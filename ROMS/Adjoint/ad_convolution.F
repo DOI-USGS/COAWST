@@ -2,28 +2,10 @@
       MODULE ad_convolution_mod
 
 #if defined ADJOINT && defined FOUR_DVAR
-# ifdef EW_PERIODIC
-#  define IR_RANGE Istr-1,Iend+1
-#  define IU_RANGE Istr,Iend
-#  define IV_RANGE Istr,Iend
-# else
-#  define IR_RANGE IstrR,IendR
-#  define IU_RANGE Istr,IendR
-#  define IV_RANGE IstrR,IendR
-# endif
-# ifdef NS_PERIODIC
-#  define JR_RANGE Jstr-1,Jend+1
-#  define JU_RANGE Jstr,Jend
-#  define JV_RANGE Jstr,Jend
-# else
-#  define JR_RANGE JstrR,JendR
-#  define JU_RANGE JstrR,JendR
-#  define JV_RANGE Jstr,JendR
-# endif
 !
-!svn $Id: ad_convolution.F 429 2009-12-20 17:30:26Z arango $
+!svn $Id$
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2010 The ROMS/TOMS Group       Andrew M. Moore   !
+!  Copyright (c) 2002-2014 The ROMS/TOMS Group       Andrew M. Moore   !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -490,18 +472,6 @@
 !
 !  Local variable declarations.
 !
-# ifdef DISTRIBUTE
-#  ifdef EW_PERIODIC
-      logical :: EWperiodic=.TRUE.
-#  else
-      logical :: EWperiodic=.FALSE.
-#  endif
-#  ifdef NS_PERIODIC
-      logical :: NSperiodic=.TRUE.
-#  else
-      logical :: NSperiodic=.FALSE.
-#  endif
-# endif
 # ifdef ADJUST_BOUNDARY
       logical, dimension(4) :: Lconvolve
 # endif
@@ -531,10 +501,10 @@
 !  Set switch to convolve boundary segments by the appropriate
 !  tiles.
 !
-      Lconvolve(iwest )=WESTERN_EDGE
-      Lconvolve(ieast )=EASTERN_EDGE
-      Lconvolve(isouth)=SOUTHERN_EDGE
-      Lconvolve(inorth)=NORTHERN_EDGE
+      Lconvolve(iwest )=DOMAIN(ng)%Western_Edge (tile)
+      Lconvolve(ieast )=DOMAIN(ng)%Eastern_Edge (tile)
+      Lconvolve(isouth)=DOMAIN(ng)%Southern_Edge(tile)
+      Lconvolve(inorth)=DOMAIN(ng)%Northern_Edge(tile)
 # endif
 
 # ifdef SOLVE3D
@@ -571,7 +541,8 @@
 # ifdef DISTRIBUTE
       CALL ad_mp_exchange2d (ng, tile, iADM, 3,                         &
      &                       LBi, UBi, LBj, UBj,                        &
-     &                       NghostPoints, EWperiodic, NSperiodic,      &
+     &                       NghostPoints,                              &
+     &                       EWperiodic(ng), NSperiodic(ng),            &
      &                       ad_zeta(:,:,Linp),                         &
      &                       ad_ubar(:,:,Linp),                         &
      &                       ad_vbar(:,:,Linp))
@@ -579,21 +550,21 @@
 !
 !  Adjoint free-surface.
 !
-      DO j=JR_RANGE
-        DO i=IR_RANGE
+      DO j=JstrT,JendT
+        DO i=IstrT,IendT
           ad_zeta(i,j,Linp)=ad_zeta(i,j,Linp)*HnormR(i,j,rec)
         END DO
       END DO
 !
 !  Adjoint 2D momentum.
 !
-      DO j=JU_RANGE
-        DO i=IU_RANGE
+      DO j=JstrT,JendT
+        DO i=IstrP,IendT
           ad_ubar(i,j,Linp)=ad_ubar(i,j,Linp)*HnormU(i,j,rec)
         END DO
       END DO
-      DO j=JV_RANGE
-        DO i=IV_RANGE
+      DO j=JstrP,JendT
+        DO i=IstrT,IendT
           ad_vbar(i,j,Linp)=ad_vbar(i,j,Linp)*HnormV(i,j,rec)
         END DO
       END DO
@@ -604,18 +575,19 @@
 #  ifdef DISTRIBUTE
       CALL ad_mp_exchange3d (ng, tile, iADM, 2,                         &
      &                       LBi, UBi, LBj, UBj, 1, N(ng),              &
-     &                       NghostPoints, EWperiodic, NSperiodic,      &
+     &                       NghostPoints,                              &
+     &                       EWperiodic(ng), NSperiodic(ng),            &
      &                       ad_u(:,:,:,Linp),                          &
      &                       ad_v(:,:,:,Linp))
 #  endif
       DO k=1,N(ng)
-        DO j=JU_RANGE
-          DO i=IU_RANGE
+        DO j=JstrT,JendT
+          DO i=IstrP,IendT
             ad_u(i,j,k,Linp)=ad_u(i,j,k,Linp)*VnormU(i,j,k,rec)
           END DO
         END DO
-        DO j=JV_RANGE
-          DO i=IV_RANGE
+        DO j=JstrP,JendT
+          DO i=IstrT,IendT
             ad_v(i,j,k,Linp)=ad_v(i,j,k,Linp)*VnormV(i,j,k,rec)
           END DO
         END DO
@@ -626,13 +598,14 @@
 #  ifdef DISTRIBUTE
       CALL ad_mp_exchange4d (ng, tile, iADM, 1,                         &
      &                       LBi, UBi, LBj, UBj, 1, N(ng), 1, NT(ng),   &
-     &                       NghostPoints, EWperiodic, NSperiodic,      &
+     &                       NghostPoints,                              &
+     &                       EWperiodic(ng), NSperiodic(ng),            &
      &                       ad_t(:,:,:,Linp,:))
 #  endif
       DO it=1,NT(ng)
         DO k=1,N(ng)
-          DO j=JR_RANGE
-            DO i=IR_RANGE
+          DO j=JstrT,JendT
+            DO i=IstrT,IendT
               ad_t(i,j,k,Linp,it)=ad_t(i,j,k,Linp,it)*                  &
      &                            VnormR(i,j,k,rec,it)
             END DO
@@ -652,17 +625,17 @@
             CALL ad_mp_exchange2d_bry (ng, tile, iADM, 1, ib,           &
      &                                 LBij, UBij,                      &
      &                                 NghostPoints,                    &
-     &                                 EWperiodic, NSperiodic,          &
+     &                                 EWperiodic(ng), NSperiodic(ng),  &
      &                                 ad_zeta_obc(:,ib,ir,Linp))
 #  endif
             IF (Lconvolve(ib)) THEN
               IF ((ib.eq.iwest).or.(ib.eq.ieast)) THEN
-                DO j=JR_RANGE
+                DO j=JstrT,JendT
                   ad_zeta_obc(j,ib,ir,Linp)=ad_zeta_obc(j,ib,ir,Linp)*  &
      &                                      HnormRobc(j,ib)
                 END DO
               ELSE IF ((ib.eq.isouth).or.(ib.eq.inorth)) THEN
-                DO i=IR_RANGE
+                DO i=IstrT,IendT
                   ad_zeta_obc(i,ib,ir,Linp)=ad_zeta_obc(i,ib,ir,Linp)*  &
      &                                      HnormRobc(i,ib)
                 END DO
@@ -681,17 +654,17 @@
             CALL ad_mp_exchange2d_bry (ng, tile, iADM, 1, ib,           &
      &                                 LBij, UBij,                      &
      &                                 NghostPoints,                    &
-     &                                 EWperiodic, NSperiodic,          &
+     &                                 EWperiodic(ng), NSperiodic(ng),  &
      &                                 ad_ubar_obc(:,ib,ir,Linp))
 #  endif
             IF (Lconvolve(ib)) THEN
               IF ((ib.eq.iwest).or.(ib.eq.ieast)) THEN
-                DO j=JU_RANGE
+                DO j=JstrT,JendT
                   ad_ubar_obc(j,ib,ir,Linp)=ad_ubar_obc(j,ib,ir,Linp)*  &
      &                                      HnormUobc(j,ib)
                 END DO
               ELSE IF ((ib.eq.isouth).or.(ib.eq.inorth)) THEN
-                DO i=IU_RANGE
+                DO i=IstrP,IendT
                   ad_ubar_obc(i,ib,ir,Linp)=ad_ubar_obc(i,ib,ir,Linp)*  &
      &                                      HnormUobc(i,ib)
                 END DO
@@ -710,17 +683,17 @@
             CALL ad_mp_exchange2d_bry (ng, tile, iADM, 1, ib,           &
      &                                 LBij, UBij,                      &
      &                                 NghostPoints,                    &
-     &                                 EWperiodic, NSperiodic,          &
+     &                                 EWperiodic(ng), NSperiodic(ng),  &
      &                                 ad_vbar_obc(:,ib,ir,Linp))
 #  endif
             IF (Lconvolve(ib)) THEN
               IF ((ib.eq.iwest).or.(ib.eq.ieast)) THEN
-                DO j=JV_RANGE
+                DO j=JstrP,JendT
                   ad_vbar_obc(j,ib,ir,Linp)=ad_vbar_obc(j,ib,ir,Linp)*  &
      &                                      HnormVobc(j,ib)
                 END DO
               ELSE IF ((ib.eq.isouth).or.(ib.eq.inorth)) THEN
-                DO i=IV_RANGE
+                DO i=IstrT,IendT
                   ad_vbar_obc(i,ib,ir,Linp)=ad_vbar_obc(i,ib,ir,Linp)*  &
      &                                      HnormVobc(i,ib)
                 END DO
@@ -741,20 +714,20 @@
             CALL ad_mp_exchange3d_bry (ng, tile, iADM, 1, ib,           &
      &                                 LBij, UBij, 1, N(ng),            &
      &                                 NghostPoints,                    &
-     &                                 EWperiodic, NSperiodic,          &
+     &                                 EWperiodic(ng), NSperiodic(ng),  &
      &                                 ad_u_obc(:,:,ib,ir,Linp))
 #   endif
             IF (Lconvolve(ib)) THEN
               IF ((ib.eq.iwest).or.(ib.eq.ieast)) THEN
                 DO k=1,N(ng)
-                  DO j=JU_RANGE
+                  DO j=JstrT,JendT
                     ad_u_obc(j,k,ib,ir,Linp)=ad_u_obc(j,k,ib,ir,Linp)*  &
      &                                       VnormUobc(j,k,ib)
                   END DO
                 END DO
               ELSE IF ((ib.eq.isouth).or.(ib.eq.inorth)) THEN
                 DO k=1,N(ng)
-                  DO i=IU_RANGE
+                  DO i=IstrP,IendT
                     ad_u_obc(i,k,ib,ir,Linp)=ad_u_obc(i,k,ib,ir,Linp)*  &
      &                                       VnormUobc(i,k,ib)
                   END DO
@@ -774,20 +747,20 @@
             CALL ad_mp_exchange3d_bry (ng, tile, iADM, 1, ib,           &
      &                                 LBij, UBij, 1, N(ng),            &
      &                                 NghostPoints,                    &
-     &                                 EWperiodic, NSperiodic,          &
+     &                                 EWperiodic(ng), NSperiodic(ng),  &
      &                                 ad_v_obc(:,:,ib,ir,Linp))
 #   endif
             IF (Lconvolve(ib)) THEN
               IF ((ib.eq.iwest).or.(ib.eq.ieast)) THEN
                 DO k=1,N(ng)
-                  DO j=JV_RANGE
+                  DO j=JstrP,JendT
                     ad_v_obc(j,k,ib,ir,Linp)=ad_v_obc(j,k,ib,ir,Linp)*  &
      &                                       VnormVobc(j,k,ib)
                   END DO
                 END DO
               ELSE IF ((ib.eq.isouth).or.(ib.eq.inorth)) THEN
                 DO k=1,N(ng)
-                  DO i=IV_RANGE
+                  DO i=IstrT,IendT
                     ad_v_obc(i,k,ib,ir,Linp)=ad_v_obc(i,k,ib,ir,Linp)*  &
      &                                       VnormVobc(i,k,ib)
                   END DO
@@ -808,13 +781,13 @@
               CALL ad_mp_exchange3d_bry (ng, tile, iADM, 1, ib,         &
      &                                   LBij, UBij, 1, N(ng),          &
      &                                   NghostPoints,                  &
-     &                                   EWperiodic, NSperiodic,        &
+     &                                   EWperiodic(ng), NSperiodic(ng),&
      &                                   ad_t_obc(:,:,ib,ir,Linp,it))
 #   endif
               IF (Lconvolve(ib)) THEN
                 IF ((ib.eq.iwest).or.(ib.eq.ieast)) THEN
                   DO k=1,N(ng)
-                    DO j=JR_RANGE
+                    DO j=JstrT,JendT
                       ad_t_obc(j,k,ib,ir,Linp,it)=                      &
      &                                   ad_t_obc(j,k,ib,ir,Linp,it)*   &
      &                                   VnormRobc(j,k,ib,it)
@@ -822,7 +795,7 @@
                   END DO
                 ELSE IF ((ib.eq.isouth).or.(ib.eq.inorth)) THEN
                   DO k=1,N(ng)
-                    DO i=IR_RANGE
+                    DO i=IstrT,IendT
                       ad_t_obc(i,k,ib,ir,Linp,it)=                      &
      &                                   ad_t_obc(i,k,ib,ir,Linp,it)*   &
      &                                   VnormRobc(i,k,ib,it)
@@ -845,18 +818,19 @@
 #  ifdef DISTRIBUTE
         CALL ad_mp_exchange3d (ng, tile, iADM, 2,                       &
      &                         LBi, UBi, LBj, UBj, 1, Nfrec(ng),        &
-     &                         NghostPoints, EWperiodic, NSperiodic,    &
+     &                         NghostPoints,                            &
+     &                         EWperiodic(ng), NSperiodic(ng),          &
      &                         ad_ustr(:,:,:,Linp),                     &
      &                         ad_vstr(:,:,:,Linp))
 #  endif
         DO k=1,Nfrec(ng)
-          DO j=JU_RANGE
-            DO i=IU_RANGE
+          DO j=JstrT,JendT
+            DO i=IstrP,IendT
               ad_ustr(i,j,k,Linp)=ad_ustr(i,j,k,Linp)*HnormSUS(i,j)
             END DO
           END DO
-          DO j=JV_RANGE
-            DO i=IV_RANGE
+          DO j=JstrP,JendT
+            DO i=IstrT,IendT
               ad_vstr(i,j,k,Linp)=ad_vstr(i,j,k,Linp)*HnormSVS(i,j)
             END DO
           END DO
@@ -874,12 +848,12 @@
             CALL ad_mp_exchange3d (ng, tile, iADM, 1,                   &
      &                             LBi, UBi, LBj, UBj, 1, Nfrec(ng),    &
      &                             NghostPoints,                        &
-     &                             EWperiodic, NSperiodic,              &
+     &                             EWperiodic(ng), NSperiodic(ng),      &
      &                             ad_tflux(:,:,:,Linp,it))
 #  endif
             DO k=1,Nfrec(ng)
-              DO j=JR_RANGE
-                DO i=IR_RANGE
+              DO j=JstrT,JendT
+                DO i=IstrT,IendT
                   ad_tflux(i,j,k,Linp,it)=ad_tflux(i,j,k,Linp,it)*      &
      &                                    HnormSTF(i,j,it)
                 END DO
@@ -1241,13 +1215,14 @@
 # ifdef DISTRIBUTE
       CALL ad_mp_exchange2d (ng, tile, iADM, 3,                         &
      &                       LBi, UBi, LBj, UBj,                        &
-     &                       NghostPoints, EWperiodic, NSperiodic,      &
+     &                       NghostPoints,                              &
+     &                       EWperiodic(ng), NSperiodic(ng),            &
      &                       ad_zeta(:,:,Linp),                         &
      &                       ad_ubar(:,:,Linp),                         &
      &                       ad_vbar(:,:,Linp))
 # endif
-      DO j=JR_RANGE
-        DO i=IR_RANGE
+      DO j=JstrT,JendT
+        DO i=IstrT,IendT
           ad_zeta(i,j,Linp)=ad_zeta(i,j,Linp)/                          &
      &                      SQRT(om_r(i,j)*on_r(i,j))
         END DO
@@ -1255,14 +1230,14 @@
 !
 !  Adjoint 2D momentum.
 !
-      DO j=JU_RANGE
-        DO i=IU_RANGE
+      DO j=JstrT,JendT
+        DO i=IstrP,IendT
           ad_ubar(i,j,Linp)=ad_ubar(i,j,Linp)/                          &
      &                      SQRT(om_u(i,j)*on_u(i,j))
         END DO
       END DO
-      DO j=JV_RANGE
-        DO i=IV_RANGE
+      DO j=JstrP,JendT
+        DO i=IstrT,IendT
           ad_vbar(i,j,Linp)=ad_vbar(i,j,Linp)/                          &
      &                      SQRT(om_v(i,j)*on_v(i,j))
         END DO
@@ -1274,12 +1249,13 @@
 #  ifdef DISTRIBUTE
       CALL ad_mp_exchange3d (ng, tile, iADM, 2,                         &
      &                       LBi, UBi, LBj, UBj, 1, N(ng),              &
-     &                       NghostPoints, EWperiodic, NSperiodic,      &
+     &                       NghostPoints,                              &
+     &                       EWperiodic(ng), NSperiodic(ng),            &
      &                       ad_u(:,:,:,Linp),                          &
      &                       ad_v(:,:,:,Linp))
 #  endif
-      DO j=JU_RANGE
-        DO i=IU_RANGE
+      DO j=JstrT,JendT
+        DO i=IstrP,IendT
           cff=om_u(i,j)*on_u(i,j)*0.5_r8
           DO k=1,N(ng)
             ad_u(i,j,k,Linp)=ad_u(i,j,k,Linp)/                          &
@@ -1287,8 +1263,8 @@
           END DO
         END DO
       END DO
-      DO j=JV_RANGE
-        DO i=IV_RANGE
+      DO j=JstrP,JendT
+        DO i=IstrT,IendT
           cff=om_v(i,j)*on_v(i,j)*0.5_r8
           DO k=1,N(ng)
             ad_v(i,j,k,Linp)=ad_v(i,j,k,Linp)/                          &
@@ -1302,11 +1278,12 @@
 #  ifdef DISTRIBUTE
       CALL ad_mp_exchange4d (ng, tile, iADM, 1,                         &
      &                       LBi, UBi, LBj, UBj, 1, N(ng), 1, NT(ng),   &
-     &                       NghostPoints, EWperiodic, NSperiodic,      &
+     &                       NghostPoints,                              &
+     &                       EWperiodic(ng), NSperiodic(ng),            &
      &                       ad_t(:,:,:,Linp,:))
 #  endif
-      DO j=JR_RANGE
-        DO i=IR_RANGE
+      DO j=JstrT,JendT
+        DO i=IstrT,IendT
           cff=om_r(i,j)*on_r(i,j)
           DO k=1,N(ng)
             fac=1.0_r8/SQRT(cff*Hz(i,j,k))
@@ -1329,19 +1306,19 @@
             CALL ad_mp_exchange2d_bry (ng, tile, iADM, 1, ib,           &
      &                                 LBij, UBij,                      &
      &                                 NghostPoints,                    &
-     &                                 EWperiodic, NSperiodic,          &
+     &                                 EWperiodic(ng), NSperiodic(ng),  &
      &                                 ad_zeta_obc(:,ib,ir,Linp))
 #  endif
             IF (Lconvolve(ib)) THEN
               IF ((ib.eq.iwest).or.(ib.eq.ieast)) THEN
                 i=BOUNDS(ng)%edge(ib,r2dvar)
-                DO j=JR_RANGE
+                DO j=JstrT,JendT
                   ad_zeta_obc(j,ib,ir,Linp)=ad_zeta_obc(j,ib,ir,Linp)/  &
      &                                      SQRT(om_r(i,j)*on_r(i,j))
                 END DO
               ELSE IF ((ib.eq.isouth).or.(ib.eq.inorth)) THEN
                 j=BOUNDS(ng)%edge(ib,r2dvar)
-                DO i=IR_RANGE
+                DO i=IstrT,IendT
                   ad_zeta_obc(i,ib,ir,Linp)=ad_zeta_obc(i,ib,ir,Linp)/  &
      &                                      SQRT(om_r(i,j)*on_r(i,j))
                 END DO
@@ -1360,19 +1337,19 @@
             CALL ad_mp_exchange2d_bry (ng, tile, iADM, 1, ib,           &
      &                                 LBij, UBij,                      &
      &                                 NghostPoints,                    &
-     &                                 EWperiodic, NSperiodic,          &
+     &                                 EWperiodic(ng), NSperiodic(ng),  &
      &                                 ad_ubar_obc(:,ib,ir,Linp))
 #  endif
             IF (Lconvolve(ib)) THEN
               IF ((ib.eq.iwest).or.(ib.eq.ieast)) THEN
                 i=BOUNDS(ng)%edge(ib,u2dvar)
-                DO j=JU_RANGE
+                DO j=JstrT,JendT
                   ad_ubar_obc(j,ib,ir,Linp)=ad_ubar_obc(j,ib,ir,Linp)/  &
      &                                      SQRT(om_u(i,j)*on_u(i,j))
                 END DO
               ELSE IF ((ib.eq.isouth).or.(ib.eq.inorth)) THEN
                 j=BOUNDS(ng)%edge(ib,u2dvar)
-                DO i=IU_RANGE
+                DO i=IstrP,IendT
                   ad_ubar_obc(i,ib,ir,Linp)=ad_ubar_obc(i,ib,ir,Linp)/  &
      &                                      SQRT(om_u(i,j)*on_u(i,j))
                 END DO
@@ -1391,19 +1368,19 @@
             CALL ad_mp_exchange2d_bry (ng, tile, iADM, 1, ib,           &
      &                                 LBij, UBij,                      &
      &                                 NghostPoints,                    &
-     &                                 EWperiodic, NSperiodic,          &
+     &                                 EWperiodic(ng), NSperiodic(ng),  &
      &                                 ad_vbar_obc(:,ib,ir,Linp))
 #  endif
             IF (Lconvolve(ib)) THEN
               IF ((ib.eq.iwest).or.(ib.eq.ieast)) THEN
                 i=BOUNDS(ng)%edge(ib,v2dvar)
-                DO j=JV_RANGE
+                DO j=JstrP,JendT
                   ad_vbar_obc(j,ib,ir,Linp)=ad_vbar_obc(j,ib,ir,Linp)/  &
      &                                      SQRT(om_v(i,j)*on_v(i,j))
                 END DO
               ELSE IF ((ib.eq.isouth).or.(ib.eq.inorth)) THEN
                 j=BOUNDS(ng)%edge(ib,v2dvar)
-                DO i=IV_RANGE
+                DO i=IstrT,IendT
                   ad_vbar_obc(i,ib,ir,Linp)=ad_vbar_obc(i,ib,ir,Linp)/  &
      &                                      SQRT(om_v(i,j)*on_v(i,j))
                 END DO
@@ -1424,13 +1401,13 @@
             CALL ad_mp_exchange3d_bry (ng, tile, iADM, 1, ib,           &
      &                                 LBij, UBij, 1, N(ng),            &
      &                                 NghostPoints,                    &
-     &                                 EWperiodic, NSperiodic,          &
+     &                                 EWperiodic(ng), NSperiodic(ng),  &
      &                                 ad_u_obc(:,:,ib,ir,Linp))
 #   endif
             IF (Lconvolve(ib)) THEN
               IF ((ib.eq.iwest).or.(ib.eq.ieast)) THEN
                 i=BOUNDS(ng)%edge(ib,u2dvar)
-                DO j=JU_RANGE
+                DO j=JstrT,JendT
                   cff=om_u(i,j)*on_u(i,j)*0.5_r8
                   DO k=1,N(ng)
                     ad_u_obc(j,k,ib,ir,Linp)=ad_u_obc(j,k,ib,ir,Linp)/  &
@@ -1441,7 +1418,7 @@
                 END DO
               ELSE IF ((ib.eq.isouth).or.(ib.eq.inorth)) THEN
                 j=BOUNDS(ng)%edge(ib,u2dvar)
-                DO i=IU_RANGE
+                DO i=IstrP,IendT
                   cff=om_u(i,j)*on_u(i,j)*0.5_r8
                   DO k=1,N(ng)
                     ad_u_obc(i,k,ib,ir,Linp)=ad_u_obc(i,k,ib,ir,Linp)/  &
@@ -1465,13 +1442,13 @@
             CALL ad_mp_exchange3d_bry (ng, tile, iADM, 1, ib,           &
      &                                 LBij, UBij, 1, N(ng),            &
      &                                 NghostPoints,                    &
-     &                                 EWperiodic, NSperiodic,          &
+     &                                 EWperiodic(ng), NSperiodic(ng),  &
      &                                 ad_v_obc(:,:,ib,ir,Linp))
 #   endif
             IF (Lconvolve(ib)) THEN
               IF ((ib.eq.iwest).or.(ib.eq.ieast)) THEN
                 i=BOUNDS(ng)%edge(ib,v2dvar)
-                DO j=JV_RANGE
+                DO j=JstrP,JendT
                   cff=om_v(i,j)*on_v(i,j)*0.5_r8
                   DO k=1,N(ng)
                     ad_v_obc(j,k,ib,ir,Linp)=ad_v_obc(j,k,ib,ir,Linp)/  &
@@ -1482,7 +1459,7 @@
                 END DO
               ELSE IF ((ib.eq.isouth).or.(ib.eq.inorth)) THEN
                 j=BOUNDS(ng)%edge(ib,v2dvar)
-                DO i=IV_RANGE
+                DO i=IstrT,IendT
                   cff=om_v(i,j)*on_v(i,j)*0.5_r8
                   DO k=1,N(ng)
                     ad_v_obc(i,k,ib,ir,Linp)=ad_v_obc(i,k,ib,ir,Linp)/  &
@@ -1507,13 +1484,13 @@
               CALL ad_mp_exchange3d_bry (ng, tile, iADM, 1, ib,         &
      &                                   LBij, UBij, 1, N(ng),          &
      &                                   NghostPoints,                  &
-     &                                   EWperiodic, NSperiodic,        &
+     &                                   EWperiodic(ng), NSperiodic(ng),&
      &                                   ad_t_obc(:,:,ib,ir,Linp,it))
 #   endif
               IF (Lconvolve(ib)) THEN
                 IF ((ib.eq.iwest).or.(ib.eq.ieast)) THEN
                   i=BOUNDS(ng)%edge(ib,r2dvar)
-                  DO j=JR_RANGE
+                  DO j=JstrT,JendT
                     cff=om_r(i,j)*on_r(i,j)
                     DO k=1,N(ng)
                       ad_t_obc(j,k,ib,ir,Linp,it)=                      &
@@ -1523,7 +1500,7 @@
                   END DO
                 ELSE IF ((ib.eq.isouth).or.(ib.eq.inorth)) THEN
                   j=BOUNDS(ng)%edge(ib,r2dvar)
-                  DO i=IR_RANGE
+                  DO i=IstrT,IendT
                     cff=om_r(i,j)*on_r(i,j)
                     DO k=1,N(ng)
                       ad_t_obc(i,k,ib,ir,Linp,it)=                      &
@@ -1548,19 +1525,20 @@
 #  ifdef DISTRIBUTE
         CALL ad_mp_exchange3d (ng, tile, iADM, 2,                       &
      &                         LBi, UBi, LBj, UBj, 1, Nfrec(ng),        &
-     &                         NghostPoints, EWperiodic, NSperiodic,    &
+     &                         NghostPoints,                            &
+     &                         EWperiodic(ng), NSperiodic(ng),          &
      &                         ad_ustr(:,:,:,Linp),                     &
      &                         ad_vstr(:,:,:,Linp))
 #  endif
         DO k=1,Nfrec(ng)
-          DO j=JU_RANGE
-            DO i=IU_RANGE
+          DO j=JstrT,JendT
+            DO i=IstrP,IendT
               ad_ustr(i,j,k,Linp)=ad_ustr(i,j,k,Linp)/                  &
      &                            SQRT(om_u(i,j)*on_u(i,j))
             END DO
           END DO
-          DO j=JV_RANGE
-            DO i=IV_RANGE
+          DO j=JstrP,JendT
+            DO i=IstrT,IendT
               ad_vstr(i,j,k,Linp)=ad_vstr(i,j,k,Linp)/                  &
      &                            SQRT(om_v(i,j)*on_v(i,j))
             END DO
@@ -1580,13 +1558,13 @@
             CALL ad_mp_exchange3d (ng, tile, iADM, 1,                   &
      &                             LBi, UBi, LBj, UBj, 1, Nfrec(ng),    &
      &                             NghostPoints,                        &
-     &                             EWperiodic, NSperiodic,              &
+     &                             EWperiodic(ng), NSperiodic(ng),      &
      &                             ad_tflux(:,:,:,Linp,it))
           END IF
         END DO
 #  endif
-        DO j=JR_RANGE
-          DO i=IR_RANGE
+        DO j=JstrT,JendT
+          DO i=IstrT,IendT
             fac=1.0_r8/SQRT(om_r(i,j)*on_r(i,j))
             DO it=1,NT(ng)
               IF (Lstflux(it,ng)) THEN
@@ -1599,13 +1577,6 @@
         END DO
       END IF
 # endif
-
-# undef IR_RANGE
-# undef IU_RANGE
-# undef IV_RANGE
-# undef JR_RANGE
-# undef JU_RANGE
-# undef JV_RANGE
 
       RETURN
       END SUBROUTINE ad_convolution_tile

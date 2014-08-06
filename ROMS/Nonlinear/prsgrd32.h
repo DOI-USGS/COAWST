@@ -2,7 +2,7 @@
 !
 !svn $Id: prsgrd32.h 732 2008-09-07 01:55:51Z jcwarner $
 !***********************************************************************
-!  Copyright (c) 2002-2010 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2014 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                           Hernan G. Arango   !
 !****************************************** Alexander F. Shchepetkin ***
@@ -63,18 +63,22 @@
      &                  GRID(ng) % vmask,                               &
 #endif
 #ifdef WET_DRY
-     &                  GRID(ng)%umask_wet,                             &
-     &                  GRID(ng)%vmask_wet,                             &
+     &                  GRID(ng) % umask_wet,                           &
+     &                  GRID(ng) % vmask_wet,                           &
 #endif
      &                  GRID(ng) % om_v,                                &
      &                  GRID(ng) % on_u,                                &
      &                  GRID(ng) % Hz,                                  &
      &                  GRID(ng) % z_r,                                 &
      &                  GRID(ng) % z_w,                                 &
+#ifdef ICESHELF
+     &                  GRID(ng) % zice,                                &
+#endif
      &                  OCEAN(ng) % rho,                                &
 #ifdef WEC_VF
      &                  OCEAN(ng) % zetat,                              &
 #endif
+
 #ifdef ATM_PRESS
      &                  FORCES(ng) % Pair,                              &
 #endif
@@ -106,6 +110,9 @@
 #endif
      &                        om_v, on_u,                               &
      &                        Hz, z_r, z_w,                             &
+# ifdef ICESHELF
+     &                        zice,                                     &
+# endif
      &                        rho,                                      &
 #ifdef WEC_VF
      &                        zetat,                                    &
@@ -146,6 +153,10 @@
       real(r8), intent(in) :: Hz(LBi:,LBj:,:)
       real(r8), intent(in) :: z_r(LBi:,LBj:,:)
       real(r8), intent(in) :: z_w(LBi:,LBj:,0:)
+# ifdef ICESHELF
+      real(r8), intent(in) :: zice(LBi:,LBj:)
+# endif
+
       real(r8), intent(in) :: rho(LBi:,LBj:,:)
 #ifdef WEC_VF
       real(r8), intent(in) :: zetat(LBi:,LBj:)
@@ -176,6 +187,9 @@
       real(r8), intent(in) :: Hz(LBi:UBi,LBj:UBj,N(ng))
       real(r8), intent(in) :: z_r(LBi:UBi,LBj:UBj,N(ng))
       real(r8), intent(in) :: z_w(LBi:UBi,LBj:UBj,0:N(ng))
+# ifdef ICESHELF
+      real(r8), intent(in) :: zice(LBi:UBi,LBj:UBj)
+# endif
       real(r8), intent(in) :: rho(LBi:UBi,LBj:UBj,N(ng))
 #ifdef WEC_VF
       real(r8), intent(in) :: zetat(LBi:UBi,LBj:UBj)
@@ -201,6 +215,9 @@
       real(r8), parameter :: OneFifth = 0.2_r8
       real(r8), parameter :: OneTwelfth = 1.0_r8/12.0_r8
       real(r8), parameter :: eps = 1.0E-10_r8
+#ifdef ICESHELF
+      real(r8), parameter :: drhodz = 0.00478_r8
+#endif
 
       real(r8) :: GRho, GRho0,  HalfGRho
       real(r8) :: cff, cff1, cff2
@@ -259,6 +276,13 @@
           cff1=1.0_r8/(z_r(i,j,N(ng))-z_r(i,j,N(ng)-1))
           cff2=0.5_r8*(rho(i,j,N(ng))-rho(i,j,N(ng)-1))*                &
      &         (z_w(i,j,N(ng))-z_r(i,j,N(ng)))*cff1
+#ifdef ICESHELF
+          P(i,j,N(ng))=GRho0*(z_w(i,j,N(ng))-zice(i,j))-                &
+     &                 GRho*(rho(i,j,N(ng))+0.5_r8*drhodz*zice(i,j))*   &
+     &                 zice(i,j)+                                       &
+     &                 GRho*(rho(i,j,N(ng))+cff2)*                      &
+     &                 (z_w(i,j,N(ng))-z_r(i,j,N(ng)))
+#else
           P(i,j,N(ng))=GRho0*z_w(i,j,N(ng))+                            &
 #ifdef WEC_VF
      &                 zetat(i,j)+                                      &
@@ -266,11 +290,12 @@
 #ifdef ATM_PRESS
      &                 fac*(Pair(i,j)-OneAtm)+                          &
 #endif
-#ifdef POT_TIDES
-     &                 (-g)*Ptide(i,j)+                                 &
-#endif
      &                 GRho*(rho(i,j,N(ng))+cff2)*                      &
      &                 (z_w(i,j,N(ng))-z_r(i,j,N(ng)))
+#endif
+#ifdef POT_TIDES
+          P(i,j,N(ng)) = P(i,j,N(ng)) - g*Ptide(i,j)
+#endif
         END DO
         DO k=N(ng)-1,1,-1
           DO i=IstrU-1,Iend
@@ -393,21 +418,21 @@
 !
         DO j=JstrV,Jend
           DO i=Istr,Iend
-            rv(i,j,k,nrhs)=om_v(i,j)*0.5_r8*                          &
-     &                       (Hz(i,j,k)+Hz(i,j-1,k))*                   &
-     &                       (P(i,j-1,k)-P(i,j,k)-                      &
-     &                        HalfGRho*                                 &
-     &                        ((rho(i,j,k)+rho(i,j-1,k))*               &
-     &                         (z_r(i,j,k)-z_r(i,j-1,k))-               &
-     &                          OneFifth*                               &
-     &                          ((dRx(i,j)-dRx(i,j-1))*                 &
-     &                           (z_r(i,j,k)-z_r(i,j-1,k)-              &
-     &                            OneTwelfth*                           &
-     &                            (dZx(i,j)+dZx(i,j-1)))-               &
-     &                           (dZx(i,j)-dZx(i,j-1))*                 &
-     &                           (rho(i,j,k)-rho(i,j-1,k)-              &
-     &                            OneTwelfth*                           &
-     &                            (dRx(i,j)+dRx(i,j-1))))))
+            rv(i,j,k,nrhs)=om_v(i,j)*0.5_r8*                            &
+     &                     (Hz(i,j,k)+Hz(i,j-1,k))*                     &
+     &                     (P(i,j-1,k)-P(i,j,k)-                        &
+     &                      HalfGRho*                                   &
+     &                      ((rho(i,j,k)+rho(i,j-1,k))*                 &
+     &                       (z_r(i,j,k)-z_r(i,j-1,k))-                 &
+     &                        OneFifth*                                 &
+     &                        ((dRx(i,j)-dRx(i,j-1))*                   &
+     &                         (z_r(i,j,k)-z_r(i,j-1,k)-                &
+     &                          OneTwelfth*                             &
+     &                          (dZx(i,j)+dZx(i,j-1)))-                 &
+     &                         (dZx(i,j)-dZx(i,j-1))*                   &
+     &                         (rho(i,j,k)-rho(i,j-1,k)-                &
+     &                          OneTwelfth*                             &
+     &                          (dRx(i,j)+dRx(i,j-1))))))
 #ifdef WET_DRY
             rv(i,j,k,nrhs)=rv(i,j,k,nrhs)*vmask_wet(i,j)
 #endif

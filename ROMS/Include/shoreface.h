@@ -1,7 +1,7 @@
 /*
 ** svn $Id: shoreface.h 429 2009-12-20 17:30:26Z arango $
 *******************************************************************************
-** Copyright (c) 2002-2010 The ROMS/TOMS Group                               **
+** Copyright (c) 2002-2014 The ROMS/TOMS Group                               **
 **   Licensed under a MIT/X style license                                    **
 **   See License_ROMS.txt                                                    **
 *******************************************************************************
@@ -25,7 +25,6 @@
 #define DIAGNOSTICS_UV
 #define DIAGNOSTICS_TS
 #define AVERAGES
-#define AVERAGES_WEC
 #define WET_DRY
 #define OUT_DOUBLE
 #define UV_ADV
@@ -36,11 +35,6 @@
 #undef  SALINITY
 #define SOLVE3D
 #define SPLINES
-#define NS_PERIODIC
-#define EASTERN_WALL
-#define WEST_FSCHAPMAN
-#define WEST_M2FLATHER
-#define WEST_M3GRADIENT
 
 #define MASKING
 #ifdef MASKING
@@ -67,7 +61,6 @@
 #  define SUSPLOAD
 #  define BEDLOAD_MPM
 #  undef  BEDLOAD_SOULSBY
-#  define AVERAGES_BEDLOAD
 # endif
 # if defined SEDIMENT || defined SG_BBL || defined MB_BBL || defined SSW_BBL
 #  define ANA_SEDIMENT

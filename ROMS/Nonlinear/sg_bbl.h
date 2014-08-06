@@ -2,7 +2,7 @@
 !
 !svn $Id: sg_bbl.h 732 2008-09-07 01:55:51Z jcwarner $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2010 The ROMS/TOMS Group        Richard Styles   !
+!  Copyright (c) 2002-2014 The ROMS/TOMS Group        Richard Styles   !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -47,6 +47,7 @@
      &                GRID(ng) % z_r,                                   &
      &                GRID(ng) % z_w,                                   &
      &                GRID(ng) % angler,                                &
+     &                GRID(ng) % ZoBot,                                 &
 # if defined SG_CALC_UB
      &                FORCES(ng) % Hwave,                               &
 # else
@@ -74,6 +75,7 @@
 # ifdef PROFILE
       CALL wclock_off (ng, iNLM, 37)
 # endif
+
       RETURN
       END SUBROUTINE bblm
 !
@@ -82,7 +84,7 @@
      &                      LBi, UBi, LBj, UBj,                         &
      &                      IminS, ImaxS, JminS, JmaxS,                 &
      &                      nrhs,                                       &
-     &                      h, z_r, z_w, angler,                        &
+     &                      h, z_r, z_w, angler, ZoBot,                 &
 # if defined SG_CALC_UB
      &                      Hwave,                                      &
 # else
@@ -122,6 +124,7 @@
       real(r8), intent(in) :: z_r(LBi:,LBj:,:)
       real(r8), intent(in) :: z_w(LBi:,LBj:,0:)
       real(r8), intent(in) :: angler(LBi:,LBj:)
+      real(r8), intent(in) :: ZoBot(LBi:,LBj:)
 #  if defined SG_CALC_UB
       real(r8), intent(in) :: Hwave(LBi:,LBj:)
 #  else
@@ -154,6 +157,7 @@
       real(r8), intent(in) :: z_r(LBi:UBi,LBj:UBj,N(ng))
       real(r8), intent(in) :: z_w(LBi:UBi,LBj:UBj,0:N(ng))
       real(r8), intent(in) :: angler(LBi:UBi,LBj:UBj)
+      real(r8), intent(in) :: ZoBot(LBi:UBi,LBj:UBj)
 #  if defined SG_CALC_UB
       real(r8), intent(in) :: Hwave(LBi:UBi,LBj:UBj)
 #  else
@@ -183,18 +187,6 @@
 !
 !  Local variable declarations.
 !
-# ifdef DISTRIBUTE
-#  ifdef EW_PERIODIC
-      logical :: EWperiodic=.TRUE.
-#  else
-      logical :: EWperiodic=.FALSE.
-#  endif
-#  ifdef NS_PERIODIC
-      logical :: NSperiodic=.TRUE.
-#  else
-      logical :: NSperiodic=.FALSE.
-#  endif
-# endif
       logical :: ITERATE
 
       integer :: Iter, i, j, k
@@ -237,7 +229,6 @@
 !  Initalize to default values.
 !-----------------------------------------------------------------------
 !
-      sg_znotdef=Zob(ng)
       DO j=JstrV-1,Jend
         DO i=IstrU-1,Iend
           Tauc(i,j)=0.0_r8
@@ -246,7 +237,7 @@
           u100(i,j)=0.0_r8
           rheight(i,j)=0.0_r8
           rlength(i,j)=0.0_r8
-          znot(i,j)=sg_znotdef
+          znot(i,j)=ZoBot(i,j)
           znotc(i,j)=0.0_r8
         END DO
       END DO
@@ -354,9 +345,9 @@
         DO i=IstrU-1,Iend
           IF (Umag(i,j).gt.0.0_r8) THEN
 !!          Ustr=MIN(sg_ustarcdef,Umag(i,j)*vonKar/                     &
-!!   &                            LOG(Zr(i,j)/sg_znotdef))
+!!   &                            LOG(Zr(i,j)/ZoBot(i,j)))
 !!          Tauc(i,j)=Ustr*Ustr
-            cff1=vonKar/LOG(Zr(i,j)/sg_znotdef)
+            cff1=vonKar/LOG(Zr(i,j)/ZoBot(i,j))
             cff2=MIN(Cdb_max,MAX(Cdb_min,cff1*cff1))
             Tauc(i,j)=cff2*Umag(i,j)*Umag(i,j)
           END IF
@@ -406,7 +397,7 @@
 !  to see if we compute sg_znot based on the wave-formed ripples.
 !  If the skin friction calculation indicates that sediment is NOT
 !  in motion, the ripple model is invalid and take the default value,
-!  sg_znotdef.
+!  ZoBot.
 !
           sg_abokb=sg_ab/sg_dd
           IF (sg_abokb.le.100.0_r8) THEN
@@ -418,7 +409,7 @@
           sg_shdnrm=(sg_ss-1.0_r8)*sg_dd*sg_g
           sg_shld=sg_ustarwm*sg_ustarwm/sg_shdnrm
           IF ((sg_shld/sg_shldcr).le.1.0_r8) THEN
-            sg_znot=sg_znotdef
+            sg_znot=ZoBot(i,j)
             sg_eta=0.0_r8
             sg_lambda=0.0_r8
           ELSE
@@ -439,7 +430,7 @@
             sg_znot=(sg_dd+2.3_r8*sg_eta+sg_kbs)/30.0_r8
           END IF
 # else
-          sg_znot=sg_znotdef
+          sg_znot=ZoBot(i,j)
           sg_chi=4.0_r8*sg_nu*sg_ub*sg_ub/                              &
      &           (sg_dd*((sg_ss-1.0_r8)*sg_g*sg_dd)**1.5_r8)
           IF (sg_chi.le.2.0_r8) THEN
@@ -650,25 +641,30 @@
 #ifdef DISTRIBUTE
       CALL mp_exchange2d (ng, tile, iNLM, 4,                            &
      &                    LBi, UBi, LBj, UBj,                           &
-     &                    NghostPoints, EWperiodic, NSperiodic,         &
+     &                    NghostPoints,                                 &
+     &                    EWperiodic(ng), NSperiodic(ng),               &
      &                    bustr, bvstr, bustrc, bvstrc)
       CALL mp_exchange2d (ng, tile, iNLM, 4,                            &
      &                    LBi, UBi, LBj, UBj,                           &
-     &                    NghostPoints, EWperiodic, NSperiodic,         &
+     &                    NghostPoints,                                 &
+     &                    EWperiodic(ng), NSperiodic(ng),               &
      &                    bustrw, bvstrw, bustrcwmax, bvstrcwmax)
       CALL mp_exchange2d (ng, tile, iNLM, 4,                            &
      &                    LBi, UBi, LBj, UBj,                           &
-     &                    NghostPoints, EWperiodic, NSperiodic,         &
+     &                    NghostPoints,                                 &
+     &                    EWperiodic(ng), NSperiodic(ng),               &
      &                    Ubot, Vbot, Ur, Vr)
       CALL mp_exchange2d (ng, tile, iNLM, 3,                            &
      &                    LBi, UBi, LBj, UBj,                           &
-     &                    NghostPoints, EWperiodic, NSperiodic,         &
+     &                    NghostPoints,                                 &
+     &                    EWperiodic(ng), NSperiodic(ng),               &
      &                    bottom(:,:,ibwav),                            &
      &                    bottom(:,:,irhgt),                            &
      &                    bottom(:,:,irlen))
       CALL mp_exchange2d (ng, tile, iNLM, 4,                            &
      &                    LBi, UBi, LBj, UBj,                           &
-     &                    NghostPoints, EWperiodic, NSperiodic,         &
+     &                    NghostPoints,                                 &
+     &                    EWperiodic(ng), NSperiodic(ng),               &
      &                    bottom(:,:,izdef),                            &
      &                    bottom(:,:,izapp))
 #endif

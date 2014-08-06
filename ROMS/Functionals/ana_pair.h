@@ -1,8 +1,8 @@
       SUBROUTINE ana_pair (ng, tile, model)
 !
-!! svn $Id: ana_pair.h 429 2009-12-20 17:30:26Z arango $
+!! svn $Id$
 !!======================================================================
-!! Copyright (c) 2002-2010 The ROMS/TOMS Group                         !
+!! Copyright (c) 2002-2014 The ROMS/TOMS Group                         !
 !!   Licensed under a MIT/X style license                              !
 !!   See License_ROMS.txt                                              !
 !=======================================================================
@@ -48,10 +48,9 @@
 !***********************************************************************
 !
       USE mod_param
+      USE mod_scalars
 !
-#if defined EW_PERIODIC || defined NS_PERIODIC
       USE exchange_2d_mod, ONLY : exchange_r2d_tile
-#endif
 #ifdef DISTRIBUTE
       USE mp_exchange_mod, ONLY : mp_exchange2d
 #endif
@@ -70,18 +69,6 @@
 !
 !  Local variable declarations.
 !
-#ifdef DISTRIBUTE
-# ifdef EW_PERIODIC
-      logical :: EWperiodic=.TRUE.
-# else
-      logical :: EWperiodic=.FALSE.
-# endif
-# ifdef NS_PERIODIC
-      logical :: NSperiodic=.TRUE.
-# else
-      logical :: NSperiodic=.FALSE.
-# endif
-#endif
       integer :: i, j
 
 #include "set_bounds.h"
@@ -92,30 +79,36 @@
 !-----------------------------------------------------------------------
 !
 #if defined BENCHMARK
-      DO j=JstrR,JendR
-        DO i=IstrR,IendR
+      DO j=JstrT,JendT
+        DO i=IstrT,IendT
           Pair(i,j)=1025.0_r8
         END DO
       END DO
 #elif defined BL_TEST
-      DO j=JstrR,JendR
-        DO i=IstrR,IendR
+      DO j=JstrT,JendT
+        DO i=IstrT,IendT
           Pair(i,j)=1013.48_r8
         END DO
       END DO
 #else
       ana_pair.h: no values provided for Pair.
 #endif
-#if defined EW_PERIODIC || defined NS_PERIODIC
-      CALL exchange_r2d_tile (ng, tile,                                 &
-     &                        LBi, UBi, LBj, UBj,                       &
-     &                        Pair)
-#endif
+!
+!  Exchange boundary data.
+!
+      IF (EWperiodic(ng).or.NSperiodic(ng)) THEN
+        CALL exchange_r2d_tile (ng, tile,                               &
+     &                          LBi, UBi, LBj, UBj,                     &
+     &                          Pair)
+      END IF
+
 #ifdef DISTRIBUTE
       CALL mp_exchange2d (ng, tile, model, 1,                           &
      &                    LBi, UBi, LBj, UBj,                           &
-     &                    NghostPoints, EWperiodic, NSperiodic,         &
+     &                    NghostPoints,                                 &
+     &                    EWperiodic(ng), NSperiodic(ng),               &
      &                    Pair)
 #endif
+
       RETURN
       END SUBROUTINE ana_pair_tile

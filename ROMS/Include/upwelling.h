@@ -1,7 +1,7 @@
 /*
 ** svn $Id: upwelling.h 429 2009-12-20 17:30:26Z arango $
 *******************************************************************************
-** Copyright (c) 2002-2010 The ROMS/TOMS Group                               **
+** Copyright (c) 2002-2014 The ROMS/TOMS Group                               **
 **   Licensed under a MIT/X style license                                    **
 **   See License_ROMS.txt                                                    **
 *******************************************************************************
@@ -32,9 +32,9 @@
 #define SOLVE3D
 #define SPLINES
 #define AVERAGES
+#define HISTORY2
 #define DIAGNOSTICS_TS
 #define DIAGNOSTICS_UV
-#define EW_PERIODIC
 
 #define ANA_GRID
 #define ANA_INITIAL
@@ -51,8 +51,10 @@
 # define ANA_VMIX
 #endif
 
+#undef BIO_UMAINE
 #if defined BIO_FENNEL  || defined ECOSIM || \
-    defined NPZD_POWELL || defined NEMURO
+    defined NPZD_POWELL || defined NEMURO || \
+    defined BIO_UMAINE
 # define ANA_BIOLOGY
 # define ANA_SPFLUX
 # define ANA_BPFLUX
@@ -69,6 +71,11 @@
 # define DENITRIFICATION
 # define BIO_SEDIMENT
 # define DIAGNOSTICS_BIO
+#endif
+
+#ifdef BIO_UMAINE
+# define OXYGEN
+# undef CARBON
 #endif
 
 #ifdef PERFECT_RESTART

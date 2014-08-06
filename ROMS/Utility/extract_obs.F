@@ -2,9 +2,9 @@
       MODULE extract_obs_mod
 #if defined FOUR_DVAR || defined VERIFICATION
 !
-!svn $Id: extract_obs.F 429 2009-12-20 17:30:26Z arango $
+!svn $Id$
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2010 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2014 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -356,8 +356,8 @@
           w22=p2*q2
           w12=p1*q2
           IF (Zobs(iobs).gt.0.0_r8) THEN
-            k1=INT(Zobs(iobs))                 ! Positions in fractional
-            k2=MIN(k1+1,N(ng))                 ! levels
+            k1=MAX(1,INT(Zobs(iobs)))          ! Positions in fractional
+            k2=MIN(INT(Zobs(iobs))+1,N(ng))    ! levels
             r2=REAL(k2-k1,r8)*(Zobs(iobs)-REAL(k1,r8))
             r1=1.0_r8-r2
           ELSE

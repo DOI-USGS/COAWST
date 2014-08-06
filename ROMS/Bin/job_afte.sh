@@ -2,7 +2,7 @@
 #
 # svn $Id: job_afte.sh 429 2009-12-20 17:30:26Z arango $
 #######################################################################
-# Copyright (c) 2002-2010 The ROMS/TOMS Group                         #
+# Copyright (c) 2002-2014 The ROMS/TOMS Group                         #
 #   Licensed under a MIT/X style license                              #
 #   See License_ROMS.txt                                              #
 #######################################################################
@@ -14,34 +14,31 @@
 #                                                                     #
 #######################################################################
 
-# Set ROOT of the directory to run Optimal Perturbations.
+# Set ROOT of the directory to run application.  The following
+# "dirname" command returns a path by removing any suffix from
+# the last slash ('/').  It returns a path above current diretory.
 
-set MYROOT="/home/arango/Work/EAC4"
-
-# Set application prefix.
-
-set PREFIX="eac4"
+set Dir=`dirname ${PWD}`
 
 # Set basic state trajectory, forward file:
 
-set HISname=${MYROOT}/Forward/${PREFIX}_his.nc
+#set HISname=${Dir}/Forward/gyre3d_his_00.nc
+ set HISname=${Dir}/Forward/gyre3d_his_01.nc
 
-set FWDname=${PREFIX}_fwd.nc
+set FWDname=gyre3d_fwd.nc
 
 if (-e $FWDname) then
   /bin/rm $FWDname
 endif
-ln -s $HISname $FWDname
+ln -s -v $HISname $FWDname
 
-# Set zero fields initial condition file
+# Set adjoint and tangent linear model initial conditions file:
+# zero fields.
 
-set ZEROname=${MYROOT}/Data/${PREFIX}_ini_zero.nc
+set IADname=gyre3d_iad.nc
 
-# Set tangent linear model initial conditions file: zero fields.
-
-set ITLname=${PREFIX}_itl.nc
-
-if (-e $ITLname) then
-  /bin/rm $ITLname
+if (-e $IADname) then
+  /bin/rm $IADname
 endif
-ln -s $ZEROname $ITLname
+
+ln -s -v ${Dir}/Data/gyre3d_ini_zero.nc $IADname

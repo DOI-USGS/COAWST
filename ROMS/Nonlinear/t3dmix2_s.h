@@ -4,7 +4,7 @@
 !
 !svn $Id: t3dmix2_s.h 732 2008-09-07 01:55:51Z jcwarner $
 !***********************************************************************
-!  Copyright (c) 2002-2010 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2014 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                           Hernan G. Arango   !
 !****************************************** Alexander F. Shchepetkin ***
@@ -44,10 +44,10 @@
 #ifdef MASKING
      &                   GRID(ng) % umask,                              &
      &                   GRID(ng) % vmask,                              &
-# ifdef WET_DRY
+#endif
+#ifdef WET_DRY
      &                   GRID(ng) % umask_wet,                          &
      &                   GRID(ng) % vmask_wet,                          &
-# endif
 #endif
      &                   GRID(ng) % Hz,                                 &
      &                   GRID(ng) % pmon_u,                             &
@@ -79,9 +79,9 @@
      &                         nrhs, nstp, nnew,                        &
 #ifdef MASKING
      &                         umask, vmask,                            &
-# ifdef WET_DRY
+#endif
+#ifdef WET_DRY
      &                         umask_wet, vmask_wet,                    &
-# endif
 #endif
      &                         Hz, pmon_u, pnom_v, pm, pn,              &
 #ifdef DIFF_3DCOEF
@@ -100,6 +100,9 @@
 !
       USE mod_param
       USE mod_scalars
+#ifdef OFFLINE_BIOLOGY
+      USE mod_biology
+#endif
 !
 !  Imported variable declarations.
 !
@@ -112,10 +115,10 @@
 # ifdef MASKING
       real(r8), intent(in) :: umask(LBi:,LBj:)
       real(r8), intent(in) :: vmask(LBi:,LBj:)
-#  ifdef WET_DRY
+# endif
+# ifdef WET_DRY
       real(r8), intent(in) :: umask_wet(LBi:,LBj:)
       real(r8), intent(in) :: vmask_wet(LBi:,LBj:)
-#  endif
 # endif
 # ifdef DIFF_3DCOEF
       real(r8), intent(in) :: diff3d_r(LBi:,LBj:,:)
@@ -138,10 +141,10 @@
 # ifdef MASKING
       real(r8), intent(in) :: umask(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: vmask(LBi:UBi,LBj:UBj)
-#  ifdef WET_DRY
+# endif
+# ifdef WET_DRY
       real(r8), intent(in) :: umask_wet(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: vmask_wet(LBi:UBi,LBj:UBj)
-#  endif
 # endif
 # ifdef DIFF_3DCOEF
       real(r8), intent(in) :: diff3d_r(LBi:UBi,LBj:UBj,N(ng))
@@ -165,9 +168,9 @@
 !
 !  Local variable declarations.
 !
-      integer :: i, itrc, j, k
+      integer :: i, ibt, itrc, j, k
 
-      real(r8) :: cff, cff1, cff2, cff3, cff4
+      real(r8) :: cff, cff1, cff2, cff3
 
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: FE
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: FX
@@ -182,7 +185,12 @@
 #endif
 !-----------------------------------------------------------------------
 !
+#ifdef OFFLINE_BIOLOGY
+      DO ibt=1,NBT
+        itrc=idbio(ibt)
+#else
       DO itrc=1,NT(ng)
+#endif
         DO k=1,N(ng)
 !
 !  Compute XI- and ETA-components of diffusive tracer flux (T m3/s).
@@ -209,11 +217,10 @@
 #else
      &                (t(i,j,k,nrhs,itrc)-t(i-1,j,k,nrhs,itrc))
 #endif
-#ifdef MASKING
-              FX(i,j)=FX(i,j)*umask(i,j)
-# ifdef WET_DRY
+#ifdef WET_DRY
               FX(i,j)=FX(i,j)*umask_wet(i,j)
-# endif
+#elif defined MASKING
+              FX(i,j)=FX(i,j)*umask(i,j)
 #endif
             END DO
           END DO
@@ -239,11 +246,10 @@
 #else
      &                (t(i,j,k,nrhs,itrc)-t(i,j-1,k,nrhs,itrc))
 #endif
-#ifdef MASKING
-              FE(i,j)=FE(i,j)*vmask(i,j)
-# ifdef WET_DRY
+#ifdef WET_DRY
               FE(i,j)=FE(i,j)*vmask_wet(i,j)
-# endif
+#elif defined MASKING
+              FE(i,j)=FE(i,j)*vmask(i,j)
 #endif
             END DO
           END DO

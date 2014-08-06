@@ -7,7 +7,7 @@
 !
 !svn $Id: lmd_skpp.F 732 2008-09-07 01:55:51Z jcwarner $
 !=======================================================================
-!  Copyright (c) 2002-2010 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2014 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                           Hernan G. Arango   !
 !========================================== Alexander F. Shchepetkin ===
@@ -50,6 +50,7 @@
       USE mod_mixing
       USE mod_ocean
       USE mod_stepping
+      USE mod_clima
 !
 !  Imported variable declarations.
 !
@@ -89,6 +90,9 @@
 # endif
      &                    MIXING(ng) % Akt,                             &
      &                    MIXING(ng) % Akv,                             &
+#ifdef AKT_3D
+     &                    CLIMA(ng) % tclm,                             &
+#endif
      &                    MIXING(ng) % hsbl,                            &
      &                    MIXING(ng) % ksbl)
       RETURN
@@ -114,7 +118,11 @@
 # ifdef LMD_NONLOCAL
      &                          ghats,                                  &
 # endif
-     &                          Akt, Akv, hsbl, ksbl)
+     &                          Akt, Akv,                               &
+#ifdef AKT_3D
+     &                          tclm,                                   &
+#endif
+     &                          hsbl, ksbl)
 !***********************************************************************
 !
       USE mod_param
@@ -159,6 +167,9 @@
       real(r8), intent(in) :: bvf(LBi:,LBj:,0:)
       real(r8), intent(inout) :: Akt(LBi:,LBj:,0:,:)
       real(r8), intent(inout) :: Akv(LBi:,LBj:,0:)
+#ifdef AKT_3D
+      real(r8), intent(in) :: tclm(LBi:,LBj:,:,:)
+# endif
       real(r8), intent(inout) :: hsbl(LBi:,LBj:)
       integer,  intent(out) :: ksbl(LBi:,LBj:)
 #  ifdef LMD_NONLOCAL
@@ -188,6 +199,9 @@
       real(r8), intent(in) :: bvf(LBi:UBi,LBj:UBj,0:N(ng))
       real(r8), intent(inout) :: Akt(LBi:UBi,LBj:UBj,0:N(ng),NAT)
       real(r8), intent(inout) :: Akv(LBi:UBi,LBj:UBj,0:N(ng))
+#ifdef AKT_3D
+      real(r8), intent(in) :: tclm(LBi:UBi,LBj:UBj,N(ng),NT(ng)+2)
+# endif
       real(r8), intent(inout) :: hsbl(LBi:UBi,LBj:UBj)
       integer,  intent(out) :: ksbl(LBi:UBi,LBj:UBj)
 #  ifdef LMD_NONLOCAL
@@ -197,18 +211,6 @@
 !
 !  Local variable declarations.
 !
-# ifdef DISTRIBUTE
-#  ifdef EW_PERIODIC
-      logical :: EWperiodic=.TRUE.
-#  else
-      logical :: EWperiodic=.FALSE.
-#  endif
-#  ifdef NS_PERIODIC
-      logical :: NSperiodic=.TRUE.
-#  else
-      logical :: NSperiodic=.FALSE.
-#  endif
-# endif
       integer :: i, itrc, j, k
 
       real(r8), parameter :: eps = 1.0E-10_r8
@@ -221,7 +223,8 @@
       real(r8) :: depth, dK_bl, hekman, hmonob, sigma, zbl
       real(r8) :: zetahat, zetapar
 # ifdef QUADRATIC
-      real(r8) :: slope_up, a_co, b_co, c_co, z_up, sqrt_arg
+      real(r8) :: slope_up, slope_down
+      real(r8) :: a_co, b_co, c_co, z_up, sqrt_arg
 # endif
 
       real(r8), dimension (IminS:ImaxS) :: Rref
@@ -520,33 +523,117 @@
         END DO
 # else
 #  ifdef QUADRATIC
-!
-! Quadratic interpolation to find hsbl, using a scheme from Bill Large
-! (personal communication).
-!
+#ifdef KATE
+!    Quadratic interpolation to find hsbl, using a scheme from Bill
+!    Large et al. (personal communication)
         DO k=N(ng),2,-1
           DO i=Istr,Iend
-            IF ((ksbl(i,j).eq.1).and.(FC(i,k-1).ge.lmd_Ric)) THEN
-              z_up=z_w(i,j,k)
-              IF (k.eq.N(ng)) THEN
-                slope_up=0.0_r8
-              ELSE
-                slope_up=(FC(i,k+1)-FC(i,k))/(z_up-z_w(i,j,k+1))
-              END IF
-              a_co=(FC(i,k-1)-FC(i,k)+slope_up*(z_w(i,j,k-1)-z_up))/    &
-     &             (z_up-z_w(i,j,k-1))**2
-              b_co=slope_up+2.0_r8*a_co*z_up
-              c_co=FC(i,k)+z_up*(a_co*z_up+slope_up)-lmd_Ric
-              sqrt_arg=b_co*b_co-4.0_r8*a_co*c_co
-              IF (((ABS(b_co).gt.eps).and.(ABS(a_co/b_co).le.eps)).or.  &
-     &            (sqrt_arg.le.0.0_r8)) THEN
-                hsbl(i,j)=-z_up+(z_up-z_w(i,j,k-1))*                    &
-     &                          (lmd_Ric-FC(i,k))/(FC(i,k-1)-FC(i,k))
-              ELSE
-                hsbl(i,j)=(-b_co+SQRT(sqrt_arg))/(2.0_r8*a_co)
-              END IF
-              ksbl(i,j)=k
+!    CAE version.  Assumes that FC is calculated on w-points.
+!    Solve FC = a*z^2 + b*z + c,
+!    If F' is d(FC)/dz, either up or down a half grid-point,
+!    a=(F'(k+.5)-F'(k-.5))/(z(k+1)-z(k-1)
+!    b=F'(k+.5)-2*a*z(k+.5)
+!    c=F(k)-a*z(k)*z(k)-bz(k)
+!    or 0 = a*z^2 + b*z + (c-FC).
+!    Let a_co=a, b_co=b, and c_co=c-Ric.
+            IF (k .eq. N(ng)) THEN
+              slope_up = 0.0_r8
+            ELSE
+              slope_up = (FC(i,k+1) - FC(i,k)) /                      &
+     &                   (z_w(i,j,k+1) - z_w(i,j,k))
             END IF
+            slope_down = (FC(i,k) - FC(i,k-1)) /                        &
+     &                 (z_w(i,j,k) - z_w(i,j,k-1))
+            a_co = (slope_up-slope_down)/(z_w(i,j,k+1)-z_w(i,j,k-1))
+            b_co = slope_up - a_co*(z_w(i,j,k+1)+z_w(i,j,k))
+            c_co = FC(i,k) - a_co*z_w(i,j,k)*z_w(i,j,k) -               &
+     &               b_co*z_w(i,j,k)-lmd_Ric
+            sqrt_arg = b_co*b_co - 4.0_r8*a_co*c_co
+            IF ( ( (abs(b_co) .gt. eps) .and.                           &
+     &           (abs(a_co/b_co) .le. eps) ) .or.                       &
+     &           (sqrt_arg .le.  0.0_r8 ) ) THEN
+!   If problem using quadratic, then use linear approx.
+              hsbl(i,j)=((FC(i,k-1)-lmd_Ric)*z_w(i,j,k  )+              &
+     &                    (lmd_Ric-FC(i,k  ))*z_w(i,j,k-1))/            &
+     &                    (FC(i,k-1)-FC(i,k))
+            ELSE
+              hsbl(i,j) = (-b_co - sqrt(sqrt_arg)) / (2.0_r8*a_co)
+              IF (hsbl(i,j) .gt. z_w(i,j,k)) THEN
+                write(6,*) 'Bad calculation of hsbl. Exiting', i,j
+                stop
+              END IF
+            END IF
+            ksbl(i,j)=k
+          END DO
+        END DO
+#endif
+!    Quadratic interpolation to find hsbl, using a scheme from Bill
+!    Large et al. (personal communication)
+        DO k=N(ng),2,-1
+          DO i=Istr,Iend
+!              z_up = z_w(i,j,k)
+!              IF (k .eq. N(ng)) THEN
+!                slope_up = 0.0_r8
+!              ELSE
+!                slope_up = (FC(i,k+1) - FC(i,k)) /                     &
+!     &                   (z_up - z_w(i,j,k+1))
+!              END IF
+!              a_co = (FC(i,k-1) - FC(i,k) +                            &
+!     &              slope_up*(z_w(i,j,k-1) - z_up)) /                  &
+!     &              (z_up - z_w(i,j,k-1))**2
+!              b_co = slope_up + 2.0_r8*a_co*z_up
+!              c_co = FC(i,k) + z_up*                                   &
+!     &               (a_co*z_up + slope_up) - lmd_Ric
+!              sqrt_arg = b_co**2 - 4.0_r8*a_co*c_co
+!              if ( ( (abs(b_co) .gt. eps) .and.                        &
+!     &           (abs(a_co/b_co) .le. eps) ) .or.                      &
+!     &           (sqrt_arg .le.  0.0_r8 ) ) then
+!                hsbl(i,j) = - z_up + (z_up - z_w(i,j,k-1))*            &
+!     &                 (lmd_Ric - FC(i,k)) / (FC(i,k-1) - Fc(i,k))
+!              else
+!                hsbl(i,j) = (-b_co + sqrt(sqrt_arg)) / (2.0_r8*a_co)
+!              endif
+!              ksbl(i,j)=k
+!
+!             CAE version.  Assumes that FC is calculated on w-points
+!             It's possible my version is the same as that above.  Not sure.
+!             Solve FC = a*z^2 + b*z + c,
+!             If F' is d(FC)/dz, either up or down a half grid-point,
+!             a=(F'(k+.5)-F'(k-.5))/(z(k+1)-z(k-1)
+!             b=F'(k+.5)-2*a*z(k+.5)
+!             c=F(k)-a*z(k)*z(k)-bz(k)
+!             or 0 = a*z^2 + b*z + (c-FC).
+!             Let a_co=a, b_co=b, and c_co=c-Ric.
+            IF (k .eq. N(ng)) THEN
+              slope_up = 0.0_r8
+            ELSE
+              slope_up = (FC(i,k+1) - FC(i,k)) /                        &
+     &                   (z_w(i,j,k+1) - z_w(i,j,k))
+            END IF
+            slope_down = (FC(i,k) - FC(i,k-1)) /                        &
+     &                 (z_w(i,j,k) - z_w(i,j,k-1))
+            a_co = (slope_up-slope_down)/(z_w(i,j,k+1)-z_w(i,j,k-1))
+            b_co = slope_up - a_co*(z_w(i,j,k+1)+z_w(i,j,k))
+            c_co = FC(i,k) - a_co*z_w(i,j,k)*z_w(i,j,k) -               &
+     &               b_co*z_w(i,j,k)-lmd_Ric
+            sqrt_arg = b_co*b_co - 4.0_r8*a_co*c_co
+            if ( ( (abs(b_co) .gt. eps) .and.                           &
+     &           (abs(a_co/b_co) .le. eps) ) .or.                       &
+     &           (sqrt_arg .le.  0.0_r8 ) ) then
+!               CAE: if problem using quadratic, then use linear approx.
+              hsbl(i,j)=((FC(i,k-1)-lmd_Ric)*z_w(i,j,k  )+              &
+     &                    (lmd_Ric-FC(i,k  ))*z_w(i,j,k-1))/            &
+     &                    (FC(i,k-1)-FC(i,k))
+            else
+              hsbl(i,j) = (-b_co - sqrt(sqrt_arg)) / (2.0_r8*a_co)
+              if ( (hsbl(i,j) .gt. z_w(i,j,k)) .or.                     &
+     &               (hsbl(i,j) .gt. z_w(i,j,k)) ) then
+                write(6,*) 'Bad calculation of hsbl Q. Exiting', i,j
+! or bad test?
+                stop
+              endif
+            endif
+            ksbl(i,j)=k
           END DO
         END DO
 #  else
@@ -619,7 +706,8 @@
 #  ifdef DISTRIBUTE
       CALL mp_exchange2d (ng, tile, iNLM, 1,                            &
      &                    LBi, UBi, LBj, UBj,                           &
-     &                    NghostPoints, EWperiodic, NSperiodic,         &
+     &                    NghostPoints,                                 &
+     &                    EWperiodic(ng), NSperiodic(ng),               &
      &                    hsbl)
 #  endif
 !
@@ -642,7 +730,8 @@
 # ifdef DISTRIBUTE
       CALL mp_exchange2d (ng, tile, iNLM, 1,                            &
      &                    LBi, UBi, LBj, UBj,                           &
-     &                    NghostPoints, EWperiodic, NSperiodic,         &
+     &                    NghostPoints,                                 &
+     &                    EWperiodic(ng), NSperiodic(ng),               &
      &                    hsbl)
 # endif
 !
@@ -923,6 +1012,17 @@
           END DO
         END DO
       END DO
+#ifdef AKT_3D
+      DO itrc=1,2
+        DO j=Jstr-2,Jend+2
+          DO k=1,N(ng)
+            DO i=Istr-2,Iend+2
+              Akt(i,j,k,itrc)=tclm(i,j,k,iAKt3)
+            END DO
+          END DO
+        END DO
+      END DO
+#endif
 
       RETURN
       END SUBROUTINE lmd_skpp_tile

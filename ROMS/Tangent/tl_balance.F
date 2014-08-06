@@ -3,9 +3,9 @@
 
 #if defined TANGENT && defined BALANCE_OPERATOR
 !
-!svn $Id: tl_balance.F 437 2010-01-06 03:22:10Z arango $
+!svn $Id$
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2010 The ROMS/TOMS Group       Andrew M. Moore   !
+!  Copyright (c) 2002-2014 The ROMS/TOMS Group       Andrew M. Moore   !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -46,12 +46,12 @@
 !=======================================================================
 !
       USE mod_kinds
-
+!
       implicit none
-
+!
       PRIVATE
       PUBLIC :: tl_balance
-
+!
       CONTAINS
 !
 !***********************************************************************
@@ -182,10 +182,8 @@
       USE mod_scalars
 !
       USE bc_2d_mod
-# if defined EW_PERIODIC || defined NS_PERIODIC
       USE exchange_2d_mod
       USE exchange_3d_mod
-# endif
 # ifdef DISTRIBUTE
       USE mp_exchange_mod, ONLY : mp_exchange2d, mp_exchange3d
 # endif
@@ -298,18 +296,6 @@
 !
 !  Local variable declarations.
 !
-# ifdef DISTRIBUTE
-#  ifdef EW_PERIODIC
-      logical :: EWperiodic=.TRUE.
-#  else
-      logical :: EWperiodic=.FALSE.
-#  endif
-#  ifdef NS_PERIODIC
-      logical :: NSperiodic=.TRUE.
-#  else
-      logical :: NSperiodic=.FALSE.
-#  endif
-# endif
       integer :: i, j, k, order
       integer :: Norder = 2                 ! Shapiro filter order
 
@@ -446,15 +432,16 @@
           END DO
         END DO
 
-#  if defined EW_PERIODIC || defined NS_PERIODIC
-        CALL exchange_r3d_tile (ng, tile,                               &
-     &                          LBi, UBi, LBj, UBj, 1, N(ng),           &
-     &                          tl_t(:,:,:,Linp,isalt)
-#  endif
+        IF (EWperiodic(ng).or.NSperiodic(ng)) THEN
+          CALL exchange_r3d_tile (ng, tile,                             &
+     &                            LBi, UBi, LBj, UBj, 1, N(ng),         &
+     &                            tl_t(:,:,:,Linp,isalt))
+        END IF
 #  ifdef DISTRIBUTE
         CALL mp_exchange3d (ng, tile, iTLM, 1,                          &
      &                      LBi, UBi, LBj, UBj, 1, N(ng),               &
-     &                      NghostPoints, EWperiodic, NSperiodic,       &
+     &                      NghostPoints,                               &
+     &                      EWperiodic(ng), NSperiodic(ng),             &
      &                      tl_t(:,:,:,Linp,isalt))
 #  endif
       END IF
@@ -482,15 +469,16 @@
           END DO
         END DO
 
-# if defined EW_PERIODIC || defined NS_PERIODIC
-        CALL exchange_r3d_tile (ng, tile,                               &
-     &                          LBi, UBi, LBj, UBj, 1, N(ng),           &
-     &                          tl_rho)
-# endif
+        IF (EWperiodic(ng).or.NSperiodic(ng)) THEN
+          CALL exchange_r3d_tile (ng, tile,                             &
+     &                            LBi, UBi, LBj, UBj, 1, N(ng),         &
+     &                            tl_rho)
+        END IF
 # ifdef DISTRIBUTE
         CALL mp_exchange3d (ng, tile, iTLM, 1,                          &
      &                      LBi, UBi, LBj, UBj, 1, N(ng),               &
-     &                      NghostPoints, EWperiodic, NSperiodic,       &
+     &                      NghostPoints,                               &
+     &                      EWperiodic(ng), NSperiodic(ng),             &
      &                      tl_rho)
 # endif
       END IF
@@ -540,7 +528,7 @@
 # endif
           END DO
 !
-!  Compute balance, interior U-momemtum from baroclinic pressure
+!  Compute balance, interior U-momentum from baroclinic pressure
 !  gradient (differentiate and then vertically integrate).
 !
           DO k=N(ng)-1,1,-1
@@ -618,20 +606,20 @@
       IF (balance(isFsur).or.balance(isVvel)) THEN
         DO j=Jstr-1,Jend
           DO i=Istr,Iend+1
-            cff1=z_w(i  ,j,N(ng))-z_r(i  ,j,N(ng))+                      &
+            cff1=z_w(i  ,j,N(ng))-z_r(i  ,j,N(ng))+                     &
      &           z_w(i-1,j,N(ng))-z_r(i-1,j,N(ng))
-            tl_phix(i)=fac1*(tl_rho(i  ,j,N(ng))-                        &
-     &                       tl_rho(i-1,j,N(ng)))*cff1+                  &
-     &                 fac2*(tl_zeta(i  ,j,Linp)-                        &
+            tl_phix(i)=fac1*(tl_rho(i  ,j,N(ng))-                       &
+     &                       tl_rho(i-1,j,N(ng)))*cff1+                 &
+     &                 fac2*(tl_zeta(i  ,j,Linp)-                       &
      &                       tl_zeta(i-1,j,Linp))
-            tl_gradP(i,j,N(ng))=0.5_r8*tl_phix(i)*                       &
+            tl_gradP(i,j,N(ng))=0.5_r8*tl_phix(i)*                      &
      &                          (pm(i-1,j)+pm(i,j))/(f(i-1,j)+f(i,j))
 # ifdef ZETA_ELLIPTIC
             tl_phi(i,N(ng))=tl_phix(i)
 # endif
           END DO
 !
-!  Compute balance, interior V-momemtum from baroclinic pressure
+!  Compute balance, interior V-momentum from baroclinic pressure
 !  gradient (differentiate and then vertically integrate).
 !
           DO k=N(ng)-1,1,-1
@@ -702,18 +690,19 @@
           END DO
         END DO
 
-# if defined EW_PERIODIC || defined NS_PERIODIC
-        CALL exchange_u3d_tile (ng, tile,                               &
-     &                          LBi, UBi, LBj, UBj, 1, N(ng),           &
-     &                          tl_u(:,:,:,Linp))
-        CALL exchange_v3d_tile (ng, tile,                               &
-     &                          LBi, UBi, LBj, UBj, 1, N(ng),           &
-     &                          tl_v(:,:,:,Linp))
-# endif
+        IF (EWperiodic(ng).or.NSperiodic(ng)) THEN
+          CALL exchange_u3d_tile (ng, tile,                             &
+     &                            LBi, UBi, LBj, UBj, 1, N(ng),         &
+     &                            tl_u(:,:,:,Linp))
+          CALL exchange_v3d_tile (ng, tile,                             &
+     &                            LBi, UBi, LBj, UBj, 1, N(ng),         &
+     &                            tl_v(:,:,:,Linp))
+        END IF
 # ifdef DISTRIBUTE
         CALL mp_exchange3d (ng, tile, iTLM, 2,                          &
      &                      LBi, UBi, LBj, UBj, 1, N(ng),               &
-     &                      NghostPoints, EWperiodic, NSperiodic,       &
+     &                      NghostPoints,                               &
+     &                      EWperiodic(ng), NSperiodic(ng),             &
      &                      tl_u(:,:,:,Linp), tl_v(:,:,:,Linp))
 # endif
       END IF
@@ -757,7 +746,8 @@
 #  ifdef DISTRIBUTE
         CALL mp_exchange2d (ng, tile, iTLM, 1,                          &
      &                      LBi, UBi, LBj, UBj,                         &
-     &                      NghostPoints, EWperiodic, NSperiodic,       &
+     &                      NghostPoints,                               &
+     &                      EWperiodic(ng), NSperiodic(ng),             &
      &                      tl_rhs_r2d)
 #  endif
 !
@@ -867,15 +857,16 @@
         END IF
 # endif
 
-# if defined EW_PERIODIC || defined NS_PERIODIC
-        CALL exchange_r2d_tile (ng, tile,                               &
-     &                          LBi, UBi, LBj, UBj,                     &
-     &                          tl_zeta(:,:,Linp))
-# endif
+        IF (EWperiodic(ng).or.NSperiodic(ng)) THEN
+          CALL exchange_r2d_tile (ng, tile,                             &
+     &                            LBi, UBi, LBj, UBj,                   &
+     &                            tl_zeta(:,:,Linp))
+        END IF
 # ifdef DISTRIBUTE
         CALL mp_exchange2d (ng, tile, iTLM, 1,                          &
      &                      LBi, UBi, LBj, UBj,                         &
-     &                      NghostPoints, EWperiodic, NSperiodic,       &
+     &                      NghostPoints,                               &
+     &                      EWperiodic(ng), NSperiodic(ng),             &
      &                      tl_zeta(:,:,Linp))
 # endif
       END IF

@@ -2,9 +2,9 @@
 #ifdef ADJOINT
       SUBROUTINE ad_def_his (ng, ldef)
 !
-!svn $Id: ad_def_his.F 429 2009-12-20 17:30:26Z arango $
+!svn $Id$
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2010 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2014 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -81,8 +81,8 @@
 
       real(r8) :: Aval(6)
 
-      character (len=80) :: ncname
       character (len=120) :: Vinfo(Natt)
+      character (len=256) :: ncname
 !
       SourceFile='ad_def_his.F'
 !
@@ -91,7 +91,7 @@
 !-----------------------------------------------------------------------
 !
       IF (exit_flag.ne.NoError) RETURN
-      ncname=ADJname(ng)
+      ncname=ADM(ng)%name
 !
       IF (Master) THEN
         IF (ldef) THEN
@@ -106,7 +106,7 @@
 !=======================================================================
 !
       DEFINE : IF (ldef) THEN
-        CALL netcdf_create (ng, iADM, TRIM(ncname), ncADJid(ng))
+        CALL netcdf_create (ng, iADM, TRIM(ncname), ADM(ng)%ncid)
         IF (exit_flag.ne.NoError) THEN
           IF (Master) WRITE (stdout,30) TRIM(ncname)
           RETURN
@@ -118,165 +118,165 @@
 !
         DimIDs=0
 !
-        status=def_dim(ng, iADM, ncADJid(ng), ncname, 'xi_rho',         &
+        status=def_dim(ng, iADM, ADM(ng)%ncid, ncname, 'xi_rho',        &
      &                 IOBOUNDS(ng)%xi_rho, DimIDs( 1))
         IF (exit_flag.ne.NoError) RETURN
 
-        status=def_dim(ng, iADM, ncADJid(ng), ncname, 'xi_u',           &
+        status=def_dim(ng, iADM, ADM(ng)%ncid, ncname, 'xi_u',          &
      &                 IOBOUNDS(ng)%xi_u, DimIDs( 2))
         IF (exit_flag.ne.NoError) RETURN
 
-        status=def_dim(ng, iADM, ncADJid(ng), ncname, 'xi_v',           &
+        status=def_dim(ng, iADM, ADM(ng)%ncid, ncname, 'xi_v',          &
      &                 IOBOUNDS(ng)%xi_v, DimIDs( 3))
         IF (exit_flag.ne.NoError) RETURN
 
-        status=def_dim(ng, iADM, ncADJid(ng), ncname, 'xi_psi',         &
+        status=def_dim(ng, iADM, ADM(ng)%ncid, ncname, 'xi_psi',        &
      &                 IOBOUNDS(ng)%xi_psi, DimIDs( 4))
         IF (exit_flag.ne.NoError) RETURN
 
-        status=def_dim(ng, iADM, ncADJid(ng), ncname, 'eta_rho',        &
+        status=def_dim(ng, iADM, ADM(ng)%ncid, ncname, 'eta_rho',       &
      &                 IOBOUNDS(ng)%eta_rho, DimIDs( 5))
         IF (exit_flag.ne.NoError) RETURN
 
-        status=def_dim(ng, iADM, ncADJid(ng), ncname, 'eta_u',          &
+        status=def_dim(ng, iADM, ADM(ng)%ncid, ncname, 'eta_u',         &
      &                 IOBOUNDS(ng)%eta_u, DimIDs( 6))
         IF (exit_flag.ne.NoError) RETURN
 
-        status=def_dim(ng, iADM, ncADJid(ng), ncname, 'eta_v',          &
+        status=def_dim(ng, iADM, ADM(ng)%ncid, ncname, 'eta_v',         &
      &                 IOBOUNDS(ng)%eta_v, DimIDs( 7))
         IF (exit_flag.ne.NoError) RETURN
 
-        status=def_dim(ng, iADM, ncADJid(ng), ncname, 'eta_psi',        &
+        status=def_dim(ng, iADM, ADM(ng)%ncid, ncname, 'eta_psi',       &
      &                 IOBOUNDS(ng)%eta_psi, DimIDs( 8))
         IF (exit_flag.ne.NoError) RETURN
 
 # ifdef ADJUST_BOUNDARY
-        status=def_dim(ng, iADM, ncADJid(ng), ncname, 'IorJ',           &
+        status=def_dim(ng, iADM, ADM(ng)%ncid, ncname, 'IorJ',          &
      &                 IOBOUNDS(ng)%IorJ, IorJdim)
         IF (exit_flag.ne.NoError) RETURN
 # endif
 
 # if defined WRITE_WATER && defined MASKING
-        status=def_dim(ng, iADM, ncADJid(ng), ncname, 'xy_rho',         &
+        status=def_dim(ng, iADM, ADM(ng)%ncid, ncname, 'xy_rho',        &
      &                 IOBOUNDS(ng)%xy_rho, DimIDs(17))
         IF (exit_flag.ne.NoError) RETURN
 
-        status=def_dim(ng, iADM, ncADJid(ng), ncname, 'xy_u',           &
+        status=def_dim(ng, iADM, ADM(ng)%ncid, ncname, 'xy_u',          &
      &                 IOBOUNDS(ng)%xy_u, DimIDs(18))
         IF (exit_flag.ne.NoError) RETURN
 
-        status=def_dim(ng, iADM, ncADJid(ng), ncname, 'xy_v',           &
+        status=def_dim(ng, iADM, ADM(ng)%ncid, ncname, 'xy_v',          &
      &                 IOBOUNDS(ng)%xy_v, DimIDs(19))
         IF (exit_flag.ne.NoError) RETURN
 # endif
 
 # ifdef SOLVE3D
 #  if defined WRITE_WATER && defined MASKING
-        status=def_dim(ng, iADM, ncADJid(ng), ncname, 'xyz_rho',        &
+        status=def_dim(ng, iADM, ADM(ng)%ncid, ncname, 'xyz_rho',       &
      &                 IOBOUNDS(ng)%xy_rho*N(ng), DimIDs(20))
         IF (exit_flag.ne.NoError) RETURN
 
-        status=def_dim(ng, iADM, ncADJid(ng), ncname, 'xyz_u',          &
+        status=def_dim(ng, iADM, ADM(ng)%ncid, ncname, 'xyz_u',         &
      &                 IOBOUNDS(ng)%xy_u*N(ng), DimIDs(21))
         IF (exit_flag.ne.NoError) RETURN
 
-        status=def_dim(ng, iADM, ncADJid(ng), ncname, 'xyz_v',          &
+        status=def_dim(ng, iADM, ADM(ng)%ncid, ncname, 'xyz_v',         &
      &                 IOBOUNDS(ng)%xy_v*N(ng), DimIDs(22))
         IF (exit_flag.ne.NoError) RETURN
 
-        status=def_dim(ng, iADM, ncADJid(ng), ncname, 'xyz_w',          &
+        status=def_dim(ng, iADM, ADM(ng)%ncid, ncname, 'xyz_w',         &
      &                 IOBOUNDS(ng)%xy_rho*(N(ng)+1), DimIDs(23))
         IF (exit_flag.ne.NoError) RETURN
 #  endif
 
-        status=def_dim(ng, iADM, ncADJid(ng), ncname, 'N',              &
+        status=def_dim(ng, iADM, ADM(ng)%ncid, ncname, 'N',             &
      &                 N(ng), DimIDs( 9))
         IF (exit_flag.ne.NoError) RETURN
 
-        status=def_dim(ng, iADM, ncADJid(ng), ncname, 's_rho',          &
+        status=def_dim(ng, iADM, ADM(ng)%ncid, ncname, 's_rho',         &
      &                 N(ng), DimIDs( 9))
         IF (exit_flag.ne.NoError) RETURN
 
-        status=def_dim(ng, iADM, ncADJid(ng), ncname, 's_w',            &
+        status=def_dim(ng, iADM, ADM(ng)%ncid, ncname, 's_w',           &
      &                 N(ng)+1, DimIDs(10))
         IF (exit_flag.ne.NoError) RETURN
 
-        status=def_dim(ng, iADM, ncADJid(ng), ncname, 'tracer',         &
+        status=def_dim(ng, iADM, ADM(ng)%ncid, ncname, 'tracer',        &
      &                 NT(ng), DimIDs(11))
         IF (exit_flag.ne.NoError) RETURN
 
 #  ifdef SEDIMENT
-        status=def_dim(ng, iADM, ncADJid(ng), ncname, 'NST',            &
+        status=def_dim(ng, iADM, ADM(ng)%ncid, ncname, 'NST',           &
      &                 NST, DimIDs(32))
         IF (exit_flag.ne.NoError) RETURN
 
-        status=def_dim(ng, iADM, ncADJid(ng), ncname, 'Nbed',           &
+        status=def_dim(ng, iADM, ADM(ng)%ncid, ncname, 'Nbed',          &
      &                 Nbed, DimIDs(16))
         IF (exit_flag.ne.NoError) RETURN
 
 #   if defined WRITE_WATER && defined MASKING
-        status=def_dim(ng, iADM, ncADJid(ng), ncname, 'xybed',          &
+        status=def_dim(ng, iADM, ADM(ng)%ncid, ncname, 'xybed',         &
      &                 IOBOUNDS(ng)%xy_rho*Nbed, DimIDs(24))
         IF (exit_flag.ne.NoError) RETURN
 #   endif
 #  endif
 
 #  ifdef ECOSIM
-        status=def_dim(ng, iADM, ncADJid(ng), ncname, 'Nphy',           &
+        status=def_dim(ng, iADM, ADM(ng)%ncid, ncname, 'Nphy',          &
      &                 Nphy, DimIDs(25))
         IF (exit_flag.ne.NoError) RETURN
 
-        status=def_dim(ng, iADM, ncADJid(ng), ncname, 'Nbac',           &
+        status=def_dim(ng, iADM, ADM(ng)%ncid, ncname, 'Nbac',          &
      &                 Nbac, DimIDs(26))
         IF (exit_flag.ne.NoError) RETURN
 
-        status=def_dim(ng, iADM, ncADJid(ng), ncname, 'Ndom',           &
+        status=def_dim(ng, iADM, ADM(ng)%ncid, ncname, 'Ndom',          &
      &                 Ndom, DimIDs(27))
         IF (exit_flag.ne.NoError) RETURN
 
-        status=def_dim(ng, iADM, ncADJid(ng), ncname, 'Nfec',           &
+        status=def_dim(ng, iADM, ADM(ng)%ncid, ncname, 'Nfec',          &
      &                 Nfec, DimIDs(28))
         IF (exit_flag.ne.NoError) RETURN
 #  endif
 # endif
 
-        status=def_dim(ng, iADM, ncADJid(ng), ncname, 'boundary',       &
+        status=def_dim(ng, iADM, ADM(ng)%ncid, ncname, 'boundary',      &
      &                 4, DimIDs(14))
         IF (exit_flag.ne.NoError) RETURN
 
 # ifdef FOUR_DVAR
-        status=def_dim(ng, iADM, ncADJid(ng), ncname, 'Nstate',         &
+        status=def_dim(ng, iADM, ADM(ng)%ncid, ncname, 'Nstate',        &
      &                 NstateVar(ng), DimIDs(29))
         IF (exit_flag.ne.NoError) RETURN
 # endif
 
 # if defined ADJUST_STFLUX || defined ADJUST_WSTRESS
-        status=def_dim(ng, iADM, ncADJid(ng), ncname, 'frc_adjust',     &
+        status=def_dim(ng, iADM, ADM(ng)%ncid, ncname, 'frc_adjust',    &
      &                 Nfrec(ng), DimIDs(30))
         IF (exit_flag.ne.NoError) RETURN
 # endif
 
 # ifdef ADJUST_BOUNDARY
-        status=def_dim(ng, iADM, ncADJid(ng), ncname, 'obc_adjust',     &
+        status=def_dim(ng, iADM, ADM(ng)%ncid, ncname, 'obc_adjust',    &
      &                 Nbrec(ng), DimIDs(31))
         IF (exit_flag.ne.NoError) RETURN
 # endif
 
 # if defined IS4DVAR
-        status=def_dim(ng, iADM, ncADJid(ng), ncname, 'Ninner',         &
+        status=def_dim(ng, iADM, ADM(ng)%ncid, ncname, 'Ninner',        &
      &                 Ninner, NinnerDim)
         IF (exit_flag.ne.NoError) RETURN
 
-        status=def_dim(ng, iADM, ncADJid(ng), ncname, 'Minner',         &
+        status=def_dim(ng, iADM, ADM(ng)%ncid, ncname, 'Minner',        &
      &                 Ninner+1, MinnerDim)
         IF (exit_flag.ne.NoError) RETURN
 
-        status=def_dim(ng, iADM, ncADJid(ng), ncname, 'Nouter',         &
+        status=def_dim(ng, iADM, ADM(ng)%ncid, ncname, 'Nouter',        &
      &                 Nouter, NouterDim)
         IF (exit_flag.ne.NoError) RETURN
 # endif
 
-        status=def_dim(ng, iADM, ncADJid(ng), ncname,                   &
+        status=def_dim(ng, iADM, ADM(ng)%ncid, ncname,                  &
      &                 TRIM(ADJUSTL(Vname(5,idtime))),                  &
      &                 nf90_unlimited, DimIDs(12))
         IF (exit_flag.ne.NoError) RETURN
@@ -339,7 +339,7 @@
 #  endif
 # endif
 !
-!  Define dimension vectors for staggered u-momemtum type variables.
+!  Define dimension vectors for staggered u-momentum type variables.
 !
 # if defined WRITE_WATER && defined MASKING
         u2dgrd(1)=DimIDs(18)
@@ -366,7 +366,7 @@
 #  endif
 # endif
 !
-!  Define dimension vectors for staggered v-momemtum type variables.
+!  Define dimension vectors for staggered v-momentum type variables.
 !
 # if defined WRITE_WATER && defined MASKING
         v2dgrd(1)=DimIDs(19)
@@ -394,7 +394,7 @@
 # endif
 # ifdef SOLVE3D
 !
-!  Define dimension vector for staggered w-momemtum type variables.
+!  Define dimension vector for staggered w-momentum type variables.
 !
 #  if defined WRITE_WATER && defined MASKING
         w3dgrd(1)=DimIDs(23)
@@ -409,7 +409,7 @@
 !
 !  Initialize unlimited time record dimension.
 !
-        tADJindx(ng)=0
+        ADM(ng)%Rindex=0
 !
 !  Initialize local information variable arrays.
 !
@@ -426,7 +426,7 @@
 !  Define time-recordless information variables.
 !-----------------------------------------------------------------------
 !
-        CALL def_info (ng, iADM, ncADJid(ng), ncname, DimIDs)
+        CALL def_info (ng, iADM, ADM(ng)%ncid, ncname, DimIDs)
         IF (exit_flag.ne.NoError) RETURN
 !
 !-----------------------------------------------------------------------
@@ -445,13 +445,13 @@
           Vinfo( 4)='360_day'
         ELSE IF (INT(time_ref).eq.0) THEN
           Vinfo( 3)='seconds since 0001-01-01 00:00:00'
-          Vinfo( 4)='365.25_day'
+          Vinfo( 4)='julian'
         ELSE IF (time_ref.gt.0.0_r8) THEN
           WRITE (Vinfo( 3),'(a,1x,a)') 'seconds since', TRIM(r_text)
-          Vinfo( 4)='standard'
+          Vinfo( 4)='gregorian'
         END IF
         Vinfo(14)=Vname(4,idtime)
-        status=def_var(ng, iADM, ncADJid(ng), adjVid(idtime,ng),        &
+        status=def_var(ng, iADM, ADM(ng)%ncid, ADM(ng)%Vid(idtime),     &
      &                 NF_TYPE, 1, (/recdim/), Aval, Vinfo, ncname,     &
      &                 SetParAccess = .FALSE.)
         IF (exit_flag.ne.NoError) RETURN
@@ -461,8 +461,8 @@
 !  Define Ritz eigenvalues and Ritz eigenvectors Euclidean norm.
 !
         Vinfo( 1)='Ritz_rvalue'
-        Vinfo( 2)='Ritz eigenvalues'
-        status=def_var(ng, iADM, ncADJid(ng), varid,                    &
+        Vinfo( 2)='real Ritz eigenvalues'
+        status=def_var(ng, iADM, ADM(ng)%ncid, varid,                   &
      &                 NF_TYPE, 1, (/recdim/), Aval, Vinfo, ncname,     &
      &                 SetParAccess = .FALSE.)
         IF (exit_flag.ne.NoError) RETURN
@@ -470,7 +470,7 @@
 #  if defined AFT_EIGENMODES
         Vinfo( 1)='Ritz_ivalue'
         Vinfo( 2)='imaginary Ritz eigenvalues'
-        status=def_var(ng, iADM, ncADJid(ng), varid,                    &
+        status=def_var(ng, iADM, ADM(ng)%ncid, varid,                   &
      &                 NF_TYPE, 1, (/recdim/), Aval, Vinfo, ncname,     &
      &                 SetParAccess = .FALSE.)
         IF (exit_flag.ne.NoError) RETURN
@@ -478,7 +478,7 @@
 
         Vinfo( 1)='Ritz_norm'
         Vinfo( 2)='Ritz eigenvectors Euclidean norm'
-        status=def_var(ng, iADM, ncADJid(ng), varid,                    &
+        status=def_var(ng, iADM, ADM(ng)%ncid, varid,                   &
      &                 NF_TYPE, 1, (/recdim/), Aval, Vinfo, ncname,     &
      &                 SetParAccess = .FALSE.)
         IF (exit_flag.ne.NoError) RETURN
@@ -493,7 +493,7 @@
         Vinfo( 2)='conjugate gradient beta coefficient'
         vardim(1)=MinnerDim
         vardim(2)=NouterDim
-        status=def_var(ng, iADM, ncADJid(ng), varid, NF_FRST,           &
+        status=def_var(ng, iADM, ADM(ng)%ncid, varid, NF_FRST,          &
      &                 2, vardim, Aval, Vinfo, ncname,                  &
      &                 SetParAccess = .FALSE.)
         IF (exit_flag.ne.NoError) RETURN
@@ -502,7 +502,7 @@
         Vinfo( 2)='Lanczos algorithm delta coefficient'
         vardim(1)=NinnerDim
         vardim(2)=NouterDim
-        status=def_var(ng, iADM, ncADJid(ng), varid, NF_FRST,           &
+        status=def_var(ng, iADM, ADM(ng)%ncid, varid, NF_FRST,          &
      &                 2, vardim, Aval, Vinfo, ncname,                  &
      &                 SetParAccess = .FALSE.)
         IF (exit_flag.ne.NoError) RETURN
@@ -511,7 +511,7 @@
         Vinfo( 2)='Lanczos recurrence eigenvectors'
         vardim(1)=NinnerDim
         vardim(2)=NinnerDim
-        status=def_var(ng, iADM, ncADJid(ng), varid, NF_FRST,           &
+        status=def_var(ng, iADM, ADM(ng)%ncid, varid, NF_FRST,          &
      &                 2, vardim, Aval, Vinfo, ncname,                  &
      &                 SetParAccess = .FALSE.)
         IF (exit_flag.ne.NoError) RETURN
@@ -531,7 +531,7 @@
 #  endif
         Vinfo(22)='coordinates'
         Aval(5)=REAL(Iinfo(1,idUsms,ng),r8)
-        status=def_var(ng, iADM, ncADJid(ng), adjVid(idUsms,ng),        &
+        status=def_var(ng, iADM, ADM(ng)%ncid, ADM(ng)%Vid(idUsms),     &
      &                 NF_FOUT, nvd4, u3dfrc, Aval, Vinfo, ncname)
         IF (exit_flag.ne.NoError) RETURN
 !
@@ -546,7 +546,7 @@
 #  endif
         Vinfo(22)='coordinates'
         Aval(5)=REAL(Iinfo(1,idVsms,ng),r8)
-        status=def_var(ng, iADM, ncADJid(ng), adjVid(idVsms,ng),        &
+        status=def_var(ng, iADM, ADM(ng)%ncid, ADM(ng)%Vid(idVsms),     &
      &                 NF_FOUT, nvd4, v3dfrc, Aval, Vinfo, ncname)
         IF (exit_flag.ne.NoError) RETURN
 # endif
@@ -575,8 +575,8 @@
 #  endif
             Vinfo(22)='coordinates'
             Aval(5)=REAL(Iinfo(1,idTsur(itrc),ng),r8)
-            status=def_var(ng, iADM, ncADJid(ng),                       &
-     &                     adjVid(idTsur(itrc),ng), NF_FOUT,            &
+            status=def_var(ng, iADM, ADM(ng)%ncid,                      &
+     &                     ADM(ng)%Vid(idTsur(itrc)), NF_FOUT,          &
      &                     nvd4, t3dfrc, Aval, Vinfo, ncname)
             IF (exit_flag.ne.NoError) RETURN
           END IF
@@ -585,20 +585,19 @@
 !
 !  Define bathymetry.
 !
-        Vinfo( 1)=Vname(1,idbath)
-        WRITE (Vinfo( 2),40) TRIM(Vname(2,idbath))
-        Vinfo( 3)='meter-1'
-        Vinfo(14)=Vname(4,idbath)
-        Vinfo(16)=Vname(1,idtime)
-# if defined WRITE_WATER && defined MASKING
-        Vinfo(20)='mask_rho'
-# endif
-        Vinfo(22)='coordinates'
-        Aval(5)=REAL(Iinfo(1,idbath,ng),r8)
-        status=def_var(ng, iADM, ncADJid(ng), adjVid(idbath,ng),        &
-     &                 NF_FOUT, nvd3, t2dgrd, Aval, Vinfo, ncname,      &
-     &                 SetFillVal = .FALSE.)
-        IF (exit_flag.ne.NoError) RETURN
+        IF (Hout(idbath,ng)) THEN
+          Vinfo( 1)=Vname(1,idbath)
+          WRITE (Vinfo( 2),40) TRIM(Vname(2,idbath))
+          Vinfo( 3)='meter-1'
+          Vinfo(14)=Vname(4,idbath)
+          Vinfo(16)=Vname(1,idtime)
+          Vinfo(22)='coordinates'
+          Aval(5)=REAL(Iinfo(1,idbath,ng),r8)
+          status=def_var(ng, iADM, ADM(ng)%ncid, ADM(ng)%Vid(idbath),   &
+     &                   NF_FOUT, nvd3, t2dgrd, Aval, Vinfo, ncname,    &
+     &                   SetFillVal = .FALSE.)
+          IF (exit_flag.ne.NoError) RETURN
+        END IF
 !
 !  Define free-surface.
 !
@@ -608,12 +607,12 @@
           Vinfo( 3)='meter-1'
           Vinfo(14)=Vname(4,idFsur)
           Vinfo(16)=Vname(1,idtime)
-# if defined WRITE_WATER && defined MASKING
+# if !defined WET_DRY && (defined WRITE_WATER && defined MASKING)
           Vinfo(20)='mask_rho'
 # endif
           Vinfo(22)='coordinates'
           Aval(5)=REAL(Iinfo(1,idFsur,ng),r8)
-          status=def_var(ng, iADM, ncADJid(ng), adjVid(idFsur,ng),      &
+          status=def_var(ng, iADM, ADM(ng)%ncid, ADM(ng)%Vid(idFsur),   &
 # ifdef WET_DRY
      &                   NF_FOUT, nvd3, t2dgrd, Aval, Vinfo, ncname,    &
      &                   SetFillVal = .FALSE.)
@@ -634,7 +633,7 @@
           Vinfo(14)=Vname(4,ifield)
           Vinfo(16)=Vname(1,idtime)
           Aval(5)=REAL(Iinfo(1,ifield,ng),r8)
-          status=def_var(ng, iADM, ncADJid(ng), adjVid(ifield,ng),      &
+          status=def_var(ng, iADM, ADM(ng)%ncid, ADM(ng)%Vid(ifield),   &
      &                   NF_FOUT, 4, t2dobc, Aval, Vinfo, ncname,       &
      &                   SetFillVal = .FALSE.)
           IF (exit_flag.ne.NoError) RETURN
@@ -654,7 +653,7 @@
 # endif
           Vinfo(22)='coordinates'
           Aval(5)=REAL(Iinfo(1,idUbar,ng),r8)
-          status=def_var(ng, iADM, ncADJid(ng), adjVid(idUbar,ng),      &
+          status=def_var(ng, iADM, ADM(ng)%ncid, ADM(ng)%Vid(idUbar),   &
      &                   NF_FOUT, nvd3, u2dgrd, Aval, Vinfo, ncname)
           IF (exit_flag.ne.NoError) RETURN
         END IF
@@ -670,7 +669,7 @@
           Vinfo(14)=Vname(4,ifield)
           Vinfo(16)=Vname(1,idtime)
           Aval(5)=REAL(Iinfo(1,ifield,ng),r8)
-          status=def_var(ng, iADM, ncADJid(ng), adjVid(ifield,ng),      &
+          status=def_var(ng, iADM, ADM(ng)%ncid, ADM(ng)%Vid(ifield),   &
      &                   NF_FOUT, 4, t2dobc, Aval, Vinfo, ncname,       &
      &                   SetFillVal = .FALSE.)
           IF (exit_flag.ne.NoError) RETURN
@@ -690,7 +689,7 @@
 # endif
           Vinfo(22)='coordinates'
           Aval(5)=REAL(Iinfo(1,idVbar,ng),r8)
-          status=def_var(ng, iADM, ncADJid(ng), adjVid(idVbar,ng),      &
+          status=def_var(ng, iADM, ADM(ng)%ncid, ADM(ng)%Vid(idVbar),   &
      &                   NF_FOUT, nvd3, v2dgrd, Aval, Vinfo, ncname)
           IF (exit_flag.ne.NoError) RETURN
         END IF
@@ -706,7 +705,7 @@
           Vinfo(14)=Vname(4,ifield)
           Vinfo(16)=Vname(1,idtime)
           Aval(5)=REAL(Iinfo(1,ifield,ng),r8)
-          status=def_var(ng, iADM, ncADJid(ng), adjVid(ifield,ng),      &
+          status=def_var(ng, iADM, ADM(ng)%ncid, ADM(ng)%Vid(ifield),   &
      &                   NF_FOUT, 4, t2dobc, Aval, Vinfo, ncname,       &
      &                   SetFillVal = .FALSE.)
           IF (exit_flag.ne.NoError) RETURN
@@ -727,7 +726,7 @@
 #  endif
           Vinfo(22)='coordinates'
           Aval(5)=REAL(Iinfo(1,idUvel,ng),r8)
-          status=def_var(ng, iADM, ncADJid(ng), adjVid(idUvel,ng),      &
+          status=def_var(ng, iADM, ADM(ng)%ncid, ADM(ng)%Vid(idUvel),   &
      &                   NF_FOUT, nvd4, u3dgrd, Aval, Vinfo, ncname)
           IF (exit_flag.ne.NoError) RETURN
         END IF
@@ -743,7 +742,7 @@
           Vinfo(14)=Vname(4,ifield)
           Vinfo(16)=Vname(1,idtime)
           Aval(5)=REAL(Iinfo(1,ifield,ng),r8)
-          status=def_var(ng, iADM, ncADJid(ng), adjVid(ifield,ng),      &
+          status=def_var(ng, iADM, ADM(ng)%ncid, ADM(ng)%Vid(ifield),   &
      &                   NF_FOUT, 5, t3dobc, Aval, Vinfo, ncname,       &
      &                   SetFillVal = .FALSE.)
           IF (exit_flag.ne.NoError) RETURN
@@ -763,7 +762,7 @@
 #  endif
           Vinfo(22)='coordinates'
           Aval(5)=REAL(Iinfo(1,idVvel,ng),r8)
-          status=def_var(ng, iADM, ncADJid(ng), adjVid(idVvel,ng),      &
+          status=def_var(ng, iADM, ADM(ng)%ncid, ADM(ng)%Vid(idVvel),   &
      &                   NF_FOUT, nvd4, v3dgrd, Aval, Vinfo, ncname)
           IF (exit_flag.ne.NoError) RETURN
         END IF
@@ -779,7 +778,7 @@
           Vinfo(14)=Vname(4,ifield)
           Vinfo(16)=Vname(1,idtime)
           Aval(5)=REAL(Iinfo(1,ifield,ng),r8)
-          status=def_var(ng, iADM, ncADJid(ng), adjVid(ifield,ng),      &
+          status=def_var(ng, iADM, ADM(ng)%ncid, ADM(ng)%Vid(ifield),   &
      &                   NF_FOUT, 5, t3dobc, Aval, Vinfo, ncname,       &
      &                   SetFillVal = .FALSE.)
           IF (exit_flag.ne.NoError) RETURN
@@ -807,7 +806,7 @@
 #  endif
             Vinfo(22)='coordinates'
             Aval(5)=REAL(r3dvar,r8)
-            status=def_var(ng, iADM, ncADJid(ng), adjTid(itrc,ng),      &
+            status=def_var(ng, iADM, ADM(ng)%ncid, ADM(ng)%Tid(itrc),   &
      &                     NF_FOUT, nvd4, t3dgrd, Aval, Vinfo, ncname)
             IF (exit_flag.ne.NoError) RETURN
           END IF
@@ -832,7 +831,7 @@
             END DO
 #   endif
             Aval(5)=REAL(Iinfo(1,ifield,ng),r8)
-            status=def_var(ng, iADM, ncADJid(ng), adjVid(ifield,ng),    &
+            status=def_var(ng, iADM, ADM(ng)%ncid, ADM(ng)%Vid(ifield), &
      &                     NF_FOUT, 5, t3dobc, Aval, Vinfo, ncname,     &
      &                     SetFillVal = .FALSE.)
             IF (exit_flag.ne.NoError) RETURN
@@ -853,7 +852,7 @@
 #  endif
           Vinfo(22)='coordinates'
           Aval(5)=REAL(Iinfo(1,idDano,ng),r8)
-          status=def_var(ng, iADM, ncADJid(ng), adjVid(idDano,ng),      &
+          status=def_var(ng, iADM, ADM(ng)%ncid, ADM(ng)%Vid(idDano),   &
      &                   NF_FOUT, nvd4, t3dgrd, Aval, Vinfo, ncname)
           IF (exit_flag.ne.NoError) RETURN
         END IF
@@ -866,13 +865,11 @@
           Vinfo( 3)=Vname(3,idVvis)
           Vinfo(14)=Vname(4,idVvis)
           Vinfo(16)=Vname(1,idtime)
-#  if defined WRITE_WATER && defined MASKING
-          Vinfo(20)='mask_rho'
-#  endif
           Vinfo(22)='coordinates'
           Aval(5)=REAL(Iinfo(1,idVvis,ng),r8)
-          status=def_var(ng, iADM, ncADJid(ng), adjVid(idVvis,ng),      &
-     &                   NF_FOUT, nvd4, w3dgrd, Aval, Vinfo, ncname)
+          status=def_var(ng, iADM, ADM(ng)%ncid, ADM(ng)%Vid(idVvis),   &
+     &                   NF_FOUT, nvd4, w3dgrd, Aval, Vinfo, ncname,    &
+     &                   SetFillVal = .FALSE.)
           IF (exit_flag.ne.NoError) RETURN
         END IF
 !
@@ -884,13 +881,11 @@
           Vinfo( 3)=Vname(3,idTdif)
           Vinfo(14)=Vname(4,idTdif)
           Vinfo(16)=Vname(1,idtime)
-#  if defined WRITE_WATER && defined MASKING
-          Vinfo(20)='mask_rho'
-#  endif
           Vinfo(22)='coordinates'
           Aval(5)=REAL(Iinfo(1,idTdif,ng),r8)
-          status=def_var(ng, iADM, ncADJid(ng), adjVid(idTdif,ng),      &
-     &                   NF_FOUT, nvd4, w3dgrd, Aval, Vinfo, ncname)
+          status=def_var(ng, iADM, ADM(ng)%ncid, ADM(ng)%Vid(idTdif),   &
+     &                   NF_FOUT, nvd4, w3dgrd, Aval, Vinfo, ncname,    &
+     &                   SetFillVal = .FALSE.)
           IF (exit_flag.ne.NoError) RETURN
         END IF
 #  ifdef SALINITY
@@ -903,13 +898,11 @@
           Vinfo( 3)=Vname(3,idSdif)
           Vinfo(14)=Vname(4,idSdif)
           Vinfo(16)=Vname(1,idtime)
-#   if defined WRITE_WATER && defined MASKING
-          Vinfo(20)='mask_rho'
-#   endif
           Vinfo(22)='coordinates'
           Aval(5)=REAL(Iinfo(1,idSdif,ng),r8)
-          status=def_var(ng, iADM, ncADJid(ng), adjVid(idSdif,ng),      &
-     &                   NF_FOUT, nvd4, w3dgrd, Aval, Vinfo, ncname)
+          status=def_var(ng, iADM, ADM(ng)%ncid, ADM(ng)%Vid(idSdif),   &
+     &                   NF_FOUT, nvd4, w3dgrd, Aval, Vinfo, ncname,    &
+     &                   SetFillVal = .FALSE.)
           IF (exit_flag.ne.NoError) RETURN
         END IF
 #  endif
@@ -936,8 +929,8 @@
 #   endif
             Vinfo(22)='coordinates'
             Aval(5)=REAL(Iinfo(1,idTsur(itrc),ng),r8)
-            status=def_var(ng, iADM, ncADJid(ng),                       &
-     &                     adjVid(idTsur(itrc),ng), NF_FOUT,            &
+            status=def_var(ng, iADM, ADM(ng)%ncid,                      &
+     &                     ADM(ng)%Vid(idTsur(itrc)), NF_FOUT,          &
      &                     nvd3, t2dgrd, Aval, Vinfo, ncname)
             IF (exit_flag.ne.NoError) RETURN
           END IF
@@ -959,7 +952,7 @@
 #  endif
           Vinfo(22)='coordinates'
           Aval(5)=REAL(Iinfo(1,idUsms,ng),r8)
-          status=def_var(ng, iADM, ncADJid(ng), adjVid(idUsms,ng),      &
+          status=def_var(ng, iADM, ADM(ng)%ncid, ADM(ng)%Vid(idUsms),   &
      &                   NF_FOUT, nvd3, u2dgrd, Aval, Vinfo, ncname)
           IF (exit_flag.ne.NoError) RETURN
         END IF
@@ -977,7 +970,7 @@
 #  endif
           Vinfo(22)='coordinates'
           Aval(5)=REAL(Iinfo(1,idVsms,ng),r8)
-          status=def_var(ng, iADM, ncADJid(ng), adjVid(idVsms,ng),      &
+          status=def_var(ng, iADM, ADM(ng)%ncid, ADM(ng)%Vid(idVsms),   &
      &                   NF_FOUT, nvd3, v2dgrd, Aval, Vinfo, ncname)
           IF (exit_flag.ne.NoError) RETURN
         END IF
@@ -996,7 +989,7 @@
 # endif
           Vinfo(22)='coordinates'
           Aval(5)=REAL(Iinfo(1,idUbms,ng),r8)
-          status=def_var(ng, iADM, ncADJid(ng), adjVid(idUbms,ng),      &
+          status=def_var(ng, iADM, ADM(ng)%ncid, ADM(ng)%Vid(idUbms),   &
      &                   NF_FOUT, nvd3, u2dgrd, Aval, Vinfo, ncname)
           IF (exit_flag.ne.NoError) RETURN
         END IF
@@ -1014,7 +1007,7 @@
 # endif
           Vinfo(22)='coordinates'
           Aval(5)=REAL(Iinfo(1,idVbms,ng),r8)
-          status=def_var(ng, iADM, ncADJid(ng), adjVid(idVbms,ng),      &
+          status=def_var(ng, iADM, ADM(ng)%ncid, ADM(ng)%Vid(idVbms),   &
      &                   NF_FOUT, nvd3, v2dgrd, Aval, Vinfo, ncname)
           IF (exit_flag.ne.NoError) RETURN
         END IF
@@ -1023,14 +1016,14 @@
 !  Leave definition mode.
 !-----------------------------------------------------------------------
 !
-        CALL netcdf_enddef (ng, iADM, ncname, ncADJid(ng))
+        CALL netcdf_enddef (ng, iADM, ncname, ADM(ng)%ncid)
         IF (exit_flag.ne.NoError) RETURN
 !
 !-----------------------------------------------------------------------
 !  Write out time-recordless, information variables.
 !-----------------------------------------------------------------------
 !
-        CALL wrt_info (ng, iADM, ncADJid(ng), ncname)
+        CALL wrt_info (ng, iADM, ADM(ng)%ncid, ncname)
         IF (exit_flag.ne.NoError) RETURN
       END IF DEFINE
 !
@@ -1040,7 +1033,7 @@
 !=======================================================================
 !
       QUERY : IF (.not.ldef) THEN
-        ncname=ADJname(ng)
+        ncname=ADM(ng)%name
 !
 !  Inquire about the dimensions and check for consistency.
 !
@@ -1054,7 +1047,7 @@
 !
 !  Open adjoint file for read/write.
 !
-        CALL netcdf_open (ng, iADM, ncname, 1, ncADJid(ng))
+        CALL netcdf_open (ng, iADM, ncname, 1, ADM(ng)%ncid)
         IF (exit_flag.ne.NoError) THEN
           WRITE (stdout,60) TRIM(ncname)
           RETURN
@@ -1072,88 +1065,88 @@
         DO i=1,n_var
           IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idtime))) THEN
             got_var(idtime)=.TRUE.
-            adjVid(idtime,ng)=var_id(i)
+            ADM(ng)%Vid(idtime)=var_id(i)
           ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idFsur))) THEN
             got_var(idFsur)=.TRUE.
-            adjVid(idFsur,ng)=var_id(i)
+            ADM(ng)%Vid(idFsur)=var_id(i)
           ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idUbar))) THEN
             got_var(idUbar)=.TRUE.
-            adjVid(idUbar,ng)=var_id(i)
+            ADM(ng)%Vid(idUbar)=var_id(i)
           ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idVbar))) THEN
             got_var(idVbar)=.TRUE.
-            adjVid(idVbar,ng)=var_id(i)
+            ADM(ng)%Vid(idVbar)=var_id(i)
 # ifdef ADJUST_BOUNDARY
           ELSE IF (TRIM(var_name(i)).eq.                                &
      &             TRIM(Vname(1,idSbry(isFsur)))) THEN
             got_var(idSbry(isFsur))=.TRUE.
-            adjVid(idSbry(isFsur),ng)=var_id(i)
+            ADM(ng)%Vid(idSbry(isFsur))=var_id(i)
           ELSE IF (TRIM(var_name(i)).eq.                                &
      &             TRIM(Vname(1,idSbry(isUbar)))) THEN
             got_var(idSbry(isUbar))=.TRUE.
-            adjVid(idSbry(isUbar),ng)=var_id(i)
+            ADM(ng)%Vid(idSbry(isUbar))=var_id(i)
           ELSE IF (TRIM(var_name(i)).eq.                                &
      &             TRIM(Vname(1,idSbry(isVbar)))) THEN
             got_var(idSbry(isVbar))=.TRUE.
-            adjVid(idSbry(isVbar),ng)=var_id(i)
+            ADM(ng)%Vid(idSbry(isVbar))=var_id(i)
 # endif
 # ifdef SOLVE3D
           ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idUvel))) THEN
             got_var(idUvel)=.TRUE.
-            adjVid(idUvel,ng)=var_id(i)
+            ADM(ng)%Vid(idUvel)=var_id(i)
           ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idVvel))) THEN
             got_var(idVvel)=.TRUE.
-            adjVid(idVvel,ng)=var_id(i)
+            ADM(ng)%Vid(idVvel)=var_id(i)
 #  ifdef ADJUST_BOUNDARY
           ELSE IF (TRIM(var_name(i)).eq.                                &
      &             TRIM(Vname(1,idSbry(isUvel)))) THEN
             got_var(idSbry(isUvel))=.TRUE.
-            adjVid(idSbry(isUvel),ng)=var_id(i)
+            ADM(ng)%Vid(idSbry(isUvel))=var_id(i)
           ELSE IF (TRIM(var_name(i)).eq.                                &
      &             TRIM(Vname(1,idSbry(isVvel)))) THEN
             got_var(idSbry(isVvel))=.TRUE.
-            adjVid(idSbry(isVvel),ng)=var_id(i)
+            ADM(ng)%Vid(idSbry(isVvel))=var_id(i)
 #  endif
           ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idDano))) THEN
             got_var(idDano)=.TRUE.
-            adjVid(idDano,ng)=var_id(i)
+            ADM(ng)%Vid(idDano)=var_id(i)
           ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idVvis))) THEN
             got_var(idVvis)=.TRUE.
-            adjVid(idVvis,ng)=var_id(i)
+            ADM(ng)%Vid(idVvis)=var_id(i)
           ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idTdif))) THEN
             got_var(idTdif)=.TRUE.
-            adjVid(idTdif,ng)=var_id(i)
+            ADM(ng)%Vid(idTdif)=var_id(i)
           ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idSdif))) THEN
             got_var(idSdif)=.TRUE.
-            adjVid(idSdif,ng)=var_id(i)
+            ADM(ng)%Vid(idSdif)=var_id(i)
 # endif
           ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idUsms))) THEN
             got_var(idUsms)=.TRUE.
-            adjVid(idUsms,ng)=var_id(i)
+            ADM(ng)%Vid(idUsms)=var_id(i)
           ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idVsms))) THEN
             got_var(idVsms)=.TRUE.
-            adjVid(idVsms,ng)=var_id(i)
+            ADM(ng)%Vid(idVsms)=var_id(i)
           ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idUbms))) THEN
             got_var(idUbms)=.TRUE.
-            adjVid(idUbms,ng)=var_id(i)
+            ADM(ng)%Vid(idUbms)=var_id(i)
           ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idVbms))) THEN
             got_var(idVbms)=.TRUE.
-            adjVid(idVbms,ng)=var_id(i)
+            ADM(ng)%Vid(idVbms)=var_id(i)
           END IF
 # ifdef SOLVE3D
           DO itrc=1,NT(ng)
             IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idTvar(itrc)))) THEN
               got_var(idTvar(itrc))=.TRUE.
-              adjTid(itrc,ng)=var_id(i)
+              ADM(ng)%Tid(itrc)=var_id(i)
 #  ifdef ADJUST_BOUNDARY
             ELSE IF (TRIM(var_name(i)).eq.                              &
      &               TRIM(Vname(1,idSbry(isTvar(itrc))))) THEN
               got_var(idSbry(isTvar(itrc)))=.TRUE.
-              adjVid(idSbry(isTvar(itrc)),ng)=var_id(i)
+              ADM(ng)%Vid(idSbry(isTvar(itrc)))=var_id(i)
 #  endif
             ELSE IF (TRIM(var_name(i)).eq.                              &
      &               TRIM(Vname(1,idTsur(itrc)))) THEN
               got_var(idTsur(itrc))=.TRUE.
-              adjVid(idTsur(itrc),ng)=var_id(i)
+              ADM(ng)%Vid(idTsur(itrc))=var_id(i)
             END IF
           END DO
 #endif
@@ -1292,13 +1285,13 @@
 !  Set unlimited time record dimension to the appropriate value.
 !
         IF (ndefADJ(ng).gt.0) THEN
-          tADJindx(ng)=((ntstart(ng)-1)-                                &
-     &                  ndefADJ(ng)*((ntstart(ng)-1)/ndefADJ(ng)))/     &
-     &                 nADJ(ng)
+          ADM(ng)%Rindex=((ntstart(ng)-1)-                              &
+     &                    ndefADJ(ng)*((ntstart(ng)-1)/ndefADJ(ng)))/   &
+     &                   nADJ(ng)
         ELSE
-          tADJindx(ng)=(ntstart(ng)-1)/nADJ(ng)
+          ADM(ng)%Rindex=(ntstart(ng)-1)/nADJ(ng)
         END IF
-        tADJindx(ng)=MIN(tADJindx(ng),rec_size)
+        ADM(ng)%Rindex=MIN(ADM(ng)%Rindex,rec_size)
       END IF QUERY
 !
   10  FORMAT (3x,'AD_DEF_HIS   - creating adjoint  file: ',a)

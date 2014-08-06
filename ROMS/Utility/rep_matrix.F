@@ -3,13 +3,14 @@
       SUBROUTINE rep_matrix (ng, model, outLoop, NinnLoop)
 !
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2010 The ROMS/TOMS Group       Andrew M. Moore   !
+!  Copyright (c) 2002-2014 The ROMS/TOMS Group       Andrew M. Moore   !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
 !                                                                      !
-!  This routine estimates the inverse of the stabilized representer    !
-!  matrix using the Lanczos vectors from the inner-loops.              !
+!  This routine estimates the TRANSPOSE of the inverse of the          !
+!  stabilized representer matrix using the Lanczos vectors from        !
+!  the inner-loops.                                                    !
 !                                                                      !
 !=======================================================================
 !
@@ -33,10 +34,19 @@
 !  Local variable declarations.
 !
       integer :: i, j, iobs, ivec, innLoop
+# ifdef MINRES
+      integer :: info
+      integer, dimension(NinnLoop) :: ipiv
+# endif
 
       real(r8) :: zbet
 
       real(r8), dimension(NinnLoop) :: zu, zgam, zt
+# ifdef MINRES
+      real(r8) :: zsum, zck, zgk
+      real(r8), dimension(NinnLoop,NinnLoop) :: ztriT, zLT, zLTt
+      real(r8), dimension(NinnLoop) :: tau, zwork1, zeref
+# endif
 !
 !-----------------------------------------------------------------------
 !  Compute observation impact on the weak constraint 4DVAR data
@@ -65,6 +75,88 @@
             END IF
           END DO
         END DO
+
+# ifdef MINRES
+!
+!  Use the minimum residual method as described by Paige and Saunders
+!  ("Sparse Indefinite Systems of Linear Equations", 1975, SIAM Journal
+!  on Numerical Analysis, 617-619). Specifically we refer to equations
+!  6.10 and 6.11 of this paper.
+!
+!  Perform a LQ factorization of the tridiagonal matrix.
+!
+        ztriT=0.0_r8
+        DO i=1,NinnLoop
+          ztriT(i,i)=cg_delta(i,outLoop)
+        END DO
+        DO i=1,NinnLoop-1
+          ztriT(i,i+1)=cg_beta(i+1,outLoop)
+        END DO
+        DO i=2,NinnLoop
+          ztriT(i,i-1)=cg_beta(i,outLoop)
+        END DO
+        CALL sqlq (NinnLoop, ztriT, tau, zwork1)
+!
+!   Isolate L=zLT and its tranpose.
+!
+        zLT=0.0_r8
+        zLTt=0.0_r8
+        DO i=1,NinnLoop
+          DO j=1,i
+            zLT(i,j)=ztriT(i,j)
+          END DO
+        END DO
+        DO j=1,NinnLoop
+          DO i=1,NinnLoop
+            zLTt(i,j)=zLT(j,i)
+          END DO
+        END DO
+!
+!  Compute zck.
+!
+        zgk=SQRT(zLT(NinnLoop,NinnLoop)*zLT(NinnLoop,NinnLoop)+         &
+     &      cg_beta(NinnLoop+1,outLoop)*cg_beta(NinnLoop+1,outLoop))
+        zck=zLT(NinnLoop,NinnLoop)/zgk
+!
+!  Now form inv(L)*zt - NOTE: we use L not L', so we use the
+!  adjoint of the original solver.
+!
+        DO j=1,NinnLoop
+          DO i=j-1,1,-1
+            zt(j)=zt(j)-zt(i)*zLTt(i,j)
+          END DO
+          zt(j)=zt(j)/zLTt(j,j)
+        END DO
+!
+!   Now form zt=D*zt.
+!
+        zt(NinnLoop)=zck*zt(NinnLoop)
+!
+!   Now form zt=Q'*zt.
+!
+        DO i=NinnLoop,1,-1
+          DO j=1,NinnLoop
+            zeref(j)=0.0_r8
+          END DO
+          zeref(i)=1.0_r8
+          DO j=i+1,NinnLoop
+            zeref(j)=ztriT(i,j)
+          END DO
+          zsum=0.0_r8
+          DO j=1,NinnLoop
+            zsum=zsum+zt(j)*zeref(j)
+          END DO
+          DO j=1,NinnLoop
+            zt(j)=zt(j)-tau(i)*zsum*zeref(j)
+          END DO
+        END DO
+!
+!   Copy the solution zt into zu.
+!
+        DO i=1,NinnLoop
+          zu(i)=zt(i)
+        END DO
+# else
 !
 !  Now multiply the result by the inverse tridiagonal matrix.
 !
@@ -80,6 +172,7 @@
         DO ivec=NinnLoop-1,1,-1
           zu(ivec)=zu(ivec)-zgam(ivec+1)*zu(ivec+1)
         END DO
+# endif
 !
 !  Finally multiply by the matrix of Lanczos vactors.
 !  Note that the factor of 1/SQRT(ObsErr) is added to covert to

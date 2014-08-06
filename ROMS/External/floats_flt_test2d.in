@@ -1,8 +1,8 @@
 !  Floats Input Parameters.
 !
-!svn $Id: floats_flt_test2d.in 429 2009-12-20 17:30:26Z arango $
+!svn $Id$
 !========================================================= Hernan G. Arango ===
-!  Copyright (c) 2002-2010 The ROMS/TOMS Group                                !
+!  Copyright (c) 2002-2014 The ROMS/TOMS Group                                !
 !    Licensed under a MIT/X style license                                     !
 !    See License_ROMS.txt                                                     !
 !==============================================================================
@@ -40,10 +40,20 @@
 !
      Lfloats == T
 
+! Switch to control the printing of floats initial positions to standard
+! output file, [1:Ngrids].
+!
+      Fprint == T
+
 ! Flag indicating re-start from previous solution. If FRREC = 0, a new
 ! NetCDF output file is created.
 
        FRREC == 0
+
+! If applicable, input script file name containing biological floats behavior
+! model parameters.
+
+     FBIONAM =  behavior_oyster.in
 
 ! Number of floats to release in each nested grid.  These values are
 ! essential because the FLOATS structure in "mod_floats" is dynamically
@@ -88,12 +98,24 @@ POS = G, C, T, N,   Ft0,    Fx0,    Fy0,    Fz0,    Fdt,    Fdx,    Fdy,   Fdz
 !             USER can control which grid to process by turning on/off this
 !             switch.
 !
+! Fprint    Switch to control the printing of floats positions to standard
+!             output file. This switch can be used to turn off the printing
+!             of information when thousands of floats are released.  This
+!             information is still in output floats NetCDF file.
+!
 ! FRREC     Flag to indicate re-start from a previous solution.  Use
 !             FRREC=0 for new solutions. In a re-start solution, FRREC
 !             is the time index in the floats NetCDF file assigned for
 !             initialization.  If FRREC is negative (say FRREC=-1), the
 !             floats will re-start from the most recent time record.
 !             That is, the initialization record is assigned internally.
+!
+!------------------------------------------------------------------------------
+! Biological behavior.
+!------------------------------------------------------------------------------
+!
+! FBIONAM   If applicable, input script file name containing biological floats
+!              behavior model parameters.
 !
 !------------------------------------------------------------------------------
 ! Number of floats.

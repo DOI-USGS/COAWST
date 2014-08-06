@@ -2,7 +2,7 @@
 !
 !! svn $Id: ana_wwave.h 429 2009-12-20 17:30:26Z arango $
 !!======================================================================
-!! Copyright (c) 2002-2010 The ROMS/TOMS Group                         !
+!! Copyright (c) 2002-2014 The ROMS/TOMS Group                         !
 !!   Licensed under a MIT/X style license                              !
 !!   See License_ROMS.txt                                              !
 !=======================================================================
@@ -111,9 +111,7 @@
       USE mod_param
       USE mod_scalars
 !
-#if defined EW_PERIODIC || defined NS_PERIODIC
       USE exchange_2d_mod, ONLY : exchange_r2d_tile
-#endif
 #ifdef DISTRIBUTE
       USE mp_exchange_mod, ONLY : mp_exchange2d
 #endif
@@ -196,18 +194,6 @@
 !
 !  Local variable declarations.
 !
-#ifdef DISTRIBUTE
-# ifdef EW_PERIODIC
-      logical :: EWperiodic=.TRUE.
-# else
-      logical :: EWperiodic=.FALSE.
-# endif
-# ifdef NS_PERIODIC
-      logical :: NSperiodic=.TRUE.
-# else
-      logical :: NSperiodic=.FALSE.
-# endif
-#endif
       integer :: i, j
       real(r8) :: cff, wdir
 #if defined LAKE_SIGNELL
@@ -223,8 +209,8 @@
 !
 #if defined BL_TEST
       wdir=210.0_r8*deg2rad
-      DO j=JstrR,JendR
-        DO i=IstrR,IendR
+      DO j=JstrT,JendT
+        DO i=IstrT,IendT
           Hwave(i,j)=0.5_r8
           Dwave(i,j)=wdir
           Pwave_bot(i,j)=8.0_r8
@@ -235,8 +221,8 @@
       ramp_u=15.0_r8       ! start ramp UP at RAMP_UP (hours)
       ramp_time=10.0_r8    ! ramp from 0 to 1 over RAMP_TIME (hours)
       ramp_d=50.0_r8       ! start ramp DOWN at RAMP_DOWN (hours)
-      DO j=JstrR,JendR
-        DO i=Istr,IendR
+      DO j=JstrT,JendT
+        DO i=IstrT,IendT
           Dwave(i,j)=270.0_r8*deg2rad
           Pwave_bot(i,j)=5.0_r8
           cff1=MIN((0.5_r8*(TANH((time(ng)/3600.0_r8-ramp_u)/           &
@@ -257,16 +243,16 @@
       ELSE
         cff=1.0_r8
       END IF
-      DO j=JstrR,JendR
-        DO i=IstrR,IendR
+      DO j=JstrT,JendT
+        DO i=IstrT,IendT
           Hwave(i,j)=0.12_r8
           Dwave(i,j)=wdir-angler(i,j)
           Pwave_bot(i,j)=10.0_r8
         END DO
       END DO
 #elif defined SED_TOY
-      DO j=JstrR,JendR
-        DO i=IstrR,IendR
+      DO j=JstrT,JendT
+        DO i=IstrT,IendT
           Hwave(i,j)=2.0_r8
           Dwave(i,j)=90.0_r8*deg2rad
           Pwave_bot(i,j)=8.0_r8
@@ -274,9 +260,12 @@
         END DO
       END DO
 #else
-      ana_wwave: No values provided for Hwave, Dwave, Pwave, Lwave.
+      ana_wwave: no values provided for Hwave, Dwave, Pwave, Lwave.
 #endif
-#if defined EW_PERIODIC || defined NS_PERIODIC
+!
+!  Exchange boundary data.
+!
+      IF (EWperiodic(ng).or.NSperiodic(ng)) THEN
 # if defined WAVES_DIR
       CALL exchange_r2d_tile (ng, tile,                                 &
      &                        LBi, UBi, LBj, UBj,                       &
@@ -327,18 +316,20 @@
      &                        LBi, UBi, LBj, UBj,                       &
      &                        Uwave_rms)
 # endif
-#endif
+      END IF
 #if defined DISTRIBUTE
 # if defined WAVES_DIR
       CALL mp_exchange2d (ng, tile, model, 1,                           &
      &                    LBi, UBi, LBj, UBj,                           &
-     &                    NghostPoints, EWperiodic, NSperiodic,         &
+     &                    NghostPoints,                                 &
+     &                    EWperiodic(ng), NSperiodic(ng),               &
      &                    Dwave)
 # endif
 # if defined WAVES_OCEAN || (defined WEC_VF && defined BOTTOM_STREAMING)
       CALL mp_exchange2d (ng, tile, model, 1,                           &
      &                    LBi, UBi, LBj, UBj,                           &
-     &                    NghostPoints, EWperiodic, NSperiodic,         &
+     &                    NghostPoints,                                 &
+     &                    EWperiodic(ng), NSperiodic(ng),               &
      &                    Dissip_fric)
 # endif
 # if defined TKE_WAVEDISS || defined WAVES_OCEAN || \
@@ -346,43 +337,50 @@
      defined WAVES_DISS
       CALL mp_exchange2d (ng, tile, model, 2,                           &
      &                    LBi, UBi, LBj, UBj,                           &
-     &                    NghostPoints, EWperiodic, NSperiodic,         &
+     &                    NghostPoints,                                 &
+     &                    EWperiodic(ng), NSperiodic(ng),               &
      &                    Dissip_break, Dissip_wcap)
 # endif
 # ifdef WAVES_HEIGHT
       CALL mp_exchange2d (ng, tile, model, 1,                           &
      &                    LBi, UBi, LBj, UBj,                           &
-     &                    NghostPoints, EWperiodic, NSperiodic,         &
+     &                    NghostPoints,                                 &
+     &                    EWperiodic(ng), NSperiodic(ng),               &
      &                    Hwave)
 # endif
 # ifdef WAVES_LENGTH
       CALL mp_exchange2d (ng, tile, model, 1,                           &
      &                    LBi, UBi, LBj, UBj,                           &
-     &                    NghostPoints, EWperiodic, NSperiodic,         &
+     &                    NghostPoints,                                 &
+     &                    EWperiodic(ng), NSperiodic(ng),               &
      &                    Lwave)
 # endif
 # ifdef WAVES_LENGTHP
       CALL mp_exchange2d (ng, tile, model, 1,                           &
      &                    LBi, UBi, LBj, UBj,                           &
-     &                    NghostPoints, EWperiodic, NSperiodic,         &
+     &                    NghostPoints,                                 &
+     &                    EWperiodic(ng), NSperiodic(ng),               &
      &                    Lwavep)
 # endif
 # ifdef WAVES_TOP_PERIOD
       CALL mp_exchange2d (ng, tile, model, 1,                           &
      &                    LBi, UBi, LBj, UBj,                           &
-     &                    NghostPoints, EWperiodic, NSperiodic,         &
+     &                    NghostPoints,                                 &
+     &                    EWperiodic(ng), NSperiodic(ng),               &
      &                    Pwave_top)
 # endif
 # ifdef WAVES_BOT_PERIOD
       CALL mp_exchange2d (ng, tile, model, 1,                           &
      &                    LBi, UBi, LBj, UBj,                           &
-     &                    NghostPoints, EWperiodic, NSperiodic,         &
+     &                    NghostPoints,                                 &
+     &                    EWperiodic(ng), NSperiodic(ng),               &
      &                    Pwave_bot)
 # endif
 # ifdef WAVES_UB
       CALL mp_exchange2d (ng, tile, model, 1,                           &
      &                    LBi, UBi, LBj, UBj,                           &
-     &                    NghostPoints, EWperiodic, NSperiodic,         &
+     &                    NghostPoints,                                 &
+     &                    EWperiodic(ng), NSperiodic(ng),               &
      &                    Uwave_rms)
 # endif
 #endif

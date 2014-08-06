@@ -2,25 +2,10 @@
       MODULE ad_set_massflux_mod
 
 #if defined ADJOINT && defined SOLVE3D
-
-# ifdef EW_PERIODIC
-#  define IU_RANGE Istr,Iend
-#  define IV_RANGE Istr,Iend
-# else
-#  define IU_RANGE Istr,IendR
-#  define IV_RANGE IstrR,IendR
-# endif
-# ifdef NS_PERIODIC
-#  define JU_RANGE Jstr,Jend
-#  define JV_RANGE Jstr,Jend
-# else
-#  define JU_RANGE JstrR,JendR
-#  define JV_RANGE Jstr,JendR
-# endif
 !
-!svn $Id: ad_set_massflux.F 429 2009-12-20 17:30:26Z arango $
+!svn $Id$
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2010 The ROMS/TOMS Group       Andrew M. Moore   !
+!  Copyright (c) 2002-2014 The ROMS/TOMS Group       Andrew M. Moore   !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -35,10 +20,10 @@
 !=======================================================================
 !
       implicit none
-
+!
       PRIVATE
       PUBLIC  :: ad_set_massflux
-
+!
       CONTAINS
 !
 !***********************************************************************
@@ -107,9 +92,7 @@
       USE mod_param
       USE mod_scalars
 !
-# if defined EW_PERIODIC || defined NS_PERIODIC
       USE ad_exchange_3d_mod
-# endif
 # ifdef DISTRIBUTE
       USE mp_exchange_mod, ONLY : ad_mp_exchange3d
 # endif
@@ -167,18 +150,6 @@
 !
 !  Local variable declarations.
 !
-# ifdef DISTRIBUTE
-#  ifdef EW_PERIODIC
-      logical :: EWperiodic=.TRUE.
-#  else
-      logical :: EWperiodic=.FALSE.
-#  endif
-#  ifdef NS_PERIODIC
-      logical :: NSperiodic=.TRUE.
-#  else
-      logical :: NSperiodic=.FALSE.
-#  endif
-# endif
       integer :: i, j, k
 
       real(r8) :: adfac, adfac1
@@ -188,45 +159,46 @@
 !-----------------------------------------------------------------------
 !  Compute horizontal mass fluxes, Hz*u/n and Hz*v/m.
 !-----------------------------------------------------------------------
-
-# if defined EW_PERIODIC || defined NS_PERIODIC || defined DISTRIBUTE
 !
 !  Exchange boundary information.
 !
-#  ifdef DISTRIBUTE
+# ifdef DISTRIBUTE
 !>    CALL mp_exchange3d (ng, tile, iTLM, 2,                            &
 !>   &                    LBi, UBi, LBj, UBj, 1, N(ng),                 &
-!>   &                    NghostPoints, EWperiodic, NSperiodic,         &
+!>   &                    NghostPoints,                                 &
+!>   &                    EWperiodic(ng), NSperiodic(ng),               &
 !>   &                    tl_Huon, tl_Hvom)
 !>
       CALL ad_mp_exchange3d (ng, tile, iADM, 2,                         &
      &                       LBi, UBi, LBj, UBj, 1, N(ng),              &
-     &                       NghostPoints, EWperiodic, NSperiodic,      &
+     &                       NghostPoints,                              &
+     &                       EWperiodic(ng), NSperiodic(ng),            &
      &                       ad_Huon, ad_Hvom)
-#  endif
-#  if defined EW_PERIODIC || defined NS_PERIODIC
-!>    CALL exchange_v3d_tile (ng, tile,                                 &
-!>   &                        LBi, UBi, LBj, UBj, 1, N(ng),             &
-!>   &                        tl_Hvom)
-!>
-      CALL ad_exchange_v3d_tile (ng, tile,                              &
-     &                           LBi, UBi, LBj, UBj, 1, N(ng),          &
-     &                           ad_Hvom)
-!>    CALL exchange_u3d_tile (ng, tile,                                 &
-!>   &                        LBi, UBi, LBj, UBj, 1, N(ng),             &
-!>   &                        tl_Huon)
-!>
-      CALL ad_exchange_u3d_tile (ng, tile,                              &
-     &                           LBi, UBi, LBj, UBj, 1, N(ng),          &
-     &                           ad_Huon)
-#  endif
+!
 # endif
+
+      IF (EWperiodic(ng).or.NSperiodic(ng)) THEN
+!>      CALL exchange_v3d_tile (ng, tile,                               &
+!>   &                          LBi, UBi, LBj, UBj, 1, N(ng),           &
+!>   &                          tl_Hvom)
+!>
+        CALL ad_exchange_v3d_tile (ng, tile,                            &
+     &                             LBi, UBi, LBj, UBj, 1, N(ng),        &
+     &                             ad_Hvom)
+!>      CALL exchange_u3d_tile (ng, tile,                               &
+!>   &                          LBi, UBi, LBj, UBj, 1, N(ng),           &
+!>   &                          tl_Huon)
+!>
+        CALL ad_exchange_u3d_tile (ng, tile,                            &
+     &                             LBi, UBi, LBj, UBj, 1, N(ng),        &
+     &                             ad_Huon)
+      END IF
 !
 !  Compute adjoint horizontal mass fluxes.
 !
       DO k=1,N(ng)
-        DO j=JV_RANGE
-          DO i=IV_RANGE
+        DO j=JstrP,JendT
+          DO i=IstrT,IendT
 # ifdef NEARSHORE_MELLOR
 !>          tl_Hvom(i,j,k)=tl_Hvom(i,j,k)+                              &
 !>   &                     0.5_r8*om_v(i,j)*                            &
@@ -257,8 +229,8 @@
             ad_Hvom(i,j,k)=0.0_r8
           END DO
         END DO
-        DO j=JU_RANGE
-          DO i=IU_RANGE
+        DO j=JstrT,JendT
+          DO i=IstrP,IendT
 # ifdef NEARSHORE_MELLOR
 !>          tl_Huon(i,j,k)=tl_Huon(i,j,k)+                              &
 !>   &                     0.5_r8*on_u(i,j)*                            &

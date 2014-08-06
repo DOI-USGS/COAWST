@@ -2,9 +2,9 @@
       MODULE rp_set_vbc_mod
 #ifdef TL_IOMS
 !
-!svn $Id: rp_set_vbc.F 429 2009-12-20 17:30:26Z arango $
+!svn $Id$
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2010 The ROMS/TOMS Group       Andrew M. Moore   !
+!  Copyright (c) 2002-2014 The ROMS/TOMS Group       Andrew M. Moore   !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -20,10 +20,10 @@
 !=======================================================================
 !
       implicit none
-
+!
       PRIVATE
       PUBLIC  :: rp_set_vbc
-
+!
       CONTAINS
 
 # ifdef SOLVE3D
@@ -55,6 +55,13 @@
      &                      nrhs(ng),                                   &
      &                      GRID(ng) % Hz,                              &
      &                      GRID(ng) % tl_Hz,                           &
+#  if defined UV_LOGDRAG
+     &                      GRID(ng) % ZoBot,                           &
+#  elif defined UV_LDRAG
+     &                      GRID(ng) % rdrag,                           &
+#  elif defined UV_QDRAG
+     &                      GRID(ng) % rdrag2,                          &
+#  endif
 #  if !defined BBL_MODEL_NOT_YET || defined ICESHELF
      &                      GRID(ng) % z_r,                             &
      &                      GRID(ng) % z_w,                             &
@@ -85,24 +92,23 @@
 #   endif
      &                      FORCES(ng) % sustr,                         &
      &                      FORCES(ng) % svstr,                         &
+     &                      FORCES(ng) % tl_sustr,                      &
+     &                      FORCES(ng) % tl_svstr,                      &
 #  endif
 #  ifndef BBL_MODEL_NOT_YET
      &                      FORCES(ng) % bustr,                         &
      &                      FORCES(ng) % bvstr,                         &
-#   ifdef TL_IOMS
      &                      FORCES(ng) % tl_bustr,                      &
      &                      FORCES(ng) % tl_bvstr,                      &
-#   endif
 #  endif
      &                      FORCES(ng) % stflx,                         &
-#  ifdef TL_IOMS
+     &                      FORCES(ng) % btflx,                         &
      &                      FORCES(ng) % tl_stflx,                      &
-     &                      FORCES(ng) % tl_btflx,                      &
-#  endif
-     &                      FORCES(ng) % btflx)
+     &                      FORCES(ng) % tl_btflx)
 #  ifdef PROFILE
       CALL wclock_off (ng, iRPM, 6)
 #  endif
+
       RETURN
       END SUBROUTINE rp_set_vbc
 !
@@ -112,6 +118,13 @@
      &                            IminS, ImaxS, JminS, JmaxS,           &
      &                            nrhs,                                 &
      &                            Hz, tl_Hz,                            &
+#  if defined UV_LOGDRAG
+     &                            ZoBot,                                &
+#  elif defined UV_LDRAG
+     &                            rdrag,                                &
+#  elif defined UV_QDRAG
+     &                            rdrag2,                               &
+#  endif
 #  if !defined BBL_MODEL_NOT_YET || defined ICESHELF
      &                            z_r, z_w,                             &
      &                            tl_z_r, tl_z_w,                       &
@@ -135,28 +148,23 @@
      &                            srflx,                                &
 #   endif
      &                            sustr, svstr,                         &
+     &                            tl_sustr, tl_svstr,                   &
 #  endif
 #  ifndef BBL_MODEL_NOT_YET
      &                            bustr, bvstr,                         &
-#   ifdef TL_IOMS
      &                            tl_bustr, tl_bvstr,                   &
-#   endif
 #  endif
-     &                            stflx,                                &
-#  ifdef TL_IOMS
-     &                            tl_stflx,                             &
-     &                            tl_btflx,                             &
-#  endif
-     &                            btflx)
+     &                            stflx, btflx,                         &
+     &                            tl_stflx, tl_btflx)
 !***********************************************************************
 !
       USE mod_param
       USE mod_scalars
 !
       USE bc_2d_mod
-# ifdef DISTRIBUTE
+#  ifdef DISTRIBUTE
       USE mp_exchange_mod, ONLY : mp_exchange2d
-# endif
+#  endif
 !
 !  Imported variable declarations.
 !
@@ -168,6 +176,13 @@
 #  ifdef ASSUMED_SHAPE
       real(r8), intent(in) :: Hz(LBi:,LBj:,:)
       real(r8), intent(in) :: tl_Hz(LBi:,LBj:,:)
+#   if defined UV_LOGDRAG
+      real(r8), intent(in) :: ZoBot(LBi:,LBj:)
+#   elif defined UV_LDRAG
+      real(r8), intent(in) :: rdrag(LBi:,LBj:)
+#   elif defined UV_QDRAG
+      real(r8), intent(in) :: rdrag2(LBi:,LBj:)
+#   endif
 #   if !defined BBL_MODEL_NOT_YET || defined ICESHELF
       real(r8), intent(in) :: z_r(LBi:,LBj:,:)
       real(r8), intent(in) :: z_w(LBi:,LBj:,0:)
@@ -198,24 +213,29 @@
 #    endif
       real(r8), intent(inout) :: sustr(LBi:,LBj:)
       real(r8), intent(inout) :: svstr(LBi:,LBj:)
+      real(r8), intent(inout) :: tl_sustr(LBi:,LBj:)
+      real(r8), intent(inout) :: tl_svstr(LBi:,LBj:)
 #   endif
 #   ifndef BBL_MODEL_NOT_YET
       real(r8), intent(inout) :: bustr(LBi:,LBj:)
       real(r8), intent(inout) :: bvstr(LBi:,LBj:)
-#    ifdef TL_IOMS
       real(r8), intent(inout) :: tl_bustr(LBi:,LBj:)
       real(r8), intent(inout) :: tl_bvstr(LBi:,LBj:)
-#    endif
 #   endif
       real(r8), intent(inout) :: stflx(LBi:,LBj:,:)
       real(r8), intent(inout) :: btflx(LBi:,LBj:,:)
-#   ifdef TL_IOMS
       real(r8), intent(inout) :: tl_stflx(LBi:,LBj:,:)
       real(r8), intent(inout) :: tl_btflx(LBi:,LBj:,:)
-#   endif
 #  else
       real(r8), intent(in) :: Hz(LBi:UBi,LBj:UBj,N(ng))
       real(r8), intent(in) :: tl_Hz(LBi:UBi,LBj:UBj,N(ng))
+#   if defined UV_LOGDRAG
+      real(r8), intent(in) :: ZoBot(LBi:UBi,LBj:UBj)
+#   elif defined UV_LDRAG
+      real(r8), intent(in) :: rdrag(LBi:UBi,LBj:UBj)
+#   elif defined UV_QDRAG
+      real(r8), intent(in) :: rdrag2(LBi:UBi,LBj:UBj)
+#   endif
 #   if !defined BBL_MODEL_NOT_YET || defined ICESHELF
       real(r8), intent(in) :: z_r(LBi:UBi,LBj:UBj,N(ng))
       real(r8), intent(in) :: z_w(LBi:UBi,LBj:UBj,0:N(ng))
@@ -246,37 +266,23 @@
 #    endif
       real(r8), intent(inout) :: sustr(LBi:UBi,LBj:UBj)
       real(r8), intent(inout) :: svstr(LBi:UBi,LBj:UBj)
+      real(r8), intent(inout) :: tl_sustr(LBi:UBi,LBj:UBj)
+      real(r8), intent(inout) :: tl_svstr(LBi:UBi,LBj:UBj)
 #   endif
 #   ifndef BBL_MODEL_NOT_YET
       real(r8), intent(inout) :: bustr(LBi:UBi,LBj:UBj)
       real(r8), intent(inout) :: bvstr(LBi:UBi,LBj:UBj)
-#    ifdef TL_IOMS
       real(r8), intent(inout) :: tl_bustr(LBi:UBi,LBj:UBj)
       real(r8), intent(inout) :: tl_bvstr(LBi:UBi,LBj:UBj)
-#    endif
 #   endif
       real(r8), intent(inout) :: stflx(LBi:UBi,LBj:UBj,NT(ng))
       real(r8), intent(inout) :: btflx(LBi:UBi,LBj:UBj,NT(ng))
-#   ifdef TL_IOMS
       real(r8), intent(inout) :: tl_stflx(LBi:UBi,LBj:UBj,NT(ng))
       real(r8), intent(inout) :: tl_btflx(LBi:UBi,LBj:UBj,NT(ng))
-#   endif
 #  endif
 !
 !  Local variable declarations.
 !
-# ifdef DISTRIBUTE
-#  ifdef EW_PERIODIC
-      logical :: EWperiodic=.TRUE.
-#  else
-      logical :: EWperiodic=.FALSE.
-#  endif
-#  ifdef NS_PERIODIC
-      logical :: NSperiodic=.TRUE.
-#  else
-      logical :: NSperiodic=.FALSE.
-#  endif
-# endif
       integer :: i, j, itrc
 
 #  if !defined BBL_MODEL_NOT_YET || defined ICESHELF
@@ -318,7 +324,8 @@
 #  ifdef SALINITY
 !
 !-----------------------------------------------------------------------
-!  Add salt flux correction or multiply flux by salinity.
+!  Multiply fresh water flux with surface salinity. If appropriate,
+!  apply correction.
 !-----------------------------------------------------------------------
 !
       DO j=JstrR,JendR
@@ -428,14 +435,14 @@
 !  If ice shelf cavities, replace surface wind stress with ice shelf
 !  cavity stress (m2/s2).
 !-----------------------------------------------------------------------
-!
+
 #   if defined UV_LOGDRAG
 !
 !  Set logarithmic ice shelf cavity stress.
 !
       DO j=JstrV-1,Jend
         DO i=IstrU-1,Iend
-          cff1=1.0_r8/LOG((z_w(i,j,N(ng))-z_r(i,j,N(ng)))/Zob(ng))
+          cff1=1.0_r8/LOG((z_w(i,j,N(ng))-z_r(i,j,N(ng)))/ZoBot(i,j))
           tl_cff1=-cff1*cff1*(tl_z_w(i,j,N(ng))-tl_z_r(i,j,N(ng)))/     &
      &                       (z_w(i,j,N(ng))-z_r(i,j,N(ng)))+           &
 #    ifdef TL_IOMS
@@ -518,13 +525,13 @@
             svstr(i,j)=-0.5_r8*(wrk(i,j-1)+wrk(i,j))*                   &
      &                 v(i,j,N(ng),nrhs)*cff2
 #    ifdef TL_IOMS
-            svstr(i,j)=-0.5_r8*                                         &
-     &                 ((tl_wrk(i,j-1)+tl_wrk(i,j))*                    &
-     &                  v(i,j,N(ng),nrhs)*cff2+                         &
-     &                  (wrk(i,j-1)+wrk(i,j))*                          &
-     &                  (tl_v(i,j,N(ng),nrhs)*cff2+                     &
-     &                   v(i,j,N(ng),nrhs)*tl_cff2))+                   &
-     &                 2.0_r8*svstr(i,j)
+            tl_svstr(i,j)=-0.5_r8*                                      &
+     &                    ((tl_wrk(i,j-1)+tl_wrk(i,j))*                 &
+     &                     v(i,j,N(ng),nrhs)*cff2+                      &
+     &                     (wrk(i,j-1)+wrk(i,j))*                       &
+     &                     (tl_v(i,j,N(ng),nrhs)*cff2+                  &
+     &                      v(i,j,N(ng),nrhs)*tl_cff2))+                &
+     &                    2.0_r8*svstr(i,j)
 #    else
             tl_svstr(i,j)=-0.5_r8*                                      &
      &                    ((tl_wrk(i,j-1)+tl_wrk(i,j))*                 &
@@ -558,16 +565,17 @@
             ELSE
               tl_cff2=0.0_r8
             END IF
-            sustr(i,j)=-rdrg2(ng)*u(i,j,N(ng),nrhs)*cff2
+            sustr(i,j)=-0.5_r8*(rdrag2(i-1,j)+rdrag2(i,j))*             &
+     &                 u(i,j,N(ng),nrhs)*cff2
 #    ifdef TL_IOMS
-            sustr(i,j)=-rdrg2(ng)*                                      &
-     &                 (tl_u(i,j,N(ng),nrhs)*cff2+                      &
-     &                  u(i,j,N(ng),nrhs)*tl_cff2)+                     &
-     &                 sustr(i,j)
+            tl_sustr(i,j)=-0.5_r8*(rdrag2(i-1,j)+rdrag2(i,j))*          &
+     &                    (tl_u(i,j,N(ng),nrhs)*cff2+                   &
+     &                     u(i,j,N(ng),nrhs)*tl_cff2)+                  &
+     &                    sustr(i,j)
 #    else
-            tl_sustr(i,j)=-rdrg2(ng)*                                   &
-     &                     (tl_u(i,j,N(ng),nrhs)*cff2+                  &
-     &                      u(i,j,N(ng),nrhs)*tl_cff2)
+            tl_sustr(i,j)=-0.5_r8*(rdrag2(i-1,j)+rdrag2(i,j))*          &
+     &                    (tl_u(i,j,N(ng),nrhs)*cff2+                   &
+     &                     u(i,j,N(ng),nrhs)*tl_cff2)
 #    endif
           END IF
         END DO
@@ -590,14 +598,15 @@
             ELSE
               tl_cff2=0.0_r8
             END IF
-            svstr(i,j)=-rdrg2(ng)*v(i,j,N(ng),nrhs)*cff2
+            svstr(i,j)=-0.5_r8*(rdrag2(i,j-1)+rdrag2(i,j))*             &
+     &                 v(i,j,N(ng),nrhs)*cff2
 #    ifdef TL_IOMS
-            svstr(i,j)=-rdrg2(ng)*                                      &
-     &                 (tl_v(i,j,N(ng),nrhs)*cff2+                      &
-     &                  v(i,j,N(ng),nrhs)*tl_cff2)+                     &
-     &                 svstr(i,j)
+            tl_svstr(i,j)=-0.5_r8*(rdrag2(i,j-1)+rdrag2(i,j))*          &
+     &                    (tl_v(i,j,N(ng),nrhs)*cff2+                   &
+     &                     v(i,j,N(ng),nrhs)*tl_cff2)+                  &
+     &                    svstr(i,j)
 #    else
-            tl_svstr(i,j)=-rdrg2(ng)*                                   &
+            tl_svstr(i,j)=-0.5_r8*(rdrag2(i,j-1)+rdrag2(i,j))*          &
      &                    (tl_v(i,j,N(ng),nrhs)*cff2+                   &
      &                     v(i,j,N(ng),nrhs)*tl_cff2)
 #    endif
@@ -611,26 +620,20 @@
       DO j=Jstr,Jend
         DO i=IstrU,Iend
           IF (zice(i,j)*zice(i-1,j).ne.0.0_r8) THEN
-!>          sustr(i,j)=-rdrg(ng)*u(i,j,N(ng),nrhs)
-!>
-#    ifdef TL_IOMS
-            sustr(i,j)=-rdrg(ng)*tl_u(i,j,N(ng),nrhs)
-#    else
-            tl_sustr(i,j)=-rdrg(ng)*tl_u(i,j,N(ng),nrhs)
-#    endif
+            sustr(i,j)=-0.5_r8*(rdrag(i-1,j)+rdrag(i,j))*               &
+     &                 u(i,j,N(ng),nrhs)
+            tl_sustr(i,j)=-0.5_r8*(rdrag(i-1,j)+rdrag(i,j))*            &
+     &                    tl_u(i,j,N(ng),nrhs)
           END IF
         END DO
       END DO
       DO j=JstrV,Jend
         DO i=Istr,Iend
           IF (zice(i,j)*zice(i,j-1).ne.0.0_r8) THEN
-!>          svstr(i,j)=-rdrg(ng)*v(i,j,N(ng),nrhs)
-!>
-#    ifdef TL_IOMS
-            svstr(i,j)=-rdrg(ng)*tl_v(i,j,N(ng),nrhs)
-#    else
-            tl_svstr(i,j)=-rdrg(ng)*tl_v(i,j,N(ng),nrhs)
-#    endif
+            svstr(i,j)=-0.5_r8*(rdrag(i,j-1)+rdrag(i,j))*               &
+     &                 v(i,j,N(ng),nrhs)
+            tl_svstr(i,j)=-0.5_r8*(rdrag(i,j-1)+rdrag(i,j))*            &
+     &                    tl_v(i,j,N(ng),nrhs)
           END IF
         END DO
       END DO
@@ -638,26 +641,16 @@
       DO j=Jstr,Jend
         DO i=IstrU,Iend
           IF (zice(i,j)*zice(i-1,j).ne.0.0_r8) THEN
-!>          sustr(i,j)=0.0_r8
-!>
-#    ifdef TL_IOMS
             sustr(i,j)=0.0_r8
-#    else
             tl_sustr(i,j)=0.0_r8
-#    endif
           END IF
         END DO
       END DO
       DO j=JstrV,Jend
         DO i=Istr,Iend
           IF (zice(i,j)*zice(i,j-1).ne.0.0_r8) THEN
-!>          svstr(i,j)=0.0_r8
-!>
-#    ifdef TL_IOMS
             svstr(i,j)=0.0_r8
-#    else
             tl_svstr(i,j)=0.0_r8
-#    endif
           END IF
         END DO
       END DO
@@ -666,30 +659,32 @@
 !  Apply periodic or gradient boundary conditions for output
 !  purposes only.
 !
-!>    CALL bc_u2d_tile (ng, tile,                                       &
-!>   &                  LBi, UBi, LBj, UBj,                             &
-!>   &                  sustr)
-!>
       CALL bc_u2d_tile (ng, tile,                                       &
      &                  LBi, UBi, LBj, UBj,                             &
      &                  sustr)
-!>    CALL bc_v2d_tile (ng, tile,                                       &
-!>   &                  LBi, UBi, LBj, UBj,                             &
-!>   &                  svstr)
-!>
+      CALL bc_u2d_tile (ng, tile,                                       &
+     &                  LBi, UBi, LBj, UBj,                             &
+     &                  tl_sustr)
       CALL bc_v2d_tile (ng, tile,                                       &
      &                  LBi, UBi, LBj, UBj,                             &
      &                  svstr)
+      CALL bc_v2d_tile (ng, tile,                                       &
+     &                  LBi, UBi, LBj, UBj,                             &
+     &                  tl_svstr)
+
 #   ifdef DISTRIBUTE
 !>    CALL mp_exchange2d (ng, tile, iNLM, 2,                            &
 !>   &                    LBi, UBi, LBj, UBj,                           &
-!>   &                    NghostPoints, EWperiodic, NSperiodic,         &
+!>   &                    NghostPoints,                                 &
+!>   &                    EWperiodic(ng), NSperiodic(ng),               &
 !>   &                    sustr, svstr)
 !>
-      CALL mp_exchange2d (ng, tile, iRPM, 2,                            &
+      CALL mp_exchange2d (ng, tile, iRPM, 4,                            &
      &                    LBi, UBi, LBj, UBj,                           &
-     &                    NghostPoints, EWperiodic, NSperiodic,         &
-     &                    sustr, svstr)
+     &                    NghostPoints,                                 &
+     &                    EWperiodic(ng), NSperiodic(ng),               &
+     &                    sustr, svstr,                                 &
+     &                    tl_sustr, tl_svstr)
 #   endif
 #  endif
 #  ifndef BBL_MODEL_NOT_YET
@@ -704,7 +699,7 @@
 !
       DO j=JstrV-1,Jend
         DO i=IstrU-1,Iend
-          cff1=1.0_r8/LOG((z_r(i,j,1)-z_w(i,j,0))/Zob(ng))
+          cff1=1.0_r8/LOG((z_r(i,j,1)-z_w(i,j,0))/ZoBot(i,j))
           tl_cff1=-cff1*cff1*(tl_z_r(i,j,1)-tl_z_w(i,j,0))/             &
      &                       (z_r(i,j,1)-z_w(i,j,0))+                   &
 #    ifdef TL_IOMS
@@ -819,14 +814,15 @@
           ELSE
             tl_cff2=0.0_r8
           END IF
-          bustr(i,j)=rdrg2(ng)*u(i,j,1,nrhs)*cff2
+          bustr(i,j)=0.5_r8*(rdrag2(i-1,j)+rdrag2(i,j))*                &
+     &               u(i,j,1,nrhs)*cff2
 #    ifdef TL_IOMS
-          tl_bustr(i,j)=rdrg2(ng)*                                      &
+          tl_bustr(i,j)=0.5_r8*(rdrag2(i-1,j)+rdrag2(i,j))*             &
      &                  (tl_u(i,j,1,nrhs)*cff2+                         &
      &                   u(i,j,1,nrhs)*tl_cff2)-                        &
      &                  bustr(i,j)
 #    else
-          tl_bustr(i,j)=rdrg2(ng)*                                      &
+          tl_bustr(i,j)=0.5_r8*(rdrag2(i-1,j)+rdrag2(i,j))*             &
      &                  (tl_u(i,j,1,nrhs)*cff2+                         &
      &                   u(i,j,1,nrhs)*tl_cff2)
 #    endif
@@ -848,14 +844,15 @@
           ELSE
             tl_cff2=0.0_r8
           END IF
-          bvstr(i,j)=rdrg2(ng)*v(i,j,1,nrhs)*cff2
+          bvstr(i,j)=0.5_r8*(rdrag2(i,j-1)+rdrag2(i,j))*                &
+     &               v(i,j,1,nrhs)*cff2
 #    ifdef TL_IOMS
-          tl_bvstr(i,j)=rdrg2(ng)*                                      &
+          tl_bvstr(i,j)=0.5_r8*(rdrag2(i,j-1)+rdrag2(i,j))*             &
      &                  (tl_v(i,j,1,nrhs)*cff2+                         &
      &                   v(i,j,1,nrhs)*tl_cff2)-                        &
      &                  bvstr(i,j)
 #    else
-          tl_bvstr(i,j)=rdrg2(ng)*                                      &
+          tl_bvstr(i,j)=0.5_r8*(rdrag2(i,j-1)+rdrag2(i,j))*             &
      &                  (tl_v(i,j,1,nrhs)*cff2+                         &
      &                   v(i,j,1,nrhs)*tl_cff2)
 #    endif
@@ -867,62 +864,50 @@
 !
       DO j=Jstr,Jend
         DO i=IstrU,Iend
-!>        bustr(i,j)=rdrg(ng)*u(i,j,1,nrhs)
-!>
-          tl_bustr(i,j)=rdrg(ng)*tl_u(i,j,1,nrhs)
+          bustr(i,j)=0.5_r8*(rdrag(i-1,j)+rdrag(i,j))*                  &
+     &               u(i,j,1,nrhs)
+          tl_bustr(i,j)=0.5_r8*(rdrag(i-1,j)+rdrag(i,j))*               &
+     &                  tl_u(i,j,1,nrhs)
         END DO
       END DO
       DO j=JstrV,Jend
         DO i=Istr,Iend
-!>        bvstr(i,j)=rdrg(ng)*v(i,j,1,nrhs)
-!>
-          tl_bvstr(i,j)=rdrg(ng)*tl_v(i,j,1,nrhs)
+          bvstr(i,j)=0.5_r8*(rdrag(i,j-1)+rdrag(i,j))*                  &
+     &               v(i,j,1,nrhs)
+          tl_bvstr(i,j)=0.5_r8*(rdrag(i,j-1)+rdrag(i,j))*               &
+     &                  tl_v(i,j,1,nrhs)
         END DO
       END DO
 #   endif
 !
 !  Apply boundary conditions.
 !
-!>    CALL bc_u2d_tile (ng, tile,                                       &
-!>   &                  LBi, UBi, LBj, UBj,                             &
-!>   &                  bustr)
-!>
       CALL bc_u2d_tile (ng, tile,                                       &
      &                  LBi, UBi, LBj, UBj,                             &
      &                  bustr)
-#   ifdef TL_IOMS
       CALL bc_u2d_tile (ng, tile,                                       &
      &                  LBi, UBi, LBj, UBj,                             &
      &                  tl_bustr)
-#   endif
-!>    CALL bc_v2d_tile (ng, tile,                                       &
-!>   &                  LBi, UBi, LBj, UBj,                             &
-!>   &                  bvstr)
-!>
       CALL bc_v2d_tile (ng, tile,                                       &
      &                  LBi, UBi, LBj, UBj,                             &
      &                  bvstr)
-#   ifdef TL_IOMS
       CALL bc_v2d_tile (ng, tile,                                       &
      &                  LBi, UBi, LBj, UBj,                             &
      &                  tl_bvstr)
-#   endif
+
 #   ifdef DISTRIBUTE
 !>    CALL mp_exchange2d (ng, tile, iNLM, 2,                            &
 !>   &                    LBi, UBi, LBj, UBj,                           &
-!>   &                    NghostPoints, EWperiodic, NSperiodic,         &
+!>   &                    NghostPoints,                                 &
+!>   &                    EWperiodic(ng), NSperiodic(ng),               &
 !>   &                    bustr, bvstr)
 !>
-      CALL mp_exchange2d (ng, tile, iRPM, 2,                            &
+      CALL mp_exchange2d (ng, tile, iRPM, 4,                            &
      &                    LBi, UBi, LBj, UBj,                           &
-     &                    NghostPoints, EWperiodic, NSperiodic,         &
-     &                    bustr, bvstr)
-#    ifdef TL_IOMS
-      CALL mp_exchange2d (ng, tile, iRPM, 2,                            &
-     &                    LBi, UBi, LBj, UBj,                           &
-     &                    NghostPoints, EWperiodic, NSperiodic,         &
+     &                    NghostPoints,                                 &
+     &                    EWperiodic(ng), NSperiodic(ng),               &
+     &                    bustr, bvstr,                                 &
      &                    tl_bustr, tl_bvstr)
-#    endif
 #   endif
 #  endif
 
@@ -956,19 +941,23 @@
      &                      LBi, UBi, LBj, UBj,                         &
      &                      IminS, ImaxS, JminS, JmaxS,                 &
      &                      krhs(ng), kstp(ng), knew(ng),               &
+#  if defined UV_LDRAG
+     &                      GRID(ng) % rdrag,                           &
+#  elif defined UV_QDRAG
+     &                      GRID(ng) % rdrag2,                          &
+#  endif
      &                      OCEAN(ng) % ubar,                           &
      &                      OCEAN(ng) % vbar,                           &
      &                      OCEAN(ng) % tl_ubar,                        &
      &                      OCEAN(ng) % tl_vbar,                        &
-#  ifdef TL_IOMS
-     &                      FORCES(ng) % tl_bustr,                      &
-     &                      FORCES(ng) % tl_bvstr,                      &
-#  endif
      &                      FORCES(ng) % bustr,                         &
-     &                      FORCES(ng) % bvstr)
+     &                      FORCES(ng) % bvstr,                         &
+     &                      FORCES(ng) % tl_bustr,                      &
+     &                      FORCES(ng) % tl_bvstr)
 #  ifdef PROFILE
       CALL wclock_off (ng, iRPM, 6)
 #  endif
+
       RETURN
       END SUBROUTINE rp_set_vbc
 !
@@ -977,21 +966,24 @@
      &                            LBi, UBi, LBj, UBj,                   &
      &                            IminS, ImaxS, JminS, JmaxS,           &
      &                            krhs, kstp, knew,                     &
+#  if defined UV_LDRAG
+     &                            rdrag,                                &
+#  elif defined UV_QDRAG
+     &                            rdrag2,                               &
+#  endif
      &                            ubar, vbar,                           &
      &                            tl_ubar, tl_vbar,                     &
-#  ifdef TL_IOMS
-     &                            tl_bustr, tl_bvstr,                   &
-#  endif
-     &                            bustr, bvstr)
+     &                            bustr, bvstr,                         &
+     &                            tl_bustr, tl_bvstr)
 !***********************************************************************
 !
       USE mod_param
       USE mod_scalars
 !
       USE bc_2d_mod
-# ifdef DISTRIBUTE
+#  ifdef DISTRIBUTE
       USE mp_exchange_mod, ONLY : mp_exchange2d
-# endif
+#  endif
 !
 !  Imported variable declarations.
 !
@@ -1001,43 +993,37 @@
       integer, intent(in) :: krhs, kstp, knew
 !
 #  ifdef ASSUMED_SHAPE
+#   if defined UV_LDRAG
+      real(r8), intent(in) :: rdrag(LBi:,LBj:)
+#   elif defined UV_QDRAG
+      real(r8), intent(in) :: rdrag2(LBi:,LBj:)
+#   endif
       real(r8), intent(in) :: ubar(LBi:,LBj:,:)
       real(r8), intent(in) :: vbar(LBi:,LBj:,:)
       real(r8), intent(in) :: tl_ubar(LBi:,LBj:,:)
       real(r8), intent(in) :: tl_vbar(LBi:,LBj:,:)
       real(r8), intent(inout) :: bustr(LBi:,LBj:)
       real(r8), intent(inout) :: bvstr(LBi:,LBj:)
-#   ifdef TL_IOMS
       real(r8), intent(inout) :: tl_bustr(LBi:,LBj:)
       real(r8), intent(inout) :: tl_bvstr(LBi:,LBj:)
-#   endif
 #  else
+#   if defined UV_LDRAG
+      real(r8), intent(in) :: rdrag(LBi:UBi,LBj:UBj)
+#   elif defined UV_QDRAG
+      real(r8), intent(in) :: rdrag2(LBi:UBi,LBj:UBj)
+#   endif
       real(r8), intent(in) :: ubar(LBi:UBi,LBj:UBj,3)
       real(r8), intent(in) :: vbar(LBi:UBi,LBj:UBj,3)
       real(r8), intent(in) :: tl_ubar(LBi:UBi,LBj:UBj,3)
       real(r8), intent(in) :: tl_vbar(LBi:UBi,LBj:UBj,3)
       real(r8), intent(inout) :: bustr(LBi:UBi,LBj:UBj)
       real(r8), intent(inout) :: bvstr(LBi:UBi,LBj:UBj)
-#   ifdef TL_IOMS
       real(r8), intent(inout) :: tl_bustr(LBi:UBi,LBj:UBj)
       real(r8), intent(inout) :: tl_bvstr(LBi:UBi,LBj:UBj)
-#   endif
 #  endif
 !
 !  Local variable declarations.
 !
-# ifdef DISTRIBUTE
-#  ifdef EW_PERIODIC
-      logical :: EWperiodic=.TRUE.
-#  else
-      logical :: EWperiodic=.FALSE.
-#  endif
-#  ifdef NS_PERIODIC
-      logical :: NSperiodic=.TRUE.
-#  else
-      logical :: NSperiodic=.FALSE.
-#  endif
-# endif
       integer :: i, j
 
       real(r8) :: cff1, cff2
@@ -1055,16 +1041,18 @@
 !
       DO j=Jstr,Jend
         DO i=IstrU,Iend
-!>        bustr(i,j)=rdrg(ng)*ubar(i,j,krhs)
-!>
-          tl_bustr(i,j)=rdrg(ng)*tl_ubar(i,j,krhs)
+          bustr(i,j)=0.5_r8*(rdrag(i-1,j)+rdrag(i,j))*                  &
+     &               ubar(i,j,krhs)
+          tl_bustr(i,j)=0.5_r8*(rdrag(i-1,j)+rdrag(i,j))*               &
+     &                  tl_ubar(i,j,krhs)
         END DO
       END DO
       DO j=JstrV,Jend
         DO i=Istr,Iend
-!>        bvstr(i,j)=rdrg(ng)*vbar(i,j,krhs)
-!>
-          tl_bvstr(i,j)=rdrg(ng)*tl_vbar(i,j,krhs)
+          bvstr(i,j)=0.5_r8*(rdrag(i,j-1)+rdrag(i,j))*                  &
+     &               vbar(i,j,krhs)
+          tl_bvstr(i,j)=0.5_r8*(rdrag(i,j-1)+rdrag(i,j))*               &
+     &                  tl_vbar(i,j,krhs)
         END DO
       END DO
 #  elif defined UV_QDRAG
@@ -1087,14 +1075,15 @@
           ELSE
             tl_cff2=0.0_r8
           END IF
-          bustr(i,j)=rdrg2(ng)*ubar(i,j,krhs)*cff2
+          bustr(i,j)=0.5_r8*(rdrag2(i-1,j)+rdrag2(i,j))*                &
+     &               ubar(i,j,krhs)*cff2
 #   ifdef TL_IOMS
-          tl_bustr(i,j)=rdrg2(ng)*                                      &
+          tl_bustr(i,j)=0.5_r8*(rdrag2(i-1,j)+rdrag2(i,j))*             &
      &                  (tl_ubar(i,j,krhs)*cff2+                        &
      &                   ubar(i,j,krhs)*tl_cff2)-                       &
      &                  bustr(i,j)
 #   else
-          tl_bustr(i,j)=rdrg2(ng)*                                      &
+          tl_bustr(i,j)=0.5_r8*(rdrag2(i-1,j)+rdrag2(i,j))*             &
      &                  (tl_ubar(i,j,krhs)*cff2+                        &
      &                   ubar(i,j,krhs)*tl_cff2)
 #   endif
@@ -1116,14 +1105,15 @@
           ELSE
             tl_cff2=0.0_r8
           END IF
-          bvstr(i,j)=rdrg2(ng)*vbar(i,j,krhs)*cff2
+          bvstr(i,j)=0.5_r8*(rdrag2(i,j-1)+rdrag2(i,j))*                &
+     &               vbar(i,j,krhs)*cff2
 #   ifdef TL_IOMS
-          tl_bvstr(i,j)=rdrg2(ng)*                                      &
+          tl_bvstr(i,j)=0.5_r8*(rdrag2(i,j-1)+rdrag2(i,j))*             &
      &                  (tl_vbar(i,j,krhs)*cff2+                        &
      &                   vbar(i,j,krhs)*tl_cff2)-                       &
      &                  bvstr(i,j)
 #   else
-          tl_bvstr(i,j)=rdrg2(ng)*                                      &
+          tl_bvstr(i,j)=0.5_r8*(rdrag2(i,j-1)+rdrag2(i,j))*             &
      &                  (tl_vbar(i,j,krhs)*cff2+                        &
      &                   vbar(i,j,krhs)*tl_cff2)
 #   endif
@@ -1133,47 +1123,34 @@
 !
 !  Apply boundary conditions.
 !
-!>    CALL bc_u2d_tile (ng, tile,                                       &
-!>   &                  LBi, UBi, LBj, UBj,                             &
-!>   &                  bustr)
-!>
       CALL bc_u2d_tile (ng, tile,                                       &
      &                  LBi, UBi, LBj, UBj,                             &
      &                  bustr)
-#  ifdef TL_IOMS
       CALL bc_u2d_tile (ng, tile,                                       &
      &                  LBi, UBi, LBj, UBj,                             &
      &                  tl_bustr)
-#  endif
-!>    CALL bc_v2d_tile (ng, tile,                                       &
-!>   &                  LBi, UBi, LBj, UBj,                             &
-!>   &                  bvstr)
-!>
       CALL bc_v2d_tile (ng, tile,                                       &
      &                  LBi, UBi, LBj, UBj,                             &
      &                  bvstr)
-#  ifdef TL_IOMS
       CALL bc_v2d_tile (ng, tile,                                       &
      &                  LBi, UBi, LBj, UBj,                             &
      &                  tl_bvstr)
-#  endif
+
 #  ifdef DISTRIBUTE
 !>    CALL mp_exchange2d (ng, tile, iNLM, 2,                            &
 !>   &                    LBi, UBi, LBj, UBj,                           &
-!>   &                    NghostPoints, EWperiodic, NSperiodic,         &
+!>   &                    NghostPoints,                                 &
+!>   &                    EWperiodic(ng), NSperiodic(ng),               &
 !>   &                    bustr, bvstr)
 !>
-      CALL mp_exchange2d (ng, tile, iRPM, 2,                            &
+      CALL mp_exchange2d (ng, tile, iRPM, 4,                            &
      &                    LBi, UBi, LBj, UBj,                           &
-     &                    NghostPoints, EWperiodic, NSperiodic,         &
-     &                    bustr, bvstr)
-#   ifdef TL_IOMS
-      CALL mp_exchange2d (ng, tile, iRPM, 2,                            &
-     &                    LBi, UBi, LBj, UBj,                           &
-     &                    NghostPoints, EWperiodic, NSperiodic,         &
+     &                    NghostPoints,                                 &
+     &                    EWperiodic(ng), NSperiodic(ng),               &
+     &                    bustr, bvstr,                                 &
      &                    tl_bustr, tl_bvstr)
-#   endif
 #  endif
+
       RETURN
       END SUBROUTINE rp_set_vbc_tile
 # endif

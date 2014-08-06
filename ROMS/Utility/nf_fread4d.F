@@ -3,7 +3,7 @@
 !
 !svn $Id: nf_fread4d.F 733 2008-09-07 01:56:45Z jcwarner $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2010 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2014 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -559,11 +559,8 @@
 
       real(r8), dimension(3) :: AttValue
 
-# if defined REFINED_GRID || defined COMPOSED_GRID
-      real(r8), allocatable :: wrk(:)
-# else
       real(r8), dimension(2+(Lm(ng)+2)*(Mm(ng)+2)*(UBk-LBk+1)) :: wrk
-# endif
+
       character (len=12), dimension(3) :: AttName
 !
 !-----------------------------------------------------------------------
@@ -670,7 +667,7 @@
       IF (model.eq.iADM) THEN
         Nghost=0
       ELSE
-        Nghost=GHOST_POINTS
+        Nghost=NghostPoints
       END IF
 #  endif
 # endif
@@ -703,11 +700,6 @@
 !  Initialize local array to avoid denormalized numbers. This
 !  facilitates processing and debugging.
 !
-#if defined REFINED_GRID || defined COMPOSED_GRID
-      IF (.not.allocated(wrk)) THEN
-        allocate (wrk(Npts+2))
-      END IF
-#endif
       wrk=0.0_r8
 !
 !-----------------------------------------------------------------------
@@ -809,11 +801,6 @@
 
       nf_fread4d=status
 
-#if defined REFINED_GRID || defined COMPOSED_GRID
-      IF (allocated(wrk)) THEN
-        deallocate (wrk)
-      END IF
-#endif
       RETURN
       END FUNCTION nf_fread4d
 #endif

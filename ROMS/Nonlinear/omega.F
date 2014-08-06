@@ -1,17 +1,10 @@
 #include "cppdefs.h"
       MODULE omega_mod
 #ifdef SOLVE3D
-# if defined COMPOSED_GRID || defined REFINED_GRID
-#  define I_RANGE IstrTU+1,MIN(IendT, Lm(ng)+2)
-#  define J_RANGE JstrTV+1,MIN(JendT, Mm(ng)+2)
-# else
-#  define I_RANGE Istr,Iend
-#  define J_RANGE Jstr,Jend
-# endif
 !
 !svn $Id: omega.F 732 2008-09-07 01:55:51Z jcwarner $
 !=======================================================================
-!  Copyright (c) 2002-2010 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2014 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                           Hernan G. Arango   !
 !========================================== Alexander F. Shchepetkin ===
@@ -25,10 +18,10 @@
 !=======================================================================
 !
       implicit none
-
+!
       PRIVATE
       PUBLIC  :: omega, scale_omega
-
+!
       CONTAINS
 !
 !***********************************************************************
@@ -38,13 +31,8 @@
       USE mod_param
       USE mod_grid
       USE mod_ocean
-# ifdef Q_PSOURCE
-      USE mod_sources
-# endif
 # if defined SEDIMENT && defined SED_MORPH
       USE mod_sedbed
-# endif
-# if defined Q_PSOURCE || (defined SEDIMENT && defined SED_MORPH)
       USE mod_stepping
 # endif
 !
@@ -64,15 +52,6 @@
      &                 IminS, ImaxS, JminS, JmaxS,                      &
 # if defined SEDIMENT && defined SED_MORPH
      &                 nstp(ng), nnew(ng),                              &
-# endif
-# ifdef Q_PSOURCE
-     &                 Msrc(ng), Nsrc(ng),                              &
-     &                 SOURCES(ng) % Isrc,                              &
-     &                 SOURCES(ng) % Jsrc,                              &
-     &                 SOURCES(ng) % Dsrc,                              &
-     &                 SOURCES(ng) % Qsrc,                              &
-# endif
-# if defined SEDIMENT && defined SED_MORPH
      &                 GRID(ng) % omn,                                  &
      &                 SEDBED(ng) % bed_thick,                          &
 # endif
@@ -86,6 +65,7 @@
 # ifdef PROFILE
       CALL wclock_off (ng, iNLM, 13)
 # endif
+
       RETURN
       END SUBROUTINE omega
 !
@@ -95,12 +75,6 @@
      &                       IminS, ImaxS, JminS, JmaxS,                &
 # if defined SEDIMENT && defined SED_MORPH
      &                       nstp, nnew,                                &
-# endif
-# ifdef Q_PSOURCE
-     &                       Msrc, Nsrc,                                &
-     &                       Isrc, Jsrc, Dsrc, Qsrc,                    &
-# endif
-# if defined SEDIMENT && defined SED_MORPH
      &                       omn, bed_thick,                            &
 # endif
      &                       Huon, Hvom,                                &
@@ -113,6 +87,7 @@
 !
       USE mod_param
       USE mod_scalars
+      USE mod_sources
 !
       USE bc_3d_mod, ONLY : bc_w3d_tile
 # ifdef DISTRIBUTE
@@ -127,18 +102,8 @@
 # if defined SEDIMENT && defined SED_MORPH
       integer, intent(in) :: nstp, nnew
 # endif
-# ifdef Q_PSOURCE
-      integer, intent(in) :: Msrc, Nsrc
-# endif
 !
 # ifdef ASSUMED_SHAPE
-#  ifdef Q_PSOURCE
-      integer, intent(in) :: Isrc(:)
-      integer, intent(in) :: Jsrc(:)
-
-      real(r8), intent(in) :: Dsrc(:)
-      real(r8), intent(in) :: Qsrc(:,:)
-#  endif
 #  if defined SEDIMENT && defined SED_MORPH
       real(r8), intent(in) :: omn(LBi:,LBj:)
       real(r8), intent(in):: bed_thick(LBi:,LBj:,:)
@@ -153,13 +118,6 @@
 
 # else
 
-#  ifdef Q_PSOURCE
-      integer, intent(in) :: Isrc(Msrc)
-      integer, intent(in) :: Jsrc(Msrc)
-
-      real(r8), intent(in) :: Dsrc(Msrc)
-      real(r8), intent(in) :: Qsrc(Msrc,N(ng))
-#  endif
 #  if defined SEDIMENT && defined SED_MORPH
       real(r8), intent(in) :: omn(LBi:UBi,LBj:UBj)
       real(r8), intent(in):: bed_thick(LBi:UBi,LBj:UBj,2)
@@ -175,22 +133,7 @@
 !
 !  Local variable declarations.
 !
-# ifdef DISTRIBUTE
-#  ifdef EW_PERIODIC
-      logical :: EWperiodic=.TRUE.
-#  else
-      logical :: EWperiodic=.FALSE.
-#  endif
-#  ifdef NS_PERIODIC
-      logical :: NSperiodic=.TRUE.
-#  else
-      logical :: NSperiodic=.FALSE.
-#  endif
-# endif
-      integer :: i, j, k
-# ifdef Q_PSOURCE
-      integer :: ii, jj, is
-# endif
+      integer :: i, ii, is, j, jj, k
 # if defined SEDIMENT && defined SED_MORPH
       real(r8) :: cff1
 # endif
@@ -210,8 +153,8 @@
 # if defined SEDIMENT && defined SED_MORPH
       cff1=1.0_r8/dt(ng)
 # endif
-      DO j=J_RANGE
-        DO i=I_RANGE
+      DO j=Jstr,Jend
+        DO i=Istr,Iend
 # if defined SEDIMENT && defined SED_MORPH
           W(i,j,0)=-cff1*(bed_thick(i,j,nstp)-                          &
      &                    bed_thick(i,j,nnew))*omn(i,j)
@@ -220,30 +163,30 @@
 # endif
         END DO
         DO k=1,N(ng)
-          DO i=I_RANGE
+          DO i=Istr,Iend
             W(i,j,k)=W(i,j,k-1)-                                        &
      &               (Huon(i+1,j,k)-Huon(i,j,k)+                        &
      &                Hvom(i,j+1,k)-Hvom(i,j,k))
           END DO
         END DO
-# ifdef Q_PSOURCE
 !
-!  Apply mass point sources - Volume influx.
+!  Apply mass point sources (volume vertical influx), if any.
 !
-        DO is=1,Nsrc
-          ii=Isrc(is)
-          jj=Jsrc(is)
-          IF (((IstrR.le.ii).and.(ii.le.IendR)).and.                    &
-     &        ((JstrR.le.jj).and.(jj.le.JendR)).and.                    &
-     &        (j.eq.jj)) THEN
-            DO k=1,N(ng)
-              W(ii,jj,k)=W(ii,jj,k)+Qsrc(is,k)
-            END DO
-          END IF
-        END DO
-# endif
+        IF (LwSrc(ng)) THEN
+          DO is=1,Nsrc(ng)
+            ii=SOURCES(ng)%Isrc(is)
+            jj=SOURCES(ng)%Jsrc(is)
+            IF (((IstrR.le.ii).and.(ii.le.IendR)).and.                  &
+     &          ((JstrR.le.jj).and.(jj.le.JendR)).and.                  &
+     &          (j.eq.jj)) THEN
+              DO k=1,N(ng)
+                W(ii,jj,k)=W(ii,jj,k)+SOURCES(ng)%Qsrc(is,k)
+              END DO
+            END IF
+          END DO
+        END IF
 !
-        DO i=I_RANGE
+        DO i=Istr,Iend
           wrk(i)=W(i,j,N(ng))/(z_w(i,j,N(ng))-z_w(i,j,0))
         END DO
 !
@@ -255,7 +198,7 @@
 !  the free-surface (k=N).
 !
         DO k=N(ng)-1,1,-1
-          DO i=I_RANGE
+          DO i=Istr,Iend
             W(i,j,k)=W(i,j,k)-                                          &
 # if defined WEC_VF
      &               W_stokes(i,j,k)-                                   &
@@ -263,7 +206,7 @@
      &               wrk(i)*(z_w(i,j,k)-z_w(i,j,0))
           END DO
         END DO
-        DO i=I_RANGE
+        DO i=Istr,Iend
           W(i,j,N(ng))=0.0_r8
         END DO
       END DO
@@ -276,11 +219,10 @@
 # ifdef DISTRIBUTE
       CALL mp_exchange3d (ng, tile, iNLM, 1,                            &
      &                    LBi, UBi, LBj, UBj, 0, N(ng),                 &
-     &                    NghostPoints, EWperiodic, NSperiodic,         &
+     &                    NghostPoints,                                 &
+     &                    EWperiodic(ng), NSperiodic(ng),               &
      &                    W)
 # endif
-# undef I_RANGE
-# undef J_RANGE
 
       RETURN
       END SUBROUTINE omega_tile
@@ -291,8 +233,12 @@
 !***********************************************************************
 !
       USE mod_param
-# if defined EW_PERIODIC || defined NS_PERIODIC
+      USE mod_ncparam
+      USE mod_scalars
+!
       USE exchange_3d_mod, ONLY : exchange_w3d_tile
+# ifdef DISTRIBUTE
+      USE mp_exchange_mod, ONLY : mp_exchange3d
 # endif
 !
 !  Imported variable declarations.
@@ -323,21 +269,29 @@
 !-----------------------------------------------------------------------
 !
       DO k=LBk,UBk
-        DO j=JstrT,JendT
-          DO i=IstrT,IendT
+        DO j=JstrR,JendR
+          DO i=IstrR,IendR
             Wscl(i,j,k)=W(i,j,k)*pm(i,j)*pn(i,j)
           END DO
         END DO
       END DO
 !
-# if defined EW_PERIODIC || defined NS_PERIODIC
-!
 !  Exchange boundary data.
 !
-      CALL exchange_w3d_tile (ng, tile,                                 &
-     &                        LBi, UBi, LBj, UBj, LBk, UBk,             &
-     &                        Wscl)
+      IF (EWperiodic(ng).or.NSperiodic(ng)) THEN
+        CALL exchange_w3d_tile (ng, tile,                               &
+     &                          LBi, UBi, LBj, UBj, LBk, UBk,           &
+     &                          Wscl)
+      END IF
+
+# ifdef DISTRIBUTE
+      CALL mp_exchange3d (ng, tile, iNLM, 1,                            &
+     &                    LBi, UBi, LBj, UBj, 0, N(ng),                 &
+     &                    NghostPoints,                                 &
+     &                    EWperiodic(ng), NSperiodic(ng),               &
+     &                    Wscl)
 # endif
+
       RETURN
       END SUBROUTINE scale_omega
 #endif

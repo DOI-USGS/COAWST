@@ -1,8 +1,8 @@
       SUBROUTINE ana_biology (ng, tile, model)
 !
-!! svn $Id: ana_biology.h 1368 2011-01-21 00:34:18Z kate $
+!! svn $Id$
 !!======================================================================
-!! Copyright (c) 2002-2011 The ROMS/TOMS Group                         !
+!! Copyright (c) 2002-2014 The ROMS/TOMS Group                         !
 !!   Licensed under a MIT/X style license                              !
 !!   See License_ROMS.txt                                              !
 !=======================================================================
@@ -288,8 +288,8 @@
       cff1=20.0_r8/3.0_r8
       cff2= 2.0_r8/3.0_r8
       DO k=1,N(ng)
-        DO j=JstrR,JendR
-          DO i=IstrR,IendR
+        DO j=JstrT,JendT
+          DO i=IstrT,IendT
             temp=t(i,j,k,1,itemp)
             IF (temp.lt.8.0_r8) THEN
               SiO4=30.0_r8
@@ -311,6 +311,7 @@
             t(i,j,k,1,iLDeN)=0.02_r8
             t(i,j,k,1,iSDeN)=0.04_r8
             t(i,j,k,1,iChlo)=0.02_r8
+            t(i,j,k,1,iOxyg)=0.00_r8
 #ifdef CARBON
             t(i,j,k,1,iTIC_)=2100.0_r8
             t(i,j,k,1,iTAlk)=2350.0_r8
@@ -333,8 +334,8 @@
       cff1=20.0_r8/3.0_r8
       cff2= 2.0_r8/3.0_r8
       DO k=1,N(ng)
-        DO j=JstrR,JendR
-          DO i=IstrR,IendR
+        DO j=JstrT,JendT
+          DO i=IstrT,IendT
             temp=t(i,j,k,1,itemp)
             IF (temp.lt.8.0_r8) THEN
               SiO4=30.0_r8
@@ -376,9 +377,11 @@
 !  Nemuro lower trophic level ecosystem model.
 !-----------------------------------------------------------------------
 !
+      cff1=20.0_r8/3.0_r8
+      cff2= 2.0_r8/3.0_r8
       DO k=1,N(ng)
-        DO j=JstrR,JendR
-          DO i=IstrR,IendR
+        DO j=JstrT,JendT
+          DO i=IstrT,IendT
 #ifdef CGOA_ANABIO
             t(i,j,k,1,iNO3_)=15.0_r8
             t(i,j,k,1,iSphy)=0.1_r8
@@ -439,8 +442,8 @@
 !-----------------------------------------------------------------------
 !
       DO k=1,N(ng)
-        DO j=JstrR,JendR
-          DO i=IstrR,IendR
+        DO j=JstrT,JendT
+          DO i=IstrT,IendT
             t(i,j,k,1,iNO3_)=BioIni(iNO3_,ng)
             t(i,j,k,1,iPhyt)=BioIni(iPhyt,ng)
             t(i,j,k,1,iZoop)=BioIni(iZoop,ng)
@@ -457,8 +460,8 @@
 !-----------------------------------------------------------------------
 !
       DO k=1,N(ng)
-        DO j=JstrR,JendR
-          DO i=IstrR,IendR
+        DO j=JstrT,JendT
+          DO i=IstrT,IendT
             t(i,j,k,1,iNO3_)=BioIni(iNO3_,ng)
             t(i,j,k,1,iPhyt)=BioIni(iPhyt,ng)
             t(i,j,k,1,iZoop)=BioIni(iZoop,ng)
@@ -493,8 +496,8 @@
       cff15=cff5*cff8*cff14                  ! mole N : gram Chl
 
       DO k=N(ng),1,-1
-        DO j=JstrR,JendR
-          DO i=IstrR,IendR
+        DO j=JstrT,JendT
+          DO i=IstrT,IendT
 !
 ! Initialization of surface chlorophyll.
 !

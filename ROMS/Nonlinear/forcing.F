@@ -6,7 +6,7 @@
 !
 !svn $Id: forcing.F 732 2008-09-07 01:55:51Z jcwarner $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2010 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2014 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -164,7 +164,7 @@
 !  Add adjoint impulse forcing to nonlinear linear state.
 !-----------------------------------------------------------------------
 !
-      IF (SOUTH_WEST_CORNER) THEN
+      IF (DOMAIN(ng)%SouthWest_Corner(tile)) THEN
         IF (Master) WRITE (stdout,10) time_code(ng)
  10     FORMAT (3x,'NL_FORCING   - added convolved adjoint impulse,',   &
      &          t62,'t = ', a)

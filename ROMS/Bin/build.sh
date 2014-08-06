@@ -2,7 +2,7 @@
 #
 # svn $Id: build.sh 442 2010-01-27 21:25:57Z arango $
 #:::::::::::::::::::::::::::::::::::::::::::::::::::::::::: John Wilkin :::
-# Copyright (c) 2002-2010 The ROMS/TOMS Group                           :::
+# Copyright (c) 2002-2014 The ROMS/TOMS Group                           :::
 #   Licensed under a MIT/X style license                                :::
 #   See License_ROMS.txt                                                :::
 #::::::::::::::::::::::::::::::::::::::::::::::::::::: Hernan G. Arango :::
@@ -51,7 +51,7 @@ while ( ($#argv) > 0 )
     case "-j"
       shift
       set parallel = 1
-      if (`echo $1 | grep -P '^\d+$'` != "" ) then
+      if (`echo $1 | grep '^[0-9]\+$'` != "" ) then
         set NCPUS = "-j $1"
         shift
       else
@@ -79,18 +79,13 @@ end
 # determine the name of the ".h" header file with the application
 # CPP definitions.
 
-setenv ROMS_APPLICATION     UPWELLING
-
-# Set number of nested/composed/mosaic grids.  Currently, only one grid
-# is supported.
-
-setenv NestedGrids          1
+setenv ROMS_APPLICATION      UPWELLING
 
 # Set a local environmental variable to define the path to the directories
 # where all this project's files are kept.
 
-setenv MY_ROOT_DIR          /home/arango/ocean/toms/repository
-setenv MY_PROJECT_DIR       ${PWD}
+setenv MY_ROOT_DIR           ${HOME}/ocean/repository
+setenv MY_PROJECT_DIR        ${PWD}
 
 # The path to the user's local current ROMS source code.
 #
@@ -102,15 +97,17 @@ setenv MY_PROJECT_DIR       ${PWD}
 # machine. This script is designed to more easily allow for differing paths
 # to the code and inputs on differing machines.
 
-setenv MY_ROMS_SRC          ${MY_ROOT_DIR}/branches/arango
+#setenv MY_ROMS_SRC          ${MY_ROOT_DIR}/branches/arango
+ setenv MY_ROMS_SRC          ${MY_ROOT_DIR}/trunk
 
 # Set path of the directory containing makefile configuration (*.mk) files.
 # The user has the option to specify a customized version of these files
 # in a different directory than the one distributed with the source code,
-# ${MY_ROMS_SCR}/Compilers. If this is the case, the you need to keep
+# ${MY_ROMS_SRC}/Compilers. If this is the case, the you need to keep
 # these configurations files up-to-date.
 
-#setenv COMPILERS            ${MY_ROMS_SRC}/Compilers
+ setenv COMPILERS            ${MY_ROMS_SRC}/Compilers
+#setenv COMPILERS            ${HOME}/Compilers
 
 # Set tunable CPP options.
 #
@@ -118,236 +115,257 @@ setenv MY_ROMS_SRC          ${MY_ROOT_DIR}/branches/arango
 # different variants of the same application without modifying its header
 # file. If this is the case, specify each options here using the -D syntax.
 # Notice also that you need to use shell's quoting syntax to enclose the
-# definition.  Both single or double quotes works. For example, to write
-# time-averaged fields set:
+# definition.  Both single or double quotes work. For example,
 #
 #    setenv MY_CPP_FLAGS "-DAVERAGES"
+#    setenv MY_CPP_FLAGS "${MY_CPP_FLAGS} -DDEBUGGING"
+#
+# can be use to write time-averaged fields. Notice that you can have as
+# many definitions as you want by appending values.
 
 #setenv MY_CPP_FLAGS "-D"
 
 # Other user defined environmental variables. See the ROMS makefile for
 # details on other options the user might want to set here. Be sure to
-# leave the switched meant to be off set to an empty string or commented
+# leave the switches meant to be off set to an empty string or commented
 # out. Any string value (including off) will evaluate to TRUE in
-# conditional if-stamentents.
+# conditional if-statements.
 
- setenv USE_MPI             on
- setenv USE_MPIF90          on
- setenv FORT                pgi
+ setenv USE_MPI             on          # distributed-memory parallelism
+ setenv USE_MPIF90          on          # compile with mpif90 script
+#setenv which_MPI           mpich       # compile with MPICH library
+#setenv which_MPI           mpich2      # compile with MPICH2 library
+ setenv which_MPI           openmpi     # compile with OpenMPI library
 
-#setenv USE_OpenMP          on
+#setenv USE_OpenMP          on          # shared-memory parallelism
 
-#setenv USE_DEBUG           on
- setenv USE_LARGE           on
-#setenv USE_NETCDF4         on
+ setenv FORT                ifort
+#setenv FORT                gfortran
+#setenv FORT                pgi
 
-# There are several MPI libraries out there. The user can select here the
-# appropriate "mpif90" script to compile, provided that the makefile
-# macro definition file (say, Compilers/Linux-pgi.mk) has:
+#setenv USE_DEBUG           on          # use Fortran debugging flags
+ setenv USE_LARGE           on          # activate 64-bit compilation
+#setenv USE_NETCDF4         on          # compile with NetCDF-4 library
+#setenv USE_PARALLEL_IO     on          # Parallel I/O with NetCDF-4/HDF5
+
+#setenv USE_MY_LIBS         on          # use my library paths below
+
+# There are several MPI libraries available. Here, we set the desired
+# "mpif90" script to use during compilation. This only works if the make
+# configuration file (say, Linux-pgi.mk) in the "Compilers" directory
+# has the following definition for FC (Fortran Compiler) in the USE_MPI
+# section:
 #
 #              FC := mpif90
 #
-# "mpif90" defined without any path. Recall that you still need to use the
-# appropriate "mpirun" to execute. Also notice that the path where the
-# MPI library is installed is computer dependent.
+# that is, "mpif90" defined without any path. Notice that the path
+# where the MPI library is installed is computer dependent. Recall
+# that you still need to use the appropriate "mpirun" to execute.
 
 if ($?USE_MPIF90) then
   switch ($FORT)
 
     case "ifort"
-#     setenv PATH /opt/intelsoft/mpich/bin:$PATH
-      setenv PATH /opt/intelsoft/mpich2/bin:$PATH
-#     setenv PATH /opt/intelsoft/openmpi/bin:$PATH
+      if ($which_MPI == "mpich" ) then
+        setenv PATH /opt/intelsoft/mpich/bin:$PATH
+      else if ($which_MPI == "mpich2" ) then
+        setenv PATH /opt/intelsoft/mpich2/bin:$PATH
+      else if ($which_MPI == "openmpi" ) then
+        setenv PATH /opt/intelsoft/openmpi/bin:$PATH
+      endif
     breaksw
 
     case "pgi"
-#     setenv PATH /opt/pgisoft/mpich/bin:$PATH
-      setenv PATH /opt/pgisoft/mpich2/bin:$PATH
-#     setenv PATH /opt/pgisoft/openmpi/bin:$PATH
+      if ($which_MPI == "mpich" ) then
+        setenv PATH /opt/pgisoft/mpich/bin:$PATH
+      else if ($which_MPI == "mpich2" ) then
+        setenv PATH /opt/pgisoft/mpich2/bin:$PATH
+      else if ($which_MPI == "openmpi" ) then
+        setenv PATH /opt/pgisoft/openmpi/bin:$PATH
+      endif
     breaksw
 
     case "gfortran"
-      setenv PATH /opt/gfortransoft/mpich2/bin:$PATH
-#     setenv PATH /opt/gfortransoft/openmpi/bin:$PATH
-    breaksw
-
-    case "g95"
-      setenv PATH /opt/g95soft/mpich2/bin:$PATH
-#     setenv PATH /opt/g95soft/openmpi/bin:$PATH
+      if ($which_MPI == "mpich2" ) then
+        setenv PATH /opt/gfortransoft/mpich2/bin:$PATH
+      else if ($which_MPI == "openmpi" ) then
+        setenv PATH /opt/gfortransoft/openmpi/bin:$PATH
+      endif
     breaksw
 
   endsw
 endif
 
-# The path of the libraries required by ROMS can be set here using
-# environmental variables which take precedence to the values
-# specified in the makefile macro definitions file (Compilers/*.mk).
-# If so desired, uncomment the local USE_MY_LIBS definition below
-# and edit the paths to your values. For most applications, only
-# the location of the NetCDF library (NETCDF_LIBDIR) and include
-# directorry (NETCDF_INCDIR) are needed!
+# If the USE_MY_LIBS is activated above, the path of the libraries
+# required by ROMS can be set here using environmental variables
+# which take precedence to the values specified in the make macro
+# definitions file (Compilers/*.mk). For most applications, only
+# the location of the NetCDF library is needed during compilation.
 #
-# Notice that when the USE_NETCDF4 macro is activated, we need a
-# serial and parallel version of the NetCDF-4/HDF5 library. The
-# parallel library uses parallel I/O through MPI-I/O so we need
-# compile also with the MPI library. This is fine in ROMS
-# distributed-memory applications.  However, in serial or
-# shared-memory ROMS applications we need to use the serial
-# version of the NetCDF-4/HDF5 to avoid conflicts with the
-# compiler. Recall also that the MPI library comes in several
-# flavors: MPICH, MPICH2, OpenMPI.
-
-#setenv USE_MY_LIBS             on
+# Notice that when the USE_NETCDF4 macro is activated, we need the
+# serial or parallel version of the NetCDF-4/HDF5 library. The
+# configuration script NC_CONFIG (available since NetCDF 4.0.1)
+# is used to set up all the required libraries according to the
+# installed options (openDAP, netCDF4/HDF5 file format). The
+# parallel library uses the MPI-I/O layer (usually available
+# in MPICH2 and OpenMPI) requiring compiling with the selected
+# MPI library.
+#
+# In ROMS distributed-memory applications, you may use either the
+# serial or parallel version of the NetCDF-4/HDF5 library. The
+# parallel version is required when parallel I/O is activated
+# (ROMS cpp option PARALLEL_IO and HDF5).
+#
+# However, in serial or shared-memory ROMS applications, we need
+# to use the serial version of the NetCDF-4/HDF5 to avoid conflicts
+# with the compiler. We cannot activate MPI constructs in serial
+# or shared-memory ROMS code. Hybrid parallelism is not possible.
+#
+# Recall also that the MPI library comes in several flavors:
+# MPICH, MPICH2, OpenMPI, etc.
 
 if ($?USE_MY_LIBS) then
   switch ($FORT)
 
     case "ifort"
-      setenv ESMF_DIR           /opt/intelsoft/esmf
-      setenv ESMF_OS            Linux
-      setenv ESMF_COMPILER      ifort
-      setenv ESMF_BOPT          O
-      setenv ESMF_ABI           64
-      setenv ESMF_COMM          mpich
-      setenv ESMF_SITE          default
-      setenv MCT_INCDIR         /opt/intelsoft/mct/include
-      setenv MCT_LIBDIR         /opt/intelsoft/mct/lib
+      setenv ESMF_OS              Linux
+      setenv ESMF_COMPILER        ifort
+      setenv ESMF_BOPT            O
+      setenv ESMF_ABI             64
+      setenv ESMF_COMM            mpich
+      setenv ESMF_SITE            default
 
-      setenv ARPACK_LIBDIR      /opt/intelsoft/serial/ARPACK
+      setenv ARPACK_LIBDIR        /opt/intelsoft/serial/ARPACK
       if ($?USE_MPI) then
-#       setenv PARPACK_LIBDIR   /opt/intelsoft/mpich/PARPACK
-        setenv PARPACK_LIBDIR   /opt/intelsoft/mpich2/PARPACK
-#       setenv PARPACK_LIBDIR   /opt/intelsoft/openmpi/PARPACK
+        if ($which_MPI == "mpich" ) then
+          setenv ESMF_DIR         /opt/intelsoft/mpich/esmf
+          setenv MCT_INCDIR       /opt/intelsoft/mpich/mct/include
+          setenv MCT_LIBDIR       /opt/intelsoft/mpich/mct/lib
+          setenv PARPACK_LIBDIR   /opt/intelsoft/mpich/PARPACK
+        else if ($which_MPI == "mpich2" ) then
+          setenv ESMF_DIR         /opt/intelsoft/mpich2/esmf
+          setenv MCT_INCDIR       /opt/intelsoft/mpich2/mct/include
+          setenv MCT_LIBDIR       /opt/intelsoft/mpich2/mct/lib
+          setenv PARPACK_LIBDIR   /opt/intelsoft/mpich2/PARPACK
+        else if ($which_MPI == "openmpi" ) then
+          setenv ESMF_DIR         /opt/intelsoft/openmpi/esmf
+          setenv MCT_INCDIR       /opt/intelsoft/openmpi/mct/include
+          setenv MCT_LIBDIR       /opt/intelsoft/openmpi/mct/lib
+          setenv PARPACK_LIBDIR   /opt/intelsoft/openmpi/PARPACK
+        endif
       endif
 
       if ($?USE_NETCDF4) then
-        if ($?USE_MPI) then
-#         setenv NETCDF_INCDIR  /opt/intelsoft/mpich/netcdf4/include
-#         setenv NETCDF_LIBDIR  /opt/intelsoft/mpich/netcdf4/lib
-#         setenv HDF5_LIBDIR    /opt/intelsoft/mpich/hdf5/lib
-
-          setenv NETCDF_INCDIR  /opt/intelsoft/mpich2/netcdf4/include
-          setenv NETCDF_LIBDIR  /opt/intelsoft/mpich2/netcdf4/lib
-          setenv HDF5_LIBDIR    /opt/intelsoft/mpich2/hdf5/lib
-
-#         setenv NETCDF_INCDIR  /opt/intelsoft/openmpi/netcdf4/include
-#         setenv NETCDF_LIBDIR  /opt/intelsoft/openmpi/netcdf4/lib
-#         setenv HDF5_LIBDIR    /opt/intelsoft/openmpi/hdf5/lib
+        if ($?USE_PARALLEL_IO && $?USE_MPI) then
+          if ($which_MPI == "mpich" ) then
+            setenv NC_CONFIG      /opt/intelsoft/mpich/netcdf4/bin/nc-config
+            setenv NETCDF_INCDIR  /opt/intelsoft/mpich/netcdf4/include
+          else if ($which_MPI == "mpich2" ) then
+            setenv NC_CONFIG      /opt/intelsoft/mpich2/netcdf4/bin/nc-config
+            setenv NETCDF_INCDIR  /opt/intelsoft/mpich2/netcdf4/include
+          else if ($which_MPI == "openmpi" ) then
+            setenv NC_CONFIG      /opt/intelsoft/openmpi/netcdf4/bin/nc-config
+            setenv NETCDF_INCDIR  /opt/intelsoft/openmpi/netcdf4/include
+          endif
         else
-          setenv NETCDF_INCDIR  /opt/intelsoft/serial/netcdf4/include
-          setenv NETCDF_LIBDIR  /opt/intelsoft/serial/netcdf4/lib
-          setenv HDF5_LIBDIR    /opt/intelsoft/serial/hdf5/lib
+          setenv NC_CONFIG        /opt/intelsoft/serial/netcdf4/bin/nc-config
+          setenv NETCDF_INCDIR    /opt/intelsoft/serial/netcdf4/include
         endif
       else
-        setenv NETCDF_INCDIR    /opt/intelsoft/serial/netcdf3/include
-        setenv NETCDF_LIBDIR    /opt/intelsoft/serial/netcdf3/lib
+        setenv NETCDF_INCDIR      /opt/intelsoft/serial/netcdf3/include
+        setenv NETCDF_LIBDIR      /opt/intelsoft/serial/netcdf3/lib
       endif
     breaksw
 
     case "pgi"
-      setenv ESMF_DIR           /opt/pgisoft/esmf-3.1.0
-      setenv ESMF_OS            Linux
-      setenv ESMF_COMPILER      pgi
-      setenv ESMF_BOPT          O
-      setenv ESMF_ABI           64
-      setenv ESMF_COMM          mpich
-      setenv ESMF_SITE          default
-      setenv MCT_INCDIR         /opt/pgisoft/mct/include
-      setenv MCT_LIBDIR         /opt/pgisoft/mct/lib
+      setenv ESMF_OS              Linux
+      setenv ESMF_COMPILER        pgi
+      setenv ESMF_BOPT            O
+      setenv ESMF_ABI             64
+      setenv ESMF_COMM            mpich
+      setenv ESMF_SITE            default
 
-      setenv ARPACK_LIBDIR      /opt/pgisoft/serial/ARPACK
+      setenv ARPACK_LIBDIR        /opt/pgisoft/serial/ARPACK
       if ($?USE_MPI) then
-        setenv PARPACK_LIBDIR   /opt/pgisoft/mpich/PARPACK
-#       setenv PARPACK_LIBDIR   /opt/pgisoft/mpich2/PARPACK
-#       setenv PARPACK_LIBDIR   /opt/pgisoft/openmpi/PARPACK
+        if ($which_MPI == "mpich" ) then
+          setenv ESMF_DIR         /opt/pgisoft/mpich/esmf
+          setenv MCT_INCDIR       /opt/pgisoft/mpich/mct/include
+          setenv MCT_LIBDIR       /opt/pgisoft/mpich/mct/lib
+          setenv PARPACK_LIBDIR   /opt/pgisoft/mpich/PARPACK
+        else if ($which_MPI == "mpich2" ) then
+          setenv ESMF_DIR         /opt/pgisoft/mpich2/esmf
+          setenv MCT_INCDIR       /opt/pgisoft/mpich2/mct/include
+          setenv MCT_LIBDIR       /opt/pgisoft/mpich2/mct/lib
+          setenv PARPACK_LIBDIR   /opt/pgisoft/mpich2/PARPACK
+        else if ($which_MPI == "openmpi" ) then
+          setenv ESMF_DIR         /opt/pgisoft/openmpi/esmf
+          setenv MCT_INCDIR       /opt/pgisoft/openmpi/mct/include
+          setenv MCT_LIBDIR       /opt/pgisoft/openmpi/mct/lib
+          setenv PARPACK_LIBDIR   /opt/pgisoft/openmpi/PARPACK
+        endif
       endif
 
       if ($?USE_NETCDF4) then
-        if ($?USE_MPI) then
-#         setenv NETCDF_INCDIR  /opt/pgisoft/mpich/netcdf4/include
-#         setenv NETCDF_LIBDIR  /opt/pgisoft/mpich/netcdf4/lib
-#         setenv HDF5_LIBDIR    /opt/pgisoft/mpich/hdf5/lib
-
-          setenv NETCDF_INCDIR  /opt/pgisoft/mpich2/netcdf4/include
-          setenv NETCDF_LIBDIR  /opt/pgisoft/mpich2/netcdf4/lib
-          setenv HDF5_LIBDIR    /opt/pgisoft/mpich2/hdf5/lib
-
-#         setenv NETCDF_INCDIR  /opt/pgisoft/openmpi/netcdf4/include
-#         setenv NETCDF_LIBDIR  /opt/pgisoft/openmpi/netcdf4/lib
-#         setenv HDF5_LIBDIR    /opt/pgisoft/openmpi/hdf5/lib
+        if ($?USE_PARALLEL_IO && $?USE_MPI) then
+          if ($which_MPI == "mpich" ) then
+            setenv NC_CONFIG      /opt/pgisoft/mpich/netcdf4/bin/nc-config
+            setenv NETCDF_INCDIR  /opt/pgisoft/mpich/netcdf4/include
+          else if ($which_MPI == "mpich2" ) then
+            setenv NC_CONFIG      /opt/pgisoft/mpich2/netcdf4/bin/nc-config
+            setenv NETCDF_INCDIR  /opt/pgisoft/mpich2/netcdf4/include
+          else if ($which_MPI == "openmpi" ) then
+            setenv NC_CONFIG      /opt/pgisoft/openmpi/netcdf4/bin/nc-config
+            setenv NETCDF_INCDIR  /opt/pgisoft/openmpi/netcdf4/include
+          endif
         else
-          setenv NETCDF_INCDIR  /opt/pgisoft/serial/netcdf4/include
-          setenv NETCDF_LIBDIR  /opt/pgisoft/serial/netcdf4/lib
-          setenv HDF5_LIBDIR    /opt/pgisoft/serial/hdf5/lib
+          setenv NC_CONFIG        /opt/pgisoft/serial/netcdf4/bin/nc-config
+          setenv NETCDF_INCDIR    /opt/pgisoft/serial/netcdf4/include
         endif
       else
-        setenv NETCDF_INCDIR    /opt/pgisoft/serial/netcdf3/include
-        setenv NETCDF_LIBDIR    /opt/pgisoft/serial/netcdf3/lib
+        setenv NETCDF_INCDIR      /opt/pgisoft/serial/netcdf3/include
+        setenv NETCDF_LIBDIR      /opt/pgisoft/serial/netcdf3/lib
       endif
     breaksw
 
     case "gfortran"
-      setenv MCT_INCDIR         /opt/gfortransoft/mct/include
-      setenv MCT_LIBDIR         /opt/gfortransoft/mct/lib
+      setenv ESMF_OS              Linux
+      setenv ESMF_COMPILER        gfortran
+      setenv ESMF_BOPT            O
+      setenv ESMF_ABI             64
+      setenv ESMF_COMM            mpich
+      setenv ESMF_SITE            default
 
-      setenv ARPACK_LIBDIR      /opt/gfortransoft/serial/ARPACK
+      setenv ARPACK_LIBDIR        /opt/gfortransoft/serial/ARPACK
       if ($?USE_MPI) then
-#       setenv PARPACK_LIBDIR   /opt/gfortransoft/mpich/PARPACK
-        setenv PARPACK_LIBDIR   /opt/gfortransoft/mpich2/PARPACK
-#       setenv PARPACK_LIBDIR   /opt/gfortransoft/openmpi/PARPACK
+        if ($which_MPI == "mpich2" ) then
+          setenv ESMF_DIR         /opt/gfortransoft/mpich2/esmf
+          setenv MCT_INCDIR       /opt/gfortransoft/mpich2/mct/include
+          setenv MCT_LIBDIR       /opt/gfortransoft/mpich2/mct/lib
+          setenv PARPACK_LIBDIR   /opt/gfortransoft/mpich2/PARPACK
+        else if ($which_MPI == "openmpi" ) then
+          setenv ESMF_DIR         /opt/gfortransoft/openmpi/esmf
+          setenv MCT_INCDIR       /opt/gfortransoft/openmpi/mct/include
+          setenv MCT_LIBDIR       /opt/gfortransoft/openmpi/mct/lib
+          setenv PARPACK_LIBDIR   /opt/gfortransoft/openmpi/PARPACK
+        endif
       endif
 
       if ($?USE_NETCDF4) then
-        if ($?USE_MPI) then
-#         setenv NETCDF_INCDIR  /opt/gfortransoft/mpich/netcdf4/include
-#         setenv NETCDF_LIBDIR  /opt/gfortransoft/mpich/netcdf4/lib
-#         setenv HDF5_LIBDIR    /opt/gfortransoft/mpich/hdf5/lib
-
-          setenv NETCDF_INCDIR  /opt/gfortransoft/mpich2/netcdf4/include
-          setenv NETCDF_LIBDIR  /opt/gfortransoft/mpich2/netcdf4/lib
-          setenv HDF5_LIBDIR    /opt/gfortransoft/mpich2/hdf5/lib
-
-#         setenv NETCDF_INCDIR  /opt/gfortransoft/openmpi/netcdf4/include
-#         setenv NETCDF_LIBDIR  /opt/gfortransoft/openmpi/netcdf4/lib
-#         setenv HDF5_LIBDIR    /opt/gfortransoft/openmpi/hdf5/lib
+        if ($?USE_PARALLEL_IO && $?USE_MPI) then
+          if ($which_MPI == "mpich2" ) then
+            setenv NC_CONFIG      /opt/gfortransoft/mpich2/netcdf4/bin/nc-config
+            setenv NETCDF_INCDIR  /opt/gfortransoft/mpich2/netcdf4/include
+          else if ($which_MPI == "openmpi" ) then
+            setenv NC_CONFIG      /opt/gfortransoft/openmpi/netcdf4/bin/nc-config
+            setenv NETCDF_INCDIR  /opt/gfortransoft/openmpi/netcdf4/include
+          endif
         else
-          setenv NETCDF_INCDIR  /opt/gfortransoft/serial/netcdf4/include
-          setenv NETCDF_LIBDIR  /opt/gfortransoft/serial/netcdf4/lib
-          setenv HDF5_LIBDIR    /opt/gfortransoft/serial/hdf5/lib
+          setenv NC_CONFIG        /opt/gfortransoft/serial/netcdf4/bin/nc-config
+          setenv NETCDF_INCDIR    /opt/gfortransoft/serial/netcdf4/include
         endif
       else
-        setenv NETCDF_INCDIR    /opt/gfortransoft/serial/netcdf3/include
-        setenv NETCDF_LIBDIR    /opt/gfortransoft/serial/netcdf3/lib
-      endif
-    breaksw
-
-    case "g95"
-      setenv MCT_INCDIR         /opt/g95soft/mct/include
-      setenv MCT_LIBDIR         /opt/g95soft/mct/lib
-
-      setenv ARPACK_LIBDIR      /opt/g95soft/serial/ARPACK
-      if ($?USE_MPI) then
-        setenv PARPACK_LIBDIR   /opt/g95soft/mpich2/PARPACK
-#       setenv PARPACK_LIBDIR   /opt/g95soft/openmpi/PARPACK
-      endif
-
-      if ($?USE_NETCDF4) then
-        if ($?USE_MPI) then
-          setenv NETCDF_INCDIR  /opt/g95soft/mpich2/netcdf4/include
-          setenv NETCDF_LIBDIR  /opt/g95soft/mpich2/netcdf4/lib
-          setenv HDF5_LIBDIR    /opt/g95soft/mpich2/hdf5/lib
-
-#         setenv NETCDF_INCDIR  /opt/g95soft/openmpi/netcdf4/include
-#         setenv NETCDF_LIBDIR  /opt/g95soft/openmpi/netcdf4/lib
-#         setenv HDF5_LIBDIR    /opt/g95soft/openmpi/hdf5/lib
-        else
-          setenv NETCDF_INCDIR  /opt/g95soft/serial/netcdf4/include
-          setenv NETCDF_LIBDIR  /opt/g95soft/serial/netcdf4/lib
-          setenv HDF5_LIBDIR    /opt/g95soft/serial/hdf5/lib
-        endif
-      else
-        setenv NETCDF_INCDIR    /opt/g95soft/serial/netcdf3/include
-        setenv NETCDF_LIBDIR    /opt/g95soft/serial/netcdf3/lib
+        setenv NETCDF_INCDIR      /opt/gfortransoft/serial/netcdf3/include
+        setenv NETCDF_LIBDIR      /opt/gfortransoft/serial/netcdf3/lib
       endif
     breaksw
 

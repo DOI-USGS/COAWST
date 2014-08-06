@@ -4,7 +4,7 @@
 !
 !svn $Id: grid_coords.F 771 2008-09-30 02:30:00Z jcwarner $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2010 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2014 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -38,14 +38,17 @@
       integer :: IstrR, Iend, JstrR, Jend
       integer :: LBi, UBi, LBj, UBj
       integer :: i, j, k, l, mc
-      integer :: Xmin, Xmax, Ymin, Ymax
 
       real(r8), parameter :: spv = 0.0_r8
 
 # ifdef FLOATS
       real(r8) :: Xstr, Xend, Ystr, Yend, zfloat
-      logical, dimension(Nfloats(ng)) :: MyThread
+      logical, dimension(Nfloats(ng)) :: my_thread
       real(r8), dimension(Nfloats(ng)) :: Iflt, Jflt
+#ifdef OFFLINE_FLOATS_LATLON
+      integer :: Ir,Jr,i1,i2,j1,j2
+      real(r8) :: p1,p2,q1,q2,cff5,cff6,cff7,cff8
+#endif
 #  ifdef SOLVE3D
       real(r8), dimension(Nfloats(ng)) :: Kflt
 #  endif
@@ -91,8 +94,8 @@
 !
       IF (spherical) THEN
         IF (Lfloats(ng)) THEN
-          mc=FLT(ng)%Findex(0)
-          IF (FLT(ng)%Findex(0).gt.0) THEN
+          mc=DRIFTER(ng)%Findex(0)
+          IF (DRIFTER(ng)%Findex(0).gt.0) THEN
             CALL hindices (ng, LBi, UBi, LBj, UBj,                      &
      &                     IstrR, Iend+1, JstrR, Jend+1,                &
      &                     GRID(ng)%angler,                             &
@@ -100,24 +103,22 @@
      &                     GRID(ng)%latr,                               &
      &                     1, mc, 1, 1,                                 &
      &                     1, mc, 1, 1,                                 &
-     &                     FLT(ng)%Flon,                                &
-     &                     FLT(ng)%Flat,                                &
-     &                     Iflt, Jflt, spv, .FALSE.,                    &
-     &                     Xmin, Xmax, Ymin, Ymax)
+     &                     DRIFTER(ng)%Flon,                            &
+     &                     DRIFTER(ng)%Flat,                            &
+     &                     Iflt, Jflt, spv, .FALSE.)
 #  ifdef DISTRIBUTE
             CALL mp_collect (ng, model, mc, spv, Iflt)
             CALL mp_collect (ng, model, mc, spv, Jflt)
 #  endif
             DO i=1,mc
-              l=FLT(ng)%Findex(i)
-              FLT(ng)%Tinfo(ixgrd,l)=MIN(MAX(0.5_r8,Iflt(i)),           &
-     &                               REAL(Lm(ng),r8)+0.5_r8)
-              FLT(ng)%Tinfo(iygrd,l)=MIN(MAX(0.5_r8,Jflt(i)),           &
-     &                               REAL(Mm(ng),r8)+0.5_r8)
+              l=DRIFTER(ng)%Findex(i)
+              DRIFTER(ng)%Tinfo(ixgrd,l)=Iflt(i)
+              DRIFTER(ng)%Tinfo(iygrd,l)=Jflt(i)
             END DO
           END IF
         END IF
       END IF
+
 #  ifdef SOLVE3D
 !
 !  Determine which node bounds the initial float location.
@@ -125,45 +126,59 @@
 #   ifdef DISTRIBUTE
       IF (Lfloats(ng)) THEN
         DO l=1,Nfloats(ng)
-          IF ((Xstr.le.FLT(ng)%Tinfo(ixgrd,l)).and.                     &
-     &        (FLT(ng)%Tinfo(ixgrd,l).lt.Xend).and.                     &
-     &        (Ystr.le.FLT(ng)%Tinfo(iygrd,l)).and.                     &
-     &        (FLT(ng)%Tinfo(iygrd,l).lt.Yend)) THEN
-            MyThread(l)=.TRUE.
+          IF ((Xstr.le.DRIFTER(ng)%Tinfo(ixgrd,l)).and.                 &
+     &        (DRIFTER(ng)%Tinfo(ixgrd,l).lt.Xend).and.                 &
+     &        (Ystr.le.DRIFTER(ng)%Tinfo(iygrd,l)).and.                 &
+     &        (DRIFTER(ng)%Tinfo(iygrd,l).lt.Yend)) THEN
+            my_thread(l)=.TRUE.
           ELSE
-            MyThread(l)=.FALSE.
+            my_thread(l)=.FALSE.
           END IF
         END DO
       END IF
 #   else
       DO l=1,Nfloats(ng)
-        MyThread(l)=.TRUE.
+        my_thread(l)=.TRUE.
       END DO
 #   endif
 #  endif
 !
 !-----------------------------------------------------------------------
-!  Set float initial vertical level position.  If the initial float
-!  depth (in meters) is not found, release float at the surface model
-!  level.
+!  Set float initial vertical level position, if inside application
+!  grid.  If the initial float depth (in meters) is not found, release
+!  float at the surface model level.
 !-----------------------------------------------------------------------
 !
       DO l=1,Nfloats(ng)
         IF (Lfloats(ng)) THEN
 #  ifdef SOLVE3D
-          FLT(ng)%Fz0(l)=spv
-          IF (MyThread(l)) THEN
-            zfloat=FLT(ng)%Tinfo(izgrd,l)
-            FLT(ng)%Fz0(l)=zfloat               ! Save original value
+          DRIFTER(ng)%Fz0(l)=spv
+          IF (my_thread(l).and.                                         &
+     &        ((DRIFTER(ng)%Tinfo(ixgrd,l).ge.0.5_r8).and.              &
+     &         (DRIFTER(ng)%Tinfo(iygrd,l).ge.0.5_r8).and.              &
+     &         (DRIFTER(ng)%Tinfo(ixgrd,l).le.                          &
+     &          REAL(Lm(ng),r8)+0.5_r8).and.                            &
+     &         (DRIFTER(ng)%Tinfo(iygrd,l).le.                          &
+     &          REAL(Mm(ng),r8)+0.5_r8))) THEN
+            zfloat=DRIFTER(ng)%Tinfo(izgrd,l)
+            DRIFTER(ng)%Fz0(l)=zfloat           ! Save original value
+#ifdef OFFLINE_FLOATS
+!            IF (l.eq.1) THEN
+!              print *, 'Float # ', l, ' DRIFTER(ng)%Fz0: ', DRIFTER(ng)%Fz0(l)
+!              print *,'The preceeding print fixes a memory bug somehow.'
+!            END IF
+#endif
             Kflt(l)=zfloat
             IF (zfloat.le.0.0_r8) THEN
-              i=INT(FLT(ng)%Tinfo(ixgrd,l))     ! Fractional positions
-              j=INT(FLT(ng)%Tinfo(iygrd,l))     ! are still in this cell
+
+#ifndef OFFLINE_FLOATS_LATLON
+              i=INT(DRIFTER(ng)%Tinfo(ixgrd,l)) ! Fractional positions
+              j=INT(DRIFTER(ng)%Tinfo(iygrd,l)) ! are still in this cell
               IF (zfloat.lt.GRID(ng)%z_w(i,j,0)) THEN
                 zfloat=GRID(ng)%z_w(i,j,0)+5.0_r8
-                FLT(ng)%Fz0(l)=zfloat
+                DRIFTER(ng)%Fz0(l)=zfloat
               END IF
-              FLT(ng)%Tinfo(izgrd,l)=REAL(N(ng),r8)
+              DRIFTER(ng)%Tinfo(izgrd,l)=REAL(N(ng),r8)
               DO k=N(ng),1,-1
                 IF ((GRID(ng)%z_w(i,j,k)-zfloat)*                       &
      &              (zfloat-GRID(ng)%z_w(i,j,k-1)).ge.0.0_r8) THEN
@@ -172,23 +187,64 @@
      &                    GRID(ng)%Hz(i,j,k)
                 END IF
               END DO
+#else
+              Kflt(l)=spv
+              Ir=INT(DRIFTER(ng)%Tinfo(ixgrd,l))
+              Jr=INT(DRIFTER(ng)%Tinfo(iygrd,l))
+
+              i1=MIN(MAX(Ir  ,0),Lm(ng)+1)
+              i2=MIN(MAX(Ir+1,1),Lm(ng)+1)
+              j1=MIN(MAX(Jr  ,0),Mm(ng)+1)
+              j2=MIN(MAX(Jr+1,0),Mm(ng)+1)
+              p2=REAL(i2-i1,r8)*(FLT(ng)%Tinfo(ixgrd,l)-REAL(i1,r8))
+              q2=REAL(j2-j1,r8)*(FLT(ng)%Tinfo(iygrd,l)-REAL(j1,r8))
+              p1=1.0_r8-p2
+              q1=1.0_r8-q2
+
+              cff6=0.0_r8
+
+              DO k=N(ng),0,-1
+#  ifdef MASKING
+                cff7=p1*q1*GRID(ng)%z_w(i1,j1,k)*GRID(ng)%rmask(i1,j1)+ &
+     &             p2*q1*GRID(ng)%z_w(i2,j1,k)*GRID(ng)%rmask(i2,j1)+   &
+     &             p1*q2*GRID(ng)%z_w(i1,j2,k)*GRID(ng)%rmask(i1,j2)+   &
+     &             p2*q2*GRID(ng)%z_w(i2,j2,k)*GRID(ng)%rmask(i2,j2)
+                cff8=p1*q1*GRID(ng)%rmask(i1,j1)+                       &
+     &             p2*q1*GRID(ng)%rmask(i2,j1)+                         &
+     &             p1*q2*GRID(ng)%rmask(i1,j2)+                         &
+     &             p2*q2*GRID(ng)%rmask(i2,j2)
+                cff5=0.0_r8
+                IF (cff8.gt.0.0_r8) cff5=cff7/cff8
+#  else
+                cff5=p1*q1*GRID(ng)%z_w(i1,j1,k)+                       &
+     &             p2*q1*GRID(ng)%z_w(i2,j1,k)+                         &
+     &             p1*q2*GRID(ng)%z_w(i1,j2,k)+                         &
+     &             p2*q2*GRID(ng)%z_w(i2,j2,k)
+#  endif
+                IF ((zfloat-cff5)*(cff6-zfloat).ge.0.0_r8) THEN
+                  Kflt(l)=REAL(k,r8)+(zfloat-cff5)/(cff6-cff5)
+                END IF
+                cff6=cff5
+              END DO
+
+#endif
             END IF
           ELSE
             Kflt(l)=spv
           END IF
 #  else
-          FLT(ng)%Tinfo(izgrd,l)=0.0_r8
+          DRIFTER(ng)%Tinfo(izgrd,l)=0.0_r8
 #  endif
         END IF
       END DO
 #  ifdef SOLVE3D
       IF (Lfloats(ng)) THEN
 #   ifdef DISTRIBUTE
-        CALL mp_collect (ng, model, Nfloats(ng), spv, FLT(ng)%Fz0)
+        CALL mp_collect (ng, model, Nfloats(ng), spv, DRIFTER(ng)%Fz0)
         CALL mp_collect (ng, model, Nfloats(ng), spv, Kflt)
 #   endif
         DO l=1,Nfloats(ng)
-          FLT(ng)%Tinfo(izgrd,l)=Kflt(l)
+          DRIFTER(ng)%Tinfo(izgrd,l)=Kflt(l)
         END DO
       END IF
 #  endif
@@ -219,8 +275,7 @@
      &                   1, mc, 1, 1,                                   &
      &                   Slon, Slat,                                    &
      &                   Ista, Jsta,                                    &
-     &                   spv, .FALSE.,                                  &
-     &                   Xmin, Xmax, Ymin, Ymax)
+     &                   spv, .FALSE.)
 #  ifdef DISTRIBUTE
           CALL mp_collect (ng, model, mc, spv, Ista)
           CALL mp_collect (ng, model, mc, spv, Jsta)

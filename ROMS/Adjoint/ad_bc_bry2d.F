@@ -2,9 +2,9 @@
       MODULE ad_bc_bry2d_mod
 #ifdef ADJOINT
 !
-!svn $Id: ad_bc_bry2d.F 429 2009-12-20 17:30:26Z arango $
+!svn $Id$
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2010 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2014 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -51,13 +51,13 @@
 !-----------------------------------------------------------------------
 !
       IF (boundary.eq.inorth) THEN
-        IF ((NORTHERN_EDGE).and.(EASTERN_EDGE)) THEN
+        IF (DOMAIN(ng)%NorthEast_Corner(tile)) THEN
 !>        tl_A(Iend+1)=tl_A(Iend)
 !>
           ad_A(Iend)=ad_A(Iend)+ad_A(Iend+1)
           ad_A(Iend+1)=0.0_r8
         END IF
-        IF ((NORTHERN_EDGE).and.(WESTERN_EDGE)) THEN
+        IF (DOMAIN(ng)%NorthWest_Corner(tile)) THEN
 !>        tl_A(Istr-1)=tl_A(Istr)
 !>
           ad_A(Istr)=ad_A(Istr)+ad_A(Istr-1)
@@ -66,13 +66,13 @@
       END IF
 
       IF (boundary.eq.isouth) THEN
-        IF ((SOUTHERN_EDGE).and.(EASTERN_EDGE)) THEN
+        IF (DOMAIN(ng)%SouthEast_Corner(tile)) THEN
 !>        tl_A(Iend+1)=tl_A(Iend)
 !>
           ad_A(Iend)=ad_A(Iend)+ad_A(Iend+1)
           ad_A(Iend+1)=0.0_r8
         END IF
-        IF ((SOUTHERN_EDGE).and.(WESTERN_EDGE)) THEN
+        IF (DOMAIN(ng)%SouthWest_Corner(tile)) THEN
 !>        tl_A(Istr-1)=tl_A(Istr)
 !>
           ad_A(Istr)=ad_A(Istr)+ad_A(Istr-1)
@@ -85,13 +85,13 @@
 !-----------------------------------------------------------------------
 !
       IF (boundary.eq.ieast) THEN
-        IF ((EASTERN_EDGE).and.(NORTHERN_EDGE)) THEN
+        IF (DOMAIN(ng)%NorthEast_Corner(tile)) THEN
 !>        tl_A(Jend+1)=tl_A(Jend)
 !>
           ad_A(Jend)=ad_A(Jend)+ad_A(Jend+1)
           ad_A(Jend+1)=0.0_r8
         END IF
-        IF ((EASTERN_EDGE).and.(SOUTHERN_EDGE)) THEN
+        IF (DOMAIN(ng)%SouthEast_Corner(tile)) THEN
 !>        tl_A(Jstr-1)=tl_A(Jstr)
 !>
           ad_A(Jstr)=ad_A(Jstr)+ad_A(Jstr-1)
@@ -100,13 +100,13 @@
       END IF
 
       IF (boundary.eq.iwest) THEN
-        IF ((WESTERN_EDGE).and.(NORTHERN_EDGE)) THEN
+        IF (DOMAIN(ng)%NorthWest_Corner(tile)) THEN
 !>        tl_A(Jend+1)=tl_A(Jend)
 !>
           ad_A(Jend)=ad_A(Jend)+ad_A(Jend+1)
           ad_A(Jend+1)=0.0_r8
         END IF
-        IF ((WESTERN_EDGE).and.(SOUTHERN_EDGE)) THEN
+        IF (DOMAIN(ng)%SouthWest_Corner(tile)) THEN
 !>        tl_A(Jstr-1)=tl_A(Jstr)
 !>
           ad_A(Jstr)=ad_A(Jstr)+ad_A(Jstr-1)
@@ -145,13 +145,13 @@
 !-----------------------------------------------------------------------
 !
       IF (boundary.eq.inorth) THEN
-        IF ((NORTHERN_EDGE).and.(EASTERN_EDGE)) THEN
+        IF (DOMAIN(ng)%NorthEast_Corner(tile)) THEN
 !>        tl_A(Iend+1)=tl_A(Iend)
 !>
           ad_A(Iend)=ad_A(Iend)+ad_A(Iend+1)
           ad_A(Iend+1)=0.0_r8
         END IF
-        IF ((NORTHERN_EDGE).and.(WESTERN_EDGE)) THEN
+        IF (DOMAIN(ng)%NorthWest_Corner(tile)) THEN
 !>        tl_A(IstrU-1)=tl_A(IstrU)
 !>
           ad_A(IstrU)=ad_A(IstrU)+ad_A(IstrU-1)
@@ -160,13 +160,13 @@
       END IF
 
       IF (boundary.eq.isouth) THEN
-        IF ((SOUTHERN_EDGE).and.(EASTERN_EDGE)) THEN
+        IF (DOMAIN(ng)%SouthEast_Corner(tile)) THEN
 !>        tl_A(Iend+1)=tl_A(Iend)
 !>
           ad_A(Iend)=ad_A(Iend)+ad_A(Iend+1)
           ad_A(Iend+1)=0.0_r8
         END IF
-        IF ((SOUTHERN_EDGE).and.(WESTERN_EDGE)) THEN
+        IF (DOMAIN(ng)%SouthWest_Corner(tile)) THEN
 !>        tl_A(IstrU-1)=tl_A(IstrU)
 !>
           ad_A(IstrU)=ad_A(IstrU)+ad_A(IstrU-1)
@@ -179,13 +179,13 @@
 !-----------------------------------------------------------------------
 !
       IF (boundary.eq.ieast) THEN
-        IF ((EASTERN_EDGE).and.(NORTHERN_EDGE)) THEN
+        IF (DOMAIN(ng)%NorthEast_Corner(tile)) THEN
 !>        tl_A(Jend+1)=tl_A(Jend)
 !>
           ad_A(Jend)=ad_A(Jend)+ad_A(Jend+1)
           ad_A(Jend+1)=0.0_r8
         END IF
-        IF ((EASTERN_EDGE).and.(SOUTHERN_EDGE)) THEN
+        IF (DOMAIN(ng)%SouthEast_Corner(tile)) THEN
 !>        tl_A(Jstr-1)=tl_A(Jstr)
 !>
           ad_A(Jstr)=ad_A(Jstr)+ad_A(Jstr-1)
@@ -194,13 +194,13 @@
       END IF
 
       IF (boundary.eq.iwest) THEN
-        IF ((WESTERN_EDGE).and.(NORTHERN_EDGE)) THEN
+        IF (DOMAIN(ng)%NorthWest_Corner(tile)) THEN
 !>        tl_A(Jend+1)=tl_A(Jend)
 !>
           ad_A(Jend)=ad_A(Jend)+ad_A(Jend+1)
           ad_A(Jend+1)=0.0_r8
         END IF
-        IF ((WESTERN_EDGE).and.(SOUTHERN_EDGE)) THEN
+        IF (DOMAIN(ng)%SouthWest_Corner(tile)) THEN
 !>        tl_A(Jstr-1)=tl_A(Jstr)
 !>
           ad_A(Jstr)=ad_A(Jstr)+ad_A(Jstr-1)
@@ -239,13 +239,13 @@
 !-----------------------------------------------------------------------
 !
       IF (boundary.eq.inorth) THEN
-        IF ((NORTHERN_EDGE).and.(EASTERN_EDGE)) THEN
+        IF (DOMAIN(ng)%NorthEast_Corner(tile)) THEN
 !>        tl_A(Iend+1)=tl_A(Iend)
 !>
           ad_A(Iend)=ad_A(Iend)+ad_A(Iend+1)
           ad_A(Iend+1)=0.0_r8
         END IF
-        IF ((NORTHERN_EDGE).and.(WESTERN_EDGE)) THEN
+        IF (DOMAIN(ng)%NorthWest_Corner(tile)) THEN
 !>        tl_A(Istr-1)=tl_A(Istr)
 !>
           ad_A(Istr)=ad_A(Istr)+ad_A(Istr-1)
@@ -254,13 +254,13 @@
       END IF
 
       IF (boundary.eq.isouth) THEN
-        IF ((SOUTHERN_EDGE).and.(EASTERN_EDGE)) THEN
+        IF (DOMAIN(ng)%SouthEast_Corner(tile)) THEN
 !>        tl_A(Iend+1)=tl_A(Iend)
 !>
           ad_A(Iend)=ad_A(Iend)+ad_A(Iend+1)
           ad_A(Iend+1)=0.0_r8
         END IF
-        IF ((SOUTHERN_EDGE).and.(WESTERN_EDGE)) THEN
+        IF (DOMAIN(ng)%SouthWest_Corner(tile)) THEN
 !>        tl_A(Istr-1)=tl_A(Istr)
 !>
           ad_A(Istr)=ad_A(Istr)+ad_A(Istr-1)
@@ -273,13 +273,13 @@
 !-----------------------------------------------------------------------
 !
       IF (boundary.eq.ieast) THEN
-        IF ((EASTERN_EDGE).and.(NORTHERN_EDGE)) THEN
+        IF (DOMAIN(ng)%NorthEast_Corner(tile)) THEN
 !>        tl_A(Jend+1)=tl_A(Jend)
 !>
           ad_A(Jend)=ad_A(Jend)+ad_A(Jend+1)
           ad_A(Jend+1)=0.0_r8
         END IF
-        IF ((EASTERN_EDGE).and.(SOUTHERN_EDGE)) THEN
+        IF (DOMAIN(ng)%SouthEast_Corner(tile)) THEN
 !>        tl_A(JstrV-1)=tl_A(JstrV)
 !>
           ad_A(JstrV)=ad_A(JstrV)+ad_A(JstrV-1)
@@ -288,13 +288,13 @@
       END IF
 
       IF (boundary.eq.iwest) THEN
-        IF ((WESTERN_EDGE).and.(NORTHERN_EDGE)) THEN
+        IF (DOMAIN(ng)%NorthWest_Corner(tile)) THEN
 !>        tl_A(Jend+1)=tl_A(Jend)
 !>
           ad_A(Jend)=ad_A(Jend)+ad_A(Jend+1)
           ad_A(Jend+1)=0.0_r8
         END IF
-        IF ((WESTERN_EDGE).and.(SOUTHERN_EDGE)) THEN
+        IF (DOMAIN(ng)%SouthWest_Corner(tile)) THEN
 !>        tl_A(JstrV-1)=tl_A(JstrV)
 !>
           ad_A(JstrV)=ad_A(JstrV)+ad_A(JstrV-1)

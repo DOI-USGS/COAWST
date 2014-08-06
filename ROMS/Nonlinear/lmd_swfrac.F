@@ -10,7 +10,7 @@
 !
 !svn $Id: lmd_swfrac.F 732 2008-09-07 01:55:51Z jcwarner $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2010 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2014 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -70,7 +70,7 @@
 !
       DO j=Jstr,Jend
         DO i=Istr,Iend
-          Jindex=MIXING(ng)%Jwtype(i,j)
+          Jindex=INT(MIXING(ng)%Jwtype(i,j))
           fac1(i)=Zscale/lmd_mu1(Jindex)
           fac2(i)=Zscale/lmd_mu2(Jindex)
           fac3(i)=lmd_r1(Jindex)

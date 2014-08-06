@@ -1,20 +1,10 @@
-#ifdef EW_PERIODIC
-# define I_RANGE Istr-1,Iend+1
-#else
-# define I_RANGE MAX(Istr-1,1),MIN(Iend+1,Lm(ng))
-#endif
-#ifdef NS_PERIODIC
-# define J_RANGE Jstr-1,Jend+1
-#else
-# define J_RANGE MAX(Jstr-1,1),MIN(Jend+1,Mm(ng))
-#endif
 #define MIX_STABILITY
 
       SUBROUTINE t3dmix4 (ng, tile)
 !
 !svn $Id: t3dmix4_s.h 732 2008-09-07 01:55:51Z jcwarner $
 !***********************************************************************
-!  Copyright (c) 2002-2010 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2014 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                           Hernan G. Arango   !
 !****************************************** Alexander F. Shchepetkin ***
@@ -54,10 +44,10 @@
 #ifdef MASKING
      &                   GRID(ng) % umask,                              &
      &                   GRID(ng) % vmask,                              &
-# ifdef WET_DRY
+#endif
+#ifdef WET_DRY
      &                   GRID(ng) % umask_wet,                          &
      &                   GRID(ng) % vmask_wet,                          &
-# endif
 #endif
      &                   GRID(ng) % Hz,                                 &
      &                   GRID(ng) % pmon_u,                             &
@@ -84,6 +74,7 @@
 #ifdef PROFILE
       CALL wclock_off (ng, iNLM, 27)
 #endif
+
       RETURN
       END SUBROUTINE t3dmix4
 !
@@ -94,9 +85,9 @@
      &                         nrhs, nstp, nnew,                        &
 #ifdef MASKING
      &                         umask, vmask,                            &
-# ifdef WET_DRY
+#endif
+#ifdef WET_DRY
      &                         umask_wet, vmask_wet,                    &
-# endif
 #endif
      &                         Hz, pmon_u, pnom_v, pm, pn,              &
 #ifdef DIFF_3DCOEF
@@ -118,7 +109,11 @@
 !***********************************************************************
 !
       USE mod_param
+      USE mod_ncparam
       USE mod_scalars
+#ifdef OFFLINE_BIOLOGY
+      USE mod_biology
+#endif
 !
 !  Imported variable declarations.
 !
@@ -131,10 +126,10 @@
 # ifdef MASKING
       real(r8), intent(in) :: umask(LBi:,LBj:)
       real(r8), intent(in) :: vmask(LBi:,LBj:)
-#  ifdef WET_DRY
+# endif
+# ifdef WET_DRY
       real(r8), intent(in) :: umask_wet(LBi:,LBj:)
       real(r8), intent(in) :: vmask_wet(LBi:,LBj:)
-#  endif
 # endif
 # ifdef DIFF_3DCOEF
 #  ifdef TS_U3ADV_SPLIT
@@ -162,10 +157,10 @@
 # ifdef MASKING
       real(r8), intent(in) :: umask(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: vmask(LBi:UBi,LBj:UBj)
-#  ifdef WET_DRY
+# endif
+# ifdef WET_DRY
       real(r8), intent(in) :: umask_wet(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: vmask_wet(LBi:UBi,LBj:UBj)
-#  endif
 # endif
 # ifdef DIFF_3DCOEF
 #  ifdef TS_U3ADV_SPLIT
@@ -194,18 +189,16 @@
 !
 !  Local variable declarations.
 !
-      integer :: i, itrc, j, k
+      integer :: Imin, Imax, Jmin, Jmax
+      integer :: i, ibt, itrc, j, k
 
-      real(r8) :: cff, cff1, cff2, cff3, cff4
+      real(r8) :: cff, cff1, cff2, cff3
 
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: FE
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: FX
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: LapT
 
 #include "set_bounds.h"
-!
-      DO itrc=1,NT(ng)
-        DO k=1,N(ng)
 !
 !-----------------------------------------------------------------------
 !  Compute horizontal biharmonic diffusion along constant S-surfaces.
@@ -217,10 +210,34 @@
 #endif
 !-----------------------------------------------------------------------
 !
+!  Set local I- and J-ranges.
+!
+      IF (EWperiodic(ng)) THEN
+        Imin=Istr-1
+        Imax=Iend+1
+      ELSE
+        Imin=MAX(Istr-1,1)
+        Imax=MIN(Iend+1,Lm(ng))
+      END IF
+      IF (NSperiodic(ng)) THEN
+        Jmin=Jstr-1
+        Jmax=Jend+1
+      ELSE
+        Jmin=MAX(Jstr-1,1)
+        Jmax=MIN(Jend+1,Mm(ng))
+      END IF
+!
 !  Compute horizontal tracer flux in the XI- and ETA-directions.
 !
-          DO j=J_RANGE
-            DO i=I_RANGE+1
+#ifdef OFFLINE_BIOLOGY
+      DO ibt=1,NBT
+        itrc=idbio(ibt)
+#else
+      DO itrc=1,NT(ng)
+#endif
+        DO k=1,N(ng)
+          DO j=Jmin,Jmax
+            DO i=Imin,Imax+1
 #ifdef DIFF_3DCOEF
 # ifdef TS_U3ADV_SPLIT
               cff=0.5_r8*diff3d_u(i,j,k)*pmon_u(i,j)
@@ -232,11 +249,10 @@
               cff=0.25_r8*(diff4(i,j,itrc)+diff4(i-1,j,itrc))*          &
      &            pmon_u(i,j)
 #endif
-#ifdef MASKING
-              cff=cff*umask(i,j)
 # ifdef WET_DRY
               cff=cff*umask_wet(i,j)
-# endif
+# elif defined MASKING
+              cff=cff*umask(i,j)
 #endif
               FX(i,j)=cff*(Hz(i,j,k)+Hz(i-1,j,k))*                      &
 #ifdef MIX_STABILITY
@@ -253,8 +269,8 @@
 #endif
             END DO
           END DO
-          DO j=J_RANGE+1
-            DO i=I_RANGE
+          DO j=Jmin,Jmax+1
+            DO i=Imin,Imax
 #ifdef DIFF_3DCOEF
 # ifdef TS_U3ADV_SPLIT
               cff=0.5_r8*diff3d_v(i,j,k)*pnom_v(i,j)
@@ -266,11 +282,10 @@
               cff=0.25_r8*(diff4(i,j,itrc)+diff4(i,j-1,itrc))*          &
      &            pnom_v(i,j)
 #endif
-#ifdef MASKING
-              cff=cff*vmask(i,j)
 # ifdef WET_DRY
               cff=cff*vmask_wet(i,j)
-# endif
+# elif defined MASKING
+              cff=cff*vmask(i,j)
 #endif
               FE(i,j)=cff*(Hz(i,j,k)+Hz(i,j-1,k))*                      &
 #ifdef MIX_STABILITY
@@ -291,8 +306,8 @@
 !  Compute first harmonic operator and multiply by the metrics of the
 !  second harmonic operator.
 !
-          DO j=J_RANGE
-            DO i=I_RANGE
+          DO j=Jmin,Jmax
+            DO i=Imin,Imax
               cff=1.0_r8/Hz(i,j,k)
               LapT(i,j)=pm(i,j)*pn(i,j)*cff*                            &
      &                  (FX(i+1,j)-FX(i,j)+                             &
@@ -303,46 +318,61 @@
 !  Apply boundary conditions (except periodic; closed or gradient)
 !  to the first harmonic operator.
 !
-#ifndef EW_PERIODIC
-          IF (WESTERN_EDGE) THEN
-            DO j=J_RANGE
-# ifdef WESTERN_WALL
-              LapT(Istr-1,j)=0.0_r8
-# else
-              LapT(Istr-1,j)=LapT(Istr,j)
-# endif
-            END DO
+          IF (.not.(CompositeGrid(iwest,ng).or.EWperiodic(ng))) THEN
+            IF (DOMAIN(ng)%Western_Edge(tile)) THEN
+              IF (LBC(iwest,isTvar(itrc),ng)%closed) THEN
+                DO j=Jmin,Jmax
+                  LapT(Istr-1,j)=0.0_r8
+                END DO
+              ELSE
+                DO j=Jmin,Jmax
+                  LapT(Istr-1,j)=LapT(Istr,j)
+                END DO
+              END IF
+            END IF
           END IF
-          IF (EASTERN_EDGE) THEN
-            DO j=J_RANGE
-# ifdef EASTERN_WALL
-              LapT(Iend+1,j)=0.0_r8
-# else
-              LapT(Iend+1,j)=LapT(Iend,j)
-# endif
-            END DO
+!
+          IF (.not.(CompositeGrid(ieast,ng).or.EWperiodic(ng))) THEN
+            IF (DOMAIN(ng)%Eastern_Edge(tile)) THEN
+              IF (LBC(ieast,isTvar(itrc),ng)%closed) THEN
+                DO j=Jmin,Jmax
+                  LapT(Iend+1,j)=0.0_r8
+                END DO
+              ELSE
+                DO j=Jmin,Jmax
+                  LapT(Iend+1,j)=LapT(Iend,j)
+                END DO
+              END IF
+            END IF
           END IF
-#endif
-#ifndef NS_PERIODIC
-          IF (SOUTHERN_EDGE) THEN
-            DO i=I_RANGE
-# ifdef SOUTHERN_WALL
-              LapT(i,Jstr-1)=0.0_r8
-# else
-              LapT(i,Jstr-1)=LapT(i,Jstr)
-# endif
-            END DO
+!
+          IF (.not.(CompositeGrid(isouth,ng).or.NSperiodic(ng))) THEN
+            IF (DOMAIN(ng)%Southern_Edge(tile)) THEN
+              IF (LBC(isouth,isTvar(itrc),ng)%closed) THEN
+                DO i=Imin,Imax
+                  LapT(i,Jstr-1)=0.0_r8
+                END DO
+              ELSE
+                DO i=Imin,Imax
+                  LapT(i,Jstr-1)=LapT(i,Jstr)
+                END DO
+              END IF
+            END IF
           END IF
-          IF (NORTHERN_EDGE) THEN
-            DO i=I_RANGE
-# ifdef NORTHERN_WALL
-              LapT(i,Jend+1)=0.0_r8
-# else
-              LapT(i,Jend+1)=LapT(i,Jend)
-# endif
-            END DO
+!
+          IF (.not.(CompositeGrid(inorth,ng).or.NSperiodic(ng))) THEN
+            IF (DOMAIN(ng)%Northern_Edge(tile)) THEN
+              IF (LBC(inorth,isTvar(itrc),ng)%closed) THEN
+                DO i=Imin,Imax
+                  LapT(i,Jend+1)=0.0_r8
+                END DO
+              ELSE
+                DO i=Imin,Imax
+                  LapT(i,Jend+1)=LapT(i,Jend)
+                END DO
+              END IF
+            END IF
           END IF
-#endif
 !
 !  Compute FX=d(LapT)/d(xi) and FE=d(LapT)/d(eta) terms.
 !
@@ -362,11 +392,10 @@
               FX(i,j)=cff*                                              &
      &                (Hz(i,j,k)+Hz(i-1,j,k))*                          &
      &                (LapT(i,j)-LapT(i-1,j))
-#ifdef MASKING
-              FX(i,j)=FX(i,j)*umask(i,j)
 # ifdef WET_DRY
               FX(i,j)=FX(i,j)*umask_wet(i,j)
-# endif
+# elif defined MASKING
+              FX(i,j)=FX(i,j)*umask(i,j)
 #endif
             END DO
           END DO
@@ -386,11 +415,10 @@
               FE(i,j)=cff*                                              &
      &                (Hz(i,j,k)+Hz(i,j-1,k))*                          &
      &                (LapT(i,j)-LapT(i,j-1))
-#ifdef MASKING
-              FE(i,j)=FE(i,j)*vmask(i,j)
 # ifdef WET_DRY
               FE(i,j)=FE(i,j)*vmask_wet(i,j)
-# endif
+# elif defined MASKING
+              FE(i,j)=FE(i,j)*vmask(i,j)
 #endif
             END DO
           END DO
@@ -413,7 +441,6 @@
           END DO
         END DO
       END DO
-#undef I_RANGE
-#undef J_RANGE
+
       RETURN
       END SUBROUTINE t3dmix4_tile

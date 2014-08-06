@@ -1,8 +1,8 @@
       SUBROUTINE ad_biology (ng,tile)
 !
-!svn $Id: ad_npzd_Powell.h 429 2009-12-20 17:30:26Z arango $
+!svn $Id$
 !************************************************** Hernan G. Arango ***
-!  Copyright (c) 2002-2010 The ROMS/TOMS Group       Andrew M. Moore   !
+!  Copyright (c) 2002-2014 The ROMS/TOMS Group       Andrew M. Moore   !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !***********************************************************************
@@ -164,10 +164,10 @@
       real(r8), dimension(NT(ng),2) :: ad_BioTrc
       real(r8), dimension(IminS:ImaxS,N(ng),NT(ng)) :: Bio
       real(r8), dimension(IminS:ImaxS,N(ng),NT(ng)) :: Bio1
-      real(r8), dimension(IminS:ImaxS,N(ng),NT(ng)) :: Bio_bak
+      real(r8), dimension(IminS:ImaxS,N(ng),NT(ng)) :: Bio_old
 
       real(r8), dimension(IminS:ImaxS,N(ng),NT(ng)) :: ad_Bio
-      real(r8), dimension(IminS:ImaxS,N(ng),NT(ng)) :: ad_Bio_bak
+      real(r8), dimension(IminS:ImaxS,N(ng),NT(ng)) :: ad_Bio_old
 
       real(r8), dimension(IminS:ImaxS,0:N(ng)) :: FC
       real(r8), dimension(IminS:ImaxS,0:N(ng)) :: ad_FC
@@ -199,6 +199,10 @@
 !-----------------------------------------------------------------------
 !  Add biological Source/Sink terms.
 !-----------------------------------------------------------------------
+!
+!  Avoid computing source/sink terms if no biological iterations.
+!
+      IF (BioIter(ng).le.0) RETURN
 !
 !  Set time-stepping size (days) according to the number of iterations.
 !
@@ -277,7 +281,7 @@
               Bio(i,k,ibio)=0.0_r8
               Bio1(i,k,ibio)=0.0_r8
               ad_Bio(i,k,ibio)=0.0_r8
-              ad_Bio_bak(i,k,ibio)=0.0_r8
+              ad_Bio_old(i,k,ibio)=0.0_r8
             END DO
           END DO
         END DO
@@ -354,7 +358,7 @@
 !
             DO itrc=1,NBT
               ibio=idbio(itrc)
-              Bio_bak(i,k,ibio)=BioTrc(ibio,nstp)
+              Bio_old(i,k,ibio)=BioTrc(ibio,nstp)
               Bio(i,k,ibio)=BioTrc(ibio,nstp)
             END DO
           END DO
@@ -740,47 +744,34 @@
         END DO ITER_LOOP
 !
 !-----------------------------------------------------------------------
-!  Adjoint of update global tracer variables (m Tunits).
+!  Update global tracer variables: Add increment due to BGC processes
+!  to tracer array in time index "nnew". Index "nnew" is solution after
+!  advection and mixing and has transport units (m Tunits) hence the
+!  increment is multiplied by Hz.  Notice that we need to subtract
+!  original values "Bio_old" at the top of the routine to just account
+!  for the concentractions affected by BGC processes. This also takes
+!  into account any constraints (non-negative concentrations, carbon
+!  concentration range) specified before entering BGC kernel. If "Bio"
+!  were unchanged by BGC processes, the increment would be exactly
+!  zero. Notice that final tracer values, t(:,:,:,nnew,:) are not
+!  bounded >=0 so that we can preserve total inventory of nutrients
+!  when advection causes tracer concentration to go negative.
 !-----------------------------------------------------------------------
 !
         DO itrc=1,NBT
           ibio=idbio(itrc)
           DO k=1,N(ng)
             DO i=Istr,Iend
-#ifdef TS_MPDATA_NOT_YET
-!>            tl_t(i,j,k,3,ibio)=tl_t(i,j,k,nnew,ibio)*Hz_inv(i,k)+     &
-!>   &                           t(i,j,k,nnew,ibio)*Hz(i,j,k)*          &
-!>   &                           tl_Hz_inv(i,k)
+              cff=Bio(i,k,ibio)-Bio_old(i,k,ibio)
+!>            tl_t(i,j,k,nnew,ibio)=tl_t(i,j,k,nnew,ibio)+              &
+!>   &                              tl_cff*Hz(i,j,k)+cff*tl_Hz(i,j,k)
 !>
-              ad_t(i,j,k,nnew,ibio)=ad_t(i,j,k,nnew,ibio)+              &
-     &                              Hz_inv(i,k)*ad_t(i,j,k,3,ibio)
-              ad_Hz_inv(i,k)=ad_Hz_inv(i,k)+                            &
-     &                       t(i,j,k,nnew,ibio)*Hz(i,j,k)*              &
-     &                       ad_t(i,j,k,3,ibio)
-              ad_t(i,j,k,3,ibio)=0.0_r8
-#endif
-!>            tl_t(i,j,k,nnew,ibio)=(0.5_r8+                            &
-!>   &                               SIGN(0.5_r8,(t(i,j,k,nnew,ibio)+   &
-!>   &                                            Bio(i,k,ibio)-        &
-!>   &                                            Bio_bak(i,k,ibio))*   &
-!>   &                                           Hz(i,j,k)))*           &
-!>   &                              (tl_t(i,j,k,nnew,ibio)+             &
-!>   &                               (tl_Bio(i,k,ibio)-                 &
-!>   &                                tl_Bio_bak(i,k,ibio))*Hz(i,j,k)+  &
-!>   &                               (Bio(i,k,ibio)-                    &
-!>   &                                Bio_bak(i,k,ibio))*tl_Hz(i,j,k))
+              ad_Hz(i,j,k)=ad_Hz(i,j,k)+cff*ad_t(i,j,k,nnew,ibio)
+              ad_cff=ad_cff+Hz(i,j,k)*ad_t(i,j,k,nnew,ibio)
+!>            tl_cff=tl_Bio(i,k,ibio)-tl_Bio_old(i,k,ibio)
 !>
-              adfac=(0.5_r8+                                            &
-     &               SIGN(0.5_r8,(t(i,j,k,nnew,ibio)+                   &
-     &                            Bio(i,k,ibio)-                        &
-     &                            Bio_bak(i,k,ibio))*Hz(i,j,k)))*       &
-     &              ad_t(i,j,k,nnew,ibio)
-              adfac1=adfac*Hz(i,j,k)
-              ad_Bio(i,k,ibio)=ad_Bio(i,k,ibio)+adfac1
-              ad_Bio_bak(i,k,ibio)=ad_Bio_bak(i,k,ibio)-adfac1
-              ad_Hz(i,j,k)=ad_Hz(i,j,k)+                                &
-     &                     adfac*(Bio(i,k,ibio)-Bio_bak(i,k,ibio))
-              ad_t(i,j,k,nnew,ibio)=adfac
+              ad_Bio_old(i,k,ibio)=ad_Bio_old(i,k,ibio)-ad_cff
+              ad_Bio(i,k,ibio)=ad_Bio(i,k,ibio)+ad_cff
             END DO
           END DO
         END DO
@@ -849,7 +840,7 @@
 !
               DO itrc=1,NBT
                 ibio=idbio(itrc)
-                Bio_bak(i,k,ibio)=BioTrc(ibio,nstp)
+                Bio_old(i,k,ibio)=BioTrc(ibio,nstp)
                 Bio(i,k,ibio)=BioTrc(ibio,nstp)
               END DO
             END DO
@@ -2029,7 +2020,7 @@
 !
               DO itrc=1,NBT
                 ibio=idbio(itrc)
-                Bio_bak(i,k,ibio)=BioTrc(ibio,nstp)
+                Bio_old(i,k,ibio)=BioTrc(ibio,nstp)
                 Bio(i,k,ibio)=BioTrc(ibio,nstp)
               END DO
             END DO
@@ -2548,7 +2539,7 @@
 !
               DO itrc=1,NBT
                 ibio=idbio(itrc)
-                Bio_bak(i,k,ibio)=BioTrc(ibio,nstp)
+                Bio_old(i,k,ibio)=BioTrc(ibio,nstp)
                 Bio(i,k,ibio)=BioTrc(ibio,nstp)
               END DO
             END DO
@@ -3102,11 +3093,11 @@
               ad_BioTrc(ibio,nstp)=ad_BioTrc(ibio,nstp)+                &
      &                             ad_Bio(i,k,ibio)
               ad_Bio(i,k,ibio)=0.0_r8
-!>            tl_Bio_bak(i,k,ibio)=tl_BioTrc(ibio,nstp)
+!>            tl_Bio_old(i,k,ibio)=tl_BioTrc(ibio,nstp)
 !>
               ad_BioTrc(ibio,nstp)=ad_BioTrc(ibio,nstp)+                &
-     &                             ad_Bio_bak(i,k,ibio)
-              ad_Bio_bak(i,k,ibio)=0.0_r8
+     &                             ad_Bio_old(i,k,ibio)
+              ad_Bio_old(i,k,ibio)=0.0_r8
             END DO
 !
 !  Adjoint positive definite concentrations.

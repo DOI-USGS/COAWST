@@ -2,7 +2,7 @@
 !
 !svn $Id: tlcheck_ocean.h 429 2009-12-20 17:30:26Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2010 The ROMS/TOMS Group       Andrew M. Moore   !
+!  Copyright (c) 2002-2014 The ROMS/TOMS Group       Andrew M. Moore   !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -31,7 +31,7 @@
 
       CONTAINS
 
-      SUBROUTINE ROMS_initialize (first, MyCOMM)
+      SUBROUTINE ROMS_initialize (first, mpiCOMM)
 !
 !=======================================================================
 !                                                                      !
@@ -45,24 +45,30 @@
       USE mod_fourdvar
       USE mod_iounits
       USE mod_scalars
+
+#ifdef MCT_LIB
 !
-#ifdef AIR_OCEAN
-      USE ocean_coupler_mod, ONLY : initialize_atmos_coupling
-#endif
-#ifdef WAVES_OCEAN
-      USE ocean_coupler_mod, ONLY : initialize_waves_coupling
+# ifdef AIR_OCEAN
+      USE ocean_coupler_mod, ONLY : initialize_ocn2atm_coupling
+# endif
+# ifdef WAVES_OCEAN
+      USE ocean_coupler_mod, ONLY : initialize_ocn2wav_coupling
+# endif
 #endif
 !
 !  Imported variable declarations.
 !
       logical, intent(inout) :: first
 
-      integer, intent(in), optional :: MyCOMM
+      integer, intent(in), optional :: mpiCOMM
 !
 !  Local variable declarations.
 !
       logical :: allocate_vars = .TRUE.
 
+#ifdef DISTRIBUTE
+      integer :: MyError, MySize
+#endif
       integer :: ng, thread
 
 #ifdef DISTRIBUTE
@@ -71,11 +77,13 @@
 !  Set distribute-memory (MPI) world communictor.
 !-----------------------------------------------------------------------
 !
-      IF (PRESENT(MyCOMM)) THEN
-        OCN_COMM_WORLD=MyCOMM
+      IF (PRESENT(mpiCOMM)) THEN
+        OCN_COMM_WORLD=mpiCOMM
       ELSE
         OCN_COMM_WORLD=MPI_COMM_WORLD
       END IF
+      CALL mpi_comm_rank (OCN_COMM_WORLD, MyRank, MyError)
+      CALL mpi_comm_size (OCN_COMM_WORLD, MySize, MyError)
 #endif
 !
 !-----------------------------------------------------------------------
@@ -88,57 +96,86 @@
       IF (first) THEN
         first=.FALSE.
 !
-!  Initialize parallel parameters.
+!  Initialize parallel control switches. These scalars switches are
+!  independent from standard input parameters.
 !
         CALL initialize_parallel
 !
-!  Initialize wall clocks.
-!
-        IF (Master) THEN
-          WRITE (stdout,10)
- 10       FORMAT (' Process Information:',/)
-        END IF
-        DO ng=1,NGRIDS
-!$OMP PARALLEL DO PRIVATE(thread) SHARED(ng,numthreads)
-          DO thread=0,numthreads-1
-            CALL wclock_on (ng, iNLM, 0)
-          END DO
-!$OMP END PARALLEL DO
-        END DO
-
-#if defined AIR_OCEAN || defined WAVES_OCEAN
-!
-!  Initialize coupling streams between model(s).
-!
-        DO ng=1,Ngrids
-# ifdef AIR_OCEAN
-          CALL initialize_atmos_coupling (ng, MyRank)
-# endif
-# ifdef WAVES_OCEAN
-          CALL initialize_waves_coupling (ng, MyRank)
-# endif
-        END DO
-#endif
-!
-!  Read in model tunable parameters from standard input. Initialize
-!  "mod_param", "mod_ncparam" and "mod_scalar" modules.
+!  Read in model tunable parameters from standard input. Allocate and
+!  initialize variables in several modules after the number of nested
+!  grids and dimension parameters are known.
 !
         CALL inp_par (iNLM)
         IF (exit_flag.ne.NoError) RETURN
 !
+!  Set domain decomposition tile partition range.  This range is
+!  computed only once since the "first_tile" and "last_tile" values
+!  are private for each parallel thread/node.
+!
+!$OMP PARALLEL
+#if defined _OPENMP
+      MyThread=my_threadnum()
+#elif defined DISTRIBUTE
+      MyThread=MyRank
+#else
+      MyThread=0
+#endif
+      DO ng=1,Ngrids
+        chunk_size=(NtileX(ng)*NtileE(ng)+numthreads-1)/numthreads
+        first_tile(ng)=MyThread*chunk_size
+        last_tile (ng)=first_tile(ng)+chunk_size-1
+      END DO
+!$OMP END PARALLEL
+!
+!  Initialize internal wall clocks. Notice that the timings does not
+!  includes processing standard input because several parameters are
+!  needed to allocate clock variables.
+!
+        IF (Master) THEN
+          WRITE (stdout,10)
+ 10       FORMAT (/,' Process Information:',/)
+        END IF
+!
+        DO ng=1,Ngrids
+!$OMP PARALLEL
+          DO thread=THREAD_RANGE
+            CALL wclock_on (ng, iNLM, 0)
+          END DO
+!$OMP END PARALLEL
+        END DO
+!
 !  Allocate and initialize modules variables.
 !
+!$OMP PARALLEL
         CALL mod_arrays (allocate_vars)
+!$OMP END PARALLEL
 !
 !  Allocate and initialize observation arrays.
 !
         CALL initialize_fourdvar
+
       END IF
+
+#if defined MCT_LIB && (defined AIR_OCEAN || defined WAVES_OCEAN)
+!
+!-----------------------------------------------------------------------
+!  Initialize coupling streams between model(s).
+!-----------------------------------------------------------------------
+!
+      DO ng=1,Ngrids
+# ifdef AIR_OCEAN
+        CALL initialize_ocn2atm_coupling (ng, MyRank)
+# endif
+# ifdef WAVES_OCEAN
+        CALL initialize_ocn2wav_coupling (ng, MyRank)
+# endif
+      END DO
+#endif
 
       RETURN
       END SUBROUTINE ROMS_initialize
 
-      SUBROUTINE ROMS_run (Tstr, Tend)
+      SUBROUTINE ROMS_run (RunInterval)
 !
 !=======================================================================
 !                                                                      !
@@ -160,124 +197,131 @@
 !
 !  Imported variable declarations
 !
-      integer, dimension(Ngrids) :: Tstr
-      integer, dimension(Ngrids) :: Tend
+      real(r8), intent(in) :: RunInterval            ! seconds
 !
 !  Local variable declarations.
 !
-      integer :: IniRec, i, lstr, my_iic, ng, status
-      integer :: subs, tile, thread
+      integer :: IniRec, i, ng, status
+      integer :: tile
 
       real(r8) :: gp, hp, p
 !
-!=======================================================================
-!  Run model for all nested grids, if any.
-!=======================================================================
-!
-      NEST_LOOP : DO ng=1,Ngrids
-!
 !-----------------------------------------------------------------------
-!  Run nonlinear and adjoint models.
+!  Run tangent linear model test.
 !-----------------------------------------------------------------------
+!
+!  Currently, the tangent linear model test cannot be run over
+!  nested grids.
+!
+      IF (Ngrids.gt.1) THEN
+        WRITE (stdout,10) 'Nested grids are not allowed, Ngrids = ',    &
+                          Ngrids
+        STOP
+      END IF
 !
 !  Initialize relevant parameters.
 !
+      DO ng=1,Ngrids
         Lold(ng)=1
         Lnew(ng)=1
-        Nrun=1
-        ERstr=1
-        ERend=NstateVar(ng)+1
-        IniRec=1
-        ig1count=0
-        ig2count=0
         nTLM(ng)=nHIS(ng)                      ! to allow IO comparison
-        LcycleTLM=.FALSE.
+      END DO
+      Nrun=1
+      Ipass=1
+      ERstr=1
+      ERend=MAXVAL(NstateVar)+1
+      IniRec=1
+      ig1count=0
+      ig2count=0
+      LcycleTLM=.FALSE.
 !
 !  Initialize nonlinear model with first guess initial conditions.
 !
-        CALL initial (ng)
-        IF (exit_flag.ne.NoError) RETURN
+!$OMP PARALLEL
+      CALL initial
+!$OMP END PARALLEL
+      IF (exit_flag.ne.NoError) RETURN
 !
 !  Run nonlinear model. Extract and store nonlinear model values at
 !  observation locations.
 !
+      DO ng=1,Ngrids
         IF (Master) THEN
-          WRITE (stdout,10) 'NL', ntstart(ng), ntend(ng)
+          WRITE (stdout,20) 'NL', ng, ntstart(ng), ntend(ng)
         END IF
-
         wrtNLmod(ng)=.TRUE.
         wrtTLmod(ng)=.FALSE.
-        time(ng)=time(ng)-dt(ng)
+      END DO
 
-        NL_LOOP1 : DO my_iic=ntstart(ng),ntend(ng)+1
-
-          iic(ng)=my_iic
+!$OMP PARALLEL
 #ifdef SOLVE3D
-          CALL main3d (ng)
+      CALL main3d (RunInterval)
 #else
-          CALL main2d (ng)
+      CALL main2d (RunInterval)
 #endif
-          IF (exit_flag.ne.NoError) RETURN
-
-        END DO NL_LOOP1
+!$OMP END PARALLEL
+      IF (exit_flag.ne.NoError) RETURN
 !
 !  Close current nonlinear model history file.
 !
-        SourceFile='tlcheck_ocean.h, ROMS_run'
-
-        CALL netcdf_close (ng, iNLM, ncHISid(ng))
+      SourceFile='tlcheck_ocean.h, ROMS_run'
+      DO ng=1,Ngrids
+        CALL netcdf_close (ng, iNLM, HIS(ng)%ncid)
         IF (exit_flag.ne.NoError) RETURN
-
         wrtNLmod(ng)=.FALSE.
         wrtTLmod(ng)=.TRUE.
+      END DO
 !
 !  Save and Report cost function between nonlinear model and
 !  observations.
 !
+      DO ng=1,Ngrids
         DO i=0,NstateVar(ng)
           FOURDVAR(ng)%CostFunOld(i)=FOURDVAR(ng)%CostFun(i)
         END DO
         IF (Master) THEN
-          WRITE (stdout,30) FOURDVAR(ng)%CostFunOld(0)
+          WRITE (stdout,40) FOURDVAR(ng)%CostFunOld(0)
           DO i=1,NstateVar(ng)
             IF (FOURDVAR(ng)%CostFunOld(i).gt.0.0_r8) THEN
               IF (i.eq.1) THEN
-                WRITE (stdout,40) FOURDVAR(ng)%CostFunOld(i),           &
+                WRITE (stdout,50) FOURDVAR(ng)%CostFunOld(i),           &
      &                            TRIM(Vname(1,idSvar(i)))
               ELSE
-                WRITE (stdout,50) FOURDVAR(ng)%CostFunOld(i),           &
+                WRITE (stdout,60) FOURDVAR(ng)%CostFunOld(i),           &
      &                            TRIM(Vname(1,idSvar(i)))
               END IF
             END IF
           END DO
         END IF
+      END DO
 !
 !  Initialize the adjoint model from rest.
 !
-        CALL ad_initial (ng)
+      DO ng=1,Ngrids
+!$OMP PARALLEL
+        CALL ad_initial (ng, .TRUE.)
+!$OMP END PARALLEL
         IF (exit_flag.ne.NoError) RETURN
+      END DO
 !
 !  Time-step adjoint model: Compute model state gradient, GRAD(J).
 !  Force the adjoint model with the adjoint misfit between nonlinear
 !  model and observations.
 !
+      DO ng=1,Ngrids
         IF (Master) THEN
-          WRITE (stdout,10) 'AD', ntstart(ng), ntend(ng)
+          WRITE (stdout,20) 'AD', ng, ntstart(ng), ntend(ng)
         END IF
+      END DO
 
-        time(ng)=time(ng)+dt(ng)
-
-        AD_LOOP : DO my_iic=ntstart(ng),ntend(ng),-1
-
-          iic(ng)=my_iic
+!$OMP PARALLEL
 #ifdef SOLVE3D
-          CALL ad_main3d (ng)
+      CALL ad_main3d (RunInterval)
 #else
-          CALL ad_main2d (ng)
+      CALL ad_main2d (RunInterval)
 #endif
-          IF (exit_flag.ne.NoError) RETURN
-
-        END DO AD_LOOP
+!$OMP END PARALLEL
+      IF (exit_flag.ne.NoError) RETURN
 !
 !-----------------------------------------------------------------------
 !  Perturb each tangent linear state variable using the steepest decent
@@ -287,21 +331,21 @@
 !
 !  Load adjoint solution.
 !
-        CALL get_state (ng, iADM, 3, ADJname(ng), tADJindx(ng),         &
+      DO ng=1,Ngrids
+        CALL get_state (ng, iADM, 3, ADM(ng)%name, ADM(ng)%Rindex,      &
      &                  Lnew(ng))
         IF (exit_flag.ne.NoError) RETURN
+      END DO
 !
 !  Compute adjoint solution dot product for scaling purposes.
 !
-!$OMP PARALLEL DO PRIVATE(thread,subs,tile)                             &
-!$OMP&            SHARED(ng,numthreads)
-        DO thread=0,numthreads-1
-          subs=NtileX(ng)*NtileE(ng)/numthreads
-          DO tile=subs*thread,subs*(thread+1)-1
-            CALL ad_dotproduct (ng, TILE, Lnew(ng))
-          END DO
+      DO ng=1,Ngrids
+!$OMP PARALLEL
+        DO tile=first_tile(ng),last_tile(ng),+1
+          CALL ad_dotproduct (ng, tile, Lnew(ng))
         END DO
-!$OMP END PARALLEL DO
+!$OMP END PARALLEL
+      END DO
 
 #ifdef SOLVE3D
 !
@@ -316,27 +360,31 @@
 !  ==========  once. Then, perturb one state variable at the time.
 !
 #endif
-        OUTER_LOOP : DO outer=ERstr,ERend
+      OUTER_LOOP : DO outer=ERstr,ERend
 
-          CALL get_state (ng, iNLM, 1, FWDname(ng), IniRec, Lnew(ng))
+        DO ng=1,Ngrids
+          CALL get_state (ng, iNLM, 1, FWD(ng)%name, IniRec, Lnew(ng))
           IF (exit_flag.ne.NoError) RETURN
+        END DO
 !
 !  INNER LOOP: scale perturbation amplitude by selecting "p" scalar,
 !  ==========  such that:
-!                              p = 10 ** FLOAT(-inner)
+!                              p = 10 ** REAL(-inner,r8)
 !
-          INNER_LOOP : DO inner=1,Ninner
+        INNER_LOOP : DO inner=1,Ninner
 !
 !  Add a perturbation to the nonlinear state initial conditions
 !  according with the outer and inner loop iterations. The added
 !  term is a function of the steepest descent direction defined
 !  by grad(J) times the perturbation amplitude "p".
 !
-            CALL initial (ng)
-            IF (exit_flag.ne.NoError) RETURN
+!$OMP PARALLEL
+          CALL initial (.FALSE.)
+!$OMP END PARALLEL
+          IF (exit_flag.ne.NoError) RETURN
 
-            lstr=LEN_TRIM(HISbase(ng))
-            WRITE (HISname,60) HISbase(ng)(1:lstr-3), Nrun
+          DO ng=1,Ngrids
+            WRITE (HIS(ng)%name,70) TRIM(HIS(ng)%base), Nrun
 
             IF (ndefTLM(ng).lt.0) THEN
               LdefHIS(ng)=.FALSE.              ! suppress IO
@@ -346,41 +394,43 @@
             END IF
             wrtNLmod(ng)=.TRUE.
             wrtTLmod(ng)=.FALSE.
+          END DO
 !
 !  Time-step nonlinear model: compute perturbed nonlinear state.
 !
+          DO ng=1,Ngrids
             IF (Master) THEN
-              WRITE (stdout,10) 'NL', ntstart(ng), ntend(ng)
+              WRITE (stdout,20) 'NL', ng, ntstart(ng), ntend(ng)
             END IF
+          END DO
 
-            time(ng)=time(ng)-dt(ng)
-
-            NL_LOOP2 : DO my_iic=ntstart(ng),ntend(ng)+1
-
-              iic(ng)=my_iic
+!$OMP PARALLEL
 #ifdef SOLVE3D
-              CALL main3d (ng)
+          CALL main3d (RunInterval)
 #else
-              CALL main2d (ng)
+          CALL main2d (RunInterval)
 #endif
-              IF (exit_flag.ne.NoError) RETURN
-
-            END DO NL_LOOP2
+!$OMP END PARALLEL
+          IF (exit_flag.ne.NoError) RETURN
 !
 !  Get current nonlinear model trajectory.
 !
-            FWDname(ng)=HISbase(ng)
-            CALL get_state (ng, iNLM, 1, FWDname(ng), IniRec, Lnew(ng))
+          DO ng=1,Ngrids
+            FWD(ng)%name=TRIM(HIS(ng)%base)//'.nc'
+            CALL get_state (ng, iNLM, 1, FWD(ng)%name, IniRec, Lnew(ng))
             IF (exit_flag.ne.NoError) RETURN
+          END DO
 !
 !  Initialize tangent linear with the steepest decent direction
 !  (adjoint state, GRAD(J)) times the perturbation amplitude "p".
 !
-            CALL tl_initial (ng)
+          DO ng=1,Ngrids
+!$OMP PARALLEL
+            CALL tl_initial (ng, .FALSE.)
+!$OMP END PARALLEL
             IF (exit_flag.ne.NoError) RETURN
 
-            lstr=LEN_TRIM(TLMbase(ng))
-            WRITE (TLMname(ng),60) TLMbase(ng)(1:lstr-3), Nrun
+            WRITE (TLM(ng)%name,70) TRIM(TLM(ng)%base), Nrun
 
             IF (ndefTLM(ng).lt.0) THEN
               LdefTLM(ng)=.FALSE.              ! suppress IO
@@ -388,75 +438,75 @@
             ELSE
               LdefTLM(ng)=.TRUE.
             END IF
+          END DO
 !
 !  Time-step tangent linear model:  Compute misfit cost function
 !  between model (nonlinear + tangent linear) and observations.
 !
+          DO ng=1,Ngrids
             IF (Master) THEN
-              WRITE (stdout,10) 'TL', ntstart(ng), ntend(ng)
+              WRITE (stdout,20) 'TL', ng, ntstart(ng), ntend(ng)
             END IF
+          END DO
 
-            time(ng)=time(ng)-dt(ng)
-
-            TL_LOOP : DO my_iic=ntstart(ng),ntend(ng)+1
-
-              iic(ng)=my_iic
+!$OMP PARALLEL
 #ifdef SOLVE3D
-              CALL tl_main3d (ng)
+          CALL tl_main3d (RunInterval)
 #else
-              CALL tl_main2d (ng)
+          CALL tl_main2d (RunInterval)
 #endif
-              IF (exit_flag.ne.NoError) RETURN
-
-            END DO TL_LOOP
+!$OMP END PARALLEL
+          IF (exit_flag.ne.NoError) RETURN
 !
 !  Close current tangent linear model history file.
 !
-            SourceFile='tlcheck_ocean.h, ROMS_run'
-
-            CALL netcdf_close (ng, iTLM, ncTLMid(ng))
+          SourceFile='tlcheck_ocean.h, ROMS_run'
+          DO ng=1,Ngrids
+            CALL netcdf_close (ng, iTLM, TLM(ng)%ncid)
             IF (exit_flag.ne.NoError) RETURN
+          END DO
 !
 !  Advance model run counter.
 !
-            Nrun=Nrun+1
+          Nrun=Nrun+1
 
-          END DO INNER_LOOP
+        END DO INNER_LOOP
 
-        END DO OUTER_LOOP
+      END DO OUTER_LOOP
 !
 !  Report dot products.
 !
+      DO ng=1,Ngrids
         IF (Master) THEN
-          WRITE (stdout,70)                                             &
+          WRITE (stdout,80)                                             &
      &      'TLM Test - Dot Products Summary: p, g1, g2, (g1-g2)/g1'
           inner=1
           DO i=1,MIN(ig1count,ig2count)
-            p=10.0_r8**FLOAT(-inner)
+            p=10.0_r8**REAL(-inner,r8)
             IF (MOD(i,1+ntimes(ng)/nTLM(ng)).eq.0) inner=inner+1
-            WRITE (stdout,80) i, p, g1(i), g2(i), (g1(i)-g2(i))/g1(i)
+            WRITE (stdout,90) i, p, g1(i), g2(i), (g1(i)-g2(i))/g1(i)
             IF ((MOD(i,1+ntimes(ng)/nTLM(ng)).eq.0).and.                &
      &          (MOD(i,Ninner*(1+ntimes(ng)/nTLM(ng))).ne.0)) THEN
-              WRITE (stdout,90)
+              WRITE (stdout,100)
             ELSE IF (MOD(i,Ninner*(1+ntimes(ng)/nTLM(ng))).eq.0) THEN
               inner=1
-              WRITE (stdout,100)
+              WRITE (stdout,110)
             END IF
           END DO
         END IF
-
-      END DO NEST_LOOP
+      END DO
 !
- 10   FORMAT (/,1x,a,1x,'ROMS/TOMS : started time-stepping:',           &
-     &        '( TimeSteps: ',i8.8,' - ',i8.8,')',/)
- 30   FORMAT (/,' Nonlinear Model Cost Function = ',1p,e21.14)
- 40   FORMAT (' --------------- ','cost function = ',1p,e21.14,2x,a)
- 50   FORMAT (17x,'cost function = ',1p,e21.14,2x,a)
- 60   FORMAT (a,'_',i3.3,'.nc')
- 70   FORMAT (/,a,/)
- 80   FORMAT (i4,2x,1pe8.1,3(1x,1p,e20.12,0p))
- 90   FORMAT (77('.'))
-100   FORMAT (77('-'))
+ 10   FORMAT (/,a,i3,/)
+ 20   FORMAT (/,1x,a,1x,'ROMS/TOMS : started time-stepping:',           &
+     &        ' (Grid: ',i2.2,' TimeSteps: ',i8.8,' - ',i8.8,')',/)
+ 40   FORMAT (/,' Nonlinear Model Cost Function = ',1p,e21.14)
+ 50   FORMAT (' --------------- ','cost function = ',1p,e21.14,2x,a)
+ 60   FORMAT (17x,'cost function = ',1p,e21.14,2x,a)
+ 70   FORMAT (a,'_',i3.3,'.nc')
+ 80   FORMAT (/,a,/)
+ 90   FORMAT (i4,2x,1pe8.1,3(1x,1p,e20.12,0p))
+100   FORMAT (77('.'))
+110   FORMAT (77('-'))
 
       RETURN
       END SUBROUTINE ROMS_run
@@ -478,7 +528,7 @@
 !
 !  Local variable declarations.
 !
-      integer :: ng, thread
+      integer :: Fcount, ng, thread
 !
 !-----------------------------------------------------------------------
 !  If blowing-up, save latest model state into RESTART NetCDF file.
@@ -486,20 +536,23 @@
 !
 !  If cycling restart records, write solution into the next record.
 !
-      DO ng=1,Ngrids
-        IF (LwrtRST(ng).and.(exit_flag.eq.1)) THEN
-          IF (Master) WRITE (stdout,10)
- 10       FORMAT (/,' Blowing-up: Saving latest model state into ',     &
-     &              ' RESTART file',/)
-          IF (LcycleRST(ng).and.(NrecRST(ng).ge.2)) THEN
-            tRSTindx(ng)=2
-            LcycleRST(ng)=.FALSE.
+      IF (exit_flag.eq.1) THEN
+        DO ng=1,Ngrids
+          IF (LwrtRST(ng)) THEN
+            IF (Master) WRITE (stdout,10)
+ 10         FORMAT (/,' Blowing-up: Saving latest model state into ',   &
+     &                ' RESTART file',/)
+            Fcount=RST(ng)%Fcount
+            IF (LcycleRST(ng).and.(RST(ng)%Nrec(Fcount).ge.2)) THEN
+              RST(ng)%Rindex=2
+              LcycleRST(ng)=.FALSE.
+            END IF
+            blowup=exit_flag
+            exit_flag=NoError
+            CALL wrt_rst (ng)
           END IF
-          blowup=exit_flag
-          exit_flag=NoError
-          CALL wrt_rst (ng)
-        END IF
-      END DO
+        END DO
+      END IF
 !
 !-----------------------------------------------------------------------
 !  Stop model and time profiling clocks.  Close output NetCDF files.
@@ -513,16 +566,16 @@
       END IF
 
       DO ng=1,Ngrids
-!$OMP PARALLEL DO PRIVATE(thread) SHARED(ng,numthreads)
-        DO thread=0,numthreads-1
+!$OMP PARALLEL
+        DO thread=THREAD_RANGE
           CALL wclock_off (ng, iNLM, 0)
         END DO
-!$OMP END PARALLEL DO
+!$OMP END PARALLEL
       END DO
 !
 !  Close IO files.
 !
-      CALL close_io
+      CALL close_out
 
       RETURN
       END SUBROUTINE ROMS_finalize

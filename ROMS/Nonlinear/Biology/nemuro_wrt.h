@@ -1,7 +1,7 @@
 /*
-** svn $Id: nemuro_wrt.h 429 2009-12-20 17:30:26Z arango $
+** svn $Id$
 *************************************************** Hernan G. Arango ***
-** Copyright (c) 2002-2010 The ROMS/TOMS Group                        **
+** Copyright (c) 2002-2014 The ROMS/TOMS Group                        **
 **   Licensed under a MIT/X style license                             **
 **   See License_ROMS.txt                                             **
 ************************************************************************
@@ -171,6 +171,11 @@
      &                      ncid = ncid)
       IF (exit_flag.ne.NoError) RETURN
 
+      CALL netcdf_put_fvar (ng, model, ncname, 'GRmaxSpl',              &
+     &                      GRmaxSpl(ng), (/0/), (/0/),                 &
+     &                      ncid = ncid)
+      IF (exit_flag.ne.NoError) RETURN
+
       CALL netcdf_put_fvar (ng, model, ncname, 'GRmaxLps',              &
      &                      GRmaxLps(ng), (/0/), (/0/),                 &
      &                      ncid = ncid)
@@ -237,6 +242,11 @@
      &                      ncid = ncid)
       IF (exit_flag.ne.NoError) RETURN
 
+      CALL netcdf_put_fvar (ng, model, ncname, 'K_PL2ZS',               &
+     &                      KPL2ZS(ng), (/0/), (/0/),                   &
+     &                      ncid = ncid)
+      IF (exit_flag.ne.NoError) RETURN
+
       CALL netcdf_put_fvar (ng, model, ncname, 'K_PS2ZL',               &
      &                      KPS2ZL(ng), (/0/), (/0/),                   &
      &                      ncid = ncid)
@@ -271,6 +281,11 @@
 
       CALL netcdf_put_fvar (ng, model, ncname, 'PS2ZSstar',             &
      &                      PS2ZSstar(ng), (/0/), (/0/),                &
+     &                      ncid = ncid)
+      IF (exit_flag.ne.NoError) RETURN
+
+      CALL netcdf_put_fvar (ng, model, ncname, 'PL2ZSstar',             &
+     &                      PL2ZSstar(ng), (/0/), (/0/),                &
      &                      ncid = ncid)
       IF (exit_flag.ne.NoError) RETURN
 
@@ -430,3 +445,34 @@
      &                      ncid = ncid)
       IF (exit_flag.ne.NoError) RETURN
 
+#ifdef IRON_LIMIT
+      CALL netcdf_put_fvar (ng, model, ncname, 'T_Fe',                  &
+     &                      T_Fe(ng), (/0/), (/0/),                     &
+     &                      ncid = ncid)
+      IF (exit_flag.ne.NoError) RETURN
+
+      CALL netcdf_put_fvar (ng, model, ncname, 'A_Fe',                  &
+     &                      A_Fe(ng), (/0/), (/0/),                     &
+     &                      ncid = ncid)
+      IF (exit_flag.ne.NoError) RETURN
+
+      CALL netcdf_put_fvar (ng, model, ncname, 'B_Fe',                  &
+     &                      B_Fe(ng), (/0/), (/0/),                     &
+     &                      ncid = ncid)
+      IF (exit_flag.ne.NoError) RETURN
+
+      CALL netcdf_put_fvar (ng, model, ncname, 'SK_FeC',                &
+     &                      SK_FeC(ng), (/0/), (/0/),                   &
+     &                      ncid = ncid)
+      IF (exit_flag.ne.NoError) RETURN
+
+      CALL netcdf_put_fvar (ng, model, ncname, 'LK_FeC',                &
+     &                      LK_FeC(ng), (/0/), (/0/),                   &
+     &                      ncid = ncid)
+      IF (exit_flag.ne.NoError) RETURN
+
+      CALL netcdf_put_fvar (ng, model, ncname, 'FeRR',                  &
+     &                      FeRR(ng), (/0/), (/0/),                     &
+     &                      ncid = ncid)
+      IF (exit_flag.ne.NoError) RETURN
+#endif

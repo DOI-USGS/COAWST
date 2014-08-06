@@ -4,9 +4,9 @@
 #if defined TANGENT && defined FOUR_DVAR && defined SOLVE3D && \
     defined ADJUST_BOUNDARY
 !
-!svn $Id: tl_conv_bry3d.F 429 2009-12-20 17:30:26Z arango $
+!svn $Id$
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2010 The ROMS/TOMS Group       Andrew M. Moore   !
+!  Copyright (c) 2002-2014 The ROMS/TOMS Group       Andrew M. Moore   !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -60,9 +60,9 @@
 !=======================================================================
 !
       implicit none
-
+!
       PUBLIC
-
+!
       CONTAINS
 !
 !***********************************************************************
@@ -136,18 +136,6 @@
 !
 !  Local variable declarations.
 !
-# ifdef DISTRIBUTE
-#  ifdef EW_PERIODIC
-      logical :: EWperiodic=.TRUE.
-#  else
-      logical :: EWperiodic=.FALSE.
-#  endif
-#  ifdef NS_PERIODIC
-      logical :: NSperiodic=.TRUE.
-#  else
-      logical :: NSperiodic=.FALSE.
-#  endif
-# endif
       logical, dimension(4) :: Lconvolve
 
       integer :: Nnew, Nold, Nsav, i, j, k, step
@@ -185,10 +173,10 @@
 !  at RHO-points.
 !-----------------------------------------------------------------------
 !
-      Lconvolve(iwest )=WESTERN_EDGE
-      Lconvolve(ieast )=EASTERN_EDGE
-      Lconvolve(isouth)=SOUTHERN_EDGE
-      Lconvolve(inorth)=NORTHERN_EDGE
+      Lconvolve(iwest )=DOMAIN(ng)%Western_Edge (tile)
+      Lconvolve(ieast )=DOMAIN(ng)%Eastern_Edge (tile)
+      Lconvolve(isouth)=DOMAIN(ng)%Southern_Edge(tile)
+      Lconvolve(inorth)=DOMAIN(ng)%Northern_Edge(tile)
 !
 !  Compute metrics factors.  Notice that "z_r" and "Hz" are assumed to
 !  be time invariant in the vertical convolution.  Scratch array are
@@ -263,12 +251,14 @@
 # ifdef DISTRIBUTE
 !>    CALL mp_exchange3d_bry (ng, tile, model, 1, boundary,             &
 !>   &                        LBij, UBij, 1, N(ng),                     &
-!>   &                        Nghost, EWperiodic, NSperiodic,           &
+!>   &                        Nghost,                                   &
+!>   &                        EWperiodic(ng), NSperiodic(ng),           &
 !>   &                        A)
 !>
       CALL mp_exchange3d_bry (ng, tile, model, 1, boundary,             &
      &                        LBij, UBij, 1, N(ng),                     &
-     &                        Nghost, EWperiodic, NSperiodic,           &
+     &                        Nghost,                                   &
+     &                        EWperiodic(ng), NSperiodic(ng),           &
      &                        tl_A)
 # endif
       IF (Lconvolve(boundary)) THEN
@@ -381,12 +371,14 @@
 # ifdef DISTRIBUTE
 !>      CALL mp_exchange3d_bry (ng, tile, model, 1, boundary,           &
 !>   &                          LBij, UBij, 1, N(ng),                   &
-!>   &                          Nghost, EWperiodic, NSperiodic,         &
+!>   &                          Nghost,                                 &
+!>   &                          EWperiodic(ng), NSperiodic(ng),         &
 !>   &                          Awrk(:,:,Nnew))
 !>
         CALL mp_exchange3d_bry (ng, tile, model, 1, boundary,           &
      &                          LBij, UBij, 1, N(ng),                   &
-     &                          Nghost, EWperiodic, NSperiodic,         &
+     &                          Nghost,                                 &
+     &                          EWperiodic(ng), NSperiodic(ng),         &
      &                          tl_Awrk(:,:,Nnew))
 # endif
 !
@@ -646,7 +638,6 @@
               tl_Awrk(j,N(ng),Nnew)=tl_DC(j,N(ng))
 #    ifdef MASKING
 !>            Awrk(j,N(ng),Nnew)=Awrk(j,N(ng),Nnew)*rmask(i,j)
-!>   &
 !>
               tl_Awrk(j,N(ng),Nnew)=tl_Awrk(j,N(ng),Nnew)*rmask(i,j)
 #    endif
@@ -843,12 +834,14 @@
 # ifdef DISTRIBUTE
 !>    CALL mp_exchange3d_bry (ng, tile, model, 1, boundary,             &
 !>   &                        LBij, UBij, 1, N(ng),                     &
-!>   &                        Nghost, EWperiodic, NSperiodic,           &
+!>   &                        Nghost,                                   &
+!>   &                        EWperiodic(ng), NSperiodic(ng),           &
 !>   &                        A)
 !>
       CALL mp_exchange3d_bry (ng, tile, model, 1, boundary,             &
      &                        LBij, UBij, 1, N(ng),                     &
-     &                        Nghost, EWperiodic, NSperiodic,           &
+     &                        Nghost,                                   &
+     &                        EWperiodic(ng), NSperiodic(ng),           &
      &                        tl_A)
 # endif
 
@@ -925,18 +918,6 @@
 !
 !  Local variable declarations.
 !
-# ifdef DISTRIBUTE
-#  ifdef EW_PERIODIC
-      logical :: EWperiodic=.TRUE.
-#  else
-      logical :: EWperiodic=.FALSE.
-#  endif
-#  ifdef NS_PERIODIC
-      logical :: NSperiodic=.TRUE.
-#  else
-      logical :: NSperiodic=.FALSE.
-#  endif
-# endif
       logical, dimension(4) :: Lconvolve
 
       integer :: Nnew, Nold, Nsav, i, j, k, step
@@ -974,10 +955,10 @@
 !  at RHO-points.
 !-----------------------------------------------------------------------
 !
-      Lconvolve(iwest )=WESTERN_EDGE
-      Lconvolve(ieast )=EASTERN_EDGE
-      Lconvolve(isouth)=SOUTHERN_EDGE
-      Lconvolve(inorth)=NORTHERN_EDGE
+      Lconvolve(iwest )=DOMAIN(ng)%Western_Edge (tile)
+      Lconvolve(ieast )=DOMAIN(ng)%Eastern_Edge (tile)
+      Lconvolve(isouth)=DOMAIN(ng)%Southern_Edge(tile)
+      Lconvolve(inorth)=DOMAIN(ng)%Northern_Edge(tile)
 !
 !  Compute metrics factors.  Notice that "z_r" and "Hz" are assumed to
 !  be time invariant in the vertical convolution.  Scratch array are
@@ -1057,12 +1038,14 @@
 # ifdef DISTRIBUTE
 !>    CALL mp_exchange3d_bry (ng, tile, model, 1, boundary,             &
 !>   &                        LBij, UBij, 1, N(ng),                     &
-!>   &                        Nghost, EWperiodic, NSperiodic,           &
+!>   &                        Nghost,                                   &
+!>   &                        EWperiodic(ng), NSperiodic(ng),           &
 !>   &                        A)
 !>
       CALL mp_exchange3d_bry (ng, tile, model, 1, boundary,             &
      &                        LBij, UBij, 1, N(ng),                     &
-     &                        Nghost, EWperiodic, NSperiodic,           &
+     &                        Nghost,                                   &
+     &                        EWperiodic(ng), NSperiodic(ng),           &
      &                        tl_A)
 # endif
       IF (Lconvolve(boundary)) THEN
@@ -1172,12 +1155,14 @@
 # ifdef DISTRIBUTE
 !>      CALL mp_exchange3d_bry (ng, tile, model, 1, boundary,           &
 !>   &                          LBij, UBij, 1, N(ng),                   &
-!>   &                          Nghost, EWperiodic, NSperiodic,         &
+!>   &                          Nghost,                                 &
+!>   &                          EWperiodic(ng), NSperiodic(ng),         &
 !>   &                          Awrk(:,:,Nnew))
 !>
         CALL mp_exchange3d_bry (ng, tile, model, 1, boundary,           &
      &                          LBij, UBij, 1, N(ng),                   &
-     &                          Nghost, EWperiodic, NSperiodic,         &
+     &                          Nghost,                                 &
+     &                          EWperiodic(ng), NSperiodic(ng),         &
      &                          tl_Awrk(:,:,Nnew))
 # endif
 !
@@ -1637,12 +1622,14 @@
 # ifdef DISTRIBUTE
 !>    CALL mp_exchange3d_bry (ng, tile, model, 1, boundary,             &
 !>   &                        LBij, UBij, 1, N(ng),                     &
-!>   &                        Nghost, EWperiodic, NSperiodic,           &
+!>   &                        Nghost,                                   &
+!>   &                        EWperiodic(ng), NSperiodic(ng),           &
 !>   &                        A)
 !>
       CALL mp_exchange3d_bry (ng, tile, model, 1, boundary,             &
      &                        LBij, UBij, 1, N(ng),                     &
-     &                        Nghost, EWperiodic, NSperiodic,           &
+     &                        Nghost,                                   &
+     &                        EWperiodic(ng), NSperiodic(ng),           &
      &                        tl_A)
 # endif
 
@@ -1719,18 +1706,6 @@
 !
 !  Local variable declarations.
 !
-# ifdef DISTRIBUTE
-#  ifdef EW_PERIODIC
-      logical :: EWperiodic=.TRUE.
-#  else
-      logical :: EWperiodic=.FALSE.
-#  endif
-#  ifdef NS_PERIODIC
-      logical :: NSperiodic=.TRUE.
-#  else
-      logical :: NSperiodic=.FALSE.
-#  endif
-# endif
       logical, dimension(4) :: Lconvolve
 
       integer :: Nnew, Nold, Nsav, i, ib, j, k, step
@@ -1768,10 +1743,10 @@
 !  at RHO-points.
 !-----------------------------------------------------------------------
 !
-      Lconvolve(iwest )=WESTERN_EDGE
-      Lconvolve(ieast )=EASTERN_EDGE
-      Lconvolve(isouth)=SOUTHERN_EDGE
-      Lconvolve(inorth)=NORTHERN_EDGE
+      Lconvolve(iwest )=DOMAIN(ng)%Western_Edge (tile)
+      Lconvolve(ieast )=DOMAIN(ng)%Eastern_Edge (tile)
+      Lconvolve(isouth)=DOMAIN(ng)%Southern_Edge(tile)
+      Lconvolve(inorth)=DOMAIN(ng)%Northern_Edge(tile)
 !
 !  Compute metrics factors.  Notice that "z_r" and "Hz" are assumed to
 !  be time invariant in the vertical convolution.  Scratch array are
@@ -1851,12 +1826,14 @@
 # ifdef DISTRIBUTE
 !>    CALL mp_exchange3d_bry (ng, tile, model, 1, boundary,             &
 !>   &                        LBij, UBij, 1, N(ng),                     &
-!>   &                        Nghost, EWperiodic, NSperiodic,           &
+!>   &                        Nghost,
+!>   &                        EWperiodic(ng), NSperiodic(ng),           &
 !>   &                        A)
 !>
       CALL mp_exchange3d_bry (ng, tile, model, 1, boundary,             &
      &                        LBij, UBij, 1, N(ng),                     &
-     &                        Nghost, EWperiodic, NSperiodic,           &
+     &                        Nghost,                                   &
+     &                        EWperiodic(ng), NSperiodic(ng),           &
      &                        tl_A)
 # endif
       IF (Lconvolve(boundary)) THEN
@@ -1968,12 +1945,14 @@
 # ifdef DISTRIBUTE
 !>      CALL mp_exchange3d_bry (ng, tile, model, 1, boundary,           &
 !>   &                          LBij, UBij, 1, N(ng),                   &
-!>   &                          Nghost, EWperiodic, NSperiodic,         &
+!>   &                          Nghost,                                 &
+!>   &                          EWperiodic(ng), NSperiodic(ng),         &
 !>   &                          Awrk(:,:,Nnew))
 !>
         CALL mp_exchange3d_bry (ng, tile, model, 1, boundary,           &
      &                          LBij, UBij, 1, N(ng),                   &
-     &                          Nghost, EWperiodic, NSperiodic,         &
+     &                          Nghost,                                 &
+     &                          EWperiodic(ng), NSperiodic(ng),         &
      &                          tl_Awrk(:,:,Nnew))
 # endif
 !
@@ -2433,12 +2412,14 @@
 # ifdef DISTRIBUTE
 !>    CALL mp_exchange3d_bry (ng, tile, model, 1, boundary,             &
 !>   &                        LBij, UBij, 1, N(ng),                     &
-!>   &                        Nghost, EWperiodic, NSperiodic,           &
+!>   &                        Nghost,                                   &
+!>   &                        EWperiodic(ng), NSperiodic(ng),           &
 !>   &                        A)
 !>
       CALL mp_exchange3d_bry (ng, tile, model, 1, boundary,             &
      &                        LBij, UBij, 1, N(ng),                     &
-     &                        Nghost, EWperiodic, NSperiodic,           &
+     &                        Nghost,                                   &
+     &                        EWperiodic(ng), NSperiodic(ng),           &
      &                        tl_A)
 # endif
 

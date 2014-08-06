@@ -2,9 +2,9 @@
 #ifdef ADJOINT
       SUBROUTINE ad_wrt_his (ng)
 !
-!svn $Id: ad_wrt_his.F 431 2009-12-26 20:36:20Z arango $
+!svn $Id$
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2010 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2014 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -58,7 +58,7 @@
 # ifdef ADJUST_BOUNDARY
       integer :: LBij, UBij
 # endif
-      integer :: i, j, gfactor, gtype, status
+      integer :: Fcount, i, j, gfactor, gtype, status
       integer :: kout
 # ifdef WEAK_CONSTRAINT
       integer :: kfout
@@ -108,28 +108,35 @@
 # ifdef SOLVE3D
       IF (iic(ng).ne.ntend(ng)) THEN
         nout=nnew(ng)
+# if defined STOCHASTIC_OPT && !defined STOCH_OPT_WHITE
+        LwrtState3d(ng)=.FALSE.
+# endif
       ELSE
+# if defined STOCHASTIC_OPT && !defined STOCH_OPT_WHITE
+        LwrtState3d(ng)=.TRUE.
+# endif
         nout=nstp(ng)
       END IF
 # endif
 !
 !  Set time record index.
 !
-      tADJindx(ng)=tADJindx(ng)+1
-      NrecADJ(ng)=NrecADJ(ng)+1
+      ADM(ng)%Rindex=ADM(ng)%Rindex+1
+      Fcount=ADM(ng)%Fcount
+      ADM(ng)%Nrec(Fcount)=ADM(ng)%Nrec(Fcount)+1
 !
 !  If requested, set time index to recycle time records in the adjoint
 !  file.
 !
       IF (LcycleADJ(ng)) THEN
-        tADJindx(ng)=MOD(tADJindx(ng)-1,2)+1
+        ADM(ng)%Rindex=MOD(ADM(ng)%Rindex-1,2)+1
       END IF
 !
 !  Write out model time (s).
 !
       IF (LwrtTime(ng)) THEN
         IF (LwrtPER(ng)) THEN
-          Tval(1)=REAL(Nrun,r8)*day2sec
+          Tval(1)=REAL(ADM(ng)%Rindex,r8)*day2sec
         ELSE
 # ifdef WEAK_CONSTRAINT
           Tval(1)=ForceTime(ng)
@@ -137,11 +144,11 @@
           Tval(1)=time(ng)
 # endif
         END IF
-        CALL netcdf_put_fvar (ng, iADM, ADJname(ng),                    &
+        CALL netcdf_put_fvar (ng, iADM, ADM(ng)%name,                   &
      &                        TRIM(Vname(1,idtime)), tval,              &
-     &                        (/tADJindx(ng)/), (/1/),                  &
-     &                        ncid = ncADJid(ng),                       &
-     &                        varid = adjVid(idtime,ng))
+     &                        (/ADM(ng)%Rindex/), (/1/),                &
+     &                        ncid = ADM(ng)%ncid,                      &
+     &                        varid = ADM(ng)%Vid(idtime))
         IF (exit_flag.ne.NoError) RETURN
       END IF
 
@@ -153,11 +160,11 @@
 !
       scale=1.0_r8                          ! m2/s2
       gtype=gfactor*u3dvar
-      status=nf_fwrite3d(ng, iADM, ncADJid(ng), adjVid(idUsms,ng),      &
-     &                   tADJindx(ng), gtype,                           &
+      status=nf_fwrite3d(ng, iADM, ADM(ng)%ncid, ADM(ng)%Vid(idUsms),   &
+     &                   ADM(ng)%Rindex, gtype,                         &
      &                   LBi, UBi, LBj, UBj, 1, Nfrec(ng), scale,       &
 #  ifdef MASKING
-     &                   GRID(ng) % umask,                              &
+     &                   GRID(ng) % umask_io,                           &
 #  endif
      &                   FORCES(ng) % ad_ustr(:,:,:,Lfout(ng)))
       IF (status.ne.nf90_noerr) THEN
@@ -173,11 +180,11 @@
 !
       scale=1.0_r8                          ! m2/s2
       gtype=gfactor*v3dvar
-      status=nf_fwrite3d(ng, iADM, ncADJid(ng), adjVid(idVsms,ng),      &
-     &                   tADJindx(ng), gtype,                           &
+      status=nf_fwrite3d(ng, iADM, ADM(ng)%ncid, ADM(ng)%Vid(idVsms),   &
+     &                   ADM(ng)%Rindex, gtype,                         &
      &                   LBi, UBi, LBj, UBj, 1, Nfrec(ng), scale,       &
 #  ifdef MASKING
-     &                   GRID(ng) % vmask,                              &
+     &                   GRID(ng) % vmask_io,                           &
 #  endif
      &                   FORCES(ng) % ad_vstr(:,:,:,Lfout(ng)))
       IF (status.ne.nf90_noerr) THEN
@@ -199,12 +206,12 @@
         IF (Lstflux(itrc,ng)) THEN
           scale=1.0_r8                      ! kinematic flux units
           gtype=gfactor*r3dvar
-          status=nf_fwrite3d(ng, iADM, ncADJid(ng),                     &
-     &                       adjVid(idTsur(itrc),ng),                   &
-     &                       tADJindx(ng), gtype,                       &
+          status=nf_fwrite3d(ng, iADM, ADM(ng)%ncid,                    &
+     &                       ADM(ng)%Vid(idTsur(itrc)),                 &
+     &                       ADM(ng)%Rindex, gtype,                     &
      &                       LBi, UBi, LBj, UBj, 1, Nfrec(ng), scale,   &
 #  ifdef MASKING
-     &                       GRID(ng) % rmask,                          &
+     &                       GRID(ng) % rmask_io,                       &
 #  endif
      &                       FORCES(ng)% ad_tflux(:,:,:,Lfout(ng),itrc))
           IF (status.ne.nf90_noerr) THEN
@@ -221,23 +228,25 @@
 !
 !  Write out bathymetry.
 !
-      scale=1.0_r8
-      gtype=gfactor*r2dvar
-      status=nf_fwrite2d(ng, iADM, ncADJid(ng), adjVid(idbath,ng),      &
-     &                   tADJindx(ng), gtype,                           &
-     &                   LBi, UBi, LBj, UBj, scale,                     &
+      IF (Hout(idbath,ng)) THEN
+        scale=1.0_r8
+        gtype=gfactor*r2dvar
+        status=nf_fwrite2d(ng, iADM, ADM(ng)%ncid, ADM(ng)%Vid(idbath), &
+     &                     ADM(ng)%Rindex, gtype,                       &
+     &                     LBi, UBi, LBj, UBj, scale,                   &
 # ifdef MASKING
-     &                   GRID(ng) % rmask,                              &
+     &                     GRID(ng) % rmask_io,                         &
 # endif
-     &                   GRID(ng)% ad_h,                                &
-     &                   SetFillVal = .FALSE.)
-      IF (status.ne.nf90_noerr) THEN
-        IF (Master) THEN
-          WRITE (stdout,10) TRIM(Vname(1,idbath)), tADJindx(ng)
+     &                     GRID(ng)% ad_h,                              &
+     &                     SetFillVal = .FALSE.)
+        IF (status.ne.nf90_noerr) THEN
+          IF (Master) THEN
+            WRITE (stdout,10) TRIM(Vname(1,idbath)), ADM(ng)%Rindex
+          END IF
+          exit_flag=3
+          ioerror=status
+          RETURN
         END IF
-        exit_flag=3
-        ioerror=status
-        RETURN
       END IF
 !
 !  Write out free-surface (m).
@@ -247,16 +256,17 @@
         IF (WRTforce(ng)) THEN
           scale=1.0_r8
           gtype=gfactor*r2dvar
-          status=nf_fwrite2d(ng, iADM, ncADJid(ng), adjVid(idFsur,ng),  &
-     &                       tADJindx(ng), gtype,                       &
+          status=nf_fwrite2d(ng, iADM, ADM(ng)%ncid,                    &
+     &                       ADM(ng)%Vid(idFsur),                       &
+     &                       ADM(ng)%Rindex, gtype,                     &
      &                       LBi, UBi, LBj, UBj, scale,                 &
 #  ifdef MASKING
-     &                       GRID(ng) % rmask,                          &
+     &                       GRID(ng) % rmask_io,                       &
 #  endif
      &                       OCEAN(ng)% f_zetaG(:,:,kfout))
           IF (status.ne.nf90_noerr) THEN
             IF (Master) THEN
-              WRITE (stdout,10) TRIM(Vname(1,idFsur)), tADJindx(ng)
+              WRITE (stdout,10) TRIM(Vname(1,idFsur)), ADM(ng)%Rindex
             END IF
             exit_flag=3
             ioerror=status
@@ -267,11 +277,12 @@
           scale=1.0_r8
           gtype=gfactor*r2dvar
           IF (LwrtState2d(ng)) THEN
-            status=nf_fwrite2d(ng, iADM, ncADJid(ng), adjVid(idFsur,ng),&
-     &                         tADJindx(ng), gtype,                     &
+            status=nf_fwrite2d(ng, iADM, ADM(ng)%ncid,                  &
+     &                         ADM(ng)%Vid(idFsur),                     &
+     &                         ADM(ng)%Rindex, gtype,                   &
      &                         LBi, UBi, LBj, UBj, scale,               &
 # ifdef MASKING
-     &                         GRID(ng) % rmask,                        &
+     &                         GRID(ng) % rmask_io,                     &
 # endif
 # ifdef WET_DRY
      &                         OCEAN(ng)% ad_zeta(:,:,kout),            &
@@ -280,11 +291,12 @@
      &                         OCEAN(ng)% ad_zeta(:,:,kout))
 # endif
           ELSE
-            status=nf_fwrite2d(ng, iADM, ncADJid(ng), adjVid(idFsur,ng),&
-     &                         tADJindx(ng), gtype,                     &
+            status=nf_fwrite2d(ng, iADM, ADM(ng)%ncid,                  &
+     &                         ADM(ng)%Vid(idFsur),                     &
+     &                         ADM(ng)%Rindex, gtype,                   &
      &                         LBi, UBi, LBj, UBj, scale,               &
 # ifdef MASKING
-     &                         GRID(ng) % rmask,                        &
+     &                         GRID(ng) % rmask_io,                     &
 # endif
 # ifdef WET_DRY
      &                         OCEAN(ng)% ad_zeta_sol,                  &
@@ -295,7 +307,7 @@
           ENDIF
           IF (status.ne.nf90_noerr) THEN
             IF (Master) THEN
-              WRITE (stdout,10) TRIM(Vname(1,idFsur)), tADJindx(ng)
+              WRITE (stdout,10) TRIM(Vname(1,idFsur)), ADM(ng)%Rindex
             END IF
             exit_flag=3
             ioerror=status
@@ -312,17 +324,17 @@
 !
       IF (ANY(Lobc(:,isFsur,ng))) THEN
         scale=1.0_r8
-        status=nf_fwrite2d_bry (ng, iADM, ADJname(ng), ncADJid(ng),     &
+        status=nf_fwrite2d_bry (ng, iADM, ADM(ng)%name, ADM(ng)%ncid,   &
      &                          Vname(1,idSbry(isFsur)),                &
-     &                          adjVid(idSbry(isFsur),ng),              &
-     &                          tADJindx(ng), r2dvar,                   &
+     &                          ADM(ng)%Vid(idSbry(isFsur)),            &
+     &                          ADM(ng)%Rindex, r2dvar,                 &
      &                          LBij, UBij, Nbrec(ng), scale,           &
      &                          BOUNDARY(ng) % ad_zeta_obc(LBij:,:,:,   &
      &                                                     Lbout(ng)))
         IF (status.ne.nf90_noerr) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idSbry(isFsur))),            &
-     &                        tADJindx(ng)
+     &                        ADM(ng)%Rindex
           END IF
           exit_flag=3
           ioerror=status
@@ -339,16 +351,17 @@
         IF (WRTforce(ng)) THEN
           scale=1.0_r8
           gtype=gfactor*u2dvar
-          status=nf_fwrite2d(ng, iADM, ncADJid(ng), adjVid(idUbar,ng),  &
-     &                       tADJindx(ng), gtype,                       &
+          status=nf_fwrite2d(ng, iADM, ADM(ng)%ncid,                    &
+     &                       ADM(ng)%Vid(idUbar),                       &
+     &                       ADM(ng)%Rindex, gtype,                     &
      &                       LBi, UBi, LBj, UBj, scale,                 &
 #   ifdef MASKING
-     &                       GRID(ng) % umask,                          &
+     &                       GRID(ng) % umask_io,                       &
 #   endif
      &                       OCEAN(ng) % f_ubarG(:,:,kfout))
           IF (status.ne.nf90_noerr) THEN
             IF (Master) THEN
-              WRITE (stdout,10) TRIM(Vname(1,idUbar)), tADJindx(ng)
+              WRITE (stdout,10) TRIM(Vname(1,idUbar)), ADM(ng)%Rindex
             END IF
             exit_flag=3
             ioerror=status
@@ -360,25 +373,27 @@
           scale=1.0_r8
           gtype=gfactor*u2dvar
           IF (LwrtState2d(ng)) THEN
-            status=nf_fwrite2d(ng, iADM, ncADJid(ng), adjVid(idUbar,ng),&
-     &                         tADJindx(ng), gtype,                     &
+            status=nf_fwrite2d(ng, iADM, ADM(ng)%ncid,                  &
+     &                         ADM(ng)%Vid(idUbar),                     &
+     &                         ADM(ng)%Rindex, gtype,                   &
      &                         LBi, UBi, LBj, UBj, scale,               &
 # ifdef MASKING
-     &                         GRID(ng) % umask,                        &
+     &                         GRID(ng) % umask_io,                     &
 # endif
      &                         OCEAN(ng) % ad_ubar(:,:,kout))
           ELSE
-            status=nf_fwrite2d(ng, iADM, ncADJid(ng), adjVid(idUbar,ng),&
-     &                         tADJindx(ng), gtype,                     &
+            status=nf_fwrite2d(ng, iADM, ADM(ng)%ncid,                  &
+     &                         ADM(ng)%Vid(idUbar),                     &
+     &                         ADM(ng)%Rindex, gtype,                   &
      &                         LBi, UBi, LBj, UBj, scale,               &
 # ifdef MASKING
-     &                         GRID(ng) % umask,                        &
+     &                         GRID(ng) % umask_io,                     &
 # endif
      &                         OCEAN(ng) % ad_ubar_sol)
           END IF
           IF (status.ne.nf90_noerr) THEN
             IF (Master) THEN
-              WRITE (stdout,10) TRIM(Vname(1,idUbar)), tADJindx(ng)
+              WRITE (stdout,10) TRIM(Vname(1,idUbar)), ADM(ng)%Rindex
             END IF
             exit_flag=3
             ioerror=status
@@ -397,17 +412,17 @@
 !
       IF (ANY(Lobc(:,isUbar,ng))) THEN
         scale=1.0_r8
-        status=nf_fwrite2d_bry (ng, iADM, ADJname(ng), ncADJid(ng),     &
+        status=nf_fwrite2d_bry (ng, iADM, ADM(ng)%name, ADM(ng)%ncid,   &
      &                          Vname(1,idSbry(isUbar)),                &
-     &                          adjVid(idSbry(isUbar),ng),              &
-     &                          tADJindx(ng), u2dvar,                   &
+     &                          ADM(ng)%Vid(idSbry(isUbar)),            &
+     &                          ADM(ng)%Rindex, u2dvar,                 &
      &                          LBij, UBij, Nbrec(ng), scale,           &
      &                          BOUNDARY(ng) % ad_ubar_obc(LBij:,:,:,   &
      &                                                     Lbout(ng)))
         IF (status.ne.nf90_noerr) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idSbry(isUbar))),            &
-     &                        tADJindx(ng)
+     &                        ADM(ng)%Rindex
           END IF
           exit_flag=3
           ioerror=status
@@ -424,16 +439,17 @@
         IF (WRTforce(ng)) THEN
           scale=1.0_r8
           gtype=gfactor*v2dvar
-          status=nf_fwrite2d(ng, iADM, ncADJid(ng), adjVid(idVbar,ng),  &
-     &                       tADJindx(ng), gtype,                       &
+          status=nf_fwrite2d(ng, iADM, ADM(ng)%ncid,                    &
+     &                       ADM(ng)%Vid(idVbar),                       &
+     &                       ADM(ng)%Rindex, gtype,                     &
      &                       LBi, UBi, LBj, UBj, scale,                 &
 #   ifdef MASKING
-      &                      GRID(ng) % vmask,                          &
+     &                       GRID(ng) % vmask_io,                       &
 #   endif
      &                       OCEAN(ng) % f_vbarG(:,:,kfout))
           IF (status.ne.nf90_noerr) THEN
             IF (Master) THEN
-              WRITE (stdout,10) TRIM(Vname(1,idVbar)), tADJindx(ng)
+              WRITE (stdout,10) TRIM(Vname(1,idVbar)), ADM(ng)%Rindex
             END IF
             exit_flag=3
             ioerror=status
@@ -445,25 +461,27 @@
           scale=1.0_r8
           gtype=gfactor*v2dvar
           IF (LwrtState2d(ng)) THEN
-            status=nf_fwrite2d(ng, iADM, ncADJid(ng), adjVid(idVbar,ng),&
-     &                         tADJindx(ng), gtype,                     &
+            status=nf_fwrite2d(ng, iADM, ADM(ng)%ncid,                  &
+     &                         ADM(ng)%Vid(idVbar),                     &
+     &                         ADM(ng)%Rindex, gtype,                   &
      &                         LBi, UBi, LBj, UBj, scale,               &
 # ifdef MASKING
-      &                        GRID(ng) % vmask,                        &
+     &                         GRID(ng) % vmask_io,                     &
 # endif
      &                         OCEAN(ng) % ad_vbar(:,:,kout))
           ELSE
-            status=nf_fwrite2d(ng, iADM, ncADJid(ng), adjVid(idVbar,ng),&
-     &                         tADJindx(ng), gtype,                     &
+            status=nf_fwrite2d(ng, iADM, ADM(ng)%ncid,                  &
+     &                         ADM(ng)%Vid(idVbar),                     &
+     &                         ADM(ng)%Rindex, gtype,                   &
      &                         LBi, UBi, LBj, UBj, scale,               &
 # ifdef MASKING
-      &                        GRID(ng) % vmask,                        &
+     &                         GRID(ng) % vmask_io,                     &
 # endif
      &                         OCEAN(ng) % ad_vbar_sol)
           END IF
           IF (status.ne.nf90_noerr) THEN
             IF (Master) THEN
-              WRITE (stdout,10) TRIM(Vname(1,idVbar)), tADJindx(ng)
+              WRITE (stdout,10) TRIM(Vname(1,idVbar)), ADM(ng)%Rindex
             END IF
             exit_flag=3
             ioerror=status
@@ -482,17 +500,17 @@
 !
       IF (ANY(Lobc(:,isVbar,ng))) THEN
         scale=1.0_r8
-        status=nf_fwrite2d_bry (ng, iADM, ADJname(ng), ncADJid(ng),     &
+        status=nf_fwrite2d_bry (ng, iADM, ADM(ng)%name, ADM(ng)%ncid,   &
      &                          Vname(1,idSbry(isVbar)),                &
-     &                          adjVid(idSbry(isVbar),ng),              &
-     &                          tADJindx(ng), v2dvar,                   &
+     &                          ADM(ng)%Vid(idSbry(isVbar)),            &
+     &                          ADM(ng)%Rindex, v2dvar,                 &
      &                          LBij, UBij, Nbrec(ng), scale,           &
      &                          BOUNDARY(ng) % ad_vbar_obc(LBij:,:,:,   &
      &                                                     Lbout(ng)))
         IF (status.ne.nf90_noerr) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idSbry(isVbar))),            &
-     &                        tADJindx(ng)
+     &                        ADM(ng)%Rindex
           END IF
           exit_flag=3
           ioerror=status
@@ -510,16 +528,17 @@
         IF (WRTforce(ng)) THEN
           scale=1.0_r8
           gtype=gfactor*u3dvar
-          status=nf_fwrite3d(ng, iADM, ncADJid(ng), adjVid(idUvel,ng),  &
-     &                       tADJindx(ng), gtype,                       &
+          status=nf_fwrite3d(ng, iADM, ADM(ng)%ncid,                    &
+     &                       ADM(ng)%Vid(idUvel),                       &
+     &                       ADM(ng)%Rindex, gtype,                     &
      &                       LBi, UBi, LBj, UBj, 1, N(ng), scale,       &
 #   ifdef MASKING
-     &                       GRID(ng) % umask,                          &
+     &                       GRID(ng) % umask_io,                       &
 #   endif
      &                       OCEAN(ng) % f_uG(:,:,:,kfout))
           IF (status.ne.nf90_noerr) THEN
             IF (Master) THEN
-              WRITE (stdout,10) TRIM(Vname(1,idUvel)), tADJindx(ng)
+              WRITE (stdout,10) TRIM(Vname(1,idUvel)), ADM(ng)%Rindex
             END IF
             exit_flag=3
             ioerror=status
@@ -529,16 +548,32 @@
 #  endif
           scale=1.0_r8
           gtype=gfactor*u3dvar
-          status=nf_fwrite3d(ng, iADM, ncADJid(ng), adjVid(idUvel,ng),  &
-     &                       tADJindx(ng), gtype,                       &
-     &                       LBi, UBi, LBj, UBj, 1, N(ng), scale,       &
-#  ifdef MASKING
-     &                       GRID(ng) % umask,                          &
+#  if defined STOCHASTIC_OPT && !defined STOCH_OPT_WHITE
+          IF (LwrtState3d(ng)) THEN
 #  endif
+          status=nf_fwrite3d(ng, iADM, ADM(ng)%ncid,                    &
+     &                       ADM(ng)%Vid(idUvel),                       &
+     &                       ADM(ng)%Rindex, gtype,                     &
+     &                       LBi, UBi, LBj, UBj, 1, N(ng), scale,       &
+#    ifdef MASKING
+     &                       GRID(ng) % umask_io,                       &
+#    endif
      &                       OCEAN(ng) % ad_u(:,:,:,nout))
+#  if defined STOCHASTIC_OPT && !defined STOCH_OPT_WHITE
+          ELSE
+          status=nf_fwrite3d(ng, iADM, ADM(ng)%ncid,                    &
+     &                       ADM(ng)%Vid(idUvel),                       &
+     &                       ADM(ng)%Rindex, gtype,                     &
+     &                       LBi, UBi, LBj, UBj, 1, N(ng), scale,       &
+#    ifdef MASKING
+     &                       GRID(ng) % umask_io,                       &
+#    endif
+     &                       OCEAN(ng) % ad_u_sol(:,:,:))
+          ENDIF
+#  endif
           IF (status.ne.nf90_noerr) THEN
             IF (Master) THEN
-              WRITE (stdout,10) TRIM(Vname(1,idUvel)), tADJindx(ng)
+              WRITE (stdout,10) TRIM(Vname(1,idUvel)), ADM(ng)%Rindex
             END IF
             exit_flag=3
             ioerror=status
@@ -555,17 +590,17 @@
 !
       IF (ANY(Lobc(:,isUvel,ng))) THEN
         scale=1.0_r8
-        status=nf_fwrite3d_bry (ng, iADM, ADJname(ng), ncADJid(ng),     &
+        status=nf_fwrite3d_bry (ng, iADM, ADM(ng)%name, ADM(ng)%ncid,   &
      &                          Vname(1,idSbry(isUvel)),                &
-     &                          adjVid(idSbry(isUvel),ng),              &
-     &                          tADJindx(ng), u3dvar,                   &
+     &                          ADM(ng)%Vid(idSbry(isUvel)),            &
+     &                          ADM(ng)%Rindex, u3dvar,                 &
      &                          LBij, UBij, 1, N(ng), Nbrec(ng), scale, &
      &                          BOUNDARY(ng) % ad_u_obc(LBij:,:,:,:,    &
      &                                                  Lbout(ng)))
         IF (status.ne.nf90_noerr) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idSbry(isUvel))),            &
-     &                        tADJindx(ng)
+     &                        ADM(ng)%Rindex
           END IF
           exit_flag=3
           ioerror=status
@@ -581,16 +616,17 @@
         IF (WRTforce(ng)) THEN
           scale=1.0_r8
           gtype=gfactor*v3dvar
-          status=nf_fwrite3d(ng, iADM, ncADJid(ng), adjVid(idVvel,ng),  &
-     &                       tADJindx(ng), gtype,                       &
+          status=nf_fwrite3d(ng, iADM, ADM(ng)%ncid,                    &
+     &                       ADM(ng)%Vid(idVvel),                       &
+     &                       ADM(ng)%Rindex, gtype,                     &
      &                       LBi, UBi, LBj, UBj, 1, N(ng), scale,       &
 #   ifdef MASKING
-     &                       GRID(ng) % vmask,                          &
+     &                       GRID(ng) % vmask_io,                       &
 #   endif
      &                       OCEAN(ng) % f_vG(:,:,:,kfout))
           IF (status.ne.nf90_noerr) THEN
             IF (Master) THEN
-              WRITE (stdout,10) TRIM(Vname(1,idVvel)), tADJindx(ng)
+              WRITE (stdout,10) TRIM(Vname(1,idVvel)), ADM(ng)%Rindex
             END IF
             exit_flag=3
             ioerror=status
@@ -600,16 +636,32 @@
 #  endif
           scale=1.0_r8
           gtype=gfactor*v3dvar
-          status=nf_fwrite3d(ng, iADM, ncADJid(ng), adjVid(idVvel,ng),  &
-     &                       tADJindx(ng), gtype,                       &
-     &                       LBi, UBi, LBj, UBj, 1, N(ng), scale,       &
-#  ifdef MASKING
-     &                       GRID(ng) % vmask,                          &
+#  if defined STOCHASTIC_OPT && !defined STOCH_OPT_WHITE
+          IF (LwrtState3d(ng)) THEN
 #  endif
+          status=nf_fwrite3d(ng, iADM, ADM(ng)%ncid,                    &
+     &                       ADM(ng)%Vid(idVvel),                       &
+     &                       ADM(ng)%Rindex, gtype,                     &
+     &                       LBi, UBi, LBj, UBj, 1, N(ng), scale,       &
+#   ifdef MASKING
+     &                       GRID(ng) % vmask_io,                       &
+#   endif
      &                       OCEAN(ng) % ad_v(:,:,:,nout))
+#  if defined STOCHASTIC_OPT && !defined STOCH_OPT_WHITE
+          ELSE
+          status=nf_fwrite3d(ng, iADM, ADM(ng)%ncid,                    &
+     &                       ADM(ng)%Vid(idVvel),                       &
+     &                       ADM(ng)%Rindex, gtype,                     &
+     &                       LBi, UBi, LBj, UBj, 1, N(ng), scale,       &
+#   ifdef MASKING
+     &                       GRID(ng) % vmask_io,                       &
+#   endif
+     &                       OCEAN(ng) % ad_v_sol(:,:,:))
+          END IF
+#  endif
           IF (status.ne.nf90_noerr) THEN
             IF (Master) THEN
-              WRITE (stdout,10) TRIM(Vname(1,idVvel)), tADJindx(ng)
+              WRITE (stdout,10) TRIM(Vname(1,idVvel)), ADM(ng)%Rindex
             END IF
             exit_flag=3
             ioerror=status
@@ -626,17 +678,17 @@
 !
       IF (ANY(Lobc(:,isVvel,ng))) THEN
         scale=1.0_r8
-        status=nf_fwrite3d_bry (ng, iADM, ADJname(ng), ncADJid(ng),     &
+        status=nf_fwrite3d_bry (ng, iADM, ADM(ng)%name, ADM(ng)%ncid,   &
      &                          Vname(1,idSbry(isVvel)),                &
-     &                          adjVid(idSbry(isVvel),ng),              &
-     &                          tADJindx(ng), v3dvar,                   &
+     &                          ADM(ng)%Vid(idSbry(isVvel)),            &
+     &                          ADM(ng)%Rindex, v3dvar,                 &
      &                          LBij, UBij, 1, N(ng), Nbrec(ng), scale, &
      &                          BOUNDARY(ng) % ad_v_obc(LBij:,:,:,:,    &
      &                                                  Lbout(ng)))
         IF (status.ne.nf90_noerr) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idSbry(isVvel))),            &
-     &                        tADJindx(ng)
+     &                        ADM(ng)%Rindex
           END IF
           exit_flag=3
           ioerror=status
@@ -653,17 +705,18 @@
           IF (WRTforce(ng)) THEN
             scale=1.0_r8
             gtype=gfactor*r3dvar
-            status=nf_fwrite3d(ng, iADM, ncADJid(ng), adjTid(itrc,ng),  &
-     &                         tADJindx(ng), gtype,                     &
+            status=nf_fwrite3d(ng, iADM, ADM(ng)%ncid,                  &
+     &                         ADM(ng)%Tid(itrc),                       &
+     &                         ADM(ng)%Rindex, gtype,                   &
      &                         LBi, UBi, LBj, UBj, 1, N(ng), scale,     &
 #   ifdef MASKING
-     &                         GRID(ng) % rmask,                        &
+     &                         GRID(ng) % rmask_io,                     &
 #   endif
      &                         OCEAN(ng) % f_tG(:,:,:,kfout,itrc))
             IF (status.ne.nf90_noerr) THEN
               IF (Master) THEN
                 WRITE (stdout,10) TRIM(Vname(1,idTvar(itrc))),          &
-     &                            tADJindx(ng)
+     &                            ADM(ng)%Rindex
               END IF
               exit_flag=3
               ioerror=status
@@ -673,17 +726,33 @@
 #  endif
             scale=1.0_r8
             gtype=gfactor*r3dvar
-            status=nf_fwrite3d(ng, iADM, ncADJid(ng), adjTid(itrc,ng),  &
-     &                         tADJindx(ng), gtype,                     &
-     &                         LBi, UBi, LBj, UBj, 1, N(ng), scale,     &
-#  ifdef MASKING
-     &                         GRID(ng) % rmask,                        &
+#  if defined STOCHASTIC_OPT && !defined STOCH_OPT_WHITE
+            IF (LwrtState3d(ng)) THEN
 #  endif
+            status=nf_fwrite3d(ng, iADM, ADM(ng)%ncid,                  &
+     &                         ADM(ng)%Tid(itrc),                       &
+     &                         ADM(ng)%Rindex, gtype,                   &
+     &                         LBi, UBi, LBj, UBj, 1, N(ng), scale,     &
+#   ifdef MASKING
+     &                         GRID(ng) % rmask_io,                     &
+#   endif
      &                         OCEAN(ng) % ad_t(:,:,:,nout,itrc))
+#  if defined STOCHASTIC_OPT && !defined STOCH_OPT_WHITE
+            ELSE
+            status=nf_fwrite3d(ng, iADM, ADM(ng)%ncid,                  &
+     &                         ADM(ng)%Tid(itrc),                       &
+     &                         ADM(ng)%Rindex, gtype,                   &
+     &                         LBi, UBi, LBj, UBj, 1, N(ng), scale,     &
+#   ifdef MASKING
+     &                         GRID(ng) % rmask_io,                     &
+#   endif
+     &                         OCEAN(ng) % ad_t_sol(:,:,:,itrc))
+            END IF
+#  endif
             IF (status.ne.nf90_noerr) THEN
               IF (Master) THEN
                 WRITE (stdout,10) TRIM(Vname(1,idTvar(itrc))),          &
-     &                            tADJindx(ng)
+     &                            ADM(ng)%Rindex
               END IF
               exit_flag=3
               ioerror=status
@@ -702,10 +771,10 @@
       DO itrc=1,NT(ng)
         IF (ANY(Lobc(:,isTvar(itrc),ng))) THEN
           scale=1.0_r8
-          status=nf_fwrite3d_bry (ng, iADM, ADJname(ng), ncADJid(ng),   &
+          status=nf_fwrite3d_bry (ng, iADM, ADM(ng)%name, ADM(ng)%ncid, &
      &                            Vname(1,idSbry(isTvar(itrc))),        &
-     &                            adjVid(idSbry(isTvar(itrc)),ng),      &
-     &                            tADJindx(ng), r3dvar,                 &
+     &                            ADM(ng)%Vid(idSbry(isTvar(itrc))),    &
+     &                            ADM(ng)%Rindex, r3dvar,               &
      &                            LBij, UBij, 1, N(ng), Nbrec(ng),      &
      &                            scale,                                &
      &                            BOUNDARY(ng) % ad_t_obc(LBij:,:,:,:,  &
@@ -713,7 +782,7 @@
           IF (status.ne.nf90_noerr) THEN
             IF (Master) THEN
               WRITE (stdout,10) TRIM(Vname(1,idSbry(isTvar(itrc)))),    &
-     &                          tADJindx(ng)
+     &                          ADM(ng)%Rindex
             END IF
             exit_flag=3
             ioerror=status
@@ -728,16 +797,16 @@
       IF (Hout(idDano,ng)) THEN
         scale=1.0_r8
         gtype=gfactor*r3dvar
-        status=nf_fwrite3d(ng, iADM, ncADJid(ng), adjVid(idDano,ng),    &
-     &                     tADJindx(ng), gtype,                         &
+        status=nf_fwrite3d(ng, iADM, ADM(ng)%ncid, ADM(ng)%Vid(idDano), &
+     &                     ADM(ng)%Rindex, gtype,                       &
      &                     LBi, UBi, LBj, UBj, 1, N(ng), scale,         &
 #  ifdef MASKING
-     &                     GRID(ng) % rmask,                            &
+     &                     GRID(ng) % rmask_io,                         &
 #  endif
      &                     OCEAN(ng) % ad_rho)
         IF (status.ne.nf90_noerr) THEN
           IF (Master) THEN
-            WRITE (stdout,10) TRIM(Vname(1,idDano)), tADJindx(ng)
+            WRITE (stdout,10) TRIM(Vname(1,idDano)), ADM(ng)%Rindex
           END IF
           exit_flag=3
           ioerror=status
@@ -750,16 +819,17 @@
       IF (Hout(idVvis,ng)) THEN
         scale=1.0_r8
         gtype=gfactor*w3dvar
-        status=nf_fwrite3d(ng, iADM, ncADJid(ng), adjVid(idVvis,ng),    &
-     &                     tADJindx(ng), gtype,                         &
+        status=nf_fwrite3d(ng, iADM, ADM(ng)%ncid, ADM(ng)%Vid(idVvis), &
+     &                     ADM(ng)%Rindex, gtype,                       &
      &                     LBi, UBi, LBj, UBj, 0, N(ng), scale,         &
 #  ifdef MASKING
-     &                     GRID(ng) % rmask,                            &
+     &                     GRID(ng) % rmask_io,                         &
 #  endif
-     &                     MIXING(ng) % ad_Akv)
+     &                     MIXING(ng) % ad_Akv,                         &
+     &                     SetFillVal = .FALSE.)
         IF (status.ne.nf90_noerr) THEN
           IF (Master) THEN
-            WRITE (stdout,10) TRIM(Vname(1,idVvis)), tADJindx(ng)
+            WRITE (stdout,10) TRIM(Vname(1,idVvis)), ADM(ng)%Rindex
           END IF
           exit_flag=3
           ioerror=status
@@ -772,16 +842,17 @@
       IF (Hout(idTdif,ng)) THEN
         scale=1.0_r8
         gtype=gfactor*w3dvar
-        status=nf_fwrite3d(ng, iADM, ncADJid(ng), adjVid(idTdif,ng),    &
-     &                     tADJindx(ng), gtype,                         &
+        status=nf_fwrite3d(ng, iADM, ADM(ng)%ncid, ADM(ng)%Vid(idTdif), &
+     &                     ADM(ng)%Rindex, gtype,                       &
      &                     LBi, UBi, LBj, UBj, 0, N(ng), scale,         &
 #  ifdef MASKING
-     &                     GRID(ng) % rmask,                            &
+     &                     GRID(ng) % rmask_io,                         &
 #  endif
-     &                     MIXING(ng) % ad_Akt(:,:,:,itemp))
+     &                     MIXING(ng) % ad_Akt(:,:,:,itemp),            &
+     &                     SetFillVal = .FALSE.)
         IF (status.ne.nf90_noerr) THEN
           IF (Master) THEN
-            WRITE (stdout,10) TRIM(Vname(1,idTdif)), tADJindx(ng)
+            WRITE (stdout,10) TRIM(Vname(1,idTdif)), ADM(ng)%Rindex
           END IF
           exit_flag=3
           ioerror=status
@@ -795,16 +866,17 @@
       IF (Hout(idSdif,ng)) THEN
         scale=1.0_r8
         gtype=gfactor*w3dvar
-        status=nf_fwrite3d(ng, iADM, ncADJid(ng), adjVid(idSdif,ng),    &
-     &                     tADJindx(ng), gtype,                         &
+        status=nf_fwrite3d(ng, iADM, ADM(ng)%ncid, ADM(ng)%Vid(idSdif), &
+     &                     ADM(ng)%Rindex, gtype,                       &
      &                     LBi, UBi, LBj, UBj, 0, N(ng), scale,         &
 #   ifdef MASKING
-     &                     GRID(ng) % rmask,                            &
+     &                     GRID(ng) % rmask_io,                         &
 #   endif
-     &                     MIXING(ng) % ad_Akt(:,:,:,isalt))
+     &                     MIXING(ng) % ad_Akt(:,:,:,isalt),            &
+     &                     SetFillVal = .FALSE.)
         IF (status.ne.nf90_noerr) THEN
           IF (Master) THEN
-            WRITE (stdout,10) TRIM(Vname(1,idSdif)), tADJindx(ng)
+            WRITE (stdout,10) TRIM(Vname(1,idSdif)), ADM(ng)%Rindex
           END IF
           exit_flag=3
           ioerror=status
@@ -830,18 +902,18 @@
           scale=1.0_r8
 #   endif
           gtype=gfactor*r2dvar
-          status=nf_fwrite2d(ng, iADM, ncADJid(ng),                     &
-     &                       adjVid(idTsur(itrc),ng),                   &
-     &                       tADJindx(ng), gtype,                       &
+          status=nf_fwrite2d(ng, iADM, ADM(ng)%ncid,                    &
+     &                       ADM(ng)%Vid(idTsur(itrc)),                 &
+     &                       ADM(ng)%Rindex, gtype,                     &
      &                       LBi, UBi, LBj, UBj, scale,                 &
 #   ifdef MASKING
-     &                       GRID(ng) % rmask,                          &
+     &                       GRID(ng) % rmask_io,                       &
 #   endif
      &                       FORCES(ng) % ad_stflx(:,:,itrc))
           IF (status.ne.nf90_noerr) THEN
             IF (Master) THEN
               WRITE (stdout,10) TRIM(Vname(1,idTsur(itrc))),            &
-     &                          tADJindx(ng)
+     &                          ADM(ng)%Rindex
             END IF
             exit_flag=3
             ioerror=status
@@ -864,16 +936,16 @@
         scale=1.0_r8
 #  endif
         gtype=gfactor*u2dvar
-        status=nf_fwrite2d(ng, iADM, ncADJid(ng), adjVid(idUsms,ng),    &
-     &                     tADJindx(ng), gtype,                         &
+        status=nf_fwrite2d(ng, iADM, ADM(ng)%ncid, ADM(ng)%Vid(idUsms), &
+     &                     ADM(ng)%Rindex, gtype,                       &
      &                     LBi, UBi, LBj, UBj, scale,                   &
 #  ifdef MASKING
-     &                     GRID(ng) % umask,                            &
+     &                     GRID(ng) % umask_io,                         &
 #  endif
      &                     FORCES(ng) % ad_sustr)
         IF (status.ne.nf90_noerr) THEN
           IF (Master) THEN
-            WRITE (stdout,10) TRIM(Vname(1,idUsms)), tADJindx(ng)
+            WRITE (stdout,10) TRIM(Vname(1,idUsms)), ADM(ng)%Rindex
           END IF
           exit_flag=3
           ioerror=status
@@ -892,16 +964,16 @@
         scale=1.0_r8
 #  endif
         gtype=gfactor*v2dvar
-        status=nf_fwrite2d(ng, iADM, ncADJid(ng), adjVid(idVsms,ng),    &
-     &                     tADJindx(ng), gtype,                         &
+        status=nf_fwrite2d(ng, iADM, ADM(ng)%ncid, ADM(ng)%Vid(idVsms), &
+     &                     ADM(ng)%Rindex, gtype,                       &
      &                     LBi, UBi, LBj, UBj, scale,                   &
 #  ifdef MASKING
-     &                     GRID(ng) % vmask,                            &
+     &                     GRID(ng) % vmask_io,                         &
 #  endif
      &                     FORCES(ng) % ad_svstr)
         IF (status.ne.nf90_noerr) THEN
           IF (Master) THEN
-            WRITE (stdout,10) TRIM(Vname(1,idVsms)), tADJindx(ng)
+            WRITE (stdout,10) TRIM(Vname(1,idVsms)), ADM(ng)%Rindex
           END IF
           exit_flag=3
           ioerror=status
@@ -916,16 +988,16 @@
 !!      scale=-rho0
         scale=1.0_r8
         gtype=gfactor*u2dvar
-        status=nf_fwrite2d(ng, iADM, ncADJid(ng), adjVid(idUbms,ng),    &
-     &                     tADJindx(ng), gtype,                         &
+        status=nf_fwrite2d(ng, iADM, ADM(ng)%ncid, ADM(ng)%Vid(idUbms), &
+     &                     ADM(ng)%Rindex, gtype,                       &
      &                     LBi, UBi, LBj, UBj, scale,                   &
 # ifdef MASKING
-     &                     GRID(ng) % umask,                            &
+     &                     GRID(ng) % umask_io,                         &
 # endif
      &                     FORCES(ng) % ad_bustr_sol)
         IF (status.ne.nf90_noerr) THEN
           IF (Master) THEN
-            WRITE (stdout,10) TRIM(Vname(1,idUbms)), tADJindx(ng)
+            WRITE (stdout,10) TRIM(Vname(1,idUbms)), ADM(ng)%Rindex
           END IF
           exit_flag=3
           ioerror=status
@@ -939,16 +1011,16 @@
 !!      scale=-rho0
         scale=1.0_r8
         gtype=gfactor*v2dvar
-        status=nf_fwrite2d(ng, iADM, ncADJid(ng), adjVid(idVbms,ng),    &
-     &                     tADJindx(ng), gtype,                         &
+        status=nf_fwrite2d(ng, iADM, ADM(ng)%ncid, ADM(ng)%Vid(idVbms), &
+     &                     ADM(ng)%Rindex, gtype,                       &
      &                     LBi, UBi, LBj, UBj, scale,                   &
 # ifdef MASKING
-     &                     GRID(ng) % vmask,                            &
+     &                     GRID(ng) % vmask_io,                         &
 # endif
      &                     FORCES(ng) % ad_bvstr_sol)
         IF (status.ne.nf90_noerr) THEN
           IF (Master) THEN
-            WRITE (stdout,10) TRIM(Vname(1,idVbms)), tADJindx(ng)
+            WRITE (stdout,10) TRIM(Vname(1,idVbms)), ADM(ng)%Rindex
           END IF
           exit_flag=3
           ioerror=status
@@ -961,13 +1033,13 @@
 !  processes to access data immediately after it is written.
 !-----------------------------------------------------------------------
 !
-      CALL netcdf_sync (ng, iADM, ADJname(ng), ncADJid(ng))
+      CALL netcdf_sync (ng, iADM, ADM(ng)%name, ADM(ng)%ncid)
       IF (exit_flag.ne.NoError) RETURN
 
 # ifdef SOLVE3D
-      IF (Master) WRITE (stdout,20) kout, nout, tADJindx(ng)
+      IF (Master) WRITE (stdout,20) kout, nout, ADM(ng)%Rindex
 # else
-      IF (Master) WRITE (stdout,20) kout, tADJindx(ng)
+      IF (Master) WRITE (stdout,20) kout, ADM(ng)%Rindex
 # endif
 !
   10  FORMAT (/,' AD_WRT_HIS - error while writing variable: ',a,/,14x, &

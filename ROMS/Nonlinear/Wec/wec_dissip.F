@@ -70,9 +70,7 @@
 !
       USE mod_param
       USE mod_scalars
-# if defined EW_PERIODIC || defined NS_PERIODIC
       USE exchange_2d_mod
-# endif
 # ifdef DISTRIBUTE
       USE mp_exchange_mod, ONLY : mp_exchange2d
 # endif
@@ -100,18 +98,6 @@
 !
 !  Local variable declarations.
 !
-# ifdef DISTRIBUTE
-#  ifdef EW_PERIODIC
-      logical :: EWperiodic=.TRUE.
-#  else
-      logical :: EWperiodic=.FALSE.
-#  endif
-#  ifdef NS_PERIODIC
-      logical :: NSperiodic=.TRUE.
-#  else
-      logical :: NSperiodic=.FALSE.
-#  endif
-# endif
       integer :: i, j
       real(r8) :: cff1, cff2
       real(r8) :: fac1, sigmat, Dstp
@@ -170,7 +156,8 @@
 # ifdef DISTRIBUTE
       CALL mp_exchange2d (ng, tile, iNLM, 2,                            &
      &                    LBi, UBi, LBj, UBj,                           &
-     &                    NghostPoints, EWperiodic, NSperiodic,         &
+     &                    NghostPoints,                                 &
+     &                    EWperiodic(ng), NSperiodic(ng),               &
      &                    Dissip_break, Dissip_wcap)
 # endif
       RETURN

@@ -4,7 +4,7 @@
 !
 !svn $Id: def_tides.F 733 2008-09-07 01:56:45Z jcwarner $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2010 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2014 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -42,12 +42,12 @@
 
       integer, parameter :: Natt = 25
 
-      integer :: i, j, nvd3, nvd4
+      integer :: i, itrc, j, nvd3, nvd4
       integer :: status, varid
 
       integer :: DimIDs(32), tharm(2), t2dgrd(3), u2dgrd(3), v2dgrd(3)
 # ifdef SOLVE3D
-      integer :: u3dgrd(4), v3dgrd(4)
+      integer :: t3dgrd(4), u3dgrd(4), v3dgrd(4)
 # endif
       integer :: Vsize(4)
 
@@ -55,8 +55,8 @@
 
       real(r8) :: Aval(6)
 
-      character (len=80) :: Vinfo(Natt)
-      character (len=80) :: ncname
+      character (len=120) :: Vinfo(Natt)
+      character (len=256) :: ncname
 !
       SourceFile='def_tides.F'
 !
@@ -65,7 +65,7 @@
 !=======================================================================
 !
       IF (exit_flag.ne.NoError) RETURN
-      ncname=TIDEname(ng)
+      ncname=TIDE(ng)%name
 !
       DEFINE : IF (ldef) THEN
 !
@@ -88,37 +88,45 @@
         DO i=1,n_var
           IF (TRIM(var_name(i)).eq.Vname(1,idCosW)) THEN
             got_var(idCosW)=.TRUE.
-            tideVid(idCosW,ng)=var_id(i)
+            TIDE(ng)%Vid(idCosW)=var_id(i)
           ELSE IF (TRIM(var_name(i)).eq.Vname(1,idSinW)) THEN
             got_var(idSinW)=.TRUE.
-            tideVid(idSinW,ng)=var_id(i)
+            TIDE(ng)%Vid(idSinW)=var_id(i)
           ELSE IF (TRIM(var_name(i)).eq.Vname(1,idCos2)) THEN
             got_var(idCos2)=.TRUE.
-            tideVid(idCos2,ng)=var_id(i)
+            TIDE(ng)%Vid(idCos2)=var_id(i)
           ELSE IF (TRIM(var_name(i)).eq.Vname(1,idSin2)) THEN
             got_var(idSin2)=.TRUE.
-            tideVid(idSin2,ng)=var_id(i)
+            TIDE(ng)%Vid(idSin2)=var_id(i)
           ELSE IF (TRIM(var_name(i)).eq.Vname(1,idSWCW)) THEN
             got_var(idSWCW)=.TRUE.
-            tideVid(idSWCW,ng)=var_id(i)
+            TIDE(ng)%Vid(idSWCW)=var_id(i)
           ELSE IF (TRIM(var_name(i)).eq.Vname(1,idFsuH)) THEN
             got_var(idFsuH)=.TRUE.
-            tideVid(idFsuH,ng)=var_id(i)
+            TIDE(ng)%Vid(idFsuH)=var_id(i)
           ELSE IF (TRIM(var_name(i)).eq.Vname(1,idu2dH)) THEN
             got_var(idu2dH)=.TRUE.
-            tideVid(idu2dH,ng)=var_id(i)
+            TIDE(ng)%Vid(idu2dH)=var_id(i)
           ELSE IF (TRIM(var_name(i)).eq.Vname(1,idv2dH)) THEN
             got_var(idv2dH)=.TRUE.
-            tideVid(idv2dH,ng)=var_id(i)
+            TIDE(ng)%Vid(idv2dH)=var_id(i)
 # ifdef SOLVE3D
           ELSE IF (TRIM(var_name(i)).eq.Vname(1,idu3dH)) THEN
             got_var(idu3dH)=.TRUE.
-            tideVid(idu3dH,ng)=var_id(i)
+            TIDE(ng)%Vid(idu3dH)=var_id(i)
           ELSE IF (TRIM(var_name(i)).eq.Vname(1,idv3dH)) THEN
             got_var(idv3dH)=.TRUE.
-            tideVid(idv3dH,ng)=var_id(i)
+            TIDE(ng)%Vid(idv3dH)=var_id(i)
 # endif
           END IF
+# ifdef SOLVE3D
+          DO itrc=1,NAT
+            IF (TRIM(var_name(i)).eq.Vname(1,idTrcH(itrc))) THEN
+              got_var(idTrcH(itrc))=.TRUE.
+              TIDE(ng)%Vid(idTrcH(itrc))=var_id(i)
+            END IF
+          END DO
+# endif
         END DO
 !
         IF (.not.got_var(idCosW)) Ldefine=.TRUE.
@@ -126,18 +134,22 @@
         IF (.not.got_var(idCos2)) Ldefine=.TRUE.
         IF (.not.got_var(idSin2)) Ldefine=.TRUE.
         IF (.not.got_var(idSWCW)) Ldefine=.TRUE.
-        IF (.not.got_var(idFsuH)) Ldefine=.TRUE.
-        IF (.not.got_var(idu2dH)) Ldefine=.TRUE.
-        IF (.not.got_var(idv2dH)) Ldefine=.TRUE.
+        IF (.not.got_var(idFsuH).and.Aout(idFsuD,ng)) Ldefine=.TRUE.
+        IF (.not.got_var(idu2dH).and.Aout(idu2dD,ng)) Ldefine=.TRUE.
+        IF (.not.got_var(idv2dH).and.Aout(idv2dD,ng)) Ldefine=.TRUE.
 # ifdef SOLVE3D
-        IF (.not.got_var(idu3dH)) Ldefine=.TRUE.
-        IF (.not.got_var(idv3dH)) Ldefine=.TRUE.
+        IF (.not.got_var(idu3dH).and.Aout(idu3dD,ng)) Ldefine=.TRUE.
+        IF (.not.got_var(idv3dH).and.Aout(idv3dD,ng)) Ldefine=.TRUE.
+        DO itrc=1,NAT
+          IF (.not.got_var(idTrcH(itrc)).and.                           &
+     &        Aout(idTrcD(itrc),ng)) Ldefine=.TRUE.
+        END DO
 # endif
 !
 !  Open existing tidal forcing file.
 !
         IF (Ldefine) THEN
-          CALL netcdf_open (ng, iNLM, ncname, 1, ncTIDEid(ng))
+          CALL netcdf_open (ng, iNLM, ncname, 1, TIDE(ng)%ncid)
           IF (exit_flag.ne.NoError) THEN
             WRITE (stdout,10) TRIM(ncname)
             RETURN
@@ -147,7 +159,7 @@
 !  Put existing file into define mode so new variables can be added.
 !
         IF (Ldefine) THEN
-          CALL netcdf_redef (ng, iNLM, ncname, ncTIDEid(ng))
+          CALL netcdf_redef (ng, iNLM, ncname, TIDE(ng)%ncid)
           IF (exit_flag.ne.NoError) THEN
             IF (Master) WRITE (stdout,20) TRIM(ncname)
             RETURN
@@ -190,13 +202,13 @@
 !
 # ifdef SOLVE3D
           IF (DimIDs( 9).eq.0) THEN
-            status=def_dim(ng, iNLM, ncTIDEid(ng), ncname, 's_rho',     &
+            status=def_dim(ng, iNLM, TIDE(ng)%ncid, ncname, 's_rho',    &
      &                     N(ng), DimIDs( 9))
             IF (exit_flag.ne.NoError) RETURN
           END IF
 # endif
           IF (DimIDs(12).eq.0) THEN
-            status=def_dim(ng, iNLM, ncTIDEid(ng), ncname, 'harmonics', &
+            status=def_dim(ng, iNLM, TIDE(ng)%ncid, ncname, 'harmonics',&
      &                     2*NTC(ng)+1, DimIDs(12))
             IF (exit_flag.ne.NoError) RETURN
           END IF
@@ -217,8 +229,14 @@
         t2dgrd(1)=DimIDs( 1)
         t2dgrd(2)=DimIDs( 5)
         t2dgrd(3)=DimIDs(12)
+# ifdef SOLVE3D
+        t3dgrd(1)=DimIDs( 1)
+        t3dgrd(2)=DimIDs( 5)
+        t3dgrd(3)=DimIDs( 9)
+        t3dgrd(4)=DimIDs(12)
+# endif
 !
-!  Define dimension vectors for staggered u-momemtum type variables.
+!  Define dimension vectors for staggered u-momentum type variables.
 !
         u2dgrd(1)=DimIDs( 2)
         u2dgrd(2)=DimIDs( 6)
@@ -230,7 +248,7 @@
         u3dgrd(4)=DimIDs(12)
 # endif
 !
-!  Define dimension vectors for staggered v-momemtum type variables.
+!  Define dimension vectors for staggered v-momentum type variables.
 !
         v2dgrd(1)=DimIDs( 3)
         v2dgrd(2)=DimIDs( 7)
@@ -261,7 +279,7 @@
 !
         Vinfo( 1)='Hcount'
         Vinfo( 2)='number of time-accumulated tide harmonics'
-        status=def_var(ng, iNLM, ncTIDEid(ng), varid, nf90_int,         &
+        status=def_var(ng, iNLM, TIDE(ng)%ncid, varid, nf90_int,        &
      &                 1, (/0/), Aval, Vinfo, ncname,                   &
      &                 SetParAccess = .FALSE.)
         IF (exit_flag.ne.NoError) RETURN
@@ -284,7 +302,7 @@
           WRITE (Vinfo( 3),'(a,1x,a)') 'seconds since', TRIM(r_text)
           Vinfo( 4)='gregorian'
         END IF
-        status=def_var(ng, iNLM, ncTIDEid(ng), tideVid(idtime,ng),      &
+        status=def_var(ng, iNLM, TIDE(ng)%ncid, TIDE(ng)%Vid(idtime),   &
      &                 NF_FRST, 1, (/0/), Aval, Vinfo, ncname,          &
      &                 SetParAccess = .FALSE.)
         IF (exit_flag.ne.NoError) RETURN
@@ -295,7 +313,7 @@
           Vinfo( 1)=Vname(1,idCosW)
           Vinfo( 2)=Vname(2,idCosW)
           Vinfo( 3)=Vname(3,idCosW)
-          status=def_var(ng, iNLM, ncTIDEid(ng), tideVid(idCosW,ng),    &
+          status=def_var(ng, iNLM, TIDE(ng)%ncid, TIDE(ng)%Vid(idCosW), &
      &                   NF_FRST, 1, (/tharm(1)/), Aval, Vinfo, ncname, &
      &                   SetParAccess = .FALSE.)
           IF (exit_flag.ne.NoError) RETURN
@@ -307,7 +325,7 @@
           Vinfo( 1)=Vname(1,idSinW)
           Vinfo( 2)=Vname(2,idSinW)
           Vinfo( 3)=Vname(3,idSinW)
-          status=def_var(ng, iNLM, ncTIDEid(ng), tideVid(idSinW,ng),    &
+          status=def_var(ng, iNLM, TIDE(ng)%ncid, TIDE(ng)%Vid(idSinW), &
      &                   NF_FRST, 1, (/tharm(1)/), Aval, Vinfo, ncname, &
      &                   SetParAccess = .FALSE.)
           IF (exit_flag.ne.NoError) RETURN
@@ -319,7 +337,7 @@
           Vinfo( 1)=Vname(1,idCos2)
           Vinfo( 2)=Vname(2,idCos2)
           Vinfo( 3)=Vname(3,idCos2)
-          status=def_var(ng, iNLM, ncTIDEid(ng), tideVid(idCos2,ng),    &
+          status=def_var(ng, iNLM, TIDE(ng)%ncid, TIDE(ng)%Vid(idCos2), &
      &                   NF_FRST, 2, tharm, Aval, Vinfo, ncname,        &
      &                   SetParAccess = .FALSE.)
           IF (exit_flag.ne.NoError) RETURN
@@ -331,7 +349,7 @@
           Vinfo( 1)=Vname(1,idSin2)
           Vinfo( 2)=Vname(2,idSin2)
           Vinfo( 3)=Vname(3,idSin2)
-          status=def_var(ng, iNLM, ncTIDEid(ng), tideVid(idSin2,ng),    &
+          status=def_var(ng, iNLM, TIDE(ng)%ncid, TIDE(ng)%Vid(idSin2), &
      &                   NF_FRST, 2, tharm, Aval, Vinfo, ncname,        &
      &                   SetParAccess = .FALSE.)
           IF (exit_flag.ne.NoError) RETURN
@@ -343,7 +361,7 @@
           Vinfo( 1)=Vname(1,idSWCW)
           Vinfo( 2)=Vname(2,idSWCW)
           Vinfo( 3)=Vname(3,idSWCW)
-          status=def_var(ng, iNLM, ncTIDEid(ng), tideVid(idSWCW,ng),    &
+          status=def_var(ng, iNLM, TIDE(ng)%ncid, TIDE(ng)%Vid(idSWCW), &
      &                   NF_FRST, 2, tharm, Aval, Vinfo, ncname,        &
      &                   SetParAccess = .FALSE.)
           IF (exit_flag.ne.NoError) RETURN
@@ -351,7 +369,7 @@
 !
 !  Define free-surface time-accumulated tide harmonics.
 !
-        IF (.not.got_var(idFsuH)) THEN
+        IF (.not.got_var(idFsuH).and.Aout(idFsuD,ng)) THEN
           Vinfo( 1)=Vname(1,idFsuH)
           Vinfo( 2)=Vname(2,idFsuH)
           Vinfo( 3)=Vname(3,idFsuH)
@@ -361,14 +379,14 @@
 # endif
           Vinfo(22)='coordinates'
           Aval(5)=REAL(Iinfo(1,idFsuH,ng),r8)
-          status=def_var(ng, iNLM, ncTIDEid(ng), tideVid(idFsuH,ng),    &
+          status=def_var(ng, iNLM, TIDE(ng)%ncid, TIDE(ng)%Vid(idFsuH), &
      &                   NF_FRST, nvd3, t2dgrd, Aval, Vinfo, ncname)
           IF (exit_flag.ne.NoError) RETURN
         END IF
 !
 !  Define 2D u-momentum time-accumulated tide harmonics.
 !
-        IF (.not.got_var(idu2dH)) THEN
+        IF (.not.got_var(idu2dH).and.Aout(idu2dD,ng)) THEN
           Vinfo( 1)=Vname(1,idu2dH)
           Vinfo( 2)=Vname(2,idu2dH)
           Vinfo( 3)=Vname(3,idu2dH)
@@ -378,14 +396,14 @@
 # endif
           Vinfo(22)='coordinates'
           Aval(5)=REAL(Iinfo(1,idu2dH,ng),r8)
-          status=def_var(ng, iNLM, ncTIDEid(ng), tideVid(idu2dH,ng),    &
+          status=def_var(ng, iNLM, TIDE(ng)%ncid, TIDE(ng)%Vid(idu2dH), &
      &                   NF_FRST, nvd3, u2dgrd, Aval, Vinfo, ncname)
           IF (exit_flag.ne.NoError) RETURN
         END IF
 !
 !  Define 2D v-momentum time-accumulated tide harmonics.
 !
-        IF (.not.got_var(idv2dH)) THEN
+        IF (.not.got_var(idv2dH).and.Aout(idv2dD,ng)) THEN
           Vinfo( 1)=Vname(1,idv2dH)
           Vinfo( 2)=Vname(2,idv2dH)
           Vinfo( 3)=Vname(3,idv2dH)
@@ -395,7 +413,7 @@
 # endif
           Vinfo(22)='coordinates'
           Aval(5)=REAL(Iinfo(1,idv2dH,ng),r8)
-          status=def_var(ng, iNLM, ncTIDEid(ng), tideVid(idv2dH,ng),    &
+          status=def_var(ng, iNLM, TIDE(ng)%ncid, TIDE(ng)%Vid(idv2dH), &
      &                   NF_FRST, nvd3, v2dgrd, Aval, Vinfo, ncname)
           IF (exit_flag.ne.NoError) RETURN
         END IF
@@ -404,7 +422,7 @@
 !
 !  Define 3D u-momentum time-accumulated tide harmonics.
 !
-        IF (.not.got_var(idu3dH)) THEN
+        IF (.not.got_var(idu3dH).and.Aout(idu3dD,ng)) THEN
           Vinfo( 1)=Vname(1,idu3dH)
           Vinfo( 2)=Vname(2,idu3dH)
           Vinfo( 3)=Vname(3,idu3dH)
@@ -414,14 +432,14 @@
 #  endif
           Vinfo(22)='coordinates'
           Aval(5)=REAL(Iinfo(1,idu3dH,ng),r8)
-          status=def_var(ng, iNLM, ncTIDEid(ng), tideVid(idu3dH,ng),    &
+          status=def_var(ng, iNLM, TIDE(ng)%ncid, TIDE(ng)%Vid(idu3dH), &
      &                   NF_FRST, nvd4, u3dgrd, Aval, Vinfo, ncname)
           IF (exit_flag.ne.NoError) RETURN
         END IF
 !
 !  Define 3D v-momentum time-accumulated tide harmonics.
 !
-        IF (.not.got_var(idv3dH)) THEN
+        IF (.not.got_var(idv3dH).and.Aout(idv3dD,ng)) THEN
           Vinfo( 1)=Vname(1,idv3dH)
           Vinfo( 2)=Vname(2,idv3dH)
           Vinfo( 3)=Vname(3,idv3dH)
@@ -431,17 +449,37 @@
 #  endif
           Vinfo(22)='coordinates'
           Aval(5)=REAL(Iinfo(1,idv3dH,ng),r8)
-          status=def_var(ng, iNLM, ncTIDEid(ng), tideVid(idv3dH,ng),    &
+          status=def_var(ng, iNLM, TIDE(ng)%ncid, TIDE(ng)%Vid(idv3dH), &
      &                   NF_FRST, nvd4, v3dgrd, Aval, Vinfo, ncname)
           IF (exit_flag.ne.NoError) RETURN
         END IF
+!
+!  Define temperaturea and salinity time-accumulated tide harmonics.
+!
+        DO itrc=1,NAT
+          IF (.not.got_var(idTrcH(itrc)).and.Aout(idTrcD(itrc),ng)) THEN
+            Vinfo( 1)=Vname(1,idTrcH(itrc))
+            Vinfo( 2)=Vname(2,idTrcH(itrc))
+            Vinfo( 3)=Vname(3,idTrcH(itrc))
+            Vinfo(14)=Vname(4,idTrcH(itrc))
+#  if defined WRITE_WATER && defined MASKING
+            Vinfo(20)='mask_rho'
+#  endif
+            Vinfo(22)='coordinates'
+            Aval(5)=REAL(Iinfo(1,idv3dH,ng),r8)
+            status=def_var(ng, iNLM, TIDE(ng)%ncid,                     &
+     &                     TIDE(ng)%Vid(idTrcH(itrc)),                  &
+     &                     NF_FRST, nvd4, t3dgrd, Aval, Vinfo, ncname)
+            IF (exit_flag.ne.NoError) RETURN
+          END IF
+        END DO
 # endif
 !
 !-----------------------------------------------------------------------
 !  Leave definition mode.
 !-----------------------------------------------------------------------
 !
-        CALL netcdf_enddef (ng, iNLM, ncname, ncTIDEid(ng))
+        CALL netcdf_enddef (ng, iNLM, ncname, TIDE(ng)%ncid)
         IF (exit_flag.ne.NoError) RETURN
 
       END IF DEFINE
@@ -465,7 +503,7 @@
 !
 !  Open tidal forcing file for read/write.
 !
-        CALL netcdf_open (ng, iNLM, ncname, 1, ncTIDEid(ng))
+        CALL netcdf_open (ng, iNLM, ncname, 1, TIDE(ng)%ncid)
         IF (exit_flag.ne.NoError) THEN
           WRITE (stdout,10) TRIM(ncname)
           RETURN
@@ -483,40 +521,49 @@
         DO i=1,n_var
           IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idtime))) THEN
             got_var(idtime)=.TRUE.
-            tideVid(idtime,ng)=var_id(i)
+            TIDE(ng)%Vid(idtime)=var_id(i)
           ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idCosW))) THEN
             got_var(idCosW)=.TRUE.
-            tideVid(idCosW,ng)=var_id(i)
+            TIDE(ng)%Vid(idCosW)=var_id(i)
           ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idSinW))) THEN
             got_var(idSinW)=.TRUE.
-            tideVid(idSinW,ng)=var_id(i)
+            TIDE(ng)%Vid(idSinW)=var_id(i)
           ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idCos2))) THEN
             got_var(idCos2)=.TRUE.
-            tideVid(idCos2,ng)=var_id(i)
+            TIDE(ng)%Vid(idCos2)=var_id(i)
           ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idSin2))) THEN
             got_var(idSin2)=.TRUE.
-            tideVid(idSin2,ng)=var_id(i)
+            TIDE(ng)%Vid(idSin2)=var_id(i)
           ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idSWCW))) THEN
             got_var(idSWCW)=.TRUE.
-            tideVid(idSWCW,ng)=var_id(i)
+            TIDE(ng)%Vid(idSWCW)=var_id(i)
           ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idFsuH))) THEN
             got_var(idFsuH)=.TRUE.
-            tideVid(idFsuH,ng)=var_id(i)
+            TIDE(ng)%Vid(idFsuH)=var_id(i)
           ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idu2dH))) THEN
             got_var(idu2dH)=.TRUE.
-            tideVid(idu2dH,ng)=var_id(i)
+            TIDE(ng)%Vid(idu2dH)=var_id(i)
           ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idv2dH))) THEN
             got_var(idv2dH)=.TRUE.
-            tideVid(idv2dH,ng)=var_id(i)
+            TIDE(ng)%Vid(idv2dH)=var_id(i)
 # ifdef SOLVE3D
           ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idu3dH))) THEN
             got_var(idu3dH)=.TRUE.
-            tideVid(idu3dH,ng)=var_id(i)
+            TIDE(ng)%Vid(idu3dH)=var_id(i)
           ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idv3dH))) THEN
             got_var(idv3dH)=.TRUE.
-            tideVid(idv3dH,ng)=var_id(i)
+            TIDE(ng)%Vid(idv3dH)=var_id(i)
 # endif
           END IF
+# ifdef SOLVE3D
+          DO itrc=1,NAT
+            IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idTrcH(itrc)))) THEN
+              got_var(idTrcH(itrc))=.TRUE.
+              TIDE(ng)%Vid(idTrcH(itrc))=var_id(i)
+            END IF
+          END DO
+# endif
+
         END DO
 !
 !  Check if tide variables are available in input NetCDF file.
@@ -557,44 +604,52 @@
           exit_flag=3
           RETURN
         END IF
-        IF (.not.got_var(idFsuH)) THEN
+        IF (.not.got_var(idFsuH).and.Aout(idFsuD,ng)) THEN
           IF (Master) WRITE (stdout,30) TRIM(Vname(1,idFsuH)),          &
      &                                  TRIM(ncname)
           exit_flag=3
           RETURN
         END IF
-        IF (.not.got_var(idu2dH)) THEN
+        IF (.not.got_var(idu2dH).and.Aout(idu2dD,ng)) THEN
           IF (Master) WRITE (stdout,30) TRIM(Vname(1,idu2dH)),          &
      &                                  TRIM(ncname)
           exit_flag=3
           RETURN
         END IF
-        IF (.not.got_var(idv2dH)) THEN
+        IF (.not.got_var(idv2dH).and.Aout(idv2dD,ng)) THEN
           IF (Master) WRITE (stdout,30) TRIM(Vname(1,idv2dH)),          &
      &                                  TRIM(ncname)
           exit_flag=3
           RETURN
         END IF
 # ifdef SOLVE3D
-        IF (.not.got_var(idu3dH)) THEN
+        IF (.not.got_var(idu3dH).and.Aout(idu3dD,ng)) THEN
           IF (Master) WRITE (stdout,30) TRIM(Vname(1,idu3dH)),          &
      &                                  TRIM(ncname)
           exit_flag=3
           RETURN
         END IF
-        IF (.not.got_var(idv3dH)) THEN
+        IF (.not.got_var(idv3dH).and.Aout(idv3dD,ng)) THEN
           IF (Master) WRITE (stdout,30) TRIM(Vname(1,idv3dH)),          &
      &                                  TRIM(ncname)
           exit_flag=3
           RETURN
         END IF
+        DO itrc=1,NAT
+          IF (.not.got_var(idTrcH(itrc)).and.Aout(idTrcD(itrc),ng)) THEN
+            IF (Master) WRITE (stdout,30) TRIM(Vname(1,idTrcH(itrc))),  &
+     &                                    TRIM(ncname)
+            exit_flag=3
+            RETURN
+          END IF
+        END DO
 # endif
       END IF QUERY
 !
   10  FORMAT (/,' DEF_TIDES - unable to open tide NetCDF file: ',a)
-  20  FORMAT (/,' DEF_TIDES - unable to put in define mode tide NetCDF',  &
-     &        ' file: ',a)
-  30  FORMAT (/,' DEF_TIDES - unable to find variable: ',a,2x,            &
+  20  FORMAT (/,' DEF_TIDES - unable to put in define mode tide',       &
+     &        ' NetCDF file: ',a)
+  30  FORMAT (/,' DEF_TIDES - unable to find variable: ',a,2x,          &
      &        ' in tide NetCDF file: ',a)
 
       RETURN

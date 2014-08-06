@@ -2,9 +2,9 @@
 #ifdef TANGENT
       SUBROUTINE tl_output (ng)
 !
-!svn $Id: tl_output.F 429 2009-12-20 17:30:26Z arango $
+!svn $Id$
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2010 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2014 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -41,7 +41,7 @@
 !
       logical :: Ldefine, NewFile
 
-      integer :: ifile, lstr, status, tile
+      integer :: Fcount, ifile, status, tile
 
 # ifdef PROFILE
 !
@@ -93,18 +93,18 @@
             Ldefine=.FALSE.
           END IF
           IF (Ldefine) THEN                     ! create new file or
-            NrecTLM(ng)=0                       ! inquire existing file
+            Fcount=TLM(ng)%Fcount               ! inquire existing file
+            TLM(ng)%Nrec(Fcount)=0
             ifile=(iic(ng)-1)/ndefTLM(ng)+1
             IF (Master) THEN
-              lstr=LEN_TRIM(TLMbase(ng))
-              WRITE (TLMname(ng),10) TLMbase(ng)(1:lstr-3),ifile
+              WRITE (TLM(ng)%name,10) TRIM(TLM(ng)%base), ifile
   10          FORMAT (a,'_',i4.4,'.nc')
             END IF
 # ifdef DISTRIBUTE
-            CALL mp_bcasts (ng, iTLM, TLMname(ng))
+            CALL mp_bcasts (ng, iTLM, TLM(ng)%name)
 # endif
-            IF (ncTLMid(ng).ne.-1) THEN
-              CALL netcdf_close (ng, iTLM, ncTLMid(ng))
+            IF (TLM(ng)%ncid.ne.-1) THEN
+              CALL netcdf_close (ng, iTLM, TLM(ng)%ncid)
             END IF
             CALL tl_def_his (ng, NewFile)
             IF (exit_flag.ne.NoError) RETURN
@@ -128,6 +128,16 @@
 !  conditions in perturbation mode computations.
 !
       IF (LwrtTLM(ng)) THEN
+# if defined STOCHASTIC_OPT || defined FORCING_SV || \
+     defined HESSIAN_SO     || defined HESSIAN_FSV
+!
+!  Write only on first time step.
+!
+        IF (iic(ng).eq.1) THEN
+          CALL tl_wrt_his (ng)
+          IF (exit_flag.ne.NoError) RETURN
+        END IF
+# else
         IF (LwrtPER(ng)) THEN
           IF ((iic(ng).gt.ntstart(ng)).and.                             &
      &        (MOD(iic(ng)-1,nTLM(ng)).eq.0)) THEN
@@ -141,7 +151,90 @@
             IF (exit_flag.ne.NoError) RETURN
           END IF
         END IF
+# endif
       END IF
+
+# ifdef TL_AVERAGES
+!
+!-----------------------------------------------------------------------
+!  If appropriate, process time-averaged NetCDF file.
+!-----------------------------------------------------------------------
+!
+!  Create output time-averaged NetCDF file or prepare existing file
+!  to append new data to it. Also, notice that it is possible to
+!  create several files during a single model run.
+!
+      IF (LdefAVG(ng)) THEN
+        IF (ndefAVG(ng).gt.0) THEN
+          IF (idefAVG(ng).lt.0) THEN
+            idefAVG(ng)=((ntstart(ng)-1)/ndefAVG(ng))*ndefAVG(ng)
+            IF ((ndefAVG(ng).eq.nAVG(ng)).and.(idefAVG(ng).le.0)) THEN
+              idefAVG(ng)=ndefAVG(ng)         ! one file per record
+            ELSE IF (idefAVG(ng).lt.iic(ng)-1) THEN
+              idefAVG(ng)=idefAVG(ng)+ndefAVG(ng)
+            END IF
+          END IF
+          IF ((nrrec(ng).ne.0).and.(iic(ng).eq.ntstart(ng))) THEN
+            IF ((iic(ng)-1).eq.idefAVG(ng)) THEN
+              Ldefine=.FALSE.                 ! finished file, delay
+            ELSE                              ! creation of next file
+              NewFile=.FALSE.
+              Ldefine=.TRUE.                  ! unfinished file, inquire
+            END IF                            ! content for appending
+            idefAVG(ng)=idefAVG(ng)+nAVG(ng)  ! restart offset
+          ELSE IF ((iic(ng)-1).eq.idefAVG(ng)) THEN
+            idefAVG(ng)=idefAVG(ng)+ndefAVG(ng)
+            IF (nAVG(ng).ne.ndefAVG(ng).and.iic(ng).eq.ntstart(ng)) THEN
+              idefAVG(ng)=idefAVG(ng)+nAVG(ng)
+            END IF
+            Ldefine=.TRUE.
+            Newfile=.TRUE.
+          ELSE
+            Ldefine=.FALSE.
+          END IF
+          IF (Ldefine) THEN
+            Fcount=AVG(ng)%Fcount
+            AVG(ng)%Nrec(Fcount)=0
+            IF (ndefAVG(ng).eq.nAVG(ng)) THEN
+              ifile=(iic(ng)-1)/ndefAVG(ng)
+            ELSE
+              ifile=(iic(ng)-1)/ndefAVG(ng)+1
+            END IF
+            IF (Master) THEN
+              WRITE (AVG(ng)%name,20) TRIM(AVG(ng)%base), ifile
+  20          FORMAT (a,'_',i4.4,'.nc')
+            END IF
+#  ifdef DISTRIBUTE
+            CALL mp_bcasts (ng, iNLM, AVG(ng)%name)
+#  endif
+            IF (AVG(ng)%ncid.ne.-1) THEN
+              CALL netcdf_close (ng, iNLM, AVG(ng)%ncid)
+            END IF
+            CALL def_avg (ng, Newfile)
+            IF (exit_flag.ne.NoError) RETURN
+            LwrtAVG(ng)=.TRUE.
+          END IF
+        ELSE
+          IF (iic(ng).eq.ntstart(ng)) THEN
+            CALL def_avg (ng, ldefout(ng))
+            IF (exit_flag.ne.NoError) RETURN
+            LwrtAVG(ng)=.TRUE.
+            LdefAVG(ng)=.FALSE.
+          END IF
+        END IF
+      END IF
+!
+!  Write out data into time-averaged NetCDF file.
+!
+      IF (LwrtAVG(ng)) THEN
+        IF ((iic(ng).gt.ntstart(ng)).and.                               &
+     &      (MOD(iic(ng)-1,nAVG(ng)).eq.0)) THEN
+          CALL wrt_avg (ng)
+          IF (exit_flag.ne.NoError) RETURN
+        END IF
+      END IF
+# endif
+
 # if defined FOUR_DVAR
 #  ifdef OBSERVATIONS
 !

@@ -5,7 +5,7 @@
 !
 !svn $Id: ini_lanczos.F 733 2008-09-07 01:56:45Z jcwarner $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2010 The ROMS/TOMS Group       Andrew M. Moore   !
+!  Copyright (c) 2002-2014 The ROMS/TOMS Group       Andrew M. Moore   !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -61,7 +61,7 @@
 # include "tile.h"
 !
 # ifdef PROFILE
-      CALL wclock_on (ng, iTLM, 1)
+      CALL wclock_on (ng, iTLM, 2)
 # endif
       CALL ini_lanczos_tile (ng, tile,                                  &
      &                       LBi, UBi, LBj, UBj, LBij, UBij,            &
@@ -125,7 +125,7 @@
 # endif
      &                       OCEAN(ng) % tl_zeta)
 # ifdef PROFILE
-      CALL wclock_off (ng, iTLM, 1)
+      CALL wclock_off (ng, iTLM, 2)
 # endif
 
       RETURN
@@ -335,20 +335,20 @@
       real(r8), dimension(Ninner) :: bvector
       real(r8), dimension(Ninner) :: zgamma
 
-      character (len=80) :: ncname
+      character (len=256) :: ncname
 
 # include "set_bounds.h"
 !
       SourceFile='ini_lanczos.F, ini_lanczos_tile'
 !
-!------------------------------------------------------------------------
+!-----------------------------------------------------------------------
 !  Compute tangent linear model initial conditions from the weighted
 !  sum of the Lanczos vectors.
-!------------------------------------------------------------------------
+!-----------------------------------------------------------------------
 !
 !  Determine if single or multiple Lanczos vector NetCDF files.
 !
-      CALL netcdf_get_ivar (ng, iADM, TRIM(LCZname(ng)), 'ndefADJ',      &
+      CALL netcdf_get_ivar (ng, iADM, TRIM(LCZ(ng)%name), 'ndefADJ',    &
      &                      ndefLCZ)
       IF (exit_flag.ne.NoError) RETURN
 !
@@ -356,28 +356,28 @@
       DO inner=1,Ninner                 ! last record ignored
 !
 !  Determine Lanczos vector file to read.  The Lanczos vectors are
-!  written into the adjoint NetCDF in the IS4DVAR Lanczos algorithm.
+!  written into the adjoint NetCDF in the I4D-Var Lanczos algorithm.
 !  The Lanczos vector for each inner loop is accumulated in the
 !  unlimited dimension. The name of this file is provided here in
-!  the LCZname variable since the ADJname value will be use in the
-!  adjoint sensitivity part.
+!  the LCZ(ng)%name variable since the ADM(ng)%name value will be
+!  use in the adjoint sensitivity part.
 !
         IF (ndefLCZ.gt.0) THEN
-          lstr=LEN_TRIM(LCZname(ng))
-          WRITE (ncname,10) LCZname(ng)(1:lstr-8), inner
+          lstr=LEN_TRIM(LCZ(ng)%name)
+          WRITE (ncname,10) LCZ(ng)%name(1:lstr-8), inner
  10       FORMAT (a,'_',i4.4,'.nc')
         ELSE
-          ncname=LCZname(ng)
+          ncname=LCZ(ng)%name
         END IF
 !
 !  Read in the Lanczos vectors (q_i, where i=1,2,...k) computed from
-!  k inner-loops of the IS4DVAR algorithm first outer loop. Load
+!  k inner-loops of the I4D-Var algorithm first outer loop. Load
 !  Lanczos vectors into TANGENT LINEAR STATE ARRAYS at index Lwrk.
 !
         CALL read_state (ng, tile, iTLM,                                &
      &                   LBi, UBi, LBj, UBj, LBij, UBij,                &
      &                   Lwrk, inner,                                   &
-     &                   ndefLCZ, ncLCZid(ng), TRIM(ncname),            &
+     &                   ndefLCZ, LCZ(ng)%ncid, TRIM(ncname),           &
 # ifdef MASKING
      &                   rmask, umask, vmask,                           &
 # endif
@@ -530,15 +530,15 @@
       END IF
       DO inner=1,Ninner-1                 ! last 2 records ignored
         IF (ndefLCZ.gt.0) THEN
-          lstr=LEN_TRIM(LCZname(ng))
-          WRITE (ncname,10) LCZname(ng)(1:lstr-8), inner
+          lstr=LEN_TRIM(LCZ(ng)%name)
+          WRITE (ncname,10) LCZ(ng)%name(1:lstr-8), inner
         ELSE
-          ncname=LCZname(ng)
+          ncname=LCZ(ng)%name
         END IF
         CALL read_state (ng, tile, iTLM,                                &
      &                   LBi, UBi, LBj, UBj, LBij, UBij,                &
      &                   Lwrk, inner,                                   &
-     &                   ndefLCZ, ncLCZid(ng), ncname,                  &
+     &                   ndefLCZ, LCZ(ng)%ncid, ncname,                 &
 # ifdef MASKING
      &                   rmask, umask, vmask,                           &
 # endif

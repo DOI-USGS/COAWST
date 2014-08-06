@@ -1,7 +1,7 @@
 !
-!svn $Id: npzd_iron_mod.h 429 2009-12-20 17:30:26Z arango $
+!svn $Id$
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2010 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2014 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -70,56 +70,56 @@
 !
 !  Biological parameters.
 !
-      integer, dimension(Ngrids) :: BioIter
+      integer, allocatable :: BioIter(:)
 
       real(r8), allocatable :: BioIni(:,:)
-      real(r8), dimension(Ngrids) :: AttPhy          ! m2/mmole
-      real(r8), dimension(Ngrids) :: AttSW           ! 1/m
-      real(r8), dimension(Ngrids) :: DetRR           ! 1/day
-      real(r8), dimension(Ngrids) :: K_NO3           ! 1/(mmol/m3)
-      real(r8), dimension(Ngrids) :: Ivlev           ! nondimensional
-      real(r8), dimension(Ngrids) :: PARfrac         ! nondimensional
+      real(r8), allocatable :: AttPhy(:)       ! m2/mmole
+      real(r8), allocatable :: AttSW(:)        ! 1/m
+      real(r8), allocatable :: DetRR(:)        ! 1/day
+      real(r8), allocatable :: K_NO3(:)        ! 1/(mmol/m3)
+      real(r8), allocatable :: Ivlev(:)        ! nondimensional
+      real(r8), allocatable :: PARfrac(:)      ! nondimensional
 #ifdef IRON_LIMIT
-      real(r8), dimension(Ngrids) :: A_Fe            ! nondimensional
-      real(r8), dimension(Ngrids) :: B_Fe            ! 1/M-C
-      real(r8), dimension(Ngrids) :: FeRR            ! 1/day
+      real(r8), allocatable :: A_Fe(:)         ! nondimensional
+      real(r8), allocatable :: B_Fe(:)         ! 1/M-C
+      real(r8), allocatable :: FeRR(:)         ! 1/day
 # ifdef IRON_RELAX
-      real(r8), dimension(Ngrids) :: FeHmin          ! m
-      real(r8), dimension(Ngrids) :: FeMax           ! mmole/m3
-      real(r8), dimension(Ngrids) :: FeNudgTime      ! day
+      real(r8), allocatable :: FeHmin(:)       ! m
+      real(r8), allocatable :: FeMax(:)        ! mmole/m3
+      real(r8), allocatable :: FeNudgTime(:)   ! day
 # endif
-      real(r8), dimension(Ngrids) :: K_FeC           ! muM-Fe/M-C
-      real(r8), dimension(Ngrids) :: T_Fe            ! day
+      real(r8), allocatable :: K_FeC(:)        ! muM-Fe/M-C
+      real(r8), allocatable :: T_Fe(:)         ! day
 #endif
 #ifdef TANGENT
-      real(r8), dimension(Ngrids) :: tl_PARfrac      ! nondimensional
+      real(r8), allocatable :: tl_PARfrac(:)   ! nondimensional
 #endif
 #ifdef ADJOINT
-      real(r8), dimension(Ngrids) :: ad_PARfrac      ! nondimensional
+      real(r8), allocatable :: ad_PARfrac(:)   ! nondimensional
 #endif
-      real(r8), dimension(Ngrids) :: PhyIS           ! m2/W
-      real(r8), dimension(Ngrids) :: PhyMRD          ! 1/day
-      real(r8), dimension(Ngrids) :: PhyMRN          ! 1/day
-      real(r8), dimension(Ngrids) :: Vm_NO3          ! 1/day
-      real(r8), dimension(Ngrids) :: wDet            ! m/day
+      real(r8), allocatable :: PhyIS(:)        ! m2/W
+      real(r8), allocatable :: PhyMRD(:)       ! 1/day
+      real(r8), allocatable :: PhyMRN(:)       ! 1/day
+      real(r8), allocatable :: Vm_NO3(:)       ! 1/day
+      real(r8), allocatable :: wDet(:)         ! m/day
 #ifdef TANGENT
-      real(r8), dimension(Ngrids) :: tl_wDet         ! m/day
+      real(r8), allocatable :: tl_wDet(:)      ! m/day
 #endif
 #ifdef ADJOINT
-      real(r8), dimension(Ngrids) :: ad_wDet         ! m/day
+      real(r8), allocatable :: ad_wDet(:)      ! m/day
 #endif
-      real(r8), dimension(Ngrids) :: wPhy            ! m/day
+      real(r8), allocatable :: wPhy(:)         ! m/day
 #ifdef TANGENT
-      real(r8), dimension(Ngrids) :: tl_wPhy         ! m/day
+      real(r8), allocatable :: tl_wPhy(:)      ! m/day
 #endif
 #ifdef ADJOINT
-      real(r8), dimension(Ngrids) :: ad_wPhy         ! m/day
+      real(r8), allocatable :: ad_wPhy(:)      ! m/day
 #endif
-      real(r8), dimension(Ngrids) :: ZooEED          ! nondimensional
-      real(r8), dimension(Ngrids) :: ZooEEN          ! nondimensional
-      real(r8), dimension(Ngrids) :: ZooGR           ! 1/day
-      real(r8), dimension(Ngrids) :: ZooMRD          ! 1/day
-      real(r8), dimension(Ngrids) :: ZooMRN          ! 1/day
+      real(r8), allocatable :: ZooEED(:)       ! nondimensional
+      real(r8), allocatable :: ZooEEN(:)       ! nondimensional
+      real(r8), allocatable :: ZooGR(:)        ! 1/day
+      real(r8), allocatable :: ZooMRD(:)       ! 1/day
+      real(r8), allocatable :: ZooMRN(:)       ! 1/day
 
       CONTAINS
 
@@ -147,8 +147,121 @@
 #endif
 !
 !-----------------------------------------------------------------------
-!  Initialize tracer identification indices.
+!  Allocate various module variables.
 !-----------------------------------------------------------------------
+!
+      IF (.not.allocated(BioIter)) THEN
+        allocate ( BioIter(Ngrids) )
+      END IF
+      IF (.not.allocated(AttPhy)) THEN
+        allocate ( AttPhy(Ngrids) )
+      END IF
+      IF (.not.allocated(AttSW)) THEN
+        allocate ( AttSW(Ngrids) )
+      END IF
+      IF (.not.allocated(DetRR)) THEN
+        allocate ( DetRR(Ngrids) )
+      END IF
+      IF (.not.allocated(K_NO3)) THEN
+        allocate ( K_NO3(Ngrids) )
+      END IF
+      IF (.not.allocated(Ivlev)) THEN
+        allocate ( Ivlev(Ngrids) )
+      END IF
+      IF (.not.allocated(PARfrac)) THEN
+        allocate ( PARfrac(Ngrids) )
+      END IF
+#ifdef IRON_LIMIT
+      IF (.not.allocated(A_Fe)) THEN
+        allocate ( A_Fe(Ngrids) )
+      END IF
+      IF (.not.allocated(B_Fe)) THEN
+        allocate ( B_Fe(Ngrids) )
+      END IF
+      IF (.not.allocated(FeRR)) THEN
+        allocate ( FeRR(Ngrids) )
+      END IF
+# ifdef IRON_RELAX
+      IF (.not.allocated(FeHmin)) THEN
+        allocate ( FeHmin(Ngrids) )
+      END IF
+      IF (.not.allocated(FeMax)) THEN
+        allocate ( FeMax(Ngrids) )
+      END IF
+      IF (.not.allocated(FeNudgTime)) THEN
+        allocate ( FeNudgTime(Ngrids) )
+      END IF
+# endif
+      IF (.not.allocated(K_FeC)) THEN
+        allocate ( K_FeC(Ngrids) )
+      END IF
+      IF (.not.allocated(T_Fe)) THEN
+        allocate ( T_Fe(Ngrids) )
+      END IF
+#endif
+#ifdef TANGENT
+      IF (.not.allocated(tl_PARfrac)) THEN
+        allocate ( tl_PARfrac(Ngrids) )
+      END IF
+#endif
+#ifdef ADJOINT
+      IF (.not.allocated(ad_PARfrac)) THEN
+        allocate ( ad_PARfrac(Ngrids) )
+      END IF
+#endif
+      IF (.not.allocated(PhyIS)) THEN
+        allocate ( PhyIS(Ngrids) )
+      END IF
+      IF (.not.allocated(PhyMRD)) THEN
+        allocate ( PhyMRD(Ngrids) )
+      END IF
+      IF (.not.allocated(PhyMRN)) THEN
+        allocate ( PhyMRN(Ngrids) )
+      END IF
+      IF (.not.allocated(Vm_NO3)) THEN
+        allocate ( Vm_NO3(Ngrids) )
+      END IF
+      IF (.not.allocated(wDet)) THEN
+        allocate ( wDet(Ngrids) )
+      END IF
+#ifdef TANGENT
+      IF (.not.allocated(tl_wDet)) THEN
+        allocate ( tl_wDet(Ngrids) )
+      END IF
+#endif
+#ifdef ADJOINT
+      IF (.not.allocated(ad_wDet)) THEN
+        allocate ( ad_wDet(Ngrids) )
+      END IF
+#endif
+      IF (.not.allocated(wPhy)) THEN
+        allocate ( wPhy(Ngrids) )
+      END IF
+#ifdef TANGENT
+      IF (.not.allocated(tl_wPhy)) THEN
+        allocate ( tl_wPhy(Ngrids) )
+      END IF
+#endif
+#ifdef ADJOINT
+      IF (.not.allocated(ad_wPhy)) THEN
+        allocate ( ad_wPhy(Ngrids) )
+      END IF
+#endif
+      IF (.not.allocated(ZooEED)) THEN
+        allocate ( ZooEED(Ngrids) )
+      END IF
+      IF (.not.allocated(ZooEEN)) THEN
+        allocate ( ZooEEN(Ngrids) )
+      END IF
+      IF (.not.allocated(ZooGR)) THEN
+        allocate ( ZooGR(Ngrids) )
+      END IF
+      IF (.not.allocated(ZooMRD)) THEN
+        allocate ( ZooMRD(Ngrids) )
+      END IF
+      IF (.not.allocated(ZooMRN)) THEN
+        allocate ( ZooMRN(Ngrids) )
+      END IF
 !
 !  Allocate biological tracer vector.
 !
@@ -156,7 +269,9 @@
         allocate ( idbio(NBT) )
       END IF
 !
-!  Set identification indices.
+!-----------------------------------------------------------------------
+!  Initialize tracer identification indices.
+!-----------------------------------------------------------------------
 !
       ic=NAT+NPT+NCS+NNS
       DO i=1,NBT

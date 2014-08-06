@@ -1,19 +1,8 @@
-#ifdef EW_PERIODIC
-# define I_RANGE Istr-1,Iend+1
-#else
-# define I_RANGE MAX(Istr-1,1),MIN(Iend+1,Lm(ng))
-#endif
-#ifdef NS_PERIODIC
-# define J_RANGE Jstr-1,Jend+1
-#else
-# define J_RANGE MAX(Jstr-1,1),MIN(Jend+1,Mm(ng))
-#endif
-
       SUBROUTINE rp_t3dmix4 (ng, tile)
 !
-!svn $Id: rp_t3dmix4_geo.h 429 2009-12-20 17:30:26Z arango $
+!svn $Id$
 !************************************************** Hernan G. Arango ***
-!  Copyright (c) 2002-2010 The ROMS/TOMS Group       Andrew M. Moore   !
+!  Copyright (c) 2002-2014 The ROMS/TOMS Group       Andrew M. Moore   !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !***********************************************************************
@@ -76,6 +65,7 @@
 #ifdef PROFILE
       CALL wclock_off (ng, iRPM, 28)
 #endif
+
       RETURN
       END SUBROUTINE rp_t3dmix4
 !
@@ -101,6 +91,7 @@
 !***********************************************************************
 !
       USE mod_param
+      USE mod_ncparam
       USE mod_scalars
 !
 !  Imported variable declarations.
@@ -159,6 +150,7 @@
 !
 !  Local variable declarations.
 !
+      integer :: Imin, Imax, Jmin, Jmax
       integer :: i, itrc, j, k, k1, k2
 
       real(r8) :: cff, cff1, cff2, cff3, cff4
@@ -196,6 +188,23 @@
 !  applying the harmonic operator twice.
 !-----------------------------------------------------------------------
 !
+!  Set local I- and J-ranges.
+!
+      IF (EWperiodic(ng)) THEN
+        Imin=Istr-1
+        Imax=Iend+1
+      ELSE
+        Imin=MAX(Istr-1,1)
+        Imax=MIN(Iend+1,Lm(ng))
+      END IF
+      IF (NSperiodic(ng)) THEN
+        Jmin=Jstr-1
+        Jmax=Jend+1
+      ELSE
+        Jmin=MAX(Jstr-1,1)
+        Jmax=MIN(Jend+1,Mm(ng))
+      END IF
+!
 !  Compute horizontal and vertical gradients associated with the
 !  first rotated harmonic operator.  Notice the recursive blocking
 !  sequence. The vertical placement of the gradients is:
@@ -211,8 +220,8 @@
           k1=k2
           k2=3-k1
           IF (k.lt.N(ng)) THEN
-            DO j=J_RANGE
-              DO i=I_RANGE+1
+            DO j=Jmin,Jmax
+              DO i=Imin,Imax+1
                 cff=0.5_r8*(pm(i,j)+pm(i-1,j))
 #ifdef MASKING
                 cff=cff*umask(i,j)
@@ -234,8 +243,8 @@
      &                               tl_t(i-1,j,k+1,nrhs,itrc))
               END DO
             END DO
-            DO j=J_RANGE+1
-              DO i=I_RANGE
+            DO j=Jmin,Jmax+1
+              DO i=Imin,Imax
                 cff=0.5_r8*(pn(i,j)+pn(i,j-1))
 #ifdef MASKING
                 cff=cff*vmask(i,j)
@@ -259,8 +268,8 @@
             END DO
           END IF
           IF ((k.eq.0).or.(k.eq.N(ng))) THEN
-            DO j=-1+J_RANGE+1
-              DO i=-1+I_RANGE+1
+            DO j=Jmin-1,Jmax+1
+              DO i=Imin-1,Imax+1
                 dTdz(i,j,k2)=0.0_r8
                 tl_dTdz(i,j,k2)=0.0_r8
                 FS(i,j,k2)=0.0_r8
@@ -268,8 +277,8 @@
               END DO
             END DO
           ELSE
-            DO j=-1+J_RANGE+1
-              DO i=-1+I_RANGE+1
+            DO j=Jmin-1,Jmax+1
+              DO i=Imin-1,Imax+1
                 cff=1.0_r8/(z_r(i,j,k+1)-                               &
      &                      z_r(i,j,k  ))
                 tl_cff=-cff*cff*(tl_z_r(i,j,k+1)-                       &
@@ -309,8 +318,8 @@
             END DO
           END IF
           IF (k.gt.0) THEN
-            DO j=J_RANGE
-              DO i=I_RANGE+1
+            DO j=Jmin,Jmax
+              DO i=Imin,Imax+1
                 cff=0.25_r8*(diff4(i,j,itrc)+diff4(i-1,j,itrc))*        &
      &              on_u(i,j)
                 FX(i,j)=cff*                                            &
@@ -360,8 +369,8 @@
 #endif
               END DO
             END DO
-            DO j=J_RANGE+1
-              DO i=I_RANGE
+            DO j=Jmin,Jmax+1
+              DO i=Imin,Imax
                 cff=0.25_r8*(diff4(i,j,itrc)+diff4(i,j-1,itrc))*        &
      &              om_v(i,j)
                 FE(i,j)=cff*                                            &
@@ -412,8 +421,8 @@
               END DO
             END DO
             IF (k.lt.N(ng)) THEN
-              DO j=J_RANGE
-                DO i=I_RANGE
+              DO j=Jmin,Jmax
+                DO i=Imin,Imax
                   cff=0.5_r8*diff4(i,j,itrc)
                   cff1=MIN(dZdx(i  ,j,k1),0.0_r8)
                   cff2=MIN(dZdx(i+1,j,k2),0.0_r8)
@@ -531,8 +540,8 @@
 !  Multiply by the metrics of the second harmonic operator.  Save
 !  into work array "LapT".
 !
-            DO j=J_RANGE
-              DO i=I_RANGE
+            DO j=Jmin,Jmax
+              DO i=Imin,Imax
                 cff=pm(i,j)*pn(i,j)
                 cff1=1.0_r8/Hz(i,j,k)
                 tl_cff1=-cff1*cff1*tl_Hz(i,j,k)+                        &
@@ -562,96 +571,141 @@
 !  Apply boundary conditions (except periodic; closed or gradient)
 !  to the first harmonic operator.
 !
-#ifndef EW_PERIODIC
-        IF (WESTERN_EDGE) THEN
-          DO k=1,N(ng)
-            DO j=J_RANGE
-# ifdef WESTERN_WALL
-              LapT(Istr-1,j,k)=0.0_r8
-              tl_LapT(Istr-1,j,k)=0.0_r8
-# else
-              LapT(Istr-1,j,k)=LapT(Istr,j,k)
-              tl_LapT(Istr-1,j,k)=tl_LapT(Istr,j,k)
-# endif
+        IF (.not.(CompositeGrid(iwest,ng).or.EWperiodic(ng))) THEN
+          IF (DOMAIN(ng)%Western_Edge(tile)) THEN
+            IF (tl_LBC(iwest,isTvar(itrc),ng)%closed) THEN
+              DO k=1,N(ng)
+                DO j=Jmin,Jmax
+                  LapT(Istr-1,j,k)=0.0_r8
+                  tl_LapT(Istr-1,j,k)=0.0_r8
+                END DO
+              END DO
+            ELSE
+              DO k=1,N(ng)
+                DO j=Jmin,Jmax
+                  LapT(Istr-1,j,k)=LapT(Istr,j,k)
+                  tl_LapT(Istr-1,j,k)=tl_LapT(Istr,j,k)
+                END DO
+              END DO
+            END IF
+          END IF
+        END IF
+!
+        IF (.not.(CompositeGrid(ieast,ng).or.EWperiodic(ng))) THEN
+          IF (DOMAIN(ng)%Eastern_Edge(tile)) THEN
+            IF (tl_LBC(ieast,isTvar(itrc),ng)%closed) THEN
+              DO k=1,N(ng)
+                DO j=Jmin,Jmax
+                  LapT(Iend+1,j,k)=0.0_r8
+                  tl_LapT(Iend+1,j,k)=0.0_r8
+                END DO
+              END DO
+            ELSE
+              DO k=1,N(ng)
+                DO j=Jmin,Jmax
+                  LapT(Iend+1,j,k)=LapT(Iend,j,k)
+                  tl_LapT(Iend+1,j,k)=tl_LapT(Iend,j,k)
+                END DO
+              END DO
+            END IF
+          END IF
+        END IF
+!
+        IF (.not.(CompositeGrid(isouth,ng).or.NSperiodic(ng))) THEN
+          IF (DOMAIN(ng)%Southern_Edge(tile)) THEN
+            IF (tl_LBC(isouth,isTvar(itrc),ng)%closed) THEN
+              DO k=1,N(ng)
+                DO i=Imin,Imax
+                  LapT(i,Jstr-1,k)=0.0_r8
+                  tl_LapT(i,Jstr-1,k)=0.0_r8
+                END DO
+              END DO
+            ELSE
+              DO k=1,N(ng)
+                DO i=Imin,Imax
+                  LapT(i,Jstr-1,k)=LapT(i,Jstr,k)
+                  tl_LapT(i,Jstr-1,k)=tl_LapT(i,Jstr,k)
+                END DO
+              END DO
+            END IF
+          END IF
+        END IF
+!
+        IF (.not.(CompositeGrid(inorth,ng).or.NSperiodic(ng))) THEN
+          IF (DOMAIN(ng)%Northern_Edge(tile)) THEN
+            IF (tl_LBC(inorth,isTvar(itrc),ng)%closed) THEN
+              DO k=1,N(ng)
+                DO i=Imin,Imax
+                  LapT(i,Jend+1,k)=0.0_r8
+                  tl_LapT(i,Jend+1,k)=0.0_r8
+                END DO
+              END DO
+            ELSE
+              DO k=1,N(ng)
+                DO i=Imin,Imax
+                  LapT(i,Jend+1,k)=LapT(i,Jend,k)
+                  tl_LapT(i,Jend+1,k)=tl_LapT(i,Jend,k)
+                END DO
+              END DO
+            END IF
+          END IF
+        END IF
+!
+        IF (.not.(CompositeGrid(isouth,ng).or.NSperiodic(ng).or.        &
+     &            CompositeGrid(iwest ,ng).or.EWperiodic(ng))) THEN
+          IF (DOMAIN(ng)%SouthWest_Corner(tile)) THEN
+            DO k=1,N(ng)
+              LapT(Istr-1,Jstr-1,k)=0.5_r8*                             &
+     &                              (LapT(Istr  ,Jstr-1,k)+             &
+     &                               LapT(Istr-1,Jstr  ,k))
+              tl_LapT(Istr-1,Jstr-1,k)=0.5_r8*                          &
+     &                                 (tl_LapT(Istr  ,Jstr-1,k)+       &
+     &                                  tl_LapT(Istr-1,Jstr  ,k))
             END DO
-          END DO
+          END IF
         END IF
-        IF (EASTERN_EDGE) THEN
-          DO k=1,N(ng)
-            DO j=J_RANGE
-# ifdef EASTERN_WALL
-              LapT(Iend+1,j,k)=0.0_r8
-              tl_LapT(Iend+1,j,k)=0.0_r8
-# else
-              LapT(Iend+1,j,k)=LapT(Iend,j,k)
-              tl_LapT(Iend+1,j,k)=tl_LapT(Iend,j,k)
-# endif
+
+        IF (.not.(CompositeGrid(isouth,ng).or.NSperiodic(ng).or.        &
+     &            CompositeGrid(ieast ,ng).or.EWperiodic(ng))) THEN
+          IF (DOMAIN(ng)%SouthEast_Corner(tile)) THEN
+            DO k=1,N(ng)
+              LapT(Iend+1,Jstr-1,k)=0.5_r8*                             &
+     &                              (LapT(Iend  ,Jstr-1,k)+             &
+     &                               LapT(Iend+1,Jstr  ,k))
+              tl_LapT(Iend+1,Jstr-1,k)=0.5_r8*                          &
+     &                                 (tl_LapT(Iend  ,Jstr-1,k)+       &
+     &                                  tl_LapT(Iend+1,Jstr  ,k))
             END DO
-          END DO
+          END IF
         END IF
-#endif
-#ifndef NS_PERIODIC
-        IF (SOUTHERN_EDGE) THEN
-          DO k=1,N(ng)
-            DO i=I_RANGE
-# ifdef SOUTHERN_WALL
-              LapT(i,Jstr-1,k)=0.0_r8
-              tl_LapT(i,Jstr-1,k)=0.0_r8
-# else
-              LapT(i,Jstr-1,k)=LapT(i,Jstr,k)
-              tl_LapT(i,Jstr-1,k)=tl_LapT(i,Jstr,k)
-# endif
+
+        IF (.not.(CompositeGrid(inorth,ng).or.NSperiodic(ng).or.        &
+     &            CompositeGrid(iwest ,ng).or.EWperiodic(ng))) THEN
+          IF (DOMAIN(ng)%NorthWest_Corner(tile)) THEN
+            DO k=1,N(ng)
+              LapT(Istr-1,Jend+1,k)=0.5_r8*                             &
+     &                              (LapT(Istr  ,Jend+1,k)+             &
+     &                               LapT(Istr-1,Jend  ,k))
+              tl_LapT(Istr-1,Jend+1,k)=0.5_r8*                          &
+     &                                 (tl_LapT(Istr  ,Jend+1,k)+       &
+     &                                  tl_LapT(Istr-1,Jend  ,k))
             END DO
-          END DO
+          END IF
         END IF
-        IF (NORTHERN_EDGE) THEN
-          DO k=1,N(ng)
-            DO i=I_RANGE
-# ifdef NORTHERN_WALL
-              LapT(i,Jend+1,k)=0.0_r8
-              tl_LapT(i,Jend+1,k)=0.0_r8
-# else
-              LapT(i,Jend+1,k)=LapT(i,Jend,k)
-              tl_LapT(i,Jend+1,k)=tl_LapT(i,Jend,k)
-# endif
+
+        IF (.not.(CompositeGrid(inorth,ng).or.NSperiodic(ng).or.        &
+     &            CompositeGrid(ieast ,ng).or.EWperiodic(ng))) THEN
+          IF (DOMAIN(ng)%NorthEast_Corner(tile)) THEN
+            DO k=1,N(ng)
+              LapT(Iend+1,Jend+1,k)=0.5_r8*                             &
+     &                              (LapT(Iend  ,Jend+1,k)+             &
+     &                               LapT(Iend+1,Jend  ,k))
+              tl_LapT(Iend+1,Jend+1,k)=0.5_r8*                          &
+     &                                 (tl_LapT(Iend  ,Jend+1,k)+       &
+     &                                  tl_LapT(Iend+1,Jend  ,k))
             END DO
-          END DO
+          END IF
         END IF
-#endif
-#if !defined EW_PERIODIC && !defined NS_PERIODIC
-        IF ((SOUTHERN_EDGE).and.(WESTERN_EDGE)) THEN
-          DO k=1,N(ng)
-            LapT(Istr-1,Jstr-1,k)=0.5_r8*(LapT(Istr  ,Jstr-1,k)+        &
-     &                                    LapT(Istr-1,Jstr  ,k))
-            tl_LapT(Istr-1,Jstr-1,k)=0.5_r8*(tl_LapT(Istr  ,Jstr-1,k)+  &
-                                             tl_LapT(Istr-1,Jstr  ,k))
-          END DO
-        END IF
-        IF ((SOUTHERN_EDGE).and.(EASTERN_EDGE)) THEN
-          DO k=1,N(ng)
-            LapT(Iend+1,Jstr-1,k)=0.5_r8*(LapT(Iend  ,Jstr-1,k)+        &
-     &                                    LapT(Iend+1,Jstr  ,k))
-            tl_LapT(Iend+1,Jstr-1,k)=0.5_r8*(tl_LapT(Iend  ,Jstr-1,k)+  &
-     &                                       tl_LapT(Iend+1,Jstr  ,k))
-          END DO
-        END IF
-        IF ((NORTHERN_EDGE).and.(WESTERN_EDGE)) THEN
-          DO k=1,N(ng)
-            LapT(Istr-1,Jend+1,k)=0.5_r8*(LapT(Istr  ,Jend+1,k)+        &
-     &                                    LapT(Istr-1,Jend  ,k))
-            tl_LapT(Istr-1,Jend+1,k)=0.5_r8*(tl_LapT(Istr  ,Jend+1,k)+  &
-     &                                       tl_LapT(Istr-1,Jend  ,k))
-          END DO
-        END IF
-        IF ((NORTHERN_EDGE).and.(EASTERN_EDGE)) THEN
-          DO k=1,N(ng)
-            LapT(Iend+1,Jend+1,k)=0.5_r8*(LapT(Iend  ,Jend+1,k)+        &
-     &                                    LapT(Iend+1,Jend  ,k))
-            tl_LapT(Iend+1,Jend+1,k)=0.5_r8*(tl_LapT(Iend  ,Jend+1,k)+  &
-     &                                       tl_LapT(Iend+1,Jend  ,k))
-          END DO
-        END IF
-#endif
 !
 !  Compute tangent linear horizontal and vertical gradients associated
 !  with the second rotated harmonic operator.
@@ -970,20 +1024,6 @@
 !>              t(i,j,k,nnew,itrc)=t(i,j,k,nnew,itrc)-cff
 !>
                 tl_t(i,j,k,nnew,itrc)=tl_t(i,j,k,nnew,itrc)-tl_cff
-#ifdef TS_MPDATA_NOT_YET
-                cff1=1.0_r8/Hz(i,j,k)
-                tl_cff1=-cff1*cff1*tl_Hz(i,j,k)+                        &
-# ifdef TL_IOMS
-     &                  2.0_r8*cff1
-# endif
-!>              t(i,j,k,3,itrc)=cff1*t(i,j,k,nnew,itrc)
-!>
-                tl_t(i,j,k,3,itrc)=tl_cff1*t(i,j,k,nnew,itrc)+          &
-     &                             cff1*tl_t(i,j,k,nnew,itrc)-          &
-# ifdef TL_IOMS
-     &                             cff1*t(i,j,k,nnew,itrc)
-# endif
-#endif
 #ifdef DIAGNOSTICS_TS
 !!              DiaTwrk(i,j,k,itrc,iThdif)=-cff
 #endif
@@ -992,7 +1032,6 @@
           END IF
         END DO K_LOOP2
       END DO T_LOOP
-#undef I_RANGE
-#undef J_RANGE
+
       RETURN
       END SUBROUTINE rp_t3dmix4_tile

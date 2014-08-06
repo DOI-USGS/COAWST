@@ -4,7 +4,7 @@
 !
 !svn $Id: mp_exchange.F 1598 2008-07-25 03:29:09Z jcwarner $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2010 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2014 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -19,35 +19,35 @@
 !                                                                      !
 !  On Input:                                                           !
 !                                                                      !
-!     ng         Nested grid number.                                   !
-!     model      Calling model identifier.                             !
-!     Nvar       Number of variables for aggregated exchanges.         !
-!     Istr       Starting tile index in the I-direction.               !
-!     Iend       Ending   tile index in the I-direction.               !
-!     Jstr       Starting tile index in the J-direction.               !
-!     Jend       Ending   tile index in the J-direction.               !
-!     LBi        I-dimension Lower bound.                              !
-!     UBi        I-dimension Upper bound.                              !
-!     LBj        J-dimension Lower bound.                              !
-!     UBj        J-dimension Upper bound.                              !
-!     LBk        K-dimension Lower bound.                              !
-!     UBk        K-dimension Upper bound.                              !
-!     LBt        T-dimension Lower bound.                              !
-!     UBt        T-dimension Upper bound.                              !
-!     Nghost     Number of ghost-points in the halo region.            !
-!     EWperiodic Switch indicating EW periodicity exchanges.           !
-!     NSperiodic Switch indicating NS periodicity exchanges.           !
-!     A          2D tiled array to process.                            !
-!     B          2D tiled array (optional) to process.                 !
-!     C          2D tiled array (optional) to process.                 !
-!     D          2D tiled array (optional) to process.                 !
+!     ng          Nested grid number.                                  !
+!     model       Calling model identifier.                            !
+!     Nvar        Number of variables for aggregated exchanges.        !
+!     Istr        Starting tile index in the I-direction.              !
+!     Iend        Ending   tile index in the I-direction.              !
+!     Jstr        Starting tile index in the J-direction.              !
+!     Jend        Ending   tile index in the J-direction.              !
+!     LBi         I-dimension Lower bound.                             !
+!     UBi         I-dimension Upper bound.                             !
+!     LBj         J-dimension Lower bound.                             !
+!     UBj         J-dimension Upper bound.                             !
+!     LBk         K-dimension Lower bound.                             !
+!     UBk         K-dimension Upper bound.                             !
+!     LBt         T-dimension Lower bound.                             !
+!     UBt         T-dimension Upper bound.                             !
+!     Nghost      Number of ghost-points in the halo region.           !
+!     EW_periodic Switch indicating EW periodicity exchanges.          !
+!     NS_periodic Switch indicating NS periodicity exchanges.          !
+!     A           2D tiled array to process.                           !
+!     B           2D tiled array (optional) to process.                !
+!     C           2D tiled array (optional) to process.                !
+!     D           2D tiled array (optional) to process.                !
 !                                                                      !
 !  On Output:                                                          !
 !                                                                      !
-!     A          Updated tiled array.                                  !
-!     B          Updated tiled array (optional).                       !
-!     C          Updated tiled array (optional).                       !
-!     D          Updated tiled array (optional).                       !
+!     A           Updated tiled array.                                 !
+!     B           Updated tiled array (optional).                      !
+!     C           Updated tiled array (optional).                      !
+!     D           Updated tiled array (optional).                      !
 !                                                                      !
 !  Routines:                                                           !
 !                                                                      !
@@ -70,7 +70,7 @@
       CONTAINS
 !
 !***********************************************************************
-      SUBROUTINE tile_neighbors (ng, Nghost, EWperiodic, NSperiodic,    &
+      SUBROUTINE tile_neighbors (ng, Nghost, EW_periodic, NS_periodic,  &
      &                           GrecvW, GsendW, Wtile, Wexchange,      &
      &                           GrecvE, GsendE, Etile, Eexchange,      &
      &                           GrecvS, GsendS, Stile, Sexchange,      &
@@ -84,7 +84,7 @@
 !
 !  Imported variable declarations.
 !
-      logical, intent(in) :: EWperiodic, NSperiodic
+      logical, intent(in) :: EW_periodic, NS_periodic
 
       integer, intent(in) :: ng, Nghost
 
@@ -152,29 +152,29 @@
 !                      Lm-2  Lm-1  Lm   Lm+1  Lm+2   Lm+3
 !                      -2    -1     0    1     2      3
 !
-      IF (EWperiodic) THEN
+      IF (EW_periodic) THEN
         IF ((table(MyRankI-1,MyRankJ).eq.Null_Value).and.               &
      &      (NtileI(ng).gt.1)) THEN
           Wtile=table(NtileI(ng)-1,MyRankJ)
           Etile=table(MyRankI+1,MyRankJ)
           GsendW=Nghost
           GsendE=Nghost
-# if defined THREE_GHOST
-          GrecvW=Nghost
-# else
-          GrecvW=Nghost+1
-# endif
+          IF (NghostPoints.eq.3) THEN
+            GrecvW=Nghost
+          ELSE
+            GrecvW=Nghost+1
+          END IF
           GrecvE=Nghost
         ELSE IF ((table(MyRankI+1,MyRankJ).eq.Null_Value).and.          &
      &           (NtileI(ng).gt.1)) THEN
           Wtile=table(MyRankI-1,MyRankJ)
           Etile=table(0,MyRankJ)
           GsendW=Nghost
-# if defined THREE_GHOST
-          GsendE=Nghost
-# else
-          GsendE=Nghost+1
-# endif
+          IF (NghostPoints.eq.3) THEN
+            GsendE=Nghost
+          ELSE
+            GsendE=Nghost+1
+          END IF
           GrecvW=Nghost
           GrecvE=Nghost
         ELSE
@@ -227,29 +227,29 @@
 !                      Mm-2  Mm-1  Mm   Mm+1  Mm+2  Mm+3
 !                      -2    -1     0    1     2     3
 !
-      IF (NSperiodic) THEN
+      IF (NS_periodic) THEN
         IF ((table(MyRankI,MyRankJ-1).eq.Null_Value).and.               &
      &      (NtileJ(ng).gt.1)) THEN
           Stile=table(MyRankI,NtileJ(ng)-1)
           Ntile=table(MyRankI,MyRankJ+1)
           GsendS=Nghost
           GsendN=Nghost
-# if defined THREE_GHOST
-          GrecvS=Nghost
-# else
-          GrecvS=Nghost+1
-# endif
+          IF (NghostPoints.eq.3) THEN
+            GrecvS=Nghost
+          ELSE
+            GrecvS=Nghost+1
+          END IF
           GrecvN=Nghost
         ELSE IF ((table(MyRankI,MyRankJ+1).eq.Null_Value).and.          &
      &           (NtileJ(ng).gt.1)) then
           Stile=table(MyRankI,MyRankJ-1)
           Ntile=table(MyRankI,0)
           GsendS=Nghost
-# if defined THREE_GHOST
-          GsendN=Nghost
-# else
-          GsendN=Nghost+1
-# endif
+          IF (NghostPoints.eq.3) THEN
+            GsendN=Nghost
+          ELSE
+            GsendN=Nghost+1
+          END IF
           GrecvS=Nghost
           GrecvN=Nghost
         ELSE
@@ -289,7 +289,7 @@
 !***********************************************************************
       SUBROUTINE mp_exchange2d (ng, tile, model, Nvar,                  &
      &                          LBi, UBi, LBj, UBj,                     &
-     &                          Nghost, EWperiodic, NSperiodic,         &
+     &                          Nghost, EW_periodic, NS_periodic,       &
      &                          A, B, C, D)
 !***********************************************************************
 !
@@ -302,7 +302,7 @@
 !
 !  Imported variable declarations.
 !
-      logical, intent(in) :: EWperiodic, NSperiodic
+      logical, intent(in) :: EW_periodic, NS_periodic
 
       integer, intent(in) :: ng, tile, model, Nvar
       integer, intent(in) :: LBi, UBi, LBj, UBj
@@ -328,7 +328,7 @@
 
       integer :: i, icS, icN, ioff, Imin, Imax, Ilen
       integer :: j, jcW, jcE, joff, Jmin, Jmax, Jlen
-      integer :: m, mc, Ierror, Lstr
+      integer :: m, mc, Ierror, Lstr, pp
       integer :: Wtile, GsendW, GrecvW, Wtag, Werror, Wrequest
       integer :: Stile, GsendS, GrecvS, Stag, Serror, Srequest
       integer :: Etile, GsendE, GrecvE, Etag, Eerror, Erequest
@@ -338,12 +338,6 @@
 
 # ifdef MPI
       integer, dimension(MPI_STATUS_SIZE,4) :: status
-# endif
-
-# if defined EW_PERIODIC || defined NS_PERIODIC
-      integer, parameter :: pp = 1
-# else
-      integer, parameter :: pp = 0
 # endif
 !
       real(r8), dimension(Nvar*HaloSizeJ(ng)) :: sendW, sendE
@@ -362,7 +356,7 @@
 !  Turn on time clocks.
 !-----------------------------------------------------------------------
 !
-      CALL wclock_on (ng, model, 39)
+      CALL wclock_on (ng, model, 40)
 # endif
 !
 !-----------------------------------------------------------------------
@@ -370,7 +364,7 @@
 !  exchange.
 !-----------------------------------------------------------------------
 !
-      CALL tile_neighbors (ng, Nghost, EWperiodic, NSperiodic,          &
+      CALL tile_neighbors (ng, Nghost, EW_periodic, NS_periodic,        &
      &                     GrecvW, GsendW, Wtile, Wexchange,            &
      &                     GrecvE, GsendE, Etile, Eexchange,            &
      &                     GrecvS, GsendS, Stile, Sexchange,            &
@@ -391,6 +385,11 @@
       Jmax=UBj
       Ilen=Imax-Imin+1
       Jlen=Jmax-Jmin+1
+      IF (EW_periodic.or.NS_periodic) THEN
+        pp=1
+      ELSE
+        pp=0
+      END IF
       EWsize=Nvar*(Nghost+pp)*Jlen
       NSsize=Nvar*(Nghost+pp)*Ilen
       IF (SIZE(sendE).lt.EWsize) THEN
@@ -887,7 +886,7 @@
 !  Turn off time clocks.
 !-----------------------------------------------------------------------
 !
-      CALL wclock_off (ng, model, 39)
+      CALL wclock_off (ng, model, 40)
 # endif
 
       RETURN
@@ -896,7 +895,7 @@
 !***********************************************************************
       SUBROUTINE mp_exchange2d_bry (ng, tile, model, Nvar, boundary,    &
      &                              LBij, UBij,                         &
-     &                              Nghost, EWperiodic, NSperiodic,     &
+     &                              Nghost, EW_periodic, NS_periodic,   &
      &                              A, B, C, D)
 !***********************************************************************
 !
@@ -909,7 +908,7 @@
 !
 !  Imported variable declarations.
 !
-      logical, intent(in) :: EWperiodic, NSperiodic
+      logical, intent(in) :: EW_periodic, NS_periodic
 
       integer, intent(in) :: ng, tile, model, Nvar, boundary
       integer, intent(in) :: LBij, UBij
@@ -935,7 +934,7 @@
 
       integer :: i, icS, icN
       integer :: j, jcW, jcE
-      integer :: m, Ierror, Lstr
+      integer :: m, Ierror, Lstr, pp
       integer :: Wtile, GsendW, GrecvW, Wtag, Werror, Wrequest
       integer :: Stile, GsendS, GrecvS, Stag, Serror, Srequest
       integer :: Etile, GsendE, GrecvE, Etag, Eerror, Erequest
@@ -946,18 +945,12 @@
 # ifdef MPI
       integer, dimension(MPI_STATUS_SIZE,4) :: status
 # endif
-
-# if defined EW_PERIODIC || defined NS_PERIODIC
-      integer, parameter :: pp = 1
-# else
-      integer, parameter :: pp = 0
-# endif
 !
-      real(r8), dimension(Nvar*(Nghost+pp)) :: sendW, sendE
-      real(r8), dimension(Nvar*(Nghost+pp)) :: recvW, recvE
+      real(r8), dimension(Nvar*HaloBry(ng)) :: sendW, sendE
+      real(r8), dimension(Nvar*HaloBry(ng)) :: recvW, recvE
 
-      real(r8), dimension(Nvar*(Nghost+pp)) :: sendS, sendN
-      real(r8), dimension(Nvar*(Nghost+pp)) :: recvS, recvN
+      real(r8), dimension(Nvar*HaloBry(ng)) :: sendS, sendN
+      real(r8), dimension(Nvar*HaloBry(ng)) :: recvS, recvN
 
       character (len=MPI_MAX_ERROR_STRING) :: string
 
@@ -969,7 +962,7 @@
 !  Turn on time clocks.
 !-----------------------------------------------------------------------
 !
-      CALL wclock_on (ng, model, 39)
+      CALL wclock_on (ng, model, 43)
 # endif
 !
 !-----------------------------------------------------------------------
@@ -977,7 +970,7 @@
 !  exchange.
 !-----------------------------------------------------------------------
 !
-      CALL tile_neighbors (ng, Nghost, EWperiodic, NSperiodic,          &
+      CALL tile_neighbors (ng, Nghost, EW_periodic, NS_periodic,        &
      &                     GrecvW, GsendW, Wtile, Wexchange,            &
      &                     GrecvE, GsendE, Etile, Eexchange,            &
      &                     GrecvS, GsendS, Stile, Sexchange,            &
@@ -1003,6 +996,11 @@
 !
 !  Determine range and length of the distributed tile boundary segments.
 !
+      IF (EW_periodic.or.NS_periodic) THEN
+        pp=1
+      ELSE
+        pp=0
+      END IF
       EWsize=Nvar*(Nghost+pp)
       NSsize=Nvar*(Nghost+pp)
       IF (SIZE(sendE).lt.EWsize) THEN
@@ -1388,7 +1386,7 @@
 !  Turn off time clocks.
 !-----------------------------------------------------------------------
 !
-      CALL wclock_off (ng, model, 39)
+      CALL wclock_off (ng, model, 43)
 # endif
 
       RETURN
@@ -1397,7 +1395,7 @@
 !***********************************************************************
       SUBROUTINE mp_exchange3d (ng, tile, model, Nvar,                  &
      &                          LBi, UBi, LBj, UBj, LBk, UBk,           &
-     &                          Nghost, EWperiodic, NSperiodic,         &
+     &                          Nghost, EW_periodic, NS_periodic,       &
      &                          A, B, C, D)
 !***********************************************************************
 !
@@ -1410,7 +1408,7 @@
 !
 !  Imported variable declarations.
 !
-      logical, intent(in) :: EWperiodic, NSperiodic
+      logical, intent(in) :: EW_periodic, NS_periodic
 
       integer, intent(in) :: ng, tile, model, Nvar
       integer, intent(in) :: LBi, UBi, LBj, UBj, LBk, UBk
@@ -1436,7 +1434,7 @@
 
       integer :: i, ikS, ikN, ioff, Imin, Imax, Ilen, IKlen
       integer :: j, jkW, jkE, joff, Jmin, Jmax, Jlen, JKlen
-      integer :: k, kc,  m, mc, Ierror, Klen, Lstr
+      integer :: k, kc,  m, mc, Ierror, Klen, Lstr, pp
       integer :: Wtile, GsendW, GrecvW, Wtag, Werror, Wrequest
       integer :: Stile, GsendS, GrecvS, Stag, Serror, Srequest
       integer :: Etile, GsendE, GrecvE, Etag, Eerror, Erequest
@@ -1446,12 +1444,6 @@
 
 # ifdef MPI
       integer, dimension(MPI_STATUS_SIZE,4) :: status
-# endif
-
-# if defined EW_PERIODIC || defined NS_PERIODIC
-      integer, parameter :: pp = 1
-# else
-      integer, parameter :: pp = 0
 # endif
 !
       real(r8), dimension(Nvar*HaloSizeJ(ng)*                           &
@@ -1474,7 +1466,7 @@
 !  Turn on time clocks.
 !-----------------------------------------------------------------------
 !
-      CALL wclock_on (ng, model, 40)
+      CALL wclock_on (ng, model, 41)
 # endif
 !
 !-----------------------------------------------------------------------
@@ -1482,7 +1474,7 @@
 !  exchange.
 !-----------------------------------------------------------------------
 !
-      CALL tile_neighbors (ng, Nghost, EWperiodic, NSperiodic,          &
+      CALL tile_neighbors (ng, Nghost, EW_periodic, NS_periodic,        &
      &                     GrecvW, GsendW, Wtile, Wexchange,            &
      &                     GrecvE, GsendE, Etile, Eexchange,            &
      &                     GrecvS, GsendS, Stile, Sexchange,            &
@@ -1506,6 +1498,11 @@
       Klen=UBk-LBk+1
       IKlen=Ilen*Klen
       JKlen=Jlen*Klen
+      IF (EW_periodic.or.NS_periodic) THEN
+        pp=1
+      ELSE
+        pp=0
+      END IF
       EWsize=Nvar*(Nghost+pp)*JKlen
       NSsize=Nvar*(Nghost+pp)*IKlen
       IF (SIZE(sendE).lt.EWsize) THEN
@@ -2098,7 +2095,7 @@
 !  Turn off time clocks.
 !-----------------------------------------------------------------------
 !
-      CALL wclock_off (ng, model, 40)
+      CALL wclock_off (ng, model, 41)
 # endif
 
       RETURN
@@ -2108,7 +2105,7 @@
 !***********************************************************************
       SUBROUTINE mp_exchange3d_bry (ng, tile, model, Nvar, boundary,    &
      &                              LBij, UBij, LBk, UBk,               &
-     &                              Nghost, EWperiodic, NSperiodic,     &
+     &                              Nghost, EW_periodic, NS_periodic,   &
      &                              A, B, C, D)
 !***********************************************************************
 !
@@ -2121,7 +2118,7 @@
 !
 !  Imported variable declarations.
 !
-      logical, intent(in) :: EWperiodic, NSperiodic
+      logical, intent(in) :: EW_periodic, NS_periodic
 
       integer, intent(in) :: ng, tile, model, Nvar, boundary
       integer, intent(in) :: LBij, UBij, LBk, UBk
@@ -2147,7 +2144,7 @@
 
       integer :: i, ikS, ikN, ioff
       integer :: j, jkW, jkE, joff
-      integer :: k, m, mc, Ierror, Klen, Lstr
+      integer :: k, m, mc, Ierror, Klen, Lstr, pp
       integer :: Wtile, GsendW, GrecvW, Wtag, Werror, Wrequest
       integer :: Stile, GsendS, GrecvS, Stag, Serror, Srequest
       integer :: Etile, GsendE, GrecvE, Etag, Eerror, Erequest
@@ -2158,17 +2155,11 @@
 # ifdef MPI
       integer, dimension(MPI_STATUS_SIZE,4) :: status
 # endif
-
-# if defined EW_PERIODIC || defined NS_PERIODIC
-      integer, parameter :: pp = 1
-# else
-      integer, parameter :: pp = 0
-# endif
 !
-      real(r8), dimension(Nvar*(Nghost+pp)*(UBk-LBk+1)) :: sendW, sendE
-      real(r8), dimension(Nvar*(Nghost+pp)*(UBk-LBk+1)) :: recvW, recvE
-      real(r8), dimension(Nvar*(Nghost+pp)*(UBk-LBk+1)) :: sendS, sendN
-      real(r8), dimension(Nvar*(Nghost+pp)*(UBk-LBk+1)) :: recvS, recvN
+      real(r8), dimension(Nvar*HaloBry(ng)*(UBk-LBk+1)) :: sendW, sendE
+      real(r8), dimension(Nvar*HaloBry(ng)*(UBk-LBk+1)) :: recvW, recvE
+      real(r8), dimension(Nvar*HaloBry(ng)*(UBk-LBk+1)) :: sendS, sendN
+      real(r8), dimension(Nvar*HaloBry(ng)*(UBk-LBk+1)) :: recvS, recvN
 
       character (len=MPI_MAX_ERROR_STRING) :: string
 
@@ -2180,7 +2171,7 @@
 !  Turn on time clocks.
 !-----------------------------------------------------------------------
 !
-      CALL wclock_on (ng, model, 40)
+      CALL wclock_on (ng, model, 43)
 # endif
 !
 !-----------------------------------------------------------------------
@@ -2188,7 +2179,7 @@
 !  exchange.
 !-----------------------------------------------------------------------
 !
-      CALL tile_neighbors (ng, Nghost, EWperiodic, NSperiodic,          &
+      CALL tile_neighbors (ng, Nghost, EW_periodic, NS_periodic,        &
      &                     GrecvW, GsendW, Wtile, Wexchange,            &
      &                     GrecvE, GsendE, Etile, Eexchange,            &
      &                     GrecvS, GsendS, Stile, Sexchange,            &
@@ -2215,6 +2206,11 @@
 !  Determine range and length of the distributed tile boundary segments.
 !
       Klen=UBk-LBk+1
+      IF (EW_periodic.or.NS_periodic) THEN
+        pp=1
+      ELSE
+        pp=0
+      END IF
       EWsize=Nvar*(Nghost+pp)*Klen
       NSsize=Nvar*(Nghost+pp)*Klen
       IF (SIZE(sendE).lt.EWsize) THEN
@@ -2712,7 +2708,7 @@
 !  Turn off time clocks.
 !-----------------------------------------------------------------------
 !
-      CALL wclock_off (ng, model, 40)
+      CALL wclock_off (ng, model, 43)
 # endif
 
       RETURN
@@ -2722,8 +2718,8 @@
 !***********************************************************************
       SUBROUTINE mp_exchange4d (ng, tile, model, Nvar,                  &
      &                          LBi, UBi, LBj, UBj, LBk, UBk, LBt, UBt, &
-     &                          Nghost, EWperiodic, NSperiodic,         &
-     &                          A, B)
+     &                          Nghost, EW_periodic, NS_periodic,       &
+     &                          A, B, C)
 !***********************************************************************
 !
       USE mod_param
@@ -2735,7 +2731,7 @@
 !
 !  Imported variable declarations.
 !
-      logical, intent(in) :: EWperiodic, NSperiodic
+      logical, intent(in) :: EW_periodic, NS_periodic
 
       integer, intent(in) :: ng, tile, model, Nvar
       integer, intent(in) :: LBi, UBi, LBj, UBj, LBk, UBk, LBt, UBt
@@ -2745,11 +2741,15 @@
       real(r8), intent(inout) :: A(LBi:,LBj:,LBk:,LBt:)
 
       real(r8), intent(inout), optional :: B(LBi:,LBj:,LBk:,LBt:)
+      real(r8), intent(inout), optional :: C(LBi:,LBj:,LBk:,LBt:)
+
 # else
       real(r8), intent(inout) :: A(LBi:UBi,LBj:UBj,LBk:UBk,LBt:UBt)
 
       real(r8), intent(inout), optional ::                              &
      &                           B(LBi:UBi,LBj:UBj,LBk:UBk,LBt:UBt)
+      real(r8), intent(inout), optional ::                              &
+     &                           C(LBi:UBi,LBj:UBj,LBk:UBk,LBt:UBt)
 # endif
 !
 !  Local variable declarations.
@@ -2758,7 +2758,7 @@
 
       integer :: i, ikS, ikN, ioff, Imin, Imax, Ilen, IKlen, IKTlen
       integer :: j, jkW, jkE, joff, Jmin, Jmax, Jlen, JKlen, JKTlen
-      integer :: k, kc, m, mc, Ierror, Klen, Lstr, Tlen
+      integer :: k, kc, m, mc, Ierror, Klen, Lstr, Tlen, pp
       integer :: l, lc
       integer :: Wtile, GsendW, GrecvW, Wtag, Werror, Wrequest
       integer :: Stile, GsendS, GrecvS, Stag, Serror, Srequest
@@ -2769,12 +2769,6 @@
 
 # ifdef MPI
       integer, dimension(MPI_STATUS_SIZE,4) :: status
-# endif
-
-# if defined EW_PERIODIC || defined NS_PERIODIC
-      integer, parameter :: pp = 1
-# else
-      integer, parameter :: pp = 0
 # endif
 !
       real(r8), dimension(Nvar*HaloSizeJ(ng)*                           &
@@ -2797,7 +2791,7 @@
 !  Turn on time clocks.
 !-----------------------------------------------------------------------
 !
-      CALL wclock_on (ng, model, 41)
+      CALL wclock_on (ng, model, 42)
 # endif
 !
 !-----------------------------------------------------------------------
@@ -2805,7 +2799,7 @@
 !  exchange.
 !-----------------------------------------------------------------------
 !
-      CALL tile_neighbors (ng, Nghost, EWperiodic, NSperiodic,          &
+      CALL tile_neighbors (ng, Nghost, EW_periodic, NS_periodic,        &
      &                     GrecvW, GsendW, Wtile, Wexchange,            &
      &                     GrecvE, GsendE, Etile, Eexchange,            &
      &                     GrecvS, GsendS, Stile, Sexchange,            &
@@ -2832,6 +2826,11 @@
       JKlen=Jlen*Klen
       IKTlen=IKlen*Tlen
       JKTlen=JKlen*Tlen
+      IF (EW_periodic.or.NS_periodic) THEN
+        pp=1
+      ELSE
+        pp=0
+      END IF
       EWsize=Nvar*(Nghost+pp)*JKTlen
       NSsize=Nvar*(Nghost+pp)*IKTlen
       IF (SIZE(sendE).lt.EWsize) THEN
@@ -2882,6 +2881,24 @@
             END DO
           END DO
         END IF
+        IF (PRESENT(C)) THEN
+          joff=jkW
+          DO m=1,GsendW
+            mc=(m-1)*JKTlen
+            i=Istr+m-1
+            DO l=LBt,UBt
+              lc=(l-LBt)*JKlen+mc
+              DO k=LBk,UBk
+                kc=(k-LBk)*Jlen+lc
+                DO j=Jmin,Jmax
+                  sizeW=sizeW+1
+                  jkW=joff+1+(j-Jmin)+kc
+                  sendW(jkW)=C(i,j,k,l)
+                END DO
+              END DO
+            END DO
+          END DO
+        END IF
       END IF
 !
       IF (Eexchange) THEN
@@ -2914,6 +2931,24 @@
                   sizeE=sizeE+1
                   jkE=joff+1+(j-Jmin)+kc
                   sendE(jkE)=B(i,j,k,l)
+                END DO
+              END DO
+            END DO
+          END DO
+        END IF
+        IF (PRESENT(C)) THEN
+          joff=jkE
+          DO m=1,GsendE
+            mc=(m-1)*JKTlen
+            i=Iend-GsendE+m
+            DO l=LBt,UBt
+              lc=(l-LBt)*JKlen+mc
+              DO k=LBk,UBk
+                kc=(k-LBk)*Jlen+lc
+                DO j=Jmin,Jmax
+                  sizeE=sizeE+1
+                  jkE=joff+1+(j-Jmin)+kc
+                  sendE(jkE)=C(i,j,k,l)
                 END DO
               END DO
             END DO
@@ -2993,6 +3028,23 @@
             END DO
           END DO
         END IF
+        IF (PRESENT(C)) THEN
+          joff=jkW
+          DO m=GrecvW,1,-1
+            mc=(GrecvW-m)*JKTlen
+            i=Istr-m
+            DO l=LBt,UBt
+              lc=(l-LBt)*JKlen+mc
+              DO k=LBk,UBk
+                kc=(k-LBk)*Jlen+lc
+                DO j=Jmin,Jmax
+                  jkW=joff+1+(j-Jmin)+kc
+                  C(i,j,k,l)=recvW(jkW)
+                END DO
+              END DO
+            END DO
+          END DO
+        END IF
       END IF
 !
       IF (Eexchange) THEN
@@ -3033,6 +3085,23 @@
                 DO j=Jmin,Jmax
                   jkE=joff+1+(j-Jmin)+kc
                   B(i,j,k,l)=recvE(jkE)
+                END DO
+              END DO
+            ENDDO
+          END DO
+        END IF
+        IF (PRESENT(C)) THEN
+          joff=jkE
+          DO m=1,GrecvE
+            mc=(m-1)*JKTlen
+            i=Iend+m
+            DO l=LBt,UBt
+              lc=(l-LBt)*JKlen+mc
+              DO k=LBk,UBk
+                kc=(k-LBk)*Jlen+lc
+                DO j=Jmin,Jmax
+                  jkE=joff+1+(j-Jmin)+kc
+                  C(i,j,k,l)=recvE(jkE)
                 END DO
               END DO
             ENDDO
@@ -3079,6 +3148,24 @@
             END DO
           END DO
         END IF
+        IF (PRESENT(C)) THEN
+          ioff=ikS
+          DO m=1,GsendS
+            mc=(m-1)*IKTlen
+            j=Jstr+m-1
+            DO l=LBt,UBt
+              lc=(l-LBt)*IKlen+mc
+              DO k=LBk,UBk
+                kc=(k-LBk)*Ilen+lc
+                DO i=Imin,Imax
+                  sizeS=sizeS+1
+                  ikS=ioff+1+(i-Imin)+kc
+                  sendS(ikS)=C(i,j,k,l)
+                END DO
+              END DO
+            END DO
+          END DO
+        END IF
       END IF
 !
       IF (Nexchange) THEN
@@ -3111,6 +3198,24 @@
                   sizeN=sizeN+1
                   ikN=ioff+1+(i-Imin)+kc
                   sendN(ikN)=B(i,j,k,l)
+                END DO
+              END DO
+            END DO
+          END DO
+        END IF
+        IF (PRESENT(C)) THEN
+          ioff=ikN
+          DO m=1,GsendN
+            mc=(m-1)*IKTlen
+            j=Jend-GsendN+m
+            DO l=LBt,UBt
+              lc=(l-LBt)*IKlen+mc
+              DO k=LBk,UBk
+                kc=(k-LBk)*Ilen+lc
+                DO i=Imin,Imax
+                  sizeN=sizeN+1
+                  ikN=ioff+1+(i-Imin)+kc
+                  sendN(ikN)=C(i,j,k,l)
                 END DO
               END DO
             END DO
@@ -3188,6 +3293,23 @@
             END DO
           END DO
         END IF
+        IF (PRESENT(C)) THEN
+          ioff=ikS
+          DO m=GrecvS,1,-1
+            mc=(GrecvS-m)*IKTlen
+            j=Jstr-m
+            DO l=LBt,UBt
+              lc=(l-LBt)*IKlen+mc
+              DO k=LBk,UBk
+                kc=(k-LBk)*Ilen+lc
+                DO i=Imin,Imax
+                  ikS=ioff+1+(i-Imin)+kc
+                  C(i,j,k,l)=recvS(ikS)
+                END DO
+              END DO
+            END DO
+          END DO
+        END IF
       END IF
 !
       IF (Nexchange) THEN
@@ -3233,6 +3355,23 @@
             END DO
           END DO
         END IF
+        IF (PRESENT(C)) THEN
+          ioff=ikN
+          DO m=1,GrecvN
+            mc=(m-1)*IKTlen
+            j=Jend+m
+            DO l=LBt,UBt
+              lc=(l-LBt)*IKlen+mc
+              DO k=LBk,UBk
+                kc=(k-LBk)*Ilen+lc
+                DO i=Imin,Imax
+                  ikN=ioff+1+(i-Imin)+kc
+                  C(i,j,k,l)=recvN(ikN)
+                END DO
+              END DO
+            END DO
+          END DO
+        END IF
       END IF
 # ifdef PROFILE
 !
@@ -3240,7 +3379,7 @@
 !  Turn off time clocks.
 !-----------------------------------------------------------------------
 !
-      CALL wclock_off (ng, model, 41)
+      CALL wclock_off (ng, model, 42)
 # endif
 
       RETURN
@@ -3251,7 +3390,7 @@
 !***********************************************************************
       SUBROUTINE ad_mp_exchange2d (ng, tile, model, Nvar,               &
      &                             LBi, UBi, LBj, UBj,                  &
-     &                             Nghost, EWperiodic, NSperiodic,      &
+     &                             Nghost, EW_periodic, NS_periodic,    &
      &                             ad_A, ad_B, ad_C, ad_D)
 !***********************************************************************
 !
@@ -3264,7 +3403,7 @@
 !
 !  Imported variable declarations.
 !
-      logical, intent(in) :: EWperiodic, NSperiodic
+      logical, intent(in) :: EW_periodic, NS_periodic
 
       integer, intent(in) :: ng, tile, model, Nvar
       integer, intent(in) :: LBi, UBi, LBj, UBj
@@ -3290,7 +3429,7 @@
 
       integer :: i, icS, icN, ioff, Imin, Imax, Ilen
       integer :: j, jcW, jcE, joff, Jmin, Jmax, Jlen
-      integer :: m, mc, Ierror, Lstr
+      integer :: m, mc, Ierror, Lstr, pp
       integer :: Wtile, GsendW, GrecvW, Wtag, Werror, Wrequest
       integer :: Stile, GsendS, GrecvS, Stag, Serror, Srequest
       integer :: Etile, GsendE, GrecvE, Etag, Eerror, Erequest
@@ -3300,12 +3439,6 @@
 
 #  ifdef MPI
       integer, dimension(MPI_STATUS_SIZE,4) :: status
-#  endif
-
-#  if defined EW_PERIODIC || defined NS_PERIODIC
-      integer, parameter :: pp = 1
-#  else
-      integer, parameter :: pp = 0
 #  endif
 !
       real(r8), dimension(Nvar*HaloSizeJ(ng)) :: sendW, sendE
@@ -3323,7 +3456,7 @@
 !  Turn on time clocks.
 !-----------------------------------------------------------------------
 !
-      CALL wclock_on (ng, model, 39)
+      CALL wclock_on (ng, model, 40)
 #  endif
 !
 !-----------------------------------------------------------------------
@@ -3331,7 +3464,7 @@
 !  exchange.
 !-----------------------------------------------------------------------
 !
-      CALL tile_neighbors (ng, Nghost, EWperiodic, NSperiodic,          &
+      CALL tile_neighbors (ng, Nghost, EW_periodic, NS_periodic,        &
      &                     GrecvW, GsendW, Wtile, Wexchange,            &
      &                     GrecvE, GsendE, Etile, Eexchange,            &
      &                     GrecvS, GsendS, Stile, Sexchange,            &
@@ -3352,6 +3485,11 @@
       Jmax=UBj
       Ilen=Imax-Imin+1
       Jlen=Jmax-Jmin+1
+      IF (EW_periodic.or.NS_periodic) THEN
+        pp=1
+      ELSE
+        pp=0
+      END IF
       NSsize=Nvar*(Nghost+pp)*Ilen
       EWsize=Nvar*(Nghost+pp)*Jlen
       BufferSizeNS=Nvar*HaloSizeI(ng)
@@ -3982,7 +4120,7 @@
 !  Turn off time clocks.
 !-----------------------------------------------------------------------
 !
-      CALL wclock_off (ng, model, 39)
+      CALL wclock_off (ng, model, 40)
 #  endif
 
       RETURN
@@ -3992,7 +4130,7 @@
 !***********************************************************************
       SUBROUTINE ad_mp_exchange2d_bry (ng, tile, model, Nvar, boundary, &
      &                                 LBij, UBij,                      &
-     &                                 Nghost, EWperiodic, NSperiodic,  &
+     &                                 Nghost, EW_periodic, NS_periodic,&
      &                                 ad_A, ad_B, ad_C, ad_D)
 !***********************************************************************
 !
@@ -4005,7 +4143,7 @@
 !
 !  Imported variable declarations.
 !
-      logical, intent(in) :: EWperiodic, NSperiodic
+      logical, intent(in) :: EW_periodic, NS_periodic
 
       integer, intent(in) :: ng, tile, model, Nvar, boundary
       integer, intent(in) :: LBij, UBij
@@ -4031,7 +4169,7 @@
 
       integer :: i, icS, icN
       integer :: j, jcW, jcE
-      integer :: m, Ierror, Lstr
+      integer :: m, Ierror, Lstr, pp
       integer :: Wtile, GsendW, GrecvW, Wtag, Werror, Wrequest
       integer :: Stile, GsendS, GrecvS, Stag, Serror, Srequest
       integer :: Etile, GsendE, GrecvE, Etag, Eerror, Erequest
@@ -4042,18 +4180,12 @@
 #  ifdef MPI
       integer, dimension(MPI_STATUS_SIZE,4) :: status
 #  endif
-
-#  if defined EW_PERIODIC || defined NS_PERIODIC
-      integer, parameter :: pp = 1
-#  else
-      integer, parameter :: pp = 0
-#  endif
 !
-      real(r8), dimension(Nvar*(Nghost+pp)) :: sendW, sendE
-      real(r8), dimension(Nvar*(Nghost+pp)) :: recvW, recvE
+      real(r8), dimension(Nvar*HaloBry(ng)) :: sendW, sendE
+      real(r8), dimension(Nvar*HaloBry(ng)) :: recvW, recvE
 
-      real(r8), dimension(Nvar*(Nghost+pp)) :: sendS, sendN
-      real(r8), dimension(Nvar*(Nghost+pp)) :: recvS, recvN
+      real(r8), dimension(Nvar*HaloBry(ng)) :: sendS, sendN
+      real(r8), dimension(Nvar*HaloBry(ng)) :: recvS, recvN
 
       character (len=MPI_MAX_ERROR_STRING) :: string
 
@@ -4064,7 +4196,7 @@
 !  Turn on time clocks.
 !-----------------------------------------------------------------------
 !
-      CALL wclock_on (ng, model, 39)
+      CALL wclock_on (ng, model, 43)
 #  endif
 !
 !-----------------------------------------------------------------------
@@ -4072,7 +4204,7 @@
 !  exchange.
 !-----------------------------------------------------------------------
 !
-      CALL tile_neighbors (ng, Nghost, EWperiodic, NSperiodic,          &
+      CALL tile_neighbors (ng, Nghost, EW_periodic, NS_periodic,        &
      &                     GrecvW, GsendW, Wtile, Wexchange,            &
      &                     GrecvE, GsendE, Etile, Eexchange,            &
      &                     GrecvS, GsendS, Stile, Sexchange,            &
@@ -4098,6 +4230,11 @@
 !
 !  Determine range and length of the distributed tile boundary segments.
 !
+      IF (EW_periodic.or.NS_periodic) THEN
+        pp=1
+      ELSE
+        pp=0
+      END IF
       NSsize=Nvar*(Nghost+pp)
       EWsize=Nvar*(Nghost+pp)
       BufferSizeNS=Nvar*(Nghost+pp)
@@ -4617,7 +4754,7 @@
 !  Turn off time clocks.
 !-----------------------------------------------------------------------
 !
-      CALL wclock_off (ng, model, 39)
+      CALL wclock_off (ng, model, 43)
 #  endif
 
       RETURN
@@ -4627,7 +4764,7 @@
 !***********************************************************************
       SUBROUTINE ad_mp_exchange3d (ng, tile, model, Nvar,               &
      &                             LBi, UBi, LBj, UBj, LBk, UBk,        &
-     &                             Nghost, EWperiodic, NSperiodic,      &
+     &                             Nghost, EW_periodic, NS_periodic,    &
      &                             ad_A, ad_B, ad_C, ad_D)
 !***********************************************************************
 !
@@ -4640,7 +4777,7 @@
 !
 !  Imported variable declarations.
 !
-      logical, intent(in) :: EWperiodic, NSperiodic
+      logical, intent(in) :: EW_periodic, NS_periodic
 
       integer, intent(in) :: ng, tile, model, Nvar
       integer, intent(in) :: LBi, UBi, LBj, UBj, LBk, UBk
@@ -4666,7 +4803,7 @@
 
       integer :: i, ikS, ikN, ioff, Imin, Imax, Ilen, IKlen
       integer :: j, jkW, jkE, joff, Jmin, Jmax, Jlen, JKlen
-      integer :: k, kc, m, mc, Ierror, Klen, Lstr
+      integer :: k, kc, m, mc, Ierror, Klen, Lstr, pp
       integer :: Wtile, GsendW, GrecvW, Wtag, Werror, Wrequest
       integer :: Stile, GsendS, GrecvS, Stag, Serror, Srequest
       integer :: Etile, GsendE, GrecvE, Etag, Eerror, Erequest
@@ -4676,12 +4813,6 @@
 
 #  ifdef MPI
       integer, dimension(MPI_STATUS_SIZE,4) :: status
-#  endif
-
-#  if defined EW_PERIODIC || defined NS_PERIODIC
-      integer, parameter :: pp = 1
-#  else
-      integer, parameter :: pp = 0
 #  endif
 !
       real(r8), dimension(Nvar*HaloSizeJ(ng)*                           &
@@ -4703,7 +4834,7 @@
 !  Turn on time clocks.
 !-----------------------------------------------------------------------
 !
-      CALL wclock_on (ng, model, 40)
+      CALL wclock_on (ng, model, 41)
 #  endif
 !
 !-----------------------------------------------------------------------
@@ -4711,7 +4842,7 @@
 !  exchange.
 !-----------------------------------------------------------------------
 !
-      CALL tile_neighbors (ng, Nghost, EWperiodic, NSperiodic,          &
+      CALL tile_neighbors (ng, Nghost, EW_periodic, NS_periodic,        &
      &                     GrecvW, GsendW, Wtile, Wexchange,            &
      &                     GrecvE, GsendE, Etile, Eexchange,            &
      &                     GrecvS, GsendS, Stile, Sexchange,            &
@@ -4735,6 +4866,11 @@
       Klen=UBk-LBk+1
       IKlen=Ilen*Klen
       JKlen=Jlen*Klen
+      IF (EW_periodic.or.NS_periodic) THEN
+        pp=1
+      ELSE
+        pp=0
+      END IF
       NSsize=Nvar*(Nghost+pp)*IKlen
       EWsize=Nvar*(Nghost+pp)*JKlen
       BufferSizeNS=Nvar*HaloSizeI(ng)*Klen
@@ -5461,7 +5597,7 @@
 !  Turn off time clocks.
 !-----------------------------------------------------------------------
 !
-      CALL wclock_off (ng, model, 40)
+      CALL wclock_off (ng, model, 41)
 #  endif
 
       RETURN
@@ -5470,7 +5606,7 @@
 !***********************************************************************
       SUBROUTINE ad_mp_exchange3d_bry (ng, tile, model, Nvar, boundary, &
      &                                 LBij, UBij, LBk, UBk,            &
-     &                                 Nghost, EWperiodic, NSperiodic,  &
+     &                                 Nghost, EW_periodic, NS_periodic,&
      &                                 ad_A, ad_B, ad_C, ad_D)
 !***********************************************************************
 !
@@ -5483,7 +5619,7 @@
 !
 !  Imported variable declarations.
 !
-      logical, intent(in) :: EWperiodic, NSperiodic
+      logical, intent(in) :: EW_periodic, NS_periodic
 
       integer, intent(in) :: ng, tile, model, Nvar, boundary
       integer, intent(in) :: LBij, UBij, LBk, UBk
@@ -5509,7 +5645,7 @@
 
       integer :: i, ikS, ikN, ioff
       integer :: j, jkW, jkE, joff
-      integer :: k, m, mc, Ierror, Klen, Lstr
+      integer :: k, m, mc, Ierror, Klen, Lstr, pp
       integer :: Wtile, GsendW, GrecvW, Wtag, Werror, Wrequest
       integer :: Stile, GsendS, GrecvS, Stag, Serror, Srequest
       integer :: Etile, GsendE, GrecvE, Etag, Eerror, Erequest
@@ -5520,17 +5656,11 @@
 #  ifdef MPI
       integer, dimension(MPI_STATUS_SIZE,4) :: status
 #  endif
-
-#  if defined EW_PERIODIC || defined NS_PERIODIC
-      integer, parameter :: pp = 1
-#  else
-      integer, parameter :: pp = 0
-#  endif
 !
-      real(r8), dimension(Nvar*(Nghost+pp)*(UBk-LBk+1)) :: sendW, sendE
-      real(r8), dimension(Nvar*(Nghost+pp)*(UBk-LBk+1)) :: recvW, recvE
-      real(r8), dimension(Nvar*(Nghost+pp)*(UBk-LBk+1)) :: sendS, sendN
-      real(r8), dimension(Nvar*(Nghost+pp)*(UBk-LBk+1)) :: recvS, recvN
+      real(r8), dimension(Nvar*HaloBry(ng)*(UBk-LBk+1)) :: sendW, sendE
+      real(r8), dimension(Nvar*HaloBry(ng)*(UBk-LBk+1)) :: recvW, recvE
+      real(r8), dimension(Nvar*HaloBry(ng)*(UBk-LBk+1)) :: sendS, sendN
+      real(r8), dimension(Nvar*HaloBry(ng)*(UBk-LBk+1)) :: recvS, recvN
 
       character (len=MPI_MAX_ERROR_STRING) :: string
 
@@ -5542,7 +5672,7 @@
 !  Turn on time clocks.
 !-----------------------------------------------------------------------
 !
-      CALL wclock_on (ng, model, 40)
+      CALL wclock_on (ng, model, 43)
 #  endif
 !
 !-----------------------------------------------------------------------
@@ -5550,7 +5680,7 @@
 !  exchange.
 !-----------------------------------------------------------------------
 !
-      CALL tile_neighbors (ng, Nghost, EWperiodic, NSperiodic,          &
+      CALL tile_neighbors (ng, Nghost, EW_periodic, NS_periodic,        &
      &                     GrecvW, GsendW, Wtile, Wexchange,            &
      &                     GrecvE, GsendE, Etile, Eexchange,            &
      &                     GrecvS, GsendS, Stile, Sexchange,            &
@@ -5577,6 +5707,11 @@
 !  Determine range and length of the distributed tile boundary segments.
 !
       Klen=UBk-LBk+1
+      IF (EW_periodic.or.NS_periodic) THEN
+        pp=1
+      ELSE
+        pp=0
+      END IF
       NSsize=Nvar*(Nghost+pp)*Klen
       EWsize=Nvar*(Nghost+pp)*Klen
       BufferSizeNS=Nvar*(Nghost+pp)*Klen
@@ -6208,7 +6343,7 @@
 !  Turn off time clocks.
 !-----------------------------------------------------------------------
 !
-      CALL wclock_off (ng, model, 40)
+      CALL wclock_off (ng, model, 43)
 #  endif
 
       RETURN
@@ -6218,8 +6353,8 @@
       SUBROUTINE ad_mp_exchange4d (ng, tile, model, Nvar,               &
      &                             LBi, UBi, LBj, UBj, LBk, UBk,        &
      &                             LBt, UBt,                            &
-     &                             Nghost, EWperiodic, NSperiodic,      &
-     &                             ad_A, ad_B)
+     &                             Nghost, EW_periodic, NS_periodic,    &
+     &                             ad_A, ad_B, ad_C)
 !***********************************************************************
 !
       USE mod_param
@@ -6231,7 +6366,7 @@
 !
 !  Imported variable declarations.
 !
-      logical, intent(in) :: EWperiodic, NSperiodic
+      logical, intent(in) :: EW_periodic, NS_periodic
 
       integer, intent(in) :: ng, tile, model, Nvar
       integer, intent(in) :: LBi, UBi, LBj, UBj, LBk, UBk, LBt, UBt
@@ -6241,11 +6376,14 @@
       real(r8), intent(inout) :: ad_A(LBi:,LBj:,LBk:,LBt:)
 
       real(r8), intent(inout), optional :: ad_B(LBi:,LBj:,LBk:,LBt:)
+      real(r8), intent(inout), optional :: ad_C(LBi:,LBj:,LBk:,LBt:)
 #  else
       real(r8), intent(inout) :: ad_A(LBi:UBi,LBj:UBj,LBk:UBk,LBt:UBt)
 
       real(r8), intent(inout), optional ::                              &
      &                           ad_B(LBi:UBi,LBj:UBj,LBk:UBk,LBt:UBt)
+      real(r8), intent(inout), optional ::                              &
+     &                           ad_C(LBi:UBi,LBj:UBj,LBk:UBk,LBt:UBt)
 #  endif
 !
 !  Local variable declarations.
@@ -6254,7 +6392,7 @@
 
       integer :: i, ikS, ikN, ioff, Imin, Imax, Ilen, IKlen, IKTlen
       integer :: j, jkW, jkE, joff, Jmin, Jmax, Jlen, JKlen, JKTlen
-      integer :: k, kc, m, mc, Ierror, Klen, Lstr, Tlen
+      integer :: k, kc, m, mc, Ierror, Klen, Lstr, Tlen, pp
       integer :: l, lc
       integer :: Wtile, GsendW, GrecvW, Wtag, Werror, Wrequest
       integer :: Stile, GsendS, GrecvS, Stag, Serror, Srequest
@@ -6265,12 +6403,6 @@
 
 #  ifdef MPI
       integer, dimension(MPI_STATUS_SIZE,4) :: status
-#  endif
-
-#  if defined EW_PERIODIC || defined NS_PERIODIC
-      integer, parameter :: pp = 1
-#  else
-      integer, parameter :: pp = 0
 #  endif
 !
       real(r8), dimension(Nvar*HaloSizeJ(ng)*(UBk-LBk+1)*               &
@@ -6292,7 +6424,7 @@
 !  Turn on time clocks.
 !-----------------------------------------------------------------------
 !
-      CALL wclock_on (ng, model, 41)
+      CALL wclock_on (ng, model, 42)
 #  endif
 !
 !-----------------------------------------------------------------------
@@ -6300,7 +6432,7 @@
 !  exchange.
 !-----------------------------------------------------------------------
 !
-      CALL tile_neighbors (ng, Nghost, EWperiodic, NSperiodic,          &
+      CALL tile_neighbors (ng, Nghost, EW_periodic, NS_periodic,        &
      &                     GrecvW, GsendW, Wtile, Wexchange,            &
      &                     GrecvE, GsendE, Etile, Eexchange,            &
      &                     GrecvS, GsendS, Stile, Sexchange,            &
@@ -6327,6 +6459,11 @@
       JKlen=Jlen*Klen
       IKTlen=IKlen*Tlen
       JKTlen=JKlen*Tlen
+      IF (EW_periodic.or.NS_periodic) THEN
+        pp=1
+      ELSE
+        pp=0
+      END IF
       NSsize=Nvar*(Nghost+pp)*IKTlen
       EWsize=Nvar*(Nghost+pp)*JKTlen
       BufferSizeNS=Nvar*HaloSizeI(ng)*Klen*Tlen
@@ -6389,6 +6526,27 @@
             END DO
           END DO
         END IF
+        IF (PRESENT(ad_C)) THEN
+          ioff=ikN
+          DO m=1,GrecvN
+            mc=(m-1)*IKTlen
+            j=Jend+m
+            DO l=LBt,UBt
+              lc=(l-LBt)*IKlen+mc
+              DO k=LBk,UBk
+                kc=(k-LBk)*Ilen+lc
+                DO i=Imin,Imax
+                  sizeN=sizeN+1
+                  ikN=ioff+1+(i-Imin)+kc
+!>                C(i,j,k,l)=recvN(ikN)
+!>
+                  recvN(ikN)=ad_C(i,j,k,l)
+                  ad_C(i,j,k,l)=0.0_r8
+                END DO
+              END DO
+            END DO
+          END DO
+        END IF
       END IF
 !
       IF (Sexchange) THEN
@@ -6431,6 +6589,27 @@
 !>
                   recvS(ikS)=ad_B(i,j,k,l)
                   ad_B(i,j,k,l)=0.0_r8
+                END DO
+              END DO
+            END DO
+          END DO
+        END IF
+        IF (PRESENT(ad_C)) THEN
+          ioff=ikS
+          DO m=GrecvS,1,-1
+            mc=(GrecvS-m)*IKTlen
+            j=Jstr-m
+            DO l=LBt,UBt
+              lc=(l-LBt)*IKlen+mc
+              DO k=LBk,UBk
+                kc=(k-LBk)*Ilen+lc
+                DO i=Imin,Imax
+                  sizeS=sizeS+1
+                  ikS=ioff+1+(i-Imin)+kc
+!>                C(i,Jstr-m,k,l)=recvS(ikS)
+!>
+                  recvS(ikS)=ad_C(i,j,k,l)
+                  ad_C(i,j,k,l)=0.0_r8
                 END DO
               END DO
             END DO
@@ -6526,6 +6705,26 @@
             END DO
           END DO
         END IF
+        IF (PRESENT(ad_C)) THEN
+          ioff=ikS
+          DO m=1,GsendS
+            mc=(m-1)*IKTlen
+            j=Jstr+m-1
+            DO l=LBt,UBt
+              lc=(l-LBt)*IKlen+mc
+              DO k=LBk,UBk
+                kc=(k-LBk)*Ilen+lc
+                DO i=Imin,Imax
+                  ikS=ioff+1+(i-Imin)+kc
+!>                sendS(ikS)=C(i,j,k,l)
+!>
+                  ad_C(i,j,k,l)=ad_C(i,j,k,l)+sendS(ikS)
+                  sendS(ikS)=0.0_r8
+                END DO
+              END DO
+            END DO
+          END DO
+        END IF
       END IF
 !
       IF (Nexchange) THEN
@@ -6571,6 +6770,26 @@
 !>                sendN(ikN)=B(i,j,k,l)
 !>
                   ad_B(i,j,k,l)=ad_B(i,j,k,l)+sendN(ikN)
+                  sendN(ikN)=0.0_r8
+                END DO
+              END DO
+            END DO
+          END DO
+        END IF
+        IF (PRESENT(ad_C)) THEN
+          ioff=ikN
+          DO m=1,GsendN
+            mc=(m-1)*IKlen
+            j=Jend-GsendN+m
+            DO l=LBt,UBt
+              lc=(l-LBt)*IKlen+mc
+              DO k=LBk,UBk
+                kc=(k-LBk)*Ilen+lc
+                DO i=Imin,Imax
+                  ikN=ioff+1+(i-Imin)+kc
+!>                sendN(ikN)=C(i,j,k,l)
+!>
+                  ad_C(i,j,k,l)=ad_C(i,j,k,l)+sendN(ikN)
                   sendN(ikN)=0.0_r8
                 END DO
               END DO
@@ -6628,6 +6847,27 @@
             END DO
           END DO
         END IF
+        IF (PRESENT(ad_C)) THEN
+          joff=jkE
+          DO m=1,GrecvE
+            mc=(m-1)*JKTlen
+            i=Iend+m
+            DO l=LBt,UBt
+              lc=(l-LBt)*JKlen+mc
+              DO k=LBk,UBk
+                kc=(k-LBk)*Jlen+lc
+                DO j=Jmin,Jmax
+                  sizeE=sizeE+1
+                  jkE=joff+1+(j-Jmin)+kc
+!>                C(i,j,k,l)=recvE(jkE)
+!>
+                  recvE(jkE)=ad_C(i,j,k,l)
+                  ad_C(i,j,k,l)=0.0_r8
+                END DO
+              END DO
+            END DO
+          END DO
+        END IF
       END IF
 !
       IF (Wexchange) THEN
@@ -6670,6 +6910,27 @@
 !>
                   recvW(jkW)=ad_B(i,j,k,l)
                   ad_B(i,j,k,l)=0.0_r8
+                END DO
+              END DO
+            END DO
+          END DO
+        END IF
+        IF (PRESENT(ad_C)) THEN
+          joff=jkW
+          DO m=GrecvW,1,-1
+            mc=(GrecvW-m)*JKTlen
+            i=Istr-m
+            DO l=LBt,UBt
+              lc=(l-LBt)*JKlen+mc
+              DO k=LBk,UBk
+                kc=(k-LBk)*Jlen+lc
+                DO j=Jmin,Jmax
+                  sizeW=sizeW+1
+                  jkW=joff+1+(j-Jmin)+kc
+!>                C(i,j,k,l)=recvW(jkW)
+!>
+                  recvW(jkW)=ad_C(i,j,k,l)
+                  ad_C(i,j,k,l)=0.0_r8
                 END DO
               END DO
             END DO
@@ -6763,6 +7024,26 @@
             END DO
           END DO
         END IF
+        IF (PRESENT(ad_C)) THEN
+          joff=jkW
+          DO m=1,GsendW
+            mc=(m-1)*JKTlen
+            i=Istr+m-1
+            DO l=LBt,UBt
+              lc=(l-LBt)*JKlen+mc
+              DO k=LBk,UBk
+                kc=(k-LBk)*Jlen+lc
+                DO j=Jmin,Jmax
+                  jkW=joff+1+(j-Jmin)+kc
+!>                sendW(jkW)=C(i,j,k,l)
+!>
+                  ad_C(i,j,k,l)=ad_C(i,j,k,l)+sendW(jkW)
+                  sendW(jkW)=0.0_r8
+                END DO
+              END DO
+            END DO
+          END DO
+        END IF
       END IF
 !
       IF (Eexchange) THEN
@@ -6814,6 +7095,26 @@
             END DO
           END DO
         END IF
+        IF (PRESENT(ad_C)) THEN
+          joff=jkE
+          DO m=1,GsendE
+            mc=(m-1)*JKTlen
+            i=Iend-GsendE+m
+            DO l=LBt,UBt
+              lc=(l-LBt)*JKlen+mc
+              DO k=LBk,UBk
+                kc=(k-LBk)*Jlen+lc
+                DO j=Jmin,Jmax
+                  jkE=joff+1+(j-Jmin)+kc
+!>                sendE(jkE)=C(i,j,k,l)
+!>
+                  ad_C(i,j,k,l)=ad_C(i,j,k,l)+sendE(jkE)
+                  sendE(jkE)=0.0_r8
+                END DO
+              END DO
+            END DO
+          END DO
+        END IF
       END IF
 #  ifdef PROFILE
 !
@@ -6821,7 +7122,7 @@
 !  Turn off time clocks.
 !-----------------------------------------------------------------------
 !
-      CALL wclock_off (ng, model, 41)
+      CALL wclock_off (ng, model, 42)
 #  endif
 
       RETURN

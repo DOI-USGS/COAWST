@@ -4,21 +4,32 @@
 !
 !svn $Id: step3d_t.F 732 2008-09-07 01:55:51Z jcwarner $
 !=======================================================================
-!  Copyright (c) 2002-2010 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2014 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                           Hernan G. Arango   !
 !========================================== Alexander F. Shchepetkin ===
 !                                                                      !
-!  This routine time-steps tracer equations. Notice that advective     !
-!  and diffusive terms are time-stepped differently.                   !
+!  This routine time-steps tracer equations.  Notice that advective    !
+!  and diffusive terms are time-stepped differently. It applies the    !
+!  corrector time-step for horizontal/vertical advection,  vertical    !
+!  diffusion, nudging if necessary, and lateral boundary conditions.   !
+!                                                                      !
+!  Notice that at input the tracer arrays have:                        !
+!                                                                      !
+!    t(:,:,:,nnew,:)   m Tunits  n+1     horizontal/vertical diffusion !
+!                                        terms plus source/sink terms  !
+!                                        (biology, sediment), if any   !
+!                                                                      !
+!    t(:,:,:,3   ,:)   Tunits    n+1/2   advective terms and vertical  !
+!                                        diffusion predictor step      !
 !                                                                      !
 !=======================================================================
 !
       implicit none
-
+!
       PRIVATE
       PUBLIC  :: step3d_t
-
+!
       CONTAINS
 !
 !***********************************************************************
@@ -26,20 +37,14 @@
 !***********************************************************************
 !
       USE mod_param
-# ifdef CLIMATOLOGY
-      USE mod_clima
-# endif
 # ifdef DIAGNOSTICS_TS
       USE mod_diags
 # endif
       USE mod_grid
       USE mod_mixing
-# if defined ASSIMILATION || defined NUDGING
-      USE mod_obs
-# endif
       USE mod_ocean
-# ifdef TS_PSOURCE
-      USE mod_sources
+# if defined TRC_PSOURCE
+      USE mod_trc_sources
 # endif
       USE mod_stepping
 !
@@ -49,39 +54,21 @@
 !
 !  Local variable declarations.
 !
-# ifdef REFINED_GRID
-      integer :: ngc, LBic, UBic, LBjc, UBjc
-# endif
 # include "tile.h"
-# ifdef REFINED_GRID
-      ngc=mychild(ng)
-      LBic=BOUNDS(ngc)%LBi(tile)
-      UBic=BOUNDS(ngc)%UBi(tile)
-      LBjc=BOUNDS(ngc)%LBj(tile)
-      UBjc=BOUNDS(ngc)%UBj(tile)
-# endif
 !
 # ifdef PROFILE
       CALL wclock_on (ng, iNLM, 35)
 # endif
       CALL step3d_t_tile (ng, tile,                                     &
      &                    LBi, UBi, LBj, UBj,                           &
-# ifdef REFINED_GRID
-     &                    LBic, UBic, LBjc, UBjc,                       &
-# endif
      &                    IminS, ImaxS, JminS, JmaxS,                   &
      &                    nrhs(ng), nstp(ng), nnew(ng),                 &
-# if defined TS_PSOURCE || defined Q_PSOURCE
-     &                    Msrc(ng), Nsrc(ng),                           &
-     &                    SOURCES(ng) % Isrc,                           &
-     &                    SOURCES(ng) % Jsrc,                           &
-     &                    SOURCES(ng) % Tsrc,                           &
-# endif
-# ifdef TS_PSOURCE
-     &                    SOURCES(ng) % Dsrc,                           &
-# endif
-# ifdef Q_PSOURCE
-     &                    SOURCES(ng) % Qsrc,                           &
+# if defined TRC_PSOURCE
+     &                    Msrcpt(ng), Nsrcpt(ng),                       &
+     &                    TRC_SOURCES(ng) % Isrcpt,                     &
+     &                    TRC_SOURCES(ng) % Jsrcpt,                     &
+     &                    TRC_SOURCES(ng) % Tsrcpt,                     &
+     &                    TRC_SOURCES(ng) % Lsrcpt,                     &
 # endif
 # ifdef MASKING
      &                    GRID(ng) % rmask,                             &
@@ -106,27 +93,10 @@
      &                    GRID(ng) % Huon,                              &
      &                    GRID(ng) % Hvom,                              &
      &                    GRID(ng) % z_r,                               &
-# if defined TCLM_NUDGING && defined TCLIMATOLOGY
-     &                    CLIMA(ng) % Tnudgcof,                         &
-     &                    CLIMA(ng) % tclm,                             &
-# endif
-# if defined NUDGING_SST || defined NUDGING_T
-     &                    OBS(ng) % EobsT,                              &
-     &                    OBS(ng) % Tobs,                               &
-# endif
      &                    MIXING(ng) % Akt,                             &
      &                    OCEAN(ng) % W,                                &
 # ifdef WEC_VF
      &                    OCEAN(ng) % W_stokes,                         &
-# endif
-# ifdef REFINED_GRID
-     &                    OCEAN(ng) % hindcu,    OCEAN(ng) % hindcv,    &
-     &                    OCEAN(ng) % hindci_u,  OCEAN(ng) % hindcj_u,  &
-     &                    OCEAN(ng) % hindci_v,  OCEAN(ng) % hindcj_v,  &
-     &                    OCEAN(ng) % FXp_west,  OCEAN(ng) % FXp_east,  &
-     &                    OCEAN(ng) % FEp_south, OCEAN(ng) % FEp_north, &
-     &                    OCEAN(ng) % FXc_west,  OCEAN(ng) % FXc_east,  &
-     &                    OCEAN(ng) % FEc_south, OCEAN(ng) % FEc_north, &
 # endif
 # if defined FLOATS && defined FLOAT_VWALK
      &                    MIXING(ng) % dAktdz,                          &
@@ -144,20 +114,11 @@
 !***********************************************************************
       SUBROUTINE step3d_t_tile (ng, tile,                               &
      &                          LBi, UBi, LBj, UBj,                     &
-# ifdef REFINED_GRID
-     &                          LBic, UBic, LBjc, UBjc,                 &
-# endif
      &                          IminS, ImaxS, JminS, JmaxS,             &
      &                          nrhs, nstp, nnew,                       &
-# if defined TS_PSOURCE || defined Q_PSOURCE
-     &                          Msrc, Nsrc,                             &
-     &                          Isrc, Jsrc, Tsrc,                       &
-# endif
-# ifdef TS_PSOURCE
-     &                          Dsrc,                                   &
-# endif
-# ifdef Q_PSOURCE
-     &                          Qsrc,                                   &
+# if defined TRC_PSOURCE
+     &                          Msrcpt, Nsrcpt,                         &
+     &                          Isrcpt, Jsrcpt, Tsrcpt, Lsrcpt,         &
 # endif
 # ifdef MASKING
      &                          rmask, umask, vmask,                    &
@@ -171,25 +132,10 @@
      &                          pm, pn,                                 &
      &                          Hz, Huon, Hvom,                         &
      &                          z_r,                                    &
-# if defined TCLM_NUDGING && defined TCLIMATOLOGY
-     &                          Tnudgcof, tclm,                         &
-# endif
-# if defined NUDGING_SST || defined NUDGING_T
-     &                          EobsT, Tobs,                            &
-# endif
      &                          Akt,                                    &
      &                          W,                                      &
 # ifdef WEC_VF
      &                          W_stokes,                               &
-# endif
-# ifdef REFINED_GRID
-     &                          hindcu,    hindcv,                      &
-     &                          hindci_u,  hindcj_u,                    &
-     &                          hindci_v,  hindcj_v,                    &
-     &                          FXp_west,  FXp_east,                    &
-     &                          FEp_south, FEp_north,                   &
-     &                          FXc_west,  FXc_east,                    &
-     &                          FEc_south, FEc_north,                   &
 # endif
 # if defined FLOATS && defined FLOAT_VWALK
      &                          dAktdz,                                 &
@@ -201,15 +147,18 @@
 !***********************************************************************
 !
       USE mod_param
+      USE mod_clima
       USE mod_ncparam
+# if defined NESTING && !defined ONE_WAY
+      USE mod_nesting
+# endif
       USE mod_scalars
-# ifdef REFINED_GRID
-      USE mod_refined
+# if defined ICE_MODEL && defined ICE_THERMO
+      USE ice_frazil_mod, ONLY : ice_frazil
 # endif
+      USE mod_sources
 !
-# if defined EW_PERIODIC || defined NS_PERIODIC
       USE exchange_3d_mod, ONLY : exchange_r3d_tile
-# endif
 # ifdef DISTRIBUTE
 #  if defined FLOATS && defined FLOAT_VWALK
       USE mp_exchange_mod, ONLY : mp_exchange3d
@@ -219,33 +168,30 @@
 # ifdef TS_MPDATA
       USE mpdata_adiff_mod
 # endif
+# ifdef NESTING
+      USE nesting_mod, ONLY : bry_fluxes
+# endif
       USE t3dbc_mod, ONLY : t3dbc_tile
+# ifdef T_PASSIVE
+      USE pt3dbc_mod, ONLY : pt3dbc_tile
+# endif
 !
 !  Imported variable declarations.
 !
       integer, intent(in) :: ng, tile
       integer, intent(in) :: LBi, UBi, LBj, UBj
-# ifdef REFINED_GRID
-      integer, intent(in) :: LBic, UBic, LBjc, UBjc
-# endif
       integer, intent(in) :: IminS, ImaxS, JminS, JmaxS
       integer, intent(in) :: nrhs, nstp, nnew
-# if defined TS_PSOURCE || defined Q_PSOURCE
-      integer, intent(in) :: Msrc, Nsrc
+# if defined TRC_PSOURCE
+      integer, intent(in) :: Msrcpt, Nsrcpt
 # endif
-!
-# ifdef ASSUMED_SHAPE
-#  if defined TS_PSOURCE || defined Q_PSOURCE
-      integer, intent(in) :: Isrc(:)
-      integer, intent(in) :: Jsrc(:)
 
-      real(r8), intent(in) :: Tsrc(:,:,:)
-#  endif
-#  ifdef TS_PSOURCE
-      real(r8), intent(in) :: Dsrc(:)
-#  endif
-#  ifdef Q_PSOURCE
-      real(r8), intent(in) :: Qsrc(:,:)
+# ifdef ASSUMED_SHAPE
+#  if defined TRC_PSOURCE
+      logical, intent(in)  :: Lsrcpt(:,:)
+      integer, intent(in)  :: Isrcpt(:)
+      integer, intent(in)  :: Jsrcpt(:)
+      real(r8), intent(in) :: Tsrcpt(:,:,:)
 #  endif
 #  ifdef MASKING
       real(r8), intent(in) :: rmask(LBi:,LBj:)
@@ -266,14 +212,6 @@
 #  endif
       real(r8), intent(in) :: pm(LBi:,LBj:)
       real(r8), intent(in) :: pn(LBi:,LBj:)
-#  if defined TCLM_NUDGING && defined TCLIMATOLOGY
-      real(r8), intent(in) :: Tnudgcof(LBi:,LBj:,:)
-      real(r8), intent(in) :: tclm(LBi:,LBj:,:,:)
-#  endif
-#  if defined NUDGING_SST || defined NUDGING_T
-      real(r8), intent(in) :: EobsT(LBi:,LBj:,:,:)
-      real(r8), intent(in) :: Tobs(LBi:,LBj:,:,:)
-#  endif
       real(r8), intent(in) :: Hz(LBi:,LBj:,:)
       real(r8), intent(in) :: Huon(LBi:,LBj:,:)
       real(r8), intent(in) :: Hvom(LBi:,LBj:,:)
@@ -286,22 +224,6 @@
       real(r8), intent(in) :: W(LBi:,LBj:,0:)
 #  ifdef WEC_VF
       real(r8), intent(in) :: W_stokes(LBi:,LBj:,0:)
-#  endif
-#  ifdef REFINED_GRID
-      integer, intent(in) :: hindcu(:)
-      integer, intent(in) :: hindcv(:)
-      real(r8), intent(in) :: hindci_u(LBi:,LBj:)
-      real(r8), intent(in) :: hindcj_u(LBi:,LBj:)
-      real(r8), intent(in) :: hindci_v(LBi:,LBj:)
-      real(r8), intent(in) :: hindcj_v(LBi:,LBj:)
-      real(r8), intent(inout) :: FXp_west(LBj:,:,:)
-      real(r8), intent(inout) :: FXp_east(LBj:,:,:)
-      real(r8), intent(inout) :: FEp_south(LBi:,:,:)
-      real(r8), intent(inout) :: FEp_north(LBi:,:,:)
-      real(r8), intent(inout) :: FXc_west(LBj:,:)
-      real(r8), intent(inout) :: FXc_east(LBj:,:)
-      real(r8), intent(inout) :: FEc_south(LBi:,:)
-      real(r8), intent(inout) :: FEc_north(LBi:,:)
 #  endif
 #  ifdef DIAGNOSTICS_TS
       real(r8), intent(inout) :: DiaTwrk(LBi:,LBj:,:,:,:)
@@ -317,17 +239,11 @@
 
 # else
 
-#  if defined TS_PSOURCE || defined Q_PSOURCE
-      integer, intent(in) :: Isrc(Msrc)
-      integer, intent(in) :: Jsrc(Msrc)
-
-      real(r8), intent(in) :: Tsrc(Msrc,N(ng),NT(ng))
-#  endif
-#  ifdef TS_PSOURCE
-      real(r8), intent(in) :: Dsrc(Msrc)
-#  endif
-#  ifdef Q_PSOURCE
-      real(r8), intent(in) :: Qsrc(Msrc,N(ng))
+#  if defined TRC_PSOURCE
+      logical, intent(in) :: Lsrcpt(Msrcpt,NT(ng))
+      integer, intent(in) :: Isrcpt(Msrcpt)
+      integer, intent(in) :: Jsrcpt(Msrcpt)
+      real(r8), intent(in) :: Tsrcpt(Msrcpt,N(ng),NT(ng))
 #  endif
 #  ifdef MASKING
       real(r8), intent(in) :: rmask(LBi:UBi,LBj:UBj)
@@ -348,14 +264,6 @@
 #  endif
       real(r8), intent(in) :: pm(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: pn(LBi:UBi,LBj:UBj)
-#  if defined TCLM_NUDGING && defined TCLIMATOLOGY
-      real(r8), intent(in) :: Tnudgcof(LBi:UBi,LBj:UBj,NT(ng))
-      real(r8), intent(in) :: tclm(LBi:UBi,LBj:UBj,N(ng),NT(ng))
-#  endif
-#  if defined NUDGING_SST || defined NUDGING_T
-      real(r8), intent(in) :: EobsT(LBi:UBi,LBj:UBj,N(ng),NT(ng))
-      real(r8), intent(in) :: Tobs(LBi:UBi,LBj:UBj,N(ng),NT(ng))
-#  endif
       real(r8), intent(in) :: Hz(LBi:UBi,LBj:UBj,N(ng))
       real(r8), intent(in) :: Huon(LBi:UBi,LBj:UBj,N(ng))
       real(r8), intent(in) :: Hvom(LBi:UBi,LBj:UBj,N(ng))
@@ -364,22 +272,6 @@
       real(r8), intent(in) :: W(LBi:UBi,LBj:UBj,0:N(ng))
 #  ifdef WEC_VF
       real(r8), intent(in) :: W_stokes(LBi:UBi,LBj:UBj,0:N(ng))
-#  endif
-#  ifdef REFINED_GRID
-      integer, intent(in) :: hindcu(4)
-      integer, intent(in) :: hindcv(4)
-      real(r8), intent(in) :: hindci_u(LBi:UBi,LBj:UBj)
-      real(r8), intent(in) :: hindcj_u(LBi:UBi,LBj:UBj)
-      real(r8), intent(in) :: hindci_v(LBi:UBi,LBj:UBj)
-      real(r8), intent(in) :: hindcj_v(LBi:UBi,LBj:UBj)
-      real(r8), intent(inout) :: FXp_west(LBj:UBj,N(ng),NT(ng))
-      real(r8), intent(inout) :: FXp_east(LBj:UBj,N(ng),NT(ng))
-      real(r8), intent(inout) :: FEp_south(LBi:UBi,N(ng),NT(ng))
-      real(r8), intent(inout) :: FEp_north(LBi:UBi,N(ng),NT(ng))
-      real(r8), intent(inout) :: FXc_west(LBj:UBj,NT(ng))
-      real(r8), intent(inout) :: FXc_east(LBj:UBj,NT(ng))
-      real(r8), intent(inout) :: FEc_south(LBi:UBi,NT(ng))
-      real(r8), intent(inout) :: FEc_north(LBi:UBi,NT(ng))
 #  endif
 #  ifdef DIAGNOSTICS_TS
       real(r8), intent(inout) :: DiaTwrk(LBi:UBi,LBj:UBj,N(ng),NT(ng),  &
@@ -394,29 +286,17 @@
 !
 !  Local variable declarations.
 !
-# ifdef DISTRIBUTE
-#  ifdef EW_PERIODIC
-      logical :: EWperiodic=.TRUE.
-#  else
-      logical :: EWperiodic=.FALSE.
-#  endif
-#  ifdef NS_PERIODIC
-      logical :: NSperiodic=.TRUE.
-#  else
-      logical :: NSperiodic=.FALSE.
-#  endif
+# ifdef NESTING
+      integer :: ILB, IUB, JLB, JUB
+      integer :: dg, cr, rg
 # endif
-      integer :: i, is, itrc, j, k, ltrc
-# ifdef REFINED_GRID
-      integer :: ie, js, je, kk
-      integer :: ngc, ref_scale, ic, jc, ref
-# endif
+      integer :: i, ibt, ic, is, itrc, j, k, ltrc
 # ifdef DIAGNOSTICS_TS
       integer :: idiag
 # endif
       real(r8), parameter :: eps = 1.0E-16_r8
 
-      real(r8) :: cff, cff1, cff2, cff3, cff4
+      real(r8) :: cff, cff1, cff2, cff3
 
       real(r8), dimension(IminS:ImaxS,0:N(ng)) :: CF
       real(r8), dimension(IminS:ImaxS,0:N(ng)) :: BC
@@ -432,16 +312,34 @@
 
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS,N(ng)) :: oHz
 # ifdef TS_MPDATA
+#  ifdef DIAGNOSTICS_TS
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS,3) :: Dhadv
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS,N(ng),NT(ng)) :: Dvadv
+#  endif
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS,N(ng),NT(ng)) :: Ta
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS,N(ng)) :: Ua
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS,N(ng)) :: Va
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS,0:N(ng)) :: Wa
 # endif
-
+      real(r8) :: my_maxbio(15)
+# if defined AGE_PASSIVE || defined AGE_DISTRIBUTION
+      integer :: iactrc, iwctrc
+# endif
+# ifdef AGE_DISTRIBUTION
+      real(r8) :: fac
+# endif
+!
 # include "set_bounds.h"
-# ifdef REFINED_GRID
-      ngc=mychild(ng)
-      ref_scale=REFINED(ngc)%ref_scale
+
+# ifdef NESTING
+!
+!  Notice that the trace flux boundary arrays are dimensioned with the
+!  global dimensions of grid to facilitate processing.
+!
+      ILB=BOUNDS(ng)%LBi(-1)
+      IUB=BOUNDS(ng)%UBi(-1)
+      JLB=BOUNDS(ng)%LBj(-1)
+      JUB=BOUNDS(ng)%UBj(-1)
 # endif
 !
 !-----------------------------------------------------------------------
@@ -451,51 +349,8 @@
 !  Compute inverse thickness.
 !
 # ifdef TS_MPDATA
-#  if defined EW_PERIODIC || defined COMPOSED_GRID
-#   define I_RANGE Istr-2,Iend+2
-#  elif defined REFINED_GRID
-#   define I_RANGE IstrC,IendC
-        IF (ng.eq.1) THEN
-          IstrC=MAX(0,Istr-2)
-          IendC=MIN(Iend+2,Lm(ng)+1)
-        ELSE
-          IstrC=Istr-2
-          IendC=Iend+2
-        END IF
-#  else
-#   define I_RANGE MAX(Istr-2,0),MIN(Iend+2,Lm(ng)+1)
-#  endif
-#  if defined NS_PERIODIC || defined COMPOSED_GRID
-#   define J_RANGE Jstr-2,Jend+2
-#  elif defined REFINED_GRID
-#   define J_RANGE JstrC,JendC
-        IF (ng.eq.1) THEN
-          JstrC=MAX(0,Jstr-2)
-          JendC=MIN(Jend+2,Mm(ng)+1)
-        ELSE
-          JstrC=Jstr-2
-          JendC=Jend+2
-        END IF
-#  else
-#   define J_RANGE MAX(Jstr-2,0),MIN(Jend+2,Mm(ng)+1)
-#  endif
-# elif defined REFINED_GRID
-#   define I_RANGE IstrC,IendC
-        IF (ng.eq.1) THEN
-          IstrC=Istr
-          IendC=Iend
-        ELSE
-          IstrC=Istr-1
-          IendC=Iend+1
-        END IF
-#   define J_RANGE JstrC,JendC
-        IF (ng.eq.1) THEN
-          JstrC=Jstr
-          JendC=Jend
-        ELSE
-          JstrC=Jstr-1
-          JendC=Jend+1
-        END IF
+#  define I_RANGE Istrm2,Iendp2
+#  define J_RANGE Jstrm2,Jendp2
 # else
 #  define I_RANGE Istr,Iend
 #  define J_RANGE Jstr,Jend
@@ -510,32 +365,43 @@
       END DO
 # undef I_RANGE
 # undef J_RANGE
-!
-!  Compute horizontal tracer advection fluxes.
-!
-# if defined TS_MPDATA   && \
-    (defined EW_PERIODIC || defined NS_PERIODIC || defined DISTRIBUTE)
+# ifdef TS_MPDATA
 !
 !  The MPDATA algorithm requires a three-point footprint, so exchange
 !  boundary data on t(:,:,:,nnew,:) so other processes computed earlier
 !  (horizontal diffusion, biology, or sediment) are accounted.
 !
-#  if defined EW_PERIODIC || defined NS_PERIODIC
-      DO itrc=1,NT(ng)
-        CALL exchange_r3d_tile (ng, tile,                               &
-     &                          LBi, UBi, LBj, UBj, 1, N(ng),           &
-     &                          t(:,:,:,nnew,itrc))
-      END DO
-#  endif
+      IF (EWperiodic(ng).or.NSperiodic(ng)) THEN
+#ifdef OFFLINE_BIOLOGY
+        DO ibt=1,NBT
+          itrc=idbio(ibt)
+#else
+        DO itrc=1,NT(ng)
+#endif
+          CALL exchange_r3d_tile (ng, tile,                             &
+     &                            LBi, UBi, LBj, UBj, 1, N(ng),         &
+     &                            t(:,:,:,nnew,itrc))
+        END DO
+      END IF
+
 #  ifdef DISTRIBUTE
       CALL mp_exchange4d (ng, tile, iNLM, 1,                            &
      &                    LBi, UBi, LBj, UBj, 1, N(ng), 1, NT(ng),      &
-     &                    NghostPoints, EWperiodic, NSperiodic,         &
+     &                    NghostPoints,                                 &
+     &                    EWperiodic(ng), NSperiodic(ng),               &
      &                    t(:,:,:,nnew,:))
 #  endif
 # endif
 
+#ifdef OFFLINE_BIOLOGY
+      T_LOOP : DO ibt=1,NBT
+        itrc=idbio(ibt)
+#else
+!
+!  Compute horizontal tracer advection fluxes.
+!
       T_LOOP : DO itrc=1,NT(ng)
+#endif
         K_LOOP : DO k=1,N(ng)
 
 # if defined TS_C2HADVECTION
@@ -556,86 +422,27 @@
      &                        t(i,j  ,k,3,itrc))
             END DO
           END DO
+
 # elif defined TS_MPDATA
 !
 !  First-order, upstream differences horizontal advective fluxes.
 !
-#  if defined EW_PERIODIC || defined COMPOSED_GRID
-#   define I_RANGE Istr-2,Iend+3
-#  elif defined REFINED_GRID
-#   define I_RANGE IstrC,IendC
-        IF (ng.eq.1) THEN
-          IstrC=MAX(1,Istr-2)
-          IendC=MIN(Iend+3,Lm(ng)+1)
-        ELSE
-          IstrC=Istr-2
-          IendC=Iend+3
-        END IF
-#  else
-#   define I_RANGE MAX(Istr-2,1),MIN(Iend+3,Lm(ng)+1)
-#  endif
-#  if defined NS_PERIODIC || defined COMPOSED_GRID
-#   define J_RANGE Jstr-2,Jend+2
-#  elif defined REFINED_GRID
-#   define J_RANGE JstrC,JendC
-        IF (ng.eq.1) THEN
-          JstrC=MAX(1,Jstr-2)
-          JendC=MIN(Jend+2,Mm(ng))
-        ELSE
-          JstrC=Jstr-2
-          JendC=Jend+2
-        END IF
-#  else
-#   define J_RANGE MAX(Jstr-2,1),MIN(Jend+2,Mm(ng))
-#  endif
-          DO j=J_RANGE
-            DO i=I_RANGE
+          DO j=JstrVm2,Jendp2i
+            DO i=IstrUm2,Iendp3
               cff1=MAX(Huon(i,j,k),0.0_r8)
               cff2=MIN(Huon(i,j,k),0.0_r8)
               FX(i,j)=cff1*t(i-1,j,k,3,itrc)+                           &
      &                cff2*t(i  ,j,k,3,itrc)
             END DO
           END DO
-#  undef I_RANGE
-#  undef J_RANGE
-#  if defined EW_PERIODIC || defined COMPOSED_GRID
-#   define I_RANGE Istr-2,Iend+2
-#  elif defined REFINED_GRID
-#   define I_RANGE IstrC,IendC
-        IF (ng.eq.1) THEN
-          IstrC=MAX(1,Istr-2)
-          IendC=MIN(Iend+2,Lm(ng))
-        ELSE
-          IstrC=Istr-2
-          IendC=Iend+2
-        END IF
-#  else
-#   define I_RANGE MAX(Istr-2,1),MIN(Iend+2,Lm(ng))
-#  endif
-#  if defined NS_PERIODIC || defined COMPOSED_GRID
-#   define J_RANGE Jstr-2,Jend+3
-#  elif defined REFINED_GRID
-#   define J_RANGE JstrC,JendC
-        IF (ng.eq.1) THEN
-          JstrC=MAX(1,Jstr-2)
-          JendC=MIN(Jend+3,Mm(ng)+1)
-        ELSE
-          JstrC=Jstr-2
-          JendC=Jend+3
-        END IF
-#  else
-#   define J_RANGE MAX(Jstr-2,1),MIN(Jend+3,Mm(ng)+1)
-#  endif
-          DO j=J_RANGE
-            DO i=I_RANGE
+          DO j=JstrVm2,Jendp3
+            DO i=IstrUm2,Iendp2i
               cff1=MAX(Hvom(i,j,k),0.0_r8)
               cff2=MIN(Hvom(i,j,k),0.0_r8)
               FE(i,j)=cff1*t(i,j-1,k,3,itrc)+                           &
      &                cff2*t(i,j  ,k,3,itrc)
             END DO
           END DO
-#  undef I_RANGE
-#  undef J_RANGE
 
 # else
 !
@@ -646,23 +453,9 @@
 #  else
 !  Fourth-order, centered differences horizontal advective fluxes.
 #  endif
-!  
-#  if defined EW_PERIODIC || defined COMPOSED_GRID
-#   define I_RANGE Istr-1,Iend+2
-#  elif defined REFINED_GRID
-#   define I_RANGE IstrC,IendC
-        IF (ng.eq.1) THEN
-          IstrC=MAX(1,Istr-1)
-          IendC=MIN(Iend+2,Lm(ng)+1)
-        ELSE
-          IstrC=Istr-1
-          IendC=Iend+2
-        END IF
-#  else
-#   define I_RANGE MAX(Istr-1,1),MIN(Iend+2,Lm(ng)+1)
-#  endif
+!
           DO j=Jstr,Jend
-            DO i=I_RANGE
+            DO i=Istrm1,Iendp2
               FX(i,j)=t(i  ,j,k,3,itrc)-                                &
      &                t(i-1,j,k,3,itrc)
 #  ifdef MASKING
@@ -670,19 +463,20 @@
 #  endif
             END DO
           END DO
-#  undef I_RANGE
-#  if !defined EW_PERIODIC && !defined COMPOSED_GRID
-          IF (WESTERN_EDGE_REF) THEN
-            DO j=Jstr,Jend
-              FX(Istr-1,j)=FX(Istr,j)
-            END DO
+          IF (.not.(CompositeGrid(iwest,ng).or.EWperiodic(ng))) THEN
+            IF (DOMAIN(ng)%Western_Edge(tile)) THEN
+              DO j=Jstr,Jend
+                FX(Istr-1,j)=FX(Istr,j)
+              END DO
+            END IF
           END IF
-          IF (EASTERN_EDGE_REF) THEN
-            DO j=Jstr,Jend
-              FX(Iend+2,j)=FX(Iend+1,j)
-            END DO
+          IF (.not.(CompositeGrid(ieast,ng).or.EWperiodic(ng))) THEN
+            IF (DOMAIN(ng)%Eastern_Edge(tile)) THEN
+              DO j=Jstr,Jend
+                FX(Iend+2,j)=FX(Iend+1,j)
+              END DO
+            END IF
           END IF
-#  endif
 !
           DO j=Jstr,Jend
             DO i=Istr-1,Iend+1
@@ -721,21 +515,7 @@
             END DO
           END DO
 !
-#  if defined NS_PERIODIC || defined COMPOSED_GRID
-#   define J_RANGE Jstr-1,Jend+2
-#  elif defined REFINED_GRID
-#   define J_RANGE JstrC,JendC
-        IF (ng.eq.1) THEN
-          JstrC=MAX(1,Jstr-1)
-          JendC=MIN(Jend+2,Mm(ng)+1)
-        ELSE
-          JstrC=Jstr-1
-          JendC=Jend+2
-        END IF
-#  else
-#   define J_RANGE MAX(Jstr-1,1),MIN(Jend+2,Mm(ng)+1)
-#  endif
-          DO j=J_RANGE
+          DO j=Jstrm1,Jendp2
             DO i=Istr,Iend
               FE(i,j)=t(i,j  ,k,3,itrc)-                                &
      &                t(i,j-1,k,3,itrc)
@@ -744,19 +524,20 @@
 #  endif
             END DO
           END DO
-#  undef J_RANGE
-#  if !defined NS_PERIODIC && !defined COMPOSED_GRID
-          IF (SOUTHERN_EDGE_REF) THEN
-            DO i=Istr,Iend
-              FE(i,Jstr-1)=FE(i,Jstr)
-            END DO
+          IF (.not.(CompositeGrid(isouth,ng).or.NSperiodic(ng))) THEN
+            IF (DOMAIN(ng)%Southern_Edge(tile)) THEN
+              DO i=Istr,Iend
+                FE(i,Jstr-1)=FE(i,Jstr)
+              END DO
+            END IF
           END IF
-          IF (NORTHERN_EDGE_REF) THEN
-            DO i=Istr,Iend
-              FE(i,Jend+2)=FE(i,Jend+1)
-            END DO
+          IF (.not.(CompositeGrid(inorth,ng).or.NSperiodic(ng))) THEN
+            IF (DOMAIN(ng)%Northern_Edge(tile)) THEN
+              DO i=Istr,Iend
+                FE(i,Jend+2)=FE(i,Jend+1)
+              END DO
+            END IF
           END IF
-#  endif
 !
           DO j=Jstr-1,Jend+1
             DO i=Istr,Iend
@@ -795,213 +576,103 @@
             END DO
           END DO
 # endif
-# if defined TS_PSOURCE && !defined Q_PSOURCE
 !
-!  Apply tracers point sources to the horizontal advection terms.
+!  Apply tracers point sources to the horizontal advection terms,
+!  if any.
 !
-          DO is=1,Nsrc
-            i=Isrc(is)
-            j=Jsrc(is)
-            IF (INT(Dsrc(is)).eq.0) THEN
-#  ifdef TS_MPDATA
-              IF (((Istr-2.le.i).and.(i.le.Iend+2)).and.                &
-     &            ((Jstr-2.le.j).and.(j.le.Jend+2))) THEN
-#  else
-              IF (((Istr.le.i).and.(i.le.Iend+1)).and.                  &
-     &            ((Jstr.le.j).and.(j.le.Jend))) THEN
-#  endif
-                IF (LtracerSrc(itrc,ng)) THEN
-                  FX(i,j)=Huon(i,j,k)*Tsrc(is,k,itrc)
-#  ifdef MASKING
-                ELSE
-                  IF ((rmask(i  ,j).eq.0.0_r8).and.                     &
-     &                (rmask(i-1,j).eq.1.0_r8)) THEN
-                    FX(i,j)=Huon(i,j,k)*t(i-1,j,k,3,itrc)
-                  ELSE IF ((rmask(i  ,j).eq.1.0_r8).and.                &
-     &                     (rmask(i-1,j).eq.0.0_r8)) THEN
-                    FX(i,j)=Huon(i,j,k)*t(i  ,j,k,3,itrc)
-                  END IF
-#  endif
-                END IF
-              END IF
-            ELSE IF (INT(Dsrc(is)).eq.1) THEN
-#  ifdef TS_MPDATA
-              IF (((Istr-2.le.i).and.(i.le.Iend+2)).and.                &
-     &            ((Jstr-2.le.j).and.(j.le.Jend+2))) THEN
-#  else
-              IF (((Istr.le.i).and.(i.le.Iend)).and.                    &
-     &            ((Jstr.le.j).and.(j.le.Jend+1))) THEN
-#  endif
-                IF (LtracerSrc(itrc,ng)) THEN
-                  FE(i,j)=Hvom(i,j,k)*Tsrc(is,k,itrc)
-#  ifdef MASKING
-                ELSE
-                  IF ((rmask(i,j  ).eq.0.0_r8).and.                     &
-     &                (rmask(i,j-1).eq.1.0_r8)) THEN
-                    FE(i,j)=Hvom(i,j,k)*t(i,j-1,k,3,itrc)
-                  ELSE IF ((rmask(i,j  ).eq.1.0_r8).and.                &
-     &                     (rmask(i,j-1).eq.0.0_r8)) THEN
-                    FE(i,j)=Hvom(i,j,k)*t(i,j  ,k,3,itrc)
-                  END IF
-#  endif
-                END IF
-              END IF
-            END IF
-          END DO
+          IF (.not.LwSrc(ng).and.ANY(LtracerSrc(:,ng))) THEN
+            DO is=1,Nsrc(ng)
+              i=SOURCES(ng)%Isrc(is)
+              j=SOURCES(ng)%Jsrc(is)
+              IF (INT(SOURCES(ng)%Dsrc(is)).eq.0) THEN
+# ifdef TS_MPDATA
+                IF (((IstrUm2.le.i).and.(i.le.Iendp3)).and.             &
+     &              ((JstrVm2.le.j).and.(j.le.Jendp2i))) THEN
+# else
+                IF (((Istr.le.i).and.(i.le.Iend+1)).and.                &
+     &              ((Jstr.le.j).and.(j.le.Jend))) THEN
 # endif
+                  IF (LtracerSrc(itrc,ng)) THEN
+                    FX(i,j)=Huon(i,j,k)*                                &
+     &                      SOURCES(ng)%Tsrc(is,k,itrc)
+# ifdef MASKING
+                  ELSE
+                    IF ((rmask(i  ,j).eq.0.0_r8).and.                   &
+     &                  (rmask(i-1,j).eq.1.0_r8)) THEN
+                      FX(i,j)=Huon(i,j,k)*t(i-1,j,k,3,itrc)
+                    ELSE IF ((rmask(i  ,j).eq.1.0_r8).and.              &
+     &                       (rmask(i-1,j).eq.0.0_r8)) THEN
+                      FX(i,j)=Huon(i,j,k)*t(i  ,j,k,3,itrc)
+                    END IF
+# endif
+                  END IF
+                END IF
+              ELSE IF (INT(SOURCES(ng)%Dsrc(is)).eq.1) THEN
+# ifdef TS_MPDATA
+                IF (((IstrUm2.le.i).and.(i.le.Iendp2i)).and.            &
+     &              ((JstrVm2.le.j).and.(j.le.Jendp3))) THEN
+# else
+                IF (((Istr.le.i).and.(i.le.Iend)).and.                  &
+     &              ((Jstr.le.j).and.(j.le.Jend+1))) THEN
+# endif
+                  IF (LtracerSrc(itrc,ng)) THEN
+                    FE(i,j)=Hvom(i,j,k)*                                &
+     &                      SOURCES(ng)%Tsrc(is,k,itrc)
+# ifdef MASKING
+                  ELSE
+                    IF ((rmask(i,j  ).eq.0.0_r8).and.                   &
+     &                  (rmask(i,j-1).eq.1.0_r8)) THEN
+                      FE(i,j)=Hvom(i,j,k)*t(i,j-1,k,3,itrc)
+                    ELSE IF ((rmask(i,j  ).eq.1.0_r8).and.              &
+     &                       (rmask(i,j-1).eq.0.0_r8)) THEN
+                      FE(i,j)=Hvom(i,j,k)*t(i,j  ,k,3,itrc)
+                    END IF
+# endif
+                  END IF
+                END IF
+              END IF
+            END DO
+          END IF
+
+# if defined NESTING && !defined ONE_WAY
 !
-!  Time-step horizontal advection term.
+!  If refinement grids, extract tracer horizontal advection fluxes
+!  (Hz*u*T/n, Hz*v*T/m) at the grid contact boundary (physical
+!  domain period) to be used in two-way nesting.
+!
+         IF (RefinedGrid(ng)) THEN
+           DO cr=1,Ncontact
+             dg=Rcontact(cr)%donor_grid
+             rg=Rcontact(cr)%receiver_grid
+             IF (ng.eq.rg) THEN
+               CALL bry_fluxes (dg, rg, cr, iNLM, tile,                 &
+     &                          IminS, ImaxS, JminS, JmaxS,             &
+     &                          ILB, IUB, JLB, JUB,                     &
+     &                          dt(ng), FX, FE,                         &
+     &                          BRY_CONTACT(iwest, cr)%Tflux(:,k,itrc), &
+     &                          BRY_CONTACT(ieast, cr)%Tflux(:,k,itrc), &
+     &                          BRY_CONTACT(isouth,cr)%Tflux(:,k,itrc), &
+     &                          BRY_CONTACT(inorth,cr)%Tflux(:,k,itrc))
+             END IF
+           END DO
+         END IF
+# endif
 !
 # ifdef TS_MPDATA
-#   if defined EW_PERIODIC || defined COMPOSED_GRID
-#    define I_RANGE Istr-2,Iend+2
-#   elif defined REFINED_GRID
-#    define I_RANGE IstrC,IendC
-        IF (ng.eq.1) THEN
-          IstrC=MAX(1,Istr-2)
-          IendC=MIN(Iend+2,Lm(ng))
-        ELSE
-          IstrC=Istr-2
-          IendC=Iend+2
-        END IF
-#   else
-#    define I_RANGE MAX(Istr-2,1),MIN(Iend+2,Lm(ng))
-#   endif
-#   if defined NS_PERIODIC || defined COMPOSED_GRID
-#    define J_RANGE Jstr-2,Jend+2
-#   elif defined REFINED_GRID
-#    define J_RANGE JstrC,JendC
-        IF (ng.eq.1) THEN
-          JstrC=MAX(1,Jstr-2)
-          JendC=MIN(Jend+2,Mm(ng))
-        ELSE
-          JstrC=Jstr-2
-          JendC=Jend+2
-        END IF
-#   else
-#    define J_RANGE MAX(Jstr-2,1),MIN(Jend+2,Mm(ng))
-#   endif
+!  Time-step horizontal advection for intermediate diffusive tracer, Ta.
+!  Advective fluxes have units of Tunits m3/s.  The new tracer has
+!  units of m Tunits.
 # else
-#   define I_RANGE Istr,Iend
-#   define J_RANGE Jstr,Jend
+!  Time-step horizontal advection term.  Advective fluxes have units
+!  of Tunits m3/s.  The new tracer has units of m Tunits.
 # endif
-# ifdef REFINED_GRID
 !
-!  Comulate in time and save vertical sum of child grid perimeter fluxes
-!  for comparison to parent at next parent time step.
-!
-          IF (ng.gt.1) THEN
-!
-!  Western edge
-!
-            IF (WESTERN_EDGE) THEN
-              DO j=Jstr,Jend
-                cff=FX(Istr,j)*dt(ng)
-                IF ((get_refdata(ng).eq.1).and.(k.eq.1)) THEN
-                  FXc_west(j,itrc)=cff
-                ELSE
-                  FXc_west(j,itrc)=FXc_west(j,itrc)+cff
-                END IF
-              END DO
-            END IF
-!
-!  Eastern edge
-!
-            IF (EASTERN_EDGE) THEN
-              DO j=Jstr,Jend
-                cff=FX(Iend+1,j)*dt(ng)
-                IF ((get_refdata(ng).eq.1).and.(k.eq.1)) THEN
-                  FXc_east(j,itrc)=cff
-                ELSE
-                  FXc_east(j,itrc)=FXc_east(j,itrc)+cff
-                END IF
-              END DO
-            END IF
-!
-!  Southern edge
-!
-            IF (SOUTHERN_EDGE) THEN
-              DO i=Istr,Iend
-                cff=FE(i,Jstr)*dt(ng)
-                IF ((get_refdata(ng).eq.1).and.(k.eq.1)) THEN
-                  FEc_south(i,itrc)=cff
-                ELSE
-                  FEc_south(i,itrc)=FEc_south(i,itrc)+cff
-                END IF
-              END DO
-            END IF
-!
-!  Northern edge
-!
-            IF (NORTHERN_EDGE) THEN
-              DO i=Istr,Iend
-                cff=FE(i,Jend+1)*dt(ng)
-                IF ((get_refdata(ng).eq.1).and.(k.eq.1)) THEN
-                  FEc_north(i,itrc)=cff
-                ELSE
-                  FEc_north(i,itrc)=FEc_north(i,itrc)+cff
-                END IF
-              END DO
-            END IF
-          END IF
-!
-!  Correct the flux of the parent grid at the location of the child boundary.
-!  Compare vertical sum from last time step of parent FXp and FEp
-!  to cumulated child fluxes FXb(ng) and FEb(ng) (these are the 
-!  child grid fluxes FXc(ngc) and FEc(ngc)).
-!
-          IF (ng.lt.Ngrids) THEN
-!
-!  western and eastern child edges.
-!
-            js=hindcu(3)
-            je=hindcu(4)
-            DO j=js,je
-!
-!  Parent grid at child WESTERN EDGE
-!
-              is=hindcu(1)-1
-              IF (((Istr.le.is).and.(is.le.Iend)).and.                  &
-     &            ((Jstr.le.j ).and.( j.le.Jend)).and.                  &
-     &            (NINT(hindci_u(is,j)).eq.1)) THEN
-                FXp_west(j,k,itrc)=FX(is,j)*dt(ng)
-              END IF
-!
-!  Parent grid at child EASTERN EDGE
-!
-              is=hindcu(2)+1
-              IF (((Istr.le.is).and.(is.le.Iend)).and.                  &
-     &            ((Jstr.le.j ).and.( j.le.Jend)).and.                  &
-     &            (NINT(hindci_u(is,j)).eq.(Lm(ngc)+1))) THEN
-                FXp_east(j,k,itrc)=FX(is,j)*dt(ng)
-              END IF
-            END DO
-!
-!  southern and northern child edges.
-!
-            is=hindcv(1)
-            ie=hindcv(2)
-            DO i=is,ie
-!
-!  Parent grid at child SOUTHERN EDGE
-!
-              js=hindcv(3)-1
-              IF (((Istr.le.i ).and.( i.le.Iend)).and.                  &
-     &            ((Jstr.le.js).and.(js.le.Jend)).and.                  &
-     &            (NINT(hindcj_v(i,js)).eq.1)) THEN
-                FEp_south(i,k,itrc)=FE(i,js)*dt(ng)
-              END IF
-!
-!  Parent grid at child NORTHERN EDGE
-!
-              js=hindcv(4)+1
-              IF (((Istr.le.i ).and.( i.le.Iend)).and.                  &
-     &            ((Jstr.le.js).and.(js.le.Jend)).and.                  &
-     &            (NINT(hindcj_v(i,js)).eq.(Mm(ngc)+1))) THEN
-                FEp_north(i,k,itrc)=FE(i,js)*dt(ng)
-              END IF
-            END DO
-          END IF
+# ifdef TS_MPDATA
+#  define I_RANGE IstrUm2,Iendp2i
+#  define J_RANGE JstrVm2,Jendp2i
+# else
+#  define I_RANGE Istr,Iend
+#  define J_RANGE Jstr,Jend
 # endif
           DO j=J_RANGE
             DO i=I_RANGE
@@ -1009,18 +680,33 @@
               cff1=cff*(FX(i+1,j)-FX(i,j))
               cff2=cff*(FE(i,j+1)-FE(i,j))
               cff3=cff1+cff2
-#  ifdef TS_MPDATA
+# ifdef TS_MPDATA
               Ta(i,j,k,itrc)=t(i,j,k,nnew,itrc)-cff3
-#  else
+# else
               t(i,j,k,nnew,itrc)=t(i,j,k,nnew,itrc)-cff3
-#  endif
-#  ifdef DIAGNOSTICS_TS
+# endif
+# ifdef DIAGNOSTICS_TS
+#  ifdef TS_MPDATA
+              Dhadv(i,j,iTxadv)=-cff1
+              Dhadv(i,j,iTyadv)=-cff2
+              Dhadv(i,j,iThadv)=-cff3
+#  else
               DiaTwrk(i,j,k,itrc,iTxadv)=-cff1
               DiaTwrk(i,j,k,itrc,iTyadv)=-cff2
               DiaTwrk(i,j,k,itrc,iThadv)=-cff3
 #  endif
+# endif
             END DO
           END DO
+# if defined DIAGNOSTICS_TS && defined TS_MPDATA
+          DO j=Jstr,Jend
+            DO i=Istr,Iend
+              DiaTwrk(i,j,k,itrc,iTxadv)=Dhadv(i,j,iTxadv)
+              DiaTwrk(i,j,k,itrc,iTyadv)=Dhadv(i,j,iTyadv)
+              DiaTwrk(i,j,k,itrc,iThadv)=Dhadv(i,j,iThadv)
+            END DO
+          END DO
+# endif
         END DO K_LOOP
       END DO T_LOOP
 !
@@ -1029,7 +715,12 @@
 !-----------------------------------------------------------------------
 !
       DO j=J_RANGE
+#ifdef OFFLINE_BIOLOGY
+        DO ibt=1,NBT
+          itrc=idbio(ibt)
+#else
         DO itrc=1,NT(ng)
+#endif
 
 # if defined TS_SVADVECTION
 !
@@ -1075,6 +766,7 @@
             FC(i,N(ng))=0.0_r8
             FC(i,0)=0.0_r8
           END DO
+
 # elif defined TS_A4VADVECTION
 !
 !  Fourth-order, Akima vertical advective flux.
@@ -1340,7 +1032,16 @@
 #  endif
 # endif
 !
-!  Time-step vertical advection term.
+# ifdef TS_MPDATA
+!  Time-step vertical advection for intermediate diffusive tracer, Ta
+!  (Tunits).
+# else
+#  ifdef SPLINES
+!  Time-step vertical advection term (Tunits).
+#  else
+!  Time-step vertical advection term (m Tunits).
+#  endif
+# endif
 # ifdef DIAGNOSTICS_TS
 !  Convert units of tracer diagnostic terms to Tunits.
 # endif
@@ -1348,32 +1049,40 @@
           DO i=I_RANGE
             CF(i,0)=dt(ng)*pm(i,j)*pn(i,j)
           END DO
-# ifdef Q_PSOURCE
 !
-!  Apply mass point sources - Volume influx.
+!  Apply mass point sources (volume vertical influx), if any.
 !
-          DO is=1,Nsrc
-            i=Isrc(is)
-            IF (((IstrR.le.i).and.(i.le.IendR)).and.                    &
-     &          ((JstrR.le.j).and.(j.le.JendR))) THEN
-              IF (j.eq.Jsrc(is)) THEN
-                DO k=1,N(ng)
-                  FC(i,k)=FC(i,k)+0.5_r8*                               &
-     &                    (Qsrc(is,k  )*Tsrc(is,k  ,itrc)+              &
-     &                     Qsrc(is,k+1)*Tsrc(is,k+1,itrc))
-                END DO
+          IF (LwSrc(ng)) THEN
+            DO is=1,Nsrc(ng)
+              i=SOURCES(ng)%Isrc(is)
+#  ifdef TS_MPDATA
+              IF (((IstrUm2.le.i).and.(i.le.Iendp2i)).and.              &
+     &            ((JstrVm2.le.j).and.(j.le.Jendp2i))) THEN
+#  else
+              IF (((IstrR.le.i).and.(i.le.IendR)).and.                  &
+     &            ((JstrR.le.j).and.(j.le.JendR))) THEN
+#  endif
+                IF (j.eq.SOURCES(ng)%Jsrc(is)) THEN
+                  DO k=1,N(ng)-1
+                    FC(i,k)=FC(i,k)+0.5_r8*                             &
+     &                      (SOURCES(ng)%Qsrc(is,k  )*                  &
+                             SOURCES(ng)%Tsrc(is,k  ,itrc)+             &
+     &                       SOURCES(ng)%Qsrc(is,k+1)*                  &
+     &                       SOURCES(ng)%Tsrc(is,k+1,itrc))
+                  END DO
+                END IF
               END IF
-            END IF
-          END DO
-# endif
+            END DO
+          END IF
+!
           DO k=1,N(ng)
             DO i=I_RANGE
               cff1=CF(i,0)*(FC(i,k)-FC(i,k-1))
-# if defined TS_MPDATA
+# ifdef TS_MPDATA
               Ta(i,j,k,itrc)=(Ta(i,j,k,itrc)-cff1)*oHz(i,j,k)
-#   ifdef DIAGNOSTICS_TS
-              DiaTwrk(i,j,k,itrc,iTvadv)=-cff1
-#   endif
+#  ifdef DIAGNOSTICS_TS
+              Dvadv(i,j,k,itrc)=-cff1
+#  endif
 # else
               t(i,j,k,nnew,itrc)=t(i,j,k,nnew,itrc)-cff1
 #  ifdef SPLINES
@@ -1406,6 +1115,8 @@
           END DO
 # endif
         END DO
+# undef I_RANGE
+# undef J_RANGE
 # ifdef TS_MPDATA
       END DO
 !
@@ -1414,11 +1125,15 @@
 !  using MPDATA recursive method.  Notice that pipelined J-loop ended.
 !-----------------------------------------------------------------------
 !
+#ifdef OFFLINE_BIOLOGY
+      DO ibt=1,NBT
+        itrc=idbio(ibt)
+#else
       DO itrc=1,NT(ng)
+#endif
         CALL mpdata_adiff_tile (ng, tile,                               &
      &                          LBi, UBi, LBj, UBj,                     &
      &                          IminS, ImaxS, JminS, JmaxS,             &
-     &                          nrhs,                                   &
 #  ifdef MASKING
      &                          rmask, umask, vmask,                    &
 #  endif
@@ -1434,7 +1149,7 @@
      &                          t(:,:,:,3,itrc),                        &
      &                          Ta(:,:,:,itrc),  Ua, Va, Wa)
 !
-!  Compute anti-difussive corrected advection fluxes.
+!  Compute anti-diffusive corrected advection fluxes.
 !
         DO k=1,N(ng)
           DO j=Jstr,Jend
@@ -1477,7 +1192,7 @@
           END DO
         END DO
 !
-!  Compute anti-difussive corrected vertical advection flux.
+!  Compute anti-diffusive corrected vertical advection flux.
 !
         DO j=Jstr,Jend
           DO k=1,N(ng)-1
@@ -1506,7 +1221,7 @@
               cff1=CF(i,0)*(FC(i,k)-FC(i,k-1))
               t(i,j,k,nnew,itrc)=t(i,j,k,nnew,itrc)-cff1
 #  ifdef DIAGNOSTICS_TS
-              DiaTwrk(i,j,k,itrc,iTvadv)=DiaTwrk(i,j,k,itrc,iTvadv)-    &
+              DiaTwrk(i,j,k,itrc,iTvadv)=Dvadv(i,j,k,itrc)-             &
      &                                   cff1
               DO idiag=1,NDT
                 DiaTwrk(i,j,k,itrc,idiag)=DiaTwrk(i,j,k,itrc,idiag)*    &
@@ -1527,7 +1242,12 @@
 !  Time-step vertical diffusion term.
 !-----------------------------------------------------------------------
 !
+#ifdef OFFLINE_BIOLOGY
+        DO ibt=1,NBT
+          itrc=idbio(ibt)
+#else
         DO itrc=1,NT(ng)
+#endif
           ltrc=MIN(NAT,itrc)
 
 # if defined SPLINES && !defined TS_MPDATA
@@ -1634,13 +1354,13 @@
 !
           DO i=Istr,Iend
 #  ifdef DIAGNOSTICS_TS
-             cff1=t(i,j,N(ng),nnew,itrc)*oHz(i,j,N(ng))
+            cff1=t(i,j,N(ng),nnew,itrc)*oHz(i,j,N(ng))
 #  endif
-             DC(i,N(ng))=(DC(i,N(ng))-FC(i,N(ng)-1)*DC(i,N(ng)-1))/     &
+            DC(i,N(ng))=(DC(i,N(ng))-FC(i,N(ng)-1)*DC(i,N(ng)-1))/      &
      &                   (BC(i,N(ng))-FC(i,N(ng)-1)*CF(i,N(ng)-1))
-             t(i,j,N(ng),nnew,itrc)=DC(i,N(ng))
+            t(i,j,N(ng),nnew,itrc)=DC(i,N(ng))
 #  ifdef DIAGNOSTICS_TS
-             DiaTwrk(i,j,N(ng),itrc,iTvdif)=                            &
+            DiaTwrk(i,j,N(ng),itrc,iTvdif)=                             &
      &                              DiaTwrk(i,j,N(ng),itrc,iTvdif)+     &
      &                              t(i,j,N(ng),nnew,itrc)-cff1
 #  endif
@@ -1661,54 +1381,143 @@
 # endif
         END DO
       END DO
+# if defined TRC_PSOURCE
 !
+!  Apply tracers point sources to the horizontal advection terms.
+!
+        DO itrc=1,NT(ng)
+          DO is=1,Nsrcpt
+            i=Isrcpt(is)
+            j=Jsrcpt(is)
+            DO k=1,N(ng)
+#  ifdef TS_MPDATA
+              IF (((Istr-2.le.i).and.(i.le.Iend+2)).and.                &
+     &            ((Jstr-2.le.j).and.(j.le.Jend+2))) THEN
+#  else
+              IF (((Istr.le.i).and.(i.le.Iend+1)).and.                  &
+     &            ((Jstr.le.j).and.(j.le.Jend))) THEN
+#  endif
+!
+                IF (Lsrcpt(is,itrc)) THEN
+                  t(i,j,k,3,itrc)=0.
+                  t(i,j,k,nstp,itrc)=Tsrcpt(is,k,itrc)
+                  t(i,j,k,nnew,itrc)=Tsrcpt(is,k,itrc)
+                END IF
+              END IF
+            END DO
+          END DO
+        END DO
+# endif
+# if defined AGE_PASSIVE || defined AGE_DISTRIBUTION
+!+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+!  Add water concentration to the right-hand-side of age concentration
+!  equation.
+!------Added by W.G.Zhang
+!+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+      iactrc=inert(2)
+      iwctrc=inert(1)
+      DO k=1,N(ng)
+        DO j=Jstr,Jend
+          DO i=Istr,Iend
+            t(i,j,k,nnew,iactrc)=t(i,j,k,nnew,iactrc)+                  &
+     &                           dt(ng)*t(i,j,k,nnew,iwctrc)
+!  Age in years, as in Spall, 2007, JGR, doi:10.1029/2005JC003364.
+            t(i,j,k,nnew,inert(3))=t(i,j,k,nnew,inert(3))+              &
+     &                           dt(ng)*3.168808781402895e-08
+            t(i,j,k,nnew,inert(4))=t(i,j,k,nnew,inert(4))+              &
+     &                           dt(ng)*3.168808781402895e-08
+          END DO
+        END DO
+      END DO
+!      iactrc=inert(4)
+!      iwctrc=inert(2)
+!      DO k=1,N(ng)
+!        DO j=Jstr,Jend
+!          DO i=Istr,Iend
+!            t(i,j,k,nnew,iactrc)=t(i,j,k,nnew,iactrc)+                  &
+!     &                           dt(ng)*t(i,j,k,nnew,iwctrc)
+!          END DO
+!        END DO
+!      END DO
+# endif
+# ifdef AGE_DISTRIBUTION
+!+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+! The aging term (dc/dtau) in the equation of age concentration
+! distribution function.
+! ------Added by W.G.Zhang to compute the age concentration distribution
+!+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+!
+      fac=dt(ng)/dtau(ng)
+      itrc=inert(3)
+      DO k=1,N(ng)
+        DO j=Jstr,Jend
+          DO i=Istr,Iend
+              t(i,j,k,nnew,itrc)=t(i,j,k,nnew,itrc)-fac*                &
+     &                           t(i,j,k,nnew,itrc)
+          END DO
+        END DO
+      END DO
+!
+      itrc=inert(4)
+      DO k=1,N(ng)
+        DO j=Jstr,Jend
+          DO i=Istr,Iend
+            t(i,j,k,nnew,itrc)=t(i,j,k,nnew,itrc)-fac*                &
+     &                         (t(i,j,k,nnew,itrc)-t(i,j,k,nnew,itrc-1))
+          END DO
+        END DO
+      END DO
+# endif
 !-----------------------------------------------------------------------
 !  Apply lateral boundary conditions and, if appropriate, nudge
 !  to tracer data and apply Land/Sea mask.
 !-----------------------------------------------------------------------
 !
+      ic=0
+#ifdef OFFLINE_BIOLOGY
+      DO ibt=1,NBT
+        itrc=idbio(ibt)
+#else
+!  Initialize tracer counter index. The "tclm" array is only allocated
+!  to the NTCLM fields that need to be processed. This is done to
+!  reduce memory.
+!
+      ic=0
+!
       DO itrc=1,NT(ng)
+#endif
+!
+!  Set compact reduced memory tracer index for nudging coefficients and
+!  climatology arrays.
+!
+        IF (LtracerCLM(itrc,ng).and.LnudgeTCLM(itrc,ng)) THEN
+          ic=ic+1
+        END IF
 !
 !  Set lateral boundary conditions.
 !
-        CALL t3dbc_tile (ng, tile, itrc,                                &
+        CALL t3dbc_tile (ng, tile, itrc, ic,                            &
      &                   LBi, UBi, LBj, UBj, N(ng), NT(ng),             &
      &                   IminS, ImaxS, JminS, JmaxS,                    &
      &                   nstp, nnew,                                    &
      &                   t)
-
-# if defined TCLM_NUDGING && defined TCLIMATOLOGY
 !
 !  Nudge towards tracer climatology.
 !
-        DO k=1,N(ng)
-          DO j=JstrR,JendR
-            DO i=IstrR,IendR
-              t(i,j,k,nnew,itrc)=t(i,j,k,nnew,itrc)+                    &
-     &                           dt(ng)*Tnudgcof(i,j,itrc)*             &
-     &                           (tclm(i,j,k,itrc)-t(i,j,k,nnew,itrc))
-            END DO
-          END DO
-        END DO
-# endif
-# if defined NUDGING_SST || defined NUDGING_T
-!
-!  Assimilate tracer observations via nudging.
-!
-        IF (update_T(itrc,ng)) THEN
+        IF (LtracerCLM(itrc,ng).and.LnudgeTCLM(itrc,ng)) THEN
           DO k=1,N(ng)
             DO j=JstrR,JendR
               DO i=IstrR,IendR
-                cff=MIN(1.0_r8,MAX(0.0_r8,EobsT(i,j,k,itrc)))
-                cff=dt(ng)*Tnudass(itrc,ng)*(1.0_r8-cff)
                 t(i,j,k,nnew,itrc)=t(i,j,k,nnew,itrc)+                  &
-     &                             cff*(Tobs(i,j,k,itrc)-               &
-     &                                  t(i,j,k,nnew,itrc))
+     &                             dt(ng)*                              &
+     &                             CLIMA(ng)%Tnudgcof(i,j,k,ic)*        &
+     &                             (CLIMA(ng)%tclm(i,j,k,ic)-           &
+     &                              t(i,j,k,nnew,itrc))
               END DO
             END DO
           END DO
         END IF
-# endif
+
 # ifdef MASKING
 !
 !  Apply Land/Sea mask.
@@ -1736,14 +1545,19 @@
           END DO
         END DO
 # endif
-# if defined EW_PERIODIC || defined NS_PERIODIC
+#  if defined ICE_MODEL && defined ICE_THERMO
+        IF (itrc == isalt) THEN
+          CALL ice_frazil(ng, tile)
+        END IF
+#  endif
 !
 !  Apply periodic boundary conditions.
 !
-        CALL exchange_r3d_tile (ng, tile,                               &
-     &                          LBi, UBi, LBj, UBj, 1, N(ng),           &
-     &                          t(:,:,:,nnew,itrc))
-# endif
+        IF (EWperiodic(ng).or.NSperiodic(ng)) THEN
+          CALL exchange_r3d_tile (ng, tile,                             &
+     &                            LBi, UBi, LBj, UBj, 1, N(ng),         &
+     &                            t(:,:,:,nnew,itrc))
+        END IF
       END DO
 # ifdef DISTRIBUTE
 !
@@ -1751,7 +1565,8 @@
 !
       CALL mp_exchange4d (ng, tile, iNLM, 1,                            &
      &                    LBi, UBi, LBj, UBj, 1, N(ng), 1, NT(ng),      &
-     &                    NghostPoints, EWperiodic, NSperiodic,         &
+     &                    NghostPoints,                                 &
+     &                    EWperiodic(ng), NSperiodic(ng),               &
      &                    t(:,:,:,nnew,:))
 # endif
 # if defined FLOATS && defined FLOAT_VWALK
@@ -1768,21 +1583,24 @@
           END DO
         END DO
       END DO
-#  if defined EW_PERIODIC || defined NS_PERIODIC
 !
 !  Apply periodic boundary conditions.
 !
-      CALL exchange_r3d_tile (ng, tile,                                 &
-     &                        LBi, UBi, LBj, UBj, 1, N(ng),             &
-     &                        dAktdz)
-#  endif
+      IF (EWperiodic(ng).or.NSperiodic(ng)) THEN
+        CALL exchange_r3d_tile (ng, tile,                               &
+     &                          LBi, UBi, LBj, UBj, 1, N(ng),           &
+     &                          dAktdz)
+      END IF
+
 #  ifdef DISTRIBUTE
       CALL mp_exchange3d (ng, tile, iNLM, 1,                            &
      &                    LBi, UBi, LBj, UBj, 1, N(ng),                 &
-     &                    NghostPoints, EWperiodic, NSperiodic,         &
+     &                    NghostPoints,                                 &
+     &                    EWperiodic(ng), NSperiodic(ng),               &
      &                    dAktdz)
 #  endif
 # endif
+
       RETURN
       END SUBROUTINE step3d_t_tile
 #endif

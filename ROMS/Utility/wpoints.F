@@ -1,9 +1,9 @@
 #include "cppdefs.h"
 #ifdef FULL_GRID
-# define IR_RANGE IstrR,IendR
-# define IU_RANGE Istr,IendR
-# define JR_RANGE JstrR,JendR
-# define JV_RANGE Jstr,JendR
+# define IR_RANGE IstrT,IendT
+# define IU_RANGE IstrP,IendT
+# define JR_RANGE JstrT,JendT
+# define JV_RANGE JstrP,JendT
 #else
 # define IR_RANGE Istr,Iend
 # define IU_RANGE IstrU,Iend
@@ -18,12 +18,12 @@
 !
 !svn $Id: wpoints.F 733 2008-09-07 01:56:45Z jcwarner $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2010 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2014 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
 !                                                                      !
-!  This routine sets variables associate with reading and writing of   !
+!  This routine sets variables associated with reading and writing of  !
 !  water points data and/or determining size of packed state vector.   !
 !                                                                      !
 !=======================================================================
@@ -56,10 +56,10 @@
      &                   LBi, UBi, LBj, UBj,                            &
      &                   IminS, ImaxS, JminS, JmaxS,                    &
 # ifdef MASKING
-     &                   GRID(ng) % pmask,                              &
-     &                   GRID(ng) % rmask,                              &
-     &                   GRID(ng) % umask,                              &
-     &                   GRID(ng) % vmask,                              &
+     &                   GRID(ng) % pmask_io,                           &
+     &                   GRID(ng) % rmask_io,                           &
+     &                   GRID(ng) % umask_io,                           &
+     &                   GRID(ng) % vmask_io,                           &
 #  ifdef PROPAGATOR
      &                   GRID(ng) % IJwaterR,                           &
      &                   GRID(ng) % IJwaterU,                           &
@@ -76,7 +76,7 @@
      &                         LBi, UBi, LBj, UBj,                      &
      &                         IminS, ImaxS, JminS, JmaxS,              &
 # ifdef MASKING
-     &                         pmask, rmask, umask, vmask,              &
+     &                         pmask_io, rmask_io, umask_io, vmask_io,  &
 #  ifdef PROPAGATOR
      &                         IJwaterR, IJwaterU, IJwaterV,            &
 #  endif
@@ -112,10 +112,10 @@
       integer, intent(out) :: IJwaterU(LBi:,LBj:)
       integer, intent(out) :: IJwaterV(LBi:,LBj:)
 #   endif
-      real(r8), intent(in) :: rmask(LBi:,LBj:)
-      real(r8), intent(in) :: pmask(LBi:,LBj:)
-      real(r8), intent(in) :: umask(LBi:,LBj:)
-      real(r8), intent(in) :: vmask(LBi:,LBj:)
+      real(r8), intent(in) :: rmask_io(LBi:,LBj:)
+      real(r8), intent(in) :: pmask_io(LBi:,LBj:)
+      real(r8), intent(in) :: umask_io(LBi:,LBj:)
+      real(r8), intent(in) :: vmask_io(LBi:,LBj:)
 #  endif
       real(r8), intent(in) :: h(LBi:,LBj:)
 # else
@@ -125,29 +125,25 @@
       integer, intent(out) :: IJwaterU(LBi:UBi,LBj:UBj)
       integer, intent(out) :: IJwaterV(LBi:UBi,LBj:UBj)
 #   endif
-      real(r8), intent(in) :: rmask(LBi:UBi,LBj:UBj)
-      real(r8), intent(in) :: pmask(LBi:UBi,LBj:UBj)
-      real(r8), intent(in) :: umask(LBi:UBi,LBj:UBj)
-      real(r8), intent(in) :: vmask(LBi:UBi,LBj:UBj)
+      real(r8), intent(in) :: rmask_io(LBi:UBi,LBj:UBj)
+      real(r8), intent(in) :: pmask_io(LBi:UBi,LBj:UBj)
+      real(r8), intent(in) :: umask_io(LBi:UBi,LBj:UBj)
+      real(r8), intent(in) :: vmask_io(LBi:UBi,LBj:UBj)
 #  endif
       real(r8), intent(in) :: h(LBi:UBi,LBj:UBj)
 # endif
 !
 !  Local variable declarations.
 !
-      integer :: my_Nxyp = 0
-      integer :: my_Nxyr = 0
-      integer :: my_Nxyu = 0
-      integer :: my_Nxyv = 0
+      integer :: my_Nxyp, my_Nxyr, my_Nxyu, my_Nxyv
 # ifdef PROPAGATOR
-      integer :: my_NwaterR = 0
-      integer :: my_NwaterU = 0
-      integer :: my_NwaterV = 0
+      integer :: my_NwaterR, my_NwaterU, my_NwaterV
 # endif
 
 # ifdef PROPAGATOR
       integer :: Imin, Imax, Jmin, Jmax
 # endif
+      integer :: Uoff, Voff
       integer :: NSUB, Npts, i, ic, ij, j
 # ifdef DISTRIBUTE
 #  ifdef PROPAGATOR
@@ -173,36 +169,70 @@
 !  Determine number of water points.
 !-----------------------------------------------------------------------
 !
-!  Determine interior and boundary points for IO purposes.
+!  Determine interior points for IO purposes.
 !
       my_Nxyr=0
       my_Nxyp=0
       my_Nxyu=0
       my_Nxyv=0
-      DO j=MAX(0,JstrR),MIN(JendR,Mm(ng)+1)
-        DO i=MAX(0,IstrR),MIN(IendR,Lm(ng)+1)
-          IF (rmask(i,j).gt.0.0_r8) THEN
-            my_Nxyr=my_Nxyr+1
-          END IF
-        END DO
-        DO i=Istr,MIN(IendR,Lm(ng)+1)
-          IF (umask(i,j).gt.0.0_r8) THEN
-            my_Nxyu=my_Nxyu+1
-          END IF
+
+      DO j=Jstr,Jend
+        DO i=Istr,Iend
+          IF (pmask_io(i,j).gt.0.0_r8) my_Nxyp=my_Nxyp+1
+          IF (rmask_io(i,j).gt.0.0_r8) my_Nxyr=my_Nxyr+1
+          IF (umask_io(i,j).gt.0.0_r8) my_Nxyu=my_Nxyu+1
+          IF (vmask_io(i,j).gt.0.0_r8) my_Nxyv=my_Nxyv+1
         END DO
       END DO
-      DO j=Jstr,MIN(JendR,Mm(ng)+1)
-        DO i=Istr,MIN(IendR,Lm(ng)+1)
-          IF (pmask(i,j).eq.1.0_r8) THEN
-            my_Nxyp=my_Nxyp+1
-          END IF
+!
+!  Determine boundary points for IO purposes.  The assigment
+!  below is done to account for periodicity.
+!
+      IF (DOMAIN(ng)%Western_Edge(tile)) THEN
+        DO j=Jstr,Jend
+          IF (rmask_io(Istr-1,j).gt.0.0_r8) my_Nxyr=my_Nxyr+1
+          IF (vmask_io(Istr-1,j).gt.0.0_r8) my_Nxyv=my_Nxyv+1
         END DO
-        DO i=MAX(0,IstrR),MIN(IendR,Lm(ng)+1)
-          IF (vmask(i,j).gt.0.0_r8) THEN
-            my_Nxyv=my_Nxyv+1
-          END IF
+      END IF
+      IF (DOMAIN(ng)%Eastern_Edge(tile)) THEN
+        DO j=Jstr,Jend
+          IF (pmask_io(Iend+1,j).gt.0.0_r8) my_Nxyp=my_Nxyp+1
+          IF (rmask_io(Iend+1,j).gt.0.0_r8) my_Nxyr=my_Nxyr+1
+          IF (umask_io(Iend+1,j).gt.0.0_r8) my_Nxyu=my_Nxyu+1
+          IF (vmask_io(Iend+1,j).gt.0.0_r8) my_Nxyv=my_Nxyv+1
         END DO
-      END DO
+      END IF
+      IF (DOMAIN(ng)%Southern_Edge(tile)) THEN
+        DO i=Istr,Iend
+          IF (rmask_io(i,Jstr-1).gt.0.0_r8) my_Nxyr=my_Nxyr+1
+          IF (umask_io(i,Jstr-1).gt.0.0_r8) my_Nxyu=my_Nxyu+1
+        END DO
+      END IF
+      IF (DOMAIN(ng)%Northern_Edge(tile)) THEN
+        DO i=Istr,Iend
+          IF (pmask_io(i,Jend+1).gt.0.0_r8) my_Nxyp=my_Nxyp+1
+          IF (rmask_io(i,Jend+1).gt.0.0_r8) my_Nxyr=my_Nxyr+1
+          IF (umask_io(i,Jend+1).gt.0.0_r8) my_Nxyu=my_Nxyu+1
+          IF (vmask_io(i,Jend+1).gt.0.0_r8) my_Nxyv=my_Nxyv+1
+        END DO
+      END IF
+      IF (DOMAIN(ng)%SouthWest_Corner(tile)) THEN
+        IF (rmask_io(Istr-1,Jstr-1).gt.0.0_r8) my_Nxyr=my_Nxyr+1
+      END IF
+      IF (DOMAIN(ng)%SouthEast_Corner(tile)) THEN
+        IF (rmask_io(Iend+1,Jstr-1).gt.0.0_r8) my_Nxyr=my_Nxyr+1
+        IF (umask_io(Iend+1,Jstr-1).gt.0.0_r8) my_Nxyu=my_Nxyu+1
+      END IF
+      IF (DOMAIN(ng)%NorthWest_Corner(tile)) THEN
+        IF (rmask_io(Istr-1,Jend+1).gt.0.0_r8) my_Nxyr=my_Nxyr+1
+        IF (vmask_io(Istr-1,Jend+1).gt.0.0_r8) my_Nxyv=my_Nxyv+1
+      END IF
+      IF (DOMAIN(ng)%NorthEast_Corner(tile)) THEN
+        IF (pmask_io(Iend+1,Jend+1).gt.0.0_r8) my_Nxyp=my_Nxyp+1
+        IF (rmask_io(Iend+1,Jend+1).gt.0.0_r8) my_Nxyr=my_Nxyr+1
+        IF (umask_io(Iend+1,Jend+1).gt.0.0_r8) my_Nxyu=my_Nxyu+1
+        IF (vmask_io(Iend+1,Jend+1).gt.0.0_r8) my_Nxyv=my_Nxyv+1
+      END IF
 # endif
 # ifdef PROPAGATOR
 !
@@ -213,10 +243,11 @@
       my_NwaterR=0
       my_NwaterU=0
       my_NwaterV=0
+
       DO j=JR_RANGE
         DO i=IR_RANGE
 #  ifdef MASKING
-          IF (rmask(i,j).gt.0.0_r8) THEN
+          IF (rmask_io(i,j).gt.0.0_r8) THEN
             my_NwaterR=my_NwaterR+1
           END IF
 #  else
@@ -225,7 +256,7 @@
         END DO
         DO i=IU_RANGE
 #  ifdef MASKING
-          IF (umask(i,j).gt.0.0_r8) THEN
+          IF (umask_io(i,j).gt.0.0_r8) THEN
             my_NwaterU=my_NwaterU+1
           END IF
 #  else
@@ -236,7 +267,7 @@
       DO j=JV_RANGE
         DO i=IR_RANGE
 #  ifdef MASKING
-          IF (vmask(i,j).gt.0.0_r8) THEN
+          IF (vmask_io(i,j).gt.0.0_r8) THEN
             my_NwaterV=my_NwaterV+1
           END IF
 #  else
@@ -248,12 +279,16 @@
 !
 !  Determine global number of points (parallel reduction).
 !
-      IF (SOUTH_WEST_CORNER.and.                                        &
-     &    NORTH_EAST_CORNER) THEN
+# ifdef DISTRIBUTE
+      NSUB=1                             ! distributed-memory
+# else
+      IF (DOMAIN(ng)%SouthWest_Corner(tile).and.                        &
+     &    DOMAIN(ng)%NorthEast_Corner(tile)) THEN
         NSUB=1                           ! non-tiled application
       ELSE
         NSUB=NtileX(ng)*NtileE(ng)       ! tiled application
       END IF
+# endif
 !$OMP CRITICAL (MAX_WATER)
       IF (block_count.eq.0) THEN
 # if defined MASKING && (defined READ_WATER || defined WRITE_WATER)
@@ -325,27 +360,45 @@
 !-----------------------------------------------------------------------
 !  Determine size of state vector.
 !-----------------------------------------------------------------------
-#  if defined FORCING_SV
+#  if defined FORCING_SV || \
+      defined SO_SEMI    || defined STOCHASTIC_OPT
 !
-!  The state vector contains surface momentum stresses.
-!
-      Mstate(ng)=NwaterU(ng)+                                           &
-     &           NwaterV(ng)
-#  elif defined SO_SEMI
-!
-!  The state vector contains surface momentum stresses and surface
-!  tracer fluxes.
+!  The state vector may contain free-surface, momentum, tracers,
+!  surface momentum stresses, amd surface tracer fluxes.
 !
       Mstate(ng)=0
-      IF (SCALARS(ng)%SOstate(isUstr)) THEN
+      IF (SCALARS(ng)%Fstate(isFsur)) THEN
+        Mstate(ng)=Mstate(ng)+NwaterR(ng)
+      END IF
+#   ifdef SOLVE3D
+      IF (SCALARS(ng)%Fstate(isUvel)) THEN
+        Mstate(ng)=Mstate(ng)+N(ng)*NwaterU(ng)
+      END IF
+      IF (SCALARS(ng)%Fstate(isVvel)) THEN
+        Mstate(ng)=Mstate(ng)+N(ng)*NwaterV(ng)
+      END IF
+      DO i=1,NT(ng)
+        IF (SCALARS(ng)%Fstate(isTvar(i))) THEN
+          Mstate(ng)=Mstate(ng)+N(ng)*NwaterR(ng)
+        END IF
+      END DO
+#   else
+      IF (SCALARS(ng)%Fstate(isUbar)) THEN
         Mstate(ng)=Mstate(ng)+NwaterU(ng)
       END IF
-      IF (SCALARS(ng)%SOstate(isVstr)) THEN
+      IF (SCALARS(ng)%Fstate(isVbar)) THEN
+        Mstate(ng)=Mstate(ng)+NwaterV(ng)
+      END IF
+#   endif
+      IF (SCALARS(ng)%Fstate(isUstr)) THEN
+        Mstate(ng)=Mstate(ng)+NwaterU(ng)
+      END IF
+      IF (SCALARS(ng)%Fstate(isVstr)) THEN
         Mstate(ng)=Mstate(ng)+NwaterV(ng)
       END IF
 #   ifdef SOLVE3D
       DO i=1,NT(ng)
-        IF (SCALARS(ng)%SOstate(isTsur(i))) THEN
+        IF (SCALARS(ng)%Fstate(isTsur(i))) THEN
           Mstate(ng)=Mstate(ng)+NwaterR(ng)
         END IF
       END DO
@@ -373,15 +426,15 @@
 !
 !  Deternine state vector starting and ending blocking indices.
 !
-      Nstate(ng)=(Mstate(ng)+numnodes-1)/numnodes
+      Nstate(ng)=(Mstate(ng)+numthreads-1)/numthreads
       block_size=Nstate(ng)
       IF (Master) THEN
         WRITE (stdout,10) ng, Mstate(ng), Nstate(ng)
- 10     FORMAT (' Size of FULL state arrays for propagator of grid ',   &
+ 10     FORMAT (/,' Size of FULL state arrays for propagator of grid ', &
      &          i2.2,', Mstate = ', i10,/,38x,                          &
      &          'NODE partition, Nstate = ', i10,/,/,                   &
      &          9x,'Node',7x,'Nstr',7x,'Nend',7x,'Size',/)
-        DO ic=0,numnodes-1
+        DO ic=0,numthreads-1
            i=1+ic*block_size
            j=MIN(Mstate(ng),i+block_size-1)
            WRITE (stdout,20) ic, i, j, j-i+1
@@ -390,9 +443,8 @@
         WRITE (stdout,'(/)')
       END IF
       Nstr(ng)=1+MyRank*block_size
-!!    Nend(ng)=MIN(Mstate(ng),Nstr(ng)+block_size-1)
       Nend(ng)=Nstr(ng)+block_size-1
-      Mstate(ng)=Nstate(ng)*numnodes
+      Mstate(ng)=Nstate(ng)*numthreads
 #  else
       Nstr(ng)=1
       Nend(ng)=Mstate(ng)
@@ -411,13 +463,31 @@
 !-----------------------------------------------------------------------
 !  If distributed-memory, set process water indices arrays.
 !-----------------------------------------------------------------------
+!
+!  Set offsets for U- and V-variables due to periodic boundary
+!  conditions. Recall that in East-West periodic boundary conditions
+!  IstrU=1. Otherwise, IstrU=2. Similarly, in North-South periodic
+!  applications IstrV=1 or else IstrV=2.
+!
+      IF (EWperiodic(ng)) THEN
+        Uoff=0
+      ELSE
+        Uoff=1
+      END IF
+!
+      IF (NSperiodic(ng)) THEN
+        Voff=0
+      ELSE
+        Voff=1
+      END IF
+
 #  ifdef DISTRIBUTE
 !
 !  Gather masking at RHO-points from all nodes.
 !
       CALL mp_gather2d (ng, model, LBi, UBi, LBj, UBj,                  &
      &                  0, r2dvar, 1.0_r8,                              &
-     &                  rmask, rmask, Npts, mask, .FALSE.)
+     &                  rmask_io, rmask_io, Npts, mask, .FALSE.)
       CALL mp_bcastf (ng, model, mask)
 #  else
 !
@@ -427,7 +497,7 @@
       DO j=0,Mm(ng)+1
         DO i=0,Lm(ng)+1
           ic=ic+1
-          mask(ic)=rmask(i,j)
+          mask(ic)=rmask_io(i,j)
         END DO
       END DO
       Npts=ic
@@ -498,7 +568,7 @@
 !
       CALL mp_gather2d (ng, model, LBi, UBi, LBj, UBj,                  &
      &                  0, p2dvar, 1.0_r8,                              &
-     &                  pmask, pmask, Npts, mask, .FALSE.)
+     &                  pmask_io, pmask_io, Npts, mask, .FALSE.)
       CALL mp_bcastf (ng, model, mask)
 !
 !  Determine water PSI-points for IO purposes.
@@ -519,7 +589,7 @@
 !
       CALL mp_gather2d (ng, model, LBi, UBi, LBj, UBj,                  &
      &                  0, u2dvar, 1.0_r8,                              &
-     &                  umask, umask, Npts, mask, .FALSE.)
+     &                  umask_io, umask_io, Npts, mask, .FALSE.)
       CALL mp_bcastf (ng, model, mask)
 #  else
 !
@@ -529,7 +599,7 @@
       DO j=0,Mm(ng)+1
         DO i=1,Lm(ng)+1
           ic=ic+1
-          mask(ic)=umask(i,j)
+          mask(ic)=umask_io(i,j)
         END DO
       END DO
       Npts=ic
@@ -559,7 +629,7 @@
       Jmin=0
       Jmax=Mm(ng)+1
 #   else
-      Imin=2
+      Imin=1+Uoff
       Imax=Lm(ng)
       Jmin=1
       Jmax=Mm(ng)
@@ -600,7 +670,7 @@
 !
       CALL mp_gather2d (ng, model, LBi, UBi, LBj, UBj,                  &
      &                  0, v2dvar, 1.0_r8,                              &
-     &                  vmask, vmask, Npts, mask, .FALSE.)
+     &                  vmask_io, vmask_io, Npts, mask, .FALSE.)
       CALL mp_bcastf (ng, model, mask)
 #  else
 !
@@ -610,7 +680,7 @@
       DO j=1,Mm(ng)+1
         DO i=0,Lm(ng)+1
           ic=ic+1
-          mask(ic)=vmask(i,j)
+          mask(ic)=vmask_io(i,j)
         END DO
       END DO
       Npts=ic
@@ -642,7 +712,7 @@
 #   else
       Imin=1
       Imax=Lm(ng)
-      Jmin=2
+      Jmin=1+Voff
       Jmax=Mm(ng)
 #   endif
       DO j=1,Mm(ng)+1
@@ -675,6 +745,11 @@
       END DO
 #  endif
 # endif
+
+# undef IR_RANGE
+# undef IU_RANGE
+# undef JR_RANGE
+# undef JV_RANGE
 
       RETURN
       END SUBROUTINE wpoints_tile

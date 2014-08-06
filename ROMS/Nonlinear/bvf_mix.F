@@ -4,7 +4,7 @@
 !
 !svn $Id: bvf_mix.F 732 2008-09-07 01:55:51Z jcwarner $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2010 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2014 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -17,10 +17,10 @@
 !======================================================================!
 !
       implicit none
-
+!
       PRIVATE
       PUBLIC  :: bvf_mix
-
+!
       CONTAINS
 !
 !***********************************************************************
@@ -56,10 +56,8 @@
 !
       USE mod_param
       USE mod_scalars
-
-# if defined EW_PERIODIC || defined NS_PERIODIC
+!
       USE exchange_3d_mod, ONLY : exchange_w3d_tile
-# endif
 # ifdef DISTRIBUTE
       USE mp_exchange_mod, ONLY : mp_exchange3d, mp_exchange4d
 # endif
@@ -82,18 +80,6 @@
 !
 !  Local variable declarations.
 !
-# ifdef DISTRIBUTE
-#  ifdef EW_PERIODIC
-      logical :: EWperiodic=.TRUE.
-#  else
-      logical :: EWperiodic=.FALSE.
-#  endif
-#  ifdef NS_PERIODIC
-      logical :: NSperiodic=.TRUE.
-#  else
-      logical :: NSperiodic=.FALSE.
-#  endif
-# endif
       integer :: i, itrc, j, k
 
       real(r8) :: cff
@@ -132,34 +118,35 @@
           END DO
         END DO
       END DO
-# if defined EW_PERIODIC || defined NS_PERIODIC || defined DISTRIBUTE
 !
 !-----------------------------------------------------------------------
 !  Exchange boundary data.
 !-----------------------------------------------------------------------
 !
-#  if defined EW_PERIODIC || defined NS_PERIODIC
-
-      CALL exchange_w3d_tile (ng, tile,                                 &
-     &                        LBi, UBi, LBj, UBj, 0, N(ng),             &
-     &                        Akv)
-      DO itrc=1,NAT
+      IF (EWperiodic(ng).or.NSperiodic(ng)) THEN
         CALL exchange_w3d_tile (ng, tile,                               &
      &                          LBi, UBi, LBj, UBj, 0, N(ng),           &
-     &                          Akt(:,:,:,itrc))
-      END DO
-#  endif
-#  ifdef DISTRIBUTE
+     &                          Akv)
+        DO itrc=1,NAT
+          CALL exchange_w3d_tile (ng, tile,                             &
+     &                            LBi, UBi, LBj, UBj, 0, N(ng),         &
+     &                            Akt(:,:,:,itrc))
+        END DO
+      END IF
+
+# ifdef DISTRIBUTE
       CALL mp_exchange3d (ng, tile, iNLM, 1,                            &
      &                    LBi, UBi, LBj, UBj, 0, N(ng),                 &
-     &                    NghostPoints, EWperiodic, NSperiodic,         &
+     &                    NghostPoints,                                 &
+     &                    EWperiodic(ng), NSperiodic(ng),               &
      &                    Akv)
       CALL mp_exchange4d (ng, tile, iNLM, 1,                            &
      &                    LBi, UBi, LBj, UBj, 0, N(ng), 1, NAT,         &
-     &                    NghostPoints, EWperiodic, NSperiodic,         &
+     &                    NghostPoints,                                 &
+     &                    EWperiodic(ng), NSperiodic(ng),               &
      &                    Akt)
-#  endif
 # endif
+
       RETURN
       END SUBROUTINE bvf_mix_tile
 #endif

@@ -1,8 +1,8 @@
-      SUBROUTINE propagator (ng, Nstr, Nend, state, ad_state)
+      SUBROUTINE propagator (RunInterval, state, ad_state)
 !
 !svn $Id: propagator_so_semi.h 429 2009-12-20 17:30:26Z arango $
 !************************************************** Hernan G. Arango ***
-!  Copyright (c) 2002-2010 The ROMS/TOMS Group       Andrew M. Moore   !
+!  Copyright (c) 2002-2014 The ROMS/TOMS Group       Andrew M. Moore   !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !***********************************************************************
@@ -36,22 +36,16 @@
 !
 !  Imported variable declarations.
 !
-      integer, intent(in) :: ng, Nstr, Nend
+      real(r8), intent(in) :: RunInterval
 
-#ifdef ASSUMED_SHAPE
-      real(r8), intent(in) :: state(Nstr:)
-      real(r8), intent(out) :: ad_state(Nstr:)
-#else
-      real(r8), intent(in) :: state(Nstr:Nend)
-      real(r8), intent(out) :: ad_state(Nstr:Nend)
-#endif
+      TYPE (T_GST), intent(in) :: state(Ngrids)
+      TYPE (T_GST), intent(inout) :: ad_state(Ngrids)
 !
 !  Local variable declarations.
 !
-#ifdef SOLVE3D
-      logical :: FirstPass = .TRUE.
-#endif
-      integer :: my_iic, subs, tile, thread
+      logical, save :: FirstPass = .TRUE.
+
+      integer :: ng, tile
 !
 !=======================================================================
 !  Backward integration of adjoint model forced with the seminorm of
@@ -59,44 +53,54 @@
 !  the first iteration.
 !=======================================================================
 !
+!$OMP MASTER
       Nrun=Nrun+1
+      DO ng=1,Ngrids
+        SOrec(ng)=0
+      END DO
+!$OMP END MASTER
+!$OMP BARRIER
 !
-      FIRST_PASS : IF (Nrun.eq.1) THEN
+      FIRST_PASS : IF (FirstPass) THEN
+        FirstPass=.FALSE.
 !
 !  Initialize the adjoint model always from rest.
 !
-        CALL ad_initial (ng)
-        IF (exit_flag.ne.NoError) RETURN
+        DO ng=1,Ngrids
+          CALL ad_initial (ng)
+!$OMP BARRIER
+          IF (exit_flag.ne.NoError) RETURN
+        END DO
 !
 !  Activate adjoint output.
 !
-        LdefADJ(ng)=.TRUE.
-        LwrtADJ(ng)=.TRUE.
-        LcycleADJ(ng)=.FALSE.
+!$OMP MASTER
+        DO ng=1,Ngrids
+          LdefADJ(ng)=.TRUE.
+          LwrtADJ(ng)=.TRUE.
+          LcycleADJ(ng)=.FALSE.
+        END DO
 !
 !  Time-step adjoint model forced with chosen functional at initial
 !  time only.
 !
-        DstrS(ng)=time(ng)*sec2day
-        DendS(ng)=DstrS(ng)
+        DO ng=1,Ngrids
+          IF (Master) THEN
+            WRITE (stdout,10) 'AD', ng, ntstart(ng), ntend(ng)
+          END IF
+          DstrS(ng)=tdays(ng)
+          DendS(ng)=DstrS(ng)
+        END DO
+!$OMP END MASTER
+!$OMP BARRIER
 
-        IF (Master) THEN
-          WRITE (stdout,10) 'AD', ntstart(ng), ntend(ng)
-        END IF
-
-        time(ng)=time(ng)+dt(ng)
-
-        AD_LOOP : DO my_iic=ntstart(ng),ntend(ng),-1
-
-          iic(ng)=my_iic
 #ifdef SOLVE3D
-          CALL ad_main3d (ng)
+        CALL ad_main3d (RunInterval)
 #else
-          CALL ad_main2d (ng)
+        CALL ad_main2d (RunInterval)
 #endif
-          IF (exit_flag.ne.NoError) RETURN
-
-        END DO AD_LOOP
+!$OMP BARRIER
+        IF (exit_flag.ne.NoError) RETURN
 
       END IF FIRST_PASS
 !
@@ -105,33 +109,39 @@
 !  variables.
 !-----------------------------------------------------------------------
 !
-!$OMP PARALLEL DO PRIVATE(thread,subs,tile)                             &
-!$OMP&            SHARED(ng,numthreads,Nstr,Nend,state,ad_state)
-      DO thread=0,numthreads-1
-        subs=NtileX(ng)*NtileE(ng)/numthreads
-        DO tile=subs*thread,subs*(thread+1)-1,+1
+      DO ng=1,Ngrids
+        DO tile=first_tile(ng),last_tile(ng),+1
 # ifdef SO_SEMI_WHITE
-          CALL so_semi_white (ng, TILE, Nstr, Nend, state, ad_state)
+          CALL so_semi_white (ng, tile, Nstr(ng), Nend(ng),             &
+     &                        state(ng)%vector,                         &
+     &                        ad_state(ng)%vector)
 # else
-          CALL so_semi_red (ng, TILE, Nstr, Nend, state, ad_state)
+          CALL so_semi_red (ng, tile, Nstr(ng), Nend(ng),               &
+     &                      state(ng)%vector,                           &
+     &                      ad_state(ng)%vector)
 # endif
         END DO
+!$OMP BARRIER
       END DO
-!$OMP END PARALLEL DO
 !
 !-----------------------------------------------------------------------
 !  Report iteration and trace or stochastic optimals matrix.
 !-----------------------------------------------------------------------
 !
+!$OMP MASTER
       IF (Master) THEN
-        WRITE (stdout,20) ' PROPAGATOR - Iteration Run: ', Nrun,        &
-     &                    ',  number converged RITZ values: ', Nconv,   &
-     &                    'TRnorm = ', TRnorm(ng)
+        DO ng=1,Ngrids
+          WRITE (stdout,20) ' PROPAGATOR - Grid: ', ng,                 &
+     &                      ',  Iteration: ', Nrun,                     &
+     &                      ',  number converged RITZ values: ',        &
+     &                      Nconv(ng), 'TRnorm = ', TRnorm(ng)
+        END DO
       END IF
+!$OMP END MASTER
 
  10   FORMAT (/,1x,a,1x,'ROMS/TOMS: started time-stepping:',            &
-     &        '( TimeSteps: ',i8.8,' - ',i8.8,')',/)
- 20   FORMAT (/,a,i3,a,i3,/,35x,a,1p,e15.8)
+     &        ' (Grid: ',i2.2,' TimeSteps: ',i8.8,' - ',i8.8,')')
+ 20   FORMAT (/,a,i2.2,a,i3.3,a,i3.3,/,42x,a,1p,e15.8)
 
       RETURN
       END SUBROUTINE propagator

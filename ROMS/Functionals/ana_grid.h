@@ -1,8 +1,8 @@
       SUBROUTINE ana_grid (ng, tile, model)
 !
-!! svn $Id: ana_grid.h 429 2009-12-20 17:30:26Z arango $
+!! svn $Id$
 !!======================================================================
-!! Copyright (c) 2002-2010 The ROMS/TOMS Group                         !
+!! Copyright (c) 2002-2014 The ROMS/TOMS Group                         !
 !!   Licensed under a MIT/X style license                              !
 !!   See License_ROMS.txt                                              !
 !=======================================================================
@@ -119,9 +119,7 @@
 #ifdef DISTRIBUTE
       USE distribute_mod, ONLY : mp_reduce
 #endif
-#if defined EW_PERIODIC || defined NS_PERIODIC
       USE exchange_2d_mod, ONLY : exchange_r2d_tile
-#endif
 #ifdef DISTRIBUTE
       USE mp_exchange_mod, ONLY : mp_exchange2d
 #endif
@@ -200,20 +198,8 @@
 !
 !  Local variable declarations.
 !
-#ifdef DISTRIBUTE
-# ifdef EW_PERIODIC
-      logical :: EWperiodic=.TRUE.
-# else
-      logical :: EWperiodic=.FALSE.
-# endif
-# ifdef NS_PERIODIC
-      logical :: NSperiodic=.TRUE.
-# else
-      logical :: NSperiodic=.FALSE.
-# endif
-#endif
       integer :: Imin, Imax, Jmin, Jmax
-      integer :: NSUB, i, j, k
+      integer :: NSUB, i, ival, j, k
 
       real(r8), parameter :: twopi = 2.0_r8*pi
 
@@ -229,7 +215,7 @@
 #endif
       real(r8) :: wrkX(IminS:ImaxS,JminS:JmaxS)
       real(r8) :: wrkY(IminS:ImaxS,JminS:JmaxS)
-!
+
 #include "set_bounds.h"
 !
 !-----------------------------------------------------------------------
@@ -259,6 +245,12 @@
       Esize=5.0E+03_r8
       depth=47.5_r8
       f0=9.25E-04_r8
+      beta=0.0_r8
+#elif defined CHANNEL
+      Xsize=600.0E+03_r8
+      Esize=360.0E+03_r8
+      depth=500.0_r8
+      f0=1.0E-04_r8
       beta=0.0_r8
 #elif defined CANYON
       Xsize=128.0E+03_r8
@@ -407,7 +399,7 @@
 !
 !  Load grid parameters to global storage.
 !
-      IF (SOUTH_WEST_TEST) THEN
+      IF (DOMAIN(ng)%SouthWest_Test(tile)) THEN
         xl(ng)=Xsize
         el(ng)=Esize
       END IF
@@ -417,26 +409,26 @@
 !  Set grid spacing (m).
 !-----------------------------------------------------------------------
 !
-!  Determine I- and J-ranges for computing grid data.  This ranges
+!  Determine I- and J-ranges for computing grid data.  These ranges
 !  are special in periodic boundary conditons since periodicity cannot
 !  be imposed in the grid coordinates.
 !
-      IF (WESTERN_EDGE) THEN
+      IF (DOMAIN(ng)%Western_Edge(tile)) THEN
         Imin=Istr-1
       ELSE
         Imin=Istr
       END IF
-      IF (EASTERN_EDGE) THEN
+      IF (DOMAIN(ng)%Eastern_Edge(tile)) THEN
         Imax=Iend+1
       ELSE
         Imax=Iend
       END IF
-      IF (SOUTHERN_EDGE) THEN
+      IF (DOMAIN(ng)%Southern_Edge(tile)) THEN
         Jmin=Jstr-1
       ELSE
         Jmin=Jstr
       END IF
-      IF (NORTHERN_EDGE) THEN
+      IF (DOMAIN(ng)%Northern_Edge(tile)) THEN
         Jmax=Jend+1
       ELSE
         Jmax=Jend
@@ -514,7 +506,11 @@
         END DO
       END DO
 #endif
+
 #ifdef DISTRIBUTE
+!
+!  Exchange boundary data.
+!
 # ifdef SPHERICAL
       CALL mp_exchange2d (ng, tile, model, 4,                           &
      &                    LBi, UBi, LBj, UBj,                           &
@@ -542,8 +538,8 @@
 ! ETA, respectively.
 !-----------------------------------------------------------------------
 !
-#define J_RANGE MIN(JstrR,Jstr-1),MAX(Jend+1,JendR)
-#define I_RANGE MIN(IstrR,Istr-1),MAX(Iend+1,IendR)
+#define J_RANGE MIN(JstrT,Jstr-1),MAX(Jend+1,JendT)
+#define I_RANGE MIN(IstrT,Istr-1),MAX(Iend+1,IendT)
 
 #if defined BENCHMARK
 !
@@ -585,26 +581,32 @@
 #endif
 #undef J_RANGE
 #undef I_RANGE
-      DO j=JstrR,JendR
-        DO i=IstrR,IendR
+      DO j=JstrT,JendT
+        DO i=IstrT,IendT
           pm(i,j)=wrkX(i,j)
           pn(i,j)=wrkY(i,j)
         END DO
       END DO
-#if defined EW_PERIODIC || defined NS_PERIODIC
-      CALL exchange_r2d_tile (ng, tile,                                 &
-     &                        LBi, UBi, LBj, UBj,                       &
-     &                        pm)
-      CALL exchange_r2d_tile (ng, tile,                                 &
-     &                        LBi, UBi, LBj, UBj,                       &
-     &                        pn)
-#endif
+!
+!  Exchange boundary data.
+!
+      IF (EWperiodic(ng).or.NSperiodic(ng)) THEN
+        CALL exchange_r2d_tile (ng, tile,                               &
+     &                          LBi, UBi, LBj, UBj,                     &
+     &                          pm)
+        CALL exchange_r2d_tile (ng, tile,                               &
+     &                          LBi, UBi, LBj, UBj,                     &
+     &                          pn)
+      END IF
+
 #ifdef DISTRIBUTE
       CALL mp_exchange2d (ng, tile, model, 2,                           &
      &                    LBi, UBi, LBj, UBj,                           &
-     &                    NghostPoints, EWperiodic, NSperiodic,         &
+     &                    NghostPoints,                                 &
+     &                    EWperiodic(ng), NSperiodic(ng),               &
      &                    pm, pn)
 #endif
+
 #if (defined CURVGRID && defined UV_ADV)
 !
 !-----------------------------------------------------------------------
@@ -619,18 +621,23 @@
      &                      (1.0_r8/wrkX(i  ,j-1)))
         END DO
       END DO
-# if defined EW_PERIODIC || defined NS_PERIODIC
-      CALL exchange_r2d_tile (ng, tile,                                 &
-     &                        LBi, UBi, LBj, UBj,                       &
-     &                        dndx)
-      CALL exchange_r2d_tile (ng, tile,                                 &
-     &                        LBi, UBi, LBj, UBj,                       &
-     &                        dmde)
-# endif
+!
+!  Exchange boundary data.
+!
+      IF (EWperiodic(ng).or.NSperiodic(ng)) THEN
+        CALL exchange_r2d_tile (ng, tile,                               &
+     &                          LBi, UBi, LBj, UBj,                     &
+     &                          dndx)
+        CALL exchange_r2d_tile (ng, tile,                               &
+     &                          LBi, UBi, LBj, UBj,                     &
+     &                          dmde)
+      END IF
+
 # ifdef DISTRIBUTE
       CALL mp_exchange2d (ng, tile, model, 2,                           &
      &                    LBi, UBi, LBj, UBj,                           &
-     &                    NghostPoints, EWperiodic, NSperiodic,         &
+     &                    NghostPoints,                                 &
+     &                    EWperiodic(ng), NSperiodic(ng),               &
      &                    dndx, dmde)
 # endif
 #endif
@@ -640,8 +647,8 @@
 !-----------------------------------------------------------------------
 !
 #if defined LAB_CANYON
-      DO j=JstrR,JendR
-        DO i=IstrR,IendR
+      DO j=JstrT,JendT
+        DO i=IstrT,IendT
           theta=-pi+                                                    &
      &          0.5_r8*dth*((cff+1.0_r8)*(REAL(j-1,r8)+0.5_r8)+         &
      &                      (cff-1.0_r8)*(REAL(Mm(ng),r8)/twopi)*       &
@@ -652,27 +659,32 @@
       END DO
 #elif defined WEDDELL
       val1=90.0_r8*deg2rad
-      DO j=JstrR,JendR
-        DO i=IstrR,IendR
+      DO j=JstrT,JendT
+        DO i=IstrT,IendT
           angler(i,j)=val1
         END DO
       END DO
 #else
-      DO j=JstrR,JendR
-        DO i=IstrR,IendR
+      DO j=JstrT,JendT
+        DO i=IstrT,IendT
           angler(i,j)=0.0_r8
         END DO
       END DO
 #endif
-#if defined EW_PERIODIC || defined NS_PERIODIC
-      CALL exchange_r2d_tile (ng, tile,                                 &
-     &                        LBi, UBi, LBj, UBj,                       &
-     &                        angler)
-#endif
+!
+!  Exchange boundary data.
+!
+      IF (EWperiodic(ng).or.NSperiodic(ng)) THEN
+        CALL exchange_r2d_tile (ng, tile,                               &
+     &                          LBi, UBi, LBj, UBj,                     &
+     &                          angler)
+      END IF
+
 #ifdef DISTRIBUTE
       CALL mp_exchange2d (ng, tile, model, 1,                           &
      &                    LBi, UBi, LBj, UBj,                           &
-     &                    NghostPoints, EWperiodic, NSperiodic,         &
+     &                    NghostPoints,                                 &
+     &                    EWperiodic(ng), NSperiodic(ng),               &
      &                    angler)
 #endif
 !
@@ -682,36 +694,41 @@
 !
 #if defined BENCHMARK
       val1=2.0_r8*(2.0_r8*pi*366.25_r8/365.25_r8)/86400.0_r8
-      DO j=JstrR,JendR
-        DO i=IstrR,IendR
+      DO j=JstrT,JendT
+        DO i=IstrT,IendT
           f(i,j)=val1*SIN(latr(i,j)*deg2rad)
         END DO
       END DO
 #elif defined WEDDELL
       val1=10.4_r8/REAL(Lm(ng),r8)
-      DO j=JstrR,JendR
-        DO i=IstrR,IendR
+      DO j=JstrT,JendT
+        DO i=IstrT,IendT
           f(i,j)=2.0_r8*7.2E-05_r8*                                     &
      &           SIN((-79.0_r8+REAL(i-1,r8)*val1)*deg2rad)
         END DO
       END DO
 #else
       val1=0.5_r8*Esize
-      DO j=JstrR,JendR
-        DO i=IstrR,IendR
+      DO j=JstrT,JendT
+        DO i=IstrT,IendT
           f(i,j)=f0+beta*(yr(i,j)-val1)
         END DO
       END DO
 #endif
-#if defined EW_PERIODIC || defined NS_PERIODIC
-      CALL exchange_r2d_tile (ng, tile,                                 &
-     &                        LBi, UBi, LBj, UBj,                       &
-     &                        f)
-#endif
+!
+!  Exchange boundary data.
+!
+      IF (EWperiodic(ng).or.NSperiodic(ng)) THEN
+        CALL exchange_r2d_tile (ng, tile,                               &
+     &                          LBi, UBi, LBj, UBj,                     &
+     &                          f)
+      END IF
+
 #ifdef DISTRIBUTE
       CALL mp_exchange2d (ng, tile, model, 1,                           &
      &                    LBi, UBi, LBj, UBj,                           &
-     &                    NghostPoints, EWperiodic, NSperiodic,         &
+     &                    NghostPoints,                                 &
+     &                    EWperiodic(ng), NSperiodic(ng),               &
      &                    f)
 #endif
 !
@@ -720,14 +737,14 @@
 !-----------------------------------------------------------------------
 !
 #if defined BENCHMARK
-      DO j=JstrR,JendR
-        DO i=IstrR,IendR
+      DO j=JstrT,JendT
+        DO i=IstrT,IendT
           h(i,j)=500.0_r8+1750.0_r8*(1.0+TANH((68.0_r8+latr(i,j))/dy))
         END DO
       END DO
 #elif defined BL_TEST
-      DO j=JstrR,JendR
-        DO i=IstrR,IendR
+      DO j=JstrT,JendT
+        DO i=IstrT,IendT
           val1=(xr(i,j)+500.0_r8)/15000.0_r8
           h(i,j)=14.0_r8+                                               &
      &           25.0_r8*(1.0_r8-EXP(-pi*xr(i,j)*1.0E-05_r8))-          &
@@ -735,22 +752,22 @@
         END DO
       END DO
 #elif defined CANYON
-      DO j=JstrR,JendR
-        DO i=IstrR,IendR
+      DO j=JstrT,JendT
+        DO i=IstrT,IendT
           val1=32000.0_r8-16000.0_r8*(SIN(pi*xr(i,j)/Xsize))**24
           h(i,j)=20.0_r8+0.5_r8*(depth-20.0_r8)*                        &
      &           (1.0_r8+TANH((yr(i,j)-val1)/10000.0_r8))
         END DO
       END DO
 #elif defined ESTUARY_TEST
-      DO j=JstrR,JendR
-        DO i=IstrR,IendR
+      DO j=JstrT,JendT
+        DO i=IstrT,IendT
           h(i,j)=5.0_r8+(Xsize-xr(i,j))/Xsize*5.0_r8
         END DO
       END DO
 #elif defined LAB_CANYON
-      DO j=JstrR,JendR
-        DO i=IstrR,IendR
+      DO j=JstrT,JendT
+        DO i=IstrT,IendT
           r=0.35_r8+dx*(REAL(i-1,r8)+0.5_r8)
           theta=-pi+                                                    &
      &           0.5_r8*dth*((cff+1.0_r8)*(REAL(j-1,r8)+0.5_r8)+        &
@@ -781,83 +798,97 @@
         END DO
       END DO
 #elif defined LAKE_SIGNELL
-      DO j=JstrR,JendR
-        DO i=IstrR,IendR
-          h(i,j)=18.0_r8-16.0_r8*FLOAT(Mm(ng)-j)/FLOAT(Mm(ng)-1)
+      DO j=JstrT,JendT
+        DO i=IstrT,IendT
+          h(i,j)=18.0_r8-16.0_r8*REAL(Mm(ng)-j,r8)/REAL(Mm(ng)-1,r8)
         END DO
       END DO
 # elif defined MIXED_LAYER
-      DO j=JstrR,JendR
-        DO i=IstrR,IendR
+      DO j=JstrT,JendT
+        DO i=IstrT,IendT
           h(i,j)=50.0_r8
         END DO
       END DO
 #elif defined OVERFLOW
       val1=200.0_r8
-      DO j=JstrR,JendR
-        DO i=IstrR,IendR
+      DO j=JstrT,JendT
+        DO i=IstrT,IendT
           h(i,j)=val1+0.5_r8*(depth-val1)*                              &
      &           (1.0_r8+TANH((yr(i,j)-100000.0_r8)/20000.0_r8))
         END DO
       END DO
 #elif defined RIVERPLUME1
-      DO j=JstrR,JendR
-        DO i=IstrR,MIN(5,IendR)
+      DO j=JstrT,JendT
+        DO i=IstrT,MIN(5,IendT)
           h(i,j)=15.0_r8
         END DO
-        DO i=MAX(6,IstrR),IendR
+        DO i=MAX(6,IstrT),IendT
           h(i,j)=depth+REAL(Lm(ng)-i,r8)*(15.0_r8-depth)/               &
      &                 REAL(Lm(ng)-6,r8)
         END DO
       END DO
 #elif defined RIVERPLUME2
-      DO j=JstrR,JendR
-        DO i=IstrR,MIN(5,IendR)
+      DO j=JstrT,JendT
+        DO i=IstrT,MIN(5,IendT)
           h(i,j)=15.0_r8
         END DO
-        DO i=MAX(6,IstrR),IendR
+        DO i=MAX(6,IstrT),IendT
           h(i,j)=depth+REAL(Lm(ng)-i,r8)*(15.0_r8-depth)/               &
      &                 REAL(Lm(ng)-6,r8)
         END DO
       END DO
 #elif defined SEAMOUNT
-      DO j=JstrR,JendR
-        DO i=IstrR,IendR
+      DO j=JstrT,JendT
+        DO i=IstrT,IendT
           val1=(xr(i,j)-0.5_r8*Xsize)/40000.0_r8
-          val2=(yr(i,j)-0.5_r8*Ysize)/40000.0_r8
+          val2=(yr(i,j)-0.5_r8*Esize)/40000.0_r8
           h(i,j)=depth-4500.0_r8*EXP(-(val1*val1+val2*val2))
         END DO
       END DO
 #elif defined SED_TOY
-      DO j=JstrR,JendR
-        DO i=IstrR,IendR
+      DO j=JstrT,JendT
+        DO i=IstrT,IendT
           h(i,j)=20.0_r8
         END DO
       END DO
 #elif defined SHOREFACE
-      DO j=JstrR,JendR
-        DO i=IstrR,IendR
-          h(i,j)=11.75_r8-0.0125_r8*Xsize/FLOAT(Lm(ng)+1)*FLOAT(i)
+      DO j=JstrT,JendT
+        DO i=IstrT,IendT
+          h(i,j)=11.75_r8-0.0125_r8*Xsize/REAL(Lm(ng)+1,r8)*REAL(i,r8)
         END DO
       END DO
 #elif defined TEST_CHAN
-      DO j=JstrR,JendR
-        DO i=IstrR,IendR
+      DO j=JstrT,JendT
+        DO i=IstrT,IendT
           h(i,j)=10.0_r8+0.4040_r8*REAL(i,r8)/REAL(Lm(ng)+1,r8)
         END DO
       END DO
 #elif defined UPWELLING
-      DO j=JstrR,JendR
-        IF (j.le.Mm(ng)/2) THEN
-          val1=REAL(j,r8)
-        ELSE
-          val1=REAL(Mm(ng)+1-j,r8)
-        END IF
-        val2=MIN(depth,84.5_r8+66.526_r8*TANH((val1-10.0_r8)/7.0_r8))
-        DO i=IstrR,IendR
-          h(i,j)=val2
+      IF (NSperiodic(ng)) THEN
+        DO i=IstrT,IendT
+          IF (i.le.Lm(ng)/2) THEN
+            val1=REAL(i,r8)
+          ELSE
+            val1=REAL(Lm(ng)+1-i,r8)
+          END IF
+          val2=MIN(depth,84.5_r8+66.526_r8*TANH((val1-10.0_r8)/7.0_r8))
+          DO j=JstrT,JendT
+            h(i,j)=val2
+          END DO
         END DO
-      END DO
+      ELSE IF (EWperiodic(ng)) THEN
+        DO j=JstrT,JendT
+          IF (j.le.Mm(ng)/2) THEN
+            val1=REAL(j,r8)
+          ELSE
+            val1=REAL(Mm(ng)+1-j,r8)
+          END IF
+          val2=MIN(depth,84.5_r8+66.526_r8*TANH((val1-10.0_r8)/7.0_r8))
+          DO i=IstrT,IendT
+            h(i,j)=val2
+          END DO
+        END DO
+      END IF
 #elif defined WEDDELL
       val1=98.80_r8
       val2=0.8270_r8
@@ -875,8 +906,9 @@
         xwrk(k)=(850.0_r8+REAL(k-228,r8)*50.0_r8)*1000.0_r8
         hwrk(k)=4000.0_r8
       END DO
-      DO j=JstrR,JendR
-        DO i=IstrR,IendR
+      DO j=JstrT,JendT
+        DO i=IstrT,IendT
+          h(i,j)=375.0_r8
           DO k=1,234
             IF ((xwrk(k).le.xr(i,1)).and.(xr(i,1).lt.xwrk(k+1))) THEN
                cff=1.0_r8/(xwrk(k+1)-xwrk(k))
@@ -887,60 +919,66 @@
         END DO
       END DO
 #elif defined WINDBASIN
-      DO i=IstrR,IendR
-        val1=1;
-        IF ((i-IstrR).lt.(INT(0.03_r8*REAL(IendR-IstrR,r8)))) THEN
-          val1=1.0_r8-(REAL((i-IstrR+1)-                                &
-     &                      INT(0.03_r8*REAL(IendR-IstrR,r8)),r8)/      &
-     &                 (0.03_r8*REAL(IendR-IstrR,r8)))**2
+      DO i=IstrT,IendT
+        ival=INT(0.03_r8*REAL(Lm(ng)+1,r8))
+        IF (i.lt.ival) THEN
+          val1=1.0_r8-(REAL((i+1)-ival,r8)/REAL(ival,r8))**2
+        ELSE IF ((Lm(ng)+1-i).lt.ival) THEN
+          val1=1.0_r8-(REAL((Lm(ng)+1-i)-ival,r8)/REAL(ival,r8))**2
+        ELSE
+          val1=1.0_r8
         END IF
-        IF ((IendR-i).lt.(INT(0.03_r8*REAL(IendR-IstrR,r8)))) THEN
-          val1=1.0_r8-(REAL((IendR-i+1)-                                &
-     &                      INT(0.03_r8*REAL(IendR-IstrR,r8)),r8)/      &
-     &                 (0.03_r8*REAL(IendR-IstrR,r8)))**2
-        END IF
-        DO j=JstrR,JendR
+        DO j=JstrT,JendT
          val2=2.0_r8*REAL(j-(Mm(ng)+1)/2,r8)/REAL(Mm(ng)+1,r8)
          h(i,j)=depth*(0.08_r8+0.92_r8*val1*(1.0_r8-val2*val2))
         END DO
       END DO
 #else
-      DO j=JstrR,JendR
-        DO i=IstrR,IendR
+      DO j=JstrT,JendT
+        DO i=IstrT,IendT
           h(i,j)=depth
         END DO
       END DO
 #endif
-#if defined EW_PERIODIC || defined NS_PERIODIC
-      CALL exchange_r2d_tile (ng, tile,                                 &
-     &                        LBi, UBi, LBj, UBj,                       &
-     &                        h)
-#endif
+!
+!  Exchange boundary data.
+!
+      IF (EWperiodic(ng).or.NSperiodic(ng)) THEN
+        CALL exchange_r2d_tile (ng, tile,                               &
+     &                          LBi, UBi, LBj, UBj,                     &
+     &                          h)
+      END IF
+
 #ifdef DISTRIBUTE
       CALL mp_exchange2d (ng, tile, model, 1,                           &
      &                    LBi, UBi, LBj, UBj,                           &
-     &                    NghostPoints, EWperiodic, NSperiodic,         &
+     &                    NghostPoints,                                 &
+     &                    EWperiodic(ng), NSperiodic(ng),               &
      &                    h)
 #endif
 !
 ! Determine minimum depth: first, determine minimum values of depth
-! within each subdomain (stored as private variable cff), then
-! determine global minimum by comparing these  subdomain minima.
+! within each subdomain, then determine global minimum by comparing
+! these subdomain minima.
 !
-      my_min=h(IstrR,JstrR)
-      my_max=h(IstrR,JstrR)
-      DO j=JstrR,JendR
-        DO i=IstrR,IendR
+      my_min=h(IstrT,JstrT)
+      my_max=h(IstrT,JstrT)
+      DO j=JstrT,JendT
+        DO i=IstrT,IendT
           my_min=MIN(my_min,h(i,j))
           my_max=MAX(my_max,h(i,j))
         END DO
       END DO
-      IF (SOUTH_WEST_CORNER.and.                                        &
-     &    NORTH_EAST_CORNER) THEN
+#ifdef DISTRIBUTE
+      NSUB=1                             ! distributed-memory
+#else
+      IF (DOMAIN(ng)%SouthWest_Corner(tile).and.                        &
+     &    DOMAIN(ng)%NorthEast_Corner(tile)) THEN
         NSUB=1                           ! non-tiled application
       ELSE
         NSUB=NtileX(ng)*NtileE(ng)       ! tiled application
       END IF
+#endif
 !$OMP CRITICAL (H_RANGE)
       IF (tile_count.eq.0) THEN
         hmin(ng)=my_min
@@ -970,36 +1008,43 @@
 !-----------------------------------------------------------------------
 !
 # ifdef WEDDELL
-      val1=340.0_r8/16.0_r8
-      DO j=JstrR,JendR
-        DO i=IstrR,IendR
+      val1=340.0_r8
+      val2=val1/16.0_r8
+      DO j=JstrT,JendT
+        DO i=IstrT,IendT
           IF (i.gt.20) THEN
             zice(i,j)=0.0_r8
           ELSE IF (i.gt.4) THEN
-            zice(i,j)=-340.0_r8+REAL(i-1,r8)*val1
+            zice(i,j)=-val1+REAL(i-1,r8)*val2
           ELSE
-            zice(i,j)=-340.0_r8
+            zice(i,j)=-val1
           END IF
         END DO
       END DO
 # else
-      DO j=JstrR,JendR
-        DO i=IstrR,IendR
+      DO j=JstrT,JendT
+        DO i=IstrT,IendT
           zice(i,j)=0.0_r8
         END DO
       END DO
 # endif
-# if defined EW_PERIODIC || defined NS_PERIODIC
-      CALL exchange_r2d_tile (ng, tile,                                 &
-     &                        LBi, UBi, LBj, UBj,                       &
-     &                        zice)
-# endif
+!
+!  Exchange boundary data.
+!
+      IF (EWperiodic(ng).or.NSperiodic(ng)) THEN
+        CALL exchange_r2d_tile (ng, tile,                               &
+     &                          LBi, UBi, LBj, UBj,                     &
+     &                          zice)
+      END IF
+
 # ifdef DISTRIBUTE
       CALL mp_exchange2d (ng, tile, model, 1,                           &
      &                    LBi, UBi, LBj, UBj,                           &
-     &                    NghostPoints, EWperiodic, NSperiodic,         &
+     &                    NghostPoints,                                 &
+     &                    EWperiodic(ng), NSperiodic(ng),               &
      &                    zice)
 # endif
 #endif
+
       RETURN
       END SUBROUTINE ana_grid_tile

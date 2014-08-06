@@ -1,8 +1,8 @@
       SUBROUTINE ana_mask (ng, tile, model)
 !
-!! svn $Id: ana_mask.h 429 2009-12-20 17:30:26Z arango $
+!! svn $Id$
 !!======================================================================
-!! Copyright (c) 2002-2010 The ROMS/TOMS Group                         !
+!! Copyright (c) 2002-2014 The ROMS/TOMS Group                         !
 !!   Licensed under a MIT/X style license                              !
 !!   See License_ROMS.txt                                              !
 !=======================================================================
@@ -52,9 +52,7 @@
       USE mod_param
       USE mod_scalars
 !
-#if defined EW_PERIODIC || defined NS_PERIODIC
       USE exchange_2d_mod
-#endif
 #ifdef DISTRIBUTE
       USE mp_exchange_mod, ONLY : mp_exchange2d
 #endif
@@ -79,18 +77,6 @@
 !
 !  Local variable declarations.
 !
-#ifdef DISTRIBUTE
-# ifdef EW_PERIODIC
-      logical :: EWperiodic=.TRUE.
-# else
-      logical :: EWperiodic=.FALSE.
-# endif
-# ifdef NS_PERIODIC
-      logical :: NSperiodic=.TRUE.
-# else
-      logical :: NSperiodic=.FALSE.
-# endif
-#endif
       integer :: Imin, Imax, Jmin, Jmax
       integer :: i, j
       real(r8) :: mask(IminS:ImaxS,JminS:JmaxS)
@@ -109,8 +95,8 @@
       Imax=Imin+2
       Jmin=-2+(Mm(ng)+1)/2
       Jmax=Jmin+2
-      DO j=Jstr-2,Jend+2
-        DO i=Istr-2,Iend+2
+      DO j=Jstrm2,Jendp2
+        DO i=Istrm2,Iendp2
           mask(i,j)=1.0_r8
           IF (((Imin.le.i).and.(i.le.Imax)).and.                        &
      &        ((Jmin.le.j).and.(j.le.Jmax))) THEN
@@ -119,8 +105,8 @@
         END DO
       END DO
 #elif defined FLT_TEST
-      DO j=Jstr-2,Jend+2
-        DO i=Istr-2,Iend+2
+      DO j=Jstrm2,Jendp2
+        DO i=Istrm2,Iendp2
           mask(i,j)=1.0_r8
           IF (j.eq.1 ) mask(i,j)=0.0_r8
           IF (j.eq.Mm(ng)) mask(i,j)=0.0_r8
@@ -131,62 +117,62 @@
         END DO
       END DO
 #elif defined LAKE_SIGNELL
-      DO j=Jstr-2,Jend+2
-        DO i=Istr-2,Iend+2
+      DO j=Jstrm2,Jendp2
+        DO i=Istrm2,Iendp2
           mask(i,j)=1.0_r8
         END DO
       END DO
-      IF (WESTERN_EDGE) THEN
-        DO j=Jstr-1,Jend+1
+      IF (DOMAIN(ng)%Western_Edge(tile)) THEN
+        DO j=Jstrm1,Jendp1
           mask(Istr-1,j)=0.0_r8
         END DO
       END IF
-      IF (EASTERN_EDGE) THEN
-        DO j=Jstr-1,Jend+1
+      IF (DOMAIN(ng)%Eastern_Edge(tile)) THEN
+        DO j=Jstrm1,Jendp1
           mask(Iend+1,j)=0.0_r8
         END DO
       END IF
-      IF (SOUTHERN_EDGE) THEN
-        DO i=Istr-1,Iend+1
+      IF (DOMAIN(ng)%Southern_Edge(tile)) THEN
+        DO i=Istrm1,Iendp1
           mask(i,Jstr-1)=0.0_r8
         END DO
       END IF
-      IF (NORTHERN_EDGE) THEN
-        DO i=Istr-1,Iend+1
+      IF (DOMAIN(ng)%Northern_Edge(tile)) THEN
+        DO i=Istrm1,Iendp1
           mask(i,Jend+1)=0.0_r8
         END DO
       END IF
 #elif defined RIVERPLUME1
-      DO j=Jstr-2,Jend+2
-        DO i=Istr-2,Iend+2
+      DO j=Jstrm2,Jendp2
+        DO i=Istrm2,Iendp2
           mask(i,j)=1.0_r8
         END DO
       END DO
-      DO i=Istr-2,MIN(5,Iend+2)
-        DO j=Jstr-2,MIN(Mm(ng)-18,Jend+2)
+      DO i=Istrm2,MIN(5,Iendp2)
+        DO j=Jstrm2,MIN(Mm(ng)-18,Jendp2)
           mask(i,j)=0.0_r8
         END DO
-        DO j=MAX(Jstr-2,Mm(ng)-16),Jend+2
+        DO j=MAX(Jstrm2,Mm(ng)-16),Jendp2
           mask(i,j)=0.0_r8
         END DO
       END DO
 #elif defined RIVERPLUME2
-      DO j=Jstr-2,Jend+2
-        DO i=Istr-2,Iend+2
+      DO j=Jstrm2,Jendp2
+        DO i=Istrm2,Iendp2
           mask(i,j)=1.0_r8
         END DO
       END DO
-      DO i=Istr-2,MIN(5,Iend+2)
-        DO j=Jstr-2,MIN(Mm(ng)-11,Jend+2)
+      DO i=Istrm2,MIN(5,Iendp2)
+        DO j=Jstrm2,MIN(Mm(ng)-11,Jendp2)
           mask(i,j)=0.0_r8
         END DO
-        DO j=MAX(Jstr-2,Mm(ng)-9),Jend+2
+        DO j=MAX(Jstrm2,Mm(ng)-9),Jendp2
           mask(i,j)=0.0_r8
         END DO
       END DO
 #elif defined SHOREFACE
-      DO j=Jstr-2,Jend+2
-        DO i=Istr-2,Iend+2
+      DO j=Jstrm2,Jendp2
+        DO i=Istrm2,Iendp2
           mask(i,j)=1.0_r8
         END DO
       END DO
@@ -194,8 +180,8 @@
       ana_mask.h: no values provided for mask.
 #endif
 !
-      DO j=JstrR,JendR
-        DO i=IstrR,IendR
+      DO j=JstrT,JendT
+        DO i=IstrT,IendT
           rmask(i,j)=mask(i,j)
         END DO
       END DO
@@ -204,13 +190,13 @@
 !  Compute Land/Sea mask of U- and V-points.
 !-----------------------------------------------------------------------
 !
-      DO j=JstrR,JendR
-        DO i=Istr,IendR
+      DO j=JstrT,JendT
+        DO i=IstrP,IendT
           umask(i,j)=mask(i-1,j)*mask(i,j)
         END DO
       END DO
-      DO j=Jstr,JendR
-        DO i=IstrR,IendR
+      DO j=JstrP,JendT
+        DO i=IstrT,IendT
           vmask(i,j)=mask(i,j-1)*mask(i,j)
         END DO
       END DO
@@ -219,31 +205,39 @@
 !  Compute Land/Sea mask of PSI-points.
 !-----------------------------------------------------------------------
 !
-      DO j=Jstr,JendR
-        DO i=Istr,IendR
+      DO j=JstrP,JendT
+        DO i=IstrP,IendT
           pmask(i,j)=mask(i-1,j-1)*mask(i,j-1)*                         &
      &               mask(i-1,j  )*mask(i,j  )
         END DO
       END DO
-#if defined EW_PERIODIC || defined NS_PERIODIC
-      CALL exchange_r2d_tile (ng, tile,                                 &
-     &                        LBi, UBi, LBj, UBj,                       &
-     &                        rmask)
-      CALL exchange_p2d_tile (ng, tile,                                 &
-     &                        LBi, UBi, LBj, UBj,                       &
-     &                        pmask)
-      CALL exchange_u2d_tile (ng, tile,                                 &
-     &                        LBi, UBi, LBj, UBj,                       &
-     &                        umask)
-      CALL exchange_v2d_tile (ng, tile,                                 &
-     &                        LBi, UBi, LBj, UBj,                       &
-     &                        vmask)
-#endif
+!
+!-----------------------------------------------------------------------
+!  Exchange boundary data.
+!-----------------------------------------------------------------------
+!
+      IF (EWperiodic(ng).or.NSperiodic(ng)) THEN
+        CALL exchange_r2d_tile (ng, tile,                               &
+     &                          LBi, UBi, LBj, UBj,                     &
+     &                          rmask)
+        CALL exchange_p2d_tile (ng, tile,                               &
+     &                          LBi, UBi, LBj, UBj,                     &
+     &                          pmask)
+        CALL exchange_u2d_tile (ng, tile,                               &
+     &                          LBi, UBi, LBj, UBj,                     &
+     &                          umask)
+        CALL exchange_v2d_tile (ng, tile,                               &
+     &                          LBi, UBi, LBj, UBj,                     &
+     &                          vmask)
+      END IF
+
 #ifdef DISTRIBUTE
       CALL mp_exchange2d (ng, tile, model, 4,                           &
      &                    LBi, UBi, LBj, UBj,                           &
-     &                    NghostPoints, EWperiodic, NSperiodic,         &
+     &                    NghostPoints,                                 &
+     &                    EWperiodic(ng), NSperiodic(ng),               &
      &                    rmask, pmask, umask, vmask)
 #endif
+
       RETURN
       END SUBROUTINE ana_mask_tile

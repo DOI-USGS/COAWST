@@ -2,7 +2,7 @@
 #
 # svn $Id: copyright.bash 429 2009-12-20 17:30:26Z arango $
 #::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
-# Copyright (c) 2002-2010 The ROMS/TOMS Group                           :::
+# Copyright (c) 2002-2014 The ROMS/TOMS Group                           :::
 #   Licensed under a MIT/X style license                                :::
 #   See License_ROMS.txt                                                :::
 #:::::::::::::::::::::::::::::::::::::::::::::::::::::: David Robertson :::
@@ -27,19 +27,19 @@
 #                                                                       :::
 #::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 
-search="2002-2009 The ROMS/TOMS"
-replace="2002-2010 The ROMS/TOMS"
+search="2002-2013 The ROMS/TOMS"
+replace="2002-2014 The ROMS/TOMS"
 
 # Directories to search for replacements.
 
-c_dirs="Compilers Master ROMS User"
+c_dirs="Apps Compilers Master ROMS User"
 
 # Specific files not in the "c_dirs".
 
 special_files="makefile Waves/SWAN/Src/Module.mk Waves/SWAN/Src/waves_coupler.F"
 
-setsvn=1
-verbose=0
+setsvn=0
+verbose=1
 
 while [ $# -gt 0 ]
 do
@@ -84,9 +84,9 @@ do
 
   if [ `echo $FILE | grep -vc '.svn/'` -gt 0 ]; then
     if [ $verbose -eq 1 ]; then
-      grep -l "${search}" $FILE && sed -i "s|${search}|${replace}|g" $FILE
+      grep -l "${search}" $FILE && sed -i -e "s|${search}|${replace}|g" $FILE
     else
-      grep -l "${search}" $FILE > /dev/null && sed -i "s|${search}|${replace}|g" $FILE
+      grep -l "${search}" $FILE > /dev/null && sed -i -e "s|${search}|${replace}|g" $FILE
     fi
   else
     echo "There is a .svn in the path: $FILE skipped"
@@ -98,23 +98,23 @@ done
 for FILE in $special_files
 do
   if [ $verbose -eq 1 ]; then
-    grep -l "${search}" $FILE && sed -i "s|${search}|${replace}|g" $FILE
+    grep -l "${search}" $FILE && sed -i -e "s|${search}|${replace}|g" $FILE
   else
-    grep -l "${search}" $FILE > /dev/null && sed -i "s|${search}|${replace}|g" $FILE
+    grep -l "${search}" $FILE > /dev/null && sed -i -e "s|${search}|${replace}|g" $FILE
   fi
 done
 
 echo -e "\nDone.\n"
 
 if [ $setsvn -eq 1 ]; then
-  svn propset -R copyright '(c) 2002-2010 The ROMS/TOMS Group' Compilers
-  svn propset -R copyright '(c) 2002-2010 The ROMS/TOMS Group' Data
-  svn propset -R copyright '(c) 2002-2010 The ROMS/TOMS Group' Master
-  svn propset -R copyright '(c) 2002-2010 The ROMS/TOMS Group' ROMS
-  svn propset -R copyright '(c) 2002-2010 The ROMS/TOMS Group' User
-  svn propset copyright '(c) 2002-2010 The ROMS/TOMS Group' . makefile
-  svn propset copyright '(c) 2002-2010 The ROMS/TOMS Group' Waves/SWAN/Src/Module.mk
-  svn propset copyright '(c) 2002-2010 The ROMS/TOMS Group' Waves/SWAN/Src/waves_coupler.F
+  svn propset -R copyright '(c) 2002-2014 The ROMS/TOMS Group' Compilers
+  svn propset -R copyright '(c) 2002-2014 The ROMS/TOMS Group' Data
+  svn propset -R copyright '(c) 2002-2014 The ROMS/TOMS Group' Master
+  svn propset -R copyright '(c) 2002-2014 The ROMS/TOMS Group' ROMS
+  svn propset -R copyright '(c) 2002-2014 The ROMS/TOMS Group' User
+  svn propset copyright '(c) 2002-2014 The ROMS/TOMS Group' . makefile
+  svn propset copyright '(c) 2002-2014 The ROMS/TOMS Group' Waves/SWAN/Src/Module.mk
+  svn propset copyright '(c) 2002-2014 The ROMS/TOMS Group' Waves/SWAN/Src/waves_coupler.F
 else
   echo -e "Not updating svn properties.\n"
 fi

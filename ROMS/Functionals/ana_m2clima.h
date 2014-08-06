@@ -1,8 +1,8 @@
       SUBROUTINE ana_m2clima (ng, tile, model)
 !
-!! svn $Id: ana_m2clima.h 429 2009-12-20 17:30:26Z arango $
+!! svn $Id$
 !!======================================================================
-!! Copyright (c) 2002-2010 The ROMS/TOMS Group                         !
+!! Copyright (c) 2002-2014 The ROMS/TOMS Group                         !
 !!   Licensed under a MIT/X style license                              !
 !!   See License_ROMS.txt                                              !
 !=======================================================================
@@ -12,7 +12,6 @@
 !=======================================================================
 !
       USE mod_param
-      USE mod_clima
       USE mod_ncparam
 !
 ! Imported variable declarations.
@@ -23,9 +22,7 @@
 !
       CALL ana_m2clima_tile (ng, tile, model,                           &
      &                       LBi, UBi, LBj, UBj,                        &
-     &                       IminS, ImaxS, JminS, JmaxS,                &
-     &                       CLIMA(ng) % ubarclm,                       &
-     &                       CLIMA(ng) % vbarclm)
+     &                       IminS, ImaxS, JminS, JmaxS)
 !
 ! Set analytical header file name used.
 !
@@ -43,15 +40,14 @@
 !***********************************************************************
       SUBROUTINE ana_m2clima_tile (ng, tile, model,                     &
      &                             LBi, UBi, LBj, UBj,                  &
-     &                             IminS, ImaxS, JminS, JmaxS,          &
-     &                             ubarclm, vbarclm)
+     &                             IminS, ImaxS, JminS, JmaxS)
 !***********************************************************************
 !
       USE mod_param
+      USE mod_clima
+      USE mod_scalars
 !
-#if defined EW_PERIODIC || defined NS_PERIODIC
       USE exchange_2d_mod
-#endif
 #ifdef DISTRIBUTE
       USE mp_exchange_mod, ONLY : mp_exchange2d
 #endif
@@ -62,28 +58,8 @@
       integer, intent(in) :: LBi, UBi, LBj, UBj
       integer, intent(in) :: IminS, ImaxS, JminS, JmaxS
 !
-#ifdef ASSUMED_SHAPE
-      real(r8), intent(out) :: ubarclm(LBi:,LBj:)
-      real(r8), intent(out) :: vbarclm(LBi:,LBj:)
-#else
-      real(r8), intent(out) :: ubarclm(LBi:UBi,LBj:UBj)
-      real(r8), intent(out) :: vbarclm(LBi:UBi,LBj:UBj)
-#endif
-!
 !  Local variable declarations.
 !
-#ifdef DISTRIBUTE
-# ifdef EW_PERIODIC
-      logical :: EWperiodic=.TRUE.
-# else
-      logical :: EWperiodic=.FALSE.
-# endif
-# ifdef NS_PERIODIC
-      logical :: NSperiodic=.TRUE.
-# else
-      logical :: NSperiodic=.FALSE.
-# endif
-#endif
       integer :: i, j
 
 #include "set_bounds.h"
@@ -92,29 +68,38 @@
 !  Set 2D momentum climatology.
 !-----------------------------------------------------------------------
 !
-      DO j=JstrR,JendR
-        DO i=Istr,IendR
-          ubarclm(i,j)=???
+      IF (Lm2CLM(ng)) THEN
+        DO j=JstrT,JendT
+          DO i=IstrP,IendT
+            CLIMA(ng)%ubarclm(i,j)=???
+          END DO
         END DO
-      END DO
-      DO j=Jstr,JendR
-        DO i=IstrR,IendR
-          vbarclm(i,j)=???
+        DO j=JstrP,JendT
+          DO i=IstrT,IendT
+            CLIMA(ng)%vbarclm(i,j)=???
+          END DO
         END DO
-      END DO
-#if defined EW_PERIODIC || defined NS_PERIODIC
-      CALL exchange_u2d_tile (ng, tile,                                 &
-     &                        LBi, UBi, LBj, UBj,                       &
-     &                        ubarclm)
-      CALL exchange_v2d_tile (ng, tile,                                 &
-     &                        LBi, UBi, LBj, UBj,                       &
-     &                        vbarclm)
-#endif
+!
+!  Exchange boundary data.
+!
+        IF (EWperiodic(ng).or.NSperiodic(ng)) THEN
+          CALL exchange_u2d_tile (ng, tile,                             &
+     &                            LBi, UBi, LBj, UBj,                   &
+     &                            CLIMA(ng) % ubarclm)
+          CALL exchange_v2d_tile (ng, tile,                             &
+     &                            LBi, UBi, LBj, UBj,                   &
+     &                            CLIMA(ng) % vbarclm)
+        END IF
+
 #ifdef DISTRIBUTE
-      CALL mp_exchange2d (ng, tile, model, 2,                           &
-     &                    LBi, UBi, LBj, UBj,                           &
-     &                    NghostPoints, EWperiodic, NSperiodic,         &
-     &                    ubarclm, vbarclm)
+        CALL mp_exchange2d (ng, tile, model, 2,                         &
+     &                      LBi, UBi, LBj, UBj,                         &
+     &                      NghostPoints,                               &
+     &                      EWperiodic(ng), NSperiodic(ng),             &
+     &                      CLIMA(ng) % ubarclm,                        &
+     %                      CLIMA(ng) % vbarclm)
 #endif
+      END IF
+
       RETURN
       END SUBROUTINE ana_m2clima_tile

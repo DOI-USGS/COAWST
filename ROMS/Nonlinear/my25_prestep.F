@@ -4,7 +4,7 @@
 !
 !svn $Id: my25_prestep.F 732 2008-09-07 01:55:51Z jcwarner $
 !=======================================================================
-!  Copyright (c) 2002-2010 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2014 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                           Hernan G. Arango   !
 !========================================== Alexander F. Shchepetkin ===
@@ -81,11 +81,10 @@
 !***********************************************************************
 !
       USE mod_param
+      USE mod_ncparam
       USE mod_scalars
 !
-# if defined EW_PERIODIC || defined NS_PERIODIC
       USE exchange_3d_mod, ONLY : exchange_w3d_tile
-# endif
 # ifdef DISTRIBUTE
       USE mp_exchange_mod, ONLY : mp_exchange3d
 # endif
@@ -130,18 +129,6 @@
 !
 !  Local variable declarations.
 !
-# ifdef DISTRIBUTE
-#  ifdef EW_PERIODIC
-      logical :: EWperiodic=.TRUE.
-#  else
-      logical :: EWperiodic=.FALSE.
-#  endif
-#  ifdef NS_PERIODIC
-      logical :: NSperiodic=.TRUE.
-#  else
-      logical :: NSperiodic=.FALSE.
-#  endif
-# endif
       integer :: i, indx, j, k
 
       real(r8), parameter :: Gamma = 1.0_r8/6.0_r8
@@ -215,22 +202,8 @@
 !
 !  Fourth-order, centered differences advection.
 !
-#  if defined EW_PERIODIC || defined COMPOSED_GRID
-#   define I_RANGE Istr-1,Iend+2
-#  elif defined REFINED_GRID
-#   define I_RANGE IstrC,IendC
-      IF (ng.eq.1) THEN
-        IstrC=MAX(1,Istr-1)
-        IendC=MIN(Iend+2,Lm(ng)+1)
-      ELSE
-        IstrC=Istr-1
-        IendC=Iend+2
-      END IF
-#  else
-#   define I_RANGE MAX(Istr-1,1),MIN(Iend+2,Lm(ng)+1)
-#  endif
         DO j=Jstr,Jend
-          DO i=I_RANGE
+          DO i=Istrm1,Iendp2
             grad (i,j)=(tke(i,j,k,nstp)-tke(i-1,j,k,nstp))
 #  ifdef MASKING
             grad (i,j)=grad (i,j)*umask(i,j)
@@ -241,21 +214,22 @@
 #  endif
           END DO
         END DO
-#  undef I_RANGE
-#  if !defined EW_PERIODIC && !defined COMPOSED_GRID
-        IF (WESTERN_EDGE_REF) THEN
-          DO j=Jstr,Jend
-            grad (Istr-1,j)=grad (Istr,j)
-            gradL(Istr-1,j)=gradL(Istr,j)
-          END DO
+        IF (.not.(CompositeGrid(iwest,ng).or.EWperiodic(ng))) THEN
+          IF (DOMAIN(ng)%Western_Edge(tile)) THEN
+            DO j=Jstr,Jend
+              grad (Istr-1,j)=grad (Istr,j)
+              gradL(Istr-1,j)=gradL(Istr,j)
+            END DO
+          END IF
         END IF
-        IF (EASTERN_EDGE_REF) THEN
-          DO j=Jstr,Jend
-            grad (Iend+2,j)=grad (Iend+1,j)
-            gradL(Iend+2,j)=gradL(Iend+1,j)
-          END DO
+        IF (.not.(CompositeGrid(ieast,ng).or.EWperiodic(ng))) THEN
+          IF (DOMAIN(ng)%Eastern_Edge(tile)) THEN
+            DO j=Jstr,Jend
+              grad (Iend+2,j)=grad (Iend+1,j)
+              gradL(Iend+2,j)=gradL(Iend+1,j)
+            END DO
+          END IF
         END IF
-#  endif
         cff=1.0_r8/6.0_r8
         DO j=Jstr,Jend
           DO i=Istr,Iend+1
@@ -269,21 +243,7 @@
           END DO
         END DO
 !
-#  if defined NS_PERIODIC || defined COMPOSED_GRID
-#   define J_RANGE Jstr-1,Jend+2
-#  elif defined REFINED_GRID
-#   define J_RANGE JstrC,JendC
-      IF (ng.eq.1) THEN
-        JstrC=MAX(1,Jstr-1)
-        JendC=MIN(Jend+2,Mm(ng)+1)
-      ELSE
-        JstrC=Jstr-1
-        JendC=Jend+2
-      END IF
-#  else
-#   define J_RANGE MAX(Jstr-1,1),MIN(Jend+2,Mm(ng)+1)
-#  endif
-        DO j=J_RANGE
+        DO j=Jstrm1,Jendp2
           DO i=Istr,Iend
             grad (i,j)=(tke(i,j,k,nstp)-tke(i,j-1,k,nstp))
 #  ifdef MASKING
@@ -295,21 +255,22 @@
 #  endif
           END DO
         END DO
-#  undef J_RANGE
-#  if !defined NS_PERIODIC && !defined COMPOSED_GRID
-        IF (SOUTHERN_EDGE_REF) THEN
-          DO i=Istr,Iend
-            grad (i,Jstr-1)=grad (i,Jstr)
-            gradL(i,Jstr-1)=gradL(i,Jstr)
-          END DO
+        IF (.not.(CompositeGrid(isouth,ng).or.NSperiodic(ng))) THEN
+          IF (DOMAIN(ng)%Southern_Edge(tile)) THEN
+            DO i=Istr,Iend
+              grad (i,Jstr-1)=grad (i,Jstr)
+              gradL(i,Jstr-1)=gradL(i,Jstr)
+            END DO
+          END IF
         END IF
-        IF (NORTHERN_EDGE_REF) THEN
-          DO i=Istr,Iend
-            grad (i,Jend+2)=grad (i,Jend+1)
-            gradL(i,Jend+2)=gradL(i,Jend+1)
-          END DO
+        IF (.not.(CompositeGrid(inorth,ng).or.NSperiodic(ng))) THEN
+          IF (DOMAIN(ng)%Northern_Edge(tile)) THEN
+            DO i=Istr,Iend
+              grad (i,Jend+2)=grad (i,Jend+1)
+              gradL(i,Jend+2)=gradL(i,Jend+1)
+            END DO
+          END IF
         END IF
-#  endif
         cff=1.0_r8/6.0_r8
         DO j=Jstr,Jend+1
           DO i=Istr,Iend
@@ -434,18 +395,21 @@
      &                 IminS, ImaxS, JminS, JmaxS,                      &
      &                 3, nstp,                                         &
      &                 gls, tke)
-# if defined EW_PERIODIC || defined NS_PERIODIC
-      CALL exchange_w3d_tile (ng, tile,                                 &
-     &                        LBi, UBi, LBj, UBj, 0, N(ng),             &
-     &                        tke(:,:,:,3))
-      CALL exchange_w3d_tile (ng, tile,                                 &
-     &                        LBi, UBi, LBj, UBj, 0, N(ng),             &
-     &                        gls(:,:,:,3))
-# endif
+!
+      IF (EWperiodic(ng).or.NSperiodic(ng)) THEN
+        CALL exchange_w3d_tile (ng, tile,                               &
+     &                          LBi, UBi, LBj, UBj, 0, N(ng),           &
+     &                          tke(:,:,:,3))
+        CALL exchange_w3d_tile (ng, tile,                               &
+     &                          LBi, UBi, LBj, UBj, 0, N(ng),           &
+     &                          gls(:,:,:,3))
+      END IF
+
 # ifdef DISTRIBUTE
       CALL mp_exchange3d (ng, tile, iNLM, 2,                            &
      &                    LBi, UBi, LBj, UBj, 0, N(ng),                 &
-     &                    NghostPoints, EWperiodic, NSperiodic,         &
+     &                    NghostPoints,                                 &
+     &                    EWperiodic(ng), NSperiodic(ng),               &
      &                    tke(:,:,:,3),                                 &
      &                    gls(:,:,:,3))
 # endif

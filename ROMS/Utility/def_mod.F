@@ -4,7 +4,7 @@
 !
 !svn $Id: def_mod.F 733 2008-09-07 01:56:45Z jcwarner $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2010 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2014 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -56,8 +56,9 @@
 
       real(r8) :: Aval(6)
 
-      character (len=80) :: Vinfo(Natt)
-      character (len=80) :: ncname, type
+      character (len=80 ) :: type
+      character (len=120) :: Vinfo(Natt)
+      character (len=256) :: ncname
 !
       SourceFile='def_mod.F'
 !
@@ -66,13 +67,13 @@
 !-----------------------------------------------------------------------
 !
       IF (exit_flag.ne.NoError) RETURN
-      ncname=MODname(ng)
+      ncname=DAV(ng)%name
 !
       IF (Master) THEN
         IF (LdefMOD(ng)) THEN
-          WRITE (stdout,10) TRIM(ncname)
+          WRITE (stdout,10) ng, TRIM(ncname)
         ELSE
-          WRITE (stdout,20) TRIM(ncname)
+          WRITE (stdout,20) ng, TRIM(ncname)
         END IF
       END IF
 !
@@ -93,7 +94,7 @@
 !
       DEFINE : IF (LdefMOD(ng)) THEN
 
-        CALL netcdf_create (ng, iNLM, TRIM(ncname), ncMODid(ng))
+        CALL netcdf_create (ng, iNLM, TRIM(ncname), DAV(ng)%ncid)
         IF (exit_flag.ne.NoError) THEN
           IF (Master) WRITE (stdout,30) TRIM(ncname)
           RETURN
@@ -104,57 +105,58 @@
 !-----------------------------------------------------------------------
 !
 # if defined BALANCE_OPERATOR && defined ZETA_ELLIPTIC
-        status=def_dim(ng, iNLM, ncMODid(ng), ncname, 'xi_rho',         &
+        status=def_dim(ng, iNLM, DAV(ng)%ncid, ncname, 'xi_rho',        &
      &                 IOBOUNDS(ng)%xi_rho, RxiDim)
         IF (exit_flag.ne.NoError) RETURN
 
-        status=def_dim(ng, iNLM, ncMODid(ng), ncname, 'eta_rho',        &
+        status=def_dim(ng, iNLM, DAV(ng)%ncid, ncname, 'eta_rho',       &
      &                 IOBOUNDS(ng)%eta_rho, RetaDim)
         IF (exit_flag.ne.NoError) RETURN
 # endif
 
-        status=def_dim(ng, iNLM, ncMODid(ng), ncname, 'record',         &
+        status=def_dim(ng, iNLM, DAV(ng)%ncid, ncname, 'record',        &
      &                 2, recordDim)
         IF (exit_flag.ne.NoError) RETURN
 
-        status=def_dim(ng, iNLM, ncMODid(ng), ncname, 'state_var',      &
+        status=def_dim(ng, iNLM, DAV(ng)%ncid, ncname, 'state_var',     &
      &                 NstateVar(ng)+1, stateDim)
         IF (exit_flag.ne.NoError) RETURN
 
-        status=def_dim(ng, iNLM, ncMODid(ng), ncname, 'datum',          &
+        status=def_dim(ng, iNLM, DAV(ng)%ncid, ncname, 'datum',         &
      &                 Ndatum(ng), datumDim)
         IF (exit_flag.ne.NoError) RETURN
 
 # ifdef FOUR_DVAR
 #  if defined IS4DVAR || defined WEAK_CONSTRAINT
-        status=def_dim(ng, iNLM, ncMODid(ng), ncname, 'Ninner',         &
+        status=def_dim(ng, iNLM, DAV(ng)%ncid, ncname, 'Ninner',        &
      &                 Ninner, NinnerDim)
         IF (exit_flag.ne.NoError) RETURN
 
-        status=def_dim(ng, iNLM, ncMODid(ng), ncname, 'Minner',         &
+        status=def_dim(ng, iNLM, DAV(ng)%ncid, ncname, 'Minner',        &
      &                 Ninner+1, MinnerDim)
         IF (exit_flag.ne.NoError) RETURN
 
-        status=def_dim(ng, iNLM, ncMODid(ng), ncname, 'Nouter',         &
+        status=def_dim(ng, iNLM, DAV(ng)%ncid, ncname, 'Nouter',        &
      &                 Nouter, NouterDim)
         IF (exit_flag.ne.NoError) RETURN
 
-        status=def_dim(ng, iNLM, ncMODid(ng), ncname, 'Mouter',         &
+        status=def_dim(ng, iNLM, DAV(ng)%ncid, ncname, 'Mouter',        &
      &                 Nouter+1, MouterDim)
         IF (exit_flag.ne.NoError) RETURN
 #   ifdef IS4DVAR
-        status=def_dim(ng, iNLM, ncMODid(ng), ncname, 'three',          &
+        status=def_dim(ng, iNLM, DAV(ng)%ncid, ncname, 'three',         &
      &                 3, threeDim)
         IF (exit_flag.ne.NoError) RETURN
 #   endif
 #  endif
-
-        status=def_dim(ng, iNLM, ncMODid(ng), ncname, 'iteration',      &
+#  if defined IS4DVAR || defined BACKGROUND
+        status=def_dim(ng, iNLM, DAV(ng)%ncid, ncname, 'iteration',     &
      &                 nf90_unlimited, iterDim)
         IF (exit_flag.ne.NoError) RETURN
 !
         CostDim(1)=stateDim
         CostDim(2)=iterDim
+#  endif
 # endif
 !
 !-----------------------------------------------------------------------
@@ -167,7 +169,7 @@
 !
           IF (exit_flag.eq.NoError) THEN
             type='ROMS/TOMS 4DVAR output observation processing file'
-            status=nf90_put_att(ncMODid(ng), nf90_global,               &
+            status=nf90_put_att(DAV(ng)%ncid, nf90_global,              &
      &                          'type', TRIM(type))
             IF (status.ne.nf90_noerr) THEN
               WRITE (stdout,40) 'type', TRIM(ncname)
@@ -179,8 +181,8 @@
 !  Input observations file.
 !
           IF (exit_flag.eq.NoError) THEN
-            status=nf90_put_att(ncMODid(ng), nf90_global,               &
-     &                          'obs_file', TRIM(OBSname(ng)))
+            status=nf90_put_att(DAV(ng)%ncid, nf90_global,              &
+     &                          'obs_file', TRIM(OBS(ng)%name))
             IF (status.ne.nf90_noerr) THEN
               WRITE (stdout,40) 'obs_file', TRIM(ncname)
               exit_flag=3
@@ -191,7 +193,7 @@
 !  SVN repository information.
 !
           IF (exit_flag.eq.NoError) THEN
-            status=nf90_put_att(ncMODid(ng), nf90_global,               &
+            status=nf90_put_att(DAV(ng)%ncid, nf90_global,              &
      &                          'svn_url', TRIM(svn_url))
             IF (status.ne.nf90_noerr) THEN
               WRITE (stdout,40) 'svn_url', TRIM(ncname)
@@ -203,7 +205,7 @@
 # ifndef DEBUGGING
 #  ifdef SVN_REV
           IF (exit_flag.eq.NoError) THEN
-            status=nf90_put_att(ncMODid(ng), nf90_global,               &
+            status=nf90_put_att(DAV(ng)%ncid, nf90_global,              &
      &                          'svn_rev', TRIM(svn_rev))
             IF (status.ne.nf90_noerr) THEN
               WRITE (stdout,40) 'svn_rev', TRIM(ncname)
@@ -215,7 +217,7 @@
 
 #  ifdef ROOT_DIR
           IF (exit_flag.eq.NoError) THEN
-            status=nf90_put_att(ncMODid(ng), nf90_global,               &
+            status=nf90_put_att(DAV(ng)%ncid, nf90_global,              &
      &                          'code_dir', TRIM(Rdir))
             IF (status.ne.nf90_noerr) THEN
               WRITE (stdout,40) 'code_dir', TRIM(ncname)
@@ -227,7 +229,7 @@
 
 #  ifdef HEADER_DIR
           IF (exit_flag.eq.NoError) THEN
-            status=nf90_put_att(ncMODid(ng), nf90_global,               &
+            status=nf90_put_att(DAV(ng)%ncid, nf90_global,              &
      &                          'header_dir', TRIM(Hdir))
             IF (status.ne.nf90_noerr) THEN
               WRITE (stdout,40) 'header_dir', TRIM(ncname)
@@ -239,7 +241,7 @@
 
 #  ifdef ROMS_HEADER
           IF (exit_flag.eq.NoError) THEN
-            status=nf90_put_att(ncMODid(ng), nf90_global,               &
+            status=nf90_put_att(DAV(ng)%ncid, nf90_global,              &
      &                          'header_file', TRIM(Hfile))
             IF (status.ne.nf90_noerr) THEN
               WRITE (stdout,40) 'header_file', TRIM(ncname)
@@ -252,7 +254,7 @@
 !  Attributes describing platform and compiler
 !
           IF (exit_flag.eq.NoError) THEN
-            status=nf90_put_att(ncMODid(ng), nf90_global,               &
+            status=nf90_put_att(DAV(ng)%ncid, nf90_global,              &
      &                          'os', TRIM(my_os))
             IF (status.ne.nf90_noerr) THEN
               WRITE (stdout,40) 'os', TRIM(ncname)
@@ -262,7 +264,7 @@
           END IF
 
           IF (exit_flag.eq.NoError) THEN
-            status=nf90_put_att(ncMODid(ng), nf90_global,               &
+            status=nf90_put_att(DAV(ng)%ncid, nf90_global,              &
      &                          'cpu', TRIM(my_cpu))
             IF (status.ne.nf90_noerr) THEN
               WRITE (stdout,40) 'cpu', TRIM(ncname)
@@ -272,7 +274,7 @@
           END IF
 
           IF (exit_flag.eq.NoError) THEN
-            status=nf90_put_att(ncMODid(ng), nf90_global,               &
+            status=nf90_put_att(DAV(ng)%ncid, nf90_global,              &
      &                          'compiler_system', TRIM(my_fort))
             IF (status.ne.nf90_noerr) THEN
               WRITE (stdout,40) 'compiler_system', TRIM(ncname)
@@ -282,7 +284,7 @@
           END IF
 
           IF (exit_flag.eq.NoError) THEN
-            status=nf90_put_att(ncMODid(ng),nf90_global,                &
+            status=nf90_put_att(DAV(ng)%ncid,nf90_global,               &
      &                          'compiler_command', TRIM(my_fc))
             IF (status.ne.nf90_noerr) THEN
               WRITE (stdout,40) 'compiler_command', TRIM(ncname)
@@ -292,7 +294,7 @@
           END IF
 
           IF (exit_flag.eq.NoError) THEN
-            status=nf90_put_att(ncMODid(ng), nf90_global,               &
+            status=nf90_put_att(DAV(ng)%ncid, nf90_global,              &
      &                          'compiler_flags', TRIM(my_fflags))
             IF (status.ne.nf90_noerr) THEN
               WRITE (stdout,40) 'compiler_flags', TRIM(ncname)
@@ -312,7 +314,7 @@
               WRITE (history,'(a,1x,a)') 'ROMS/TOMS, Version',          &
      &                                   TRIM(version)
             END IF
-            status=nf90_put_att(ncMODid(ng), nf90_global,               &
+            status=nf90_put_att(DAV(ng)%ncid, nf90_global,              &
      &                          'history', TRIM(history))
             IF (status.ne.nf90_noerr) THEN
               WRITE (stdout,40) 'history', TRIM(ncname)
@@ -341,14 +343,14 @@
 !
         Vinfo( 1)='outer'
         Vinfo( 2)='outer loop counter'
-        status=def_var(ng, iNLM, ncMODid(ng), varid, nf90_int,          &
+        status=def_var(ng, iNLM, DAV(ng)%ncid, varid, nf90_int,         &
      &                 1, (/0/), Aval, Vinfo, ncname,                   &
      &                 SetParAccess = .FALSE.)
         IF (exit_flag.ne.NoError) RETURN
-
+!
         Vinfo( 1)='inner'
         Vinfo( 2)='inner loop counter'
-        status=def_var(ng, iNLM, ncMODid(ng), varid, nf90_int,          &
+        status=def_var(ng, iNLM, DAV(ng)%ncid, varid, nf90_int,         &
      &                 1, (/0/), Aval, Vinfo, ncname,                   &
      &                 SetParAccess = .FALSE.)
         IF (exit_flag.ne.NoError) RETURN
@@ -359,63 +361,63 @@
 !
         Vinfo( 1)='Nobs'
         Vinfo( 2)='Number of usable observations'
-        status=def_var(ng, iNLM, ncMODid(ng), varid, nf90_int,          &
+        status=def_var(ng, iNLM, DAV(ng)%ncid, varid, nf90_int,         &
      &                 1, (/stateDim/), Aval, Vinfo, ncname,            &
      &                 SetParAccess = .FALSE.)
         IF (exit_flag.ne.NoError) RETURN
-
+!
         Vinfo( 1)='obs_mean'
         Vinfo( 2)='observations mean'
-        status=def_var(ng, iNLM, ncMODid(ng), varid, NF_FRST,           &
+        status=def_var(ng, iNLM, DAV(ng)%ncid, varid, NF_FRST,          &
      &                 1, (/stateDim/), Aval, Vinfo, ncname,            &
      &                 SetParAccess = .FALSE.)
         IF (exit_flag.ne.NoError) RETURN
-
+!
         Vinfo( 1)='obs_std'
         Vinfo( 2)='observations standard deviation'
-        status=def_var(ng, iNLM, ncMODid(ng), varid, NF_FRST,           &
+        status=def_var(ng, iNLM, DAV(ng)%ncid, varid, NF_FRST,          &
      &                 1, (/stateDim/), Aval, Vinfo, ncname,            &
      &                 SetParAccess = .FALSE.)
         IF (exit_flag.ne.NoError) RETURN
-
+!
         Vinfo( 1)='model_mean'
         Vinfo( 2)='model mean'
-        status=def_var(ng, iNLM, ncMODid(ng), varid, NF_FRST,           &
+        status=def_var(ng, iNLM, DAV(ng)%ncid, varid, NF_FRST,          &
      &                 1, (/stateDim/), Aval, Vinfo, ncname,            &
      &                 SetParAccess = .FALSE.)
         IF (exit_flag.ne.NoError) RETURN
-
+!
         Vinfo( 1)='model_std'
         Vinfo( 2)='model standard deviation'
-        status=def_var(ng, iNLM, ncMODid(ng), varid, NF_FRST,           &
+        status=def_var(ng, iNLM, DAV(ng)%ncid, varid, NF_FRST,          &
      &                 1, (/stateDim/), Aval, Vinfo, ncname,            &
      &                 SetParAccess = .FALSE.)
         IF (exit_flag.ne.NoError) RETURN
-
+!
         Vinfo( 1)='model_bias'
         Vinfo( 2)='model bias'
-        status=def_var(ng, iNLM, ncMODid(ng), varid, NF_FRST,           &
+        status=def_var(ng, iNLM, DAV(ng)%ncid, varid, NF_FRST,          &
      &                 1, (/stateDim/), Aval, Vinfo,ncname,             &
      &                 SetParAccess = .FALSE.)
         IF (exit_flag.ne.NoError) RETURN
-
+!
         Vinfo( 1)='SDE'
         Vinfo( 2)='model-observations standard deviation error'
-        status=def_var(ng, iNLM, ncMODid(ng), varid, NF_FRST,           &
+        status=def_var(ng, iNLM, DAV(ng)%ncid, varid, NF_FRST,          &
      &                 1, (/stateDim/), Aval, Vinfo, ncname,            &
      &                 SetParAccess = .FALSE.)
         IF (exit_flag.ne.NoError) RETURN
-
+!
         Vinfo( 1)='CC'
         Vinfo( 2)='model-observations cross-correlation'
-        status=def_var(ng, iNLM, ncMODid(ng), varid, NF_FRST,           &
+        status=def_var(ng, iNLM, DAV(ng)%ncid, varid, NF_FRST,          &
      &                 1, (/stateDim/), Aval, Vinfo, ncname,            &
      &                 SetParAccess = .FALSE.)
         IF (exit_flag.ne.NoError) RETURN
-
+!
         Vinfo( 1)='MSE'
         Vinfo( 2)='model-observations mean squared error'
-        status=def_var(ng, iNLM, ncMODid(ng), varid, NF_FRST,           &
+        status=def_var(ng, iNLM, DAV(ng)%ncid, varid, NF_FRST,          &
      &                 1, (/stateDim/), Aval, Vinfo, ncname,            &
      &                 SetParAccess = .FALSE.)
         IF (exit_flag.ne.NoError) RETURN
@@ -425,8 +427,8 @@
 !  Number of converged Ritz eigenvalues.
 !
         Vinfo( 1)='nConvRitz'
-        Vinfo( 2)='Number of converged Ritz eigenvalues'
-        status=def_var(ng, iNLM, ncMODid(ng), varid, nf90_int,          &
+        Vinfo( 2)='number of converged Ritz eigenvalues'
+        status=def_var(ng, iNLM, DAV(ng)%ncid, varid, nf90_int,         &
      &                 1, (/0/), Aval, Vinfo, ncname,                   &
      &                 SetParAccess = .FALSE.)
         IF (exit_flag.ne.NoError) RETURN
@@ -435,9 +437,26 @@
 !  Number of converged Ritz eigenvalues.
 !
         Vinfo( 1)='nConvRitz'
-        Vinfo( 2)='Number of converged Ritz eigenvalues'
-        status=def_var(ng, iNLM, ncMODid(ng), varid, nf90_int,          &
+        Vinfo( 2)='number of converged Ritz eigenvalues'
+        status=def_var(ng, iNLM, DAV(ng)%ncid, varid, nf90_int,         &
      &                 1, (/Nouterdim/), Aval, Vinfo, ncname,           &
+     &                 SetParAccess = .FALSE.)
+        IF (exit_flag.ne.NoError) RETURN
+# endif
+# if defined WEAK_CONSTRAINT && \
+    (defined ARRAY_MODES     || defined CLIPPING)
+!
+!  Number of converged Ritz eigenvalues.
+!
+        Vinfo( 1)='Nvct'
+#  if defined ARRAY_MODES
+        Vinfo( 2)='representer matrix array mode eigenvector '//        &
+     &            'processed'
+#  elif defined CLIPPING
+        Vinfo( 2)='representer matric cut-off eigenvectors'
+#  endif
+        status=def_var(ng, iNLM, DAV(ng)%ncid, varid, nf90_int,         &
+     &                 1, (/0/), Aval, Vinfo, ncname,                   &
      &                 SetParAccess = .FALSE.)
         IF (exit_flag.ne.NoError) RETURN
 # endif
@@ -447,7 +466,7 @@
 !
         Vinfo( 1)='Ritz'
         Vinfo( 2)='converged Ritz eigenvalues to approximate Hessian'
-        status=def_var(ng, iNLM, ncMODid(ng), varid, NF_FRST,           &
+        status=def_var(ng, iNLM, DAV(ng)%ncid, varid, NF_FRST,          &
      &                 1, (/Ninnerdim/), Aval, Vinfo, ncname,           &
      &                 SetParAccess = .FALSE.)
         IF (exit_flag.ne.NoError) RETURN
@@ -459,7 +478,7 @@
         Vinfo( 2)='converged Ritz eigenvalues to approximate Hessian'
         vardim(1)=NinnerDim
         vardim(2)=NouterDim
-        status=def_var(ng, iNLM, ncMODid(ng), varid, NF_FRST,           &
+        status=def_var(ng, iNLM, DAV(ng)%ncid, varid, NF_FRST,          &
      &                 2, vardim, Aval, Vinfo, ncname,                  &
      &                 SetParAccess = .FALSE.)
         IF (exit_flag.ne.NoError) RETURN
@@ -472,7 +491,7 @@
         Vinfo( 2)='conjugate gradient beta coefficient'
         vardim(1)=MinnerDim
         vardim(2)=NouterDim
-        status=def_var(ng, iNLM, ncMODid(ng), varid, NF_FRST,           &
+        status=def_var(ng, iNLM, DAV(ng)%ncid, varid, NF_FRST,          &
      &                 2, vardim, Aval, Vinfo, ncname,                  &
      &                 SetParAccess = .FALSE.)
         IF (exit_flag.ne.NoError) RETURN
@@ -485,26 +504,29 @@
         Vinfo( 2)='Lanczos algorithm delta coefficient'
         vardim(1)=NinnerDim
         vardim(2)=NouterDim
-        status=def_var(ng, iNLM, ncMODid(ng), varid, NF_FRST,           &
+        status=def_var(ng, iNLM, DAV(ng)%ncid, varid, NF_FRST,          &
      &                 2, vardim, Aval, Vinfo, ncname,                  &
      &                 SetParAccess = .FALSE.)
         IF (exit_flag.ne.NoError) RETURN
+
 #  ifdef WEAK_CONSTRAINT
+!
         Vinfo( 1)='cg_dla'
         Vinfo( 2)='normalization coefficients for Lanczos vectors'
         vardim(1)=NinnerDim
         vardim(2)=NouterDim
-        status=def_var(ng, iNLM, ncMODid(ng), varid, NF_FRST,           &
+        status=def_var(ng, iNLM, DAV(ng)%ncid, varid, NF_FRST,          &
      &                 2, vardim, Aval, Vinfo, ncname,                  &
      &                 SetParAccess = .FALSE.)
         IF (exit_flag.ne.NoError) RETURN
 #  endif
 #  ifdef IS4DVAR
+!
         Vinfo( 1)='cg_gamma'
         Vinfo( 2)='Lanczos algorithm gamma coefficient'
         vardim(1)=NinnerDim
         vardim(2)=NouterDim
-        status=def_var(ng, iNLM, ncMODid(ng), varid, NF_FRST,           &
+        status=def_var(ng, iNLM, DAV(ng)%ncid, varid, NF_FRST,          &
      &                 2, vardim, Aval, Vinfo, ncname,                  &
      &                 SetParAccess = .FALSE.)
         IF (exit_flag.ne.NoError) RETURN
@@ -516,7 +538,7 @@
 !
         Vinfo( 1)='cg_Gnorm'
         Vinfo( 2)='initial gradient normalization factor'
-        status=def_var(ng, iNLM, ncMODid(ng), varid, NF_FRST,           &
+        status=def_var(ng, iNLM, DAV(ng)%ncid, varid, NF_FRST,          &
      &                 1, (/NouterDim/), Aval, Vinfo, ncname,           &
      &                 SetParAccess = .FALSE.)
         IF (exit_flag.ne.NoError) RETURN
@@ -526,14 +548,14 @@
 !
         Vinfo( 1)='cg_Gnorm_v'
         Vinfo( 2)='initial gradient normalization factor, v-space'
-        status=def_var(ng, iNLM, ncMODid(ng), varid, NF_FRST,           &
+        status=def_var(ng, iNLM, DAV(ng)%ncid, varid, NF_FRST,          &
      &                 1, (/NouterDim/), Aval, Vinfo, ncname,           &
      &                 SetParAccess = .FALSE.)
         IF (exit_flag.ne.NoError) RETURN
-
+!
         Vinfo( 1)='cg_Gnorm_y'
         Vinfo( 2)='initial gradient normalization factor, y-space'
-        status=def_var(ng, iNLM, ncMODid(ng), varid, NF_FRST,           &
+        status=def_var(ng, iNLM, DAV(ng)%ncid, varid, NF_FRST,          &
      &                 1, (/NouterDim/), Aval, Vinfo, ncname,           &
      &                 SetParAccess = .FALSE.)
         IF (exit_flag.ne.NoError) RETURN
@@ -546,7 +568,7 @@
         Vinfo( 2)='Lanczos vector normalization factor'
         vardim(1)=MinnerDim
         vardim(2)=NouterDim
-        status=def_var(ng, iNLM, ncMODid(ng), varid, NF_FRST,           &
+        status=def_var(ng, iNLM, DAV(ng)%ncid, varid, NF_FRST,          &
      &                 2, vardim, Aval, Vinfo, ncname,                  &
      &                 SetParAccess = .FALSE.)
         IF (exit_flag.ne.NoError) RETURN
@@ -559,7 +581,7 @@
         Vinfo( 2)='reduction in the gradient norm'
         vardim(1)=NinnerDim
         vardim(2)=NouterDim
-        status=def_var(ng, iNLM, ncMODid(ng), varid, NF_FRST,           &
+        status=def_var(ng, iNLM, DAV(ng)%ncid, varid, NF_FRST,          &
      &                 2, vardim, Aval, Vinfo, ncname,                  &
      &                 SetParAccess = .FALSE.)
         IF (exit_flag.ne.NoError) RETURN
@@ -571,16 +593,16 @@
         Vinfo( 2)='reduction in the gradient norm, v-space'
         vardim(1)=NinnerDim
         vardim(2)=NouterDim
-        status=def_var(ng, iNLM, ncMODid(ng), varid, NF_FRST,           &
+        status=def_var(ng, iNLM, DAV(ng)%ncid, varid, NF_FRST,          &
      &                 2, vardim, Aval, Vinfo, ncname,                  &
      &                 SetParAccess = .FALSE.)
         IF (exit_flag.ne.NoError) RETURN
-
+!
         Vinfo( 1)='cg_Greduc_y'
         Vinfo( 2)='reduction in the gradient norm, y-space'
         vardim(1)=NinnerDim
         vardim(2)=NouterDim
-        status=def_var(ng, iNLM, ncMODid(ng), varid, NF_FRST,           &
+        status=def_var(ng, iNLM, DAV(ng)%ncid, varid, NF_FRST,          &
      &                 2, vardim, Aval, Vinfo, ncname,                  &
      &                 SetParAccess = .FALSE.)
         IF (exit_flag.ne.NoError) RETURN
@@ -593,7 +615,7 @@
         Vinfo( 2)='Lanczos recurrence tridiagonal matrix'
         vardim(1)=NinnerDim
         vardim(2)=threeDim
-        status=def_var(ng, iNLM, ncMODid(ng), varid, NF_FRST,           &
+        status=def_var(ng, iNLM, DAV(ng)%ncid, varid, NF_FRST,          &
      &                 2, vardim, Aval, Vinfo, ncname,                  &
      &                 SetParAccess = .FALSE.)
         IF (exit_flag.ne.NoError) RETURN
@@ -604,7 +626,7 @@
         Vinfo( 2)='tridiagonal matrix, upper diagonal elements'
         vardim(1)=NinnerDim
         vardim(2)=NouterDim
-        status=def_var(ng, iNLM, ncMODid(ng), varid, NF_FRST,           &
+        status=def_var(ng, iNLM, DAV(ng)%ncid, varid, NF_FRST,          &
      &                 2, vardim, Aval, Vinfo, ncname,                  &
      &                 SetParAccess = .FALSE.)
         IF (exit_flag.ne.NoError) RETURN
@@ -617,7 +639,7 @@
         Vinfo( 2)='Lanczos recurrence eigenvalues'
         vardim(1)=NinnerDim
         vardim(2)=NouterDim
-        status=def_var(ng, iNLM, ncMODid(ng), varid, NF_FRST,           &
+        status=def_var(ng, iNLM, DAV(ng)%ncid, varid, NF_FRST,          &
      &                 2, vardim, Aval, Vinfo, ncname,                  &
      &                 SetParAccess = .FALSE.)
         IF (exit_flag.ne.NoError) RETURN
@@ -628,7 +650,7 @@
         Vinfo( 2)='Ritz eigenvalues relative error'
         vardim(1)=NinnerDim
         vardim(2)=NouterDim
-        status=def_var(ng, iNLM, ncMODid(ng), varid, NF_FRST,           &
+        status=def_var(ng, iNLM, DAV(ng)%ncid, varid, NF_FRST,          &
      &                 2, vardim, Aval, Vinfo, ncname,                  &
      &                 SetParAccess = .FALSE.)
         IF (exit_flag.ne.NoError) RETURN
@@ -641,7 +663,7 @@
         Vinfo( 2)='Lanczos recurrence eigenvectors'
         vardim(1)=NinnerDim
         vardim(2)=NinnerDim
-        status=def_var(ng, iNLM, ncMODid(ng), varid, NF_FRST,           &
+        status=def_var(ng, iNLM, DAV(ng)%ncid, varid, NF_FRST,          &
      &                 2, vardim, Aval, Vinfo, ncname,                  &
      &                 SetParAccess = .FALSE.)
         IF (exit_flag.ne.NoError) RETURN
@@ -654,20 +676,49 @@
         vardim(1)=NinnerDim
         vardim(2)=NinnerDim
         vardim(3)=NouterDim
-        status=def_var(ng, iNLM, ncMODid(ng), varid, NF_FRST,           &
+        status=def_var(ng, iNLM, DAV(ng)%ncid, varid, NF_FRST,          &
      &                 3, vardim, Aval, Vinfo, ncname,                  &
      &                 SetFillVal = .FALSE.,                            &
      &                 SetParAccess = .FALSE.)
         IF (exit_flag.ne.NoError) RETURN
 # endif
-# if defined TL_W4DVAR || defined W4DVAR || defined W4DVAR_SENSITIVITY
+# if defined TL_W4DPSAS          || defined W4DPSAS || \
+     defined W4DPSAS_SENSITIVITY
 !
-!  Define RPM data penalty function.
+!  Define NLM initial and final data penalty function.
 !
-        Vinfo( 1)='RPcost_function'
-        Vinfo( 2)='representer model data penalty function'
-        status=def_var(ng, iNLM, ncMODid(ng), varid, nf90_double,       &
-     &                 1, (/NouterDim/), Aval, Vinfo, ncname,           &
+        Vinfo( 1)='NL_iDataPenalty'
+        Vinfo( 2)='nonlinear model initial data penalty function'
+        status=def_var(ng, iNLM, DAV(ng)%ncid, varid, nf90_double,      &
+     &                 1, (/stateDim/), Aval, Vinfo, ncname,            &
+     &                 SetParAccess = .FALSE.)
+        IF (exit_flag.ne.NoError) RETURN
+!
+        Vinfo( 1)='NL_fDataPenalty'
+        Vinfo( 2)='nonlinear model final data penalty function'
+        status=def_var(ng, iNLM, DAV(ng)%ncid, varid, nf90_double,      &
+     &                 2, (/stateDim,NouterDim/), Aval, Vinfo, ncname,  &
+     &                 SetParAccess = .FALSE.)
+        IF (exit_flag.ne.NoError) RETURN
+# endif
+# if (defined RECOMPUTE_4DVAR   && \
+     (defined ARRAY_MODES       || defined CLIPPING)) || \
+     defined TL_W4DVAR          || defined W4DVAR     || \
+     defined W4DVAR_SENSITIVITY
+!
+!  Define RPM initial and final data penalty function.
+!
+        Vinfo( 1)='RP_iDataPenalty'
+        Vinfo( 2)='representer model initial data penalty function'
+        status=def_var(ng, iNLM, DAV(ng)%ncid, varid, nf90_double,      &
+     &                 2, (/stateDim,NouterDim/), Aval, Vinfo, ncname,  &
+     &                 SetParAccess = .FALSE.)
+        IF (exit_flag.ne.NoError) RETURN
+!
+        Vinfo( 1)='RP_fDataPenalty'
+        Vinfo( 2)='representer model final data penalty function'
+        status=def_var(ng, iNLM, DAV(ng)%ncid, varid, nf90_double,      &
+     &                 2, (/stateDim,NouterDim/), Aval, Vinfo, ncname,  &
      &                 SetParAccess = .FALSE.)
         IF (exit_flag.ne.NoError) RETURN
 # endif
@@ -679,7 +730,7 @@
         Vinfo( 2)='first guess initial data misfit'
         vardim(1)=MinnerDim
         vardim(2)=NouterDim
-        status=def_var(ng, iNLM, ncMODid(ng), varid, nf90_double,       &
+        status=def_var(ng, iNLM, DAV(ng)%ncid, varid, nf90_double,      &
      &                 2, vardim, Aval, Vinfo, ncname,                  &
      &                 SetParAccess = .FALSE.)
         IF (exit_flag.ne.NoError) RETURN
@@ -690,7 +741,7 @@
         Vinfo( 2)='state estimate data misfit'
         vardim(1)=MinnerDim
         vardim(2)=NouterDim
-        status=def_var(ng, iNLM, ncMODid(ng), varid, nf90_double,       &
+        status=def_var(ng, iNLM, DAV(ng)%ncid, varid, nf90_double,      &
      &                 2, vardim, Aval, Vinfo, ncname,                  &
      &                 SetParAccess = .FALSE.)
         IF (exit_flag.ne.NoError) RETURN
@@ -701,7 +752,7 @@
         Vinfo( 2)='model penalty function'
         vardim(1)=MinnerDim
         vardim(2)=NouterDim
-        status=def_var(ng, iNLM, ncMODid(ng), varid, nf90_double,       &
+        status=def_var(ng, iNLM, DAV(ng)%ncid, varid, nf90_double,      &
      &                 2, vardim, Aval, Vinfo, ncname,                  &
      &                 SetParAccess = .FALSE.)
         IF (exit_flag.ne.NoError) RETURN
@@ -712,7 +763,7 @@
         Vinfo( 2)='optimal penalty function'
         vardim(1)=MinnerDim
         vardim(2)=NouterDim
-        status=def_var(ng, iNLM, ncMODid(ng), varid, nf90_double,       &
+        status=def_var(ng, iNLM, DAV(ng)%ncid, varid, nf90_double,      &
      &                 2, vardim, Aval, Vinfo, ncname,                  &
      &                 SetParAccess = .FALSE.)
         IF (exit_flag.ne.NoError) RETURN
@@ -723,7 +774,7 @@
         Vinfo( 2)='actual model penalty function'
         vardim(1)=MinnerDim
         vardim(2)=NouterDim
-        status=def_var(ng, iNLM, ncMODid(ng), varid, nf90_double,       &
+        status=def_var(ng, iNLM, DAV(ng)%ncid, varid, nf90_double,      &
      &                 2, vardim, Aval, Vinfo, ncname,                  &
      &                 SetParAccess = .FALSE.)
         IF (exit_flag.ne.NoError) RETURN
@@ -734,7 +785,7 @@
         Vinfo( 2)='actual data penalty function'
         vardim(1)=MinnerDim
         vardim(2)=NouterDim
-        status=def_var(ng, iNLM, ncMODid(ng), varid, nf90_double,       &
+        status=def_var(ng, iNLM, DAV(ng)%ncid, varid, nf90_double,      &
      &                 2, vardim, Aval, Vinfo, ncname,                  &
      &                 SetParAccess = .FALSE.)
         IF (exit_flag.ne.NoError) RETURN
@@ -745,7 +796,7 @@
         Vinfo( 2)='actual total penalty function'
         vardim(1)=MinnerDim
         vardim(2)=NouterDim
-        status=def_var(ng, iNLM, ncMODid(ng), varid, nf90_double,       &
+        status=def_var(ng, iNLM, DAV(ng)%ncid, varid, nf90_double,      &
      &                 2, vardim, Aval, Vinfo, ncname,                  &
      &                 SetParAccess = .FALSE.)
         IF (exit_flag.ne.NoError) RETURN
@@ -755,7 +806,7 @@
 !
         Vinfo( 1)=Vname(1,idObsS)
         Vinfo( 2)=Vname(2,idObsS)
-        status=def_var(ng, iNLM, ncMODid(ng), modVid(idObsS,ng),        &
+        status=def_var(ng, iNLM, DAV(ng)%ncid, DAV(ng)%Vid(idObsS),     &
      &                 NF_FRST, 1, (/datumDim/), Aval, Vinfo, ncname)
         IF (exit_flag.ne.NoError) RETURN
 
@@ -765,7 +816,7 @@
 !
         Vinfo( 1)=Vname(1,idNLmi)
         Vinfo( 2)=Vname(2,idNLmi)
-        status=def_var(ng, iNLM, ncMODid(ng), modVid(idNLmi,ng),        &
+        status=def_var(ng, iNLM, DAV(ng)%ncid, DAV(ng)%Vid(idNLmi),     &
      &                 NF_FRST, 1, (/datumDim/), Aval, Vinfo, ncname)
         IF (exit_flag.ne.NoError) RETURN
 # endif
@@ -776,7 +827,7 @@
         haveNLmod(ng)=.FALSE.
         Vinfo( 1)=Vname(1,idNLmo)
         Vinfo( 2)=Vname(2,idNLmo)
-        status=def_var(ng, iNLM, ncMODid(ng), modVid(idNLmo,ng),        &
+        status=def_var(ng, iNLM, DAV(ng)%ncid, DAV(ng)%Vid(idNLmo),     &
      &                 NF_FRST, 1, (/datumDim/), Aval, Vinfo, ncname)
         IF (exit_flag.ne.NoError) RETURN
 # endif
@@ -792,7 +843,7 @@
 #  else
         Vinfo( 2)=Vname(2,idTLmo)
 #  endif
-        status=def_var(ng, iNLM, ncMODid(ng), modVid(idTLmo,ng),        &
+        status=def_var(ng, iNLM, DAV(ng)%ncid, DAV(ng)%Vid(idTLmo),     &
      &                 NF_FRST, 1, (/datumDim/), Aval, Vinfo, ncname)
         IF (exit_flag.ne.NoError) RETURN
 # endif
@@ -802,7 +853,7 @@
 !
         Vinfo( 1)=Vname(1,idMOMi)
         Vinfo( 2)=Vname(2,idMOMi)
-        status=def_var(ng, iNLM, ncMODid(ng), modVid(idMOMi,ng),        &
+        status=def_var(ng, iNLM, DAV(ng)%ncid, DAV(ng)%Vid(idMOMi),     &
      &                 NF_FRST, 1, (/datumDim/), Aval, Vinfo, ncname)
         IF (exit_flag.ne.NoError) RETURN
 !
@@ -810,7 +861,7 @@
 !
         Vinfo( 1)=Vname(1,idMOMf)
         Vinfo( 2)=Vname(2,idMOMf)
-        status=def_var(ng, iNLM, ncMODid(ng), modVid(idMOMf,ng),        &
+        status=def_var(ng, iNLM, DAV(ng)%ncid, DAV(ng)%Vid(idMOMf),     &
      &                 NF_FRST, 1, (/datumDim/), Aval, Vinfo, ncname)
         IF (exit_flag.ne.NoError) RETURN
 # endif
@@ -820,7 +871,7 @@
 !
         Vinfo( 1)='NLcost_function'
         Vinfo( 2)='nonlinear model misfit cost function'
-        status=def_var(ng, iNLM, ncMODid(ng), varid, nf90_double,       &
+        status=def_var(ng, iNLM, DAV(ng)%ncid, varid, nf90_double,      &
      &                 2, (/stateDim,MouterDim/), Aval, Vinfo, ncname)
         IF (exit_flag.ne.NoError) RETURN
 !
@@ -828,7 +879,7 @@
 !
         Vinfo( 1)='TLcost_function'
         Vinfo( 2)='tangent linear model misfit cost function'
-        status=def_var(ng, iNLM, ncMODid(ng), varid, nf90_double,       &
+        status=def_var(ng, iNLM, DAV(ng)%ncid, varid, nf90_double,      &
      &                 1, (/iterDim/), Aval, Vinfo, ncname,             &
      &                 SetParAccess = .FALSE.)
         IF (exit_flag.ne.NoError) RETURN
@@ -839,7 +890,7 @@
 !
         Vinfo( 1)='back_function'
         Vinfo( 2)='model minus background misfit cost function'
-        status=def_var(ng, iNLM, ncMODid(ng), varid, nf90_double,       &
+        status=def_var(ng, iNLM, DAV(ng)%ncid, varid, nf90_double,      &
      &                 1, (/iterDim/), Aval, Vinfo, ncname,             &
      &                 SetParAccess = .FALSE.)
         IF (exit_flag.ne.NoError) RETURN
@@ -851,7 +902,7 @@
 !
         Vinfo( 1)='Jmin'
         Vinfo( 2)='normalized, optimal cost function minimum'
-        status=def_var(ng, iNLM, ncMODid(ng), varid, nf90_double,       &
+        status=def_var(ng, iNLM, DAV(ng)%ncid, varid, nf90_double,      &
      &                 1, (/iterDim/), Aval, Vinfo, ncname,             &
      &                 SetParAccess = .FALSE.)
         IF (exit_flag.ne.NoError) RETURN
@@ -864,7 +915,7 @@
         Vinfo( 2)='initial gradient for minimization, observation space'
         vardim(1)=datumDim
         vardim(2)=NouterDim
-        status=def_var(ng, iNLM, ncMODid(ng), varid, nf90_double,       &
+        status=def_var(ng, iNLM, DAV(ng)%ncid, varid, nf90_double,      &
      &                 2, vardim, Aval, Vinfo, ncname)
         IF (exit_flag.ne.NoError) RETURN
 !
@@ -875,7 +926,7 @@
         vardim(1)=datumDim
         vardim(2)=MinnerDim
         vardim(3)=NouterDim
-        status=def_var(ng, iNLM, ncMODid(ng), varid, nf90_double,       &
+        status=def_var(ng, iNLM, DAV(ng)%ncid, varid, nf90_double,      &
      &                 3, vardim, Aval, Vinfo, ncname)
         IF (exit_flag.ne.NoError) RETURN
 !
@@ -886,7 +937,7 @@
         vardim(1)=datumDim
         vardim(2)=NinnerDim
         vardim(3)=NouterDim
-        status=def_var(ng, iNLM, ncMODid(ng), varid, nf90_double,       &
+        status=def_var(ng, iNLM, DAV(ng)%ncid, varid, nf90_double,      &
      &                 3, vardim, Aval, Vinfo, ncname)
         IF (exit_flag.ne.NoError) RETURN
 # endif
@@ -898,7 +949,7 @@
         Vinfo( 1)='RPmodel_initial'
         Vinfo( 2)='initial representer model at observation locations'
         vardim(1)=datumDim
-        status=def_var(ng, iNLM, ncMODid(ng), varid, nf90_double,       &
+        status=def_var(ng, iNLM, DAV(ng)%ncid, varid, nf90_double,      &
      &                 1, vardim, Aval, Vinfo, ncname)
         IF (exit_flag.ne.NoError) RETURN
 # endif
@@ -911,7 +962,7 @@
         Vinfo( 1)='ObsImpact_total'
         Vinfo( 2)='total observation impact'
         vardim(1)=datumDim
-        status=def_var(ng, iNLM, ncMODid(ng), varid, nf90_double,       &
+        status=def_var(ng, iNLM, DAV(ng)%ncid, varid, nf90_double,      &
      &                 1, vardim, Aval, Vinfo, ncname)
         IF (exit_flag.ne.NoError) RETURN
 #  else
@@ -921,7 +972,7 @@
         Vinfo( 1)='ObsSens_total'
         Vinfo( 2)='total observation sensitivity'
         vardim(1)=datumDim
-        status=def_var(ng, iNLM, ncMODid(ng), varid, nf90_double,       &
+        status=def_var(ng, iNLM, DAV(ng)%ncid, varid, nf90_double,      &
      &                 1, vardim, Aval, Vinfo, ncname)
         IF (exit_flag.ne.NoError) RETURN
 #  endif
@@ -935,7 +986,7 @@
         Vinfo( 1)='ObsImpact_IC'
         Vinfo( 2)='observation impact due to initial conditions'
         vardim(1)=datumDim
-        status=def_var(ng, iNLM, ncMODid(ng), varid, nf90_double,       &
+        status=def_var(ng, iNLM, DAV(ng)%ncid, varid, nf90_double,      &
      &                 1, vardim, Aval, Vinfo, ncname)
         IF (exit_flag.ne.NoError) RETURN
 
@@ -946,7 +997,7 @@
         Vinfo( 1)='ObsImpact_FC'
         Vinfo( 2)='observation impact due to surface forcing'
         vardim(1)=datumDim
-        status=def_var(ng, iNLM, ncMODid(ng), varid, nf90_double,       &
+        status=def_var(ng, iNLM, DAV(ng)%ncid, varid, nf90_double,      &
      &                 1, vardim, Aval, Vinfo, ncname)
         IF (exit_flag.ne.NoError) RETURN
 #  endif
@@ -957,7 +1008,7 @@
         Vinfo( 1)='ObsImpact_BC'
         Vinfo( 2)='observation impact due to open boundary conditions'
         vardim(1)=datumDim
-        status=def_var(ng, iNLM, ncMODid(ng), varid, nf90_double,       &
+        status=def_var(ng, iNLM, DAV(ng)%ncid, varid, nf90_double,      &
      &                 1, vardim, Aval, Vinfo, ncname)
         IF (exit_flag.ne.NoError) RETURN
 #  endif
@@ -970,7 +1021,7 @@
           Vinfo( 1)='zeta_ref'
           Vinfo( 2)='reference free-surface, balance operator'
           Vinfo( 3)=Vname(3,idFsur)
-          status=def_var(ng, iNLM, ncMODid(ng), modVid(idFsur,ng),      &
+          status=def_var(ng, iNLM, DAV(ng)%ncid, DAV(ng)%Vid(idFsur),   &
      &                   NF_FOUT, 2, (/RxiDim, RetaDim/), Aval, Vinfo,  &
      &                   ncname)
         END IF
@@ -980,7 +1031,7 @@
 !  Leave definition mode.
 !-----------------------------------------------------------------------
 !
-        CALL netcdf_enddef (ng, iNLM, ncname, ncMODid(ng))
+        CALL netcdf_enddef (ng, iNLM, ncname, DAV(ng)%ncid)
         IF (exit_flag.ne.NoError) RETURN
 
       END IF DEFINE
@@ -990,7 +1041,7 @@
 !=======================================================================
 !
       QUERY : IF (.not.LdefMOD(ng)) THEN
-        ncname=MODname(ng)
+        ncname=DAV(ng)%name
 !
 !  Inquire about the dimensions and check for consistency.
 !
@@ -1004,7 +1055,7 @@
 !
 !  Open model/observation for read/write.
 !
-        CALL netcdf_open (ng, iNLM, ncname, 1, ncMODid(ng))
+        CALL netcdf_open (ng, iNLM, ncname, 1, DAV(ng)%ncid)
         IF (exit_flag.ne.NoError) THEN
           WRITE (stdout,50) TRIM(ncname)
           RETURN
@@ -1022,29 +1073,29 @@
         DO i=1,n_var
           IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idObsS))) THEN
             got_var(idObsS)=.TRUE.
-            modVid(idObsS,ng)=var_id(i)
+            DAV(ng)%Vid(idObsS)=var_id(i)
 # ifdef FOUR_DVAR
           ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idNLmi))) THEN
             got_var(idNLmi)=.TRUE.
-            modVid(idNLmi,ng)=var_id(i)
+            DAV(ng)%Vid(idNLmi)=var_id(i)
 # endif
           ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idNLmo))) THEN
             got_var(idNLmo)=.TRUE.
             haveNLmod(ng)=.TRUE.
-            modVid(idNLmo,ng)=var_id(i)
+            DAV(ng)%Vid(idNLmo)=var_id(i)
 # if defined IS4DVAR || defined WEAK_CONSTRAINT
           ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idTLmo))) THEN
             got_var(idTLmo)=.TRUE.
             haveTLmod(ng)=.TRUE.
-            modVid(idTLmo,ng)=var_id(i)
+            DAV(ng)%Vid(idTLmo)=var_id(i)
 # endif
 # if defined IS4DVAR || defined WEAK_CONSTRAINT
           ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idMOMi))) THEN
             got_var(idMOMi)=.TRUE.
-            modVid(idMOMi,ng)=var_id(i)
+            DAV(ng)%Vid(idMOMi)=var_id(i)
           ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idMOMf))) THEN
             got_var(idMOMf)=.TRUE.
-            modVid(idMOMf,ng)=var_id(i)
+            DAV(ng)%Vid(idMOMf)=var_id(i)
 # endif
           END IF
         END DO
@@ -1053,28 +1104,28 @@
 !
         IF (.not.got_var(idObsS)) THEN
           IF (Master) WRITE (stdout,60) TRIM(Vname(1,idObsS)),          &
-     &                                  TRIM(MODname(ng))
+     &                                  TRIM(DAV(ng)%name)
           exit_flag=2
           RETURN
         END IF
 # ifdef FOUR_DVAR
         IF (.not.got_var(idNLmi)) THEN
           IF (Master) WRITE (stdout,60) TRIM(Vname(1,idNLmi)),          &
-     &                                  TRIM(MODname(ng))
+     &                                  TRIM(DAV(ng)%name)
           exit_flag=2
           RETURN
         END IF
 # endif
         IF (.not.got_var(idNLmo)) THEN
           IF (Master) WRITE (stdout,60) TRIM(Vname(1,idNLmo)),          &
-     &                                  TRIM(MODname(ng))
+     &                                  TRIM(DAV(ng)%name)
           exit_flag=2
           RETURN
         END IF
 # if defined IS4DVAR || defined WEAK_CONSTRAINT
         IF (.not.got_var(idTLmo)) THEN
           IF (Master) WRITE (stdout,60) TRIM(Vname(1,idTLmo)),          &
-     &                                  TRIM(MODname(ng))
+     &                                  TRIM(DAV(ng)%name)
           exit_flag=2
           RETURN
         END IF
@@ -1082,26 +1133,26 @@
 # if defined IS4DVAR || defined WEAK_CONSTRAINT
         IF (.not.got_var(idMOMi)) THEN
           IF (Master) WRITE (stdout,60) TRIM(Vname(1,idMOMi)),          &
-     &                                  TRIM(MODname(ng))
+     &                                  TRIM(DAV(ng)%name)
           exit_flag=2
           RETURN
         END IF
         IF (.not.got_var(idMOMf)) THEN
           IF (Master) WRITE (stdout,60) TRIM(Vname(1,idMOMf)),          &
-     &                                  TRIM(MODname(ng))
+     &                                  TRIM(DAV(ng)%name)
           exit_flag=2
           RETURN
         END IF
 # endif
       END IF QUERY
 
-  10  FORMAT (/,6x,'DEF_MOD   - creating model/observation data file:', &
-     &        1x,a)
-  20  FORMAT (/,6x,'DEF_MOD   - inquiring model/observation data file:',&
-     &        1x,a)
+  10  FORMAT (/,6x,'DEF_MOD   - creating model/observation data file,', &
+     &        ' Grid ',i2.2,': ',a)
+  20  FORMAT (/,6x,'DEF_MOD   - inquiring model/observation data file,',&
+     &        ' Grid ',i2.2,': ',a)
   30  FORMAT (/,' DEF_MOD - unable to create model/observation file:',  &
      &        1x,a)
-  40  FORMAT (/,' DEF_MOD - unable to create globat attribute: ',       &
+  40  FORMAT (/,' DEF_MOD - unable to create global attribute: ',       &
      &        a,/,11x,a)
   50  FORMAT (/,' DEF_MOD - unable to open observation/model file: ',a)
 

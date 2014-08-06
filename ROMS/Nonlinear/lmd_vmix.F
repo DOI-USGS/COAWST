@@ -4,7 +4,7 @@
 !
 !svn $Id: lmd_vmix.F 732 2008-09-07 01:55:51Z jcwarner $
 !=======================================================================
-!  Copyright (c) 2002-2010 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2014 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                           Hernan G. Arango   !
 !========================================== Alexander F. Shchepetkin ===
@@ -37,6 +37,7 @@
       USE mod_grid
       USE mod_mixing
       USE mod_ocean
+      USE mod_scalars
       USE mod_stepping
 !
 # ifdef LMD_SKPP
@@ -57,31 +58,33 @@
 # ifdef PROFILE
       CALL wclock_on (ng, iNLM, 18)
 # endif
-      CALL lmd_vmix_tile (ng, tile,                                     &
-     &                    LBi, UBi, LBj, UBj,                           &
-     &                    IminS, ImaxS, JminS, JmaxS,                   &
-     &                    nstp(ng),                                     &
-     &                    GRID(ng) % Hz,                                &
+      IF (.not.PerfectRST(ng).or.iic(ng).ne.ntstart(ng)) THEN
+        CALL lmd_vmix_tile (ng, tile,                                   &
+     &                      LBi, UBi, LBj, UBj,                         &
+     &                      IminS, ImaxS, JminS, JmaxS,                 &
+     &                      nstp(ng),                                   &
+     &                      GRID(ng) % Hz,                              &
 # ifndef SPLINES
-     &                    GRID(ng) % z_r,                               &
+     &                      GRID(ng) % z_r,                             &
 # endif
-     &                    OCEAN(ng) % rho,                              &
-     &                    OCEAN(ng) % u,                                &
-     &                    OCEAN(ng) % v,                                &
+     &                      OCEAN(ng) % rho,                            &
+     &                      OCEAN(ng) % u,                              &
+     &                      OCEAN(ng) % v,                              &
 # ifdef LMD_DDMIX
-     &                    OCEAN(ng) % t,                                &
-     &                    MIXING(ng) % alfaobeta,                       &
+     &                      OCEAN(ng) % t,                              &
+     &                      MIXING(ng) % alfaobeta,                     &
 # endif
-     &                    MIXING(ng) % bvf,                             &
-     &                    MIXING(ng) % Akt,                             &
-     &                    MIXING(ng) % Akv)
+     &                      MIXING(ng) % bvf,                           &
+     &                      MIXING(ng) % Akt,                           &
+     &                      MIXING(ng) % Akv)
 # ifdef LMD_SKPP
-      CALL lmd_skpp (ng, tile)
+        CALL lmd_skpp (ng, tile)
 # endif
 # ifdef LMD_BKPP
-      CALL lmd_bkpp (ng, tile)
+        CALL lmd_bkpp (ng, tile)
 # endif
-      CALL lmd_finish (ng, tile)
+        CALL lmd_finish (ng, tile)
+      END IF
 # ifdef PROFILE
       CALL wclock_off (ng, iNLM, 18)
 # endif
@@ -237,36 +240,36 @@
 #  endif
 #  ifdef RI_HORAVG
       DO k=1,N(ng)-1
-        IF (WESTERN_EDGE) THEN
+        IF (DOMAIN(ng)%Western_Edge(tile)) THEN
           DO j=MAX(1,Jstr-1),MIN(Jend+1,Mm(ng))
             Rig(Istr-1,j,k)=Rig(Istr,j,k)
           END DO
         END IF
-        IF (EASTERN_EDGE) THEN
+        IF (DOMAIN(ng)%Eastern_Edge(tile)) THEN
           DO j=MAX(1,Jstr-1),MIN(Jend+1,Mm(ng))
             Rig(Iend+1,j,k)=Rig(Iend,j,k)
           END DO
         END IF
-        IF (SOUTHERN_EDGE) THEN
+        IF (DOMAIN(ng)%Southern_Edge(tile)) THEN
           DO i=MAX(1,Istr-1),MIN(Iend+1,Lm(ng))
             Rig(i,Jstr-1,k)=Rig(i,Jstr,k)
           END DO
         END IF
-        IF (NORTHERN_EDGE) THEN
+        IF (DOMAIN(ng)%Northern_Edge(tile)) THEN
           DO i=MAX(1,Istr-1),MIN(Iend+1,Lm(ng))
             Rig(i,Jend+1,k)=Rig(i,Jend,k)
           END DO
         END IF
-        IF (SOUTH_WEST_CORNER) THEN
+        IF (DOMAIN(ng)%SouthWest_Corner(tile)) THEN
           Rig(Istr-1,Jstr-1,k)=Rig(Istr,Jstr,k)
         END IF
-        IF (NORTH_WEST_CORNER) THEN
+        IF (DOMAIN(ng)%NorthWest_Corner(tile)) THEN
           Rig(Istr-1,Jend+1,k)=Rig(Istr,Jend,k)
         END IF
-        IF (SOUTH_EAST_CORNER) THEN
+        IF (DOMAIN(ng)%SouthEast_Corner(tile)) THEN
           Rig(Iend+1,Jstr-1,k)=Rig(Iend,Jstr,k)
         END IF
-        IF (NORTH_EAST_CORNER) THEN
+        IF (DOMAIN(ng)%NorthEast_Corner(tile)) THEN
           Rig(Iend+1,Jend+1,k)=Rig(Iend,Jend,k)
         END IF
 !
@@ -335,16 +338,30 @@
 !  Holloway.
 !
             cff=1.0_r8/SQRT(MAX(bvf(i,j,k),1.0E-7_r8))
+# ifdef ISOMIP
+            lmd_iwm=1.0E-3_r8
+            lmd_iws=5.0E-5_r8
+            if (bvf(i,j,k) .lt. 0.0_r8) then
+              lmd_iwm=lmd_iwm*100.0_r8
+              lmd_iws=lmd_iws*100.0_r8
+            endif
+# else
             lmd_iwm=1.0E-6_r8*cff
             lmd_iws=1.0E-7_r8*cff
 !           lmd_iwm=lmd_nuwm
 !           lmd_iws=lmd_nuws
+# endif
 !
 ! Sum contributions due to internal wave breaking, shear instability
 ! and convective diffusivity due to shear instability.
 !
+# ifdef ISOMIP
+            Akv(i,j,k)=lmd_iwm
+            Akt(i,j,k,itemp)=lmd_iws
+# else
             Akv(i,j,k)=lmd_iwm+lmd_nu0m*nu_sx
             Akt(i,j,k,itemp)=lmd_iws+lmd_nu0s*nu_sx
+# endif
 # ifdef SALINITY
             Akt(i,j,k,isalt)=Akt(i,j,k,itemp)
 # endif
@@ -451,6 +468,10 @@
 # ifndef SPLINES
      &                      GRID(ng) % z_r,                             &
 # endif
+# ifdef M2TIDE_DIFF
+     &                      GRID(ng) % z_w,                             &
+     &                      MIXING(ng) % m2_amp,                        &
+# endif
      &                      MIXING(ng) % bvf,                           &
      &                      MIXING(ng) % Akt,                           &
      &                      MIXING(ng) % Akv)
@@ -464,6 +485,10 @@
      &                            Hz,                                   &
 # ifndef SPLINES
      &                            z_r,                                  &
+# endif
+# ifdef M2TIDE_DIFF
+     &                            z_w,                                  &
+     &                            m2_amp,                               &
 # endif
      &                            bvf, Akt, Akv)
 !***********************************************************************
@@ -487,6 +512,10 @@
 #  ifndef SPLINES
       real(r8), intent(in) :: z_r(LBi:,LBj:,:)
 #  endif
+# ifdef M2TIDE_DIFF
+      real(r8), intent(in) :: z_w(LBi:,LBj:,0:)
+      real(r8), intent(in) :: m2_amp(LBi:,LBj:)
+# endif
       real(r8), intent(in) :: bvf(LBi:,LBj:,0:)
 
       real(r8), intent(inout) :: Akt(LBi:,LBj:,0:,:)
@@ -496,6 +525,10 @@
 #  ifndef SPLINES
       real(r8), intent(in) :: z_r(LBi:UBi,LBj:UBj,N(ng))
 #  endif
+# ifdef M2TIDE_DIFF
+      real(r8), intent(in) :: z_w(LBi:UBi,LBj:UBj,0:N(ng))
+      real(r8), intent(in) :: m2_amp(LBi:UBi,LBj:UBj)
+# endif
       real(r8), intent(in) :: bvf(LBi:UBi,LBj:UBj,0:N(ng))
 
       real(r8), intent(inout) :: Akt(LBi:UBi,LBj:UBj,0:N(ng),NAT)
@@ -504,23 +537,19 @@
 !
 !  Local variable declarations.
 !
-# ifdef DISTRIBUTE
-#  ifdef EW_PERIODIC
-      logical :: EWperiodic=.TRUE.
-#  else
-      logical :: EWperiodic=.FALSE.
-#  endif
-#  ifdef NS_PERIODIC
-      logical :: NSperiodic=.TRUE.
-#  else
-      logical :: NSperiodic=.FALSE.
-#  endif
-# endif
       integer :: i, itrc, j, k
 
       real(r8), parameter :: eps = 1.0E-14_r8
 
       real(r8) :: cff, lmd_iwm, lmd_iws, nu_sx, nu_sxc, shear2
+# ifdef M2TIDE_DIFF
+      real(r8), parameter :: lmd_k0 = 5.0e-3_r8  ! m2 s-1
+      real(r8), parameter :: lmd_sigma = 3.0_r8
+      real(r8), parameter :: lmd_p = 0.25_r8
+      real(r8), parameter :: lmd_drag = 2.4e-3_r8
+      real(r8), parameter :: eps = 1.e-20_r8
+      real(r8) :: lmd_kz, lmd_ri
+# endif
 
 # include "set_bounds.h"
 !
@@ -529,6 +558,10 @@
 !  the superposition of three processes: local Richardson number
 !  instability due to resolved vertical shear, internal wave
 !  breaking, and double diffusion.
+# ifdef M2TIDE_DIFF
+!  Add in contribution of simulated tidal mixing.
+!   Lee, H.-C. et al., 2006 Ocean Modelling, 11, 464-477.
+# endif
 !-----------------------------------------------------------------------
 !
       DO k=1,N(ng)-1
@@ -550,14 +583,35 @@
 ! Sum contributions due to internal wave breaking, shear instability
 ! and convective diffusivity due to shear instability.
 !
+# ifndef ISOMIP
             Akv(i,j,k)=Akv(i,j,k)+lmd_nu0c*nu_sxc
             Akt(i,j,k,itemp)=Akt(i,j,k,itemp)+lmd_nu0c*nu_sxc
-# ifdef SALINITY
+#  ifdef SALINITY
             Akt(i,j,k,isalt)=Akt(i,j,k,isalt)+lmd_nu0c*nu_sxc
+#  endif
 # endif
           END DO
         END DO
       END DO
+!
+# ifdef M2TIDE_DIFF
+!  Add in contribution of simulated tidal mixing.
+!
+      DO k=1,N(ng)-1
+        DO j=Jstr,Jend
+          DO i=Istr,Iend
+            shear2 = 0.5 * lmd_drag *                                   &
+     &               (m2_amp(i,j)/(vonKar*(z_w(i,j,0)-z_w(i,j,k)) ))**2
+            lmd_ri = max(0.0,bvf(i,j,k)) / (shear2 + eps)
+            lmd_kz = lmd_k0 * (1 + lmd_sigma*lmd_ri)**(-lmd_p)
+            Akt(i,j,k,itemp)=Akt(i,j,k,itemp)+lmd_kz
+#  ifdef SALINITY
+            Akt(i,j,k,isalt)=Akt(i,j,k,isalt)+lmd_kz
+#  endif
+          END DO
+        END DO
+      END DO
+# endif
 !
 !  Apply boundary conditions.
 !
@@ -572,11 +626,13 @@
 # ifdef DISTRIBUTE
       CALL mp_exchange3d (ng, tile, iNLM, 1,                            &
      &                    LBi, UBi, LBj, UBj, 0, N(ng),                 &
-     &                    NghostPoints, EWperiodic, NSperiodic,         &
+     &                    NghostPoints,                                 &
+     &                    EWperiodic(ng), NSperiodic(ng),               &
      &                    Akv)
       CALL mp_exchange4d (ng, tile, iNLM, 1,                            &
      &                    LBi, UBi, LBj, UBj, 0, N(ng), 1, NAT,         &
-     &                    NghostPoints, EWperiodic, NSperiodic,         &
+     &                    NghostPoints,                                 &
+     &                    EWperiodic(ng), NSperiodic(ng),               &
      &                    Akt)
 # endif
       RETURN

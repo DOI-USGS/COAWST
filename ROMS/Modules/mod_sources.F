@@ -1,10 +1,9 @@
 #include "cppdefs.h"
       MODULE mod_sources
-#if defined UV_PSOURCE || defined TS_PSOURCE || defined Q_PSOURCE
 !
 !svn $Id: mod_sources.F 1338 2008-01-24 02:47:35Z jcwarner $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2010 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2014 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -48,8 +47,8 @@
 
         implicit none
 
-        integer, dimension(Ngrids) :: Msrc
-        integer, dimension(Ngrids) :: Nsrc
+        integer, allocatable :: Msrc(:)
+        integer, allocatable :: Nsrc(:)
 
         TYPE T_SOURCES
 
@@ -65,10 +64,10 @@
           real(r8), pointer :: Xsrc(:)
           real(r8), pointer :: Ysrc(:)
 
-# ifndef ANA_PSOURCE
+#ifndef ANA_PSOURCE
           real(r8), pointer :: QbarG(:,:)
           real(r8), pointer :: TsrcG(:,:,:,:)
-# endif
+#endif
 
         END TYPE T_SOURCES
 
@@ -86,13 +85,13 @@
 !=======================================================================
 !
       USE mod_param
-# ifndef ANA_PSOURCE
+#ifndef ANA_PSOURCE
       USE mod_parallel
       USE mod_iounits
       USE mod_ncparam
       USE mod_netcdf
       USE mod_scalars
-# endif
+#endif
 !
 !  Imported variable declarations.
 !
@@ -100,11 +99,11 @@
 !
 !  Local variable declarations.
 !
-# ifndef ANA_PSOURCE
+#ifndef ANA_PSOURCE
       logical :: foundit
 
       integer :: Vid, ifile, nvatt, nvdim
-# endif
+#endif
       integer :: is, itrc, k, mg
 
       real(r8), parameter :: IniVal = 0.0_r8
@@ -112,18 +111,21 @@
 !-----------------------------------------------------------------------
 !  Allocate module variables.
 !-----------------------------------------------------------------------
+!
+      IF (ng.eq.1) THEN
+        allocate ( Msrc(Ngrids) )
+        allocate ( Nsrc(Ngrids) )
+      END IF
 
-# if !defined ANA_PSOURCE && (defined UV_PSOURCE || \
-                              defined TS_PSOURCE || defined Q_PSOURCE)
+#ifndef ANA_PSOURCE
 !
 !  Inquire about the number of point sources.
 !
       IF (ng.eq.1) THEN
         DO mg=1,Ngrids
           foundit=.FALSE.
-
-          QUERY : DO ifile=1,nFfiles(mg)
-            CALL netcdf_inq_var (ng, iNLM, FRCname(ifile,mg),           &
+          IF (LuvSrc(mg).or.LwSrc(mg).or.ANY(LtracerSrc(:,mg))) THEN
+            CALL netcdf_inq_var (ng, iNLM, SSF(mg)%name,                &
      &                           MyVarName = TRIM(Vname(1,idRxpo)),     &
      &                           SearchVar = foundit,                   &
      &                           VarID = Vid,                           &
@@ -134,19 +136,18 @@
             IF (foundit) THEN
               Nsrc(mg)=var_Dsize(1)         ! first dimension
               Msrc(mg)=Nsrc(mg)
-              EXIT QUERY
             END IF
-          END DO QUERY
+          END IF
         END DO
       END IF
-# else
+#else
 !
 !  Set number of point sources to maximum number of analytical sources.
 !  Notice that a maximum of 200 analytical sources are set-up here.
 !
       Msrc(ng)=200
       Nsrc(ng)=Msrc(ng)
-# endif
+#endif
 !
 !  Allocate structure.
 !
@@ -174,11 +175,11 @@
 
       allocate ( SOURCES(ng) % Ysrc(Nsrc(ng)) )
 
-# ifndef ANA_PSOURCE
+#ifndef ANA_PSOURCE
       allocate ( SOURCES(ng) % QbarG(Nsrc(ng),2) )
 
       allocate ( SOURCES(ng) % TsrcG(Nsrc(ng),N(ng),2,NT(ng)) )
-# endif
+#endif
 !
 !-----------------------------------------------------------------------
 !  Initialize module variables.
@@ -192,10 +193,10 @@
         SOURCES(ng) % Xsrc(is) = IniVal
         SOURCES(ng) % Ysrc(is) = IniVal
         SOURCES(ng) % Qbar(is) = IniVal
-# ifndef ANA_PSOURCE
+#ifndef ANA_PSOURCE
         SOURCES(ng) % QbarG(is,1) = IniVal
         SOURCES(ng) % QbarG(is,2) = IniVal
-# endif
+#endif
       END DO
       DO k=1,N(ng)
         DO is=1,Nsrc(ng)
@@ -207,15 +208,14 @@
         DO k=1,N(ng)
           DO is=1,Nsrc(ng)
             SOURCES(ng) % Tsrc(is,k,itrc) = IniVal
-# ifndef ANA_PSOURCE
+#ifndef ANA_PSOURCE
             SOURCES(ng) % TsrcG(is,k,1,itrc) = IniVal
             SOURCES(ng) % TsrcG(is,k,2,itrc) = IniVal
-# endif
+#endif
           END DO
         END DO
       END DO
 
       RETURN
       END SUBROUTINE allocate_sources
-#endif
       END MODULE mod_sources

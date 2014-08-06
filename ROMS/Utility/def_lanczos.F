@@ -2,9 +2,9 @@
 #if defined IS4DVAR
       SUBROUTINE def_lanczos (ng)
 !
-!svn $Id: def_lanczos.F 429 2009-12-20 17:30:26Z arango $
+!svn $Id$
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2010 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2014 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -79,8 +79,8 @@
 
       real(r8) :: Aval(6)
 
-      character (len=80) :: fname, ncname
       character (len=120) :: Vinfo(Natt)
+      character (len=256) :: ncname
 !
       SourceFile='def_lanczos.F'
 !
@@ -89,13 +89,13 @@
 !-----------------------------------------------------------------------
 !
       IF (exit_flag.ne.NoError) RETURN
-      ncname=LCZname(ng)
+      ncname=LCZ(ng)%name
 !
       IF (Master) THEN
         IF (LdefLCZ(ng)) THEN
-          WRITE (stdout,10) TRIM(ncname)
+          WRITE (stdout,10) ng, TRIM(ncname)
         ELSE
-          WRITE (stdout,20) TRIM(ncname)
+          WRITE (stdout,20) ng, TRIM(ncname)
         END IF
       END IF
 !
@@ -104,7 +104,7 @@
 !=======================================================================
 !
       DEFINE : IF (LdefLCZ(ng)) THEN
-        CALL netcdf_create (ng, iADM, TRIM(ncname), ncLCZid(ng))
+        CALL netcdf_create (ng, iADM, TRIM(ncname), LCZ(ng)%ncid)
         IF (exit_flag.ne.NoError) THEN
           IF (Master) WRITE (stdout,30) TRIM(ncname)
           RETURN
@@ -116,163 +116,163 @@
 !
         DimIDs=0
 !
-        status=def_dim(ng, iADM, ncLCZid(ng), ncname, 'xi_rho',         &
+        status=def_dim(ng, iADM, LCZ(ng)%ncid, ncname, 'xi_rho',        &
      &                 IOBOUNDS(ng)%xi_rho, DimIDs( 1))
         IF (exit_flag.ne.NoError) RETURN
 
-        status=def_dim(ng, iADM, ncLCZid(ng), ncname, 'xi_u',           &
+        status=def_dim(ng, iADM, LCZ(ng)%ncid, ncname, 'xi_u',          &
      &                 IOBOUNDS(ng)%xi_u, DimIDs( 2))
         IF (exit_flag.ne.NoError) RETURN
 
-        status=def_dim(ng, iADM, ncLCZid(ng), ncname, 'xi_v',           &
+        status=def_dim(ng, iADM, LCZ(ng)%ncid, ncname, 'xi_v',          &
      &                 IOBOUNDS(ng)%xi_v, DimIDs( 3))
         IF (exit_flag.ne.NoError) RETURN
 
-        status=def_dim(ng, iADM, ncLCZid(ng), ncname, 'xi_psi',         &
+        status=def_dim(ng, iADM, LCZ(ng)%ncid, ncname, 'xi_psi',        &
      &                 IOBOUNDS(ng)%xi_psi, DimIDs( 4))
         IF (exit_flag.ne.NoError) RETURN
 
-        status=def_dim(ng, iADM, ncLCZid(ng), ncname, 'eta_rho',        &
+        status=def_dim(ng, iADM, LCZ(ng)%ncid, ncname, 'eta_rho',       &
      &                 IOBOUNDS(ng)%eta_rho, DimIDs( 5))
         IF (exit_flag.ne.NoError) RETURN
 
-        status=def_dim(ng, iADM, ncLCZid(ng), ncname, 'eta_u',          &
+        status=def_dim(ng, iADM, LCZ(ng)%ncid, ncname, 'eta_u',         &
      &                 IOBOUNDS(ng)%eta_u, DimIDs( 6))
         IF (exit_flag.ne.NoError) RETURN
 
-        status=def_dim(ng, iADM, ncLCZid(ng), ncname, 'eta_v',          &
+        status=def_dim(ng, iADM, LCZ(ng)%ncid, ncname, 'eta_v',         &
      &                 IOBOUNDS(ng)%eta_v, DimIDs( 7))
         IF (exit_flag.ne.NoError) RETURN
 
-        status=def_dim(ng, iADM, ncLCZid(ng), ncname, 'eta_psi',        &
+        status=def_dim(ng, iADM, LCZ(ng)%ncid, ncname, 'eta_psi',       &
      &                 IOBOUNDS(ng)%eta_psi, DimIDs( 8))
         IF (exit_flag.ne.NoError) RETURN
 
 # ifdef ADJUST_BOUNDARY
-        status=def_dim(ng, iADM, ncLCZid(ng), ncname, 'IorJ',           &
+        status=def_dim(ng, iADM, LCZ(ng)%ncid, ncname, 'IorJ',          &
      &                 IOBOUNDS(ng)%IorJ, IorJdim)
         IF (exit_flag.ne.NoError) RETURN
 # endif
 
 # if defined WRITE_WATER && defined MASKING
-        status=def_dim(ng, iADM, ncLCZid(ng), ncname, 'xy_rho',         &
+        status=def_dim(ng, iADM, LCZ(ng)%ncid, ncname, 'xy_rho',        &
      &                 IOBOUNDS(ng)%xy_rho, DimIDs(17))
         IF (exit_flag.ne.NoError) RETURN
 
-        status=def_dim(ng, iADM, ncLCZid(ng), ncname, 'xy_u',           &
+        status=def_dim(ng, iADM, LCZ(ng)%ncid, ncname, 'xy_u',          &
      &                 IOBOUNDS(ng)%xy_u, DimIDs(18))
         IF (exit_flag.ne.NoError) RETURN
 
-        status=def_dim(ng, iADM, ncLCZid(ng), ncname, 'xy_v',           &
+        status=def_dim(ng, iADM, LCZ(ng)%ncid, ncname, 'xy_v',          &
      &                 IOBOUNDS(ng)%xy_v, DimIDs(19))
         IF (exit_flag.ne.NoError) RETURN
 # endif
 
 # ifdef SOLVE3D
 #  if defined WRITE_WATER && defined MASKING
-        status=def_dim(ng, iADM, ncLCZid(ng), ncname, 'xyz_rho',        &
+        status=def_dim(ng, iADM, LCZ(ng)%ncid, ncname, 'xyz_rho',       &
      &                 IOBOUNDS(ng)%xy_rho*N(ng), DimIDs(20))
         IF (exit_flag.ne.NoError) RETURN
 
-        status=def_dim(ng, iADM, ncLCZid(ng), ncname, 'xyz_u',          &
+        status=def_dim(ng, iADM, LCZ(ng)%ncid, ncname, 'xyz_u',         &
      &                 IOBOUNDS(ng)%xy_u*N(ng), DimIDs(21))
         IF (exit_flag.ne.NoError) RETURN
 
-        status=def_dim(ng, iADM, ncLCZid(ng), ncname, 'xyz_v',          &
+        status=def_dim(ng, iADM, LCZ(ng)%ncid, ncname, 'xyz_v',         &
      &                 IOBOUNDS(ng)%xy_v*N(ng), DimIDs(22))
         IF (exit_flag.ne.NoError) RETURN
 
-        status=def_dim(ng, iADM, ncLCZid(ng), ncname, 'xyz_w',          &
+        status=def_dim(ng, iADM, LCZ(ng)%ncid, ncname, 'xyz_w',         &
      &                 IOBOUNDS(ng)%xy_rho*(N(ng)+1), DimIDs(23))
         IF (exit_flag.ne.NoError) RETURN
 #  endif
 
-        status=def_dim(ng, iADM, ncLCZid(ng), ncname, 'N',              &
+        status=def_dim(ng, iADM, LCZ(ng)%ncid, ncname, 'N',             &
      &                 N(ng), DimIDs( 9))
         IF (exit_flag.ne.NoError) RETURN
 
-        status=def_dim(ng, iADM, ncLCZid(ng), ncname, 's_rho',          &
+        status=def_dim(ng, iADM, LCZ(ng)%ncid, ncname, 's_rho',         &
      &                 N(ng), DimIDs( 9))
         IF (exit_flag.ne.NoError) RETURN
 
-        status=def_dim(ng, iADM, ncLCZid(ng), ncname, 's_w',            &
+        status=def_dim(ng, iADM, LCZ(ng)%ncid, ncname, 's_w',           &
      &                 N(ng)+1, DimIDs(10))
         IF (exit_flag.ne.NoError) RETURN
 
-        status=def_dim(ng, iADM, ncLCZid(ng), ncname, 'tracer',         &
+        status=def_dim(ng, iADM, LCZ(ng)%ncid, ncname, 'tracer',        &
      &                 NT(ng), DimIDs(11))
         IF (exit_flag.ne.NoError) RETURN
 
 #  ifdef SEDIMENT
-        status=def_dim(ng, iADM, ncLCZid(ng), ncname, 'NST',            &
+        status=def_dim(ng, iADM, LCZ(ng)%ncid, ncname, 'NST',           &
      &                 NST, DimIDs(32))
         IF (exit_flag.ne.NoError) RETURN
 
-        status=def_dim(ng, iADM, ncLCZid(ng), ncname, 'Nbed',           &
+        status=def_dim(ng, iADM, LCZ(ng)%ncid, ncname, 'Nbed',          &
      &                 Nbed, DimIDs(16))
         IF (exit_flag.ne.NoError) RETURN
 
 #   if defined WRITE_WATER && defined MASKING
-        status=def_dim(ng, iADM, ncLCZid(ng), ncname, 'xybed',          &
+        status=def_dim(ng, iADM, LCZ(ng)%ncid, ncname, 'xybed',         &
      &                 IOBOUNDS(ng)%xy_rho*Nbed, DimIDs(24))
         IF (exit_flag.ne.NoError) RETURN
 #   endif
 #  endif
 
 #  ifdef ECOSIM
-        status=def_dim(ng, iADM, ncLCZid(ng), ncname, 'Nphy',           &
+        status=def_dim(ng, iADM, LCZ(ng)%ncid, ncname, 'Nphy',          &
      &                 Nphy, DimIDs(25))
         IF (exit_flag.ne.NoError) RETURN
 
-        status=def_dim(ng, iADM, ncLCZid(ng), ncname, 'Nbac',           &
+        status=def_dim(ng, iADM, LCZ(ng)%ncid, ncname, 'Nbac',          &
      &                 Nbac, DimIDs(26))
         IF (exit_flag.ne.NoError) RETURN
 
-        status=def_dim(ng, iADM, ncLCZid(ng), ncname, 'Ndom',           &
+        status=def_dim(ng, iADM, LCZ(ng)%ncid, ncname, 'Ndom',          &
      &                 Ndom, DimIDs(27))
         IF (exit_flag.ne.NoError) RETURN
 
-        status=def_dim(ng, iADM, ncLCZid(ng), ncname, 'Nfec',           &
+        status=def_dim(ng, iADM, LCZ(ng)%ncid, ncname, 'Nfec',          &
      &                 Nfec, DimIDs(28))
         IF (exit_flag.ne.NoError) RETURN
 #  endif
 # endif
 
-        status=def_dim(ng, iADM, ncLCZid(ng), ncname, 'boundary',       &
+        status=def_dim(ng, iADM, LCZ(ng)%ncid, ncname, 'boundary',      &
      &                 4, DimIDs(14))
         IF (exit_flag.ne.NoError) RETURN
 
 # ifdef FOUR_DVAR
-        status=def_dim(ng, iADM, ncLCZid(ng), ncname, 'Nstate',         &
+        status=def_dim(ng, iADM, LCZ(ng)%ncid, ncname, 'Nstate',        &
      &                 NstateVar(ng), DimIDs(29))
         IF (exit_flag.ne.NoError) RETURN
 # endif
 
 # if defined ADJUST_STFLUX || defined ADJUST_WSTRESS
-        status=def_dim(ng, iADM, ncLCZid(ng), ncname, 'frc_adjust',     &
+        status=def_dim(ng, iADM, LCZ(ng)%ncid, ncname, 'frc_adjust',    &
      &                 Nfrec(ng), DimIDs(30))
         IF (exit_flag.ne.NoError) RETURN
 # endif
 
 # ifdef ADJUST_BOUNDARY
-        status=def_dim(ng, iADM, ncLCZid(ng), ncname, 'obc_adjust',     &
+        status=def_dim(ng, iADM, LCZ(ng)%ncid, ncname, 'obc_adjust',    &
      &                 Nbrec(ng), DimIDs(31))
         IF (exit_flag.ne.NoError) RETURN
 # endif
 
-        status=def_dim(ng, iADM, ncLCZid(ng), ncname, 'Ninner',         &
+        status=def_dim(ng, iADM, LCZ(ng)%ncid, ncname, 'Ninner',        &
      &                 Ninner, NinnerDim)
         IF (exit_flag.ne.NoError) RETURN
 
-        status=def_dim(ng, iADM, ncLCZid(ng), ncname, 'Minner',         &
+        status=def_dim(ng, iADM, LCZ(ng)%ncid, ncname, 'Minner',        &
      &                 Ninner+1, MinnerDim)
         IF (exit_flag.ne.NoError) RETURN
 
-        status=def_dim(ng, iADM, ncLCZid(ng), ncname, 'Nouter',         &
+        status=def_dim(ng, iADM, LCZ(ng)%ncid, ncname, 'Nouter',        &
      &                 Nouter, NouterDim)
         IF (exit_flag.ne.NoError) RETURN
 
-        status=def_dim(ng, iADM, ncLCZid(ng), ncname,                   &
+        status=def_dim(ng, iADM, LCZ(ng)%ncid, ncname,                  &
      &                 TRIM(ADJUSTL(Vname(5,idtime))),                  &
      &                 nf90_unlimited, DimIDs(12))
         IF (exit_flag.ne.NoError) RETURN
@@ -335,7 +335,7 @@
 #  endif
 # endif
 !
-!  Define dimension vectors for staggered u-momemtum type variables.
+!  Define dimension vectors for staggered u-momentum type variables.
 !
 # if defined WRITE_WATER && defined MASKING
         u2dgrd(1)=DimIDs(18)
@@ -362,7 +362,7 @@
 #  endif
 # endif
 !
-!  Define dimension vectors for staggered v-momemtum type variables.
+!  Define dimension vectors for staggered v-momentum type variables.
 !
 # if defined WRITE_WATER && defined MASKING
         v2dgrd(1)=DimIDs(19)
@@ -390,7 +390,7 @@
 # endif
 # ifdef SOLVE3D
 !
-!  Define dimension vector for staggered w-momemtum type variables.
+!  Define dimension vector for staggered w-momentum type variables.
 !
 #  if defined WRITE_WATER && defined MASKING
         w3dgrd(1)=DimIDs(23)
@@ -405,7 +405,7 @@
 !
 !  Initialize unlimited time record dimension.
 !
-        tLCZindx(ng)=0
+        LCZ(ng)%Rindex=0
 !
 !  Initialize local information variable arrays.
 !
@@ -422,7 +422,7 @@
 !  Define time-recordless information variables.
 !-----------------------------------------------------------------------
 !
-        CALL def_info (ng, iADM, ncLCZid(ng), ncname, DimIDs)
+        CALL def_info (ng, iADM, LCZ(ng)%ncid, ncname, DimIDs)
         IF (exit_flag.ne.NoError) RETURN
 !
 !-----------------------------------------------------------------------
@@ -437,7 +437,7 @@
         Vinfo( 2)='conjugate gradient beta coefficient'
         vardim(1)=MinnerDim
         vardim(2)=NouterDim
-        status=def_var(ng, iADM, ncLCZid(ng), varid, NF_FRST,           &
+        status=def_var(ng, iADM, LCZ(ng)%ncid, varid, NF_FRST,          &
      &                 2, vardim, Aval, Vinfo, ncname)
         IF (exit_flag.ne.NoError) RETURN
 
@@ -445,7 +445,7 @@
         Vinfo( 2)='Lanczos algorithm delta coefficient'
         vardim(1)=NinnerDim
         vardim(2)=NouterDim
-        status=def_var(ng, iADM, ncLCZid(ng), varid, NF_FRST,           &
+        status=def_var(ng, iADM, LCZ(ng)%ncid, varid, NF_FRST,          &
      &                 2, vardim, Aval, Vinfo, ncname)
         IF (exit_flag.ne.NoError) RETURN
 
@@ -453,7 +453,7 @@
         Vinfo( 2)='Lanczos recurrence eigenvectors'
         vardim(1)=NinnerDim
         vardim(2)=NinnerDim
-        status=def_var(ng, iADM, ncLCZid(ng), varid, NF_FRST,           &
+        status=def_var(ng, iADM, LCZ(ng)%ncid, varid, NF_FRST,          &
      &                 2, vardim, Aval, Vinfo, ncname)
         IF (exit_flag.ne.NoError) RETURN
 !
@@ -469,13 +469,13 @@
           Vinfo( 4)='360_day'
         ELSE IF (INT(time_ref).eq.0) THEN
           Vinfo( 3)='seconds since 0001-01-01 00:00:00'
-          Vinfo( 4)='365.25_day'
+          Vinfo( 4)='julian'
         ELSE IF (time_ref.gt.0.0_r8) THEN
           WRITE (Vinfo( 3),'(a,1x,a)') 'seconds since', TRIM(r_text)
-          Vinfo( 4)='standard'
+          Vinfo( 4)='gregorian'
         END IF
         Vinfo(14)=Vname(4,idtime)
-        status=def_var(ng, iADM, ncLCZid(ng), lczVid(idtime,ng),        &
+        status=def_var(ng, iADM, LCZ(ng)%ncid, LCZ(ng)%Vid(idtime),     &
      &                 NF_TYPE, 1, (/recdim/), Aval, Vinfo,ncname,      &
      &                 SetParAccess = .FALSE.)
         IF (exit_flag.ne.NoError) RETURN
@@ -492,7 +492,7 @@
 # endif
         Vinfo(22)='coordinates'
         Aval(5)=REAL(Iinfo(1,idFsur,ng),r8)
-        status=def_var(ng, iADM, ncLCZid(ng), lczVid(idFsur,ng),        &
+        status=def_var(ng, iADM, LCZ(ng)%ncid, LCZ(ng)%Vid(idFsur),     &
      &                 NF_FOUT, nvd3, t2dgrd, Aval, Vinfo, ncname)
         IF (exit_flag.ne.NoError) RETURN
 
@@ -508,7 +508,7 @@
           Vinfo(14)=Vname(4,ifield)
           Vinfo(16)=Vname(1,idtime)
           Aval(5)=REAL(Iinfo(1,ifield,ng),r8)
-          status=def_var(ng, iADM, ncLCZid(ng), lczVid(ifield,ng),      &
+          status=def_var(ng, iADM, LCZ(ng)%ncid, LCZ(ng)%Vid(ifield),   &
      &                   NF_FOUT, 4, t2dobc, Aval, Vinfo, ncname,       &
      &                   SetFillVal = .FALSE.)
           IF (exit_flag.ne.NoError) RETURN
@@ -527,7 +527,7 @@
 # endif
         Vinfo(22)='coordinates'
         Aval(5)=REAL(Iinfo(1,idUbar,ng),r8)
-        status=def_var(ng, iADM, ncLCZid(ng), lczVid(idUbar,ng),        &
+        status=def_var(ng, iADM, LCZ(ng)%ncid, LCZ(ng)%Vid(idUbar),     &
      &                 NF_FOUT, nvd3, u2dgrd, Aval, Vinfo, ncname)
         IF (exit_flag.ne.NoError) RETURN
 
@@ -543,7 +543,7 @@
           Vinfo(14)=Vname(4,ifield)
           Vinfo(16)=Vname(1,idtime)
           Aval(5)=REAL(Iinfo(1,ifield,ng),r8)
-          status=def_var(ng, iADM, ncLCZid(ng), lczVid(ifield,ng),      &
+          status=def_var(ng, iADM, LCZ(ng)%ncid, LCZ(ng)%Vid(ifield),   &
      &                   NF_FOUT, 4, t2dobc, Aval, Vinfo, ncname,       &
      &                   SetFillVal = .FALSE.)
           IF (exit_flag.ne.NoError) RETURN
@@ -562,7 +562,7 @@
 # endif
         Vinfo(22)='coordinates'
         Aval(5)=REAL(Iinfo(1,idVbar,ng),r8)
-        status=def_var(ng, iADM, ncLCZid(ng), lczVid(idVbar,ng),        &
+        status=def_var(ng, iADM, LCZ(ng)%ncid, LCZ(ng)%Vid(idVbar),     &
      &                 NF_FOUT, nvd3, v2dgrd, Aval, Vinfo, ncname)
         IF (exit_flag.ne.NoError) RETURN
 
@@ -578,7 +578,7 @@
           Vinfo(14)=Vname(4,ifield)
           Vinfo(16)=Vname(1,idtime)
           Aval(5)=REAL(Iinfo(1,ifield,ng),r8)
-          status=def_var(ng, iADM, ncLCZid(ng), lczVid(ifield,ng),      &
+          status=def_var(ng, iADM, LCZ(ng)%ncid, LCZ(ng)%Vid(ifield),   &
      &                   NF_FOUT, 4, t2dobc, Aval, Vinfo, ncname,       &
      &                   SetFillVal = .FALSE.)
           IF (exit_flag.ne.NoError) RETURN
@@ -598,7 +598,7 @@
 #  endif
         Vinfo(22)='coordinates'
         Aval(5)=REAL(Iinfo(1,idUvel,ng),r8)
-        status=def_var(ng, iADM, ncLCZid(ng), lczVid(idUvel,ng),        &
+        status=def_var(ng, iADM, LCZ(ng)%ncid, LCZ(ng)%Vid(idUvel),     &
      &                 NF_FOUT, nvd4, u3dgrd, Aval, Vinfo, ncname)
         IF (exit_flag.ne.NoError) RETURN
 
@@ -614,7 +614,7 @@
           Vinfo(14)=Vname(4,ifield)
           Vinfo(16)=Vname(1,idtime)
           Aval(5)=REAL(Iinfo(1,ifield,ng),r8)
-          status=def_var(ng, iADM, ncLCZid(ng), lczVid(ifield,ng),      &
+          status=def_var(ng, iADM, LCZ(ng)%ncid, LCZ(ng)%Vid(ifield),   &
      &                   NF_FOUT, 5, t3dobc, Aval, Vinfo, ncname,       &
      &                   SetFillVal = .FALSE.)
           IF (exit_flag.ne.NoError) RETURN
@@ -633,7 +633,7 @@
 #  endif
         Vinfo(22)='coordinates'
         Aval(5)=REAL(Iinfo(1,idVvel,ng),r8)
-        status=def_var(ng, iADM, ncLCZid(ng), lczVid(idVvel,ng),        &
+        status=def_var(ng, iADM, LCZ(ng)%ncid, LCZ(ng)%Vid(idVvel),     &
      &                 NF_FOUT, nvd4, v3dgrd, Aval, Vinfo, ncname)
         IF (exit_flag.ne.NoError) RETURN
 
@@ -649,7 +649,7 @@
           Vinfo(14)=Vname(4,ifield)
           Vinfo(16)=Vname(1,idtime)
           Aval(5)=REAL(Iinfo(1,ifield,ng),r8)
-          status=def_var(ng, iADM, ncLCZid(ng), lczVid(ifield,ng),      &
+          status=def_var(ng, iADM, LCZ(ng)%ncid, LCZ(ng)%Vid(ifield),   &
      &                   NF_FOUT, 5, t3dobc, Aval, Vinfo, ncname,       &
      &                   SetFillVal = .FALSE.)
           IF (exit_flag.ne.NoError) RETURN
@@ -676,7 +676,7 @@
 #  endif
           Vinfo(22)='coordinates'
           Aval(5)=REAL(r3dvar,r8)
-          status=def_var(ng, iADM, ncLCZid(ng), lczTid(itrc,ng),        &
+          status=def_var(ng, iADM, LCZ(ng)%ncid, LCZ(ng)%Tid(itrc),     &
      &                   NF_FOUT, nvd4, t3dgrd, Aval, Vinfo, ncname)
           IF (exit_flag.ne.NoError) RETURN
         END DO
@@ -701,7 +701,7 @@
             END DO
 #   endif
             Aval(5)=REAL(Iinfo(1,ifield,ng),r8)
-            status=def_var(ng, iADM, ncLCZid(ng), lczVid(ifield,ng),    &
+            status=def_var(ng, iADM, LCZ(ng)%ncid, LCZ(ng)%Vid(ifield), &
      &                     NF_FOUT, 5, t3dobc, Aval, Vinfo, ncname,     &
      &                     SetFillVal = .FALSE.)
             IF (exit_flag.ne.NoError) RETURN
@@ -731,8 +731,8 @@
 #  endif
             Vinfo(22)='coordinates'
             Aval(5)=REAL(r2dvar,r8)
-            status=def_var(ng, iADM, ncLCZid(ng),                       &
-     &                     lczVid(idTsur(itrc),ng),                     &
+            status=def_var(ng, iADM, LCZ(ng)%ncid,                      &
+     &                     LCZ(ng)%Vid(idTsur(itrc)),                   &
      &                     NF_FOUT, nvd4, t3dfrc, Aval, Vinfo, ncname)
             IF (exit_flag.ne.NoError) RETURN
           END IF
@@ -753,7 +753,7 @@
 #  endif
         Vinfo(22)='coordinates'
         Aval(5)=REAL(u2dvar,r8)
-        status=def_var(ng, iADM, ncLCZid(ng), lczVid(idUsms,ng),        &
+        status=def_var(ng, iADM, LCZ(ng)%ncid, LCZ(ng)%Vid(idUsms),     &
      &                 NF_FOUT, nvd4, u3dfrc, Aval, Vinfo, ncname)
         IF (exit_flag.ne.NoError) RETURN
 !
@@ -770,7 +770,7 @@
 #  endif
         Vinfo(22)='coordinates'
         Aval(5)=REAL(v2dvar,r8)
-        status=def_var(ng, iADM, ncLCZid(ng), lczVid(idVsms,ng),        &
+        status=def_var(ng, iADM, LCZ(ng)%ncid, LCZ(ng)%Vid(idVsms),     &
      &                 NF_FOUT, nvd4, v3dfrc, Aval, Vinfo, ncname)
         IF (exit_flag.ne.NoError) RETURN
 # endif
@@ -779,14 +779,14 @@
 !  Leave definition mode.
 !-----------------------------------------------------------------------
 !
-        CALL netcdf_enddef (ng, iADM, ncname, ncLCZid(ng))
+        CALL netcdf_enddef (ng, iADM, ncname, LCZ(ng)%ncid)
         IF (exit_flag.ne.NoError) RETURN
 !
 !-----------------------------------------------------------------------
 !  Write out time-recordless, information variables.
 !-----------------------------------------------------------------------
 !
-        CALL wrt_info (ng, iADM, ncLCZid(ng), ncname)
+        CALL wrt_info (ng, iADM, LCZ(ng)%ncid, ncname)
         IF (exit_flag.ne.NoError) RETURN
       END IF DEFINE
 !
@@ -796,7 +796,7 @@
 !=======================================================================
 !
       QUERY: IF (.not.LdefLCZ(ng)) THEN
-        ncname=LCZname(ng)
+        ncname=LCZ(ng)%name
 !
 !  Inquire about the dimensions and check for consistency.
 !
@@ -810,7 +810,7 @@
 !
 !  Open Lanczos vectors file for read/write.
 !
-        CALL netcdf_open (ng, iADM, ncname, 1, ncLCZid(ng))
+        CALL netcdf_open (ng, iADM, ncname, 1, LCZ(ng)%ncid)
         IF (exit_flag.ne.NoError) THEN
           WRITE (stdout,60) TRIM(ncname)
           RETURN
@@ -828,54 +828,54 @@
         DO i=1,n_var
           IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idtime))) THEN
             got_var(idtime)=.TRUE.
-            lczVid(idtime,ng)=var_id(i)
+            LCZ(ng)%Vid(idtime)=var_id(i)
           ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idFsur))) THEN
             got_var(idFsur)=.TRUE.
-            lczVid(idFsur,ng)=var_id(i)
+            LCZ(ng)%Vid(idFsur)=var_id(i)
           ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idUbar))) THEN
             got_var(idUbar)=.TRUE.
-            lczVid(idUbar,ng)=var_id(i)
+            LCZ(ng)%Vid(idUbar)=var_id(i)
           ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idVbar))) THEN
             got_var(idVbar)=.TRUE.
-            lczVid(idVbar,ng)=var_id(i)
+            LCZ(ng)%Vid(idVbar)=var_id(i)
 # ifdef ADJUST_BOUNDARY
           ELSE IF (TRIM(var_name(i)).eq.                                &
      &             TRIM(Vname(1,idSbry(isFsur)))) THEN
             got_var(idSbry(isFsur))=.TRUE.
-            lczVid(idSbry(isFsur),ng)=var_id(i)
+            LCZ(ng)%Vid(idSbry(isFsur))=var_id(i)
           ELSE IF (TRIM(var_name(i)).eq.                                &
      &             TRIM(Vname(1,idSbry(isUbar)))) THEN
             got_var(idSbry(isUbar))=.TRUE.
-            lczVid(idSbry(isUbar),ng)=var_id(i)
+            LCZ(ng)%Vid(idSbry(isUbar))=var_id(i)
           ELSE IF (TRIM(var_name(i)).eq.                                &
      &             TRIM(Vname(1,idSbry(isVbar)))) THEN
             got_var(idSbry(isVbar))=.TRUE.
-            lczVid(idSbry(isVbar),ng)=var_id(i)
+            LCZ(ng)%Vid(idSbry(isVbar))=var_id(i)
 # endif
 # ifdef ADJUST_WSTRESS
           ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idUsms))) THEN
             got_var(idUsms)=.TRUE.
-            lczVid(idUsms,ng)=var_id(i)
+            LCZ(ng)%Vid(idUsms)=var_id(i)
           ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idVsms))) THEN
             got_var(idVsms)=.TRUE.
-            lczVid(idVsms,ng)=var_id(i)
+            LCZ(ng)%Vid(idVsms)=var_id(i)
 # endif
 # ifdef SOLVE3D
           ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idUvel))) THEN
             got_var(idUvel)=.TRUE.
-            lczVid(idUvel,ng)=var_id(i)
+            LCZ(ng)%Vid(idUvel)=var_id(i)
           ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idVvel))) THEN
             got_var(idVvel)=.TRUE.
-            lczVid(idVvel,ng)=var_id(i)
+            LCZ(ng)%Vid(idVvel)=var_id(i)
 #  ifdef ADJUST_BOUNDARY
           ELSE IF (TRIM(var_name(i)).eq.                                &
      &             TRIM(Vname(1,idSbry(isUvel)))) THEN
             got_var(idSbry(isUvel))=.TRUE.
-            lczVid(idSbry(isUvel),ng)=var_id(i)
+            LCZ(ng)%Vid(idSbry(isUvel))=var_id(i)
           ELSE IF (TRIM(var_name(i)).eq.                                &
      &             TRIM(Vname(1,idSbry(isVvel)))) THEN
             got_var(idSbry(isVvel))=.TRUE.
-            lczVid(idSbry(isVvel),ng)=var_id(i)
+            LCZ(ng)%Vid(idSbry(isVvel))=var_id(i)
 #  endif
 # endif
           END IF
@@ -883,18 +883,18 @@
           DO itrc=1,NT(ng)
             IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idTvar(itrc)))) THEN
               got_var(idTvar(itrc))=.TRUE.
-              lczTid(itrc,ng)=var_id(i)
+              LCZ(ng)%Tid(itrc)=var_id(i)
 #  ifdef ADJUST_BOUNDARY
             ELSE IF (TRIM(var_name(i)).eq.                              &
      &               TRIM(Vname(1,idSbry(isTvar(itrc))))) THEN
               got_var(idSbry(isTvar(itrc)))=.TRUE.
-              lczVid(idSbry(isTvar(itrc)),ng)=var_id(i)
+              LCZ(ng)%Vid(idSbry(isTvar(itrc)))=var_id(i)
 #  endif
 #  ifdef ADJUST_STFLUX
             ELSE IF (TRIM(var_name(i)).eq.                              &
      &               TRIM(Vname(1,idTsur(itrc)))) THEN
               got_var(idTsur(itrc))=.TRUE.
-              lczVid(idTsur(itrc),ng)=var_id(i)
+              LCZ(ng)%Vid(idTsur(itrc))=var_id(i)
 #  endif
             END IF
           END DO
@@ -1020,11 +1020,13 @@
 !
 !  Set unlimited time record dimension to the appropriate value.
 !
-        tLCZindx(ng)=rec_size
+        LCZ(ng)%Rindex=rec_size
       END IF QUERY
 !
-  10  FORMAT (3x,'DEF_LANCZOS  - creating Lanczos  file: ',a)
-  20  FORMAT (3x,'DEF_LANCZOS  - inquiring Lanczos file: ',a)
+  10  FORMAT (3x,'DEF_LANCZOS  - creating Lanczos file, Grid ',i2.2,    &
+     &        ': ',a)
+  20  FORMAT (3x,'DEF_LANCZOS  - inquiring Lanczos file, Grid ',i2.2,   &
+     &        ': ',a)
   30  FORMAT (/,' DEF_LANCZOS - unable to create Lanczos NetCDF file:', &
      &        1x,a)
   40  FORMAT (a,', Lanczos vectors')

@@ -5,7 +5,7 @@
 !
 !svn $Id: conv_bry2d.F 429 2009-12-20 17:30:26Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2010 The ROMS/TOMS Group       Andrew M. Moore   !
+!  Copyright (c) 2002-2014 The ROMS/TOMS Group       Andrew M. Moore   !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -51,9 +51,9 @@
 !=======================================================================
 !
       implicit none
-
+!
       PUBLIC
-
+!
       CONTAINS
 !
 !***********************************************************************
@@ -85,8 +85,7 @@
       integer, intent(in) :: LBij, UBij
       integer, intent(in) :: LBi, UBi, LBj, UBj
       integer, intent(in) :: IminS, ImaxS, JminS, JmaxS
-      integer, intent(in) :: Nghost
-      integer, intent(in) :: NHsteps
+      integer, intent(in) :: Nghost, NHsteps
 
       real(r8), intent(in) :: DTsizeH
 !
@@ -118,18 +117,6 @@
 !
 !  Local variable declarations.
 !
-# ifdef DISTRIBUTE
-#  ifdef EW_PERIODIC
-      logical :: EWperiodic=.TRUE.
-#  else
-      logical :: EWperiodic=.FALSE.
-#  endif
-#  ifdef NS_PERIODIC
-      logical :: NSperiodic=.TRUE.
-#  else
-      logical :: NSperiodic=.FALSE.
-#  endif
-# endif
       logical, dimension(4) :: Lconvolve
 
       integer :: Nnew, Nold, Nsav, i, j, step
@@ -147,10 +134,10 @@
 !  at RHO-points.
 !-----------------------------------------------------------------------
 !
-      Lconvolve(iwest )=WESTERN_EDGE
-      Lconvolve(ieast )=EASTERN_EDGE
-      Lconvolve(isouth)=SOUTHERN_EDGE
-      Lconvolve(inorth)=NORTHERN_EDGE
+      Lconvolve(iwest )=DOMAIN(ng)%Western_Edge (tile)
+      Lconvolve(ieast )=DOMAIN(ng)%Eastern_Edge (tile)
+      Lconvolve(isouth)=DOMAIN(ng)%Southern_Edge(tile)
+      Lconvolve(inorth)=DOMAIN(ng)%Northern_Edge(tile)
 !
 !  Compute metrics factor.
 !
@@ -179,7 +166,8 @@
 # ifdef DISTRIBUTE
       CALL mp_exchange2d_bry (ng, tile, model, 1, boundary,             &
      &                        LBij, UBij,                               &
-     &                        Nghost, EWperiodic, NSperiodic,           &
+     &                        Nghost,                                   &
+     &                        EWperiodic(ng), NSperiodic(ng),           &
      &                        A)
 # endif
       IF (Lconvolve(boundary)) THEN
@@ -252,7 +240,8 @@
 # ifdef DISTRIBUTE
         CALL mp_exchange2d_bry (ng, tile, model, 1, boundary,           &
      &                          LBij, UBij,                             &
-     &                          Nghost, EWperiodic, NSperiodic,         &
+     &                          Nghost,                                 &
+     &                          EWperiodic(ng), NSperiodic(ng),         &
      &                          Awrk(:,Nnew))
 # endif
 !
@@ -284,7 +273,8 @@
 # ifdef DISTRIBUTE
       CALL mp_exchange2d_bry (ng, tile, model, 1, boundary,             &
      &                        LBij, UBij,                               &
-     &                        Nghost, EWperiodic, NSperiodic,           &
+     &                        Nghost,                                   &
+     &                        EWperiodic(ng), NSperiodic(ng),           &
      &                        A)
 # endif
 
@@ -321,8 +311,7 @@
       integer, intent(in) :: LBij, UBij
       integer, intent(in) :: LBi, UBi, LBj, UBj
       integer, intent(in) :: IminS, ImaxS, JminS, JmaxS
-      integer, intent(in) :: Nghost
-      integer, intent(in) :: NHsteps
+      integer, intent(in) :: Nghost, NHsteps
 
       real(r8), intent(in) :: DTsizeH
 !
@@ -352,18 +341,6 @@
 !
 !  Local variable declarations.
 !
-# ifdef DISTRIBUTE
-#  ifdef EW_PERIODIC
-      logical :: EWperiodic=.TRUE.
-#  else
-      logical :: EWperiodic=.FALSE.
-#  endif
-#  ifdef NS_PERIODIC
-      logical :: NSperiodic=.TRUE.
-#  else
-      logical :: NSperiodic=.FALSE.
-#  endif
-# endif
       logical, dimension(4) :: Lconvolve
 
       integer :: Nnew, Nold, Nsav, i, j, step
@@ -383,10 +360,10 @@
 !  at U-points.
 !-----------------------------------------------------------------------
 !
-      Lconvolve(iwest )=WESTERN_EDGE
-      Lconvolve(ieast )=EASTERN_EDGE
-      Lconvolve(isouth)=SOUTHERN_EDGE
-      Lconvolve(inorth)=NORTHERN_EDGE
+      Lconvolve(iwest )=DOMAIN(ng)%Western_Edge (tile)
+      Lconvolve(ieast )=DOMAIN(ng)%Eastern_Edge (tile)
+      Lconvolve(isouth)=DOMAIN(ng)%Southern_Edge(tile)
+      Lconvolve(inorth)=DOMAIN(ng)%Northern_Edge(tile)
 !
 !  Compute metrics factor.
 !
@@ -416,7 +393,8 @@
 # ifdef DISTRIBUTE
       CALL mp_exchange2d_bry (ng, tile, model, 1, boundary,             &
      &                        LBij, UBij,                               &
-     &                        Nghost, EWperiodic, NSperiodic,           &
+     &                        Nghost,                                   &
+     &                        EWperiodic(ng), NSperiodic(ng),           &
      &                        A)
 # endif
       IF (Lconvolve(boundary)) THEN
@@ -487,7 +465,8 @@
 # ifdef DISTRIBUTE
         CALL mp_exchange2d_bry (ng, tile, model, 1, boundary,           &
      &                          LBij, UBij,                             &
-     &                          Nghost, EWperiodic, NSperiodic,         &
+     &                          Nghost,                                 &
+     &                          EWperiodic(ng), NSperiodic(ng),         &
      &                          Awrk(:,Nnew))
 # endif
 !
@@ -519,7 +498,8 @@
 # ifdef DISTRIBUTE
       CALL mp_exchange2d_bry (ng, tile, model, 1, boundary,             &
      &                        LBij, UBij,                               &
-     &                        Nghost, EWperiodic, NSperiodic,           &
+     &                        Nghost,                                   &
+     &                        EWperiodic(ng), NSperiodic(ng),           &
      &                        A)
 # endif
 
@@ -586,18 +566,6 @@
 !
 !  Local variable declarations.
 !
-# ifdef DISTRIBUTE
-#  ifdef EW_PERIODIC
-      logical :: EWperiodic=.TRUE.
-#  else
-      logical :: EWperiodic=.FALSE.
-#  endif
-#  ifdef NS_PERIODIC
-      logical :: NSperiodic=.TRUE.
-#  else
-      logical :: NSperiodic=.FALSE.
-#  endif
-# endif
       logical, dimension(4) :: Lconvolve
 
       integer :: Nnew, Nold, Nsav, i, j, step
@@ -617,10 +585,10 @@
 !  at RHO-points.
 !-----------------------------------------------------------------------
 !
-      Lconvolve(iwest )=WESTERN_EDGE
-      Lconvolve(ieast )=EASTERN_EDGE
-      Lconvolve(isouth)=SOUTHERN_EDGE
-      Lconvolve(inorth)=NORTHERN_EDGE
+      Lconvolve(iwest )=DOMAIN(ng)%Western_Edge (tile)
+      Lconvolve(ieast )=DOMAIN(ng)%Eastern_Edge (tile)
+      Lconvolve(isouth)=DOMAIN(ng)%Southern_Edge(tile)
+      Lconvolve(inorth)=DOMAIN(ng)%Northern_Edge(tile)
 !
 !  Compute metrics factor.
 !
@@ -650,7 +618,8 @@
 # ifdef DISTRIBUTE
       CALL mp_exchange2d_bry (ng, tile, model, 1, boundary,             &
      &                        LBij, UBij,                               &
-     &                        Nghost, EWperiodic, NSperiodic,           &
+     &                        Nghost,                                   &
+     &                        EWperiodic(ng), NSperiodic(ng),           &
      &                        A)
 # endif
       IF (Lconvolve(boundary)) THEN
@@ -721,7 +690,8 @@
 # ifdef DISTRIBUTE
         CALL mp_exchange2d_bry (ng, tile, model, 1, boundary,           &
      &                          LBij, UBij,                             &
-     &                          Nghost, EWperiodic, NSperiodic,         &
+     &                          Nghost,                                 &
+     &                          EWperiodic(ng), NSperiodic(ng),         &
      &                          Awrk(:,Nnew))
 # endif
 !
@@ -753,7 +723,8 @@
 # ifdef DISTRIBUTE
       CALL mp_exchange2d_bry (ng, tile, model, 1,  boundary,            &
      &                        LBij, UBij,                               &
-     &                        Nghost, EWperiodic, NSperiodic,           &
+     &                        Nghost,                                   &
+     &                        EWperiodic(ng), NSperiodic(ng),           &
      &                        A)
 # endif
 

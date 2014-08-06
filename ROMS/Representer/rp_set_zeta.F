@@ -3,9 +3,9 @@
 
 #if defined TL_IOMS && defined SOLVE3D
 !
-!svn $Id: rp_set_zeta.F 429 2009-12-20 17:30:26Z arango $
+!svn $Id$
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2010 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2014 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -16,10 +16,10 @@
 !=======================================================================
 !
       implicit none
-
+!
       PRIVATE
       PUBLIC  :: rp_set_zeta
-
+!
       CONTAINS
 !
 !***********************************************************************
@@ -49,6 +49,7 @@
 # ifdef PROFILE
       CALL wclock_off (ng, iRPM, 12)
 # endif
+
       RETURN
       END SUBROUTINE rp_set_zeta
 !
@@ -61,11 +62,8 @@
 !
       USE mod_param
       USE mod_scalars
-
-# if defined EW_PERIODIC || defined NS_PERIODIC
 !
       USE exchange_2d_mod, ONLY : exchange_r2d_tile
-# endif
 # ifdef DISTRIBUTE
       USE mp_exchange_mod, ONLY : mp_exchange2d
 # endif
@@ -88,18 +86,6 @@
 !
 !  Local variable declarations.
 !
-# ifdef DISTRIBUTE
-#  ifdef EW_PERIODIC
-      logical :: EWperiodic=.TRUE.
-#  else
-      logical :: EWperiodic=.FALSE.
-#  endif
-#  ifdef NS_PERIODIC
-      logical :: NSperiodic=.TRUE.
-#  else
-      logical :: NSperiodic=.FALSE.
-#  endif
-# endif
       integer :: i, j
 
 # include "set_bounds.h"
@@ -119,32 +105,36 @@
           tl_zeta(i,j,2)=tl_Zt_avg1(i,j)
         END DO
       END DO
-# if defined EW_PERIODIC || defined NS_PERIODIC
-!>    CALL exchange_r2d_tile (ng, tile,                                 &
-!>   &                        LBi, UBi, LBj, UBj,                       &
-!>   &                        zeta(:,:,1))
+
+      IF (EWperiodic(ng).or.NSperiodic(ng)) THEN
+!>      CALL exchange_r2d_tile (ng, tile,                               &
+!>   &                          LBi, UBi, LBj, UBj,                     &
+!>   &                          zeta(:,:,1))
 !>
-      CALL exchange_r2d_tile (ng, tile,                                 &
-     &                        LBi, UBi, LBj, UBj,                       &
-     &                        tl_zeta(:,:,1))
-!>    CALL exchange_r2d_tile (ng, tile,                                 &
-!>   &                        LBi, UBi, LBj, UBj,                       &
-!>   &                        zeta(:,:,2))
+        CALL exchange_r2d_tile (ng, tile,                               &
+     &                          LBi, UBi, LBj, UBj,                     &
+     &                          tl_zeta(:,:,1))
+!>      CALL exchange_r2d_tile (ng, tile,                               &
+!>   &                          LBi, UBi, LBj, UBj,                     &
+!>   &                          zeta(:,:,2))
 !>
-      CALL exchange_r2d_tile (ng, tile,                                 &
-     &                        LBi, UBi, LBj, UBj,                       &
-     &                        tl_zeta(:,:,2))
-# endif
+        CALL exchange_r2d_tile (ng, tile,                               &
+     &                          LBi, UBi, LBj, UBj,                     &
+     &                          tl_zeta(:,:,2))
+      END IF
+
 # ifdef DISTRIBUTE
 !>    CALL mp_exchange2d (ng, tile, iNLM, 2,                            &
 !>   &                    LBi, UBi, LBj, UBj,                           &
-!>   &                    NghostPoints, EWperiodic, NSperiodic,         &
+!>   &                    NghostPoints,                                 &
+!>   &                    EWperiodic(ng), NSperiodic(ng),               &
 !>   &                    zeta(:,:,1),                                  &
 !>   &                    zeta(:,:,2))
 !>
       CALL mp_exchange2d (ng, tile, iNLM, 2,                            &
      &                    LBi, UBi, LBj, UBj,                           &
-     &                    NghostPoints, EWperiodic, NSperiodic,         &
+     &                    NghostPoints,                                 &
+     &                    EWperiodic(ng), NSperiodic(ng),               &
      &                    tl_zeta(:,:,1),                               &
      &                    tl_zeta(:,:,2))
 # endif

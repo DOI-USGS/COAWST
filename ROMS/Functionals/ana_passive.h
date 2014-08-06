@@ -1,8 +1,8 @@
       SUBROUTINE ana_passive (ng, tile, model)
 !
-!! svn $Id: ana_passive.h 429 2009-12-20 17:30:26Z arango $
+!! svn $Id$
 !!======================================================================
-!! Copyright (c) 2002-2010 The ROMS/TOMS Group                         !
+!! Copyright (c) 2002-2014 The ROMS/TOMS Group                         !
 !!   Licensed under a MIT/X style license                              !
 !!   See License_ROMS.txt                                              !
 !=======================================================================
@@ -76,8 +76,8 @@
       DO ip=1,NPT
         itrc=inert(ip)
         DO k=1,N(ng)
-          DO j=JstrR,JendR
-            DO i=IstrR,IendR
+          DO j=JstrT,JendT
+            DO i=IstrT,IendT
               t(i,j,k,1,itrc)=???
               t(i,j,k,2,itrc)=t(i,j,k,1,itrc)
             END DO
@@ -87,5 +87,6 @@
 #else
       ana_passive.h: no values provided for t(:,:,:,1,inert(itrc))
 #endif
+
       RETURN
       END SUBROUTINE ana_passive_tile

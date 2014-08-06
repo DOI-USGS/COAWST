@@ -3,9 +3,9 @@
 
 #if defined TANGENT && defined BALANCE_OPERATOR
 !
-!svn $Id: ad_balance.F 437 2010-01-06 03:22:10Z arango $
+!svn $Id$
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2010 The ROMS/TOMS Group       Andrew M. Moore   !
+!  Copyright (c) 2002-2014 The ROMS/TOMS Group       Andrew M. Moore   !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -182,10 +182,8 @@
       USE mod_scalars
 !
       USE ad_bc_2d_mod
-# if defined EW_PERIODIC || defined NS_PERIODIC
       USE ad_exchange_2d_mod
       USE ad_exchange_3d_mod
-# endif
 # ifdef DISTRIBUTE
       USE mp_exchange_mod, ONLY : ad_mp_exchange2d, ad_mp_exchange3d
 # endif
@@ -298,18 +296,6 @@
 !
 !  Local variable declarations.
 !
-# ifdef DISTRIBUTE
-#  ifdef EW_PERIODIC
-      logical :: EWperiodic=.TRUE.
-#  else
-      logical :: EWperiodic=.FALSE.
-#  endif
-#  ifdef NS_PERIODIC
-      logical :: NSperiodic=.TRUE.
-#  else
-      logical :: NSperiodic=.FALSE.
-#  endif
-# endif
       integer :: i, j, k, order
 
       integer :: Norder = 2                 ! Shapiro filter order
@@ -398,24 +384,26 @@
 # ifdef DISTRIBUTE
 !>      CALL mp_exchange2d (ng, tile, iTLM, 1,                          &
 !>   &                      LBi, UBi, LBj, UBj,                         &
-!>   &                      NghostPoints, EWperiodic, NSperiodic,       &
+!>   &                      NghostPoints,                               &
+!>   &                      EWperiodic(ng), NSperiodic(ng),             &
 !>   &                      tl_zeta(:,:,Linp))
 !>
         CALL ad_mp_exchange2d (ng, tile, iADM, 1,                       &
      &                         LBi, UBi, LBj, UBj,                      &
-     &                         NghostPoints, EWperiodic, NSperiodic,    &
+     &                         NghostPoints,                            &
+     &                         EWperiodic(ng), NSperiodic(ng),          &
      &                         ad_zeta(:,:,Linp))
 
 # endif
-# if defined EW_PERIODIC || defined NS_PERIODIC
-!>      CALL exchange_r2d_tile (ng, tile,                               &
-!>   &                          LBi, UBi, LBj, UBj,                     &
-!>   &                          tl_zeta(:,:,Linp))
+        IF (EWperiodic(ng).or.NSperiodic(ng)) THEN
+!>        CALL exchange_r2d_tile (ng, tile,                             &
+!>   &                            LBi, UBi, LBj, UBj,                   &
+!>   &                            tl_zeta(:,:,Linp))
 !>
-        CALL ad_exchange_r2d_tile (ng, tile,                            &
-     &                             LBi, UBi, LBj, UBj,                  &
-     &                             ad_zeta(:,:,Linp))
-# endif
+          CALL ad_exchange_r2d_tile (ng, tile,                          &
+     &                               LBi, UBi, LBj, UBj,                &
+     &                               ad_zeta(:,:,Linp))
+        END IF
 # ifdef ZETA_ELLIPTIC
 !
 !  Adjoint balanced free-surface contribution to unbalanced free-surface
@@ -466,12 +454,14 @@
 #  ifdef DISTRIBUTE
 !>      CALL mp_exchange2d (ng, tile, iTLM, 1,                          &
 !>   &                      LBi, UBi, LBj, UBj,                         &
-!>   &                      NghostPoints, EWperiodic, NSperiodic,       &
+!>   &                      NghostPoints,                               &
+!>   &                      EWperiodic(ng), NSperiodic(ng),             &
 !>   &                      tl_rhs_r2d)
 !>
         CALL ad_mp_exchange2d (ng, tile, iADM, 1,                       &
      &                         LBi, UBi, LBj, UBj,                      &
-     &                         NghostPoints, EWperiodic, NSperiodic,    &
+     &                         NghostPoints,                            &
+     &                         EWperiodic(ng), NSperiodic(ng),          &
      &                         ad_rhs_r2d)
 #  endif
 !>      CALL r2d_bc (ng, tile,                                          &
@@ -652,30 +642,33 @@
 # ifdef DISTRIBUTE
 !>      CALL mp_exchange3d (ng, tile, iTLM, 2,                          &
 !>   &                      LBi, UBi, LBj, UBj, 1, N(ng),               &
-!>   &                      NghostPoints, EWperiodic, NSperiodic,       &
+!>   &                      NghostPoints,                               &
+!>   &                      EWperiodic(ng), NSperiodic(ng),             &
 !>   &                      tl_u(:,:,:,Linp), tl_v(:,:,:,Linp))
 !>
         CALL ad_mp_exchange3d (ng, tile, iADM, 2,                       &
      &                         LBi, UBi, LBj, UBj, 1, N(ng),            &
-     &                         NghostPoints, EWperiodic, NSperiodic,    &
+     &                         NghostPoints,                            &
+     &                         EWperiodic(ng), NSperiodic(ng),          &
      &                         ad_u(:,:,:,Linp), ad_v(:,:,:,Linp))
 # endif
-# if defined EW_PERIODIC || defined NS_PERIODIC
-!>      CALL exchange_v3d_tile (ng, tile,                               &
-!>   &                          LBi, UBi, LBj, UBj, 1, N(ng),           &
-!>   &                          tl_v(:,:,:,Linp))
+        IF (EWperiodic(ng).or.NSperiodic(ng)) THEN
+!>        CALL exchange_v3d_tile (ng, tile,                             &
+!>   &                            LBi, UBi, LBj, UBj, 1, N(ng),         &
+!>   &                            tl_v(:,:,:,Linp))
 !>
-        CALL ad_exchange_v3d_tile (ng, tile,                            &
-     &                             LBi, UBi, LBj, UBj, 1, N(ng),        &
-     &                             ad_v(:,:,:,Linp))
-!>      CALL exchange_u3d_tile (ng, tile,                               &
-!>   &                          LBi, UBi, LBj, UBj, 1, N(ng),           &
-!>   &                          tl_u(:,:,:,Linp))
+          CALL ad_exchange_v3d_tile (ng, tile,                          &
+     &                               LBi, UBi, LBj, UBj, 1, N(ng),      &
+     &                               ad_v(:,:,:,Linp))
+!>        CALL exchange_u3d_tile (ng, tile,                             &
+!>   &                            LBi, UBi, LBj, UBj, 1, N(ng),         &
+!>   &                            tl_u(:,:,:,Linp))
 !>
-        CALL ad_exchange_u3d_tile (ng, tile,                            &
-     &                             LBi, UBi, LBj, UBj, 1, N(ng),        &
-     &                             ad_u(:,:,:,Linp))
-# endif
+          CALL ad_exchange_u3d_tile (ng, tile,                          &
+     &                               LBi, UBi, LBj, UBj, 1, N(ng),      &
+     &                               ad_u(:,:,:,Linp))
+        END IF
+
         DO k=1,N(ng)
           DO j=JstrV,Jend
             DO i=Istr,Iend
@@ -737,7 +730,7 @@
           END IF
 # endif
 !
-!  Compute balanced, interior V-momemtum from baroclinic pressure
+!  Compute balanced, interior V-momentum from baroclinic pressure
 !  gradient (differentiate and then vertically integrate).
 !
 !>        DO k=N(ng)-1,1,-1
@@ -797,7 +790,7 @@
 !  surface pressure gradient.
 !
           DO i=Istr,Iend+1
-            cff1=z_w(i  ,j,N(ng))-z_r(i  ,j,N(ng))+                      &
+            cff1=z_w(i  ,j,N(ng))-z_r(i  ,j,N(ng))+                     &
      &           z_w(i-1,j,N(ng))-z_r(i-1,j,N(ng))
 # ifdef ZETA_ELLIPTIC
 !>          tl_phi(i,N(ng))=tl_phix(i)
@@ -805,16 +798,16 @@
             ad_phix(i)=ad_phix(i)+ad_phi(i,N(ng))
             ad_phi(i,N(ng))=0.0_r8
 # endif
-!>          tl_gradP(i,j,N(ng))=0.5_r8*tl_phix(i)*(pm(i-1,j)+pm(i,j))/   &
+!>          tl_gradP(i,j,N(ng))=0.5_r8*tl_phix(i)*(pm(i-1,j)+pm(i,j))/  &
 !>   &                          (f(i-1,j)+f(i,j))
 !>
-            ad_phix(i)=ad_phix(i)+                                       &
-     &                 ad_gradP(i,j,N(ng))*0.5_r8*(pm(i-1,j)+pm(i,j))/   &
+            ad_phix(i)=ad_phix(i)+                                      &
+     &                 ad_gradP(i,j,N(ng))*0.5_r8*(pm(i-1,j)+pm(i,j))/  &
      &                 (f(i-1,j)+f(i,j))
             ad_gradP(i,j,N(ng))=0.0_r8
-!>          tl_phix(i)=fac1*(tl_rho(i  ,j,N(ng))-                        &
-!>                           tl_rho(i-1,j,N(ng)))*cff1+                  &
-!>   &                 fac2*(tl_zeta(i  ,j,Linp)-                        &
+!>          tl_phix(i)=fac1*(tl_rho(i  ,j,N(ng))-                       &
+!>                           tl_rho(i-1,j,N(ng)))*cff1+                 &
+!>   &                 fac2*(tl_zeta(i  ,j,Linp)-                       &
 !>                           tl_zeta(i-1,j,Linp))
 !>
             adfac1=fac1*cff1*ad_phix(i)
@@ -884,7 +877,7 @@
           END IF
 # endif
 !
-!  Compute balanced, interior U-momemtum from baroclinic pressure
+!  Compute balanced, interior U-momentum from baroclinic pressure
 !  gradient (differentiate and then vertically integrate).
 !
 !>        DO k=N(ng)-1,1,-1
@@ -944,7 +937,7 @@
 !
           DO i=Istr-1,Iend
             cff1=z_w(i,j  ,N(ng))-z_r(i,j  ,N(ng))+                     &
-       &         z_w(i,j-1,N(ng))-z_r(i,j-1,N(ng))
+     &           z_w(i,j-1,N(ng))-z_r(i,j-1,N(ng))
 # ifdef ZETA_ELLIPTIC
 !>          tl_phi(i,N(ng))=tl_phie(i)
 !>
@@ -1001,23 +994,25 @@
 # ifdef DISTRIBUTE
 !>      CALL mp_exchange3d (ng, tile, iTLM, 1,                          &
 !>   &                      LBi, UBi, LBj, UBj, 1, N(ng),               &
-!>   &                      NghostPoints, EWperiodic, NSperiodic,       &
+!>   &                      NghostPoints,                               &
+!>   &                      EWperiodic(ng), NSperiodic(ng),             &
 !>   &                      tl_rho)
 !>
         CALL ad_mp_exchange3d (ng, tile, iADM, 1,                       &
      &                         LBi, UBi, LBj, UBj, 1, N(ng),            &
-     &                         NghostPoints, EWperiodic, NSperiodic,    &
+     &                         NghostPoints,                            &
+     &                         EWperiodic(ng), NSperiodic(ng),          &
      &                         ad_rho)
 # endif
-# if defined EW_PERIODIC || defined NS_PERIODIC
-!>      CALL exchange_r3d_tile (ng, tile,                               &
-!>   &                          LBi, UBi, LBj, UBj, 1, N(ng),           &
-!>   &                          tl_rho)
+        IF (EWperiodic(ng).or.NSperiodic(ng)) THEN
+!>        CALL exchange_r3d_tile (ng, tile,                             &
+!>   &                            LBi, UBi, LBj, UBj, 1, N(ng),         &
+!>   &                            tl_rho)
 !>
-        CALL ad_exchange_r3d_tile (ng, tile,                            &
-     &                             LBi, UBi, LBj, UBj, 1, N(ng),        &
-     &                             ad_rho)
-# endif
+          CALL ad_exchange_r3d_tile (ng, tile,                          &
+     &                               LBi, UBi, LBj, UBj, 1, N(ng),      &
+     &                               ad_rho)
+        END IF
 
         DO j=JstrR,JendR
           DO k=1,N(ng)
@@ -1055,23 +1050,25 @@
 #  ifdef DISTRIBUTE
 !>      CALL mp_exchange3d (ng, tile, iTLM, 1,                          &
 !>   &                      LBi, UBi, LBj, UBj, 1, N(ng),               &
-!>   &                      NghostPoints, EWperiodic, NSperiodic,       &
+!>   &                      NghostPoints,                               &
+!>   &                      EWperiodic(ng), NSperiodic(ng),             &
 !>   &                      tl_t(:,:,:,Linp,isalt))
 !>
         CALL ad_mp_exchange3d (ng, tile, iADM, 1,                       &
      &                         LBi, UBi, LBj, UBj, 1, N(ng),            &
-     &                         NghostPoints, EWperiodic, NSperiodic,    &
+     &                         NghostPoints,                            &
+     &                         EWperiodic(ng), NSperiodic(ng),          &
      &                         ad_t(:,:,:,Linp,isalt))
 #  endif
-#  if defined EW_PERIODIC || defined NS_PERIODIC
-!>      CALL exchange_r3d_tile (ng, tile,                               &
-!>   &                          LBi, UBi, LBj, UBj, 1, N(ng),           &
-!>   &                          tl_t(:,:,:,Linp,isalt)
+        IF (EWperiodic(ng).or.NSperiodic(ng)) THEN
+!>        CALL exchange_r3d_tile (ng, tile,                             &
+!>   &                            LBi, UBi, LBj, UBj, 1, N(ng),         &
+!>   &                            tl_t(:,:,:,Linp,isalt))
 !>
-        CALL ad_exchange_r3d_tile (ng, tile,                            &
-     &                             LBi, UBi, LBj, UBj, 1, N(ng),        &
-     &                             ad_t(:,:,:,Linp,isalt)
-#  endif
+          CALL ad_exchange_r3d_tile (ng, tile,                          &
+     &                               LBi, UBi, LBj, UBj, 1, N(ng),      &
+     &                               ad_t(:,:,:,Linp,isalt))
+        END IF
 !
 !  Compute temperature (dTdz) and salinity (dSdz) shears.
 !
@@ -1165,8 +1162,8 @@
             END DO
           END DO
         END DO
-# endif
       END IF
+# endif
 
       RETURN
       END SUBROUTINE ad_balance_tile

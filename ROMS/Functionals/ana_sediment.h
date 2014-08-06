@@ -2,7 +2,7 @@
 !
 !! svn $Id: ana_sediment.h 429 2009-12-20 17:30:26Z arango $
 !!======================================================================
-!! Copyright (c) 2002-2010 The ROMS/TOMS Group                         !
+!! Copyright (c) 2002-2014 The ROMS/TOMS Group                         !
 !!   Licensed under a MIT/X style license                              !
 !!   See License_ROMS.txt                                              !
 !=======================================================================
@@ -74,15 +74,9 @@
 !***********************************************************************
 !
       USE mod_param
+      USE mod_ncparam
       USE mod_scalars
       USE mod_sediment
-!
-#if defined EW_PERIODIC || defined NS_PERIODIC
-      USE exchange_3d_mod, ONLY : exchange_r3d_tile
-#endif
-#ifdef DISTRIBUTE
-      USE mp_exchange_mod, ONLY : mp_exchange3d, mp_exchange4d
-#endif
 !
 !  Imported variable declarations.
 !
@@ -125,18 +119,6 @@
 !  Local variable declarations.
 !
 #ifdef DISTRIBUTE
-# ifdef EW_PERIODIC
-      logical :: EWperiodic=.TRUE.
-# else
-      logical :: EWperiodic=.FALSE.
-# endif
-# ifdef NS_PERIODIC
-      logical :: NSperiodic=.TRUE.
-# else
-      logical :: NSperiodic=.FALSE.
-# endif
-#endif
-#ifdef DISTRIBUTE
       integer :: Tstr, Tend
 #endif
       integer :: i, ised, j, k
@@ -152,22 +134,22 @@
 !-----------------------------------------------------------------------
 !
 # if defined BL_TEST || defined NJ_BIGHT
-      DO j=JstrR,JendR
-        DO i=IstrR,IendR
+      DO j=JstrT,JendT
+        DO i=IstrT,IendT
           bottom(i,j,isd50)=0.0005_r8
           bottom(i,j,idens)=2650.0_r8
         END DO
       END DO
 # elif defined LAKE_SIGNELL || defined ADRIA02
-      DO j=JstrR,JendR
-        DO i=IstrR,IendR
+      DO j=JstrT,JendT
+        DO i=IstrT,IendT
           bottom(i,j,isd50)=0.000150_r8    ! 150 microns
           bottom(i,j,idens)=2650.0_r8
         END DO
       END DO
 # elif defined SED_TOY
-      DO j=JstrR,JendR
-        DO i=IstrR,IendR
+      DO j=JstrT,JendT
+        DO i=IstrT,IendT
           bottom(i,j,isd50)=0.0005_r8
           bottom(i,j,idens)=2650.0_r8
         END DO
@@ -176,6 +158,7 @@
       ana_sediment.h: no values provided for bottom(:,:,isd50) and
                                              bottom(:,:,idens)
 # endif
+
 # if defined MB_BBL || defined SSW_BBL
 #  undef YALIN
 !
@@ -190,8 +173,8 @@
 !  Yalin method (Miller et. al, 1977).
 !
       Kvisc=0.0013_r8/rho0
-      DO j=JstrR,JendR
-        DO i=IstrR,IendR
+      DO j=JstrT,JendT
+        DO i=IstrT,IendT
           rhoWater=rho(i,j,1)+1000.0_r8
           cff=SQRT((bottom(i,j,idens)-rhoWater)*                        &
      &             g*bottom(i,j,isd50)*bottom(i,j,isd50)*               &
@@ -214,8 +197,8 @@
         END DO
       END DO
 #  else
-      DO j=JstrR,JendR
-        DO i=IstrR,IendR
+      DO j=JstrT,JendT
+        DO i=IstrT,IendT
           bottom(i,j,itauc)=0.15_r8/rho0
         END DO
       END DO
@@ -223,12 +206,12 @@
 !
 !-----------------------------------------------------------------------
 !  If only Blass bottom boundary layer and not sediment model, set
-!  sediiment settling velocity (m/s).
+!  sediment settling velocity (m/s).
 !-----------------------------------------------------------------------
 !
       Kvisc=0.0013_r8/rho0
-      DO j=JstrR,JendR
-        DO i=IstrR,IendR
+      DO j=JstrT,JendT
+        DO i=IstrT,IendT
           bottom(i,j,iwsed)=0.02_r8
 !!
 !! Consider Souslby (1997) estimate of settling velocity.
@@ -250,8 +233,8 @@
 !
       DO ised=1,NST
         DO k=1,N(ng)
-          DO j=JstrR,JendR
-            DO i=IstrR,IendR
+          DO j=JstrT,JendT
+            DO i=IstrT,IendT
               t(i,j,k,1,idsed(ised))=Csed(ised,ng)
             END DO
           END DO
@@ -265,8 +248,8 @@
 !-----------------------------------------------------------------------
 !
 # if defined LAKE_SIGNELL || defined ADRIA02
-      DO j=JstrR,JendR
-        DO i=IstrR,IendR
+      DO j=JstrT,JendT
+        DO i=IstrT,IendT
 !
 !  Set bed layer properties.
 !
@@ -275,7 +258,7 @@
             bed(i,j,k,ithck)=0.10_r8
             bed(i,j,k,iporo)=0.90_r8
             DO ised=1,NST
-              bed_frac(i,j,k,ised)=1.0_r8/FLOAT(NST)
+              bed_frac(i,j,k,ised)=1.0_r8/REAL(NST,r8)
             END DO
           END DO
 !
@@ -287,8 +270,8 @@
         END DO
       END DO
 # elif defined ESTUARY_TEST
-      DO j=JstrR,JendR
-        DO i=IstrR,IendR
+      DO j=JstrT,JendT
+        DO i=IstrT,IendT
 !
 !  Set bed layer properties.
 !
@@ -297,7 +280,7 @@
             bed(i,j,k,ithck)=0.001_r8
             bed(i,j,k,iporo)=0.90_r8
             DO ised=1,NST
-              bed_frac(i,j,k,ised)=1.0_r8/FLOAT(NST)
+              bed_frac(i,j,k,ised)=1.0_r8/REAL(NST,r8)
             END DO
           END DO
 !
@@ -309,8 +292,8 @@
         END DO
       END DO
 # elif defined INLET_TEST
-      DO j=JstrR,JendR
-        DO i=IstrR,IendR
+      DO j=JstrT,JendT
+        DO i=IstrT,IendT
 !
 !  Set bed layer properties.
 !
@@ -319,7 +302,7 @@
              bed(i,j,k,ithck)=10.0_r8
              bed(i,j,k,iporo)=0.50_r8
              DO ised=1,NST
-               bed_frac(i,j,k,ised)=1.0_r8/FLOAT(NST)
+               bed_frac(i,j,k,ised)=1.0_r8/REAL(NST,r8)
              ENDDO
           END DO
 !
@@ -331,8 +314,8 @@
         END DO
       END DO
 # elif defined SED_TOY
-      DO j=JstrR,JendR
-        DO i=IstrR,IendR
+      DO j=JstrT,JendT
+        DO i=IstrT,IendT
 !
 !  Set bed layer properties.
 !
@@ -341,7 +324,7 @@
              bed(i,j,k,ithck)=0.01_r8
              bed(i,j,k,iporo)=0.30_r8
 !!           DO ised=1,NST
-!!             bed_frac(i,j,k,ised)=1.0_r8/FLOAT(NST)
+!!             bed_frac(i,j,k,ised)=1.0_r8/REAL(NST,r8)
 !!           END DO
              bed_frac(i,j,k,1)=1.0_r8
              bed_frac(i,j,k,2)=0.0_r8
@@ -354,13 +337,13 @@
           bottom(i,j,izdef)=Zob(ng)
         END DO
       END DO
-      DO j=JstrR,JendR
-        DO i=IstrR,IendR
+      DO j=JstrT,JendT
+        DO i=IstrT,IendT
         END DO
       END DO
 # elif defined SED_TEST1
-      DO j=JstrR,JendR
-        DO i=IstrR,IendR
+      DO j=JstrT,JendT
+        DO i=IstrT,IendT
 !
 !  Set bed layer properties.
 !
@@ -369,7 +352,7 @@
              bed(i,j,k,ithck)=15.00_r8
              bed(i,j,k,iporo)=0.50_r8
              DO ised=1,NST
-               bed_frac(i,j,k,ised)=1.0_r8/FLOAT(NST)
+               bed_frac(i,j,k,ised)=1.0_r8/REAL(NST,r8)
              END DO
           END DO
 !
@@ -381,8 +364,8 @@
         END DO
       END DO
 # elif defined SHOREFACE
-      DO j=JstrR,JendR
-        DO i=IstrR,IendR
+      DO j=JstrT,JendT
+        DO i=IstrT,IendT
 !
 !  Set bed layer properties.
 !
@@ -391,7 +374,7 @@
             bed(i,j,k,ithck)=5.0_r8
             bed(i,j,k,iporo)=0.50_r8
             DO ised=1,NST
-              bed_frac(i,j,k,ised)=1.0_r8/FLOAT(NST)
+              bed_frac(i,j,k,ised)=1.0_r8/REAL(NST,r8)
             END DO
           END DO
 !
@@ -403,8 +386,8 @@
         END DO
       END DO
 # elif defined TEST_CHAN
-      DO j=JstrR,JendR
-        DO i=IstrR,IendR
+      DO j=JstrT,JendT
+        DO i=IstrT,IendT
 !
 !  Set bed layer properties.
 !
@@ -413,7 +396,7 @@
             bed(i,j,k,ithck)=1.0_r8
             bed(i,j,k,iporo)=0.90_r8
             DO ised=1,NST
-              bed_frac(i,j,k,ised)=1.0_r8/FLOAT(NST)
+              bed_frac(i,j,k,ised)=1.0_r8/REAL(NST,r8)
             END DO
           END DO
 !
@@ -434,17 +417,17 @@
 !-----------------------------------------------------------------------
 !
       DO k=1,Nbed
-        DO j=JstrR,JendR
-          DO i=IstrR,IendR
+        DO j=JstrT,JendT
+          DO i=IstrT,IendT
 !
 !  Calculate mass so it is consistent with density, thickness, and
 !  porosity.
 !
              DO ised=1,NST
                bed_mass(i,j,k,1,ised)=bed(i,j,k,ithck)*                 &
-     &                                 Srho(ised,ng)*                   &
-     &                                 (1.0_r8-bed(i,j,k,iporo))*       &
-     &                                 bed_frac(i,j,k,ised)
+     &                                Srho(ised,ng)*                    &
+     &                                (1.0_r8-bed(i,j,k,iporo))*        &
+     &                                bed_frac(i,j,k,ised)
              END DO
           END DO
         END DO
@@ -452,8 +435,8 @@
 !
 !  Set exposed sediment layer properties.
 !
-      DO j=JstrR,JendR
-        DO i=IstrR,IendR
+      DO j=JstrT,JendT
+        DO i=IstrT,IendT
           cff1=1.0_r8
           cff2=1.0_r8
           cff3=1.0_r8
@@ -481,5 +464,6 @@
         END DO
       END DO
 #endif
+
       RETURN
       END SUBROUTINE ana_sediment_tile

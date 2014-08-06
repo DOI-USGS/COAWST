@@ -4,9 +4,9 @@
 
 #ifdef IS4DVAR
 !
-!svn $Id: cgradient.F 429 2009-12-20 17:30:26Z arango $
+!svn $Id$
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2010 The ROMS/TOMS Group       Andrew M. Moore   !
+!  Copyright (c) 2002-2014 The ROMS/TOMS Group       Andrew M. Moore   !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -754,7 +754,7 @@
 !
 !  Estimate the Hessian. Note that ad_var(Lold) will be in y-space
 !  already if preconditioning since all of the Lanczos vectors saved
-!  in the ADJname file will be in y-space.
+!  in the ADM(ng)%name file will be in y-space.
 !
       IF (innLoop.gt.0) THEN
         Lwrk=2
@@ -1678,12 +1678,12 @@
 !
 !  Local variable declarations.
 !
-      integer :: i, j, k, lstr, rec
+      integer :: i, j, k, rec
       integer :: ib, ir, it
 
       real(r8) :: fac, fac1, fac2
 
-      character (len=80) :: ncname
+      character (len=256) :: ncname
 
 # include "set_bounds.h"
 !
@@ -1710,7 +1710,8 @@
 !
         IF (ANY(Lobc(:,isFsur,ng))) THEN
           DO ir=1,Nbrec(ng)
-            IF ((Lobc(iwest,isFsur,ng)).and.WESTERN_EDGE) THEN
+            IF ((Lobc(iwest,isFsur,ng)).and.                            &
+     &          DOMAIN(ng)%Western_Edge(tile)) THEN
               ib=iwest
               DO j=Jstr,Jend
                 tl_zeta_obc(j,ib,ir,Lout)=d_zeta_obc(j,ib,ir)
@@ -1720,7 +1721,8 @@
 #  endif
               END DO
             END IF
-            IF ((Lobc(ieast,isFsur,ng)).and.EASTERN_EDGE) THEN
+            IF ((Lobc(ieast,isFsur,ng)).and.                            &
+     &          DOMAIN(ng)%Eastern_Edge(tile)) THEN
               ib=ieast
               DO j=Jstr,Jend
                 tl_zeta_obc(j,ib,ir,Lout)=d_zeta_obc(j,ib,ir)
@@ -1730,7 +1732,8 @@
 #  endif
               END DO
             END IF
-            IF ((Lobc(isouth,isFsur,ng)).and.SOUTHERN_EDGE) THEN
+            IF ((Lobc(isouth,isFsur,ng)).and.                           &
+     &          DOMAIN(ng)%Southern_Edge(tile)) THEN
               ib=isouth
               DO i=Istr,Iend
                 tl_zeta_obc(i,ib,ir,Lout)=d_zeta_obc(i,ib,ir)
@@ -1740,7 +1743,8 @@
 #  endif
               END DO
             END IF
-            IF ((Lobc(inorth,isFsur,ng)).and.NORTHERN_EDGE) THEN
+            IF ((Lobc(inorth,isFsur,ng)).and.                           &
+     &          DOMAIN(ng)%Northern_Edge(tile)) THEN
               ib=inorth
               DO i=Istr,Iend
                 tl_zeta_obc(i,ib,ir,Lout)=d_zeta_obc(i,ib,ir)
@@ -1774,7 +1778,8 @@
 !
         IF (ANY(Lobc(:,isUbar,ng))) THEN
           DO ir=1,Nbrec(ng)
-            IF ((Lobc(iwest,isUbar,ng)).and.WESTERN_EDGE) THEN
+            IF ((Lobc(iwest,isUbar,ng)).and.                            &
+     &          DOMAIN(ng)%Western_Edge(tile)) THEN
               ib=iwest
               DO j=Jstr,Jend
                 tl_ubar_obc(j,ib,ir,Lout)=d_ubar_obc(j,ib,ir)
@@ -1784,7 +1789,8 @@
 #  endif
               END DO
             END IF
-            IF ((Lobc(ieast,isUbar,ng)).and.EASTERN_EDGE) THEN
+            IF ((Lobc(ieast,isUbar,ng)).and.                            &
+     &          DOMAIN(ng)%Eastern_Edge(tile)) THEN
               ib=ieast
               DO j=Jstr,Jend
                 tl_ubar_obc(j,ib,ir,Lout)=d_ubar_obc(j,ib,ir)
@@ -1794,7 +1800,8 @@
 #  endif
               END DO
             END IF
-            IF ((Lobc(isouth,isUbar,ng)).and.SOUTHERN_EDGE) THEN
+            IF ((Lobc(isouth,isUbar,ng)).and.                           &
+     &          DOMAIN(ng)%Southern_Edge(tile)) THEN
               ib=isouth
               DO i=IstrU,Iend
                 tl_ubar_obc(i,ib,ir,Lout)=d_ubar_obc(i,ib,ir)
@@ -1804,7 +1811,8 @@
 #  endif
               END DO
             END IF
-            IF ((Lobc(inorth,isUbar,ng)).and.NORTHERN_EDGE) THEN
+            IF ((Lobc(inorth,isUbar,ng)).and.                           &
+     &          DOMAIN(ng)%Northern_Edge(tile)) THEN
               ib=inorth
               DO i=IstrU,Iend
                 tl_ubar_obc(i,ib,ir,Lout)=d_ubar_obc(i,ib,ir)
@@ -1838,7 +1846,8 @@
 !
         IF (ANY(Lobc(:,isVbar,ng))) THEN
           DO ir=1,Nbrec(ng)
-            IF ((Lobc(iwest,isVbar,ng)).and.WESTERN_EDGE) THEN
+            IF ((Lobc(iwest,isVbar,ng)).and.                            &
+     &          DOMAIN(ng)%Western_Edge(tile)) THEN
               ib=iwest
               DO j=JstrV,Jend
                 tl_vbar_obc(j,ib,ir,Lout)=d_vbar_obc(j,ib,ir)
@@ -1848,7 +1857,8 @@
 #  endif
               END DO
             END IF
-            IF ((Lobc(ieast,isVbar,ng)).and.EASTERN_EDGE) THEN
+            IF ((Lobc(ieast,isVbar,ng)).and.                            &
+     &          DOMAIN(ng)%Eastern_Edge(tile)) THEN
               ib=ieast
               DO j=JstrV,Jend
                 tl_vbar_obc(j,ib,ir,Lout)=d_vbar_obc(j,ib,ir)
@@ -1858,7 +1868,8 @@
 #  endif
               END DO
             END IF
-            IF ((Lobc(isouth,isVbar,ng)).and.SOUTHERN_EDGE) THEN
+            IF ((Lobc(isouth,isVbar,ng)).and.                           &
+     &          DOMAIN(ng)%Southern_Edge(tile)) THEN
               ib=isouth
               DO i=Istr,Iend
                 tl_vbar_obc(i,ib,ir,Lout)=d_vbar_obc(i,ib,ir)
@@ -1868,7 +1879,8 @@
 #  endif
               END DO
             END IF
-            IF ((Lobc(inorth,isVbar,ng)).and.NORTHERN_EDGE) THEN
+            IF ((Lobc(inorth,isVbar,ng)).and.                           &
+     &          DOMAIN(ng)%Northern_Edge(tile)) THEN
               ib=inorth
               DO i=Istr,Iend
                 tl_vbar_obc(i,ib,ir,Lout)=d_vbar_obc(i,ib,ir)
@@ -1927,7 +1939,8 @@
 !
         IF (ANY(Lobc(:,isUvel,ng))) THEN
           DO ir=1,Nbrec(ng)
-            IF ((Lobc(iwest,isUvel,ng)).and.WESTERN_EDGE) THEN
+            IF ((Lobc(iwest,isUvel,ng)).and.                            &
+     &          DOMAIN(ng)%Western_Edge(tile)) THEN
               ib=iwest
               DO k=1,N(ng)
                 DO j=Jstr,Jend
@@ -1939,7 +1952,8 @@
                 END DO
               END DO
             END IF
-            IF ((Lobc(ieast,isUvel,ng)).and.EASTERN_EDGE) THEN
+            IF ((Lobc(ieast,isUvel,ng)).and.                            &
+     &          DOMAIN(ng)%Eastern_Edge(tile)) THEN
               ib=ieast
               DO k=1,N(ng)
                 DO j=Jstr,Jend
@@ -1951,7 +1965,8 @@
                 END DO
               END DO
             END IF
-            IF ((Lobc(isouth,isUvel,ng)).and.SOUTHERN_EDGE) THEN
+            IF ((Lobc(isouth,isUvel,ng)).and.                           &
+     &          DOMAIN(ng)%Southern_Edge(tile)) THEN
               ib=isouth
               DO k=1,N(ng)
                 DO i=IstrU,Iend
@@ -1963,7 +1978,8 @@
                 END DO
               END DO
             END IF
-            IF ((Lobc(inorth,isUvel,ng)).and.NORTHERN_EDGE) THEN
+            IF ((Lobc(inorth,isUvel,ng)).and.                           &
+     &          DOMAIN(ng)%Northern_Edge(tile)) THEN
               ib=inorth
               DO k=1,N(ng)
                 DO i=IstrU,Iend
@@ -1998,7 +2014,8 @@
 !
         IF (ANY(Lobc(:,isVvel,ng))) THEN
           DO ir=1,Nbrec(ng)
-            IF ((Lobc(iwest,isVvel,ng)).and.WESTERN_EDGE) THEN
+            IF ((Lobc(iwest,isVvel,ng)).and.                            &
+     &          DOMAIN(ng)%Western_Edge(tile)) THEN
               ib=iwest
               DO k=1,N(ng)
                 DO j=JstrV,Jend
@@ -2010,7 +2027,8 @@
                 END DO
               END DO
             END IF
-            IF ((Lobc(ieast,isVvel,ng)).and.EASTERN_EDGE) THEN
+            IF ((Lobc(ieast,isVvel,ng)).and.                            &
+     &          DOMAIN(ng)%Eastern_Edge(tile)) THEN
               ib=ieast
               DO k=1,N(ng)
                 DO j=JstrV,Jend
@@ -2022,7 +2040,8 @@
                 END DO
               END DO
             END IF
-            IF ((Lobc(isouth,isVvel,ng)).and.SOUTHERN_EDGE) THEN
+            IF ((Lobc(isouth,isVvel,ng)).and.                           &
+     &          DOMAIN(ng)%Southern_Edge(tile)) THEN
               ib=isouth
               DO k=1,N(ng)
                 DO i=Istr,Iend
@@ -2034,7 +2053,8 @@
                 END DO
               END DO
             END IF
-            IF ((Lobc(inorth,isVvel,ng)).and.NORTHERN_EDGE) THEN
+            IF ((Lobc(inorth,isVvel,ng)).and.                           &
+     &          DOMAIN(ng)%Northern_Edge(tile)) THEN
               ib=inorth
               DO k=1,N(ng)
                 DO i=Istr,Iend
@@ -2072,7 +2092,8 @@
         DO it=1,NT(ng)
           IF (ANY(Lobc(:,isTvar(it),ng))) THEN
             DO ir=1,Nbrec(ng)
-              IF ((Lobc(iwest,isTvar(it),ng)).and.WESTERN_EDGE) THEN
+              IF ((Lobc(iwest,isTvar(it),ng)).and.                      &
+     &            DOMAIN(ng)%Western_Edge(tile)) THEN
                 ib=iwest
                 DO k=1,N(ng)
                   DO j=Jstr,Jend
@@ -2084,7 +2105,8 @@
                   END DO
                 END DO
               END IF
-              IF ((Lobc(ieast,isTvar(it),ng)).and.EASTERN_EDGE) THEN
+              IF ((Lobc(ieast,isTvar(it),ng)).and.                      &
+     &            DOMAIN(ng)%Eastern_Edge(tile)) THEN
                 ib=ieast
                 DO k=1,N(ng)
                   DO j=Jstr,Jend
@@ -2096,7 +2118,8 @@
                   END DO
                 END DO
               END IF
-              IF ((Lobc(isouth,isTvar(it),ng)).and.SOUTHERN_EDGE) THEN
+              IF ((Lobc(isouth,isTvar(it),ng)).and.                     &
+     &            DOMAIN(ng)%Southern_Edge(tile)) THEN
                 ib=isouth
                 DO k=1,N(ng)
                   DO i=Istr,Iend
@@ -2108,7 +2131,8 @@
                   END DO
                 END DO
               END IF
-              IF ((Lobc(inorth,isTvar(it),ng)).and.NORTHERN_EDGE) THEN
+              IF ((Lobc(inorth,isTvar(it),ng)).and.                     &
+     &            DOMAIN(ng)%Northern_Edge(tile)) THEN
                 ib=inorth
                 DO k=1,N(ng)
                   DO i=Istr,Iend
@@ -2192,11 +2216,10 @@
 !  Read in each previous gradient state solutions, g(0) to g(k).
 !
         IF (ndefADJ(ng).gt.0) THEN
-          lstr=LEN_TRIM(ADJbase(ng))
-          WRITE (ncname,10) ADJbase(ng)(1:lstr-3), outLoop
+          WRITE (ncname,10) TRIM(ADM(ng)%base), outLoop
  10       FORMAT (a,'_',i3.3,'.nc')
         ELSE
-          ncname=ADJname(ng)
+          ncname=ADM(ng)%name
         END IF
 !
         DO rec=1,innLoop
@@ -2207,7 +2230,7 @@
           CALL read_state (ng, tile, model,                             &
      &                     LBi, UBi, LBj, UBj, LBij, UBij,              &
      &                     Lout, rec,                                   &
-     &                     ndefADJ(ng), ncADJid(ng), ncname,            &
+     &                     ndefADJ(ng), ADM(ng)%ncid, ncname,           &
 # ifdef MASKING
      &                     rmask, umask, vmask,                         &
 # endif
@@ -3129,7 +3152,8 @@
 !
       IF (ANY(Lobc(:,isFsur,ng))) THEN
         DO ir=1,Nbrec(ng)
-          IF ((Lobc(iwest,isFsur,ng)).and.WESTERN_EDGE) THEN
+          IF ((Lobc(iwest,isFsur,ng)).and.                              &
+     &        DOMAIN(ng)%Western_Edge(tile)) THEN
             ib=iwest
             DO j=Jstr,Jend
               d_zeta_obc(j,ib,ir)=ad_zeta_obc(j,ib,ir,Lnew)
@@ -3139,7 +3163,8 @@
 #  endif
             END DO
           END IF
-          IF ((Lobc(ieast,isFsur,ng)).and.EASTERN_EDGE) THEN
+          IF ((Lobc(ieast,isFsur,ng)).and.                              &
+     &        DOMAIN(ng)%Eastern_Edge(tile)) THEN
             ib=ieast
             DO j=Jstr,Jend
               d_zeta_obc(j,ib,ir)=ad_zeta_obc(j,ib,ir,Lnew)
@@ -3149,7 +3174,8 @@
 #  endif
             END DO
           END IF
-          IF ((Lobc(isouth,isFsur,ng)).and.SOUTHERN_EDGE) THEN
+          IF ((Lobc(isouth,isFsur,ng)).and.                             &
+     &        DOMAIN(ng)%Southern_Edge(tile)) THEN
             ib=isouth
             DO i=Istr,Iend
               d_zeta_obc(i,ib,ir)=ad_zeta_obc(i,ib,ir,Lnew)
@@ -3159,7 +3185,8 @@
 #  endif
             END DO
           END IF
-          IF ((Lobc(inorth,isFsur,ng)).and.NORTHERN_EDGE) THEN
+          IF ((Lobc(inorth,isFsur,ng)).and.                             &
+     &        DOMAIN(ng)%Northern_Edge(tile)) THEN
             ib=inorth
             DO i=Istr,Iend
               d_zeta_obc(i,ib,ir)=ad_zeta_obc(i,ib,ir,Lnew)
@@ -3193,27 +3220,30 @@
 !
       IF (ANY(Lobc(:,isUbar,ng))) THEN
         DO ir=1,Nbrec(ng)
-          IF ((Lobc(iwest,isUbar,ng)).and.WESTERN_EDGE) THEN
+          IF ((Lobc(iwest,isUbar,ng)).and.                              &
+     &        DOMAIN(ng)%Western_Edge(tile)) THEN
             ib=iwest
             DO j=Jstr,Jend
               d_ubar_obc(j,ib,ir)=ad_ubar_obc(j,ib,ir,Lnew)
 #  ifdef MASKING
-              d_ubar_obc(j,ib,ir)=d_ubar_obc(j,ib,ir)*                   &
+              d_ubar_obc(j,ib,ir)=d_ubar_obc(j,ib,ir)*                  &
      &                            umask(Istr,j)
 #  endif
             END DO
           END IF
-          IF ((Lobc(ieast,isUbar,ng)).and.EASTERN_EDGE) THEN
+          IF ((Lobc(ieast,isUbar,ng)).and.                              &
+     &        DOMAIN(ng)%Eastern_Edge(tile)) THEN
             ib=ieast
             DO j=Jstr,Jend
               d_ubar_obc(j,ib,ir)=ad_ubar_obc(j,ib,ir,Lnew)
 #  ifdef MASKING
-              d_ubar_obc(j,ib,ir)=d_ubar_obc(j,ib,ir)*                   &
+              d_ubar_obc(j,ib,ir)=d_ubar_obc(j,ib,ir)*                  &
      &                            umask(Iend+1,j)
 #  endif
             END DO
           END IF
-          IF ((Lobc(isouth,isUbar,ng)).and.SOUTHERN_EDGE) THEN
+          IF ((Lobc(isouth,isUbar,ng)).and.                             &
+     &        DOMAIN(ng)%Southern_Edge(tile)) THEN
             ib=isouth
             DO i=IstrU,Iend
               d_ubar_obc(i,ib,ir)=ad_ubar_obc(i,ib,ir,Lnew)
@@ -3223,7 +3253,8 @@
 #  endif
             END DO
           END IF
-          IF ((Lobc(inorth,isUbar,ng)).and.NORTHERN_EDGE) THEN
+          IF ((Lobc(inorth,isUbar,ng)).and.                             &
+     &        DOMAIN(ng)%Northern_Edge(tile)) THEN
             ib=inorth
             DO i=IstrU,Iend
               d_ubar_obc(i,ib,ir)=ad_ubar_obc(i,ib,ir,Lnew)
@@ -3257,7 +3288,8 @@
 !
       IF (ANY(Lobc(:,isVbar,ng))) THEN
         DO ir=1,Nbrec(ng)
-          IF ((Lobc(iwest,isVbar,ng)).and.WESTERN_EDGE) THEN
+          IF ((Lobc(iwest,isVbar,ng)).and.                              &
+     &        DOMAIN(ng)%Western_Edge(tile)) THEN
             ib=iwest
             DO j=JstrV,Jend
               d_vbar_obc(j,ib,ir)=ad_vbar_obc(j,ib,ir,Lnew)
@@ -3267,7 +3299,8 @@
 #  endif
             END DO
           END IF
-          IF ((Lobc(ieast,isVbar,ng)).and.EASTERN_EDGE) THEN
+          IF ((Lobc(ieast,isVbar,ng)).and.                              &
+     &        DOMAIN(ng)%Eastern_Edge(tile)) THEN
             ib=ieast
             DO j=JstrV,Jend
               d_vbar_obc(j,ib,ir)=ad_vbar_obc(j,ib,ir,Lnew)
@@ -3277,7 +3310,8 @@
 #  endif
             END DO
           END IF
-          IF ((Lobc(isouth,isVbar,ng)).and.SOUTHERN_EDGE) THEN
+          IF ((Lobc(isouth,isVbar,ng)).and.                             &
+     &        DOMAIN(ng)%Southern_Edge(tile)) THEN
             ib=isouth
             DO i=Istr,Iend
               d_vbar_obc(i,ib,ir)=ad_vbar_obc(i,ib,ir,Lnew)
@@ -3287,7 +3321,8 @@
 #  endif
             END DO
           END IF
-          IF ((Lobc(inorth,isVbar,ng)).and.NORTHERN_EDGE) THEN
+          IF ((Lobc(inorth,isVbar,ng)).and.                             &
+     &        DOMAIN(ng)%Northern_Edge(tile)) THEN
             ib=inorth
             DO i=Istr,Iend
               d_vbar_obc(i,ib,ir)=ad_vbar_obc(i,ib,ir,Lnew)
@@ -3346,7 +3381,8 @@
 !
       IF (ANY(Lobc(:,isUvel,ng))) THEN
         DO ir=1,Nbrec(ng)
-          IF ((Lobc(iwest,isUvel,ng)).and.WESTERN_EDGE) THEN
+          IF ((Lobc(iwest,isUvel,ng)).and.                              &
+     &        DOMAIN(ng)%Western_Edge(tile)) THEN
             ib=iwest
             DO k=1,N(ng)
               DO j=Jstr,Jend
@@ -3358,7 +3394,8 @@
               END DO
             END DO
           END IF
-          IF ((Lobc(ieast,isUvel,ng)).and.EASTERN_EDGE) THEN
+          IF ((Lobc(ieast,isUvel,ng)).and.                              &
+     &        DOMAIN(ng)%Eastern_Edge(tile)) THEN
             ib=ieast
             DO k=1,N(ng)
               DO j=Jstr,Jend
@@ -3370,7 +3407,8 @@
               END DO
             END DO
           END IF
-          IF ((Lobc(isouth,isUvel,ng)).and.SOUTHERN_EDGE) THEN
+          IF ((Lobc(isouth,isUvel,ng)).and.                             &
+     &        DOMAIN(ng)%Southern_Edge(tile)) THEN
             ib=isouth
             DO k=1,N(ng)
               DO i=IstrU,Iend
@@ -3382,7 +3420,8 @@
               END DO
             END DO
           END IF
-          IF ((Lobc(inorth,isUvel,ng)).and.NORTHERN_EDGE) THEN
+          IF ((Lobc(inorth,isUvel,ng)).and.                             &
+     &        DOMAIN(ng)%Northern_Edge(tile)) THEN
             ib=inorth
             DO k=1,N(ng)
               DO i=IstrU,Iend
@@ -3417,7 +3456,8 @@
 !
       IF (ANY(Lobc(:,isVvel,ng))) THEN
         DO ir=1,Nbrec(ng)
-          IF ((Lobc(iwest,isVvel,ng)).and.WESTERN_EDGE) THEN
+          IF ((Lobc(iwest,isVvel,ng)).and.                              &
+     &        DOMAIN(ng)%Western_Edge(tile)) THEN
             ib=iwest
             DO k=1,N(ng)
               DO j=JstrV,Jend
@@ -3429,7 +3469,8 @@
               END DO
             END DO
           END IF
-          IF ((Lobc(ieast,isVvel,ng)).and.EASTERN_EDGE) THEN
+          IF ((Lobc(ieast,isVvel,ng)).and.                              &
+     &        DOMAIN(ng)%Eastern_Edge(tile)) THEN
             ib=ieast
             DO k=1,N(ng)
               DO j=JstrV,Jend
@@ -3441,7 +3482,8 @@
               END DO
             END DO
           END IF
-          IF ((Lobc(isouth,isVvel,ng)).and.SOUTHERN_EDGE) THEN
+          IF ((Lobc(isouth,isVvel,ng)).and.                             &
+     &        DOMAIN(ng)%Southern_Edge(tile)) THEN
             ib=isouth
             DO k=1,N(ng)
               DO i=Istr,Iend
@@ -3453,7 +3495,8 @@
               END DO
             END DO
           END IF
-          IF ((Lobc(inorth,isVvel,ng)).and.NORTHERN_EDGE) THEN
+          IF ((Lobc(inorth,isVvel,ng)).and.                             &
+     &        DOMAIN(ng)%Northern_Edge(tile)) THEN
             ib=inorth
             DO k=1,N(ng)
               DO i=Istr,Iend
@@ -3491,7 +3534,8 @@
       DO it=1,NT(ng)
         IF (ANY(Lobc(:,isTvar(it),ng))) THEN
           DO ir=1,Nbrec(ng)
-            IF ((Lobc(iwest,isTvar(it),ng)).and.WESTERN_EDGE) THEN
+            IF ((Lobc(iwest,isTvar(it),ng)).and.                        &
+     &          DOMAIN(ng)%Western_Edge(tile)) THEN
               ib=iwest
               DO k=1,N(ng)
                 DO j=Jstr,Jend
@@ -3503,7 +3547,8 @@
                 END DO
               END DO
             END IF
-            IF ((Lobc(ieast,isTvar(it),ng)).and.EASTERN_EDGE) THEN
+            IF ((Lobc(ieast,isTvar(it),ng)).and.                        &
+     &          DOMAIN(ng)%Eastern_Edge(tile)) THEN
               ib=ieast
               DO k=1,N(ng)
                 DO j=Jstr,Jend
@@ -3515,7 +3560,8 @@
                 END DO
               END DO
             END IF
-            IF ((Lobc(isouth,isTvar(it),ng)).and.SOUTHERN_EDGE) THEN
+            IF ((Lobc(isouth,isTvar(it),ng)).and.                       &
+     &          DOMAIN(ng)%Southern_Edge(tile)) THEN
               ib=isouth
               DO k=1,N(ng)
                 DO i=Istr,Iend
@@ -3527,7 +3573,8 @@
                 END DO
               END DO
             END IF
-            IF ((Lobc(inorth,isTvar(it),ng)).and.NORTHERN_EDGE) THEN
+            IF ((Lobc(inorth,isTvar(it),ng)).and.                       &
+     &          DOMAIN(ng)%Northern_Edge(tile)) THEN
               ib=inorth
               DO k=1,N(ng)
                 DO i=Istr,Iend
@@ -3759,14 +3806,14 @@
 !
 !  Local variable declarations.
 !
-      integer :: i, j, k, lstr
+      integer :: i, j, k
       integer :: ib, ir, it
 
       real(r8) :: fac
 
       real(r8), dimension(0:NstateVar(ng)) :: dot
 
-      character (len=80) :: ncname
+      character (len=256) :: ncname
 
 # include "set_bounds.h"
 !
@@ -3803,7 +3850,8 @@
 !
       IF (ANY(Lobc(:,isFsur,ng))) THEN
         DO ir=1,Nbrec(ng)
-          IF ((Lobc(iwest,isFsur,ng)).and.WESTERN_EDGE) THEN
+          IF ((Lobc(iwest,isFsur,ng)).and.                              &
+     &        DOMAIN(ng)%Western_Edge(tile)) THEN
             ib=iwest
             DO j=Jstr,Jend
               ad_zeta_obc(j,ib,ir,Lnew)=ad_zeta_obc(j,ib,ir,Lnew)-      &
@@ -3815,7 +3863,8 @@
 #  endif
             END DO
           END IF
-          IF ((Lobc(ieast,isFsur,ng)).and.EASTERN_EDGE) THEN
+          IF ((Lobc(ieast,isFsur,ng)).and.                              &
+     &        DOMAIN(ng)%Eastern_Edge(tile)) THEN
             ib=ieast
             DO j=Jstr,Jend
               ad_zeta_obc(j,ib,ir,Lnew)=ad_zeta_obc(j,ib,ir,Lnew)-      &
@@ -3827,7 +3876,8 @@
 #  endif
             END DO
           END IF
-          IF ((Lobc(isouth,isFsur,ng)).and.SOUTHERN_EDGE) THEN
+          IF ((Lobc(isouth,isFsur,ng)).and.                             &
+     &        DOMAIN(ng)%Southern_Edge(tile)) THEN
             ib=isouth
             DO i=Istr,Iend
               ad_zeta_obc(i,ib,ir,Lnew)=ad_zeta_obc(i,ib,ir,Lnew)-      &
@@ -3839,7 +3889,8 @@
 #  endif
             END DO
           END IF
-          IF ((Lobc(inorth,isFsur,ng)).and.NORTHERN_EDGE) THEN
+          IF ((Lobc(inorth,isFsur,ng)).and.                             &
+     &        DOMAIN(ng)%Northern_Edge(tile)) THEN
             ib=inorth
             DO i=Istr,Iend
               ad_zeta_obc(i,ib,ir,Lnew)=ad_zeta_obc(i,ib,ir,Lnew)-      &
@@ -3877,7 +3928,8 @@
 !
       IF (ANY(Lobc(:,isUbar,ng))) THEN
         DO ir=1,Nbrec(ng)
-          IF ((Lobc(iwest,isUbar,ng)).and.WESTERN_EDGE) THEN
+          IF ((Lobc(iwest,isUbar,ng)).and.                              &
+     &        DOMAIN(ng)%Western_Edge(tile)) THEN
             ib=iwest
             DO j=Jstr,Jend
               ad_ubar_obc(j,ib,ir,Lnew)=ad_ubar_obc(j,ib,ir,Lnew)-      &
@@ -3889,7 +3941,8 @@
 #  endif
             END DO
           END IF
-          IF ((Lobc(ieast,isUbar,ng)).and.EASTERN_EDGE) THEN
+          IF ((Lobc(ieast,isUbar,ng)).and.                              &
+     &        DOMAIN(ng)%Eastern_Edge(tile)) THEN
             ib=ieast
             DO j=Jstr,Jend
               ad_ubar_obc(j,ib,ir,Lnew)=ad_ubar_obc(j,ib,ir,Lnew)-      &
@@ -3901,7 +3954,8 @@
 #  endif
             END DO
           END IF
-          IF ((Lobc(isouth,isUbar,ng)).and.SOUTHERN_EDGE) THEN
+          IF ((Lobc(isouth,isUbar,ng)).and.                             &
+     &        DOMAIN(ng)%Southern_Edge(tile)) THEN
             ib=isouth
             DO i=IstrU,Iend
               ad_ubar_obc(i,ib,ir,Lnew)=ad_ubar_obc(i,ib,ir,Lnew)-      &
@@ -3913,7 +3967,8 @@
 #  endif
             END DO
           END IF
-          IF ((Lobc(inorth,isUbar,ng)).and.NORTHERN_EDGE) THEN
+          IF ((Lobc(inorth,isUbar,ng)).and.                             &
+     &        DOMAIN(ng)%Northern_Edge(tile)) THEN
             ib=inorth
             DO i=IstrU,Iend
               ad_ubar_obc(i,ib,ir,Lnew)=ad_ubar_obc(i,ib,ir,Lnew)-      &
@@ -3951,7 +4006,8 @@
 !
       IF (ANY(Lobc(:,isVbar,ng))) THEN
         DO ir=1,Nbrec(ng)
-          IF ((Lobc(iwest,isVbar,ng)).and.WESTERN_EDGE) THEN
+          IF ((Lobc(iwest,isVbar,ng)).and.                              &
+     &        DOMAIN(ng)%Western_Edge(tile)) THEN
             ib=iwest
             DO j=JstrV,Jend
               ad_vbar_obc(j,ib,ir,Lnew)=ad_vbar_obc(j,ib,ir,Lnew)-      &
@@ -3963,7 +4019,8 @@
 #  endif
             END DO
           END IF
-          IF ((Lobc(ieast,isVbar,ng)).and.EASTERN_EDGE) THEN
+          IF ((Lobc(ieast,isVbar,ng)).and.                              &
+     &        DOMAIN(ng)%Eastern_Edge(tile)) THEN
             ib=ieast
             DO j=JstrV,Jend
               ad_vbar_obc(j,ib,ir,Lnew)=ad_vbar_obc(j,ib,ir,Lnew)-      &
@@ -3975,7 +4032,8 @@
 #  endif
             END DO
           END IF
-          IF ((Lobc(isouth,isVbar,ng)).and.SOUTHERN_EDGE) THEN
+          IF ((Lobc(isouth,isVbar,ng)).and.                             &
+     &        DOMAIN(ng)%Southern_Edge(tile)) THEN
             ib=isouth
             DO i=Istr,Iend
               ad_vbar_obc(i,ib,ir,Lnew)=ad_vbar_obc(i,ib,ir,Lnew)-      &
@@ -3987,7 +4045,8 @@
 #  endif
             END DO
           END IF
-          IF ((Lobc(inorth,isVbar,ng)).and.NORTHERN_EDGE) THEN
+          IF ((Lobc(inorth,isVbar,ng)).and.                             &
+     &        DOMAIN(ng)%Northern_Edge(tile)) THEN
             ib=inorth
             DO i=Istr,Iend
               ad_vbar_obc(i,ib,ir,Lnew)=ad_vbar_obc(i,ib,ir,Lnew)-      &
@@ -4054,7 +4113,8 @@
 !
       IF (ANY(Lobc(:,isUvel,ng))) THEN
         DO ir=1,Nbrec(ng)
-          IF ((Lobc(iwest,isUvel,ng)).and.WESTERN_EDGE) THEN
+          IF ((Lobc(iwest,isUvel,ng)).and.                              &
+     &        DOMAIN(ng)%Western_Edge(tile)) THEN
             ib=iwest
             DO k=1,N(ng)
               DO j=Jstr,Jend
@@ -4068,7 +4128,8 @@
               END DO
             END DO
           END IF
-          IF ((Lobc(ieast,isUvel,ng)).and.EASTERN_EDGE) THEN
+          IF ((Lobc(ieast,isUvel,ng)).and.                              &
+     &        DOMAIN(ng)%Eastern_Edge(tile)) THEN
             ib=ieast
             DO k=1,N(ng)
               DO j=Jstr,Jend
@@ -4082,7 +4143,8 @@
               END DO
             END DO
           END IF
-          IF ((Lobc(isouth,isUvel,ng)).and.SOUTHERN_EDGE) THEN
+          IF ((Lobc(isouth,isUvel,ng)).and.                             &
+     &        DOMAIN(ng)%Southern_Edge(tile)) THEN
             ib=isouth
             DO k=1,N(ng)
               DO i=IstrU,Iend
@@ -4096,7 +4158,8 @@
               END DO
             END DO
           END IF
-          IF ((Lobc(inorth,isUvel,ng)).and.NORTHERN_EDGE) THEN
+          IF ((Lobc(inorth,isUvel,ng)).and.                             &
+     &        DOMAIN(ng)%Northern_Edge(tile)) THEN
             ib=inorth
             DO k=1,N(ng)
               DO i=IstrU,Iend
@@ -4135,7 +4198,8 @@
 !
       IF (ANY(Lobc(:,isVvel,ng))) THEN
         DO ir=1,Nbrec(ng)
-          IF ((Lobc(iwest,isVvel,ng)).and.WESTERN_EDGE) THEN
+          IF ((Lobc(iwest,isVvel,ng)).and.                              &
+     &        DOMAIN(ng)%Western_Edge(tile)) THEN
             ib=iwest
             DO k=1,N(ng)
               DO j=JstrV,Jend
@@ -4149,7 +4213,8 @@
               END DO
             END DO
           END IF
-          IF ((Lobc(ieast,isVvel,ng)).and.EASTERN_EDGE) THEN
+          IF ((Lobc(ieast,isVvel,ng)).and.                              &
+     &        DOMAIN(ng)%Eastern_Edge(tile)) THEN
             ib=ieast
             DO k=1,N(ng)
               DO j=JstrV,Jend
@@ -4163,7 +4228,8 @@
               END DO
             END DO
           END IF
-          IF ((Lobc(isouth,isVvel,ng)).and.SOUTHERN_EDGE) THEN
+          IF ((Lobc(isouth,isVvel,ng)).and.                             &
+     &        DOMAIN(ng)%Southern_Edge(tile)) THEN
             ib=isouth
             DO k=1,N(ng)
               DO i=Istr,Iend
@@ -4177,7 +4243,8 @@
               END DO
             END DO
           END IF
-          IF ((Lobc(inorth,isVvel,ng)).and.NORTHERN_EDGE) THEN
+          IF ((Lobc(inorth,isVvel,ng)).and.                             &
+     &        DOMAIN(ng)%Northern_Edge(tile)) THEN
             ib=inorth
             DO k=1,N(ng)
               DO i=Istr,Iend
@@ -4219,7 +4286,8 @@
       DO it=1,NT(ng)
         IF (ANY(Lobc(:,isTvar(it),ng))) THEN
           DO ir=1,Nbrec(ng)
-            IF ((Lobc(iwest,isTvar(it),ng)).and.WESTERN_EDGE) THEN
+            IF ((Lobc(iwest,isTvar(it),ng)).and.                        &
+     &          DOMAIN(ng)%Western_Edge(tile)) THEN
               ib=iwest
               DO k=1,N(ng)
                 DO j=Jstr,Jend
@@ -4234,7 +4302,8 @@
                 END DO
               END DO
             END IF
-            IF ((Lobc(ieast,isTvar(it),ng)).and.EASTERN_EDGE) THEN
+            IF ((Lobc(ieast,isTvar(it),ng)).and.                        &
+     &          DOMAIN(ng)%Eastern_Edge(tile)) THEN
               ib=ieast
               DO k=1,N(ng)
                 DO j=Jstr,Jend
@@ -4249,7 +4318,8 @@
                 END DO
               END DO
             END IF
-            IF ((Lobc(isouth,isTvar(it),ng)).and.SOUTHERN_EDGE) THEN
+            IF ((Lobc(isouth,isTvar(it),ng)).and.                       &
+     &          DOMAIN(ng)%Southern_Edge(tile)) THEN
               ib=isouth
               DO k=1,N(ng)
                 DO i=Istr,Iend
@@ -4264,7 +4334,8 @@
                 END DO
               END DO
             END IF
-            IF ((Lobc(inorth,isTvar(it),ng)).and.NORTHERN_EDGE) THEN
+            IF ((Lobc(inorth,isTvar(it),ng)).and.                       &
+     &          DOMAIN(ng)%Northern_Edge(tile)) THEN
               ib=inorth
               DO k=1,N(ng)
                 DO i=Istr,Iend
@@ -4316,11 +4387,10 @@
 !  Determine gradient file to process.
 !
       IF (ndefADJ(ng).gt.0) THEN
-        lstr=LEN_TRIM(ADJbase(ng))
-        WRITE (ncname,10) ADJbase(ng)(1:lstr-3), outLoop
+        WRITE (ncname,10) TRIM(ADM(ng)%base), outLoop
  10     FORMAT (a,'_',i3.3,'.nc')
       ELSE
-        ncname=ADJname(ng)
+        ncname=ADM(ng)%name
       END IF
 !
 !  Read Lanczos vector on which the Hessian matrix is operating
@@ -4329,7 +4399,7 @@
       CALL read_state (ng, tile, model,                                 &
      &                 LBi, UBi, LBj, UBj, LBij, UBij,                  &
      &                 Lwrk, innLoop,                                   &
-     &                 ndefADJ(ng), ncADJid(ng), ncname,                &
+     &                 ndefADJ(ng), ADM(ng)%ncid, ncname,               &
 # ifdef MASKING
      &                 rmask, umask, vmask,                             &
 # endif
@@ -4596,14 +4666,14 @@
 !
 !  Local variable declarations.
 !
-      integer :: i, j, lstr, rec
+      integer :: i, j, rec
 
       real(r8) :: fac, fac1, fac2
 
       real(r8), dimension(0:NstateVar(ng)) :: dot
       real(r8), dimension(0:Ninner) :: DotProd, dot_new, dot_old
 
-      character (len=80) :: ncname
+      character (len=256) :: ncname
 
 # include "set_bounds.h"
 !
@@ -4670,11 +4740,10 @@
 !  Determine adjoint file to process.
 !
         IF (ndefADJ(ng).gt.0) THEN
-          lstr=LEN_TRIM(ADJbase(ng))
-          WRITE (ncname,10) ADJbase(ng)(1:lstr-3), outLoop
+          WRITE (ncname,10) TRIM(ADM(ng)%base), outLoop
  10       FORMAT (a,'_',i3.3,'.nc')
         ELSE
-          ncname=ADJname(ng)
+          ncname=ADM(ng)%name
         END IF
 !
 !  Read in the previous (innLoop-1) orthonormal Lanczos vector.
@@ -4682,7 +4751,7 @@
         CALL read_state (ng, tile, model,                               &
      &                   LBi, UBi, LBj, UBj, LBij, UBij,                &
      &                   Lwrk, innLoop-1,                               &
-     &                   ndefADJ(ng), ncADJid(ng), ncname,              &
+     &                   ndefADJ(ng), ADM(ng)%ncid, ncname,             &
 # ifdef MASKING
      &                   rmask, umask, vmask,                           &
 # endif
@@ -4759,10 +4828,9 @@
 !  is important for the Lanczos vector calculations.
 !
       IF (ndefADJ(ng).gt.0) THEN
-        lstr=LEN_TRIM(ADJbase(ng))
-        WRITE (ncname,10) ADJbase(ng)(1:lstr-3), outLoop
+        WRITE (ncname,10) TRIM(ADM(ng)%base), outLoop
       ELSE
-        ncname=ADJname(ng)
+        ncname=ADM(ng)%name
       END IF
 !
       DO rec=innLoop,1,-1
@@ -4774,7 +4842,7 @@
         CALL read_state (ng, tile, model,                               &
      &                   LBi, UBi, LBj, UBj, LBij, UBij,                &
      &                   Lwrk, rec,                                     &
-     &                   ndefADJ(ng), ncADJid(ng), ncname,              &
+     &                   ndefADJ(ng), ADM(ng)%ncid, ncname,             &
 # ifdef MASKING
      &                   rmask, umask, vmask,                           &
 # endif
@@ -5068,10 +5136,9 @@
 !  Determine adjoint file to process.
 !
       IF (ndefADJ(ng).gt.0) THEN
-        lstr=LEN_TRIM(ADJbase(ng))
-        WRITE (ncname,10) ADJbase(ng)(1:lstr-3), outLoop
+        WRITE (ncname,10) TRIM(ADM(ng)%base), outLoop
       ELSE
-        ncname=ADJname(ng)
+        ncname=ADM(ng)%name
       END IF
 !
       DO rec=innLoop,1,-1
@@ -5084,7 +5151,7 @@
         CALL read_state (ng, tile, model,                               &
      &                   LBi, UBi, LBj, UBj, LBij, UBij,                &
      &                   Lwrk, rec,                                     &
-     &                   ndefADJ(ng), ncADJid(ng), ncname,              &
+     &                   ndefADJ(ng), ADM(ng)%ncid, ncname,             &
 #  ifdef MASKING
      &                   rmask, umask, vmask,                           &
 #  endif
@@ -5371,14 +5438,14 @@
 !
 !  Local variable declarations.
 !
-      integer :: lstr, rec
+      integer :: rec
 
       real(r8) :: fac1, fac2
 
       real(r8), dimension(0:NstateVar(ng)) :: dot
       real(r8), dimension(0:Ninner) :: DotProd, dot_new, dot_old
 
-      character (len=80) :: ncname
+      character (len=256) :: ncname
 
 # include "set_bounds.h"
 !
@@ -5430,11 +5497,10 @@
 !  Adjust gradient against all previous gradients.
 !
       IF (ndefADJ(ng).gt.0) THEN
-        lstr=LEN_TRIM(ADJbase(ng))
-        WRITE (ncname,10) ADJbase(ng)(1:lstr-3), outLoop
+        WRITE (ncname,10) TRIM(ADM(ng)%base), outLoop
  10     FORMAT (a,'_',i3.3,'.nc')
       ELSE
-        ncname=ADJname(ng)
+        ncname=ADM(ng)%name
       END IF
 !
       DO rec=1,innLoop
@@ -5446,7 +5512,7 @@
         CALL read_state (ng, tile, model,                               &
      &                   LBi, UBi, LBj, UBj, LBij, UBij,                &
      &                   Lwrk, rec,                                     &
-     &                   ndefADJ(ng), ncADJid(ng), ncname,              &
+     &                   ndefADJ(ng), ADM(ng)%ncid, ncname,             &
 # ifdef MASKING
      &                   rmask, umask, vmask,                           &
 # endif
@@ -5836,7 +5902,7 @@
 !
 !  Local variable declarations.
 !
-      integer :: i, ingood, lstr, rec, nvec, status, varid
+      integer :: i, ingood, rec, nvec, status, varid
       integer :: L1
       integer :: start(4), total(4)
 
@@ -5847,7 +5913,7 @@
       real(r8), dimension(0:NstateVar(ng)) :: dot
       real(r8), dimension(0:Ninner) :: DotProd, dot_new, dot_old
 
-      character (len=80) :: ncname
+      character (len=256) :: ncname
 
 # include "set_bounds.h"
 !
@@ -5869,9 +5935,9 @@
 !
 !  Write out number of converged eigenvalues.
 !
-      CALL netcdf_put_ivar (ng, model, HSSname(ng), 'nConvRitz',        &
+      CALL netcdf_put_ivar (ng, model, HSS(ng)%name, 'nConvRitz',       &
      &                      nConvRitz, (/0/), (/0/),                    &
-     &                      ncid = ncHSSid(ng))
+     &                      ncid = HSS(ng)%ncid)
       IF (exit_flag.ne.NoError) RETURN
 !
 !-----------------------------------------------------------------------
@@ -5918,10 +5984,9 @@
 !  Compute Hessian eigenvectors.
 !
         IF (ndefADJ(ng).gt.0) THEN
-          lstr=LEN_TRIM(ADJbase(ng))
-          WRITE (ncname,20) ADJbase(ng)(1:lstr-3), outLoop
+          WRITE (ncname,20) TRIM(ADM(ng)%base), outLoop
         ELSE
-          ncname=ADJname(ng)
+          ncname=ADM(ng)%name
         END IF
 !
         ROWS : DO rec=1,innLoop
@@ -5932,7 +5997,7 @@
           CALL read_state (ng, tile, model,                             &
      &                     LBi, UBi, LBj, UBj, LBij, UBij,              &
      &                     Lwrk, rec,                                   &
-     &                     ndefADJ(ng), ncADJid(ng), ncname,            &
+     &                     ndefADJ(ng), ADM(ng)%ncid, ncname,           &
 # ifdef MASKING
      &                     rmask, umask, vmask,                         &
 # endif
@@ -6017,10 +6082,9 @@
 !  ad_var(Lnew).
 !
       IF (ndefADJ(ng).gt.0) THEN
-        lstr=LEN_TRIM(HSSbase(ng))
-        WRITE (ncname,20) HSSbase(ng)(1:lstr-3), outLoop
+        WRITE (ncname,20) TRIM(HSS(ng)%base), outLoop
       ELSE
-        ncname=HSSname(ng)
+        ncname=HSS(ng)%name
       END IF
       IF (Master) WRITE (stdout,30)
 !
@@ -6032,7 +6096,7 @@
         CALL read_state (ng, tile, model,                               &
      &                   LBi, UBi, LBj, UBj, LBij, UBij,                &
      &                   Lold, nvec,                                    &
-     &                   0, ncHSSid(ng), ncname,                        &
+     &                   0, HSS(ng)%ncid, ncname,                       &
 # ifdef MASKING
      &                   rmask, umask, vmask,                           &
 # endif
@@ -6104,7 +6168,7 @@
           CALL read_state (ng, tile, model,                             &
      &                     LBi, UBi, LBj, UBj, LBij, UBij,              &
      &                     Lwrk, rec,                                   &
-     &                     0, ncHSSid(ng), ncname,                      &
+     &                     0, HSS(ng)%ncid, ncname,                     &
 # ifdef MASKING
      &                     rmask, umask, vmask,                         &
 # endif
@@ -6320,20 +6384,20 @@
 !
 !  Write out converged Ritz eigenvalues and is associated accuracy.
 !
-        CALL netcdf_put_fvar (ng, model, HSSname(ng), 'Ritz',           &
+        CALL netcdf_put_fvar (ng, model, HSS(ng)%name, 'Ritz',          &
      &                        Ritz(nvec:), (/nvec/), (/1/),             &
-     &                        ncid = ncHSSid(ng))
+     &                        ncid = HSS(ng)%ncid)
         IF (exit_flag.ne.NoError) RETURN
 
-        CALL netcdf_put_fvar (ng, model, HSSname(ng), 'Ritz_error',     &
+        CALL netcdf_put_fvar (ng, model, HSS(ng)%name, 'Ritz_error',    &
      &                        RitzErr(nvec:), (/nvec/), (/1/),          &
-     &                        ncid = ncHSSid(ng))
+     &                        ncid = HSS(ng)%ncid)
         IF (exit_flag.ne.NoError) RETURN
 !
 !  Replace record "nvec" of Hessian eigenvectors NetCDF with the
 !  normalized value in adjoint state arrays at index Lold.
 !
-        tHSSindx(ng)=nvec-1
+        HSS(ng)%Rindex=nvec-1
         LwrtState2d(ng)=.TRUE.
         CALL wrt_hessian (ng, Lold, Lold)
         LwrtState2d(ng)=.FALSE.
@@ -6383,128 +6447,128 @@
 !
 !  Write out outer and inner iteration.
 !
-      CALL netcdf_put_ivar (ng, model, MODname(ng), 'outer',            &
+      CALL netcdf_put_ivar (ng, model, DAV(ng)%name, 'outer',           &
      &                      outer, (/0/), (/0/),                        &
-     &                      ncid = ncMODid(ng))
+     &                      ncid = DAV(ng)%ncid)
       IF (exit_flag.ne.NoError) RETURN
 
-      CALL netcdf_put_ivar (ng, model, MODname(ng), 'inner',            &
+      CALL netcdf_put_ivar (ng, model, DAV(ng)%name, 'inner',           &
      &                      inner, (/0/), (/0/),                        &
-     &                      ncid = ncMODid(ng))
+     &                      ncid = DAV(ng)%ncid)
       IF (exit_flag.ne.NoError) RETURN
 !
 !  Write out number of converged Ritz eigenvalues.
 !
       IF (innLoop.eq.Ninner) THEN
-        CALL netcdf_put_ivar (ng, model, MODname(ng), 'nConvRitz',      &
+        CALL netcdf_put_ivar (ng, model, DAV(ng)%name, 'nConvRitz',     &
      &                        nConvRitz, (/0/), (/0/),                  &
-     &                        ncid = ncMODid(ng))
+     &                        ncid = DAV(ng)%ncid)
         IF (exit_flag.ne.NoError) RETURN
       END IF
 !
 !  Write out converged Ritz eigenvalues.
 !
       IF (innLoop.eq.Ninner) THEN
-        CALL netcdf_put_fvar (ng, model, MODname(ng), 'Ritz',           &
+        CALL netcdf_put_fvar (ng, model, DAV(ng)%name, 'Ritz',          &
      &                        Ritz, (/1/), (/nConvRitz/),               &
-     &                        ncid = ncMODid(ng))
+     &                        ncid = DAV(ng)%ncid)
         IF (exit_flag.ne.NoError) RETURN
       END IF
 !
 !  Write out conjugate gradient norms.
 !
       IF (innLoop.gt.0) THEN
-        CALL netcdf_put_fvar (ng, model, MODname(ng), 'cg_beta',        &
+        CALL netcdf_put_fvar (ng, model, DAV(ng)%name, 'cg_beta',       &
      &                        cg_beta, (/1,1/), (/Ninner+1,Nouter/),    &
-     &                        ncid = ncMODid(ng))
+     &                        ncid = DAV(ng)%ncid)
         IF (exit_flag.ne.NoError) RETURN
       END IF
 !
 !  Write out Lanczos algorithm coefficients.
 !
       IF (innLoop.gt.0) THEN
-        CALL netcdf_put_fvar (ng, model, MODname(ng), 'cg_delta',       &
+        CALL netcdf_put_fvar (ng, model, DAV(ng)%name, 'cg_delta',      &
      &                        cg_delta, (/1,1/), (/Ninner,Nouter/),     &
-     &                        ncid = ncMODid(ng))
+     &                        ncid = DAV(ng)%ncid)
         IF (exit_flag.ne.NoError) RETURN
       END IF
 !
       IF (innLoop.gt.0) THEN
-        CALL netcdf_put_fvar (ng, model, MODname(ng), 'cg_gamma',       &
+        CALL netcdf_put_fvar (ng, model, DAV(ng)%name, 'cg_gamma',      &
      &                        cg_gamma, (/1,1/), (/Ninner,Nouter/),     &
-     &                        ncid = ncMODid(ng))
+     &                        ncid = DAV(ng)%ncid)
         IF (exit_flag.ne.NoError) RETURN
       END IF
 !
 !  Initial gradient normalization factor.
 !
       IF (innLoop.eq.0) THEN
-        CALL netcdf_put_fvar (ng, model, MODname(ng), 'cg_Gnorm',       &
+        CALL netcdf_put_fvar (ng, model, DAV(ng)%name, 'cg_Gnorm',      &
      &                        cg_Gnorm, (/1/), (/Nouter/),              &
-     &                        ncid = ncMODid(ng))
+     &                        ncid = DAV(ng)%ncid)
         IF (exit_flag.ne.NoError) RETURN
       END IF
 !
 !  Lanczos vector normalization factor.
 !
       IF (innLoop.gt.0) THEN
-        CALL netcdf_put_fvar (ng, model, MODname(ng), 'cg_QG',          &
+        CALL netcdf_put_fvar (ng, model, DAV(ng)%name, 'cg_QG',         &
      &                        cg_QG, (/1,1/), (/Ninner,Nouter/),        &
-     &                        ncid = ncMODid(ng))
+     &                        ncid = DAV(ng)%ncid)
         IF (exit_flag.ne.NoError) RETURN
       END IF
 !
 !  Reduction in the gradient norm.
 !
       IF (innLoop.gt.0) THEN
-        CALL netcdf_put_fvar (ng, model, MODname(ng), 'cg_Greduc',      &
+        CALL netcdf_put_fvar (ng, model, DAV(ng)%name, 'cg_Greduc',     &
      &                        cg_Greduc, (/1,1/), (/Ninner,Nouter/),    &
-     &                        ncid = ncMODid(ng))
+     &                        ncid = DAV(ng)%ncid)
         IF (exit_flag.ne.NoError) RETURN
       END IF
 !
 !  Lanczos recurrence tridiagonal matrix.
 !
       IF (innLoop.gt.0) THEN
-        CALL netcdf_put_fvar (ng, model, MODname(ng), 'cg_Tmatrix',     &
+        CALL netcdf_put_fvar (ng, model, DAV(ng)%name, 'cg_Tmatrix',    &
      &                        cg_Tmatrix, (/1,1/), (/Ninner,3/),        &
-     &                        ncid = ncMODid(ng))
+     &                        ncid = DAV(ng)%ncid)
         IF (exit_flag.ne.NoError) RETURN
       END IF
 !
 !  Lanczos tridiagonal matrix, upper diagonal elements.
 !
       IF (innLoop.gt.0) THEN
-        CALL netcdf_put_fvar (ng, model, MODname(ng), 'cg_zu',          &
+        CALL netcdf_put_fvar (ng, model, DAV(ng)%name, 'cg_zu',         &
      &                        cg_zu, (/1,1/), (/Ninner,Nouter/),        &
-     &                        ncid = ncMODid(ng))
+     &                        ncid = DAV(ng)%ncid)
         IF (exit_flag.ne.NoError) RETURN
       END IF
 !
 !  Eigenvalues of Lanczos recurrence relationship.
 !
       IF (innLoop.gt.0) THEN
-        CALL netcdf_put_fvar (ng, model, MODname(ng), 'cg_Ritz',        &
+        CALL netcdf_put_fvar (ng, model, DAV(ng)%name, 'cg_Ritz',       &
      &                        cg_Ritz, (/1,1/), (/Ninner,Nouter/),      &
-     &                        ncid = ncMODid(ng))
+     &                        ncid = DAV(ng)%ncid)
         IF (exit_flag.ne.NoError) RETURN
       END IF
 !
 !  Eigenvalues relative error.
 !
       IF (innLoop.gt.0) THEN
-        CALL netcdf_put_fvar (ng, model, MODname(ng), 'cg_RitzErr',     &
+        CALL netcdf_put_fvar (ng, model, DAV(ng)%name, 'cg_RitzErr',    &
      &                        cg_RitzErr, (/1,1/), (/Ninner,Nouter/),   &
-     &                        ncid = ncMODid(ng))
+     &                        ncid = DAV(ng)%ncid)
         IF (exit_flag.ne.NoError) RETURN
       END IF
 !
 !  Eigenvectors of Lanczos recurrence relationship.
 !
       IF (innLoop.gt.0) THEN
-        CALL netcdf_put_fvar (ng, model, MODname(ng), 'cg_zv',          &
+        CALL netcdf_put_fvar (ng, model, DAV(ng)%name, 'cg_zv',         &
      &                        cg_zv, (/1,1/), (/Ninner,Ninner/),        &
-     &                        ncid = ncMODid(ng))
+     &                        ncid = DAV(ng)%ncid)
         IF (exit_flag.ne.NoError) RETURN
       END IF
 !
@@ -6514,19 +6578,19 @@
 !  of the observations to the 4DVAR data assimilation system.
 !
       IF (innLoop.gt.0) THEN
-        CALL netcdf_put_fvar (ng, model, ADJname(ng), 'cg_beta',        &
+        CALL netcdf_put_fvar (ng, model, ADM(ng)%name, 'cg_beta',       &
      &                        cg_beta, (/1,1/), (/Ninner+1,Nouter/),    &
-     &                        ncid = ncADJid(ng))
+     &                        ncid = ADM(ng)%ncid)
         IF (exit_flag.ne.NoError) RETURN
 !
-        CALL netcdf_put_fvar (ng, model, ADJname(ng), 'cg_delta',       &
+        CALL netcdf_put_fvar (ng, model, ADM(ng)%name, 'cg_delta',      &
      &                        cg_delta, (/1,1/), (/Ninner,Nouter/),     &
-     &                        ncid = ncADJid(ng))
+     &                        ncid = ADM(ng)%ncid)
         IF (exit_flag.ne.NoError) RETURN
 !
-        CALL netcdf_put_fvar (ng, model, ADJname(ng), 'cg_zv',          &
+        CALL netcdf_put_fvar (ng, model, ADM(ng)%name, 'cg_zv',         &
      &                        cg_zv, (/1,1/), (/Ninner,Ninner/),        &
-     &                        ncid = ncADJid(ng))
+     &                        ncid = ADM(ng)%ncid)
         IF (exit_flag.ne.NoError) RETURN
       END IF
 !
@@ -6534,7 +6598,7 @@
 !  Synchronize model/observation NetCDF file to disk.
 !-----------------------------------------------------------------------
 !
-      CALL netcdf_sync (ng, model, MODname(ng), ncMODid(ng))
+      CALL netcdf_sync (ng, model, DAV(ng)%name, DAV(ng)%ncid)
 
       RETURN
       END SUBROUTINE cg_write
@@ -6658,7 +6722,7 @@
 !
 !  Local variable declarations.
 !
-      integer :: i, lstr, rec, Lscale
+      integer :: i, rec, Lscale
       integer :: L1 = 1
       integer :: L2 = 2
 
@@ -6668,7 +6732,7 @@
 
       logical :: Ltrans
 
-      character (len=80) :: ncname
+      character (len=256) :: ncname
 
 # include "set_bounds.h"
 !
@@ -6725,11 +6789,10 @@
 !  Now compute nl_var(L1) = Q * cg_zu.
 !
       IF (ndefADJ(ng).gt.0) THEN
-        lstr=LEN_TRIM(ADJbase(ng))
-        WRITE (ncname,10) ADJbase(ng)(1:lstr-3), outLoop
+        WRITE (ncname,10) TRIM(ADM(ng)%base), outLoop
  10     FORMAT (a,'_',i3.3,'.nc')
       ELSE
-        ncname=ADJname(ng)
+        ncname=ADM(ng)%name
       END IF
 !
       DO rec=1,innLoop
@@ -6739,7 +6802,7 @@
         CALL read_state (ng, tile, model,                               &
      &                   LBi, UBi, LBj, UBj, LBij, UBij,                &
      &                   L2, rec,                                       &
-     &                   ndefADJ(ng), ncADJid(ng), ncname,              &
+     &                   ndefADJ(ng), ADM(ng)%ncid, ncname,             &
 # ifdef MASKING
      &                   rmask, umask, vmask,                           &
 # endif
@@ -6809,16 +6872,15 @@
 !
       rec=1
       IF (ndefADJ(ng).gt.0) THEN
-        lstr=LEN_TRIM(ADJbase(ng))
-        WRITE (ncname,10) ADJbase(ng)(1:lstr-3), outLoop
+        WRITE (ncname,10) TRIM(ADM(ng)%base), outLoop
       ELSE
-        ncname=ADJname(ng)
+        ncname=ADM(ng)%name
       END IF
 !
       CALL read_state (ng, tile, model,                                 &
      &                 LBi, UBi, LBj, UBj, LBij, UBij,                  &
      &                 L2, rec,                                         &
-     &                 ndefADJ(ng), ncADJid(ng), ncname,                &
+     &                 ndefADJ(ng), ADM(ng)%ncid, ncname,               &
 # ifdef MASKING
      &                 rmask, umask, vmask,                             &
 # endif
@@ -6945,7 +7007,7 @@
       CALL read_state (ng, tile, model,                                 &
      &                 LBi, UBi, LBj, UBj, LBij, UBij,                  &
      &                 L2, 4,                                           &
-     &                 ndefTLM(ng), ncITLid(ng), ITLname(ng),           &
+     &                 ndefTLM(ng), ITL(ng)%ncid, ITL(ng)%name,         &
 # ifdef MASKING
      &                 rmask, umask, vmask,                             &
 # endif
@@ -7194,7 +7256,6 @@
       integer :: is, ie, inc, iss, ncid
       integer :: nol, nols, nole, ninc
       integer :: ingood
-      integer :: lstr
       integer :: namm
 # ifdef SOLVE3D
       integer :: it
@@ -7206,7 +7267,7 @@
       real(r8), dimension(1:Ninner+1,Nouter) :: beta_lcz
       real(r8), dimension(Ninner,Ninner) :: zv_lcz
 
-      character (len=80) :: ncname
+      character (len=256) :: ncname
 
 # ifdef DISTRIBUTE
       character (len=3) :: op_handle
@@ -7222,7 +7283,7 @@
 !
 !  Apply the preconditioner. The approximated Hessian matrix is computed
 !  from the eigenvectors computed by the Lanczos algorithm which are
-!  stored in HSSname NetCDF file.
+!  stored in HSS(ng)%name NetCDF file.
 !-----------------------------------------------------------------------
 !
       L1=1
@@ -7256,8 +7317,7 @@
 !
 !  Read the primitive Ritz vectors cg_v and cg_beta.
 !
-        lstr=LEN_TRIM(ADJbase(ng))
-        WRITE (ncname,20) ADJbase(ng)(1:lstr-3), nol
+        WRITE (ncname,20) TRIM(ADM(ng)%base), nol
         IF (Master) THEN
           WRITE (stdout,30) outLoop, innLoop, TRIM(ncname)
         END IF
@@ -7319,8 +7379,7 @@
 !
 !  Determine adjoint file to process.
 !
-              lstr=LEN_TRIM(ADJbase(ng))
-              WRITE (ncname,20) ADJbase(ng)(1:lstr-3), nol
+              WRITE (ncname,20) TRIM(ADM(ng)%base), nol
               IF (Master.and.(nvec.eq.is)) THEN
                 WRITE (stdout,50) outLoop, innLoop, TRIM(ncname)
               END IF
@@ -7418,8 +7477,7 @@
 !  Read the converged Hessian eigenvectors into NLM state array,
 !  index L2.
 !
-          lstr=LEN_TRIM(HSSbase(ng))
-          WRITE (ncname,20) HSSbase(ng)(1:lstr-3), nol
+          WRITE (ncname,20) TRIM(HSS(ng)%base), nol
           IF (Master.and.(nvec.eq.is)) THEN
             WRITE (stdout,60) outLoop, innLoop, TRIM(ncname)
           END IF
@@ -7564,8 +7622,7 @@
 !
           IF (Lritz.and.Ltrans) THEN
 
-            lstr=LEN_TRIM(ADJbase(ng))
-            WRITE (ncname,20) ADJbase(ng)(1:lstr-3), nol
+            WRITE (ncname,20) TRIM(ADM(ng)%base), nol
             IF (Master.and.(nvec.eq.is)) THEN
               WRITE (stdout,50) outLoop, innLoop, TRIM(ncname)
             END IF

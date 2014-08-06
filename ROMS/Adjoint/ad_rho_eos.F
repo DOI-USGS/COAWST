@@ -3,9 +3,9 @@
       MODULE ad_rho_eos_mod
 #if defined ADJOINT && defined SOLVE3D
 !
-!svn $Id: ad_rho_eos.F 429 2009-12-20 17:30:26Z arango $
+!svn $Id$
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2010 The ROMS/TOMS Group       Andrew M. Moore   !
+!  Copyright (c) 2002-2014 The ROMS/TOMS Group       Andrew M. Moore   !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -156,10 +156,8 @@
       USE mod_sediment
 #  endif
 !
-#  if defined EW_PERIODIC || defined NS_PERIODIC
       USE ad_exchange_2d_mod
       USE ad_exchange_3d_mod
-#  endif
 #  ifdef DISTRIBUTE
       USE mp_exchange_mod, ONLY : ad_mp_exchange2d, ad_mp_exchange3d
 #  endif
@@ -258,18 +256,6 @@
 !
 !  Local variable declarations.
 !
-# ifdef DISTRIBUTE
-#  ifdef EW_PERIODIC
-      logical :: EWperiodic=.TRUE.
-#  else
-      logical :: EWperiodic=.FALSE.
-#  endif
-#  ifdef NS_PERIODIC
-      logical :: NSperiodic=.TRUE.
-#  else
-      logical :: NSperiodic=.FALSE.
-#  endif
-# endif
       integer :: i, ised, itrc, j, k
 
       real(r8) :: SedDen, Tp, Tpr10, Ts, Tt, sqrtTs
@@ -374,159 +360,169 @@
 !  of state is only valid for potential temperature range of -2C to 40C
 !  and a salinity range of 0 PSU to 42 PSU.
 !=======================================================================
-
-#  if defined EW_PERIODIC || defined NS_PERIODIC || defined DISTRIBUTE
 !
 !-----------------------------------------------------------------------
 !  Exchange boundary data.
 !-----------------------------------------------------------------------
 !
-#   ifdef DISTRIBUTE
-#    ifdef BV_FREQUENCY_NOT_YET
+#  ifdef DISTRIBUTE
+#   ifdef BV_FREQUENCY_NOT_YET
 !>    CALL mp_exchange3d (ng, tile, iTLM, 1,                            &
 !>   &                    LBi, UBi, LBj, UBj, 0, N(ng),                 &
-!>   &                    NghostPoints, EWperiodic, NSperiodic,         &
+!>   &                    NghostPoints,                                 &
+!>   &                    EWperiodic(ng), NSperiodic(ng),               &
 !>   &                    tl_bvf)
 !>
       CALL ad_mp_exchange3d (ng, tile, iADM, 1,                         &
      &                       LBi, UBi, LBj, UBj, 0, N(ng),              &
-     &                       NghostPoints, EWperiodic, NSperiodic,      &
+     &                       NghostPoints,                              &
+     &                       EWperiodic(ng), NSperiodic(ng),            &
      &                       ad_bvf)
-#    endif
-#    ifdef VAR_RHO_2D
+#   endif
+#   ifdef VAR_RHO_2D
 !>    CALL mp_exchange2d (ng, tile, iTLM, 2,                            &
 !>   &                    LBi, UBi, LBj, UBj,                           &
-!>   &                    NghostPoints, EWperiodic, NSperiodic,         &
+!>   &                    NghostPoints,                                 &
+!>   &                    EWperiodic(ng), NSperiodic(ng),               &
 !>   &                    tl_rhoA, tl_rhoS)
 !>
       CALL ad_mp_exchange2d (ng, tile, iADM, 2,                         &
      &                       LBi, UBi, LBj, UBj,                        &
-     &                       NghostPoints, EWperiodic, NSperiodic,      &
+     &                       NghostPoints,                              &
+     &                       EWperiodic(ng), NSperiodic(ng),            &
      &                       ad_rhoA, ad_rhoS)
-#    endif
-#    if defined LMD_SKPP_NOT_YET || defined LMD_BKPP_NOT_YET || \
-        defined BULK_FLUXES_NOT_YET
+#   endif
+#   if defined LMD_SKPP_NOT_YET || defined LMD_BKPP_NOT_YET || \
+       defined BULK_FLUXES_NOT_YET
 !>    CALL mp_exchange2d (ng, tile, iTLM, 2,                            &
 !>   &                    LBi, UBi, LBj, UBj,                           &
-!>   &                    NghostPoints, EWperiodic, NSperiodic,         &
+!>   &                    NghostPoints,                                 &
+!>   &                    EWperiodic(ng), NSperiodic(ng),               &
 !>   &                    tl_alpha, tl_beta)
 !>
       CALL ad_mp_exchange2d (ng, tile, iADM, 2,                         &
      &                       LBi, UBi, LBj, UBj,                        &
-     &                       NghostPoints, EWperiodic, NSperiodic,      &
+     &                       NghostPoints,                              &
+     &                       EWperiodic(ng), NSperiodic(ng),            &
      &                       ad_alpha, ad_beta)
-#     ifdef LMD_DDMIX_NOT_YET
+#    ifdef LMD_DDMIX_NOT_YET
 !>    CALL mp_exchange3d (ng, tile, iTLM, 1,                            &
 !>   &                    LBi, UBi, LBj, UBj, 0, N(ng),                 &
-!>   &                    NghostPoints, EWperiodic, NSperiodic,         &
+!>   &                    NghostPoints,                                 &
+!>   &                    EWperiodic(ng), NSperiodic(ng),               &
 !>   &                    tl_alfaobeta)
 !>
       CALL ad_mp_exchange3d (ng, tile, iADM, 1,                         &
      &                       LBi, UBi, LBj, UBj, 0, N(ng),              &
-     &                       NghostPoints, EWperiodic, NSperiodic,      &
+     &                       NghostPoints,                              &
+     &                       EWperiodic(ng), NSperiodic(ng),            &
      &                       ad_alfaobeta)
-#     endif
 #    endif
-#    if defined LMD_SKPP_NOT_YET || defined LMD_BKPP_NOT_YET
+#   endif
+#   if defined LMD_SKPP_NOT_YET || defined LMD_BKPP_NOT_YET
 !>    CALL mp_exchange3d (ng, tile, iTLM, 1,                            &
 !>   &                    LBi, UBi, LBj, UBj, 1, N(ng),                 &
-!>   &                    NghostPoints, EWperiodic, NSperiodic,         &
+!>   &                    NghostPoints,                                 &
+!>   &                    EWperiodic(ng), NSperiodic(ng),               &
 !>   &                    tl_pden)
 !>
       CALL ad_mp_exchange3d (ng, tile, iADM, 1,                         &
      &                       LBi, UBi, LBj, UBj, 1, N(ng),              &
-     &                       NghostPoints, EWperiodic, NSperiodic,      &
+     &                       NghostPoints,                              &
+     &                       EWperiodic(ng), NSperiodic(ng),            &
      &                       ad_pden)
-#    endif
+#   endif
 !>    CALL exchange_r3d_tile (ng, tile,                                 &
 !>   &                        LBi, UBi, LBj, UBj, 1, N(ng),             &
-!>   &                        NghostPoints, EWperiodic, NSperiodic,     &
+!>   &                        NghostPoints,                             &
+!>   &                        EWperiodic(ng), NSperiodic(ng),           &
 !>   &                        tl_rho)
 !>
       CALL ad_mp_exchange3d (ng, tile, iADM, 1,                         &
      &                       LBi, UBi, LBj, UBj, 1, N(ng),              &
-     &                       NghostPoints, EWperiodic, NSperiodic,      &
+     &                       NghostPoints,                              &
+     &                       EWperiodic(ng), NSperiodic(ng),            &
      &                       ad_rho)
-#   endif
+!
+#  endif
 
-#   if defined EW_PERIODIC || defined NS_PERIODIC
-#    ifdef BV_FREQUENCY_NOT_YET
-!>    CALL exchange_w3d_tile (ng, tile,                                 &
-!>   &                        LBi, UBi, LBj, UBj, 0, N(ng),             &
-!>   &                        tl_bvf)
+      IF (EWperiodic(ng).or.NSperiodic(ng)) THEN
+#  ifdef BV_FREQUENCY_NOT_YET
+!>      CALL exchange_w3d_tile (ng, tile,                               &
+!>   &                          LBi, UBi, LBj, UBj, 0, N(ng),           &
+!>   &                          tl_bvf)
 !>
-      CALL ad_exchange_w3d_tile (ng, tile,                              &
-     &                           LBi, UBi, LBj, UBj, 0, N(ng),          &
-     &                           ad_bvf)
-#    endif
-#    ifdef VAR_RHO_2D
-!>    CALL exchange_r2d_tile (ng, tile,                                 &
-!>   &                        LBi, UBi, LBj, UBj,                       &
-!>   &                        tl_rhoS)
+        CALL ad_exchange_w3d_tile (ng, tile,                            &
+     &                             LBi, UBi, LBj, UBj, 0, N(ng),        &
+     &                             ad_bvf)
+#  endif
+#  ifdef VAR_RHO_2D
+!>      CALL exchange_r2d_tile (ng, tile,                               &
+!>   &                          LBi, UBi, LBj, UBj,                     &
+!>   &                          tl_rhoS)
 !>
-      CALL ad_exchange_r2d_tile (ng, tile,                              &
-     &                           LBi, UBi, LBj, UBj,                    &
-     &                           ad_rhoS)
-!>    CALL exchange_r2d_tile (ng, tile,                                 &
-!>   &                        LBi, UBi, LBj, UBj,                       &
-!>   &                        tl_rhoA)
+        CALL ad_exchange_r2d_tile (ng, tile,                            &
+     &                             LBi, UBi, LBj, UBj,                  &
+     &                             ad_rhoS)
+!>      CALL exchange_r2d_tile (ng, tile,                               &
+!>   &                          LBi, UBi, LBj, UBj,                     &
+!>   &                          tl_rhoA)
 !>
-      CALL ad_exchange_r2d_tile (ng, tile,                              &
-     &                           LBi, UBi, LBj, UBj,                    &
-     &                           ad_rhoA)
-#    endif
-#    if defined LMD_SKPP_NOT_YET || defined LMD_BKPP_NOT_YET || \
-        defined BULK_FLUXES_NOT_YET
-!>    CALL exchange_r2d_tile (ng, tile,                                 &
-!>   &                        LBi, UBi, LBj, UBj,                       &
-!>   &                        tl_beta)
+        CALL ad_exchange_r2d_tile (ng, tile,                            &
+     &                             LBi, UBi, LBj, UBj,                  &
+     &                             ad_rhoA)
+#  endif
+#  if defined LMD_SKPP_NOT_YET || defined LMD_BKPP_NOT_YET || \
+      defined BULK_FLUXES_NOT_YET
+!>      CALL exchange_r2d_tile (ng, tile,                               &
+!>   &                          LBi, UBi, LBj, UBj,                     &
+!>   &                          tl_beta)
 !>
-      CALL ad_exchange_r2d_tile (ng, tile,                              &
-     &                           LBi, UBi, LBj, UBj,                    &
-     &                           ad_beta)
-!>    CALL exchange_r2d_tile (ng, tile,                                 &
-!>   &                        LBi, UBi, LBj, UBj,                       &
-!>   &                        tl_alpha)
+        CALL ad_exchange_r2d_tile (ng, tile,                            &
+     &                             LBi, UBi, LBj, UBj,                  &
+     &                             ad_beta)
+!>      CALL exchange_r2d_tile (ng, tile,                               &
+!>   &                          LBi, UBi, LBj, UBj,                     &
+!>   &                          tl_alpha)
 !>
-      CALL ad_exchange_r2d_tile (ng, tile,                              &
-     &                           LBi, UBi, LBj, UBj,                    &
-     &                           ad_alpha)
-#     ifdef LMD_DDMIX_NOT_YET
-!>    CALL exchange_w3d_tile (ng, tile,                                 &
-!>   &                        LBi, UBi, LBj, UBj, 0, N(ng),             &
-!>   &                        tl_alfaobeta)
+        CALL ad_exchange_r2d_tile (ng, tile,                            &
+     &                             LBi, UBi, LBj, UBj,                  &
+     &                             ad_alpha)
+#   ifdef LMD_DDMIX_NOT_YET
+!>      CALL exchange_w3d_tile (ng, tile,                               &
+!>   &                          LBi, UBi, LBj, UBj, 0, N(ng),           &
+!>   &                          tl_alfaobeta)
 !>
-      CALL ad_exchange_w3d_tile (ng, tile,                              &
-     &                           LBi, UBi, LBj, UBj, 0, N(ng),          &
-     &                           ad_alfaobeta)
-#     endif
-#    endif
-#    if defined LMD_SKPP_NOT_YET || defined LMD_BKPP_NOT_YET
-!>    CALL exchange_r3d_tile (ng, tile,                                 &
-!>   &                        LBi, UBi, LBj, UBj, 1, N(ng),             &
-!>   &                        tl_pden)
-!>
-      CALL ad_exchange_r3d_tile (ng, tile,                              &
-     &                           LBi, UBi, LBj, UBj, 1, N(ng),          &
-     &                           ad_pden)
-#    endif
-!>    CALL exchange_r3d_tile (ng, tile,                                 &
-!>   &                        LBi, UBi, LBj, UBj, 1, N(ng),             &
-!>   &                        tl_rho)
-!>
-      CALL ad_exchange_r3d_tile (ng, tile,                              &
-     &                           LBi, UBi, LBj, UBj, 1, N(ng),          &
-     &                           ad_rho)
+        CALL ad_exchange_w3d_tile (ng, tile,                            &
+     &                             LBi, UBi, LBj, UBj, 0, N(ng),        &
+     &                             ad_alfaobeta)
 #   endif
 #  endif
+#  if defined LMD_SKPP_NOT_YET || defined LMD_BKPP_NOT_YET
+!>      CALL exchange_r3d_tile (ng, tile,                               &
+!>   &                          LBi, UBi, LBj, UBj, 1, N(ng),           &
+!>   &                          tl_pden)
+!>
+        CALL ad_exchange_r3d_tile (ng, tile,                            &
+     &                             LBi, UBi, LBj, UBj, 1, N(ng),        &
+     &                             ad_pden)
+#  endif
+!>      CALL exchange_r3d_tile (ng, tile,                               &
+!>   &                          LBi, UBi, LBj, UBj, 1, N(ng),           &
+!>   &                          tl_rho)
+!>
+        CALL ad_exchange_r3d_tile (ng, tile,                            &
+     &                             LBi, UBi, LBj, UBj, 1, N(ng),        &
+     &                             ad_rho)
+      END IF
 !
 !-----------------------------------------------------------------------
 !  Compute BASIC STATE related variables.
 !-----------------------------------------------------------------------
 !
-      DO j=JstrR,JendR
+      DO j=JstrT,JendT
         DO k=1,N(ng)
-          DO i=IstrR,IendR
+          DO i=IstrT,IendT
             Tt=MAX(-2.0_r8,t(i,j,k,nrhs,itemp))
 #  ifdef SALINITY
             Ts=MAX(0.0_r8,t(i,j,k,nrhs,isalt))
@@ -650,7 +646,7 @@
 #   else
         DO k=N(ng),N(ng)
 #   endif
-          DO i=IstrR,IendR
+          DO i=IstrT,IendT
             Tpr10=0.1_r8*z_r(i,j,k)
 !
 !  Compute thermal expansion and saline contraction coefficients.
@@ -674,16 +670,16 @@
 !-----------------------------------------------------------------------
 !
         DO k=1,N(ng)
-          DO i=IstrR,IendR
+          DO i=IstrT,IendT
 #  if defined LMD_SKPP_NOT_YET || defined LMD_BKPP_NOT_YET
 #   ifdef MASKING
 !>          tl_pden(i,j,k)=tl_pden(i,k)*rmask(i,j)
 !>
             ad_pden(i,j,k)=ad_pden(i,k)*rmask(i,j)
 #   endif
-!>          tl_pden(i,j,k)=tl_den1(i,k)
-!>
-            ad_den1(i,k)=ad_den1(i,k)+ad_pden(i,j,k)
+!>          tl_pden(i,j,k)=tl_den1(i,k)             ! This gives a fatal
+!>                                                  ! result in 4D-Var
+            ad_den1(i,k)=ad_den1(i,k)+ad_pden(i,j,k)! posterior error...
             ad_pden(i,j,k)=0.0_r8
 #  endif
 !>          tl_rho(i,j,k)=tl_den(i,k)
@@ -709,7 +705,7 @@
         DO k=N(ng),N(ng)
 #   endif
           IF (k.eq.N(ng)) THEN
-            DO i=IstrR,IendR
+            DO i=IstrT,IendT
               cff=1.0_r8/wrk(i,N(ng))
 !>            tl_beta (i,j)=tl_cff*Scof(i,N(ng))+cff*tl_Scof(i,N(ng))
 !>            tl_alpha(i,j)=tl_cff*Tcof(i,N(ng))+cff*tl_Tcof(i,N(ng))
@@ -726,7 +722,7 @@
               ad_cff=0.0_r8
             END DO
           END IF
-          DO i=IstrR,IendR
+          DO i=IstrT,IendT
             Tpr10=0.1_r8*z_r(i,j,k)
             cff=bulk(i,k)+Tpr10
             cff1=Tpr10*den1(i,k)
@@ -798,7 +794,7 @@
 !  RHO-points and vertical W-points.
 !-----------------------------------------------------------------------
 !
-        DO i=IstrR,IendR
+        DO i=IstrT,IendT
 !>        tl_bvf(i,j,N(ng))=0.0_r8
 !>
           ad_bvf(i,j,N(ng))=0.0_r8
@@ -807,7 +803,7 @@
           ad_bvf(i,j,0)=0.0_r8
         END DO
         DO k=1,N(ng)-1
-          DO i=IstrR,IendR
+          DO i=IstrT,IendT
             bulk_up=bulk0(i,k+1)-                                       &
      &              z_w(i,j,k)*(bulk1(i,k+1)-                           &
      &                          bulk2(i,k+1)*z_w(i,j,k))
@@ -915,13 +911,13 @@
 !
 !  Compute temporary intermediate BASIC STATE "rhoS1" and "rhoA1".
 !
-        DO i=IstrR,IendR
+        DO i=IstrT,IendT
           cff1=den(i,N(ng))*Hz(i,j,N(ng))
           rhoS1(i,j)=0.5_r8*cff1*Hz(i,j,N(ng))
           rhoA1(i,j)=cff1
         END DO
         DO k=N(ng)-1,1,-1
-          DO i=IstrR,IendR
+          DO i=IstrT,IendT
             cff1=den(i,k)*Hz(i,j,k)
             rhoS1(i,j)=rhoS1(i,j)+Hz(i,j,k)*(rhoA1(i,j)+0.5_r8*cff1)
             rhoA1(i,j)=rhoA1(i,j)+cff1
@@ -929,7 +925,7 @@
         END DO
 !
         cff2=1.0_r8/rho0
-        DO i=IstrR,IendR
+        DO i=IstrT,IendT
           cff1=1.0_r8/(z_w(i,j,N(ng))-z_w(i,j,0))
 !>        tl_rhoS(i,j)=2.0_r8*cff2*                                     &
 !>   &                 cff1*(2.0_r8*tl_cff1*rhoS1(i,j)+                 &
@@ -953,12 +949,12 @@
 !
 !  Compute appropriate intermediate BASIC STATE "rhoA1".
 !
-        DO i=IstrR,IendR
+        DO i=IstrT,IendT
           cff1=den(i,N(ng))*Hz(i,j,N(ng))
           rhoA1(i,j)=cff1
         END DO
         DO k=N(ng)-1,1,-1
-          DO i=IstrR,IendR
+          DO i=IstrT,IendT
             cff1=den(i,k)*Hz(i,j,k)
 !>          tl_rhoA(i,j)=tl_rhoA(i,j)+tl_cff1
 !>
@@ -981,7 +977,7 @@
             rhoA1(i,j)=rhoA1(i,j)+cff1
           END DO
         END DO
-        DO i=IstrR,IendR
+        DO i=IstrT,IendT
           cff1=den(i,N(ng))*Hz(i,j,N(ng))
 !>        tl_rhoA(i,j)=tl_cff1
 !>
@@ -1008,7 +1004,7 @@
 !-----------------------------------------------------------------------
 !
         DO k=1,N(ng)
-          DO i=IstrR,IendR
+          DO i=IstrT,IendT
 !
 !  Check temperature and salinity minimum valid values. Assign depth
 !  to the pressure.
@@ -1433,10 +1429,8 @@
       USE mod_sediment
 #  endif
 !
-#  if defined EW_PERIODIC || defined NS_PERIODIC
       USE ad_exchange_2d_mod
       USE ad_exchange_3d_mod
-#  endif
 #  ifdef DISTRIBUTE
       USE mp_exchange_mod, ONLY : ad_mp_exchange2d, ad_mp_exchange3d
 #  endif
@@ -1534,18 +1528,6 @@
 !
 !  Local variable declarations.
 !
-# ifdef DISTRIBUTE
-#  ifdef EW_PERIODIC
-      logical :: EWperiodic=.TRUE.
-#  else
-      logical :: EWperiodic=.FALSE.
-#  endif
-#  ifdef NS_PERIODIC
-      logical :: NSperiodic=.TRUE.
-#  else
-      logical :: NSperiodic=.FALSE.
-#  endif
-# endif
       integer :: i, ised, itrc, j, k
 
       real(r8) :: SedDen, cff, cff1, cff2
@@ -1563,153 +1545,162 @@
 !  Adjoint linear equation of state.
 !=======================================================================
 !
-#  if defined EW_PERIODIC || defined NS_PERIODIC || defined DISTRIBUTE
-
 !-----------------------------------------------------------------------
 !  Exchange boundary data.
 !-----------------------------------------------------------------------
 !
-#   ifdef DISTRIBUTE
-#    ifdef BV_FREQUENCY_NOT_YET
+#  ifdef DISTRIBUTE
+#   ifdef BV_FREQUENCY_NOT_YET
 !>    CALL mp_exchange3d (ng, tile, iTLM, 1,                            &
 !>   &                    LBi, UBi, LBj, UBj, 0, N(ng),                 &
-!>   &                    NghostPoints, EWperiodic, NSperiodic,         &
+!>   &                    NghostPoints,                                 &
+!>   &                    EWperiodic(ng), NSperiodic(ng),               &
 !>   &                    tl_bvf)
 !>
       CALL ad_mp_exchange3d (ng, tile, iADM, 1,                         &
      &                       LBi, UBi, LBj, UBj, 0, N(ng),              &
-     &                       NghostPoints, EWperiodic, NSperiodic,      &
+     &                       NghostPoints,                              &
+     &                       EWperiodic(ng), NSperiodic(ng),            &
      &                       ad_bvf)
-#    endif
-#    ifdef VAR_RHO_2D
+#   endif
+#   ifdef VAR_RHO_2D
 !>    CALL mp_exchange2d (ng, tile, iTLM, 2,                            &
 !>   &                    LBi, UBi, LBj, UBj,                           &
-!>   &                    NghostPoints, EWperiodic, NSperiodic,         &
+!>   &                    NghostPoints,                                 &
+!>   &                    EWperiodic(ng), NSperiodic(ng),               &
 !>   &                    tl_rhoA, tl_rhoS)
 !>
       CALL ad_mp_exchange2d (ng, tile, iADM, 2,                         &
      &                       LBi, UBi, LBj, UBj,                        &
-     &                       NghostPoints, EWperiodic, NSperiodic,      &
+     &                       NghostPoints,                              &
+     &                       EWperiodic(ng), NSperiodic(ng),            &
      &                       ad_rhoA, ad_rhoS)
-#    endif
-#    if defined LMD_SKPP_NOT_YET || defined LMD_BKPP_NOT_YET || \
-        defined BULK_FLUXES_NOT_YET
+#   endif
+#   if defined LMD_SKPP_NOT_YET || defined LMD_BKPP_NOT_YET || \
+       defined BULK_FLUXES_NOT_YET
 !>    CALL mp_exchange2d (ng, tile, iTLM, 2,                            &
 !>   &                    LBi, UBi, LBj, UBj,                           &
-!>   &                    NghostPoints, EWperiodic, NSperiodic,         &
+!>   &                    NghostPoints,                                 &
+!>   &                    EWperiodic(ng), NSperiodic(ng),               &
 !>   &                    tl_alpha, tl_beta)
 !>
       CALL ad_mp_exchange2d (ng, tile, iADM, 2,                         &
      &                       LBi, UBi, LBj, UBj,                        &
-     &                       NghostPoints, EWperiodic, NSperiodic,      &
+     &                       NghostPoints,                              &
+     &                       EWperiodic(ng), NSperiodic(ng),            &
      &                       ad_alpha, ad_beta)
-#     ifdef LMD_DDMIX_NOT_YET
+#    ifdef LMD_DDMIX_NOT_YET
 !>    CALL mp_exchange3d (ng, tile, iTLM, 1,                            &
 !>   &                    LBi, UBi, LBj, UBj, 0, N(ng),                 &
-!>   &                    NghostPoints, EWperiodic, NSperiodic,         &
+!>   &                    NghostPoints,                                 &
+!>   &                    EWperiodic(ng), NSperiodic(ng),               &
 !>   &                    tl_alfaobeta)
 !>
       CALL ad_mp_exchange3d (ng, tile, iADM, 1,                         &
      &                       LBi, UBi, LBj, UBj, 0, N(ng),              &
-     &                       NghostPoints, EWperiodic, NSperiodic,      &
+     &                       NghostPoints,                              &
+     &                       EWperiodic(ng), NSperiodic(ng),            &
      &                       ad_alfaobeta)
-#     endif
 #    endif
-#    if defined LMD_SKPP_NOT_YET || defined LMD_BKPP_NOT_YET
+#   endif
+#   if defined LMD_SKPP_NOT_YET || defined LMD_BKPP_NOT_YET
 !>    CALL mp_exchange3d (ng, tile, iTLM, 1,                            &
 !>   &                    LBi, UBi, LBj, UBj, 1, N(ng),                 &
-!>   &                    NghostPoints, EWperiodic, NSperiodic,         &
+!>   &                    NghostPoints,                                 &
+!>   &                    EWperiodic(ng), NSperiodic(ng),               &
 !>   &                    tl_pden)
 !>
       CALL ad_mp_exchange3d (ng, tile, iADM, 1,                         &
      &                       LBi, UBi, LBj, UBj, 1, N(ng),              &
-     &                       NghostPoints, EWperiodic, NSperiodic,      &
+     &                       NghostPoints,                              &
+     &                       EWperiodic(ng), NSperiodic(ng),            &
      &                       ad_pden)
-#    endif
+#   endif
 !>    CALL mp_exchange3d (ng, tile, iTLM, 1,                            &
 !>   &                    LBi, UBi, LBj, UBj, 1, N(ng),                 &
-!>   &                    NghostPoints, EWperiodic, NSperiodic,         &
+!>   &                    NghostPoints,                                 &
+!>   &                    EWperiodic(ng), NSperiodic(ng),               &
 !>   &                    tl_rho)
 !>
       CALL ad_mp_exchange3d (ng, tile, iADM, 1,                         &
      &                       LBi, UBi, LBj, UBj, 1, N(ng),              &
-     &                       NghostPoints, EWperiodic, NSperiodic,      &
+     &                       NghostPoints,                              &
+     &                       EWperiodic(ng), NSperiodic(ng),            &
      &                       ad_rho)
-#   endif
-
-#   if defined EW_PERIODIC || defined NS_PERIODIC
-#    ifdef BV_FREQUENCY_NOT_YET
-!>    CALL exchange_w3d_tile (ng, tile,                                 &
-!>   &                        LBi, UBi, LBj, UBj, 0, N(ng),             &
-!>   &                        tl_bvf)
-!>
-      CALL ad_exchange_w3d_tile (ng, tile,                              &
-     &                           LBi, UBi, LBj, UBj, 0, N(ng),          &
-     &                           ad_bvf)
-#    endif
-#    ifdef VAR_RHO_2D
-!>    CALL exchange_r2d_tile (ng, tile,                                 &
-!>   &                        LBi, UBi, LBj, UBj,                       &
-!>   &                        tl_rhoS)
-!>
-      CALL ad_exchange_r2d_tile (ng, tile,                              &
-     &                           LBi, UBi, LBj, UBj,                    &
-     &                           ad_rhoS)
-!>    CALL exchange_r2d_tile (ng, tile,                                 &
-!>   &                        LBi, UBi, LBj, UBj,                       &
-!>   &                        tl_rhoA)
-!>
-      CALL ad_exchange_r2d_tile (ng, tile,                              &
-     &                           LBi, UBi, LBj, UBj,                    &
-     &                           ad_rhoA)
-#    endif
-#    if defined LMD_SKPP_NOT_YET || defined LMD_BKPP_NOT_YET || \
-        defined BULK_FLUXES_NOT_YET
-!>    CALL exchange_r2d_tile (ng, tile,                                 &
-!>   &                        LBi, UBi, LBj, UBj,                       &
-!>   &                        tl_beta)
-!>
-      CALL ad_exchange_r2d_tile (ng, tile,                              &
-     &                           LBi, UBi, LBj, UBj,                    &
-     &                           ad_beta)
-!>    CALL exchange_r2d_tile (ng, tile,                                 &
-!>   &                        LBi, UBi, LBj, UBj,                       &
-!>   &                        tl_alpha)
-!>
-      CALL ad_exchange_r2d_tile (ng, tile,                              &
-     &                           LBi, UBi, LBj, UBj,                    &
-     &                           ad_alpha)
-#     ifdef LMD_DDMIX_NOT_YET
-!>    CALL exchange_w3d_tile (ng, tile,                                 &
-!>   &                        LBi, UBi, LBj, UBj, 0, N(ng),             &
-!>   &                        tl_alfaobeta)
-!>
-      CALL ad_exchange_w3d_tile (ng, tile,                              &
-     &                           LBi, UBi, LBj, UBj, 0, N(ng),          &
-     &                           ad_alfaobeta)
-#     endif
-#    endif
-#    if defined LMD_SKPP_NOT_YET || defined LMD_BKPP_NOT_YET
-!>    CALL exchange_r3d_tile (ng, tile,                                 &
-!>   &                        LBi, UBi, LBj, UBj, 1, N(ng),             &
-!>   &                        tl_pden)
-!>
-      CALL ad_exchange_r3d_tile (ng, tile,                              &
-     &                           LBi, UBi, LBj, UBj, 1, N(ng),          &
-     &                           ad_pden)
-#    endif
-!>    CALL exchange_r3d_tile (ng, tile,                                 &
-!>   &                        LBi, UBi, LBj, UBj, 1, N(ng),             &
-!>   &                        tl_rho)
-!>
-      CALL ad_exchange_r3d_tile (ng, tile,                              &
-     &                           LBi, UBi, LBj, UBj, 1, N(ng),          &
-     &                           ad_rho)
-#   endif
 !
 #  endif
 
-      DO j=JstrR,JendR
+      IF (EWperiodic(ng).or.NSperiodic(ng)) THEN
+#  ifdef BV_FREQUENCY_NOT_YET
+!>      CALL exchange_w3d_tile (ng, tile,                               &
+!>   &                          LBi, UBi, LBj, UBj, 0, N(ng),           &
+!>   &                          tl_bvf)
+!>
+        CALL ad_exchange_w3d_tile (ng, tile,                            &
+     &                             LBi, UBi, LBj, UBj, 0, N(ng),        &
+     &                             ad_bvf)
+#  endif
+#  ifdef VAR_RHO_2D
+!>      CALL exchange_r2d_tile (ng, tile,                               &
+!>   &                          LBi, UBi, LBj, UBj,                     &
+!>   &                          tl_rhoS)
+!>
+        CALL ad_exchange_r2d_tile (ng, tile,                            &
+     &                             LBi, UBi, LBj, UBj,                  &
+     &                             ad_rhoS)
+!>      CALL exchange_r2d_tile (ng, tile,                               &
+!>   &                          LBi, UBi, LBj, UBj,                     &
+!>   &                          tl_rhoA)
+!>
+        CALL ad_exchange_r2d_tile (ng, tile,                            &
+     &                             LBi, UBi, LBj, UBj,                  &
+     &                             ad_rhoA)
+#  endif
+#  if defined LMD_SKPP_NOT_YET || defined LMD_BKPP_NOT_YET || \
+      defined BULK_FLUXES_NOT_YET
+!>      CALL exchange_r2d_tile (ng, tile,                               &
+!>   &                          LBi, UBi, LBj, UBj,                     &
+!>   &                          tl_beta)
+!>
+        CALL ad_exchange_r2d_tile (ng, tile,                            &
+     &                             LBi, UBi, LBj, UBj,                  &
+     &                             ad_beta)
+!>      CALL exchange_r2d_tile (ng, tile,                               &
+!>   &                          LBi, UBi, LBj, UBj,                     &
+!>   &                          tl_alpha)
+!>
+        CALL ad_exchange_r2d_tile (ng, tile,                            &
+     &                             LBi, UBi, LBj, UBj,                  &
+     &                             ad_alpha)
+#   ifdef LMD_DDMIX_NOT_YET
+!>      CALL exchange_w3d_tile (ng, tile,                               &
+!>   &                          LBi, UBi, LBj, UBj, 0, N(ng),           &
+!>   &                          tl_alfaobeta)
+!>
+        CALL ad_exchange_w3d_tile (ng, tile,                            &
+     &                             LBi, UBi, LBj, UBj, 0, N(ng),        &
+     &                             ad_alfaobeta)
+#   endif
+#  endif
+#  if defined LMD_SKPP_NOT_YET || defined LMD_BKPP_NOT_YET
+!>      CALL exchange_r3d_tile (ng, tile,                               &
+!>   &                          LBi, UBi, LBj, UBj, 1, N(ng),           &
+!>   &                          tl_pden)
+!>
+        CALL ad_exchange_r3d_tile (ng, tile,                            &
+     &                             LBi, UBi, LBj, UBj, 1, N(ng),        &
+     &                             ad_pden)
+#  endif
+!>      CALL exchange_r3d_tile (ng, tile,                               &
+!>   &                          LBi, UBi, LBj, UBj, 1, N(ng),           &
+!>   &                          tl_rho)
+!>
+        CALL ad_exchange_r3d_tile (ng, tile,                            &
+     &                             LBi, UBi, LBj, UBj, 1, N(ng),        &
+     &                             ad_rho)
+      END IF
+!
+      DO j=JstrT,JendT
 
 #  if defined LMD_SKPP_NOT_YET || defined LMD_BKPP_NOT_YET || \
       defined BULK_FLUXES_NOT_YET
@@ -1730,7 +1721,7 @@
           cff=1.0_r8/Scoef(ng)
         END IF
         DO k=1,N(ng)
-          DO i=IstrR,IendR
+          DO i=IstrT,IendT
 !>          tl_alfaobeta(i,j,k)=0.0_r8
 !>
             ad_alfaobeta(i,j,k)=0.0_r8
@@ -1740,7 +1731,7 @@
 !
 !  Set thermal expansion and saline contraction coefficients.
 !
-        DO i=IstrR,IendR
+        DO i=IstrT,IendT
 #   ifdef SALINITY
 !>        tl_beta(i,j)=0.0_r8
 !>
@@ -1765,7 +1756,7 @@
 !
         ad_cff=0.0_r8
         DO k=1,N(ng)
-          DO i=IstrR,IendR
+          DO i=IstrT,IendT
             cff=1.0_r8/(z_r(i,j,k+1)-z_r(i,j,k))
 !>          tl_bvf(i,j,k)=-gorho0*                                      &
 !>   &                    (cff*(tl_rho(i,j,k+1)-tl_rho(i,j,k))+         &
@@ -1797,13 +1788,13 @@
 !
 !  Compute intermediate BASIC STATE rhoS1 and rhoA1.
 !
-        DO i=IstrR,IendR
+        DO i=IstrT,IendT
           cff1=rho(i,j,N(ng))*Hz(i,j,N(ng))
           rhoS1(i,j)=0.5_r8*cff1*Hz(i,j,N(ng))
           rhoA1(i,j)=cff1
         END DO
         DO k=N(ng)-1,1,-1
-          DO i=IstrR,IendR
+          DO i=IstrT,IendT
             cff1=rho(i,j,k)*Hz(i,j,k)
             rhoS1(i,j)=rhoS1(i,j)+Hz(i,j,k)*(rhoA1(i,j)+0.5_r8*cff1)
             rhoA1(i,j)=rhoA1(i,j)+cff1
@@ -1811,7 +1802,7 @@
         END DO
 !
         cff2=1.0_r8/rho0
-        DO i=IstrR,IendR
+        DO i=IstrT,IendT
           cff1=1.0_r8/(z_w(i,j,N(ng))-z_w(i,j,0))
 !>        tl_rhoS(i,j)=2.0_r8*cff2*                                     &
 !>   &                 cff1*(2.0_r8*tl_cff1*rhoS1(i,j)+                 &
@@ -1835,12 +1826,12 @@
 !
 !  Compute appropriate intermediate BASIC STATE "rhoA1".
 !
-        DO i=IstrR,IendR
+        DO i=IstrT,IendT
           cff1=rho(i,j,N(ng))*Hz(i,j,N(ng))
           rhoA1(i,j)=cff1
         END DO
         DO k=N(ng)-1,1,-1
-          DO i=IstrR,IendR
+          DO i=IstrT,IendT
             cff1=rho(i,j,k)*Hz(i,j,k)
 !>          tl_rhoA(i,j)=tl_rhoA(i,j)+tl_cff1
 !>
@@ -1863,7 +1854,7 @@
             rhoA1(i,j)=rhoA1(i,j)+cff1
           END DO
         END DO
-        DO i=IstrR,IendR
+        DO i=IstrT,IendT
           cff1=rho(i,j,N(ng))*Hz(i,j,N(ng))
 !>        tl_rhoA(i,j)=tl_cff1
 !>
@@ -1891,7 +1882,7 @@
 !-----------------------------------------------------------------------
 !
         DO k=1,N(ng)
-          DO i=IstrR,IendR
+          DO i=IstrT,IendT
 #  if defined LMD_SKPP_NOT_YET || defined LMD_BKPP_NOT_YET
 !>          tl_pden(i,j,k)=tl_rho(i,j,k)
 !>

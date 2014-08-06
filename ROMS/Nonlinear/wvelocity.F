@@ -4,7 +4,7 @@
 !
 !svn $Id: wvelocity.F 732 2008-09-07 01:55:51Z jcwarner $
 !=======================================================================
-!  Copyright (c) 2002-2010 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2014 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                           Hernan G. Arango   !
 !========================================== Alexander F. Shchepetkin ===
@@ -69,12 +69,11 @@
 !***********************************************************************
 !
       USE mod_param
+      USE mod_ncparam
       USE mod_scalars
 !
       USE bc_3d_mod, ONLY : bc_w3d_tile
-# if defined EW_PERIODIC || defined NS_PERIODIC
       USE exchange_2d_mod
-# endif
 # ifdef DISTRIBUTE
       USE mp_exchange_mod, ONLY : mp_exchange2d, mp_exchange3d
 # endif
@@ -109,22 +108,9 @@
       real(r8), intent(in) :: W(LBi:UBi,LBj:UBj,0:N(ng))
       real(r8), intent(out) :: wvel(LBi:UBi,LBj:UBj,0:N(ng))
 # endif
-
 !
 !  Local variable declarations.
 !
-# ifdef DISTRIBUTE
-#  ifdef EW_PERIODIC
-      logical :: EWperiodic=.TRUE.
-#  else
-      logical :: EWperiodic=.FALSE.
-#  endif
-#  ifdef NS_PERIODIC
-      logical :: NSperiodic=.TRUE.
-#  else
-      logical :: NSperiodic=.FALSE.
-#  endif
-# endif
       integer :: i, j, k
 
       real(r8) :: cff1, cff2, cff3, cff4, cff5, slope
@@ -150,25 +136,24 @@
 !  The vertical coordinate is a function of several parameter but only
 !  the free-surface is time dependent. However, in sediment applications
 !  with stratigraphy, the bathymetry (h) also evolves in time.
-
-# if defined EW_PERIODIC || defined NS_PERIODIC || defined DISTRIBUTE
 !
 !  Exchange time-averaged fields.
 !
-#  if defined EW_PERIODIC || defined NS_PERIODIC
-      CALL exchange_u2d_tile (ng, tile,                                 &
-     &                        LBi, UBi, LBj, UBj,                       &
-     &                        DU_avg1)
-      CALL exchange_v2d_tile (ng, tile,                                 &
-     &                        LBi, UBi, LBj, UBj,                       &
-     &                        DV_avg1)
-#  endif
-#  ifdef DISTRIBUTE
+      IF (EWperiodic(ng).or.NSperiodic(ng)) THEN
+        CALL exchange_u2d_tile (ng, tile,                               &
+     &                          LBi, UBi, LBj, UBj,                     &
+     &                          DU_avg1)
+        CALL exchange_v2d_tile (ng, tile,                               &
+     &                          LBi, UBi, LBj, UBj,                     &
+     &                          DV_avg1)
+      END IF
+
+# ifdef DISTRIBUTE
       CALL mp_exchange2d (ng, tile, iNLM, 2,                            &
      &                    LBi, UBi, LBj, UBj,                           &
-     &                    NghostPoints, EWperiodic, NSperiodic,         &
+     &                    NghostPoints,                                 &
+     &                    EWperiodic(ng), NSperiodic(ng),               &
      &                    DU_avg1, DV_avg1)
-#  endif
 # endif
 !
 !  Compute contribution due to quasi-horizontal motions along
@@ -272,7 +257,8 @@
 # ifdef DISTRIBUTE
       CALL mp_exchange3d (ng, tile, iNLM, 1,                            &
      &                    LBi, UBi, LBj, UBj, 0, N(ng),                 &
-     &                    NghostPoints, EWperiodic, NSperiodic,         &
+     &                    NghostPoints,                                 &
+     &                    EWperiodic(ng), NSperiodic(ng),               &
      &                    wvel)
 # endif
 

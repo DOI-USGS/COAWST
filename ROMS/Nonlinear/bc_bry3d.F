@@ -3,7 +3,7 @@
 !
 !svn $Id: bc_bry3d.F 429 2009-12-20 17:30:26Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2010 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2014 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -54,12 +54,12 @@
 !-----------------------------------------------------------------------
 !
       IF (boundary.eq.iwest) THEN
-        IF ((WESTERN_EDGE).and.(SOUTHERN_EDGE)) THEN
+        IF (DOMAIN(ng)%SouthWest_Corner(tile)) THEN
           DO k=LBk,UBk
             A(Jstr-1,k)=A(Jstr,k)
           END DO
         END IF
-        IF ((WESTERN_EDGE).and.(NORTHERN_EDGE)) THEN
+        IF (DOMAIN(ng)%NorthWest_Corner(tile)) THEN
           DO k=LBk,UBk
             A(Jend+1,k)=A(Jend,k)
           END DO
@@ -67,12 +67,12 @@
       END IF
 
       IF (boundary.eq.ieast) THEN
-        IF ((EASTERN_EDGE).and.(SOUTHERN_EDGE)) THEN
+        IF (DOMAIN(ng)%SouthEast_Corner(tile)) THEN
           DO k=LBk,UBk
             A(Jstr-1,k)=A(Jstr,k)
           END DO
         END IF
-        IF ((EASTERN_EDGE).and.(NORTHERN_EDGE)) THEN
+        IF (DOMAIN(ng)%NorthEast_Corner(tile)) THEN
           DO k=LBk,UBk
             A(Jend+1,k)=A(Jend,k)
           END DO
@@ -84,12 +84,12 @@
 !-----------------------------------------------------------------------
 !
       IF (boundary.eq.isouth) THEN
-        IF ((SOUTHERN_EDGE).and.(WESTERN_EDGE)) THEN
+        IF (DOMAIN(ng)%SouthWest_Corner(tile)) THEN
           DO k=LBk,UBk
             A(Istr-1,k)=A(Istr,k)
           END DO
         END IF
-        IF ((SOUTHERN_EDGE).and.(EASTERN_EDGE)) THEN
+        IF (DOMAIN(ng)%SouthEast_Corner(tile)) THEN
           DO k=LBk,UBk
             A(Iend+1,k)=A(Iend,k)
           END DO
@@ -97,12 +97,12 @@
       END IF
 
       IF (boundary.eq.inorth) THEN
-        IF ((NORTHERN_EDGE).and.(WESTERN_EDGE)) THEN
+        IF (DOMAIN(ng)%NorthWest_Corner(tile)) THEN
           DO k=LBk,UBk
             A(Istr-1,k)=A(Istr,k)
           END DO
         END IF
-        IF ((NORTHERN_EDGE).and.(EASTERN_EDGE)) THEN
+        IF (DOMAIN(ng)%NorthEast_Corner(tile)) THEN
           DO k=LBk,UBk
             A(Iend+1,k)=A(Iend,k)
           END DO
@@ -144,12 +144,12 @@
 !-----------------------------------------------------------------------
 !
       IF (boundary.eq.iwest) THEN
-        IF ((WESTERN_EDGE).and.(SOUTHERN_EDGE)) THEN
+        IF (DOMAIN(ng)%SouthWest_Corner(tile)) THEN
           DO k=LBk,UBk
             A(Jstr-1,k)=A(Jstr,k)
           END DO
         END IF
-        IF ((WESTERN_EDGE).and.(NORTHERN_EDGE)) THEN
+        IF (DOMAIN(ng)%NorthWest_Corner(tile)) THEN
           DO k=LBk,UBk
             A(Jend+1,k)=A(Jend,k)
           END DO
@@ -157,12 +157,12 @@
       END IF
 
       IF (boundary.eq.ieast) THEN
-        IF ((EASTERN_EDGE).and.(SOUTHERN_EDGE)) THEN
+        IF (DOMAIN(ng)%SouthEast_Corner(tile)) THEN
           DO k=LBk,UBk
             A(Jstr-1,k)=A(Jstr,k)
           END DO
         END IF
-        IF ((EASTERN_EDGE).and.(NORTHERN_EDGE)) THEN
+        IF (DOMAIN(ng)%NorthEast_Corner(tile)) THEN
           DO k=LBk,UBk
             A(Jend+1,k)=A(Jend,k)
           END DO
@@ -174,12 +174,12 @@
 !-----------------------------------------------------------------------
 !
       IF (boundary.eq.isouth) THEN
-        IF ((SOUTHERN_EDGE).and.(WESTERN_EDGE)) THEN
+        IF (DOMAIN(ng)%SouthWest_Corner(tile)) THEN
           DO k=LBk,UBk
             A(IstrU-1,k)=A(IstrU,k)
           END DO
         END IF
-        IF ((SOUTHERN_EDGE).and.(EASTERN_EDGE)) THEN
+        IF (DOMAIN(ng)%SouthEast_Corner(tile)) THEN
           DO k=LBk,UBk
             A(Iend+1,k)=A(Iend,k)
           END DO
@@ -187,12 +187,12 @@
       END IF
 
       IF (boundary.eq.inorth) THEN
-        IF ((NORTHERN_EDGE).and.(WESTERN_EDGE)) THEN
+        IF (DOMAIN(ng)%NorthWest_Corner(tile)) THEN
           DO k=LBk,UBk
             A(IstrU-1,k)=A(IstrU,k)
           END DO
         END IF
-        IF ((NORTHERN_EDGE).and.(EASTERN_EDGE)) THEN
+        IF (DOMAIN(ng)%NorthEast_Corner(tile)) THEN
           DO k=LBk,UBk
             A(Iend+1,k)=A(Iend,k)
           END DO
@@ -234,12 +234,12 @@
 !-----------------------------------------------------------------------
 !
       IF (boundary.eq.iwest) THEN
-        IF ((WESTERN_EDGE).and.(SOUTHERN_EDGE)) THEN
+        IF (DOMAIN(ng)%SouthWest_Corner(tile)) THEN
           DO k=LBk,UBk
             A(JstrV-1,k)=A(JstrV,k)
           END DO
         END IF
-        IF ((WESTERN_EDGE).and.(NORTHERN_EDGE)) THEN
+        IF (DOMAIN(ng)%NorthWest_Corner(tile)) THEN
           DO k=LBk,UBk
             A(Jend+1,k)=A(Jend,k)
           END DO
@@ -247,12 +247,12 @@
       END IF
 
       IF (boundary.eq.ieast) THEN
-        IF ((EASTERN_EDGE).and.(SOUTHERN_EDGE)) THEN
+        IF (DOMAIN(ng)%SouthEast_Corner(tile)) THEN
           DO k=LBk,UBk
             A(JstrV-1,k)=A(JstrV,k)
           END DO
         END IF
-        IF ((EASTERN_EDGE).and.(NORTHERN_EDGE)) THEN
+        IF (DOMAIN(ng)%NorthEast_Corner(tile)) THEN
           DO k=LBk,UBk
             A(Jend+1,k)=A(Jend,k)
           END DO
@@ -264,12 +264,12 @@
 !-----------------------------------------------------------------------
 !
       IF (boundary.eq.isouth) THEN
-        IF ((SOUTHERN_EDGE).and.(WESTERN_EDGE)) THEN
+        IF (DOMAIN(ng)%SouthWest_Corner(tile)) THEN
           DO k=LBk,UBk
             A(Istr-1,k)=A(Istr,k)
           END DO
         END IF
-        IF ((SOUTHERN_EDGE).and.(EASTERN_EDGE)) THEN
+        IF (DOMAIN(ng)%SouthEast_Corner(tile)) THEN
           DO k=LBk,UBk
             A(Iend+1,k)=A(Iend,k)
           END DO
@@ -277,12 +277,12 @@
       END IF
 
       IF (boundary.eq.inorth) THEN
-        IF ((NORTHERN_EDGE).and.(WESTERN_EDGE)) THEN
+        IF (DOMAIN(ng)%NorthWest_Corner(tile)) THEN
           DO k=LBk,UBk
             A(Istr-1,k)=A(Istr,k)
           END DO
         END IF
-        IF ((NORTHERN_EDGE).and.(EASTERN_EDGE)) THEN
+        IF (DOMAIN(ng)%NorthEast_Corner(tile)) THEN
           DO k=LBk,UBk
             A(Iend+1,k)=A(Iend,k)
           END DO

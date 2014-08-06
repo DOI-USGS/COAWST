@@ -3,7 +3,7 @@
 !
 !svn $Id: strings.F 429 2009-12-20 17:30:26Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2010 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2014 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -11,6 +11,7 @@
 !  This module contains several string manipulation functions:         !
 !                                                                      !
 !    find_string   scans a character array for a specified string      !
+!    join_string   concatenate character array into a single string    !
 !    lowercase     converts input string characters to lowercase       !
 !    uppercase     converts input string characters to uppercase       !
 !                                                                      !
@@ -29,13 +30,14 @@
       implicit none
 !
       PRIVATE
-
+!
       PUBLIC :: find_string
+      PUBLIC :: join_string
       PUBLIC :: lowercase
       PUBLIC :: uppercase
-
+!
       CONTAINS
-
+!
       FUNCTION find_string (A, Asize, string, Aindex) RESULT (foundit)
 !
 !=======================================================================
@@ -88,8 +90,69 @@
 
       RETURN
       END FUNCTION find_string
+!
+      SUBROUTINE join_string (A, Asize, string, Lstring)
+!
+!=======================================================================
+!                                                                      !
+!  This routine concatenate a character array into a single string     !
+!  with each element separated by commas.                              !
+!                                                                      !
+!  On Input:                                                           !
+!                                                                      !
+!     A            Array of strings (character)                        !
+!     Asize        Size of A (integer)                                 !
+!                                                                      !
+!  On Output:                                                          !
+!                                                                      !
+!     string       Concatenated string (character)                     !
+!     Lstring      Length of concatenated string (integer)             !
+!                                                                      !
+!=======================================================================
+!
+!  Imported variable declarations.
+!
+      integer, intent(in) :: Asize
 
-      FUNCTION lowercase (Ainp) RESULT (Aout)
+      integer, intent(out) :: Lstring
+
+      character (len=*), intent(in) :: A(Asize)
+      character (len=*), intent(out) :: string
+!
+!  Local variable declarations.
+!
+      integer :: i, ie, is, lstr
+!
+!-----------------------------------------------------------------------
+!  Concatenate input character array.
+!-----------------------------------------------------------------------
+!
+!  Initialize to blank string.
+!
+      lstr=LEN(string)
+      DO i=1,lstr
+        string(i:i)=' '
+      END DO
+!
+!  Concatenate.
+!
+      is=1
+      DO i=1,Asize
+        lstr=LEN_TRIM(A(i))
+        IF (lstr.gt.0) THEN
+          ie=is+lstr-1
+          string(is:ie)=TRIM(A(i))
+          is=ie+1
+          string(is:is)=','
+          is=is+2
+        END IF
+      END DO
+      Lstring=LEN_TRIM(string)-1
+
+      RETURN
+      END SUBROUTINE join_string
+!
+      FUNCTION lowercase (Sinp) RESULT (Sout)
 !
 !=======================================================================
 !                                                                      !
@@ -98,11 +161,11 @@
 !                                                                      !
 !  On Input:                                                           !
 !                                                                      !
-!     Ainp       String with uppercase elements (character)            !
+!     Sinp       String with uppercase elements (character)            !
 !                                                                      !
 !  On Output:                                                          !
 !                                                                      !
-!     Aout       Lowercase string (character)                          !
+!     Sout       Lowercase string (character)                          !
 !                                                                      !
 !  Reference:                                                          !
 !                                                                      !
@@ -113,13 +176,13 @@
 !
 !  Imported variable declarations.
 !
-      character (*), intent(in) :: Ainp
+      character (*), intent(in) :: Sinp
 !
 !  Local variable definitions.
 !
       integer :: i, j, lstr
 
-      character (LEN(Ainp)) :: Aout
+      character (LEN(Sinp)) :: Sout
 
       character (26), parameter :: Lcase = 'abcdefghijklmnopqrstuvwxyz'
       character (26), parameter :: Ucase = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
@@ -128,19 +191,19 @@
 !  Convert input string to lowercase.
 !-----------------------------------------------------------------------
 !
-      lstr=LEN(Ainp)
-      Aout=Ainp
+      lstr=LEN(Sinp)
+      Sout=Sinp
       DO i=1,lstr
-        j=INDEX(Ucase, Aout(i:i))
+        j=INDEX(Ucase, Sout(i:i))
         IF (j.ne.0) THEN
-          Aout(i:i)=Lcase(j:j)
+          Sout(i:i)=Lcase(j:j)
         END IF
       END DO
 
       RETURN
       END FUNCTION lowercase
-
-      FUNCTION uppercase (Ainp) RESULT (Aout)
+!
+      FUNCTION uppercase (Sinp) RESULT (Sout)
 !
 !=======================================================================
 !                                                                      !
@@ -149,11 +212,11 @@
 !                                                                      !
 !  On Input:                                                           !
 !                                                                      !
-!     Ainp       String with lowercase characters (character)          !
+!     Sinp       String with lowercase characters (character)          !
 !                                                                      !
 !  On Output:                                                          !
 !                                                                      !
-!     Aout       Uppercase string (character)                          !
+!     Sout       Uppercase string (character)                          !
 !                                                                      !
 !  Reference:                                                          !
 !                                                                      !
@@ -164,13 +227,13 @@
 !
 !  Imported variable declarations.
 !
-      character (*), intent(in) :: Ainp
+      character (*), intent(in) :: Sinp
 !
 !  Local variable definitions.
 !
       integer :: i, j, lstr
 
-      character (LEN(Ainp)) :: Aout
+      character (LEN(Sinp)) :: Sout
 
       character (26), parameter :: Lcase = 'abcdefghijklmnopqrstuvwxyz'
       character (26), parameter :: Ucase = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
@@ -179,12 +242,12 @@
 !  Convert input string to uppercase.
 !-----------------------------------------------------------------------
 !
-      lstr=LEN(Ainp)
-      Aout=Ainp
+      lstr=LEN(Sinp)
+      Sout=Sinp
       DO i=1,lstr
-        j=INDEX(Lcase, Aout(i:i))
+        j=INDEX(Lcase, Sout(i:i))
         IF (j.ne.0) THEN
-          Aout(i:i)=Ucase(j:j)
+          Sout(i:i)=Ucase(j:j)
         END IF
       END DO
 

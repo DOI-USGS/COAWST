@@ -4,9 +4,9 @@
 #if defined ADJOINT && defined FOUR_DVAR && defined SOLVE3D && \
     defined ADJUST_BOUNDARY
 !
-!svn $Id: ad_conv_bry3d.F 429 2009-12-20 17:30:26Z arango $
+!svn $Id$
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2010 The ROMS/TOMS Group       Andrew M. Moore   !
+!  Copyright (c) 2002-2014 The ROMS/TOMS Group       Andrew M. Moore   !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -136,18 +136,6 @@
 !
 !  Local variable declarations.
 !
-# ifdef DISTRIBUTE
-#  ifdef EW_PERIODIC
-      logical :: EWperiodic=.TRUE.
-#  else
-      logical :: EWperiodic=.FALSE.
-#  endif
-#  ifdef NS_PERIODIC
-      logical :: NSperiodic=.TRUE.
-#  else
-      logical :: NSperiodic=.FALSE.
-#  endif
-# endif
       logical, dimension(4) :: Lconvolve
 
       integer :: Nnew, Nold, Nsav, i, j, k, step
@@ -200,10 +188,10 @@
 !  variable at RHO-points.
 !-----------------------------------------------------------------------
 !
-      Lconvolve(iwest )=WESTERN_EDGE
-      Lconvolve(ieast )=EASTERN_EDGE
-      Lconvolve(isouth)=SOUTHERN_EDGE
-      Lconvolve(inorth)=NORTHERN_EDGE
+      Lconvolve(iwest )=DOMAIN(ng)%Western_Edge (tile)
+      Lconvolve(ieast )=DOMAIN(ng)%Eastern_Edge (tile)
+      Lconvolve(isouth)=DOMAIN(ng)%Southern_Edge(tile)
+      Lconvolve(inorth)=DOMAIN(ng)%Northern_Edge(tile)
 !
 !  Set integration indices and initial conditions.
 !
@@ -275,12 +263,14 @@
 # ifdef DISTRIBUTE
 !>    CALL mp_exchange3d_bry (ng, tile, model, 1, boundary,             &
 !>   &                        LBij, UBij, 1, N(ng),                     &
-!>   &                        Nghost, EWperiodic, NSperiodic,           &
+!>   &                        Nghost,                                   &
+!>   &                        EWperiodic(ng), NSperiodic(ng),           &
 !>   &                        tl_A)
 !>
       CALL ad_mp_exchange3d_bry (ng, tile, model, 1, boundary,          &
      &                           LBij, UBij, 1, N(ng),                  &
-     &                           Nghost, EWperiodic, NSperiodic,        &
+     &                           Nghost,                                &
+     &                           EWperiodic(ng), NSperiodic(ng),        &
      &                           ad_A)
 # endif
 !>    CALL bc_r3d_bry_tile (ng, tile, boundary,                         &
@@ -847,12 +837,14 @@
 # ifdef DISTRIBUTE
 !>      CALL mp_exchange3d_bry (ng, tile, model, 1, boundary,           &
 !>   &                          LBij, UBij, 1, N(ng),                   &
-!>   &                          Nghost, EWperiodic, NSperiodic,         &
+!>   &                          Nghost,                                 &
+!>   &                          EWperiodic(ng), NSperiodic(ng),         &
 !>   &                          tl_Awrk(:,:,Nnew))
 !>
         CALL ad_mp_exchange3d_bry (ng, tile, model, 1, boundary,        &
      &                             LBij, UBij, 1, N(ng),                &
-     &                             Nghost, EWperiodic, NSperiodic,      &
+     &                             Nghost,                              &
+     &                             EWperiodic(ng), NSperiodic(ng),      &
      &                             ad_Awrk(:,:,Nnew))
 # endif
 !>      CALL bc_r3d_bry_tile (ng, tile, boundary,                       &
@@ -970,12 +962,14 @@
 # ifdef DISTRIBUTE
 !>    CALL mp_exchange3d_bry (ng, tile, model, 1, boundary,             &
 !>   &                        LBij, UBij, 1, N(ng),                     &
-!>   &                        Nghost, EWperiodic, NSperiodic,           &
+!>   &                        Nghost,                                   &
+!>   &                        EWperiodic(ng), NSperiodic(ng),           &
 !>   &                        tl_A)
 !>
       CALL ad_mp_exchange3d_bry (ng, tile, model, 1, boundary,          &
      &                           LBij, UBij, 1, N(ng),                  &
-     &                           Nghost, EWperiodic, NSperiodic,        &
+     &                           Nghost,                                &
+     &                           EWperiodic(ng), NSperiodic(ng),        &
      &                           ad_A)
 # endif
 !>    CALL bc_r3d_bry_tile (ng, tile, boundary,                         &
@@ -1060,18 +1054,6 @@
 !
 !  Local variable declarations.
 !
-# ifdef DISTRIBUTE
-#  ifdef EW_PERIODIC
-      logical :: EWperiodic=.TRUE.
-#  else
-      logical :: EWperiodic=.FALSE.
-#  endif
-#  ifdef NS_PERIODIC
-      logical :: NSperiodic=.TRUE.
-#  else
-      logical :: NSperiodic=.FALSE.
-#  endif
-# endif
       logical, dimension(4) :: Lconvolve
 
       integer :: Nnew, Nold, Nsav, i, j, k, step
@@ -1124,10 +1106,10 @@
 !  at RHO-points.
 !-----------------------------------------------------------------------
 !
-      Lconvolve(iwest )=WESTERN_EDGE
-      Lconvolve(ieast )=EASTERN_EDGE
-      Lconvolve(isouth)=SOUTHERN_EDGE
-      Lconvolve(inorth)=NORTHERN_EDGE
+      Lconvolve(iwest )=DOMAIN(ng)%Western_Edge (tile)
+      Lconvolve(ieast )=DOMAIN(ng)%Eastern_Edge (tile)
+      Lconvolve(isouth)=DOMAIN(ng)%Southern_Edge(tile)
+      Lconvolve(inorth)=DOMAIN(ng)%Northern_Edge(tile)
 !
 !  Set integration indices and initial conditions.
 !
@@ -1204,12 +1186,14 @@
 # ifdef DISTRIBUTE
 !>    CALL mp_exchange3d_bry (ng, tile, model, 1, boundary,             &
 !>   &                        LBij, UBij, 1, N(ng),                     &
-!>   &                        Nghost, EWperiodic, NSperiodic,           &
+!>   &                        Nghost,                                   &
+!>   &                        EWperiodic(ng), NSperiodic(ng),           &
 !>   &                        tl_A)
 !>
       CALL ad_mp_exchange3d_bry (ng, tile, model, 1, boundary,          &
      &                           LBij, UBij, 1, N(ng),                  &
-     &                           Nghost, EWperiodic, NSperiodic,        &
+     &                           Nghost,                                &
+     &                           EWperiodic(ng), NSperiodic(ng),        &
      &                           ad_A)
 # endif
 !>    CALL bc_u3d_bry_tile (ng, tile, boundary,                         &
@@ -1781,12 +1765,14 @@
 # ifdef DISTRIBUTE
 !>      CALL mp_exchange3d_bry (ng, tile, model, 1, boundary,           &
 !>   &                          LBij, UBij, 1, N(ng),                   &
-!>   &                          Nghost, EWperiodic, NSperiodic,         &
+!>   &                          Nghost,                                 &
+!>   &                          EWperiodic(ng), NSperiodic(ng),         &
 !>   &                          tl_Awrk(:,:,Nnew))
 !>
         CALL ad_mp_exchange3d_bry (ng, tile, model, 1, boundary,        &
      &                             LBij, UBij, 1, N(ng),                &
-     &                             Nghost, EWperiodic, NSperiodic,      &
+     &                             Nghost,                              &
+     &                             EWperiodic(ng), NSperiodic(ng),      &
      &                             ad_Awrk(:,:,Nnew))
 # endif
 !>      CALL bc_u3d_bry_tile (ng, tile, boundary,                       &
@@ -1903,12 +1889,14 @@
 # ifdef DISTRIBUTE
 !>    CALL mp_exchange3d_bry (ng, tile, model, 1, boundary,             &
 !>   &                        LBij, UBij, 1, N(ng),                     &
-!>   &                        Nghost, EWperiodic, NSperiodic,           &
+!>   &                        Nghost,                                   &
+!>   &                        EWperiodic(ng), NSperiodic(ng),           &
 !>   &                        tl_A)
 !>
       CALL ad_mp_exchange3d_bry (ng, tile, model, 1, boundary,          &
      &                           LBij, UBij, 1, N(ng),                  &
-     &                           Nghost, EWperiodic, NSperiodic,        &
+     &                           Nghost,                                &
+     &                           EWperiodic(ng), NSperiodic(ng),        &
      &                           ad_A)
 # endif
 !>    CALL bc_u3d_bry_tile (ng, tile, boundary,                         &
@@ -1992,18 +1980,6 @@
 !
 !  Local variable declarations.
 !
-# ifdef DISTRIBUTE
-#  ifdef EW_PERIODIC
-      logical :: EWperiodic=.TRUE.
-#  else
-      logical :: EWperiodic=.FALSE.
-#  endif
-#  ifdef NS_PERIODIC
-      logical :: NSperiodic=.TRUE.
-#  else
-      logical :: NSperiodic=.FALSE.
-#  endif
-# endif
       logical, dimension(4) :: Lconvolve
 
       integer :: Nnew, Nold, Nsav, i, j, k, step
@@ -2056,10 +2032,10 @@
 !  at RHO-points.
 !-----------------------------------------------------------------------
 !
-      Lconvolve(iwest )=WESTERN_EDGE
-      Lconvolve(ieast )=EASTERN_EDGE
-      Lconvolve(isouth)=SOUTHERN_EDGE
-      Lconvolve(inorth)=NORTHERN_EDGE
+      Lconvolve(iwest )=DOMAIN(ng)%Western_Edge (tile)
+      Lconvolve(ieast )=DOMAIN(ng)%Eastern_Edge (tile)
+      Lconvolve(isouth)=DOMAIN(ng)%Southern_Edge(tile)
+      Lconvolve(inorth)=DOMAIN(ng)%Northern_Edge(tile)
 !
 !  Set integration indices and initial conditions.
 !
@@ -2136,12 +2112,14 @@
 # ifdef DISTRIBUTE
 !>    CALL mp_exchange3d_bry (ng, tile, model, 1, boundary,             &
 !>   &                        LBij, UBij, 1, N(ng),                     &
-!>   &                        Nghost, EWperiodic, NSperiodic,           &
+!>   &                        Nghost,                                   &
+!>   &                        EWperiodic(ng), NSperiodic(ng),           &
 !>   &                        tl_A)
 !>
       CALL ad_mp_exchange3d_bry (ng, tile, model, 1, boundary,          &
      &                           LBij, UBij, 1, N(ng),                  &
-     &                           Nghost, EWperiodic, NSperiodic,        &
+     &                           Nghost,                                &
+     &                           EWperiodic(ng), NSperiodic(ng),        &
      &                           ad_A)
 # endif
 !>    CALL bc_v3d_bry_tile (ng, tile, boundary,                         &
@@ -2711,12 +2689,14 @@
 # ifdef DISTRIBUTE
 !>      CALL mp_exchange3d_bry (ng, tile, model, 1, boundary,           &
 !>   &                          LBij, UBij, 1, N(ng),                   &
-!>   &                          Nghost, EWperiodic, NSperiodic,         &
+!>   &                          Nghost,                                 &
+!>   &                          EWperiodic(ng), NSperiodic(ng),         &
 !>   &                          tl_Awrk(:,:,Nnew))
 !>
         CALL ad_mp_exchange3d_bry (ng, tile, model, 1, boundary,        &
      &                             LBij, UBij, 1, N(ng),                &
-     &                             Nghost, EWperiodic, NSperiodic,      &
+     &                             Nghost,                              &
+     &                             EWperiodic(ng), NSperiodic(ng),      &
      &                             ad_Awrk(:,:,Nnew))
 # endif
 !>      CALL bc_v3d_bry_tile (ng, tile, boundary,                       &
@@ -2833,12 +2813,14 @@
 # ifdef DISTRIBUTE
 !>    CALL mp_exchange3d_bry (ng, tile, model, 1, boundary,             &
 !>   &                        LBij, UBij, 1, N(ng),                     &
-!>   &                        Nghost, EWperiodic, NSperiodic,           &
+!>   &                        Nghost,                                   &
+!>   &                        EWperiodic(ng), NSperiodic(ng),           &
 !>   &                        tl_A)
 !>
       CALL ad_mp_exchange3d_bry (ng, tile, model, 1, boundary,          &
      &                           LBij, UBij, 1, N(ng),                  &
-     &                           Nghost, EWperiodic, NSperiodic,        &
+     &                           Nghost,                                &
+     &                           EWperiodic(ng), NSperiodic(ng),        &
      &                           ad_A)
 # endif
 !>    CALL bc_v3d_bry_tile (ng, tile, boundary,                         &

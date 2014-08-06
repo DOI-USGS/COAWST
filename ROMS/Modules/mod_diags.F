@@ -4,7 +4,7 @@
 !
 !svn $Id: mod_diags.F 737 2008-09-07 02:06:44Z jcwarner $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2010 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2014 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -18,11 +18,6 @@
 !  DiaV2d    Diagnostics for 2D V-momentum terms.                      !
 !  DiaU3d    Diagnostics for 3D U-momentum terms.                      !
 !  DiaV3d    Diagnostics for 3D V-momentum terms.                      !
-!                                                                      !
-!  pvor_bar  2D, vertically integrated, potential vorticity.           !
-!  rvor_bar  2D, vertically integrated, relative vorticity.            !
-!  pvor      3D potential vorticity.                                   !
-!  rvor      3D relative vorticity.                                    !
 !                                                                      !
 !  Diagnostics fields work arrays.                                     !
 !                                                                      !
@@ -50,7 +45,7 @@
 
         TYPE T_DIAGS
 
-# ifdef BIO_FENNEL
+# if defined DIAGNOSTICS_BIO && defined BIO_FENNEL
           real(r8), pointer :: DiaBio2d(:,:,:)
           real(r8), pointer :: DiaBio3d(:,:,:,:)
 # endif
@@ -80,13 +75,6 @@
           real(r8), pointer :: DiaRU(:,:,:,:,:)
           real(r8), pointer :: DiaRV(:,:,:,:,:)
 #  endif
-
-# endif
-          real(r8), pointer :: pvor_bar(:,:)
-          real(r8), pointer :: rvor_bar(:,:)
-# ifdef SOLVE3D
-          real(r8), pointer :: pvor(:,:,:)
-          real(r8), pointer :: rvor(:,:,:)
 # endif
 
         END TYPE T_DIAGS
@@ -116,9 +104,13 @@
 !
       IF (ng.eq.1 ) allocate ( DIAGS(Ngrids) )
 !
-# ifdef BIO_FENNEL
-      allocate ( DIAGS(ng) % DiaBio2d(LBi:UBi,LBj:UBj,NDbio2d) )
-      allocate ( DIAGS(ng) % DiaBio3d(LBi:UBi,LBj:UBj,N(ng),NDbio3d) )
+# if defined DIAGNOSTICS_BIO && defined BIO_FENNEL
+      IF (NDbio2d.gt.0) THEN
+        allocate ( DIAGS(ng) % DiaBio2d(LBi:UBi,LBj:UBj,NDbio2d) )
+      END IF
+      IF (NDbio3d.gt.0) THEN
+        allocate ( DIAGS(ng) % DiaBio3d(LBi:UBi,LBj:UBj,N(ng),NDbio3d) )
+      END IF
 # endif
 
 # ifdef DIAGNOSTICS_TS
@@ -147,13 +139,6 @@
       allocate ( DIAGS(ng) % DiaRV(LBi:UBi,LBj:UBj,N(ng),2,NDrhs) )
 #  endif
 
-# endif
-
-      allocate ( DIAGS(ng) % pvor_bar(LBi:UBi,LBj:UBj) )
-      allocate ( DIAGS(ng) % rvor_bar(LBi:UBi,LBj:UBj) )
-# ifdef SOLVE3D
-      allocate ( DIAGS(ng) % pvor(LBi:UBi,LBj:UBj,N(ng)) )
-      allocate ( DIAGS(ng) % rvor(LBi:UBi,LBj:UBj,N(ng)) )
 # endif
 
       RETURN
@@ -191,32 +176,32 @@
 !
 !  Set array initialization range.
 !
-# ifdef _OPENMP
-      IF (WESTERN_EDGE) THEN
-        Imin=BOUNDS(ng)%LBi(tile)
-      ELSE
-        Imin=Istr
-      END IF
-      IF (EASTERN_EDGE) THEN
-        Imax=BOUNDS(ng)%UBi(tile)
-      ELSE
-        Imax=Iend
-      END IF
-      IF (SOUTHERN_EDGE) THEN
-        Jmin=BOUNDS(ng)%LBj(tile)
-      ELSE
-        Jmin=Jstr
-      END IF
-      IF (NORTHERN_EDGE) THEN
-        Jmax=BOUNDS(ng)%UBj(tile)
-      ELSE
-        Jmax=Jend
-      END IF
-# else
+# ifdef DISTRIBUTE
       Imin=BOUNDS(ng)%LBi(tile)
       Imax=BOUNDS(ng)%UBi(tile)
       Jmin=BOUNDS(ng)%LBj(tile)
       Jmax=BOUNDS(ng)%UBj(tile)
+# else
+      IF (DOMAIN(ng)%Western_Edge(tile)) THEN
+        Imin=BOUNDS(ng)%LBi(tile)
+      ELSE
+        Imin=Istr
+      END IF
+      IF (DOMAIN(ng)%Eastern_Edge(tile)) THEN
+        Imax=BOUNDS(ng)%UBi(tile)
+      ELSE
+        Imax=Iend
+      END IF
+      IF (DOMAIN(ng)%Southern_Edge(tile)) THEN
+        Jmin=BOUNDS(ng)%LBj(tile)
+      ELSE
+        Jmin=Jstr
+      END IF
+      IF (DOMAIN(ng)%Northern_Edge(tile)) THEN
+        Jmax=BOUNDS(ng)%UBj(tile)
+      ELSE
+        Jmax=Jend
+      END IF
 # endif
 !
 !-----------------------------------------------------------------------
@@ -224,19 +209,23 @@
 !-----------------------------------------------------------------------
 !
       DO j=Jmin,Jmax
-# ifdef BIO_FENNEL
-        DO idiag=1,NDbio2d
-          DO i=Imin,Imax
-            DIAGS(ng) % DiaBio2d(i,j,idiag) = IniVal
-          END DO
-        END DO
-        DO idiag=1,NDbio3d
-          DO k=1,N(ng)
+# if defined DIAGNOSTICS_BIO && defined BIO_FENNEL
+        IF (NDbio2d.gt.0) THEN
+          DO idiag=1,NDbio2d
             DO i=Imin,Imax
-              DIAGS(ng) % DiaBio3d(i,j,k,idiag) = IniVal
+              DIAGS(ng) % DiaBio2d(i,j,idiag) = IniVal
             END DO
           END DO
-        END DO
+        END IF
+        IF (NDbio3d.gt.0) THEN
+          DO idiag=1,NDbio3d
+            DO k=1,N(ng)
+              DO i=Imin,Imax
+                DIAGS(ng) % DiaBio3d(i,j,k,idiag) = IniVal
+              END DO
+            END DO
+          END DO
+        END IF
 # endif
 # ifdef DIAGNOSTICS_TS
         DO idiag=1,NDT
@@ -301,18 +290,6 @@
           END DO
         END DO
 #  endif
-# endif
-        DO i=Imin,Imax
-          DIAGS(ng) % pvor_bar(i,j) = IniVal
-          DIAGS(ng) % rvor_bar(i,j) = IniVal
-        END DO
-# ifdef SOLVE3D
-        DO k=1,N(ng)
-          DO i=Imin,Imax
-            DIAGS(ng) % pvor(i,j,k) = IniVal
-            DIAGS(ng) % rvor(i,j,k) = IniVal
-          END DO
-        END DO
 # endif
       END DO
 

@@ -3,7 +3,7 @@
 !
 !svn $Id: get_date.F 1598 2008-07-25 03:29:09Z jcwarner $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2010 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2014 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -474,6 +474,25 @@
       ref_att=text
       RETURN
       END FUNCTION ref_att
+
+!----------------------------------------------------------------------
+!
+!---COMPUTES THE JULIAN DATE (JD) GIVEN A GREGORIAN CALENDAR
+!---DATE (YEAR,MONTH,DAY).
+!---------------------------------------------------------------------
+      INTEGER FUNCTION jd (year,month,day)
+!
+      INTEGER year,month,day,i,j,k
+!
+      i= year
+      j= month
+      k= day
+!
+      jd= k-32075+1461*(i+4800+(j-14)/12)/4+367*(j-2-(j-14)/12*12)      &
+     &    /12-3*((I+4900+(j-14)/12)/100)/4
+!
+      RETURN
+      END
 
       SUBROUTINE time_string (time, time_code)
 !

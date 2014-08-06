@@ -4,7 +4,7 @@
 !
 !svn $Id: wrt_diags.F 733 2008-09-07 01:56:45Z jcwarner $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2010 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2014 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -40,9 +40,12 @@
 !  Local variable declarations.
 !
       integer :: LBi, UBi, LBj, UBj
-      integer :: gfactor, gtype, ifield, itrc, ivar, status
+      integer :: Fcount, gfactor, gtype, ifield, itrc, ivar, status
 
       real(r8) :: scale
+# ifdef BIOLOGY
+      real(r8) :: dtBIO
+# endif
 !
       SourceFile='wrt_diags.F'
 !
@@ -68,57 +71,18 @@
 !
 !  Set time and time-record index.
 !
-      tDIAindx(ng)=tDIAindx(ng)+1
-      NrecDIA(ng)=NrecDIA(ng)+1
+      DIA(ng)%Rindex=DIA(ng)%Rindex+1
+      Fcount=DIA(ng)%Fcount
+      DIA(ng)%Nrec(Fcount)=DIA(ng)%Nrec(Fcount)+1
 !
 !  Write out averaged time.
 !
-      CALL netcdf_put_fvar (ng, iNLM, DIAname(ng),                      &
+      CALL netcdf_put_fvar (ng, iNLM, DIA(ng)%name,                     &
      &                      TRIM(Vname(idtime,ng)), DIAtime(ng:),       &
-     &                      (/tDIAindx(ng)/), (/1/),                    &
-     &                      ncid = ncDIAid(ng),                         &
-     &                      varid = diaVid(idtime,ng))
+     &                      (/DIA(ng)%Rindex/), (/1/),                  &
+     &                      ncid = DIA(ng)%ncid,                        &
+     &                      varid = DIA(ng)%Vid(idtime))
       IF (exit_flag.ne.NoError) RETURN
-!
-!  Write out 2D potential vorticity.
-!
-      scale=1.0_r8/(REAL(nDIA(ng),r8)*dt(ng))
-      gtype=gfactor*p2dvar
-      status=nf_fwrite2d(ng, iNLM, ncDIAid(ng), diaVid(id2dPV,ng),      &
-     &                   tDIAindx(ng), gtype,                           &
-     &                   LBi, UBi, LBj, UBj, scale,                     &
-#  ifdef MASKING
-     &                   GRID(ng) % pmask,                              &
-#  endif
-     &                   DIAGS(ng) % pvor_bar)
-      IF (status.ne.nf90_noerr) THEN
-        IF (Master) THEN
-          WRITE (stdout,10) TRIM(Vname(1,id2dPV)), tDIAindx(ng)
-        END IF
-        exit_flag=3
-        ioerror=status
-        RETURN
-      END IF
-!
-!  Write out 2D relative vorticity.
-!
-      scale=1.0_r8/(REAL(nDIA(ng),r8)*dt(ng))
-      gtype=gfactor*p2dvar
-      status=nf_fwrite2d(ng, iNLM, ncDIAid(ng), diaVid(id2dRV,ng),      &
-     &                   tDIAindx(ng), gtype,                           &
-     &                   LBi, UBi, LBj, UBj, scale,                     &
-#  ifdef MASKING
-     &                   GRID(ng) % pmask,                              &
-#  endif
-     &                   DIAGS(ng) % rvor_bar)
-      IF (status.ne.nf90_noerr) THEN
-        IF (Master) THEN
-          WRITE (stdout,10) TRIM(Vname(1,id2dRV)), tDIAindx(ng)
-        END IF
-        exit_flag=3
-        ioerror=status
-        RETURN
-      END IF
 
 # ifdef DIAGNOSTICS_UV
 !
@@ -126,41 +90,47 @@
 !
       DO ivar=1,NDM2d
         ifield=idDu2d(ivar)
-        scale=1.0_r8/(REAL(nDIA(ng),r8)*dt(ng))
-        gtype=gfactor*u2dvar
-        status=nf_fwrite2d(ng, iNLM, ncDIAid(ng), diaVid(ifield,ng),    &
-     &                     tDIAindx(ng), gtype,                         &
-     &                     LBi, UBi, LBj, UBj, scale,                   &
+        IF (Dout(ifield,ng)) THEN
+          scale=1.0_r8/dt(ng)
+          gtype=gfactor*u2dvar
+          status=nf_fwrite2d(ng, iNLM, DIA(ng)%ncid,                    &
+     &                       DIA(ng)%Vid(ifield),                       &
+     &                       DIA(ng)%Rindex, gtype,                     &
+     &                       LBi, UBi, LBj, UBj, scale,                 &
 #  ifdef MASKING
-     &                     GRID(ng) % umask,                            &
+     &                       GRID(ng) % umask_dia,                      &
 #  endif
-     &                     DIAGS(ng) % DiaU2d(:,:,ivar))
-        IF (status.ne.nf90_noerr) THEN
-          IF (Master) THEN
-            WRITE (stdout,10) TRIM(Vname(1,ifield)), tDIAindx(ng)
+     &                       DIAGS(ng) % DiaU2d(:,:,ivar))
+          IF (status.ne.nf90_noerr) THEN
+            IF (Master) THEN
+              WRITE (stdout,10) TRIM(Vname(1,ifield)), DIA(ng)%Rindex
+            END IF
+            exit_flag=3
+            ioerror=status
+            RETURN
           END IF
-          exit_flag=3
-          ioerror=status
-          RETURN
         END IF
 !
         ifield=idDv2d(ivar)
-        scale=1.0_r8/(REAL(nDIA(ng),r8)*dt(ng))
-        gtype=gfactor*v2dvar
-        status=nf_fwrite2d(ng, iNLM, ncDIAid(ng), diaVid(ifield,ng),    &
-     &                     tDIAindx(ng), gtype,                         &
-     &                     LBi, UBi, LBj, UBj, scale,                   &
+        IF (Dout(ifield,ng)) THEN
+          scale=1.0_r8/dt(ng)
+          gtype=gfactor*v2dvar
+          status=nf_fwrite2d(ng, iNLM, DIA(ng)%ncid,                    &
+     &                       DIA(ng)%Vid(ifield),                       &
+     &                       DIA(ng)%Rindex, gtype,                     &
+     &                       LBi, UBi, LBj, UBj, scale,                 &
 #  ifdef MASKING
-     &                     GRID(ng) % vmask,                            &
+     &                       GRID(ng) % vmask_dia,                      &
 #  endif
-     &                     DIAGS(ng) % DiaV2d(:,:,ivar))
-        IF (status.ne.nf90_noerr) THEN
-          IF (Master) THEN
-            WRITE (stdout,10) TRIM(Vname(1,ifield)), tDIAindx(ng)
+     &                       DIAGS(ng) % DiaV2d(:,:,ivar))
+          IF (status.ne.nf90_noerr) THEN
+            IF (Master) THEN
+              WRITE (stdout,10) TRIM(Vname(1,ifield)), DIA(ng)%Rindex
+            END IF
+            exit_flag=3
+            ioerror=status
+            RETURN
           END IF
-          exit_flag=3
-          ioerror=status
-          RETURN
         END IF
       END DO
 
@@ -170,86 +140,50 @@
 !
       DO ivar=1,NDM3d
         ifield=idDu3d(ivar)
-        scale=1.0_r8/(REAL(nDIA(ng),r8)*dt(ng))
-        gtype=gfactor*u3dvar
-        status=nf_fwrite3d(ng, iNLM, ncDIAid(ng), diaVid(ifield,ng),    &
-     &                     tDIAindx(ng), gtype,                         &
-     &                     LBi, UBi, LBj, UBj, 1, N(ng), scale,         &
+        IF (Dout(ifield,ng)) THEN
+          scale=1.0_r8/dt(ng)
+          gtype=gfactor*u3dvar
+          status=nf_fwrite3d(ng, iNLM, DIA(ng)%ncid,                    &
+     &                       DIA(ng)%Vid(ifield),                       &
+     &                       DIA(ng)%Rindex, gtype,                     &
+     &                       LBi, UBi, LBj, UBj, 1, N(ng), scale,       &
 #   ifdef MASKING
-     &                     GRID(ng) % umask,                            &
+     &                       GRID(ng) % umask_dia,                      &
 #   endif
-     &                     DIAGS(ng) % DiaU3d(:,:,:,ivar))
-        IF (status.ne.nf90_noerr) THEN
-          IF (Master) THEN
-            WRITE (stdout,10) TRIM(Vname(1,ifield)), tDIAindx(ng)
+     &                       DIAGS(ng) % DiaU3d(:,:,:,ivar))
+          IF (status.ne.nf90_noerr) THEN
+            IF (Master) THEN
+              WRITE (stdout,10) TRIM(Vname(1,ifield)), DIA(ng)%Rindex
+            END IF
+            exit_flag=3
+            ioerror=status
+            RETURN
           END IF
-          exit_flag=3
-          ioerror=status
-          RETURN
         END IF
 !
         ifield=idDv3d(ivar)
-        scale=1.0_r8/(REAL(nDIA(ng),r8)*dt(ng))
-        gtype=gfactor*v3dvar
-        status=nf_fwrite3d(ng, iNLM, ncDIAid(ng), diaVid(ifield,ng),    &
-     &                     tDIAindx(ng), gtype,                         &
-     &                     LBi, UBi, LBj, UBj, 1, N(ng), scale,         &
+        IF (Dout(ifield,ng)) THEN
+          scale=1.0_r8/dt(ng)
+          gtype=gfactor*v3dvar
+          status=nf_fwrite3d(ng, iNLM, DIA(ng)%ncid,                    &
+     &                       DIA(ng)%Vid(ifield),                       &
+     &                       DIA(ng)%Rindex, gtype,                     &
+     &                       LBi, UBi, LBj, UBj, 1, N(ng), scale,       &
 #   ifdef MASKING
-     &                     GRID(ng) % vmask,                            &
+     &                       GRID(ng) % vmask_dia,                      &
 #   endif
-     &                     DIAGS(ng) % DiaV3d(:,:,:,ivar))
-        IF (status.ne.nf90_noerr) THEN
-          IF (Master) THEN
-            WRITE (stdout,10) TRIM(Vname(1,ifield)), tDIAindx(ng)
+     &                       DIAGS(ng) % DiaV3d(:,:,:,ivar))
+          IF (status.ne.nf90_noerr) THEN
+            IF (Master) THEN
+              WRITE (stdout,10) TRIM(Vname(1,ifield)), DIA(ng)%Rindex
+            END IF
+            exit_flag=3
+            ioerror=status
+            RETURN
           END IF
-          exit_flag=3
-          ioerror=status
-          RETURN
         END IF
       END DO
 #  endif
-# endif
-# ifdef SOLVE3D
-!
-!  Write out 3D potential vorticity.
-!
-      scale=1.0_r8/(REAL(nDIA(ng),r8)*dt(ng))
-      gtype=gfactor*p3dvar
-      status=nf_fwrite3d(ng, iNLM, ncDIAid(ng), diaVid(id3dPV,ng),      &
-     &                   tDIAindx(ng), gtype,                           &
-     &                   LBi, UBi, LBj, UBj, 1, N(ng), scale,           &
-#  ifdef MASKING
-     &                   GRID(ng) % pmask,                              &
-#  endif
-     &                   DIAGS(ng) % pvor)
-      IF (status.ne.nf90_noerr) THEN
-        IF (Master) THEN
-          WRITE (stdout,10) TRIM(Vname(1,id3dPV)), tDIAindx(ng)
-        END IF
-        exit_flag=3
-        ioerror=status
-        RETURN
-      END IF
-!
-!  Write out 3D relative vorticity.
-!
-      scale=1.0_r8/(REAL(nDIA(ng),r8)*dt(ng))
-      gtype=gfactor*p3dvar
-      status=nf_fwrite3d(ng, iNLM, ncDIAid(ng), diaVid(id3dRV,ng),      &
-     &                   tDIAindx(ng), gtype,                           &
-     &                   LBi, UBi, LBj, UBj, 1, N(ng), scale,           &
-#  ifdef MASKING
-     &                   GRID(ng) % pmask,                              &
-#  endif
-     &                   DIAGS(ng) % rvor)
-      IF (status.ne.nf90_noerr) THEN
-        IF (Master) THEN
-          WRITE (stdout,10) TRIM(Vname(1,id3dRV)), tDIAindx(ng)
-        END IF
-        exit_flag=3
-        ioerror=status
-        RETURN
-      END IF
 # endif
 # ifdef DIAGNOSTICS_TS
 !
@@ -258,46 +192,55 @@
       DO itrc=1,NT(ng)
         DO ivar=1,NDT
           ifield=idDtrc(itrc,ivar)
-          scale=1.0_r8/(REAL(nDIA(ng),r8)*dt(ng))
-          gtype=gfactor*r3dvar
-          status=nf_fwrite3d(ng, iNLM, ncDIAid(ng), diaVid(ifield,ng),  &
-     &                       tDIAindx(ng), gtype,                       &
-     &                       LBi, UBi, LBj, UBj, 1, N(ng), scale,       &
+          IF (Dout(ifield,ng)) THEN
+            scale=1.0_r8/dt(ng)
+            gtype=gfactor*r3dvar
+            status=nf_fwrite3d(ng, iNLM, DIA(ng)%ncid,                  &
+     &                         DIA(ng)%Vid(ifield),                     &
+     &                         DIA(ng)%Rindex, gtype,                   &
+     &                         LBi, UBi, LBj, UBj, 1, N(ng), scale,     &
 #  ifdef MASKING
-     &                       GRID(ng) % rmask,                          &
+     &                         GRID(ng) % rmask_dia,                    &
 #  endif
-     &                       DIAGS(ng) % DiaTrc(:,:,:,itrc,ivar))
-          IF (status.ne.nf90_noerr) THEN
-            IF (Master) THEN
-              WRITE (stdout,10) TRIM(Vname(1,ifield)), tDIAindx(ng)
+     &                         DIAGS(ng) % DiaTrc(:,:,:,itrc,ivar))
+            IF (status.ne.nf90_noerr) THEN
+              IF (Master) THEN
+                WRITE (stdout,10) TRIM(Vname(1,ifield)), DIA(ng)%Rindex
+              END IF
+              exit_flag=3
+              ioerror=status
+              RETURN
             END IF
-            exit_flag=3
-            ioerror=status
-            RETURN
           END IF
         END DO
       END DO
 # endif
-
-# ifdef BIO_FENNEL
+# if defined DIAGNOSTICS_BIO && defined BIO_FENNEL
 !
 !  Write out 2D biological diagnostic fields.
 !
+      dtBIO=dt(ng)*sec2day/REAL(BioIter(ng),r8)
+
       DO ivar=1,NDbio2d
         ifield=iDbio2(ivar)
-        IF (Hout(ifield,ng)) THEN
-          scale=1.0_r8
+        IF (Dout(ifield,ng)) THEN
+          IF (ivar.eq.ipCO2) THEN
+            scale=1.0_r8
+          ELSE
+            scale=1.0_r8/dtBIO                       ! mmole m-2 day-1
+          END IF
           gtype=gfactor*r2dvar
-          status=nf_fwrite2d(ng, iNLM, ncDIAid(ng), diaVid(ifield,ng),  &
-     &                       tDIAindx(ng), gtype,                       &
+          status=nf_fwrite2d(ng, iNLM, DIA(ng)%ncid,                    &
+     &                       DIA(ng)%Vid(ifield),                       &
+     &                       DIA(ng)%Rindex, gtype,                     &
      &                       LBi, UBi, LBj, UBj, scale,                 &
 #  ifdef MASKING
-     &                       GRID(ng) % rmask,                          &
+     &                       GRID(ng) % rmask_dia,                      &
 #  endif
      &                       DIAGS(ng) % DiaBio2d(:,:,ivar))
           IF (status.ne.nf90_noerr) THEN
             IF (Master) THEN
-              WRITE (stdout,10) TRIM(Vname(1,ifield)), tDIAindx(ng)
+              WRITE (stdout,10) TRIM(Vname(1,ifield)), DIA(ng)%Rindex
             END IF
             exit_flag=3
             ioerror=status
@@ -310,19 +253,20 @@
 !
       DO ivar=1,NDbio3d
         ifield=iDbio3(ivar)
-        IF (Hout(ifield,ng)) THEN
-          scale=1.0_r8
+        IF (Dout(ifield,ng)) THEN
+          scale=1.0_r8/dtBIO                         ! mmole m-3 day-1
           gtype=gfactor*r3dvar
-          status=nf_fwrite3d(ng, iNLM, ncDIAid(ng), diaVid(ifield,ng),  &
-     &                       tDIAindx(ng), gtype,                       &
+          status=nf_fwrite3d(ng, iNLM, DIA(ng)%ncid,                    &
+     &                       DIA(ng)%Vid(ifield),                       &
+     &                       DIA(ng)%Rindex, gtype,                     &
      &                       LBi, UBi, LBj, UBj, 1, N(ng), scale,       &
 #  ifdef MASKING
-     &                       GRID(ng) % rmask,                          &
+     &                       GRID(ng) % rmask_dia,                      &
 #  endif
      &                       DIAGS(ng) % DiaBio3d(:,:,:,ivar))
           IF (status.ne.nf90_noerr) THEN
             IF (Master) THEN
-              WRITE (stdout,10) TRIM(Vname(1,ifield)), tDIAindx(ng)
+              WRITE (stdout,10) TRIM(Vname(1,ifield)), DIA(ng)%Rindex
             END IF
             exit_flag=3
             ioerror=status
@@ -335,15 +279,23 @@
 !  Synchronize time-average NetCDF file to disk to allow other processes
 !  to access data immediately after it is written.
 !
-      CALL netcdf_sync (ng, iNLM, DIAname(ng), ncDIAid(ng))
+      CALL netcdf_sync (ng, iNLM, DIA(ng)%name, DIA(ng)%ncid)
       IF (exit_flag.ne.NoError) RETURN
 
-      IF (Master) WRITE (stdout,20) tDIAindx(ng)
+# ifdef NESTING
+      IF (Master) WRITE (stdout,20) DIA(ng)%Rindex, ng
+# else
+      IF (Master) WRITE (stdout,20) DIA(ng)%Rindex
+# endif
 !
   10  FORMAT (/,' WRT_DIAGS - error while writing variable: ',a,/,13x,  &
      &        'into diagnostics NetCDF file for time record: ',i4)
   20  FORMAT (6x,'WRT_DIAGS - wrote diagnostics fields into time ',     &
+# ifdef NESTING
+     &        'record = ',t72,i7.7,2x,i2.2)
+# else
      &        'record = ',t72,i7.7)
+# endif
 #else
       SUBROUTINE wrt_diags
 #endif

@@ -3,7 +3,7 @@
 !
 !svn $Id: nf_fwrite3d_bry.F 429 2009-12-20 17:30:26Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2010 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2014 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -33,6 +33,14 @@
 !                                                                      !
 !     status       Error flag (integer).                               !
 !                                                                      !
+#ifdef POSITIVE_ZERO
+!  Starting F95 zero values can be signed (-0 or +0) following the     !
+!  IEEE 754 floating point standard.  This may produce different       !
+!  output data in serial and parallel applications. Since comparing    !
+!  serial and parallel output is essential for tracking parallel       !
+!  partition bugs, "positive zero" is enforced.                        !
+!                                                                      !
+#endif
 !=======================================================================
 !
       implicit none
@@ -88,7 +96,7 @@
 
       real(r8), parameter :: Aspv = 0.0_r8
 
-      real(r8), dimension((UBij-LBij+1)*(UBk-LBk+1)*4*Nrec) :: Aout
+      real(r8), dimension((UBij-LBij+1)*(UBk-LBk+1)*4*Nrec) :: Awrk
 !
 !-----------------------------------------------------------------------
 !  Set starting and ending indices to process.
@@ -145,10 +153,10 @@
 !
 !  Set switch to process boundary data by their associated tiles.
 !
-      bounded(iwest )=WESTERN_EDGE
-      bounded(ieast )=EASTERN_EDGE
-      bounded(isouth)=SOUTHERN_EDGE
-      bounded(inorth)=NORTHERN_EDGE
+      bounded(iwest )=DOMAIN(ng)%Western_Edge (tile)
+      bounded(ieast )=DOMAIN(ng)%Eastern_Edge (tile)
+      bounded(isouth)=DOMAIN(ng)%Southern_Edge(tile)
+      bounded(inorth)=DOMAIN(ng)%Northern_Edge(tile)
 !
 !  Set NetCDF dimension counters for processing requested field.
 !
@@ -167,7 +175,7 @@
 !  Pack and scale output data.
 !-----------------------------------------------------------------------
 !
-      Aout=Aspv
+      Awrk=Aspv
 
       DO ir=1,Nrec
         rc=(ir-1)*IJKlen*4
@@ -179,7 +187,12 @@
                 kc=(k-LBk)*IorJ+bc
                 DO j=Jmin,Jmax
                   ic=1+(j-LBij)+kc
-                  Aout(ic)=A(j,k,ib,ir)*Ascl
+                  Awrk(ic)=A(j,k,ib,ir)*Ascl
+#ifdef POSITIVE_ZERO
+                  IF (ABS(Awrk(ic)).eq.0.0_r8) THEN
+                    Awrk(ic)=0.0_r8               ! impose positive zero
+                  END IF
+#endif
                 END DO
               END DO
             ELSE IF ((ib.eq.isouth).or.(ib.eq.inorth)) THEN
@@ -187,7 +200,12 @@
                 kc=(k-LBk)*IorJ+bc
                 DO i=Imin,Imax
                   ic=1+(i-LBij)+kc
-                  Aout(ic)=A(i,k,ib,ir)*Ascl
+                  Awrk(ic)=A(i,k,ib,ir)*Ascl
+#ifdef POSITIVE_ZERO
+                  IF (ABS(Awrk(ic)).eq.0.0_r8) THEN
+                    Awrk(ic)=0.0_r8               ! impose positive zero
+                  END IF
+#endif
                 END DO
               END DO
             END IF
@@ -200,7 +218,7 @@
 !  If distributed-memory set-up, collect data from all spawned
 !  nodes.
 !
-      CALL mp_collect (ng, model, Npts, Aspv, Aout)
+      CALL mp_collect (ng, model, Npts, Aspv, Awrk)
 #endif
 !
 !-----------------------------------------------------------------------
@@ -209,7 +227,7 @@
 !
       status=nf90_noerr
       IF (OutThread) THEN
-        status=nf90_put_var(ncid, ncvarid, Aout, start, total)
+        status=nf90_put_var(ncid, ncvarid, Awrk, start, total)
       END IF
 
 #ifdef DISTRIBUTE

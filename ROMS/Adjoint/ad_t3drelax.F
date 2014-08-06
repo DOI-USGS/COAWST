@@ -3,9 +3,9 @@
 
 #if defined TL_IOMS && defined RPM_RELAXATION && defined SOLVE3D
 !
-!svn $Id: ad_t3drelax.F 429 2009-12-20 17:30:26Z arango $
+!svn $Id$
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2010 The ROMS/TOMS Group       Andrew M. Moore   !
+!  Copyright (c) 2002-2014 The ROMS/TOMS Group       Andrew M. Moore   !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -143,13 +143,6 @@
 !
             DO j=Jstr,Jend
               DO i=Istr,Iend
-# ifdef TS_MPDATA_NOT_YET
-!>              tl_t(i,j,k,3,itrc)=tl_t(i,j,k,nnew,itrc)
-!>
-                ad_t(i,j,k,nnew,itrc)=ad_t(i,j,k,nnew,itrc)+            &
-     &                                ad__t(i,j,k,3,itrc)
-                ad_t(i,j,k,3,itrc)=0.0_r8
-# endif
 !>              tl_t(i,j,k,nnew,itrc)=tl_t(i,j,k,nnew,itrc)+            &
 !>   &                                dt(ng)*pm(i,j)*pn(i,j)*           &
 !>   &                                (FX(i+1,j)-FX(i,j)+               &

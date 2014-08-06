@@ -7,7 +7,7 @@
 !
 !svn $Id: sed_bed.F 429 2009-12-20 17:30:26Z arango $
 !==================================================== John C. Warner ===
-!  Copyright (c) 2002-2010 The ROMS/TOMS Group      Hernan G. Arango   !
+!  Copyright (c) 2002-2014 The ROMS/TOMS Group      Hernan G. Arango   !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -120,9 +120,7 @@
       USE mod_sediment
 !
       USE bc_3d_mod, ONLY : bc_r3d_tile
-# if defined EW_PERIODIC || defined NS_PERIODIC
       USE exchange_2d_mod, ONLY : exchange_r2d_tile
-# endif
 # ifdef DISTRIBUTE
       USE mp_exchange_mod, ONLY : mp_exchange3d, mp_exchange4d
 # endif
@@ -192,18 +190,6 @@
 !
 !  Local variable declarations.
 !
-# ifdef DISTRIBUTE
-#  ifdef EW_PERIODIC
-      logical :: EWperiodic=.TRUE.
-#  else
-      logical :: EWperiodic=.FALSE.
-#  endif
-#  ifdef NS_PERIODIC
-      logical :: NSperiodic=.TRUE.
-#  else
-      logical :: NSperiodic=.FALSE.
-#  endif
-# endif
       integer :: Ksed, i, ised, j, k, ks
       integer :: bnew
 
@@ -239,18 +225,8 @@
         END DO
       END DO
 #  else
-#   ifdef EW_PERIODIC
-#    define I_RANGE Istr-1,Iend+1
-#   else
-#    define I_RANGE MAX(Istr-1,1),MIN(Iend+1,Lm(ng))
-#   endif
-#   ifdef NS_PERIODIC
-#    define J_RANGE Jstr-1,Jend+1
-#   else
-#    define J_RANGE MAX(Jstr-1,1),MIN(Jend+1,Mm(ng))
-#   endif
-      DO i=I_RANGE
-        DO j=J_RANGE
+        DO j=Jstrm1,Jendp1
+          DO i=Istrm1,Iendp1
           tau_w(i,j)=0.5_r8*SQRT((bustr(i,j)+bustr(i+1,j))*             &
      &                           (bustr(i,j)+bustr(i+1,j))+             &
      &                           (bvstr(i,j)+bvstr(i,j+1))*             &
@@ -260,8 +236,6 @@
 #   endif
         END DO
       END DO
-#   undef I_RANGE
-#   undef J_RANGE
 #  endif
 # endif
 !
@@ -514,11 +488,11 @@
             END DO
           END DO
         END DO
-#  if defined EW_PERIODIC || defined NS_PERIODIC
-        CALL exchange_r2d_tile (ng, tile,                               &
-     &                          LBi, UBi, LBj, UBj,                     &
-     &                          bed_thick(:,:,nnew))
-#  endif
+        IF (EWperiodic(ng).or.NSperiodic(ng)) THEN
+          CALL exchange_r2d_tile (ng, tile,                             &
+     &                            LBi, UBi, LBj, UBj,                   &
+     &                            bed_thick(:,:,nnew))
+        END IF
 # endif
 !
 !-----------------------------------------------------------------------
@@ -536,7 +510,8 @@
 # ifdef DISTRIBUTE
       CALL mp_exchange4d (ng, tile, iNLM, 2,                            &
      &                    LBi, UBi, LBj, UBj, 1, Nbed, 1, NST,          &
-     &                    NghostPoints, EWperiodic, NSperiodic,         &
+     &                    NghostPoints,                                 &
+     &                    EWperiodic(ng), NSperiodic(ng),               &
      &                    bed_frac,                                     &
      &                    bed_mass(:,:,:,nnew,:))
 # endif
@@ -549,7 +524,8 @@
 # ifdef DISTRIBUTE
       CALL mp_exchange4d (ng, tile, iNLM, 1,                            &
      &                    LBi, UBi, LBj, UBj, 1, Nbed, 1, MBEDP,        &
-     &                    NghostPoints, EWperiodic, NSperiodic,         &
+     &                    NghostPoints,                                 &
+     &                    EWperiodic(ng), NSperiodic(ng),               &
      &                    bed)
 # endif
 

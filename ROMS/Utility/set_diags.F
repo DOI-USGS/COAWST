@@ -4,7 +4,7 @@
 !
 !svn $Id: set_diags.F 1598 2008-07-25 03:29:09Z jcwarner $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2010 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2014 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -56,6 +56,9 @@
 !***********************************************************************
 !
       USE mod_param
+# if defined DIAGNOSTICS_BIO && defined BIO_FENNEL
+      USE mod_biology
+# endif
       USE mod_diags
       USE mod_grid
       USE mod_ocean
@@ -65,19 +68,19 @@
 # ifdef SOLVE3D
       USE bc_3d_mod
 # endif
-# if defined EW_PERIODIC || defined NS_PERIODIC
-      USE exchange_2d_mod, ONLY : exchange_p2d_tile
-#  ifdef SOLVE3D
-      USE exchange_3d_mod, ONLY : exchange_p3d_tile
-#  endif
+# ifdef WET_DRY
+      USE exchange_2d_mod
 # endif
 # ifdef DISTRIBUTE
-      USE mp_exchange_mod, ONLY : mp_exchange2d, mp_exchange3d
+#  if defined WET_DRY         || \
+     (defined DIAGNOSTICS_BIO && defined BIO_FENNEL)
+      USE mp_exchange_mod, ONLY : mp_exchange2d
+#  endif
+      USE mp_exchange_mod, ONLY : mp_exchange3d
 #  ifdef SOLVE3D
       USE mp_exchange_mod, ONLY : mp_exchange4d
 #  endif
 # endif
-      USE vorticity_mod, ONLY : vorticity_tile
 !
       implicit none
 !
@@ -90,28 +93,14 @@
 !
 !  Local variable declarations.
 !
-# ifdef DISTRIBUTE
-#  ifdef EW_PERIODIC
-      logical :: EWperiodic=.TRUE.
-#  else
-      logical :: EWperiodic=.FALSE.
-#  endif
-#  ifdef NS_PERIODIC
-      logical :: NSperiodic=.TRUE.
-#  else
-      logical :: NSperiodic=.FALSE.
-#  endif
-# endif
       integer :: i, it, j, k
       integer :: idiag
 
       real(r8) :: fac
-# ifdef SOLVE3D
-      real(r8) :: potvor(LBi:UBi,LBj:UBj,N(ng))
-      real(r8) :: relvor(LBi:UBi,LBj:UBj,N(ng))
-# endif
-      real(r8) :: potvor_bar(LBi:UBi,LBj:UBj)
-      real(r8) :: relvor_bar(LBi:UBi,LBj:UBj)
+
+      real(r8) :: rfac(IminS:ImaxS,JminS:JmaxS)
+      real(r8) :: ufac(IminS:ImaxS,JminS:JmaxS)
+      real(r8) :: vfac(IminS:ImaxS,JminS:JmaxS)
 
 # include "set_bounds.h"
 !
@@ -120,43 +109,6 @@
 !-----------------------------------------------------------------------
 !
       IF (nDIA(ng).eq.0) RETURN
-!
-!-----------------------------------------------------------------------
-!  Compute vorticity diagnostics.
-!-----------------------------------------------------------------------
-!
-        CALL vorticity_tile (ng, tile,                                  &
-     &                       LBi, UBi, LBj, UBj,                        &
-     &                       IminS, ImaxS, JminS, JmaxS,                &
-# ifdef SOLVE3D
-     &                       kout, nrhs,                                &
-# else
-     &                       kout,                                      &
-# endif
-# ifdef MASKING
-     &                       GRID(ng) % pmask,                          &
-     &                       GRID(ng) % umask,                          &
-     &                       GRID(ng) % vmask,                          &
-# endif
-     &                       GRID(ng) % fomn,                           &
-     &                       GRID(ng) % h,                              &
-     &                       GRID(ng) % om_u,                           &
-     &                       GRID(ng) % on_v,                           &
-     &                       GRID(ng) % pm,                             &
-     &                       GRID(ng) % pn,                             &
-# ifdef SOLVE3D
-     &                       GRID(ng) % z_r,                            &
-     &                       OCEAN(ng) % pden,                          &
-     &                       OCEAN(ng) % u,                             &
-     &                       OCEAN(ng) % v,                             &
-# endif
-     &                       OCEAN(ng) % ubar,                          &
-     &                       OCEAN(ng) % vbar,                          &
-     &                       OCEAN(ng) % zeta,                          &
-# ifdef SOLVE3D
-     &                       potvor, relvor,                            &
-# endif
-                             potvor_bar, relvor_bar)
 
 # if defined DIAGNOSTICS_TS || defined DIAGNOSTICS_UV
 !
@@ -168,23 +120,47 @@
 !
       IF (((iic(ng).gt.ntsDIA(ng)).and.                                 &
      &     (MOD(iic(ng)-1,nDIA(ng)).eq.1)).or.                          &
+     &    ((iic(ng).ge.ntsDIA(ng)).and.(nDIA(ng).eq.1)).or.             &
      &    ((nrrec(ng).gt.0).and.(iic(ng).eq.ntstart(ng)))) THEN
+
+#  ifdef WET_DRY
+!
+!  If wetting and drying, initialize time dependent counters for wet
+!  points. The time averaged field at each point is only accumulated
+!  over wet points since its multiplied by the appropriate mask.
+!
         DO j=Jstr,JendR
           DO i=Istr,IendR
-            DIAGS(ng)%pvor_bar(i,j)=potvor_bar(i,j)
-            DIAGS(ng)%rvor_bar(i,j)=relvor_bar(i,j)
+            GRID(ng)%pmask_dia(i,j)=MAX(0.0_r8,                         &
+     &                                  MIN(GRID(ng)%pmask_io(i,j),     &
+     &                                      1.0_r8))
           END DO
         END DO
-#  ifdef SOLVE3D
-        DO k=1,N(ng)
-          DO j=Jstr,JendR
-            DO i=Istr,IendR
-              DIAGS(ng)%pvor(i,j,k)=potvor(i,j,k)
-              DIAGS(ng)%rvor(i,j,k)=relvor(i,j,k)
-            END DO
+        DO j=JstrR,JendR
+          DO i=IstrR,IendR
+            GRID(ng)%rmask_dia(i,j)=MAX(0.0_r8,                         &
+     &                                  MIN(GRID(ng)%rmask_io(i,j),     &
+     &                                      1.0_r8))
+          END DO
+        END DO
+        DO j=JstrR,JendR
+          DO i=Istr,IendR
+            GRID(ng)%umask_dia(i,j)=MAX(0.0_r8,                         &
+     &                                  MIN(GRID(ng)%umask_io(i,j),     &
+     &                                      1.0_r8))
+          END DO
+        END DO
+        DO j=Jstr,JendR
+          DO i=IstrR,IendR
+            GRID(ng)%vmask_dia(i,j)=MAX(0.0_r8,                         &
+     &                                  MIN(GRID(ng)%vmask_io(i,j),     &
+     &                                      1.0_r8))
           END DO
         END DO
 #  endif
+!
+!  Initialize.
+!
 #  ifdef DIAGNOSTICS_TS
         DO idiag=1,NDT
           DO it=1,NT(ng)
@@ -192,6 +168,9 @@
               DO j=JstrR,JendR
                 DO i=IstrR,IendR
                   DIAGS(ng)%DiaTrc(i,j,k,it,idiag)=                     &
+#   ifdef WET_DRY
+     &                      GRID(ng)%rmask_io(i,j)*                     &
+#   endif
      &                      DIAGS(ng)%DiaTwrk(i,j,k,it,idiag)
                 END DO
               END DO
@@ -200,26 +179,50 @@
         END DO
 #  endif
 #  ifdef DIAGNOSTICS_UV
-        DO j=JstrR,JendR
-          DO idiag=1,NDM2d
-            DO i=IstrR,IendR
-              DIAGS(ng)%DiaU2d(i,j,idiag)=DIAGS(ng)%DiaU2wrk(i,j,idiag)
-              DIAGS(ng)%DiaV2d(i,j,idiag)=DIAGS(ng)%DiaV2wrk(i,j,idiag)
+        DO idiag=1,NDM2d
+          DO j=JstrR,JendR
+            DO i=Istr,IendR
+              DIAGS(ng)%DiaU2d(i,j,idiag)=                              &
+#   ifdef WET_DRY
+     &                                    GRID(ng)%umask_io(i,j)*       &
+#   endif
+     &                                    DIAGS(ng)%DiaU2wrk(i,j,idiag)
             END DO
           END DO
+          DO j=Jstr,JendR
+            DO i=IstrR,IendR
+              DIAGS(ng)%DiaV2d(i,j,idiag)=                              &
+#   ifdef WET_DRY
+     &                                    GRID(ng)%vmask_io(i,j)*       &
+#   endif
+     &                                    DIAGS(ng)%DiaV2wrk(i,j,idiag)
+            END DO
+          END DO
+        END DO
 #   ifdef SOLVE3D
-          DO idiag=1,NDM3d
-            DO k=1,N(ng)
-              DO i=IstrR,IendR
+        DO idiag=1,NDM3d
+          DO k=1,N(ng)
+            DO j=JstrR,JendR
+              DO i=Istr,IendR
                 DIAGS(ng)%DiaU3d(i,j,k,idiag)=                          &
+#    ifdef WET_DRY
+     &                    GRID(ng)%umask_io(i,j)*                       &
+#    endif
      &                    DIAGS(ng)%DiaU3wrk(i,j,k,idiag)
+              END DO
+            END DO
+            DO j=Jstr,JendR
+              DO i=IstrR,IendR
                 DIAGS(ng)%DiaV3d(i,j,k,idiag)=                          &
+#    ifdef WET_DRY
+     &                    GRID(ng)%vmask_io(i,j)*                       &
+#    endif
      &                    DIAGS(ng)%DiaV3wrk(i,j,k,idiag)
               END DO
             END DO
           END DO
-#   endif
         END DO
+#   endif
 #  endif
 !
 !-----------------------------------------------------------------------
@@ -227,26 +230,49 @@
 !-----------------------------------------------------------------------
 !
       ELSE IF (iic(ng).gt.ntsDIA(ng)) THEN
+
+#  ifdef WET_DRY
+!
+!  If wetting and drying, accumulate wet points counters.
+!  points. The time averaged field at each point is only accumulated
+!  over wet points since its multiplied by the appropriate mask.
+!
         DO j=Jstr,JendR
           DO i=Istr,IendR
-            DIAGS(ng)%pvor_bar(i,j)=DIAGS(ng)%pvor_bar(i,j)+            &
-     &                              potvor_bar(i,j)
-            DIAGS(ng)%rvor_bar(i,j)=DIAGS(ng)%rvor_bar(i,j)+            &
-     &                              relvor_bar(i,j)
+            GRID(ng)%pmask_dia(i,j)=GRID(ng)%pmask_dia(i,j)+            &
+     &                              MAX(0.0_r8,                         &
+     &                                  MIN(GRID(ng)%pmask_io(i,j),     &
+     &                                      1.0_r8))
           END DO
         END DO
-#  ifdef SOLVE3D
-        DO k=1,N(ng)
-          DO j=Jstr,JendR
-            DO i=Istr,IendR
-              DIAGS(ng)%pvor(i,j,k)=DIAGS(ng)%pvor(i,j,k)+              &
-     &                              potvor(i,j,k)
-              DIAGS(ng)%rvor(i,j,k)=DIAGS(ng)%rvor(i,j,k)+              &
-     &                              relvor(i,j,k)
-            END DO
+        DO j=JstrR,JendR
+          DO i=IstrR,IendR
+            GRID(ng)%rmask_dia(i,j)=GRID(ng)%rmask_dia(i,j)+            &
+     &                              MAX(0.0_r8,                         &
+     &                                  MIN(GRID(ng)%rmask_io(i,j),     &
+     &                                      1.0_r8))
+          END DO
+        END DO
+        DO j=JstrR,JendR
+          DO i=Istr,IendR
+            GRID(ng)%umask_dia(i,j)=GRID(ng)%umask_dia(i,j)+            &
+     &                              MAX(0.0_r8,                         &
+     &                                  MIN(GRID(ng)%umask_io(i,j),     &
+     &                                      1.0_r8))
+          END DO
+        END DO
+        DO j=Jstr,JendR
+          DO i=IstrR,IendR
+            GRID(ng)%vmask_dia(i,j)=GRID(ng)%vmask_dia(i,j)+            &
+     &                              MAX(0.0_r8,                         &
+     &                                  MIN(GRID(ng)%vmask_io(i,j),     &
+     &                                      1.0_r8))
           END DO
         END DO
 #  endif
+!
+!  Accumulate diagnostic terms.
+!
 #  ifdef DIAGNOSTICS_TS
         DO idiag=1,NDT
           DO it=1,NT(ng)
@@ -255,6 +281,9 @@
                 DO i=IstrR,IendR
                   DIAGS(ng)%DiaTrc(i,j,k,it,idiag)=                     &
      &                      DIAGS(ng)%DiaTrc(i,j,k,it,idiag)+           &
+#   ifdef WET_DRY
+     &                      GRID(ng)%rmask_io(i,j)*                     &
+#   endif
      &                      DIAGS(ng)%DiaTwrk(i,j,k,it,idiag)
                 END DO
               END DO
@@ -263,138 +292,258 @@
         END DO
 #  endif
 #  ifdef DIAGNOSTICS_UV
-        DO j=JstrR,JendR
-          DO idiag=1,NDM2d
-            DO i=IstrR,IendR
+        DO idiag=1,NDM2d
+          DO j=JstrR,JendR
+            DO i=Istr,IendR
               DIAGS(ng)%DiaU2d(i,j,idiag)=DIAGS(ng)%DiaU2d(i,j,idiag)+  &
+#   ifdef WET_DRY
+     &                                    GRID(ng)%umask_io(i,j)*       &
+#   endif
      &                                    DIAGS(ng)%DiaU2wrk(i,j,idiag)
+            END DO
+          END DO
+          DO j=Jstr,JendR
+            DO i=IstrR,IendR
               DIAGS(ng)%DiaV2d(i,j,idiag)=DIAGS(ng)%DiaV2d(i,j,idiag)+  &
+#   ifdef WET_DRY
+     &                                    GRID(ng)%vmask_io(i,j)*       &
+#   endif
      &                                    DIAGS(ng)%DiaV2wrk(i,j,idiag)
             END DO
           END DO
+        END DO
 #   ifdef SOLVE3D
-          DO idiag=1,NDM3d
-            DO k=1,N(ng)
-              DO i=IstrR,IendR
+        DO idiag=1,NDM3d
+          DO k=1,N(ng)
+            DO j=JstrR,JendR
+              DO i=Istr,IendR
                 DIAGS(ng)%DiaU3d(i,j,k,idiag)=                          &
      &                    DIAGS(ng)%DiaU3d(i,j,k,idiag)+                &
+#    ifdef WET_DRY
+     &                    GRID(ng)%umask_io(i,j)*                       &
+#    endif
      &                    DIAGS(ng)%DiaU3wrk(i,j,k,idiag)
+              END DO
+            END DO
+            DO j=Jstr,JendR
+              DO i=IstrR,IendR
                 DIAGS(ng)%DiaV3d(i,j,k,idiag)=                          &
      &                    DIAGS(ng)%DiaV3d(i,j,k,idiag)+                &
+#    ifdef WET_DRY
+     &                    GRID(ng)%vmask_io(i,j)*                       &
+#    endif
      &                    DIAGS(ng)%DiaV3wrk(i,j,k,idiag)
               END DO
             END DO
           END DO
-#   endif
         END DO
+#   endif
 #  endif
       END IF
 # endif
 !
 !-----------------------------------------------------------------------
-!  Set diagnotics time.
+!  Convert accumulated sums into time-averages, if appropriate
 !-----------------------------------------------------------------------
 !
-      IF ((iic(ng).gt.ntsDIA(ng)).and.                                  &
-     &    (MOD(iic(ng)-1,nDIA(ng)).eq.0).and.                           &
-     &    ((iic(ng).ne.ntstart(ng)).or.(nrrec(ng).eq.0))) THEN
-        IF (SOUTH_WEST_TEST) THEN
-          DIAtime(ng)=DIAtime(ng)+REAL(nDIA(ng),r8)*dt(ng)
+      IF (((iic(ng).gt.ntsDIA(ng)).and.                                 &
+     &     (MOD(iic(ng)-1,nDIA(ng)).eq.0).and.                          &
+     &     ((iic(ng).ne.ntstart(ng)).or.(nrrec(ng).eq.0))).or.          &
+     &    ((iic(ng).ge.ntsDIA(ng)).and.(nDIA(ng).eq.1))) THEN
+        IF (DOMAIN(ng)%SouthWest_Test(tile)) THEN
+          IF (nDIA(ng).eq.1) THEN
+            DIAtime(ng)=time(ng)
+          ELSE
+            DIAtime(ng)=DIAtime(ng)+REAL(nDIA(ng),r8)*dt(ng)
+          END IF
         END IF
-
-# if defined DIAGNOSTICS_TS || defined DIAGNOSTICS_UV
 !
-!-----------------------------------------------------------------------
-!  Apply periodic or gradient boundary conditions and land-mask
-!  for output purposes.
-!-----------------------------------------------------------------------
+!  Set time-averaged factors for each C-grid variable type. Notice that
+!  the I- and J-ranges are all grid types are the same for convinience.
+# ifdef WET_DRY
+!  In wetting and drying, the sums are devided by the number of times
+!  that each qrid point is wet.
+# endif
 !
-#  if defined EW_PERIODIC || defined NS_PERIODIC
-        CALL exchange_p2d_tile (ng, tile,                               &
-     &                          LBi, UBi, LBj, UBj,                     &
-     &                          DIAGS(ng)%pvor_bar)
-        CALL exchange_p2d_tile (ng, tile,                               &
-     &                          LBi, UBi, LBj, UBj,                     &
-     &                          DIAGS(ng)%rvor_bar)
-#  endif
-#  ifdef MASKING
-        DO j=Jstr,JendR
-          DO i=Istr,IendR
-            DIAGS(ng)%pvor_bar(i,j)=DIAGS(ng)%pvor_bar(i,j)*            &
-     &                              GRID(ng)%pmask(i,j)
-            DIAGS(ng)%rvor_bar(i,j)=DIAGS(ng)%rvor_bar(i,j)*            &
-     &                              GRID(ng)%pmask(i,j)
+# ifdef WET_DRY
+        DO j=JstrR,JendR
+          DO i=IstrR,IendR
+            rfac(i,j)=1.0_r8/MAX(1.0_r8, GRID(ng)%rmask_dia(i,j))
+            ufac(i,j)=1.0_r8/MAX(1.0_r8, GRID(ng)%umask_dia(i,j))
+            vfac(i,j)=1.0_r8/MAX(1.0_r8, GRID(ng)%vmask_dia(i,j))
           END DO
         END DO
-#  endif
+# else
+        fac=1.0_r8/REAL(nDIA(ng),r8)
+        DO j=JstrR,JendR
+          DO i=IstrR,IendR
+            rfac(i,j)=fac
+            ufac(i,j)=fac
+            vfac(i,j)=fac
+          END DO
+        END DO
+# endif
+
+# ifdef WET_DRY
+!
+!  If last time-step of average window, convert time dependent counters
+!  for wet points to time-averaged Land/Sea masks (dry=0, wet=1) for
+!  the current average window period. Notice that a grid point is wet
+!  if the count is greater than zero for the current time average
+!  window.
+!
+        DO j=Jstr,JendR
+          DO i=Istr,IendR
+            GRID(ng)%pmask_dia(i,j)=MIN(1.0_r8, GRID(ng)%pmask_dia(i,j))
+          END DO
+        END DO
+        DO j=JstrR,JendR
+          DO i=IstrR,IendR
+            GRID(ng)%rmask_dia(i,j)=MIN(1.0_r8, GRID(ng)%rmask_dia(i,j))
+          END DO
+        END DO
+        DO j=JstrR,JendR
+          DO i=Istr,IendR
+            GRID(ng)%umask_dia(i,j)=MIN(1.0_r8, GRID(ng)%umask_dia(i,j))
+          END DO
+        END DO
+        DO j=Jstr,JendR
+          DO i=IstrR,IendR
+            GRID(ng)%vmask_dia(i,j)=MIN(1.0_r8, GRID(ng)%vmask_dia(i,j))
+          END DO
+        END DO
+!
+!  Exchange boundary data.
+!
+        IF (EWperiodic(ng).or.NSperiodic(ng)) THEN
+          CALL exchange_p2d_tile (ng, tile,                             &
+     &                            LBi, UBi, LBj, UBj,                   &
+     &                            GRID(ng)%pmask_dia)
+          CALL exchange_r2d_tile (ng, tile,                             &
+     &                            LBi, UBi, LBj, UBj,                   &
+     &                            GRID(ng)%rmask_dia)
+          CALL exchange_u2d_tile (ng, tile,                             &
+     &                            LBi, UBi, LBj, UBj,                   &
+     &                            GRID(ng)%umask_dia)
+          CALL exchange_v2d_tile (ng, tile,                             &
+     &                            LBi, UBi, LBj, UBj,                   &
+     &                            GRID(ng)%vmask_dia)
+        END IF
+
 #  ifdef DISTRIBUTE
-        CALL mp_exchange2d (ng, tile, iNLM, 2,                          &
+        CALL mp_exchange2d (ng, tile, iNLM, 4,                          &
      &                      LBi, UBi, LBj, UBj,                         &
-     &                      NghostPoints, EWperiodic, NSperiodic,       &
-     &                      DIAGS(ng)%pvor_bar,                         &
-     &                      DIAGS(ng)%rvor_bar)
+     &                      NghostPoints,                               &
+     &                      EWperiodic(ng), NSperiodic(ng),             &
+     &                      GRID(ng)%pmask_dia,                         &
+     &                      GRID(ng)%rmask_dia,                         &
+     &                      GRID(ng)%umask_dia,                         &
+     &                      GRID(ng)%vmask_dia)
 #  endif
-#  ifdef SOLVE3D
-#   if defined EW_PERIODIC || defined NS_PERIODIC
-        CALL exchange_p3d_tile (ng, tile,                               &
-     &                          LBi, UBi, LBj, UBj, 1, N(ng),           &
-     &                          DIAGS(ng)%pvor)
-        CALL exchange_p3d_tile (ng, tile,                               &
-     &                          LBi, UBi, LBj, UBj, 1, N(ng),           &
-     &                          DIAGS(ng)%rvor)
-#   endif
-#   ifdef MASKING
-        DO k=1,N(ng)
-          DO j=Jstr,JendR
-            DO i=Istr,IendR
-              DIAGS(ng)%pvor(i,j,k)=DIAGS(ng)%pvor(i,j,k)*              &
-     &                              GRID(ng)%pmask(i,j)
-              DIAGS(ng)%rvor(i,j,k)=DIAGS(ng)%rvor(i,j,k)*              &
-     &                              GRID(ng)%pmask(i,j)
+# endif
+!
+!  Convert accumulated sums to time averages.
+!
+# ifdef DIAGNOSTICS_TS
+        DO idiag=1,NDT
+          DO it=1,NT(ng)
+            DO k=1,N(ng)
+              DO j=JstrR,JendR
+                DO i=IstrR,IendR
+                  DIAGS(ng)%DiaTrc(i,j,k,it,idiag)=rfac(i,j)*           &
+     &                      DIAGS(ng)%DiaTrc(i,j,k,it,idiag)
+                END DO
+              END DO
             END DO
           END DO
         END DO
-#   endif
-#   ifdef DISTRIBUTE
-        CALL mp_exchange3d (ng, tile, iNLM, 2,                          &
-     &                      LBi, UBi, LBj, UBj, 1, N(ng),               &
-     &                      NghostPoints, EWperiodic, NSperiodic,       &
-     &                      DIAGS(ng)%pvor,                             &
-     &                      DIAGS(ng)%rvor)
-#   endif
+# endif
+# if defined DIAGNOSTICS_BIO && defined BIO_FENNEL
+        DO idiag=1,NDbio2d
+          IF (idiag.ne.ipCO2) THEN
+            DO j=JstrR,JendR
+              DO i=IstrR,IendR
+                DIAGS(ng)%DiaBio2d(i,j,idiag)=rfac(i,j)*                &
+     &                    DIAGS(ng)%DiaBio2d(i,j,idiag)
+              END DO
+            END DO
+          END IF
+        END DO
+        DO idiag=1,NDbio3d
+          DO k=1,N(ng)
+            DO j=JstrR,JendR
+              DO i=IstrR,IendR
+                DIAGS(ng)%DiaBio3d(i,j,k,idiag)=rfac(i,j)*              &
+     &                    DIAGS(ng)%DiaBio3d(i,j,k,idiag)
+              END DO
+            END DO
+          END DO
+        END DO
+# endif
+# ifdef DIAGNOSTICS_UV
+        DO idiag=1,NDM2d
+          DO j=JstrR,JendR
+            DO i=Istr,IendR
+              DIAGS(ng)%DiaU2d(i,j,idiag)=ufac(i,j)*                    &
+     &                                    DIAGS(ng)%DiaU2d(i,j,idiag)
+            END DO
+          END DO
+          DO j=Jstr,JendR
+            DO i=IstrR,IendR
+              DIAGS(ng)%DiaV2d(i,j,idiag)=vfac(i,j)*                    &
+     &                                    DIAGS(ng)%DiaV2d(i,j,idiag)
+            END DO
+          END DO
+        END DO
+#  ifdef SOLVE3D
+        DO idiag=1,NDM3d
+          DO k=1,N(ng)
+            DO j=JstrR,JendR
+              DO i=Istr,IendR
+                DIAGS(ng)%DiaU3d(i,j,k,idiag)=ufac(i,j)*                &
+     &                    DIAGS(ng)%DiaU3d(i,j,k,idiag)
+              END DO
+            END DO
+            DO j=Jstr,JendR
+              DO i=IstrR,IendR
+                DIAGS(ng)%DiaV3d(i,j,k,idiag)=vfac(i,j)*                &
+     &                    DIAGS(ng)%DiaV3d(i,j,k,idiag)
+              END DO
+            END DO
+          END DO
+        END DO
 #  endif
+# endif
+
+# if defined DIAGNOSTICS_TS  || defined DIAGNOSTICS_UV || \
+    (defined DIAGNOSTICS_BIO && defined BIO_FENNEL)
+!
+!-----------------------------------------------------------------------
+!  Apply periodic or gradient boundary conditions for output purposes.
+!-----------------------------------------------------------------------
+!
 #  ifdef DIAGNOSTICS_TS
 !
-!  3D diagnostics.
+!  3D tracer diagnostics.
 !
         DO idiag=1,NDT
           DO it=1,NT(ng)
             CALL bc_r3d_tile (ng, tile,                                 &
      &                        LBi, UBi, LBj, UBj, 1, N(ng),             &
      &                        DIAGS(ng)%DiaTrc(:,:,:,it,idiag))
-#   ifdef MASKING
-            DO k=1,N(ng)
-              DO j=JstrR,JendR
-                DO i=IstrR,IendR
-                  DIAGS(ng)%DiaTrc(i,j,k,it,idiag)=                     &
-     &                      DIAGS(ng)%DiaTrc(i,j,k,it,idiag)*           &
-     &                      GRID(ng)%rmask(i,j)
-                END DO
-              END DO
-            END DO
-#   endif
           END DO
 #   ifdef DISTRIBUTE
           CALL mp_exchange4d (ng, tile, iNLM, 1,                        &
      &                        LBi, UBi, LBj, UBj, 1, N(ng), 1, NT(ng),  &
-     &                        NghostPoints, EWperiodic, NSperiodic,     &
+     &                        NghostPoints,                             &
+     &                        EWperiodic(ng), NSperiodic(ng),           &
      &                        DIAGS(ng)%DiaTrc(:,:,:,:,idiag))
 #   endif
         END DO
 #  endif
 #  ifdef DIAGNOSTICS_UV
 !
-!  2D diagnostics.
+!  2D momentum diagnostics.
 !
         DO idiag=1,NDM2d
           CALL bc_u2d_tile (ng, tile,                                   &
@@ -407,11 +556,15 @@
 #   ifdef DISTRIBUTE
         CALL mp_exchange3d (ng, tile, iNLM, 2,                          &
      &                      LBi, UBi, LBj, UBj, 1, NDM2d,               &
-     &                      NghostPoints, EWperiodic, NSperiodic,       &
+     &                      NghostPoints,                               &
+     &                      EWperiodic(ng), NSperiodic(ng),             &
      &                      DIAGS(ng)%DiaU2d,                           &
      &                      DIAGS(ng)%DiaV2d)
 #   endif
 #   ifdef SOLVE3D
+!
+!  3D momentum diagnostics.
+!
         DO idiag=1,NDM3d
           CALL bc_u3d_tile (ng, tile,                                   &
      &                      LBi, UBi, LBj, UBj, 1, N(ng),               &
@@ -423,36 +576,43 @@
 #    ifdef DISTRIBUTE
         CALL mp_exchange4d (ng, tile, iNLM, 2,                          &
      &                      LBi, UBi, LBj, UBj, 1, N(ng), 1, NDM3d,     &
-     &                      NghostPoints, EWperiodic, NSperiodic,       &
+     &                      NghostPoints,                               &
+     &                      EWperiodic(ng), NSperiodic(ng),             &
      &                      DIAGS(ng)%DiaU3d,                           &
      &                      DIAGS(ng)%DiaV3d)
 #    endif
 #   endif
-#   ifdef MASKING
-        DO j=JstrR,JendR
-          DO idiag=1,NDM2d
-            DO i=IstrR,IendR
-              DIAGS(ng)%DiaU2d(i,j,idiag)=DIAGS(ng)%DiaU2d(i,j,idiag)*  &
-     &                                    GRID(ng)%umask(i,j)
-              DIAGS(ng)%DiaV2d(i,j,idiag)=DIAGS(ng)%DiaV2d(i,j,idiag)*  &
-     &                                    GRID(ng)%vmask(i,j)
-            END DO
-          END DO
-#    ifdef SOLVE3D
-          DO idiag=1,NDM3d
-            DO k=1,N(ng)
-              DO i=IstrR,IendR
-                DIAGS(ng)%DiaU3d(i,j,k,idiag)=                          &
-     &                                 DIAGS(ng)%DiaU3d(i,j,k,idiag)*   &
-     &                                 GRID(ng)%umask(i,j)
-                DIAGS(ng)%DiaV3d(i,j,k,idiag)=                          &
-     &                                 DIAGS(ng)%DiaV3d(i,j,k,idiag)*   &
-     &                                 GRID(ng)%vmask(i,j)
-              END DO
-            END DO
-          END DO
-#    endif
+#  endif
+#  if defined DIAGNOSTICS_BIO && defined BIO_FENNEL
+!
+!  Biological terms 2D diagnostics.
+!
+        DO idiag=1,NDbio2d
+          CALL bc_r2d_tile (ng, tile,                                   &
+     &                      LBi, UBi, LBj, UBj,                         &
+     &                      DIAGS(ng)%DiaBio2d(:,:,idiag))
         END DO
+#   ifdef DISTRIBUTE
+        CALL mp_exchange3d (ng, tile, iNLM, 1,                          &
+     &                      LBi, UBi, LBj, UBj, 1, NDbio2d,             &
+     &                      NghostPoints,                               &
+     &                      EWperiodic(ng), NSperiodic(ng),             &
+     &                      DIAGS(ng)%DiaBio2d)
+#   endif
+!
+!  Biological terms 3D diagnostics.
+!
+        DO idiag=1,NDbio3d
+          CALL bc_r3d_tile (ng, tile,                                   &
+     &                      LBi, UBi, LBj, UBj, 1, N(ng),               &
+     &                      DIAGS(ng)%DiaBio3d(:,:,:,idiag))
+        END DO
+#   ifdef DISTRIBUTE
+        CALL mp_exchange4d (ng, tile, iNLM, 1,                          &
+     &                      LBi, UBi, LBj, UBj, 1, N(ng), 1, NDbio3d,   &
+     &                      NghostPoints,                               &
+     &                      EWperiodic(ng), NSperiodic(ng),             &
+     &                      DIAGS(ng)%DiaBio3d)
 #   endif
 #  endif
 # endif

@@ -1,19 +1,19 @@
 #include "cppdefs.h"
       SUBROUTINE regrid (ng, model, ncname, ncid,                       &
      &                   ncvname, ncvarid, gtype, iflag,                &
-     &                   Nx, Ny, Ainp, Amin, Amax,                      &
+     &                   Nx, Ny, Finp, Amin, Amax,                      &
      &                   LBi, UBi, LBj, UBj,                            &
      &                   Imin, Imax, Jmin, Jmax,                        &
-     &                   Xout, Yout, Aout)
+     &                   Xout, Yout, Fout)
 !
 !svn $Id: regrid.F 771 2008-09-30 02:30:00Z jcwarner $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2010 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2014 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
 !                                                                      !
-!  This routine interpolates gridded data, Ainp, to model locations    !
+!  This routine interpolates gridded data, Finp, to model locations    !
 !  Xout and Yout.                                                      !
 !                                                                      !
 !  On Input:                                                           !
@@ -26,25 +26,25 @@
 !     ncvarid    NetCDF variable ID (integer)                          !
 !     gtype      C-grid type (integer)                                 !
 !     iflag      Interpolation flag (integer, 0: linear, 1: cubic)     !
-!     Nx         X-dimension size for gridded data, Ainp (integer)     !
-!     Ny         Y-dimension size for gridded data, Ainp (integer)     !
-!     Ainp       Gridded data to interpolate from (real)               !
+!     Nx         X-dimension size for gridded data, Finp (integer)     !
+!     Ny         Y-dimension size for gridded data, Finp (integer)     !
+!     Finp       Gridded data to interpolate from (real)               !
 !     Amin       Gridded data minimum value (integer)                  !
 !     Amax       Gridded data maximum value (integer)                  !
-!     LBi        Aout I-dimension Lower bound (integer)                !
-!     UBi        Aout I-dimension Upper bound (integer)                !
-!     LBj        Aout J-dimension Lower bound (integer)                !
-!     UBj        Aout J-dimension Upper bound (integer)                !
-!     Imin       Aout starting data I-index (integer)                  !
-!     Imax       Aout ending   data I-index (integer)                  !
-!     Jmin       Aout starting data J-index (integer)                  !
-!     Jmax       Aout ending   data J-index (integer)                  !
+!     LBi        Fout I-dimension Lower bound (integer)                !
+!     UBi        Fout I-dimension Upper bound (integer)                !
+!     LBj        Fout J-dimension Lower bound (integer)                !
+!     UBj        Fout J-dimension Upper bound (integer)                !
+!     Imin       Fout starting data I-index (integer)                  !
+!     Imax       Fout ending   data I-index (integer)                  !
+!     Jmin       Fout starting data J-index (integer)                  !
+!     Jmax       Fout ending   data J-index (integer)                  !
 !     Xout       X-locations (longitude) to interpolate (real)         !
 !     Yout       Y-locations (latitude)  to interpolate (real)         !
 !                                                                      !
 !  On Output:                                                          !
 !                                                                      !
-!     Aout       Interpolated field (real)                             !
+!     Fout       Interpolated field (real)                             !
 !                                                                      !
 !=======================================================================
 !
@@ -70,12 +70,12 @@
 !
       real(r8), intent(inout) :: Amin, Amax
 !
-      real(r8), intent(inout) :: Ainp(Nx,Ny)
+      real(r8), intent(inout) :: Finp(Nx,Ny)
 
       real(r8), intent(in) :: Xout(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: Yout(LBi:UBi,LBj:UBj)
 
-      real(r8), intent(out) :: Aout(LBi:UBi,LBj:UBj)
+      real(r8), intent(out) :: Fout(LBi:UBi,LBj:UBj)
 
       character (len=*), intent(in) :: ncname
       character (len=*), intent(in) :: ncvname
@@ -85,7 +85,6 @@
       logical :: rectangular
       integer :: i, j
       integer :: Istr, Iend, Jstr, Jend
-      integer :: Xmn, Xmx, Ymn, Ymx
 #ifdef DISTRIBUTE
       integer :: Cgrid, ghost
 #endif
@@ -186,8 +185,8 @@
       Jend=Jmax
 #endif
 !
-!  Find fractional indices (Iout,Jout) of the grid cells in Ainp
-!  containing positions to intepolate. Reuse Imin, Imax, Jmin, Jmax.
+!  Find fractional indices (Iout,Jout) of the grid cells in Finp
+!  containing positions to intepolate.
 !
       CALL hindices (ng, 1, Nx, 1, Ny, 1, Nx, 1, Ny,                    &
      &               angle, Xinp, Yinp,                                 &
@@ -195,22 +194,22 @@
      &               Istr, Iend, Jstr, Jend,                            &
      &               Xout, Yout,                                        &
      &               Iout, Jout,                                        &
-     &               IJspv, rectangular,                                &
-     &               Xmn, Xmx, Ymn, Ymx)
+     &               IJspv, rectangular)
+
       IF (iflag.eq.linear) THEN
         CALL linterp2d (ng, 1, Nx, 1, Ny,                               &
-     &                  Xinp, Yinp, Ainp,                               &
+     &                  Xinp, Yinp, Finp,                               &
      &                  LBi, UBi, LBj, UBj,                             &
      &                  Istr, Iend, Jstr, Jend,                         &
      &                  Iout, Jout, Xout, Yout,                         &
-     &                  Aout, my_min, my_max)
+     &                  Fout, my_min, my_max)
       ELSE IF (iflag.eq.cubic) THEN
         CALL cinterp2d (ng, 1, Nx, 1, Ny,                               &
-     &                  Xinp, Yinp, Ainp,                               &
+     &                  Xinp, Yinp, Finp,                               &
      &                  LBi, UBi, LBj, UBj,                             &
      &                  Istr, Iend, Jstr, Jend,                         &
      &                  Iout, Jout, Xout, Yout,                         &
-     &                  Aout, my_min, my_max)
+     &                  Fout, my_min, my_max)
       END IF
 !
 !  Compute global interpolated field minimum and maximum values.

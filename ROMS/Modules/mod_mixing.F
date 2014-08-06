@@ -3,7 +3,7 @@
 !
 !svn $Id: mod_mixing.F 737 2008-09-07 02:06:44Z jcwarner $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2010 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2014 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -20,24 +20,30 @@
 !  Hviscosity   Time invariant, horizontal viscosity (harmonic or      !
 !                 (biharmonic) term at RHO-points.                     !
 #endif
+#ifdef SOLVE3D
 !  dAktdz       Vertical gradient in mixing coefficient (m/s) for      !
 !                 tracer 1, used in float random walk calculations     !
 !  diff2        Horizontal, time invariant harmonic coefficient        !
 !                 (m2/s) for tracers.                                  !
 !  diff4        Horizontal, time invariant biharmonic coefficient      !
-#ifdef DIFF_3DCOEF
+# ifdef DIFF_3DCOEF
 !                 (m4/s) for tracers.                                  !
-#else
+# else
 !                 SQRT(m4/s) for tracers.                              !
-#endif
-#ifdef DIFF_3DCOEF
+# endif
+# ifdef DIFF_3DCOEF
 !  diff3d_r     Horizontal, time-dependent 3D diffusion coefficient at !
 !                 RHO-points.                                          !
-# ifdef TS_U3ADV_SPLIT
+#  ifdef TS_U3ADV_SPLIT
 !  diff3d_u     Horizontal, time-dependent 3D diffusion coefficient at !
 !                 U-points.                                            !
 !  diff3d_v     Horizontal, time-dependent 3D diffusiob coefficient at !
 !                 V-points.                                            !
+#  endif
+# endif
+# ifndef ANA_SPONGE
+!  diff_factor  Horizontal diffusivity factor (nondimensional) for     !
+!                 increasing mixing sponge areas at RHO-points.        !
 # endif
 #endif
 !  visc2_r      Horizontal, time invariant harmonic viscosity          !
@@ -65,6 +71,10 @@
 !  Vvis3d_r     Horizontal, time-dependent 3D V-viscosity coefficient  !
 !                 at RHO-points.                                       !
 # endif
+#endif
+#ifndef ANA_SPONGE
+!  visc_factor  Horizontal viscosity factor (nondimensional) for       !
+!                 increasing mixing in sponge areas at RHO-points.     !
 #endif
 !                                                                      !
 #ifdef FOUR_DVAR
@@ -149,14 +159,14 @@
 !  Nonlinear model state.
 !
 #ifdef SOLVE3D
-# if defined LMD_SKPP || defined SOLAR_SOURCE
-          integer,  pointer :: Jwtype(:,:)
-# endif
 # if defined LMD_SKPP || defined LMD_BKPP
           integer,  pointer :: ksbl(:,:)
 #  ifdef LMD_BKPP
           integer,  pointer :: kbbl(:,:)
 #  endif
+# endif
+# if defined LMD_SKPP || defined SOLAR_SOURCE
+          real(r8),  pointer :: Jwtype(:,:)
 # endif
 #endif
 #if defined DIFF_3DCOEF && defined SOLVE3D
@@ -165,7 +175,10 @@
 #if defined VISC_3DCOEF && defined SOLVE3D
           real(r8), pointer :: Hviscosity(:,:)
 #endif
-#if defined UV_VIS2 || !defined SOLVE3D
+#ifndef ANA_SPONGE
+          real(r8), pointer :: visc_factor(:,:)
+#endif
+#if defined UV_VIS2
           real(r8), pointer :: visc2_p(:,:)
           real(r8), pointer :: visc2_r(:,:)
 #endif
@@ -220,6 +233,9 @@
 # endif
 #endif
 #ifdef SOLVE3D
+# ifndef ANA_SPONGE
+          real(r8), pointer :: diff_factor(:,:)
+# endif
 # ifdef TS_DIF2
           real(r8), pointer :: diff2(:,:,:)
 # endif
@@ -246,6 +262,9 @@
 # endif
 # ifdef BV_FREQUENCY
           real(r8), pointer :: bvf(:,:,:)
+# endif
+# ifdef M2TIDE_DIFF
+          real(r8), pointer :: m2_amp(:,:)
 # endif
 # if defined MIX_ISO_TS || defined GENT_McWILLIAMS
           real(r8), pointer :: neutral(:,:,:)
@@ -413,6 +432,7 @@
 !=======================================================================
 !
       USE mod_param
+      USE mod_scalars
 !
 !  Local variable declarations.
 !
@@ -426,7 +446,12 @@
 !
 !  Nonlinear model state.
 !
-#if defined UV_VIS2 || !defined SOLVE3D
+#ifndef ANA_SPONGE
+      IF (LuvSponge(ng)) THEN
+        allocate ( MIXING(ng) % visc_factor(LBi:UBi,LBj:UBj) )
+      END IF
+#endif
+#if defined UV_VIS2
       allocate ( MIXING(ng) % visc2_p(LBi:UBi,LBj:UBj) )
       allocate ( MIXING(ng) % visc2_r(LBi:UBi,LBj:UBj) )
 #endif
@@ -486,6 +511,11 @@
 #endif
 
 #ifdef SOLVE3D
+# ifndef ANA_SPONGE
+      IF (ANY(LtracerSponge(:,ng))) THEN
+        allocate ( MIXING(ng) % diff_factor(LBi:UBi,LBj:UBj) )
+      END IF
+# endif
 # ifdef TS_DIF2
       allocate ( MIXING(ng) % diff2(LBi:UBi,LBj:UBj,NT(ng)) )
 # endif
@@ -519,6 +549,10 @@
 
 # ifdef BV_FREQUENCY
       allocate ( MIXING(ng) % bvf(LBi:UBi,LBj:UBj,0:N(ng)) )
+# endif
+
+# ifdef M2TIDE_DIFF
+      allocate ( MIXING(ng) % m2_amp(LBi:UBi,LBj:UBj) )
 # endif
 
 # if defined MIX_ISO_TS || defined GENT_McWILLIAMS
@@ -726,38 +760,40 @@
 #endif
 
       real(r8), parameter :: IniVal = 0.0_r8
+#  if defined GLS_MIXING || defined MY25_MIXING
       real(r8) :: cff1, cff2, cff3, cff4
+#endif
 
 #include "set_bounds.h"
 !
 !  Set array initialization range.
 !
-#ifdef _OPENMP
-      IF (WESTERN_EDGE) THEN
-        Imin=BOUNDS(ng)%LBi(tile)
-      ELSE
-        Imin=Istr
-      END IF
-      IF (EASTERN_EDGE) THEN
-        Imax=BOUNDS(ng)%UBi(tile)
-      ELSE
-        Imax=Iend
-      END IF
-      IF (SOUTHERN_EDGE) THEN
-        Jmin=BOUNDS(ng)%LBj(tile)
-      ELSE
-        Jmin=Jstr
-      END IF
-      IF (NORTHERN_EDGE) THEN
-        Jmax=BOUNDS(ng)%UBj(tile)
-      ELSE
-        Jmax=Jend
-      END IF
-#else
+#ifdef DISTRIBUTE
       Imin=BOUNDS(ng)%LBi(tile)
       Imax=BOUNDS(ng)%UBi(tile)
       Jmin=BOUNDS(ng)%LBj(tile)
       Jmax=BOUNDS(ng)%UBj(tile)
+#else
+      IF (DOMAIN(ng)%Western_Edge(tile)) THEN
+        Imin=BOUNDS(ng)%LBi(tile)
+      ELSE
+        Imin=Istr
+      END IF
+      IF (DOMAIN(ng)%Eastern_Edge(tile)) THEN
+        Imax=BOUNDS(ng)%UBi(tile)
+      ELSE
+        Imax=Iend
+      END IF
+      IF (DOMAIN(ng)%Southern_Edge(tile)) THEN
+        Jmin=BOUNDS(ng)%LBj(tile)
+      ELSE
+        Jmin=Jstr
+      END IF
+      IF (DOMAIN(ng)%Northern_Edge(tile)) THEN
+        Jmax=BOUNDS(ng)%UBj(tile)
+      ELSE
+        Jmax=Jend
+      END IF
 #endif
 !
 !-----------------------------------------------------------------------
@@ -768,7 +804,14 @@
 !
       IF ((model.eq.0).or.(model.eq.iNLM)) THEN
         DO j=Jmin,Jmax
-#if defined UV_VIS2 || !defined SOLVE3D
+#ifndef ANA_SPONGE
+          IF (LuvSponge(ng)) THEN
+            DO i=Imin,Imax
+              MIXING(ng) % visc_factor(i,j) = IniVal
+            END DO
+          END IF
+#endif
+#if defined UV_VIS2
           DO i=Imin,Imax
             MIXING(ng) % visc2_p(i,j) = IniVal
             MIXING(ng) % visc2_r(i,j) = IniVal
@@ -836,6 +879,13 @@
           END DO
 #endif
 #ifdef SOLVE3D
+# ifndef ANA_SPONGE
+          IF (ANY(LtracerSponge(:,ng))) THEN
+            DO i=Imin,Imax
+              MIXING(ng) % diff_factor(i,j) = IniVal
+            END DO
+          END IF
+# endif
 # ifdef TS_DIF2
           DO itrc=1,NT(ng)
             DO i=Imin,Imax
@@ -904,6 +954,11 @@
             END DO
           END DO
 # endif
+# ifdef M2TIDE_DIFF
+          DO i=Imin,Imax
+            MIXING(ng) % m2_amp(i,j) = IniVal
+          END DO
+# endif
 # if defined MIX_ISO_TS || defined GENT_McWILLIAMS
           DO k=1,N(ng)
             DO i=Imin,Imax
@@ -949,7 +1004,7 @@
 # endif
 # if defined LMD_SKPP || defined SOLAR_SOURCE
           DO i=Imin,Imax
-            MIXING(ng) % Jwtype(i,j) = lmd_Jwt(ng)
+            MIXING(ng) % Jwtype(i,j) = REAL(lmd_Jwt(ng),r8)
           END DO
 # endif
 # if defined LMD_SKPP || defined LMD_BKPP

@@ -1,7 +1,7 @@
 /*
 ** svn $Id: sediment_var.h 439 2010-01-11 19:29:29Z arango $
 *************************************************** Hernan G. Arango ***
-** Copyright (c) 2002-2010 The ROMS/TOMS Group                        **
+** Copyright (c) 2002-2014 The ROMS/TOMS Group                        **
 **   Licensed under a MIT/X style license                             **
 **   See License_ROMS.txt                                             **
 ************************************************************************
@@ -318,15 +318,15 @@
                       Fscale(varid,ng)=scale
                       Iinfo(1,varid,ng)=gtype
                     END DO
-                    WRITE (Vname(1,varid),'(a,i2.2)')                 &
+                    WRITE (Vname(1,varid),'(a,i2.2)')                   &
      &                    TRIM(ADJUSTL(Vinfo(1))), i
-                    WRITE (Vname(2,varid),'(a,a,i2.2)')               &
+                    WRITE (Vname(2,varid),'(a,a,i2.2)')                 &
      &                    TRIM(ADJUSTL(Vinfo(2))), ', size class ', i
-                    WRITE (Vname(3,varid),'(a)')                      &
+                    WRITE (Vname(3,varid),'(a)')                        &
      &                    TRIM(ADJUSTL(Vinfo(3)))
-                    WRITE (Vname(4,varid),'(a,a)')                    &
+                    WRITE (Vname(4,varid),'(a,a)')                      &
      &                    TRIM(Vname(1,varid)), ', scalar, series'
-                    WRITE (Vname(5,varid),'(a)')                      &
+                    WRITE (Vname(5,varid),'(a)')                        &
      &                    TRIM(ADJUSTL(Vinfo(5)))
                   END DO
                   varid=varid+1
@@ -531,8 +531,6 @@
                 END IF
 
 
-#ifdef TS_PSOURCE
-
 /*
 **  Sediment tracers point Source/Sinks (river runoff).
 */
@@ -585,4 +583,3 @@
                   END DO
                   varid=varid+1
                 END IF
-#endif

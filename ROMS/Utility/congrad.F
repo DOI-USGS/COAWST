@@ -4,9 +4,9 @@
       SUBROUTINE congrad (ng, model, outLoop, innLoop, NinnLoop,        &
      &                    Lcgini)
 !
-!svn $Id: congrad.F 429 2009-12-20 17:30:26Z arango $
+!svn $Id$
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2010 The ROMS/TOMS Group       Andrew M. Moore   !
+!  Copyright (c) 2002-2014 The ROMS/TOMS Group       Andrew M. Moore   !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -136,6 +136,9 @@
       integer :: i, ic, j, iobs, ivec, Lscale, info
 
       real(r8) :: zbet, eps, preducv, preducy
+# ifdef MINRES
+      real(r8) :: zsum, zck, zgk
+# endif
       real(r8) :: Jopt, Jf, Jmod, Jdata, Jb, Jobs, Jact, cff
 
       real(r8), dimension(NinnLoop) :: zu, zgam
@@ -145,6 +148,10 @@
       real(r8), dimension(Ninner,3) :: zwork
       real(r8), dimension(2*(NinnLoop-1)) :: work
       real(r8), dimension(Ninner,Ninner) :: zgv
+# ifdef MINRES
+      real(r8), dimension(innLoop,innLoop) :: ztriT, zLT, zLTt
+      real(r8), dimension(innLoop) :: tau, zwork1, ze, zeref
+# endif
 
       character (len=13) :: string
 !
@@ -512,6 +519,88 @@
      &                               zcglwk(iobs,innLoop+1,outLoop)*    &
      &                               zgrad0(iobs,outLoop)
           END DO
+# ifdef MINRES
+!
+!  Use the minimum residual method as recommended by El Akkraoui and
+!  Gauthier (2010, QJRMS, 136, 107-115) and described by Paige and
+!  Saunders ("Sparse Indefinite Systems of Linear Equations", 1975,
+!  SIAM Journal on Numerical Analysis, 617-619). Specifically we refer
+!  to equations 6.10 and 6.11 of this paper.
+!
+!  Perform a LQ factorization of the tridiagonal matrix.
+!
+          ztriT=0.0_r8
+          DO i=1,innLoop
+            ztriT(i,i)=cg_delta(i,outLoop)
+          END DO
+          DO i=1,innLoop-1
+            ztriT(i,i+1)=cg_beta(i+1,outLoop)
+          END DO
+          DO i=2,innLoop
+            ztriT(i,i-1)=cg_beta(i,outLoop)
+          END DO
+          CALL sqlq(innLoop, ztriT, tau, zwork1)
+!
+!   Isolate L=zLT and its transpose.
+!
+          zLT=0.0_r8
+          zLTt=0.0_r8
+          DO i=1,innLoop
+            DO j=1,i
+              zLT(i,j)=ztriT(i,j)
+            END DO
+          END DO
+          DO j=1,innLoop
+            DO i=1,innLoop
+              zLTt(i,j)=zLT(j,i)
+            END DO
+          END DO
+!
+!   Now form ze=beta1*Q*e1.
+!
+          ze=0.0_r8
+          DO i=1,innLoop
+            ze(i)=-cg_QG(i,outLoop)
+          END DO
+          DO i=1,innLoop
+            DO j=1,innLoop
+              zeref(j)=0.0_r8
+            END DO
+            zeref(i)=1.0_r8
+            DO j=i+1,innLoop
+              zeref(j)=ztriT(i,j)
+            END DO
+            zsum=0.0_r8
+            DO j=1,innLoop
+              zsum=zsum+ze(j)*zeref(j)
+            END DO
+            DO j=1,innLoop
+              ze(j)=ze(j)-tau(i)*zsum*zeref(j)
+            END DO
+          END DO
+!
+!   Now form ze=D*ze (using equation 5.6 and 6.5 also).
+!
+          zgk=SQRT(zLT(innLoop,innLoop)*zLT(innLoop,innLoop)+           &
+     &        cg_beta(innLoop+1,outLoop)*cg_beta(innLoop+1,outLoop))
+          zck=zLT(innLoop,innLoop)/zgk
+          ze(innLoop)=zck*ze(innLoop)
+!
+!   Now compute ze=inv(L')*ze.
+!
+          DO j=innLoop,1,-1
+            ze(j)=ze(j)/zLTt(j,j)
+            DO i=1,j-1
+              ze(i)=ze(i)-ze(j)*zLTt(i,j)
+            END DO
+          END DO
+!
+!   Copy the solution ze into zwork.
+!
+          DO i=1,innLoop
+            zwork(i,3)=ze(i)
+          END DO
+# else
 !
 !  Calculate the new solution based upon the new, orthonormalized
 !  Lanczos vector. First, the tridiagonal system is solved by
@@ -531,7 +620,7 @@
             zu(ivec)=zu(ivec)-zgam(ivec+1)*zu(ivec+1)
             zwork(ivec,3)=zu(ivec)
           END DO
-
+# endif
           DO iobs=1,Ndatum(ng)
             zw(iobs)=zgrad0(iobs,outLoop)+                              &
      &               cg_beta(innLoop+1,outLoop)*                        &
@@ -648,6 +737,54 @@
      &                     zcglwk(iobs,ivec,outLoop)*zhv(iobs)
             END DO
           END DO
+# ifdef MINRES
+!
+!   Now form ze=Q*ztemp1.
+!
+          ze=0.0_r8
+          DO i=1,innLoop
+            ze(i)=ztemp1(i)
+          END DO
+          DO i=1,innLoop
+            DO j=1,innLoop
+              zeref(j)=0.0_r8
+            END DO
+            zeref(i)=1.0_r8
+            DO j=i+1,innLoop
+              zeref(j)=ztriT(i,j)
+            END DO
+            zsum=0.0_r8
+            DO j=1,innLoop
+              zsum=zsum+ze(j)*zeref(j)
+            END DO
+            DO j=1,innLoop
+              ze(j)=ze(j)-tau(i)*zsum*zeref(j)
+            END DO
+          END DO
+!
+!   Now form ze=D*ze (using equation 5.6 and 6.5 also).
+!
+          zgk=SQRT(zLT(innLoop,innLoop)*zLT(innLoop,innLoop)+           &
+     &        cg_beta(innLoop+1,outLoop)*cg_beta(innLoop+1,outLoop))
+          zck=zLT(innLoop,innLoop)/zgk
+          ze(innLoop)=zck*ze(innLoop)
+!
+!   Now compute ze=inv(L')*ze.
+!
+          DO j=innLoop,1,-1
+            ze(j)=ze(j)/zLTt(j,j)
+            DO i=1,j-1
+              ze(i)=ze(i)-ze(j)*zLTt(i,j)
+            END DO
+          END DO
+!
+!   Copy the solution ze into ztemp2.
+!
+          DO i=1,innLoop
+            ztemp2(i)=ze(i)
+          END DO
+!
+# else
           zbet=cg_delta(1,outLoop)
           zu1(1)=ztemp1(1)/zbet
           DO ivec=2,innLoop
@@ -663,6 +800,7 @@
             zu1(ivec)=zu1(ivec)-zgam(ivec+1)*zu1(ivec+1)
             ztemp2(ivec)=zu1(ivec)
           END DO
+# endif
           DO iobs=1,Ndatum(ng)
             zhv(iobs)=0.0_r8
           END DO
@@ -685,6 +823,54 @@
               END IF
             END DO
           END DO
+# ifdef MINRES
+!
+!   Now form ze=Q*ztemp1.
+!
+          ze=0.0_r8
+          DO i=1,innLoop
+            ze(i)=ztemp1(i)
+          END DO
+          DO i=1,innLoop
+            DO j=1,innLoop
+              zeref(j)=0.0_r8
+            END DO
+            zeref(i)=1.0_r8
+            DO j=i+1,innLoop
+              zeref(j)=ztriT(i,j)
+            END DO
+            zsum=0.0_r8
+            DO j=1,innLoop
+              zsum=zsum+ze(j)*zeref(j)
+            END DO
+            DO j=1,innLoop
+              ze(j)=ze(j)-tau(i)*zsum*zeref(j)
+            END DO
+          END DO
+!
+!   Now form ze=D*ze (using equation 5.6 and 6.5 also).
+!
+          zgk=SQRT(zLT(innLoop,innLoop)*zLT(innLoop,innLoop)+           &
+     &        cg_beta(innLoop+1,outLoop)*cg_beta(innLoop+1,outLoop))
+          zck=zLT(innLoop,innLoop)/zgk
+          ze(innLoop)=zck*ze(innLoop)
+!
+!   Now compute ze=inv(L')*ze.
+!
+          DO j=innLoop,1,-1
+            ze(j)=ze(j)/zLTt(j,j)
+            DO i=1,j-1
+              ze(i)=ze(i)-ze(j)*zLTt(i,j)
+            END DO
+          END DO
+!
+!   Copy the solution ze into ztemp2.
+!
+          DO i=1,innLoop
+            ztemp2(i)=ze(i)
+          END DO
+!
+# else
           zbet=cg_delta(1,outLoop)
           zu2(1)=ztemp1(1)/zbet
           DO ivec=2,innLoop
@@ -699,6 +885,7 @@
             zu2(ivec)=zu2(ivec)-zgam(ivec+1)*zu2(ivec+1)
             ztemp2(ivec)=zu2(ivec)
           END DO
+# endif
           DO iobs=1,Ndatum(ng)
             zht(iobs)=0.0_r8
           END DO
@@ -715,8 +902,8 @@
           DO iobs=1,Ndatum(ng)
             IF (ObsErr(iobs).ne.0.0_r8) THEN
               cff=cg_pxsave(iobs)/SQRT(ObsErr(iobs))
-              Jb=Jb+zd(iobs)*zht(iobs)-2.0_r8*cff*zhv(iobs)+  &
-     &            cff*gdgw(iobs)
+              Jb=Jb+zd(iobs)*zht(iobs)-2.0_r8*cff*zhv(iobs)+            &
+     &           cff*gdgw(iobs)
             END IF
           END DO
 !
@@ -1310,200 +1497,200 @@
 !
 !  Write out outer and inner iteration.
 !
-      CALL netcdf_put_ivar (ng, model, MODname(ng), 'outer',            &
+      CALL netcdf_put_ivar (ng, model, DAV(ng)%name, 'outer',           &
      &                      outer, (/0/), (/0/),                        &
-     &                      ncid = ncMODid(ng))
+     &                      ncid = DAV(ng)%ncid)
       IF (exit_flag.ne.NoError) RETURN
 
-      CALL netcdf_put_ivar (ng, model, MODname(ng), 'inner',            &
+      CALL netcdf_put_ivar (ng, model, DAV(ng)%name, 'inner',           &
      &                      inner, (/0/), (/0/),                        &
-     &                      ncid = ncMODid(ng))
+     &                      ncid = DAV(ng)%ncid)
       IF (exit_flag.ne.NoError) RETURN
 !
 !  Write out number of converged Ritz eigenvalues.
 !
       IF (innLoop.eq.Ninner) THEN
-        CALL netcdf_put_ivar (ng, model, MODname(ng), 'nConvRitz',      &
+        CALL netcdf_put_ivar (ng, model, DAV(ng)%name, 'nConvRitz',     &
      &                        nConvRitz, (/outLoop/), (/1/),            &
-     &                        ncid = ncMODid(ng))
+     &                        ncid = DAV(ng)%ncid)
         IF (exit_flag.ne.NoError) RETURN
       END IF
 !
 !  Write out converged Ritz eigenvalues.
 !
       IF (innLoop.eq.Ninner) THEN
-        CALL netcdf_put_fvar (ng, model, MODname(ng), 'Ritz',           &
+        CALL netcdf_put_fvar (ng, model, DAV(ng)%name, 'Ritz',          &
      &                        Ritz, (/1,outLoop/), (/nConvRitz,1/),     &
-     &                        ncid = ncMODid(ng))
+     &                        ncid = DAV(ng)%ncid)
         IF (exit_flag.ne.NoError) RETURN
       END IF
 !
 !  Write out conjugate gradient norm.
 !
       IF (innLoop.gt.0) THEN
-        CALL netcdf_put_fvar (ng, model, MODname(ng), 'cg_beta',        &
+        CALL netcdf_put_fvar (ng, model, DAV(ng)%name, 'cg_beta',       &
      &                        cg_beta, (/1,1/), (/Ninner+1,Nouter/),    &
-     &                        ncid = ncMODid(ng))
+     &                        ncid = DAV(ng)%ncid)
         IF (exit_flag.ne.NoError) RETURN
       END IF
 !
 !  Write out Lanczos algorithm coefficients.
 !
       IF (innLoop.gt.0) THEN
-        CALL netcdf_put_fvar (ng, model, MODname(ng), 'cg_delta',       &
+        CALL netcdf_put_fvar (ng, model, DAV(ng)%name, 'cg_delta',      &
      &                        cg_delta, (/1,1/), (/Ninner,Nouter/),     &
-     &                        ncid = ncMODid(ng))
+     &                        ncid = DAV(ng)%ncid)
         IF (exit_flag.ne.NoError) RETURN
       END IF
 !
 !  Write normalization coefficients for Lanczos vectos.
 !
       IF (innLoop.gt.0) THEN
-        CALL netcdf_put_fvar (ng, model, MODname(ng), 'cg_dla',         &
+        CALL netcdf_put_fvar (ng, model, DAV(ng)%name, 'cg_dla',        &
      &                        cg_dla, (/1,1/), (/Ninner,Nouter/),       &
-     &                        ncid = ncMODid(ng))
+     &                        ncid = DAV(ng)%ncid)
         IF (exit_flag.ne.NoError) RETURN
       END IF
 !
 !  Initial gradient normalization factor.
 !
       IF (innLoop.eq.0) THEN
-        CALL netcdf_put_fvar (ng, model, MODname(ng), 'cg_Gnorm_y',     &
+        CALL netcdf_put_fvar (ng, model, DAV(ng)%name, 'cg_Gnorm_y',    &
      &                        cg_Gnorm_y, (/1/), (/Nouter/),            &
-     &                        ncid = ncMODid(ng))
+     &                        ncid = DAV(ng)%ncid)
         IF (exit_flag.ne.NoError) RETURN
 
-        CALL netcdf_put_fvar (ng, model, MODname(ng), 'cg_Gnorm_v',     &
+        CALL netcdf_put_fvar (ng, model, DAV(ng)%name, 'cg_Gnorm_v',    &
      &                        cg_Gnorm_v, (/1/), (/Nouter/),            &
-     &                        ncid = ncMODid(ng))
+     &                        ncid = DAV(ng)%ncid)
         IF (exit_flag.ne.NoError) RETURN
       END IF
 !
 !  Lanczos vector normalization factor.
 !
       IF (innLoop.gt.0) THEN
-        CALL netcdf_put_fvar (ng, model, MODname(ng), 'cg_QG',          &
+        CALL netcdf_put_fvar (ng, model, DAV(ng)%name, 'cg_QG',         &
      &                        cg_QG, (/1,1/), (/Ninner,Nouter/),        &
-     &                        ncid = ncMODid(ng))
+     &                        ncid = DAV(ng)%ncid)
         IF (exit_flag.ne.NoError) RETURN
       END IF
 !
 !  Reduction in the gradient norm.
 !
       IF (innLoop.gt.0) THEN
-        CALL netcdf_put_fvar (ng, model, MODname(ng), 'cg_Greduc_y',    &
+        CALL netcdf_put_fvar (ng, model, DAV(ng)%name, 'cg_Greduc_y',   &
      &                        preducy, (/innLoop,outLoop/), (/1,1/),    &
-     &                        ncid = ncMODid(ng))
+     &                        ncid = DAV(ng)%ncid)
         IF (exit_flag.ne.NoError) RETURN
 
-        CALL netcdf_put_fvar (ng, model, MODname(ng), 'cg_Greduc_v',    &
+        CALL netcdf_put_fvar (ng, model, DAV(ng)%name, 'cg_Greduc_v',   &
      &                        preducv, (/innLoop,outLoop/), (/1,1/),    &
-     &                        ncid = ncMODid(ng))
+     &                        ncid = DAV(ng)%ncid)
         IF (exit_flag.ne.NoError) RETURN
       END IF
 !
 !  Eigenvalues of Lanczos recurrence relationship.
 !
       IF (innLoop.gt.0) THEN
-        CALL netcdf_put_fvar (ng, model, MODname(ng), 'cg_Ritz',        &
+        CALL netcdf_put_fvar (ng, model, DAV(ng)%name, 'cg_Ritz',       &
      &                        cg_Ritz, (/1,1/), (/Ninner,Nouter/),      &
-     &                        ncid = ncMODid(ng))
+     &                        ncid = DAV(ng)%ncid)
         IF (exit_flag.ne.NoError) RETURN
       END IF
 !
 !  Eigenvalues relative error.
 !
       IF (innLoop.gt.0) THEN
-        CALL netcdf_put_fvar (ng, model, MODname(ng), 'cg_RitzErr',     &
+        CALL netcdf_put_fvar (ng, model, DAV(ng)%name, 'cg_RitzErr',    &
      &                        cg_RitzErr, (/1,1/), (/Ninner,Nouter/),   &
-     &                        ncid = ncMODid(ng))
+     &                        ncid = DAV(ng)%ncid)
         IF (exit_flag.ne.NoError) RETURN
       END IF
 !
 !  Eigenvectors of Lanczos recurrence relationship.
 !
       IF (innLoop.gt.0) THEN
-        CALL netcdf_put_fvar (ng, model, MODname(ng), 'cg_zv',          &
+        CALL netcdf_put_fvar (ng, model, DAV(ng)%name, 'cg_zv',         &
      &                        cg_zv(:,:,outLoop),                       &
      &                        (/1,1,outLoop/), (/Ninner,Ninner,1/),     &
-     &                        ncid = ncMODid(ng))
+     &                        ncid = DAV(ng)%ncid)
         IF (exit_flag.ne.NoError) RETURN
       END IF
 !
 !  First guess initial data misfit.
 !
-      CALL netcdf_put_fvar (ng, model, MODname(ng), 'Jf',               &
+      CALL netcdf_put_fvar (ng, model, DAV(ng)%name, 'Jf',              &
      &                      Jf, (/innLoop+1,outLoop/), (/1,1/),         &
-     &                      ncid = ncMODid(ng))
+     &                      ncid = DAV(ng)%ncid)
       IF (exit_flag.ne.NoError) RETURN
 !
 !  State estimate data misfit.
 !
-      CALL netcdf_put_fvar (ng, model, MODname(ng), 'Jdata',            &
+      CALL netcdf_put_fvar (ng, model, DAV(ng)%name, 'Jdata',           &
      &                      Jdata, (/innLoop+1,outLoop/), (/1,1/),      &
-     &                      ncid = ncMODid(ng))
+     &                      ncid = DAV(ng)%ncid)
       IF (exit_flag.ne.NoError) RETURN
 !
 !  Model penalty function.
 !
-      CALL netcdf_put_fvar (ng, model, MODname(ng), 'Jmod',             &
+      CALL netcdf_put_fvar (ng, model, DAV(ng)%name, 'Jmod',            &
      &                      Jmod, (/innLoop+1,outLoop/), (/1,1/),       &
-     &                      ncid = ncMODid(ng))
+     &                      ncid = DAV(ng)%ncid)
       IF (exit_flag.ne.NoError) RETURN
 !
 !  Optimal penalty function.
 !
-      CALL netcdf_put_fvar (ng, model, MODname(ng), 'Jopt',             &
+      CALL netcdf_put_fvar (ng, model, DAV(ng)%name, 'Jopt',            &
      &                      Jopt, (/innLoop+1,outLoop/), (/1,1/),       &
-     &                      ncid = ncMODid(ng))
+     &                      ncid = DAV(ng)%ncid)
       IF (exit_flag.ne.NoError) RETURN
 !
 !  Actual model penalty function.
 !
-      CALL netcdf_put_fvar (ng, model, MODname(ng), 'Jb',               &
+      CALL netcdf_put_fvar (ng, model, DAV(ng)%name, 'Jb',              &
      &                      Jb, (/innLoop+1,outLoop/), (/1,1/),         &
-     &                      ncid = ncMODid(ng))
+     &                      ncid = DAV(ng)%ncid)
       IF (exit_flag.ne.NoError) RETURN
 !
 !  Actual data penalty function.
 !
-      CALL netcdf_put_fvar (ng, model, MODname(ng), 'Jobs',             &
+      CALL netcdf_put_fvar (ng, model, DAV(ng)%name, 'Jobs',            &
      &                      Jobs, (/innLoop+1,outLoop/), (/1,1/),       &
-     &                      ncid = ncMODid(ng))
+     &                      ncid = DAV(ng)%ncid)
       IF (exit_flag.ne.NoError) RETURN
 !
 !  Actual total penalty function.
 !
-      CALL netcdf_put_fvar (ng, model, MODname(ng), 'Jact',             &
+      CALL netcdf_put_fvar (ng, model, DAV(ng)%name, 'Jact',            &
      &                      Jact, (/innLoop+1,outLoop/), (/1,1/),       &
-     &                      ncid = ncMODid(ng))
+     &                      ncid = DAV(ng)%ncid)
       IF (exit_flag.ne.NoError) RETURN
 !
 !  Initial gradient for minimization.
 !
       IF (innLoop.eq.0) THEN
-        CALL netcdf_put_fvar (ng, model, MODname(ng), 'zgrad0',         &
+        CALL netcdf_put_fvar (ng, model, DAV(ng)%name, 'zgrad0',        &
      &                        zgrad0(:,outLoop),                        &
      &                        (/1,outLoop/), (/Ndatum(ng),1/),          &
-     &                        ncid = ncMODid(ng))
+     &                        ncid = DAV(ng)%ncid)
         IF (exit_flag.ne.NoError) RETURN
       END IF
 !
 !  Lanczos vectors.
 !
-      CALL netcdf_put_fvar (ng, model, MODname(ng), 'zcglwk',           &
+      CALL netcdf_put_fvar (ng, model, DAV(ng)%name, 'zcglwk',          &
      &                      zcglwk(:,innLoop+1,outLoop),                &
      &                      (/1,innLoop+1,outLoop/), (/Ndatum(ng),1,1/),&
-     &                      ncid = ncMODid(ng))
+     &                      ncid = DAV(ng)%ncid)
       IF (exit_flag.ne.NoError) RETURN
 !
 !  Saved TLmodVal_S.
 !
       IF (innLoop.gt.0) THEN
-        CALL netcdf_put_fvar (ng, model, MODname(ng), 'TLmodVal_S',     &
+        CALL netcdf_put_fvar (ng, model, DAV(ng)%name, 'TLmodVal_S',    &
      &                        TLmodVal_S(:,innLoop,outLoop),            &
      &                        (/1,innLoop,outLoop/), (/Ndatum(ng),1,1/),&
-     &                        ncid = ncMODid(ng))
+     &                        ncid = DAV(ng)%ncid)
         IF (exit_flag.ne.NoError) RETURN
       END IF
 !
@@ -1511,7 +1698,7 @@
 !  Synchronize model/observation NetCDF file to disk.
 !-----------------------------------------------------------------------
 !
-      CALL netcdf_sync (ng, model, MODname(ng), ncMODid(ng))
+      CALL netcdf_sync (ng, model, DAV(ng)%name, DAV(ng)%ncid)
 
       RETURN
       END SUBROUTINE cg_write

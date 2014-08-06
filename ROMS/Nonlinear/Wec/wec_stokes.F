@@ -106,10 +106,8 @@
 !
       USE mod_param
       USE mod_scalars
-# if defined EW_PERIODIC || defined NS_PERIODIC
       USE exchange_2d_mod
       USE exchange_3d_mod
-# endif
 # ifdef DISTRIBUTE
       USE mp_exchange_mod, ONLY : mp_exchange2d, mp_exchange3d
 # endif
@@ -204,19 +202,6 @@
 !
 !  Local variable declarations.
 !
-# ifdef DISTRIBUTE
-#  ifdef EW_PERIODIC
-      logical :: EWperiodic=.TRUE.
-#  else
-      logical :: EWperiodic=.FALSE.
-#  endif
-#  ifdef NS_PERIODIC
-      logical :: NSperiodic=.TRUE.
-#  else
-      logical :: NSperiodic=.FALSE.
-#  endif
-# endif
-
       integer :: i, j, k
       real(r8) :: cff, cff2, cff3, cff4, cff5, cff6
       real(r8) :: fac1, fac2
@@ -362,7 +347,7 @@
      &                  LBi, UBi, LBj, UBj, N(ng),                      &
      &                  IminS, ImaxS, JminS, JmaxS,                     &
      &                  v_stokes)
-#  if defined EW_PERIODIC || defined NS_PERIODIC
+      IF (EWperiodic(ng).or.NSperiodic(ng)) THEN
 !
       CALL exchange_u3d_tile (ng, tile,                                 &
      &                        LBi, UBi, LBj, UBj, 1, N(ng),             &
@@ -370,11 +355,12 @@
       CALL exchange_v3d_tile (ng, tile,                                 &
      &                        LBi, UBi, LBj, UBj, 1, N(ng),             &
      &                        v_stokes(:,:,:))
-#  endif
+      END IF
 # ifdef DISTRIBUTE
       CALL mp_exchange3d (ng, tile, iNLM, 2,                            &
      &                    LBi, UBi, LBj, UBj, 1, N(ng),                 &
-     &                    NghostPoints, EWperiodic, NSperiodic,         &
+     &                    NghostPoints,                                 &
+     &                    EWperiodic(ng), NSperiodic(ng),               &
      &                    u_stokes, v_stokes)
 # endif
 !
@@ -472,15 +458,14 @@
      &                    LBi, UBi, LBj, UBj,                           &
      &                    IminS, ImaxS, JminS, JmaxS,                   &
      &                    vbar_stokes)
-#  if defined EW_PERIODIC || defined NS_PERIODIC
-!
+      IF (EWperiodic(ng).or.NSperiodic(ng)) THEN
       CALL exchange_u2d_tile (ng, tile,                                 &
      &                        LBi, UBi, LBj, UBj,                       &
      &                        ubar_stokes(:,:))
       CALL exchange_v2d_tile (ng, tile,                                 &
      &                        LBi, UBi, LBj, UBj,                       &
      &                        vbar_stokes(:,:))
-#  endif
+      END IF
       CALL bc_w3d_tile (ng, tile,                                       &
      &                  LBi, UBi, LBj, UBj, 0, N(ng),                   &
      &                  W_stokes)
@@ -501,21 +486,25 @@
 # ifdef DISTRIBUTE
       CALL mp_exchange2d (ng, tile, iNLM, 2,                            &
      &                    LBi, UBi, LBj, UBj,                           &
-     &                    NghostPoints, EWperiodic, NSperiodic,         &
+     &                    NghostPoints,                                 &
+     &                    EWperiodic(ng), NSperiodic(ng),               &
      &                    ubar_stokes, vbar_stokes)
 #  ifdef WEC_MELLOR
       CALL mp_exchange2d (ng, tile, iNLM, 2,                            &
      &                    LBi, UBi, LBj, UBj,                           &
-     &                    NghostPoints, EWperiodic, NSperiodic,         &
+     &                    NghostPoints,                                 &
+     &                    EWperiodic(ng), NSperiodic(ng),               &
      &                    rulag2d, rvlag2d)
       CALL mp_exchange3d (ng, tile, iNLM, 2,                            &
      &                    LBi, UBi, LBj, UBj, 1, N(ng),                 &
-     &                    NghostPoints, EWperiodic, NSperiodic,         &
+     &                    NghostPoints,                                 &
+     &                    EWperiodic(ng), NSperiodic(ng),               &
      &                    rulag3d,  rvlag3d)
 #  endif
       CALL mp_exchange3d (ng, tile, iNLM, 1,                            &
      &                    LBi, UBi, LBj, UBj, 0, N(ng),                 &
-     &                    NghostPoints, EWperiodic, NSperiodic,         &
+     &                    NghostPoints,                                 &
+     &                    EWperiodic(ng), NSperiodic(ng),               &
      &                    W_stokes)
 # endif
       RETURN

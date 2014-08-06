@@ -3,7 +3,7 @@
 !
 !svn $Id: set_2dfld.F 1598 2008-07-25 03:29:09Z jcwarner $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2010 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2014 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -20,7 +20,8 @@
 !***********************************************************************
       SUBROUTINE set_2dfld_tile (ng, tile, model, ifield,               &
      &                           LBi, UBi, LBj, UBj,                    &
-     &                           Finp, Fout, update)
+     &                           Finp, Fout, update,                    &
+     &                           SetBC)
 !***********************************************************************
 !
       USE mod_param
@@ -28,17 +29,16 @@
       USE mod_iounits
       USE mod_ncparam
       USE mod_scalars
-
-#if defined EW_PERIODIC || defined NS_PERIODIC
 !
       USE exchange_2d_mod
-#endif
 #ifdef DISTRIBUTE
       USE mp_exchange_mod, ONLY : mp_exchange2d
 #endif
 !
 !  Imported variable declarations.
 !
+      logical, intent(in), optional :: SetBC
+
       logical, intent(out) :: update
 
       integer, intent(in) :: ng, tile, model, ifield
@@ -54,19 +54,8 @@
 !
 !  Local variable declarations.
 !
-      logical :: Lgrided, Lonerec
-# ifdef DISTRIBUTE
-#  ifdef EW_PERIODIC
-      logical :: EWperiodic=.TRUE.
-#  else
-      logical :: EWperiodic=.FALSE.
-#  endif
-#  ifdef NS_PERIODIC
-      logical :: NSperiodic=.TRUE.
-#  else
-      logical :: NSperiodic=.FALSE.
-#  endif
-# endif
+      logical :: LapplyBC, Lgrided, Lonerec
+
       integer :: Tindex, gtype, i, it1, it2, j
 
       real(r8) :: Fval, fac, fac1, fac2
@@ -76,6 +65,14 @@
 !----------------------------------------------------------------------
 !  Set-up requested field for current tile.
 !----------------------------------------------------------------------
+!
+!  Set switch to apply boundary conditions.
+!
+      IF (PRESENT(SetBC)) THEN
+        LapplyBC=SetBC
+      ELSE
+        LapplyBC=.TRUE.
+      END IF
 !
 !  Get requested field information from global storage.
 !
@@ -115,7 +112,7 @@
           END DO
         END IF
 !
-!  Time-interpolate from grided or point data.
+!  Time-interpolate from gridded or point data.
 !
       ELSE IF (((fac1*fac2).ge.0.0_r8).and.                             &
      &        ((fac1+fac2).gt.0.0_r8)) THEN
@@ -141,13 +138,13 @@
 !  read in at the next time step.
 !
         IF ((time(ng)+dt(ng)).gt.Tintrp(it2,ifield,ng)) THEN
-          IF (SOUTH_WEST_TEST) synchro_flag(ng)=.TRUE.
+          IF (DOMAIN(ng)%SouthWest_Test(tile)) synchro_flag(ng)=.TRUE.
         END IF
 !
 !  Unable to set-up requested field.  Activate error flag to quit.
 !
       ELSE
-        IF (SOUTH_WEST_TEST) THEN
+        IF (DOMAIN(ng)%SouthWest_Test(tile)) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,ifield)), tdays(ng),         &
      &                        Finfo(1,ifield,ng), Finfo(2,ifield,ng),   &
@@ -167,34 +164,43 @@
           update=.FALSE.
         END IF
       END IF
-#if defined EW_PERIODIC || defined NS_PERIODIC || defined DISTRIBUTE
 !
 !  Exchange boundary data.
 !
       IF (update) THEN
-# if defined EW_PERIODIC || defined NS_PERIODIC
-        IF (gtype.eq.r2dvar) THEN
-          CALL exchange_r2d_tile (ng, tile,                             &
-     &                            LBi, UBi, LBj, UBj,                   &
-     &                            Fout)
-        ELSE IF (gtype.eq.u2dvar) THEN
-          CALL exchange_u2d_tile (ng, tile,                             &
-     &                            LBi, UBi, LBj, UBj,                   &
-     &                            Fout)
-        ELSE IF (gtype.eq.v2dvar) THEN
-          CALL exchange_v2d_tile (ng, tile,                             &
-     &                            LBi, UBi, LBj, UBj,                   &
-     &                            Fout)
+        IF (LapplyBC.and.(EWperiodic(ng).or.NSperiodic(ng))) THEN
+          IF (gtype.eq.r2dvar) THEN
+            CALL exchange_r2d_tile (ng, tile,                           &
+     &                              LBi, UBi, LBj, UBj,                 &
+     &                              Fout)
+          ELSE IF (gtype.eq.u2dvar) THEN
+            CALL exchange_u2d_tile (ng, tile,                           &
+     &                              LBi, UBi, LBj, UBj,                 &
+     &                              Fout)
+          ELSE IF (gtype.eq.v2dvar) THEN
+            CALL exchange_v2d_tile (ng, tile,                           &
+     &                              LBi, UBi, LBj, UBj,                 &
+     &                              Fout)
+          END IF
         END IF
-# endif
-# ifdef DISTRIBUTE
-        CALL mp_exchange2d (ng, tile, model, 1,                         &
-     &                      LBi, UBi, LBj, UBj,                         &
-     &                      NghostPoints, EWperiodic, NSperiodic,       &
-     &                      Fout)
-# endif
-      END IF
+
+#ifdef DISTRIBUTE
+        IF (.not.LapplyBC) THEN
+          CALL mp_exchange2d (ng, tile, model, 1,                       &
+     &                        LBi, UBi, LBj, UBj,                       &
+     &                        NghostPoints,                             &
+     &                        .FALSE., .FALSE.,                         &
+     &                        Fout)
+        ELSE
+          CALL mp_exchange2d (ng, tile, model, 1,                       &
+     &                        LBi, UBi, LBj, UBj,                       &
+     &                        NghostPoints,                             &
+     &                        EWperiodic(ng), NSperiodic(ng),           &
+     &                        Fout)
+        END IF
 #endif
+      END IF
+
       RETURN
       END SUBROUTINE set_2dfld_tile
 

@@ -3,7 +3,7 @@
 !
 !svn $Id: mod_ocean.F 787 2008-10-14 00:37:50Z jcwarner $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2010 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2014 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -24,6 +24,7 @@
 !  ru           Right-hand-side of 3D U-momentum equation (m4/s2).     !
 !  rv           Right hand side of 3D V-momentum equation (m4/s2).     !
 !  t            Tracer type variables (active and passive).            !
+!  st           Stationary production variables for GOANPZ             !
 !  u            3D U-momentum component (m/s).                         !
 !  v            3D V-momentum component (m/s).                         !
 !  W            S-coordinate (omega*Hz/mn) vertical velocity (m3/s).   !
@@ -33,16 +34,6 @@
 !                                                                      !
 !  pH           Surface concentration of hydrogen ions.                !
 !                                                                      !
-#ifdef REFINED_GRID
-!  FXp_west      parent grid flux along location of child western edge !
-!  FXp_east      parent grid flux along location of child eastern edge !
-!  FEp_south     parent grid flux along location of child southern edge!
-!  FEp_north     parent grid flux along location of child northern edge!
-!  FXc_west      child western boundary grid flux                      !
-!  FXc_east      child eastern boundary grid flux                      !
-!  FEc_south     child southern boundary grid flux                     !
-!  FEc_north     child northern boundary grid flux                     !
-#endif
 #ifdef WEC
 !  Wave effect on currents variables                                   !
 !
@@ -107,6 +98,17 @@
           real(r8), pointer :: v(:,:,:,:)
           real(r8), pointer :: W(:,:,:)
           real(r8), pointer :: wvel(:,:,:)
+
+# ifdef NEMURO_SED1
+          real(r8), pointer :: PONsed(:,:)
+          real(r8), pointer :: OPALsed(:,:)
+          real(r8), pointer :: DENITsed(:,:)
+          real(r8), pointer :: PON_burial(:,:)
+          real(r8), pointer :: OPAL_burial(:,:)
+# endif
+# ifdef PRIMARY_PROD
+          real(r8), pointer :: Bio_NPP(:,:)
+# endif
 # if defined WEC
 #  ifdef WEC_MELLOR
           real(r8), pointer :: rulag3d(:,:,:)
@@ -121,57 +123,9 @@
           real(r8), pointer :: uwave(:,:)
           real(r8), pointer :: vwave(:,:)
 # endif
-# if defined BIO_FENNEL && defined CARBON
+# if (defined BIO_FENNEL || defined BIO_UMAINE) && defined CARBON
           real(r8), pointer :: pH(:,:)
 # endif
-#endif
-
-#if defined REFINED_GRID
-          real(r8), pointer :: hindpi_u(:,:)
-          real(r8), pointer :: hindpj_u(:,:)
-          real(r8), pointer :: hindpi_v(:,:)
-          real(r8), pointer :: hindpj_v(:,:)
-          real(r8), pointer :: hindpi_r(:,:)
-          real(r8), pointer :: hindpj_r(:,:)
-          real(r8), pointer :: hindspi_u(:,:)
-          real(r8), pointer :: hindspj_u(:,:)
-          real(r8), pointer :: hindspi_v(:,:)
-          real(r8), pointer :: hindspj_v(:,:)
-          real(r8), pointer :: hindspi_r(:,:)
-          real(r8), pointer :: hindspj_r(:,:)
-          integer, pointer :: hindpr(:)
-          integer, pointer :: hindpu(:)
-          integer, pointer :: hindpv(:)
-          real(r8), pointer :: hindci_u(:,:)
-          real(r8), pointer :: hindcj_u(:,:)
-          real(r8), pointer :: hindci_v(:,:)
-          real(r8), pointer :: hindcj_v(:,:)
-          real(r8), pointer :: hindci_r(:,:)
-          real(r8), pointer :: hindcj_r(:,:)
-          integer, pointer :: hindcr(:)
-          integer, pointer :: hindcu(:)
-          integer, pointer :: hindcv(:)
-          integer, pointer :: hindxmin
-          integer, pointer :: hindxmax
-          real(r8), pointer :: FXp_west(:,:,:)
-          real(r8), pointer :: FXp_east(:,:,:)
-          real(r8), pointer :: FEp_north(:,:,:)
-          real(r8), pointer :: FEp_south(:,:,:)
-          real(r8), pointer :: FXc_west(:,:)
-          real(r8), pointer :: FXc_east(:,:)
-          real(r8), pointer :: FEc_north(:,:)
-          real(r8), pointer :: FEc_south(:,:)
-#endif
-#if defined COMPOSED_GRID
-          real(r8), pointer :: hindi_u(:,:)
-          real(r8), pointer :: hindj_u(:,:)
-          real(r8), pointer :: hindi_v(:,:)
-          real(r8), pointer :: hindj_v(:,:)
-          real(r8), pointer :: hindi_r(:,:)
-          real(r8), pointer :: hindj_r(:,:)
-          integer, pointer :: hindr(:,:)
-          integer, pointer :: hindu(:,:)
-          integer, pointer :: hindv(:,:)
 #endif
 
 #if defined TANGENT || defined TL_IOMS
@@ -236,6 +190,9 @@
           real(r8), pointer :: ad_u(:,:,:,:)
           real(r8), pointer :: ad_v(:,:,:,:)
           real(r8), pointer :: ad_W(:,:,:)
+          real(r8), pointer :: ad_t_sol(:,:,:,:)
+          real(r8), pointer :: ad_u_sol(:,:,:)
+          real(r8), pointer :: ad_v_sol(:,:,:)
 #  if defined WEC
           real(r8), pointer :: ad_rulag3d(:,:,:)
           real(r8), pointer :: ad_rvlag3d(:,:,:)
@@ -285,6 +242,16 @@
           real(r8), pointer :: f_u(:,:,:)
           real(r8), pointer :: f_v(:,:,:)
 #  endif
+# endif
+#endif
+#ifdef FORCING_SV
+          real(r8), pointer :: f_ubar(:,:)
+          real(r8), pointer :: f_vbar(:,:)
+          real(r8), pointer :: f_zeta(:,:)
+# ifdef SOLVE3D
+          real(r8), pointer :: f_t(:,:,:,:)
+          real(r8), pointer :: f_u(:,:,:)
+          real(r8), pointer :: f_v(:,:,:)
 # endif
 #endif
 
@@ -378,7 +345,6 @@
 #ifdef SOLVE3D
       allocate ( OCEAN(ng) % pden(LBi:UBi,LBj:UBj,N(ng)) )
       allocate ( OCEAN(ng) % rho(LBi:UBi,LBj:UBj,N(ng)) )
-
       allocate ( OCEAN(ng) % ru(LBi:UBi,LBj:UBj,0:N(ng),2) )
       allocate ( OCEAN(ng) % rv(LBi:UBi,LBj:UBj,0:N(ng),2) )
 
@@ -387,6 +353,17 @@
       allocate ( OCEAN(ng) % v(LBi:UBi,LBj:UBj,N(ng),2) )
       allocate ( OCEAN(ng) % W(LBi:UBi,LBj:UBj,0:N(ng)) )
       allocate ( OCEAN(ng) % wvel(LBi:UBi,LBj:UBj,0:N(ng)) )
+# ifdef NEMURO_SED1
+      ! Add a 2D array for sediment pools
+      allocate ( OCEAN(ng) % PONsed(LBi:UBi,LBj:UBj) )
+      allocate ( OCEAN(ng) % OPALsed(LBi:UBi,LBj:UBj) )
+      allocate ( OCEAN(ng) % DENITsed(LBi:UBi,LBj:UBj) )
+      allocate ( OCEAN(ng) % PON_burial(LBi:UBi,LBj:UBj) )
+      allocate ( OCEAN(ng) % OPAL_burial(LBi:UBi,LBj:UBj) )
+# endif
+# ifdef PRIMARY_PROD
+      allocate ( OCEAN(ng) % Bio_NPP(LBi:UBi,LBj:UBj) )
+# endif
 
 # if defined WEC
 #  ifdef WEC_MELLOR
@@ -403,60 +380,10 @@
       allocate ( OCEAN(ng) % vwave(LBi:UBi,LBj:UBj) )
 # endif
 
-# if defined BIO_FENNEL && defined CARBON
+# if (defined BIO_FENNEL || defined BIO_UMAINE) && defined CARBON
       allocate ( OCEAN(ng) % pH(LBi:UBi,LBj:UBj) )
 # endif
 #endif
-
-
-#if defined REFINED_GRID
-          allocate ( OCEAN(ng) % hindpi_u(LBi:UBi,LBj:UBj) )
-          allocate ( OCEAN(ng) % hindpj_u(LBi:UBi,LBj:UBj) )
-          allocate ( OCEAN(ng) % hindpi_v(LBi:UBi,LBj:UBj) )
-          allocate ( OCEAN(ng) % hindpj_v(LBi:UBi,LBj:UBj) )
-          allocate ( OCEAN(ng) % hindpi_r(LBi:UBi,LBj:UBj) )
-          allocate ( OCEAN(ng) % hindpj_r(LBi:UBi,LBj:UBj) )
-          allocate ( OCEAN(ng) % hindspi_u(LBi:UBi,LBj:UBj) )
-          allocate ( OCEAN(ng) % hindspj_u(LBi:UBi,LBj:UBj) )
-          allocate ( OCEAN(ng) % hindspi_v(LBi:UBi,LBj:UBj) )
-          allocate ( OCEAN(ng) % hindspj_v(LBi:UBi,LBj:UBj) )
-          allocate ( OCEAN(ng) % hindspi_r(LBi:UBi,LBj:UBj) )
-          allocate ( OCEAN(ng) % hindspj_r(LBi:UBi,LBj:UBj) )
-          allocate ( OCEAN(ng) % hindpr(1:4) )
-          allocate ( OCEAN(ng) % hindpu(1:4) )
-          allocate ( OCEAN(ng) % hindpv(1:4) )
-          allocate ( OCEAN(ng) % hindci_u(LBi:UBi,LBj:UBj) )
-          allocate ( OCEAN(ng) % hindcj_u(LBi:UBi,LBj:UBj) )
-          allocate ( OCEAN(ng) % hindci_v(LBi:UBi,LBj:UBj) )
-          allocate ( OCEAN(ng) % hindcj_v(LBi:UBi,LBj:UBj) )
-          allocate ( OCEAN(ng) % hindci_r(LBi:UBi,LBj:UBj) )
-          allocate ( OCEAN(ng) % hindcj_r(LBi:UBi,LBj:UBj) )
-          allocate ( OCEAN(ng) % hindcr(1:4) )
-          allocate ( OCEAN(ng) % hindcu(1:4) )
-          allocate ( OCEAN(ng) % hindcv(1:4) )
-          allocate ( OCEAN(ng) % hindxmin )
-          allocate ( OCEAN(ng) % hindxmax )
-          allocate ( OCEAN(ng) % FXp_west(LBj:UBj,N(ng),NT(ng)) )
-          allocate ( OCEAN(ng) % FXp_east(LBj:UBj,N(ng),NT(ng)) )
-          allocate ( OCEAN(ng) % FEp_south(LBi:UBi,N(ng),NT(ng)) )
-          allocate ( OCEAN(ng) % FEp_north(LBi:UBi,N(ng),NT(ng)) )
-          allocate ( OCEAN(ng) % FXc_west(LBj:UBj,NT(ng)) )
-          allocate ( OCEAN(ng) % FXc_east(LBj:UBj,NT(ng)) )
-          allocate ( OCEAN(ng) % FEc_south(LBi:UBi,NT(ng)) )
-          allocate ( OCEAN(ng) % FEc_north(LBi:UBi,NT(ng)) )
-#endif
-#ifdef COMPOSED_GRID
-          allocate ( OCEAN(ng) % hindi_u(LBi:UBi,LBj:UBj) )
-          allocate ( OCEAN(ng) % hindj_u(LBi:UBi,LBj:UBj) )
-          allocate ( OCEAN(ng) % hindi_v(LBi:UBi,LBj:UBj) )
-          allocate ( OCEAN(ng) % hindj_v(LBi:UBi,LBj:UBj) )
-          allocate ( OCEAN(ng) % hindi_r(LBi:UBi,LBj:UBj) )
-          allocate ( OCEAN(ng) % hindj_r(LBi:UBi,LBj:UBj) )
-          allocate ( OCEAN(ng) % hindr(1:4,Ngrids-1) )
-          allocate ( OCEAN(ng) % hindu(1:4,Ngrids-1) )
-          allocate ( OCEAN(ng) % hindv(1:4,Ngrids-1) )
-#endif
-
 #if defined TANGENT || defined TL_IOMS
 !
 !  Tangent linear model state.
@@ -532,6 +459,10 @@
       allocate ( OCEAN(ng) % ad_v(LBi:UBi,LBj:UBj,N(ng),2) )
       allocate ( OCEAN(ng) % ad_W(LBi:UBi,LBj:UBj,0:N(ng)) )
 
+      allocate ( OCEAN(ng) % ad_t_sol(LBi:UBi,LBj:UBj,N(ng),NT(ng)) )
+      allocate ( OCEAN(ng) % ad_u_sol(LBi:UBi,LBj:UBj,N(ng)) )
+      allocate ( OCEAN(ng) % ad_v_sol(LBi:UBi,LBj:UBj,N(ng)) )
+
 #  if defined WEC
       allocate ( OCEAN(ng) % ad_rulag3d(LBi:UBi,LBj:UBj,N(ng)) )
       allocate ( OCEAN(ng) % ad_rvlag3d(LBi:UBi,LBj:UBj,N(ng)) )
@@ -589,6 +520,17 @@
       allocate ( OCEAN(ng) % f_v(LBi:UBi,LBj:UBj,N(ng)) )
 #   endif
 #  endif
+# endif
+#endif
+#ifdef FORCING_SV
+      allocate ( OCEAN(ng) % f_ubar(LBi:UBi,LBj:UBj) )
+      allocate ( OCEAN(ng) % f_vbar(LBi:UBi,LBj:UBj) )
+      allocate ( OCEAN(ng) % f_zeta(LBi:UBi,LBj:UBj) )
+
+# ifdef SOLVE3D
+      allocate ( OCEAN(ng) % f_t(LBi:UBi,LBj:UBj,N(ng),NT(ng)) )
+      allocate ( OCEAN(ng) % f_u(LBi:UBi,LBj:UBj,N(ng)) )
+      allocate ( OCEAN(ng) % f_v(LBi:UBi,LBj:UBj,N(ng)) )
 # endif
 #endif
 
@@ -655,7 +597,7 @@
       integer :: Imin, Imax, Jmin, Jmax
       integer :: i, j, rec
 #ifdef SOLVE3D
-      integer :: itrc, k
+      integer :: itrc, itrc2, k
 #endif
 
       real(r8), parameter :: IniVal = 0.0_r8
@@ -664,32 +606,32 @@
 !
 !  Set array initialization range.
 !
-#ifdef _OPENMP
-      IF (WESTERN_EDGE) THEN
-        Imin=BOUNDS(ng)%LBi(tile)
-      ELSE
-        Imin=Istr
-      END IF
-      IF (EASTERN_EDGE) THEN
-        Imax=BOUNDS(ng)%UBi(tile)
-      ELSE
-        Imax=Iend
-      END IF
-      IF (SOUTHERN_EDGE) THEN
-        Jmin=BOUNDS(ng)%LBj(tile)
-      ELSE
-        Jmin=Jstr
-      END IF
-      IF (NORTHERN_EDGE) THEN
-        Jmax=BOUNDS(ng)%UBj(tile)
-      ELSE
-        Jmax=Jend
-      END IF
-#else
+#ifdef DISTRIBUTE
       Imin=BOUNDS(ng)%LBi(tile)
       Imax=BOUNDS(ng)%UBi(tile)
       Jmin=BOUNDS(ng)%LBj(tile)
       Jmax=BOUNDS(ng)%UBj(tile)
+#else
+      IF (DOMAIN(ng)%Western_Edge(tile)) THEN
+        Imin=BOUNDS(ng)%LBi(tile)
+      ELSE
+        Imin=Istr
+      END IF
+      IF (DOMAIN(ng)%Eastern_Edge(tile)) THEN
+        Imax=BOUNDS(ng)%UBi(tile)
+      ELSE
+        Imax=Iend
+      END IF
+      IF (DOMAIN(ng)%Southern_Edge(tile)) THEN
+        Jmin=BOUNDS(ng)%LBj(tile)
+      ELSE
+        Jmin=Jstr
+      END IF
+      IF (DOMAIN(ng)%Northern_Edge(tile)) THEN
+        Jmax=BOUNDS(ng)%UBj(tile)
+      ELSE
+        Jmax=Jend
+      END IF
 #endif
 !
 !-----------------------------------------------------------------------
@@ -698,39 +640,6 @@
 !
 !  Nonlinear model state.
 !
-#if defined REFINED_GRID
-            OCEAN(ng) % hindpr(1) = 0
-            OCEAN(ng) % hindpr(2) = 0
-            OCEAN(ng) % hindpr(3) = 0
-            OCEAN(ng) % hindpr(4) = 0
-            OCEAN(ng) % hindpu(1) = 0
-            OCEAN(ng) % hindpu(2) = 0
-            OCEAN(ng) % hindpu(3) = 0
-            OCEAN(ng) % hindpu(4) = 0
-            OCEAN(ng) % hindpv(1) = 0
-            OCEAN(ng) % hindpv(2) = 0
-            OCEAN(ng) % hindpv(3) = 0
-            OCEAN(ng) % hindpv(4) = 0
-            OCEAN(ng) % hindcr(1) = 0
-            OCEAN(ng) % hindcr(2) = 0
-            OCEAN(ng) % hindcr(3) = 0
-            OCEAN(ng) % hindcr(4) = 0
-            OCEAN(ng) % hindcu(1) = 0
-            OCEAN(ng) % hindcu(2) = 0
-            OCEAN(ng) % hindcu(3) = 0
-            OCEAN(ng) % hindcu(4) = 0
-            OCEAN(ng) % hindcv(1) = 0
-            OCEAN(ng) % hindcv(2) = 0
-            OCEAN(ng) % hindcv(3) = 0
-            OCEAN(ng) % hindcv(4) = 0
-            OCEAN(ng) % hindxmin = 0
-            OCEAN(ng) % hindxmax = 0
-#endif
-#ifdef COMPOSED_GRID
-            OCEAN(ng) % hindr = 0
-            OCEAN(ng) % hindu = 0
-            OCEAN(ng) % hindv = 0
-#endif
       IF ((model.eq.0).or.(model.eq.iNLM)) THEN
         DO j=Jmin,Jmax
           DO i=Imin,Imax
@@ -764,8 +673,19 @@
             OCEAN(ng) % ubar_stokes(i,j) = IniVal
             OCEAN(ng) % vbar_stokes(i,j) = IniVal
 #endif
-#if defined BIO_FENNEL && defined CARBON && defined SOLVE3D
+#if (defined BIO_FENNEL || defined BIO_UMAINE) && \
+      defined CARBON && defined SOLVED3D
             OCEAN(ng) % pH(i,j) = 8.0_r8
+#endif
+#if defined NEMURO_SED1
+            OCEAN(ng) % PONsed(i,j) = IniVal
+            OCEAN(ng) % OPALsed(i,j) = IniVal
+            OCEAN(ng) % DENITsed(i,j) = IniVal
+            OCEAN(ng) % PON_burial(i,j) = IniVal
+            OCEAN(ng) % OPAL_burial(i,j) = IniVal
+#endif
+#ifdef PRIMARY_PROD
+            OCEAN(ng) % Bio_NPP(i,j) = IniVal
 #endif
 #ifdef UV_KIRBY
             OCEAN(ng) % uwave(i,j) = IniVal
@@ -816,50 +736,8 @@
               END DO
             END DO
           END DO 
-# if defined REFINED_GRID
-          DO i=Imin,Imax
-            OCEAN(ng) % hindpi_u(i,j) = IniVal
-            OCEAN(ng) % hindpj_u(i,j) = IniVal
-            OCEAN(ng) % hindpi_v(i,j) = IniVal
-            OCEAN(ng) % hindpj_v(i,j) = IniVal
-            OCEAN(ng) % hindpi_r(i,j) = IniVal
-            OCEAN(ng) % hindpj_r(i,j) = IniVal
-            OCEAN(ng) % hindspi_u(i,j) = IniVal
-            OCEAN(ng) % hindspj_u(i,j) = IniVal
-            OCEAN(ng) % hindspi_v(i,j) = IniVal
-            OCEAN(ng) % hindspj_v(i,j) = IniVal
-            OCEAN(ng) % hindspi_r(i,j) = IniVal
-            OCEAN(ng) % hindspj_r(i,j) = IniVal
-            OCEAN(ng) % hindci_u(i,j) = IniVal
-            OCEAN(ng) % hindcj_u(i,j) = IniVal
-            OCEAN(ng) % hindci_v(i,j) = IniVal
-            OCEAN(ng) % hindcj_v(i,j) = IniVal
-            OCEAN(ng) % hindci_r(i,j) = IniVal
-            OCEAN(ng) % hindcj_r(i,j) = IniVal
-          END DO
-# endif
-# ifdef COMPOSED_GRID
-          DO i=Imin,Imax
-            OCEAN(ng) % hindi_u(i,j) = IniVal
-            OCEAN(ng) % hindj_u(i,j) = IniVal
-            OCEAN(ng) % hindi_v(i,j) = IniVal
-            OCEAN(ng) % hindj_v(i,j) = IniVal
-            OCEAN(ng) % hindi_r(i,j) = IniVal
-            OCEAN(ng) % hindj_r(i,j) = IniVal
-          END DO
-# endif
 #endif
         END DO
-#if defined REFINED_GRID
-        OCEAN(ng) % FXp_west = IniVal
-        OCEAN(ng) % FXp_east = IniVal
-        OCEAN(ng) % FEp_south = IniVal
-        OCEAN(ng) % FEp_north = IniVal
-        OCEAN(ng) % FXc_west = IniVal
-        OCEAN(ng) % FXc_east = IniVal
-        OCEAN(ng) % FEc_south = IniVal
-        OCEAN(ng) % FEc_north = IniVal
-#endif
       END IF
 
 #if defined TANGENT || defined TL_IOMS
@@ -885,6 +763,11 @@
             OCEAN(ng) % tl_zeta(i,j,1) = IniVal
             OCEAN(ng) % tl_zeta(i,j,2) = IniVal
             OCEAN(ng) % tl_zeta(i,j,3) = IniVal
+# ifdef FORCING_SV
+            OCEAN(ng) % f_ubar(i,j) = IniVal
+            OCEAN(ng) % f_vbar(i,j) = IniVal
+            OCEAN(ng) % f_zeta(i,j) = IniVal
+# endif
 # if defined WEC
             OCEAN(ng) % tl_rulag2d(i,j) = IniVal
             OCEAN(ng) % tl_rvlag2d(i,j) = IniVal
@@ -902,6 +785,10 @@
               OCEAN(ng) % tl_u(i,j,k,2) = IniVal
               OCEAN(ng) % tl_v(i,j,k,1) = IniVal
               OCEAN(ng) % tl_v(i,j,k,2) = IniVal
+#  ifdef FORCING_SV
+              OCEAN(ng) % f_u(i,j,k) = IniVal
+              OCEAN(ng) % f_v(i,j,k) = IniVal
+#  endif
 #  if defined WEC
               OCEAN(ng) % tl_rulag3d(i,j,k) = IniVal
               OCEAN(ng) % tl_rvlag3d(i,j,k) = IniVal
@@ -926,6 +813,9 @@
                 OCEAN(ng) % tl_t(i,j,k,1,itrc) = IniVal
                 OCEAN(ng) % tl_t(i,j,k,2,itrc) = IniVal
                 OCEAN(ng) % tl_t(i,j,k,3,itrc) = IniVal
+#  ifdef FORCING_SV
+                OCEAN(ng) % f_t(i,j,k,itrc) = IniVal
+#  endif
               END DO
             END DO
           END DO
@@ -957,6 +847,11 @@
             OCEAN(ng) % ad_zeta(i,j,1) = IniVal
             OCEAN(ng) % ad_zeta(i,j,2) = IniVal
             OCEAN(ng) % ad_zeta(i,j,3) = IniVal
+# ifdef FORCING_SV
+            OCEAN(ng) % f_ubar(i,j) = IniVal
+            OCEAN(ng) % f_vbar(i,j) = IniVal
+            OCEAN(ng) % f_zeta(i,j) = IniVal
+# endif
 
             OCEAN(ng) % ad_ubar_sol(i,j) = IniVal
             OCEAN(ng) % ad_vbar_sol(i,j) = IniVal
@@ -978,6 +873,12 @@
               OCEAN(ng) % ad_u(i,j,k,2) = IniVal
               OCEAN(ng) % ad_v(i,j,k,1) = IniVal
               OCEAN(ng) % ad_v(i,j,k,2) = IniVal
+              OCEAN(ng) % ad_u_sol(i,j,k) = IniVal
+              OCEAN(ng) % ad_v_sol(i,j,k) = IniVal
+#  ifdef FORCING_SV
+              OCEAN(ng) % f_u(i,j,k) = IniVal
+              OCEAN(ng) % f_v(i,j,k) = IniVal
+#  endif
 #  if defined WEC
               OCEAN(ng) % ad_rulag3d(i,j,k) = IniVal
               OCEAN(ng) % ad_rvlag3d(i,j,k) = IniVal
@@ -1002,6 +903,10 @@
                 OCEAN(ng) % ad_t(i,j,k,1,itrc) = IniVal
                 OCEAN(ng) % ad_t(i,j,k,2,itrc) = IniVal
                 OCEAN(ng) % ad_t(i,j,k,3,itrc) = IniVal
+                OCEAN(ng) % ad_t_sol(i,j,k,itrc) = IniVal
+#  ifdef FORCING_SV
+                OCEAN(ng) % f_t(i,j,k,itrc) = IniVal
+#  endif
               END DO
             END DO
           END DO

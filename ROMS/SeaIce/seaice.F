@@ -1,9 +1,9 @@
 #include "cppdefs.h"
 #ifdef ICE_MODEL
-      SUBROUTINE seaice(ng)
+      SUBROUTINE seaice
 !
 !=======================================================================
-!  Copyright (c) 2002 ROMS/TOMS Group                                  !
+!  Copyright (c) 2002-2014 The ROMS/TOMS Group                         !
 !================================================== Hernan G. Arango ===
 !                                                                      !
 !  This is the main driver routine for the sea ice portion of the
@@ -22,9 +22,6 @@
       USE ice_vbc_mod, ONLY : ice_vbc
 # ifdef ICE_THERMO
       USE ice_thermo_mod, ONLY : ice_thermo
-#  ifdef ICE_SMOOTH
-      USE ice_smoother_mod, ONLY : ice_smoother
-#  endif
 # endif
 # if defined ICE_MOMENTUM && defined ICE_EVP
       USE ice_evp_mod, ONLY : ice_evp
@@ -41,38 +38,35 @@
 
       implicit none
 
-      integer, intent(in) :: ng
-
-      integer :: thread, subs, tile
-      integer :: i, nforc, my_ievp, nelas, iter
+      integer :: tile
+      integer :: ig, ng, nl, my_ievp, nelas
       real(r8), parameter :: dt_large = 1.0E+23_r8
-      real(r8) :: dtice_sav
 
-      liold(ng) = linew(ng)
-      linew(ng) = 3-liold(ng)
+      NEST_LAYER : DO nl=1,NestLayers
+
+        DO ig=1,GridsInLayer(nl)
+          ng=GridNumber(ig,nl)
+          liold(ng) = linew(ng)
+          linew(ng) = 3-liold(ng)
 
 ! ----------------------------------------------------------------------
 !  Compute the ice-ocean shear.
 ! ----------------------------------------------------------------------
-!$OMP PARALLEL DO PRIVATE(thread,subs,tile), SHARED(ng,numthreads)
-      DO thread=0,numthreads-1
-        subs=NtileX(ng)*NtileE(ng)/numthreads
-        DO tile=subs*thread,subs*(thread+1)-1,+1
-          CALL ice_spdiw(ng, TILE)
+          DO tile=first_tile(ng),last_tile(ng),+1
+            CALL ice_spdiw(ng, TILE)
+          END DO
         END DO
-      END DO
-!$OMP END PARALLEL DO
+!$OMP BARRIER
 ! ----------------------------------------------------------------------
 !  Compute the stresses on the ice from the air and water.
 ! ----------------------------------------------------------------------
-!$OMP PARALLEL DO PRIVATE(thread,subs,tile), SHARED(ng,numthreads)
-      DO thread=0,numthreads-1
-        subs=NtileX(ng)*NtileE(ng)/numthreads
-        DO tile=subs*thread,subs*(thread+1)-1,+1
-          CALL ice_vbc(ng, TILE)
+        DO ig=1,GridsInLayer(nl)
+          ng=GridNumber(ig,nl)
+          DO tile=first_tile(ng),last_tile(ng),+1
+            CALL ice_vbc(ng, TILE)
+          END DO
+!$OMP BARRIER
         END DO
-      END DO
-!$OMP END PARALLEL DO
 
 #undef ACTIVE
 #ifdef ACTIVE
@@ -86,49 +80,40 @@
 !  Elastic-Viscous-Plastic rheology (EVP).
 ! ----------------------------------------------------------------------
 
-      nelas = nevp(ng)
+        DO ig=1,GridsInLayer(nl)
+          ng=GridNumber(ig,nl)
+          nelas = nevp(ng)
 
-      liuol(ng) = liunw(ng)
-      liunw(ng) = 3-liuol(ng)
+          liuol(ng) = liunw(ng)
+          liunw(ng) = 3-liuol(ng)
 
-      dte(ng) = dtice(ng)/FLOAT(nevp(ng))
+          dte(ng) = dtice(ng)/FLOAT(nevp(ng))
 
-      DO my_ievp=1,nelas
+          DO my_ievp=1,nelas
 
-        lieol(ng) = lienw(ng)
-        lienw(ng) = 3-lieol(ng)
+            lieol(ng) = lienw(ng)
+            lienw(ng) = 3-lieol(ng)
 
-        ievp(ng)=my_ievp
-!$OMP PARALLEL DO PRIVATE(thread,subs,tile), SHARED(ng,numthreads)
-        DO thread=0,numthreads-1
-          subs=NtileX(ng)*NtileE(ng)/numthreads
-          DO tile=subs*thread,subs*(thread+1)-1,+1
-            CALL ice_evp(ng, TILE)
+            ievp(ng)=my_ievp
+            DO tile=first_tile(ng),last_tile(ng),+1
+              CALL ice_evp(ng, TILE)
+            END DO
+!$OMP BARRIER
+            DO tile=first_tile(ng),last_tile(ng),+1
+              CALL ice_evp_sig(ng, TILE)
+            END DO
+!$OMP BARRIER
+            DO tile=first_tile(ng),last_tile(ng),+1
+              CALL ice_elastic(ng, TILE)
+            END DO
+!$OMP BARRIER
           END DO
         END DO
-!$OMP END PARALLEL DO
-!$OMP PARALLEL DO PRIVATE(thread,subs,tile), SHARED(ng,numthreads)
-        DO thread=0,numthreads-1
-          subs=NtileX(ng)*NtileE(ng)/numthreads
-          DO tile=subs*thread,subs*(thread+1)-1,+1
-            CALL ice_evp_sig(ng, TILE)
-          END DO
-        END DO
-!$OMP END PARALLEL DO
-!$OMP PARALLEL DO PRIVATE(thread,subs,tile), SHARED(ng,numthreads)
-        DO thread=0,numthreads-1
-          subs=NtileX(ng)*NtileE(ng)/numthreads
-          DO tile=subs*thread,subs*(thread+1)-1,+1
-            CALL ice_elastic(ng, TILE)
-          END DO
-        END DO
-!$OMP END PARALLEL DO
-      END DO
 
 # else
-      write(*,*) 'An ice rheology must be defined if ICE_MOMENTUM',     &
+        write(*,*) 'An ice rheology must be defined if ICE_MOMENTUM',     &
      &           ' option is specified'
-      stop
+        stop
 # endif
 #endif
 
@@ -136,44 +121,41 @@
 ! ----------------------------------------------------------------------
 !  Compute the ice enthalpi before advection.
 ! ----------------------------------------------------------------------
-!$OMP PARALLEL DO PRIVATE(thread,subs,tile) SHARED(ng,numthreads)
-      DO thread=0,numthreads-1
-        subs=NtileX(ng)*NtileE(ng)/numthreads
-        DO tile=subs*thread,subs*(thread+1)-1,+1
-          CALL ice_enthalpi(ng, TILE)
+        DO ig=1,GridsInLayer(nl)
+          ng=GridNumber(ig,nl)
+          DO tile=first_tile(ng),last_tile(ng),+1
+            CALL ice_enthalpi(ng, TILE)
+          END DO
+!$OMP BARRIER
         END DO
-      END DO
-!$OMP END PARALLEL DO
 ! ----------------------------------------------------------------------
 !  Compute the advection of the ice tracer fields.
 ! ----------------------------------------------------------------------
-!$OMP PARALLEL DO PRIVATE(thread,subs,tile) SHARED(ng,numthreads)
-      DO thread=0,numthreads-1
-        subs=NtileX(ng)*NtileE(ng)/numthreads
-        DO tile=subs*thread,subs*(thread+1)-1,+1
-          CALL ice_advect(ng, TILE)
-          CALL ice_limit(ng, TILE)
+        DO ig=1,GridsInLayer(nl)
+          ng=GridNumber(ig,nl)
+          DO tile=first_tile(ng),last_tile(ng),+1
+            CALL ice_advect(ng, TILE)
+            CALL ice_limit(ng, TILE)
+          END DO
+!$OMP BARRIER
         END DO
-      END DO
-!$OMP END PARALLEL DO
 #endif
 
 #ifdef ICE_THERMO
 ! ----------------------------------------------------------------------
 !  Compute the ice thermodynamics.
 ! ----------------------------------------------------------------------
-!$OMP PARALLEL DO PRIVATE(thread,subs,tile) SHARED(ng,numthreads)
-      DO thread=0,numthreads-1
-        subs=NtileX(ng)*NtileE(ng)/numthreads
-        DO tile=subs*thread,subs*(thread+1)-1,+1
-          CALL ice_thermo (ng, TILE)
-# ifdef ICE_SMOOTH
-          CALL ice_smoother(ng, TILE)
-# endif
+        DO ig=1,GridsInLayer(nl)
+          ng=GridNumber(ig,nl)
+          DO tile=first_tile(ng),last_tile(ng),+1
+            CALL ice_thermo (ng, TILE)
+            CALL ice_limit(ng, TILE)
+          END DO
+!$OMP BARRIER
         END DO
-      END DO
-!$OMP END PARALLEL DO
 #endif
+
+      END DO NEST_LAYER
 
 #else
       SUBROUTINE seaice

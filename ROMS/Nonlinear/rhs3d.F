@@ -4,7 +4,7 @@
 !
 !svn $Id: rhs3d.F 732 2008-09-07 01:55:51Z jcwarner $
 !=======================================================================
-!  Copyright (c) 2002-2010 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2014 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                           Hernan G. Arango   !
 !========================================== Alexander F. Shchepetkin ===
@@ -15,10 +15,10 @@
 !=======================================================================
 !
       implicit none
-
+!
       PRIVATE
       PUBLIC  :: rhs3d
-
+!
       CONTAINS
 !
 !***********************************************************************
@@ -26,9 +26,6 @@
 !***********************************************************************
 !
       USE mod_param
-# ifdef CLIMATOLOGY
-      USE mod_clima
-# endif
       USE mod_coupling
 # ifdef DIAGNOSTICS_UV
       USE mod_diags
@@ -37,9 +34,6 @@
       USE mod_grid
 # ifdef WEC
       USE mod_mixing
-# endif
-# if defined ASSIMILATION || defined NUDGING
-      USE mod_obs
 # endif
       USE mod_ocean
       USE mod_stepping
@@ -118,6 +112,7 @@
       CALL t3dmix4 (ng, tile)
 #  endif
 # endif
+# if !defined OFFLINE_BIOLOGY
 !
 !-----------------------------------------------------------------------
 !  Compute right-hand-side terms for the 3D momentum equations.
@@ -148,16 +143,6 @@
      &                 FORCES(ng) % bvstr,                              &
      &                 FORCES(ng) % sustr,                              &
      &                 FORCES(ng) % svstr,                              &
-# ifdef M3CLM_NUDGING
-     &                 CLIMA(ng) % M3nudgcof,                           &
-     &                 CLIMA(ng) % uclm,                                &
-     &                 CLIMA(ng) % vclm,                                &
-# endif
-# if defined NUDGING_UVsur || defined NUDGING_UV
-     &                 OBS(ng) % EobsUV,                                &
-     &                 OBS(ng) % Uobs,                                  &
-     &                 OBS(ng) % Vobs,                                  &
-# endif
      &                 OCEAN(ng) % u,                                   &
      &                 OCEAN(ng) % v,                                   &
      &                 OCEAN(ng) % W,                                   &
@@ -201,6 +186,7 @@
 !
       CALL uv3dmix4 (ng, tile)
 # endif
+# endif /* !OFFLINE */
       RETURN
       END SUBROUTINE rhs3d
 !
@@ -217,12 +203,6 @@
      &                       om_u, om_v, on_u, on_v, pm, pn,            &
      &                       bustr, bvstr,                              &
      &                       sustr, svstr,                              &
-# ifdef M3CLM_NUDGING
-     &                       M3nudgcof, uclm, vclm,                     &
-# endif
-# if defined NUDGING_UVsur || defined NUDGING_UV
-     &                       EobsUV, Uobs, Vobs,                        &
-# endif
      &                       u, v, W,                                   &
 # ifdef WEC
      &                       u_stokes, v_stokes, W_stokes,              &
@@ -240,6 +220,7 @@
 !***********************************************************************
 !
       USE mod_param
+      USE mod_clima
       USE mod_scalars
 !
 !  Imported variable declarations.
@@ -268,16 +249,6 @@
       real(r8), intent(in) :: bvstr(LBi:,LBj:)
       real(r8), intent(in) :: sustr(LBi:,LBj:)
       real(r8), intent(in) :: svstr(LBi:,LBj:)
-#  ifdef M3CLM_NUDGING
-      real(r8), intent(in) :: M3nudgcof(LBi:,LBj:)
-      real(r8), intent(in) :: uclm(LBi:,LBj:,:)
-      real(r8), intent(in) :: vclm(LBi:,LBj:,:)
-#  endif
-#  if defined NUDGING_UVsur || defined NUDGING_UV
-      real(r8), intent(in) :: EobsUV(LBi:,LBj:,:)
-      real(r8), intent(in) :: Uobs(LBi:,LBj:,:)
-      real(r8), intent(in) :: Vobs(LBi:,LBj:,:)
-#  endif
       real(r8), intent(in) :: u(LBi:,LBj:,:,:)
       real(r8), intent(in) :: v(LBi:,LBj:,:,:)
       real(r8), intent(in) :: W(LBi:,LBj:,0:)
@@ -322,16 +293,6 @@
       real(r8), intent(in) :: bvstr(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: sustr(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: svstr(LBi:UBi,LBj:UBj)
-#  ifdef M3CLM_NUDGING
-      real(r8), intent(in) :: M3nudgcof(LBi:UBi,LBj:UBj)
-      real(r8), intent(in) :: uclm(LBi:UBi,LBj:UBj,N(ng))
-      real(r8), intent(in) :: vclm(LBi:UBi,LBj:UBj,N(ng))
-#  endif
-#  if defined NUDGING_UVsur || defined NUDGING_UV
-      real(r8), intent(in) :: EobsUV(LBi:UBi,LBj:UBj,N(ng))
-      real(r8), intent(in) :: Uobs(LBi:UBi,LBj:UBj,N(ng))
-      real(r8), intent(in) :: Vobs(LBi:UBi,LBj:UBj,N(ng))
-#  endif
       real(r8), intent(in) :: u(LBi:UBi,LBj:UBj,N(ng),2)
       real(r8), intent(in) :: v(LBi:UBi,LBj:UBj,N(ng),2)
       real(r8), intent(in) :: W(LBi:UBi,LBj:UBj,0:N(ng))
@@ -361,18 +322,6 @@
 !
 !  Local variable declarations.
 !
-# ifdef DISTRIBUTE
-#  ifdef EW_PERIODIC
-      logical :: EWperiodic=.TRUE.
-#  else
-      logical :: EWperiodic=.FALSE.
-#  endif
-#  ifdef NS_PERIODIC
-      logical :: NSperiodic=.TRUE.
-#  else
-      logical :: NSperiodic=.FALSE.
-#  endif
-# endif
       integer :: i, j, k
 
       real(r8), parameter :: Gadv = -0.25_r8
@@ -696,65 +645,36 @@
           END DO
         END DO
 # endif
-# ifdef M3CLM_NUDGING
 !
 !-----------------------------------------------------------------------
 !  Add in nudging of 3D momentum climatology.
 !-----------------------------------------------------------------------
 !
-        DO j=Jstr,Jend
-          DO i=IstrU,Iend
-            cff=0.25_r8*(M3nudgcof(i-1,j)+M3nudgcof(i,j))*              &
-     &          om_u(i,j)*on_u(i,j)
-            ru(i,j,k,nrhs)=ru(i,j,k,nrhs)+                              &
-     &                     cff*(Hz(i-1,j,k)+Hz(i,j,k))*                 &
-     &                     (uclm(i,j,k)-u(i,j,k,nrhs))
-          END DO
-        END DO
-        DO j=JstrV,Jend
-          DO i=Istr,Iend
-            cff=0.25_r8*(M3nudgcof(i,j-1)+M3nudgcof(i,j))*              &
-     &          om_v(i,j)*on_v(i,j)
-            rv(i,j,k,nrhs)=rv(i,j,k,nrhs)+                              &
-     &                     cff*(Hz(i,j-1,k)+Hz(i,j,k))*                 &
-     &                     (vclm(i,j,k)-v(i,j,k,nrhs))
-         END DO
-       END DO
-# endif
-# if defined NUDGING_UVsur || defined NUDGING_UV
-!
-!-----------------------------------------------------------------------
-!  Assimilate horizontal currents observations via nudging.
-!-----------------------------------------------------------------------
-!
-!  Notice that the nondimensional error variance "EobsUV" is flipped,
-!  so a value of unity represents unavailable data.
-!
-        IF (update_UV(ng)) THEN
+        IF (LnudgeM3CLM(ng)) THEN
           DO j=Jstr,Jend
             DO i=IstrU,Iend
-              cff=MIN(1.0_r8,MAX(0.0_r8,0.5_r8*(EobsUV(i-1,j,k)+        &
-     &                                          EobsUV(i  ,j,k))))
-              cff=M3nudass(ng)*(1.0_r8-cff)
+              cff=0.25_r8*(CLIMA(ng)%M3nudgcof(i-1,j,k)+                &
+     &                     CLIMA(ng)%M3nudgcof(i  ,j,k))*               &
+     &            om_u(i,j)*on_u(i,j)
               ru(i,j,k,nrhs)=ru(i,j,k,nrhs)+                            &
-     &                       cff*0.5_r8*(Hz(i,j,k)+Hz(i-1,j,k))*        &
-     &                           (Uobs(i,j,k)-u(i,j,k,nrhs))*           &
-     &                           om_u(i,j)*on_u(i,j)
+     &                       cff*(Hz(i-1,j,k)+Hz(i,j,k))*               &
+     &                       (CLIMA(ng)%uclm(i,j,k)-                    &
+     &                        u(i,j,k,nrhs))
             END DO
           END DO
           DO j=JstrV,Jend
             DO i=Istr,Iend
-              cff=MIN(1.0_r8,MAX(0.0_r8,0.5_r8*(EobsUV(i,j-1,k)+        &
-     &                                          EobsUV(i,j  ,k))))
-              cff=M3nudass(ng)*(1.0_r8-cff)
+              cff=0.25_r8*(CLIMA(ng)%M3nudgcof(i,j-1,k)+                &
+     &                     CLIMA(ng)%M3nudgcof(i,j  ,k))*               &
+     &            om_v(i,j)*on_v(i,j)
               rv(i,j,k,nrhs)=rv(i,j,k,nrhs)+                            &
-     &                       cff*0.5_r8*(Hz(i,j-1,k)+Hz(i,j,k))*        &
-     &                           (Vobs(i,j,k)-v(i,j,k,nrhs))*           &
-     &                           om_v(i,j)*on_v(i,j)
+     &                       cff*(Hz(i,j-1,k)+Hz(i,j,k))*               &
+     &                       (CLIMA(ng)%vclm(i,j,k)-                    &
+     &                        v(i,j,k,nrhs))
             END DO
           END DO
         END IF
-# endif
+
 # ifdef UV_ADV
 !
 !-----------------------------------------------------------------------
@@ -817,22 +737,8 @@
           END DO
         END DO
 #  else
-#   if defined EW_PERIODIC || defined COMPOSED_GRID
-#    define IU_RANGE IstrU-1,Iend+1
-#   elif defined REFINED_GRID
-#    define IU_RANGE IstrC,IendC
-        IF (ng.eq.1) THEN
-          IstrC=MAX(2,IstrU-1)
-          IendC=MIN(Iend+1,Lm(ng))
-        ELSE
-          IstrC=IstrU-1
-          IendC=Iend+1
-        END IF
-#   else
-#    define IU_RANGE MAX(IstrU-1,2),MIN(Iend+1,Lm(ng))
-#   endif
         DO j=Jstr,Jend
-          DO i=IU_RANGE
+          DO i=IstrUm1,Iendp1
             uxx(i,j)=u(i-1,j,k,nrhs)-2.0_r8*u(i,j,k,nrhs)+              &
 #   ifdef WEC_MELLOR
      &               u_stokes(i-1,j,k)-2.0_r8*u_stokes(i,j,k)+          &
@@ -842,21 +748,22 @@
             Huxx(i,j)=Huon(i-1,j,k)-2.0_r8*Huon(i,j,k)+Huon(i+1,j,k)
           END DO
         END DO
-#   undef IU_RANGE
-#   if !defined EW_PERIODIC && !defined COMPOSED_GRID
-        IF (WESTERN_EDGE_REF) THEN
-          DO j=Jstr,Jend
-            uxx (Istr,j)=uxx (Istr+1,j)
-            Huxx(Istr,j)=Huxx(Istr+1,j)
-          END DO
+        IF (.not.(CompositeGrid(iwest,ng).or.EWperiodic(ng))) THEN
+          IF (DOMAIN(ng)%Western_Edge(tile)) THEN
+            DO j=Jstr,Jend
+              uxx (Istr,j)=uxx (Istr+1,j)
+              Huxx(Istr,j)=Huxx(Istr+1,j)
+            END DO
+          END IF
         END IF
-        IF (EASTERN_EDGE_REF) THEN
-          DO j=Jstr,Jend
-            uxx (Iend+1,j)=uxx (Iend,j)
-            Huxx(Iend+1,j)=Huxx(Iend,j)
-          END DO
+        IF (.not.(CompositeGrid(ieast,ng).or.EWperiodic(ng))) THEN
+          IF (DOMAIN(ng)%Eastern_Edge(tile)) THEN
+            DO j=Jstr,Jend
+              uxx (Iend+1,j)=uxx (Iend,j)
+              Huxx(Iend+1,j)=Huxx(Iend,j)
+            END DO
+          END IF
         END IF
-#   endif
 #   ifdef UV_C4ADVECTION
 !
 !  Fourth-order, centered differences u-momentum horizontal advection.
@@ -904,21 +811,7 @@
           END DO
         END DO
 #   endif
-#   if defined NS_PERIODIC || defined COMPOSED_GRID
-#    define JU_RANGE Jstr-1,Jend+1
-#   elif defined REFINED_GRID
-#    define JU_RANGE JstrC,JendC
-        IF (ng.eq.1) THEN
-          JstrC=MAX(1,Jstr-1)
-          JendC=MIN(Jend+1,Mm(ng))
-        ELSE
-          JstrC=Jstr-1
-          JendC=Jend+1
-        END IF
-#   else
-#    define JU_RANGE MAX(Jstr-1,1),MIN(Jend+1,Mm(ng))
-#   endif
-        DO j=JU_RANGE
+        DO j=Jstrm1,Jendp1
           DO i=IstrU,Iend
             uee(i,j)=u(i,j-1,k,nrhs)-2.0_r8*u(i,j,k,nrhs)+              &
 #   ifdef WEC_MELLOR
@@ -928,19 +821,20 @@
      &               u(i,j+1,k,nrhs)
           END DO
         END DO
-#   undef JU_RANGE
-#   if !defined NS_PERIODIC && !defined COMPOSED_GRID
-        IF (SOUTHERN_EDGE_REF) THEN
-          DO i=IstrU,Iend
-            uee(i,Jstr-1)=uee(i,Jstr)
-          END DO
+        IF (.not.(CompositeGrid(isouth,ng).or.NSperiodic(ng))) THEN
+          IF (DOMAIN(ng)%Southern_Edge(tile)) THEN
+            DO i=IstrU,Iend
+              uee(i,Jstr-1)=uee(i,Jstr)
+            END DO
+          END IF
         END IF
-        IF (NORTHERN_EDGE_REF) THEN
-          DO i=IstrU,Iend
-            uee(i,Jend+1)=uee(i,Jend)
-          END DO
+        IF (.not.(CompositeGrid(inorth,ng).or.NSperiodic(ng))) THEN
+          IF (DOMAIN(ng)%Northern_Edge(tile)) THEN
+            DO i=IstrU,Iend
+              uee(i,Jend+1)=uee(i,Jend)
+            END DO
+          END IF
         END IF
-#   endif
         DO j=Jstr,Jend+1
           DO i=IstrU-1,Iend
            Hvxx(i,j)=Hvom(i-1,j,k)-2.0_r8*Hvom(i,j,k)+Hvom(i+1,j,k)
@@ -985,22 +879,8 @@
           END DO
         END DO
 #   endif
-#   if defined EW_PERIODIC || defined COMPOSED_GRID
-#    define IV_RANGE Istr-1,Iend+1
-#   elif defined REFINED_GRID
-#    define IV_RANGE IstrC,IendC
-        IF (ng.eq.1) THEN
-          IstrC=MAX(1,Istr-1)
-          IendC=MIN(Iend+1,Lm(ng))
-        ELSE
-          IstrC=Istr-1
-          IendC=Iend+1
-        END IF
-#   else
-#    define IV_RANGE MAX(Istr-1,1),MIN(Iend+1,Lm(ng))
-#   endif
         DO j=JstrV,Jend
-          DO i=IV_RANGE
+          DO i=Istrm1,Iendp1
             vxx(i,j)=v(i-1,j,k,nrhs)-2.0_r8*v(i,j,k,nrhs)+              &
 #   ifdef WEC_MELLOR
      &               v_stokes(i-1,j,k)-2.0_r8*v_stokes(i,j,k)+          &
@@ -1009,19 +889,20 @@
      &               v(i+1,j,k,nrhs)
           END DO
         END DO
-#   undef IV_RANGE
-#   if !defined EW_PERIODIC && !defined COMPOSED_GRID
-        IF (WESTERN_EDGE_REF) THEN
-          DO j=JstrV,Jend
-            vxx(Istr-1,j)=vxx(Istr,j)
-          END DO
+        IF (.not.(CompositeGrid(iwest,ng).or.EWperiodic(ng))) THEN
+          IF (DOMAIN(ng)%Western_Edge(tile)) THEN
+            DO j=JstrV,Jend
+              vxx(Istr-1,j)=vxx(Istr,j)
+            END DO
+          END IF
         END IF
-        IF (EASTERN_EDGE_REF) THEN
-          DO j=JstrV,Jend
-            vxx(Iend+1,j)=vxx(Iend,j)
-          END DO
+        IF (.not.(CompositeGrid(ieast,ng).or.EWperiodic(ng))) THEN
+          IF (DOMAIN(ng)%Eastern_Edge(tile)) THEN
+            DO j=JstrV,Jend
+              vxx(Iend+1,j)=vxx(Iend,j)
+            END DO
+          END IF
         END IF
-#   endif
         DO j=JstrV-1,Jend
           DO i=Istr,Iend+1
            Huee(i,j)=Huon(i,j-1,k)-2.0_r8*Huon(i,j,k)+Huon(i,j+1,k)
@@ -1073,21 +954,7 @@
           END DO
         END DO
 #   endif
-#   if defined NS_PERIODIC || defined COMPOSED_GRID
-#    define JV_RANGE JstrV-1,Jend+1
-#   elif defined REFINED_GRID
-#    define JV_RANGE JstrC,JendC
-        IF (ng.eq.1) THEN
-          JstrC=MAX(2,Jstrv-1)
-          JendC=MIN(Jend+1,Mm(ng))
-        ELSE
-          JstrC=JstrV-1
-          JendC=Jend+1
-        END IF
-#   else
-#    define JV_RANGE MAX(JstrV-1,2),MIN(Jend+1,Mm(ng))
-#   endif
-        DO j=JV_RANGE
+        DO j=JstrVm1,Jendp1
           DO i=Istr,Iend
             vee(i,j)=v(i,j-1,k,nrhs)-2.0_r8*v(i,j,k,nrhs)+              &
 #   ifdef WEC_MELLOR
@@ -1098,21 +965,22 @@
             Hvee(i,j)=Hvom(i,j-1,k)-2.0_r8*Hvom(i,j,k)+Hvom(i,j+1,k)
           END DO
         END DO
-#   undef JV_RANGE
-#   if !defined NS_PERIODIC && !defined COMPOSED_GRID
-        IF (SOUTHERN_EDGE_REF) THEN
-          DO i=Istr,Iend
-            vee (i,Jstr)=vee (i,Jstr+1)
-            Hvee(i,Jstr)=Hvee(i,Jstr+1)
-          END DO
+        IF (.not.(CompositeGrid(isouth,ng).or.NSperiodic(ng))) THEN
+          IF (DOMAIN(ng)%Southern_Edge(tile)) THEN
+            DO i=Istr,Iend
+              vee (i,Jstr)=vee (i,Jstr+1)
+              Hvee(i,Jstr)=Hvee(i,Jstr+1)
+            END DO
+          END IF
         END IF
-        IF (NORTHERN_EDGE_REF) THEN
-          DO i=Istr,Iend
-            vee (i,Jend+1)=vee (i,Jend)
-            Hvee(i,Jend+1)=Hvee(i,Jend)
-          END DO
+        IF (.not.(CompositeGrid(inorth,ng).or.NSperiodic(ng))) THEN
+          IF (DOMAIN(ng)%Northern_Edge(tile)) THEN
+            DO i=Istr,Iend
+              vee (i,Jend+1)=vee (i,Jend)
+              Hvee(i,Jend+1)=Hvee(i,Jend)
+            END DO
+          END IF
         END IF
-#   endif
 #   ifdef UV_C4ADVECTION
         cff=1.0_r8/6.0_r8
         DO j=JstrV-1,Jend
@@ -1222,6 +1090,7 @@
           END DO
         END DO
 # endif
+
       END DO K_LOOP
 !
       J_LOOP : DO j=Jstr,Jend

@@ -1,7 +1,7 @@
 !
-!svn $Id: fennel_mod.h 429 2009-12-20 17:30:26Z arango $
+!svn $Id$
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2010 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2014 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -105,43 +105,43 @@
 !
 !  Biological parameters.
 !
-      integer, dimension(Ngrids) :: BioIter
+      integer, allocatable :: BioIter(:)
 
-      real(r8), dimension(Ngrids) :: AttSW           ! 1/m
-      real(r8), dimension(Ngrids) :: AttChl          ! 1/(mg_Chl m2)
-      real(r8), dimension(Ngrids) :: Chl2C_m         ! mg_Chl/mg_C
-      real(r8), dimension(Ngrids) :: ChlMin          ! mg_Chl/m3
-      real(r8), dimension(Ngrids) :: CoagR           ! 1/day
-      real(r8), dimension(Ngrids) :: D_p5NH4         ! Watts/m2
-      real(r8), dimension(Ngrids) :: I_thNH4         ! Watts/m2
-      real(r8), dimension(Ngrids) :: K_NH4           ! m3/mmol_N
-      real(r8), dimension(Ngrids) :: K_NO3           ! m3/mmol_N
-      real(r8), dimension(Ngrids) :: K_Phy           ! (mmol_N/m3)^2
-      real(r8), dimension(Ngrids) :: LDeRRN          ! 1/day
-      real(r8), dimension(Ngrids) :: LDeRRC          ! 1/day
-      real(r8), dimension(Ngrids) :: NitriR          ! 1/day
-      real(r8), dimension(Ngrids) :: PARfrac         ! nondimensional
-      real(r8), dimension(Ngrids) :: PhyCN           ! mol_C/mol_N
-      real(r8), dimension(Ngrids) :: PhyIP           ! 1/mmol_N
-      real(r8), dimension(Ngrids) :: PhyIS           ! 1/(Watts m-2 day)
-      real(r8), dimension(Ngrids) :: PhyMin          ! mmol_N/m3
-      real(r8), dimension(Ngrids) :: PhyMR           ! 1/day
-      real(r8), dimension(Ngrids) :: SDeAR           ! 1/day
-      real(r8), dimension(Ngrids) :: SDeBR           ! 1/day
-      real(r8), dimension(Ngrids) :: SDeRRN          ! 1/day
-      real(r8), dimension(Ngrids) :: SDeRRC          ! 1/day
-      real(r8), dimension(Ngrids) :: Vp0             ! nondimensional
-      real(r8), dimension(Ngrids) :: wLDet           ! m/day
-      real(r8), dimension(Ngrids) :: wPhy            ! m/day
-      real(r8), dimension(Ngrids) :: wSDet           ! m/day
-      real(r8), dimension(Ngrids) :: ZooAE_N         ! nondimensional
-      real(r8), dimension(Ngrids) :: ZooBM           ! 1/day
-      real(r8), dimension(Ngrids) :: ZooCN           ! mol_C/mol_N
-      real(r8), dimension(Ngrids) :: ZooER           ! 1/day
-      real(r8), dimension(Ngrids) :: ZooGR           ! 1/day
-      real(r8), dimension(Ngrids) :: ZooMin          ! mmol_N/m3
-      real(r8), dimension(Ngrids) :: ZooMR           ! 1/day
-      real(r8), dimension(Ngrids) :: pCO2air         ! ppmv
+      real(r8), allocatable :: AttSW(:)              ! 1/m
+      real(r8), allocatable :: AttChl(:)             ! 1/(mg_Chl m2)
+      real(r8), allocatable :: Chl2C_m(:)            ! mg_Chl/mg_C
+      real(r8), allocatable :: ChlMin(:)             ! mg_Chl/m3
+      real(r8), allocatable :: CoagR(:)              ! 1/day
+      real(r8), allocatable :: D_p5NH4(:)            ! Watts/m2
+      real(r8), allocatable :: I_thNH4(:)            ! Watts/m2
+      real(r8), allocatable :: K_NH4(:)              ! m3/mmol_N
+      real(r8), allocatable :: K_NO3(:)              ! m3/mmol_N
+      real(r8), allocatable :: K_Phy(:)              ! (mmol_N/m3)^2
+      real(r8), allocatable :: LDeRRN(:)             ! 1/day
+      real(r8), allocatable :: LDeRRC(:)             ! 1/day
+      real(r8), allocatable :: NitriR(:)             ! 1/day
+      real(r8), allocatable :: PARfrac(:)            ! nondimensional
+      real(r8), allocatable :: PhyCN(:)              ! mol_C/mol_N
+      real(r8), allocatable :: PhyIP(:)              ! 1/mmol_N
+      real(r8), allocatable :: PhyIS(:)              ! 1/(Watts m-2 day)
+      real(r8), allocatable :: PhyMin(:)             ! mmol_N/m3
+      real(r8), allocatable :: PhyMR(:)              ! 1/day
+      real(r8), allocatable :: SDeAR(:)              ! 1/day
+      real(r8), allocatable :: SDeBR(:)              ! 1/day
+      real(r8), allocatable :: SDeRRN(:)             ! 1/day
+      real(r8), allocatable :: SDeRRC(:)             ! 1/day
+      real(r8), allocatable :: Vp0(:)                ! nondimensional
+      real(r8), allocatable :: wLDet(:)              ! m/day
+      real(r8), allocatable :: wPhy(:)               ! m/day
+      real(r8), allocatable :: wSDet(:)              ! m/day
+      real(r8), allocatable :: ZooAE_N(:)            ! nondimensional
+      real(r8), allocatable :: ZooBM(:)              ! 1/day
+      real(r8), allocatable :: ZooCN(:)              ! mol_C/mol_N
+      real(r8), allocatable :: ZooER(:)              ! 1/day
+      real(r8), allocatable :: ZooGR(:)              ! 1/day
+      real(r8), allocatable :: ZooMin(:)             ! mmol_N/m3
+      real(r8), allocatable :: ZooMR(:)              ! 1/day
+      real(r8), allocatable :: pCO2air(:)            ! ppmv
 
       CONTAINS
 
@@ -196,15 +196,6 @@
       NDbio2d=NDbio2d+1
 # endif
 !
-!  Allocate biological diagnostics vectors
-!
-      IF (.not.allocated(iDbio2)) THEN
-        allocate ( iDbio2(NDbio2d) )
-      END IF
-      IF (.not.allocated(iDbio3)) THEN
-        allocate ( iDbio3(NDbio3d) )
-      END IF
-!
 !  Initialize biology diagnostic indices.
 !
       ic=0
@@ -223,16 +214,139 @@
 #endif
 !
 !-----------------------------------------------------------------------
-!  Initialize tracer identification indices.
+!  Allocate various module variables.
 !-----------------------------------------------------------------------
+!
+      IF (.not.allocated(BioIter)) THEN
+        allocate ( BioIter(Ngrids) )
+      END IF
+      IF (.not.allocated(AttSW)) THEN
+        allocate ( AttSW(Ngrids) )
+      END IF
+      IF (.not.allocated(AttChl)) THEN
+        allocate ( AttChl(Ngrids) )
+      END IF
+      IF (.not.allocated(Chl2C_m)) THEN
+        allocate ( Chl2C_m(Ngrids) )
+      END IF
+      IF (.not.allocated(ChlMin)) THEN
+        allocate ( ChlMin(Ngrids) )
+      END IF
+      IF (.not.allocated(CoagR)) THEN
+        allocate ( CoagR(Ngrids) )
+      END IF
+      IF (.not.allocated(D_p5NH4)) THEN
+        allocate ( D_p5NH4(Ngrids) )
+      END IF
+      IF (.not.allocated(I_thNH4)) THEN
+        allocate ( I_thNH4(Ngrids) )
+      END IF
+      IF (.not.allocated(K_NH4)) THEN
+        allocate ( K_NH4(Ngrids) )
+      END IF
+      IF (.not.allocated(K_NO3)) THEN
+        allocate ( K_NO3(Ngrids) )
+      END IF
+      IF (.not.allocated(K_Phy)) THEN
+        allocate ( K_Phy(Ngrids) )
+      END IF
+      IF (.not.allocated(LDeRRN)) THEN
+        allocate ( LDeRRN(Ngrids) )
+      END IF
+      IF (.not.allocated(LDeRRC)) THEN
+        allocate ( LDeRRC(Ngrids) )
+      END IF
+      IF (.not.allocated(NitriR)) THEN
+        allocate ( NitriR(Ngrids) )
+      END IF
+      IF (.not.allocated(PARfrac)) THEN
+        allocate ( PARfrac(Ngrids) )
+      END IF
+      IF (.not.allocated(PhyCN)) THEN
+        allocate ( PhyCN(Ngrids) )
+      END IF
+      IF (.not.allocated(PhyIP)) THEN
+        allocate ( PhyIP(Ngrids) )
+      END IF
+      IF (.not.allocated(PhyIS)) THEN
+        allocate ( PhyIS(Ngrids) )
+      END IF
+      IF (.not.allocated(PhyMin)) THEN
+        allocate ( PhyMin(Ngrids) )
+      END IF
+      IF (.not.allocated(PhyMR)) THEN
+        allocate ( PhyMR(Ngrids) )
+      END IF
+      IF (.not.allocated(SDeAR)) THEN
+        allocate ( SDeAR(Ngrids) )
+      END IF
+      IF (.not.allocated(SDeBR)) THEN
+        allocate ( SDeBR(Ngrids) )
+      END IF
+      IF (.not.allocated(SDeRRN)) THEN
+        allocate ( SDeRRN(Ngrids) )
+      END IF
+      IF (.not.allocated(SDeRRC)) THEN
+        allocate ( SDeRRC(Ngrids) )
+      END IF
+      IF (.not.allocated(Vp0)) THEN
+        allocate ( Vp0(Ngrids) )
+      END IF
+      IF (.not.allocated(wLDet)) THEN
+        allocate ( wLDet(Ngrids) )
+      END IF
+      IF (.not.allocated(wPhy)) THEN
+        allocate ( wPhy(Ngrids) )
+      END IF
+      IF (.not.allocated(wSDet)) THEN
+        allocate ( wSDet(Ngrids) )
+      END IF
+      IF (.not.allocated(ZooAE_N)) THEN
+        allocate ( ZooAE_N(Ngrids) )
+      END IF
+      IF (.not.allocated(ZooBM)) THEN
+        allocate ( ZooBM(Ngrids) )
+      END IF
+      IF (.not.allocated(ZooCN)) THEN
+        allocate ( ZooCN(Ngrids) )
+      END IF
+      IF (.not.allocated(ZooER)) THEN
+        allocate ( ZooER(Ngrids) )
+      END IF
+      IF (.not.allocated(ZooGR)) THEN
+        allocate ( ZooGR(Ngrids) )
+      END IF
+      IF (.not.allocated(ZooMin)) THEN
+        allocate ( ZooMin(Ngrids) )
+      END IF
+      IF (.not.allocated(ZooMR)) THEN
+        allocate ( ZooMR(Ngrids) )
+      END IF
+      IF (.not.allocated(pCO2air)) THEN
+        allocate ( pCO2air(Ngrids) )
+      END IF
 !
 !  Allocate biological tracer vector.
 !
       IF (.not.allocated(idbio)) THEN
         allocate ( idbio(NBT) )
       END IF
+
+#if defined DIAGNOSTICS && defined DIAGNOSTICS_BIO
 !
-!  Set identification indices.
+!  Allocate biological diagnostics vectors
+!
+      IF (.not.allocated(iDbio2)) THEN
+        allocate ( iDbio2(NDbio2d) )
+      END IF
+      IF (.not.allocated(iDbio3)) THEN
+        allocate ( iDbio3(NDbio3d) )
+      END IF
+#endif
+!
+!-----------------------------------------------------------------------
+!  Initialize tracer identification indices.
+!-----------------------------------------------------------------------
 !
       ic=NAT+NPT+NCS+NNS
       DO i=1,NBT

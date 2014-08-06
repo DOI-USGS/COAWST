@@ -1,7 +1,7 @@
 /*
-** svn $Id: nemuro_var.h 429 2009-12-20 17:30:26Z arango $
+** svn $Id$
 *************************************************** Hernan G. Arango ***
-** Copyright (c) 2002-2010 The ROMS/TOMS Group                        **
+** Copyright (c) 2002-2014 The ROMS/TOMS Group                        **
 **   Licensed under a MIT/X style license                             **
 **   See License_ROMS.txt                                             **
 ************************************************************************
@@ -42,10 +42,33 @@
                 idTvar(iSiOH)=varid
               CASE ('idTvar(iopal)')
                 idTvar(iopal)=varid
-
-/*
-**  Biological tracers open boundary conditions.
-*/
+# ifdef IRON_LIMIT
+              CASE ('idTvar(iFeSp)')
+                idTvar(iFeSp)=varid
+              CASE ('idTvar(iFeLp)')
+                idTvar(iFeLp)=varid
+              CASE ('idTvar(iFeD_)')
+                idTvar(iFeD_)=varid
+# endif
+# ifdef NEMURO_SED1
+              CASE ('idPONsed')
+                idPONsed=varid
+              CASE ('idOPALsed')
+                idOPALsed=varid
+              CASE ('idDENITsed')
+                idDENITsed=varid
+              CASE ('idPONbur')
+                idPONbur=varid
+              CASE ('idOPALbur')
+                idOPALbur=varid
+# endif
+# ifdef PRIMARY_PROD
+              CASE ('idNPP')
+                idNPP=varid
+# endif
+!
+!  Biological tracers open boundary conditions.
+!
 
               CASE ('idTbry(iwest,iLphy)')
                 idTbry(iwest,iLphy)=varid
@@ -145,12 +168,37 @@
                 idTbry(isouth,iopal)=varid
               CASE ('idTbry(inorth,iopal)')
                 idTbry(inorth,iopal)=varid
+# ifdef IRON_LIMIT
+              CASE ('idTbry(iwest,iFeSp)')
+                idTbry(iwest,iFeSp)=varid
+              CASE ('idTbry(ieast,iFeSp)')
+                idTbry(ieast,iFeSp)=varid
+              CASE ('idTbry(isouth,iFeSp)')
+                idTbry(isouth,iFeSp)=varid
+              CASE ('idTbry(inorth,iFeSp)')
+                idTbry(inorth,iFeSp)=varid
+              CASE ('idTbry(iwest,iFeLp)')
+                idTbry(iwest,iFeLp)=varid
+              CASE ('idTbry(ieast,iFeLp)')
+                idTbry(ieast,iFeLp)=varid
+              CASE ('idTbry(isouth,iFeLp)')
+                idTbry(isouth,iFeLp)=varid
+              CASE ('idTbry(inorth,iFeLp)')
+                idTbry(inorth,iFeLp)=varid
+              CASE ('idTbry(iwest,iFeD_)')
+                idTbry(iwest,iFeD_)=varid
+              CASE ('idTbry(ieast,iFeD_)')
+                idTbry(ieast,iFeD_)=varid
+              CASE ('idTbry(isouth,iFeD_)')
+                idTbry(isouth,iFeD_)=varid
+              CASE ('idTbry(inorth,iFeD_)')
+                idTbry(inorth,iFeD_)=varid
+# endif
 
-#ifdef TS_PSOURCE
 
-/*
-**  Biological tracers point Source/Sinks (river runoff).
-*/
+!
+! Biological tracers point Source/Sinks (river runoff).
+!
 
               CASE ('idRtrc(iNO3_)')
                 idRtrc(iNO3_)=varid
@@ -160,4 +208,3 @@
                 idRtrc(iDON_)=varid
               CASE ('idRtrc(iPON_)')
                 idRtrc(iPON_)=varid
-#endif

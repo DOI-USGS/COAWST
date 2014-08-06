@@ -1,11 +1,14 @@
 #include "cppdefs.h"
       MODULE vorticity_mod
 
-#ifdef DIAGNOSTICS
+#if defined AVERAGES    || \
+   (defined AD_AVERAGES && defined ADJOINT) || \
+   (defined RP_AVERAGES && defined TL_IOMS) || \
+   (defined TL_AVERAGES && defined TANGENT)
 !
 !svn $Id: vorticity.F 443 2010-02-04 21:31:53Z arango $
 !=======================================================================
-!  Copyright (c) 2002-2010 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2014 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !================================================== Hernan G. Arango ===
@@ -21,14 +24,13 @@
 !                                                                      !
 !    avor = rvor + f                                                   !
 !                                                                      !
-!  In curvilinear coordinates, the relative and potential vorticity    !
+!  In curvilinear coordinates, the vertical component of relative      !
+!  vorticity and potential vorticity are:                              !
 !  are:                                                                !
 !                                                                      !
-!    rvor = mn * [d(v/n)/d(xi) - d(u/m)/d(eta)] +                      !
+!    rvor = mn * [d(v/n)/d(xi) - d(u/m)/d(eta)]                        !
 !                                                                      !
-!           d(u)/d(z) - d(v)/d(z)]                                     !
-!                                                                      !
-!    pvor = mn/rho0 * [f/mn d(pden)/d(z) +                             !
+!    pvor = mn/rho0 * [f/mn +                                          !
 !                                                                      !
 !                      d(v/n)/d(xi) - d(u/m)/d(eta)] * d(pden)/d(z) +  !
 !                                                                      !
@@ -57,7 +59,7 @@
 !***********************************************************************
 !
       USE mod_param
-      USE mod_diags
+      USE mod_average
       USE mod_grid
       USE mod_ocean
       USE mod_stepping
@@ -77,9 +79,9 @@
      &                     LBi, UBi, LBj, UBj,                          &
      &                     IminS, ImaxS, JminS, JmaxS,                  &
 # ifdef SOLVE3D
-     &                     kstp(ng), nrhs(ng),                          &
+     &                     KOUT, NOUT,                                  &
 # else
-     &                     knew(ng),                                    &
+     &                     KOUT,                                        &
 # endif
 # ifdef MASKING
      &                     GRID(ng) % pmask,                            &
@@ -102,11 +104,11 @@
      &                     OCEAN(ng) % vbar,                            &
      &                     OCEAN(ng) % zeta,                            &
 # ifdef SOLVE3D
-     &                     DIAGS(ng) % pvor,                            &
-     &                     DIAGS(ng) % rvor,                            &
+     &                     AVERAGE(ng) % avgpvor3d,                     &
+     &                     AVERAGE(ng) % avgrvor3d,                     &
 # endif
-                           DIAGS(ng) % pvor_bar,                        &
-     &                     DIAGS(ng) % rvor_bar)
+     &                     AVERAGE(ng) % avgpvor2d,                     &
+     &                     AVERAGE(ng) % avgrvor2d)
 
 # ifdef PROFILE
       CALL wclock_off (ng, iNLM, 5)
@@ -119,7 +121,7 @@
      &                           LBi, UBi, LBj, UBj,                    &
      &                           IminS, ImaxS, JminS, JmaxS,            &
 # ifdef SOLVE3D
-     &                           kout, nrhs,                            &
+     &                           kout, nout,                            &
 # else
      &                           kout,                                  &
 # endif
@@ -138,13 +140,12 @@
 !***********************************************************************
 !
       USE mod_param
+      USE mod_ncparam
       USE mod_scalars
 !
-# if defined EW_PERIODIC || defined NS_PERIODIC
       USE exchange_2d_mod, ONLY : exchange_p2d_tile
-#  ifdef SOLVE3D
+# ifdef SOLVE3D
       USE exchange_3d_mod, ONLY : exchange_p3d_tile
-#  endif
 # endif
 # ifdef DISTRIBUTE
       USE mp_exchange_mod, ONLY : mp_exchange2d
@@ -155,23 +156,11 @@
 !
 !  Imported variable declarations.
 !
-# ifdef DISTRIBUTE
-#  ifdef EW_PERIODIC
-      logical :: EWperiodic=.TRUE.
-#  else
-      logical :: EWperiodic=.FALSE.
-#  endif
-#  ifdef NS_PERIODIC
-      logical :: NSperiodic=.TRUE.
-#  else
-      logical :: NSperiodic=.FALSE.
-#  endif
-# endif
       integer, intent(in) :: ng, tile
       integer, intent(in) :: LBi, UBi, LBj, UBj
       integer, intent(in) :: IminS, ImaxS, JminS, JmaxS
 # ifdef SOLVE3D
-      integer, intent(in) :: kout, nrhs
+      integer, intent(in) :: kout, nout
 # else
       integer, intent(in) :: kout
 # endif
@@ -301,13 +290,13 @@
           END DO
           DO j=Jstr,JendR
             DO i=Istr,IendR
-              dUde(i,j)=om_u(i,j  )*u(i,j  ,k,nrhs)-                    &
-     &                  om_u(i,j-1)*u(i,j-1,k,nrhs)
+              dUde(i,j)=om_u(i,j  )*u(i,j  ,k,nout)-                    &
+     &                  om_u(i,j-1)*u(i,j-1,k,nout)
 #  ifdef MASKING
               dUde(i,j)=dUde(i,j)*pmask(i,j)
 #  endif
-              dVdx(i,j)=on_v(i  ,j)*v(i  ,j,k,nrhs)-                    &
-     &                  on_v(i-1,j)*v(i-1,j,k,nrhs)
+              dVdx(i,j)=on_v(i  ,j)*v(i  ,j,k,nout)-                    &
+     &                  on_v(i-1,j)*v(i-1,j,k,nout)
 #  ifdef MASKING
               dVdx(i,j)=dVdx(i,j)*pmask(i,j)
 #  endif
@@ -342,16 +331,16 @@
             DO i=Istr,IendR
               cff=1.0_r8/(0.5_r8*(z_r(i-1,j,k+1)-z_r(i-1,j,k)+          &
      &                            z_r(i  ,j,k+1)-z_r(i  ,j,k)))
-              dUdz(i,j,k2)=cff*(u(i,j,k+1,nrhs)-                        &
-     &                          u(i,j,k  ,nrhs))
+              dUdz(i,j,k2)=cff*(u(i,j,k+1,nout)-                        &
+     &                          u(i,j,k  ,nout))
             END DO
           END DO
           DO j=Jstr,JendR
             DO i=Istr-1,IendR
               cff=1.0_r8/(0.5_r8*(z_r(i,j-1,k+1)-z_r(i,j-1,k)+          &
      &                            z_r(i,j  ,k+1)-z_r(i,j  ,k)))
-              dVdz(i,j,k2)=cff*(v(i,j,k+1,nrhs)-                        &
-     &                          v(i,j,k  ,nrhs))
+              dVdz(i,j,k2)=cff*(v(i,j,k+1,nout)-                        &
+     &                          v(i,j,k  ,nout))
             END DO
           END DO
         END IF
@@ -373,29 +362,31 @@
      &                dUdz(i  ,j  ,k1)+dUdz(i  ,j  ,k2)
               dVdz_pr=dVdz(i-1,j  ,k1)+dVdz(i-1,j  ,k2)+                &
      &                dVdz(i  ,j  ,k1)+dVdz(i  ,j  ,k2)
-              rvor(i,j,k)=cff*(dVdx(i,j)-dUde(i,j))+                    &
-     &                    0.25_r8*(dUdz_pr-dVdz_pr)
+              rvor(i,j,k)=cff*(dVdx(i,j)-dUde(i,j))
               pvor(i,j,k)=orho0*                                        &
      &                    (cff*dRdz_pr*(fomn(i,j)+                      &
      &                                  dVdx(i,j)-dUde(i,j))+           &
-     &                     0.125_r8*(dUdz_pr*dRde_pr-dVdz_pr*dRde_pr))
+     &                     0.125_r8*(dUdz_pr*dRde_pr-dVdz_pr*dRdx_pr))
             END DO
           END DO
         END IF
       END DO K_LOOP
+!
+!  Exchange boundary data.
+!
+      IF (EWperiodic(ng).or.NSperiodic(ng)) THEN
+        CALL exchange_p3d_tile (ng, tile,                               &
+     &                          LBi, UBi, LBj, UBj, 1, N(ng),           &
+     &                          pvor)
+        CALL exchange_p3d_tile (ng, tile,                               &
+     &                          LBi, UBi, LBj, UBj, 1, N(ng),           &
+     &                          rvor)
+      END IF
 
-#  if defined EW_PERIODIC || defined NS_PERIODIC
-      CALL exchange_p3d_tile (ng, tile,                                 &
-     &                        LBi, UBi, LBj, UBj, 1, N(ng),             &
-     &                        pvor)
-      CALL exchange_p3d_tile (ng, tile,                                 &
-     &                        LBi, UBi, LBj, UBj, 1, N(ng),             &
-     &                        rvor)
-#  endif
 #  ifdef DISTRIBUTE
       CALL mp_exchange3d (ng, tile, iNLM, 2,                            &
      &                    LBi, UBi, LBj, UBj, 1, N(ng),                 &
-     &                    NghostPoints, EWperiodic, NSperiodic,         &
+     &                    NghostPoints, EWperiodic(ng), NSperiodic(ng), &
      &                    pvor,                                         &
      &                    rvor)
 #  endif
@@ -426,19 +417,22 @@
      &                       (h(i,j)+zeta(i,j,kout)))
         END DO
       END DO
+!
+!  Exchange boundary information.
+!
+      IF (EWperiodic(ng).or.NSperiodic(ng)) THEN
+        CALL exchange_p2d_tile (ng, tile,                               &
+     &                          LBi, UBi, LBj, UBj,                     &
+     &                          pvor_bar)
+        CALL exchange_p2d_tile (ng, tile,                               &
+     &                          LBi, UBi, LBj, UBj,                     &
+     &                          rvor_bar)
+      END IF
 
-# if defined EW_PERIODIC || defined NS_PERIODIC
-      CALL exchange_p2d_tile (ng, tile,                                 &
-     &                        LBi, UBi, LBj, UBj,                       &
-     &                        pvor_bar)
-      CALL exchange_p2d_tile (ng, tile,                                 &
-     &                        LBi, UBi, LBj, UBj,                       &
-     &                        rvor_bar)
-# endif
 # ifdef DISTRIBUTE
       CALL mp_exchange2d (ng, tile, iNLM, 2,                            &
      &                    LBi, UBi, LBj, UBj,                           &
-     &                    NghostPoints, EWperiodic, NSperiodic,         &
+     &                    NghostPoints, EWperiodic(ng), NSperiodic(ng), &
      &                    pvor_bar,                                     &
      &                    rvor_bar)
 # endif

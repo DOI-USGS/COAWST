@@ -2,9 +2,9 @@
 #if (defined FOUR_DVAR || defined VERIFICATION) && defined OBSERVATIONS
       SUBROUTINE stats_modobs (ng)
 !
-!svn $Id: stats_modobs.F 429 2009-12-20 17:30:26Z arango $
+!svn $Id$
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2010 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2014 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -82,25 +82,25 @@
 !
 !  Read in observation type identifier.
 !
-      CALL netcdf_get_ivar (ng, iNLM, OBSname(ng), Vname(1,idOtyp),     &
+      CALL netcdf_get_ivar (ng, iNLM, OBS(ng)%name, Vname(1,idOtyp),    &
      &                      obs_type,                                   &
-     &                      ncid = ncOBSid(ng),                         &
+     &                      ncid = OBS(ng)%ncid,                        &
      &                      start = (/1/), total = (/Ndatum(ng)/))
       IF (exit_flag.ne. NoError) RETURN
 !
 !  Read in observation values.
 !
-      CALL netcdf_get_fvar (ng, iNLM, OBSname(ng), Vname(1,idOval),     &
+      CALL netcdf_get_fvar (ng, iNLM, OBS(ng)%name, Vname(1,idOval),    &
      &                      obs_value,                                  &
-     &                      ncid = ncOBSid(ng),                         &
+     &                      ncid = OBS(ng)%ncid,                        &
      &                      start = (/1/), total = (/Ndatum(ng)/))
       IF (exit_flag.ne. NoError) RETURN
 !
 !  Read in observation screening flag.
 !
-      CALL netcdf_get_fvar (ng, iNLM, MODname(ng), Vname(1,idObsS),     &
+      CALL netcdf_get_fvar (ng, iNLM, DAV(ng)%name, Vname(1,idObsS),    &
      &                      obs_scale,                                  &
-     &                      ncid = ncMODid(ng),                         &
+     &                      ncid = DAV(ng)%ncid,                        &
      &                      start = (/1/), total = (/Ndatum(ng)/))
       IF (exit_flag.ne. NoError) RETURN
 !
@@ -108,14 +108,14 @@
 !
 # if defined TL_W4DVAR          || defined W4DVAR || \
      defined W4DVAR_SENSITIVITY
-      CALL netcdf_get_fvar (ng, iNLM, MODname(ng), Vname(1,idTLmo),     &
+      CALL netcdf_get_fvar (ng, iNLM, DAV(ng)%name, Vname(1,idTLmo),    &
      &                      mod_value,                                  &
-     &                      ncid = ncMODid(ng),                         &
+     &                      ncid = DAV(ng)%ncid,                        &
      &                      start = (/1/), total = (/Ndatum(ng)/))
 # else
-      CALL netcdf_get_fvar (ng, iNLM, MODname(ng), Vname(1,idNLmo),     &
+      CALL netcdf_get_fvar (ng, iNLM, DAV(ng)%name, Vname(1,idNLmo),    &
      &                      mod_value,                                  &
-     &                      ncid = ncMODid(ng),                         &
+     &                      ncid = DAV(ng)%ncid,                        &
      &                      start = (/1/), total = (/Ndatum(ng)/))
 # endif
       IF (exit_flag.ne. NoError) RETURN
@@ -238,54 +238,54 @@
 !
 !  Write comparison statistics to NetCDF file.
 !
-      CALL netcdf_put_ivar (ng, iNLM, MODname(ng), 'Nobs',              &
+      CALL netcdf_put_ivar (ng, iNLM, DAV(ng)%name, 'Nobs',             &
      &                      Ncount(0:), (/1/), (/NstateVar(ng)+1/),     &
-     &                      ncid = ncMODid(ng))
+     &                      ncid = DAV(ng)%ncid)
       IF (exit_flag.ne.NoError) RETURN
 
-      CALL netcdf_put_fvar (ng, iNLM, MODname(ng), 'obs_mean',          &
+      CALL netcdf_put_fvar (ng, iNLM, DAV(ng)%name, 'obs_mean',         &
      &                      obs_mean(0:), (/1/), (/NstateVar(ng)+1/),   &
-     &                      ncid = ncMODid(ng))
+     &                      ncid = DAV(ng)%ncid)
       IF (exit_flag.ne.NoError) RETURN
 
-      CALL netcdf_put_fvar (ng, iNLM, MODname(ng), 'obs_std',           &
+      CALL netcdf_put_fvar (ng, iNLM, DAV(ng)%name, 'obs_std',          &
      &                      obs_std(0:), (/1/), (/NstateVar(ng)+1/),    &
-     &                      ncid = ncMODid(ng))
+     &                      ncid = DAV(ng)%ncid)
       IF (exit_flag.ne.NoError) RETURN
 
-      CALL netcdf_put_fvar (ng, iNLM, MODname(ng), 'model_mean',        &
+      CALL netcdf_put_fvar (ng, iNLM, DAV(ng)%name, 'model_mean',       &
      &                      mod_mean(0:), (/1/), (/NstateVar(ng)+1/),   &
-     &                      ncid = ncMODid(ng))
+     &                      ncid = DAV(ng)%ncid)
       IF (exit_flag.ne.NoError) RETURN
 
-      CALL netcdf_put_fvar (ng, iNLM, MODname(ng), 'model_std',         &
+      CALL netcdf_put_fvar (ng, iNLM, DAV(ng)%name, 'model_std',        &
      &                      mod_std(0:), (/1/), (/NstateVar(ng)+1/),    &
-     &                      ncid = ncMODid(ng))
+     &                      ncid = DAV(ng)%ncid)
       IF (exit_flag.ne.NoError) RETURN
 
-      CALL netcdf_put_fvar (ng, iNLM, MODname(ng), 'model_bias',        &
+      CALL netcdf_put_fvar (ng, iNLM, DAV(ng)%name, 'model_bias',       &
      &                      MB(0:), (/1/), (/NstateVar(ng)+1/),         &
-     &                      ncid = ncMODid(ng))
+     &                      ncid = DAV(ng)%ncid)
       IF (exit_flag.ne.NoError) RETURN
 
-      CALL netcdf_put_fvar (ng, iNLM, MODname(ng), 'SDE',               &
+      CALL netcdf_put_fvar (ng, iNLM, DAV(ng)%name, 'SDE',              &
      &                      SDE(0:), (/1/), (/NstateVar(ng)+1/),        &
-     &                      ncid = ncMODid(ng))
+     &                      ncid = DAV(ng)%ncid)
       IF (exit_flag.ne.NoError) RETURN
 
-      CALL netcdf_put_fvar (ng, iNLM, MODname(ng), 'CC',                &
-     &                      CC(0:), (/1/), (/NstateVar(ng)+1/),        &
-     &                      ncid = ncMODid(ng))
+      CALL netcdf_put_fvar (ng, iNLM, DAV(ng)%name, 'CC',               &
+     &                      CC(0:), (/1/), (/NstateVar(ng)+1/),         &
+     &                      ncid = DAV(ng)%ncid)
       IF (exit_flag.ne.NoError) RETURN
 
-      CALL netcdf_put_fvar (ng, iNLM, MODname(ng), 'MSE',               &
+      CALL netcdf_put_fvar (ng, iNLM, DAV(ng)%name, 'MSE',              &
      &                      MSE(0:), (/1/), (/NstateVar(ng)+1/),        &
-     &                      ncid = ncMODid(ng))
+     &                      ncid = DAV(ng)%ncid)
       IF (exit_flag.ne.NoError) RETURN
 !
 !  Synchronize NetCDF file to disk.
 !
-      CALL netcdf_sync (ng, iNLM, MODname(ng), ncMODid(ng))
+      CALL netcdf_sync (ng, iNLM, DAV(ng)%name, DAV(ng)%ncid)
 !
  10   FORMAT (/,' 4DVAR Model-Observations Comparison Statistics:',/)
  20   FORMAT (t22,5(a11,1x))

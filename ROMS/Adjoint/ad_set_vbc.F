@@ -2,9 +2,9 @@
       MODULE ad_set_vbc_mod
 #ifdef ADJOINT
 !
-!svn $Id: ad_set_vbc.F 431 2009-12-26 20:36:20Z arango $
+!svn $Id$
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2010 The ROMS/TOMS Group       Andrew M. Moore   !
+!  Copyright (c) 2002-2014 The ROMS/TOMS Group       Andrew M. Moore   !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -19,10 +19,10 @@
 !=======================================================================
 !
       implicit none
-
+!
       PRIVATE
       PUBLIC  :: ad_set_vbc
-
+!
       CONTAINS
 
 # ifdef SOLVE3D
@@ -54,6 +54,13 @@
 #  if defined SCORRECTION || defined SRELAXATION
      &                      GRID(ng) % Hz,                              &
      &                      GRID(ng) % ad_Hz,                           &
+#  endif
+#  if defined UV_LOGDRAG
+     &                      GRID(ng) % ZoBot,                           &
+#  elif defined UV_LDRAG
+     &                      GRID(ng) % rdrag,                           &
+#  elif defined UV_QDRAG
+     &                      GRID(ng) % rdrag2,                          &
 #  endif
 #  if defined UV_LOGDRAG && (!defined BBL_MODEL_NOT_YET || defined ICESHELF)
      &                      GRID(ng) % z_r,                             &
@@ -116,6 +123,13 @@
 #  if defined SCORRECTION || defined SRELAXATION
      &                            Hz, ad_Hz,                            &
 #  endif
+#  if defined UV_LOGDRAG
+     &                            ZoBot,                                &
+#  elif defined UV_LDRAG
+     &                            rdrag,                                &
+#  elif defined UV_QDRAG
+     &                            rdrag2,                               &
+#  endif
 #  if defined UV_LOGDRAG && (!defined BBL_MODEL_NOT_YET || defined ICESHELF)
      &                            z_r, ad_z_r,                          &
      &                            z_w, ad_z_w,                          &
@@ -173,6 +187,13 @@
 #  ifdef ASSUMED_SHAPE
 #   if defined SCORRECTION || defined SRELAXATION
       real(r8), intent(in) :: Hz(LBi:,LBj:,:)
+#   endif
+#   if defined UV_LOGDRAG
+      real(r8), intent(in) :: ZoBot(LBi:,LBj:)
+#   elif defined UV_LDRAG
+      real(r8), intent(in) :: rdrag(LBi:,LBj:)
+#   elif defined UV_QDRAG
+      real(r8), intent(in) :: rdrag2(LBi:,LBj:)
 #   endif
 #   if defined UV_LOGDRAG && (!defined BBL_MODEL_NOT_YET || defined ICESHELF)
       real(r8), intent(in) :: z_r(LBi:,LBj:,:)
@@ -240,6 +261,13 @@
 #   if defined SCORRECTION || defined SRELAXATION
       real(r8), intent(in) :: Hz(LBi:UBi,LBj:UBj,N(ng))
 #   endif
+#   if defined UV_LOGDRAG
+      real(r8), intent(in) :: ZoBot(LBi:UBi,LBj:UBj)
+#   elif defined UV_LDRAG
+      real(r8), intent(in) :: rdrag(LBi:UBi,LBj:UBj)
+#   elif defined UV_QDRAG
+      real(r8), intent(in) :: rdrag2(LBi:UBi,LBj:UBj)
+#   endif
 #   if defined UV_LOGDRAG && (!defined BBL_MODEL_NOT_YET || defined ICESHELF)
       real(r8), intent(in) :: z_r(LBi:UBi,LBj:UBj,N(ng))
       real(r8), intent(in) :: z_w(LBi:UBi,LBj:UBj,0:N(ng))
@@ -306,18 +334,6 @@
 !
 !  Local variable declarations.
 !
-# ifdef DISTRIBUTE
-#  ifdef EW_PERIODIC
-      logical :: EWperiodic=.TRUE.
-#  else
-      logical :: EWperiodic=.FALSE.
-#  endif
-#  ifdef NS_PERIODIC
-      logical :: NSperiodic=.TRUE.
-#  else
-      logical :: NSperiodic=.FALSE.
-#  endif
-# endif
       integer :: i, j, itrc
 
       real(r8) :: cff1, cff2, cff3
@@ -358,12 +374,14 @@
 #   ifdef DISTRIBUTE
 !>    CALL mp_exchange2d (ng, tile, iTLM, 2,                            &
 !>   &                    LBi, UBi, LBj, UBj,                           &
-!>   &                    NghostPoints, EWperiodic, NSperiodic,         &
+!>   &                    NghostPoints,                                 &
+!>   &                    EWperiodic(ng), NSperiodic(ng),               &
 !>   &                    tl_bustr, tl_bvstr)
 !>
       CALL ad_mp_exchange2d (ng, tile, iADM, 2,                         &
      &                       LBi, UBi, LBj, UBj,                        &
-     &                       NghostPoints, EWperiodic, NSperiodic,      &
+     &                       NghostPoints,                              &
+     &                       EWperiodic(ng), NSperiodic(ng),            &
      &                       ad_bustr, ad_bvstr)
 #   endif
 !>    CALL bc_u2d_tile (ng, tile,                                       &
@@ -381,7 +399,7 @@
      &                     LBi, UBi, LBj, UBj,                          &
      &                     ad_bvstr)
 !
-!  Save adjoint bottom momentun flux for output purposes.
+!  Save adjoint bottom momentum flux for output purposes.
 !
       DO j=JstrR,JendR
         DO i=Istr,IendR
@@ -404,7 +422,7 @@
 !
       DO j=JstrV-1,Jend
         DO i=IstrU-1,Iend
-          cff1=1.0_r8/LOG((z_r(i,j,1)-z_w(i,j,0))/Zob(ng))
+          cff1=1.0_r8/LOG((z_r(i,j,1)-z_w(i,j,0))/ZoBot(i,j))
           cff2=vonKar*vonKar*cff1*cff1
           wrk(i,j)=MIN(Cdb_max,MAX(Cdb_min,cff2))
         END DO
@@ -505,7 +523,7 @@
       END DO
       DO j=JstrV-1,Jend
         DO i=IstrU-1,Iend
-          cff1=1.0_r8/LOG((z_r(i,j,1)-z_w(i,j,0))/Zob(ng))
+          cff1=1.0_r8/LOG((z_r(i,j,1)-z_w(i,j,0))/ZoBot(i,j))
           cff2=vonKar*vonKar*cff1*cff1
           cff3=MAX(Cdb_min,cff2)
           wrk(i,j)=MIN(Cdb_max,cff3)
@@ -543,11 +561,12 @@
      &                  u(i  ,j-1,1,nrhs)+                              &
      &                  u(i+1,j-1,1,nrhs))
           cff2=SQRT(cff1*cff1+v(i,j,1,nrhs)*v(i,j,1,nrhs))
-!>        tl_bvstr(i,j)=rdrg2(ng)*                                      &
+!>        tl_bvstr(i,j)=0.5_r8*(rdrag2(i,j-1)+rdrag2(i,j))*             &
 !>   &                  (tl_v(i,j,1,nrhs)*cff2+                         &
 !>   &                   v(i,j,1,nrhs)*tl_cff2)
 !>
-          adfac=rdrg2(ng)*ad_bvstr(i,j)
+          adfac=0.5_r8*(rdrag2(i,j-1)+rdrag2(i,j))*                     &
+     &          ad_bvstr(i,j)
           ad_v(i,j,1,nrhs)=ad_v(i,j,1,nrhs)+adfac*cff2
           ad_cff2=ad_cff2+adfac*v(i,j,1,nrhs)
           ad_bvstr(i,j)=0.0_r8
@@ -583,11 +602,12 @@
      &                  v(i-1,j  ,1,nrhs)+                              &
      &                  v(i-1,j+1,1,nrhs))
           cff2=SQRT(u(i,j,1,nrhs)*u(i,j,1,nrhs)+cff1*cff1)
-!>        tl_bustr(i,j)=rdrg2(ng)*                                      &
+!>        tl_bustr(i,j)=0.5_r8*(rdrag2(i-1,j)+rdrag2(i,j))*             &
 !>   &                  (tl_u(i,j,1,nrhs)*cff2+                         &
 !>   &                   u(i,j,1,nrhs)*tl_cff2)
 !>
-          adfac=rdrg2(ng)*ad_bustr(i,j)
+          adfac=0.5_r8*(rdrag2(i-1,j)+rdrag2(i,j))*                     &
+     &          ad_bustr(i,j)
           ad_u(i,j,1,nrhs)=ad_u(i,j,1,nrhs)+adfac*cff2
           ad_cff2=ad_cff2+adfac*u(i,j,1,nrhs)
           ad_bustr(i,j)=0.0_r8
@@ -622,17 +642,23 @@
 !
       DO j=JstrV,Jend
         DO i=Istr,Iend
-!>        tl_bvstr(i,j)=rdrg(ng)*tl_v(i,j,1,nrhs)
+!>        tl_bvstr(i,j)=0.5_r8*(rdrag(i,j-1)+rdrag(i,j))*               &
+!>   &                  tl_v(i,j,1,nrhs)
 !>
-          ad_v(i,j,1,nrhs)=ad_v(i,j,1,nrhs)+rdrg(ng)*ad_bvstr(i,j)
+          ad_v(i,j,1,nrhs)=ad_v(i,j,1,nrhs)+                            &
+     &                     0.5_r8*(rdrag(i,j-1)+rdrag(i,j))*            &
+     &                     ad_bvstr(i,j)
           ad_bvstr(i,j)=0.0_r8
         END DO
       END DO
       DO j=Jstr,Jend
         DO i=IstrU,Iend
-!>        tl_bustr(i,j)=rdrg(ng)*tl_u(i,j,1,nrhs)
+!>        tl_bustr(i,j)=0.5_r8*(rdrag(i-1,j)+rdrag(i,j))*               &
+!>   &                  tl_u(i,j,1,nrhs)
 !>
-          ad_u(i,j,1,nrhs)=ad_u(i,j,1,nrhs)+rdrg(ng)*ad_bustr(i,j)
+          ad_u(i,j,1,nrhs)=ad_u(i,j,1,nrhs)+                            &
+     &                     0.5_r8*(rdrag(i-1,j)+rdrag(i,j))*            &
+     &                     ad_bustr(i,j)
           ad_bustr(i,j)=0.0_r8
         END DO
       END DO
@@ -652,12 +678,14 @@
 #   ifdef DISTRIBUTE
 !>    CALL mp_exchange2d (ng, tile, iTLM, 2,                            &
 !>   &                    LBi, UBi, LBj, UBj,                           &
-!>   &                    NghostPoints, EWperiodic, NSperiodic,         &
+!>   &                    NghostPoints,                                 &
+!>   &                    EWperiodic(ng), NSperiodic(ng),               &
 !>   &                    tl_sustr, tl_svstr)
 !>
       CALL ad_mp_exchange2d (ng, tile, iADM, 2,                         &
      &                       LBi, UBi, LBj, UBj,                        &
-     &                       NghostPoints, EWperiodic, NSperiodic,      &
+     &                       NghostPoints,                              &
+     &                       EWperiodic(ng), NSperiodic(ng),            &
      &                       ad_sustr, ad_svstr)
 #   endif
 !>    CALL bc_u2d_tile (ng, tile,                                       &
@@ -681,7 +709,7 @@
 !
       DO j=JstrV-1,Jend
         DO i=IstrU-1,Iend
-          cff1=1.0_r8/LOG((z_w(i,j,N(ng))-z_r(i,j,N(ng)))/Zob(ng))
+          cff1=1.0_r8/LOG((z_w(i,j,N(ng))-z_r(i,j,N(ng)))/ZoBot(i,j))
           cff2=vonKar*vonKar*cff1*cff1
           cff3=MAX(Cdb_min,cff2)
           wrk(i,j)=MIN(Cdb_max,cff3)
@@ -791,7 +819,7 @@
       END DO
       DO j=JstrV-1,Jend
         DO i=IstrU-1,Iend
-          cff1=1.0_r8/LOG((z_w(i,j,N(ng))-z_r(i,j,N(ng)))/Zob(ng))
+          cff1=1.0_r8/LOG((z_w(i,j,N(ng))-z_r(i,j,N(ng)))/ZoBot(i,j))
           cff2=vonKar*vonKar*cff1*cff1
           cff3=MAX(Cdb_min,cff2)
           wrk(i,j)=MIN(Cdb_max,cff3)
@@ -830,11 +858,11 @@
      &                    u(i  ,j-1,N(ng),nrhs)+                        &
      &                    u(i+1,j-1,N(ng),nrhs))
             cff2=SQRT(cff1*cff1+v(i,j,N(ng),nrhs)*v(i,j,N(ng),nrhs))
-!>          tl_svstr(i,j)=-rdrg2(ng)*                                   &
+!>          tl_svstr(i,j)=-0.5_r8*(rdrag2(i,j-1)+rdrag2(i,j))*          &
 !>   &                    (tl_v(i,j,N(ng),nrhs)*cff2+                   &
 !>   &                     v(i,j,N(ng),nrhs)*tl_cff2)
 !>
-            adfac=-rdrg2(ng)*ad_svstr(i,j)
+            adfac=-0.5_r8*(rdrag2(i,j-1)+rdrag2(i,j))*ad_svstr(i,j)
             ad_v(i,j,N(ng),nrhs)=ad_v(i,j,N(ng),nrhs)+adfac*cff2
             ad_cff2=ad_cff2+adfac*v(i,j,N(ng),nrhs)
             ad_svstr(i,j)=0.0_r8
@@ -874,11 +902,11 @@
      &                    v(i-1,j  ,N(ng),nrhs)+                        &
      &                    v(i-1,j+1,N(ng),nrhs))
             cff2=SQRT(u(i,j,N(ng),nrhs)*u(i,j,N(ng),nrhs)+cff1*cff1)
-!>          tl_sustr(i,j)=-rdrg2(ng)*                                   &
+!>          tl_sustr(i,j)=-0.5_r8*(rdrag2(i-1,j)+rdrag2(i,j))*          &
 !>   &                     (tl_u(i,j,N(ng),nrhs)*cff2+                  &
 !>   &                      u(i,j,N(ng),nrhs)*tl_cff2)
 !>
-            adfac=-rdrg2(ng)*ad_sustr(i,j)
+            adfac=-0.5_r8*(rdrag2(i-1,j)+rdrag2(i,j))*ad_sustr(i,j)
             ad_u(i,j,N(ng),nrhs)=ad_u(i,j,N(ng),nrhs)+adfac*cff2
             ad_cff2=ad_cff2+adfac*u(i,j,N(ng),nrhs)
             ad_sustr(i,j)=0.0_r8
@@ -917,10 +945,12 @@
       DO j=JstrV,Jend
         DO i=Istr,Iend
           IF (zice(i,j)*zice(i,j-1).ne.0.0_r8) THEN
-!>          tl_svstr(i,j)=-rdrg(ng)*tl_v(i,j,N(ng),nrhs)
+!>          tl_svstr(i,j)=-0.5_r8*(rdrag(i,j-1)+rdrag(i,j))*            &
+!>   &                    tl_v(i,j,N(ng),nrhs)
 !>
             ad_v(i,j,N(ng),nrhs)=ad_v(i,j,N(ng),nrhs)-                  &
-     &                           rdrg(ng)*ad_svstr(i,j)
+     &                           0.5_r8*(rdrag(i,j-1)+rdrag(i,j))*      &
+     &                           ad_svstr(i,j)
             ad_svstr(i,j)=0.0_r8
           END IF
         END DO
@@ -928,10 +958,12 @@
       DO j=Jstr,Jend
         DO i=IstrU,Iend
           IF (zice(i,j)*zice(i-1,j).ne.0.0_r8) THEN
-!>          tl_sustr(i,j)=-rdrg(ng)*tl_u(i,j,N(ng),nrhs)
+!>          tl_sustr(i,j)=-0.5_r8*(rdrag(i-1,j)+rdrag(i,j))*            &
+!>   &                    tl_u(i,j,N(ng),nrhs)
 !>
             ad_u(i,j,N(ng),nrhs)=ad_u(i,j,N(ng),nrhs)-                  &
-     &                           rdrg(ng)*ad_sustr(i,j)
+     &                           0.5_r8*(rdrag(i-1,j)+rdrag(i,j))*      &
+     &                           ad_sustr(i,j)
             ad_sustr(i,j)=0.0_r8
           END IF
         END DO
@@ -1090,6 +1122,7 @@
 !
       USE mod_param
       USE mod_forces
+      USE mod_grid
       USE mod_ocean
       USE mod_stepping
 !
@@ -1108,6 +1141,11 @@
      &                      LBi, UBi, LBj, UBj,                         &
      &                      IminS, ImaxS, JminS, JmaxS,                 &
      &                      krhs(ng), kstp(ng), knew(ng),               &
+#  if defined UV_LDRAG
+     &                      GRID(ng) % rdrag,                           &
+#  elif defined UV_QDRAG
+     &                      GRID(ng) % rdrag2,                          &
+#  endif
      &                      OCEAN(ng) % ubar,                           &
      &                      OCEAN(ng) % vbar,                           &
      &                      OCEAN(ng) % ad_ubar,                        &
@@ -1127,6 +1165,11 @@
      &                            LBi, UBi, LBj, UBj,                   &
      &                            IminS, ImaxS, JminS, JmaxS,           &
      &                            krhs, kstp, knew,                     &
+#  if defined UV_LDRAG
+     &                            rdrag,                                &
+#  elif defined UV_QDRAG
+     &                            rdrag2,                               &
+#  endif
      &                            ubar, vbar,                           &
      &                            ad_ubar, ad_vbar,                     &
      &                            ad_bustr, ad_bustr_sol,               &
@@ -1149,6 +1192,11 @@
       integer, intent(in) :: krhs, kstp, knew
 !
 #  ifdef ASSUMED_SHAPE
+#   if defined UV_LDRAG
+      real(r8), intent(in) :: rdrag(LBi:,LBj:)
+#   elif defined UV_QDRAG
+      real(r8), intent(in) :: rdrag2(LBi:,LBj:)
+#   endif
       real(r8), intent(in) :: ubar(LBi:,LBj:,:)
       real(r8), intent(in) :: vbar(LBi:,LBj:,:)
       real(r8), intent(inout) :: ad_ubar(LBi:,LBj:,:)
@@ -1158,6 +1206,11 @@
       real(r8), intent(out) :: ad_bustr_sol(LBi:,LBj:)
       real(r8), intent(out) :: ad_bvstr_sol(LBi:,LBj:)
 #  else
+#   if defined UV_LDRAG
+      real(r8), intent(in) :: rdrag(LBi:UBi,LBj:UBj)
+#   elif defined UV_QDRAG
+      real(r8), intent(in) :: rdrag2(LBi:UBi,LBj:UBj)
+#   endif
       real(r8), intent(in) :: ubar(LBi:UBi,LBj:UBj,3)
       real(r8), intent(in) :: vbar(LBi:UBi,LBj:UBj,3)
       real(r8), intent(inout) :: ad_ubar(LBi:UBi,LBj:UBj,3)
@@ -1170,18 +1223,6 @@
 !
 !  Local variable declarations.
 !
-# ifdef DISTRIBUTE
-#  ifdef EW_PERIODIC
-      logical :: EWperiodic=.TRUE.
-#  else
-      logical :: EWperiodic=.FALSE.
-#  endif
-#  ifdef NS_PERIODIC
-      logical :: NSperiodic=.TRUE.
-#  else
-      logical :: NSperiodic=.FALSE.
-#  endif
-# endif
       integer :: i, j
 
       real(r8) :: cff1, cff2
@@ -1206,12 +1247,14 @@
 #   ifdef DISTRIBUTE
 !>    CALL mp_exchange2d (ng, tile, iTLM, 2,                            &
 !>   &                    LBi, UBi, LBj, UBj,                           &
-!>   &                    NghostPoints, EWperiodic, NSperiodic,         &
+!>   &                    NghostPoints,                                 &
+!>   &                    EWperiodic(ng), NSperiodic(ng),               &
 !>   &                    tl_bustr, tl_bvstr)
 !>
       CALL ad_mp_exchange2d (ng, tile, iADM, 2,                         &
      &                       LBi, UBi, LBj, UBj,                        &
-     &                       NghostPoints, EWperiodic, NSperiodic,      &
+     &                       NghostPoints,                              &
+     &                       EWperiodic(ng), NSperiodic(ng),            &
      &                       ad_bustr, ad_bvstr)
 #   endif
 !>    CALL bc_v2d_tile (ng, tile,                                       &
@@ -1229,7 +1272,7 @@
      &                     LBi, UBi, LBj, UBj,                          &
      &                     ad_bustr)
 !
-!  Save adjoint bottom momentun flux for output purposes.
+!  Save adjoint bottom momentum flux for output purposes.
 !
       DO j=JstrR,JendR
         DO i=Istr,IendR
@@ -1248,17 +1291,23 @@
 !
       DO j=JstrV,Jend
         DO i=Istr,Iend
-!>        tl_bvstr(i,j)=rdrg(ng)*tl_vbar(i,j,krhs)
+!>        tl_bvstr(i,j)=0.5_r8*(rdrag(i,j-1)+rdrag(i,j))*               &
+!>   &                  tl_vbar(i,j,krhs)
 !>
-          ad_vbar(i,j,krhs)=ad_vbar(i,j,krhs)+rdrg(ng)*ad_bvstr(i,j)
+          ad_vbar(i,j,krhs)=ad_vbar(i,j,krhs)+                          &
+     &                      0.5_r8*(rdrag(i,j-1)+rdrag(i,j))*           &
+     &                      ad_bvstr(i,j)
           ad_bvstr(i,j)=0.0_r8
         END DO
       END DO
       DO j=Jstr,Jend
         DO i=IstrU,Iend
-!>        tl_bustr(i,j)=rdrg(ng)*tl_ubar(i,j,krhs)
+!>        tl_bustr(i,j)=0.5_r8*(rdrag(i,j-1)+rdrag(i,j))*               &
+!>   &                  tl_ubar(i,j,krhs)
 !>
-          ad_ubar(i,j,krhs)=ad_ubar(i,j,krhs)+rdrg(ng)*ad_bustr(i,j)
+          ad_ubar(i,j,krhs)=ad_ubar(i,j,krhs)+                          &
+     &                      0.5_r8*(rdrag(i,j-1)+rdrag(i,j))*           &
+     &                      ad_bustr(i,j)
           ad_bustr(i,j)=0.0_r8
         END DO
       END DO
@@ -1273,11 +1322,11 @@
      &                  ubar(i  ,j-1,krhs)+                             &
      &                  ubar(i+1,j-1,krhs))
           cff2=SQRT(cff1*cff1+vbar(i,j,krhs)*vbar(i,j,krhs))
-!>        tl_bvstr(i,j)=rdrg2(ng)*                                      &
+!>        tl_bvstr(i,j)=0.5_r8*(rdrag2(i,j-1)+rdrag2(i,j))*             &
 !>   &                  (tl_vbar(i,j,krhs)*cff2+                        &
 !>   &                   vbar(i,j,krhs)*tl_cff2)
 !>
-          adfac=rdrg2(ng)*ad_bvstr(i,j)
+          adfac=0.5_r8*(rdrag2(i,j-1)+rdrag2(i,j))*ad_bvstr(i,j)
           ad_vbar(i,j,krhs)=ad_vbar(i,j,krhs)+adfac*cff2
           ad_cff2=ad_cff2+vbar(i,j,krhs)*adfac
           ad_bvstr(i,j)=0.0_r8
@@ -1314,11 +1363,11 @@
      &                  vbar(i-1,j  ,krhs)+                             &
      &                  vbar(i-1,j+1,krhs))
           cff2=SQRT(ubar(i,j,krhs)*ubar(i,j,krhs)+cff1*cff1)
-!>        tl_bustr(i,j)=rdrg2(ng)*                                      &
+!>        tl_bustr(i,j)=0.5_r8*(rdrag2(i-1,j)+rdrag2(i,j))*             &
 !>   &                  (tl_ubar(i,j,krhs)*cff2+                        &
 !>   &                   ubar(i,j,krhs)*tl_cff2)
 !>
-          adfac=rdrg2(ng)*ad_bustr(i,j)
+          adfac=0.5_r8*(rdrag2(i-1,j)+rdrag2(i,j))*ad_bustr(i,j)
           ad_ubar(i,j,krhs)=ad_ubar(i,j,krhs)+adfac*cff2
           ad_cff2=ad_cff2+adfac*ubar(i,j,krhs)
           ad_bustr(i,j)=0.0_r8

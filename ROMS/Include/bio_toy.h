@@ -1,7 +1,7 @@
 /*
 ** svn $Id: bio_toy.h 440 2010-01-25 06:36:07Z arango $
 *******************************************************************************
-** Copyright (c) 2002-2010 The ROMS/TOMS Group                               **
+** Copyright (c) 2002-2014 The ROMS/TOMS Group                               **
 **   Licensed under a MIT/X style license                                    **
 **   See License_ROMS.txt                                                    **
 *******************************************************************************
@@ -26,12 +26,7 @@
 #define SALINITY
 #define SPLINES
 #define AVERAGES
-#define AVERAGES_AKV
-#define AVERAGES_AKT
-#define AVERAGES_AKS
 #define SOLVE3D
-#define EW_PERIODIC
-#define NS_PERIODIC
 
 #define LMD_MIXING
 #ifdef LMD_MIXING

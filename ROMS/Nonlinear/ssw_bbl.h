@@ -6,7 +6,7 @@
 !
 !svn $Id: ssw_bbl.h 732 2008-09-07 01:55:51Z jcwarner $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2010 The ROMS/TOMS Group        Chris Sherwood   !
+!  Copyright (c) 2002-2014 The ROMS/TOMS Group        Chris Sherwood   !
 !    Licensed under a MIT/X style license               Rich Signell   !
 !    See License_ROMS.txt                             John C. Warner   !
 !=======================================================================
@@ -51,6 +51,7 @@
      &                GRID(ng) % z_r,                                   &
      &                GRID(ng) % z_w,                                   &
      &                GRID(ng) % angler,                                &
+     &                GRID(ng) % ZoBot,                                 &
 #if defined SSW_CALC_UB
      &                FORCES(ng) % Hwave,                               &
 #else
@@ -90,7 +91,7 @@
      &                      LBi, UBi, LBj, UBj,                         &
      &                      IminS, ImaxS, JminS, JmaxS,                 &
      &                      nrhs,                                       &
-     &                      h, z_r, z_w, angler,                        &
+     &                      h, z_r, z_w, angler, ZoBot,                 &
 #if defined SSW_CALC_UB
      &                      Hwave,                                      &
 #else
@@ -134,6 +135,7 @@
       real(r8), intent(in) :: z_r(LBi:,LBj:,:)
       real(r8), intent(in) :: z_w(LBi:,LBj:,0:)
       real(r8), intent(in) :: angler(LBi:,LBj:)
+      real(r8), intent(in) :: ZoBot(LBi:,LBj:)
 # if defined SSW_CALC_UB
       real(r8), intent(in) :: Hwave(LBi:,LBj:)
 # else
@@ -168,6 +170,7 @@
       real(r8), intent(in) :: z_r(LBi:UBi,LBj:UBj,N(ng))
       real(r8), intent(in) :: z_w(LBi:UBi,LBj:UBj,0:N(ng))
       real(r8), intent(in) :: angler(LBi:UBi,LBj:UBj)
+      real(r8), intent(in) :: ZoBot(LBi:UBi,LBj:UBj)
 # if defined SSW_CALC_UB
       real(r8), intent(in) :: Hwave(LBi:UBi,LBj:UBj)
 # else
@@ -199,18 +202,6 @@
 !
 !  Local variable declarations.
 !
-#ifdef DISTRIBUTE
-# ifdef EW_PERIODIC
-      logical :: EWperiodic=.TRUE.
-# else
-      logical :: EWperiodic=.FALSE.
-# endif
-# ifdef NS_PERIODIC
-      logical :: NSperiodic=.TRUE.
-# else
-      logical :: NSperiodic=.FALSE.
-# endif
-#endif
       logical :: ITERATE
 
       integer :: Iter, i, j, k
@@ -394,7 +385,7 @@
           zoBF(i,j)=0.0_r8
           zoBIO(i,j)=0.0_r8
 !!        zoDEF(i,j)=bottom(i,j,izdef)
-          zoDEF(i,j)=Zob(ng)
+          zoDEF(i,j)=ZoBot(i,j)
 
 #ifdef SSW_CALC_ZNOT
 !
@@ -648,7 +639,7 @@
         DO i=IstrU,Iend
           anglec=Ur_sg(i,j)/(0.5*(Umag(i-1,j)+Umag(i,j)))
           bustr(i,j)=0.5_r8*(Tauc(i-1,j)+Tauc(i,j))*anglec
-#  ifdef WET_DRY
+#  ifdef LIMIT_BSTRESS
           cff2=0.75_r8*0.5_r8*(z_w(i-1,j,1)+z_w(i,j,1)-                 &
      &                         z_w(i-1,j,0)-z_w(i,j,0))
           bustr(i,j)=SIGN(1.0_r8,bustr(i,j))*MIN(ABS(bustr(i,j)),       &
@@ -660,7 +651,7 @@
         DO i=Istr,Iend
           anglec=Vr_sg(i,j)/(0.5_r8*(Umag(i,j-1)+Umag(i,j)))
           bvstr(i,j)=0.5_r8*(Tauc(i,j-1)+Tauc(i,j))*anglec
-#  ifdef WET_DRY
+#  ifdef LIMIT_BSTRESS
           cff2=0.75_r8*0.5_r8*(z_w(i,j-1,1)+z_w(i,j,1)-                 &
      &                         z_w(i,j-1,0)-z_w(i,j,0))
           bvstr(i,j)=SIGN(1.0_r8,bvstr(i,j))*MIN(ABS(bvstr(i,j)),       &
@@ -771,30 +762,36 @@
 #ifdef DISTRIBUTE
       CALL mp_exchange2d (ng, tile, iNLM, 4,                            &
      &                    LBi, UBi, LBj, UBj,                           &
-     &                    NghostPoints, EWperiodic, NSperiodic,         &
+     &                    NghostPoints,                                 &
+     &                    EWperiodic(ng), NSperiodic(ng),               &
      &                    bustr, bvstr, bustrc, bvstrc)
       CALL mp_exchange2d (ng, tile, iNLM, 4,                            &
      &                    LBi, UBi, LBj, UBj,                           &
-     &                    NghostPoints, EWperiodic, NSperiodic,         &
+     &                    NghostPoints,                                 &
+     &                    EWperiodic(ng), NSperiodic(ng),               &
      &                    bustrw, bvstrw, bustrcwmax, bvstrcwmax)
       CALL mp_exchange2d (ng, tile, iNLM, 4,                            &
      &                    LBi, UBi, LBj, UBj,                           &
-     &                    NghostPoints, EWperiodic, NSperiodic,         &
+     &                    NghostPoints,                                 &
+     &                    EWperiodic(ng), NSperiodic(ng),               &
      &                    Ubot, Vbot, Ur, Vr)
       CALL mp_exchange2d (ng, tile, iNLM, 3,                            &
      &                    LBi, UBi, LBj, UBj,                           &
-     &                    NghostPoints, EWperiodic, NSperiodic,         &
+     &                    NghostPoints,                                 &
+     &                    EWperiodic(ng), NSperiodic(ng),               &
      &                    bottom(:,:,ibwav),                            &
      &                    bottom(:,:,irhgt),                            &
      &                    bottom(:,:,irlen))
       CALL mp_exchange2d (ng, tile, iNLM, 2,                            &
      &                    LBi, UBi, LBj, UBj,                           &
-     &                    NghostPoints, EWperiodic, NSperiodic,         &
+     &                    NghostPoints,                                 &
+     &                    EWperiodic(ng), NSperiodic(ng),               &
      &                    bottom(:,:,izdef),                            &
      &                    bottom(:,:,izapp))
       CALL mp_exchange2d (ng, tile, iNLM, 4,                            &
      &                    LBi, UBi, LBj, UBj,                           &
-     &                    NghostPoints, EWperiodic, NSperiodic,         &
+     &                    NghostPoints,                                 &
+     &                    EWperiodic(ng), NSperiodic(ng),               &
      &                    bottom(:,:,izNik),                            &
      &                    bottom(:,:,izbio),                            &
      &                    bottom(:,:,izbfm),                            &
@@ -1200,34 +1197,34 @@
         xm(i)=-xm(i-1)*cff
       END DO
 !
-      thetap=CMPLX(0.0_r8,-0.3926991_r8,8)+                               &
-     &       CMPLX(0.0110486_r8,-0.0110485_r8,8)*xp(1)+                   &
-     &       CMPLX(0.0_r8,-0.0009765_r8,8)*xp(2)+                         &
-     &       CMPLX(-0.0000906_r8,-0.0000901_r8,8)*xp(3)+                  &
-     &       CMPLX(-0.0000252_r8,0.0_r8,8)*xp(4)+                         &
-     &       CMPLX(-0.0000034_r8,0.0000051_r8,8)*xp(5)+                   &
+      thetap=CMPLX(0.0_r8,-0.3926991_r8,8)+                             &
+     &       CMPLX(0.0110486_r8,-0.0110485_r8,8)*xp(1)+                 &
+     &       CMPLX(0.0_r8,-0.0009765_r8,8)*xp(2)+                       &
+     &       CMPLX(-0.0000906_r8,-0.0000901_r8,8)*xp(3)+                &
+     &       CMPLX(-0.0000252_r8,0.0_r8,8)*xp(4)+                       &
+     &       CMPLX(-0.0000034_r8,0.0000051_r8,8)*xp(5)+                 &
      &       CMPLX(0.0000006,0.0000019,8)*xp(6)
-      thetam=CMPLX(0.0_r8,-0.3926991_r8,8)+                               &
-     &       CMPLX(0.0110486_r8,-0.0110485_r8,8)*xm(1)+                   &
-     &       CMPLX(0.0_r8,-0.0009765_r8,8)*xm(2)+                         &
-     &       CMPLX(-0.0000906_r8,-0.0000901_r8,8)*xm(3)+                  &
-     &       CMPLX(-0.0000252_r8,0.0_r8,8)*xm(4)+                         &
-     &       CMPLX(-0.0000034_r8,0.0000051_r8,8)*xm(5)+                   &
+      thetam=CMPLX(0.0_r8,-0.3926991_r8,8)+                             &
+     &       CMPLX(0.0110486_r8,-0.0110485_r8,8)*xm(1)+                 &
+     &       CMPLX(0.0_r8,-0.0009765_r8,8)*xm(2)+                       &
+     &       CMPLX(-0.0000906_r8,-0.0000901_r8,8)*xm(3)+                &
+     &       CMPLX(-0.0000252_r8,0.0_r8,8)*xm(4)+                       &
+     &       CMPLX(-0.0000034_r8,0.0000051_r8,8)*xm(5)+                 &
      &       CMPLX(0.0000006_r8,0.0000019_r8,8)*xm(6)
 !
-      phip=CMPLX(0.7071068_r8,0.7071068_r8,8)+                            &
-     &     CMPLX(-0.0625001_r8,-0.0000001_r8,8)*xp(1)+                    &
-     &     CMPLX(-0.0013813_r8,0.0013811_r8,8)*xp(2)+                     &
-     &     CMPLX(0.0000005_r8,0.0002452_r8,8)*xp(3)+                      &
-     &     CMPLX(0.0000346_r8,0.0000338_r8,8)*xp(4)+                      &
-     &     CMPLX(0.0000117_r8,-0.0000024_r8,8)*xp(5)+                     &
+      phip=CMPLX(0.7071068_r8,0.7071068_r8,8)+                          &
+     &     CMPLX(-0.0625001_r8,-0.0000001_r8,8)*xp(1)+                  &
+     &     CMPLX(-0.0013813_r8,0.0013811_r8,8)*xp(2)+                   &
+     &     CMPLX(0.0000005_r8,0.0002452_r8,8)*xp(3)+                    &
+     &     CMPLX(0.0000346_r8,0.0000338_r8,8)*xp(4)+                    &
+     &     CMPLX(0.0000117_r8,-0.0000024_r8,8)*xp(5)+                   &
      &     CMPLX(0.0000016_r8,-0.0000032_r8,8)*xp(6)
-      phim=CMPLX(0.7071068_r8,0.7071068_r8,8)+                            &
-     &     CMPLX(-0.0625001_r8,-0.0000001_r8,8)*xm(1)+                    &
-     &     CMPLX(-0.0013813_r8,0.0013811_r8,8)*xm(2)+                     &
-     &     CMPLX(0.0000005_r8,0.0002452_r8,8)*xm(3)+                      &
-     &     CMPLX(0.0000346_r8,0.0000338_r8,8)*xm(4)+                      &
-     &     CMPLX(0.0000117_r8,-0.0000024_r8,8)*xm(5)+                     &
+      phim=CMPLX(0.7071068_r8,0.7071068_r8,8)+                          &
+     &     CMPLX(-0.0625001_r8,-0.0000001_r8,8)*xm(1)+                  &
+     &     CMPLX(-0.0013813_r8,0.0013811_r8,8)*xm(2)+                   &
+     &     CMPLX(0.0000005_r8,0.0002452_r8,8)*xm(3)+                    &
+     &     CMPLX(0.0000346_r8,0.0000338_r8,8)*xm(4)+                    &
+     &     CMPLX(0.0000117_r8,-0.0000024_r8,8)*xm(5)+                   &
      &     CMPLX(0.0000016_r8,-0.0000032_r8,8)*xm(6)
 !
       cff=x/SQRT(2.0_r8)

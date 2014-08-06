@@ -2,9 +2,9 @@
 #ifdef ADJOINT
       SUBROUTINE ad_output (ng)
 !
-!svn $Id: ad_output.F 429 2009-12-20 17:30:26Z arango $
+!svn $Id$
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2010 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2014 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -38,7 +38,7 @@
 !
       logical :: Ldefine, NewFile, wrtHIS
 
-      integer :: ifile, lstr, status
+      integer :: Fcount, ifile, status
 !
       SourceFile='ad_output.F'
 
@@ -92,18 +92,18 @@
             Ldefine=.FALSE.
           END IF
           IF (Ldefine) THEN                     ! create new file or
-            NrecADJ(ng)=0                       ! inquire existing file
+            Fcount=ADM(ng)%Fcount               ! inquire existing file
+            ADM(ng)%Nrec(Fcount)=0
             ifile=(iic(ng)-1)/ndefADJ(ng)+1
             IF (Master) THEN
-              lstr=LEN_TRIM(ADJbase(ng))
-              WRITE (ADJname(ng),10) ADJbase(ng)(1:lstr-3),ifile
+              WRITE (ADM(ng)%name,10) TRIM(ADM(ng)%base), ifile
   10          FORMAT (a,'_',i4.4,'.nc')
             END IF
 # ifdef DISTRIBUTE
-            CALL mp_bcasts (ng, iADM, ADJname(ng))
+            CALL mp_bcasts (ng, iADM, ADM(ng)%name)
 # endif
-            IF (ncADJid(ng).ne.-1) THEN
-              CALL netcdf_close (ng, iADM, ncADJid(ng))
+            IF (ADM(ng)%ncid.ne.-1) THEN
+              CALL netcdf_close (ng, iADM, ADM(ng)%ncid)
             END IF
             CALL ad_def_his (ng, NewFile)
             IF (exit_flag.ne.NoError) RETURN
@@ -133,17 +133,21 @@
             IF (exit_flag.ne.NoError) RETURN
           END IF
         ELSE
+# ifdef HESSIAN_SO
+          wrtHIS=(MOD(iic(ng)-1,nADJ(ng)).eq.0)   ! otherwise
+# else
           IF (nADJ(ng).eq.ntimes(ng)) THEN
             wrtHIS=(iic(ng).ne.ntstart(ng)).and.                        &
      &             (MOD(iic(ng)-1,nADJ(ng)).eq.0) ! avoid ntstart rec
           ELSE
-# ifdef WEAK_CONSTRAINT
+#  ifdef WEAK_CONSTRAINT
             wrtHIS=(iic(ng).ne.ntstart(ng)).and.                        &
      &             (MOD(iic(ng)-1,nADJ(ng)).eq.0) ! avoid ntstart-1 rec
-# else
+#  else
             wrtHIS=(MOD(iic(ng)-1,nADJ(ng)).eq.0) ! otherwise
-# endif
+#  endif
           END IF
+# endif
           IF (wrtHIS) THEN
             CALL ad_wrt_his (ng)
             IF (exit_flag.ne.NoError) RETURN
@@ -151,7 +155,7 @@
         END IF
       END IF
 
-# ifdef AVERAGES
+# ifdef AD_AVERAGES
 !
 !-----------------------------------------------------------------------
 !  If appropriate, process time-averaged NetCDF file.
@@ -190,22 +194,21 @@
             Ldefine=.FALSE.
           END IF
           IF (Ldefine) THEN
-            NrecAVG(ng)=0
+            AVG(ng)%Nrec(Fcount)=0
             IF (ndefAVG(ng).eq.nAVG(ng)) THEN
               ifile=(iic(ng)-1)/ndefAVG(ng)
             ELSE
               ifile=(iic(ng)-1)/ndefAVG(ng)+1
             END IF
             IF (Master) THEN
-              lstr=LEN_TRIM(AVGbase(ng))
-              WRITE (AVGname(ng),20) AVGbase(ng)(1:lstr-3),ifile
+              WRITE (AVG(ng)%name,20) TRIM(AVG(ng)%base), ifile
   20          FORMAT (a,'_',i4.4,'.nc')
             END IF
-# ifdef DISTRIBUTE
-            CALL mp_bcasts (ng, iADM, AVGname(ng))
-# endif
-            IF (ncAVGid(ng).ne.-1) THEN
-              CALL netcdf_close (ng, iADM, ncAVGid(ng))
+#  ifdef DISTRIBUTE
+            CALL mp_bcasts (ng, iADM, AVG(ng)%name)
+#  endif
+            IF (AVG(ng)%ncid.ne.-1) THEN
+              CALL netcdf_close (ng, iADM, AVG(ng)%ncid)
             END IF
             CALL def_avg (ng, Newfile)
             IF (exit_flag.ne.NoError) RETURN
@@ -231,6 +234,7 @@
         END IF
       END IF
 # endif
+
 # ifdef PROFILE
 !
 !-----------------------------------------------------------------------

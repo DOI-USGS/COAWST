@@ -3,7 +3,7 @@
 #if defined ICE_THERMO && defined ICE_SMOOTH
 !
 !============================================== W. Paul Budgell =======!
-!  Copyright (c) 2002 ROMS/TOMS Group                                  !
+!  Copyright (c) 2002-2014 The ROMS/TOMS Group                         !
 !============================================== Hernan G. Arango ======!
 !                                                                      !
 !  Smooth the stflx field using a low-order Shapiro filter.            !
@@ -101,20 +101,9 @@
 
 ! Local variable definitions
 !
-# ifdef DISTRIBUTE
-#  ifdef EW_PERIODIC
-      logical :: EWperiodic=.TRUE.
-#  else
-      logical :: EWperiodic=.FALSE.
-#  endif
-#  ifdef NS_PERIODIC
-      logical :: NSperiodic=.TRUE.
-#  else
-      logical :: NSperiodic=.FALSE.
-#  endif
-# endif
       integer :: i, j, k, it
       integer, parameter :: nits = 1
+      integer :: Imin, Imax, Jmin, Jmax
 
       real(r8) :: smfac
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: a
@@ -124,37 +113,42 @@
 !
       DO k=1,2
 !
-#  ifdef EW_PERIODIC
-#   define I_RANGE Istr-1,Iend+2
-#  else
-#   define I_RANGE MAX(Istr-1,0),MIN(Iend+2,Lm(ng)+1)
-#  endif
-#  ifdef NS_PERIODIC
-#   define J_RANGE Jstr-1,Jend+2
-#  else
-#   define J_RANGE MAX(Jstr-1,0),MIN(Jend+2,Mm(ng)+1)
-#  endif
-        DO j=J_RANGE
-          DO i=I_RANGE
+        Imin = Istr-1
+        Jmin = Jstr-1
+        IF (EWperiodic(ng)) THEN
+          Imax = Iend+2
+        ELSE
+          Imax = MIN(Iend+2,Lm(ng)+1)
+        ENDIF
+        IF (NSperiodic(ng)) THEN
+          Jmax = Jend+2
+        ELSE
+          Jmax = MIN(Jend+2,Mm(ng)+1)
+        ENDIF
+        DO j=Jmin,Jmax
+          DO i=Imin,Imax
             a(i,j)=stflx(i,j,k)
             b(i,j)=stflx(i,j,k)
           END DO
         END DO
-#undef I_RANGE
-#undef J_RANGE
+
         DO it=1,nits
-#  ifdef EW_PERIODIC
-#   define I_RANGE Istr-1,Iend+2
-#  else
-#   define I_RANGE MAX(Istr-1,1),MIN(Iend+2,Lm(ng))
-#  endif
-#  ifdef NS_PERIODIC
-#   define J_RANGE Jstr-1,Jend+2
-#  else
-#   define J_RANGE MAX(Jstr-1,1),MIN(Jend+2,Mm(ng))
-#  endif
-        DO j=J_RANGE
-          DO i=I_RANGE
+        IF (EWperiodic(ng)) THEN
+          Imin = Istr-1
+          Imax = Iend+2
+        ELSE
+          Imin = MAX(Istr-1,1)
+          Imax = MIN(Iend+2,Lm(ng))
+        ENDIF
+        IF (NSperiodic(ng)) THEN
+          Jmin = Jstr-1
+          Jmax = Jend+2
+        ELSE
+          Jmin = MAX(Jstr-1,1)
+          Jmax = MIN(Jend+2,Mm(ng))
+        ENDIF
+        DO j=Jmin,Jmax
+          DO i=Imin,Imax
             smfac=rmask(i+1,j)+rmask(i,j-1)+rmask(i-1,j)+rmask(i,j+1)
             IF (rmask(i,j).gt.0..and.smfac.gt.0.) THEN
               b(i,j)=a(i,j)+(.5/smfac)                                  &
@@ -164,25 +158,24 @@
             END IF
           END DO
         END DO
-#undef I_RANGE
-#undef J_RANGE
-#  ifdef EW_PERIODIC
-#   define I_RANGE Istr-1,Iend+2
-#  else
-#   define I_RANGE MAX(Istr-1,0),MIN(Iend+2,Lm(ng)+1)
-#  endif
-#  ifdef NS_PERIODIC
-#   define J_RANGE Jstr-1,Jend+2
-#  else
-#   define J_RANGE MAX(Jstr-1,0),MIN(Jend+2,Mm(ng)+1)
-#  endif
-        DO j=J_RANGE
-          DO i=I_RANGE
+
+        Imin = Istr-1
+        Jmin = Jstr-1
+        IF (EWperiodic(ng)) THEN
+          Imax = Iend+2
+        ELSE
+          Imax = MIN(Iend+2,Lm(ng)+1)
+        ENDIF
+        IF (NSperiodic(ng)) THEN
+          Jmax = Jend+2
+        ELSE
+          Jmax = MIN(Jend+2,Mm(ng)+1)
+        ENDIF
+        DO j=Jmin,Jmax
+          DO i=Imin,Imax
             a(i,j)=b(i,j)
           END DO
         END DO
-#undef I_RANGE
-#undef J_RANGE
 
       END DO
 
@@ -201,7 +194,7 @@
 #ifdef DISTRIBUTE
       CALL mp_exchange2d (ng, tile, iNLM, 2,                            &
      &                    LBi, UBi, LBj, UBj,                           &
-     &                    NghostPoints, EWperiodic, NSperiodic,         &
+     &                    NghostPoints, EWperiodic(ng), NSperiodic(ng), &
      &                    stflx_wk(:,:,isalt), stflx_wk(:,:,itemp))
 #endif
 !

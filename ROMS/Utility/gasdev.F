@@ -1,9 +1,9 @@
 #include "cppdefs.h"
       SUBROUTINE gasdev_s (harvest)
 !
-!svn $Id: gasdev.F 429 2009-12-20 17:30:26Z arango $
+!svn $Id$
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2010 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2014 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -101,9 +101,9 @@
       logical, dimension(SIZE(harvest)) :: mask
 
       integer(i4b), save :: last_allocated = 0
-      integer(i4b) :: m, n, ng, nn
+      integer(i4b) :: m, mc, n, ng, nn
 
-      real(r8), dimension(SIZE(harvest)) :: rsq, v1, v2
+      real(r8), dimension(SIZE(harvest)) :: rsq, v1, v2, v3
       real(r8), allocatable, dimension(:), save :: g
 !
 !-----------------------------------------------------------------------
@@ -136,10 +136,16 @@
           v2(ng:n)=2.0_r8*v2(ng:n)-1.0_r8
 !
 !  See if they are in the unit circle, and if they are not, try again.
+!  The original "array_copy" below is problematic in old compilers.
+!  This is obviously a compiler bug.
 !
           rsq(ng:n)=v1(ng:n)**2+v2(ng:n)**2
           mask(ng:n)=((rsq(ng:n).gt.0.0_r8).and.(rsq(ng:n).lt.1.0_r8))
-          CALL array_copy (PACK(v1(ng:n), mask(ng:n)), v1(ng:), nn, m)
+          mc=COUNT(mask(ng:n))                       ! HGA: Changed for
+          v3(1:mc)=PACK(v1(ng:n), mask(ng:n))        ! portability with
+          CALL array_copy (v3(1:mc), v1(ng:), nn, m) ! old F90 compilers
+!!        CALL array_copy (PACK(v1(ng:n), mask(ng:n)),                  &
+!!   &                     v1(ng:), nn, m)
           v2(ng:ng+nn-1)=PACK(v2(ng:n), mask(ng:n))
           rsq(ng:ng+nn-1)=PACK(rsq(ng:n), mask(ng:n))
           ng=ng+nn

@@ -2,7 +2,7 @@
 !
 !svn $Id: ad_ocean.h 429 2009-12-20 17:30:26Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2010 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2014 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -28,7 +28,7 @@
 
       CONTAINS
 
-      SUBROUTINE ROMS_initialize (first, MyCOMM)
+      SUBROUTINE ROMS_initialize (first, mpiCOMM)
 !
 !=======================================================================
 !                                                                      !
@@ -41,25 +41,34 @@
       USE mod_parallel
       USE mod_iounits
       USE mod_scalars
+
+#ifdef MCT_LIB
 !
-#ifdef AIR_OCEAN
-      USE ocean_coupler_mod, ONLY : initialize_atmos_coupling
-#endif
-#ifdef WAVES_OCEAN
-      USE ocean_coupler_mod, ONLY : initialize_waves_coupling
+# ifdef AIR_OCEAN
+      USE ocean_coupler_mod, ONLY : initialize_ocn2atm_coupling
+# endif
+# ifdef WAVES_OCEAN
+      USE ocean_coupler_mod, ONLY : initialize_ocn2wav_coupling
+# endif
 #endif
 !
 !  Imported variable declarations.
 !
       logical, intent(inout) :: first
 
-      integer, intent(in), optional :: MyCOMM
+      integer, intent(in), optional :: mpiCOMM
 !
 !  Local variable declarations.
 !
       logical :: allocate_vars = .TRUE.
 
-      integer :: ng, thread
+#ifdef DISTRIBUTE
+      integer :: MyError, MySize
+#endif
+      integer :: chunk_size, ng, thread
+#ifdef _OPENMP
+      integer :: my_threadnum
+#endif
 
 #ifdef DISTRIBUTE
 !
@@ -67,11 +76,13 @@
 !  Set distribute-memory (MPI) world communictor.
 !-----------------------------------------------------------------------
 !
-      IF (PRESENT(MyCOMM)) THEN
-        OCN_COMM_WORLD=MyCOMM
+      IF (PRESENT(mpiCOMM)) THEN
+        OCN_COMM_WORLD=mpiCOMM
       ELSE
         OCN_COMM_WORLD=MPI_COMM_WORLD
       END IF
+      CALL mpi_comm_rank (OCN_COMM_WORLD, MyRank, MyError)
+      CALL mpi_comm_size (OCN_COMM_WORLD, MySize, MyError)
 #endif
 !
 !-----------------------------------------------------------------------
@@ -84,123 +95,150 @@
       IF (first) THEN
         first=.FALSE.
 !
-!  Initialize parallel parameters.
+!  Initialize parallel control switches. These scalars switches are
+!  independent from standard input parameters.
 !
         CALL initialize_parallel
 !
-!  Initialize wall clocks.
-!
-        IF (Master) THEN
-          WRITE (stdout,10)
- 10       FORMAT (' Process Information:',/)
-        END IF
-        DO ng=1,Ngrids
-!$OMP PARALLEL DO PRIVATE(thread) SHARED(ng,numthreads)
-          DO thread=0,numthreads-1
-            CALL wclock_on (ng, iADM, 0)
-          END DO
-!$OMP END PARALLEL DO
-        END DO
-
-#if defined AIR_OCEAN || defined WAVES_OCEAN
-!
-!  Initialize coupling streams between model(s).
-!
-        DO ng=1,Ngrids
-# ifdef AIR_OCEAN
-          CALL initialize_atmos_coupling (ng, MyRank)
-# endif
-# ifdef WAVES_OCEAN
-          CALL initialize_waves_coupling (ng, MyRank)
-# endif
-        END DO
-#endif
-!
-!  Read in model tunable parameters from standard input. Initialize
-!  "mod_param", "mod_ncparam" and "mod_scalar" modules.
+!  Read in model tunable parameters from standard input. Allocate and
+!  initialize variables in several modules after the number of nested
+!  grids and dimension parameters are known.
 !
         CALL inp_par (iADM)
         IF (exit_flag.ne.NoError) RETURN
 !
+!  Set domain decomposition tile partition range.  This range is
+!  computed only once since the "first_tile" and "last_tile" values
+!  are private for each parallel thread/node.
+!
+!$OMP PARALLEL
+#if defined _OPENMP
+      MyThread=my_threadnum()
+#elif defined DISTRIBUTE
+      MyThread=MyRank
+#else
+      MyThread=0
+#endif
+      DO ng=1,Ngrids
+        chunk_size=(NtileX(ng)*NtileE(ng)+numthreads-1)/numthreads
+        first_tile(ng)=MyThread*chunk_size
+        last_tile (ng)=first_tile(ng)+chunk_size-1
+      END DO
+!$OMP END PARALLEL
+!
+!  Initialize internal wall clocks. Notice that the timings does not
+!  includes processing standard input because several parameters are
+!  needed to allocate clock variables.
+!
+        IF (Master) THEN
+          WRITE (stdout,10)
+ 10       FORMAT (/,' Process Information:',/)
+        END IF
+!
+        DO ng=1,Ngrids
+!$OMP PARALLEL
+          DO thread=THREAD_RANGE
+            CALL wclock_on (ng, iADM, 0)
+          END DO
+!$OMP END PARALLEL
+        END DO
+!
 !  Allocate and initialize modules variables.
 !
+!$OMP PARALLEL
         CALL mod_arrays (allocate_vars)
+!$OMP END PARALLEL
+
       END IF
+
+#if defined MCT_LIB && (defined AIR_OCEAN || defined WAVES_OCEAN)
 !
 !-----------------------------------------------------------------------
-!  Initialize model state variables for all nested/composed grids.
+!  Initialize coupling streams between model(s).
 !-----------------------------------------------------------------------
 !
       DO ng=1,Ngrids
+# ifdef AIR_OCEAN
+        CALL initialize_ocn2atm_coupling (ng, MyRank)
+# endif
+# ifdef WAVES_OCEAN
+        CALL initialize_ocn2wav_coupling (ng, MyRank)
+# endif
+      END DO
+#endif
+!
+!-----------------------------------------------------------------------
+!  Initialize adjoint model state variables over all nested grids, if
+!  applicable.
+!-----------------------------------------------------------------------
+!
+      Lstiffness=.FALSE.
+      DO ng=1,Ngrids
+!$OMP PARALLEL
         CALL ad_initial (ng)
+!$OMP END PARALLEL
         IF (exit_flag.ne.NoError) RETURN
+      END DO
+!
+!  Initialize run or ensemble counter.
+!
+      Nrun=1
+!
+!  Activate adjoint output.
+!
+      DO ng=1,Ngrids
+        LdefADJ(ng)=.TRUE.
+        LwrtADJ(ng)=.TRUE.
+        LcycleADJ(ng)=.FALSE.
       END DO
 
       RETURN
       END SUBROUTINE ROMS_initialize
 
-      SUBROUTINE ROMS_run (Tstr, Tend)
+      SUBROUTINE ROMS_run (RunInterval)
 !
 !=======================================================================
 !                                                                      !
-!  This routine time-step ROMS/TOMS generic adjoint model backwards    !
-!  from provided initial conditions and BASIC nonlinear state.         !
+!  This routine runs ROMS/TOMS adjoint model backwards for the         !
+!  specified time interval (seconds), RunInterval.                     !
 !                                                                      !
 !=======================================================================
 !
       USE mod_param
       USE mod_parallel
       USE mod_iounits
-      USE mod_ncparam
       USE mod_scalars
 !
-!  Imported variable declarations
+!  Imported variable declarations.
 !
-      integer, dimension(Ngrids) :: Tstr
-      integer, dimension(Ngrids) :: Tend
+      real(r8), intent(in) :: RunInterval            ! seconds
 !
 !  Local variable declarations.
 !
-      integer :: i, my_iic, ng
+      integer :: ng
 !
-!=======================================================================
-!  Run model for all nested grids, if any.
-!=======================================================================
+!-----------------------------------------------------------------------
+!  Time-step adjoint model over all nested grids, if applicable.
+!-----------------------------------------------------------------------
 !
-      Nrun=1
-
-      NEST_LOOP : DO ng=1,Ngrids
-!
-!  Activate adjoint output.
-!
-        LdefADJ(ng)=.TRUE.
-        LwrtADJ(ng)=.TRUE.
-        LcycleADJ(ng)=.FALSE.
-!
-!  Time-step adjoint model: compute gradient.
-!
+      DO ng=1,Ngrids
         IF (Master) THEN
-          WRITE (stdout,10) ntstart(ng), ntend(ng)
+          WRITE (stdout,10) 'AD', ng, ntstart(ng), ntend(ng)
         END IF
+      END DO
 
-        time(ng)=time(ng)+dt(ng)
-
-        AD_LOOP : DO my_iic=ntstart(ng),ntend(ng),-1
-
-          iic(ng)=my_iic
+!$OMP PARALLEL
 #ifdef SOLVE3D
-          CALL ad_main3d (ng)
+      CALL ad_main3d (RunInterval)
 #else
-          CALL ad_main2d (ng)
+      CALL ad_main2d (RunInterval)
 #endif
-          IF (exit_flag.ne.NoError) RETURN
+!$OMP END PARALLEL
 
-        END DO AD_LOOP
-
-      END DO NEST_LOOP
+      IF (exit_flag.ne.NoError) RETURN
 !
- 10   FORMAT (/,'AD ROMS/TOMS: started time-stepping:',                 &
-     &        '( TimeSteps: ',i8.8,' - ',i8.8,')',/)
+ 10   FORMAT (/,1x,a,1x,'ROMS/TOMS: started time-stepping:',            &
+     &        ' (Grid: ',i2.2,' TimeSteps: ',i8.8,' - ',i8.8,')',/)
 
       RETURN
       END SUBROUTINE ROMS_run
@@ -221,7 +259,7 @@
 !
 !  Local variable declarations.
 !
-      integer :: ng, thread
+      integer :: Fcount, ng, thread
 !
 !-----------------------------------------------------------------------
 !  If blowing-up, save latest model state into RESTART NetCDF file.
@@ -229,20 +267,23 @@
 !
 !  If cycling restart records, write solution into the next record.
 !
-      DO ng=1,Ngrids
-        IF (LwrtRST(ng).and.(exit_flag.eq.1)) THEN
-          IF (Master) WRITE (stdout,10)
- 10       FORMAT (/,' Blowing-up: Saving latest model state into ',     &
-     &              ' RESTART file',/)
-          IF (LcycleRST(ng).and.(NrecRST(ng).ge.2)) THEN
-            tRSTindx(ng)=2
-            LcycleRST(ng)=.FALSE.
+      IF (exit_flag.eq.1) THEN
+        DO ng=1,Ngrids
+          IF (LwrtRST(ng)) THEN
+            IF (Master) WRITE (stdout,10)
+ 10         FORMAT (/,' Blowing-up: Saving latest model state into ',   &
+     &                ' RESTART file',/)
+            Fcount=RST(ng)%Fcount
+            IF (LcycleRST(ng).and.(RST(ng)%Nrec(Fcount).ge.2)) THEN
+              RST(ng)%Rindex=2
+              LcycleRST(ng)=.FALSE.
+            END IF
+            blowup=exit_flag
+            exit_flag=NoError
+            CALL wrt_rst (ng)
           END IF
-          blowup=exit_flag
-          exit_flag=NoError
-          CALL wrt_rst (ng)
-        END IF
-      END DO
+        END DO
+      END IF
 !
 !-----------------------------------------------------------------------
 !  Stop model and time profiling clocks.  Close output NetCDF files.
@@ -256,16 +297,16 @@
       END IF
 
       DO ng=1,Ngrids
-!$OMP PARALLEL DO PRIVATE(thread) SHARED(ng,numthreads)
-        DO thread=0,numthreads-1
-          CALL wclock_off (ng, iNLM, 0)
+!$OMP PARALLEL
+        DO thread=THREAD_RANGE
+          CALL wclock_off (ng, iADM, 0)
         END DO
-!$OMP END PARALLEL DO
+!$OMP END PARALLEL
       END DO
 !
 !  Close IO files.
 !
-      CALL close_io
+      CALL close_out
 
       RETURN
       END SUBROUTINE ROMS_finalize

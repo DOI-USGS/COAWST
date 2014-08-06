@@ -4,7 +4,7 @@
 !
 !svn $Id: gls_corstep.F 732 2008-09-07 01:55:51Z jcwarner $
 !=======================================================================
-!  Copyright (c) 2002-2010 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2014 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license           Hernan G. Arango   !
 !    See License_ROMS.txt                   Alexander F. Shchepetkin   !
 !==================================================== John C. Warner ===
@@ -15,8 +15,14 @@
 !                                                                      !
 !  References:                                                         !
 !                                                                      !
-!  Umlauf, L. and H. Burchard, 2001:  A generic length-scale           !
-!    Equation for geophysical turbulence models.                       !
+!  Umlauf, L. and H. Burchard, 2003:  A generic length-scale           !
+!    Equation for geophysical turbulence models, J. Marine Res.,       !
+!    61, 235-265.                                                      !
+!                                                                      !
+!  Warner, J. C., C. R. Sherwood, H. G. Arango and R. P. Signell,      !
+!    2005:  Performance of four turbulence closure models              !
+!    implemented using a generic length scale method, Ocean            !
+!    Modelling, 8, 81-113.                                             !
 !                                                                      !
 !=======================================================================
 !
@@ -64,6 +70,7 @@
      &                       GRID(ng) % pn,                             &
      &                       GRID(ng) % z_r,                            &
      &                       GRID(ng) % z_w,                            &
+     &                       GRID(ng) % ZoBot,                          &
      &                       OCEAN(ng) % u,                             &
      &                       OCEAN(ng) % v,                             &
      &                       OCEAN(ng) % W,                             &
@@ -104,6 +111,7 @@
      &                             umask, vmask,                        &
 # endif
      &                             Huon, Hvom, Hz, pm, pn, z_r, z_w,    &
+     &                             ZoBot,                               &
      &                             u, v, W,                             &
 # ifdef WEC_VF
      &                             W_stokes,                            &
@@ -122,9 +130,7 @@
       USE mod_param
       USE mod_scalars
 !
-# if defined EW_PERIODIC || defined NS_PERIODIC
       USE exchange_3d_mod, ONLY : exchange_w3d_tile
-# endif
 # ifdef DISTRIBUTE
       USE mp_exchange_mod, ONLY : mp_exchange3d, mp_exchange4d
 # endif
@@ -149,6 +155,7 @@
       real(r8), intent(in) :: pn(LBi:,LBj:)
       real(r8), intent(in) :: z_r(LBi:,LBj:,:)
       real(r8), intent(in) :: z_w(LBi:,LBj:,0:)
+      real(r8), intent(in) :: ZoBot(LBi:,LBj:)
       real(r8), intent(in) :: u(LBi:,LBj:,:,:)
       real(r8), intent(in) :: v(LBi:,LBj:,:,:)
       real(r8), intent(in) :: W(LBi:,LBj:,0:)
@@ -167,6 +174,7 @@
       real(r8), intent(in) :: Dissip_wcap(LBi:,LBj:)
 #  endif
       real(r8), intent(in) :: bvf(LBi:,LBj:,0:)
+
       real(r8), intent(inout) :: Akt(LBi:,LBj:,0:,:)
       real(r8), intent(inout) :: Akv(LBi:,LBj:,0:)
       real(r8), intent(inout) :: Akk(LBi:,LBj:,0:)
@@ -186,6 +194,7 @@
       real(r8), intent(in) :: pn(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: z_r(LBi:UBi,LBj:UBj,N(ng))
       real(r8), intent(in) :: z_w(LBi:UBi,LBj:UBj,0:N(ng))
+      real(r8), intent(in) :: ZoBot(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: u(LBi:UBi,LBj:UBj,N(ng),2)
       real(r8), intent(in) :: v(LBi:UBi,LBj:UBj,N(ng),2)
       real(r8), intent(in) :: W(LBi:UBi,LBj:UBj,0:N(ng))
@@ -204,6 +213,7 @@
       real(r8), intent(in) :: Dissip_wcap(LBi:UBi,LBj:UBj)
 #  endif
       real(r8), intent(in) :: bvf(LBi:UBi,LBj:UBj,0:N(ng))
+
       real(r8), intent(inout) :: Akt(LBi:UBi,LBj:UBj,0:N(ng),NAT)
       real(r8), intent(inout) :: Akv(LBi:UBi,LBj:UBj,0:N(ng))
       real(r8), intent(inout) :: Akk(LBi:UBi,LBj:UBj,0:N(ng))
@@ -216,18 +226,6 @@
 !  Local variable declarations.
 !
       logical :: Lmy25
-# ifdef DISTRIBUTE
-#  ifdef EW_PERIODIC
-      logical :: EWperiodic=.TRUE.
-#  else
-      logical :: EWperiodic=.FALSE.
-#  endif
-#  ifdef NS_PERIODIC
-      logical :: NSperiodic=.TRUE.
-#  else
-      logical :: NSperiodic=.FALSE.
-#  endif
-# endif
       integer :: i, itrc, j, k
 
 #ifdef AKLIMIT
@@ -235,7 +233,7 @@
 #endif
       real(r8), parameter :: Gadv = 1.0_r8/3.0_r8
       real(r8), parameter :: eps = 1.0E-10_r8
-      real(r8) :: Zos_min, Zob_min
+      real(r8) :: Zos_min
 
       real(r8) :: Gh, Gm, Kprod, Ls_unlmt, Ls_lmt, Pprod, Sh, Sm
       real(r8) :: cff, cff1, cff2, cff3
@@ -270,6 +268,7 @@
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: FEP
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: FXK
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: FXP
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: Zob_min
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: curvK
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: curvP
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: gradK
@@ -282,7 +281,11 @@
 !-----------------------------------------------------------------------
 !
       Zos_min=MAX(Zos(ng),0.0001_r8)
-      Zob_min=MAX(Zob(ng),0.0001_r8)
+      DO j=Jstr,Jend
+        DO i=Istr,Iend
+          Zob_min(i,j)=MAX(ZoBot(i,j),0.0001_r8)
+        END DO
+      END DO
 !
       Lmy25=.FALSE.
       IF ((gls_p(ng).eq.0.0_r8).and.                                    &
@@ -320,8 +323,7 @@
       gls_fac2=gls_cmu0(ng)**(gls_p(ng))*gls_n(ng)*                     &
      &         vonKar**(gls_n(ng))
       gls_fac3=gls_cmu0(ng)**(gls_p(ng))*gls_n(ng)
-      gls_fac4=gls_cmu0(ng)**(gls_p(ng))*                               &
-     &         (vonKar*Zob_min)**(gls_n(ng))
+      gls_fac4=gls_cmu0(ng)**(gls_p(ng))
       gls_fac5=0.56_r8**(0.5_r8*gls_n(ng))*gls_cmu0(ng)**gls_p(ng)
       gls_fac6=8.0_r8/gls_cmu0(ng)**6.0_r8
 !
@@ -335,36 +337,15 @@
 !  Compute vertical velocity shear at W-points.
 !-----------------------------------------------------------------------
 !
-# ifdef COMPOSED_GRID
-#  define I_RANGE Istr-1,Iend+1
-#  define J_RANGE Jstr-1,Jend+1
-# elif defined REFINED_GRID
-#  define I_RANGE IstrC,IendC
-#  define J_RANGE JstrC,JendC
-      IF (ng.eq.1) THEN
-        IstrC=MAX(1,Istr-1)
-        IendC=MIN(Iend+1,Lm(ng))
-        JstrC=MAX(1,Jstr-1)
-        JendC=MIN(Jend+1,Mm(ng))
-      ELSE
-        IstrC=Istr-1
-        IendC=Iend+1
-        JstrC=Jstr-1
-        JendC=Jend+1
-      END IF
-# else
-#  define I_RANGE MAX(1,Istr-1),MIN(Iend+1,Lm(ng))
-#  define J_RANGE MAX(1,Jstr-1),MIN(Jend+1,Mm(ng))
-# endif
 # ifdef SPLINES
-      DO j=J_RANGE
-        DO i=I_RANGE
+      DO j=Jstrm1,Jendp1
+        DO i=Istrm1,Iendp1
           CF(i,0)=0.0_r8
           dU(i,0)=0.0_r8
           dV(i,0)=0.0_r8
         END DO
         DO k=1,N(ng)-1
-          DO i=I_RANGE
+          DO i=Istrm1,Iendp1
             cff=1.0_r8/(2.0_r8*Hz(i,j,k+1)+                             &
      &                  Hz(i,j,k)*(2.0_r8-CF(i,k-1)))
             CF(i,k)=cff*Hz(i,j,k+1)
@@ -376,26 +357,26 @@
      &                   Hz(i,j,k)*dV(i,k-1))
           END DO
         END DO
-        DO i=I_RANGE
+        DO i=Istrm1,Iendp1
           dU(i,N(ng))=0.0_r8
           dV(i,N(ng))=0.0_r8
         END DO
         DO k=N(ng)-1,1,-1
-          DO i=I_RANGE
+          DO i=Istrm1,Iendp1
             dU(i,k)=dU(i,k)-CF(i,k)*dU(i,k+1)
             dV(i,k)=dV(i,k)-CF(i,k)*dV(i,k+1)
           END DO
         END DO
         DO k=1,N(ng)-1
-          DO i=I_RANGE
+          DO i=Istrm1,Iendp1
             shear2(i,j,k)=dU(i,k)*dU(i,k)+dV(i,k)*dV(i,k)
           END DO
         END DO
       END DO
 # else
       DO k=1,N(ng)-1
-        DO j=J_RANGE
-          DO i=I_RANGE
+        DO j=Jstrm1,Jendp1
+          DO i=Istrm1,Iendp1
             cff=0.5_r8/(z_r(i,j,k+1)-z_r(i,j,k))
             shear2(i,j,k)=(cff*(u(i  ,j,k+1,nstp)-u(i  ,j,k,nstp)+      &
      &                          u(i+1,j,k+1,nstp)-u(i+1,j,k,nstp)))**2+ &
@@ -405,8 +386,6 @@
         END DO
       END DO
 # endif
-# undef I_RANGE
-# undef J_RANGE
 !
 ! Load Brunt-Vaisala frequency.
 !
@@ -425,40 +404,38 @@
 !-----------------------------------------------------------------------
 !
       DO k=1,N(ng)-1
-#  ifndef COMPOSED_GRID
-        IF (WESTERN_EDGE_REF) THEN
+        IF (DOMAIN(ng)%Western_Edge(tile)) THEN
           DO j=MAX(1,Jstr-1),MIN(Jend+1,Mm(ng))
             shear2(Istr-1,j,k)=shear2(Istr,j,k)
           END DO
         END IF
-        IF (EASTERN_EDGE_REF) THEN
+        IF (DOMAIN(ng)%Eastern_Edge(tile)) THEN
           DO j=MAX(1,Jstr-1),MIN(Jend+1,Mm(ng))
             shear2(Iend+1,j,k)=shear2(Iend,j,k)
           END DO
         END IF
-        IF (SOUTHERN_EDGE_REF) THEN
+        IF (DOMAIN(ng)%Southern_Edge(tile)) THEN
           DO i=MAX(1,Istr-1),MIN(Iend+1,Lm(ng))
             shear2(i,Jstr-1,k)=shear2(i,Jstr,k)
           END DO
         END IF
-        IF (NORTHERN_EDGE_REF) THEN
+        IF (DOMAIN(ng)%Northern_Edge(tile)) THEN
           DO i=MAX(1,Istr-1),MIN(Iend+1,Lm(ng))
             shear2(i,Jend+1,k)=shear2(i,Jend,k)
           END DO
         END IF
-        IF (SOUTH_WEST_CORNER_REF) THEN
+        IF (DOMAIN(ng)%SouthWest_Corner(tile)) THEN
           shear2(Istr-1,Jstr-1,k)=shear2(Istr,Jstr,k)
         END IF
-        IF (NORTH_WEST_CORNER_REF) THEN
+        IF (DOMAIN(ng)%NorthWest_Corner(tile)) THEN
           shear2(Istr-1,Jend+1,k)=shear2(Istr,Jend,k)
         END IF
-        IF (SOUTH_EAST_CORNER_REF) THEN
+        IF (DOMAIN(ng)%SouthEast_Corner(tile)) THEN
           shear2(Iend+1,Jstr-1,k)=shear2(Iend,Jstr,k)
         END IF
-        IF (NORTH_EAST_CORNER_REF) THEN
+        IF (DOMAIN(ng)%NorthEast_Corner(tile)) THEN
           shear2(Iend+1,Jend+1,k)=shear2(Iend,Jend,k)
         END IF
-#  endif
 !
 !  Average horizontally.
 !
@@ -510,22 +487,8 @@
           END DO
         END DO
 # else
-#  if defined EW_PERIODIC || defined COMPOSED_GRID
-#   define I_RANGE Istr-1,Iend+2
-#  elif defined REFINED_GRID
-#   define I_RANGE IstrC,IendC
-      IF (ng.eq.1) THEN
-        IstrC=MAX(1,Istr-1)
-        IendC=MIN(Iend+2,Lm(ng)+1)
-      ELSE
-        IstrC=Istr-1
-        IendC=Iend+2
-      END IF
-#  else
-#   define I_RANGE MAX(Istr-1,1),MIN(Iend+2,Lm(ng)+1)
-#  endif
         DO j=Jstr,Jend
-          DO i=I_RANGE
+          DO i=Istrm1,Iendp2
             gradK(i,j)=(tke(i,j,k,3)-tke(i-1,j,k,3))
 #  ifdef MASKING
             gradK(i,j)=gradK(i,j)*umask(i,j)
@@ -536,21 +499,22 @@
 #  endif
           END DO
         END DO
-#  undef I_RANGE
-#  if !defined EW_PERIODIC && !defined COMPOSED_GRID
-        IF (WESTERN_EDGE_REF) THEN
-          DO j=Jstr,Jend
-            gradK(Istr-1,j)=gradK(Istr,j)
-            gradP(Istr-1,j)=gradP(Istr,j)
-          END DO
+        IF (.not.(CompositeGrid(iwest,ng).or.EWperiodic(ng))) THEN
+          IF (DOMAIN(ng)%Western_Edge(tile)) THEN
+            DO j=Jstr,Jend
+              gradK(Istr-1,j)=gradK(Istr,j)
+              gradP(Istr-1,j)=gradP(Istr,j)
+            END DO
+          END IF
         END IF
-        IF (EASTERN_EDGE_REF) THEN
-          DO j=Jstr,Jend
-            gradK(Iend+2,j)=gradK(Iend+1,j)
-            gradP(Iend+2,j)=gradP(Iend+1,j)
-          END DO
+        IF (.not.(CompositeGrid(ieast,ng).or.EWperiodic(ng))) THEN
+          IF (DOMAIN(ng)%Eastern_Edge(tile)) THEN
+            DO j=Jstr,Jend
+              gradK(Iend+2,j)=gradK(Iend+1,j)
+              gradP(Iend+2,j)=gradP(Iend+1,j)
+            END DO
+          END IF
         END IF
-#  endif
 #  ifdef K_C4ADVECTION
 !
 !  Fourth-order, centered differences advection.
@@ -593,21 +557,7 @@
           END DO
         END DO
 #  endif
-#  if defined NS_PERIODIC || defined COMPOSED_GRID
-#   define J_RANGE Jstr-1,Jend+2
-#  elif defined REFINED_GRID
-#   define J_RANGE JstrC,JendC
-      IF (ng.eq.1) THEN
-        JstrC=MAX(1,Jstr-1)
-        JendC=MIN(Jend+2,Mm(ng)+1)
-      ELSE
-        JstrC=Jstr-1
-        JendC=Jend+2
-      END IF
-#  else
-#   define J_RANGE MAX(Jstr-1,1),MIN(Jend+2,Mm(ng)+1)
-#  endif
-        DO j=J_RANGE
+        DO j=Jstrm1,Jendp2
           DO i=Istr,Iend
             gradK(i,j)=(tke(i,j,k,3)-tke(i,j-1,k,3))
 #  ifdef MASKING
@@ -619,21 +569,22 @@
 #  endif
           END DO
         END DO
-#  undef J_RANGE
-#  if !defined NS_PERIODIC && !defined COMPOSED_GRID
-        IF (SOUTHERN_EDGE_REF) THEN
-          DO i=Istr,Iend
-            gradK(i,Jstr-1)=gradK(i,Jstr)
-            gradP(i,Jstr-1)=gradP(i,Jstr)
-          END DO
+        IF (.not.(CompositeGrid(isouth,ng).or.NSperiodic(ng))) THEN
+          IF (DOMAIN(ng)%Southern_Edge(tile)) THEN
+            DO i=Istr,Iend
+              gradK(i,Jstr-1)=gradK(i,Jstr)
+              gradP(i,Jstr-1)=gradP(i,Jstr)
+            END DO
+          END IF
         END IF
-        IF (NORTHERN_EDGE_REF) THEN
-          DO i=Istr,Iend
-            gradK(i,Jend+2)=gradK(i,Jend+1)
-            gradP(i,Jend+2)=gradP(i,Jend+1)
-          END DO
+        IF (.not.(CompositeGrid(inorth,ng).or.NSperiodic(ng))) THEN
+          IF (DOMAIN(ng)%Northern_Edge(tile)) THEN
+            DO i=Istr,Iend
+              gradK(i,Jend+2)=gradK(i,Jend+1)
+              gradP(i,Jend+2)=gradP(i,Jend+1)
+            END DO
+          END IF
         END IF
-#  endif
 #  ifdef K_C4ADVECTION
         cff1=1.0_r8/6.0_r8
         DO j=Jstr,Jend+1
@@ -966,7 +917,8 @@
      &                            tke(i,j,N(ng),nnew)**gls_m(ng)*       &
      &                            (L_sft*Zos_eff(i))**gls_n(ng),        &
      &                            gls_Pmin(ng))
-          gls(i,j,0,nnew)=MAX(gls_fac4*tke(i,j,0,nnew)**(gls_m(ng)),    &
+          cff=gls_fac4*(vonKar*Zob_min(i,j))**(gls_n(ng))
+          gls(i,j,0,nnew)=MAX(cff*tke(i,j,0,nnew)**(gls_m(ng)),         &
      &                        gls_Pmin(ng))
         END DO
 !
@@ -1019,8 +971,7 @@
      &                 (gls_n(ng)-1.0_r8)*                              &
      &                 0.5_r8*(Akp(i,j,N(ng))+Akp(i,j,N(ng)-1))
 # ifdef CRAIG_BANNER
-#  if defined GERBI_TKE_FLUX
-#  else
+#  if !defined GERBI_TKE_FLUX
           gls_fluxt(i)=gls_fluxt(i)-dt(ng)*                             &
      &                 gls_m(ng)*(gls_cmu0(ng)**gls_p(ng))*             &
      &                 cff**(gls_m(ng)-1.0_r8)*                         &
@@ -1042,7 +993,7 @@
 # endif
           cff=0.5_r8*(tke(i,j,0,nnew)+tke(i,j,1,nnew))
           gls_fluxb(i)=dt(ng)*gls_fac2*(cff**gls_m(ng))*                &
-     &                 (0.5_r8*Hz(i,j,1)+Zob_min)**                     &
+     &                 (0.5_r8*Hz(i,j,1)+Zob_min(i,j))**                &
      &                 (gls_n(ng)-1.0_r8)*                              &
      &                 0.5_r8*(Akp(i,j,0)+Akp(i,j,1))
 !
@@ -1201,7 +1152,7 @@
 #ifdef AKLIMIT
           Akv(i,j,N(ng))=MIN(Ak_max,Akv(i,j,N(ng)))
 #endif
-          Akv(i,j,0)=Akv_bak(ng)+vonKar*Zob_min*gls_cmu0(ng)*           &
+          Akv(i,j,0)=Akv_bak(ng)+vonKar*Zob_min(i,j)*gls_cmu0(ng)*      &
      &               SQRT(tke(i,j,0,nnew))
 #ifdef AKLIMIT
           Akv(i,j,0)=MIN(Ak_max,Akv(i,j,0))
@@ -1228,32 +1179,35 @@
      &                 IminS, ImaxS, JminS, JmaxS,                      &
      &                 nnew, nstp,                                      &
      &                 gls, tke)
-# if defined EW_PERIODIC || defined NS_PERIODIC
-      CALL exchange_w3d_tile (ng, tile,                                 &
-     &                        LBi, UBi, LBj, UBj, 0, N(ng),             &
-     &                        tke(:,:,:,nnew))
-      CALL exchange_w3d_tile (ng, tile,                                 &
-     &                        LBi, UBi, LBj, UBj, 0, N(ng),             &
-     &                        gls(:,:,:,nnew))
-      CALL exchange_w3d_tile (ng, tile,                                 &
-     &                        LBi, UBi, LBj, UBj, 0, N(ng),             &
-     &                        Akv)
-      DO itrc=1,NAT
+      IF (EWperiodic(ng).or.NSperiodic(ng)) THEN
         CALL exchange_w3d_tile (ng, tile,                               &
      &                          LBi, UBi, LBj, UBj, 0, N(ng),           &
-     &                          Akt(:,:,:,itrc))
-      END DO
-# endif
+     &                          tke(:,:,:,nnew))
+        CALL exchange_w3d_tile (ng, tile,                               &
+     &                          LBi, UBi, LBj, UBj, 0, N(ng),           &
+     &                          gls(:,:,:,nnew))
+        CALL exchange_w3d_tile (ng, tile,                               &
+     &                          LBi, UBi, LBj, UBj, 0, N(ng),           &
+     &                          Akv)
+        DO itrc=1,NAT
+          CALL exchange_w3d_tile (ng, tile,                             &
+     &                            LBi, UBi, LBj, UBj, 0, N(ng),         &
+     &                            Akt(:,:,:,itrc))
+        END DO
+      END IF
+
 # ifdef DISTRIBUTE
       CALL mp_exchange3d (ng, tile, iNLM, 3,                            &
      &                    LBi, UBi, LBj, UBj, 0, N(ng),                 &
-     &                    NghostPoints, EWperiodic, NSperiodic,         &
+     &                    NghostPoints,                                 &
+     &                    EWperiodic(ng), NSperiodic(ng),               &
      &                    tke(:,:,:,nnew),                              &
      &                    gls(:,:,:,nnew),                              &
      &                    Akv)
       CALL mp_exchange4d (ng, tile, iNLM, 1,                            &
      &                    LBi, UBi, LBj, UBj, 0, N(ng), 1, NAT,         &
-     &                    NghostPoints, EWperiodic, NSperiodic,         &
+     &                    NghostPoints,                                 &
+     &                    EWperiodic(ng), NSperiodic(ng),               &
      &                    Akt)
 # endif
 

@@ -5,7 +5,7 @@
 !
 !svn $Id: mod_coupler.F 755 2008-09-14 19:07:08Z jcwarner $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2010 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2014 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -94,15 +94,12 @@
 !  Number of models to couple.
 !
       integer :: Nmodels
-!# ifdef REFINED_GRID
-!      integer :: N_mctmodels
-!# endif
 !
 !  Coupled model components IDs.
 !
-!      integer :: ATMid = 2
-!      integer :: WAVid = 3
-!      integer :: OCNid = 1
+      integer :: ATMid = 2
+      integer :: WAVid = 3
+      integer :: OCNid = 1
 !
 !  Logical switch to report verbose import/export field ranges.
 !
@@ -250,7 +247,7 @@
 
       character (len=40) :: code
       character (len=80) :: string
-      character (len=80), dimension(5) :: Vinfo
+      character (len=120), dimension(5) :: Vinfo
 !
 !-----------------------------------------------------------------------
 !  Read in coupling export/import variable information.
@@ -261,7 +258,7 @@
       OPEN (inp, FILE=TRIM(CPLname), FORM='formatted', STATUS='old',    &
      &      ERR=10)
       GO TO 20
-  10  IF (Master) WRITE(stdout,50) TRIM(CPLname)
+  10  IF (MyRank.eq.0) WRITE(stdout,50) TRIM(CPLname)
       STOP
   20  CONTINUE
 !

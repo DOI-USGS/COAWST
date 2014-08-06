@@ -2,9 +2,9 @@
 #ifdef WEAK_CONSTRAINT
       SUBROUTINE def_impulse (ng)
 !
-!svn $Id: def_impulse.F 429 2009-12-20 17:30:26Z arango $
+!svn $Id$
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2010 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2014 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -59,8 +59,8 @@
 
       real(r8) :: Aval(6)
 
-      character (len=80) :: Vinfo(Natt)
-      character (len=80) :: ncname
+      character (len=120) :: Vinfo(Natt)
+      character (len=256) :: ncname
 !
       SourceFile='def_impulse.F'
 !
@@ -69,10 +69,10 @@
 !=======================================================================
 !
       IF (exit_flag.ne.NoError) RETURN
-      ncname=TLFname(ng)
+      ncname=TLF(ng)%name
 !
       DEFINE : IF (LdefTLF(ng)) THEN
-        CALL netcdf_create (ng, iTLM, TRIM(ncname), ncTLFid(ng))
+        CALL netcdf_create (ng, iTLM, TRIM(ncname), TLF(ng)%ncid)
         IF (exit_flag.ne.NoError) THEN
           IF (Master) WRITE (stdout,10) TRIM(ncname)
           RETURN
@@ -84,129 +84,129 @@
 !
         DimIDs=0
 !
-        status=def_dim(ng, iTLM, ncTLFid(ng), ncname, 'xi_rho',         &
+        status=def_dim(ng, iTLM, TLF(ng)%ncid, ncname, 'xi_rho',        &
      &                 IOBOUNDS(ng)%xi_rho, DimIDs( 1))
         IF (exit_flag.ne.NoError) RETURN
 
-        status=def_dim(ng, iTLM, ncTLFid(ng), ncname, 'xi_u',           &
+        status=def_dim(ng, iTLM, TLF(ng)%ncid, ncname, 'xi_u',          &
      &                 IOBOUNDS(ng)%xi_u, DimIDs( 2))
         IF (exit_flag.ne.NoError) RETURN
 
-        status=def_dim(ng, iTLM, ncTLFid(ng), ncname, 'xi_v',           &
+        status=def_dim(ng, iTLM, TLF(ng)%ncid, ncname, 'xi_v',          &
      &                 IOBOUNDS(ng)%xi_v, DimIDs( 3))
         IF (exit_flag.ne.NoError) RETURN
 
-        status=def_dim(ng, iTLM, ncTLFid(ng), ncname, 'xi_psi',         &
+        status=def_dim(ng, iTLM, TLF(ng)%ncid, ncname, 'xi_psi',        &
      &                 IOBOUNDS(ng)%xi_psi, DimIDs( 4))
         IF (exit_flag.ne.NoError) RETURN
 
-        status=def_dim(ng, iTLM, ncTLFid(ng), ncname, 'eta_rho',        &
+        status=def_dim(ng, iTLM, TLF(ng)%ncid, ncname, 'eta_rho',       &
      &                 IOBOUNDS(ng)%eta_rho, DimIDs( 5))
         IF (exit_flag.ne.NoError) RETURN
 
-        status=def_dim(ng, iTLM, ncTLFid(ng), ncname, 'eta_u',          &
+        status=def_dim(ng, iTLM, TLF(ng)%ncid, ncname, 'eta_u',         &
      &                 IOBOUNDS(ng)%eta_u, DimIDs( 6))
         IF (exit_flag.ne.NoError) RETURN
 
-        status=def_dim(ng, iTLM, ncTLFid(ng), ncname, 'eta_v',          &
+        status=def_dim(ng, iTLM, TLF(ng)%ncid, ncname, 'eta_v',         &
      &                 IOBOUNDS(ng)%eta_v, DimIDs( 7))
         IF (exit_flag.ne.NoError) RETURN
 
-        status=def_dim(ng, iTLM, ncTLFid(ng), ncname, 'eta_psi',        &
+        status=def_dim(ng, iTLM, TLF(ng)%ncid, ncname, 'eta_psi',       &
      &                 IOBOUNDS(ng)%eta_psi, DimIDs( 8))
         IF (exit_flag.ne.NoError) RETURN
 
 # if defined WRITE_WATER && defined MASKING
-        status=def_dim(ng, iTLM, ncTLFid(ng), ncname, 'xy_rho',         &
+        status=def_dim(ng, iTLM, TLF(ng)%ncid, ncname, 'xy_rho',        &
      &                 IOBOUNDS(ng)%xy_rho, DimIDs(17))
         IF (exit_flag.ne.NoError) RETURN
 
-        status=def_dim(ng, iTLM, ncTLFid(ng), ncname, 'xy_u',           &
+        status=def_dim(ng, iTLM, TLF(ng)%ncid, ncname, 'xy_u',          &
      &                 IOBOUNDS(ng)%xy_u, DimIDs(18))
         IF (exit_flag.ne.NoError) RETURN
 
-        status=def_dim(ng, iTLM, ncTLFid(ng), ncname, 'xy_v',           &
+        status=def_dim(ng, iTLM, TLF(ng)%ncid, ncname, 'xy_v',          &
      &                 IOBOUNDS(ng)%xy_v, DimIDs(19))
         IF (exit_flag.ne.NoError) RETURN
 # endif
 
 # ifdef SOLVE3D
 #  if defined WRITE_WATER && defined MASKING
-        status=def_dim(ng, iTLM, ncTLFid(ng), ncname, 'xyz_rho',        &
+        status=def_dim(ng, iTLM, TLF(ng)%ncid, ncname, 'xyz_rho',       &
      &                 IOBOUNDS(ng)%xy_rho*N(ng), DimIDs(20))
         IF (exit_flag.ne.NoError) RETURN
 
-        status=def_dim(ng, iTLM, ncTLFid(ng), ncname, 'xyz_u',          &
+        status=def_dim(ng, iTLM, TLF(ng)%ncid, ncname, 'xyz_u',         &
      &                 IOBOUNDS(ng)%xy_u*N(ng), DimIDs(21))
         IF (exit_flag.ne.NoError) RETURN
 
-        status=def_dim(ng, iTLM, ncTLFid(ng), ncname, 'xyz_v',          &
+        status=def_dim(ng, iTLM, TLF(ng)%ncid, ncname, 'xyz_v',         &
      &                 IOBOUNDS(ng)%xy_v*N(ng), DimIDs(22))
         IF (exit_flag.ne.NoError) RETURN
 
-        status=def_dim(ng, iTLM, ncTLFid(ng), ncname, 'xyz_w',          &
+        status=def_dim(ng, iTLM, TLF(ng)%ncid, ncname, 'xyz_w',         &
      &                 IOBOUNDS(ng)%xy_rho*(N(ng)+1), DimIDs(23))
         IF (exit_flag.ne.NoError) RETURN
 #  endif
 
-        status=def_dim(ng, iTLM, ncTLFid(ng), ncname, 's_rho',          &
+        status=def_dim(ng, iTLM, TLF(ng)%ncid, ncname, 's_rho',         &
      &                 N(ng), DimIDs( 9))
         IF (exit_flag.ne.NoError) RETURN
 
-        status=def_dim(ng, iTLM, ncTLFid(ng), ncname, 's_w',            &
+        status=def_dim(ng, iTLM, TLF(ng)%ncid, ncname, 's_w',           &
      &                 N(ng)+1, DimIDs(10))
         IF (exit_flag.ne.NoError) RETURN
 
-        status=def_dim(ng, iTLM, ncTLFid(ng), ncname, 'tracer',         &
+        status=def_dim(ng, iTLM, TLF(ng)%ncid, ncname, 'tracer',        &
      &                 NT(ng), DimIDs(11))
         IF (exit_flag.ne.NoError) RETURN
 
 #  ifdef SEDIMENT
-        status=def_dim(ng, iTLM, ncTLFid(ng), ncname, 'NST',            &
+        status=def_dim(ng, iTLM, TLF(ng)%ncid, ncname, 'NST',           &
      &                 NST, DimIDs(32))
         IF (exit_flag.ne.NoError) RETURN
 
-        status=def_dim(ng, iTLM, ncTLFid(ng), ncname, 'Nbed',           &
+        status=def_dim(ng, iTLM, TLF(ng)%ncid, ncname, 'Nbed',          &
      &                 Nbed, DimIDs(16))
         IF (exit_flag.ne.NoError) RETURN
 
 #   if defined WRITE_WATER && defined MASKING
-        status=def_dim(ng, iTLM, ncTLFid(ng), ncname, 'xybed',          &
+        status=def_dim(ng, iTLM, TLF(ng)%ncid, ncname, 'xybed',         &
      &                 IOBOUNDS(ng)%xy_rho*Nbed, DimIDs(24))
         IF (exit_flag.ne.NoError) RETURN
 #   endif
 #  endif
 
 #  ifdef ECOSIM
-        status=def_dim(ng, iTLM, ncTLFid(ng), ncname, 'Nphy',           &
+        status=def_dim(ng, iTLM, TLF(ng)%ncid, ncname, 'Nphy',          &
      &                 Nphy, DimIDs(25))
         IF (exit_flag.ne.NoError) RETURN
 
-        status=def_dim(ng, iTLM, ncTLFid(ng), ncname, 'Nbac',           &
+        status=def_dim(ng, iTLM, TLF(ng)%ncid, ncname, 'Nbac',          &
      &                 Nbac, DimIDs(26))
         IF (exit_flag.ne.NoError) RETURN
 
-        status=def_dim(ng, iTLM, ncTLFid(ng), ncname, 'Ndom',           &
+        status=def_dim(ng, iTLM, TLF(ng)%ncid, ncname, 'Ndom',          &
      &                 Ndom, DimIDs(27))
         IF (exit_flag.ne.NoError) RETURN
 
-        status=def_dim(ng, iTLM, ncTLFid(ng), ncname, 'Nfec',           &
+        status=def_dim(ng, iTLM, TLF(ng)%ncid, ncname, 'Nfec',          &
      &                 Nfec, DimIDs(28))
         IF (exit_flag.ne.NoError) RETURN
 #  endif
 # endif
 
-        status=def_dim(ng, iTLM, ncTLFid(ng), ncname, 'boundary',       &
+        status=def_dim(ng, iTLM, TLF(ng)%ncid, ncname, 'boundary',      &
      &                 4, DimIDs(14))
         IF (exit_flag.ne.NoError) RETURN
 
 # ifdef FOUR_DVAR
-        status=def_dim(ng, iTLM, ncTLFid(ng), ncname, 'Nstate',         &
+        status=def_dim(ng, iTLM, TLF(ng)%ncid, ncname, 'Nstate',        &
      &                 NstateVar(ng), DimIDs(29))
         IF (exit_flag.ne.NoError) RETURN
 # endif
 
-        status=def_dim(ng, iTLM, ncTLFid(ng), ncname,                   &
+        status=def_dim(ng, iTLM, TLF(ng)%ncid, ncname,                  &
      &                 TRIM(ADJUSTL(Vname(5,idtime))),                  &
      &                 nf90_unlimited, DimIDs(12))
         IF (exit_flag.ne.NoError) RETURN
@@ -244,7 +244,7 @@
 #  endif
 # endif
 !
-!  Define dimension vectors for staggered u-momemtum type variables.
+!  Define dimension vectors for staggered u-momentum type variables.
 !
 # if defined WRITE_WATER && defined MASKING
         u2dgrd(1)=DimIDs(18)
@@ -265,7 +265,7 @@
 #  endif
 # endif
 !
-!  Define dimension vectors for staggered v-momemtum type variables.
+!  Define dimension vectors for staggered v-momentum type variables.
 !
 # if defined WRITE_WATER && defined MASKING
         v2dgrd(1)=DimIDs(19)
@@ -288,7 +288,7 @@
 !
 !  Initialize unlimited time record dimension.
 !
-        tTLFindx(ng)=0
+        TLF(ng)%Rindex=0
 !
 !  Initialize local information variable arrays.
 !
@@ -305,7 +305,7 @@
 !  Define time-recordless information variables.
 !-----------------------------------------------------------------------
 !
-        CALL def_info (ng, iTLM, ncTLFid(ng), ncname, DimIDs)
+        CALL def_info (ng, iTLM, TLF(ng)%ncid, ncname, DimIDs)
         IF (exit_flag.ne.NoError) RETURN
 !
 !-----------------------------------------------------------------------
@@ -324,13 +324,13 @@
           Vinfo( 4)='360_day'
         ELSE IF (INT(time_ref).eq.0) THEN
           Vinfo( 3)='seconds since 0001-01-01 00:00:00'
-          Vinfo( 4)='365.25_day'
+          Vinfo( 4)='julian'
         ELSE IF (time_ref.gt.0.0_r8) THEN
           WRITE (Vinfo( 3),'(a,1x,a)') 'seconds since', TRIM(r_text)
-          Vinfo( 4)='standard'
+          Vinfo( 4)='gregorian'
         END IF
         Vinfo(14)=Vname(4,idtime)
-        status=def_var(ng, iTLM, ncTLFid(ng), tlfVid(idtime,ng),        &
+        status=def_var(ng, iTLM, TLF(ng)%ncid, TLF(ng)%Vid(idtime),     &
      &                 NF_TYPE, 1, (/recdim/), Aval, Vinfo, ncname,     &
      &                 SetParAccess = .FALSE.)
         IF (exit_flag.ne.NoError) RETURN
@@ -347,7 +347,7 @@
 # endif
         Vinfo(22)='coordinates'
         Aval(5)=REAL(Iinfo(1,idZtlf,ng),r8)
-        status=def_var(ng, iTLM, ncTLFid(ng), tlfVid(idZtlf,ng),        &
+        status=def_var(ng, iTLM, TLF(ng)%ncid, TLF(ng)%Vid(idZtlf),     &
      &                 NF_FOUT, nvd3, t2dgrd, Aval, Vinfo, ncname)
         IF (exit_flag.ne.NoError) RETURN
 !
@@ -363,7 +363,7 @@
 # endif
         Vinfo(22)='coordinates'
         Aval(5)=REAL(Iinfo(1,idUbtf,ng),r8)
-        status=def_var(ng, iTLM, ncTLFid(ng), tlfVid(idUbtf,ng),        &
+        status=def_var(ng, iTLM, TLF(ng)%ncid, TLF(ng)%Vid(idUbtf),     &
      &                 NF_FOUT, nvd3, u2dgrd, Aval, Vinfo, ncname)
         IF (exit_flag.ne.NoError) RETURN
 !
@@ -379,7 +379,7 @@
 # endif
         Vinfo(22)='coordinates'
         Aval(5)=REAL(Iinfo(1,idVbtf,ng),r8)
-        status=def_var(ng, iTLM, ncTLFid(ng), tlfVid(idVbtf,ng),        &
+        status=def_var(ng, iTLM, TLF(ng)%ncid, TLF(ng)%Vid(idVbtf),     &
      &                 NF_FOUT, nvd3, v2dgrd, Aval, Vinfo, ncname)
         IF (exit_flag.ne.NoError) RETURN
 
@@ -397,7 +397,7 @@
 #  endif
         Vinfo(22)='coordinates'
         Aval(5)=REAL(Iinfo(1,idUtlf,ng),r8)
-        status=def_var(ng, iTLM, ncTLFid(ng), tlfVid(idUtlf,ng),        &
+        status=def_var(ng, iTLM, TLF(ng)%ncid, TLF(ng)%Vid(idUtlf),     &
      &                 NF_FOUT, nvd4, u3dgrd, Aval, Vinfo, ncname)
         IF (exit_flag.ne.NoError) RETURN
 !
@@ -413,7 +413,7 @@
 #  endif
         Vinfo(22)='coordinates'
         Aval(5)=REAL(Iinfo(1,idVtlf,ng),r8)
-        status=def_var(ng, iTLM, ncTLFid(ng), tlfVid(idVtlf,ng),        &
+        status=def_var(ng, iTLM, TLF(ng)%ncid, TLF(ng)%Vid(idVtlf),     &
      &                 NF_FOUT, nvd4, v3dgrd, Aval, Vinfo, ncname)
         IF (exit_flag.ne.NoError) RETURN
 !
@@ -437,7 +437,7 @@
 #  endif
           Vinfo(22)='coordinates'
           Aval(5)=REAL(r3dvar,r8)
-          status=def_var(ng, iTLM, ncTLFid(ng), tlfTid(itrc,ng),        &
+          status=def_var(ng, iTLM, TLF(ng)%ncid, TLF(ng)%Tid(itrc),     &
      &                   NF_FOUT, nvd4, t3dgrd, Aval, Vinfo, ncname)
           IF (exit_flag.ne.NoError) RETURN
         END DO
@@ -447,7 +447,7 @@
 !  Leave definition mode.
 !-----------------------------------------------------------------------
 !
-        CALL netcdf_enddef (ng, iTLM, ncname, ncTLFid(ng))
+        CALL netcdf_enddef (ng, iTLM, ncname, TLF(ng)%ncid)
         IF (exit_flag.ne.NoError) RETURN
 !
 !-----------------------------------------------------------------------
@@ -455,7 +455,7 @@
 !  creation switch.
 !-----------------------------------------------------------------------
 !
-        CALL wrt_info (ng, iTLM, ncTLFid(ng), ncname)
+        CALL wrt_info (ng, iTLM, TLF(ng)%ncid, ncname)
         IF (exit_flag.ne.NoError) RETURN
         LdefTLF(ng)=.FALSE.
       END IF DEFINE
@@ -466,7 +466,7 @@
 !=======================================================================
 !
       QUERY : IF (.not.LdefTLF(ng)) THEN
-        ncname=TLFname(ng)
+        ncname=TLF(ng)%name
 !
 !  Inquire about the dimensions and check for consistency.
 !
@@ -480,7 +480,7 @@
 !
 !  Open impulse forcing file for read/write.
 !
-        CALL netcdf_open (ng, iTLM, ncname, 1, ncTLFid(ng))
+        CALL netcdf_open (ng, iTLM, ncname, 1, TLF(ng)%ncid)
         IF (exit_flag.ne.NoError) THEN
           WRITE (stdout,30) TRIM(ncname)
           RETURN
@@ -498,30 +498,30 @@
         DO i=1,n_var
           IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idtime))) THEN
             got_var(idtime)=.TRUE.
-            tlfVid(idtime,ng)=var_id(i)
+            TLF(ng)%Vid(idtime)=var_id(i)
           ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idZtlf))) THEN
             got_var(idZtlf)=.TRUE.
-            tlfVid(idZtlf,ng)=var_id(i)
+            TLF(ng)%Vid(idZtlf)=var_id(i)
           ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idUbtf))) THEN
             got_var(idUbtf)=.TRUE.
-            tlfVid(idUbtf,ng)=var_id(i)
+            TLF(ng)%Vid(idUbtf)=var_id(i)
           ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idVbtf))) THEN
             got_var(idVbtf)=.TRUE.
-            tlfVid(idVbtf,ng)=var_id(i)
+            TLF(ng)%Vid(idVbtf)=var_id(i)
 # ifdef SOLVE3D
           ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idUtlf))) THEN
             got_var(idUtlf)=.TRUE.
-            tlfVid(idUtlf,ng)=var_id(i)
+            TLF(ng)%Vid(idUtlf)=var_id(i)
           ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idVtlf))) THEN
             got_var(idVtlf)=.TRUE.
-            tlfVid(idVtlf,ng)=var_id(i)
+            TLF(ng)%Vid(idVtlf)=var_id(i)
 # endif
           END IF
 # ifdef SOLVE3D
           DO itrc=1,NT(ng)
             IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idTtlf(itrc)))) THEN
              got_var(idTtlf(itrc))=.TRUE.
-             tlfTid(itrc,ng)=var_id(i)
+             TLF(ng)%Tid(itrc)=var_id(i)
             END IF
           END DO
 # endif
@@ -581,7 +581,7 @@
 !
 !  Set unlimited time record dimension to the appropriate value.
 !
-        tTLFindx(ng)=rec_size
+        TLF(ng)%Rindex=rec_size
       END IF QUERY
 !
   10  FORMAT (/,' DEF_IMPULSE - unable to create impulse forcing',      &

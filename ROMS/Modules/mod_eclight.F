@@ -4,7 +4,7 @@
 !
 !svn $Id: mod_eclight.F 1338 2008-01-24 02:47:35Z jcwarner $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2010 The ROMS/TOMS Group       W. Paul Bissett   !
+!  Copyright (c) 2002-2014 The ROMS/TOMS Group       W. Paul Bissett   !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================

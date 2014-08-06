@@ -3,7 +3,7 @@
 !
 !svn $Id: wrt_info.F 733 2008-09-07 01:56:45Z jcwarner $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2010 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2014 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -27,6 +27,9 @@
 !
       USE mod_param
       USE mod_parallel
+#if defined FLOATS && defined FLOAT_BIOLOGY
+      USE mod_behavior
+#endif
 #ifdef BIOLOGY
       USE mod_biology
 #endif
@@ -41,9 +44,10 @@
 #ifdef SEDIMENT
       USE mod_sediment
 #endif
-#if defined SOLVE3D && defined TS_PSOURCE
-      USE mod_sources
+#ifdef PROPAGATOR
+      USE mod_storage
 #endif
+      USE mod_sources
 
 #if !defined PARALLEL_IO  && defined DISTRIBUTE
       USE distribute_mod, ONLY : mp_bcasti
@@ -67,7 +71,7 @@
       logical :: Cgrid = .TRUE.
 
       integer :: LBi, UBi, LBj, UBj
-      integer :: i, j, k, ibry, ilev, itrc, status, varid
+      integer :: i, j, k, ibry, itrc, status, varid
 
 #ifdef DISTRIBUTE
       integer, dimension(2) :: ibuffer
@@ -85,9 +89,6 @@
 #ifdef STATIONS
       real(r8), dimension(Nstation(ng)) :: Zpos, wrk
 #endif
-
-      character (len=1) :: char1
-      character (len=1), dimension(NT(ng)) :: char1_trc
 !
       SourceFile='wrt_info.F'
 !
@@ -132,7 +133,7 @@
      &                      ncid = ncid)
       IF (exit_flag.ne.NoError) RETURN
 
-#if defined NETCDF4 && defined DEFLATE
+#if defined HDF5 && defined DEFLATE
       CALL netcdf_put_ivar (ng, model, ncname, 'shuffle',               &
      &                      shuffle, (/0/), (/0/),                      &
      &                      ncid = ncid)
@@ -164,7 +165,10 @@
      &                      ncid = ncid)
       IF (exit_flag.ne.NoError) RETURN
 
-#ifdef AVERAGES
+#if defined AVERAGES    || \
+   (defined AD_AVERAGES && defined ADJOINT) || \
+   (defined RP_AVERAGES && defined TL_IOMS) || \
+   (defined TL_AVERAGES && defined TANGENT)
       CALL netcdf_put_ivar (ng, model, ncname, 'ntsAVG',                &
      &                      ntsAVG(ng), (/0/), (/0/),                   &
      &                      ncid = ncid)
@@ -177,6 +181,33 @@
 
       CALL netcdf_put_ivar (ng, model, ncname, 'ndefAVG',               &
      &                      ndefAVG(ng), (/0/), (/0/),                  &
+     &                      ncid = ncid)
+      IF (exit_flag.ne.NoError) RETURN
+#endif
+#ifdef AVERAGES2
+      CALL netcdf_put_ivar (ng, model, ncname, 'ntsAVG2',               &
+     &                      ntsAVG2(ng), (/0/), (/0/),                  &
+     &                      ncid = ncid)
+      IF (exit_flag.ne.NoError) RETURN
+
+      CALL netcdf_put_ivar (ng, model, ncname, 'nAVG2',                 &
+     &                      nAVG2(ng), (/0/), (/0/),                    &
+     &                      ncid = ncid)
+      IF (exit_flag.ne.NoError) RETURN
+
+      CALL netcdf_put_ivar (ng, model, ncname, 'ndefAVG2',              &
+     &                      ndefAVG2(ng), (/0/), (/0/),                 &
+     &                      ncid = ncid)
+      IF (exit_flag.ne.NoError) RETURN
+#endif
+#ifdef HISTORY2
+      CALL netcdf_put_ivar (ng, model, ncname, 'nHIS2',                 &
+     &                      nHIS2(ng), (/0/), (/0/),                    &
+     &                      ncid = ncid)
+      IF (exit_flag.ne.NoError) RETURN
+
+      CALL netcdf_put_ivar (ng, model, ncname, 'ndefHIS2',              &
+     &                      ndefHIS2(ng), (/0/), (/0/),                 &
      &                      ncid = ncid)
       IF (exit_flag.ne.NoError) RETURN
 #endif
@@ -220,9 +251,13 @@
 #endif
 
 #ifdef PROPAGATOR
-      WRITE (char1,'(l1)') LrstGST
-      CALL netcdf_put_svar (ng, model, ncname, 'LrstGST',               &
-     &                      char1, (/0/), (/0/),                        &
+      CALL netcdf_put_lvar (ng, model, ncname, 'LmultiGST',             &
+     &                      LmultiGST, (/0/), (/0/),                    &
+     &                      ncid = ncid)
+      IF (exit_flag.ne.NoError) RETURN
+
+      CALL netcdf_put_lvar (ng, model, ncname, 'LrstGST',               &
+     &                      LrstGST, (/0/), (/0/),                      &
      &                      ncid = ncid)
       IF (exit_flag.ne.NoError) RETURN
 
@@ -236,6 +271,15 @@
      &                      ncid = ncid)
       IF (exit_flag.ne.NoError) RETURN
 
+      CALL netcdf_put_ivar (ng, model, ncname, 'NEV',                   &
+     &                      NEV, (/0/), (/0/),                          &
+     &                      ncid = ncid)
+      IF (exit_flag.ne.NoError) RETURN
+
+      CALL netcdf_put_ivar (ng, model, ncname, 'NCV',                   &
+     &                      NCV, (/0/), (/0/),                          &
+     &                      ncid = ncid)
+      IF (exit_flag.ne.NoError) RETURN
 
       CALL netcdf_put_fvar (ng, model, ncname, 'Ritz_tol',              &
      &                      Ritz_tol, (/0/), (/0/),                     &
@@ -410,6 +454,20 @@
      &                      ncid = ncid)
       IF (exit_flag.ne.NoError) RETURN
 # endif
+#endif
+
+#if defined UV_VIS2 || defined UV_VIS4
+      CALL netcdf_put_lvar (ng, model, ncname, 'LuvSponge',             &
+     &                      LuvSponge(ng), (/0/), (/0/),                &
+     &                      ncid = ncid)
+      IF (exit_flag.ne.NoError) RETURN
+#endif
+
+#if (defined TS_DIF2 || defined TS_DIF4) && defined SOLVE3D
+      CALL netcdf_put_lvar (ng, model, ncname, 'LtracerSponge',         &
+     &                      LtracerSponge(:,ng), (/1/), (/NT(ng)/),     &
+     &                      ncid = ncid)
+      IF (exit_flag.ne.NoError) RETURN
 #endif
 
 #ifdef SOLVE3D
@@ -614,91 +672,63 @@
       IF (exit_flag.ne.NoError) RETURN
 #endif
 
-#ifdef NUDGING
-!
-!  Nudging inverse time scales used in data assimilation.
-!
-      CALL netcdf_put_fvar (ng, model, ncname, 'Znudass',               &
-     &                      Znudass(ng)/sec2day, (/0/), (/0/),          &
-     &                      ncid = ncid)
-      IF (exit_flag.ne.NoError) RETURN
-
-      CALL netcdf_put_fvar (ng, model, ncname, 'M2nudass',              &
-     &                      M2nudass(ng)/sec2day, (/0/), (/0/),         &
-     &                      ncid = ncid)
-      IF (exit_flag.ne.NoError) RETURN
-
-# ifdef SOLVE3D
-      CALL netcdf_put_fvar (ng, model, ncname, 'M3nudass',              &
-     &                      M3nudass(ng)/sec2day, (/0/), (/0/),         &
-     &                      ncid = ncid)
-      IF (exit_flag.ne.NoError) RETURN
-
-      DO itrc=1,NT(ng)
-        nudg(itrc)=Tnudass(itrc,ng)/sec2day
-      END DO
-      CALL netcdf_put_fvar (ng, model, ncname, 'Tnudass',               &
-     &                      nudg, (/1/), (/NT(ng)/),                    &
-     &                      ncid = ncid)
-      IF (exit_flag.ne.NoError) RETURN
-# endif
-#endif
-
-#ifdef NUDGING_COFF
+#ifndef DEBUGGING
 !
 !  Open boundary nudging, inverse time scales.
 !
-      CALL netcdf_put_fvar (ng, model, ncname, 'FSobc_in',              &
-     &                      FSobc_in(ng,:), (/1/), (/4/),               &
-     &                      ncid = ncid)
-      IF (exit_flag.ne.NoError) RETURN
+      IF (NudgingCoeff(ng)) THEN
+        CALL netcdf_put_fvar (ng, model, ncname, 'FSobc_in',            &
+     &                        FSobc_in(ng,:), (/1/), (/4/),             &
+     &                        ncid = ncid)
+        IF (exit_flag.ne.NoError) RETURN
 
-      CALL netcdf_put_fvar (ng, model, ncname, 'FSobc_out',             &
-     &                      FSobc_out(ng,:), (/1/), (/4/),              &
-     &                      ncid = ncid)
-      IF (exit_flag.ne.NoError) RETURN
+        CALL netcdf_put_fvar (ng, model, ncname, 'FSobc_out',           &
+     &                        FSobc_out(ng,:), (/1/), (/4/),            &
+     &                        ncid = ncid)
+        IF (exit_flag.ne.NoError) RETURN
 
-      CALL netcdf_put_fvar (ng, model, ncname, 'M2obc_in',              &
-     &                      M2obc_in(ng,:), (/1/), (/4/),               &
-     &                      ncid = ncid)
-      IF (exit_flag.ne.NoError) RETURN
+        CALL netcdf_put_fvar (ng, model, ncname, 'M2obc_in',            &
+     &                        M2obc_in(ng,:), (/1/), (/4/),             &
+     &                        ncid = ncid)
+        IF (exit_flag.ne.NoError) RETURN
 
-      CALL netcdf_put_fvar (ng, model, ncname, 'M2obc_out',             &
-     &                      M2obc_out(ng,:), (/1/), (/4/),              &
-     &                      ncid = ncid)
-      IF (exit_flag.ne.NoError) RETURN
+        CALL netcdf_put_fvar (ng, model, ncname, 'M2obc_out',           &
+     &                        M2obc_out(ng,:), (/1/), (/4/),            &
+     &                        ncid = ncid)
+        IF (exit_flag.ne.NoError) RETURN
 
 # ifdef SOLVE3D
-      DO ibry=1,4
-        DO itrc=1,NT(ng)
-          Tobc(itrc,ibry)=Tobc_in(itrc,ng,ibry)
+        DO ibry=1,4
+          DO itrc=1,NT(ng)
+            Tobc(itrc,ibry)=Tobc_in(itrc,ng,ibry)
+          END DO
         END DO
-      END DO
-      CALL netcdf_put_fvar (ng, model, ncname, 'Tobc_in',               &
-     &                      Tobc, (/1,1/), (/NT(ng),4/),                &
-     &                      ncid = ncid)
-      IF (exit_flag.ne.NoError) RETURN
+        CALL netcdf_put_fvar (ng, model, ncname, 'Tobc_in',             &
+     &                        Tobc, (/1,1/), (/NT(ng),4/),              &
+     &                        ncid = ncid)
+        IF (exit_flag.ne.NoError) RETURN
 
-      DO ibry=1,4
-        DO itrc=1,NT(ng)
-          Tobc(itrc,ibry)=Tobc_out(itrc,ng,ibry)
+        DO ibry=1,4
+          DO itrc=1,NT(ng)
+            Tobc(itrc,ibry)=Tobc_out(itrc,ng,ibry)
+          END DO
         END DO
-      END DO
-      CALL netcdf_put_fvar (ng, model, ncname, 'Tobc_out',              &
-     &                      Tobc, (/1,1/), (/NT(ng),4/),                &
-     &                      ncid = ncid)
-      IF (exit_flag.ne.NoError) RETURN
+        CALL netcdf_put_fvar (ng, model, ncname, 'Tobc_out',            &
+     &                        Tobc, (/1,1/), (/NT(ng),4/),              &
+     &                        ncid = ncid)
+        IF (exit_flag.ne.NoError) RETURN
 
-      CALL netcdf_put_fvar (ng, model, ncname, 'M3obc_in',              &
-     &                      M3obc_in(ng,:), (/1/), (/4/),               &
-     &                      ncid = ncid)
-      IF (exit_flag.ne.NoError) RETURN
+        CALL netcdf_put_fvar (ng, model, ncname, 'M3obc_in',            &
+     &                        M3obc_in(ng,:), (/1/), (/4/),             &
+     &                        ncid = ncid)
+        IF (exit_flag.ne.NoError) RETURN
 
-      CALL netcdf_put_fvar (ng, model, ncname, 'M3obc_out',             &
-     &                      M3obc_out(ng,:), (/1/), (/4/),              &
+        CALL netcdf_put_fvar (ng, model, ncname, 'M3obc_out',           &
+     &                        M3obc_out(ng,:), (/1/), (/4/),            &
      &                      ncid = ncid)
-      IF (exit_flag.ne.NoError) RETURN
+        IF (exit_flag.ne.NoError) RETURN
 # endif
+      END IF
 #endif
 !
 !  Equation of State parameters.
@@ -755,14 +785,70 @@
      &                      gamma2(ng), (/0/), (/0/),                   &
      &                      ncid = ncid)
       IF (exit_flag.ne.NoError) RETURN
-
-#if defined SOLVE3D && defined TS_PSOURCE
 !
-!  Logical switches indicating which tracer variables are processed
-!  during point Sources/Sinks.
+! Logical switches to activate horizontal momentum transport
+! point Sources/Sinks (like river runoff transport) and mass point
+! Sources/Sinks (like volume vertical influx).
+!
+      CALL netcdf_put_lvar (ng, model, ncname, 'LuvSrc',                &
+     &                      LuvSrc(ng), (/0/), (/0/),                   &
+     &                      ncid = ncid)
+      IF (exit_flag.ne.NoError) RETURN
+
+      CALL netcdf_put_lvar (ng, model, ncname, 'LwSrc',                 &
+     &                      LwSrc(ng), (/0/), (/0/),                    &
+     &                      ncid = ncid)
+      IF (exit_flag.ne.NoError) RETURN
+
+#ifdef SOLVE3D
+!
+!  Logical switches to activate tracer point Sources/Sinks.
 !
       CALL netcdf_put_lvar (ng, model, ncname, 'LtracerSrc',            &
      &                      LtracerSrc(:,ng), (/1/), (/NT(ng)/),        &
+     &                      ncid = ncid)
+      IF (exit_flag.ne.NoError) RETURN
+#endif
+!
+!  Logical switches to process climatology fields.
+!
+      CALL netcdf_put_lvar (ng, model, ncname, 'LsshCLM',               &
+     &                      LsshCLM(ng), (/0/), (/0/),                  &
+     &                      ncid = ncid)
+      IF (exit_flag.ne.NoError) RETURN
+
+      CALL netcdf_put_lvar (ng, model, ncname, 'Lm2CLM',                &
+     &                      Lm2CLM(ng), (/0/), (/0/),                   &
+     &                      ncid = ncid)
+      IF (exit_flag.ne.NoError) RETURN
+
+#ifdef SOLVE3D
+      CALL netcdf_put_lvar (ng, model, ncname, 'Lm3CLM',                &
+     &                      Lm3CLM(ng), (/0/), (/0/),                   &
+     &                      ncid = ncid)
+      IF (exit_flag.ne.NoError) RETURN
+
+      CALL netcdf_put_lvar (ng, model, ncname, 'LtracerCLM',            &
+     &                      LtracerCLM(:,ng), (/1/), (/NT(ng)/),        &
+     &                      ncid = ncid)
+      IF (exit_flag.ne.NoError) RETURN
+#endif
+!
+!  Logical switches for nudging climatology fields.
+!
+      CALL netcdf_put_lvar (ng, model, ncname, 'LnudgeM2CLM',           &
+     &                      LnudgeM2CLM(ng), (/0/), (/0/),              &
+     &                      ncid = ncid)
+      IF (exit_flag.ne.NoError) RETURN
+
+#ifdef SOLVE3D
+      CALL netcdf_put_lvar (ng, model, ncname, 'LnudgeM3CLM',           &
+     &                      LnudgeM3CLM(ng), (/0/), (/0/),              &
+     &                      ncid = ncid)
+      IF (exit_flag.ne.NoError) RETURN
+
+      CALL netcdf_put_lvar (ng, model, ncname, 'LnudgeTCLM',            &
+     &                      LnudgeTCLM(:,ng), (/1/), (/NT(ng)/),        &
      &                      ncid = ncid)
       IF (exit_flag.ne.NoError) RETURN
 #endif
@@ -995,42 +1081,40 @@
 !
 !  Adjoint sensitivity parameters.
 !
-      WRITE (char1,'(l1)') SCALARS(ng)%Lstate(isFsur)
-      CALL netcdf_put_svar (ng, model, ncname, 'Lzeta',                 &
-     &                      char1, (/0/), (/0/),                        &
+      CALL netcdf_put_lvar (ng, model, ncname, 'Lzeta',                 &
+     &                      SCALARS(ng)%Lstate(isFsur),                 &
+     &                      (/0/), (/0/),                               &
      &                      ncid = ncid)
       IF (exit_flag.ne.NoError) RETURN
 
-      WRITE (char1,'(l1)') SCALARS(ng)%Lstate(isUbar)
-      CALL netcdf_put_svar (ng, model, ncname, 'Lubar',                 &
-     &                      char1, (/0/), (/0/),                        &
+      CALL netcdf_put_lvar (ng, model, ncname, 'Lubar',                 &
+     &                      SCALARS(ng)%Lstate(isUbar),                 &
+     &                      (/0/), (/0/),                               &
      &                      ncid = ncid)
       IF (exit_flag.ne.NoError) RETURN
 
-      WRITE (char1,'(l1)') SCALARS(ng)%Lstate(isVbar)
-      CALL netcdf_put_svar (ng, model, ncname, 'Lvbar',                 &
-     &                      char1, (/0/), (/0/),                        &
+      CALL netcdf_put_lvar (ng, model, ncname, 'Lvbar',                 &
+     &                      SCALARS(ng)%Lstate(isVbar),                 &
+     &                      (/0/), (/0/),                               &
      &                      ncid = ncid)
       IF (exit_flag.ne.NoError) RETURN
 
 # ifdef SOLVE3D
-      WRITE (char1,'(l1)') SCALARS(ng)%Lstate(isUvel)
-      CALL netcdf_put_svar (ng, model, ncname, 'Luvel',                 &
-     &                      char1, (/0/), (/0/),                        &
+      CALL netcdf_put_lvar (ng, model, ncname, 'Luvel',                 &
+     &                      SCALARS(ng)%Lstate(isUvel),                 &
+     &                      (/0/), (/0/),                               &
      &                      ncid = ncid)
       IF (exit_flag.ne.NoError) RETURN
 
-      WRITE (char1,'(l1)') SCALARS(ng)%Lstate(isVvel)
-      CALL netcdf_put_svar (ng, model, ncname, 'Lvvel',                 &
-     &                      char1, (/0/), (/0/),                        &
+      CALL netcdf_put_lvar (ng, model, ncname, 'Lvvel',                 &
+     &                      SCALARS(ng)%Lstate(isVvel),                 &
+     &                      (/0/), (/0/),                               &
      &                      ncid = ncid)
       IF (exit_flag.ne.NoError) RETURN
 
-      DO i=1,NT(ng)
-        WRITE (char1_trc(i),'(l1)') SCALARS(ng)%Lstate(isTvar(i))
-      END DO
-      CALL netcdf_put_svar (ng, model, ncname, 'Ltracer',               &
-     &                      char1_trc, (/1/), (/NT(ng)/),               &
+      CALL netcdf_put_lvar (ng, model, ncname, 'Ltracer',               &
+     &                      SCALARS(ng)%Lstate(isTvar(:)),              &
+     &                      (/1/), (/NT(ng)/),                          &
      &                      ncid = ncid)
       IF (exit_flag.ne.NoError) RETURN
 
@@ -1044,54 +1128,135 @@
      &                      ncid = ncid)
       IF (exit_flag.ne.NoError) RETURN
 # endif
+#endif
 
-# ifdef SO_SEMI
-#  ifndef SO_SEMI_WHITE
+#if defined FORCING_SV || defined SO_SEMI || defined STOCHASTIC_OPT
+!
+!  Singular Forcing Vectors or Stochastic Optimals state switches.
+!
+      CALL netcdf_put_lvar (ng, model, ncname, 'Fzeta',                 &
+     &                      SCALARS(ng)%Fstate(isFsur),                 &
+     &                      (/0/), (/0/),                               &
+     &                      ncid = ncid)
+      IF (exit_flag.ne.NoError) RETURN
+
+# ifndef SOLVE3D
+      CALL netcdf_put_lvar (ng, model, ncname, 'Fubar',                 &
+     &                      SCALARS(ng)%Fstate(isUbar),                 &
+     &                      (/0/), (/0/),                               &
+     &                      ncid = ncid)
+      IF (exit_flag.ne.NoError) RETURN
+
+      CALL netcdf_put_lvar (ng, model, ncname, 'Fvbar',                 &
+     &                      SCALARS(ng)%Fstate(isVbar),                 &
+     &                      (/0/), (/0/),                               &
+     &                      ncid = ncid)
+      IF (exit_flag.ne.NoError) RETURN
+
+# else
+
+      CALL netcdf_put_lvar (ng, model, ncname, 'Fuvel',                 &
+     &                      SCALARS(ng)%Fstate(isUvel),                 &
+     &                      (/0/), (/0/),                               &
+     &                      ncid = ncid)
+      IF (exit_flag.ne.NoError) RETURN
+
+      CALL netcdf_put_lvar (ng, model, ncname, 'Fvvel',                 &
+     &                      SCALARS(ng)%Fstate(isVvel),                 &
+     &                      (/0/), (/0/),                               &
+     &                      ncid = ncid)
+      IF (exit_flag.ne.NoError) RETURN
+
+      CALL netcdf_put_lvar (ng, model, ncname, 'Ftracer',               &
+     &                      SCALARS(ng)%Fstate(isTvar(:)),              &
+     &                      (/1/), (/NT(ng)/),                          &
+     &                      ncid = ncid)
+      IF (exit_flag.ne.NoError) RETURN
+# endif
+
+      CALL netcdf_put_lvar (ng, model, ncname, 'Fsustr',                &
+     &                      SCALARS(ng)%Fstate(isUstr),                 &
+     &                      (/0/), (/0/),                               &
+     &                      ncid = ncid)
+      IF (exit_flag.ne.NoError) RETURN
+
+      CALL netcdf_put_lvar (ng, model, ncname, 'Fsvstr',                &
+     &                      SCALARS(ng)%Fstate(isVstr),                 &
+     &                      (/0/), (/0/),                               &
+     &                      ncid = ncid)
+      IF (exit_flag.ne.NoError) RETURN
+
+# ifdef SOLVE3D
+      CALL netcdf_put_lvar (ng, model, ncname, 'Fstflx',                &
+     &                      SCALARS(ng)%Fstate(isTsur(:)),              &
+     &                      (/1/), (/NT(ng)/),                          &
+     &                      ncid = ncid)
+      IF (exit_flag.ne.NoError) RETURN
+# endif
+#endif
+
+#ifdef SO_SEMI
+# ifndef SO_SEMI_WHITE
       CALL netcdf_put_fvar (ng, model, ncname, 'SO_decay',              &
      &                      SO_decay(ng), (/0/), (/0/),                 &
      &                      ncid = ncid)
       IF (exit_flag.ne.NoError) RETURN
-#  endif
+# endif
 
       CALL netcdf_put_fvar (ng, model, ncname, 'SO_trace',              &
      &                      TRnorm(ng), (/0/), (/0/),                   &
      &                      ncid = ncid)
       IF (exit_flag.ne.NoError) RETURN
 
-      WRITE (char1,'(l1)') SCALARS(ng)%SOstate(isUstr)
-      CALL netcdf_put_svar (ng, model, ncname, 'Lso_Ustr',              &
-     &                      char1, (/0/), (/0/),                        &
+      CALL netcdf_put_fvar (ng, model, ncname, 'SOsdev_zeta',           &
+     &                      SO_sdev(isFsur,ng), (/0/), (/0/),           &
      &                      ncid = ncid)
       IF (exit_flag.ne.NoError) RETURN
 
-      WRITE (char1,'(l1)') SCALARS(ng)%SOstate(isVstr)
-      CALL netcdf_put_svar (ng, model, ncname, 'Lso_Vstr',              &
-     &                      char1, (/0/), (/0/),                        &
+# ifndef SOLVE3D
+      CALL netcdf_put_fvar (ng, model, ncname, 'SOsdev_ubar',           &
+     &                      SO_sdev(isUbar,ng), (/0/), (/0/),           &
      &                      ncid = ncid)
       IF (exit_flag.ne.NoError) RETURN
 
-#  ifdef SOLVE3D
-      DO i=1,NT(ng)
-        WRITE (char1_trc(i),'(l1)') SCALARS(ng)%SOstate(isTsur(i))
+      CALL netcdf_put_fvar (ng, model, ncname, 'SOsdev_vbar',           &
+     &                      SO_sdev(isUbar,ng), (/0/), (/0/),           &
+     &                      ncid = ncid)
+      IF (exit_flag.ne.NoError) RETURN
+
+# else
+
+      CALL netcdf_put_fvar (ng, model, ncname, 'SOsdev_uvel',           &
+     &                      SO_sdev(isUvel,ng), (/0/), (/0/),           &
+     &                      ncid = ncid)
+      IF (exit_flag.ne.NoError) RETURN
+
+      CALL netcdf_put_fvar (ng, model, ncname, 'SOsdev_vvel',           &
+     &                      SO_sdev(isVvel,ng), (/0/), (/0/),           &
+     &                      ncid = ncid)
+      IF (exit_flag.ne.NoError) RETURN
+
+      DO itrc=1,NT(ng)
+        nudg(itrc)=SO_sdev(isTvar(itrc),ng)
       END DO
-      CALL netcdf_put_svar (ng, model, ncname, 'Lso_tracer',            &
-     &                      char1_trc, (/1/), (/NT(ng)/),               &
+      CALL netcdf_put_fvar (ng, model, ncname, 'SOsdev_tracer',         &
+     &                      nudg, (/1/), (/NT(ng)/),                    &
      &                      ncid = ncid)
       IF (exit_flag.ne.NoError) RETURN
-#  endif
+# endif
 
-      CALL netcdf_put_fvar (ng, model, ncname, 'SOsdev_Ustr',           &
+      CALL netcdf_put_fvar (ng, model, ncname, 'SOsdev_sustr',          &
      &                      SO_sdev(isUstr,ng), (/0/), (/0/),           &
      &                      ncid = ncid)
       IF (exit_flag.ne.NoError) RETURN
 
 
-      CALL netcdf_put_fvar (ng, model, ncname, 'SOsdev_Vstr',           &
-     &                      SO_sdev(isUstr,ng), (/0/), (/0/),           &
+      CALL netcdf_put_fvar (ng, model, ncname, 'SOsdev_svstr',          &
+     &                      SO_sdev(isVstr,ng), (/0/), (/0/),           &
      &                      ncid = ncid)
       IF (exit_flag.ne.NoError) RETURN
 
-#  ifdef SOLVE3D
+# ifdef SOLVE3D
       DO itrc=1,NT(ng)
         nudg(itrc)=SO_sdev(isTsur(itrc),ng)
       END DO
@@ -1099,7 +1264,6 @@
      &                      nudg, (/1/), (/NT(ng)/),                    &
      &                      ncid = ncid)
       IF (exit_flag.ne.NoError) RETURN
-#  endif
 # endif
 #endif
 
@@ -1110,12 +1274,20 @@
 #  include <ecosim_wrt.h>
 # elif defined NEMURO
 #  include <nemuro_wrt.h>
+# elif defined BIO_UMAINE
+#  include <umaine_wrt.h>
 # elif defined NPZD_FRANKS
 #  include <npzd_Franks_wrt.h>
 # elif defined NPZD_IRON
 #  include <npzd_iron_wrt.h>
 # elif defined NPZD_POWELL
 #  include <npzd_Powell_wrt.h>
+# endif
+#endif
+
+#if defined FLOATS && defined FLOAT_BIOLOGY
+# if defined FLOAT_OYSTER
+#  include <oyster_floats_wrt.h>
 # endif
 #endif
 
@@ -1127,11 +1299,12 @@
 !  Write out grid variables.
 !-----------------------------------------------------------------------
 !
-!  Grid type switch.
+!  Grid type switch. Writing characters in parallel I/O is extremely
+!  inefficient.  It is better to write this as an integer switch:
+!  0=Cartesian, 1=spherical.
 !
-      WRITE (char1,'(l1)') spherical
-      CALL netcdf_put_svar (ng, model, ncname, 'spherical',             &
-     &                      char1, (/0/), (/0/),                        &
+      CALL netcdf_put_lvar (ng, model, ncname, 'spherical',             &
+     &                      spherical, (/0/), (/0/),                    &
      &                      ncid = ncid)
       IF (exit_flag.ne.NoError) RETURN
 !
@@ -1219,7 +1392,7 @@
 !
 !  Stations positions.
 !
-      IF (ncid.eq.ncSTAid(ng)) THEN
+      IF (ncid.eq.STA(ng)%ncid) THEN
         CALL netcdf_put_fvar (ng, model, ncname, 'Ipos',                &
      &                        SCALARS(ng)%SposX(:), (/1/),              &
      &                        (/Nstation(ng)/), ncid = ncid)
@@ -1233,9 +1406,9 @@
 #endif
 
 #ifdef NO_WRITE_GRID
-      GRID_VARS : IF (ncid.eq.ncSTAid(ng)) THEN
+      GRID_VARS : IF (ncid.eq.STA(ng)%ncid) THEN
 #else
-      GRID_VARS : IF (ncid.ne.ncFLTid(ng)) THEN
+      GRID_VARS : IF (ncid.ne.FLT(ng)%ncid) THEN
 #endif
 #if !(defined SED_MORPH && defined SEDIMENT)
 !
@@ -1243,12 +1416,12 @@
 !
         IF (exit_flag.eq.NoError) THEN
           scale=1.0_r8
-          IF (ncid.ne.ncSTAid(ng)) THEN
+          IF (ncid.ne.STA(ng)%ncid) THEN
             IF (find_string(var_name, n_var, 'h', varid)) THEN
               status=nf_fwrite2d(ng, model, ncid, varid, 0, r2dvar,     &
      &                           LBi, UBi, LBj, UBj, scale,             &
 # ifdef MASKING
-     &                           GRID(ng) % rmask,                      &
+     &                           GRID(ng) % rmask_io,                   &
 # endif
      &                           GRID(ng) % h,                          &
      &                           SetFillVal = .FALSE.)
@@ -1260,7 +1433,7 @@
             ELSE
               IF (Master) WRITE (stdout,20) 'h', TRIM(ncname)
               exit_flag=3
-              ioerror=status
+              ioerror=nf90_enotvar
             END IF
 # ifdef STATIONS
           ELSE
@@ -1277,17 +1450,45 @@
           END IF
         END IF
 #endif
+#ifdef ICESHELF
+!
+!  Ice shelf thickness.
+!
+        IF (exit_flag.eq.NoError) THEN
+          IF (ncid.ne.STA(ng)%ncid) THEN
+            scale=1.0_r8
+            IF (find_string(var_name, n_var, 'zice', varid)) THEN
+              status=nf_fwrite2d(ng, model, ncid, varid, 0, r2dvar,     &
+     &                           LBi, UBi, LBj, UBj, scale,             &
+# ifdef MASKING
+     &                           GRID(ng) % rmask,                      &
+# endif
+     &                           GRID(ng) % zice,                       &
+     &                           SetFillVal = .FALSE.)
+              IF (status.ne.nf90_noerr) THEN
+                IF (Master) WRITE (stdout,10) 'zice', TRIM(ncname)
+                exit_flag=3
+                ioerror=status
+              END IF
+            ELSE
+              IF (Master) WRITE (stdout,20) 'zice', TRIM(ncname)
+              exit_flag=3
+              ioerror=status
+            END IF
+          END IF
+        END IF
+#endif
 !
 !  Coriolis parameter.
 !
         IF (exit_flag.eq.NoError) THEN
-          IF (ncid.ne.ncSTAid(ng)) THEN
+          IF (ncid.ne.STA(ng)%ncid) THEN
             scale=1.0_r8
             IF (find_string(var_name, n_var, 'f', varid)) THEN
               status=nf_fwrite2d(ng, model, ncid, varid, 0, r2dvar,     &
      &                           LBi, UBi, LBj, UBj, scale,             &
 #ifdef MASKING
-     &                           GRID(ng) % rmask,                      &
+     &                           GRID(ng) % rmask_io,                   &
 #endif
      &                           GRID(ng) % f,                          &
      &                           SetFillVal = .FALSE.)
@@ -1299,7 +1500,7 @@
             ELSE
               IF (Master) WRITE (stdout,20) 'f', TRIM(ncname)
               exit_flag=3
-              ioerror=status
+              ioerror=nf90_enotvar
             END IF
           END IF
         END IF
@@ -1307,13 +1508,13 @@
 !  Curvilinear transformation metrics.
 !
         IF (exit_flag.eq.NoError) THEN
-          IF (ncid.ne.ncSTAid(ng)) THEN
+          IF (ncid.ne.STA(ng)%ncid) THEN
             scale=1.0_r8
             IF (find_string(var_name, n_var, 'pm', varid)) THEN
               status=nf_fwrite2d(ng, model, ncid, varid, 0, r2dvar,     &
      &                           LBi, UBi, LBj, UBj, scale,             &
 #ifdef MASKING
-     &                           GRID(ng) % rmask,                      &
+     &                           GRID(ng) % rmask_io,                   &
 #endif
      &                           GRID(ng) % pm,                         &
      &                           SetFillVal = .FALSE.)
@@ -1325,19 +1526,19 @@
             ELSE
               IF (Master) WRITE (stdout,20) 'pm', TRIM(ncname)
               exit_flag=3
-              ioerror=status
+              ioerror=nf90_enotvar
             END IF
           END IF
         END IF
 
         IF (exit_flag.eq.NoError) THEN
-          IF (ncid.ne.ncSTAid(ng)) THEN
+          IF (ncid.ne.STA(ng)%ncid) THEN
             scale=1.0_r8
             IF (find_string(var_name, n_var, 'pn', varid)) THEN
               status=nf_fwrite2d(ng, model, ncid, varid, 0, r2dvar,     &
      &                           LBi, UBi, LBj, UBj, scale,             &
 #ifdef MASKING
-     &                           GRID(ng) % rmask,                      &
+     &                           GRID(ng) % rmask_io,                   &
 #endif
      &                           GRID(ng) % pn,                         &
      &                           SetFillVal = .FALSE.)
@@ -1349,7 +1550,7 @@
             ELSE
               IF (Master) WRITE (stdout,20) 'pn', TRIM(ncname)
               exit_flag=3
-              ioerror=status
+              ioerror=nf90_enotvar
             END IF
           END IF
         END IF
@@ -1359,12 +1560,12 @@
         IF (spherical) THEN
           IF (exit_flag.eq.NoError) THEN
             scale=1.0_r8
-            IF (ncid.ne.ncSTAid(ng)) THEN
+            IF (ncid.ne.STA(ng)%ncid) THEN
               IF (find_string(var_name, n_var, 'lon_rho', varid)) THEN
                 status=nf_fwrite2d(ng, model, ncid, varid, 0, r2dvar,   &
      &                             LBi, UBi, LBj, UBj, scale,           &
 #ifdef MASKING
-     &                             GRID(ng) % rmask,                    &
+     &                             GRID(ng) % rmask_io,                 &
 #endif
      &                             GRID(ng) % lonr,                     &
      &                             SetFillVal = .FALSE.)
@@ -1376,7 +1577,7 @@
               ELSE
                 IF (Master) WRITE (stdout,20) 'lon_rho', TRIM(ncname)
                 exit_flag=3
-                ioerror=status
+                ioerror=nf90_enotvar
               END IF
 #ifdef STATIONS
             ELSE
@@ -1395,12 +1596,12 @@
 
           IF (exit_flag.eq.NoError) THEN
             scale=1.0_r8
-            IF (ncid.ne.ncSTAid(ng)) THEN
+            IF (ncid.ne.STA(ng)%ncid) THEN
               IF (find_string(var_name, n_var, 'lat_rho', varid)) THEN
                 status=nf_fwrite2d(ng, model, ncid, varid, 0, r2dvar,   &
      &                             LBi, UBi, LBj, UBj, scale,           &
 #ifdef MASKING
-     &                             GRID(ng) % rmask,                    &
+     &                             GRID(ng) % rmask_io,                 &
 #endif
      &                             GRID(ng) % latr,                     &
      &                             SetFillVal = .FALSE.)
@@ -1412,7 +1613,7 @@
               ELSE
                 IF (Master) WRITE (stdout,20) 'lat_rho', TRIM(ncname)
                 exit_flag=3
-                ioerror=status
+                ioerror=nf90_enotvar
               END IF
 #ifdef STATIONS
             ELSE
@@ -1433,12 +1634,12 @@
         IF (.not.spherical) THEN
           IF (exit_flag.eq.NoError) THEN
             scale=1.0_r8
-            IF (ncid.ne.ncSTAid(ng)) THEN
+            IF (ncid.ne.STA(ng)%ncid) THEN
               IF (find_string(var_name, n_var, 'x_rho', varid)) THEN
                 status=nf_fwrite2d(ng, model, ncid, varid, 0, r2dvar,   &
      &                             LBi, UBi, LBj, UBj, scale,           &
 #ifdef MASKING
-     &                             GRID(ng) % rmask,                    &
+     &                             GRID(ng) % rmask_io,                 &
 #endif
      &                             GRID(ng) % xr,                       &
      &                             SetFillVal = .FALSE.)
@@ -1450,7 +1651,7 @@
               ELSE
                 IF (Master) WRITE (stdout,20) 'x_rho', TRIM(ncname)
                 exit_flag=3
-                ioerror=status
+                ioerror=nf90_enotvar
               END IF
 #ifdef STATIONS
             ELSE
@@ -1469,12 +1670,12 @@
 
           IF (exit_flag.eq.NoError) THEN
             scale=1.0_r8
-            IF (ncid.ne.ncSTAid(ng)) THEN
+            IF (ncid.ne.STA(ng)%ncid) THEN
               IF (find_string(var_name, n_var, 'y_rho', varid)) THEN
                 status=nf_fwrite2d(ng, model, ncid, varid, 0, r2dvar,   &
      &                             LBi, UBi, LBj, UBj, scale,           &
 #ifdef MASKING
-     &                             GRID(ng) % rmask,                    &
+     &                             GRID(ng) % rmask_io,                 &
 #endif
      &                             GRID(ng) % yr,                       &
      &                             SetFillVal = .FALSE.)
@@ -1486,7 +1687,7 @@
               ELSE
                 IF (Master) WRITE (stdout,20) 'y_rho', TRIM(ncname)
                 exit_flag=3
-                ioerror=status
+                ioerror=nf90_enotvar
               END IF
 #ifdef STATIONS
             ELSE
@@ -1508,13 +1709,13 @@
 !
         IF (spherical) THEN
           IF (exit_flag.eq.NoError) THEN
-            IF (ncid.ne.ncSTAid(ng)) THEN
+            IF (ncid.ne.STA(ng)%ncid) THEN
               scale=1.0_r8
               IF (find_string(var_name, n_var, 'lon_u', varid)) THEN
                 status=nf_fwrite2d(ng, model, ncid, varid, 0, u2dvar,   &
      &                             LBi, UBi, LBj, UBj, scale,           &
 #ifdef MASKING
-     &                             GRID(ng) % umask,                    &
+     &                             GRID(ng) % umask_io,                 &
 #endif
      &                             GRID(ng) % lonu,                     &
      &                             SetFillVal = .FALSE.)
@@ -1526,19 +1727,19 @@
               ELSE
                 IF (Master) WRITE (stdout,20) 'lon_u', TRIM(ncname)
                 exit_flag=3
-                ioerror=status
+                ioerror=nf90_enotvar
               END IF
             END IF
           END IF
 
           IF (exit_flag.eq.NoError) THEN
-            IF (ncid.ne.ncSTAid(ng)) THEN
+            IF (ncid.ne.STA(ng)%ncid) THEN
               scale=1.0_r8
               IF (find_string(var_name, n_var, 'lat_u', varid)) THEN
                 status=nf_fwrite2d(ng, model, ncid, varid, 0, u2dvar,   &
      &                             LBi, UBi, LBj, UBj, scale,           &
 #ifdef MASKING
-     &                             GRID(ng) % umask,                    &
+     &                             GRID(ng) % umask_io,                 &
 #endif
      &                             GRID(ng) % latu,                     &
      &                             SetFillVal = .FALSE.)
@@ -1550,7 +1751,7 @@
               ELSE
                 IF (Master) WRITE (stdout,20) 'lat_u', TRIM(ncname)
                 exit_flag=3
-                ioerror=status
+                ioerror=nf90_enotvar
               END IF
             END IF
           END IF
@@ -1558,13 +1759,13 @@
 !
         IF (.not.spherical) THEN
           IF (exit_flag.eq.NoError) THEN
-            IF (ncid.ne.ncSTAid(ng)) THEN
+            IF (ncid.ne.STA(ng)%ncid) THEN
               scale=1.0_r8
               IF (find_string(var_name, n_var, 'x_u', varid)) THEN
                 status=nf_fwrite2d(ng, model, ncid, varid, 0, u2dvar,   &
      &                             LBi, UBi, LBj, UBj, scale,           &
 #ifdef MASKING
-     &                             GRID(ng) % umask,                    &
+     &                             GRID(ng) % umask_io,                 &
 #endif
      &                             GRID(ng) % xu,                       &
      &                             SetFillVal = .FALSE.)
@@ -1576,19 +1777,19 @@
               ELSE
                 IF (Master) WRITE (stdout,20) 'x_u', TRIM(ncname)
                 exit_flag=3
-                ioerror=status
+                ioerror=nf90_enotvar
               END IF
             END IF
           END IF
 
           IF (exit_flag.eq.NoError) THEN
-            IF (ncid.ne.ncSTAid(ng)) THEN
+            IF (ncid.ne.STA(ng)%ncid) THEN
               scale=1.0_r8
               IF (find_string(var_name, n_var, 'y_u', varid)) THEN
                 status=nf_fwrite2d(ng, model, ncid, varid, 0, u2dvar,   &
      &                             LBi, UBi, LBj, UBj, scale,           &
 #ifdef MASKING
-     &                             GRID(ng) % umask,                    &
+     &                             GRID(ng) % umask_io,                 &
 #endif
      &                             GRID(ng) % yu,                       &
      &                             SetFillVal = .FALSE.)
@@ -1600,7 +1801,7 @@
               ELSE
                 IF (Master) WRITE (stdout,20) 'y_u', TRIM(ncname)
                 exit_flag=3
-                ioerror=status
+                ioerror=nf90_enotvar
               END IF
             END IF
           END IF
@@ -1610,13 +1811,13 @@
 !
         IF (spherical) THEN
           IF (exit_flag.eq.NoError) THEN
-            IF (ncid.ne.ncSTAid(ng)) THEN
+            IF (ncid.ne.STA(ng)%ncid) THEN
               scale=1.0_r8
               IF (find_string(var_name, n_var, 'lon_v', varid)) THEN
                 status=nf_fwrite2d(ng, model, ncid, varid, 0, v2dvar,   &
      &                             LBi, UBi, LBj, UBj, scale,           &
 #ifdef MASKING
-     &                             GRID(ng) % vmask,                    &
+     &                             GRID(ng) % vmask_io,                 &
 #endif
      &                             GRID(ng) % lonv,                     &
      &                             SetFillVal = .FALSE.)
@@ -1628,19 +1829,19 @@
               ELSE
                 IF (Master) WRITE (stdout,10) 'lon_v', TRIM(ncname)
                 exit_flag=3
-                ioerror=status
+                ioerror=nf90_enotvar
               END IF
             END IF
           END IF
 
           IF (exit_flag.eq.NoError) THEN
-            IF (ncid.ne.ncSTAid(ng)) THEN
+            IF (ncid.ne.STA(ng)%ncid) THEN
               scale=1.0_r8
               IF (find_string(var_name, n_var, 'lat_v', varid)) THEN
                 status=nf_fwrite2d(ng, model, ncid, varid, 0, v2dvar,   &
      &                             LBi, UBi, LBj, UBj, scale,           &
 #ifdef MASKING
-     &                             GRID(ng) % vmask,                    &
+     &                             GRID(ng) % vmask_io,                 &
 #endif
      &                             GRID(ng) % latv,                     &
      &                             SetFillVal = .FALSE.)
@@ -1652,7 +1853,7 @@
               ELSE
                 IF (Master) WRITE (stdout,20) 'lat_v', TRIM(ncname)
                 exit_flag=3
-                ioerror=status
+                ioerror=nf90_enotvar
               END IF
             END IF
           END IF
@@ -1660,13 +1861,13 @@
 !
         IF (.not.spherical) THEN
           IF (exit_flag.eq.NoError) THEN
-            IF (ncid.ne.ncSTAid(ng)) THEN
+            IF (ncid.ne.STA(ng)%ncid) THEN
               scale=1.0_r8
               IF (find_string(var_name, n_var, 'x_v', varid)) THEN
                 status=nf_fwrite2d(ng, model, ncid, varid, 0, v2dvar,   &
      &                             LBi, UBi, LBj, UBj, scale,           &
 #ifdef MASKING
-     &                             GRID(ng) % vmask,                    &
+     &                             GRID(ng) % vmask_io,                 &
 #endif
      &                             GRID(ng) % xv,                       &
      &                             SetFillVal = .FALSE.)
@@ -1678,19 +1879,19 @@
               ELSE
                 IF (Master) WRITE (stdout,10) 'x_v', TRIM(ncname)
                 exit_flag=3
-                ioerror=status
+                ioerror=nf90_enotvar
               END IF
             END IF
           END IF
 
           IF (exit_flag.eq.NoError) THEN
-            IF (ncid.ne.ncSTAid(ng)) THEN
+            IF (ncid.ne.STA(ng)%ncid) THEN
               scale=1.0_r8
               IF (find_string(var_name, n_var, 'y_v', varid)) THEN
                 status=nf_fwrite2d(ng, model, ncid, varid, 0, v2dvar,   &
      &                             LBi, UBi, LBj, UBj, scale,           &
 #ifdef MASKING
-     &                             GRID(ng) % vmask,                    &
+     &                             GRID(ng) % vmask_io,                 &
 #endif
      &                             GRID(ng) % yv,                       &
      &                             SetFillVal = .FALSE.)
@@ -1702,7 +1903,7 @@
               ELSE
                 IF (Master) WRITE (stdout,20) 'y_v', TRIM(ncname)
                 exit_flag=3
-                ioerror=status
+                ioerror=nf90_enotvar
               END IF
             END IF
           END IF
@@ -1712,13 +1913,13 @@
 !
         IF (spherical) THEN
           IF (exit_flag.eq.NoError) THEN
-            IF (ncid.ne.ncSTAid(ng)) THEN
+            IF (ncid.ne.STA(ng)%ncid) THEN
               scale=1.0_r8
               IF (find_string(var_name, n_var, 'lon_psi', varid)) THEN
                 status=nf_fwrite2d(ng, model, ncid, varid, 0, p2dvar,   &
      &                             LBi, UBi, LBj, UBj, scale,           &
 #ifdef MASKING
-     &                             GRID(ng) % pmask,                    &
+     &                             GRID(ng) % pmask_io,                 &
 #endif
      &                             GRID(ng) % lonp,                     &
      &                             SetFillVal = .FALSE.)
@@ -1730,19 +1931,19 @@
               ELSE
                 IF (Master) WRITE (stdout,20) 'lon_p', TRIM(ncname)
                 exit_flag=3
-                ioerror=status
+                ioerror=nf90_enotvar
               END IF
             END IF
           END IF
 
           IF (exit_flag.eq.NoError) THEN
-            IF (ncid.ne.ncSTAid(ng)) THEN
+            IF (ncid.ne.STA(ng)%ncid) THEN
               scale=1.0_r8
               IF (find_string(var_name, n_var, 'lat_psi', varid)) THEN
                 status=nf_fwrite2d(ng, model, ncid, varid, 0, p2dvar,   &
      &                             LBi, UBi, LBj, UBj, scale,           &
 #ifdef MASKING
-     &                             GRID(ng) % vmask,                    &
+     &                             GRID(ng) % vmask_io,                 &
 #endif
      &                             GRID(ng) % latp,                     &
      &                             SetFillVal = .FALSE.)
@@ -1754,7 +1955,7 @@
               ELSE
                 IF (Master) WRITE (stdout,20) 'lat_p', TRIM(ncname)
                 exit_flag=3
-                ioerror=status
+                ioerror=nf90_enotvar
               END IF
             END IF
           END IF
@@ -1762,13 +1963,13 @@
 !
         IF (.not.spherical) THEN
           IF (exit_flag.eq.NoError) THEN
-            IF (ncid.ne.ncSTAid(ng)) THEN
+            IF (ncid.ne.STA(ng)%ncid) THEN
               scale=1.0_r8
               IF (find_string(var_name, n_var, 'x_psi', varid)) THEN
                 status=nf_fwrite2d(ng, model, ncid, varid, 0, p2dvar,   &
      &                             LBi, UBi, LBj, UBj, scale,           &
 #ifdef MASKING
-     &                             GRID(ng) % pmask,                    &
+     &                             GRID(ng) % pmask_io,                 &
 #endif
      &                             GRID(ng) % xp,                       &
      &                             SetFillVal = .FALSE.)
@@ -1780,19 +1981,19 @@
               ELSE
                 IF (Master) WRITE (stdout,20) 'x_p', TRIM(ncname)
                 exit_flag=3
-                ioerror=status
+                ioerror=nf90_enotvar
               END IF
             END IF
           END IF
 
           IF (exit_flag.eq.NoError) THEN
-            IF (ncid.ne.ncSTAid(ng)) THEN
+            IF (ncid.ne.STA(ng)%ncid) THEN
               scale=1.0_r8
               IF (find_string(var_name, n_var, 'y_psi', varid)) THEN
                 status=nf_fwrite2d(ng, model, ncid, varid, 0, p2dvar,   &
      &                             LBi, UBi, LBj, UBj, scale,           &
 #ifdef MASKING
-     &                             GRID(ng) % vmask,                    &
+     &                             GRID(ng) % vmask_io,                 &
 #endif
      &                             GRID(ng) % yp,                       &
      &                             SetFillVal = .FALSE.)
@@ -1804,7 +2005,7 @@
               ELSE
                 IF (Master) WRITE (stdout,20) 'y_p', TRIM(ncname)
                 exit_flag=3
-                ioerror=status
+                ioerror=nf90_enotvar
               END IF
             END IF
           END IF
@@ -1816,12 +2017,12 @@
 !
         IF (exit_flag.eq.NoError) THEN
           scale=1.0_r8
-          IF (ncid.ne.ncSTAid(ng)) THEN
+          IF (ncid.ne.STA(ng)%ncid) THEN
             IF (find_string(var_name, n_var, 'angle', varid)) THEN
               status=nf_fwrite2d(ng, model, ncid, varid, 0, r2dvar,     &
      &                           LBi, UBi, LBj, UBj, scale,             &
 # ifdef MASKING
-     &                           GRID(ng) % rmask,                      &
+     &                           GRID(ng) % rmask_io,                   &
 # endif
      &                           GRID(ng) % angler,                     &
      &                           SetFillVal = .FALSE.)
@@ -1833,7 +2034,7 @@
             ELSE
               IF (Master) WRITE (stdout,20) 'angle', TRIM(ncname)
               exit_flag=3
-              ioerror=status
+              ioerror=nf90_enotvar
             END IF
 # ifdef STATIONS
           ELSE
@@ -1856,13 +2057,17 @@
 !  Masking fields at RHO-, U-, V-points, and PSI-points.
 !
         IF (exit_flag.eq.NoError) THEN
-          IF (ncid.ne.ncSTAid(ng)) THEN
+          IF (ncid.ne.STA(ng)%ncid) THEN
             scale=1.0_r8
             IF (find_string(var_name, n_var, 'mask_rho', varid)) THEN
               status=nf_fwrite2d(ng, model, ncid, varid, 0, r2dvar,     &
      &                           LBi, UBi, LBj, UBj, scale,             &
+     &                           GRID(ng) % rmask_io,                   &
+# ifdef WRITE_WATER
+     &                           GRID(ng) % rmask_io,                   &
+# else
      &                           GRID(ng) % rmask,                      &
-     &                           GRID(ng) % rmask,                      &
+# endif
      &                           SetFillVal = .FALSE.)
               IF (status.ne.nf90_noerr) THEN
                 IF (Master) WRITE (stdout,10) 'mask_rho', TRIM(ncname)
@@ -1872,20 +2077,32 @@
             ELSE
               IF (Master) WRITE (stdout,20) 'mask_rho', TRIM(ncname)
               exit_flag=3
-              ioerror=status
+              ioerror=nf90_enotvar
             END IF
           END IF
         END IF
 
         IF (exit_flag.eq.NoError) THEN
-          IF (ncid.ne.ncSTAid(ng)) THEN
+          IF (ncid.ne.STA(ng)%ncid) THEN
             scale=1.0_r8
             IF (find_string(var_name, n_var, 'mask_u', varid)) THEN
-              status=nf_fwrite2d(ng, model, ncid, varid, 0, u2dvar,     &
-     &                           LBi, UBi, LBj, UBj, scale,             &
-     &                           GRID(ng) % umask,                      &
-     &                           GRID(ng) % umask,                      &
-     &                           SetFillVal = .FALSE.)
+              IF (LuvSrc(ng)) THEN
+                status=nf_fwrite2d(ng, model, ncid, varid, 0, u2dvar,   &
+     &                             LBi, UBi, LBj, UBj, scale,           &
+     &                             GRID(ng) % umask_io,                 &
+     &                             GRID(ng) % umask_io,                 &
+     &                             SetFillVal = .FALSE.)
+              ELSE
+                status=nf_fwrite2d(ng, model, ncid, varid, 0, u2dvar,   &
+     &                             LBi, UBi, LBj, UBj, scale,           &
+     &                             GRID(ng) % umask_io,                 &
+# ifdef WRITE_WATER
+     &                             GRID(ng) % umask_io,                 &
+# else
+     &                             GRID(ng) % umask,                    &
+# endif
+     &                             SetFillVal = .FALSE.)
+              END IF
               IF (status.ne.nf90_noerr) THEN
                 IF (Master) WRITE (stdout,10) 'mask_u', TRIM(ncname)
                 exit_flag=3
@@ -1894,20 +2111,32 @@
             ELSE
               IF (Master) WRITE (stdout,20) 'mask_u', TRIM(ncname)
               exit_flag=3
-              ioerror=status
+              ioerror=nf90_enotvar
             END IF
           END IF
         END IF
 
         IF (exit_flag.eq.NoError) THEN
-          IF (ncid.ne.ncSTAid(ng)) THEN
+          IF (ncid.ne.STA(ng)%ncid) THEN
             scale=1.0_r8
             IF (find_string(var_name, n_var, 'mask_v', varid)) THEN
-              status=nf_fwrite2d(ng, model, ncid, varid, 0, v2dvar,     &
-     &                           LBi, UBi, LBj, UBj, scale,             &
-     &                           GRID(ng) % vmask,                      &
-     &                           GRID(ng) % vmask,                      &
-     &                           SetFillVal = .FALSE.)
+              IF (LuvSrc(ng)) THEN
+                status=nf_fwrite2d(ng, model, ncid, varid, 0, v2dvar,   &
+     &                             LBi, UBi, LBj, UBj, scale,           &
+     &                             GRID(ng) % vmask_io,                 &
+     &                             GRID(ng) % vmask_io,                 &
+     &                             SetFillVal = .FALSE.)
+              ELSE
+                status=nf_fwrite2d(ng, model, ncid, varid, 0, v2dvar,   &
+     &                             LBi, UBi, LBj, UBj, scale,           &
+     &                             GRID(ng) % vmask_io,                 &
+# ifdef WRITE_WATER
+     &                             GRID(ng) % vmask_io,                 &
+# else
+     &                             GRID(ng) % vmask,                    &
+# endif
+     &                             SetFillVal = .FALSE.)
+              END IF
               IF (status.ne.nf90_noerr) THEN
                 IF (Master) WRITE (stdout,10) 'mask_v', TRIM(ncname)
                 exit_flag=3
@@ -1916,19 +2145,23 @@
             ELSE
               IF (Master) WRITE (stdout,20) 'mask_v', TRIM(ncname)
               exit_flag=3
-              ioerror=status
+              ioerror=nf90_enotvar
             END IF
           END IF
         END IF
 
         IF (exit_flag.eq.NoError) THEN
-          IF (ncid.ne.ncSTAid(ng)) THEN
+          IF (ncid.ne.STA(ng)%ncid) THEN
             scale=1.0_r8
             IF (find_string(var_name, n_var, 'mask_psi', varid)) THEN
               status=nf_fwrite2d(ng, model, ncid, varid, 0, p2dvar,     &
      &                           LBi, UBi, LBj, UBj, scale,             &
+     &                           GRID(ng) % pmask_io,                   &
+# ifdef WRITE_WATER
+     &                           GRID(ng) % pmask_io,                   &
+# else
      &                           GRID(ng) % pmask,                      &
-     &                           GRID(ng) % pmask,                      &
+# endif
      &                           SetFillVal = .FALSE.)
               IF (status.ne.nf90_noerr) THEN
                 IF (Master) WRITE (stdout,10) 'mask_psi', TRIM(ncname)
@@ -1938,7 +2171,7 @@
             ELSE
               IF (Master) WRITE (stdout,20) 'mask_psi', TRIM(ncname)
               exit_flag=3
-              ioerror=status
+              ioerror=nf90_enotvar
             END IF
           END IF
         END IF
@@ -1951,13 +2184,13 @@
 !  Adjoint sensitivity spatial scope mask at RHO-, U-, and V-points.
 !
         IF (exit_flag.eq.NoError) THEN
-          IF (ncid.ne.ncSTAid(ng)) THEN
+          IF (ncid.ne.STA(ng)%ncid) THEN
             scale=1.0_r8
             IF (find_string(var_name, n_var, 'scope_rho', varid)) THEN
               status=nf_fwrite2d(ng, model, ncid, varid, 0, r2dvar,     &
      &                           LBi, UBi, LBj, UBj, scale,             &
 # ifdef MASKING
-     &                           GRID(ng) % rmask,                      &
+     &                           GRID(ng) % rmask_io,                   &
 # endif
      &                           GRID(ng) % Rscope,                     &
      &                           SetFillVal = .FALSE.)
@@ -1969,19 +2202,19 @@
             ELSE
               IF (Master) WRITE (stdout,20) 'scope_rho', TRIM(ncname)
               exit_flag=3
-              ioerror=status
+              ioerror=nf90_enotvar
             END IF
           END IF
         END IF
 
         IF (exit_flag.eq.NoError) THEN
-          IF (ncid.ne.ncSTAid(ng)) THEN
+          IF (ncid.ne.STA(ng)%ncid) THEN
             scale=1.0_r8
             IF (find_string(var_name, n_var, 'scope_u', varid)) THEN
               status=nf_fwrite2d(ng, model, ncid, varid, 0, u2dvar,     &
      &                           LBi, UBi, LBj, UBj, scale,             &
 # ifdef MASKING
-     &                           GRID(ng) % umask,                      &
+     &                           GRID(ng) % umask_io,                   &
 # endif
      &                           GRID(ng) % Uscope,                     &
      &                           SetFillVal = .FALSE.)
@@ -1993,19 +2226,19 @@
             ELSE
               IF (Master) WRITE (stdout,20) 'scope_u', TRIM(ncname)
               exit_flag=3
-              ioerror=status
+              ioerror=nf90_enotvar
             END IF
           END IF
         END IF
 
         IF (exit_flag.eq.NoError) THEN
-          IF (ncid.ne.ncSTAid(ng)) THEN
+          IF (ncid.ne.STA(ng)%ncid) THEN
             scale=1.0_r8
             IF (find_string(var_name, n_var, 'scope_v', varid)) THEN
               status=nf_fwrite2d(ng, model, ncid, varid, 0, v2dvar,     &
      &                           LBi, UBi, LBj, UBj, scale,             &
 # ifdef MASKING
-     &                           GRID(ng) % rmask,                      &
+     &                           GRID(ng) % rmask_io,                   &
 # endif
      &                           GRID(ng) % Vscope,                     &
      &                           SetFillVal = .FALSE.)
@@ -2017,8 +2250,87 @@
             ELSE
               IF (Master) WRITE (stdout,20) 'scope_v', TRIM(ncname)
               exit_flag=3
-              ioerror=status
+              ioerror=nf90_enotvar
             END IF
+          END IF
+        END IF
+#endif
+#ifdef UV_DRAG_GRID
+!
+!  Spatially bottom friction parameter.
+!
+        IF (exit_flag.eq.NoError) THEN
+          IF (ncid.ne.STA(ng)%ncid) THEN
+            scale=1.0_r8
+# ifdef UV_LOGDRAG
+            IF (find_string(var_name, n_var, TRIM(Vname(1,idZoBL)),     &
+     &                      varid)) THEN
+              status=nf_fwrite2d(ng, model, ncid, varid, 0, r2dvar,     &
+     &                           LBi, UBi, LBj, UBj, scale,             &
+#  ifdef MASKING
+     &                           GRID(ng) % rmask_io,                   &
+#  endif
+     &                           GRID(ng) % ZoBot,                      &
+     &                           SetFillVal = .FALSE.)
+              IF (status.ne.nf90_noerr) THEN
+                IF (Master) WRITE (stdout,10) TRIM(Vname(1,idZoBL)),    &
+     &                                        TRIM(ncname)
+                exit_flag=3
+                ioerror=status
+              END IF
+            ELSE
+              IF (Master) WRITE (stdout,20) TRIM(Vname(1,idZoBL)),      &
+     &                                      TRIM(ncname)
+              exit_flag=3
+              ioerror=nf90_enotvar
+            END IF
+# endif
+# ifdef UV_LDRAG
+            IF (find_string(var_name, n_var, TRIM(Vname(1,idragL)),     &
+     &                      varid)) THEN
+              status=nf_fwrite2d(ng, model, ncid, varid, 0, r2dvar,     &
+     &                           LBi, UBi, LBj, UBj, scale,             &
+#  ifdef MASKING
+     &                           GRID(ng) % rmask_io,                   &
+#  endif
+     &                           GRID(ng) % rdrag,                      &
+     &                           SetFillVal = .FALSE.)
+              IF (status.ne.nf90_noerr) THEN
+                IF (Master) WRITE (stdout,10) TRIM(Vname(1,idragL)),    &
+     &                                        TRIM(ncname)
+                exit_flag=3
+                ioerror=status
+              END IF
+            ELSE
+              IF (Master) WRITE (stdout,20) TRIM(Vname(1,idragL)),      &
+     &                                      TRIM(ncname)
+              exit_flag=3
+              ioerror=nf90_enotvar
+            END IF
+# endif
+# ifdef UV_QDRAG
+            IF (find_string(var_name, n_var, TRIM(Vname(1,idragQ)),     &
+     &                      varid)) THEN
+              status=nf_fwrite2d(ng, model, ncid, varid, 0, r2dvar,     &
+     &                           LBi, UBi, LBj, UBj, scale,             &
+#  ifdef MASKING
+     &                           GRID(ng) % rmask_io,                   &
+#  endif
+     &                           GRID(ng) % rdrag2,                     &
+     &                           SetFillVal = .FALSE.)
+              IF (status.ne.nf90_noerr) THEN
+                IF (Master) WRITE (stdout,10) TRIM(Vname(1,idragQ)),    &
+     &                                        TRIM(ncname)
+                exit_flag=3
+                ioerror=status
+              END IF
+            ELSE
+              IF (Master) WRITE (stdout,20) TRIM(Vname(1,idragQ)),      &
+     &                                      TRIM(ncname)
+              exit_flag=3
+              ioerror=nf90_enotvar
+            END IF
+# endif
           END IF
         END IF
 #endif

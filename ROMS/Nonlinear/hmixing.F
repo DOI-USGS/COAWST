@@ -6,7 +6,7 @@
 !
 !svn $Id: hmixing.F 732 2008-09-07 01:55:51Z jcwarner $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2010 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2014 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -142,11 +142,10 @@
 !***********************************************************************
 !
       USE mod_param
+      USE mod_ncparam
       USE mod_scalars
 !
-# if defined EW_PERIODIC || defined NS_PERIODIC
       USE exchange_3d_mod
-# endif
 # ifdef DISTRIBUTE
       USE mp_exchange_mod, ONLY : mp_exchange3d
 # endif
@@ -238,18 +237,6 @@
 !
 !  Local variable declarations.
 !
-# ifdef DISTRIBUTE
-#  ifdef EW_PERIODIC
-      logical :: EWperiodic=.TRUE.
-#  else
-      logical :: EWperiodic=.FALSE.
-#  endif
-#  ifdef NS_PERIODIC
-      logical :: NSperiodic=.TRUE.
-#  else
-      logical :: NSperiodic=.FALSE.
-#  endif
-# endif
       integer :: i, j, k
 
       real(r8), parameter :: SmagorCoef = 0.1_r8
@@ -479,247 +466,278 @@
 !-----------------------------------------------------------------------
 !  Apply boundary conditions
 !-----------------------------------------------------------------------
-
-# ifndef EW_PERIODIC
 !
 !  East-West gradient boundary conditions.
 !
-      IF (EASTERN_EDGE) THEN
-        DO k=1,N(ng)
-          DO j=JstrV-1,Jend
-#  if defined DIFF_3DCOEF
-#   ifdef TS_U3ADV_SPLIT
-            diff3d_u(Iend+1,j,k)=diff3d_u(Iend,j,k)
-            diff3d_v(Iend+1,j,k)=diff3d_v(Iend,j,k)
-#   else
-            diff3d_r(Iend+1,j,k)=diff3d_r(Iend,j,k)
-#   endif
+      IF (.not.EWperiodic(ng)) THEN
+        IF (DOMAIN(ng)%Eastern_Edge(tile)) THEN
+          DO k=1,N(ng)
+            DO j=JstrV-1,Jend
+# if defined DIFF_3DCOEF
+#  ifdef TS_U3ADV_SPLIT
+              diff3d_u(Iend+1,j,k)=diff3d_u(Iend,j,k)
+              diff3d_v(Iend+1,j,k)=diff3d_v(Iend,j,k)
+#  else
+              diff3d_r(Iend+1,j,k)=diff3d_r(Iend,j,k)
 #  endif
-#  if defined VISC_3DCOEF
-#   ifdef UV_U3ADV_SPLIT
-            Uvis3d_r(Iend+1,j,k)=Uvis3d_r(Iend,j,k)
-            Vvis3d_r(Iend+1,j,k)=Vvis3d_r(Iend,j,k)
-#   else
-            visc3d_r(Iend+1,j,k)=visc3d_r(Iend,j,k)
-#   endif
-#  endif
-          END DO
-        END DO
-      END IF
-      IF (WESTERN_EDGE) THEN
-        DO k=1,N(ng)
-          DO j=JstrV-1,Jend
-#  if defined DIFF_3DCOEF
-#   ifdef TS_U3ADV_SPLIT
-            diff3d_u(Istr-1,j,k)=diff3d_u(Istr,j,k)
-            diff3d_v(Istr-1,j,k)=diff3d_v(Istr,j,k)
-#   else
-            diff3d_r(Istr-1,j,k)=diff3d_r(Istr,j,k)
-#   endif
-#  endif
-#  if defined VISC_3DCOEF
-#   ifdef UV_U3ADV_SPLIT
-            Uvis3d_r(Istr-1,j,k)=Uvis3d_r(Istr,j,k)
-            Vvis3d_r(Istr-1,j,k)=Vvis3d_r(Istr,j,k)
-#   else
-            visc3d_r(Istr-1,j,k)=visc3d_r(Istr,j,k)
-#   endif
-#  endif
-          END DO
-        END DO
-      END IF
 # endif
-# ifndef NS_PERIODIC
+# if defined VISC_3DCOEF
+#  ifdef UV_U3ADV_SPLIT
+              Uvis3d_r(Iend+1,j,k)=Uvis3d_r(Iend,j,k)
+              Vvis3d_r(Iend+1,j,k)=Vvis3d_r(Iend,j,k)
+#  else
+              visc3d_r(Iend+1,j,k)=visc3d_r(Iend,j,k)
+#  endif
+# endif
+            END DO
+          END DO
+        END IF
+
+        IF (DOMAIN(ng)%Western_Edge(tile)) THEN
+          DO k=1,N(ng)
+            DO j=JstrV-1,Jend
+# if defined DIFF_3DCOEF
+#  ifdef TS_U3ADV_SPLIT
+              diff3d_u(Istr-1,j,k)=diff3d_u(Istr,j,k)
+              diff3d_v(Istr-1,j,k)=diff3d_v(Istr,j,k)
+#  else
+              diff3d_r(Istr-1,j,k)=diff3d_r(Istr,j,k)
+#  endif
+# endif
+# if defined VISC_3DCOEF
+#  ifdef UV_U3ADV_SPLIT
+              Uvis3d_r(Istr-1,j,k)=Uvis3d_r(Istr,j,k)
+              Vvis3d_r(Istr-1,j,k)=Vvis3d_r(Istr,j,k)
+#  else
+              visc3d_r(Istr-1,j,k)=visc3d_r(Istr,j,k)
+#  endif
+# endif
+            END DO
+          END DO
+        END IF
+      END IF
 !
 !  North-South gradient boundary conditions.
 !
-      IF (NORTHERN_EDGE) THEN
-        DO k=1,N(ng)
-          DO i=IstrU-1,Iend
-#  ifdef DIFF_3DCOEF
-#   ifdef TS_U3ADV_SPLIT
-            diff3d_u(i,Jend+1,k)=diff3d_u(i,Jend,k)
-            diff3d_v(i,Jend+1,k)=diff3d_v(i,Jend,k)
-#   else
-            diff3d_r(i,Jend+1,k)=diff3d_r(i,Jend,k)
-#   endif
+      IF (.not.NSperiodic(ng)) THEN
+        IF (DOMAIN(ng)%Northern_Edge(tile)) THEN
+          DO k=1,N(ng)
+            DO i=IstrU-1,Iend
+# ifdef DIFF_3DCOEF
+#  ifdef TS_U3ADV_SPLIT
+              diff3d_u(i,Jend+1,k)=diff3d_u(i,Jend,k)
+              diff3d_v(i,Jend+1,k)=diff3d_v(i,Jend,k)
+#  else
+              diff3d_r(i,Jend+1,k)=diff3d_r(i,Jend,k)
 #  endif
-#  ifdef VISC_3DCOEF
-#   ifdef UV_U3ADV_SPLIT
-            Uvis3d_r(i,Jend+1,k)=Uvis3d_r(i,Jend,k)
-            Vvis3d_r(i,Jend+1,k)=Vvis3d_r(i,Jend,k)
-#   else
-            visc3d_r(i,Jend+1,k)=visc3d_r(i,Jend,k)
-#   endif
-#  endif
-          END DO
-        END DO
-      END IF
-      IF (SOUTHERN_EDGE) THEN
-        DO k=1,N(ng)
-          DO i=IstrU-1,Iend
-#  ifdef DIFF_3DCOEF
-#   ifdef TS_U3ADV_SPLIT
-            diff3d_u(i,Jstr-1,k)=diff3d_u(i,Jstr,k)
-            diff3d_v(i,Jstr-1,k)=diff3d_v(i,Jstr,k)
-#   else
-            diff3d_r(i,Jstr-1,k)=diff3d_r(i,Jstr,k)
-#   endif
-#  endif
-#  ifdef VISC_3DCOEF
-#   ifdef UV_U3ADV_SPLIT
-            Uvis3d_r(i,Jstr-1,k)=Uvis3d_r(i,Jstr,k)
-            Vvis3d_r(i,Jstr-1,k)=Vvis3d_r(i,Jstr,k)
-#   else
-            visc3d_r(i,Jstr-1,k)=visc3d_r(i,Jstr,k)
-#   endif
-#  endif
-          END DO
-        END DO
-      END IF
 # endif
-# if !defined EW_PERIODIC && !defined NS_PERIODIC
+# ifdef VISC_3DCOEF
+#  ifdef UV_U3ADV_SPLIT
+              Uvis3d_r(i,Jend+1,k)=Uvis3d_r(i,Jend,k)
+              Vvis3d_r(i,Jend+1,k)=Vvis3d_r(i,Jend,k)
+#  else
+              visc3d_r(i,Jend+1,k)=visc3d_r(i,Jend,k)
+#  endif
+# endif
+            END DO
+          END DO
+        END IF
+
+        IF (DOMAIN(ng)%Southern_Edge(tile)) THEN
+          DO k=1,N(ng)
+            DO i=IstrU-1,Iend
+# ifdef DIFF_3DCOEF
+#  ifdef TS_U3ADV_SPLIT
+              diff3d_u(i,Jstr-1,k)=diff3d_u(i,Jstr,k)
+              diff3d_v(i,Jstr-1,k)=diff3d_v(i,Jstr,k)
+#  else
+              diff3d_r(i,Jstr-1,k)=diff3d_r(i,Jstr,k)
+#  endif
+# endif
+# ifdef VISC_3DCOEF
+#  ifdef UV_U3ADV_SPLIT
+              Uvis3d_r(i,Jstr-1,k)=Uvis3d_r(i,Jstr,k)
+              Vvis3d_r(i,Jstr-1,k)=Vvis3d_r(i,Jstr,k)
+#  else
+              visc3d_r(i,Jstr-1,k)=visc3d_r(i,Jstr,k)
+#  endif
+# endif
+            END DO
+          END DO
+        END IF
+      END IF
 !
 !  Boundary corners.
 !
-      IF ((SOUTHERN_EDGE).and.(WESTERN_EDGE)) THEN
-        DO k=1,N(ng)
-#  ifdef DIFF_3DCOEF
-#   ifdef TS_U3ADV_SPLIT
-          diff3d_u(Istr-1,Jstr-1,k)=0.5_r8*(diff3d_u(Istr  ,Jstr-1,k)+  &
-     &                                      diff3d_u(Istr-1,Jstr  ,k))
-          diff3d_v(Istr-1,Jstr-1,k)=0.5_r8*(diff3d_v(Istr  ,Jstr-1,k)+  &
-     &                                      diff3d_v(Istr-1,Jstr  ,k))
-#   else
-          diff3d_r(Istr-1,Jstr-1,k)=0.5_r8*(diff3d_r(Istr  ,Jstr-1,k)+  &
-     &                                      diff3d_r(Istr-1,Jstr  ,k))
-#   endif
+      IF (.not.(EWperiodic(ng).or.NSperiodic(ng))) THEN
+        IF (DOMAIN(ng)%SouthWest_Corner(tile)) THEN
+          DO k=1,N(ng)
+# ifdef DIFF_3DCOEF
+#  ifdef TS_U3ADV_SPLIT
+            diff3d_u(Istr-1,Jstr-1,k)=0.5_r8*                           &
+     &                                (diff3d_u(Istr  ,Jstr-1,k)+       &
+     &                                 diff3d_u(Istr-1,Jstr  ,k))
+            diff3d_v(Istr-1,Jstr-1,k)=0.5_r8*                           &
+     &                                (diff3d_v(Istr  ,Jstr-1,k)+       &
+     &                                 diff3d_v(Istr-1,Jstr  ,k))
+#  else
+            diff3d_r(Istr-1,Jstr-1,k)=0.5_r8*                           &
+     &                                (diff3d_r(Istr  ,Jstr-1,k)+       &
+     &                                 diff3d_r(Istr-1,Jstr  ,k))
 #  endif
-#  ifdef VISC_3DCOEF
-#   ifdef UV_U3ADV_SPLIT
-          Uvis3d_r(Istr-1,Jstr-1,k)=0.5_r8*(Uvis3d_r(Istr  ,Jstr-1,k)+  &
-     &                                      Uvis3d_r(Istr-1,Jstr  ,k))
-          Vvis3d_r(Istr-1,Jstr-1,k)=0.5_r8*(Vvis3d_r(Istr  ,Jstr-1,k)+  &
-     &                                      Vvis3d_r(Istr-1,Jstr  ,k))
-#   else
-          visc3d_r(Istr-1,Jstr-1,k)=0.5_r8*(visc3d_r(Istr  ,Jstr-1,k)+  &
-     &                                      visc3d_r(Istr-1,Jstr  ,k))
-#   endif
-#  endif
-        END DO
-      END IF
-      IF ((SOUTHERN_EDGE).and.(EASTERN_EDGE)) THEN
-        DO k=1,N(ng)
-#  ifdef DIFF_3DCOEF
-#   ifdef TS_U3ADV_SPLIT
-          diff3d_u(Iend+1,Jstr-1,k)=0.5_r8*(diff3d_u(Iend  ,Jstr-1,k)+  &
-     &                                      diff3d_u(Iend+1,Jstr  ,k))
-          diff3d_v(Iend+1,Jstr-1,k)=0.5_r8*(diff3d_v(Iend  ,Jstr-1,k)+  &
-     &                                      diff3d_v(Iend+1,Jstr  ,k))
-#   else
-          diff3d_r(Iend+1,Jstr-1,k)=0.5_r8*(diff3d_r(Iend  ,Jstr-1,k)+  &
-     &                                      diff3d_r(Iend+1,Jstr  ,k))
-#   endif
-#  endif
-#  ifdef VISC_3DCOEF
-#   ifdef UV_U3ADV_SPLIT
-          Uvis3d_r(Iend+1,Jstr-1,k)=0.5_r8*(Uvis3d_r(Iend  ,Jstr-1,k)+  &
-     &                                      Uvis3d_r(Iend+1,Jstr  ,k))
-          Vvis3d_r(Iend+1,Jstr-1,k)=0.5_r8*(Vvis3d_r(Iend  ,Jstr-1,k)+  &
-     &                                      Vvis3d_r(Iend+1,Jstr  ,k))
-#   else
-          visc3d_r(Iend+1,Jstr-1,k)=0.5_r8*(visc3d_r(Iend  ,Jstr-1,k)+  &
-     &                                      visc3d_r(Iend+1,Jstr  ,k))
-#   endif
-#  endif
-        END DO
-      END IF
-      IF (NORTHERN_EDGE .and. WESTERN_EDGE) THEN
-        DO k=1,N(ng)
-#  ifdef DIFF_3DCOEF
-#   ifdef TS_U3ADV_SPLIT
-          diff3d_u(Istr-1,Jend+1,k)=0.5_r8*(diff3d_u(Istr  ,Jend+1,k)+  &
-     &                                      diff3d_u(Istr-1,Jend  ,k))
-          diff3d_v(Istr-1,Jend+1,k)=0.5_r8*(diff3d_v(Istr  ,Jend+1,k)+  &
-     &                                      diff3d_v(Istr-1,Jend  ,k))
-#   else
-          diff3d_r(Istr-1,Jend+1,k)=0.5_r8*(diff3d_r(Istr  ,Jend+1,k)+  &
-     &                                      diff3d_r(Istr-1,Jend  ,k))
-#   endif
-#  endif
-#  ifdef VISC_3DCOEF
-#   ifdef UV_U3ADV_SPLIT
-          Uvis3d_r(Istr-1,Jend+1,k)=0.5_r8*(Uvis3d_r(Istr  ,Jend+1,k)+  &
-     &                                      Uvis3d_r(Istr-1,Jend  ,k))
-          Vvis3d_r(Istr-1,Jend+1,k)=0.5_r8*(Vvis3d_r(Istr  ,Jend+1,k)+  &
-     &                                      Vvis3d_r(Istr-1,Jend  ,k))
-#   else
-          visc3d_r(Istr-1,Jend+1,k)=0.5_r8*(visc3d_r(Istr  ,Jend+1,k)+  &
-     &                                      visc3d_r(Istr-1,Jend  ,k))
-#   endif
-#  endif
-        END DO
-      END IF
-      IF (NORTHERN_EDGE .and. EASTERN_EDGE) THEN
-        DO k=1,N(ng)
-#  ifdef DIFF_3DCOEF
-#   ifdef TS_U3ADV_SPLIT
-          diff3d_u(Iend+1,Jend+1,k)=0.5_r8*(diff3d_u(Iend  ,Jend+1,k)+  &
-     &                                      diff3d_u(Iend+1,Jend  ,k))
-          diff3d_v(Iend+1,Jend+1,k)=0.5_r8*(diff3d_v(Iend  ,Jend+1,k)+  &
-     &                                      diff3d_v(Iend+1,Jend  ,k))
-#   else
-          diff3d_r(Istr-1,Jend+1,k)=0.5_r8*(diff3d_r(Istr  ,Jend+1,k)+  &
-     &                                      diff3d_r(Istr-1,Jend  ,k))
-#   endif
-#  endif
-#  ifdef VISC_3DCOEF
-#   ifdef UV_U3ADV_SPLIT
-          Uvis3d_r(Iend+1,Jend+1,k)=0.5_r8*(Uvis3d_r(Iend  ,Jend+1,k)+  &
-     &                                      Vvis3d_r(Iend+1,Jend  ,k))
-          Vvis3d_r(Iend+1,Jend+1,k)=0.5_r8*(Vvis3d_r(Iend  ,Jend+1,k)+  &
-     &                                      Vvis3d_r(Iend+1,Jend  ,k))
-#   else
-          visc3d_r(Iend+1,Jend+1,k)=0.5_r8*(visc3d_r(Iend  ,Jend+1,k)+  &
-     &                                      visc3d_r(Iend+1,Jend  ,k))
-#   endif
-#  endif
-        END DO
-      END IF
 # endif
-# if defined EW_PERIODIC || defined NS_PERIODIC
+# ifdef VISC_3DCOEF
+#  ifdef UV_U3ADV_SPLIT
+            Uvis3d_r(Istr-1,Jstr-1,k)=0.5_r8*                           &
+     &                                (Uvis3d_r(Istr  ,Jstr-1,k)+       &
+     &                                 Uvis3d_r(Istr-1,Jstr  ,k))
+            Vvis3d_r(Istr-1,Jstr-1,k)=0.5_r8*                           &
+     &                                (Vvis3d_r(Istr  ,Jstr-1,k)+       &
+     &                                 Vvis3d_r(Istr-1,Jstr  ,k))
+#  else
+            visc3d_r(Istr-1,Jstr-1,k)=0.5_r8*                           &
+     &                                (visc3d_r(Istr  ,Jstr-1,k)+       &
+     &                                 visc3d_r(Istr-1,Jstr  ,k))
+#  endif
+# endif
+          END DO
+        END IF
+
+        IF (DOMAIN(ng)%SouthEast_Corner(tile)) THEN
+          DO k=1,N(ng)
+# ifdef DIFF_3DCOEF
+#  ifdef TS_U3ADV_SPLIT
+            diff3d_u(Iend+1,Jstr-1,k)=0.5_r8*                           &
+     &                                (diff3d_u(Iend  ,Jstr-1,k)+       &
+     &                                 diff3d_u(Iend+1,Jstr  ,k))
+            diff3d_v(Iend+1,Jstr-1,k)=0.5_r8*                           &
+     &                                (diff3d_v(Iend  ,Jstr-1,k)+       &
+     &                                 diff3d_v(Iend+1,Jstr  ,k))
+#  else
+            diff3d_r(Iend+1,Jstr-1,k)=0.5_r8*                           &
+     &                                (diff3d_r(Iend  ,Jstr-1,k)+       &
+     &                                 diff3d_r(Iend+1,Jstr  ,k))
+#  endif
+# endif
+# ifdef VISC_3DCOEF
+#  ifdef UV_U3ADV_SPLIT
+            Uvis3d_r(Iend+1,Jstr-1,k)=0.5_r8*                           &
+     &                                (Uvis3d_r(Iend  ,Jstr-1,k)+       &
+     &                                 Uvis3d_r(Iend+1,Jstr  ,k))
+            Vvis3d_r(Iend+1,Jstr-1,k)=0.5_r8*                           &
+     &                                (Vvis3d_r(Iend  ,Jstr-1,k)+       &
+     &                                 Vvis3d_r(Iend+1,Jstr  ,k))
+#  else
+            visc3d_r(Iend+1,Jstr-1,k)=0.5_r8*                           &
+     &                                (visc3d_r(Iend  ,Jstr-1,k)+       &
+     &                                 visc3d_r(Iend+1,Jstr  ,k))
+#  endif
+# endif
+          END DO
+        END IF
+
+        IF (DOMAIN(ng)%Northern_Edge(tile).and.                         &
+     &      DOMAIN(ng)%Western_Edge(tile)) THEN
+          DO k=1,N(ng)
+# ifdef DIFF_3DCOEF
+#  ifdef TS_U3ADV_SPLIT
+            diff3d_u(Istr-1,Jend+1,k)=0.5_r8*                           &
+     &                                (diff3d_u(Istr  ,Jend+1,k)+       &
+     &                                 diff3d_u(Istr-1,Jend  ,k))
+            diff3d_v(Istr-1,Jend+1,k)=0.5_r8*                           &
+     &                                (diff3d_v(Istr  ,Jend+1,k)+       &
+     &                                 diff3d_v(Istr-1,Jend  ,k))
+#  else
+            diff3d_r(Istr-1,Jend+1,k)=0.5_r8*                           &
+     &                                (diff3d_r(Istr  ,Jend+1,k)+       &
+     &                                 diff3d_r(Istr-1,Jend  ,k))
+#  endif
+# endif
+# ifdef VISC_3DCOEF
+#  ifdef UV_U3ADV_SPLIT
+            Uvis3d_r(Istr-1,Jend+1,k)=0.5_r8*                           &
+     &                                (Uvis3d_r(Istr  ,Jend+1,k)+       &
+     &                                 Uvis3d_r(Istr-1,Jend  ,k))
+            Vvis3d_r(Istr-1,Jend+1,k)=0.5_r8*                           &
+     &                                (Vvis3d_r(Istr  ,Jend+1,k)+       &
+     &                                 Vvis3d_r(Istr-1,Jend  ,k))
+#  else
+            visc3d_r(Istr-1,Jend+1,k)=0.5_r8*                           &
+     &                                (visc3d_r(Istr  ,Jend+1,k)+       &
+     &                                 visc3d_r(Istr-1,Jend  ,k))
+#  endif
+# endif
+          END DO
+        END IF
+
+        IF (DOMAIN(ng)%Northern_Edge(tile).and.                         &
+     &      DOMAIN(ng)%Eastern_Edge(tile)) THEN
+          DO k=1,N(ng)
+# ifdef DIFF_3DCOEF
+#  ifdef TS_U3ADV_SPLIT
+            diff3d_u(Iend+1,Jend+1,k)=0.5_r8*                           &
+     &                                (diff3d_u(Iend  ,Jend+1,k)+       &
+     &                                 diff3d_u(Iend+1,Jend  ,k))
+            diff3d_v(Iend+1,Jend+1,k)=0.5_r8*                           &
+     &                                (diff3d_v(Iend  ,Jend+1,k)+       &
+     &                                 diff3d_v(Iend+1,Jend  ,k))
+#  else
+            diff3d_r(Istr-1,Jend+1,k)=0.5_r8*                           &
+     &                                (diff3d_r(Istr  ,Jend+1,k)+       &
+     &                                 diff3d_r(Istr-1,Jend  ,k))
+#  endif
+# endif
+# ifdef VISC_3DCOEF
+#  ifdef UV_U3ADV_SPLIT
+            Uvis3d_r(Iend+1,Jend+1,k)=0.5_r8*                           &
+     &                                (Uvis3d_r(Iend  ,Jend+1,k)+       &
+     &                                 Vvis3d_r(Iend+1,Jend  ,k))
+            Vvis3d_r(Iend+1,Jend+1,k)=0.5_r8*                           &
+     &                                (Vvis3d_r(Iend  ,Jend+1,k)+       &
+     &                                 Vvis3d_r(Iend+1,Jend  ,k))
+#  else
+            visc3d_r(Iend+1,Jend+1,k)=0.5_r8*                           &
+     &                                (visc3d_r(Iend  ,Jend+1,k)+       &
+     &                                 visc3d_r(Iend+1,Jend  ,k))
+#  endif
+# endif
+          END DO
+        END IF
+      END IF
 !
 !  Periodic boundary conditions.
 !
-#  ifdef DIFF_3DCOEF
-#   ifdef TS_U3ADV_SPLIT
-      CALL exchange_u3d_tile (ng, tile,                                 &
-     &                        LBi, UBi, LBj, UBj, 1, N(ng),             &
-     &                        diff3d_u)
-      CALL exchange_v3d_tile (ng, tile,                                 &
-     &                        LBi, UBi, LBj, UBj, 1, N(ng),             &
-     &                        diff3d_v)
-#   else
-      CALL exchange_r3d_tile (ng, tile,                                 &
-     &                        LBi, UBi, LBj, UBj, 1, N(ng),             &
-     &                        diff3d_r)
-#   endif
-#  endif
-#  ifdef VISC_3DCOEF
-#   ifdef UV_U3ADV_SPLIT
-      CALL exchange_r3d_tile (ng, tile,                                 &
-     &                        LBi, UBi, LBj, UBj, 1, N(ng),             &
-     &                        Uvis3d_r)
-      CALL exchange_r3d_tile (ng, tile,                                 &
-     &                        LBi, UBi, LBj, UBj, 1, N(ng),             &
-     &                        Vvis3d_r)
-#   else
-      CALL exchange_r3d_tile (ng, tile,                                 &
-     &                        LBi, UBi, LBj, UBj, 1, N(ng),             &
-     &                        visc3d_r)
-#   endif
+      IF (EWperiodic(ng).or.NSperiodic(ng)) THEN
+# ifdef DIFF_3DCOEF
+#  ifdef TS_U3ADV_SPLIT
+        CALL exchange_u3d_tile (ng, tile,                               &
+     &                          LBi, UBi, LBj, UBj, 1, N(ng),           &
+     &                          diff3d_u)
+        CALL exchange_v3d_tile (ng, tile,                               &
+     &                          LBi, UBi, LBj, UBj, 1, N(ng),           &
+     &                          diff3d_v)
+#  else
+        CALL exchange_r3d_tile (ng, tile,                               &
+     &                          LBi, UBi, LBj, UBj, 1, N(ng),           &
+     &                          diff3d_r)
 #  endif
 # endif
+# ifdef VISC_3DCOEF
+#  ifdef UV_U3ADV_SPLIT
+        CALL exchange_r3d_tile (ng, tile,                               &
+     &                          LBi, UBi, LBj, UBj, 1, N(ng),           &
+     &                          Uvis3d_r)
+        CALL exchange_r3d_tile (ng, tile,                               &
+     &                          LBi, UBi, LBj, UBj, 1, N(ng),           &
+     &                          Vvis3d_r)
+#  else
+        CALL exchange_r3d_tile (ng, tile,                               &
+     &                          LBi, UBi, LBj, UBj, 1, N(ng),           &
+     &                          visc3d_r)
+#  endif
+# endif
+      END IF
+
 # ifdef DISTRIBUTE
 !
 !  Exhange boundary data.
@@ -728,12 +746,14 @@
 #   ifdef TS_U3ADV_SPLIT
       CALL mp_exchange3d (ng, tile, iNLM, 2,                            &
      &                    LBi, UBi, LBj, UBj, 1, N(ng),                 &
-     &                    NghostPoints, EWperiodic, NSperiodic,         &
+     &                    NghostPoints,                                 &
+     &                    EWperiodic(ng), NSperiodic(ng),               &
      &                    diff3d_u, diff3d_v)
 #   else
       CALL mp_exchange3d (ng, tile, iNLM, 1,                            &
      &                    LBi, UBi, LBj, UBj, 1, N(ng),                 &
-     &                    NghostPoints, EWperiodic, NSperiodic,         &
+     &                    NghostPoints,                                 &
+     &                    EWperiodic(ng), NSperiodic(ng),               &
      &                    diff3d_r)
 #   endif
 #  endif
@@ -741,16 +761,19 @@
 #   ifdef UV_U3ADV_SPLIT
       CALL mp_exchange3d (ng, tile, iNLM, 2,                            &
      &                    LBi, UBi, LBj, UBj, 1, N(ng),                 &
-     &                    NghostPoints, EWperiodic, NSperiodic,         &
+     &                    NghostPoints,                                 &
+     &                    EWperiodic(ng), NSperiodic(ng),               &
      &                    Uvis3d_r, Vvis3d_r)
 #   else
       CALL mp_exchange3d (ng, tile, iNLM, 1,                            &
      &                    LBi, UBi, LBj, UBj, 1, N(ng),                 &
-     &                    NghostPoints, EWperiodic, NSperiodic,         &
+     &                    NghostPoints,                                 &
+     &                    EWperiodic(ng), NSperiodic(ng),               &
      &                    visc3d_r)
 #   endif
 #  endif
 # endif
+
       RETURN
       END SUBROUTINE hmixing_tile
 #endif

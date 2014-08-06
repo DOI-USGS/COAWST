@@ -3,7 +3,7 @@
 **
 ** svn $Id: cppdefs.h 818 2008-11-02 14:56:47Z jcwarner $
 ********************************************************** Hernan G. Arango ***
-** Copyright (c) 2002-2010 The ROMS/TOMS Group                               **
+** Copyright (c) 2002-2014 The ROMS/TOMS Group                               **
 **   Licensed under a MIT/X style license                                    **
 **   See License_ROMS.txt                                                    **
 *******************************************************************************
@@ -39,11 +39,16 @@
 ** UV_VIS2             use to turn ON or OFF harmonic horizontal mixing      **
 ** UV_VIS4             use to turn ON or OFF biharmonic horizontal mixing    **
 ** UV_SMAGORINSKY      use to turn ON or OFF Smagorinsky-like viscosity      **
+** UV_DRAG_GRID        use if spatially varying bottom friction parameters   **
 ** UV_LOGDRAG          use to turn ON or OFF logarithmic bottom friction     **
 ** UV_LDRAG            use to turn ON or OFF linear bottom friction          **
 ** UV_QDRAG            use to turn ON or OFF quadratic bottom friction       **
-** UV_PSOURCE          use to turn ON or OFF point Sources/Sinks             **
-** Q_PSOURCE           use to turn ON or OFF mass point Sources              **
+** UV_WAVEDRAG         use to turn ON or OFF extra linear bottom wave drag   **
+**                                                                           **
+** OPTION to not allow the bottom stress components to change the direction  **
+** of bottom momentum (change sign of velocity components.                   **
+**                                                                           **
+** LIMIT_BSTRESS       use to limit the magnitude of bottom stress           **
 **                                                                           **
 ** OPTIONS associated with tracers equations:                                **
 **                                                                           **
@@ -84,7 +89,10 @@
 ** SCORRECTION         use if freshwater flux correction                     **
 ** SOLAR_SOURCE        use if solar radiation source term                    **
 ** SRELAXATION         use if salinity relaxation as a freshwater flux       **
-** TS_PSOURCE          use to turn ON or OFF point Sources/Sinks             **
+** TRC_PSOURCE         use if source of inert passive tracers (dyes, etc)    **
+** AGE_PASSIVE         use if aging of inert passive tracers                 **
+** AGE_DISTRIBUTION    use if aging of inert passive tracers                 **
+** WTYPE_GRID          use to turn ON spatially varying Jerlov water type    **
 **                                                                           **
 ** Tracer advection OPTIONS for adjoint-based algorithms:                    **
 **                                                                           **
@@ -130,7 +138,7 @@
 **                                                                           **
 ** ATM_PRESS           use to impose atmospheric pressure onto sea surface   **
 **                                                                           **
-** OPTIONS for surface fluxes formutalion using atmospheric boundary layer   **
+** OPTIONS for surface fluxes formulation using atmospheric boundary layer   **
 ** (Fairall et al, 1996):                                                    **
 **                                                                           **
 **   There are three ways to provide longwave radiation in the atmospheric   **
@@ -149,7 +157,9 @@
 ** LONGWAVE            use if computing net longwave radiation               **
 ** LONGWAVE_OUT        use if computing outgoing longwave radiation          **
 ** EMINUSP             use if computing E-P                                  **
-** EMINUSP_SSH         use if computing changes in SSH due to E-P
+** EMINUSP_SSH         use if computing changes in SSH due to E-P            **
+** RUNOFF              use if adding runoff as a second rain field           **
+** RUNOFF_SSH          use if adjusting zeta based on runoff field           **
 **                                                                           **
 ** OPTIONS for wave roughness formulation in bulk fluxes:                    **
 **                                                                           **
@@ -177,15 +187,13 @@
 ** MASKING             use if land/sea masking                               **
 ** BODYFORCE           use if applying stresses as bodyforces                **
 ** PROFILE             use if time profiling                                 **
-** AVERAGES            use if writing out time-averaged data                 **
-** AVERAGES_AKV        use if writing out time-averaged AKv                  **
-** AVERAGES_AKT        use if writing out time-averaged AKt                  **
-** AVERAGES_AKS        use if writing out time-averaged AKs                  **
-** AVERAGES_DETIDE     use if writing out time-averaged detided fields       **
-** AVERAGES_FLUXES     use if writing out time-averaged fluxes               **
-** AVERAGES_WEC        use if writing out time-averaged wave-current stresses**
-** AVERAGES_QUADRATIC  use if writing out quadratic terms                    **
-** AVERAGES_BEDLOAD    use if writing out time-averaged bed load             **
+** AVERAGES            use if writing out NLM time-averaged data             **
+** AVERAGES2           use if writing out secondary time-averaged data       **
+** HISTORY2            use if writing out secondary history data             **
+** AVERAGES_DETIDE     use if writing out NLM time-averaged detided fields   **
+** AD_AVERAGES         use if writing out ADM time-averaged data             **
+** RP_AVERAGES         use if writing out TLM time-averaged data             **
+** TL_AVERAGES         use if writing out ADM time-averaged data             **
 ** DIAGNOSTICS_BIO     use if writing out biological diagnostics             **
 ** DIAGNOSTICS_UV      use if writing out momentum diagnostics               **
 ** DIAGNOSTICS_TS      use if writing out tracer diagnostics                 **
@@ -194,11 +202,18 @@
 ** STATIONS            use if writing out station data                       **
 ** STATIONS_CGRID      use if extracting data at native C-grid               **
 **                                                                           **
+** OPTIONS for floating iceshelves:                                          **
+**                                                                           **
+** ICESHELF_3EQ        use if using 3 eqn. thermodynamic formulation         **
+**                                                                           **
 ** OPTIONS for Lagrangian drifters:                                          **
 **                                                                           **
 ** FLOATS              use to activate simulated Lagrangian drifters         **
+** FLOAT_OYSTER        use to activate oyster model behavior in floats       **
+** FLOAT_STICKY        use to reflect/stick floats that hit surface/bottom   **
 ** FLOAT_VWALK         use if vertical random walk                           **
 ** VWALK_FORWARD       use if forward time stepping vertical random walk     **
+** DIAPAUSE            use to simulate diapause                              **
 **                                                                           **
 ** OPTION to activate conservative, parabolic spline reconstruction of       **
 ** vertical derivatives. Notice that there also options (see above) for      **
@@ -217,6 +232,8 @@
 ** ANA_BTFLUX          use if analytical bottom temperature flux             **
 ** ANA_CLOUD           use if analytical cloud fraction                      **
 ** ANA_DIAG            use if customized diagnostics                         **
+** ANA_DQDSST          use if analytical surface heat flux sensitivity to SST**
+** ANA_DRAG            use if analytical spatially varying drag parameters   **
 ** ANA_FSOBC           use if analytical free-surface boundary conditions    **
 ** ANA_GRID            use if analytical model grid set-up                   **
 ** ANA_HUMIDITY        use if analytical surface air humidity                **
@@ -227,24 +244,28 @@
 ** ANA_M3CLIMA         use if analytical 3D momentum climatology             **
 ** ANA_M3OBC           use if analytical 3D momentum boundary conditions     **
 ** ANA_MASK            use if analytical Land/Sea masking                    **
+** ANA_NUDGCOEF        use if analytical climatology nudging coefficients    **
 ** ANA_PAIR            use if analytical surface air pressure                **
 ** ANA_PASSIVE         use if analytical inert tracers initial conditions    **
 ** ANA_PERTURB         use if analytical perturbation of initial conditions  **
 ** ANA_PSOURCE         use if analytical point Sources/Sinks                 **
+** ANA_PTOBC           use if analytical passive tracers boundary conditions **
 ** ANA_RAIN            use if analytical rain fall rate                      **
 ** ANA_SEDIMENT        use if analytical sediment initial fields             **
 ** ANA_SMFLUX          use if analytical surface momentum stress             **
 ** ANA_SPFLUX          use if analytical surface passive tracers fluxes      **
 ** ANA_SPINNING        use if analytical time-varying rotation force         **
+** ANA_SPONGE          use if analytical enhanced viscosity/diffusion sponge **
 ** ANA_SRFLUX          use if analytical surface shortwave radiation flux    **
 ** ANA_SSFLUX          use if analytical surface salinity flux               **
 ** ANA_SSH             use if analytical sea surface height                  **
 ** ANA_SSS             use if analytical sea surface salinity                **
-** ANA_SST             use if analytical SST and dQdSST                      **
-** ANA_STFLUX          use if analytical surface temperature flux            **
+** ANA_SST             use if analytical sea surface temperature, SST        **
+** ANA_STFLUX          use if analytical surface net heat flux               **
 ** ANA_TAIR            use if analytical surface air temperature             **
 ** ANA_TCLIMA          use if analytical tracers climatology                 **
 ** ANA_TOBC            use if analytical tracers boundary conditions         **
+** ANA_TRC_PSOURCE     use if analytical point sources of inert tracers      **
 ** ANA_VMIX            use if analytical vertical mixing coefficients        **
 ** ANA_WINDS           use if analytical surface winds                       **
 ** ANA_WWAVE           use if analytical wind induced waves                  **
@@ -307,6 +328,7 @@
 ** LMD_RIMIX           use to add diffusivity due to shear instability       **
 ** LMD_SHAPIRO         use if Shapiro filtering boundary layer depth         **
 ** LMD_SKPP            use if surface boundary layer KPP mixing              **
+** M2TIDE_DIFF         use to add simulated tidal diffusion                  **
 **                                                                           **
 ** OPTIONS to activate smoothing of Richardson number, if SPLINES is not     **
 ** activated:                                                                **
@@ -345,174 +367,7 @@
 **                                                                           **
 ** Lateral boundary conditions OPTIONS:                                      **
 **                                                                           **
-**   Select ONE option at each boundary edge for free-surface, 2D momentum,  **
-**   3D momentum, and tracers. The turbulent kinetic energy (TKE) conditions **
-**   are only activated for the Generic length scale or Mellor-Yamada 2.5    **
-**   vertical mixing closures. If open boundary radiation conditions, an     **
-**   additional option can be activated at each boundary edge to include     **
-**   a passive (active) nudging term with weak (strong) values for outflow   **
-**   (inflow).                                                               **
-**                                                                           **
-** Option to impose a sponge layer near the lateral boundary:                **
-**                                                                           **
-** SPONGE              use if enhanced viscosity/diffusion areas             **
-**                                                                           **
-** OPTIONS to impose mass conservation at the open boundary:                 **
-**                                                                           **
-** EAST_VOLCONS        use if Eastern  edge mass conservation enforcement    **
-** WEST_VOLCONS        use if Western  edge mass conservation enforcement    **
-** NORTH_VOLCONS       use if Northern edge mass conservation enforcement    **
-** SOUTH_VOLCONS       use if Southern edge mass conservation enforcement    **
-**                                                                           **
-** OPTIONS for periodic boundary conditions:                                 **
-**                                                                           **
-** EW_PERIODIC         use if East-West periodic boundaries                  **
-** NS_PERIODIC         use if North-South periodic boundaries                **
-**                                                                           **
-** OPTIONS for closed boundary conditions:                                   **
-**                                                                           **
-** EASTERN_WALL        use if Eastern  edge, closed wall condition           **
-** WESTERN_WALL        use if Western  edge, closed wall condition           **
-** NORTHERN_WALL       use if Northern edge, closed wall condition           **
-** SOUTHERN_WALL       use if Southern edge, closed wall condition           **
-**                                                                           **
-** Additional OPTION for radiation open boundary conditions:                 **
-**                                                                           **
 ** RADIATION_2D        use if tangential phase speed in radiation conditions **
-**                                                                           **
-** Eastern edge open boundary conditions OPTIONS:                            **
-**                                                                           **
-** EAST_FSCHAPMAN      use if free-surface Chapman condition                 **
-** EAST_FSGRADIENT     use if free-surface gradient condition                **
-** EAST_FSRADIATION    use if free-surface radiation condition               **
-** EAST_FSNUDGING      use if free-surface passive/active nudging term       **
-** EAST_FSCLAMPED      use if free-surface clamped condition                 **
-** EAST_M2FLATHER      use if 2D momentum Flather condition                  **
-** EAST_M2GRADIENT     use if 2D momentum gradient condition                 **
-** EAST_M2RADIATION    use if 2D momentum radiation condition                **
-** EAST_M2REDUCED      use if 2D momentum reduced-physics                    **
-** EAST_M2NUDGING      use if 2D momentum passive/active nudging term        **
-** EAST_M2CLAMPED      use if 2D momentum clamped condition                  **
-** EAST_M3GRADIENT     use if 3D momentum gradient condition                 **
-** EAST_M3RADIATION    use if 3D momentum radiation condition                **
-** EAST_M3NUDGING      use if 3D momentum passive/active nudging term        **
-** EAST_M3CLAMPED      use if 3D momentum clamped condition                  **
-** EAST_KGRADIENT      use if TKE fields gradient condition                  **
-** EAST_KRADIATION     use if TKE fields radiation condition                 **
-** EAST_TGRADIENT      use if tracers gradient condition                     **
-** EAST_TRADIATION     use if tracers radiation condition                    **
-** EAST_TNUDGING       use if tracers passive/active nudging term            **
-** EAST_TCLAMPED       use if tracers clamped condition                      **
-**                                                                           **
-** Western edge open boundary conditions OPTIONS:                            **
-**                                                                           **
-** WEST_FSCHAPMAN      use if free-surface Chapman condition                 **
-** WEST_FSGRADIENT     use if free-surface gradient condition                **
-** WEST_FSRADIATION    use if free-surface radiation condition               **
-** WEST_FSNUDGING      use if free-surface passive/active nudging term       **
-** WEST_FSCLAMPED      use if free-surface clamped condition                 **
-** WEST_M2FLATHER      use if 2D momentum Flather condition                  **
-** WEST_M2GRADIENT     use if 2D momentum gradient condition                 **
-** WEST_M2RADIATION    use if 2D momentum radiation condition                **
-** WEST_M2REDUCED      use if 2D momentum reduced-physics                    **
-** WEST_M2NUDGING      use if 2D momentum passive/active nudging term        **
-** WEST_M2CLAMPED      use if 2D momentum clamped condition                  **
-** WEST_M3GRADIENT     use if 3D momentum gradient condition                 **
-** WEST_M3RADIATION    use if 3D momentum radiation condition                **
-** WEST_M3NUDGING      use if 3D momentum passive/active nudging term        **
-** WEST_M3CLAMPED      use if 3D momentum clamped condition                  **
-** WEST_KGRADIENT      use if TKE fields gradient condition                  **
-** WEST_KRADIATION     use if TKE fields radiation condition                 **
-** WEST_TGRADIENT      use if tracers gradient condition                     **
-** WEST_TRADIATION     use if tracers radiation condition                    **
-** WEST_TNUDGING       use if tracers passive/active nudging term            **
-** WEST_TCLAMPED       use if tracers clamped condition                      **
-**                                                                           **
-** Northern edge open boundary conditions OPTIONS:                           **
-**                                                                           **
-** NORTH_FSCHAPMAN     use if free-surface Chapman condition                 **
-** NORTH_FSGRADIENT    use if free-surface gradient condition                **
-** NORTH_FSRADIATION   use if free-surface radiation condition               **
-** NORTH_FSNUDGING     use if free-surface passive/active nudging term       **
-** NORTH_FSCLAMPED     use if free-surface clamped condition                 **
-** NORTH_M2FLATHER     use if 2D momentum Flather condition                  **
-** NORTH_M2GRADIENT    use if 2D momentum gradient condition                 **
-** NORTH_M2RADIATION   use if 2D momentum radiation condition                **
-** NORTH_M2REDUCED     use if 2D momentum reduced-physics                    **
-** NORTH_M2NUDGING     use if 2D momentum passive/active nudging term        **
-** NORTH_M2CLAMPED     use if 2D momentum clamped condition                  **
-** NORTH_M3GRADIENT    use if 3D momentum gradient condition                 **
-** NORTH_M3RADIATION   use if 3D momentum radiation condition                **
-** NORTH_M3NUDGING     use if 3D momentum passive/active nudging term        **
-** NORTH_M3CLAMPED     use if 3D momentum clamped condition                  **
-** NORTH_KGRADIENT     use if TKE fields gradient condition                  **
-** NORTH_KRADIATION    use if TKE fields radiation condition                 **
-** NORTH_TGRADIENT     use if tracers gradient condition                     **
-** NORTH_TRADIATION    use if tracers radiation condition                    **
-** NORTH_TNUDGING      use if tracers passive/active nudging term            **
-** NORTH_TCLAMPED      use if tracers clamped condition                      **
-**                                                                           **
-** Southern edge open boundary conditions OPTIONS:                           **
-**                                                                           **
-** SOUTH_FSCHAPMAN     use if free-surface Chapman condition                 **
-** SOUTH_FSGRADIENT    use if free-surface gradient condition                **
-** SOUTH_FSRADIATION   use if free-surface radiation condition               **
-** SOUTH_FSNUDGING     use if free-surface passive/active nudging term       **
-** SOUTH_FSCLAMPED     use if free-surface clamped condition                 **
-** SOUTH_M2FLATHER     use if 2D momentum Flather condition                  **
-** SOUTH_M2GRADIENT    use if 2D momentum gradient condition                 **
-** SOUTH_M2RADIATION   use if 2D momentum radiation condition                **
-** SOUTH_M2REDUCED     use if 2D momentum reduced-physics                    **
-** SOUTH_M2NUDGING     use if 2D momentum passive/active nudging term        **
-** SOUTH_M2CLAMPED     use if 2D momentum clamped condition                  **
-** SOUTH_M3GRADIENT    use if 3D momentum gradient condition                 **
-** SOUTH_M3RADIATION   use if 3D momentum radiation condition                **
-** SOUTH_M3NUDGING     use if 3D momentum passive/active nudging term        **
-** SOUTH_M3CLAMPED     use if 3D momentum clamped condition                  **
-** SOUTH_KGRADIENT     use if TKE fields gradient condition                  **
-** SOUTH_KRADIATION    use if TKE fields radiation condition                 **
-** SOUTH_TGRADIENT     use if tracers gradient condition                     **
-** SOUTH_TRADIATION    use if tracers radiation condition                    **
-** SOUTH_TNUDGING      use if tracers passive/active nudging term            **
-** SOUTH_TCLAMPED      use if tracers clamped condition                      **
-**                                                                           **
-** OPTIONS for stokes velocities at open boundaries:                         **
-**                                                                           **
-** Western edge open boundary conditions OPTIONS:                            **
-**                                                                           **
-** WEST_M2SRADIATION    use if 2D stokes radiation condition                 **
-** WEST_M2SCLAMPED      use if 2D stokes clamped condition                   **
-** WEST_M2SGRADIENT     use if 2D stokes gradient condition                  **
-** WEST_M3SRADIATION    use if 3D stokes radiation condition                 **
-** WEST_M3SCLAMPED      use if 3D stokes clamped condition                   **
-** WEST_M3SGRADIENT     use if 3D stokes gradient condition                  **
-**                                                                           **
-** Western edge open boundary conditions OPTIONS:                            **
-**                                                                           **
-** EAST_M2SRADIATION    use if 2D stokes radiation condition                 **
-** EAST_M2SCLAMPED      use if 2D stokes clamped condition                   **
-** EAST_M2SGRADIENT     use if 2D stokes gradient condition                  **
-** EAST_M3SRADIATION    use if 3D stokes radiation condition                 **
-** EAST_M3SCLAMPED      use if 3D stokes clamped condition                   **
-** EAST_M3SGRADIENT     use if 3D stokes gradient condition                  **
-**                                                                           **
-** Western edge open boundary conditions OPTIONS:                            **
-**                                                                           **
-** SOUTH_M2SRADIATION    use if 2D stokes radiation condition                **
-** SOUTH_M2SCLAMPED      use if 2D stokes clamped condition                  **
-** SOUTH_M2SGRADIENT     use if 2D stokes gradient condition                 **
-** SOUTH_M3SRADIATION    use if 3D stokes radiation condition                **
-** SOUTH_M3SCLAMPED      use if 3D stokes clamped condition                  **
-** SOUTH_M3SGRADIENT     use if 3D stokes gradient condition                 **
-**                                                                           **
-** Western edge open boundary conditions OPTIONS:                            **
-**                                                                           **
-** NORTH_M2SRADIATION    use if 2D stokes radiation condition                **
-** NORTH_M2SCLAMPED      use if 2D stokes clamped condition                  **
-** NORTH_M2SGRADIENT     use if 2D stokes gradient condition                 **
-** NORTH_M3SRADIATION    use if 3D stokes radiation condition                **
-** NORTH_M3SCLAMPED      use if 3D stokes clamped condition                  **
-** NORTH_M3SGRADIENT     use if 3D stokes gradient condition                 **
 **                                                                           **
 ** OPTIONS for tidal forcing at open boundaries:                             **
 **                                                                           **
@@ -532,6 +387,7 @@
 **                                                                           **
 ** SSH_TIDES           use if imposing tidal elevation                       **
 ** UV_TIDES            use if imposing tidal currents                        **
+** POT_TIDES           use if imposing potential tides                       **
 ** RAMP_TIDES          use if ramping (over one day) tidal forcing           **
 ** FSOBC_REDUCED       use if SSH data and reduced physics conditions        **
 ** ADD_FSOBC           use to add tidal elevation to processed OBC data      **
@@ -539,41 +395,16 @@
 **                                                                           **
 ** OPTIONS for reading and processing of climatological fields:              **
 **                                                                           **
-** M2CLIMATOLOGY       use if processing 2D momentum climatology             **
-** M3CLIMATOLOGY       use if processing 3D momentum climatology             **
-** TCLIMATOLOGY        use if processing tracers climatology                 **
-** ZCLIMATOLOGY        use if processing SSH climatology                     **
-**                                                                           **
-** OPTIONS to nudge climatology data (primarily in sponge areas):            **
-**                                                                           **
-** M2CLM_NUDGING       use if nudging 2D momentum climatology                **
-** M3CLM_NUDGING       use if nudging 3D momentum climatology                **
-** TCLM_NUDGING        use if nudging tracers climatology                    **
-** ZCLM_NUDGING        use if nudging SSH climatology                        **
-**                                                                           **
-** Optimal Interpolation (OI) or nudging data assimilation OPTIONS:          **
-**                                                                           **
-**   The OI assimilation is intermittent whereas nudging is continuous       **
-**   (observations are time interpolated). If applicable, choose only one    **
-**   option for each field to update: either OI assimilation or nudging.     **
-**                                                                           **
-** ASSIMILATION_SSH    use if assimilating SSH observations                  **
-** ASSIMILATION_SST    use if assimilating SST observations                  **
-** ASSIMILATION_T      use if assimilating tracers observations              **
-** ASSIMILATION_UVsur  use if assimilating surface current observations      **
-** ASSIMILATION_UV     use if assimilating horizontal current observations   **
-** UV_BAROCLINIC       use if assimilating baroclinic currents only          **
-** NUDGING_SST         use if nudging SST observations                       **
-** NUDGING_T           use if nudging tracers observations                   **
-** NUDGING_UVsur       use if nudging surface current observations           **
-** NUDGING_UV          use if nudging horizontal currents observations       **
+** OCLIMATOLOGY        use if processing 3D vertical momentum climatology    **
+** AKTCLIMATOLOGY      use if processing 3D vertical salinity diffustion     **
 **                                                                           **
 ** ROMS/TOMS driver OPTIONS:                                                 **
 **                                                                           **
 ** ADM_DRIVER          use if generic adjoint model driver                   **
 ** AD_SENSITIVITY      use if adjoint sensitivity driver                     **
 ** AFT_EIGENMODES      use if adjoint finite time eingenmodes driver         **
-** CONVOLUTION         use if adjoint convolution driver                     **
+** ARRAY_MODES         use if W4DVAR representer matrix array modes          **
+** CLIPPING            use if W4DVAR representer matrix clipping analysis    **
 ** CORRELATION         use if background-error correlation model driver      **
 ** ENSEMBLE            use if ensemble prediction driver                     **
 ** FORCING_SV          use if forcing singular vectors driver                **
@@ -581,6 +412,9 @@
 ** INNER_PRODUCT       use if tangent linear and adjoint inner product check **
 ** IS4DVAR             use if incremental 4DVar data assimilation            **
 ** IS4DVAR_SENSITIVITY use if I4DVar observations sensitivity driver         **
+** HESSIAN_FSV         use if Hessian forcing singular vectors               **
+** HESSIAN_SO          use if Hessian stochastic optimals                    **
+** HESSIAN_SV          use if Hessian singular vectors                       **
 ** OPT_OBSERVATIONS    use if optimal observations driver                    **
 ** OPT_PERTURBATION    use if optimal perturbations driver, singular vectors **
 ** PICARD_TEST         use if representer tangent linear model test          **
@@ -603,9 +437,10 @@
 ** AD_IMPULSE          use to force adjoint model with intermittent impulses **
 ** ADJUST_STFLUX       use if including surface tracer flux in 4DVar state   **
 ** ADJUST_WSTRESS      use if including wind-stress in 4DVar state           **
+** ARRAY_MODES_SPLIT   use to separate analysis due to IC, forcing, and OBC  **
 ** BALANCE_OPERATOR    use if error covariance multivariate balance term     **
 ** CELERITY_WRITE      use if writing radiation celerity in forward file     **
-** CONVOLVE            use if convolving solution with diffusion operators   **
+** CLIPPING_SPLIT      use to separate analysis due to IC, forcing, and OBC  **
 ** DATALESS_LOOPS      use if testing convergence of Picard iterations       **
 ** FORWARD_MIXING      use if processing forward vertical mixing coefficient **
 ** FORWARD_WRITE       use if writing out forward solution, basic state      **
@@ -613,15 +448,18 @@
 ** FORWARD_RHS         use if processing forward right-hand-side terms       **
 ** IMPLICIT_VCONV      use if implicit vertical convolution algorithm        **
 ** IMPULSE             use if processing adjoint impulse forcing             **
+** MINRES              use if Minimal Residual Method for 4DVar minimization **
 ** MULTIPLE_TLM        use if multiple TLM history files in 4DVAR            **
 ** NLM_OUTER           use if nonlinear model as basic state in outer loop   **
 ** OBS_IMPACT          use if observation impact to 4DVAR data assimilation  **
 ** OBS_IMPACT_SPLIT    use to separate impact due to IC, forcing, and OBC    **
-** POSTERIOR_EOFS      Use if posterior analysis error covariance EOFS       **
-** POSTERIOR_ERROR_F   Use if final posterior analysis error covariance      **
-** POSTERIOR_ERROR_I   Use if initial posterior analysis error covariance    **
+** POSTERIOR_EOFS      use if posterior analysis error covariance EOFS       **
+** POSTERIOR_ERROR_F   use if final posterior analysis error covariance      **
+** POSTERIOR_ERROR_I   use if initial posterior analysis error covariance    **
+** RECOMPUTE_4DVAR     use if recomputing 4DVar in analysis algorithms       **
 ** RPM_RELAXATION      use if Picard iterations, Diffusive Relaxation of RPM **
-** SO_SEMI_WHITE       use to activate white/red noise processes             **
+** SO_SEMI_WHITE       use to activate SO semi norm white/red noise processes**
+** STOCH_OPT_WHITE     use to activate SO white/red noise processes          **
 ** SPLINES_VCONV       use to activate implicit splines vertical convolution **
 ** VCONVOLUTION        use to add vertical correlation to 3D convolution     **
 ** VERIFICATION        use if writing out solution at observation locations  **
@@ -654,6 +492,7 @@
 **                                                                           **
 ** NPZD biology model OPTIONS:                                               **
 **                                                                           **
+** BIO_UMAINE          use if Chai et al. (2002) CoSINE model                **
 ** NPZD_FRANKS         use if NPZD Biology model, Franks et al. (1986)       **
 ** NPZD_IRON           use if NPZD Biology model with iron limitation        **
 ** NPZD_POWELL         use if NPZD Biology model, Powell et al. (2006)       **
@@ -671,6 +510,8 @@
 **    work yet.                                                              **
 **                                                                           **
 ** NEMURO              use if Nemuro ecosystem model.                        **
+** NEMURO_SED1         use if Nemuro sediment remineralization               **
+** PRIMARY_PROD        use if primary productivity output                    **
 ** BIO_SEDIMENT        use to restore fallen material to the nutrient pool   **
 ** HOLLING_GRAZING     use Holling-type s-shaped curve grazing (implicit)    **
 ** IVLEV_EXPLICIT      use Ivlev explicit grazing algorithm                  **
@@ -711,13 +552,24 @@
 ** SURFACE_STREAMING   activate wave enhanced surface streaming              **
 ** WAVE_MIXING         activate enhanced vertical viscosity mixing from waves**
 **                                                                           **
+** OPTIONS for grid nesting:                                                 **
+**                                                                           **
+** NESTING             use to activate grid nesting: composite/refinement    **
+** NO_CORRECT_TRACER   use to avoid two-way correction of boundary tracer    **
+** ONE_WAY             use if one-way nesting in refinement grids            **
+** TIME_INTERP_FLUX    time interpolate coarse mass flux instead of persist  **
+**                                                                           **
 ** NetCDF input/output OPTIONS:                                              **
 **                                                                           **
 ** DEFLATE             use to set compression NetCDF-4/HDF5 format files     **
-** NETCDF4             use to create NetCDF-4/HDF5 format files              **
+** HDF5                use to create NetCDF-4/HDF5 format files              **
+** NO_LBC_ATT          use to not check NLM_LBC global attribute on restart  **
 ** NO_READ_GHOST       use to not include ghost points during read/scatter   **
 ** NO_WRITE_GRID       use if not writing grid arrays                        **
+** PARALLEL_IO         use if parallel I/O via HDF5 or pnetcdf libraries     **
 ** PERFECT_RESTART     use to include perfect restart variables              **
+** PNETCDF             use if parallel I/O with pnetcdf (classic format)     **
+** POSITIVE_ZERO       use to impose positive zero in ouput data             **
 ** READ_WATER          use if only reading water points data                 **
 ** WRITE_WATER         use if only writing water points data                 **
 ** RST_SINGLE          use if writing single precision restart fields        **
@@ -749,6 +601,9 @@
 ** ICE_UPWIND          use for upwind advection scheme
 ** ICE_BULK_FLUXES     use for ice part of bulk flux computation
 ** ICE_CONVSNOW        use for conversion of flooded snow to ice
+** ICE_STRENGTH_QUAD   use for ice strength a quadratic function of thickness
+** NO_SCORRECTION_ICE  use for no scorrection under the ice
+** OUTFLOW_MASK        use for Hibler style outflow cells
 **
 ** OPTION to avoid writing current date and CPP options to NetCDF file       **
 ** headers. This is used to compare serial and parallel solutions where      **
@@ -764,21 +619,24 @@
 **                                                                           **
 ** Idealized Test Problems:                                                  **
 **                                                                           **
-** A4DVAR_TOY          4DVAR Data Assimilation Toy                           **
 ** BASIN               Big Bad Basin Example                                 **
 ** BENCHMARK           Benchmark Tests (small, Medium, big grids)            **
 ** BIO_TOY             One-dimension (vertical) Biology Toy                  **
 ** BL_TEST             Boundary Layers Test                                  **
+** CHANNEL             Periodic channel, Optimal Perturbations Test          **
 ** CANYON              Coastal form stress Canyon Test                       **
 ** CHANNEL_NECK        Channel with a Constriction                           **
 ** COUPLING_TEST       Two-way Atmosphere-Ocean Coupling Test                **
+** DOGBONE             Idealize nesting grids (Composite and Refinement) Test**
 ** DOUBLE_GYRE         Idealized Double-gyre Example                         **
 ** ESTUARY_TEST        Test Estuary for Sediment                             **
 ** FLT_TEST            Float Tracking Example                                **
 ** GRAV_ADJ            Gravitational Adjustment Example                      **
 ** INLET_TEST          Test Inlet Application                                **
+** ISOMIP              ISOMIP 2.01 Ice Shelf test case                       **
 ** KELVIN              Kelvin wave test                                      **
 ** LAB_CANYON          Lab Canyon, Polar Coordinates Example                 **
+** LAKE_JERSEY         Lake Jersey Nesting Test Case                         **
 ** LAKE_SIGNELL        Lake Signell Sediment Test Case                       **
 ** LMD_TEST            Test for LMD and KPP                                  **
 ** OVERFLOW            Gravitational/Overflow Example                        **
@@ -803,6 +661,7 @@
 **                                                                           **
 ** ADRIA02             Adriatic Sea Application                              **
 ** NJ_BIGHT            New Jersey Bight Application                          **
+** WC13                California Current System, 1/3 degree resolution      **
 **                                                                           **
 *******************************************************************************
 *******************************************************************************

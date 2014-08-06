@@ -1,8 +1,8 @@
       SUBROUTINE ana_cloud (ng, tile, model)
 !
-!! svn $Id: ana_cloud.h 429 2009-12-20 17:30:26Z arango $
+!! svn $Id$
 !!======================================================================
-!! Copyright (c) 2002-2010 The ROMS/TOMS Group                         !
+!! Copyright (c) 2002-2014 The ROMS/TOMS Group                         !
 !!   Licensed under a MIT/X style license                              !
 !!   See License_ROMS.txt                                              !
 !=======================================================================
@@ -49,9 +49,7 @@
       USE mod_param
       USE mod_scalars
 !
-#if defined EW_PERIODIC || defined NS_PERIODIC
       USE exchange_2d_mod, ONLY : exchange_r2d_tile
-#endif
 #ifdef DISTRIBUTE
       USE mp_exchange_mod, ONLY : mp_exchange2d
 #endif
@@ -70,18 +68,6 @@
 !
 !  Local variable declarations.
 !
-#ifdef DISTRIBUTE
-# ifdef EW_PERIODIC
-      logical :: EWperiodic=.TRUE.
-# else
-      logical :: EWperiodic=.FALSE.
-# endif
-# ifdef NS_PERIODIC
-      logical :: NSperiodic=.TRUE.
-# else
-      logical :: NSperiodic=.FALSE.
-# endif
-#endif
       integer :: iday, i, j, month, year
       real(r8) :: Cval, hour, yday
 
@@ -102,9 +88,9 @@
 !-----------------------------------------------------------------------
 !  Set analytical cloud fraction (%/100): 0=clear sky, 1:overcast sky.
 !-----------------------------------------------------------------------
-
-#if defined PAPA_CLM
 !
+#if defined PAPA_CLM
+
 !  OWS Papa cloud climatology.
 !
       CALL caldate (r_date, tdays(ng), year, yday, month, iday, hour)
@@ -122,22 +108,28 @@
 #else
       Cval=0.0_r8
 #endif
-!
-      DO j=JstrR,JendR
-        DO i=IstrR,IendR
+
+      DO j=JstrT,JendT
+        DO i=IstrT,IendT
           cloud(i,j)=Cval
         END DO
       END DO
-#if defined EW_PERIODIC || defined NS_PERIODIC
-      CALL exchange_r2d_tile (ng, tile,                                 &
-     &                        LBi, UBi, LBj, UBj,                       &
-     &                        cloud)
-#endif
+!
+!  Exchange boundary data.
+!
+      IF (EWperiodic(ng).or.NSperiodic(ng)) THEN
+        CALL exchange_r2d_tile (ng, tile,                               &
+     &                          LBi, UBi, LBj, UBj,                     &
+     &                          cloud)
+      END IF
+
 #ifdef DISTRIBUTE
       CALL mp_exchange2d (ng, tile, model, 1,                           &
      &                    LBi, UBi, LBj, UBj,                           &
-     &                    NghostPoints, EWperiodic, NSperiodic,         &
+     &                    NghostPoints,                                 &
+     &                    EWperiodic(ng), NSperiodic(ng),               &
      &                    cloud)
 #endif
+
       RETURN
       END SUBROUTINE ana_cloud_tile

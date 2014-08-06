@@ -3,7 +3,7 @@
 #ifdef ICE_MODEL
 !
 !=======================================================================
-!  Copyright (c) 2002 ROMS/TOMS Group                                  !
+!  Copyright (c) 2002-2014 The ROMS/TOMS Group                         !
 !================================================== Hernan G. Arango ===
 !                                                                      !
 !  This module computes the magnitude of the shear between the ice
@@ -51,7 +51,6 @@
 # ifdef ICE_MODEL
      &                     liuol(ng),                                   &
 # endif
-     &                     GRID(ng) % Hz,                               &
      &                     GRID(ng) % z_r,                              &
      &                     GRID(ng) % z_w,                              &
      &                     OCEAN(ng) % u,                               &
@@ -79,7 +78,7 @@
 # ifdef ICE_MODEL
      &                           liuol,                                 &
 # endif
-     &                           Hz, z_r, z_w,                          &
+     &                           z_r, z_w,                              &
      &                           u, v,                                  &
 # ifdef LMD_SKPP
      &                           hsbl,                                  &
@@ -106,7 +105,6 @@
       integer, intent(in) :: liuol
 
 # ifdef ASSUMED_SHAPE
-      real(r8), intent(in) :: Hz(LBi:,LBj:,:)
       real(r8), intent(in) :: z_r(LBi:,LBj:,:)
       real(r8), intent(in) :: z_w(LBi:,LBj:,0:)
       real(r8), intent(in) :: u(LBi:,LBj:,:,:)
@@ -120,7 +118,6 @@
       real(r8), intent(out) :: vwater(LBi:,LBj:)
       real(r8), intent(out) :: spd_iw(LBi:,LBj:)
 # else
-      real(r8), intent(in) :: Hz(LBi:UBi,LBj:UBj,N(ng))
       real(r8), intent(in) :: z_r(LBi:UBi,LBj:UBj,N(ng))
       real(r8), intent(in) :: z_w(LBi:UBi,LBj:UBj,0:N(ng))
       real(r8), intent(in) :: u(LBi:UBi,LBj:UBj,N(ng),2)
@@ -135,18 +132,6 @@
 !
 !  Local variable declarations.
 !
-# ifdef DISTRIBUTE
-#  ifdef EW_PERIODIC
-      logical :: EWperiodic=.TRUE.
-#  else
-      logical :: EWperiodic=.FALSE.
-#  endif
-#  ifdef NS_PERIODIC
-      logical :: NSperiodic=.TRUE.
-#  else
-      logical :: NSperiodic=.FALSE.
-#  endif
-# endif
       integer :: i, j
 
       integer :: nlio, nbotu, nbotv, k
@@ -162,66 +147,67 @@
 
 #  define I_RANGE MAX(Istr-2,0),MIN(Iend+2,Lm(ng)+1)
 #  define J_RANGE MAX(Jstr-2,0),MIN(Jend+2,Mm(ng)+1)
-        do j=J_RANGE
+      do j=J_RANGE
         do i=I_RANGE
-!             sl_dpth = lmd_epsilon*(z_w(i,j,N(ng))-hsbl(i,j))
+!         sl_dpth = lmd_epsilon*(z_w(i,j,N(ng))-Hsbl(i,j))
 #  ifdef LMD_SKPP
-              mlio = min(hsbl(i,j),-10._r8)
+! Hsbl is now a positive quantity
+          mlio = min(-Hsbl(i,j),-10._r8)
 #  else
-              mlio = -10._r8
+          mlio = -10._r8
 #  endif
-              nbot(i,j) = 1
-              do k=N(ng),1,-1
-                  if(z_r(i,j,k).lt.mlio) then
-                     nbot(i,j) = min(k,N(ng))
-                     nbot(i,j) = max(nbot(i,j),1)
-                     goto 1111
-                  endif
-              enddo
- 1111         continue
+          nbot(i,j) = 1
+          do k=N(ng),1,-1
+            if(z_r(i,j,k).lt.mlio) then
+              nbot(i,j) = min(k,N(ng))
+              nbot(i,j) = max(nbot(i,j),1)
+              goto 1111
+            endif
+          enddo
+ 1111   continue
         enddo
-        enddo
+      enddo
 #undef I_RANGE
 #undef J_RANGE
 #  define I_RANGE MAX(Istr-1,1),Iend+1             
-        do j=Jstr,Jend
+      do j=Jstr,Jend
         do i=I_RANGE
-             nlio = 0
-             nbotu = NINT(0.5_r8*(nbot(i-1,j)+nbot(i,j)))
-             nbotu = max(min(nbotu,N(ng)),1)
-             uw(i,j) = 0._r8
-             totml = 0._r8
-             do k=N(ng),nbotu,-1
-                nlio = nlio + 1
-                dml = 0.5_r8*(z_w(i-1,j,k)-z_w(i-1,j,k-1)               &
+          nlio = 0
+          nbotu = NINT(0.5_r8*(nbot(i-1,j)+nbot(i,j)))
+          nbotu = max(min(nbotu,N(ng)),1)
+          uw(i,j) = 0._r8
+          totml = 0._r8
+          do k=N(ng),nbotu,-1
+            nlio = nlio + 1
+            dml = 0.5_r8*(z_w(i-1,j,k)-z_w(i-1,j,k-1)               &
      &                      + z_w(i,j,k)-z_w(i,j,k-1))
-                uw(i,j) = uw(i,j) + u(i,j,k,nrhs)*dml
-                totml = totml + dml
-             enddo
-             uw(i,j) = uw(i,j)/totml
-!            uw(i,j) =  u(i,j,N,nrhs)
+            uw(i,j) = uw(i,j) + u(i,j,k,nrhs)*dml
+            totml = totml + dml
           enddo
+          uw(i,j) = uw(i,j)/totml
+!         uw(i,j) =  u(i,j,N,nrhs)
         enddo
+      enddo
 
 #  define J_RANGE MAX(Jstr-1,1),Jend+1 
-        do j=J_RANGE
-          do i=Istr,Iend
-             nlio = 0
-             nbotv = NINT(0.5_r8*(nbot(i,j-1)+nbot(i,j)))
-             nbotv = max(min(nbotv,N(ng)),1)
-             vw(i,j) = 0._r8
-             totml = 0._r8
-             do k=N(ng),nbotv,-1
-                nlio = nlio + 1
-                dml = 0.5_r8*(z_w(i,j-1,k)-z_w(i,j-1,k-1)               &
+      do j=J_RANGE
+        do i=Istr,Iend
+          nlio = 0
+          nbotv = NINT(0.5_r8*(nbot(i,j-1)+nbot(i,j)))
+          nbotv = max(min(nbotv,N(ng)),1)
+          vw(i,j) = 0._r8
+          totml = 0._r8
+          do k=N(ng),nbotv,-1
+            nlio = nlio + 1
+            dml = 0.5_r8*(z_w(i,j-1,k)-z_w(i,j-1,k-1)               &
      &                      + z_w(i,j,k)-z_w(i,j,k-1))
-                vw(i,j) = vw(i,j) + v(i,j,k,nrhs)*dml
-                totml = totml + dml
-             enddo
-             vw(i,j) = vw(i,j)/totml
-!            vw(i,j) =  v(i,j,N,nrhs)
+            vw(i,j) = vw(i,j) + v(i,j,k,nrhs)*dml
+            totml = totml + dml
           enddo
+          vw(i,j) = vw(i,j)/totml
+!         vw(i,j) =  v(i,j,N,nrhs)
         enddo
+      enddo
 #undef I_RANGE
 #undef J_RANGE
       do j=Jstr,Jend
@@ -233,11 +219,11 @@
         enddo
       enddo
       do j=Jstr,Jend
-        do i=IstrU,Iend
+        do i=IstrP,Iend
            uwater(i,j) = uw(i,j)
         enddo
       enddo
-      do j=JstrV,Jend
+      do j=JstrP,Jend
         do i=Istr,Iend
            vwater(i,j) = vw(i,j)
         enddo
@@ -257,7 +243,7 @@
 #ifdef DISTRIBUTE
       CALL mp_exchange2d (ng, tile, iNLM, 3,                            &
      &                    LBi, UBi, LBj, UBj,                           &
-     &                    NghostPoints, EWperiodic, NSperiodic,         &
+     &                    NghostPoints, EWperiodic(ng), NSperiodic(ng), &
      &                    spd_iw, uwater, vwater)
 #endif
 

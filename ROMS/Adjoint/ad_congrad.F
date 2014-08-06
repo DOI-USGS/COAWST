@@ -4,9 +4,9 @@
       SUBROUTINE ad_congrad (ng, model, outLoop, innLoop, NinnLoop,     &
      &                       Lcgini)
 !
-!svn $Id: ad_congrad.F 429 2009-12-20 17:30:26Z arango $
+!svn $Id$
 !=================================================== Andrew M. Moore ===
-!  Copyright (c) 2002-2010 The ROMS/TOMS Group      Hernan G. Arango   !
+!  Copyright (c) 2002-2014 The ROMS/TOMS Group      Hernan G. Arango   !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -137,11 +137,24 @@
 
       real(r8) :: dla, zbet
       real(r8) :: adfac, ad_dla
+# ifdef MINRES
+      integer :: ii
+      real(r8) :: zsum, zck, zgk
+      real(r8) :: ad_zsum, ad_zck, ad_zgk
+# endif
 
       real(r8), dimension(NinnLoop) :: zu, zgam
       real(r8), dimension(NinnLoop) :: ad_zu, ad_zrhs
       real(r8), dimension(Ndatum(ng)) :: pgrad, zt, pgrad_S
       real(r8), dimension(Ndatum(ng)) :: ad_px, ad_pgrad, ad_zt
+# ifdef MINRES
+      real(r8), dimension(innLoop,innLoop) :: ztriT, zLT, zLTt
+      real(r8), dimension(innLoop,innLoop) :: ztriTs
+      real(r8), dimension(innLoop,innLoop) :: ad_ztriT, ad_zLT
+      real(r8), dimension(innLoop,innLoop) :: ad_zLTt
+      real(r8), dimension(innLoop) :: tau, zwork1, ze, zeref, zes
+      real(r8), dimension(innLoop) :: ad_tau, ad_zwork1, ad_ze, ad_zeref
+# endif
 !
 !-----------------------------------------------------------------------
 !  Weak constraint 4DVar conjugate gradient, Lanczos-based algorithm.
@@ -169,6 +182,18 @@
         ad_zu=0.0_r8
         ad_zrhs=0.0_r8
         ad_zt=0.0_r8
+# ifdef MINRES
+        ad_ze=0.0_r8
+        ad_zsum=0.0_r8
+        ad_zck=0.0_r8
+        ad_zgk=0.0_r8
+        ad_ztriT=0.0_r8
+        ad_zLT=0.0_r8
+        ad_zLTt=0.0_r8
+        ad_tau=0.0_r8
+        ad_zwork1=0.0_r8
+        ad_zeref=0.0_r8
+# endif
 !
 !  Initialize cg_Gnorm. The adjoint of reprecond is not available.
 !
@@ -546,6 +571,99 @@
 !
           IF (innLoop.eq.NinnLoop) THEN
 
+# ifdef MINRES
+!
+!  Compute zu first.
+!
+!  Perform a LQ factorization of the tridiagonal matrix.
+!
+            ztriT=0.0_r8
+            DO i=1,innLoop
+              ztriT(i,i)=cg_delta(i,outLoop)
+            END DO
+            DO i=1,innLoop-1
+              ztriT(i,i+1)=cg_beta(i+1,outLoop)
+            END DO
+            DO i=2,innLoop
+              ztriT(i,i-1)=cg_beta(i,outLoop)
+            END DO
+!
+!  Save a copy of ztriT since it is overwritten by sqlq.
+!
+            DO j=1,innLoop
+              DO i=1,innLoop
+                ztriTs(i,j)=ztriT(i,j)
+              END DO
+            END DO
+!
+            CALL sqlq(innLoop, ztriT, tau, zwork1)
+!
+!   Isolate L=zLT and its transpose.
+!
+            zLT=0.0_r8
+            zLTt=0.0_r8
+            DO i=1,innLoop
+              DO j=1,i
+                zLT(i,j)=ztriT(i,j)
+              END DO
+            END DO
+            DO j=1,innLoop
+              DO i=1,innLoop
+                zLTt(i,j)=zLT(j,i)
+              END DO
+            END DO
+!
+!   Now form ze=beta1*Q*e1.
+!
+            ze=0.0_r8
+            DO i=1,innLoop
+              ze(i)=-cg_QG(i,outLoop)
+            END DO
+            DO i=1,innLoop
+              DO j=1,innLoop
+                zeref(j)=0.0_r8
+              END DO
+              zeref(i)=1.0_r8
+              DO j=i+1,innLoop
+                zeref(j)=ztriT(i,j)
+              END DO
+              zsum=0.0_r8
+              DO j=1,innLoop
+                zsum=zsum+ze(j)*zeref(j)
+              END DO
+              DO j=1,innLoop
+                ze(j)=ze(j)-tau(i)*zsum*zeref(j)
+              END DO
+            END DO
+!
+!   Save ze for use later.
+!
+            DO i=1,innLoop
+              zes(i)=ze(i)
+            END DO
+!
+!   Now form ze=D*ze (using equation 5.6 and 6.5 also).
+!
+            zgk=SQRT(zLT(innLoop,innLoop)*zLT(innLoop,innLoop)+         &
+     &          cg_beta(innLoop+1,outLoop)*cg_beta(innLoop+1,outLoop))
+            zck=zLT(innLoop,innLoop)/zgk
+            ze(innLoop)=zck*ze(innLoop)
+!
+!   Now compute ze=inv(L')*ze.
+!
+            DO j=innLoop,1,-1
+              ze(j)=ze(j)/zLTt(j,j)
+              DO i=1,j-1
+                ze(i)=ze(i)-ze(j)*zLTt(i,j)
+              END DO
+            END DO
+!
+!   Copy the solution ze into zu.
+!
+            DO i=1,innLoop
+              zu(i)=ze(i)
+            END DO
+# else
 !
 !  Compute zu and zgam first.
 !
@@ -561,7 +679,7 @@
             DO ivec=innLoop-1,1,-1
               zu(ivec)=zu(ivec)-zgam(ivec+1)*zu(ivec+1)
             END DO
-
+# endif
             DO iobs=1,Ndatum(ng)
               DO ivec=1,innLoop
 !>              tl_px(iobs)=tl_px(iobs)+                                &
@@ -578,6 +696,198 @@
               ad_px(iobs)=0.0_r8
             END DO
 
+# ifdef MINRES
+            DO i=1,innLoop
+!>            tl_zu(i)=tl_ze(i)
+!>
+              ad_ze(i)=ad_ze(i)+ad_zu(i)
+              ad_zu(i)=0.0_r8
+            END DO
+!
+!   Adjoint solver the linear triangular system.
+!
+            DO j=1,innLoop
+              DO i=j-1,1,-1
+!>              tl_ze(i)=tl_ze(i)-tl_ze(j)*zLTt(i,j)
+!>
+                ad_ze(j)=ad_ze(j)-ad_ze(i)*zLTt(i,j)
+              END DO
+!>            tl_ze(j)=tl_ze(j)/zLTt(j,j)
+!>
+              ad_ze(j)=ad_ze(j)/zLTt(j,j)
+            END DO
+!
+            DO i=1,innLoop
+!>            tl_ze(i)=tl_ze(i)-tl_zrhs(i)
+!>
+              ad_zrhs(i)=ad_zrhs(i)-ad_ze(i)
+              DO j=1,innLoop
+!>              tl_zrhs(i)=tl_zrhs(i)+tl_zLTt(i,j)*ze(j)
+!>
+                ad_zLTt(i,j)=ad_zLTt(i,j)+ze(j)*ad_zrhs(i)
+              END DO
+!>            tl_zrhs(i)=0.0_r8
+!>
+              ad_zrhs(i)=0.0_r8
+            END DO
+!
+!    Use saved values zes of ze here.
+!
+!>          tl_ze(innLoop)=tl_zck*ze(innLoop)+zck*tl_ze(innLoop)
+!>
+            ad_zck=ad_zck+zes(innLoop)*ad_ze(innLoop)
+            ad_ze(innLoop)=zck*ad_ze(innLoop)
+!>          tl_zck=tl_zLT(innLoop,innLoop)/zgk-tl_zgk*zck/zgk
+!>
+            adfac=ad_zck/zgk
+            ad_zLT(innLoop,innLoop)=ad_zLT(innLoop,innLoop)+adfac
+            ad_zgk=ad_zgk-zck*adfac
+            ad_zck=0.0_r8
+            IF (zgk.GT.0.0_r8) THEN
+!>            tl_zgk=(tl_zLT(innLoop,innLoop)*zLT(innLoop,innLoop)+     &
+!>   &                tl_cg_beta(innLoop+1)*cg_beta(innLoop+1,outLoop))/&
+!>   &               zgk
+!>
+              adfac=ad_zgk/zgk
+              ad_zLT(innLoop,innLoop)=ad_zLT(innLoop,innLoop)+          &
+     &                                zLT(innLoop,innLoop)*adfac
+              ad_cg_beta(innLoop+1)=ad_cg_beta(innLoop+1)+              &
+     &                              cg_beta(innLoop+1,outLoop)*adfac
+              ad_zgk=0.0_r8
+            ELSE
+!>            tl_zgk=0.0_r8
+!>
+              ad_zgk=0.0_r8
+            ENDIF
+!
+!   This is the adjoint multiplication by Q via the H matrices so must
+!   be done in reverse.
+!
+            DO i=innLoop,1,-1
+!
+!   Recompute intermediate arrays.
+!
+              DO j=1,innLoop
+                ze(j)=-cg_QG(j,outLoop)
+              END DO
+              DO ii=1,i
+                DO j=1,innLoop
+                  zeref(j)=0.0_r8
+                END DO
+                zeref(ii)=1.0_r8
+                DO j=ii+1,innLoop
+                  zeref(j)=ztriT(ii,j)
+                END DO
+                zsum=0.0_r8
+                DO j=1,innLoop
+                  zsum=zsum+ze(j)*zeref(j)
+                END DO
+!
+!  Save ze again.
+!
+                DO j=1,innLoop
+                  zes(j)=ze(j)
+                END DO
+                DO j=1,innLoop
+                  ze(j)=ze(j)-tau(ii)*zsum*zeref(j)
+                END DO
+              END DO
+!
+              DO j=1,innLoop
+!>              tl_ze(j)=tl_ze(j)-tl_tau(i)*zsum*zeref(j)-              &
+!>   &                            tau(i)*tl_zsum*zeref(j)-              &
+!>   &                            tau(i)*zsum*tl_zeref(j)
+!>
+                ad_tau(i)=ad_tau(i)-zsum*zeref(j)*ad_ze(j)
+                ad_zsum=ad_zsum-tau(i)*zeref(j)*ad_ze(j)
+                ad_zeref(j)=ad_zeref(j)-tau(i)*zsum*ad_ze(j)
+              END DO
+              DO j=1,innLoop
+!>              tl_zsum=tl_zsum+tl_ze(j)*zeref(j)+ze(j)*tl_zeref(j)
+!>
+                ad_ze(j)=ad_ze(j)+zeref(j)*ad_zsum
+                ad_zeref(j)=ad_zeref(j)+zes(j)*ad_zsum
+              END DO
+!>            tl_zsum=0.0_r8
+!>
+              ad_zsum=0.0_r8
+              DO j=i+1,innLoop
+!>              tl_zeref(j)=tl_ztriT(i,j)
+                ad_ztriT(i,j)=ad_ztriT(i,j)+ad_zeref(j)
+                ad_zeref(j)=0.0_r8
+              END DO
+!>            tl_zeref(i)=0.0_r8
+!>
+              ad_zeref(i)=0.0_r8
+              DO j=1,innLoop
+!>              tl_zeref(j)=0.0_r8
+!>
+                ad_zeref(j)=0.0_r8
+              END DO
+            END DO
+            DO i=1,innLoop
+!>            tl_ze(i)=-tl_cg_QG(i,outLoop)
+!>
+              ad_cg_QG(i)=ad_cg_QG(i)-ad_ze(i)
+              ad_ze(i)=0.0_r8
+            END DO
+!
+            DO j=1,innLoop
+              DO i=1,innLoop
+!>              tl_zLTt(i,j)=tl_zLT(j,i)
+!>
+                ad_zLT(j,i)=ad_zLT(j,i)+ad_zLTt(i,j)
+                ad_zLTt(i,j)=0.0_r8
+              END DO
+            END DO
+            DO i=1,innLoop
+              DO j=1,i
+!>              tl_zLT(i,j)=tl_ztriT(i,j)
+!>
+                ad_ztriT(i,j)=ad_ztriT(i,j)+ad_zLT(i,j)
+                ad_zLT(i,j)=0.0_r8
+              END DO
+            END DO
+!>          tl_zLT=0.0_r8
+!>
+            ad_zLT=0.0_r8
+!>          tl_zLTt=0.0_r8
+!>
+            ad_zLTt=0.0_r8
+!
+!  Grab a clean copy of ztriT.
+!
+            DO j=1,innLoop
+              DO i=1,innLoop
+                ztriT(i,j)=ztriTs(i,j)
+              END DO
+            END DO
+!
+            CALL ad_sqlq (innLoop, ztriT, ad_ztriT, tau, ad_tau,       &
+     &                    zwork1, ad_zwork1)
+!
+            DO i=2,innLoop
+!>            tl_ztriT(i,i-1)=tl_cg_beta(i)
+!>
+              ad_cg_beta(i)=ad_cg_beta(i)+ad_ztriT(i,i-1)
+              ad_ztriT(i,i-1)=0.0_r8
+            END DO
+            DO i=1,innLoop-1
+!>            tl_ztriT(i,i+1)=tl_cg_beta(i+1)
+!>
+              ad_cg_beta(i+1)=ad_cg_beta(i+1)+ad_ztriT(i,i+1)
+              ad_ztriT(i,i+1)=0.0_r8
+            END DO
+            DO i=1,innLoop
+!>            tl_ztriT(i,i)=tl_cg_delta(i)
+!>
+              ad_cg_delta(i)=ad_cg_delta(i)+ad_ztriT(i,i)
+              ad_ztriT(i,i)=0.0_r8
+            END DO
+!>          tl_ztriT=0.0_r8
+!>
+            ad_ztriT=0.0_r8
+# else
             IF (NinnLoop.eq.1) THEN
               zu(1)=-cg_QG(1,outLoop)/cg_delta(1,outLoop)
 !>            tl_zu(1)=tl_zrhs(1)/cg_delta(1,outLoop)
@@ -651,6 +961,7 @@
               ad_cg_beta(2)=ad_cg_beta(2)-zu(2)*ad_zrhs(1)
               ad_zrhs(1)=0.0_r8
             END IF
+# endif
           END IF
 
           DO iobs=1,Ndatum(ng)

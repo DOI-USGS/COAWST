@@ -2,7 +2,7 @@
 !
 !svn $Id: mp_routines.F 1336 2008-01-24 02:45:56Z jcwarner $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2010 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2014 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -44,6 +44,7 @@
 
       RETURN
       END SUBROUTINE my_flush
+
 #ifdef DISTRIBUTE
 !
 !-----------------------------------------------------------------------
@@ -99,9 +100,9 @@
 !-----------------------------------------------------------------------
 !
       USE mod_kinds
-
+!
       implicit none
-
+!
       integer :: my_numthreads
 
 #ifdef DISTRIBUTE
@@ -128,9 +129,9 @@
 !-----------------------------------------------------------------------
 !
       USE mod_kinds
-
+!
       implicit none
-
+!
       integer :: my_threadnum
 
 #if defined _OPENMP
@@ -153,16 +154,21 @@
 !-----------------------------------------------------------------------
 !
       USE mod_kinds
-
+!
       implicit none
-
-      real(r8), intent(out) :: wtime(2)
+!
+      real(r8) :: wtime(2)
       real(r8) :: my_wtime
+#ifdef _OPENMP
+      real(r8) :: omp_get_wtime
+#endif
 #ifdef CRAYX1
       integer :: count, count_rate, count_max
 #endif
 
-#ifdef CRAYX1
+#if defined _OPENMP
+      my_wtime=omp_get_wtime()
+#elif defined CRAYX1
       CALL system_clock (count, count_rate, count_max)
       my_wtime=REAL(count,r8)/REAL(count_rate,r8)
 #else

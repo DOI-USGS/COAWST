@@ -6,14 +6,14 @@
 !
 !svn $Id: conv_2d.F 732 2008-09-07 01:55:51Z jcwarner $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2010 The ROMS/TOMS Group       Andrew M. Moore   !
+!  Copyright (c) 2002-2014 The ROMS/TOMS Group       Andrew M. Moore   !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
 !                                                                      !
 !  These routines applies the background error covariance to data      !
 !  assimilation fields via the space convolution of the diffusion      !
-!  equation (filter) for 3D state variables. The diffusion filter      !
+!  equation (filter) for 2D state variables. The diffusion filter      !
 !  is solved using an explicit (inefficient) algorithm.                !
 !                                                                      !
 !  For Gaussian (bell-shaped) correlations, the space convolution      !
@@ -51,9 +51,9 @@
 !=======================================================================
 !
       implicit none
-
+!
       PUBLIC
-
+!
       CONTAINS
 !
 !***********************************************************************
@@ -70,6 +70,7 @@
 !***********************************************************************
 !
       USE mod_param
+      USE mod_scalars
 !
       USE bc_2d_mod, ONLY: bc_r2d_tile
 # ifdef DISTRIBUTE
@@ -113,18 +114,6 @@
 !
 !  Local variable declarations.
 !
-# ifdef DISTRIBUTE
-#  ifdef EW_PERIODIC
-      logical :: EWperiodic=.TRUE.
-#  else
-      logical :: EWperiodic=.FALSE.
-#  endif
-#  ifdef NS_PERIODIC
-      logical :: NSperiodic=.TRUE.
-#  else
-      logical :: NSperiodic=.FALSE.
-#  endif
-# endif
       integer :: Nnew, Nold, Nsav, i, j, step
 
       real(r8), dimension(LBi:UBi,LBj:UBj,2) :: Awrk
@@ -132,6 +121,7 @@
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: FE
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: FX
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: Hfac
+
 # include "set_bounds.h"
 !
 !-----------------------------------------------------------------------
@@ -151,10 +141,14 @@
 !
       Nold=1
       Nnew=2
+      CALL bc_r2d_tile (ng, tile,                                       &
+     &                  LBi, UBi, LBj, UBj,                             &
+     &                  A)
 # ifdef DISTRIBUTE
       CALL mp_exchange2d (ng, tile, model, 1,                           &
      &                    LBi, UBi, LBj, UBj,                           &
-     &                    Nghost, EWperiodic, NSperiodic,               &
+     &                    Nghost,                                       &
+     &                    EWperiodic(ng), NSperiodic(ng),               &
      &                    A)
 # endif
       DO j=Jstr-1,Jend+1
@@ -209,7 +203,8 @@
 # ifdef DISTRIBUTE
         CALL mp_exchange2d (ng, tile, model, 1,                         &
      &                      LBi, UBi, LBj, UBj,                         &
-     &                      Nghost, EWperiodic, NSperiodic,             &
+     &                      Nghost,                                     &
+     &                      EWperiodic(ng), NSperiodic(ng),             &
      &                      Awrk(:,:,Nnew))
 # endif
 !
@@ -235,7 +230,8 @@
 # ifdef DISTRIBUTE
       CALL mp_exchange2d (ng, tile, model, 1,                           &
      &                    LBi, UBi, LBj, UBj,                           &
-     &                    Nghost, EWperiodic, NSperiodic,               &
+     &                    Nghost,                                       &
+     &                    EWperiodic(ng), NSperiodic(ng),               &
      &                    A)
 # endif
 
@@ -256,6 +252,7 @@
 !***********************************************************************
 !
       USE mod_param
+      USE mod_scalars
 !
       USE bc_2d_mod, ONLY: bc_u2d_tile
 # ifdef DISTRIBUTE
@@ -297,18 +294,6 @@
 !
 !  Local variable declarations.
 !
-# ifdef DISTRIBUTE
-#  ifdef EW_PERIODIC
-      logical :: EWperiodic=.TRUE.
-#  else
-      logical :: EWperiodic=.FALSE.
-#  endif
-#  ifdef NS_PERIODIC
-      logical :: NSperiodic=.TRUE.
-#  else
-      logical :: NSperiodic=.FALSE.
-#  endif
-# endif
       integer :: Nnew, Nold, Nsav, i, j, step
 
       real(r8) :: cff
@@ -339,10 +324,14 @@
 !
       Nold=1
       Nnew=2
+      CALL bc_u2d_tile (ng, tile,                                       &
+     &                  LBi, UBi, LBj, UBj,                             &
+     &                  A)
 # ifdef DISTRIBUTE
       CALL mp_exchange2d (ng, tile, model, 1,                           &
      &                    LBi, UBi, LBj, UBj,                           &
-     &                    Nghost, EWperiodic, NSperiodic,               &
+     &                    Nghost,                                       &
+     &                    EWperiodic(ng), NSperiodic(ng),               &
      &                    A)
 # endif
       DO j=Jstr-1,Jend+1
@@ -395,7 +384,8 @@
 # ifdef DISTRIBUTE
         CALL mp_exchange2d (ng, tile, model, 1,                         &
      &                      LBi, UBi, LBj, UBj,                         &
-     &                      Nghost, EWperiodic, NSperiodic,             &
+     &                      Nghost,                                     &
+     &                      EWperiodic(ng), NSperiodic(ng),             &
      &                      Awrk(:,:,Nnew))
 # endif
 !
@@ -421,7 +411,8 @@
 # ifdef DISTRIBUTE
       CALL mp_exchange2d (ng, tile, model, 1,                           &
      &                    LBi, UBi, LBj, UBj,                           &
-     &                    Nghost, EWperiodic, NSperiodic,               &
+     &                    Nghost,                                       &
+     &                    EWperiodic(ng), NSperiodic(ng),               &
      &                    A)
 # endif
 
@@ -442,6 +433,7 @@
 !***********************************************************************
 !
       USE mod_param
+      USE mod_scalars
 !
       USE bc_2d_mod, ONLY: bc_v2d_tile
 # ifdef DISTRIBUTE
@@ -483,18 +475,6 @@
 !
 !  Local variable declarations.
 !
-# ifdef DISTRIBUTE
-#  ifdef EW_PERIODIC
-      logical :: EWperiodic=.TRUE.
-#  else
-      logical :: EWperiodic=.FALSE.
-#  endif
-#  ifdef NS_PERIODIC
-      logical :: NSperiodic=.TRUE.
-#  else
-      logical :: NSperiodic=.FALSE.
-#  endif
-# endif
       integer :: Nnew, Nold, Nsav, i, j, step
 
       real(r8) :: cff
@@ -525,10 +505,14 @@
 !
       Nold=1
       Nnew=2
+      CALL bc_v2d_tile (ng, tile,                                       &
+     &                  LBi, UBi, LBj, UBj,                             &
+     &                  A)
 # ifdef DISTRIBUTE
       CALL mp_exchange2d (ng, tile, model, 1,                           &
      &                    LBi, UBi, LBj, UBj,                           &
-     &                    Nghost, EWperiodic, NSperiodic,               &
+     &                    Nghost,                                       &
+     &                    EWperiodic(ng), NSperiodic(ng),               &
      &                    A)
 # endif
       DO j=JstrV-1,Jend+1
@@ -581,7 +565,8 @@
 # ifdef DISTRIBUTE
         CALL mp_exchange2d (ng, tile, model, 1,                         &
      &                      LBi, UBi, LBj, UBj,                         &
-     &                      Nghost, EWperiodic, NSperiodic,             &
+     &                      Nghost,                                     &
+     &                      EWperiodic(ng), NSperiodic(ng),             &
      &                      Awrk(:,:,Nnew))
 # endif
 !
@@ -607,7 +592,8 @@
 # ifdef DISTRIBUTE
       CALL mp_exchange2d (ng, tile, model, 1,                           &
      &                    LBi, UBi, LBj, UBj,                           &
-     &                    Nghost, EWperiodic, NSperiodic,               &
+     &                    Nghost,                                       &
+     &                    EWperiodic(ng), NSperiodic(ng),               &
      &                    A)
 # endif
 

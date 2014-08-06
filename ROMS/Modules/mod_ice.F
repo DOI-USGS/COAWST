@@ -32,6 +32,9 @@
           real(r8), pointer :: coef_ice_heat(:,:)
           real(r8), pointer :: rhs_ice_heat(:,:)
           real(r8), pointer :: pice(:,:)
+#ifdef ICE_STRENGTH_QUAD
+          real(r8), pointer :: pstar_grid(:,:)
+#endif
           real(r8), pointer :: zetai(:,:)
           real(r8), pointer :: eta(:,:)
           real(r8), pointer :: tauaiu(:,:)
@@ -45,6 +48,13 @@
           real(r8), pointer :: sig11(:,:,:)
           real(r8), pointer :: sig22(:,:,:)
           real(r8), pointer :: sig12(:,:,:)
+
+# if defined ICE_BIO  
+         real(r8), pointer ::IcePhL(:,:,:)
+         real(r8), pointer ::IceNO3(:,:,:)
+         real(r8), pointer ::IceNH4(:,:,:)
+         integer, pointer ::IceLog(:,:,:)
+# endif
 
         END TYPE T_ICE
 
@@ -100,6 +110,9 @@
       allocate ( ICE(ng) % coef_ice_heat(LBi:UBi,LBj:UBj) )
       allocate ( ICE(ng) % rhs_ice_heat(LBi:UBi,LBj:UBj) )
       allocate ( ICE(ng) % pice(LBi:UBi,LBj:UBj) )
+#ifdef ICE_STRENGTH_QUAD
+      allocate ( ICE(ng) % pstar_grid(LBi:UBi,LBj:UBj) )
+#endif
       allocate ( ICE(ng) % zetai(LBi:UBi,LBj:UBj) )
       allocate ( ICE(ng) % eta(LBi:UBi,LBj:UBj) )
       allocate ( ICE(ng) % tauaiu(LBi:UBi,LBj:UBj) )
@@ -113,6 +126,13 @@
       allocate ( ICE(ng) % sig11(LBi:UBi,LBj:UBj,2) )
       allocate ( ICE(ng) % sig22(LBi:UBi,LBj:UBj,2) )
       allocate ( ICE(ng) % sig12(LBi:UBi,LBj:UBj,2) )
+
+# if defined ICE_BIO  
+      allocate (ICE(ng) % IcePhL(LBi:UBi,LBj:UBj,2) )
+      allocate (ICE(ng) % IceNO3(LBi:UBi,LBj:UBj,2) )
+      allocate (ICE(ng) % IceNH4(LBi:UBi,LBj:UBj,2) )
+      allocate (ICE(ng) % IceLog(LBi:UBi,LBj:UBj,2) )
+# endif
 
       RETURN
       END SUBROUTINE allocate_ice
@@ -149,23 +169,23 @@
 !  Set array initialization range.
 !
 #ifdef _OPENMP
-      IF (WESTERN_EDGE) THEN
-        Imin=LBi
+      IF (DOMAIN(ng)%Western_Edge(tile)) THEN
+        Imin=BOUNDS(ng)%LBi(tile)
       ELSE
         Imin=Istr
       END IF
-      IF (EASTERN_EDGE) THEN
-        Imax=UBi
+      IF (DOMAIN(ng)%Eastern_Edge(tile)) THEN
+        Imax=BOUNDS(ng)%UBi(tile)
       ELSE
         Imax=Iend
       END IF
-      IF (SOUTHERN_EDGE) THEN
-        Jmin=LBj
+      IF (DOMAIN(ng)%Southern_Edge(tile)) THEN
+        Jmin=BOUNDS(ng)%LBj(tile)
       ELSE
-        Imin=Jstr
+        Jmin=Jstr
       END IF
-      IF (NORTHERN_EDGE) THEN
-        Jmax=UBj
+      IF (DOMAIN(ng)%Northern_Edge(tile)) THEN
+        Jmax=BOUNDS(ng)%UBj(tile)
       ELSE
         Jmax=Jend
       END IF
@@ -226,6 +246,9 @@
           ICE(ng) % coef_ice_heat(i,j) = IniVal
           ICE(ng) % rhs_ice_heat(i,j) = IniVal
           ICE(ng) % pice(i,j) = IniVal
+#ifdef ICE_STRENGTH_QUAD
+          ICE(ng) % pstar_grid(i,j) = IniVal
+#endif
           ICE(ng) % zetai(i,j) = IniVal
           ICE(ng) % eta(i,j) = IniVal
           ICE(ng) % tauaiu(i,j) = IniVal
@@ -243,6 +266,17 @@
           ICE(ng) % sig22(i,j,2) = IniVal
           ICE(ng) % sig12(i,j,1) = IniVal
           ICE(ng) % sig12(i,j,2) = IniVal
+
+# if defined ICE_BIO  
+          ICE(ng) % IcePhL(i,j,1) = IniVal
+          ICE(ng) % IcePhL(i,j,2) = IniVal
+          ICE(ng) % IceNO3(i,j,1) = IniVal
+          ICE(ng) % IceNO3(i,j,2) = IniVal
+          ICE(ng) % IceNH4(i,j,1) = IniVal
+          ICE(ng) % IceNH4(i,j,2) = IniVal
+          ICE(ng) % IceLog(i,j,1) = -1
+          ICE(ng) % IceLog(i,j,2) = -1
+# endif
         END DO
       END DO
 

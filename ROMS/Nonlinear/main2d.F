@@ -1,22 +1,19 @@
 #include "cppdefs.h"
 #if defined NONLINEAR && !defined SOLVE3D
-# if !defined REFINED_GRID
-      SUBROUTINE main2d
-# else
-      SUBROUTINE main2d(ng)
-# endif
+      SUBROUTINE main2d (RunInterval)
 !
 !svn $Id: main2d.F 838 2008-11-17 04:22:18Z jcwarner $
 !=======================================================================
-!  Copyright (c) 2002-2010 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2014 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                           Hernan G. Arango   !
 !========================================== Alexander F. Shchepetkin ===
 !                                                                      !
 !  This subroutine is the main driver for nonlinear ROMS/TOMS when     !
 !  configurated as shallow water (barotropic) ocean model only. It     !
-!  advances forward the  vertically integrated primitive equations     !
-!  for a single time step.                                             !
+!  advances forward  the vertically integrated primitive equations     !
+!  for all nested grids,  if any,  by the specified  time interval     !
+!  (seconds), RunInterval.                                             !
 !                                                                      !
 !=======================================================================
 !
@@ -26,6 +23,9 @@
       USE mod_coupler
 # endif
       USE mod_iounits
+# ifdef NESTING
+      USE mod_nesting
+# endif
       USE mod_scalars
       USE mod_stepping
 !
@@ -41,6 +41,9 @@
       USE frc_adjust_mod, ONLY : frc_adjust
 # endif
       USE ini_fields_mod, ONLY : ini_fields, ini_zeta
+# ifdef NESTING
+      USE nesting_mod, ONLY : nesting
+# endif
 # if defined ADJUST_BOUNDARY
       USE obc_adjust_mod, ONLY : obc_adjust, load_obc
 # endif
@@ -50,16 +53,17 @@
 # ifdef WAVES_OCEAN
       USE ocean_coupler_mod, ONLY : ocn2wav_coupling
 # endif
-# ifdef COMPOSED_GRID
-      USE nesting_mod, ONLY : nesting
-# endif
-# ifdef ASSIMILATION
-      USE oi_update_mod, ONLY : oi_update
-# endif
 # ifdef WEC_MELLOR
       USE radiation_stress_mod, ONLY : radiation_stress
 # endif
-# if defined AVERAGES && !defined ADJOINT
+# ifdef BULK_FLUXES2D
+#  ifdef CCSM_FLUXES2D
+      USE ccsm_flux_mod, ONLY : ccsm_flux
+#  else
+      USE bulk_flux_mod, ONLY : bulk_flux
+#  endif
+# endif
+# ifdef AVERAGES
       USE set_avg_mod, ONLY : set_avg
 # endif
 # if defined SSH_TIDES || defined UV_TIDES
@@ -70,51 +74,67 @@
 # ifdef FLOATS
       USE step_floats_mod, ONLY : step_floats
 # endif
-# ifdef REFINED_GRID
-      USE get_2dparent_data_mod, ONLY : get_2dparent_data
-      USE set_2dparent_data_mod, ONLY : set_2dparent_data
-      USE set_2dchild_data_mod, ONLY : set_2dchild_data
-# endif
 !
       implicit none
 !
 !  Imported variable declarations.
 !
-# if !defined REFINED_GRID
-      integer :: ng
-# else
-      integer, intent(in) :: ng
-# endif
+      real(r8), intent(in) :: RunInterval
 !
 !  Local variable declarations.
 !
-      integer :: next_indx1, subs, tile, thread
+      logical :: Time_Step
+
+      integer :: Nsteps, Rsteps
+      integer :: ig, istep, ng, nl, tile
+      integer :: next_indx1
 # ifdef FLOATS
       integer :: Lend, Lstr, chunk_size
-# endif
-# if defined W4DPSAS || defined NLM_OUTER
-      real(r8) :: HalfDT
-# endif
-# if defined REFINED_GRID
-      integer :: ngp
-      ngp=myparent(ng)
 # endif
 !
 !=======================================================================
 !  Time-step vertically integrated equations.
 !=======================================================================
 !
-!  Set time clock.
+!  Time-step the 3D kernel for the specified time interval (seconds),
+!  RunInterval.
 !
-# if !defined REFINED_GRID
-      DO ng=1,Ngrids
-# endif
-        time(ng)=time(ng)+dt(ng)
-        tdays(ng)=time(ng)*sec2day
-        CALL time_string (time(ng), time_code(ng))
-# if !defined REFINED_GRID
-      END DO
-# endif
+      Time_Step=.TRUE.
+!
+      KERNEL_LOOP : DO WHILE (Time_Step)
+!
+!  In nesting applications, the number of nesting layers (NestLayers) is
+!  used to facilitate refinement grids and composite/refinament grids
+!  combinations. Otherwise, the solution it is looped once for a single
+!  grid application (NestLayers = 1).
+!
+        NEST_LAYER : DO nl=1,NestLayers
+!
+!  Determine number of time steps to compute in each nested grid layer
+!  based on the specified time interval (seconds), RunInterval. Non
+!  nesting applications have NestLayers=1. Notice that RunInterval is
+!  set in the calling driver. Its value may span the full period of the
+!  simulation, or a multi-model coupling interval, or just a single
+!  step.
+!
+          CALL ntimesteps (nl, GridsInLayer(nl), iNLM, RunInterval,     &
+     &                     Nsteps, Rsteps)
+          IF (exit_flag.ne.NoError) RETURN
+!
+!  Time-step governing equations for Nsteps.
+!
+          STEP_LOOP : DO istep=1,Nsteps
+!
+!  Set time indices and time clock.
+!
+            DO ig=1,GridsInLayer(nl)
+              ng=GridNumber(ig,nl)
+              iic(ng)=iic(ng)+1
+              time(ng)=time(ng)+dt(ng)
+              tdays(ng)=time(ng)*sec2day
+              CALL time_string (time(ng), time_code(ng))
+              IF (step_counter(ng).eq.Rsteps) Time_Step=.FALSE.
+            END DO
 
 # if defined W4DPSAS || defined NLM_OUTER || \
      defined W4DPSAS_SENSITIVITY
@@ -127,110 +147,97 @@
 !  snapshots (FrequentImpulse=TRUE).
 !-----------------------------------------------------------------------
 !
-      IF (FrequentImpulse) THEN
-!$OMP PARALLEL DO PRIVATE(thread,subs,tile) SHARED(ng,numthreads)
-# if !defined REFINED_GRID
-        DO ng=1,Ngrids
-# endif
-          DO thread=0,numthreads-1
-            subs=NtileX(ng)*NtileE(ng)/numthreads
-            DO tile=subs*thread,subs*(thread+1)-1,+1
-              CALL forcing (ng, TILE, kstp(ng), nstp(ng))
+            DO ig=1,GridsInLayer(nl)
+              ng=GridNumber(ig,nl)
+              IF (FrequentImpulse(ng)) THEN
+                DO tile=first_tile(ng),last_tile(ng),+1
+                  CALL forcing (ng, tile, kstp(ng), nstp(ng))
+                END DO
+!$OMP BARRIER
+              END IF
             END DO
-          END DO
-# if !defined REFINED_GRID
-        END DO
-# endif
-!$OMP END PARALLEL DO
-      END IF
 # endif
 !
 !-----------------------------------------------------------------------
 !  Read in required data, if any, from input NetCDF files.
 !-----------------------------------------------------------------------
 !
-# if !defined REFINED_GRID
-      DO ng=1,Ngrids
-# endif
-        CALL get_data (ng)
-# if !defined REFINED_GRID
-      END DO
-# endif
-      IF (exit_flag.ne.NoError) RETURN
+            DO ig=1,GridsInLayer(nl)
+              ng=GridNumber(ig,nl)
+!$OMP MASTER
+              CALL get_data (ng)
+!$OMP END MASTER
+!$OMP BARRIER
+              IF (exit_flag.ne.NoError) RETURN
+            END DO
 !
 !-----------------------------------------------------------------------
 !  If applicable, process input data: time interpolate between data
 !  snapshots.
 !-----------------------------------------------------------------------
 !
-!$OMP PARALLEL DO PRIVATE(thread,subs,tile) SHARED(ng,numthreads)
-# if !defined REFINED_GRID
-      DO ng=1,Ngrids
-# endif
-        DO thread=0,numthreads-1
-          subs=NtileX(ng)*NtileE(ng)/numthreads
-          DO tile=subs*thread,subs*(thread+1)-1,+1
-            CALL set_data (ng, TILE)
-          END DO
-        END DO
-# if !defined REFINED_GRID
-      END DO
-# endif
-!$OMP END PARALLEL DO
-      IF (exit_flag.ne.NoError) RETURN
+            DO ig=1,GridsInLayer(nl)
+              ng=GridNumber(ig,nl)
+              DO tile=first_tile(ng),last_tile(ng),+1
+                CALL set_data (ng, tile)
+              END DO
+!$OMP BARRIER
+            END DO
+            IF (exit_flag.ne.NoError) RETURN
+
+# ifdef NESTING
 !
 !-----------------------------------------------------------------------
-!  Get data from parent grids.
+!  If refinement grid and not initialization, extract donor grid data.
 !-----------------------------------------------------------------------
 !
-# ifdef REFINED_GRID
-! get data from parent grid at time of parent. Only need to 
-! do this once per child loop.
-        IF (ng.gt.1) THEN
-          IF (get_refdata(ng).eq.1) THEN
-            CALL get_2dparent_data (ng, TILE)
-          END IF
-        END IF
-! put child data back to parent 
-        IF ((ng.lt.Ngrids).and.(iic(ng).gt.1)) THEN
-          CALL set_2dchild_data (ng, TILE)
-        END IF
+            DO ig=1,GridsInLayer(nl)
+              ng=GridNumber(ig,nl)
+              IF (RefinedGrid(ng).and.(iic(ng).gt.1)) THEN
+!
+!  Extract donor grid data at contact points and store it in REFINED
+!  structure so it can be used for the space-time interpolation.
+!
+                IF ((istep.eq.1).and.(RefineScale(ng).gt.0)) THEN
+                  CALL nesting (ng, iNLM, ngetD)
+                END IF
+              END IF
+            END DO
 # endif
 !
 !-----------------------------------------------------------------------
 !  Initialize all time levels and compute other initial fields.
 !-----------------------------------------------------------------------
 !
-# if !defined REFINED_GRID
-      DO ng=1,Ngrids
-# endif
-        IF (iic(ng).eq.ntstart(ng)) THEN
+            DO ig=1,GridsInLayer(nl)
+              ng=GridNumber(ig,nl)
+              IF (iic(ng).eq.ntstart(ng)) THEN
 !
 !  Initialize free-surface.
 !
-!$OMP PARALLEL DO PRIVATE(thread,subs,tile) SHARED(ng,numthreads)
-        DO thread=0,numthreads-1
-          subs=NtileX(ng)*NtileE(ng)/numthreads
-          DO tile=subs*thread,subs*(thread+1)-1,+1
-            CALL ini_zeta (ng, TILE, iNLM)
-          END DO
-        END DO
-!$OMP END PARALLEL DO
+                DO tile=first_tile(ng),last_tile(ng),+1
+                  CALL ini_zeta (ng, tile, iNLM)
+                END DO
+!$OMP BARRIER
 !
 !  Initialize other state variables.
 !
-!$OMP PARALLEL DO PRIVATE(thread,subs,tile) SHARED(ng,numthreads)
-          DO thread=0,numthreads-1
-            subs=NtileX(ng)*NtileE(ng)/numthreads
-            DO tile=subs*(thread+1)-1,subs*thread,-1
-              CALL ini_fields (ng, TILE, iNLM)
-            END DO
-          END DO
-!$OMP END PARALLEL DO
-        END IF
-# if !defined REFINED_GRID
-      END DO
+                DO tile=last_tile(ng),first_tile(ng),-1
+                  CALL ini_fields (ng, tile, iNLM)
+                END DO
+!$OMP BARRIER
+
+# ifdef NESTING
+!
+!  Extract donor grid initial data at contact points and store it in
+!  REFINED structure so it can be used for the space-time interpolation.
+!
+                IF (RefinedGrid(ng)) THEN
+                  CALL nesting (ng, iNLM, ngetD)
+                END IF
 # endif
+              END IF
+            END DO
 !
 !-----------------------------------------------------------------------
 !  Compute and report diagnostics. If appropriate, accumulate time-
@@ -238,31 +245,27 @@
 !  jobs.
 !-----------------------------------------------------------------------
 !
-!$OMP PARALLEL DO PRIVATE(thread,subs,tile)                             &
-!$OMP&            SHARED(ng,Lnew,numthreads)
-# if !defined REFINED_GRID
-      DO ng=1,Ngrids
-# endif
-        DO thread=0,numthreads-1
-          subs=NtileX(ng)*NtileE(ng)/numthreads
-          DO tile=subs*thread,subs*(thread+1)-1,+1     ! irreversible loop
-# if defined AVERAGES && !defined ADJOINT
-            CALL set_avg (ng, TILE)
+            DO ig=1,GridsInLayer(nl)
+              ng=GridNumber(ig,nl)
+              DO tile=first_tile(ng),last_tile(ng),+1     ! irreversible
+# ifdef AVERAGES
+#  ifdef FILTERED
+                CALL set_filter (ng, tile)
+#  else
+                CALL set_avg (ng, tile)
+#  endif
 # endif
 # ifdef DIAGNOSTICS
-            CALL set_diags (ng, TILE)
+                CALL set_diags (ng, tile)
 # endif
-            CALL diag (ng, TILE)
+                CALL diag (ng, tile)
 # ifdef TLM_CHECK
-            CALL nl_dotproduct (ng, TILE, Lnew(ng))
+                CALL nl_dotproduct (ng, tile, Lnew(ng))
 # endif
-          END DO
-        END DO
-# if !defined REFINED_GRID
-      END DO
-# endif
-!$OMP END PARALLEL DO
-      IF (exit_flag.ne.NoError) RETURN
+              END DO
+!$OMP BARRIER
+            END DO
+            IF (exit_flag.ne.NoError) RETURN
 
 # ifdef AIR_OCEAN
 !
@@ -271,24 +274,18 @@
 !  timesteps: get air/sea fluxes.
 !-----------------------------------------------------------------------
 !
-#  if !defined REFINED_GRID
-      DO ng=1,Ngrids
-#  endif
-      IF ((iic(ng).ne.ntstart(ng)).and.                                 &
-     &    MOD(iic(ng),CoupleSteps(Iatmos,ng)).eq.0) THEN
-!$OMP PARALLEL DO PRIVATE(thread,subs,tile) SHARED(ng,numthreads)
-          DO thread=0,numthreads-1
-            subs=NtileX(ng)*NtileE(ng)/numthreads
-            DO tile=subs*(thread+1)-1,subs*thread,-1
-              CALL ocn2atm_coupling (ng, TILE)
+            DO ig=1,GridsInLayer(nl)
+              ng=GridNumber(ig,nl)
+              IF ((iic(ng).ne.ntstart(ng)).and.                         &
+     &            MOD(iic(ng),CoupleSteps(Iatmos,ng)).eq.0) THEN
+                DO tile=last_tile(ng),first_tile(ng),-1
+                  CALL ocn2atm_coupling (ng, tile)
+                END DO
+!$OMP BARRIER
+              END IF
             END DO
-          END DO
-!$OMP END PARALLEL DO
-        END IF
-#  if !defined REFINED_GRID
-      END DO
-#  endif
 # endif
+
 # ifdef ADJUST_BOUNDARY
 !
 !-----------------------------------------------------------------------
@@ -297,17 +294,16 @@
 !  timestep.
 !-----------------------------------------------------------------------
 !
-      IF (iic(ng).lt.(ntend(ng)+1)) THEN
-!$OMP PARALLEL DO PRIVATE(thread,subs,tile) SHARED(ng,numthreads)
-        DO thread=0,numthreads-1
-          subs=NtileX(ng)*NtileE(ng)/numthreads
-          DO tile=subs*thread,subs*(thread+1)-1,+1
-            CALL obc_adjust (ng, TILE, Lbinp(ng))
-            CALL load_obc (ng, TILE, Lbout(ng))
-          END DO
-        END DO
-!$OMP END PARALLEL DO
-      END IF
+            DO ig=1,GridsInLayer(nl)
+              ng=GridNumber(ig,nl)
+              IF (iic(ng).lt.(ntend(ng)+1)) THEN
+                DO tile=first_tile(ng),last_tile(ng),+1
+                  CALL obc_adjust (ng, tile, Lbinp(ng))
+                  CALL load_obc (ng, tile, Lbout(ng))
+                END DO
+!$OMP BARRIER
+              END IF
+            END DO
 # endif
 
 # ifdef ADJUST_WSTRESS
@@ -317,16 +313,15 @@
 !  Load surface forcing to storage arrays.
 !-----------------------------------------------------------------------
 !
-      IF (iic(ng).lt.(ntend(ng)+1)) THEN
-!$OMP PARALLEL DO PRIVATE(thread,subs,tile) SHARED(ng,Lfout,numthreads)
-        DO thread=0,numthreads-1
-          subs=NtileX(ng)*NtileE(ng)/numthreads
-          DO tile=subs*thread,subs*(thread+1)-1,+1
-            CALL frc_adjust (ng, TILE, Lfinp(ng), Lfout(ng))
-          END DO
-        END DO
-!$OMP END PARALLEL DO
-      END DO
+            DO ig=1,GridsInLayer(nl)
+              ng=GridNumber(ig,nl)
+              IF (iic(ng).lt.(ntend(ng)+1)) THEN
+                DO tile=first_tile(ng),last_tile(ng),+1
+                  CALL frc_adjust (ng, tile, Lfinp(ng))
+                END DO
+!$OMP BARRIER
+              END IF
+            END DO
 # endif
 
 # ifdef WAVES_OCEAN
@@ -336,23 +331,16 @@
 !  timesteps: get waves/sea fluxes.
 !-----------------------------------------------------------------------
 !
-#  if !defined REFINED_GRID
-      DO ng=1,Ngrids
-#  endif
-      IF ((iic(ng).ne.ntstart(ng)).and.                                 &
-     &    MOD(iic(ng)-1,CoupleSteps(Iwaves,ng)).eq.0) THEN
-!$OMP PARALLEL DO PRIVATE(thread,subs,tile) SHARED(ng,numthreads)
-          DO thread=0,numthreads-1
-            subs=NtileX(ng)*NtileE(ng)/numthreads
-            DO tile=subs*thread,subs*(thread+1)-1,+1
-              CALL ocn2wav_coupling (ng, TILE)
+            DO ig=1,GridsInLayer(nl)
+              ng=GridNumber(ig,nl)
+              IF ((iic(ng).ne.ntstart(ng)).and.                         &
+     &            MOD(iic(ng)-1,CoupleSteps(Iwaves,ng)).eq.0) THEN
+                DO tile=first_tile(ng),last_tile(ng),+1
+                  CALL ocn2wav_coupling (ng, tile)
+                END DO
+!$OMP BARRIER
+              END IF
             END DO
-          END DO
-!$OMP END PARALLEL DO
-        END IF
-#  if !defined REFINED_GRID
-      END DO
-#  endif
 # endif
 
 # ifdef WEC_MELLOR
@@ -361,45 +349,48 @@
 !  Compute radiation stress terms.
 !-----------------------------------------------------------------------
 !
-!$OMP PARALLEL DO PRIVATE(thread,subs,tile) SHARED(ng,numthreads)
-#  if !defined REFINED_GRID
-      DO ng=1,Ngrids
-#  endif
-        DO thread=0,numthreads-1
-          subs=NtileX(ng)*NtileE(ng)/numthreads
-          DO tile=subs*(thread+1)-1,subs*thread,-1
-            CALL radiation_stress (ng, TILE)
-          END DO
-        END DO
-#  if !defined REFINED_GRID
-      END DO
-#  endif
-!$OMP END PARALLEL DO
+            DO ig=1,GridsInLayer(nl)
+              ng=GridNumber(ig,nl)
+              DO tile=last_tile(ng),first_tile(ng),-1
+                CALL radiation_stress (ng, tile)
+              END DO
+!$OMP BARRIER
+            END DO
 # endif
 !
 !-----------------------------------------------------------------------
 !  Set vertical boundary conditions. Process tidal forcing.
 !-----------------------------------------------------------------------
 !
-!$OMP PARALLEL DO PRIVATE(thread,subs,tile) SHARED(numthreads)
-# if !defined REFINED_GRID
-      DO ng=1,Ngrids
+            DO ig=1,GridsInLayer(nl)
+              ng=GridNumber(ig,nl)
+              DO tile=first_tile(ng),last_tile(ng),+1
+# ifdef BULK_FLUXES2D
+#  ifdef CCSM_FLUXES2D
+                CALL ccsm_flux (ng, tile)
+#  else
+                CALL bulk_flux (ng, tile)
+#  endif
 # endif
-        DO thread=0,numthreads-1
-          subs=NtileX(ng)*NtileE(ng)/numthreads
-          DO tile=subs*thread,subs*(thread+1)-1,+1
-            CALL set_vbc (ng, TILE)
+                CALL set_vbc (ng, tile)
 # if defined SSH_TIDES || defined UV_TIDES
-            CALL set_tides (ng, TILE)
+                CALL set_tides (ng, tile)
 # endif
-          END DO
-        END DO
-# if !defined REFINED_GRID
-      END DO
-# endif
-!$OMP END PARALLEL DO
-# ifdef COMPOSED_GRID
-      CALL nesting (100)
+              END DO
+!$OMP BARRIER
+            END DO
+
+# ifdef NESTING
+!
+!  If composite or mosaic grids, process additional points in the
+!  contact zone between connected grids for bottom stress variables.
+!
+            DO ig=1,GridsInLayer(nl)
+              ng=GridNumber(ig,nl)
+              IF (ANY(CompositeGrid(:,ng))) THEN
+                CALL nesting (ng, iNLM, nbstr)
+              END IF
+            END DO
 # endif
 !
 !-----------------------------------------------------------------------
@@ -408,21 +399,31 @@
 !  time step.
 !-----------------------------------------------------------------------
 !
-# if !defined REFINED_GRID
-      DO ng=1,Ngrids
-# endif
-        CALL output (ng)
-        IF ((exit_flag.ne.NoError).or.                                  &
-     &      (iic(ng).eq.(ntend(ng)+1))) RETURN
-# if !defined REFINED_GRID
-      END DO
-# endif
+            DO ig=1,GridsInLayer(nl)
+              ng=GridNumber(ig,nl)
+!$OMP MASTER
+              CALL output (ng)
+!$OMP END MASTER
+!$OMP BARRIER
+              IF ((exit_flag.ne.NoError).or.                            &
+     &            ((iic(ng).eq.(ntend(ng)+1)).and.(ng.eq.Ngrids))) THEN
+                RETURN
+              END IF
+            END DO
+
+# ifdef NESTING
 !
-# ifdef REFINED_GRID
-! Interpolate the parent data to child time.
-      IF (ng.gt.1) THEN
-        CALL set_2dparent_data (ng, TILE)
-      END IF
+!-----------------------------------------------------------------------
+!  If refinement grid, interpolate (space, time) state variables
+!  contact points from donor grid extracted data.
+!-----------------------------------------------------------------------
+!
+            DO ig=1,GridsInLayer(nl)
+              ng=GridNumber(ig,nl)
+              IF (RefinedGrid(ng).and.(RefineScale(ng).gt.0)) THEN
+                CALL nesting (ng, iNLM, nputD)
+              END IF
+            END DO
 # endif
 !
 !-----------------------------------------------------------------------
@@ -430,134 +431,133 @@
 !  free-surface and momentum components.
 !-----------------------------------------------------------------------
 !
+# ifndef OFFLINE_FLOATS
 !  Set time indices for predictor step. The PREDICTOR_2D_STEP switch
 !  it is assumed to be false before the first time-step.
 !
-# if !defined REFINED_GRID
-      DO ng=1,Ngrids
-# endif
-        iif(ng)=1
-        nfast(ng)=1
-        next_indx1=3-indx1(ng)
-        IF (.not.PREDICTOR_2D_STEP(ng)) THEN
-          PREDICTOR_2D_STEP(ng)=.TRUE.
-          IF (FIRST_2D_STEP) THEN
-            kstp(ng)=indx1(ng)
-          ELSE
-            kstp(ng)=3-indx1(ng)
-          END IF
-          knew(ng)=3
-          krhs(ng)=indx1(ng)
-        END IF
+            DO ig=1,GridsInLayer(nl)
+              ng=GridNumber(ig,nl)
+              iif(ng)=1
+              nfast(ng)=1
+              next_indx1=3-indx1(ng)
+              IF (.not.PREDICTOR_2D_STEP(ng)) THEN
+                PREDICTOR_2D_STEP(ng)=.TRUE.
+                IF (FIRST_2D_STEP) THEN
+                  kstp(ng)=indx1(ng)
+                ELSE
+                  kstp(ng)=3-indx1(ng)
+                END IF
+                knew(ng)=3
+                krhs(ng)=indx1(ng)
+              END IF
 !
 !  Predictor step - Advance barotropic equations using 2D time-step
 !  ==============   predictor scheme.
 !
-!$OMP PARALLEL DO PRIVATE(thread,subs,tile) SHARED(ng,numthreads)
-        DO thread=0,numthreads-1
-          subs=NtileX(ng)*NtileE(ng)/numthreads
-          DO tile=subs*(thread+1)-1,subs*thread,-1
-            CALL step2d (ng, TILE)
-          END DO
-        END DO
-!$OMP END PARALLEL DO
-# if !defined REFINED_GRID
-      END DO
-# endif
-# ifdef COMPOSED_GRID
-      CALL nesting (100)
+              DO tile=last_tile(ng),first_tile(ng),-1
+                CALL step2d (ng, tile)
+              END DO
+!$OMP BARRIER
+            END DO
+
+# ifdef NESTING
+!
+!  If composite or mosaic grids, process additional points in the
+!  contact zone between connected grids for the state variables
+!  associated with the 2D engine Predictor Step section.
+!
+            DO ig=1,GridsInLayer(nl)
+              ng=GridNumber(ig,nl)
+              IF (ANY(CompositeGrid(:,ng))) THEN
+                CALL nesting (ng, iNLM, n2dPS)
+              END IF
+            END DO
 # endif
 !
 !  Set time indices for corrector step.
 !
-# if !defined REFINED_GRID
-      DO ng=1,Ngrids
-# endif
-        IF (PREDICTOR_2D_STEP(ng)) THEN
-          PREDICTOR_2D_STEP(ng)=.FALSE.
-          knew(ng)=next_indx1
-          kstp(ng)=3-knew(ng)
-          krhs(ng)=3
-          IF (iif(ng).lt.(nfast(ng)+1)) indx1(ng)=next_indx1
-        END IF
+            DO ig=1,GridsInLayer(nl)
+              ng=GridNumber(ig,nl)
+              IF (PREDICTOR_2D_STEP(ng)) THEN
+                PREDICTOR_2D_STEP(ng)=.FALSE.
+                knew(ng)=next_indx1
+                kstp(ng)=3-knew(ng)
+                krhs(ng)=3
+                IF (iif(ng).lt.(nfast(ng)+1)) indx1(ng)=next_indx1
+              END IF
 !
 !  Corrector step - Apply 2D time-step corrector scheme.  Notice that
 !  ==============   there is not need for a corrector step during the
 !  auxiliary (nfast+1) time-step.
 !
-        IF (iif(ng).lt.(nfast(ng)+1)) THEN
-!$OMP PARALLEL DO PRIVATE(thread,subs,tile) SHARED(ng,numthreads)
-          DO thread=0,numthreads-1
-            subs=NtileX(ng)*NtileE(ng)/numthreads
-            DO tile=subs*thread,subs*(thread+1)-1,+1
-              CALL step2d (ng, TILE)
+              IF (iif(ng).lt.(nfast(ng)+1)) THEN
+                DO tile=first_tile(ng),last_tile(ng),+1
+                  CALL step2d (ng, tile)
+                END DO
+!$OMP BARRIER
+              END IF
             END DO
-          END DO
-!$OMP END PARALLEL DO
-        END IF
-# if !defined REFINED_GRID
-      END DO
-# endif
-# ifdef COMPOSED_GRID
-      CALL nesting (100)
-# endif
-# ifdef ASSIMILATION
+
+# ifdef NESTING
 !
-!-----------------------------------------------------------------------
-!  Assimilation of observations via optimal interpolation.
-!-----------------------------------------------------------------------
+!  If composite or mosaic grids, process additional points in the
+!  contact zone between connected grids for the state variables
+!  associated with the 2D engine Corrector Step section.
 !
-!$OMP PARALLEL DO PRIVATE(thread,subs,tile) SHARED(ng,numthreads)
-# if !defined REFINED_GRID
-      DO ng=1,Ngrids
+            DO ig=1,GridsInLayer(nl)
+              ng=GridNumber(ig,nl)
+              IF (ANY(CompositeGrid(:,ng))) THEN
+                CALL nesting (ng, iNLM, n2dCS)
+              END IF
+            END DO
 # endif
-        DO thread=0,numthreads-1
-          subs=NtileX(ng)*NtileE(ng)/numthreads
-          DO tile=subs*thread,subs*(thread+1)-1,+1
-            CALL oi_update (ng, TILE)
-          END DO
-        END DO
-# if !defined REFINED_GRID
-      END DO
-# endif
-!$OMP END PARALLEL DO
 # endif
 
 # ifdef FLOATS
 !
 !-----------------------------------------------------------------------
-!  Compute Lagrangian drifters trajectories.
+!  Compute Lagrangian drifters trajectories: Split all the drifters
+!  between all the computational threads, except in distributed-memory
+!  and serial configurations. In distributed-memory, the parallel node
+!  containing the drifter is selected internally since the state
+!  variables do not have a global scope.
 !-----------------------------------------------------------------------
 !
-      IF (Lfloats(Ng)) THEN
-!$OMP PARALLEL DO PRIVATE(thread,chunk_size,Lstr,Lend)                  &
-!$OMP&            SHARED(ng,numthreads,Nfloats)
-# if !defined REFINED_GRID
-      DO ng=1,Ngrids
-# endif
-        DO thread=0,numthreads-1
-          chunk_size=(Nfloats(ng)+numthreads-1)/numthreads
-          Lstr=1+thread*chunk_size
-          Lend=MIN(Nfloats(ng),Lstr+chunk_size-1)
-          CALL step_floats (ng, Lstr, Lend)
-        END DO
-# if !defined REFINED_GRID
-      END DO
-# endif
-!$OMP END PARALLEL DO
+            DO ig=1,GridsInLayer(nl)
+              ng=GridNumber(ig,nl)
+              IF (Lfloats(ng)) THEN
+#  ifdef _OPENMP
+                chunk_size=(Nfloats(ng)+numthreads-1)/numthreads
+                Lstr=1+MyThread*chunk_size
+                Lend=MIN(Nfloats(ng),Lstr+chunk_size-1)
+#  else
+                Lstr=1
+                Lend=Nfloats(ng)
+#  endif
+                CALL step_floats (ng, Lstr, Lend)
+!$OMP BARRIER
 !
 !  Shift floats time indices.
 !
-        nfp1(ng)=MOD(nfp1(ng)+1,NFT+1)
-        nf(ng)  =MOD(nf(ng)  +1,NFT+1)
-        nfm1(ng)=MOD(nfm1(ng)+1,NFT+1)
-        nfm2(ng)=MOD(nfm2(ng)+1,NFT+1)
-        nfm3(ng)=MOD(nfm3(ng)+1,NFT+1)
-      END IF
+                nfp1(ng)=MOD(nfp1(ng)+1,NFT+1)
+                nf  (ng)=MOD(nf  (ng)+1,NFT+1)
+                nfm1(ng)=MOD(nfm1(ng)+1,NFT+1)
+                nfm2(ng)=MOD(nfm2(ng)+1,NFT+1)
+                nfm3(ng)=MOD(nfm3(ng)+1,NFT+1)
+              END IF
+            END DO
 # endif
 
-#else
-      SUBROUTINE main2d
-#endif
+          END DO STEP_LOOP
+
+        END DO NEST_LAYER
+
+      END DO KERNEL_LOOP
+
       RETURN
       END SUBROUTINE main2d
+#else
+      SUBROUTINE main2d
+      RETURN
+      END SUBROUTINE main2d
+#endif

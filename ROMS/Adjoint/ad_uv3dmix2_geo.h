@@ -1,23 +1,8 @@
-#ifdef EW_PERIODIC
-# define IV_RANGE Istr-1,Iend+1
-# define IU_RANGE Istr-1,Iend+1
-#else
-# define IV_RANGE MAX(1,Istr-1),MIN(Iend+1,Lm(ng))
-# define IU_RANGE MAX(2,IstrU-1),MIN(Iend+1,Lm(ng))
-#endif
-#ifdef NS_PERIODIC
-# define JU_RANGE Jstr-1,Jend+1
-# define JV_RANGE Jstr-1,Jend+1
-#else
-# define JU_RANGE MAX(1,Jstr-1),MIN(Jend+1,Mm(ng))
-# define JV_RANGE MAX(2,JstrV-1),MIN(Jend+1,Mm(ng))
-#endif
-
       SUBROUTINE ad_uv3dmix2 (ng, tile)
 !
-!svn $Id: ad_uv3dmix2_geo.h 429 2009-12-20 17:30:26Z arango $
+!svn $Id$
 !************************************************** Hernan G. Arango ***
-!  Copyright (c) 2002-2010 The ROMS/TOMS Group       Andrew M. Moore   !
+!  Copyright (c) 2002-2014 The ROMS/TOMS Group       Andrew M. Moore   !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !***********************************************************************
@@ -25,7 +10,7 @@
 !  This routine computes adjoint harmonic mixing of momentum, rotated  !
 !  along geopotentials, from the horizontal divergence of the  stress  !
 !  tensor.  A transverse  isotropy is assumed so the stress tensor is  !
-!  splitted into vertical and horizontal subtensors.                   !
+!  split into vertical and horizontal subtensors.                      !
 !                                                                      !
 !  Reference:                                                          !
 !                                                                      !
@@ -77,8 +62,6 @@
      &                       GRID(ng) % umask,                          &
      &                       GRID(ng) % vmask,                          &
 #endif
-     &                       GRID(ng) % Hz,                             &
-     &                       GRID(ng) % ad_Hz,                          &
      &                       GRID(ng) % om_p,                           &
      &                       GRID(ng) % om_r,                           &
      &                       GRID(ng) % om_u,                           &
@@ -89,10 +72,17 @@
      &                       GRID(ng) % on_v,                           &
      &                       GRID(ng) % pm,                             &
      &                       GRID(ng) % pn,                             &
+     &                       GRID(ng) % Hz,                             &
+     &                       GRID(ng) % ad_Hz,                          &
      &                       GRID(ng) % z_r,                            &
      &                       GRID(ng) % ad_z_r,                         &
+#ifdef VISC_3DCOEF
+     &                       MIXING(ng) % visc3d_r,                     &
+     &                       MIXING(ng) % ad_visc3d_r,                  &
+#else
      &                       MIXING(ng) % visc2_p,                      &
      &                       MIXING(ng) % visc2_r,                      &
+#endif
 #ifdef DIAGNOSTICS_UV
 !!   &                       DIAGS(ng) % DiaRUfrc,                      &
 !!   &                       DIAGS(ng) % DiaRVfrc,                      &
@@ -101,10 +91,10 @@
 #endif
      &                       OCEAN(ng) % u,                             &
      &                       OCEAN(ng) % v,                             &
-     &                       COUPLING(ng) % ad_rufrc,                   &
-     &                       COUPLING(ng) % ad_rvfrc,                   &
      &                       OCEAN(ng) % ad_u,                          &
-     &                       OCEAN(ng) % ad_v)
+     &                       OCEAN(ng) % ad_v,                          &
+     &                       COUPLING(ng) % ad_rufrc,                   &
+     &                       COUPLING(ng) % ad_rvfrc)
 #ifdef PROFILE
       CALL wclock_off (ng, iADM, 31)
 #endif
@@ -120,17 +110,22 @@
 #ifdef MASKING
      &                             pmask, rmask, umask, vmask,          &
 #endif
-     &                             Hz, ad_Hz,                           &
      &                             om_p, om_r, om_u, om_v,              &
      &                             on_p, on_r, on_u, on_v,              &
-     &                             pm, pn, z_r, ad_z_r,                 &
+     &                             pm, pn,                              &
+     &                             Hz, ad_Hz,                           &
+     &                             z_r, ad_z_r,                         &
+#ifdef VISC_3DCOEF
+     &                             visc3d_r, ad_visc3d_r,               &
+#else
      &                             visc2_p, visc2_r,                    &
+#endif
 #ifdef DIAGNOSTICS_UV
 !!   &                             DiaRUfrc, DiaRVfrc,                  &
 !!   &                             DiaU3wrk, DiaV3wrk,                  &
 #endif
-     &                             u, v,                                &
-     &                             ad_rufrc, ad_rvfrc, ad_u, ad_v)
+     &                             u, v, ad_u, ad_v,                    &
+     &                             ad_rufrc, ad_rvfrc)
 !***********************************************************************
 !
       USE mod_param
@@ -150,7 +145,6 @@
       real(r8), intent(in) :: umask(LBi:,LBj:)
       real(r8), intent(in) :: vmask(LBi:,LBj:)
 # endif
-      real(r8), intent(in) :: Hz(LBi:,LBj:,:)
       real(r8), intent(in) :: om_p(LBi:,LBj:)
       real(r8), intent(in) :: om_r(LBi:,LBj:)
       real(r8), intent(in) :: om_u(LBi:,LBj:)
@@ -161,26 +155,32 @@
       real(r8), intent(in) :: on_v(LBi:,LBj:)
       real(r8), intent(in) :: pm(LBi:,LBj:)
       real(r8), intent(in) :: pn(LBi:,LBj:)
+      real(r8), intent(in) :: Hz(LBi:,LBj:,:)
       real(r8), intent(in) :: z_r(LBi:,LBj:,:)
+# ifdef VISC_3DCOEF
+      real(r8), intent(in) :: visc3d_r(LBi:,LBj:,:)
+# else
       real(r8), intent(in) :: visc2_p(LBi:,LBj:)
       real(r8), intent(in) :: visc2_r(LBi:,LBj:)
-
+# endif
       real(r8), intent(in) :: u(LBi:,LBj:,:,:)
       real(r8), intent(in) :: v(LBi:,LBj:,:,:)
 
-#ifdef DIAGNOSTICS_UV
+# ifdef DIAGNOSTICS_UV
 !!    real(r8), intent(inout) :: DiaRUfrc(LBi:,LBj:,:,:)
 !!    real(r8), intent(inout) :: DiaRVfrc(LBi:,LBj:,:,:)
 !!    real(r8), intent(inout) :: DiaU3wrk(LBi:,LBj:,:,:)
 !!    real(r8), intent(inout) :: DiaV3wrk(LBi:,LBj:,:,:)
-#endif
-
+# endif
       real(r8), intent(inout) :: ad_Hz(LBi:,LBj:,:)
       real(r8), intent(inout) :: ad_z_r(LBi:,LBj:,:)
       real(r8), intent(inout) :: ad_rufrc(LBi:,LBj:)
       real(r8), intent(inout) :: ad_rvfrc(LBi:,LBj:)
       real(r8), intent(inout) :: ad_u(LBi:,LBj:,:,:)
       real(r8), intent(inout) :: ad_v(LBi:,LBj:,:,:)
+# ifdef VISC_3DCOEF
+      real(r8), intent(inout) :: ad_visc3d_r(LBi:,LBj:,:)
+# endif
 #else
 # ifdef MASKING
       real(r8), intent(in) :: pmask(LBi:UBi,LBj:UBj)
@@ -188,7 +188,6 @@
       real(r8), intent(in) :: umask(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: vmask(LBi:UBi,LBj:UBj)
 # endif
-      real(r8), intent(in) :: Hz(LBi:UBi,LBj:UBj,N(ng))
       real(r8), intent(in) :: om_p(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: om_r(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: om_u(LBi:UBi,LBj:UBj)
@@ -199,6 +198,7 @@
       real(r8), intent(in) :: on_v(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: pm(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: pn(LBi:UBi,LBj:UBj)
+      real(r8), intent(in) :: Hz(LBi:UBi,LBj:UBj,N(ng))
       real(r8), intent(in) :: z_r(LBi:UBi,LBj:UBj,N(ng))
       real(r8), intent(in) :: visc2_p(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: visc2_r(LBi:UBi,LBj:UBj)
@@ -206,12 +206,12 @@
       real(r8), intent(in) :: u(LBi:UBi,LBj:UBj,N(ng),2)
       real(r8), intent(in) :: v(LBi:UBi,LBj:UBj,N(ng),2)
 
-#ifdef DIAGNOSTICS_UV
+# ifdef DIAGNOSTICS_UV
 !!    real(r8), intent(inout) :: DiaRUfrc(LBi:UBi,LBj:UBj,3,NDM2d-1)
 !!    real(r8), intent(inout) :: DiaRVfrc(LBi:UBi,LBj:UBj,3,NDM2d-1)
 !!    real(r8), intent(inout) :: DiaU3wrk(LBi:UBi,LBj:UBj,N(ng),NDM3d)
 !!    real(r8), intent(inout) :: DiaV3wrk(LBi:UBi,LBj:UBj,N(ng),NDM3d)
-#endif
+# endif
 
       real(r8), intent(inout) :: ad_Hz(LBi:UBi,LBj:UBj,N(ng))
       real(r8), intent(inout) :: ad_z_r(LBi:UBi,LBj:UBj,N(ng))
@@ -219,6 +219,10 @@
       real(r8), intent(inout) :: ad_rvfrc(LBi:UBi,LBj:UBj)
       real(r8), intent(inout) :: ad_u(LBi:UBi,LBj:UBj,N(ng),2)
       real(r8), intent(inout) :: ad_v(LBi:UBi,LBj:UBj,N(ng),2)
+# ifdef VISC_3DCOEF
+      real(r8), intent(inout) :: ad_visc3d_r(LBi:UBi,LBj:UBj,N(ng))
+# endif
+
 #endif
 !
 !  Local variable declarations.
@@ -229,12 +233,15 @@
       real(r8) :: cff1, cff2, cff3, cff4
       real(r8) :: cff5, cff6, cff7, cff8
       real(r8) :: dmUdz, dnUdz, dmVdz, dnVdz
-
+#ifdef VISC_3DCOEF
+      real(r8) :: visc_p
+      real(r8) :: ad_fac1, ad_fac2, ad_visc_p
+#endif
       real(r8) :: adfac, ad_cff
+      real(r8) :: adfac1, adfac2, adfac3, adfac4, adfac5, adfac6
       real(r8) :: ad_cff1, ad_cff2, ad_cff3, ad_cff4
       real(r8) :: ad_cff5, ad_cff6, ad_cff7, ad_cff8
       real(r8) :: ad_dmUdz, ad_dnUdz, ad_dmVdz, ad_dnVdz
-      real(r8) :: adfac1, adfac2, adfac3, adfac4, adfac5, adfac6
 
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: UFx
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: VFe
@@ -255,8 +262,10 @@
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS,2) :: dZdx_p
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS,2) :: dZdx_r
 
-      real(r8), dimension(IminS:ImaxS,JminS:JmaxS,2) :: ad_UFs
-      real(r8), dimension(IminS:ImaxS,JminS:JmaxS,2) :: ad_VFs
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS,2) :: ad_UFse
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS,2) :: ad_UFsx
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS,2) :: ad_VFse
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS,2) :: ad_VFsx
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS,2) :: ad_dmUde
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS,2) :: ad_dmVde
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS,2) :: ad_dnUdx
@@ -284,6 +293,12 @@
       ad_cff7=0.0_r8
       ad_cff8=0.0_r8
 
+#ifdef VISC_3DCOEF
+      ad_fac1=0.0_r8
+      ad_fac2=0.0_r8
+      ad_visc_p=0.0_r8
+#endif
+
       ad_dmUdz=0.0_r8
       ad_dnUdz=0.0_r8
       ad_dmVdz=0.0_r8
@@ -294,8 +309,10 @@
       ad_VFe(IminS:ImaxS,JminS:JmaxS)=0.0_r8
       ad_VFx(IminS:ImaxS,JminS:JmaxS)=0.0_r8
 
-      ad_UFs(IminS:ImaxS,JminS:JmaxS,1:2)=0.0_r8
-      ad_VFs(IminS:ImaxS,JminS:JmaxS,1:2)=0.0_r8
+      ad_UFse(IminS:ImaxS,JminS:JmaxS,1:2)=0.0_r8
+      ad_UFsx(IminS:ImaxS,JminS:JmaxS,1:2)=0.0_r8
+      ad_VFse(IminS:ImaxS,JminS:JmaxS,1:2)=0.0_r8
+      ad_VFsx(IminS:ImaxS,JminS:JmaxS,1:2)=0.0_r8
 
       ad_dmUde(IminS:ImaxS,JminS:JmaxS,1:2)=0.0_r8
       ad_dmVde(IminS:ImaxS,JminS:JmaxS,1:2)=0.0_r8
@@ -322,10 +339,10 @@
 !    dZdx_r, dZde_r, dnUdx, dmVde(:,:,k2) k+1    rho-points
 !    dZdx_p, dZde_p, dnVdx, dmUde(:,:,k1) k      psi-points
 !    dZdx_p, dZde_p, dnVdx, dmUde(:,:,k2) k+1    psi-points
-!                       UFs, dUdz(:,:,k1) k-1/2  WU-points
-!                       UFs, dUdz(:,:,k2) k+1/2  WU-points
-!                       VFs, dVdz(:,:,k1) k-1/2  WV-points
-!                       VFs, dVdz(:,:,k2) k+1/2  WV-points
+!                UFse, UFsx, dUdz(:,:,k1) k-1/2  WU-points
+!                UFse, UFsx, dUdz(:,:,k2) k+1/2  WU-points
+!                VFse, VFsx, dVdz(:,:,k1) k-1/2  WV-points
+!                VFse, VFsx, dVdz(:,:,k2) k+1/2  WV-points
 !
 !  Compute adjoint starting values of k1 and k2.  We need to compute
 !  the adjoint equivalent of kt=k1, k1=k2, k2=k1.
@@ -337,8 +354,8 @@
         k2=3-k1
       END DO
 !
-!  Compute required basic state fields.  Need to look forward in
-!  recursive kk index.
+!  Compute required BASIC STATE fields. Need to look forward in "kk"
+!  index.
 !
       K_LOOP : DO k=N(ng),0,-1
         k2b=1
@@ -349,8 +366,8 @@
 !
 !  Compute slopes (nondimensional) at RHO- and PSI-points.
 !
-            DO j=-1+JU_RANGE+1
-              DO i=IV_RANGE+1
+            DO j=Jstr-1,Jend+1
+              DO i=IstrU-1,Iend+1
                 cff=0.5_r8*(pm(i-1,j)+pm(i,j))
 #ifdef MASKING
                 cff=cff*umask(i,j)
@@ -358,18 +375,9 @@
                 UFx(i,j)=cff*(z_r(i  ,j,kk+1)-                          &
      &                        z_r(i-1,j,kk+1))
               END DO
-              DO i=IV_RANGE
-                dZdx_r(i,j,k2b)=0.5_r8*(UFx(i  ,j)+                     &
-     &                                  UFx(i+1,j))
-              END DO
-              IF (kk.eq.0) THEN
-                DO i=IV_RANGE
-                  dZdx_r(i,j,k1b)=0.0_r8
-                END DO
-              END IF
             END DO
-            DO j=JU_RANGE+1
-              DO i=-1+IV_RANGE+1
+            DO j=JstrV-1,Jend+1
+              DO i=Istr-1,Iend+1
                 cff=0.5_r8*(pn(i,j-1)+pn(i,j))
 #ifdef MASKING
                 cff=cff*vmask(i,j)
@@ -377,28 +385,35 @@
                 VFe(i,j)=cff*(z_r(i,j  ,kk+1)-                          &
      &                        z_r(i,j-1,kk+1))
               END DO
-              DO i=IV_RANGE+1
-                dZde_p(i,j,k2b)=0.5_r8*(VFe(i-1,j)+                     &
-     &                                  VFe(i  ,j))
+            END DO
+!
+            DO j=Jstr,Jend+1
+              DO i=Istr,Iend+1
                 dZdx_p(i,j,k2b)=0.5_r8*(UFx(i,j-1)+                     &
      &                                  UFx(i,j  ))
+                dZde_p(i,j,k2b)=0.5_r8*(VFe(i-1,j)+                     &
+     &                                  VFe(i  ,j))
               END DO
-              IF (kk.eq.0) THEN
-                DO i=IV_RANGE+1
-                  dZde_p(i,j,k1b)=0.0_r8
-                  dZdx_p(i,j,k1b)=0.0_r8
-                END DO
-              END IF
             END DO
-            DO j=JU_RANGE
-              DO i=-1+IV_RANGE+1
+            DO j=JstrV-1,Jend
+              DO i=IstrU-1,Iend
+                dZdx_r(i,j,k2b)=0.5_r8*(UFx(i  ,j)+                     &
+     &                                  UFx(i+1,j))
                 dZde_r(i,j,k2b)=0.5_r8*(VFe(i,j  )+                     &
      &                                  VFe(i,j+1))
               END DO
             END DO
+
             IF (kk.eq.0) THEN
-              DO j=JU_RANGE
-                DO i=-1+IV_RANGE+1
+              DO j=Jstr,Jend+1
+                DO i=Istr,Iend+1
+                  dZdx_p(i,j,k1b)=0.0_r8
+                  dZde_p(i,j,k1b)=0.0_r8
+                END DO
+              END DO
+              DO j=JstrV-1,Jend
+                DO i=IstrU-1,Iend
+                  dZdx_r(i,j,k1b)=0.0_r8
                   dZde_r(i,j,k1b)=0.0_r8
                 END DO
               END DO
@@ -406,102 +421,121 @@
 !
 !  Compute momentum horizontal (1/m/s) and vertical (1/s) gradients.
 !
-            DO j=-1+JV_RANGE
-              DO i=-1+IU_RANGE
-                dnUdx(i,j,k2b)=0.5_r8*pm(i,j)*                          &
-     &                         ((pn(i  ,j)+pn(i+1,j))*                  &
-     &                          u(i+1,j,kk+1,nrhs)-                     &
-     &                          (pn(i-1,j)+pn(i  ,j))*                  &
-     &                          u(i  ,j,kk+1,nrhs))
+            DO j=JstrV-1,Jend
+              DO i=IstrU-1,Iend
+                cff=0.5_r8*pm(i,j)
 #ifdef MASKING
-                dnUdx(i,j,k2b)=dnUdx(i,j,k2b)*rmask(i,j)
+                cff=cff*rmask(i,j)
 #endif
-                dmVde(i,j,k2b)=0.5_r8*pn(i,j)*                          &
-     &                         ((pm(i,j  )+pm(i,j+1))*                  &
-     &                          v(i,j+1,kk+1,nrhs)-                     &
-     &                          (pm(i,j-1)+pm(i,j  ))*                  &
-     &                          v(i,j  ,kk+1,nrhs))
-#ifdef MASKING
-                dmVde(i,j,k2b)=dmVde(i,j,k2b)*rmask(i,j)
-#endif
+                dnUdx(i,j,k2b)=cff*((pn(i  ,j)+pn(i+1,j))*              &
+     &                              u(i+1,j,kk+1,nrhs)-                 &
+     &                              (pn(i-1,j)+pn(i  ,j))*              &
+     &                              u(i  ,j,kk+1,nrhs))
               END DO
             END DO
+
+            DO j=Jstr,Jend+1
+              DO i=Istr,Iend+1
+                cff=0.125_r8*(pn(i-1,j  )+pn(i,j  )+                    &
+     &                        pn(i-1,j-1)+pn(i,j-1))
+#ifdef MASKING
+                cff=cff*pmask(i,j)
+#endif
+                dmUde(i,j,k2b)=cff*((pm(i-1,j  )+pm(i,j  ))*            &
+     &                              u(i,j  ,kk+1,nrhs)-                 &
+     &                              (pm(i-1,j-1)+pm(i,j-1))*            &
+     &                              u(i,j-1,kk+1,nrhs))
+              END DO
+            END DO
+
+            DO j=Jstr,Jend+1
+              DO i=Istr,Iend+1
+                cff=0.125_r8*(pm(i-1,j  )+pm(i,j  )+                    &
+     &                        pm(i-1,j-1)+pm(i,j-1))
+#ifdef MASKING
+                cff=cff*pmask(i,j)
+#endif
+                dnVdx(i,j,k2b)=cff*((pn(i  ,j-1)+pn(i  ,j))*            &
+     &                              v(i  ,j,kk+1,nrhs)-                 &
+     &                              (pn(i-1,j-1)+pn(i-1,j))*            &
+     &                              v(i-1,j,kk+1,nrhs))
+              END DO
+            END DO
+
+            DO j=JstrV-1,Jend
+              DO i=IstrU-1,Iend
+                cff=0.5_r8*pn(i,j)
+#ifdef MASKING
+                cff=cff*rmask(i,j)
+#endif
+                dmVde(i,j,k2b)=cff*((pm(i,j  )+pm(i,j+1))*              &
+     &                              v(i,j+1,kk+1,nrhs)-                 &
+     &                              (pm(i,j-1)+pm(i,j  ))*              &
+     &                              v(i,j  ,kk+1,nrhs))
+              END DO
+            END DO
+
             IF (kk.eq.0) THEN
-              DO j=-1+JV_RANGE
-                DO i=-1+IU_RANGE
+              DO j=JstrV-1,Jend
+                DO i=IstrU-1,Iend
                   dnUdx(i,j,k1b)=0.0_r8
+                END DO
+              END DO
+              DO j=Jstr,Jend+1
+                DO i=Istr,Iend+1
+                  dmUde(i,j,k1b)=0.0_r8
+                END DO
+              END DO
+              DO j=Jstr,Jend+1
+                DO i=Istr,Iend+1
+                  dnVdx(i,j,k1b)=0.0_r8
+                END DO
+              END DO
+              DO j=JstrV-1,Jend
+                DO i=IstrU-1,Iend
                   dmVde(i,j,k1b)=0.0_r8
                 END DO
               END DO
             END IF
-            DO j=JU_RANGE+1
-              DO i=IV_RANGE+1
-                dmUde(i,j,k2b)=0.125_r8*(pn(i-1,j  )+pn(i,j  )+         &
-     &                                   pn(i-1,j-1)+pn(i,j-1))*        &
-     &                         ((pm(i-1,j  )+pm(i,j  ))*                &
-     &                          u(i,j  ,kk+1,nrhs)-                     &
-     &                          (pm(i-1,j-1)+pm(i,j-1))*                &
-     &                          u(i,j-1,kk+1,nrhs))
-#ifdef MASKING
-                dmUde(i,j,k2b)=dmUde(i,j,k2b)*pmask(i,j)
-#endif
-                dnVdx(i,j,k2b)=0.125_r8*(pm(i-1,j  )+pm(i,j  )+         &
-     &                                   pm(i-1,j-1)+pm(i,j-1))*        &
-     &                         ((pn(i  ,j-1)+pn(i  ,j))*                &
-     &                          v(i  ,j,kk+1,nrhs)-                     &
-     &                          (pn(i-1,j-1)+pn(i-1,j))*                &
-     &                          v(i-1,j,kk+1,nrhs))
-#ifdef MASKING
-                dnVdx(i,j,k2b)=dnVdx(i,j,k2b)*pmask(i,j)
-#endif
-              END DO
-            END DO
-            IF (kk.eq.0) THEN
-              DO j=JU_RANGE+1
-                DO i=IV_RANGE+1
-                  dmUde(i,j,k1b)=0.0_r8
-                  dnVdx(i,j,k1b)=0.0_r8
-                END DO
-              END DO
-            END IF
           END IF
+
           IF ((kk.eq.0).or.(kk.eq.N(ng))) THEN
-            DO j=JU_RANGE
-              DO i=-1+IU_RANGE+1
+            DO j=Jstr-1,Jend+1
+              DO i=IstrU-1,Iend+1
                 dUdz(i,j,k2b)=0.0_r8
               END DO
             END DO
-            DO j=-1+JV_RANGE+1
-              DO i=IV_RANGE
+            DO j=JstrV-1,Jend+1
+              DO i=Istr-1,Iend+1
                 dVdz(i,j,k2b)=0.0_r8
               END DO
             END DO
             IF (kk.eq.0) THEN
-              DO j=JU_RANGE
-                DO i=-1+IU_RANGE+1
+              DO j=Jstr-1,Jend+1
+                DO i=IstrU-1,Iend+1
                   dUdz(i,j,k1b)=0.0_r8
                 END DO
               END DO
-              DO j=-1+JV_RANGE+1
-                DO i=IV_RANGE
+              DO j=JstrV-1,Jend+1
+                DO i=Istr-1,Iend+1
                   dVdz(i,j,k1b)=0.0_r8
                 END DO
               END DO
             END IF
           ELSE
-            DO j=JU_RANGE
-              DO i=-1+IU_RANGE+1
+            DO j=Jstr-1,Jend+1
+              DO i=IstrU-1,Iend+1
                 cff=1.0_r8/(0.5_r8*(z_r(i-1,j,kk+1)-                    &
      &                              z_r(i-1,j,kk  )+                    &
      &                              z_r(i  ,j,kk+1)-                    &
      &                              z_r(i  ,j,kk  )))
                 dUdz(i,j,k2b)=cff*(u(i,j,kk+1,nrhs)-                    &
      &                             u(i,j,kk  ,nrhs))
-
               END DO
             END DO
-            DO j=-1+JV_RANGE+1
-              DO i=IV_RANGE
+
+            DO j=JstrV-1,Jend+1
+              DO i=Istr-1,Iend+1
                 cff=1.0_r8/(0.5_r8*(z_r(i,j-1,kk+1)-                    &
      &                              z_r(i,j-1,kk  )+                    &
      &                              z_r(i,j  ,kk+1)-                    &
@@ -520,81 +554,124 @@
         ABOVE_BOTTOM : IF (k.gt.0) THEN
           DO j=JstrV,Jend
             DO i=Istr,Iend
-              cff=0.25_r8*(pm(i,j)+pm(i,j-1))*(pn(i,j)+pn(i,j-1))
+              cff=dt(ng)*0.25_r8*(pm(i,j)+pm(i,j-1))*(pn(i,j)+pn(i,j-1))
 #ifdef DIAGNOSTICS_UV
-!!            DiaRVfrc(i,j,3,M2hvis)=DiaRVfrc(i,j,3,M2hvis)+cff1+cff2
-!!            DiaV3wrk(i,j,k,M3hvis)=cff3
+!!            DiaV3wrk(i,j,k,M3yvis)=-cff*cff2+dt(ng)*cff4
+!!            DiaV3wrk(i,j,k,M3xvis)= cff*cff1+dt(ng)*cff3
+!!            DiaV3wrk(i,j,k,M3hvis)=cff5+cff6
+!!            DiaRVfrc(i,j,3,M2yvis)=DiaRVfrc(i,j,3,M2yvis)-cff2+cff4
+!!            DiaRVfrc(i,j,3,M2xvis)=DiaRVfrc(i,j,3,M2xvis)+cff1+cff3
+!!            DiaRVfrc(i,j,3,M2hvis)=DiaRVfrc(i,j,3,M2hvis)+cff1-cff2+  &
+!!   &                                                      cff3+cff4
 #endif
-!>            tl_v(i,j,k,nnew)=tl_v(i,j,k,nnew)+tl_cff3
+!>            tl_v(i,j,k,nnew)=tl_v(i,j,k,nnew)+tl_cff5+tl_cff6
 !>
-              ad_cff3=ad_cff3+ad_v(i,j,k,nnew)
-!>            tl_rvfrc(i,j)=tl_rvfrc(i,j)+tl_cff1+tl_cff2
+              ad_cff5=ad_cff5+ad_v(i,j,k,nnew)
+              ad_cff6=ad_cff6+ad_v(i,j,k,nnew)
+!>            tl_rvfrc(i,j)=tl_rvfrc(i,j)+                              &
+!>   &                      tl_cff1-tl_cff2+tl_cff3+tl_cff4
 !>
               ad_cff1=ad_cff1+ad_rvfrc(i,j)
-              ad_cff2=ad_cff2+ad_rvfrc(i,j)
-!>            tl_cff3=dt(ng)*(cff*tl_cff1+tl_cff2)
+              ad_cff2=ad_cff2-ad_rvfrc(i,j)
+              ad_cff3=ad_cff3+ad_rvfrc(i,j)
+              ad_cff4=ad_cff4+ad_rvfrc(i,j)
+!>            tl_cff6=dt(ng)*(tl_cff3+tl_cff4)
 !>
-              adfac=dt(ng)*ad_cff3
-              ad_cff1=ad_cff1+cff*adfac
-              ad_cff2=ad_cff2+adfac
+              adfac=dt(ng)*ad_cff6
+              ad_cff3=ad_cff3+adfac
+              ad_cff4=ad_cff4+adfac
+              ad_cff6=0.0_r8
+!>            tl_cff5=cff*(tl_cff1-tl_cff2)
+!>
+              adfac=cff*ad_cff5
+              ad_cff1=ad_cff1+adfac
+              ad_cff2=ad_cff2-adfac
+              ad_cff5=0.0_r8
+!>            tl_cff4=tl_VFse(i,j,k2)-tl_VFse(i,j,k1)
+!>
+              ad_VFse(i,j,k1)=ad_VFse(i,j,k1)-ad_cff4
+              ad_VFse(i,j,k2)=ad_VFse(i,j,k2)+ad_cff4
+              ad_cff4=0.0_r8
+!>            tl_cff3=tl_VFsx(i,j,k2)-tl_VFsx(i,j,k1)
+!>
+              ad_VFsx(i,j,k1)=ad_VFsx(i,j,k1)-ad_cff3
+              ad_VFsx(i,j,k2)=ad_VFsx(i,j,k2)+ad_cff3
               ad_cff3=0.0_r8
-!>            tl_cff2=tl_VFs(i,j,k2)-tl_VFs(i,j,k1)
+!>            tl_cff2=0.5_r8*(pm(i,j-1)+pm(i,j))*                       &
+!>   &                (tl_VFe(i  ,j)-tl_VFe(i,j-1))
 !>
-              ad_VFs(i,j,k1)=ad_VFs(i,j,k1)-ad_cff2
-              ad_VFs(i,j,k2)=ad_VFs(i,j,k2)+ad_cff2
+              adfac=0.5_r8*(pm(i,j-1)+pm(i,j))*ad_cff2
+              ad_VFe(i,j-1)=ad_VFe(i,j-1)-adfac
+              ad_VFe(i,j  )=ad_VFe(i,j  )+adfac
               ad_cff2=0.0_r8
-!>            tl_cff1=0.5_r8*((pn(i,j-1)+pn(i,j))*                      &
-!>   &                        (tl_VFx(i+1,j)-tl_VFx(i,j  ))-            &
-!>   &                        (pm(i,j-1)+pm(i,j))*                      &
-!>   &                        (tl_VFe(i  ,j)-tl_VFe(i,j-1)))
+!>            tl_cff1=0.5_r8*(pn(i,j-1)+pn(i,j))*                       &
+!>   &                (tl_VFx(i+1,j)-tl_VFx(i,j  ))
 !>
-              adfac=0.5_r8*ad_cff1
-              adfac1=adfac*(pn(i,j-1)+pn(i,j))
-              adfac2=adfac*(pm(i,j-1)+pm(i,j))
-              ad_VFx(i  ,j)=ad_VFx(i  ,j)-adfac1
-              ad_VFx(i+1,j)=ad_VFx(i+1,j)+adfac1
-              ad_VFe(i,j-1)=ad_VFe(i,j-1)+adfac2
-              ad_VFe(i,j  )=ad_VFe(i,j  )-adfac2
+              adfac=0.5_r8*(pn(i,j-1)+pn(i,j))*ad_cff1
+              ad_VFx(i  ,j)=ad_VFx(i  ,j)-adfac
+              ad_VFx(i+1,j)=ad_VFx(i+1,j)+adfac
               ad_cff1=0.0_r8
             END DO
           END DO
+
           DO j=Jstr,Jend
             DO i=IstrU,Iend
-              cff=0.25_r8*(pm(i-1,j)+pm(i,j))*(pn(i-1,j)+pn(i,j))
+              cff=dt(ng)*0.25_r8*(pm(i-1,j)+pm(i,j))*(pn(i-1,j)+pn(i,j))
 #ifdef DIAGNOSTICS_UV
-!!            DiaRUfrc(i,j,3,M2hvis)=DiaRUfrc(i,j,3,M2hvis)+cff1+cff2
-!!            DiaU3wrk(i,j,k,M3hvis)=cff3
+!!            DiaU3wrk(i,j,k,M3yvis)=cff*cff2+dt(ng)*cff4
+!!            DiaU3wrk(i,j,k,M3xvis)=cff*cff1+dt(ng)*cff3
+!!            DiaU3wrk(i,j,k,M3hvis)=cff5+cff6
+!!            DiaRUfrc(i,j,3,M2yvis)=DiaRUfrc(i,j,3,M2yvis)+cff2+cff4
+!!            DiaRUfrc(i,j,3,M2xvis)=DiaRUfrc(i,j,3,M2xvis)+cff1+cff3
+!!            DiaRUfrc(i,j,3,M2hvis)=DiaRUfrc(i,j,3,M2hvis)+cff1+cff2+  &
+!!   &                                                      cff3+cff4
 #endif
-!>            tl_u(i,j,k,nnew)=tl_u(i,j,k,nnew)+tl_cff3
+!>            tl_u(i,j,k,nnew)=tl_u(i,j,k,nnew)+tl_cff5+tl_cff6
 !>
-              ad_cff3=ad_cff3+ad_u(i,j,k,nnew)
-!>            tl_rufrc(i,j)=tl_rufrc(i,j)+tl_cff1+tl_cff2
+              ad_cff5=ad_cff5+ad_u(i,j,k,nnew)
+              ad_cff6=ad_cff6+ad_u(i,j,k,nnew)
+!>            tl_rufrc(i,j)=tl_rufrc(i,j)+                              &
+!>   &                      tl_cff1+tl_cff2+tl_cff3+tl_cff4
 !>
               ad_cff1=ad_cff1+ad_rufrc(i,j)
               ad_cff2=ad_cff2+ad_rufrc(i,j)
-!>            tl_cff3=dt(ng)*(cff*tl_cff1+tl_cff2)
+              ad_cff3=ad_cff3+ad_rufrc(i,j)
+              ad_cff4=ad_cff4+ad_rufrc(i,j)
+!>            tl_cff6=dt(ng)*(tl_cff3+tl_cff4)
 !>
-              adfac=dt(ng)*ad_cff3
-              ad_cff1=ad_cff1+cff*adfac
+              adfac=dt(ng)*ad_cff6
+              ad_cff3=ad_cff3+adfac
+              ad_cff4=ad_cff4+adfac
+              ad_cff6=0.0_r8
+!>            tl_cff5=cff*(tl_cff1+tl_cff2)
+!>
+              adfac=cff*ad_cff5
+              ad_cff1=ad_cff1+adfac
               ad_cff2=ad_cff2+adfac
+              ad_cff5=0.0_r8
+!>            tl_cff4=tl_UFse(i,j,k2)-tl_UFse(i,j,k1)
+!>
+              ad_UFse(i,j,k1)=ad_UFse(i,j,k1)-ad_cff4
+              ad_UFse(i,j,k2)=ad_UFse(i,j,k2)+ad_cff4
+              ad_cff4=0.0_r8
+!>            tl_cff3=tl_UFsx(i,j,k2)-tl_UFsx(i,j,k1)
+!>
+              ad_UFsx(i,j,k1)=ad_UFsx(i,j,k1)-ad_cff3
+              ad_UFsx(i,j,k2)=ad_UFsx(i,j,k2)+ad_cff3
               ad_cff3=0.0_r8
-!>            tl_cff2=tl_UFs(i,j,k2)-tl_UFs(i,j,k1)
+!>            tl_cff2=0.5_r8*(pm(i-1,j)+pm(i,j))*                       &
+!>   &                (tl_UFe(i,j+1)-tl_UFe(i  ,j))
 !>
-              ad_UFs(i,j,k1)=ad_UFs(i,j,k1)-ad_cff2
-              ad_UFs(i,j,k2)=ad_UFs(i,j,k2)+ad_cff2
+              adfac=0.5_r8*(pm(i-1,j)+pm(i,j))*ad_cff2
+              ad_UFe(i,j  )=ad_UFe(i,j  )-adfac
+              ad_UFe(i,j+1)=ad_UFe(i,j+1)+adfac
               ad_cff2=0.0_r8
-!>            tl_cff1=0.5_r8*((pn(i-1,j)+pn(i,j))*                      &
-!>   &                        (tl_UFx(i,j  )-tl_UFx(i-1,j))+            &
-!>   &                        (pm(i-1,j)+pm(i,j))*                      &
-!>   &                        (tl_UFe(i,j+1)-tl_UFe(i  ,j)))
+!>            tl_cff1=0.5_r8*(pn(i-1,j)+pn(i,j))*                       &
+!>   &                (tl_UFx(i,j  )-tl_UFx(i-1,j))
 !>
-              adfac=0.5_r8*ad_cff1
-              adfac1=adfac*(pn(i-1,j)+pn(i,j))
-              adfac2=adfac*(pm(i-1,j)+pm(i,j))
-              ad_UFx(i-1,j)=ad_UFx(i-1,j)-adfac1
-              ad_UFx(i  ,j)=ad_UFx(i  ,j)+adfac1
-              ad_UFe(i  ,j)=ad_UFe(i  ,j)-adfac2
-              ad_UFe(i,j+1)=ad_UFe(i,j+1)+adfac2
+              adfac=0.5_r8*(pn(i-1,j)+pn(i,j))*ad_cff1
+              ad_UFx(i-1,j)=ad_UFx(i-1,j)-adfac
+              ad_UFx(i  ,j)=ad_UFx(i  ,j)+adfac
               ad_cff1=0.0_r8
             END DO
           END DO
@@ -605,9 +682,17 @@
           BELOW_SURFACE : IF (k.lt.N(ng)) THEN
             DO j=JstrV,Jend
               DO i=Istr,Iend
+#ifdef VISC_3DCOEF
+                cff=0.125_r8*                                           &
+     &              (visc3d_r(i,j-1,k  )+visc3d_r(i,j,k  )+             &
+     &               visc3d_r(i,j-1,k+1)+visc3d_r(i,j,k+1))
+                fac1=cff*on_v(i,j)
+                fac2=cff*om_v(i,j)
+#else
                 cff=0.25_r8*(visc2_r(i,j-1)+visc2_r(i,j))
                 fac1=cff*on_v(i,j)
                 fac2=cff*om_v(i,j)
+#endif
                 cff=0.5_r8*(pn(i,j-1)+pn(i,j))
                 dnUdz=cff*0.25_r8*(dUdz(i  ,j  ,k2)+                    &
      &                             dUdz(i+1,j  ,k2)+                    &
@@ -629,22 +714,37 @@
                 cff6=MIN(dZde_p(i+1,j,k2),0.0_r8)
                 cff7=MAX(dZde_p(i  ,j,k2),0.0_r8)
                 cff8=MAX(dZde_p(i+1,j,k1),0.0_r8)
-!>              tl_VFs(i,j,k2)=tl_VFs(i,j,k2)+                          &
-!>   &                         fac2*                                    &
-!>   &                         (tl_cff1*(cff5*dmUdz-dmUde(i  ,j,k1))+   &
-!>   &                          tl_cff2*(cff6*dmUdz-dmUde(i+1,j,k2))+   &
-!>   &                          tl_cff3*(cff7*dmUdz-dmUde(i  ,j,k2))+   &
-!>   &                          tl_cff4*(cff8*dmUdz-dmUde(i+1,j,k1))+   &
-!>   &                          cff1*(tl_cff5*dmUdz+cff5*tl_dmUdz-      &
-!>   &                                tl_dmUde(i  ,j,k1))+              &
-!>   &                          cff2*(tl_cff6*dmUdz+cff6*tl_dmUdz-      &
-!>   &                                tl_dmUde(i+1,j,k2))+              &
-!>   &                          cff3*(tl_cff7*dmUdz+cff7*tl_dmUdz-      &
-!>   &                                tl_dmUde(i  ,j,k2))+              &
-!>   &                          cff4*(tl_cff8*dmUdz+cff8*tl_dmUdz-      &
-!>   &                                tl_dmUde(i+1,j,k1)))
+#ifdef VISC_3DCOEF
+!>              tl_VFse(i,j,k2)=tl_VFse(i,j,k2)+                        &
+!>   &                          tl_fac2*                                &
+!>   &                          (cff1*(cff5*dmUdz-dmUde(i  ,j,k1))+     &
+!>   &                           cff2*(cff6*dmUdz-dmUde(i+1,j,k2))+     &
+!>   &                           cff3*(cff7*dmUdz-dmUde(i  ,j,k2))+     &
+!>   &                           cff4*(cff8*dmUdz-dmUde(i+1,j,k1)))
 !>
-                adfac=fac2*ad_VFs(i,j,k2)
+                ad_fac2=ad_fac2+                                        &
+     &                  (cff1*(cff5*dmUdz-dmUde(i  ,j,k1))+             &
+     &                   cff2*(cff6*dmUdz-dmUde(i+1,j,k2))+             &
+     &                   cff3*(cff7*dmUdz-dmUde(i  ,j,k2))+             &
+     &                   cff4*(cff8*dmUdz-dmUde(i+1,j,k1)))*            &
+     &                  ad_VFse(i,j,k2)
+#endif
+!>              tl_VFse(i,j,k2)=tl_VFse(i,j,k2)+                        &
+!>   &                          fac2*                                   &
+!>   &                          (tl_cff1*(cff5*dmUdz-dmUde(i  ,j,k1))+  &
+!>   &                           tl_cff2*(cff6*dmUdz-dmUde(i+1,j,k2))+  &
+!>   &                           tl_cff3*(cff7*dmUdz-dmUde(i  ,j,k2))+  &
+!>   &                           tl_cff4*(cff8*dmUdz-dmUde(i+1,j,k1))+  &
+!>   &                           cff1*(tl_cff5*dmUdz+cff5*tl_dmUdz-     &
+!>   &                                 tl_dmUde(i  ,j,k1))+             &
+!>   &                           cff2*(tl_cff6*dmUdz+cff6*tl_dmUdz-     &
+!>   &                                 tl_dmUde(i+1,j,k2))+             &
+!>   &                           cff3*(tl_cff7*dmUdz+cff7*tl_dmUdz-     &
+!>   &                                 tl_dmUde(i  ,j,k2))+             &
+!>   &                           cff4*(tl_cff8*dmUdz+cff8*tl_dmUdz-     &
+!>   &                                 tl_dmUde(i+1,j,k1)))
+!>
+                adfac=fac2*ad_VFse(i,j,k2)
                 adfac1=adfac*dmUdz
                 ad_cff1=ad_cff1+(cff5*dmUdz-dmUde(i  ,j,k1))*adfac
                 ad_cff2=ad_cff2+(cff6*dmUdz-dmUde(i+1,j,k2))*adfac
@@ -734,22 +834,37 @@
                 cff6=MIN(dZdx_r(i,j  ,k2),0.0_r8)
                 cff7=MAX(dZdx_r(i,j-1,k2),0.0_r8)
                 cff8=MAX(dZdx_r(i,j  ,k1),0.0_r8)
-!>              tl_VFs(i,j,k2)=tl_VFs(i,j,k2)-                          &
-!>   &                         fac1*                                    &
-!>   &                         (tl_cff1*(cff5*dnUdz-dnUdx(i,j-1,k1))+   &
-!>   &                          tl_cff2*(cff6*dnUdz-dnUdx(i,j  ,k2))+   &
-!>   &                          tl_cff3*(cff7*dnUdz-dnUdx(i,j-1,k2))+   &
-!>   &                          tl_cff4*(cff8*dnUdz-dnUdx(i,j  ,k1))+   &
-!>   &                          cff1*(tl_cff5*dnUdz+cff5*tl_dnUdz-      &
-!>   &                                tl_dnUdx(i,j-1,k1))+              &
-!>   &                          cff2*(tl_cff6*dnUdz+cff6*tl_dnUdz-      &
-!>   &                                tl_dnUdx(i,j  ,k2))+              &
-!>   &                          cff3*(tl_cff7*dnUdz+cff7*tl_dnUdz-      &
-!>   &                                tl_dnUdx(i,j-1,k2))+              &
-!>   &                          cff4*(tl_cff8*dnUdz+cff8*tl_dnUdz-      &
-!>   &                                tl_dnUdx(i,j  ,k1)))
+#ifdef VISC_3DCOEF
+!>              tl_VFsx(i,j,k2)=tl_VFsx(i,j,k2)-                        &
+!>   &                          tl_fac1*                                &
+!>   &                          (cff1*(cff5*dnUdz-dnUdx(i,j-1,k1))+     &
+!>   &                           cff2*(cff6*dnUdz-dnUdx(i,j  ,k2))+     &
+!>   &                           cff3*(cff7*dnUdz-dnUdx(i,j-1,k2))+     &
+!>   &                           cff4*(cff8*dnUdz-dnUdx(i,j  ,k1)))
 !>
-                adfac=fac1*ad_VFs(i,j,k2)
+                ad_fac1=ad_fac1-                                        &
+     &                  (cff1*(cff5*dnUdz-dnUdx(i,j-1,k1))+             &
+     &                   cff2*(cff6*dnUdz-dnUdx(i,j  ,k2))+             &
+     &                   cff3*(cff7*dnUdz-dnUdx(i,j-1,k2))+             &
+     &                   cff4*(cff8*dnUdz-dnUdx(i,j  ,k1)))*            &
+     &                  ad_VFsx(i,j,k2)
+#endif
+!>              tl_VFsx(i,j,k2)=tl_VFsx(i,j,k2)-                        &
+!>   &                          fac1*                                   &
+!>   &                          (tl_cff1*(cff5*dnUdz-dnUdx(i,j-1,k1))+  &
+!>   &                           tl_cff2*(cff6*dnUdz-dnUdx(i,j  ,k2))+  &
+!>   &                           tl_cff3*(cff7*dnUdz-dnUdx(i,j-1,k2))+  &
+!>   &                           tl_cff4*(cff8*dnUdz-dnUdx(i,j  ,k1))+  &
+!>   &                           cff1*(tl_cff5*dnUdz+cff5*tl_dnUdz-     &
+!>   &                                 tl_dnUdx(i,j-1,k1))+             &
+!>   &                           cff2*(tl_cff6*dnUdz+cff6*tl_dnUdz-     &
+!>   &                                 tl_dnUdx(i,j  ,k2))+             &
+!>   &                           cff3*(tl_cff7*dnUdz+cff7*tl_dnUdz-     &
+!>   &                                 tl_dnUdx(i,j-1,k2))+             &
+!>   &                           cff4*(tl_cff8*dnUdz+cff8*tl_dnUdz-     &
+!>   &                                 tl_dnUdx(i,j  ,k1)))
+!>
+                adfac=fac1*ad_VFsx(i,j,k2)
                 adfac1=adfac*dnUdz
                 ad_cff1=ad_cff1-(cff5*dnUdz-dnUdx(i,j-1,k1))*adfac
                 ad_cff2=ad_cff2-(cff6*dnUdz-dnUdx(i,j  ,k2))*adfac
@@ -835,23 +950,37 @@
                 cff2=MIN(dZde_r(i,j  ,k2),0.0_r8)
                 cff3=MAX(dZde_r(i,j-1,k2),0.0_r8)
                 cff4=MAX(dZde_r(i,j  ,k1),0.0_r8)
-!>              tl_VFs(i,j,k2)=tl_VFs(i,j,k2)+                          &
-!>   &                         fac2*                                    &
-!>   &                         (tl_cff1*(cff1*dmVdz-dmVde(i,j-1,k1))+   &
-!>   &                          tl_cff2*(cff2*dmVdz-dmVde(i,j  ,k2))+   &
-!>   &                          tl_cff3*(cff3*dmVdz-dmVde(i,j-1,k2))+   &
-!>   &                          tl_cff4*(cff4*dmVdz-dmVde(i,j  ,k1))+   &
-!>   &                          cff1*(tl_cff1*dmVdz+cff1*tl_dmVdz-      &
-!>   &                                tl_dmVde(i,j-1,k1))+              &
-!>   &                          cff2*(tl_cff2*dmVdz+cff2*tl_dmVdz-      &
-!>   &                                tl_dmVde(i,j  ,k2))+              &
-!>   &                          cff3*(tl_cff3*dmVdz+cff3*tl_dmVdz-      &
-!>   &                                tl_dmVde(i,j-1,k2))+              &
-!>   &                          cff4*(tl_cff4*dmVdz+cff4*tl_dmVdz-      &
-!>   &                                tl_dmVde(i,j  ,k1)))
+#ifdef VISC_3DCOEF
+!>              tl_VFse(i,j,k2)=tl_VFse(i,j,k2)+                        &
+!>   &                          tl_fac2*                                &
+!>   &                          (cff1*(cff1*dmVdz-dmVde(i,j-1,k1))+     &
+!>   &                           cff2*(cff2*dmVdz-dmVde(i,j  ,k2))+     &
+!>   &                           cff3*(cff3*dmVdz-dmVde(i,j-1,k2))+     &
+!>   &                           cff4*(cff4*dmVdz-dmVde(i,j  ,k1)))
+!>
+                ad_fac2=ad_fac2+                                        &
+     &                  (cff1*(cff1*dmVdz-dmVde(i,j-1,k1))+             &
+     &                   cff2*(cff2*dmVdz-dmVde(i,j  ,k2))+             &
+     &                   cff3*(cff3*dmVdz-dmVde(i,j-1,k2))+             &
+     &                   cff4*(cff4*dmVdz-dmVde(i,j  ,k1)))*            &
+     &                  ad_VFse(i,j,k2)
+#endif
+!>              tl_VFse(i,j,k2)=fac2*                                   &
+!>   &                          (tl_cff1*(cff1*dmVdz-dmVde(i,j-1,k1))+  &
+!>   &                           tl_cff2*(cff2*dmVdz-dmVde(i,j  ,k2))+  &
+!>   &                           tl_cff3*(cff3*dmVdz-dmVde(i,j-1,k2))+  &
+!>   &                           tl_cff4*(cff4*dmVdz-dmVde(i,j  ,k1))+  &
+!>   &                           cff1*(tl_cff1*dmVdz+cff1*tl_dmVdz-     &
+!>   &                                 tl_dmVde(i,j-1,k1))+             &
+!>   &                           cff2*(tl_cff2*dmVdz+cff2*tl_dmVdz-     &
+!>   &                                 tl_dmVde(i,j  ,k2))+             &
+!>   &                           cff3*(tl_cff3*dmVdz+cff3*tl_dmVdz-     &
+!>   &                                 tl_dmVde(i,j-1,k2))+             &
+!>   &                           cff4*(tl_cff4*dmVdz+cff4*tl_dmVdz-     &
+!>   &                                 tl_dmVde(i,j  ,k1)))
 !>
                 cff=2.0_r8*dmVdz
-                adfac=fac2*ad_VFs(i,j,k2)
+                adfac=fac2*ad_VFse(i,j,k2)
                 ad_cff1=ad_cff1+(cff1*cff-dmVde(i,j-1,k1))*adfac
                 ad_cff2=ad_cff2+(cff2*cff-dmVde(i,j  ,k2))*adfac
                 ad_cff3=ad_cff3+(cff3*cff-dmVde(i,j-1,k2))*adfac
@@ -863,6 +992,7 @@
                 ad_dmVde(i,j  ,k2)=ad_dmVde(i,j  ,k2)-cff2*adfac
                 ad_dmVde(i,j-1,k2)=ad_dmVde(i,j-1,k2)-cff3*adfac
                 ad_dmVde(i,j  ,k1)=ad_dmVde(i,j  ,k1)-cff4*adfac
+                ad_VFse(i,j,k2)=0.0_r8
 !>              tl_cff4=(0.5_r8+SIGN(0.5_r8, dZde_r(i,j  ,k1)))*        &
 !>   &                  tl_dZde_r(i,j  ,k1)
 !>
@@ -900,22 +1030,37 @@
                 cff2=MIN(dZdx_p(i+1,j,k2),0.0_r8)
                 cff3=MAX(dZdx_p(i  ,j,k2),0.0_r8)
                 cff4=MAX(dZdx_p(i+1,j,k1),0.0_r8)
-!>              tl_VFs(i,j,k2)=fac1*                                    &
-!>   &                         (tl_cff1*(cff1*dnVdz-dnVdx(i  ,j,k1))+   &
-!>   &                          tl_cff2*(cff2*dnVdz-dnVdx(i+1,j,k2))+   &
-!>   &                          tl_cff3*(cff3*dnVdz-dnVdx(i  ,j,k2))+   &
-!>   &                          tl_cff4*(cff4*dnVdz-dnVdx(i+1,j,k1))+   &
-!>   &                          cff1*(tl_cff1*dnVdz+cff1*tl_dnVdz-      &
-!>   &                                tl_dnVdx(i  ,j,k1))+              &
-!>   &                          cff2*(tl_cff2*dnVdz+cff2*tl_dnVdz-      &
-!>   &                                tl_dnVdx(i+1,j,k2))+              &
-!>   &                          cff3*(tl_cff3*dnVdz+cff3*tl_dnVdz-      &
-!>   &                                tl_dnVdx(i  ,j,k2))+              &
-!>   &                          cff4*(tl_cff4*dnVdz+cff4*tl_dnVdz-      &
-!>   &                                tl_dnVdx(i+1,j,k1)))
+#ifdef VISC_3DCOEF
+!>              tl_VFsx(i,j,k2)=tl_VFsx(i,j,k2)+                        &
+!>   &                          tl_fac1*                                &
+!>   &                          (cff1*(cff1*dnVdz-dnVdx(i  ,j,k1))+     &
+!>   &                           cff2*(cff2*dnVdz-dnVdx(i+1,j,k2))+     &
+!>   &                           cff3*(cff3*dnVdz-dnVdx(i  ,j,k2))+     &
+!>   &                           cff4*(cff4*dnVdz-dnVdx(i+1,j,k1)))
+!>
+                ad_fac1=ad_fac1+                                        &
+     &                  (cff1*(cff1*dnVdz-dnVdx(i  ,j,k1))+             &
+     &                   cff2*(cff2*dnVdz-dnVdx(i+1,j,k2))+             &
+     &                   cff3*(cff3*dnVdz-dnVdx(i  ,j,k2))+             &
+     &                   cff4*(cff4*dnVdz-dnVdx(i+1,j,k1)))*            &
+     &                  ad_VFsx(i,j,k2)
+#endif
+!>              tl_VFsx(i,j,k2)=fac1*                                   &
+!>   &                          (tl_cff1*(cff1*dnVdz-dnVdx(i  ,j,k1))+  &
+!>   &                           tl_cff2*(cff2*dnVdz-dnVdx(i+1,j,k2))+  &
+!>   &                           tl_cff3*(cff3*dnVdz-dnVdx(i  ,j,k2))+  &
+!>   &                           tl_cff4*(cff4*dnVdz-dnVdx(i+1,j,k1))+  &
+!>   &                           cff1*(tl_cff1*dnVdz+cff1*tl_dnVdz-     &
+!>   &                                 tl_dnVdx(i  ,j,k1))+             &
+!>   &                           cff2*(tl_cff2*dnVdz+cff2*tl_dnVdz-     &
+!>   &                                 tl_dnVdx(i+1,j,k2))+             &
+!>   &                           cff3*(tl_cff3*dnVdz+cff3*tl_dnVdz-     &
+!>   &                                 tl_dnVdx(i  ,j,k2))+             &
+!>   &                           cff4*(tl_cff4*dnVdz+cff4*tl_dnVdz-     &
+!>   &                                 tl_dnVdx(i+1,j,k1)))
 !>
                 cff=2.0_r8*dnVdz
-                adfac=fac1*ad_VFs(i,j,k2)
+                adfac=fac1*ad_VFsx(i,j,k2)
                 ad_cff1=ad_cff1+(cff1*cff-dnVdx(i  ,j,k1))*adfac
                 ad_cff2=ad_cff2+(cff2*cff-dnVdx(i+1,j,k2))*adfac
                 ad_cff3=ad_cff3+(cff3*cff-dnVdx(i  ,j,k2))*adfac
@@ -927,7 +1072,7 @@
                 ad_dnVdx(i+1,j,k2)=ad_dnVdx(i+1,j,k2)-cff2*adfac
                 ad_dnVdx(i  ,j,k2)=ad_dnVdx(i  ,j,k2)-cff3*adfac
                 ad_dnVdx(i+1,j,k1)=ad_dnVdx(i+1,j,k1)-cff4*adfac
-                ad_VFs(i,j,k2)=0.0_r8
+                ad_VFsx(i,j,k2)=0.0_r8
 !>              tl_cff4=(0.5_r8+SIGN(0.5_r8, dZdx_p(i+1,j,k1)))*        &
 !>   &                  tl_dZdx_p(i+1,j,k1)
 !>
@@ -994,14 +1139,41 @@
                 ad_dUdz(i  ,j  ,k2)=ad_dUdz(i  ,j  ,k2)+adfac
                 ad_dUdz(i+1,j  ,k2)=ad_dUdz(i+1,j  ,k2)+adfac
                 ad_dnUdz=0.0_r8
+#ifdef VISC_3DCOEF
+!>              tl_fac2=tl_cff*om_v(i,j)
+!>              tl_fac1=tl_cff*on_v(i,j)
+!>
+                ad_cff=ad_cff+                                          &
+     &                 on_v(i,j)*ad_fac1+om_v(i,j)*ad_fac2
+                ad_fac1=0.0_r8
+                ad_fac2=0.0_r8
+!>              tl_cff=0.125_r8*                                        &
+!>   &                 (tl_visc3d_r(i,j-1,k  )+tl_visc3d_r(i,j,k  )+    &
+!>   &                  tl_visc3d_r(i,j-1,k+1)+tl_visc3d_r(i,j,k+1))
+!>
+                adfac=0.125_r8*ad_cff
+                ad_visc3d_r(i,j-1,k  )=ad_visc3d_r(i,j-1,k  )+adfac
+                ad_visc3d_r(i,j  ,k  )=ad_visc3d_r(i,j  ,k  )+adfac
+                ad_visc3d_r(i,j-1,k+1)=ad_visc3d_r(i,j-1,k+1)+adfac
+                ad_visc3d_r(i,j  ,k+1)=ad_visc3d_r(i,j  ,k+1)+adfac
+                ad_cff=0.0_r8
+#endif
               END DO
             END DO
 !
             DO j=Jstr,Jend
               DO i=IstrU,Iend
+#ifdef VISC_3DCOEF
+                cff=0.125_r8*                                           &
+     &              (visc3d_r(i-1,j,k  )+visc3d_r(i,j,k  )+             &
+     &               visc3d_r(i-1,j,k+1)+visc3d_r(i,j,k+1))
+                fac1=cff*on_u(i,j)
+                fac2=cff*om_u(i,j)
+#else
                 cff=0.25_r8*(visc2_r(i-1,j)+visc2_r(i,j))
                 fac1=cff*on_u(i,j)
                 fac2=cff*om_u(i,j)
+#endif
                 cff=0.5_r8*(pn(i-1,j)+pn(i,j))
                 dnUdz=cff*dUdz(i,j,k2)
                 dnVdz=cff*0.25_r8*(dVdz(i-1,j+1,k2)+                    &
@@ -1014,7 +1186,7 @@
      &                             dVdz(i  ,j+1,k2)+                    &
      &                             dVdz(i-1,j  ,k2)+                    &
      &                             dVdz(i  ,j  ,k2))
-
+!
                 cff1=MIN(dZdx_r(i-1,j,k1),0.0_r8)
                 cff2=MIN(dZdx_r(i  ,j,k2),0.0_r8)
                 cff3=MAX(dZdx_r(i-1,j,k2),0.0_r8)
@@ -1023,22 +1195,37 @@
                 cff6=MIN(dZde_r(i  ,j,k2),0.0_r8)
                 cff7=MAX(dZde_r(i-1,j,k2),0.0_r8)
                 cff8=MAX(dZde_r(i  ,j,k1),0.0_r8)
-!>              tl_UFs(i,j,k2)=tl_UFs(i,j,k2)-                          &
-!>   &                         fac2*                                    &
-!>   &                         (tl_cff1*(cff5*dmVdz-dmVde(i-1,j,k1))+   &
-!>   &                          tl_cff2*(cff6*dmVdz-dmVde(i  ,j,k2))+   &
-!>   &                          tl_cff3*(cff7*dmVdz-dmVde(i-1,j,k2))+   &
-!>   &                          tl_cff4*(cff8*dmVdz-dmVde(i  ,j,k1))+   &
-!>   &                          cff1*(tl_cff5*dmVdz+cff5*tl_dmVdz-      &
-!>   &                                tl_dmVde(i-1,j,k1))+              &
-!>   &                          cff2*(tl_cff6*dmVdz+cff6*tl_dmVdz-      &
-!>   &                                tl_dmVde(i  ,j,k2))+              &
-!>   &                          cff3*(tl_cff7*dmVdz+cff7*tl_dmVdz-      &
-!>   &                                tl_dmVde(i-1,j,k2))+              &
-!>   &                          cff4*(tl_cff8*dmVdz+cff8*tl_dmVdz-      &
-!>   &                                tl_dmVde(i  ,j,k1)))
+#ifdef VISC_3DCOEF
+!>              tl_UFse(i,j,k2)=tl_UFse(i,j,k2)-                        &
+!>   &                          tl_fac2*                                &
+!>   &                          (cff1*(cff5*dmVdz-dmVde(i-1,j,k1))+     &
+!>   &                           cff2*(cff6*dmVdz-dmVde(i  ,j,k2))+     &
+!>   &                           cff3*(cff7*dmVdz-dmVde(i-1,j,k2))+     &
+!>   &                           cff4*(cff8*dmVdz-dmVde(i  ,j,k1)))
 !>
-                adfac=fac2*ad_UFs(i,j,k2)
+                ad_fac2=ad_fac2-                                        &
+     &                  (cff1*(cff5*dmVdz-dmVde(i-1,j,k1))+             &
+     &                   cff2*(cff6*dmVdz-dmVde(i  ,j,k2))+             &
+     &                   cff3*(cff7*dmVdz-dmVde(i-1,j,k2))+             &
+     &                   cff4*(cff8*dmVdz-dmVde(i  ,j,k1)))*            &
+     &                  ad_UFse(i,j,k2)
+#endif
+!>              tl_UFse(i,j,k2)=tl_UFse(i,j,k2)-                        &
+!>   &                          fac2*                                   &
+!>   &                          (tl_cff1*(cff5*dmVdz-dmVde(i-1,j,k1))+  &
+!>   &                           tl_cff2*(cff6*dmVdz-dmVde(i  ,j,k2))+  &
+!>   &                           tl_cff3*(cff7*dmVdz-dmVde(i-1,j,k2))+  &
+!>   &                           tl_cff4*(cff8*dmVdz-dmVde(i  ,j,k1))+  &
+!>   &                           cff1*(tl_cff5*dmVdz+cff5*tl_dmVdz-     &
+!>   &                                 tl_dmVde(i-1,j,k1))+             &
+!>   &                           cff2*(tl_cff6*dmVdz+cff6*tl_dmVdz-     &
+!>   &                                 tl_dmVde(i  ,j,k2))+             &
+!>   &                           cff3*(tl_cff7*dmVdz+cff7*tl_dmVdz-     &
+!>   &                                 tl_dmVde(i-1,j,k2))+             &
+!>   &                           cff4*(tl_cff8*dmVdz+cff8*tl_dmVdz-     &
+!>   &                                 tl_dmVde(i  ,j,k1)))
+!>
+                adfac=fac2*ad_UFse(i,j,k2)
                 adfac1=adfac*dmVdz
                 ad_cff1=ad_cff1-(cff5*dmVdz-dmVde(i-1,j,k1))*adfac
                 ad_cff2=ad_cff2-(cff6*dmVdz-dmVde(i  ,j,k2))*adfac
@@ -1128,22 +1315,37 @@
                 cff6=MIN(dZdx_p(i,j+1,k2),0.0_r8)
                 cff7=MAX(dZdx_p(i,j  ,k2),0.0_r8)
                 cff8=MAX(dZdx_p(i,j+1,k1),0.0_r8)
-!>              tl_UFs(i,j,k2)=tl_UFs(i,j,k2)+                          &
-!>   &                         fac1*                                    &
-!>   &                         (tl_cff1*(cff5*dnVdz-dnVdx(i,j  ,k1))+   &
-!>   &                          tl_cff2*(cff6*dnVdz-dnVdx(i,j+1,k2))+   &
-!>   &                          tl_cff3*(cff7*dnVdz-dnVdx(i,j  ,k2))+   &
-!>   &                          tl_cff4*(cff8*dnVdz-dnVdx(i,j+1,k1))+   &
-!>   &                          cff1*(tl_cff5*dnVdz+cff5*tl_dnVdz-      &
-!>   &                                tl_dnVdx(i,j  ,k1))+              &
-!>   &                          cff2*(tl_cff6*dnVdz+cff6*tl_dnVdz-      &
-!>   &                                tl_dnVdx(i,j+1,k2))+              &
-!>   &                          cff3*(tl_cff7*dnVdz+cff7*tl_dnVdz-      &
-!>   &                                tl_dnVdx(i,j  ,k2))+              &
-!>   &                          cff4*(tl_cff8*dnVdz+cff8*tl_dnVdz-      &
-!>   &                                tl_dnVdx(i,j+1,k1)))
+#ifdef VISC_3DCOEF
+!>              tl_UFsx(i,j,k2)=tl_UFsx(i,j,k2)+                        &
+!>   &                          tl_fac1*                                &
+!>   &                          (cff1*(cff5*dnVdz-dnVdx(i,j  ,k1))+     &
+!>   &                           cff2*(cff6*dnVdz-dnVdx(i,j+1,k2))+     &
+!>   &                           cff3*(cff7*dnVdz-dnVdx(i,j  ,k2))+     &
+!>   &                           cff4*(cff8*dnVdz-dnVdx(i,j+1,k1)))
 !>
-                adfac=fac1*ad_UFs(i,j,k2)
+                ad_fac1=ad_fac1+                                        &
+     &                  (cff1*(cff5*dnVdz-dnVdx(i,j  ,k1))+             &
+     &                   cff2*(cff6*dnVdz-dnVdx(i,j+1,k2))+             &
+     &                   cff3*(cff7*dnVdz-dnVdx(i,j  ,k2))+             &
+     &                   cff4*(cff8*dnVdz-dnVdx(i,j+1,k1)))*            &
+     &                  ad_UFsx(i,j,k2)
+#endif
+!>              tl_UFsx(i,j,k2)=tl_UFsx(i,j,k2)+                        &
+!>   &                          fac1*                                   &
+!>   &                          (tl_cff1*(cff5*dnVdz-dnVdx(i,j  ,k1))+  &
+!>   &                           tl_cff2*(cff6*dnVdz-dnVdx(i,j+1,k2))+  &
+!>   &                           tl_cff3*(cff7*dnVdz-dnVdx(i,j  ,k2))+  &
+!>   &                           tl_cff4*(cff8*dnVdz-dnVdx(i,j+1,k1))+  &
+!>   &                           cff1*(tl_cff5*dnVdz+cff5*tl_dnVdz-     &
+!>   &                                 tl_dnVdx(i,j  ,k1))+             &
+!>   &                           cff2*(tl_cff6*dnVdz+cff6*tl_dnVdz-     &
+!>   &                                 tl_dnVdx(i,j+1,k2))+             &
+!>   &                           cff3*(tl_cff7*dnVdz+cff7*tl_dnVdz-     &
+!>   &                                 tl_dnVdx(i,j  ,k2))+             &
+!>   &                           cff4*(tl_cff8*dnVdz+cff8*tl_dnVdz-     &
+!>   &                                 tl_dnVdx(i,j+1,k1)))
+!>
+                adfac=fac1*ad_UFsx(i,j,k2)
                 adfac1=adfac*dnVdz
                 ad_cff1=ad_cff1+(cff5*dnVdz-dnVdx(i,j  ,k1))*adfac
                 ad_cff2=ad_cff2+(cff6*dnVdz-dnVdx(i,j+1,k2))*adfac
@@ -1229,23 +1431,37 @@
                 cff2=MIN(dZde_p(i,j+1,k2),0.0_r8)
                 cff3=MAX(dZde_p(i,j  ,k2),0.0_r8)
                 cff4=MAX(dZde_p(i,j+1,k1),0.0_r8)
-!>              tl_UFs(i,j,k2)=tl_UFs(i,j,k2)+                          &
-!>   &                         fac2*                                    &
-!>   &                         (tl_cff1*(cff1*dmUdz-dmUde(i,j  ,k1))+   &
-!>   &                          tl_cff2*(cff2*dmUdz-dmUde(i,j+1,k2))+   &
-!>   &                          tl_cff3*(cff3*dmUdz-dmUde(i,j  ,k2))+   &
-!>   &                          tl_cff4*(cff4*dmUdz-dmUde(i,j+1,k1))+   &
-!>   &                          cff1*(tl_cff1*dmUdz+cff1*tl_dmUdz-      &
-!>   &                                tl_dmUde(i,j  ,k1))+              &
-!>   &                          cff2*(tl_cff2*dmUdz+cff2*tl_dmUdz-      &
-!>   &                                tl_dmUde(i,j+1,k2))+              &
-!>   &                          cff3*(tl_cff3*dmUdz+cff3*tl_dmUdz-      &
-!>   &                                tl_dmUde(i,j  ,k2))+              &
-!>   &                          cff4*(tl_cff4*dmUdz+cff4*tl_dmUdz-      &
-!>   &                                tl_dmUde(i,j+1,k1)))
+#ifdef VISC_3DCOEF
+!>              tl_UFse(i,j,k2)=tl_UFse(i,j,k2)+
+!>   &                          tl_fac2*                                &
+!>   &                          (cff1*(cff1*dmUdz-dmUde(i,j  ,k1))+     &
+!>   &                           cff2*(cff2*dmUdz-dmUde(i,j+1,k2))+     &
+!>   &                           cff3*(cff3*dmUdz-dmUde(i,j  ,k2))+     &
+!>   &                           cff4*(cff4*dmUdz-dmUde(i,j+1,k1)))
+!>
+                ad_fac2=ad_fac2+                                        &
+     &                  (cff1*(cff1*dmUdz-dmUde(i,j  ,k1))+             &
+     &                   cff2*(cff2*dmUdz-dmUde(i,j+1,k2))+             &
+     &                   cff3*(cff3*dmUdz-dmUde(i,j  ,k2))+             &
+     &                   cff4*(cff4*dmUdz-dmUde(i,j+1,k1)))*            &
+     &                  ad_UFse(i,j,k2)
+#endif
+!>              tl_UFse(i,j,k2)=fac2*                                   &
+!>   &                          (tl_cff1*(cff1*dmUdz-dmUde(i,j  ,k1))+  &
+!>   &                           tl_cff2*(cff2*dmUdz-dmUde(i,j+1,k2))+  &
+!>   &                           tl_cff3*(cff3*dmUdz-dmUde(i,j  ,k2))+  &
+!>   &                           tl_cff4*(cff4*dmUdz-dmUde(i,j+1,k1))+  &
+!>   &                           cff1*(tl_cff1*dmUdz+cff1*tl_dmUdz-     &
+!>   &                                 tl_dmUde(i,j  ,k1))+             &
+!>   &                           cff2*(tl_cff2*dmUdz+cff2*tl_dmUdz-     &
+!>   &                                 tl_dmUde(i,j+1,k2))+             &
+!>   &                           cff3*(tl_cff3*dmUdz+cff3*tl_dmUdz-     &
+!>   &                                 tl_dmUde(i,j  ,k2))+             &
+!>   &                           cff4*(tl_cff4*dmUdz+cff4*tl_dmUdz-     &
+!>   &                                 tl_dmUde(i,j+1,k1)))
 !>
                 cff=2.0_r8*dmUdz
-                adfac=fac2*ad_UFs(i,j,k2)
+                adfac=fac2*ad_UFse(i,j,k2)
                 ad_cff1=ad_cff1+(cff1*cff-dmUde(i,j  ,k1))*adfac
                 ad_cff2=ad_cff2+(cff2*cff-dmUde(i,j+1,k2))*adfac
                 ad_cff3=ad_cff3+(cff3*cff-dmUde(i,j  ,k2))*adfac
@@ -1257,6 +1473,7 @@
                 ad_dmUde(i,j+1,k2)=ad_dmUde(i,j+1,k2)-cff2*adfac
                 ad_dmUde(i,j  ,k2)=ad_dmUde(i,j  ,k2)-cff3*adfac
                 ad_dmUde(i,j+1,k1)=ad_dmUde(i,j+1,k1)-cff4*adfac
+                ad_UFse(i,j,k2)=0.0_r8
 !>              tl_cff4=(0.5_r8+SIGN(0.5_r8, dZde_p(i,j+1,k1)))*        &
 !>   &                  tl_dZde_p(i,j+1,k1)
 !>
@@ -1294,22 +1511,37 @@
                 cff2=MIN(dZdx_r(i  ,j,k2),0.0_r8)
                 cff3=MAX(dZdx_r(i-1,j,k2),0.0_r8)
                 cff4=MAX(dZdx_r(i  ,j,k1),0.0_r8)
-!>              tl_UFs(i,j,k2)=fac1*                                    &
-!>   &                         (tl_cff1*(cff1*dnUdz-dnUdx(i-1,j,k1))+   &
-!>   &                          tl_cff2*(cff2*dnUdz-dnUdx(i  ,j,k2))+   &
-!>   &                          tl_cff3*(cff3*dnUdz-dnUdx(i-1,j,k2))+   &
-!>   &                          tl_cff4*(cff4*dnUdz-dnUdx(i  ,j,k1))+   &
-!>   &                          cff1*(tl_cff1*dnUdz+cff1*tl_dnUdz-      &
-!>   &                                tl_dnUdx(i-1,j,k1))+              &
-!>   &                          cff2*(tl_cff2*dnUdz+cff2*tl_dnUdz-      &
-!>   &                                tl_dnUdx(i  ,j,k2))+              &
-!>   &                          cff3*(tl_cff3*dnUdz+cff3*tl_dnUdz-      &
-!>   &                                tl_dnUdx(i-1,j,k2))+              &
-!>   &                          cff4*(tl_cff4*dnUdz+cff4*tl_dnUdz-      &
-!>   &                                tl_dnUdx(i  ,j,k1)))
+#ifdef VISC_3DCOEF
+!>              tl_UFsx(i,j,k2)=tl_UFsx(i,j,k2)+                        &
+!>   &                          tl_fac1*                                &
+!>   &                          (cff1*(cff1*dnUdz-dnUdx(i-1,j,k1))+     &
+!>   &                           cff2*(cff2*dnUdz-dnUdx(i  ,j,k2))+     &
+!>   &                           cff3*(cff3*dnUdz-dnUdx(i-1,j,k2))+     &
+!>   &                           cff4*(cff4*dnUdz-dnUdx(i  ,j,k1)))
+!>
+                ad_fac1=ad_fac1+                                        &
+     &                  (cff1*(cff1*dnUdz-dnUdx(i-1,j,k1))+             &
+     &                   cff2*(cff2*dnUdz-dnUdx(i  ,j,k2))+             &
+     &                   cff3*(cff3*dnUdz-dnUdx(i-1,j,k2))+             &
+     &                   cff4*(cff4*dnUdz-dnUdx(i  ,j,k1)))*            &
+     &                  ad_UFsx(i,j,k2)
+#endif
+!>              tl_UFsx(i,j,k2)=fac1*                                   &
+!>   &                          (tl_cff1*(cff1*dnUdz-dnUdx(i-1,j,k1))+  &
+!>   &                           tl_cff2*(cff2*dnUdz-dnUdx(i  ,j,k2))+  &
+!>   &                           tl_cff3*(cff3*dnUdz-dnUdx(i-1,j,k2))+  &
+!>   &                           tl_cff4*(cff4*dnUdz-dnUdx(i  ,j,k1))+  &
+!>   &                           cff1*(tl_cff1*dnUdz+cff1*tl_dnUdz-     &
+!>   &                                 tl_dnUdx(i-1,j,k1))+             &
+!>   &                           cff2*(tl_cff2*dnUdz+cff2*tl_dnUdz-     &
+!>   &                                 tl_dnUdx(i  ,j,k2))+             &
+!>   &                           cff3*(tl_cff3*dnUdz+cff3*tl_dnUdz-     &
+!>   &                                 tl_dnUdx(i-1,j,k2))+             &
+!>   &                           cff4*(tl_cff4*dnUdz+cff4*tl_dnUdz-     &
+!>   &                                 tl_dnUdx(i  ,j,k1)))
 !>
                 cff=2.0_r8*dnUdz
-                adfac=fac1*ad_UFs(i,j,k2)
+                adfac=fac1*ad_UFsx(i,j,k2)
                 ad_cff1=ad_cff1+(cff1*cff-dnUdx(i-1,j,k1))*adfac
                 ad_cff2=ad_cff2+(cff2*cff-dnUdx(i  ,j,k2))*adfac
                 ad_cff3=ad_cff3+(cff3*cff-dnUdx(i-1,j,k2))*adfac
@@ -1321,7 +1553,7 @@
                 ad_dnUdx(i  ,j,k2)=ad_dnUdx(i  ,j,k2)-cff2*adfac
                 ad_dnUdx(i-1,j,k2)=ad_dnUdx(i-1,j,k2)-cff3*adfac
                 ad_dnUdx(i  ,j,k1)=ad_dnUdx(i  ,j,k1)-cff4*adfac
-                ad_UFs(i,j,k2)=0.0_r8
+                ad_UFsx(i,j,k2)=0.0_r8
 !>              tl_cff4=(0.5_r8+SIGN(0.5_r8, dZdx_r(i  ,j,k1)))*        &
 !>   &                  tl_dZdx_r(i  ,j,k1)
 !>
@@ -1388,12 +1620,31 @@
 !>
                 ad_dUdz(i,j,k2)=ad_dUdz(i,j,k2)+cff*ad_dnUdz
                 ad_dnUdz=0.0_r8
+#ifdef VISC_3DCOEF
+!>              tl_fac2=tl_cff*om_u(i,j)
+!>              tl_fac1=tl_cff*on_u(i,j)
+!>
+                ad_cff=ad_cff+                                          &
+     &                 on_u(i,j)*ad_fac1+om_u(i,j)*ad_fac2
+                ad_fac1=0.0_r8
+                ad_fac2=0.0_r8
+!>              tl_cff=0.125_r8*                                        &
+!>   &                 (tl_visc3d_r(i-1,j,k  )+tl_visc3d_r(i,j,k  )+    &
+!>   &                  tl_visc3d_r(i-1,j,k+1)+tl_visc3d_r(i,j,k+1))
+!>
+                adfac=0.125_r8*ad_cff
+                ad_visc3d_r(i-1,j,k  )=ad_visc3d_r(i-1,j,k  )+adfac
+                ad_visc3d_r(i  ,j,k  )=ad_visc3d_r(i  ,j,k  )+adfac
+                ad_visc3d_r(i-1,j,k+1)=ad_visc3d_r(i-1,j,k+1)+adfac
+                ad_visc3d_r(i  ,j,k+1)=ad_visc3d_r(i  ,j,k+1)+adfac
+                ad_cff=0.0_r8
+#endif
              END DO
             END DO
           END IF BELOW_SURFACE
 !
-          DO j=JU_RANGE+1
-            DO i=IV_RANGE+1
+          DO j=Jstr,Jend+1
+            DO i=Istr,Iend+1
               pm_p=0.25_r8*(pm(i-1,j-1)+pm(i-1,j)+                      &
      &                      pm(i  ,j-1)+pm(i  ,j))
               pn_p=0.25_r8*(pn(i-1,j-1)+pn(i-1,j)+                      &
@@ -1402,58 +1653,106 @@
               cff2=MAX(dZdx_p(i,j,k1),0.0_r8)
               cff3=MIN(dZde_p(i,j,k1),0.0_r8)
               cff4=MAX(dZde_p(i,j,k1),0.0_r8)
-!>            tl_VFx(i,j)=on_p(i,j)*on_p(i,j)*tl_cff
-!>            tl_UFe(i,j)=om_p(i,j)*om_p(i,j)*tl_cff
+#ifdef VISC_3DCOEF
+              cff=0.25_r8*                                              &
+     &            (Hz(i-1,j  ,k)+Hz(i,j  ,k)+                           &
+     &             Hz(i-1,j-1,k)+Hz(i,j-1,k))*                          &
+     &             (on_p(i,j)*(dnVdx(i,j,k1)-                           &
+     &                         0.5_r8*pn_p*                             &
+     &                         (cff1*(dVdz(i-1,j,k1)+                   &
+     &                                dVdz(i  ,j,k2))+                  &
+     &                          cff2*(dVdz(i-1,j,k2)+                   &
+     &                                dVdz(i  ,j,k1))))+                &
+     &              om_p(i,j)*(dmUde(i,j,k1)-                           &
+     &                         0.5_r8*pm_p*                             &
+     &                         (cff3*(dUdz(i,j-1,k1)+                   &
+     &                                dUdz(i,j  ,k2))+                  &
+     &                          cff4*(dUdz(i,j-1,k2)+                   &
+     &                                dUdz(i,j  ,k1)))))
+# ifdef MASKING
+              cff=cff*pmask(i,j)
+# endif
+              visc_p=0.25_r8*                                           &
+     &               (visc3d_r(i-1,j-1,k)+visc3d_r(i-1,j,k)+            &
+     &                visc3d_r(i  ,j-1,k)+visc3d_r(i  ,j,k))
+!>            tl_VFx(i,j)=on_p(i,j)*on_p(i,j)*                          &
+!>   &                    (tl_visc_p*cff+visc_p*tl_cff)
+!>
+              adfac=on_p(i,j)*on_p(i,j)*ad_VFx(i,j)
+              ad_cff=ad_cff+visc_p*adfac
+              ad_visc_p=ad_visc_p+cff*adfac
+              ad_VFx(i,j)=0.0_r8
+!>            tl_UFe(i,j)=om_p(i,j)*om_p(i,j)*                          &
+!>   &                    (tl_visc_p*cff+visc_p*tl_cff)
+!>
+              adfac=om_p(i,j)*om_p(i,j)*ad_UFe(i,j)
+              ad_cff=ad_cff+visc_p*adfac
+              ad_visc_p=ad_visc_p+cff*adfac
+              ad_UFe(i,j)=0.0_r8
+!>            tl_visc_p=0.25_r8*                                        &
+!>   &                  (tl_visc3d_r(i-1,j-1,k)+tl_visc3d_r(i-1,j,k)+   &
+!>   &                   tl_visc3d_r(i  ,j-1,k)+tl_visc3d_r(i  ,j,k))
+!>
+              adfac=0.25_r8*ad_visc_p
+              ad_visc3d_r(i-1,j-1,k)=ad_visc3d_r(i-1,j-1,k)+adfac
+              ad_visc3d_r(i  ,j-1,k)=ad_visc3d_r(i  ,j-1,k)+adfac
+              ad_visc3d_r(i-1,j  ,k)=ad_visc3d_r(i-1,j  ,k)+adfac
+              ad_visc3d_r(i  ,j  ,k)=ad_visc3d_r(i  ,j  ,k)+adfac
+              ad_visc_p=0.0_r8
+#else
+!>            tl_VFx(i,j)=on_p(i,j)*on_p(i,j)*visc2_p(i,j)*tl_cff
+!>            tl_UFe(i,j)=om_p(i,j)*om_p(i,j)*visc2_p(i,j)*tl_cff
 !>
               ad_cff=ad_cff+                                            &
-     &               on_p(i,j)*on_p(i,j)*ad_VFx(i,j)+                   &
-     &               om_p(i,j)*om_p(i,j)*ad_UFe(i,j)
+     &               on_p(i,j)*on_p(i,j)*visc2_p(i,j)*ad_VFx(i,j)+      &
+     &               om_p(i,j)*om_p(i,j)*visc2_p(i,j)*ad_UFe(i,j)
               ad_VFx(i,j)=0.0_r8
               ad_UFe(i,j)=0.0_r8
+#endif
 #ifdef MASKING
 !>            tl_cff=tl_cff*pmask(i,j)
 !>
               ad_cff=ad_cff*pmask(i,j)
 #endif
-!>            tl_cff=visc2_p(i,j)*0.25_r8*                              &
+!>            tl_cff=0.25_r8*                                           &
 !>   &               ((tl_Hz(i-1,j  ,k)+tl_Hz(i,j  ,k)+                 &
 !>   &                 tl_Hz(i-1,j-1,k)+tl_Hz(i,j-1,k))*                &
-!>   &                 (on_p(i,j)*(dnVdx(i,j,k1)-                       &
-!>   &                             0.5_r8*pn_p*                         &
-!>   &                             (cff1*(dVdz(i-1,j,k1)+               &
-!>   &                                    dVdz(i  ,j,k2))+              &
-!>   &                              cff2*(dVdz(i-1,j,k2)+               &
-!>   &                                    dVdz(i  ,j,k1))))+            &
-!>   &                  om_p(i,j)*(dmUde(i,j,k1)-                       &
-!>   &                             0.5_r8*pm_p*                         &
-!>   &                             (cff3*(dUdz(i,j-1,k1)+               &
-!>   &                                    dUdz(i,j  ,k2))+              &
-!>   &                              cff4*(dUdz(i,j-1,k2)+               &
-!>   &                                    dUdz(i,j  ,k1)))))+           &
+!>   &                (on_p(i,j)*(dnVdx(i,j,k1)-                        &
+!>   &                            0.5_r8*pn_p*                          &
+!>   &                            (cff1*(dVdz(i-1,j,k1)+                &
+!>   &                                   dVdz(i  ,j,k2))+               &
+!>   &                             cff2*(dVdz(i-1,j,k2)+                &
+!>   &                                   dVdz(i  ,j,k1))))+             &
+!>   &                 om_p(i,j)*(dmUde(i,j,k1)-                        &
+!>   &                            0.5_r8*pm_p*                          &
+!>   &                            (cff3*(dUdz(i,j-1,k1)+                &
+!>   &                                   dUdz(i,j  ,k2))+               &
+!>   &                             cff4*(dUdz(i,j-1,k2)+                &
+!>   &                                   dUdz(i,j  ,k1)))))+            &
 !>   &                (Hz(i-1,j  ,k)+Hz(i,j  ,k)+                       &
 !>   &                 Hz(i-1,j-1,k)+Hz(i,j-1,k))*                      &
-!>   &                 (on_p(i,j)*(tl_dnVdx(i,j,k1)-                    &
-!>   &                             0.5_r8*pn_p*                         &
-!>   &                            (tl_cff1*(dVdz(i-1,j,k1)+             &
-!>   &                                      dVdz(i  ,j,k2))+            &
-!>   &                             cff1*(tl_dVdz(i-1,j,k1)+             &
-!>   &                                   tl_dVdz(i  ,j,k2))+            &
-!>   &                             tl_cff2*(dVdz(i-1,j,k2)+             &
-!>   &                                      dVdz(i  ,j,k1))+            &
-!>   &                             cff2*(tl_dVdz(i-1,j,k2)+             &
-!>   &                                   tl_dVdz(i  ,j,k1)))+           &
-!>   &                  om_p(i,j)*(tl_dmUde(i,j,k1)-                    &
-!>   &                             0.5_r8*pm_p*                         &
-!>   &                             (tl_cff3*(dUdz(i,j-1,k1)+            &
-!>   &                                       dUdz(i,j  ,k2))+           &
-!>   &                              cff3*(tl_dUdz(i,j-1,k1)+            &
-!>   &                                    tl_dUdz(i,j  ,k2))+           &
-!>   &                              tl_cff4*(dUdz(i,j-1,k2)+            &
-!>   &                                       dUdz(i,j  ,k1))+           &
-!>   &                              cff4*(tl_dUdz(i,j-1,k2)+            &
-!>   &                                    tl_dUdz(i,j  ,k1)))))))
+!>   &                (on_p(i,j)*(tl_dnVdx(i,j,k1)-                     &
+!>   &                            0.5_r8*pn_p*                          &
+!>   &                           (tl_cff1*(dVdz(i-1,j,k1)+              &
+!>   &                                     dVdz(i  ,j,k2))+             &
+!>   &                            cff1*(tl_dVdz(i-1,j,k1)+              &
+!>   &                                  tl_dVdz(i  ,j,k2))+             &
+!>   &                            tl_cff2*(dVdz(i-1,j,k2)+              &
+!>   &                                     dVdz(i  ,j,k1))+             &
+!>   &                            cff2*(tl_dVdz(i-1,j,k2)+              &
+!>   &                                  tl_dVdz(i  ,j,k1)))+            &
+!>   &                 om_p(i,j)*(tl_dmUde(i,j,k1)-                     &
+!>   &                            0.5_r8*pm_p*                          &
+!>   &                            (tl_cff3*(dUdz(i,j-1,k1)+             &
+!>   &                                      dUdz(i,j  ,k2))+            &
+!>   &                             cff3*(tl_dUdz(i,j-1,k1)+             &
+!>   &                                   tl_dUdz(i,j  ,k2))+            &
+!>   &                             tl_cff4*(dUdz(i,j-1,k2)+             &
+!>   &                                      dUdz(i,j  ,k1))+            &
+!>   &                             cff4*(tl_dUdz(i,j-1,k2)+             &
+!>   &                                   tl_dUdz(i,j  ,k1)))))))
 !>
-              adfac=visc2_p(i,j)*0.25_r8*ad_cff
+              adfac=0.25_r8*ad_cff
               ad_cff=0.0_r8
               adfac1=adfac*(on_p(i,j)*(dnVdx(i,j,k1)-                   &
      &                                 0.5_r8*pn_p*                     &
@@ -1506,7 +1805,7 @@
      &                          ad_cff4+                                &
      &                          (0.5_r8+                                &
      &                           SIGN(0.5_r8,-dZde_p(i,j,k1)))*         &
-                                ad_cff3
+     &                          ad_cff3
               ad_cff4=0.0_r8
               ad_cff3=0.0_r8
 !>            tl_cff2=(0.5_r8+SIGN(0.5_r8, dZdx_p(i,j,k1)))*            &
@@ -1520,70 +1819,102 @@
      &                          ad_cff2+                                &
      &                          (0.5_r8+                                &
      &                           SIGN(0.5_r8,-dZdx_p(i,j,k1)))*         &
-                                ad_cff1
+     &                          ad_cff1
               ad_cff2=0.0_r8
               ad_cff1=0.0_r8
             END DO
           END DO
 !
-          DO j=-1+JV_RANGE
-            DO i=-1+IU_RANGE
+          DO j=JstrV-1,Jend
+            DO i=IstrU-1,Iend
               cff1=MIN(dZdx_r(i,j,k1),0.0_r8)
               cff2=MAX(dZdx_r(i,j,k1),0.0_r8)
               cff3=MIN(dZde_r(i,j,k1),0.0_r8)
               cff4=MAX(dZde_r(i,j,k1),0.0_r8)
-!>            tl_VFe(i,j)=om_r(i,j)*om_r(i,j)*tl_cff
-!>            tl_UFx(i,j)=on_r(i,j)*on_r(i,j)*tl_cff
+#ifdef VISC_3DCOEF
+              cff=Hz(i,j,k)*                                            &
+     &            (on_r(i,j)*(dnUdx(i,j,k1)-                            &
+     &                        0.5_r8*pn(i,j)*                           &
+     &                        (cff1*(dUdz(i  ,j,k1)+                    &
+     &                               dUdz(i+1,j,k2))+                   &
+     &                         cff2*(dUdz(i  ,j,k2)+                    &
+     &                               dUdz(i+1,j,k1))))-                 &
+     &             om_r(i,j)*(dmVde(i,j,k1)-                            &
+     &                        0.5_r8*pm(i,j)*                           &
+     &                        (cff3*(dVdz(i,j  ,k1)+                    &
+     &                               dVdz(i,j+1,k2))+                   &
+     &                         cff4*(dVdz(i,j  ,k2)+                    &
+     &                               dVdz(i,j+1,k1)))))
+# ifdef MASKING
+              cff=cff*rmask(i,j)
+# endif
+!>            tl_VFe(i,j)=om_r(i,j)*om_r(i,j)*                          &
+!>   &                    (tl_visc3d_r(i,j,k)*cff+                      &
+!>   &                     visc3d_r(i,j,k)*tl_cff)
+!>
+              adfac=om_r(i,j)*om_r(i,j)*ad_VFe(i,j)
+              ad_cff=ad_cff+visc3d_r(i,j,k)*adfac
+              ad_visc3d_r(i,j,k)=ad_visc3d_r(i,j,k)+cff*adfac
+              ad_VFe(i,j)=0.0_r8
+!>            tl_UFx(i,j)=on_r(i,j)*on_r(i,j)*                          &
+!>   &                    (tl_visc3d_r(i,j,k)*cff+                      &
+!>   &                     visc3d_r(i,j,k)*tl_cff)
+!>
+              adfac=on_r(i,j)*on_r(i,j)*ad_UFx(i,j)
+              ad_cff=ad_cff+visc3d_r(i,j,k)*adfac
+              ad_visc3d_r(i,j,k)=ad_visc3d_r(i,j,k)+cff*adfac
+              ad_UFx(i,j)=0.0_r8
+#else
+!>            tl_VFe(i,j)=om_r(i,j)*om_r(i,j)*visc2_r(i,j)*tl_cff
+!>            tl_UFx(i,j)=on_r(i,j)*on_r(i,j)*visc2_r(i,j)*tl_cff
 !>
               ad_cff=ad_cff+                                            &
-     &               om_r(i,j)*om_r(i,j)*ad_VFe(i,j)+                   &
-     &               on_r(i,j)*on_r(i,j)*ad_UFx(i,j)
+     &               om_r(i,j)*om_r(i,j)*visc2_r(i,j)*ad_VFe(i,j)+      &
+     &               on_r(i,j)*on_r(i,j)*visc2_r(i,j)*ad_UFx(i,j)
               ad_VFe(i,j)=0.0_r8
               ad_UFx(i,j)=0.0_r8
+#endif
 #ifdef MASKING
 !>            tl_cff=tl_cff*rmask(i,j)
 !>
               ad_cff=ad_cff*rmask(i,j)
 #endif
-!>            tl_cff=visc2_r(i,j)*                                      &
-!>   &               (tl_Hz(i,j,k)*                                     &
-!>   &                (on_r(i,j)*(dnUdx(i,j,k1)-                        &
-!>   &                            0.5_r8*pn(i,j)*                       &
-!>   &                            (cff1*(dUdz(i  ,j,k1)+                &
-!>   &                                   dUdz(i+1,j,k2))+               &
-!>   &                             cff2*(dUdz(i  ,j,k2)+                &
-!>   &                                   dUdz(i+1,j,k1))))-             &
-!>   &                 om_r(i,j)*(dmVde(i,j,k1)-                        &
-!>   &                            0.5_r8*pm(i,j)*                       &
-!>   &                            (cff3*(dVdz(i,j  ,k1)+                &
-!>   &                                   dVdz(i,j+1,k2))+               &
-!>   &                             cff4*(dVdz(i,j  ,k2)+                &
-!>   &                                   dVdz(i,j+1,k1)))))+            &
-!>   &                Hz(i,j,k)*                                        &
-!>   &                (on_r(i,j)*(tl_dnUdx(i,j,k1)-                     &
-!>   &                            0.5_r8*pn(i,j)*                       &
-!>   &                            (tl_cff1*(dUdz(i  ,j,k1)+             &
-!>   &                                      dUdz(i+1,j,k2))+            &
-!>   &                             cff1*(tl_dUdz(i  ,j,k1)+             &
-!>   &                                   tl_dUdz(i+1,j,k2))+            &
-!>   &                             tl_cff2*(dUdz(i  ,j,k2)+             &
-!>   &                                      dUdz(i+1,j,k1))+            &
-!>   &                             cff2*(tl_dUdz(i  ,j,k2)+             &
-!>   &                                   tl_dUdz(i+1,j,k1))))-          &
-!>   &                 om_r(i,j)*(tl_dmVde(i,j,k1)-                     &
-!>   &                            0.5_r8*pm(i,j)*                       &
-!>   &                            (tl_cff3*(dVdz(i,j  ,k1)+             &
-!>   &                                      dVdz(i,j+1,k2))+            &
-!>   &                             cff3*(tl_dVdz(i,j  ,k1)+             &
-!>   &                                   tl_dVdz(i,j+1,k2))+            &
-!>   &                             tl_cff4*(dVdz(i,j  ,k2)+             &
-!>   &                                      dVdz(i,j+1,k1))+            &
-!>   &                             cff4*(tl_dVdz(i,j  ,k2)+             &
-!>   &                                   tl_dVdz(i,j+1,k1))))))
+!>            tl_cff=tl_Hz(i,j,k)*                                      &
+!>   &               (on_r(i,j)*(dnUdx(i,j,k1)-                         &
+!>   &                           0.5_r8*pn(i,j)*                        &
+!>   &                           (cff1*(dUdz(i  ,j,k1)+                 &
+!>   &                                  dUdz(i+1,j,k2))+                &
+!>   &                            cff2*(dUdz(i  ,j,k2)+                 &
+!>   &                                  dUdz(i+1,j,k1))))-              &
+!>   &                om_r(i,j)*(dmVde(i,j,k1)-                         &
+!>   &                           0.5_r8*pm(i,j)*                        &
+!>   &                           (cff3*(dVdz(i,j  ,k1)+                 &
+!>   &                                  dVdz(i,j+1,k2))+                &
+!>   &                            cff4*(dVdz(i,j  ,k2)+                 &
+!>   &                                  dVdz(i,j+1,k1)))))+             &
+!>   &               Hz(i,j,k)*                                         &
+!>   &               (on_r(i,j)*(tl_dnUdx(i,j,k1)-                      &
+!>   &                           0.5_r8*pn(i,j)*                        &
+!>   &                           (tl_cff1*(dUdz(i  ,j,k1)+              &
+!>   &                                     dUdz(i+1,j,k2))+             &
+!>   &                            cff1*(tl_dUdz(i  ,j,k1)+              &
+!>   &                                  tl_dUdz(i+1,j,k2))+             &
+!>   &                            tl_cff2*(dUdz(i  ,j,k2)+              &
+!>   &                                     dUdz(i+1,j,k1))+             &
+!>   &                            cff2*(tl_dUdz(i  ,j,k2)+              &
+!>   &                                  tl_dUdz(i+1,j,k1))))-           &
+!>   &                om_r(i,j)*(tl_dmVde(i,j,k1)-                      &
+!>   &                           0.5_r8*pm(i,j)*                        &
+!>   &                           (tl_cff3*(dVdz(i,j  ,k1)+              &
+!>   &                                     dVdz(i,j+1,k2))+             &
+!>   &                            cff3*(tl_dVdz(i,j  ,k1)+              &
+!>   &                                  tl_dVdz(i,j+1,k2))+             &
+!>   &                            tl_cff4*(dVdz(i,j  ,k2)+              &
+!>   &                                     dVdz(i,j+1,k1))+             &
+!>   &                            cff4*(tl_dVdz(i,j  ,k2)+              &
+!>   &                                  tl_dVdz(i,j+1,k1)))))
 !>
-              adfac=visc2_r(i,j)*ad_cff
-              ad_cff=0.0_r8
-              adfac1=adfac*Hz(i,j,k)
+              adfac1=Hz(i,j,k)*ad_cff
               adfac2=adfac1*on_r(i,j)
               adfac3=adfac2*0.5_r8*pn(i,j)
               adfac4=adfac1*om_r(i,j)
@@ -1601,7 +1932,7 @@
      &                                        dVdz(i,j+1,k2))+          &
      &                                  cff4*(dVdz(i,j  ,k2)+           &
      &                                        dVdz(i,j+1,k1)))))*       &
-     &                     adfac
+     &                     ad_cff
               ad_dnUdx(i,j,k1)=ad_dnUdx(i,j,k1)+adfac2
               ad_cff1=ad_cff1-                                          &
      &                (dUdz(i  ,j,k1)+dUdz(i+1,j,k2))*adfac3
@@ -1620,6 +1951,7 @@
               ad_dVdz(i,j  ,k2)=ad_dVdz(i,j  ,k2)+cff4*adfac5
               ad_dVdz(i,j+1,k1)=ad_dVdz(i,j+1,k1)+cff4*adfac5
               ad_dVdz(i,j+1,k2)=ad_dVdz(i,j+1,k2)+cff3*adfac5
+              ad_cff=0.0_r8
 !>            tl_cff4=(0.5_r8+SIGN(0.5_r8, dZde_r(i,j,k1)))*            &
 !>   &                tl_dZde_r(i,j,k1)
 !>            tl_cff3=(0.5_r8+SIGN(0.5_r8,-dZde_r(i,j,k1)))*            &
@@ -1651,30 +1983,47 @@
             END DO
           END DO
         END IF ABOVE_BOTTOM
+
         IF ((k.eq.0).or.(k.eq.N(ng))) THEN
-          DO j=JU_RANGE
-            DO i=-1+IU_RANGE+1
-!>            tl_UFs(i,j,k2)=0.0_r8
+          DO j=JstrV-1,Jend+1
+            DO i=Istr-1,Iend+1
+!>            tl_VFse(i,j,k2)=0.0_r8
 !>
-              ad_UFs(i,j,k2)=0.0_r8
-!>            tl_dUdz(i,j,k2)=0.0_r8
+              ad_VFse(i,j,k2)=0.0_r8
+!>            tl_VFsx(i,j,k2)=0.0_r8
 !>
-              ad_dUdz(i,j,k2)=0.0_r8
+              ad_VFsx(i,j,k2)=0.0_r8
             END DO
           END DO
-          DO j=-1+JV_RANGE+1
-            DO i=IV_RANGE
-!>            tl_VFs(i,j,k2)=0.0_r8
+          DO j=Jstr-1,Jend+1
+            DO i=IstrU-1,Iend+1
+!>            tl_UFse(i,j,k2)=0.0_r8
 !>
-              ad_VFs(i,j,k2)=0.0_r8
+              ad_UFse(i,j,k2)=0.0_r8
+!>            tl_UFsx(i,j,k2)=0.0_r8
+!>
+              ad_UFsx(i,j,k2)=0.0_r8
+            END DO
+          END DO
+
+          DO j=JstrV-1,Jend+1
+            DO i=Istr-1,Iend+1
 !>            tl_dVdz(i,j,k2)=0.0_r8
 !>
               ad_dVdz(i,j,k2)=0.0_r8
             END DO
           END DO
+          DO j=Jstr-1,Jend+1
+            DO i=IstrU-1,Iend+1
+
+!>            tl_dUdz(i,j,k2)=0.0_r8
+!>
+              ad_dUdz(i,j,k2)=0.0_r8
+            END DO
+          END DO
         ELSE
-          DO j=-1+JV_RANGE+1
-            DO i=IV_RANGE
+          DO j=JstrV-1,Jend+1
+            DO i=Istr-1,Iend+1
               cff=1.0_r8/(0.5_r8*(z_r(i,j-1,k+1)-z_r(i,j-1,k)+          &
      &                            z_r(i,j  ,k+1)-z_r(i,j  ,k)))
 !>            tl_dVdz(i,j,k2)=tl_cff*(v(i,j,k+1,nrhs)-                  &
@@ -1701,8 +2050,9 @@
               ad_cff=0.0_r8
             END DO
           END DO
-          DO j=JU_RANGE
-            DO i=-1+IU_RANGE+1
+
+          DO j=Jstr-1,Jend+1
+            DO i=IstrU-1,Iend+1
               cff=1.0_r8/(0.5_r8*(z_r(i-1,j,k+1)-z_r(i-1,j,k)+          &
      &                            z_r(i  ,j,k+1)-z_r(i  ,j,k)))
 !>            tl_dUdz(i,j,k2)=tl_cff*(u(i,j,k+1,nrhs)-                  &
@@ -1730,9 +2080,30 @@
             END DO
           END DO
         END IF
+
         IF (k.lt.N(ng)) THEN
-          DO j=JU_RANGE+1
-            DO i=IV_RANGE+1
+          DO j=JstrV-1,Jend
+            DO i=IstrU-1,Iend
+              cff=0.5_r8*pn(i,j)
+#ifdef MASKING
+              cff=cff*rmask(i,j)
+#endif
+!>            tl_dmVde(i,j,k2)=cff*((pm(i,j  )+pm(i,j+1))*              &
+!>   &                              tl_v(i,j+1,k+1,nrhs)-               &
+!>   &                              (pm(i,j-1)+pm(i,j  ))*              &
+!>   &                              tl_v(i,j  ,k+1,nrhs))
+!>
+              adfac=cff*ad_dmVde(i,j,k2)
+              ad_v(i,j  ,k+1,nrhs)=ad_v(i,j  ,k+1,nrhs)-                &
+     &                             (pm(i,j-1)+pm(i,j  ))*adfac
+              ad_v(i,j+1,k+1,nrhs)=ad_v(i,j+1,k+1,nrhs)+                &
+     &                             (pm(i,j  )+pm(i,j+1))*adfac
+              ad_dmVde(i,j,k2)=0.0_r8
+            END DO
+          END DO
+
+          DO j=Jstr,Jend+1
+            DO i=IstrU-1,Iend+1
               cff=0.125_r8*(pm(i-1,j  )+pm(i,j  )+                      &
      &                      pm(i-1,j-1)+pm(i,j-1))
 #ifdef MASKING
@@ -1749,6 +2120,11 @@
               ad_v(i  ,j,k+1,nrhs)=ad_v(i  ,j,k+1,nrhs)+                &
      &                             (pn(i  ,j-1)+pn(i  ,j))*adfac
               ad_dnVdx(i,j,k2)=0.0_r8
+            END DO
+          END DO
+
+          DO j=Jstr,Jend+1
+            DO i=Istr,Iend+1
               cff=0.125_r8*(pn(i-1,j  )+pn(i,j  )+                      &
      &                      pn(i-1,j-1)+pn(i,j-1))
 #ifdef MASKING
@@ -1767,23 +2143,9 @@
               ad_dmUde(i,j,k2)=0.0_r8
             END DO
           END DO
-          DO j=-1+JV_RANGE
-            DO i=-1+IU_RANGE
-              cff=0.5_r8*pn(i,j)
-#ifdef MASKING
-              cff=cff*rmask(i,j)
-#endif
-!>            tl_dmVde(i,j,k2)=cff*((pm(i,j  )+pm(i,j+1))*              &
-!>   &                              tl_v(i,j+1,k+1,nrhs)-               &
-!>   &                              (pm(i,j-1)+pm(i,j  ))*              &
-!>   &                              tl_v(i,j  ,k+1,nrhs))
-!>
-              adfac=cff*ad_dmVde(i,j,k2)
-              ad_v(i,j  ,k+1,nrhs)=ad_v(i,j  ,k+1,nrhs)-                &
-     &                             (pm(i,j-1)+pm(i,j  ))*adfac
-              ad_v(i,j+1,k+1,nrhs)=ad_v(i,j+1,k+1,nrhs)+                &
-     &                             (pm(i,j  )+pm(i,j+1))*adfac
-              ad_dmVde(i,j,k2)=0.0_r8
+
+          DO j=JstrV-1,Jend
+            DO i=IstrU-1,Iend
               cff=0.5_r8*pm(i,j)
 #ifdef MASKING
               cff=cff*rmask(i,j)
@@ -1804,8 +2166,8 @@
 !
 !  Compute slopes (nondimensional) at RHO- and PSI-points.
 !
-          DO j=JU_RANGE
-            DO i=-1+IV_RANGE+1
+          DO j=JstrV-1,Jend
+            DO i=IstrU-1,Iend
 !>            tl_dZde_r(i,j,k2)=0.5_r8*(tl_VFe(i,j  )+                  &
 !>   &                                  tl_VFe(i,j+1))
 !>
@@ -1813,17 +2175,18 @@
               ad_VFe(i,j  )=ad_VFe(i,j  )+adfac
               ad_VFe(i,j+1)=ad_VFe(i,j+1)+adfac
               ad_dZde_r(i,j,k2)=0.0_r8
+!>            tl_dZdx_r(i,j,k2)=0.5_r8*(tl_UFx(i  ,j)+                  &
+!>   &                                  tl_UFx(i+1,j))
+!>
+              adfac=0.5_r8*ad_dZdx_r(i,j,k2)
+              ad_UFx(i  ,j)=ad_UFx(i  ,j)+adfac
+              ad_UFx(i+1,j)=ad_UFx(i+1,j)+adfac
+              ad_dZdx_r(i,j,k2)=0.0_r8
             END DO
           END DO
-          DO j=JU_RANGE+1
-            DO i=IV_RANGE+1
-!>            tl_dZdx_p(i,j,k2)=0.5_r8*(tl_UFx(i,j-1)+                  &
-!>   &                                  tl_UFx(i,j  ))
-!>
-              adfac=0.5_r8*ad_dZdx_p(i,j,k2)
-              ad_UFx(i,j-1)=ad_UFx(i,j-1)+adfac
-              ad_UFx(i,j  )=ad_UFx(i,j  )+adfac
-              ad_dZdx_p(i,j,k2)=0.0_r8
+
+          DO j=Jstr,Jend+1
+            DO i=Istr,Iend+1
 !>            tl_dZde_p(i,j,k2)=0.5_r8*(tl_VFe(i-1,j)+                  &
 !>   &                                  tl_VFe(i  ,j))
 !>
@@ -1831,8 +2194,18 @@
               ad_VFe(i-1,j)=ad_VFe(i-1,j)+adfac
               ad_VFe(i  ,j)=ad_VFe(i  ,j)+adfac
               ad_dZde_p(i,j,k2)=0.0_r8
+!>            tl_dZdx_p(i,j,k2)=0.5_r8*(tl_UFx(i,j-1)+                  &
+!>   &                                  tl_UFx(i,j  ))
+!>
+              adfac=0.5_r8*ad_dZdx_p(i,j,k2)
+              ad_UFx(i,j-1)=ad_UFx(i,j-1)+adfac
+              ad_UFx(i,j  )=ad_UFx(i,j  )+adfac
+              ad_dZdx_p(i,j,k2)=0.0_r8
             END DO
-            DO i=-1+IV_RANGE+1
+          END DO
+!
+          DO j=JstrV-1,Jend+1
+            DO i=Istr-1,Iend+1
               cff=0.5_r8*(pn(i,j-1)+pn(i,j))
 #ifdef MASKING
               cff=cff*vmask(i,j)
@@ -1846,17 +2219,9 @@
               ad_VFe(i,j)=0.0_r8
             END DO
           END DO
-          DO j=-1+JU_RANGE+1
-            DO i=IV_RANGE
-!>            tl_dZdx_r(i,j,k2)=0.5_r8*(tl_UFx(i  ,j)+                  &
-!>   &                                  tl_UFx(i+1,j))
-!>
-              adfac=0.5_r8*ad_dZdx_r(i,j,k2)
-              ad_UFx(i  ,j)=ad_UFx(i  ,j)+adfac
-              ad_UFx(i+1,j)=ad_UFx(i+1,j)+adfac
-              ad_dZdx_r(i,j,k2)=0.0_r8
-            END DO
-            DO i=IV_RANGE+1
+
+          DO j=Jstr-1,Jend+1
+            DO i=IstrU-1,Iend+1
               cff=0.5_r8*(pm(i-1,j)+pm(i,j))
 #ifdef MASKING
               cff=cff*umask(i,j)
@@ -1878,9 +2243,5 @@
         k2=k1
         k1=kt
       END DO K_LOOP
-#undef IU_RANGE
-#undef IV_RANGE
-#undef JU_RANGE
-#undef JV_RANGE
       RETURN
       END SUBROUTINE ad_uv3dmix2_tile

@@ -2,7 +2,7 @@
 !
 !svn $Id: mod_kinds.F 1589 2008-07-24 04:02:51Z jcwarner $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2010 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2014 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -35,5 +35,6 @@
 #else
         integer, parameter :: r16 = selected_real_kind(15,300) !128-bit
 #endif
+        integer, parameter :: char_len = 256
 
       END MODULE mod_kinds

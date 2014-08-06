@@ -2,7 +2,7 @@
 !
 !svn $Id: symmetry.h 429 2009-12-20 17:30:26Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2010 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2014 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -33,7 +33,7 @@
 
       CONTAINS
 
-      SUBROUTINE ROMS_initialize (first, MyCOMM)
+      SUBROUTINE ROMS_initialize (first, mpiCOMM)
 !
 !=======================================================================
 !                                                                      !
@@ -52,13 +52,20 @@
 !
       logical, intent(inout) :: first
 
-      integer, intent(in), optional :: MyCOMM
+      integer, intent(in), optional :: mpiCOMM
 !
 !  Local variable declarations.
 !
       logical :: allocate_vars = .TRUE.
 
-      integer :: STDrec, Tindex, ng, thread
+#ifdef DISTRIBUTE
+      integer :: MyError, MySize
+#endif
+      integer :: STDrec, Tindex
+      integer :: chunk_size, ng, thread
+#ifdef _OPENMP
+      integer :: my_threadnum
+#endif
 
 #ifdef DISTRIBUTE
 !
@@ -66,11 +73,13 @@
 !  Set distribute-memory (MPI) world communictor.
 !-----------------------------------------------------------------------
 !
-      IF (PRESENT(MyCOMM)) THEN
-        OCN_COMM_WORLD=MyCOMM
+      IF (PRESENT(mpiCOMM)) THEN
+        OCN_COMM_WORLD=mpiCOMM
       ELSE
         OCN_COMM_WORLD=MPI_COMM_WORLD
       END IF
+      CALL mpi_comm_rank (OCN_COMM_WORLD, MyRank, MyError)
+      CALL mpi_comm_size (OCN_COMM_WORLD, MySize, MyError)
 #endif
 !
 !-----------------------------------------------------------------------
@@ -83,92 +92,119 @@
       IF (first) THEN
         first=.FALSE.
 !
-!  Initialize parallel parameters.
+!  Initialize parallel control switches. These scalars switches are
+!  independent from standard input parameters.
 !
         CALL initialize_parallel
 !
-!  Initialize wall clocks.
-!
-        IF (Master) THEN
-          WRITE (stdout,10)
- 10       FORMAT (' Process Information:',/)
-        END IF
-        DO ng=1,Ngrids
-!$OMP PARALLEL DO PRIVATE(thread) SHARED(ng,numthreads)
-          DO thread=0,numthreads-1
-            CALL wclock_on (ng, iNLM, 0)
-          END DO
-!$OMP END PARALLEL DO
-        END DO
-!
-!  Read in model tunable parameters from standard input. Initialize
-!  "mod_param", "mod_ncparam" and "mod_scalar" modules.
+!  Read in model tunable parameters from standard input. Allocate and
+!  initialize variables in several modules after the number of nested
+!  grids and dimension parameters are known.
 !
         CALL inp_par (iNLM)
         IF (exit_flag.ne.NoError) RETURN
 !
+!  Set domain decomposition tile partition range.  This range is
+!  computed only once since the "first_tile" and "last_tile" values
+!  are private for each parallel thread/node.
+!
+!$OMP PARALLEL
+#if defined _OPENMP
+      MyThread=my_threadnum()
+#elif defined DISTRIBUTE
+      MyThread=MyRank
+#else
+      MyThread=0
+#endif
+      DO ng=1,Ngrids
+        chunk_size=(NtileX(ng)*NtileE(ng)+numthreads-1)/numthreads
+        first_tile(ng)=MyThread*chunk_size
+        last_tile (ng)=first_tile(ng)+chunk_size-1
+      END DO
+!$OMP END PARALLEL
+!
+!  Initialize internal wall clocks. Notice that the timings does not
+!  includes processing standard input because several parameters are
+!  needed to allocate clock variables.
+!
+        IF (Master) THEN
+          WRITE (stdout,10)
+ 10       FORMAT (/,' Process Information:',/)
+        END IF
+!
+        DO ng=1,Ngrids
+!$OMP PARALLEL
+          DO thread=THREAD_RANGE
+            CALL wclock_on (ng, iNLM, 0)
+          END DO
+!$OMP END PARALLEL
+        END DO
+!
 !  Allocate and initialize modules variables.
 !
+!$OMP PARALLEL
         CALL mod_arrays (allocate_vars)
+!$OMP END PARALLEL
 !
 !  Allocate and initialize observation arrays.
 !
         CALL initialize_fourdvar
+
+      END IF
 !
-!  Read in standard deviation factors for initial conditions
-!  error covariance.  They are loaded in Tindex=1 of the
-!  e_var(...,Tindex) state variables.
+!-----------------------------------------------------------------------
+!  Read in standard deviation factors for error covariance.
+!-----------------------------------------------------------------------
 !
-        STDrec=1
-        Tindex=1
+!  Initial conditions standard deviation. They are loaded in Tindex=1
+!  of the e_var(...,Tindex) state variables.
+!
+      STDrec=1
+      Tindex=1
+      DO ng=1,Ngrids
+        CALL get_state (ng, 6, 6, STD(1,ng)%name, STDrec, Tindex)
+        IF (exit_flag.ne.NoError) RETURN
+      END DO
+!
+!  Model error standard deviation. They are loaded in Tindex=2
+!  of the e_var(...,Tindex) state variables.
+!
+      STDrec=1
+      Tindex=2
+      IF (NSA.eq.2) THEN
         DO ng=1,Ngrids
-          CALL get_state (ng, 6, 6, STDname(1,ng), STDrec, Tindex)
+          CALL get_state (ng, 6, 6, STD(2,ng)%name, STDrec, Tindex)
           IF (exit_flag.ne.NoError) RETURN
         END DO
-!
-!  Read in standard deviation factors for model error covariance.
-!  They are loaded in Tindex=2 of the e_var(...,Tindex) state
-!  variables.
-!
-        STDrec=1
-        Tindex=2
-        DO ng=1,Ngrids
-          IF (NSA.eq.2) THEN
-            CALL get_state (ng, 6, 6, STDname(2,ng), STDrec, Tindex)
-            IF (exit_flag.ne.NoError) RETURN
-          END IF
-        END DO
+      END IF
 
 #ifdef ADJUST_BOUNDARY
 !
-!  Read in standard deviation factors for boundary conditions
-!  error covariance.
+!  Open boundary conditions standard deviation.
 !
-        STDrec=1
-        Tindex=1
-        DO ng=1,Ngrids
-          CALL get_state (ng, 8, 8, STDname(3,ng), STDrec, Tindex)
-          IF (exit_flag.ne.NoError) RETURN
-        END DO
+      STDrec=1
+      Tindex=1
+      DO ng=1,Ngrids
+        CALL get_state (ng, 8, 8, STD(3,ng)%name, STDrec, Tindex)
+        IF (exit_flag.ne.NoError) RETURN
+      END DO
 #endif
 #if defined ADJUST_WSTRESS || defined ADJUST_STFLUX
 !
-!  Read in standard deviation factors for surface forcing
-!  error covariance.
+!  Surface forcing standard deviation.
 !
-        STDrec=1
-        Tindex=1
-        DO ng=1,Ngrids
-          CALL get_state (ng, 9, 9, STDname(4,ng), STDrec, Tindex)
-          IF (exit_flag.ne.NoError) RETURN
-        END DO
+      STDrec=1
+      Tindex=1
+      DO ng=1,Ngrids
+        CALL get_state (ng, 9, 9, STD(4,ng)%name, STDrec, Tindex)
+        IF (exit_flag.ne.NoError) RETURN
+      END DO
 #endif
-      END IF
 
       RETURN
       END SUBROUTINE ROMS_initialize
 
-      SUBROUTINE ROMS_run (Tstr, Ted)
+      SUBROUTINE ROMS_run (RunInterval)
 !
 !=======================================================================
 !                                                                      !
@@ -185,98 +221,91 @@
       USE mod_scalars
       USE mod_stepping
 !
-#ifdef BALANCE_OPERATOR
-      USE ad_balance_mod, ONLY: ad_balance
-#endif
-      USE ad_convolution_mod, ONLY : ad_convolution
-      USE ad_variability_mod, ONLY : ad_variability
+      USE convolve_mod, ONLY : error_covariance
 #ifdef DISTRIBUTE
       USE distribute_mod, ONLY : mp_bcastf
 #endif
-      USE ini_adjust_mod, ONLY : load_ADtoTL
-      USE ini_adjust_mod, ONLY : load_TLtoAD
       USE normalization_mod, ONLY : normalization
-#ifdef BALANCE_OPERATOR
-      USE tl_balance_mod, ONLY: tl_balance
-#endif
-      USE tl_convolution_mod, ONLY : tl_convolution
-      USE tl_variability_mod, ONLY : tl_variability
 !
 !  Imported variable declarations
 !
-      integer, dimension(Ngrids) :: Tstr
-      integer, dimension(Ngrids) :: Tend
+      real(r8), intent(in) :: RunInterval            ! seconds
 !
 !  Local variable declarations.
 !
-      logical :: BOUNDED_TL, add
-      logical :: Lweak
+      logical :: BOUNDED_TL
 
-      integer :: i, j, my_iic, ng, subs, tile, thread
-      integer :: ADrec, Lstate, NRMrec, Nrec, rec
+      integer :: i, j, ng, tile
+      integer :: Lbck, Lini, Lstate, NRMrec
       integer :: IperAD, JperAD, KperAD, ivarAD
       integer :: IoutTL, JoutTL, KoutTL, ivarTL
 #ifdef DISTRIBUTE
       integer :: Istr, Iend, Jstr, Jend
 #endif
-#ifdef BALANCE_OPERATOR
-      integer :: Lbck = 1
-#endif
+      integer, dimension(Ngrids) :: Nrec
+
       integer, allocatable :: StateVar(:)
 
-      real(r8), allocatable :: R(:,:), Rerr(:,:)
+      real(r8), allocatable :: R(:,:,:), Rerr(:,:)
 
+      character (len=8 ) :: driver
       character (len=20) :: frmt
-!
-!-----------------------------------------------------------------------
-!  Run model for all nested grids, if any.
-!-----------------------------------------------------------------------
-!
-      NEST_LOOP : DO ng=1,Ngrids
 !
 !-----------------------------------------------------------------------
 !  Run nonlinear model and compute basic state tracjectory.
 !-----------------------------------------------------------------------
 !
+      Lini=1                ! NLM initial conditions record in INI
+      Lbck=1                ! background record in INI
+      Rec1=1
+      Rec2=2
+      driver='symmetry'
+!
 !  Initialize and set nonlinear model initial conditions.
 !
+      DO ng=1,Ngrids
         wrtNLmod(ng)=.FALSE.
         wrtRPmod(ng)=.FALSE.
         wrtTLmod(ng)=.FALSE.
-        CALL initial (ng)
-        IF (exit_flag.ne.NoError) RETURN
+      END DO
+
+!$OMP PARALLEL
+      CALL initial
+!$OMP END PARALLEL
+      IF (exit_flag.ne.NoError) RETURN
 !
 !  Run nonlinear model and compute basic state trajectory.
 !
+      DO ng=1,Ngrids
         IF (Master) THEN
-          WRITE (stdout,10) 'NL', ntstart(ng), ntend(ng)
+          WRITE (stdout,10) 'NL', ng, ntstart(ng), ntend(ng)
         END IF
+      END DO
 
-        time(ng)=time(ng)-dt(ng)
-
-        NL_LOOP : DO my_iic=ntstart(ng),ntend(ng)+1
-
-          iic(ng)=my_iic
+!$OMP PARALLEL
 #ifdef SOLVE3D
-          CALL main3d (ng)
+      CALL main3d (RunInterval)
 #else
-          CALL main2d (ng)
+      CALL main2d (RunInterval)
 #endif
-          IF (exit_flag.ne.NoError) RETURN
-
-        END DO NL_LOOP
+!$OMP END PARALLEL
+      IF (exit_flag.ne.NoError) RETURN
 !
 !  Set forward file trajectory.
 !
-        FWDname(ng)=HISname(ng)
-        ncFWDid(ng)=ncHISid(ng)
+      DO ng=1,Ngrids
+        FWD(ng)%name=HIS(ng)%name
+        FWD(ng)%ncid=HIS(ng)%ncid
+      END DO
 
 #if defined BULK_FLUXES && defined NL_BULK_FLUXES
 !
 !  Set file name containing the nonlinear model bulk fluxes to be read
 !  and processed by other algorithms.
 !
-        BLKname(ng)=HISname(ng)
+      DO ng=1,Ngrids
+        BLK(ng)%name=HIS(ng)%name
+      END DO
 #endif
 !
 !-----------------------------------------------------------------------
@@ -288,6 +317,7 @@
 !  computation and needs to be computed once for a particular
 !  application grid.
 !
+      DO ng=1,Ngrids
         IF (ANY(LwrtNRM(:,ng))) THEN
           CALL def_norm (ng, iNLM, 1)
           IF (exit_flag.ne.NoError) RETURN
@@ -304,41 +334,40 @@
           CALL def_norm (ng, iNLM, 4)
           IF (exit_flag.ne.NoError) RETURN
 #endif
-!$OMP PARALLEL DO PRIVATE(ng,thread,subs,tile)                          &
-!$OMP&            SHARED(inner,numthreads)
-          DO thread=0,numthreads-1
-            subs=NtileX(ng)*NtileE(ng)/numthreads
-            DO tile=subs*thread,subs*(thread+1)-1
-              CALL normalization (ng, TILE, 2)
-            END DO
+!$OMP PARALLEL
+          DO tile=first_tile(ng),last_tile(ng),+1
+            CALL normalization (ng, tile, 2)
           END DO
-!$OMP END PARALLEL DO
+!$OMP END PARALLEL
           LdefNRM(1:4,ng)=.FALSE.
           LwrtNRM(1:4,ng)=.FALSE.
         ELSE
           NRMrec=1
-          CALL get_state (ng, 5, 5, NRMname(1,ng), NRMrec, 1)
+          CALL get_state (ng, 5, 5, NRM(1,ng)%name, NRMrec, 1)
           IF (exit_flag.ne.NoError) RETURN
 
           IF (NSA.eq.2) THEN
-            CALL get_state (ng, 5, 5, NRMname(2,ng), NRMrec, 2)
+            CALL get_state (ng, 5, 5, NRM(2,ng)%name, NRMrec, 2)
             IF (exit_flag.ne.NoError) RETURN
           END IF
 #ifdef ADJUST_BOUNDARY
-          CALL get_state (ng, 10, 10, NRMname(3,ng), NRMrec, 1)
+          CALL get_state (ng, 10, 10, NRM(3,ng)%name, NRMrec, 1)
           IF (exit_flag.ne.NoError) RETURN
 #endif
 #if defined ADJUST_WSTRESS || defined ADJUST_STFLUX
-          CALL get_state (ng, 11, 11, NRMname(4,ng), NRMrec, 1)
+          CALL get_state (ng, 11, 11, NRM(4,ng)%name, NRMrec, 1)
           IF (exit_flag.ne.NoError) RETURN
 #endif
         END IF
+      END DO
 !
 !  Define TLM impulse forcing NetCDF file.
 !
+      DO ng=1,Ngrids
         LdefTLF(ng)=.TRUE.
         CALL def_impulse (ng)
         IF (exit_flag.ne.NoError) RETURN
+      END DO
 !
 !=======================================================================
 !  Perturb the adjoint state variable, one at the time, with a delta
@@ -350,46 +379,51 @@
 !
 !  Determine variables to perturb.
 !
-        Lold(ng)=1
-        ERstr=1
 #ifdef SOLVE3D
-        ERend=NstateVar(ng)-2
-        allocate ( StateVar(NstateVar(ng)-2) )
-        StateVar(1)=isFsur
-        StateVar(2)=isUvel
-        StateVar(3)=isVvel
-        DO i=1,NT(ng)
-          StateVar(3+i)=isTvar(i)
-        END DO
-        Lstate=MAXVAL(StateVar)
+      allocate ( StateVar(MAXVAL(NstateVar)-2) )
+      StateVar(1)=isFsur
+      StateVar(2)=isUvel
+      StateVar(3)=isVvel
+      DO i=1,MT
+        StateVar(3+i)=isTvar(i)
+      END DO
+      Lstate=MAXVAL(StateVar)
 #else
-        ERend=NstateVar(ng)
-        allocate ( StateVar(NstateVar(ng)) )
-        StateVar(1)=isFsur
-        StateVar(2)=isUbar
-        StateVar(3)=isVbar
-        Lstate=3
+      allocate ( StateVar(MAXVAL(NstateVar)) )
+      StateVar(1)=isFsur
+      StateVar(2)=isUbar
+      StateVar(3)=isVbar
+      Lstate=3
 #endif
-        allocate ( R(Lstate,Lstate) )
-        allocate ( Rerr(Lstate,Lstate) )
+      allocate ( R(Lstate,Lstate,Ngrids) )
+      allocate ( Rerr(Lstate,Lstate) )
 !
 !  Initialize sample representer matrix to report.
 !
-        R(1:Lstate,1:Lstate)=0.0_r8
+      R(1:Lstate,1:Lstate,1:Ngrids)=0.0_r8
 !
 !  Set point to perturb and point to report.
 !
-        ivarTL=INT(user(1))
-        ivarAD=INT(user(2))
-        IoutTL=INT(user(3))
-        IperAD=INT(user(4))
-        JoutTL=INT(user(5))
-        JperAD=INT(user(6))
-        KoutTL=INT(user(7))
-        KperAD=INT(user(8))
+      ivarTL=INT(user(1))
+      ivarAD=INT(user(2))
+      IoutTL=INT(user(3))
+      IperAD=INT(user(4))
+      JoutTL=INT(user(5))
+      JperAD=INT(user(6))
+      KoutTL=INT(user(7))
+      KperAD=INT(user(8))
 !
-        PERT_LOOP : DO Nrun=ERstr,ERend
-          user(2)=StateVar(Nrun)
+!  Determine number of perturbation iterations.
+!
+      ERstr=1
+#ifdef SOLVE3D
+      ERend=MINVAL(NstateVar)-2
+#else
+      ERend=MINVAL(NstateVar)
+#endif
+!
+      PERT_LOOP : DO Nrun=ERstr,ERend
+        user(2)=StateVar(Nrun)
 !
 !-----------------------------------------------------------------------
 !  Time-step the adjoint model.
@@ -397,158 +431,62 @@
 !
 !  Perturb the adjoint model at specified point.
 !
-          ADmodel=.TRUE.
-          TLmodel=.FALSE.
+        ADmodel=.TRUE.
+        TLmodel=.FALSE.
+        DO ng=1,Ngrids
+          Lold(ng)=1
+!$OMP PARALLEL
           CALL ad_initial (ng)
+!$OMP END PARALLEL
           IF (exit_flag.ne.NoError) RETURN
-          NrecADJ(ng)=0
-          tADJindx(ng)=0
+          Fcount=ADM(ng)%Fcount
+          ADM(ng)%Nrec(Fcount)=0
+          ADM(ng)%Rindex=0
+        END DO
 !
 !  Time-step adjoint model backwards forced with current PSI vector.
 !
+        DO ng=1,Ngrids
           IF (Master) THEN
-            WRITE (stdout,10) 'AD', ntstart(ng), ntend(ng)
+            WRITE (stdout,10) 'AD', ng, ntstart(ng), ntend(ng)
           END IF
+        END DO
 
-          time(ng)=time(ng)+dt(ng)
-
-          AD_LOOP : DO my_iic=ntstart(ng),ntend(ng),-1
-
-            iic(ng)=my_iic
+!$OMP PARALLEL
 #ifdef SOLVE3D
-            CALL ad_main3d (ng)
+        CALL ad_main3d (RunInterval)
 #else
-            CALL ad_main2d (ng)
+        CALL ad_main2d (RunInterval)
 #endif
-            IF (exit_flag.ne.NoError) RETURN
-
-          END DO AD_LOOP
+!$OMP END PARALLEL
+        IF (exit_flag.ne.NoError) RETURN
 !
 !-----------------------------------------------------------------------
 !  Convolve adjoint trajectory with model-error covariance and convert
 !  to impulse forcing.
 !-----------------------------------------------------------------------
 !
-          Nrec=NrecADJ(ng)
-          NrecADJ(ng)=0
-          tADJindx(ng)=0
-          LwrtState2d(ng)=.TRUE.
-!
-!  Clear adjoint state arrays.
-!
-!$OMP PARALLEL DO PRIVATE(thread,subs,tile), SHARED(numthreads)
-          DO thread=0,numthreads-1
-            subs=NtileX(ng)*NtileE(ng)/numthreads
-            DO tile=subs*thread,subs*(thread+1)-1
-              CALL initialize_ocean (ng, TILE, iADM)
-            END DO
-          END DO
-!$OMF END PARALLEL DO
-
-#ifdef BALANCE_OPERATOR
-!
-!  Read background state.
-!
-          CALL get_state (ng, iNLM, 9, FWDname(ng), Lbck, Lbck)
-          IF (exit_flag.ne.NoError) RETURN
-#endif
-!
-!  Proccess each time record of current adjoint solution in ADJname.
-!
-          DO rec=1,Nrec
-!
-!  Set switch to scale model error covariace with background error
-!  covariance factor Cfscale(:).
-!
-          IF (rec.eq.Nrec) THEN
-            Lweak=.FALSE.
-          ELSE
-            Lweak=.TRUE.
-          END IF
-!
-!  Read adjoint solution. Since routine "get_state" loads data into the
-!  ghost points, the adjoint solution is read in the tangent linear
-!  state arrays by using iTLM instead of iADM in the calling arguments.
-!
-            ADrec=rec
-            CALL get_state (ng, iTLM, 4, ADJname(ng), ADrec, Lold(ng))
-            IF (exit_flag.ne.NoError) RETURN
-!
-!  Load interior solution, read above, into adjoint state arrays.
-!  Then, multiply adjoint solution by the background-error standard
-!  deviations. Next, convolve resulting adjoint solution with the
-!  squared-root adjoint diffusion operator which impose the model-error
-!  spatial correlations. Notice that the spatial convolution is only
-!  done for half of the diffusion steps (squared-root filter). Clear
-!  tangent linear state arrays when done.
-!
-            add=.FALSE.
-!$OMP PARALLEL DO PRIVATE(ng,thread,subs,tile)                          &
-!$OMP&            SHARED(inner,add,numthreads)
-            DO thread=0,numthreads-1
-              subs=NtileX(ng)*NtileE(ng)/numthreads
-              DO tile=subs*thread,subs*(thread+1)-1
-                CALL load_TLtoAD (ng, TILE, Lold(ng), Lold(ng), add)
-#ifdef BALANCE_OPERATOR
-                CALL ad_balance (ng, TILE, Lbck, Lold(ng))
-#endif
-                CALL ad_variability (ng, TILE, Lold(ng), Lweak)
-                CALL ad_convolution (ng, TILE, Lold(ng), Lweak, 2)
-                CALL initialize_ocean (ng, TILE, iTLM)
-              END DO
-            END DO
-!$OMP END PARALLEL DO
-!
-!  To insure symmetry, convolve resulting filtered adjoint solution
-!  from above with the squared-root (half of steps) tangent linear
-!  diffusion operator. Then, multiply result with its corresponding
-!  background-error standard deviations.  Since the convolved solution
-!  is in the adjoint state arrays, first copy to tangent linear state
-!  arrays including the ghosts points. Copy back to adjoint state
-!  arrays when done with the convolution for output purposes.
-!
-            add=.FALSE.
-!$OMP PARALLEL DO PRIVATE(ng,thread,subs,tile)                          &
-!$OMP&            SHARED(inner,add,numthreads)
-            DO thread=0,numthreads-1
-              subs=NtileX(ng)*NtileE(ng)/numthreads
-              DO tile=subs*thread,subs*(thread+1)-1,+1
-                CALL load_ADtoTL (ng, TILE, Lold(ng), Lold(ng), add)
-                CALL tl_convolution (ng, TILE, Lold(ng), Lweak, 2)
-                CALL tl_variability (ng, TILE, Lold(ng), Lweak)
-#ifdef BALANCE_OPERATOR
-                CALL tl_balance (ng, TILE, Lbck, Lold(ng))
-#endif
-                CALL load_TLtoAD (ng, TILE, Lold(ng), Lold(ng), add)
-              END DO
-            END DO
-!$OMP END PARALLEL DO
-!
-!  Overwrite ADJname history NetCDF file with convolved adjoint
-!  solution.
-!
-            kstp(ng)=Lold(ng)
-#ifdef SOLVE3D
-            nstp(ng)=Lold(ng)
-#endif
-            CALL ad_wrt_his (ng)
-            IF (exit_flag.ne.NoError) RETURN
-          END DO
-          LwrtState2d(ng)=.FALSE.
+        Lposterior=.FALSE.
+        CALL error_covariance (iTLM, driver, -1, -1,                    &
+     &                         Lbck, Lini, Lold, Lnew,                  &
+     &                         Rec1, Rec2, Lposterior)
+        IF (exit_flag.ne.NoError) RETURN
 !
 !  Convert convolved adjoint solution to impulse forcing. Write out
-!  impulse forcing into TLFname NetCDF file. To facilitate the forcing
-!  by the TLM and RPM, the forcing is process and written in
+!  impulse forcing into TLF(ng)%name NetCDF file. To facilitate the
+!  forcing by the TLM and RPM, the forcing is process and written in
 !  increasing time coordinates.
 !
-          tTLFindx(ng)=0
+        DO ng=1,Ngrids
+          TLF(ng)%Rindex=0
 #ifdef DISTRIBUTE
           tile=MyRank
 #else
           tile=-1
 #endif
-          CALL wrt_impulse (ng, tile, iADM, ADJname(ng))
+          CALL wrt_impulse (ng, tile, iADM, ADM(ng)%name)
           IF (exit_flag.ne.NoError) RETURN
+        END DO
 !
 !-----------------------------------------------------------------------
 !  Integrate tangent linear model forced by the convolved adjoint
@@ -560,36 +498,38 @@
 !  from the adjoint model will be added as impulse forcing in
 !  "tl_forcing".
 !
+        ADmodel=.FALSE.
+        TLmodel=.FALSE.
+        DO ng=1,Ngrids
           wrtTLmod(ng)=.FALSE.
-          ADmodel=.FALSE.
-          TLmodel=.FALSE.
+!$OMP PARALLEL
           CALL tl_initial (ng)
+!$OMP END PARALLEL
           IF (exit_flag.ne.NoError) RETURN
+        END DO
 !
 !  Run tangent linear model forward and force with convolved adjoint
 !  trajectory impulses. Compute R_n * PSI at observation points which
 !  are used in the conjugate gradient algorithm.
 !
+        DO ng=1,Ngrids
           IF (Master) THEN
-            WRITE (stdout,10) 'TL', ntstart(ng), ntend(ng)
+            WRITE (stdout,10) 'TL', ng, ntstart(ng), ntend(ng)
           END IF
+        END DO
 
-          time(ng)=time(ng)-dt(ng)
-
-          TL_LOOP : DO my_iic=ntstart(ng),ntend(ng)+1
-
-            iic(ng)=my_iic
+!$OMP PARALLEL
 #ifdef SOLVE3D
-            CALL tl_main3d (ng)
+        CALL tl_main3d (RunInterval)
 #else
-            CALL tl_main2d (ng)
+        CALL tl_main2d (RunInterval)
 #endif
-            IF (exit_flag.ne.NoError) RETURN
-
-          END DO TL_LOOP
+!$OMP END PARALLEL
+        IF (exit_flag.ne.NoError) RETURN
 !
 !  Extract solution at requested points.
 !
+        DO ng=1,Ngrids
 #ifdef DISTRIBUTE
           Istr=BOUNDS(ng)%Istr(MyRank)
           Iend=BOUNDS(ng)%Iend(MyRank)
@@ -600,24 +540,27 @@
 #else
           BOUNDED_TL=.TRUE.
 #endif
-          R(1,Nrun)=OCEAN(ng)%tl_zeta(IoutTL,JoutTL,knew(ng))
+          R(1,Nrun,ng)=OCEAN(ng)%tl_zeta(IoutTL,JoutTL,knew(ng))
 #ifndef SOLVE3D
-          R(2,Nrun)=OCEAN(ng)%tl_ubar(IoutTL,JoutTL,knew(ng))
-          R(3,Nrun)=OCEAN(ng)%tl_vbar(IoutTL,JoutTL,knew(ng))
+          R(2,Nrun,ng)=OCEAN(ng)%tl_ubar(IoutTL,JoutTL,knew(ng))
+          R(3,Nrun,ng)=OCEAN(ng)%tl_vbar(IoutTL,JoutTL,knew(ng))
 #else
-          R(2,Nrun)=OCEAN(ng)%tl_u(IoutTL,JoutTL,KoutTL,nstp(ng))
-          R(3,Nrun)=OCEAN(ng)%tl_v(IoutTL,JoutTL,KoutTL,nstp(ng))
+          R(2,Nrun,ng)=OCEAN(ng)%tl_u(IoutTL,JoutTL,KoutTL,nstp(ng))
+          R(3,Nrun,ng)=OCEAN(ng)%tl_v(IoutTL,JoutTL,KoutTL,nstp(ng))
           DO i=1,NT(ng)
-            R(i+3,Nrun)=OCEAN(ng)%tl_t(IoutTL,JoutTL,KoutTL,nstp(ng),i)
+            R(i+3,Nrun,ng)=OCEAN(ng)%tl_t(IoutTL,JoutTL,KoutTL,         &
+     &                                    nstp(ng),i)
           END DO
 #endif
+        END DO
 
-        END DO PERT_LOOP
+      END DO PERT_LOOP
 !
 !  Report sampled representer matrix and report symmetry.
 !
+      DO ng=1,Ngrids
 #ifdef DISTRIBUTE
-        CALL mp_bcastf (ng, iTLM, R)
+        CALL mp_bcastf (ng, iTLM, R(:,:,ng))
 #endif
         IF (Master) THEN
           WRITE (stdout,20) 'Representer Matrix Symmetry Test: ',       &
@@ -633,22 +576,21 @@
           END IF
           DO i=1,Lstate
             DO j=1,Lstate
-              Rerr(i,j)=R(i,j)-R(j,i)
+              Rerr(i,j)=R(i,j,ng)-R(j,i,ng)
             END DO
           END DO
           DO i=1,Lstate
-            WRITE (stdout,frmt) (R(i,j),j=1,Lstate)
+            WRITE (stdout,frmt) (R(i,j,ng),j=1,Lstate)
           END DO
           WRITE (stdout,30) 'Representer Matrix Symmetry Error: '
           DO i=1,Lstate
             WRITE (stdout,frmt) (Rerr(i,j),j=1,Lstate)
           END DO
         END IF
-
-      END DO NEST_LOOP
-
+      END DO
+!
  10   FORMAT (/,1x,a,1x,'ROMS/TOMS: started time-stepping:',            &
-     &        '( TimeSteps: ',i8.8,' - ',i8.8,')',/)
+     &        ' (Grid: ',i2.2,' TimeSteps: ',i8.8,' - ',i8.8,')',/)
  20   FORMAT (/,1x,a,/,/,3x,a,' i = ',i4.4,' j = ',i4.4,' k = ',i4.4,   &
      &                 /,3x,a,' i = ',i4.4,' j = ',i4.4,' k = ',i4.4)
  30   FORMAT (/,1x,a,/)
@@ -672,7 +614,17 @@
 !
 !  Local variable declarations.
 !
-      integer :: ng, thread
+      integer :: Fcount, ng, thread
+!
+!-----------------------------------------------------------------------
+!  Compute and report model-observation comparison statistics.
+!-----------------------------------------------------------------------
+!
+      IF (exit_flag.eq.NoError) THEN
+        DO ng=1,Ngrids
+          CALL stats_modobs (ng)
+        END DO
+      END IF
 !
 !-----------------------------------------------------------------------
 !  If blowing-up, save latest model state into RESTART NetCDF file.
@@ -680,20 +632,23 @@
 !
 !  If cycling restart records, write solution into the next record.
 !
-      DO ng=1,Ngrids
-        IF (LwrtRST(ng).and.(exit_flag.eq.1)) THEN
-          IF (Master) WRITE (stdout,10)
- 10       FORMAT (/,' Blowing-up: Saving latest model state into ',     &
-     &              ' RESTART file',/)
-          IF (LcycleRST(ng).and.(NrecRST(ng).ge.2)) THEN
-            tRSTindx(ng)=2
-            LcycleRST(ng)=.FALSE.
+      IF (exit_flag.eq.1) THEN
+        DO ng=1,Ngrids
+          IF (LwrtRST(ng)) THEN
+            IF (Master) WRITE (stdout,10)
+ 10         FORMAT (/,' Blowing-up: Saving latest model state into ',   &
+     &                ' RESTART file',/)
+            Fcount=RST(ng)%Fcount
+            IF (LcycleRST(ng).and.(RST(ng)%Nrec(Fcount).ge.2)) THEN
+              RST(ng)%Rindex=2
+              LcycleRST(ng)=.FALSE.
+            END IF
+            blowup=exit_flag
+            exit_flag=NoError
+            CALL wrt_rst (ng)
           END IF
-          blowup=exit_flag
-          exit_flag=NoError
-          CALL wrt_rst (ng)
-        END IF
-      END DO
+        END DO
+      END IF
 !
 !-----------------------------------------------------------------------
 !  Stop model and time profiling clocks.  Close output NetCDF files.
@@ -707,16 +662,16 @@
       END IF
 
       DO ng=1,Ngrids
-!$OMP PARALLEL DO PRIVATE(thread) SHARED(ng,numthreads)
-        DO thread=0,numthreads-1
+!$OMP PARALLEL
+        DO thread=THREAD_RANGE
           CALL wclock_off (ng, iNLM, 0)
         END DO
-!$OMP END PARALLEL DO
+!$OMP END PARALLEL
       END DO
 !
 !  Close IO files.
 !
-      CALL close_io
+      CALL close_out
 
       RETURN
       END SUBROUTINE ROMS_finalize

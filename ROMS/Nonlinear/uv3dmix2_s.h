@@ -2,7 +2,7 @@
 !
 !svn $Id: uv3dmix2_s.h 732 2008-09-07 01:55:51Z jcwarner $
 !************************************************** Hernan G. Arango ***
-!  Copyright (c) 2002-2010 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2014 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !***********************************************************************
@@ -254,11 +254,10 @@
      &           pnom_p(i,j)*                                           &
      &           ((pm(i-1,j  )+pm(i,j  ))*u(i,j  ,k,nrhs)-              &
      &            (pm(i-1,j-1)+pm(i,j-1))*u(i,j-1,k,nrhs)))
-#ifdef MASKING
-            cff=cff*pmask(i,j)
-#endif
-#ifdef WET_DRY
+# ifdef WET_DRY
             cff=cff*pmask_wet(i,j)
+# elif defined MASKING
+            cff=cff*pmask(i,j)
 #endif
 #ifdef VISC_3DCOEF
             visc_p=0.25_r8*(visc3d_r(i-1,j-1,k)+visc3d_r(i-1,j,k)+      &

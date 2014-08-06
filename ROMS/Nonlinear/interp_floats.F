@@ -4,7 +4,7 @@
 !
 !svn $Id: interp_floats.F 1311 2008-01-10 04:13:52Z jcwarner $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2010 The ROMS/TOMS Group         Mark Hadfield   !
+!  Copyright (c) 2002-2014 The ROMS/TOMS Group         Mark Hadfield   !
 !    Licensed under a MIT/X style license             John M. Klinck   !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -25,6 +25,7 @@
 !     Lend       Ending   float index to process.                      !
 !     itime      Floats time level to process.                         !
 !     ifield     ID of field to compute.                               !
+!     isBval     Lateral boundary variable index.                      !
 !     gtype      Grid type. If negative, interpolate floats slopes.    !
 !     maskit     Should the field be masked? Ignored if Land/Sea       !
 !                 masking is not active.                               !
@@ -35,7 +36,7 @@
 !     Hz         Vertical thicknesses (m).                             !
 !     Amask      Field Land/Sea mask.                                  !
 !     A          Field to interpolate from.                            !
-!     MyThread   Float parallel thread bounded switch.                 !
+!     my_thread  Float parallel thread bounded switch.                 !
 !     bounded    Float grid bounded status switch.                     !
 !                                                                      !
 !  On Output:                                                          !
@@ -45,15 +46,15 @@
 !=======================================================================
 !
       implicit none
-
+!
       PRIVATE
       PUBLIC  :: interp_floats
-
+!
       CONTAINS
 !
 !***********************************************************************
       SUBROUTINE interp_floats (ng, LBi, UBi, LBj, UBj, LBk, UBk,       &
-     &                          Lstr, Lend, itime, ifield,              &
+     &                          Lstr, Lend, itime, ifield, isBval,      &
      &                          gtype, maskit, Fspval, nudg,            &
      &                          pm, pn,                                 &
 # ifdef SOLVE3D
@@ -62,11 +63,12 @@
 # ifdef MASKING
      &                          Amask,                                  &
 # endif
-     &                          A, MyThread, bounded, track)
+     &                          A, my_thread, bounded, track)
 !***********************************************************************
 !
       USE mod_param
       USE mod_ncparam
+      USE mod_floats
       USE mod_scalars
 !
       implicit none
@@ -74,11 +76,15 @@
 !  Imported variable declarations.
 !
       integer, intent(in) :: ng, LBi, UBi, LBj, UBj, LBk, UBk
-      integer, intent(in) :: Lstr, Lend, itime, ifield, gtype
+      integer, intent(in) :: Lstr, Lend, itime, ifield, isBval, gtype
 
       logical, intent(in) :: maskit
-      logical, intent(in) :: MyThread(Lstr:Lend)
+      logical, intent(in) :: my_thread(Lstr:Lend)
+# ifdef OFFLINE_FLOATS
+      logical, intent(inout) :: bounded(Nfloats(ng))
+# else
       logical, intent(in) :: bounded(Nfloats(ng))
+# endif
 
       real(r8), intent(in) :: Fspval
 
@@ -106,11 +112,12 @@
 
       real(r8) :: p1, p2, q1, q2, r1, r2
       real(r8) :: s111, s211, s121, s221, s112, s212, s122, s222
+      real(r8) :: t111, t211, t121, t221, t112, t212, t122, t222
 
 # ifdef MASKING
       integer :: Irn, Irnm1, Irnp1, Jrn, Jrnm1, Jrnp1
 
-      real(r8) :: cff1, cff2
+      real(r8) :: cff1, cff2, cff3
 # endif
 !
 !-----------------------------------------------------------------------
@@ -151,6 +158,14 @@
         s122=1.0_r8
         s212=1.0_r8
         s222=1.0_r8
+        t111=1.0_r8
+        t121=1.0_r8
+        t211=1.0_r8
+        t221=1.0_r8
+        t112=1.0_r8
+        t122=1.0_r8
+        t212=1.0_r8
+        t222=1.0_r8
       END IF
 !
 !-----------------------------------------------------------------------
@@ -158,7 +173,7 @@
 !-----------------------------------------------------------------------
 !
       DO l=Lstr,Lend
-        IF (MyThread(l)) THEN
+        IF (my_thread(l)) THEN
           IF (.not.bounded(l)) THEN
             track(ifield,itime,l)=Fspval
           ELSE
@@ -195,7 +210,7 @@
               i1=MIN(MAX(Ir  ,0),Lm(ng)+1)
               i2=MIN(MAX(Ir+1,1),Lm(ng)+1)
               j1=MIN(MAX(Jr  ,0),Mm(ng)+1)
-              j2=MIN(MAX(Jr+1,0),Mm(ng)+1)
+              j2=MIN(MAX(Jr+1,1),Mm(ng)+1)
 !
               p2=REAL(i2-i1,r8)*(track(ixgrd,itime,l)-REAL(i1,r8))
               q2=REAL(j2-j1,r8)*(track(iygrd,itime,l)-REAL(j1,r8))
@@ -214,6 +229,10 @@
      &               (Hz(i1,j2,khm)+Hz(i1,j2,khp))
                 s221=2.0_r8*pm(i2,j2)*pn(i2,j2)/                        &
      &               (Hz(i2,j2,khm)+Hz(i2,j2,khp))
+                t111=2.0_r8/(Hz(i1,j1,khm)+Hz(i1,j1,khp))
+                t211=2.0_r8/(Hz(i2,j1,khm)+Hz(i2,j1,khp))
+                t121=2.0_r8/(Hz(i1,j2,khm)+Hz(i1,j2,khp))
+                t221=2.0_r8/(Hz(i2,j2,khm)+Hz(i2,j2,khp))
                 khm=MIN(MAX(k2  ,1),N(ng))
                 khp=MIN(MAX(k2+1,1),N(ng))
                 s112=2.0_r8*pm(i1,j1)*pn(i1,j1)/                        &
@@ -224,20 +243,16 @@
      &               (Hz(i1,j2,khm)+Hz(i1,j2,khp))
                 s222=2.0_r8*pm(i2,j2)*pn(i2,j2)/                        &
      &               (Hz(i2,j2,khm)+Hz(i2,j2,khp))
+                t112=2.0_r8/(Hz(i1,j1,khm)+Hz(i1,j1,khp))
+                t212=2.0_r8/(Hz(i2,j1,khm)+Hz(i2,j1,khp))
+                t122=2.0_r8/(Hz(i1,j2,khm)+Hz(i1,j2,khp))
+                t222=2.0_r8/(Hz(i2,j2,khm)+Hz(i2,j2,khp))
               END IF
 # endif
 !
               IF (Lmask) THEN
 # ifdef MASKING
-                cff1=p1*q1*r1*Amask(i1,j1)*s111*A(i1,j1,k1)+            &
-     &               p2*q1*r1*Amask(i2,j1)*s211*A(i2,j1,k1)+            &
-     &               p1*q2*r1*Amask(i1,j2)*s121*A(i1,j2,k1)+            &
-     &               p2*q2*r1*Amask(i2,j2)*s221*A(i2,j2,k1)+            &
-     &               p1*q1*r2*Amask(i1,j1)*s112*A(i1,j1,k2)+            &
-     &               p2*q1*r2*Amask(i2,j1)*s212*A(i2,j1,k2)+            &
-     &               p1*q2*r2*Amask(i1,j2)*s122*A(i1,j2,k2)+            &
-     &               p2*q2*r2*Amask(i2,j2)*s222*A(i2,j2,k2)
-                cff2=p1*q1*r1*Amask(i1,j1)+                             &
+                cff1=p1*q1*r1*Amask(i1,j1)+                             &
      &               p2*q1*r1*Amask(i2,j1)+                             &
      &               p1*q2*r1*Amask(i1,j2)+                             &
      &               p2*q2*r1*Amask(i2,j2)+                             &
@@ -245,10 +260,32 @@
      &               p2*q1*r2*Amask(i2,j1)+                             &
      &               p1*q2*r2*Amask(i1,j2)+                             &
      &               p2*q2*r2*Amask(i2,j2)
-                IF (cff2.gt.0.0_r8) THEN
-                  track(ifield,itime,l)=cff1/cff2+nudg(l)
+                IF (cff1.gt.0.0_r8) THEN
+                  cff2=p1*q1*r1*Amask(i1,j1)*s111*A(i1,j1,k1)+          &
+     &                 p2*q1*r1*Amask(i2,j1)*s211*A(i2,j1,k1)+          &
+     &                 p1*q2*r1*Amask(i1,j2)*s121*A(i1,j2,k1)+          &
+     &                 p2*q2*r1*Amask(i2,j2)*s221*A(i2,j2,k1)+          &
+     &                 p1*q1*r2*Amask(i1,j1)*s112*A(i1,j1,k2)+          &
+     &                 p2*q1*r2*Amask(i2,j1)*s212*A(i2,j1,k2)+          &
+     &                 p1*q2*r2*Amask(i1,j2)*s122*A(i1,j2,k2)+          &
+     &                 p2*q2*r2*Amask(i2,j2)*s222*A(i2,j2,k2)
+                  cff3=(p1*q1*r1*Amask(i1,j1)*t111+                     &
+     &                  p2*q1*r1*Amask(i2,j1)*t211+                     &
+     &                  p1*q2*r1*Amask(i1,j2)*t121+                     &
+     &                  p2*q2*r1*Amask(i2,j2)*t221+                     &
+     &                  p1*q1*r2*Amask(i1,j1)*t112+                     &
+     &                  p2*q1*r2*Amask(i2,j1)*t212+                     &
+     &                  p1*q2*r2*Amask(i1,j2)*t122+                     &
+     &                  p2*q2*r2*Amask(i2,j2)*t222)*nudg(l)
+                  track(ifield,itime,l)=cff2/cff1+cff3
                 ELSE
+# ifdef OFFLINE_FLOATS
+! Float has likely moved into land, maybe becuase offline DT is too big??
+                  track(ifield,itime,l)=spval
+                  bounded(l)=.FALSE.
+#else
                   track(ifield,itime,l)=0.0_r8
+#endif
                 END IF
 # endif
               ELSE
@@ -260,7 +297,14 @@
      &                                p2*q1*r2*s212*A(i2,j1,k2)+        &
      &                                p1*q2*r2*s122*A(i1,j2,k2)+        &
      &                                p2*q2*r2*s222*A(i2,j2,k2)+        &
-     &                                nudg(l)
+     &                                (p1*q1*r1*t111+                   &
+     &                                 p2*q1*r1*t211+                   &
+     &                                 p1*q2*r1*t121+                   &
+     &                                 p2*q2*r1*t221+                   &
+     &                                 p1*q1*r2*t112+                   &
+     &                                 p2*q1*r2*t212+                   &
+     &                                 p1*q2*r2*t122+                   &
+     &                                 p2*q2*r2*t222)*nudg(l)
               END IF
 !
 !-----------------------------------------------------------------------
@@ -292,36 +336,36 @@
               IF (Lmask) THEN
                 Irn=NINT(track(ixgrd,itime,l))
                 Jrn=NINT(track(iygrd,itime,l))
-#  ifdef EW_PERIODIC
-                IF (Irn.ge.Lm(ng)) THEN
-                  Irnp1=Irn+1-Lm(ng)
-                ELSE
-                  Irnp1=Irn+1
-                END IF
-                IF (Irn.le.1) THEN
-                  Irnm1=Irn-1+Lm(ng)
+                IF (EWperiodic(ng)) THEN
+                  IF (Irn.ge.Lm(ng)) THEN
+                    Irnp1=Irn+1-Lm(ng)
+                  ELSE
+                    Irnp1=Irn+1
+                  END IF
+                  IF (Irn.le.1) THEN
+                    Irnm1=Irn-1+Lm(ng)
+                  ELSE
+                    Irnm1=Irn-1
+                  END IF
                 ELSE
                   Irnm1=Irn-1
+                  Irnp1=Irn+1
                 END IF
-#  else
-                Irnm1=Irn-1
-                Irnp1=Irn+1
-#  endif
-#  ifdef NS_PERIODIC
-                IF (Jrn.ge.Mm(ng)) THEN
-                  Jrnp1=Jrn+1-Mm(ng)
-                ELSE
-                  Jrnp1=Jrn+1
-                END IF
-                IF (Jrn.le.1) THEN
-                  Jrnm1=Jrn-1+Mm(ng)
+                IF (NSperiodic(ng)) THEN
+                  IF (Jrn.ge.Mm(ng)) THEN
+                    Jrnp1=Jrn+1-Mm(ng)
+                  ELSE
+                    Jrnp1=Jrn+1
+                  END IF
+                  IF (Jrn.le.1) THEN
+                    Jrnm1=Jrn-1+Mm(ng)
+                  ELSE
+                    Jrnm1=Jrn-1
+                  END IF
                 ELSE
                   Jrnm1=Jrn-1
+                  Jrnp1=Jrn+1
                 END IF
-#  else
-                Jrnm1=Jrn-1
-                Jrnp1=Jrn+1
-#  endif
                 IF (Amask(Irn,Jrn).lt.0.5_r8) THEN
                   halo=.TRUE.
                 ELSE IF ((Ir.lt.Irn).and.                               &

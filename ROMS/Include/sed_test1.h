@@ -1,7 +1,7 @@
 /*
 ** svn $Id: sed_test1.h 429 2009-12-20 17:30:26Z arango $
 *******************************************************************************
-** Copyright (c) 2002-2010 The ROMS/TOMS Group                               **
+** Copyright (c) 2002-2014 The ROMS/TOMS Group                               **
 **   Licensed under a MIT/X style license                                    **
 **   See License_ROMS.txt                                                    **
 *******************************************************************************
@@ -15,7 +15,6 @@
 
 #define ROMS_MODEL
 #define UV_ADV
-#define UV_PSOURCE
 #define UV_LOGDRAG
 #define UV_VIS4
 #define MIX_S_UV
@@ -30,16 +29,6 @@
 # define SUSPLOAD
 #endif
 #define  SPLINES
-#define NORTHERN_WALL
-#define SOUTHERN_WALL
-#define WEST_FSRADIATION
-#define WEST_M2RADIATION
-#define WEST_M3RADIATION
-#define WEST_TGRADIENT
-#define EAST_FSCLAMPED
-#define EAST_M2RADIATION
-#define EAST_M3RADIATION
-#define EAST_TCLAMPED
 #define MY25_MIXING
 #ifdef MY25_MIXING
 # define KANTHA_CLAYSON

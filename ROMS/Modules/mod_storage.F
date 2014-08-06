@@ -5,7 +5,7 @@
 !
 !svn $Id: mod_storage.F 1338 2008-01-24 02:47:35Z jcwarner $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2010 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2014 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -14,16 +14,6 @@
 !                                                                      !
 !  LworkL       Size of Arnoldi iterations work array SworkL.          !
 !  Lrvec        ARPACK logical to compute converged Ritz values.       !
-!  Mstate       Size of FULL state vector (water points only).         !
-# ifdef SO_SEMI
-!  Nsemi        Number of time record saved in seminorm strochastic    !
-!                 optimals adjoint state vector.                       !
-# endif
-!  Nsize        Size of the eigenvalue problem: Nend-Nstr+1.           !
-!  Nstate       Size of NODE partition state vector: Nstate=Mstate in  !
-!                 serial applications.                                 !
-!  Nstr         State vector node partition starting index.            !
-!  Nend         State vector node partition ending   index.            !
 !  NCV          Number of Lanczos vectors to compute.                  !
 !  NEV          Number of eigenvalues to compute.                      !
 !  Bvec         Lanczos/Arnoldi basis vectors.                         !
@@ -32,6 +22,8 @@
 !  Rvector      Real Ritz eigenvectors.                                !
 !  Swork        FULL state work array used in distributed memory       !
 !                 communications.                                      !
+!  SworkR       FULL state work array used to compute the ROMS state   !
+!                 eigenvectors.                                        !
 !  SworkD       State work array for ARPACK reverse communications.    !
 !  SworkEV      ARPACK work array.                                     !
 !  SworkL       ARPACK work array.                                     !
@@ -42,7 +34,7 @@
 !                 howmany='A'  compute NEV Ritz vectors                !
 !                 howmany='P'  compute NEV Schur vectors               !
 !                 howmany='S'  compute some Ritz vectors using select  !
-!  ido          ARPACK reverse communications flag (input/outpu).      !
+!  ido          ARPACK reverse communications flag (input/output).     !
 !  iparam       ARPACK input/output integer parameters.                !
 !  ipntr        ARPACK pointer to mark the starting location in SworkD !
 !                 and SworkK arrays used in the Arnoldi iterations.    !
@@ -65,57 +57,74 @@
 !                                                                      !
 !=======================================================================
 !
-        USE mod_param
+      USE mod_param
 !
-        implicit none
+      implicit none
 !
-        integer, dimension(Ngrids) :: Mstate
-        integer, dimension(Ngrids) :: Nstate
-        integer, dimension(Ngrids) :: Nstr
-        integer, dimension(Ngrids) :: Nend
+!  ARPACK logical switches.
 !
-        logical :: Lrvec
+      logical :: Lrvec                    ! Ritz values switch
+      logical, allocatable :: select(:,:) ! Ritz vectors, [NCV,Ngrids]
 !
-        integer :: NCV
-        integer :: NEV
-# ifdef SO_SEMI
-        integer :: Nsemi
-# endif
-        integer :: Nsize
-        integer :: LworkL
-        integer :: ido
-        integer :: info
+!  Eigenproblem parameters.
 !
-        real(r8) :: sigmaI
-        real(r8) :: sigmaR
+      integer :: NCV                      ! number of Lanczos vectors
+      integer :: NEV                      ! number of eigenvalues
+      integer :: LworkL                   ! size of array SworkL
+
+      integer, allocatable :: LworkD(:)   ! size of array SworkD
 !
-        character (len=1) :: bmat, howmany
-        character (len=2) :: which
+!  ARPACK integer parameters and flags.
 !
-        integer, dimension(11) :: iparam
-# if defined AFT_EIGENMODES || defined FT_EIGENMODES
-        integer, dimension(14) :: ipntr
-# else
-        integer, dimension(11) :: ipntr
-# endif
+      integer, allocatable :: iparam(:,:) ! eigenproblem parameters
+      integer, allocatable :: ipntr(:,:)  ! index for work arrays
+      integer, allocatable :: ido(:)      ! reverse communication flag
+      integer, allocatable :: info(:)     ! information and error flag
 !
-        logical, allocatable :: select(:)           ! [NCV]
+!  ARPACK floating-point parameters.
 !
-        real(r8), allocatable :: Bvec(:,:)          ! [Nstr:Nend,NCV]
-        real(r8), allocatable :: RvalueR(:)         ! [NEV+1]
-        real(r8), allocatable :: RvalueI(:)         ! [NEV+1]
-        real(r8), allocatable :: Rvector(:,:)       ! [Nstr:Nend,NEV+1]
+      real(r8) :: sigmaI                  ! real part shifts
+      real(r8) :: sigmaR                  ! imaginary part shifts
+!
+!  ARPACK character parameters.
+!
+      character (len=1) :: bmat           ! eigenvalue problem ID
+      character (len=1) :: howmany        ! basis functions ID
+      character (len=2) :: which          ! Ritz values ID
+!
+!  ARPACK work arrays.
+!
+      real(r8), allocatable :: RvalueR(:,:)       ! [NEV+1,Ngrids]
+      real(r8), allocatable :: RvalueI(:,:)       ! [NEV+1,Ngrids]
+      real(r8), allocatable :: norm(:,:)          ! [NEV+1,Ngrids]
+      real(r8), allocatable :: SworkL(:,:)        ! [LworkL,Ngrids]
+      real(r8), allocatable :: SworkEV(:,:)       ! [3*NCV,Ngrids]
 # ifdef DISTRIBUTE
-        real(r8), allocatable :: Swork(:)           ! [Mstate]
+      real(r8), allocatable :: Swork(:)           ! [Mstate]
 # endif
-        real(r8), allocatable :: SworkD(:)          ! [3*Nstate]
-        real(r8), allocatable :: SworkEV(:)         ! [3*NCV]
-        real(r8), allocatable :: SworkL(:)          ! [LworkL]
-        real(r8), allocatable :: norm(:)            ! [NEV+1]
-        real(r8), allocatable :: resid(:)           ! [Nstr:Nend]
+      real(r8), pointer :: SworkR(:)              ! [Mstate]
+!
+!  State work arrays structure for nested grids.
+!
+        TYPE T_STORAGE
+
+          real(r8), pointer :: Bvec(:,:)            ! [Nstr:Nend,NCV]
+          real(r8), pointer :: Rvector(:,:)         ! [Nstr:Nend,NEV+1]
+          real(r8), pointer :: SworkD(:)            ! [3*Nstate]
+          real(r8), pointer :: resid(:)             ! [Nstr:Nend]
+# ifdef STOCHASTIC_OPT
+          real(r8), pointer :: ad_Work(:)           ! [Mstate]
+# endif
+# if defined STOCHASTIC_OPT && defined HESSIAN_SO
+          real(r8), pointer :: my_state(:)          ! [Nstr:Nend]
+# endif
 # ifdef SO_SEMI
-        real(r8), allocatable :: so_state(:,:)      ! [Nstr:Nend,Nsemi]
+          real(r8), pointer :: so_state(:,:)        ! [Nstr:Nend,Nsemi]
 # endif
+
+        END TYPE T_STORAGE
+
+        TYPE (T_STORAGE), allocatable :: STORAGE(:)
 !
 !  ARPACK private common blocks containing parameters needed for
 !  checkpoiniting. The original include files "i_aupd.h" and
@@ -159,7 +168,7 @@
 
       CONTAINS
 
-      SUBROUTINE allocate_storage (ng)
+      SUBROUTINE allocate_storage
 !
 !=======================================================================
 !                                                                      !
@@ -170,13 +179,11 @@
 !
       USE mod_scalars
 !
-!  Imported variable declarations.
-!
-      integer, intent(in) :: ng
-!
 !  Local variable declarations
 !
-      integer :: i, j
+      integer :: i, j, ng
+
+      integer, allocatable :: Mstr(:), Mend(:)
 
       real(r8), parameter :: IniVal = 0.0_r8
 !
@@ -184,11 +191,35 @@
 !  Allocate module variables.
 !-----------------------------------------------------------------------
 !
+!  Allocate local dimension parameters.
+!
+      allocate ( Mstr(Ngrids) )
+      allocate ( Mend(Ngrids) )
+!
+!  Allocate parameters associated with nested grids.
+!
+      allocate ( ido(Ngrids) )
+      allocate ( info(Ngrids) )
+      allocate ( LworkD(Ngrids) )
+
+      allocate ( iparam(11,Ngrids) )
+# if defined AFT_EIGENMODES || defined FT_EIGENMODES
+      allocate ( ipntr(14,Ngrids) )
+# else
+      allocate ( ipntr(11,Ngrids) )
+# endif
+!
 !  Determine size of work array SworkL:
 !
 # if defined OPT_PERTURBATION
       LworkL=NCV*(NCV+8)
+# elif defined HESSIAN_SV
+      LworkL=NCV*(NCV+8)
+# elif defined HESSIAN_FSV
+      LworkL=NCV*(NCV+8)
 # elif defined FORCING_SV
+      LworkL=NCV*(NCV+8)
+# elif defined STOCHASTIC_OPT
       LworkL=NCV*(NCV+8)
 # elif defined SO_SEMI
       LworkL=NCV*(NCV+8)
@@ -196,84 +227,134 @@
       LworkL=3*NCV*NCV+6*NCV
 # endif
 # ifdef SO_SEMI
-      Nsemi=1+ntimes(ng)/nADJ(ng)
+      DO ng=1,Ngrids
+        Nsemi(ng)=1+ntimes(ng)/nADJ(ng)
+      END DO
+# endif
+!
+!  Set local dimensions of storage arrays according to the propagator
+!  driver.
+!
+      DO ng=1,Ngrids
+# if defined HESSIAN_FSV || defined HESSIAN_SO || defined HESSIAN_SV
+        Mstr(ng)=1
+        Mend(ng)=Ninner
+        LworkD(ng)=3*Ninner
+# else
+        Mstr(ng)=Nstr(ng)
+        Mend(ng)=Nend(ng)
+        LworkD(ng)=3*Nstate(ng)
+# endif
+      END DO
+!
+!  Allocate structure.
+!
+      allocate ( STORAGE(Ngrids) )
+
+      DO ng=1,Ngrids
+        allocate ( STORAGE(ng) % Bvec(Mstr(ng):Mend(ng),NCV) )
+
+        allocate ( STORAGE(ng) % Rvector(Mstr(ng):Mend(ng),NEV+1) )
+
+        allocate ( STORAGE(ng) % SworkD(LworkD(ng)) )
+
+        allocate ( STORAGE(ng) % resid(Mstr(ng):Mend(ng)) )
+
+# ifdef STOCHASTIC_OPT
+        allocate ( STORAGE(ng) % ad_Work(MAXVAL(Mstate)) )
 # endif
 
-      IF (ng.eq.1) THEN
+# if defined STOCHASTIC_OPT && defined HESSIAN_SO
+        allocate ( STORAGE(ng) % my_state(Nstr(ng):Nend(ng)) )
+# endif
+# ifdef SO_SEMI
+        allocate ( STORAGE(ng) % so_state(Mstr(ng):Mend(ng),Nsemi(ng)) )
+# endif
+      END DO
+!
+!  Allocate other arrays.
+!
+      allocate ( select(NCV,Ngrids) )
 
-        allocate ( select(NCV) )
+      allocate ( norm(NEV+1,Ngrids) )
 
-        allocate ( Bvec(Nstr(ng):Nend(ng),NCV) )
+      allocate ( RvalueR(NEV+1,Ngrids) )
 
-        allocate ( RvalueR(NEV+1) )
+      allocate ( RvalueI(NEV+1,Ngrids) )
 
-        allocate ( RvalueI(NEV+1) )
+      allocate ( SworkEV(3*NCV,Ngrids) )
 
-        allocate ( Rvector(Nstr(ng):Nend(ng),NEV+1) )
+      allocate ( SworkL(LworkL,Ngrids) )
+
+      allocate ( SworkR(MAXVAL(Mstate)) )
 
 # ifdef DISTRIBUTE
-        allocate ( Swork(Mstate(ng)) )
+      allocate ( Swork(MAXVAL(Mstate)) )
 # endif
-
-        allocate ( SworkD(3*Nstate(ng)) )
-
-        allocate ( SworkEV(3*NCV) )
-
-        allocate ( SworkL(LworkL) )
-
-        allocate ( norm(NEV+1) )
-
-        allocate ( resid(Nstr(ng):Nend(ng)) )
-
-# ifdef SO_SEMI
-        allocate ( so_state(Nstr(ng):Nend(ng), Nsemi) )
-# endif
-
-      END IF
-
 !
 !-----------------------------------------------------------------------
 !  Initialize module variables.
 !-----------------------------------------------------------------------
 !
-      DO j=1,NCV
-        select(j) = .TRUE.
-        DO i=Nstr(ng),Nend(ng)
-          Bvec(i,j) = IniVal
+      iparam=0
+      ipntr=0
+
+      DO ng=1,Ngrids
+        DO j=1,NCV
+          select(j,ng) = .TRUE.
+          DO i=Mstr(ng),Mend(ng)
+            STORAGE(ng) % Bvec(i,j) = IniVal
+          END DO
         END DO
+        DO j=1,NEV+1
+          norm(j,ng) = IniVal
+          RvalueR(j,ng) = IniVal
+          RvalueI(j,ng) = IniVal
+          DO i=Mstr(ng),Mend(ng)
+            STORAGE(ng) % Rvector(i,j) = IniVal
+          END DO
+        END DO
+        DO i=Mstr(ng),Mend(ng)
+          STORAGE(ng) % resid(i) = IniVal
+        END DO
+# ifdef STOCHASTIC_OPT
+        DO i=1,MAXVAL(Mstate)
+          STORAGE(ng) % ad_Work(i) = IniVal
+        END DO
+# endif
+# if defined STOCHASTIC_OPT && defined HESSIAN_SO
+        DO i=Nstr(ng),Nend(ng)
+          STORAGE(ng) % my_state(i) = IniVal
+        END DO
+# endif
+# ifdef SO_SEMI
+        DO j=1,Nsemi(ng)
+          DO i=Mstr(ng),Mend(ng)
+            STORAGE(ng) % so_state(i,j) = IniVal
+          END DO
+        END DO
+# endif
       END DO
-      DO j=1,NEV+1
-        norm(j) = IniVal
-        RvalueR(j) = IniVal
-        RvalueI(j) = IniVal
-        DO i=Nstr(ng),Nend(ng)
-          Rvector(i,j) = IniVal
-        END DO
+      DO i=1,MAXVAL(Mstate)
+        SworkR(i) = IniVal
       END DO
 # ifdef DISTRIBUTE
-      DO i=1,Mstate(ng)
+      DO i=1,MAXVAL(Mstate)
         Swork(i) = IniVal
       END DO
 # endif
-      DO i=1,3*Nstate(ng)
-        SworkD(i) = IniVal
-      END DO
-      DO i=1,3*NCV
-        SworkEV(i) = IniVal
-      END DO
-      DO i=1,LworkL
-        SworkL(i) = IniVal
-      END DO
-      DO i=Nstr(ng),Nend(ng)
-        resid(i) = IniVal
-      END DO
-# ifdef SO_SEMI
-      DO j=1,Nsemi
-        DO i=Nstr(ng),Nend(ng)
-          so_state(i,j) = IniVal
+!
+      DO ng=1,Ngrids
+        DO i=1,LworkD(ng)
+          STORAGE(ng) % SworkD(i) = IniVal
+        END DO
+        DO i=1,3*NCV
+          SworkEV(i,ng) = IniVal
+        END DO
+        DO i=1,LworkL
+          SworkL(i,ng) = IniVal
         END DO
       END DO
-# endif
 
       RETURN
       END SUBROUTINE allocate_storage

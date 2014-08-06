@@ -4,7 +4,7 @@
 
 !
 !=====================================================================
-!  Copyright (c) 2000 Rutgers/UCLA                                   !
+!  Copyright (c) 2002-2014 The ROMS/TOMS Group
 !================================================ Hernan G. Arango ===
 !                                                                    !
 !  This routine computes the bulk parameterization of surface wind   !
@@ -57,7 +57,7 @@
 # include "tile.h"
 !
 # ifdef PROFILE
-      CALL wclock_on (ng, iNLM, 43)
+      CALL wclock_on (ng, iNLM, 17)
 # endif
       CALL ncep_flux_tile (ng, tile,                                    &
      &                     LBi, UBi, LBj, UBj,                          &
@@ -118,7 +118,7 @@
      &                     OCEAN(ng) % rho                              &
      &                     )
 # ifdef PROFILE
-      CALL wclock_off (ng, iNLM, 43)
+      CALL wclock_off (ng, iNLM, 17)
 # endif
       RETURN
       END SUBROUTINE ncep_flux
@@ -175,9 +175,7 @@
       USE mod_param
       USE mod_scalars
 !
-# if defined EW_PERIODIC || defined NS_PERIODIC
       USE exchange_2d_mod
-# endif
 # ifdef DISTRIBUTE
       USE mp_exchange_mod, ONLY : mp_exchange2d
 # endif
@@ -320,18 +318,6 @@
 !
 !  Local variable declarations.
 !
-# ifdef DISTRIBUTE
-#  ifdef EW_PERIODIC
-      logical :: EWperiodic=.TRUE.
-#  else
-      logical :: EWperiodic=.FALSE.
-#  endif
-#  ifdef NS_PERIODIC
-      logical :: NSperiodic=.TRUE.
-#  else
-      logical :: NSperiodic=.FALSE.
-#  endif
-# endif
       integer :: i, j, k
 
       real(r8) :: rhoswi, zu, zt, zq, slp, TseaK, tsrf, sfc_temp
@@ -375,8 +361,8 @@
       zq=10._r8 ! measurement height of specific humidity [m]
       cpair=1004.7_r8 ! specific heat of dry air (J/K/kg)
 
-      DO j=Jstr-1,JendR
-        DO i=Istr-1,IendR
+      DO j=Jstr-1,JendT
+        DO i=Istr-1,IendT
 # ifdef ICE_THERMO
              IF(ai(i,j,liold).gt.min_a(ng)) THEN
                 sfc_temp = ai(i,j,liold)*tis(i,j) +                     &
@@ -404,7 +390,7 @@
           tml = TseaK
 
 #ifdef ICE_MODEL
-          fice = max(ai(i,j,liold), min_a(ng))
+          fice = max(ai(i,j,liold), 0.0_r8)
 #else
           fice = icec(i,j)
 #endif
@@ -419,8 +405,8 @@
           hsn_n = 0.2_r8*fice
           sfwat_n = 0._r8
 #endif
-          thki_n = hice_n/(fice+0.01_r8)
-          thksn_n = hsn_n/(fice+0.01_r8)
+          thki_n = hice_n/(MAX(fice,0.01_r8))
+          thksn_n = hsn_n/(MAX(fice,0.01_r8))
 !
           lhtfl = lhflx(i,j)
           shtfl = shflx(i,j)
@@ -704,49 +690,48 @@
         write(*,*) 'ice',tdays,qai_n(i,j),-qsh_i,-qlh_i,-qswi,qlwi,     &
      &              tsrf,tsrf_d
         print *, 'ice2', dswrf, albs, tsrf, alb_s_wet, alb_i_wet
-      endif
+      END IF
 #endif
 
 #endif
-      ENDDO
-      ENDDO
+      END DO
+      END DO
 
 # ifdef ICE_MODEL
-      DO j=JstrR,JendR
-         DO i=Istr,IendR
-            rhoO = 1000._r8 + 0.5_r8*(rho(i,j,N(ng))+rho(i-1,j,N(ng)))
-            sustr_aw(i,j) = 0.5_r8*(tau_awx_n(i-1,j)+tau_awx_n(i,j))/rhoO
-         ENDDO
-      ENDDO
+      DO j=JstrT,JendT
+        DO i=Istr,IendT
+          rhoO = 1000._r8 + 0.5_r8*(rho(i,j,N(ng))+rho(i-1,j,N(ng)))
+          sustr_aw(i,j) = 0.5_r8*(tau_awx_n(i-1,j)+tau_awx_n(i,j))/rhoO
+        END DO
+      END DO
 
-      DO j=Jstr,JendR
-         DO i=IstrR,IendR
-            rhoO = 1000._r8 + 0.5_r8*(rho(i,j,N(ng))+rho(i,j-1,N(ng)))
-            svstr_aw(i,j) = 0.5_r8*(tau_awy_n(i,j-1)+tau_awy_n(i,j))/rhoO
-         ENDDO
-      ENDDO
+      DO j=Jstr,JendT
+        DO i=IstrT,IendT
+          rhoO = 1000._r8 + 0.5_r8*(rho(i,j,N(ng))+rho(i,j-1,N(ng)))
+          svstr_aw(i,j) = 0.5_r8*(tau_awy_n(i,j-1)+tau_awy_n(i,j))/rhoO
+        END DO
+      END DO
 # else
-      DO j=JstrR,JendR
-         DO i=Istr,IendR
-            rhoO = 1000._r8 + 0.5_r8*(rho(i,j,N(ng))+rho(i-1,j,N(ng)))
-            sustr(i,j) = 0.5_r8*(tau_awx_n(i-1,j)+tau_awx_n(i,j))/rhoO
-         ENDDO
-      ENDDO
+      DO j=JstrT,JendT
+        DO i=Istr,IendT
+          rhoO = 1000._r8 + 0.5_r8*(rho(i,j,N(ng))+rho(i-1,j,N(ng)))
+          sustr(i,j) = 0.5_r8*(tau_awx_n(i-1,j)+tau_awx_n(i,j))/rhoO
+        END DO
+      END DO
 
-      DO j=Jstr,JendR
-         DO i=IstrR,IendR
-            rhoO = 1000._r8 + 0.5_r8*(rho(i,j,N(ng))+rho(i,j-1,N(ng)))
-            svstr(i,j) = 0.5_r8*(tau_awy_n(i,j-1)+tau_awy_n(i,j))/rhoO
-         ENDDO
-      ENDDO
+      DO j=Jstr,JendT
+        DO i=IstrT,IendT
+          rhoO = 1000._r8 + 0.5_r8*(rho(i,j,N(ng))+rho(i,j-1,N(ng)))
+          svstr(i,j) = 0.5_r8*(tau_awy_n(i,j-1)+tau_awy_n(i,j))/rhoO
+        END DO
+      END DO
 # endif
 !
 !-----------------------------------------------------------------------
 !  Exchange boundary data.
 !-----------------------------------------------------------------------
 !
-# if defined EW_PERIODIC || defined NS_PERIODIC
-
+      IF (EWperiodic(ng).or.NSperiodic(ng)) THEN
         CALL exchange_r2d_tile (ng, tile,                               &
      &                          LBi, UBi, LBj, UBj,                     &
      &                          rhoa_n)
@@ -783,8 +768,8 @@
         CALL exchange_r2d_tile (ng, tile,                               &
      &                          LBi, UBi, LBj, UBj,                     &
      &                          tau_awy_n)
-#  ifdef ICE_MODEL
-#   ifdef ICE_THERMO
+# ifdef ICE_MODEL
+#  ifdef ICE_THERMO
         CALL exchange_r2d_tile (ng, tile,                               &
      &                          LBi, UBi, LBj, UBj,                     &
      &                          qao_n)
@@ -803,7 +788,7 @@
         CALL exchange_r2d_tile (ng, tile,                               &
      &                          LBi, UBi, LBj, UBj,                     &
      &                          snow_n)
-#   endif
+#  endif
         CALL exchange_r2d_tile (ng, tile,                               &
      &                          LBi, UBi, LBj, UBj,                     &
      &                          tau_aix_n)
@@ -816,60 +801,60 @@
         CALL exchange_v2d_tile (ng, tile,                               &
      &                          LBi, UBi, LBj, UBj,                     &
      &                          svstr_aw)
-#  endif
+# endif
         CALL exchange_r2d_tile (ng, tile,                               &
      &                          LBi, UBi, LBj, UBj,                     &
      &                          stflx(:,:,isalt))
         CALL exchange_r2d_tile (ng, tile,                               &
      &                          LBi, UBi, LBj, UBj,                     &
      &                          stflx(:,:,itemp))
-#  ifndef ICE_MODEL
+# ifndef ICE_MODEL
         CALL exchange_u2d_tile (ng, tile,                               &
      &                          LBi, UBi, LBj, UBj,                     &
      &                          sustr)
         CALL exchange_v2d_tile (ng, tile,                               &
      &                          LBi, UBi, LBj, UBj,                     &
      &                          svstr)
-#  endif
 # endif
+      END IF
 # ifdef DISTRIBUTE
       CALL mp_exchange2d (ng, tile, iNLM, 4,                            &
      &                    LBi, UBi, LBj, UBj,                           &
-     &                    NghostPoints, EWperiodic, NSperiodic,         &
+     &                    NghostPoints, EWperiodic(ng), NSperiodic(ng), &
      &                    rhoa_n, wg2_d, cd_d, ch_d)
       CALL mp_exchange2d (ng, tile, iNLM, 4,                            &
      &                    LBi, UBi, LBj, UBj,                           &
-     &                    NghostPoints, EWperiodic, NSperiodic,         &
+     &                    NghostPoints, EWperiodic(ng), NSperiodic(ng), &
      &                    ce_d, wg2_m, cd_m, ch_m)
       CALL mp_exchange2d (ng, tile, iNLM, 4,                            &
      &                    LBi, UBi, LBj, UBj,                           &
-     &                    NghostPoints, EWperiodic, NSperiodic,         &
+     &                    NghostPoints, EWperiodic(ng), NSperiodic(ng), &
      &                    ce_m, srflx, tau_awx_n, tau_awy_n)
 #  ifdef ICE_MODEL
 #   ifdef ICE_THERMO
        CALL mp_exchange2d (ng, tile, iNLM, 4,                           &
      &                    LBi, UBi, LBj, UBj,                           &
-     &                    NghostPoints, EWperiodic, NSperiodic,         &
+     &                    NghostPoints, EWperiodic(ng), NSperiodic(ng), &
      &                    qao_n, qai_n, p_e_n, coef_ice_heat)
        CALL mp_exchange2d (ng, tile, iNLM, 2,                           &
      &                    LBi, UBi, LBj, UBj,                           &
-     &                    NghostPoints, EWperiodic, NSperiodic,         &
+     &                    NghostPoints, EWperiodic(ng), NSperiodic(ng), &
      &                    rhs_ice_heat, snow_n)
 #   endif
       CALL mp_exchange2d (ng, tile, iNLM, 4,                            &
      &                    LBi, UBi, LBj, UBj,                           &
-     &                    NghostPoints, EWperiodic, NSperiodic,         &
+     &                    NghostPoints, EWperiodic(ng), NSperiodic(ng), &
      &                    tau_aix_n, tau_aiy_n, sustr_aw, svstr_aw)
 #  endif
       CALL mp_exchange2d (ng, tile, iNLM, 2,                            &
      &                    LBi, UBi, LBj, UBj,                           &
-     &                    NghostPoints, EWperiodic, NSperiodic,         &
+     &                    NghostPoints, EWperiodic(ng), NSperiodic(ng), &
      &                    stflx(:,:,itemp),                             &
      &                    stflx(:,:,isalt))
 #  ifndef ICE_MODEL
       CALL mp_exchange2d (ng, tile, iNLM, 2,                            &
      &                    LBi, UBi, LBj, UBj,                           &
-     &                    NghostPoints, EWperiodic, NSperiodic,         &
+     &                    NghostPoints, EWperiodic(ng), NSperiodic(ng), &
      &                    sustr, svstr)
 #  endif
 # endif

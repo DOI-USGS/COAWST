@@ -1,7 +1,7 @@
 /*
-** svn $Id: ecosim_def.h 429 2009-12-20 17:30:26Z arango $
+** svn $Id$
 *************************************************** Hernan G. Arango ***
-** Copyright (c) 2002-2010 The ROMS/TOMS Group                        **
+** Copyright (c) 2002-2014 The ROMS/TOMS Group                        **
 **   Licensed under a MIT/X style license                             **
 **   See License_ROMS.txt                                             **
 ************************************************************************
@@ -24,21 +24,27 @@
 
       Vinfo( 1)='RtUVR_flag'
       Vinfo( 2)='switch to calculate CDOC UV photolysis.'
-      status=def_var(ng, model, ncid, varid, nf90_char,                 &
+      Vinfo( 9)='.FALSE.'
+      Vinfo(10)='.TRUE.'
+      status=def_var(ng, model, ncid, varid, nf90_int,                  &
      &               1, (/0/), Aval, Vinfo, ncname,                     &
      &               SetParAccess = .FALSE.)
       IF (exit_flag.ne.NoError) RETURN
 
       Vinfo( 1)='NFIX_flag'
       Vinfo( 2)='switch to calculate temperature based N fixation'
-      status=def_var(ng, model, ncid, varid, nf90_char,                 &
+      Vinfo( 9)='.FALSE.'
+      Vinfo(10)='.TRUE.'
+      status=def_var(ng, model, ncid, varid, nf90_int,                  &
      &               1, (/0/), Aval, Vinfo, ncname,                     &
      &               SetParAccess = .FALSE.)
       IF (exit_flag.ne.NoError) RETURN
 
       Vinfo( 1)='Regen_flag'
       Vinfo( 2)='switch to calculate fecal matter regeneration'
-      status=def_var(ng, model, ncid, varid, nf90_char,                 &
+      Vinfo( 9)='.FALSE.'
+      Vinfo(10)='.TRUE.'
+      status=def_var(ng, model, ncid, varid, nf90_int,                  &
      &               1, (/0/), Aval, Vinfo, ncname,                     &
      &               SetParAccess = .FALSE.)
       IF (exit_flag.ne.NoError) RETURN

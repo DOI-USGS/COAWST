@@ -3,7 +3,7 @@
 !
 !svn $Id: def_var.F 733 2008-09-07 01:56:45Z jcwarner $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2010 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2014 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -110,7 +110,7 @@
       logical :: LandFill
 #endif
 #if defined PARALLEL_IO && defined DISTRIBUTE
-      logical :: Laccess
+      logical :: Ltiled
 #endif
       integer :: i, j, latt, status
 
@@ -144,7 +144,7 @@
           END IF
         END IF
 
-#if !defined PARALLEL_IO && (defined NETCDF4 && defined DEFLATE)
+#if !defined PARALLEL_IO && (defined HDF5 && defined DEFLATE)
 !
 !  Define deflate (file compresion) parameters. Notice that deflation
 !  cannot be used in parallel I/O for writing data. This is because
@@ -604,10 +604,14 @@
                 text='lon_u lat_u'
               ELSE IF (INT(Aval(5)).eq.u3dvar) THEN
                 text='lon_u lat_u s_rho'
+              ELSE IF (INT(Aval(5)).eq.-u3dvar) THEN
+                text='lon_u lat_u s_w'
               ELSE IF (INT(Aval(5)).eq.v2dvar) THEN
                 text='lon_v lat_v'
               ELSE IF (INT(Aval(5)).eq.v3dvar) THEN
                 text='lon_v lat_v s_rho'
+              ELSE IF (INT(Aval(5)).eq.-v3dvar) THEN
+                text='lon_v lat_v s_w'
               ELSE IF (INT(Aval(5)).eq.p2dvar) THEN
                 text='lon_psi lat_psi'
               ELSE IF (INT(Aval(5)).eq.p3dvar) THEN
@@ -626,10 +630,14 @@
                 text='x_u y_u'
               ELSE IF (INT(Aval(5)).eq.u3dvar) THEN
                 text='x_u y_u s_rho'
+              ELSE IF (INT(Aval(5)).eq.-u3dvar) THEN
+                text='x_u y_u s_w'
               ELSE IF (INT(Aval(5)).eq.v2dvar) THEN
                 text='x_v y_v'
               ELSE IF (INT(Aval(5)).eq.v3dvar) THEN
                 text='x_v y_v s_rho'
+              ELSE IF (INT(Aval(5)).eq.-v3dvar) THEN
+                text='x_v y_v s_w'
               ELSE IF (INT(Aval(5)).eq.p2dvar) THEN
                 text='x_psi y_psi'
               ELSE IF (INT(Aval(5)).eq.p3dvar) THEN
@@ -726,19 +734,21 @@
 #endif
 #if defined PARALLEL_IO && defined DISTRIBUTE
 !
-!  Set either collective or independent parallel access. This information
-!  is not written to the data file.
+!  Set parallel access for tiled and non-tiled variables. The optional
+!  argument "SetParAccess" is only available for non-tiled variables.
+!  Otherwise, it is assumed that defined variables are tiled. That is,
+!  they are variables (2D/3D) with parallel domain decomposition.
 !
         IF (exit_flag.eq.NoError) THEN
           IF (PRESENT(SetParAccess)) THEN
-            Laccess=SetParAccess
+            Ltiled=SetParAccess
           ELSE
-            Laccess=.TRUE.
+            Ltiled=.TRUE.
           END IF
-          IF (Laccess) THEN
-            status=nf90_var_par_access(ncid, Vid, IO_collective)
+          IF (Ltiled) THEN
+            status=nf90_var_par_access(ncid, Vid, IO_tiled_access)
           ELSE
-            status=nf90_var_par_access(ncid, Vid, IO_independent)
+            status=nf90_var_par_access(ncid, Vid, IO_nontiled_access)
           END IF
           IF (status.ne.nf90_noerr) THEN
             IF (Master) WRITE (stdout,40) TRIM(Vinfo(1)),               &

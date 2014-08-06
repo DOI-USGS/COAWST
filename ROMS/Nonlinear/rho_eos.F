@@ -4,7 +4,7 @@
 !
 !svn $Id: rho_eos.F 732 2008-09-07 01:55:51Z jcwarner $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2010 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2014 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -37,10 +37,10 @@
 !=======================================================================
 !
       implicit none
-
+!
       PRIVATE
       PUBLIC  :: rho_eos
-
+!
       CONTAINS
 !
 !***********************************************************************
@@ -93,15 +93,15 @@
      &                   MIXING(ng) % alfaobeta,                        &
 #  endif
 # endif
-# if defined LMD_SKPP || defined LMD_BKPP || defined DIAGNOSTICS
      &                   OCEAN(ng) % pden,                              &
-# endif
      &                   OCEAN(ng) % rho)
 # ifdef PROFILE
       CALL wclock_off (ng, iNLM, 14)
 # endif
+
       RETURN
       END SUBROUTINE rho_eos
+
 # ifdef NONLIN_EOS
 !
 !***********************************************************************
@@ -129,9 +129,7 @@
      &                         alfaobeta,                               &
 #   endif
 #  endif
-#  if defined LMD_SKPP || defined LMD_BKPP || defined DIAGNOSTICS
      &                         pden,                                    &
-#  endif
      &                         rho)
 !***********************************************************************
 !
@@ -142,10 +140,8 @@
       USE mod_sediment
 #  endif
 !
-#  if defined EW_PERIODIC || defined NS_PERIODIC
       USE exchange_2d_mod
       USE exchange_3d_mod
-#  endif
 #  ifdef DISTRIBUTE
       USE mp_exchange_mod, ONLY : mp_exchange2d, mp_exchange3d
 #  endif
@@ -182,9 +178,7 @@
       real(r8), intent(out) :: alfaobeta(LBi:,LBj:,0:)
 #    endif
 #   endif
-#   if defined LMD_SKPP || defined LMD_BKPP || defined DIAGNOSTICS
       real(r8), intent(out) :: pden(LBi:,LBj:,:)
-#   endif
       real(r8), intent(out) :: rho(LBi:,LBj:,:)
 #  else
 #   ifdef MASKING
@@ -211,26 +205,12 @@
       real(r8), intent(out) :: alfaobeta(LBi:UBi,LBj:UBj,0:N(ng))
 #    endif
 #   endif
-#   if defined LMD_SKPP || defined LMD_BKPP || defined DIAGNOSTICS
       real(r8), intent(out) :: pden(LBi:UBi,LBj:UBj,N(ng))
-#   endif
       real(r8), intent(out) :: rho(LBi:UBi,LBj:UBj,N(ng))
 #  endif
 !
 !  Local variable declarations.
 !
-# ifdef DISTRIBUTE
-#  ifdef EW_PERIODIC
-      logical :: EWperiodic=.TRUE.
-#  else
-      logical :: EWperiodic=.FALSE.
-#  endif
-#  ifdef NS_PERIODIC
-      logical :: NSperiodic=.TRUE.
-#  else
-      logical :: NSperiodic=.FALSE.
-#  endif
-# endif
       integer :: i, ised, itrc, j, k
 
       real(r8) :: SedDen, Tp, Tpr10, Ts, Tt, sqrtTs
@@ -264,6 +244,8 @@
 !  Nonlinear equation of state.  Notice that this equation of state
 !  is only valid for potential temperature range of -2C to 40C and
 !  a salinity range of 0 PSU to 42 PSU.
+!  Because of the pressure effect on freezing and the iceshelf, we've
+!  extended temp limit to -2.5 (msd 4/25/06)
 !=======================================================================
 !
       DO j=JstrT,JendT
@@ -273,9 +255,11 @@
 !  Check temperature and salinity lower values. Assign depth to the
 !  pressure.
 !
-            Tt=MAX(-2.0_r8,t(i,j,k,nrhs,itemp))
+            Tt=MAX(-2.5_r8,t(i,j,k,nrhs,itemp))
+            Tt=MIN(40.0_r8,Tt)
 #  ifdef SALINITY
             Ts=MAX(0.0_r8,t(i,j,k,nrhs,isalt))
+            Ts=MIN(100.0_r8,Ts)
             sqrtTs=SQRT(Ts)
 #  else
             Ts=0.0_r8
@@ -490,96 +474,95 @@
         DO k=1,N(ng)
           DO i=IstrT,IendT
             rho(i,j,k)=den(i,k)
-#  if defined LMD_SKPP || defined LMD_BKPP || defined DIAGNOSTICS
             pden(i,j,k)=(den1(i,k)-1000.0_r8)
-#   ifdef MASKING
+#  ifdef MASKING
             pden(i,j,k)=pden(i,j,k)*rmask(i,j)
-#   endif
 #  endif
           END DO
         END DO
       END DO
-#  if defined EW_PERIODIC || defined NS_PERIODIC || defined DISTRIBUTE
 !
 !-----------------------------------------------------------------------
 !  Exchange boundary data.
 !-----------------------------------------------------------------------
 !
-#   if defined EW_PERIODIC || defined NS_PERIODIC
-      CALL exchange_r3d_tile (ng, tile,                                 &
-     &                        LBi, UBi, LBj, UBj, 1, N(ng),             &
-     &                        rho)
-#    if defined LMD_SKPP || defined LMD_BKPP || defined DIAGNOSTICS
-      CALL exchange_r3d_tile (ng, tile,                                 &
-     &                        LBi, UBi, LBj, UBj, 1, N(ng),             &
-     &                        pden)
-#    endif
-#    if defined LMD_SKPP    || defined LMD_BKPP         || \
-        defined BULK_FLUXES || defined BALANCE_OPERATOR
+      IF (EWperiodic(ng).or.NSperiodic(ng)) THEN
+        CALL exchange_r3d_tile (ng, tile,                               &
+     &                          LBi, UBi, LBj, UBj, 1, N(ng),           &
+     &                          rho)
+        CALL exchange_r3d_tile (ng, tile,                               &
+     &                          LBi, UBi, LBj, UBj, 1, N(ng),           &
+     &                          pden)
 
-#     ifdef LMD_DDMIX
-      CALL exchange_w3d_tile (ng, tile,                                 &
-     &                        LBi, UBi, LBj, UBj, 0, N(ng),             &
-     &                        alfaobeta)
-#     endif
-      CALL exchange_r2d_tile (ng, tile,                                 &
-     &                        LBi, UBi, LBj, UBj,                       &
-     &                        alpha)
-      CALL exchange_r2d_tile (ng, tile,                                 &
-     &                        LBi, UBi, LBj, UBj,                       &
-     &                        beta)
+#  if defined LMD_SKPP    || defined LMD_BKPP         || \
+      defined BULK_FLUXES || defined BALANCE_OPERATOR
+#   ifdef LMD_DDMIX
+        CALL exchange_w3d_tile (ng, tile,                               &
+     &                          LBi, UBi, LBj, UBj, 0, N(ng),           &
+     &                          alfaobeta)
+#   endif
+        CALL exchange_r2d_tile (ng, tile,                               &
+     &                          LBi, UBi, LBj, UBj,                     &
+     &                          alpha)
+        CALL exchange_r2d_tile (ng, tile,                               &
+     &                          LBi, UBi, LBj, UBj,                     &
+     &                          beta)
+#  endif
+
+#  ifdef VAR_RHO_2D
+        CALL exchange_r2d_tile (ng, tile,                               &
+     &                          LBi, UBi, LBj, UBj,                     &
+     &                          rhoA)
+        CALL exchange_r2d_tile (ng, tile,                               &
+     &                          LBi, UBi, LBj, UBj,                     &
+     &                          rhoS)
+#  endif
+
+#  ifdef BV_FREQUENCY
+        CALL exchange_w3d_tile (ng, tile,                               &
+     &                          LBi, UBi, LBj, UBj, 0, N(ng),           &
+     &                          bvf)
+#  endif
+      END IF
+
+#  ifdef DISTRIBUTE
+!
+      CALL mp_exchange3d (ng, tile, iNLM, 2,                            &
+     &                    LBi, UBi, LBj, UBj, 1, N(ng),                 &
+     &                    NghostPoints,                                 &
+     &                    EWperiodic(ng), NSperiodic(ng),               &
+     &                    rho, pden)
+
+#   if defined LMD_SKPP    || defined LMD_BKPP         || \
+       defined BULK_FLUXES || defined BALANCE_OPERATOR
+#    ifdef LMD_DDMIX
+      CALL mp_exchange3d (ng, tile, iNLM, 1,                            &
+     &                    LBi, UBi, LBj, UBj, 0, N(ng),                 &
+     &                    NghostPoints,                                 &
+     &                    EWperiodic(ng), NSperiodic(ng),               &
+     &                    alfaobeta)
 #    endif
-#    ifdef VAR_RHO_2D
-      CALL exchange_r2d_tile (ng, tile,                                 &
-     &                        LBi, UBi, LBj, UBj,                       &
-     &                        rhoA)
-      CALL exchange_r2d_tile (ng, tile,                                 &
-     &                        LBi, UBi, LBj, UBj,                       &
-     &                        rhoS)
-#    endif
-#    ifdef BV_FREQUENCY
-      CALL exchange_w3d_tile (ng, tile,                                 &
-     &                        LBi, UBi, LBj, UBj, 0, N(ng),             &
-     &                        bvf)
-#    endif
+      CALL mp_exchange2d (ng, tile, iNLM, 2,                            &
+     &                    LBi, UBi, LBj, UBj,                           &
+     &                    NghostPoints,                                 &
+     &                    EWperiodic(ng), NSperiodic(ng),               &
+     &                    alpha, beta)
 #   endif
 
-#   ifdef DISTRIBUTE
-      CALL mp_exchange3d (ng, tile, iNLM, 1,                            &
-     &                    LBi, UBi, LBj, UBj, 1, N(ng),                 &
-     &                    NghostPoints, EWperiodic, NSperiodic,         &
-     &                    rho)
-#    if defined LMD_SKPP || defined LMD_BKPP || defined DIAGNOSTICS
-      CALL mp_exchange3d (ng, tile, iNLM, 1,                            &
-     &                    LBi, UBi, LBj, UBj, 1, N(ng),                 &
-     &                    NghostPoints, EWperiodic, NSperiodic,         &
-     &                    pden)
-#    endif
-#    if defined LMD_SKPP    || defined LMD_BKPP         || \
-        defined BULK_FLUXES || defined BALANCE_OPERATOR
-#     ifdef LMD_DDMIX
-      CALL mp_exchange3d (ng, tile, iNLM, 1,                            &
-     &                    LBi, UBi, LBj, UBj, 0, N(ng),                 &
-     &                    NghostPoints, EWperiodic, NSperiodic,         &
-     &                    alfaobeta)
-#     endif
+#   ifdef VAR_RHO_2D
       CALL mp_exchange2d (ng, tile, iNLM, 2,                            &
      &                    LBi, UBi, LBj, UBj,                           &
-     &                    NghostPoints, EWperiodic, NSperiodic,         &
-     &                    alpha, beta)
-#    endif
-#    ifdef VAR_RHO_2D
-      CALL mp_exchange2d (ng, tile, iNLM, 2,                            &
-     &                    LBi, UBi, LBj, UBj,                           &
-     &                    NghostPoints, EWperiodic, NSperiodic,         &
+     &                    NghostPoints,                                 &
+     &                    EWperiodic(ng), NSperiodic(ng),               &
      &                    rhoA, rhoS)
-#    endif
-#    ifdef BV_FREQUENCY
+#   endif
+
+#   ifdef BV_FREQUENCY
       CALL mp_exchange3d (ng, tile, iNLM, 1,                            &
      &                    LBi, UBi, LBj, UBj, 0, N(ng),                 &
-     &                    NghostPoints, EWperiodic, NSperiodic,         &
+     &                    NghostPoints,                                 &
+     &                    EWperiodic(ng), NSperiodic(ng),               &
      &                    bvf)
-#    endif
 #   endif
 #  endif
 
@@ -614,9 +597,7 @@
      &                         alfaobeta,                               &
 #   endif
 #  endif
-#  if defined LMD_SKPP || defined LMD_BKPP || defined DIAGNOSTICS
      &                         pden,                                    &
-#  endif
      &                         rho)
 !***********************************************************************
 !
@@ -626,10 +607,8 @@
       USE mod_sediment
 #  endif
 !
-#  if defined EW_PERIODIC || defined NS_PERIODIC
       USE exchange_2d_mod
       USE exchange_3d_mod
-#  endif
 #  ifdef DISTRIBUTE
       USE mp_exchange_mod, ONLY : mp_exchange2d, mp_exchange3d
 #  endif
@@ -667,9 +646,7 @@
       real(r8), intent(out) :: alfaobeta(LBi:,LBj:,0:)
 #    endif
 #   endif
-#   if defined LMD_SKPP || defined LMD_BKPP || defined DIAGNOSTICS
       real(r8), intent(out) :: pden(LBi:,LBj:,:)
-#   endif
       real(r8), intent(out) :: rho(LBi:,LBj:,:)
 #  else
 #   ifdef MASKING
@@ -696,26 +673,12 @@
       real(r8), intent(out) :: alfaobeta(LBi:UBi,LBj:UBj,0:N(ng))
 #    endif
 #   endif
-#   if defined LMD_SKPP || defined LMD_BKPP || defined DIAGNOSTICS
       real(r8), intent(out) :: pden(LBi:UBi,LBj:UBj,N(ng))
-#   endif
       real(r8), intent(out) :: rho(LBi:UBi,LBj:UBj,N(ng))
 #  endif
 !
 !  Local variable declarations.
 !
-# ifdef DISTRIBUTE
-#  ifdef EW_PERIODIC
-      logical :: EWperiodic=.TRUE.
-#  else
-      logical :: EWperiodic=.FALSE.
-#  endif
-#  ifdef NS_PERIODIC
-      logical :: NSperiodic=.TRUE.
-#  else
-      logical :: NSperiodic=.FALSE.
-#  endif
-# endif
       integer :: i, ised, itrc, j, k
       real(r8) :: SedDen, cff, cff1, cff2
 
@@ -754,9 +717,7 @@
 #  ifdef MASKING
             rho(i,j,k)=rho(i,j,k)*rmask(i,j)
 #  endif
-#  if defined LMD_SKPP || defined LMD_BKPP || defined DIAGNOSTICS
             pden(i,j,k)=rho(i,j,k)
-#  endif
           END DO
         END DO
 
@@ -836,88 +797,91 @@
 #   endif
 #  endif
       END DO
-#  if defined EW_PERIODIC || defined NS_PERIODIC || defined DISTRIBUTE
 !
 !-----------------------------------------------------------------------
 !  Exchange boundary data.
 !-----------------------------------------------------------------------
 !
-#   if defined EW_PERIODIC || defined NS_PERIODIC
-      CALL exchange_r3d_tile (ng, tile,                                 &
-     &                        LBi, UBi, LBj, UBj, 1, N(ng),             &
-     &                        rho)
-#    if defined LMD_SKPP || defined LMD_BKPP || defined DIAGNOSTICS
-      CALL exchange_r3d_tile (ng, tile,                                 &
-     &                        LBi, UBi, LBj, UBj, 1, N(ng),             &
-     &                        pden)
+      IF (EWperiodic(ng).or.NSperiodic(ng)) THEN
+        CALL exchange_r3d_tile (ng, tile,                               &
+     &                          LBi, UBi, LBj, UBj, 1, N(ng),           &
+     &                          rho)
+        CALL exchange_r3d_tile (ng, tile,                               &
+     &                          LBi, UBi, LBj, UBj, 1, N(ng),           &
+     &                          pden)
+
+#  if defined LMD_SKPP    || defined LMD_BKPP         || \
+      defined BULK_FLUXES || defined BALANCE_OPERATOR
+#   ifdef LMD_DDMIX
+        CALL exchange_w3d_tile (ng, tile,                               &
+     &                          LBi, UBi, LBj, UBj, 0, N(ng),           &
+     &                          alfaobeta)
+#   endif
+        CALL exchange_r2d_tile (ng, tile,                               &
+     &                          LBi, UBi, LBj, UBj,                     &
+     &                          alpha)
+        CALL exchange_r2d_tile (ng, tile,                               &
+     &                          LBi, UBi, LBj, UBj,                     &
+     &                          beta)
+#  endif
+
+#  ifdef VAR_RHO_2D
+        CALL exchange_r2d_tile (ng, tile,                               &
+     &                          LBi, UBi, LBj, UBj,                     &
+     &                          rhoA)
+        CALL exchange_r2d_tile (ng, tile,                               &
+     &                          LBi, UBi, LBj, UBj,                     &
+     &                          rhoS)
+#  endif
+
+#  ifdef BV_FREQUENCY
+        CALL exchange_w3d_tile (ng, tile,                               &
+     &                          LBi, UBi, LBj, UBj, 0, N(ng),           &
+     &                          bvf)
+#  endif
+      END IF
+
+#  ifdef DISTRIBUTE
+!
+      CALL mp_exchange3d (ng, tile, iNLM, 2,                            &
+     &                    LBi, UBi, LBj, UBj, 1, N(ng),                 &
+     &                    NghostPoints,                                 &
+     &                    EWperiodic(ng), NSperiodic(ng),               &
+     &                    rho, pden)
+
+#   if defined LMD_SKPP    || defined LMD_BKPP         || \
+       defined BULK_FLUXES || defined BALANCE_OPERATOR
+#    ifdef LMD_DDMIX
+      CALL mp_exchange3d (ng, tile, iNLM, 1,                            &
+     &                    LBi, UBi, LBj, UBj, 0, N(ng),                 &
+     &                    NghostPoints,                                 &
+     &                    EWperiodic(ng), NSperiodic(ng),               &
+     &                    alfaobeta)
 #    endif
-#    if defined LMD_SKPP    || defined LMD_BKPP         || \
-        defined BULK_FLUXES || defined BALANCE_OPERATOR
-#     ifdef LMD_DDMIX
-      CALL exchange_w3d_tile (ng, tile,                                 &
-     &                        LBi, UBi, LBj, UBj, 0, N(ng),             &
-     &                        alfaobeta)
-#     endif
-      CALL exchange_r2d_tile (ng, tile,                                 &
-     &                        LBi, UBi, LBj, UBj,                       &
-     &                        alpha)
-      CALL exchange_r2d_tile (ng, tile,                                 &
-     &                        LBi, UBi, LBj, UBj,                       &
-     &                        beta)
-#    endif
-#    ifdef VAR_RHO_2D
-      CALL exchange_r2d_tile (ng, tile,                                 &
-     &                        LBi, UBi, LBj, UBj,                       &
-     &                        rhoA)
-      CALL exchange_r2d_tile (ng, tile,                                 &
-     &                        LBi, UBi, LBj, UBj,                       &
-     &                        rhoS)
-#    endif
-#    ifdef BV_FREQUENCY
-      CALL exchange_w3d_tile (ng, tile,                                 &
-     &                        LBi, UBi, LBj, UBj, 0, N(ng),             &
-     &                        bvf)
-#    endif
+      CALL mp_exchange2d (ng, tile, iNLM, 2,                            &
+     &                    LBi, UBi, LBj, UBj,                           &
+     &                    NghostPoints,                                 &
+     &                    EWperiodic(ng), NSperiodic(ng),               &
+     &                    alpha, beta)
 #   endif
 
-#   ifdef DISTRIBUTE
-      CALL mp_exchange3d (ng, tile, iNLM, 1,                            &
-     &                    LBi, UBi, LBj, UBj, 1, N(ng),                 &
-     &                    NghostPoints, EWperiodic, NSperiodic,         &
-     &                    rho)
-#    if defined LMD_SKPP || defined LMD_BKPP || defined DIAGNOSTICS
-      CALL mp_exchange3d (ng, tile, iNLM, 1,                            &
-     &                    LBi, UBi, LBj, UBj, 1, N(ng),                 &
-     &                    NghostPoints, EWperiodic, NSperiodic,         &
-     &                    pden)
-#    endif
-#    if defined LMD_SKPP    || defined LMD_BKPP         || \
-        defined BULK_FLUXES || defined BALANCE_OPERATOR
-#     ifdef LMD_DDMIX
-      CALL mp_exchange3d (ng, tile, iNLM, 1,                            &
-     &                    LBi, UBi, LBj, UBj, 0, N(ng),                 &
-     &                    NghostPoints, EWperiodic, NSperiodic,         &
-     &                    alfaobeta)
-#     endif
+#   ifdef VAR_RHO_2D
       CALL mp_exchange2d (ng, tile, iNLM, 2,                            &
      &                    LBi, UBi, LBj, UBj,                           &
-     &                    NghostPoints, EWperiodic, NSperiodic,         &
-     &                    alpha, beta)
-#    endif
-#    ifdef VAR_RHO_2D
-      CALL mp_exchange2d (ng, tile, iNLM, 2,                            &
-     &                    LBi, UBi, LBj, UBj,                           &
-     &                    NghostPoints, EWperiodic, NSperiodic,         &
+     &                    NghostPoints,                                 &
+     &                    EWperiodic(ng), NSperiodic(ng),               &
      &                    rhoA, rhoS)
-#    endif
-#    ifdef BV_FREQUENCY
+#   endif
+
+#   ifdef BV_FREQUENCY
       CALL mp_exchange3d (ng, tile, iNLM, 1,                            &
      &                    LBi, UBi, LBj, UBj, 0, N(ng),                 &
-     &                    NghostPoints, EWperiodic, NSperiodic,         &
+     &                    NghostPoints,                                 &
+     &                    EWperiodic(ng), NSperiodic(ng),               &
      &                    bvf)
-#    endif
 #   endif
 #  endif
+
       RETURN
       END SUBROUTINE rho_eos_tile
 # endif

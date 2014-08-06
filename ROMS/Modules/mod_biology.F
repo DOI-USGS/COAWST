@@ -3,7 +3,7 @@
 /*
 ** svn $Id: mod_biology.F 429 2009-12-20 17:30:26Z arango $
 *************************************************** Hernan G. Arango ***
-** Copyright (c) 2002-2010 The ROMS/TOMS Group                        **
+** Copyright (c) 2002-2014 The ROMS/TOMS Group                        **
 **   Licensed under a MIT/X style license                             **
 **   See License_ROMS.txt                                             **
 ************************************************************************
@@ -24,6 +24,7 @@
 **         npzd_Franks.h      NPZD_FRANKS                             **
 **         npzd_iron.h        NPZD_IRON                               **
 **         npzd_Powell.h      NPZD_POWELL                             **
+**         umaine.h           BIO_UMAINE                              **
 **                                                                    **
 **   (2) Internal model parameters declaration:                       **
 **                                                                    **
@@ -33,6 +34,7 @@
 **         npzd_Franks_mod.h                                          **
 **         npzd_iron_mod.h                                            **
 **         npzd_Powell_mod.h                                          **
+**         umaine_mod.h                                               **
 **                                                                    **
 **   (3) Model parameters standard input script:                      **
 **                                                                    **
@@ -51,6 +53,7 @@
 **         npzd_Franks_inp.h                                          **
 **         npzd_iron_inp.h                                            **
 **         npzd_Powell_inp.h                                          **
+**         umaine_inp.h                                               **
 **                                                                    **
 **   (5) Code to assign indices to model variables during the         **
 **       reading of metadata information from "varinfo.dat":          **
@@ -61,6 +64,7 @@
 **         npzd_Franks_var.h                                          **
 **         npzd_iron_var.h                                            **
 **         npzd_Powell_var.h                                          **
+**         umaine_var.h                                               **
 **                                                                    **
 **   (6) Code to define input model parameters in all output          **
 **       NetCDF files:                                                **
@@ -71,6 +75,7 @@
 **         npzd_Franks_def.h                                          **
 **         npzd_iron_def.h                                            **
 **         npzd_Powell_def.h                                          **
+**         umaine_def.h                                               **
 **                                                                    **
 **   (7) Code to write out input model parameters in all output       **
 **       NetCDF files:                                                **
@@ -81,6 +86,7 @@
 **         npzd_Franks_wrt.h                                          **
 **         npzd_iron_wrt.h                                            **
 **         npzd_Powell_wrt.h                                          **
+**         umaine_wrt.h                                               **
 **                                                                    **
 **                                                                    **
 ** Note that all the *.h files are located in ROMS/Nonlinear/Biology  **
@@ -104,6 +110,8 @@
 #  include <npzd_iron_mod.h>
 # elif defined NPZD_POWELL
 #  include <npzd_Powell_mod.h>
+# elif defined BIO_UMAINE
+#  include <umaine_mod.h>
 # endif
 #endif
 

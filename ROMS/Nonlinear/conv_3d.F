@@ -6,7 +6,7 @@
 !
 !svn $Id: conv_3d.F 732 2008-09-07 01:55:51Z jcwarner $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2010 The ROMS/TOMS Group       Andrew M. Moore   !
+!  Copyright (c) 2002-2014 The ROMS/TOMS Group       Andrew M. Moore   !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -56,9 +56,9 @@
 !=======================================================================
 !
       implicit none
-
+!
       PUBLIC
-
+!
       CONTAINS
 !
 !***********************************************************************
@@ -77,6 +77,7 @@
 !***********************************************************************
 !
       USE mod_param
+      USE mod_scalars
 !
       USE bc_3d_mod, ONLY: bc_r3d_tile
 # ifdef DISTRIBUTE
@@ -128,18 +129,6 @@
 !
 !  Local variable declarations.
 !
-# ifdef DISTRIBUTE
-#  ifdef EW_PERIODIC
-      logical :: EWperiodic=.TRUE.
-#  else
-      logical :: EWperiodic=.FALSE.
-#  endif
-#  ifdef NS_PERIODIC
-      logical :: NSperiodic=.TRUE.
-#  else
-      logical :: NSperiodic=.FALSE.
-#  endif
-# endif
       integer :: Nnew, Nold, Nsav, i, j, k, step
 
       real(r8) :: cff, cff1
@@ -207,10 +196,14 @@
 !
       Nold=1
       Nnew=2
+      CALL bc_r3d_tile (ng, tile,                                       &
+     &                  LBi, UBi, LBj, UBj, LBk, UBk,                   &
+     &                  A)
 # ifdef DISTRIBUTE
       CALL mp_exchange3d (ng, tile, model, 1,                           &
      &                    LBi, UBi, LBj, UBj, LBk, UBk,                 &
-     &                    Nghost, EWperiodic, NSperiodic,               &
+     &                    Nghost,                                       &
+     &                    EWperiodic(ng), NSperiodic(ng),               &
      &                    A)
 # endif
       DO k=1,N(ng)
@@ -269,7 +262,8 @@
 # ifdef DISTRIBUTE
         CALL mp_exchange3d (ng, tile, model, 1,                         &
      &                      LBi, UBi, LBj, UBj, LBk, UBk,               &
-     &                      Nghost, EWperiodic, NSperiodic,             &
+     &                      Nghost,                                     &
+     &                      EWperiodic(ng), NSperiodic(ng),             &
      &                      Awrk(:,:,:,Nnew))
 # endif
 !
@@ -477,9 +471,10 @@
      &                  A)
 # ifdef DISTRIBUTE
       CALL mp_exchange3d (ng, tile, model, 1,                           &
-     &                      LBi, UBi, LBj, UBj, LBk, UBk,               &
-     &                      Nghost, EWperiodic, NSperiodic,             &
-     &                      A)
+     &                    LBi, UBi, LBj, UBj, LBk, UBk,                 &
+     &                    Nghost,                                       &
+     &                    EWperiodic(ng), NSperiodic(ng),               &
+     &                    A)
 # endif
 
       RETURN
@@ -501,6 +496,7 @@
 !***********************************************************************
 !
       USE mod_param
+      USE mod_scalars
 !
       USE bc_3d_mod, ONLY: bc_u3d_tile
 # ifdef DISTRIBUTE
@@ -550,18 +546,6 @@
 !
 !  Local variable declarations.
 !
-# ifdef DISTRIBUTE
-#  ifdef EW_PERIODIC
-      logical :: EWperiodic=.TRUE.
-#  else
-      logical :: EWperiodic=.FALSE.
-#  endif
-#  ifdef NS_PERIODIC
-      logical :: NSperiodic=.TRUE.
-#  else
-      logical :: NSperiodic=.FALSE.
-#  endif
-# endif
       integer :: Nnew, Nold, Nsav, i, j, k, step
 
       real(r8) :: cff, cff1
@@ -635,10 +619,14 @@
 !
       Nold=1
       Nnew=2
+      CALL bc_u3d_tile (ng, tile,                                       &
+     &                  LBi, UBi, LBj, UBj, LBk, UBk,                   &
+     &                  A)
 # ifdef DISTRIBUTE
       CALL mp_exchange3d (ng, tile, model, 1,                           &
      &                    LBi, UBi, LBj, UBj, LBk, UBk,                 &
-     &                    Nghost, EWperiodic, NSperiodic,               &
+     &                    Nghost,                                       &
+     &                    EWperiodic(ng), NSperiodic(ng),               &
      &                    A)
 # endif
       DO k=1,N(ng)
@@ -695,7 +683,8 @@
 # ifdef DISTRIBUTE
         CALL mp_exchange3d (ng, tile, model, 1,                         &
      &                      LBi, UBi, LBj, UBj, LBk, UBk,               &
-     &                      Nghost, EWperiodic, NSperiodic,             &
+     &                      Nghost,                                     &
+     &                      EWperiodic(ng), NSperiodic(ng),             &
      &                      Awrk(:,:,:,Nnew))
 # endif
 !
@@ -909,7 +898,8 @@
 # ifdef DISTRIBUTE
       CALL mp_exchange3d (ng, tile, model, 1,                           &
      &                    LBi, UBi, LBj, UBj, LBk, UBk,                 &
-     &                    Nghost, EWperiodic, NSperiodic,               &
+     &                    Nghost,                                       &
+     &                    EWperiodic(ng), NSperiodic(ng),               &
      &                    A)
 # endif
 
@@ -932,6 +922,7 @@
 !***********************************************************************
 !
       USE mod_param
+      USE mod_scalars
 !
       USE bc_3d_mod, ONLY: bc_v3d_tile
 # ifdef DISTRIBUTE
@@ -981,18 +972,6 @@
 !
 !  Local variable declarations.
 !
-# ifdef DISTRIBUTE
-#  ifdef EW_PERIODIC
-      logical :: EWperiodic=.TRUE.
-#  else
-      logical :: EWperiodic=.FALSE.
-#  endif
-#  ifdef NS_PERIODIC
-      logical :: NSperiodic=.TRUE.
-#  else
-      logical :: NSperiodic=.FALSE.
-#  endif
-# endif
       integer :: Nnew, Nold, Nsav, i, j, k, step
 
       real(r8) :: cff, cff1
@@ -1066,10 +1045,14 @@
 !
       Nold=1
       Nnew=2
+      CALL bc_v3d_tile (ng, tile,                                       &
+     &                  LBi, UBi, LBj, UBj, LBk, UBk,                   &
+     &                  A)
 # ifdef DISTRIBUTE
       CALL mp_exchange3d (ng, tile, model, 1,                           &
      &                    LBi, UBi, LBj, UBj, LBk, UBk,                 &
-     &                    Nghost, EWperiodic, NSperiodic,               &
+     &                    Nghost,                                       &
+     &                    EWperiodic(ng), NSperiodic(ng),               &
      &                    A)
 # endif
       DO k=1,N(ng)
@@ -1126,7 +1109,8 @@
 # ifdef DISTRIBUTE
         CALL mp_exchange3d (ng, tile, model, 1,                         &
      &                      LBi, UBi, LBj, UBj, LBk, UBk,               &
-     &                      Nghost, EWperiodic, NSperiodic,             &
+     &                      Nghost,                                     &
+     &                      EWperiodic(ng), NSperiodic(ng),             &
      &                      Awrk(:,:,:,Nnew))
 # endif
 !
@@ -1340,7 +1324,8 @@
 # ifdef DISTRIBUTE
       CALL mp_exchange3d (ng, tile, model, 1,                           &
      &                    LBi, UBi, LBj, UBj, LBk, UBk,                 &
-     &                    Nghost, EWperiodic, NSperiodic,               &
+     &                    Nghost,                                       &
+     &                    EWperiodic(ng), NSperiodic(ng),               &
      &                    A)
 # endif
 

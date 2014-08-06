@@ -3,7 +3,7 @@
 !
 !svn $Id: mod_grid.F 790 2008-10-14 19:32:07Z jcwarner $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2010 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2014 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -38,7 +38,6 @@
 !  grdscl     Grid scale used to adjust horizontal mixing according    !
 !               to grid area.                                          !
 !  h          Bottom depth (m) at RHO-points.                          !
-!  hinv       Inverse of Bottom depth (1/m) at RHO-points.             !
 !  latp       Latitude (degrees_north) at PSI-points.                  !
 !  latr       Latitude (degrees_north) at RHO-points.                  !
 !  latu       Latitude (degrees_north) at U-points.                    !
@@ -58,9 +57,6 @@
 !  on_v       V-grid spacing (meters) in the ETA-direction.            !
 !  pm         Coordinate transformation metric "m" (1/meters)          !
 !               associated with the differential distances in XI.      !
-!  pmask      Slipperiness mask at PSI-points:                         !
-!               (0=Land, 1=Sea, 1-gamma2=boundary).                    !
-!  pmask_wet  Slipperiness mask at PSI-points for wetdry.              !
 !  pmon_p     Compound term, pm/pn at PSI-points.                      !
 !  pmon_r     Compound term, pm/pn at RHO-points.                      !
 !  pmon_u     Compound term, pm/pn at U-points.                        !
@@ -71,17 +67,62 @@
 !  pnom_r     Compound term, pn/pm at RHO-points.                      !
 !  pnom_u     Compound term, pn/pm at U-points.                        !
 !  pnom_v     Compound term, pn/pm at V-points.                        !
+#ifdef MASKING
+!  pmask      Slipperiness mask at PSI-points:                         !
+!               (0=Land, 1=Sea, 1-gamma2=boundary).                    !
 !  rmask      Mask at RHO-points (0=Land, 1=Sea).                      !
-!  rmask_wet  Mask at RHO-points for wetting and drying (0=dry, 1=wet) !
 !  umask      Mask at U-points (0=Land, 1=Sea).                        !
-!  umask_wet  Mask at U-points for wetting and drying (0=dry, 1,2=wet) !
 !  vmask      Mask at V-points (0=Land, 1=Sea).                        !
-!  vmask_wet  Mask at V-points for wetting and drying (0=dry, 1,2=wet) !
+# if defined AVERAGES    || \
+    (defined AD_AVERAGES && defined ADJOINT) || \
+    (defined RP_AVERAGES && defined TL_IOMS) || \
+    (defined TL_AVERAGES && defined TANGENT)
+!
+!  pmask_avg  Time-average FillValue mask at PSI-points (0=dry, 1=wet) !
+!  rmask_avg  Time-average FillValue mask at RHO-points (0=dry, 1=wet) !
+!  rmask_avg  Time-average FillValue mask at   U-points (0=dry, 1=wet) !
+!  rmask_avg  Time-average FillValue mask at   V-points (0=dry, 1=wet) !
+# endif
+# if defined AVERAGES2
+!  pmask_avg2 Time-average FillValue mask at PSI-points (0=dry, 1=wet) !
+!  rmask_avg2 Time-average FillValue mask at RHO-points (0=dry, 1=wet) !
+!  rmask_avg2 Time-average FillValue mask at   U-points (0=dry, 1=wet) !
+!  rmask_avg2 Time-average FillValue mask at   V-points (0=dry, 1=wet) !
+# endif
+# ifdef DIAGNOSTICS
+!
+!  pmask_dia  Diagnostics FillValue mask at PSI-points (0=dry, 1=wet)  !
+!  rmask_dia  Diagnostics FillValue mask at RHO-points (0=dry, 1=wet)  !
+!  rmask_dia  Diagnostics FillValue mask at   U-points (0=dry, 1=wet)  !
+!  rmask_dia  Diagnostics FillValue mask at   V-points (0=dry, 1=wet)  !
+# endif
 !                                                                      !
 !  pmask_io   Output FillValue mask at PSI-points (0=dry, 1=wet)       !
 !  rmask_io   Output FillValue mask at RHO-points (0=dry, 1=wet)       !
 !  rmask_io   Output FillValue mask at   U-points (0=dry, 1=wet)       !
 !  rmask_io   Output FillValue mask at   V-points (0=dry, 1=wet)       !
+#endif
+#ifdef OUTFLOW_MASK
+!  mask_outflow  Mask at RHO-points for ice BC (0=weak, 1=strong)      !
+#endif
+#ifdef WET_DRY
+!  pmask_wet  Wet/Dry mask at PSI-points (0=dry, 1=wet)                !
+!  rmask_wet  Wet/Dry mask at RHO-points (0=dry, 1=wet)                !
+!  umask_wet  Wet/Dry mask at   U-points (0=dry, 1,2=wet)              !
+!  vmask_wet  Wet/Dry mask at   V-points (0=dry, 1,2=wet)              !
+#endif
+#if defined UV_LOGDRAG || defined GLS_MIXING || \
+    defined BBL_MODEL  || defined SEDIMENT
+!  ZoBot      Bottom roughness length (m).                             !
+#endif
+#if defined UV_LDRAG
+!  rdrag      Linear drag coefficient (m/s).                           !
+#elif defined UV_QDRAG
+!  rdrag2     Quadratic drag coefficient (nondimensional).             !
+#endif
+#if defined UV_WAVEDRAG
+!  wavedrag   Linear drag coefficient from internal tides (m/s).       !
+#endif
 !  xp         XI-coordinates (m) at PSI-points.                        !
 !  xr         XI-coordinates (m) at RHO-points.                        !
 !  xu         XI-coordinates (m) at U-points.                          !
@@ -114,10 +155,9 @@
 #endif
 
           real(r8), pointer :: angler(:,:)
-#ifdef CURVGRID
           real(r8), pointer :: CosAngler(:,:)
           real(r8), pointer :: SinAngler(:,:)
-#endif
+
 #if defined CURVGRID && defined UV_ADV
           real(r8), pointer :: dmde(:,:)
           real(r8), pointer :: dndx(:,:)
@@ -126,7 +166,6 @@
           real(r8), pointer :: fomn(:,:)
           real(r8), pointer :: grdscl(:,:)
           real(r8), pointer :: h(:,:)
-          real(r8), pointer :: hinv(:,:)
           real(r8), pointer :: latp(:,:)
           real(r8), pointer :: latr(:,:)
           real(r8), pointer :: latu(:,:)
@@ -154,6 +193,18 @@
           real(r8), pointer :: pnom_r(:,:)
           real(r8), pointer :: pnom_u(:,:)
           real(r8), pointer :: pnom_v(:,:)
+#if defined UV_LOGDRAG || defined GLS_MIXING || \
+    defined BBL_MODEL  || defined SEDIMENT
+          real(r8), pointer :: ZoBot(:,:)
+#endif
+#if defined UV_LDRAG
+          real(r8), pointer :: rdrag(:,:)
+#elif defined UV_QDRAG
+          real(r8), pointer :: rdrag2(:,:)
+#endif
+#if defined UV_WAVEDRAG
+          real(r8), pointer :: wavedrag(:,:)
+#endif
           real(r8), pointer :: xp(:,:)
           real(r8), pointer :: xr(:,:)
           real(r8), pointer :: xu(:,:)
@@ -184,22 +235,43 @@
           real(r8), pointer :: rmask(:,:)
           real(r8), pointer :: umask(:,:)
           real(r8), pointer :: vmask(:,:)
+# if defined AVERAGES    || \
+    (defined AD_AVERAGES && defined ADJOINT) || \
+    (defined RP_AVERAGES && defined TL_IOMS) || \
+    (defined TL_AVERAGES && defined TANGENT)
+          real(r8), pointer :: pmask_avg(:,:)
+          real(r8), pointer :: rmask_avg(:,:)
+          real(r8), pointer :: umask_avg(:,:)
+          real(r8), pointer :: vmask_avg(:,:)
+# endif
+# if defined AVERAGES2
+          real(r8), pointer :: pmask_avg2(:,:)
+          real(r8), pointer :: rmask_avg2(:,:)
+          real(r8), pointer :: umask_avg2(:,:)
+          real(r8), pointer :: vmask_avg2(:,:)
+# endif
+# ifdef DIAGNOSTICS
+          real(r8), pointer :: pmask_dia(:,:)
+          real(r8), pointer :: rmask_dia(:,:)
+          real(r8), pointer :: umask_dia(:,:)
+          real(r8), pointer :: vmask_dia(:,:)
+# endif
           real(r8), pointer :: pmask_io(:,:)
           real(r8), pointer :: rmask_io(:,:)
           real(r8), pointer :: umask_io(:,:)
           real(r8), pointer :: vmask_io(:,:)
 #endif
+#ifdef OUTFLOW_MASK
+          real(r8), pointer :: mask_outflow(:,:)
+#endif
 #ifdef WET_DRY
+          real(r8), pointer :: pmask_wet(:,:)
+          real(r8), pointer :: rmask_wet(:,:)
+          real(r8), pointer :: umask_wet(:,:)
+          real(r8), pointer :: vmask_wet(:,:)
 # ifdef SOLVE3D
           real(r8), pointer :: rmask_wet_avg(:,:)
 # endif
-          real(r8), pointer :: pmask_wet(:,:)
-          real(r8), pointer :: rmask_full(:,:)
-          real(r8), pointer :: rmask_wet(:,:)
-          real(r8), pointer :: umask_full(:,:)
-          real(r8), pointer :: umask_wet(:,:)
-          real(r8), pointer :: vmask_full(:,:)
-          real(r8), pointer :: vmask_wet(:,:)
 #endif
 #if defined AD_SENSITIVITY   || defined IS4DVAR_SENSITIVITY || \
     defined OPT_OBSERVATIONS || defined SENSITIVITY_4DVAR   || \
@@ -277,10 +349,9 @@
 #endif
 
       allocate ( GRID(ng) % angler(LBi:UBi,LBj:UBj) )
-#ifdef CURVGRID
       allocate ( GRID(ng) % CosAngler(LBi:UBi,LBj:UBj) )
       allocate ( GRID(ng) % SinAngler(LBi:UBi,LBj:UBj) )
-#endif
+
 #if defined CURVGRID && defined UV_ADV
       allocate ( GRID(ng) % dmde(LBi:UBi,LBj:UBj) )
       allocate ( GRID(ng) % dndx(LBi:UBi,LBj:UBj) )
@@ -290,7 +361,6 @@
       allocate ( GRID(ng) % fomn(LBi:UBi,LBj:UBj) )
       allocate ( GRID(ng) % grdscl(LBi:UBi,LBj:UBj) )
       allocate ( GRID(ng) % h(LBi:UBi,LBj:UBj) )
-      allocate ( GRID(ng) % hinv(LBi:UBi,LBj:UBj) )
       allocate ( GRID(ng) % latp(LBi:UBi,LBj:UBj) )
       allocate ( GRID(ng) % latr(LBi:UBi,LBj:UBj) )
       allocate ( GRID(ng) % latu(LBi:UBi,LBj:UBj) )
@@ -318,6 +388,18 @@
       allocate ( GRID(ng) % pnom_r(LBi:UBi,LBj:UBj) )
       allocate ( GRID(ng) % pnom_u(LBi:UBi,LBj:UBj) )
       allocate ( GRID(ng) % pnom_v(LBi:UBi,LBj:UBj) )
+#if defined UV_LOGDRAG || defined GLS_MIXING || \
+    defined BBL_MODEL  || defined SEDIMENT
+      allocate ( GRID(ng) % ZoBot(LBi:UBi,LBj:UBj) )
+#endif
+#if defined UV_LDRAG
+      allocate ( GRID(ng) % rdrag(LBi:UBi,LBj:UBj) )
+#elif defined UV_QDRAG
+      allocate ( GRID(ng) % rdrag2(LBi:UBi,LBj:UBj) )
+#endif
+#if defined UV_WAVEDRAG
+      allocate ( GRID(ng) % wavedrag(LBi:UBi,LBj:UBj) )
+#endif
       allocate ( GRID(ng) % xp(LBi:UBi,LBj:UBj) )
       allocate ( GRID(ng) % xr(LBi:UBi,LBj:UBj) )
       allocate ( GRID(ng) % xu(LBi:UBi,LBj:UBj) )
@@ -352,23 +434,44 @@
       allocate ( GRID(ng) % rmask(LBi:UBi,LBj:UBj) )
       allocate ( GRID(ng) % umask(LBi:UBi,LBj:UBj) )
       allocate ( GRID(ng) % vmask(LBi:UBi,LBj:UBj) )
+# if defined AVERAGES    || \
+    (defined AD_AVERAGES && defined ADJOINT) || \
+    (defined RP_AVERAGES && defined TL_IOMS) || \
+    (defined TL_AVERAGES && defined TANGENT)
+      allocate ( GRID(ng) % pmask_avg(LBi:UBi,LBj:UBj) )
+      allocate ( GRID(ng) % rmask_avg(LBi:UBi,LBj:UBj) )
+      allocate ( GRID(ng) % umask_avg(LBi:UBi,LBj:UBj) )
+      allocate ( GRID(ng) % vmask_avg(LBi:UBi,LBj:UBj) )
+# endif
+# if defined AVERAGES2
+      allocate ( GRID(ng) % pmask_avg2(LBi:UBi,LBj:UBj) )
+      allocate ( GRID(ng) % rmask_avg2(LBi:UBi,LBj:UBj) )
+      allocate ( GRID(ng) % umask_avg2(LBi:UBi,LBj:UBj) )
+      allocate ( GRID(ng) % vmask_avg2(LBi:UBi,LBj:UBj) )
+# endif
+# ifdef DIAGNOSTICS
+      allocate ( GRID(ng) % pmask_dia(LBi:UBi,LBj:UBj) )
+      allocate ( GRID(ng) % rmask_dia(LBi:UBi,LBj:UBj) )
+      allocate ( GRID(ng) % umask_dia(LBi:UBi,LBj:UBj) )
+      allocate ( GRID(ng) % vmask_dia(LBi:UBi,LBj:UBj) )
+# endif
       allocate ( GRID(ng) % pmask_io(LBi:UBi,LBj:UBj) )
       allocate ( GRID(ng) % rmask_io(LBi:UBi,LBj:UBj) )
       allocate ( GRID(ng) % umask_io(LBi:UBi,LBj:UBj) )
       allocate ( GRID(ng) % vmask_io(LBi:UBi,LBj:UBj) )
 #endif
 
+#ifdef OUTFLOW_MASK
+      allocate ( GRID(ng) % mask_outflow(LBi:UBi,LBj:UBj) )
+#endif
 #ifdef WET_DRY
+      allocate ( GRID(ng) % pmask_wet(LBi:UBi,LBj:UBj) )
+      allocate ( GRID(ng) % rmask_wet(LBi:UBi,LBj:UBj) )
+      allocate ( GRID(ng) % umask_wet(LBi:UBi,LBj:UBj) )
+      allocate ( GRID(ng) % vmask_wet(LBi:UBi,LBj:UBj) )
 # ifdef SOLVE3D
       allocate ( GRID(ng) % rmask_wet_avg(LBi:UBi,LBj:UBj) )
 # endif
-      allocate ( GRID(ng) % pmask_wet(LBi:UBi,LBj:UBj) )
-      allocate ( GRID(ng) % rmask_full(LBi:UBi,LBj:UBj) )
-      allocate ( GRID(ng) % rmask_wet(LBi:UBi,LBj:UBj) )
-      allocate ( GRID(ng) % umask_full(LBi:UBi,LBj:UBj) )
-      allocate ( GRID(ng) % umask_wet(LBi:UBi,LBj:UBj) )
-      allocate ( GRID(ng) % vmask_full(LBi:UBi,LBj:UBj) )
-      allocate ( GRID(ng) % vmask_wet(LBi:UBi,LBj:UBj) )
 #endif
 
 #if defined AD_SENSITIVITY   || defined IS4DVAR_SENSITIVITY || \
@@ -429,6 +532,7 @@
 !=======================================================================
 !
       USE mod_param
+      USE mod_scalars
 !
 !  Imported variable declarations.
 !
@@ -443,37 +547,50 @@
 #endif
 
       real(r8), parameter :: IniVal = 0.0_r8
+      real(r8) :: IniMetricVal
 
 #include "set_bounds.h"
 !
 !  Set array initialization range.
 !
-#ifdef _OPENMP
-      IF (WESTERN_EDGE) THEN
-        Imin=BOUNDS(ng)%LBi(tile)
-      ELSE
-        Imin=Istr
-      END IF
-      IF (EASTERN_EDGE) THEN
-        Imax=BOUNDS(ng)%UBi(tile)
-      ELSE
-        Imax=Iend
-      END IF
-      IF (SOUTHERN_EDGE) THEN
-        Jmin=BOUNDS(ng)%LBj(tile)
-      ELSE
-        Jmin=Jstr
-      END IF
-      IF (NORTHERN_EDGE) THEN
-        Jmax=BOUNDS(ng)%UBj(tile)
-      ELSE
-        Jmax=Jend
-      END IF
-#else
+#ifdef DISTRIBUTE
       Imin=BOUNDS(ng)%LBi(tile)
       Imax=BOUNDS(ng)%UBi(tile)
       Jmin=BOUNDS(ng)%LBj(tile)
       Jmax=BOUNDS(ng)%UBj(tile)
+#else
+      IF (DOMAIN(ng)%Western_Edge(tile)) THEN
+        Imin=BOUNDS(ng)%LBi(tile)
+      ELSE
+        Imin=Istr
+      END IF
+      IF (DOMAIN(ng)%Eastern_Edge(tile)) THEN
+        Imax=BOUNDS(ng)%UBi(tile)
+      ELSE
+        Imax=Iend
+      END IF
+      IF (DOMAIN(ng)%Southern_Edge(tile)) THEN
+        Jmin=BOUNDS(ng)%LBj(tile)
+      ELSE
+        Jmin=Jstr
+      END IF
+      IF (DOMAIN(ng)%Northern_Edge(tile)) THEN
+        Jmax=BOUNDS(ng)%UBj(tile)
+      ELSE
+        Jmax=Jend
+      END IF
+#endif
+!
+!  Set initialization value that it is special in nexting to just
+!  load contact points that have not been initialized from the
+!  regular physical grid. This is done to make sure that all these
+!  important metric values have been set-up correctly.
+!
+#ifdef NESTING
+      IniMetricVal=spval                   ! very large value
+      IniMetricVal=IniVal
+#else
+      IniMetricVal=IniVal
 #endif
 !
 !-----------------------------------------------------------------------
@@ -490,30 +607,28 @@
             GRID(ng) % IJwaterU(i,j) = 0
             GRID(ng) % IJwaterV(i,j) = 0
 #endif
-            GRID(ng) % angler(i,j) = IniVal
-#ifdef CURVGRID
+            GRID(ng) % angler(i,j) = IniMetricVal
             GRID(ng) % CosAngler(i,j) = IniVal
             GRID(ng) % SinAngler(i,j) = IniVal
-#endif
+
 #if defined CURVGRID && defined UV_ADV
-            GRID(ng) % dmde(i,j) = IniVal
-            GRID(ng) % dndx(i,j) = IniVal
+            GRID(ng) % dmde(i,j) = IniMetricVal
+            GRID(ng) % dndx(i,j) = IniMetricVal
 #endif
-            GRID(ng) % f(i,j) = IniVal
+            GRID(ng) % f(i,j) = IniMetricVal
             GRID(ng) % fomn(i,j) = IniVal
             GRID(ng) % grdscl(i,j) = IniVal
 
-            GRID(ng) % h(i,j) = IniVal
-            GRID(ng) % hinv(i,j) = IniVal
+            GRID(ng) % h(i,j) = IniMetricVal
 
             GRID(ng) % latp(i,j) = IniVal
-            GRID(ng) % latr(i,j) = IniVal
-            GRID(ng) % latu(i,j) = IniVal
-            GRID(ng) % latv(i,j) = IniVal
+            GRID(ng) % latr(i,j) = IniMetricVal
+            GRID(ng) % latu(i,j) = IniMetricVal
+            GRID(ng) % latv(i,j) = IniMetricVal
             GRID(ng) % lonp(i,j) = IniVal
-            GRID(ng) % lonr(i,j) = IniVal
-            GRID(ng) % lonu(i,j) = IniVal
-            GRID(ng) % lonv(i,j) = IniVal
+            GRID(ng) % lonr(i,j) = IniMetricVal
+            GRID(ng) % lonu(i,j) = IniMetricVal
+            GRID(ng) % lonv(i,j) = IniMetricVal
 
             GRID(ng) % omn(i,j) = IniVal
             GRID(ng) % om_p(i,j) = IniVal
@@ -525,8 +640,8 @@
             GRID(ng) % on_u(i,j) = IniVal
             GRID(ng) % on_v(i,j) = IniVal
 
-            GRID(ng) % pm(i,j) = IniVal
-            GRID(ng) % pn(i,j) = IniVal
+            GRID(ng) % pm(i,j) = IniMetricVal
+            GRID(ng) % pn(i,j) = IniMetricVal
 
             GRID(ng) % pmon_p(i,j) = IniVal
             GRID(ng) % pmon_r(i,j) = IniVal
@@ -537,13 +652,27 @@
             GRID(ng) % pnom_u(i,j) = IniVal
             GRID(ng) % pnom_v(i,j) = IniVal
 
+#if defined UV_LOGDRAG || defined GLS_MIXING || \
+    defined BBL_MODEL  || defined SEDIMENT
+            GRID(ng) % ZoBot(i,j) = Zob(ng)
+#endif
+#if defined UV_LDRAG
+            GRID(ng) % rdrag(i,j) = rdrg(ng)
+#elif defined UV_QDRAG
+            GRID(ng) % rdrag2(i,j) = rdrg2(ng)
+#endif
+#if defined UV_WAVEDRAG
+            GRID(ng) % wavedrag(i,j) = Inival
+#endif
+
             GRID(ng) % xp(i,j) = IniVal
-            GRID(ng) % xr(i,j) = IniVal
-            GRID(ng) % xu(i,j) = IniVal
-            GRID(ng) % xv(i,j) = IniVal
+            GRID(ng) % xr(i,j) = IniMetricVal
+            GRID(ng) % xu(i,j) = IniMetricVal
+            GRID(ng) % xv(i,j) = IniMetricVal
             GRID(ng) % yp(i,j) = IniVal
-            GRID(ng) % yu(i,j) = IniVal
-            GRID(ng) % yv(i,j) = IniVal
+            GRID(ng) % yr(i,j) = IniMetricVal
+            GRID(ng) % yu(i,j) = IniMetricVal
+            GRID(ng) % yv(i,j) = IniMetricVal
 
 #if defined ICESHELF && defined SOLVE3D
             GRID(ng) % IcePress(i,j) = IniVal
@@ -552,26 +681,47 @@
 
 #ifdef MASKING
             GRID(ng) % pmask(i,j) = IniVal
-            GRID(ng) % rmask(i,j) = IniVal
-            GRID(ng) % umask(i,j) = IniVal
-            GRID(ng) % vmask(i,j) = IniVal
-            GRID(ng) % pmask_io(i,j) = 1.0_r8
-            GRID(ng) % rmask_io(i,j) = 1.0_r8
-            GRID(ng) % umask_io(i,j) = 1.0_r8
-            GRID(ng) % vmask_io(i,j) = 1.0_r8
+            GRID(ng) % rmask(i,j) = IniMetricVal
+            GRID(ng) % umask(i,j) = IniMetricVal
+            GRID(ng) % vmask(i,j) = IniMetricVal
+# if defined AVERAGES    || \
+    (defined AD_AVERAGES && defined ADJOINT) || \
+    (defined RP_AVERAGES && defined TL_IOMS) || \
+    (defined TL_AVERAGES && defined TANGENT)
+            GRID(ng) % pmask_avg(i,j) = IniVal
+            GRID(ng) % rmask_avg(i,j) = IniVal
+            GRID(ng) % umask_avg(i,j) = IniVal
+            GRID(ng) % vmask_avg(i,j) = IniVal
+# endif
+# if defined AVERAGES2
+            GRID(ng) % pmask_avg2(i,j) = IniVal
+            GRID(ng) % rmask_avg2(i,j) = IniVal
+            GRID(ng) % umask_avg2(i,j) = IniVal
+            GRID(ng) % vmask_avg2(i,j) = IniVal
+# endif
+# ifdef DIAGNOSTICS
+            GRID(ng) % pmask_dia(i,j) = IniVal
+            GRID(ng) % rmask_dia(i,j) = IniVal
+            GRID(ng) % umask_dia(i,j) = IniVal
+            GRID(ng) % vmask_dia(i,j) = IniVal
+# endif
+            GRID(ng) % pmask_io(i,j) = IniVal
+            GRID(ng) % rmask_io(i,j) = IniVal
+            GRID(ng) % umask_io(i,j) = IniVal
+            GRID(ng) % vmask_io(i,j) = IniVal
 #endif
 
+#ifdef OUTFLOW_MASK
+            GRID(ng) % mask_outflow(i,j) = IniVal
+#endif
 #ifdef WET_DRY
+            GRID(ng) % pmask_wet(i,j) = IniVal
+            GRID(ng) % rmask_wet(i,j) = IniVal
+            GRID(ng) % umask_wet(i,j) = IniVal
+            GRID(ng) % vmask_wet(i,j) = IniVal
 # ifdef SOLVE3D
             GRID(ng) % rmask_wet_avg(i,j) = IniVal
 # endif
-            GRID(ng) % pmask_wet(i,j) = IniVal
-            GRID(ng) % rmask_full(i,j) = 1.0_r8
-            GRID(ng) % rmask_wet(i,j) = IniVal
-            GRID(ng) % umask_full(i,j) = 1.0_r8
-            GRID(ng) % umask_wet(i,j) = IniVal
-            GRID(ng) % vmask_full(i,j) = 1.0_r8
-            GRID(ng) % vmask_wet(i,j) = IniVal
 #endif
 
 #if defined AD_SENSITIVITY   || defined IS4DVAR_SENSITIVITY || \

@@ -2,7 +2,7 @@
 !
 !svn $Id: pert_ocean.h 429 2009-12-20 17:30:26Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2010 The ROMS/TOMS Group       Andrew M. Moore   !
+!  Copyright (c) 2002-2014 The ROMS/TOMS Group       Andrew M. Moore   !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -62,7 +62,7 @@
 
       CONTAINS
 
-      SUBROUTINE ROMS_initialize (first, MyCOMM)
+      SUBROUTINE ROMS_initialize (first, mpiCOMM)
 !
 !=======================================================================
 !                                                                      !
@@ -75,25 +75,34 @@
       USE mod_parallel
       USE mod_iounits
       USE mod_scalars
+
+#ifdef MCT_LIB
 !
-#ifdef AIR_OCEAN
-      USE ocean_coupler_mod, ONLY : initialize_atmos_coupling
-#endif
-#ifdef WAVES_OCEAN
-      USE ocean_coupler_mod, ONLY : initialize_waves_coupling
+# ifdef AIR_OCEAN
+      USE ocean_coupler_mod, ONLY : initialize_ocn2atm_coupling
+# endif
+# ifdef WAVES_OCEAN
+      USE ocean_coupler_mod, ONLY : initialize_ocn2wav_coupling
+# endif
 #endif
 !
 !  Imported variable declarations.
 !
       logical, intent(inout) :: first
 
-      integer, intent(in), optional :: MyCOMM
+      integer, intent(in), optional :: mpiCOMM
 !
 !  Local variable declarations.
 !
       logical :: allocate_vars = .TRUE.
 
-      integer :: ng, thread
+#ifdef DISTRIBUTE
+      integer :: MyError, MySize
+#endif
+      integer :: chunk_size, ng, thread
+#ifdef _OPENMP
+      integer :: my_threadnum
+#endif
 
 #ifdef DISTRIBUTE
 !
@@ -101,11 +110,13 @@
 !  Set distribute-memory (MPI) world communictor.
 !-----------------------------------------------------------------------
 !
-      IF (PRESENT(MyCOMM)) THEN
-        OCN_COMM_WORLD=MyCOMM
+      IF (PRESENT(mpiCOMM)) THEN
+        OCN_COMM_WORLD=mpiCOMM
       ELSE
         OCN_COMM_WORLD=MPI_COMM_WORLD
       END IF
+      CALL mpi_comm_rank (OCN_COMM_WORLD, MyRank, MyError)
+      CALL mpi_comm_size (OCN_COMM_WORLD, MySize, MyError)
 #endif
 !
 !-----------------------------------------------------------------------
@@ -118,53 +129,82 @@
       IF (first) THEN
         first=.FALSE.
 !
-!  Initialize parallel parameters.
+!  Initialize parallel control switches. These scalars switches are
+!  independent from standard input parameters.
 !
         CALL initialize_parallel
 !
-!  Initialize wall clocks.
-!
-        IF (Master) THEN
-          WRITE (stdout,10)
- 10       FORMAT (' Process Information:',/)
-        END IF
-        DO ng=1,Ngrids
-!$OMP PARALLEL DO PRIVATE(thread) SHARED(ng,numthreads)
-          DO thread=0,numthreads-1
-            CALL wclock_on (ng, iNLM, 0)
-          END DO
-!$OMP END PARALLEL DO
-        END DO
-
-#if defined AIR_OCEAN || defined WAVES_OCEAN
-!
-!  Initialize coupling streams between model(s).
-!
-        DO ng=1,Ngrids
-# ifdef AIR_OCEAN
-          CALL initialize_atmos_coupling (ng, MyRank)
-# endif
-# ifdef WAVES_OCEAN
-          CALL initialize_waves_coupling (ng, MyRank)
-# endif
-        END DO
-#endif
-!
-!  Read in model tunable parameters from standard input. Initialize
-!  "mod_param", "mod_ncparam" and "mod_scalar" modules.
+!  Read in model tunable parameters from standard input. Allocate and
+!  initialize variables in several modules after the number of nested
+!  grids and dimension parameters are known.
 !
         CALL inp_par (iNLM)
         IF (exit_flag.ne.NoError) RETURN
 !
+!  Set domain decomposition tile partition range.  This range is
+!  computed only once since the "first_tile" and "last_tile" values
+!  are private for each parallel thread/node.
+!
+!$OMP PARALLEL
+#if defined _OPENMP
+      MyThread=my_threadnum()
+#elif defined DISTRIBUTE
+      MyThread=MyRank
+#else
+      MyThread=0
+#endif
+      DO ng=1,Ngrids
+        chunk_size=(NtileX(ng)*NtileE(ng)+numthreads-1)/numthreads
+        first_tile(ng)=MyThread*chunk_size
+        last_tile (ng)=first_tile(ng)+chunk_size-1
+      END DO
+!$OMP END PARALLEL
+!
+!  Initialize internal wall clocks. Notice that the timings does not
+!  includes processing standard input because several parameters are
+!  needed to allocate clock variables.
+!
+        IF (Master) THEN
+          WRITE (stdout,10)
+ 10       FORMAT (/,' Process Information:',/)
+        END IF
+!
+        DO ng=1,Ngrids
+!$OMP PARALLEL
+          DO thread=THREAD_RANGE
+            CALL wclock_on (ng, iNLM, 0)
+          END DO
+!$OMP END PARALLEL
+        END DO
+!
 !  Allocate and initialize modules variables.
 !
+!$OMP PARALLEL
         CALL mod_arrays (allocate_vars)
+!$OMP END PARALLEL
+
       END IF
+
+#if defined MCT_LIB && (defined AIR_OCEAN || defined WAVES_OCEAN)
+!
+!-----------------------------------------------------------------------
+!  Initialize coupling streams between model(s).
+!-----------------------------------------------------------------------
+!
+      DO ng=1,Ngrids
+# ifdef AIR_OCEAN
+        CALL initialize_ocn2atm_coupling (ng, MyRank)
+# endif
+# ifdef WAVES_OCEAN
+        CALL initialize_ocn2wav_coupling (ng, MyRank)
+# endif
+      END DO
+#endif
 
       RETURN
       END SUBROUTINE ROMS_initialize
 
-      SUBROUTINE ROMS_run (Tstr, Tend)
+      SUBROUTINE ROMS_run (RunInterval)
 !
 !=======================================================================
 !                                                                      !
@@ -189,12 +229,11 @@
 !
 !  Imported variable declarations
 !
-      integer, dimension(Ngrids) :: Tstr
-      integer, dimension(Ngrids) :: Tend
+      real(r8), intent(in) :: RunInterval            ! seconds
 !
 !  Local variable declarations.
 !
-      integer :: my_iic, ng, subs, tile, thread
+      integer :: ng, tile
 #ifdef SANITY_CHECK
       logical :: BOUNDED_AD, BOUNDED_TL, SAME_VAR
 # ifdef DISTRIBUTE
@@ -206,108 +245,117 @@
 
       real(r8) :: IniVal = 0.0_r8
 
-      real(r8), dimension(4) :: val
+      real(r8), dimension(4,Ngrids) :: val
 #endif
 !
 !=======================================================================
 !  Run model for all nested grids, if any.
 !=======================================================================
 !
-      NEST_LOOP : DO ng=1,Ngrids
-
 #ifdef INNER_PRODUCT
 !
 !  Set end of pertubation loos as the total number of state variables
-!  interior points.
+!  interior points. Is not possible to run the inner product test over
+!  nested grids. If nested grids, run each grid separately.
 !
+      IF (Ngrids.gt.1) THEN
+        WRITE (stdout,10) 'Nested grids are not allowed, Ngrids = ',    &
+                          Ngrids
+        STOP
+      END IF
+      ng=1
 # ifdef SOLVE3D
-        ERend=(Lm(ng)-1)*Mm(ng)+                                        &
-     &        Lm(ng)*(Mm(ng)-1)+                                        &
-     &        Lm(ng)*Mm(ng)+                                            &
-     &        (Lm(ng)-1)*Mm(ng)*N(ng)+                                  &
-     &        Lm(ng)*(Mm(ng)-1)*N(ng)+                                  &
-     &        Lm(ng)*Mm(ng)*N(ng)*NAT
+      ERend=(Lm(ng)-1)*Mm(ng)+                                          &
+     &       Lm(ng)*(Mm(ng)-1)+                                         &
+     &       Lm(ng)*Mm(ng)+                                             &
+     &       (Lm(ng)-1)*Mm(ng)*N(ng)+                                   &
+     &       Lm(ng)*(Mm(ng)-1)*N(ng)+                                   &
+     &       Lm(ng)*Mm(ng)*N(ng)*NAT
 # else
-        ERend=(Lm(ng)-1)*Mm(ng)+                                        &
-     &        Lm(ng)*(Mm(ng)-1)+                                        &
-     &        Lm(ng)*Mm(ng)
+      ERend=(Lm(ng)-1)*Mm(ng)+                                          &
+     &       Lm(ng)*(Mm(ng)-1)+                                         &
+     &       Lm(ng)*Mm(ng)
 # endif
 #endif
 #ifdef SANITY_CHECK
 !
 !  Set tangent and adjoint variable and random point to perturb.
 !
-        ivarTL=INT(user(1))
-        ivarAD=INT(user(2))
-        IperTL=INT(user(3))
-        IperAD=INT(user(4))
-        JperTL=INT(user(5))
-        JperAD=INT(user(6))
+      ivarTL=INT(user(1))
+      ivarAD=INT(user(2))
+      IperTL=INT(user(3))
+      IperAD=INT(user(4))
+      JperTL=INT(user(5))
+      JperAD=INT(user(6))
 # ifdef SOLVE3D
-        KperTL=INT(user(7))
-        KperAD=INT(user(8))
-        SAME_VAR=(ivarTL.eq.ivarAD).and.                                &
-     &           (IperTL.eq.IperAD).and.                                &
-     &           (JperTL.eq.JperAD).and.                                &
-     &           (KperTL.eq.KperAD)
+      KperTL=INT(user(7))
+      KperAD=INT(user(8))
+      SAME_VAR=(ivarTL.eq.ivarAD).and.                                  &
+     &         (IperTL.eq.IperAD).and.                                  &
+     &         (JperTL.eq.JperAD).and.                                  &
+     &         (KperTL.eq.KperAD)
 # else
-        SAME_VAR=(ivarTL.eq.ivarAD).and.                                &
-     &           (IperTL.eq.IperAD).and.                                &
-     &           (JperTL.eq.JperAD)
+      SAME_VAR=(ivarTL.eq.ivarAD).and.                                  &
+     &         (IperTL.eq.IperAD).and.                                  &
+     &         (JperTL.eq.JperAD)
 # endif
 #endif
 !
 !  Set relevant IO switches.
 !
+      DO ng=1,Ngrids
         IF (nTLM(ng).gt.0) LdefTLM(ng)=.TRUE.
         IF (nADJ(ng).gt.0) LdefADJ(ng)=.TRUE.
-        Lstiffness=.FALSE.
+      END DO
+      Lstiffness=.FALSE.
 
 #if defined BULK_FLUXES || defined NL_BULK_FLUXES
 
 !  Set file name containing the nonlinear model bulk fluxes to be read
 !  and processed by other algorithms.
 !
-        BLKname(ng)=FWDname(ng)
+      DO ng=1,Ngrids
+        BLK(ng)%name=FWD(ng)%name
+      END DO
 #endif
 !
 !=======================================================================
 !  Perturbation loop.
 !=======================================================================
 !
-        PERT_LOOP : DO Nrun=ERstr,ERend
+      PERT_LOOP : DO Nrun=ERstr,ERend
 !
 !-----------------------------------------------------------------------
 !  Time step tangent linear model.
 !-----------------------------------------------------------------------
 !
-          TLmodel=.TRUE.
-          ADmodel=.FALSE.
+        TLmodel=.TRUE.
+        ADmodel=.FALSE.
+        DO ng=1,Ngrids
+!$OMP PARALLEL
           CALL tl_initial (ng)
+!$OMP END PARALLEL
           IF (exit_flag.ne.NoError) RETURN
 
           IF (Master) THEN
-            WRITE (stdout,10) 'TL', ntstart(ng), ntend(ng)
+            WRITE (stdout,10) 'TL', ng, ntstart(ng), ntend(ng)
           END IF
+        END DO
 
-          time(ng)=time(ng)-dt(ng)
-
-          TL_LOOP : DO my_iic=ntstart(ng),ntend(ng)+1
-
-            iic(ng)=my_iic
+!$OMP PARALLEL
 #ifdef SOLVE3D
-            CALL tl_main3d (ng)
+        CALL tl_main3d (RunInterval)
 #else
-            CALL tl_main2d (ng)
+        CALL tl_main2d (RunInterval)
 #endif
-            IF (exit_flag.ne.NoError) RETURN
-
-          END DO TL_LOOP
+!$OMP END PARALLEL
+        IF (exit_flag.ne.NoError) RETURN
 
 #ifdef SANITY_CHECK
 !
 !  Get check value for tangent linear state variable.
 !
+        DO ng=1,Ngrids
 # ifdef DISTRIBUTE
           Istr=BOUNDS(ng)%Istr(MyRank)
           Iend=BOUNDS(ng)%Iend(MyRank)
@@ -322,34 +370,35 @@
           BOUNDED_AD=.TRUE.
 # endif
           DO i=1,4
-            val(i)=IniVal
+            val(i,ng)=IniVal
           END DO
           IF (BOUNDED_TL) THEN
 # ifdef SOLVE3D
             IF (ivarTL.eq.isUbar) THEN
-              val(1)=OCEAN(ng)%tl_ubar(IperTL,JperTL,knew(ng))
+              val(1,ng)=OCEAN(ng)%tl_ubar(IperTL,JperTL,knew(ng))
             ELSE IF (ivarTL.eq.isVbar) THEN
-              val(1)=OCEAN(ng)%tl_vbar(IperTL,JperTL,knew(ng))
+              val(1,ng)=OCEAN(ng)%tl_vbar(IperTL,JperTL,knew(ng))
             ELSE IF (ivarTL.eq.isFsur) THEN
-              val(1)=OCEAN(ng)%tl_zeta(IperTL,JperTL,knew(ng))
+              val(1,ng)=OCEAN(ng)%tl_zeta(IperTL,JperTL,knew(ng))
             ELSE IF (ivarTL.eq.isUvel) THEN
-              val(1)=OCEAN(ng)%tl_u(IperTL,JperTL,KperTL,nstp(ng))
+              val(1,ng)=OCEAN(ng)%tl_u(IperTL,JperTL,KperTL,nstp(ng))
             ELSE IF (ivarTL.eq.isVvel) THEN
-              val(1)=OCEAN(ng)%tl_v(IperTL,JperTL,KperTL,nstp(ng))
+              val(1,ng)=OCEAN(ng)%tl_v(IperTL,JperTL,KperTL,nstp(ng))
             ELSE
               DO i=1,NT(ng)
                 IF (ivarTL.eq.isTvar(i)) THEN
-                  val(1)=OCEAN(ng)%tl_t(IperTL,JperTL,KperTL,nstp(ng),i)
+                  val(1,ng)=OCEAN(ng)%tl_t(IperTL,JperTL,KperTL,        &
+     &                                     nstp(ng),i)
                 END IF
               END DO
             END IF
 # else
             IF (ivarTL.eq.isUbar) THEN
-              val(1)=OCEAN(ng)%tl_ubar(IperTL,JperTL,knew(ng))
+              val(1,ng)=OCEAN(ng)%tl_ubar(IperTL,JperTL,knew(ng))
             ELSE IF (ivarTL.eq.isVbar) THEN
-              val(1)=OCEAN(ng)%tl_vbar(IperTL,JperTL,knew(ng))
+              val(1,ng)=OCEAN(ng)%tl_vbar(IperTL,JperTL,knew(ng))
             ELSE IF (ivarTL.eq.isFsur) THEN
-              val(1)=OCEAN(ng)%tl_zeta(IperTL,JperTL,knew(ng))
+              val(1,ng)=OCEAN(ng)%tl_zeta(IperTL,JperTL,knew(ng))
             END IF
 # endif
           END IF
@@ -357,81 +406,77 @@
           IF (BOUNDED_AD) THEN
 # ifdef SOLVE3D
             IF (ivarAD.eq.isUbar) THEN
-              val(3)=OCEAN(ng)%tl_ubar(IperAD,JperAD,knew(ng))
+              val(3,ng)=OCEAN(ng)%tl_ubar(IperAD,JperAD,knew(ng))
             ELSE IF (ivarAD.eq.isVbar) THEN
-              val(3)=OCEAN(ng)%tl_vbar(IperAD,JperAD,knew(ng))
+              val(3,ng)=OCEAN(ng)%tl_vbar(IperAD,JperAD,knew(ng))
             ELSE IF (ivarAD.eq.isFsur) THEN
-              val(3)=OCEAN(ng)%tl_zeta(IperAD,JperAD,knew(ng))
+              val(3,ng)=OCEAN(ng)%tl_zeta(IperAD,JperAD,knew(ng))
             ELSE IF (ivarAD.eq.isUvel) THEN
-              val(3)=OCEAN(ng)%tl_u(IperAD,JperAD,KperAD,nstp(ng))
+              val(3,ng)=OCEAN(ng)%tl_u(IperAD,JperAD,KperAD,nstp(ng))
             ELSE IF (ivarAD.eq.isVvel) THEN
-              val(3)=OCEAN(ng)%tl_v(IperAD,JperAD,KperAD,nstp(ng))
+              val(3,ng)=OCEAN(ng)%tl_v(IperAD,JperAD,KperAD,nstp(ng))
             ELSE
               DO i=1,NT(ng)
                 IF (ivarAD.eq.isTvar(i)) THEN
-                  val(3)=OCEAN(ng)%tl_t(IperAD,JperAD,KperAD,nstp(ng),i)
+                  val(3,ng)=OCEAN(ng)%tl_t(IperAD,JperAD,KperAD,        &
+     &                                     nstp(ng),i)
                 END IF
               END DO
             END IF
 # else
             IF (ivarAD.eq.isUbar) THEN
-              val(3)=OCEAN(ng)%tl_ubar(IperAD,JperAD,knew(ng))
+              val(3,ng)=OCEAN(ng)%tl_ubar(IperAD,JperAD,knew(ng))
             ELSE IF (ivarAD.eq.isVbar) THEN
-              val(3)=OCEAN(ng)%tl_vbar(IperAD,JperAD,knew(ng))
+              val(3,ng)=OCEAN(ng)%tl_vbar(IperAD,JperAD,knew(ng))
             ELSE IF (ivarAD.eq.isFsur) THEN
-              val(3)=OCEAN(ng)%tl_zeta(IperAD,JperAD,knew(ng))
+              val(3,ng)=OCEAN(ng)%tl_zeta(IperAD,JperAD,knew(ng))
             END IF
 # endif
           END IF
-
+        END DO
 #endif
 !
 !  Clear all model state arrays arrays.
 !
-!$OMP PARALLEL DO PRIVATE(ng,thread,subs,tile) SHARED(numthreads)
-          DO thread=0,numthreads-1
-#if defined _OPENMP || defined DISTRIBUTE
-            subs=NtileX(ng)*NtileE(ng)/numthreads
-#else
-            subs=1
-#endif
-            DO tile=subs*thread,subs*(thread+1)-1
-              CALL initialize_ocean (ng, TILE, 0)
-            END DO
+        DO ng=1,Ngrids
+!$OMP PARALLEL
+          DO tile=first_tile(ng),last_tile(ng),+1
+            CALL initialize_ocean (ng, tile, 0)
           END DO
-!$OMP END PARALLEL DO
+!$OMP END PARALLEL
+        END DO
 !
 !-----------------------------------------------------------------------
 !  Time step adjoint model backwards.
 !-----------------------------------------------------------------------
 !
-          TLmodel=.FALSE.
-          ADmodel=.TRUE.
+        TLmodel=.FALSE.
+        ADmodel=.TRUE.
+        DO ng=1,Ngrids
+!$OMP PARALLEL
           CALL ad_initial (ng)
+!$OMP END PARALLEL
           IF (exit_flag.ne.NoError) RETURN
 
           IF (Master) THEN
-            WRITE (stdout,10) 'AD', ntstart(ng), ntend(ng)
+            WRITE (stdout,10) 'AD', ng, ntstart(ng), ntend(ng)
           END IF
+        END DO
 
-          time(ng)=time(ng)+dt(ng)
-
-          AD_LOOP : DO my_iic=ntstart(ng),ntend(ng),-1
-
-            iic(ng)=my_iic
+!$OMP PARALLEL
 #ifdef SOLVE3D
-            CALL ad_main3d (ng)
+        CALL ad_main3d (RunInterval)
 #else
-            CALL ad_main2d (ng)
+        CALL ad_main2d (RunInterval)
 #endif
-            IF (exit_flag.ne.NoError) RETURN
-
-          END DO AD_LOOP
+!$OMP END PARALLEL
+        IF (exit_flag.ne.NoError) RETURN
 
 #ifdef SANITY_CHECK
 !
 !  Get check value for adjoint state variable.
 !
+        DO ng=1,Ngrids
 # ifdef DISTRIBUTE
           Istr=BOUNDS(ng)%Istr(MyRank)
           Iend=BOUNDS(ng)%Iend(MyRank)
@@ -448,29 +493,30 @@
           IF (BOUNDED_AD) THEN
 # ifdef SOLVE3D
             IF (ivarAD.eq.isUbar) THEN
-              val(2)=OCEAN(ng)%ad_ubar(IperAD,JperAD,kstp(ng))
+              val(2,ng)=OCEAN(ng)%ad_ubar(IperAD,JperAD,kstp(ng))
             ELSE IF (ivarAD.eq.isVbar) THEN
-              val(2)=OCEAN(ng)%ad_vbar(IperAD,JperAD,kstp(ng))
+              val(2,ng)=OCEAN(ng)%ad_vbar(IperAD,JperAD,kstp(ng))
             ELSE IF (ivarAD.eq.isFsur) THEN
-              val(2)=OCEAN(ng)%ad_zeta(IperAD,JperAD,kstp(ng))
+              val(2,ng)=OCEAN(ng)%ad_zeta(IperAD,JperAD,kstp(ng))
             ELSE IF (ivarAD.eq.isUvel) THEN
-              val(2)=OCEAN(ng)%ad_u(IperAD,JperAD,KperAD,nstp(ng))
+              val(2,ng)=OCEAN(ng)%ad_u(IperAD,JperAD,KperAD,nstp(ng))
             ELSE IF (ivarAD.eq.isVvel) THEN
-              val(2)=OCEAN(ng)%ad_v(IperAD,JperAD,KperAD,nstp(ng))
+              val(2,ng)=OCEAN(ng)%ad_v(IperAD,JperAD,KperAD,nstp(ng))
             ELSE
               DO i=1,NT(ng)
                 IF (ivarAD.eq.isTvar(i)) THEN
-                  val(2)=OCEAN(ng)%ad_t(IperAD,JperAD,KperAD,nstp(ng),i)
+                  val(2,ng)=OCEAN(ng)%ad_t(IperAD,JperAD,KperAD,        &
+     &                                     nstp(ng),i)
                 END IF
               END DO
             END IF
 # else
             IF (ivarAD.eq.isUbar) THEN
-              val(2)=OCEAN(ng)%ad_ubar(IperAD,JperAD,kstp(ng))
+              val(2,ng)=OCEAN(ng)%ad_ubar(IperAD,JperAD,kstp(ng))
             ELSE IF (ivarAD.eq.isVbar) THEN
-              val(2)=OCEAN(ng)%ad_vbar(IperAD,JperAD,kstp(ng))
+              val(2,ng)=OCEAN(ng)%ad_vbar(IperAD,JperAD,kstp(ng))
             ELSE IF (ivarAD.eq.isFsur) THEN
-              val(2)=OCEAN(ng)%ad_zeta(IperAD,JperAD,kstp(ng))
+              val(2,ng)=OCEAN(ng)%ad_zeta(IperAD,JperAD,kstp(ng))
             END IF
 # endif
           END IF
@@ -478,29 +524,30 @@
           IF (BOUNDED_TL) THEN
 # ifdef SOLVE3D
             IF (ivarTL.eq.isUbar) THEN
-              val(4)=OCEAN(ng)%ad_ubar(IperTL,JperTL,kstp(ng))
+              val(4,ng)=OCEAN(ng)%ad_ubar(IperTL,JperTL,kstp(ng))
             ELSE IF (ivarTL.eq.isVbar) THEN
-              val(4)=OCEAN(ng)%ad_vbar(IperTL,JperTL,kstp(ng))
+              val(4,ng)=OCEAN(ng)%ad_vbar(IperTL,JperTL,kstp(ng))
             ELSE IF (ivarTL.eq.isFsur) THEN
-              val(4)=OCEAN(ng)%ad_zeta(IperTL,JperTL,kstp(ng))
+              val(4,ng)=OCEAN(ng)%ad_zeta(IperTL,JperTL,kstp(ng))
             ELSE IF (ivarTL.eq.isUvel) THEN
-              val(4)=OCEAN(ng)%ad_u(IperTL,JperTL,KperTL,nstp(ng))
+              val(4,ng)=OCEAN(ng)%ad_u(IperTL,JperTL,KperTL,nstp(ng))
             ELSE IF (ivarTL.eq.isVvel) THEN
-              val(4)=OCEAN(ng)%ad_v(IperTL,JperTL,KperTL,nstp(ng))
+              val(4,ng)=OCEAN(ng)%ad_v(IperTL,JperTL,KperTL,nstp(ng))
             ELSE
               DO i=1,NT(ng)
                 IF (ivarTL.eq.isTvar(i)) THEN
-                  val(4)=OCEAN(ng)%ad_t(IperTL,JperTL,KperTL,nstp(ng),i)
+                  val(4,ng)=OCEAN(ng)%ad_t(IperTL,JperTL,KperTL,        &
+     &                                     nstp(ng),i)
                 END IF
               END DO
             END IF
 # else
             IF (ivarTL.eq.isUbar) THEN
-              val(4)=OCEAN(ng)%ad_ubar(IperTL,JperTL,kstp(ng))
+              val(4,ng)=OCEAN(ng)%ad_ubar(IperTL,JperTL,kstp(ng))
             ELSE IF (ivarTL.eq.isVbar) THEN
-              val(4)=OCEAN(ng)%ad_vbar(IperTL,JperTL,kstp(ng))
+              val(4,ng)=OCEAN(ng)%ad_vbar(IperTL,JperTL,kstp(ng))
             ELSE IF (ivarTL.eq.isFsur) THEN
-              val(4)=OCEAN(ng)%ad_zeta(IperTL,JperTL,kstp(ng))
+              val(4,ng)=OCEAN(ng)%ad_zeta(IperTL,JperTL,kstp(ng))
             END IF
 # endif
           END IF
@@ -509,23 +556,25 @@
 !  Report sanity check values.
 !
 # ifdef DISTRIBUTE
-          CALL mp_collect (ng, iTLM, 4, IniVal, val)
+          CALL mp_collect (ng, iTLM, 4, IniVal, val(1,ng))
 # endif
           IF (Master) THEN
             IF (SAME_VAR) THEN
               WRITE (stdout,20) 'Perturbing',                           &
      &                          TRIM(Vname(1,idSvar(ivarTL)))
               IF (ivarTL.le.3) THEN
-                WRITE (stdout,30) 'Tangent:    ', val(1),IperTL,JperTL
-                WRITE (stdout,30) 'Adjoint:    ', val(2),IperAD,JperAD
-                WRITE (stdout,30) 'Difference: ', val(2)-val(1),        &
+                WRITE (stdout,30) 'Tangent:    ', val(1,ng),            &
+     &                                            IperTL,JperTL
+                WRITE (stdout,30) 'Adjoint:    ', val(2,ng),            &
+     &                                            IperAD, JperAD
+                WRITE (stdout,30) 'Difference: ', val(2,ng)-val(1,ng),  &
      &                                            IperTL,JperTL
               ELSE
-                WRITE (stdout,40) 'Tangent:    ', val(1),IperTL,JperTL, &
-     &                                                 KperTL
-                WRITE (stdout,40) 'Adjoint:    ', val(2),IperAD,JperAD, &
-     &                                                   KperAD
-                WRITE (stdout,40) 'Difference: ', val(2)-val(1),        &
+                WRITE (stdout,40) 'Tangent:    ', val(1,ng),            &
+     &                                            IperTL,JperTL,KperTL
+                WRITE (stdout,40) 'Adjoint:    ', val(2,ng),            &
+     &                                            IperAD,JperAD,KperAD
+                WRITE (stdout,40) 'Difference: ', val(2,ng)-val(1,ng),  &
      &                                            IperTL,JperTL,KperTL
               END IF
             ELSE
@@ -534,20 +583,20 @@
      &                            TRIM(Vname(1,idSvar(ivarTL))),        &
      &                            IperTL,JperTL
                 WRITE (stdout,60) TRIM(Vname(1,idSvar(ivarTL))),        &
-     &                            val(1),IperTL,JperTL
+     &                            val(1,ng),IperTL,JperTL
               ELSE
                 WRITE (stdout,70) 'Tangent, Perturbing: ',              &
      &                            TRIM(Vname(1,idSvar(ivarTL))),        &
      &                            IperTL,JperTL,KperTL
                 WRITE (stdout,80) TRIM(Vname(1,idSvar(ivarTL))),        &
-     &                            val(1),IperTL,JperTL,KperTL
+     &                            val(1,ng),IperTL,JperTL,KperTL
               END IF
               IF (ivarAD.le.3) THEN
                 WRITE (stdout,60) TRIM(Vname(1,idSvar(ivarAD))),        &
-     &                            val(3),IperAD,JperAD
+     &                            val(3,ng),IperAD,JperAD
               ELSE
                 WRITE (stdout,80) TRIM(Vname(1,idSvar(ivarAD))),        &
-     &                            val(3),IperAD,JperAD,KperAD
+     &                            val(3,ng),IperAD,JperAD,KperAD
               END IF
 !
               IF (ivarAD.le.3) THEN
@@ -555,54 +604,50 @@
      &                            TRIM(Vname(1,idSvar(ivarAD))),        &
      &                            IperAD,JperAD
                 WRITE (stdout,60) TRIM(Vname(1,idSvar(ivarAD))),        &
-     &                            val(2),IperAD,JperAD
+     &                            val(2,ng),IperAD,JperAD
               ELSE
                 WRITE (stdout,70) 'Adjoint, Perturbing: ',              &
      &                            TRIM(Vname(1,idSvar(ivarAD))),        &
      &                            IperAD,JperAD,KperAD
                 WRITE (stdout,80) TRIM(Vname(1,idSvar(ivarAD))),        &
-     &                            val(2),IperAD,JperAD,KperAD
+     &                            val(2,ng),IperAD,JperAD,KperAD
               END IF
               IF (ivarTL.le.3) THEN
                 WRITE (stdout,60) TRIM(Vname(1,idSvar(ivarTL))),        &
-     &                            val(4),IperTL,JperTL
+     &                            val(4,ng),IperTL,JperTL
               ELSE
                 WRITE (stdout,80) TRIM(Vname(1,idSvar(ivarTL))),        &
-     &                            val(4),IperTL,JperTL,KperTL
+     &                            val(4,ng),IperTL,JperTL,KperTL
               END IF
-              WRITE (stdout,90) val(3)-val(4)
+              WRITE (stdout,90) val(3,ng)-val(4,ng)
             END IF
           END IF
+        END DO
 #endif
 !
 !  Clear model state arrays arrays.
 !
-!$OMP PARALLEL DO PRIVATE(ng,thread,subs,tile) SHARED(numthreads)
-          DO thread=0,numthreads-1
-#if defined _OPENMP || defined DISTRIBUTE
-            subs=NtileX(ng)*NtileE(ng)/numthreads
-#else
-            subs=1
-#endif
-            DO tile=subs*thread,subs*(thread+1)-1
-              CALL initialize_ocean (ng, TILE, 0)
-            END DO
+        DO ng=1,Ngrids
+!$OMP PARALLEL
+          DO tile=first_tile(ng),last_tile(ng),+1
+            CALL initialize_ocean (ng, tile, 0)
           END DO
-!$OMP END PARALLEL DO
-
-        END DO PERT_LOOP
+!$OMP END PARALLEL
+        END DO
 !
 !  Close current forward NetCDF file.
 !
         SourceFile='pert_ocean.h, ROMS_run'
 
-        CALL netcdf_close (ng, iTLM, ncFWDid(ng), Lupdate = .FALSE.)
-        IF (exit_flag.ne.NoError) RETURN
+        DO ng=1,Ngrids
+          CALL netcdf_close (ng, iTLM, FWD(ng)%ncid, Lupdate = .FALSE.)
+          IF (exit_flag.ne.NoError) RETURN
+        END DO
 
-      END DO NEST_LOOP
+      END DO PERT_LOOP
 !
  10   FORMAT (/,1x,a,1x,'ROMS/TOMS: started time-stepping:',            &
-     &        '( TimeSteps: ',i8.8,' - ',i8.8,')',/)
+     &        ' (Grid: ',i2.2,' TimeSteps: ',i8.8,' - ',i8.8,')',/)
 #ifdef SANITY_CHECK
  20   FORMAT (/,' Sanity Check - ',a,' variable: ',a,t60)
  30   FORMAT (' Sanity Check - ', a, 1p,e19.12,                         &
@@ -638,7 +683,7 @@
 !
 !  Local variable declarations.
 !
-      integer :: ng, thread
+      integer :: Fcount, ng, thread
 !
 !-----------------------------------------------------------------------
 !  If blowing-up, save latest model state into RESTART NetCDF file.
@@ -646,20 +691,23 @@
 !
 !  If cycling restart records, write solution into the next record.
 !
-      DO ng=1,Ngrids
-        IF (LwrtRST(ng).and.(exit_flag.eq.1)) THEN
-          IF (Master) WRITE (stdout,10)
- 10       FORMAT (/,' Blowing-up: Saving latest model state into ',     &
-     &              ' RESTART file',/)
-          IF (LcycleRST(ng).and.(NrecRST(ng).ge.2)) THEN
-            tRSTindx(ng)=2
-            LcycleRST(ng)=.FALSE.
+      IF (exit_flag.eq.1) THEN
+        DO ng=1,Ngrids
+          IF (LwrtRST(ng)) THEN
+            IF (Master) WRITE (stdout,10)
+ 10         FORMAT (/,' Blowing-up: Saving latest model state into ',   &
+     &                ' RESTART file',/)
+            Fcount=RST(ng)%Fcount
+            IF (LcycleRST(ng).and.(RST(ng)%Nrec(Fcount).ge.2)) THEN
+              RST(ng)%Rindex=2
+              LcycleRST(ng)=.FALSE.
+            END IF
+            blowup=exit_flag
+            exit_flag=NoError
+            CALL wrt_rst (ng)
           END IF
-          blowup=exit_flag
-          exit_flag=NoError
-          CALL wrt_rst (ng)
-        END IF
-      END DO
+        END DO
+      END IF
 !
 !-----------------------------------------------------------------------
 !  Stop model and time profiling clocks.  Close output NetCDF files.
@@ -673,16 +721,16 @@
       END IF
 
       DO ng=1,Ngrids
-!$OMP PARALLEL DO PRIVATE(thread) SHARED(ng,numthreads)
-        DO thread=0,numthreads-1
+!$OMP PARALLEL
+        DO thread=THREAD_RANGE
           CALL wclock_off (ng, iNLM, 0)
         END DO
-!$OMP END PARALLEL DO
+!$OMP END PARALLEL
       END DO
 !
 !  Close IO files.
 !
-      CALL close_io
+      CALL close_out
 
       RETURN
       END SUBROUTINE ROMS_finalize

@@ -88,9 +88,7 @@
       USE mod_param
       USE mod_scalars
 !
-# if defined EW_PERIODIC || defined NS_PERIODIC
       USE exchange_2d_mod
-# endif
 # ifdef DISTRIBUTE
       USE mp_exchange_mod, ONLY : mp_exchange2d
 # endif
@@ -145,18 +143,6 @@
 !
 !  Local variable declarations.
 !
-# ifdef DISTRIBUTE
-#  ifdef EW_PERIODIC
-      logical :: EWperiodic=.TRUE.
-#  else
-      logical :: EWperiodic=.FALSE.
-#  endif
-#  ifdef NS_PERIODIC
-      logical :: NSperiodic=.TRUE.
-#  else
-      logical :: NSperiodic=.FALSE.
-#  endif
-# endif
       integer :: i, j
 
       real(r8) :: cff
@@ -195,66 +181,67 @@
       DO j=JstrR,JendR
         DO i=Istr,IendR
           sustr(i,j)=cff*(Taux(i-1,j)+Taux(i,j))
-#  ifdef MASKING
+# ifdef MASKING
           sustr(i,j)=sustr(i,j)*umask(i,j)
-#  endif
+# endif
         END DO
       END DO
       DO j=Jstr,JendR
         DO i=IstrR,IendR
           svstr(i,j)=cff*(Tauy(i,j-1)+Tauy(i,j))
-#  ifdef MASKING
+# ifdef MASKING
           svstr(i,j)=svstr(i,j)*vmask(i,j)
-#  endif
+# endif
         END DO
       END DO
-# if defined EW_PERIODIC || defined NS_PERIODIC || defined DISTRIBUTE
+      IF (EWperiodic(ng).or.NSperiodic(ng)) THEN
 !
 !-----------------------------------------------------------------------
 !  Exchange boundary data.
 !-----------------------------------------------------------------------
 !
-#  if defined EW_PERIODIC || defined NS_PERIODIC
-      CALL exchange_r2d_tile (ng, tile,                                 &
-     &                        LBi, UBi, LBj, UBj,                       &
-     &                        stflx(:,:,itemp))
-      CALL exchange_r2d_tile (ng, tile,                                 &
-     &                        LBi, UBi, LBj, UBj,                       &
-     &                        rain)
-#   ifdef EMINUSP
-      CALL exchange_r2d_tile (ng, tile,                                 &
-     &                        LBi, UBi, LBj, UBj,                       &
-     &                        evap)
-      CALL exchange_r2d_tile (ng, tile,                                 &
-     &                        LBi, UBi, LBj, UBj,                       &
-     &                        EminusP)
-      CALL exchange_r2d_tile (ng, tile,                                 &
-     &                        LBi, UBi, LBj, UBj,                       &
-     &                        stflx(:,:,isalt))
-#   endif
-      CALL exchange_u2d_tile (ng, tile,                                 &
-     &                        LBi, UBi, LBj, UBj,                       &
-     &                        sustr)
-      CALL exchange_v2d_tile (ng, tile,                                 &
-     &                        LBi, UBi, LBj, UBj,                       &
-     &                        svstr)
-#  endif
-#  ifdef DISTRIBUTE
+        CALL exchange_r2d_tile (ng, tile,                               &
+     &                          LBi, UBi, LBj, UBj,                     &
+     &                          stflx(:,:,itemp))
+        CALL exchange_r2d_tile (ng, tile,                               &
+     &                          LBi, UBi, LBj, UBj,                     &
+     &                          rain)
+# ifdef EMINUSP
+        CALL exchange_r2d_tile (ng, tile,                               &
+     &                          LBi, UBi, LBj, UBj,                     &
+     &                          evap)
+        CALL exchange_r2d_tile (ng, tile,                               &
+     &                          LBi, UBi, LBj, UBj,                     &
+     &                          EminusP)
+        CALL exchange_r2d_tile (ng, tile,                               &
+     &                          LBi, UBi, LBj, UBj,                     &
+     &                          stflx(:,:,isalt))
+# endif
+        CALL exchange_u2d_tile (ng, tile,                               &
+     &                          LBi, UBi, LBj, UBj,                     &
+     &                          sustr)
+        CALL exchange_v2d_tile (ng, tile,                               &
+     &                          LBi, UBi, LBj, UBj,                     &
+     &                          svstr)
+      END IF
+# ifdef DISTRIBUTE
       CALL mp_exchange2d (ng, tile, iNLM, 2,                            &
      &                    LBi, UBi, LBj, UBj,                           &
-     &                    NghostPoints, EWperiodic, NSperiodic,         &
+     &                    NghostPoints,                                 &
+     &                    EWperiodic(ng), NSperiodic(ng),               &
      &                    rain, stflx(:,:,itemp))
-      CALL mp_exchange2d (ng, tile, iNLM, 2,                           &
-     &                    LBi, UBi, LBj, UBj,                          &
-     &                    NghostPoints, EWperiodic, NSperiodic,        &
+      CALL mp_exchange2d (ng, tile, iNLM, 2,                            &
+     &                    LBi, UBi, LBj, UBj,                           &
+     &                    NghostPoints,                                 &
+     &                    EWperiodic(ng), NSperiodic(ng),               &
      &                    sustr, svstr)
-#   ifdef EMINUSP
+#  ifdef EMINUSP
       CALL mp_exchange2d (ng, tile, iNLM, 3,                            &
      &                    LBi, UBi, LBj, UBj,                           &
-     &                    NghostPoints, EWperiodic, NSperiodic,         &
+     &                    NghostPoints,                                 &
+     &                    EWperiodic(ng), NSperiodic(ng),               &
      &                    evap, EminusP,                                &
      &                    stflx(:,:,isalt))
-#   endif
 #  endif
 # endif
       RETURN

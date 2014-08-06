@@ -2,9 +2,9 @@
       MODULE rp_biology_mod
 #if defined TL_IOMS && defined BIOLOGY
 !
-!svn $Id: rp_biology.F 429 2009-12-20 17:30:26Z arango $
+!svn $Id$
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2010 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2014 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -25,6 +25,8 @@
 !!#  include <rp_fennel.h>
 # elif defined NEMURO
 !!#  include <rp_nemuro.h>
+# elif defined BIO_UMAINE
+!!#  include <rp_UMAINE.h>
 # elif defined NPZD_FRANKS
 #  include <rp_npzd_Franks.h>
 # elif defined NPZD_IRON

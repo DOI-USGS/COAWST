@@ -1,14 +1,18 @@
 !
 !svn $Id: sedbed_mod.h 429 2009-12-20 17:30:26Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2010 The ROMS/TOMS Group        John C. Warner   !
+!  Copyright (c) 2002-2014 The ROMS/TOMS Group        John C. Warner   !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
 !                                                                      !
 !  Sediment Model Kernel Variables:                                    !
 !                                                                      !
-#if defined AVERAGES && defined BEDLOAD
+#if defined BEDLOAD     && \
+    defined AVERAGES    || \
+   (defined AD_AVERAGES && defined ADJOINT) || \
+   (defined RP_AVERAGES && defined TL_IOMS) || \
+   (defined TL_AVERAGES && defined TANGENT)
 ! avgbedldu       Time-averaged Bed load u-transport (kg/m/s).         !
 ! avgbedldv       Time-averaged Bed load v-transport (kg/m/s).         !
 #endif
@@ -88,7 +92,11 @@
 !
 !  Nonlinear model state.
 !
-#if defined AVERAGES && defined BEDLOAD
+#if defined BEDLOAD     && \
+    defined AVERAGES    || \
+   (defined AD_AVERAGES && defined ADJOINT) || \
+   (defined RP_AVERAGES && defined TL_IOMS) || \
+   (defined TL_AVERAGES && defined TANGENT)
         real(r8), pointer :: avgbedldu(:,:,:)
         real(r8), pointer :: avgbedldv(:,:,:)
 #endif
@@ -178,6 +186,7 @@
 !=======================================================================
 !
       USE mod_param
+      USE mod_ncparam
       USE mod_sediment
 !
 !  Imported variable declarations.
@@ -192,9 +201,17 @@
 !
 !  Nonlinear model state.
 !
-#if defined AVERAGES && defined BEDLOAD
-      allocate ( SEDBED(ng) % avgbedldu(LBi:UBi,LBj:UBj,NST) )
-      allocate ( SEDBED(ng) % avgbedldv(LBi:UBi,LBj:UBj,NST) )
+#if defined BEDLOAD     && \
+    defined AVERAGES    || \
+   (defined AD_AVERAGES && defined ADJOINT) || \
+   (defined RP_AVERAGES && defined TL_IOMS) || \
+   (defined TL_AVERAGES && defined TANGENT)
+      IF (ANY(Aout(idUbld(:),ng))) THEN
+        allocate ( SEDBED(ng) % avgbedldu(LBi:UBi,LBj:UBj,NST) )
+      END IF
+      IF (ANY(Aout(idVbld(:),ng))) THEN
+        allocate ( SEDBED(ng) % avgbedldv(LBi:UBi,LBj:UBj,NST) )
+      END IF
 #endif
 #if defined SEDIMENT
       allocate ( SEDBED(ng) % bed(LBi:UBi,LBj:UBj,Nbed,MBEDP) )
@@ -282,6 +299,7 @@
 !=======================================================================
 !
       USE mod_param
+      USE mod_ncparam
       USE mod_sediment
 !
 !  Imported variable declarations.
@@ -300,22 +318,22 @@
 !  Set array initialization range.
 !
 #ifdef _OPENMP
-      IF (WESTERN_EDGE) THEN
+      IF (DOMAIN(ng)%Western_Edge(tile)) THEN
         Imin=BOUNDS(ng)%LBi(tile)
       ELSE
         Imin=Istr
       END IF
-      IF (EASTERN_EDGE) THEN
+      IF (DOMAIN(ng)%Eastern_Edge(tile)) THEN
         Imax=BOUNDS(ng)%UBi(tile)
       ELSE
         Imax=Iend
       END IF
-      IF (SOUTHERN_EDGE) THEN
+      IF (DOMAIN(ng)%Southern_Edge(tile)) THEN
         Jmin=BOUNDS(ng)%LBj(tile)
       ELSE
         Jmin=Jstr
       END IF
-      IF (NORTHERN_EDGE) THEN
+      IF (DOMAIN(ng)%Northern_Edge(tile)) THEN
         Jmax=BOUNDS(ng)%UBj(tile)
       ELSE
         Jmax=Jend
@@ -334,15 +352,32 @@
 !  Nonlinear model state.
 !
       IF ((model.eq.0).or.(model.eq.iNLM)) THEN
-        DO j=Jmin,Jmax
-#if defined AVERAGES && defined SEDIMENT && defined BEDLOAD
+
+#if defined BEDLOAD     && \
+    defined AVERAGES    || \
+   (defined AD_AVERAGES && defined ADJOINT) || \
+   (defined RP_AVERAGES && defined TL_IOMS) || \
+   (defined TL_AVERAGES && defined TANGENT)
+        IF (ANY(Aout(idUbld(:),ng))) THEN
           DO itrc=1,NST
-            DO i=Imin,Imax
-              SEDBED(ng) % avgbedldu(i,j,itrc) = IniVal
-              SEDBED(ng) % avgbedldv(i,j,itrc) = IniVal
+            DO j=Jmin, Jmax
+              DO i=Imin,Imax
+                SEDBED(ng) % avgbedldu(i,j,itrc) = IniVal
+              END DO
             END DO
           END DO
+        END IF
+        IF (ANY(Aout(idVbld(:),ng))) THEN
+          DO itrc=1,NST
+            DO j=Jmin, Jmax
+              DO i=Imin,Imax
+                SEDBED(ng) % avgbedldv(i,j,itrc) = IniVal
+              END DO
+            END DO
+          END DO
+        END IF
 #endif
+        DO j=Jmin,Jmax
 #ifdef SEDIMENT
           DO itrc=1,MBEDP
             DO k=1,Nbed

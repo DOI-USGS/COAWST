@@ -6,7 +6,7 @@
 !
 !svn $Id: sed_surface.F 429 2009-12-20 17:30:26Z arango $
 !==================================================== John C. Warner ===
-!  Copyright (c) 2002-2010 The ROMS/TOMS Group      Hernan G. Arango   !
+!  Copyright (c) 2002-2014 The ROMS/TOMS Group      Hernan G. Arango   !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -75,9 +75,6 @@
       USE mod_sediment
 !
       USE bc_3d_mod, ONLY : bc_r3d_tile
-# if defined EW_PERIODIC || defined NS_PERIODIC
-      USE exchange_2d_mod, ONLY : exchange_r2d_tile
-# endif
 # ifdef DISTRIBUTE
       USE mp_exchange_mod, ONLY : mp_exchange3d, mp_exchange4d
 # endif
@@ -99,18 +96,6 @@
 !
 !  Local variable declarations.
 !
-# ifdef DISTRIBUTE
-#  ifdef EW_PERIODIC
-      logical :: EWperiodic=.TRUE.
-#  else
-      logical :: EWperiodic=.FALSE.
-#  endif
-#  ifdef NS_PERIODIC
-      logical :: NSperiodic=.TRUE.
-#  else
-      logical :: NSperiodic=.FALSE.
-#  endif
-# endif
       integer :: i, ised, j
 
       real(r8) :: cff1, cff2, cff3, cff4
@@ -156,7 +141,8 @@
 # ifdef DISTRIBUTE
       CALL mp_exchange3d (ng, tile, iNLM, 1,                            &
      &                    LBi, UBi, LBj, UBj, 1, MBOTP,                 &
-     &                    NghostPoints, EWperiodic, NSperiodic,         &
+     &                    NghostPoints,                                 &
+     &                    EWperiodic(ng), NSperiodic(ng),               &
      &                    bottom)
 # endif
 

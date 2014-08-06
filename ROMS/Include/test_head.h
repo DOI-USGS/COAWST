@@ -1,7 +1,7 @@
 /*
 ** svn $Id: test_head.h 429 2009-12-20 17:30:26Z arango $
 *******************************************************************************
-** Copyright (c) 2002-2010 The ROMS/TOMS Group                               **
+** Copyright (c) 2002-2014 The ROMS/TOMS Group                               **
 **   Licensed under a MIT/X style license                                    **
 **   See License_ROMS.txt                                                    **
 *******************************************************************************
@@ -29,24 +29,12 @@
 #undef  SALINITY
 #define SOLVE3D
 #define SPLINES
-#define NORTHERN_WALL
-#define SOUTHERN_WALL
-#define EAST_M3RADIATION
-#define WEST_M3RADIATION
-#define EAST_TGRADIENT
-#define WEST_TGRADIENT
 
 #define SSH_TIDES
-#define WEST_FSCLAMPED
-#define EAST_FSCLAMPED
-
+#define UV_TIDES
 #define ANA_FSOBC
 #define ANA_M2OBC
-
-#define UV_TIDES
 #define FSOBC_REDUCED
-#define WEST_M2REDUCED
-#define EAST_M2REDUCED
 
 #define UV_LOGDRAG
 #undef  UV_QDRAG
@@ -86,7 +74,6 @@
 #  define SUSPLOAD
 #  define BEDLOAD_MPM
 #  undef  BEDLOAD_SOULSBY
-#  define AVERAGES_BEDLOAD
 # endif
 # if defined SEDIMENT || defined SG_BBL || defined MB_BBL || defined SSW_BBL
 #  undef ANA_SEDIMENT

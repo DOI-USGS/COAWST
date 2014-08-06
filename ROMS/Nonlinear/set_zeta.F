@@ -5,7 +5,7 @@
 !
 !svn $Id: set_zeta.F 732 2008-09-07 01:55:51Z jcwarner $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2010 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2014 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -14,12 +14,11 @@
 !                                                                      !
 !=======================================================================
 !
-!
       implicit none
-
+!
       PRIVATE
       PUBLIC  :: set_zeta
-
+!
       CONTAINS
 !
 !***********************************************************************
@@ -29,8 +28,12 @@
       USE mod_param
       USE mod_coupling
       USE mod_ocean
-#if defined EMINUSP && defined EMINUSP_SSH
+#if (defined EMINUSP && defined EMINUSP_SSH) || \
+    (defined RUNOFF && defined RUNOFF_SSH)
       USE mod_forces
+#endif
+#if defined RUNOFF && defined RUNOFF_SSH
+      USE mod_grid
 #endif
 !
 !  Imported variable declarations.
@@ -52,10 +55,16 @@
      &                    FORCES(ng) % rain,                            &
      &                    FORCES(ng) % evap,                            &
 # endif
+# if defined RUNOFF && defined RUNOFF_SSH
+     &                    GRID(ng) % pm,                                &
+     &                    GRID(ng) % pn,                                &
+     &                    FORCES(ng) % runoff,                          &
+# endif
      &                    OCEAN(ng) % zeta)
 # ifdef PROFILE
       CALL wclock_off (ng, iNLM, 12)
 # endif
+
       RETURN
       END SUBROUTINE set_zeta
 !
@@ -67,16 +76,16 @@
 # if defined EMINUSP && defined EMINUSP_SSH
      &                          rain, evap,                             & 
 # endif
+# if defined RUNOFF && defined RUNOFF_SSH
+     &                          pm, pn, runoff,                         & 
+# endif
      &                          zeta)
 !***********************************************************************
 !
       USE mod_param
       USE mod_scalars
-
-# if defined EW_PERIODIC || defined NS_PERIODIC
 !
       USE exchange_2d_mod, ONLY : exchange_r2d_tile
-# endif
 # ifdef DISTRIBUTE
       USE mp_exchange_mod, ONLY : mp_exchange2d
 # endif
@@ -88,42 +97,35 @@
       integer, intent(in) :: IminS, ImaxS, JminS, JmaxS
 !
 # ifdef ASSUMED_SHAPE
-# if defined EMINUSP && defined EMINUSP_SSH
+#   if defined EMINUSP && defined EMINUSP_SSH
       real(r8), intent(in) :: rain(LBi:,LBj:)
       real(r8), intent(in) :: evap(LBi:,LBj:)
+#   endif
+#   if defined RUNOFF && defined RUNOFF_SSH
+      real(r8), intent(in) :: pm(LBi:,LBj:)
+      real(r8), intent(in) :: pn(LBi:,LBj:)
+      real(r8), intent(in) :: runoff(LBi:,LBj:)
+#   endif
       real(r8), intent(inout) :: Zt_avg1(LBi:,LBj:)
-# else
-      real(r8), intent(in) :: Zt_avg1(LBi:,LBj:)
-# endif
       real(r8), intent(out) :: zeta(LBi:,LBj:,:)
 # else
-# if defined EMINUSP && defined EMINUSP_SSH
+#   if defined EMINUSP && defined EMINUSP_SSH
       real(r8), intent(in) :: rain(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: evap(LBi:UBi,LBj:UBj)
+#   endif
+#   if defined RUNOFF && defined RUNOFF_SSH
+      real(r8), intent(in) :: pm(LBi:UBi,LBj:UBj)
+      real(r8), intent(in) :: pn(LBi:UBi,LBj:UBj)
+      real(r8), intent(in) :: runoff(LBi:UBi,LBj:UBj)
+#   endif
       real(r8), intent(inout) :: Zt_avg1(LBi:UBi,LBj:UBj)
-# else
-      real(r8), intent(in) :: Zt_avg1(LBi:UBi,LBj:UBj)
-# endif
       real(r8), intent(out) :: zeta(LBi:UBi,LBj:UBj,3)
 # endif
 !
 !  Local variable declarations.
 !
-# ifdef DISTRIBUTE
-#  ifdef EW_PERIODIC
-      logical :: EWperiodic=.TRUE.
-#  else
-      logical :: EWperiodic=.FALSE.
-#  endif
-#  ifdef NS_PERIODIC
-      logical :: NSperiodic=.TRUE.
-#  else
-      logical :: NSperiodic=.FALSE.
-#  endif
-# endif
-# if defined EMINUSP && defined EMINUSP_SSH
-      real(r8) :: cff
-#endif
+      real(r8) :: cff, cff1
+!
       integer :: i, j
 
 # include "set_bounds.h"
@@ -141,6 +143,19 @@
       END DO
 # endif
 !
+# if defined EMINUSP && defined EMINUSP_SSH
+!
+! Correct sea level for surface runoff
+! Apply to fast-time averaged free-surface height
+!
+      DO j=JstrR,JendR
+        DO i=IstrR,IendR
+          cff1 = dt(ng)/(rhow*pm(i,j)*pn(i,j))
+          Zt_avg1(i,j) = Zt_avg1(i,j) + cff1*runoff(i,j)
+        END DO
+      END DO
+# endif
+!
 !-----------------------------------------------------------------------
 !  Prepare to time-step 2D equations:  set initial free-surface
 !  to its fast-time averaged values (which corresponds to the time
@@ -153,18 +168,21 @@
           zeta(i,j,2)=Zt_avg1(i,j)
         END DO
       END DO
-# if defined EW_PERIODIC || defined NS_PERIODIC
-      CALL exchange_r2d_tile (ng, tile,                                 &
-     &                        LBi, UBi, LBj, UBj,                       &
-     &                        zeta(:,:,1))
-      CALL exchange_r2d_tile (ng, tile,                                 &
-     &                        LBi, UBi, LBj, UBj,                       &
-     &                        zeta(:,:,2))
-# endif
+
+      IF (EWperiodic(ng).or.NSperiodic(ng)) THEN
+        CALL exchange_r2d_tile (ng, tile,                               &
+     &                          LBi, UBi, LBj, UBj,                     &
+     &                          zeta(:,:,1))
+        CALL exchange_r2d_tile (ng, tile,                               &
+     &                          LBi, UBi, LBj, UBj,                     &
+     &                          zeta(:,:,2))
+      END IF
+
 # ifdef DISTRIBUTE
       CALL mp_exchange2d (ng, tile, iNLM, 2,                            &
      &                    LBi, UBi, LBj, UBj,                           &
-     &                    NghostPoints, EWperiodic, NSperiodic,         &
+     &                    NghostPoints,                                 &
+     &                    EWperiodic(ng), NSperiodic(ng),               &
      &                    zeta(:,:,1),                                  &
      &                    zeta(:,:,2))
 # endif

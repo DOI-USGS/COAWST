@@ -1,7 +1,7 @@
 !
-!svn $Id: npzd_Franks_mod.h 429 2009-12-20 17:30:26Z arango $
+!svn $Id$
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2010 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2014 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -42,29 +42,29 @@
 !
 !  Biological parameters.
 !
-      integer, dimension(Ngrids) :: BioIter
+      integer, allocatable :: BioIter(:)
 
 #ifdef ANA_BIOLOGY
       real(r8), allocatable :: BioIni(:,:)
 #endif
-      real(r8), dimension(Ngrids) :: DetRR           ! 1/day
-      real(r8), dimension(Ngrids) :: K_ext           ! 1/m
-      real(r8), dimension(Ngrids) :: K_NO3           ! 1/(mmol/m3)
-      real(r8), dimension(Ngrids) :: K_Phy           ! mmol/m3
-      real(r8), dimension(Ngrids) :: PhyMR           ! 1/day
-      real(r8), dimension(Ngrids) :: Vm_NO3          ! 1/day
-      real(r8), dimension(Ngrids) :: wDet            ! m/day
+      real(r8), allocatable :: DetRR(:)        ! 1/day
+      real(r8), allocatable :: K_ext(:)        ! 1/m
+      real(r8), allocatable :: K_NO3(:)        ! 1/(mmol/m3)
+      real(r8), allocatable :: K_Phy(:)        ! mmol/m3
+      real(r8), allocatable :: PhyMR(:)        ! 1/day
+      real(r8), allocatable :: Vm_NO3(:)       ! 1/day
+      real(r8), allocatable :: wDet(:)         ! m/day
 #ifdef TANGENT
-      real(r8), dimension(Ngrids) :: tl_wDet
+      real(r8), allocatable :: tl_wDet(:)
 #endif
 #ifdef ADJOINT
-      real(r8), dimension(Ngrids) :: ad_wDet
+      real(r8), allocatable :: ad_wDet(:)
 #endif
-      real(r8), dimension(Ngrids) :: ZooGR           ! 1/day
-      real(r8), dimension(Ngrids) :: ZooMR           ! 1/day
-      real(r8), dimension(Ngrids) :: ZooMD           ! 1/day
-      real(r8), dimension(Ngrids) :: ZooGA           ! nondimensional
-      real(r8), dimension(Ngrids) :: ZooEC           ! nondimensional
+      real(r8), allocatable :: ZooGR(:)        ! 1/day
+      real(r8), allocatable :: ZooMR(:)        ! 1/day
+      real(r8), allocatable :: ZooMD(:)        ! 1/day
+      real(r8), allocatable :: ZooGA(:)        ! nondimensional
+      real(r8), allocatable :: ZooEC(:)        ! nondimensional
 
       CONTAINS
 
@@ -88,8 +88,58 @@
       NBT=4
 !
 !-----------------------------------------------------------------------
-!  Initialize tracer identification indices.
+!  Allocate various module variables.
 !-----------------------------------------------------------------------
+!
+      IF (.not.allocated(BioIter)) THEN
+        allocate ( BioIter(Ngrids) )
+      END IF
+      IF (.not.allocated(DetRR)) THEN
+        allocate ( DetRR(Ngrids) )
+      END IF
+      IF (.not.allocated(K_ext)) THEN
+        allocate ( K_ext(Ngrids) )
+      END IF
+      IF (.not.allocated(K_NO3)) THEN
+        allocate ( K_NO3(Ngrids) )
+      END IF
+      IF (.not.allocated(K_Phy)) THEN
+        allocate ( K_Phy(Ngrids) )
+      END IF
+      IF (.not.allocated(PhyMR)) THEN
+        allocate ( PhyMR(Ngrids) )
+      END IF
+      IF (.not.allocated(Vm_NO3)) THEN
+        allocate ( Vm_NO3(Ngrids) )
+      END IF
+      IF (.not.allocated(wDet)) THEN
+        allocate ( wDet(Ngrids) )
+      END IF
+#ifdef TANGENT
+      IF (.not.allocated(tl_wDet)) THEN
+        allocate ( tl_wDet(Ngrids) )
+      END IF
+#endif
+#ifdef ADJOINT
+      IF (.not.allocated(ad_wDet)) THEN
+        allocate ( ad_wDet(Ngrids) )
+      END IF
+#endif
+      IF (.not.allocated(ZooGR)) THEN
+        allocate ( ZooGR(Ngrids) )
+      END IF
+      IF (.not.allocated(ZooMR)) THEN
+        allocate ( ZooMR(Ngrids) )
+      END IF
+      IF (.not.allocated(ZooMD)) THEN
+        allocate ( ZooMD(Ngrids) )
+      END IF
+      IF (.not.allocated(ZooGA)) THEN
+        allocate ( ZooGA(Ngrids) )
+      END IF
+      IF (.not.allocated(ZooEC)) THEN
+        allocate ( ZooEC(Ngrids) )
+      END IF
 !
 !  Allocate biological tracer vector.
 !
@@ -97,7 +147,9 @@
         allocate ( idbio(NBT) )
       END IF
 !
-!  Set identification indices.
+!-----------------------------------------------------------------------
+!  Initialize tracer identification indices.
+!-----------------------------------------------------------------------
 !
       ic=NAT+NPT+NCS+NNS
       DO i=1,NBT

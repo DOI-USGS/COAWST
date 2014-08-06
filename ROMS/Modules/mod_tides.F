@@ -4,7 +4,7 @@
 !
 !svn $Id: mod_tides.F 1382 2011-02-19 01:44:37Z kate $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2011 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2014 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -69,10 +69,21 @@
 #  endif
 !                                                                      !
 # endif
+# ifdef UV_WAVEDRAG
+!  We need to accumulate a detided estimate of the bottom velocities   !
+!  which is the subtracted from the bottom velocity before the         !
+!  wave drag due to conversion of tidal energy into internal tides     !
+!  is applied.                                                         !
+!  sum_ubot      Time-accumulated bottom u-momentum.                   !
+!  sum_vbot      Time-accumulated bottom v-momentum.                   !
+!  filt_ubot     Time-mean bottom u-momentum.                          !
+!  filt_vbot     Time-mean bottom v-momentum.                          !
+# endif
 !=======================================================================
 !
         USE mod_kinds
         USE mod_param
+        USE mod_stepping
 
         implicit none
 
@@ -129,6 +140,12 @@
           real(r8), pointer :: v_tide(:,:,:,:)
 #  endif
 # endif
+# ifdef UV_WAVEDRAG
+          real(r8), pointer :: sum_ubot(:,:)
+          real(r8), pointer :: sum_vbot(:,:)
+          real(r8), pointer :: filt_ubot(:,:)
+          real(r8), pointer :: filt_vbot(:,:)
+# endif
 
         END TYPE T_TIDES
 
@@ -143,6 +160,11 @@
         real(r8), allocatable :: sat_phase_corr(:,:)
         real(r8), allocatable :: sat_amp(:,:)
         real(r8), allocatable :: sat_flag(:,:)
+# endif
+# ifdef UV_WAVEDRAG
+        integer :: nstep_hour
+        integer :: hour_steps = 0
+        real(r8), parameter :: drag_scale = 0.375
 # endif
 
       CONTAINS
@@ -172,7 +194,7 @@
 !
       logical :: foundit
 
-      integer :: Vid, i, ifile, mg, nvatt, nvdim
+      integer :: Nfiles, Vid, i, ifile, mg, nvatt, nvdim
 !
 !-----------------------------------------------------------------------
 !  Allocate module variables.
@@ -183,41 +205,60 @@
       IF (ng.eq.1) THEN
         MTC=0
         DO mg=1,Ngrids
+          IF (.not.(RefinedGrid(ng).and.RefineScale(ng).gt.0)) THEN
+            foundit=.FALSE.
 
-          foundit=.FALSE.
-
-          QUERY : DO ifile=1,nFfiles(mg)
-            CALL netcdf_inq_var (ng, iNLM, FRCname(ifile,mg),           &
-     &                           MyVarName = TRIM(Vname(1,idTper)),     &
-     &                           SearchVar = foundit,                   &
-     &                           VarID = Vid,                           &
-     &                           nVardim = nvdim,                       &
-     &                           nVarAtt = nvatt)
-            IF (exit_flag.ne.NoError) RETURN
+            QUERY : DO ifile=1,nFfiles(mg)
+              CALL netcdf_inq_var (ng, iNLM, FRC(ifile,mg)%name,        &
+     &                             MyVarName = TRIM(Vname(1,idTper)),   &
+     &                             SearchVar = foundit,                 &
+     &                             VarID = Vid,                         &
+     &                             nVardim = nvdim,                     &
+     &                             nVarAtt = nvatt)
+              IF (exit_flag.ne.NoError) RETURN
 
 # if defined AVERAGES_DETIDE && defined AVERAGES
 !
 !  Check if detiding variables are available and set definition switch.
 !
-            IF (foundit) THEN
-              DO i=1,n_var
-                IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idFsuH))) THEN
-                  LdefTIDE(ng)=.FALSE.
-                END IF
-              END DO
-            ENDIF
+              IF (foundit) THEN
+                DO i=1,n_var
+                  IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idFsuH))) THEN
+                    LdefTIDE(ng)=.FALSE.
+                  END IF
+                END DO
+              END IF
 # endif
 !
-!  Set maximun numbert of tidal components.
+!  Set maximum number of tidal components.  Allocate and initialize
+!  TIDE I/O structure.
 !
-            IF (foundit) THEN
-              MTC=MAX(MTC,var_Dsize(1))              ! first dimension
-              NTC(mg)=var_Dsize(1)
-              TIDEname(ng)=TRIM(FRCname(ifile,mg))
-              EXIT QUERY
-            END IF
-          END DO QUERY
-
+              IF (foundit) THEN
+                MTC=MAX(MTC,var_Dsize(1))            ! first dimension
+                NTC(mg)=var_Dsize(1)
+!
+                Nfiles=FRC(ifile,mg)%Nfiles
+                allocate ( TIDE(ng)%Nrec(Nfiles) )
+                allocate ( TIDE(ng)%time_min(Nfiles) )
+                allocate ( TIDE(ng)%time_max(Nfiles) )
+                allocate ( TIDE(ng)%Vid(NV) )
+                allocate ( TIDE(ng)%Tid(MT) )
+                allocate ( TIDE(ng)%files(Nfiles) )
+                TIDE(ng)%Nfiles=Nfiles
+                TIDE(ng)%Fcount=1
+                TIDE(ng)%Rindex=0
+                TIDE(ng)%ncid=-1
+                TIDE(ng)%Vid=-1
+                TIDE(ng)%Tid=-1
+                TIDE(ng)%Nrec(1:Nfiles)=0
+                TIDE(ng)%time_min(1:Nfiles)=0.0_r8
+                TIDE(ng)%time_max(1:Nfiles)=0.0_r8
+                TIDE(ng)%name=TRIM(FRC(ifile,mg)%name)
+                TIDE(ng)%label='TIDE - tidal forcing'
+                EXIT QUERY
+              END IF
+            END DO QUERY
+          END IF
         END DO
       END IF
 !
@@ -277,38 +318,44 @@
       allocate ( TIDES(ng) % SinWSinW(MTC,MTC) )
       allocate ( TIDES(ng) % SinWCosW(MTC,MTC) )
 
-!      IF (Aout(idFsuD,ng)) THEN
+      IF (Aout(idFsuD,ng)) THEN
         allocate ( TIDES(ng) % zeta_detided(LBi:UBi,LBj:UBj) )
         allocate ( TIDES(ng) % zeta_tide(LBi:UBi,LBj:UBj,0:2*MTC) )
-!      END IF
+      END IF
 
-!      IF (Aout(idu2dD,ng)) THEN
+      IF (Aout(idu2dD,ng)) THEN
         allocate ( TIDES(ng) % ubar_detided(LBi:UBi,LBj:UBj) )
         allocate ( TIDES(ng) % ubar_tide(LBi:UBi,LBj:UBj,0:2*MTC) )
-!      END IF
+      END IF
 
-!      IF (Aout(idv2dD,ng)) THEN
+      IF (Aout(idv2dD,ng)) THEN
         allocate ( TIDES(ng) % vbar_detided(LBi:UBi,LBj:UBj) )
         allocate ( TIDES(ng) % vbar_tide(LBi:UBi,LBj:UBj,0:2*MTC) )
-!      END IF
+      END IF
 
 #  ifdef SOLVE3D
-!      IF (Aout(idu3dD,ng)) THEN
+      IF (Aout(idu3dD,ng)) THEN
         allocate ( TIDES(ng) % u_detided(LBi:UBi,LBj:UBj,N(ng)) )
         allocate ( TIDES(ng) % u_tide(LBi:UBi,LBj:UBj,N(ng),0:2*MTC) )
-!      END IF
+      END IF
 
-!      IF (Aout(idv3dD,ng)) THEN
+      IF (Aout(idv3dD,ng)) THEN
         allocate ( TIDES(ng) % v_detided(LBi:UBi,LBj:UBj,N(ng)) )
         allocate ( TIDES(ng) % v_tide(LBi:UBi,LBj:UBj,N(ng),0:2*MTC) )
-!      END IF
+      END IF
 
-!      IF (ANY(Aout(idTrcD(:),ng))) THEN
+      IF (ANY(Aout(idTrcD(:),ng))) THEN
         allocate ( TIDES(ng) % t_detided(LBi:UBi,LBj:UBj,N(ng),NAT) )
         allocate ( TIDES(ng) % t_tide(LBi:UBi,LBj:UBj,N(ng),            &
      &                                0:2*MTC,NAT) )
-!      END IF
+      END IF
 #  endif
+# endif
+# ifdef UV_WAVEDRAG
+      allocate ( TIDES(ng) % sum_ubot(LBi:UBi,LBj:UBj) )
+      allocate ( TIDES(ng) % sum_vbot(LBi:UBi,LBj:UBj) )
+      allocate ( TIDES(ng) % filt_ubot(LBi:UBi,LBj:UBj) )
+      allocate ( TIDES(ng) % filt_vbot(LBi:UBi,LBj:UBj) )
 # endif
 
       RETURN
@@ -344,32 +391,32 @@
 !
 !  Set array initialization range.
 !
-# ifdef _OPENMP
-      IF (WESTERN_EDGE) THEN
-        Imin=BOUNDS(ng)%LBi(tile)
-      ELSE
-        Imin=Istr
-      END IF
-      IF (EASTERN_EDGE) THEN
-        Imax=BOUNDS(ng)%UBi(tile)
-      ELSE
-        Imax=Iend
-      END IF
-      IF (SOUTHERN_EDGE) THEN
-        Jmin=BOUNDS(ng)%LBj(tile)
-      ELSE
-        Jmin=Jstr
-      END IF
-      IF (NORTHERN_EDGE) THEN
-        Jmax=BOUNDS(ng)%UBj(tile)
-      ELSE
-        Jmax=Jend
-      END IF
-# else
+# ifdef DISTRIBUTE
       Imin=BOUNDS(ng)%LBi(tile)
       Imax=BOUNDS(ng)%UBi(tile)
       Jmin=BOUNDS(ng)%LBj(tile)
       Jmax=BOUNDS(ng)%UBj(tile)
+# else
+      IF (DOMAIN(ng)%Western_Edge(tile)) THEN
+        Imin=BOUNDS(ng)%LBi(tile)
+      ELSE
+        Imin=Istr
+      END IF
+      IF (DOMAIN(ng)%Eastern_Edge(tile)) THEN
+        Imax=BOUNDS(ng)%UBi(tile)
+      ELSE
+        Imax=Iend
+      END IF
+      IF (DOMAIN(ng)%Southern_Edge(tile)) THEN
+        Jmin=BOUNDS(ng)%LBj(tile)
+      ELSE
+        Jmin=Jstr
+      END IF
+      IF (DOMAIN(ng)%Northern_Edge(tile)) THEN
+        Jmax=BOUNDS(ng)%UBj(tile)
+      ELSE
+        Jmax=Jend
+      END IF
 # endif
 !
 !-----------------------------------------------------------------------
@@ -378,7 +425,7 @@
 !
 !  Initialize tidal forcing variables.
 !
-      IF (SOUTH_WEST_TEST) THEN
+      IF (DOMAIN(ng)%SouthWest_Test(tile)) THEN
         DO itide=1,MTC
           TIDES(ng) % Tperiod(itide) = IniVal
         END DO
@@ -410,7 +457,7 @@
 !  Initialize cariables used for the least-squares detiding of
 !  time-averaged fields.
 !
-      IF (SOUTH_WEST_TEST) THEN
+      IF (DOMAIN(ng)%SouthWest_Test(tile)) THEN
         DO jtide=1,MTC
           TIDES(ng) % CosOmega(jtide) = IniVal
           TIDES(ng) % SinOmega(jtide) = IniVal
@@ -426,7 +473,7 @@
         END DO
       END IF
 
-!      IF (Aout(idFsuD,ng)) THEN
+      IF (Aout(idFsuD,ng)) THEN
         DO j=Jmin,Jmax
           DO i=Imin,Imax
             TIDES(ng) % zeta_detided(i,j) = IniVal
@@ -439,9 +486,9 @@
             END DO
           END DO
         END DO
-!      END IF
+      END IF
 
-!      IF (Aout(idu2dD,ng)) THEN
+      IF (Aout(idu2dD,ng)) THEN
         DO j=Jmin,Jmax
           DO i=Imin,Imax
             TIDES(ng) % ubar_detided(i,j) = IniVal
@@ -454,7 +501,7 @@
             END DO
           END DO
         END DO
-!      END IF
+      END IF
 # endif
 
 # if defined POT_TIDES
@@ -593,7 +640,7 @@
 
 # endif
 # if defined AVERAGES_DETIDE && defined AVERAGES
-!      IF (Aout(idv2dD,ng)) THEN
+      IF (Aout(idv2dD,ng)) THEN
         DO j=Jmin,Jmax
           DO i=Imin,Imax
             TIDES(ng) % vbar_detided(i,j) = IniVal
@@ -606,10 +653,10 @@
             END DO
           END DO
         END DO
-!      END IF
+      END IF
 
 #  ifdef SOLVE3D
-!      IF (Aout(idu3dD,ng)) THEN
+      IF (Aout(idu3dD,ng)) THEN
         DO k=1,N(ng)
           DO j=Jmin,Jmax
             DO i=Imin,Imax
@@ -626,9 +673,9 @@
             END DO
           END DO
         END DO
-!      END IF
+      END IF
 
-!      IF (Aout(idv3dD,ng)) THEN
+      IF (Aout(idv3dD,ng)) THEN
         DO k=1,N(ng)
           DO j=Jmin,Jmax
             DO i=Imin,Imax
@@ -645,9 +692,9 @@
             END DO
           END DO
         END DO
-!      END IF
+      END IF
 
-!      IF (ANY(Aout(idTrcD(:),ng))) THEN
+      IF (ANY(Aout(idTrcD(:),ng))) THEN
         DO itrc=1,NAT
           DO k=1,N(ng)
             DO j=Jmin,Jmax
@@ -668,8 +715,18 @@
             END DO
           END DO
         END DO
-!      END IF
+      END IF
 #  endif
+# endif
+# ifdef UV_WAVEDRAG
+      DO j=Jmin,Jmax
+        DO i=Imin,Imax
+          TIDES(ng) % sum_ubot(i,j) = IniVal
+          TIDES(ng) % sum_vbot(i,j) = IniVal
+          TIDES(ng) % filt_ubot(i,j) = IniVal
+          TIDES(ng) % filt_vbot(i,j) = IniVal
+        END DO
+      END DO
 # endif
 
       RETURN
@@ -708,22 +765,22 @@
 #include "set_bounds.h"
 
 #ifdef _OPENMP
-      IF (WESTERN_EDGE) THEN
+      IF (DOMAIN(ng)%Western_Edge(tile)) THEN
         Imin=BOUNDS(ng)%LBi(tile)
       ELSE
         Imin=Istr
       END IF
-      IF (EASTERN_EDGE) THEN
+      IF (DOMAIN(ng)%Eastern_Edge(tile)) THEN
         Imax=BOUNDS(ng)%UBi(tile)
       ELSE
         Imax=Iend
       END IF
-      IF (SOUTHERN_EDGE) THEN
+      IF (DOMAIN(ng)%Southern_Edge(tile)) THEN
         Jmin=BOUNDS(ng)%LBj(tile)
       ELSE
         Jmin=Jstr
       END IF
-      IF (NORTHERN_EDGE) THEN
+      IF (DOMAIN(ng)%Northern_Edge(tile)) THEN
         Jmax=BOUNDS(ng)%UBj(tile)
       ELSE
         Jmax=Jend

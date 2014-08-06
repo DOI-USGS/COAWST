@@ -2,9 +2,9 @@
       MODULE rp_set_depth_mod
 #ifdef TL_IOMS
 !
-!svn $Id: rp_set_depth.F 429 2009-12-20 17:30:26Z arango $
+!svn $Id$
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2010 The ROMS/TOMS Group       Andrew M. Moore   !
+!  Copyright (c) 2002-2014 The ROMS/TOMS Group       Andrew M. Moore   !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -22,7 +22,7 @@
 !=======================================================================
 !
       implicit none
-
+!
       PRIVATE
 # ifdef SOLVE3D
       PUBLIC  :: rp_set_depth, rp_set_depth_tile
@@ -31,7 +31,7 @@
 #  endif
 # endif
       PUBLIC  :: rp_bath, rp_bath_tile
-
+!
       CONTAINS
 
 # ifdef SOLVE3D
@@ -44,9 +44,9 @@
       USE mod_coupling
       USE mod_grid
       USE mod_ocean
-# if defined SEDIMENT && defined SED_MORPH
+#  if defined SEDIMENT && defined SED_MORPH
       USE mod_sedbed
-# endif
+#  endif
       USE mod_stepping
 !
 !  Imported variable declarations.
@@ -57,6 +57,9 @@
 !
 #  include "tile.h"
 !
+#  ifdef PROFILE
+      CALL wclock_on (ng, iRPM, 12)
+#  endif
       CALL rp_set_depth_tile (ng, tile,                                 &
      &                        LBi, UBi, LBj, UBj,                       &
      &                        IminS, ImaxS, JminS, JmaxS,               &
@@ -74,6 +77,10 @@
      &                        GRID(ng) % tl_Hz,                         &
      &                        GRID(ng) % tl_z_r,                        &
      &                        GRID(ng) % tl_z_w)
+# ifdef PROFILE
+      CALL wclock_off (ng, iRPM, 12)
+# endif
+
       RETURN
       END SUBROUTINE rp_set_depth
 !
@@ -96,10 +103,8 @@
       USE mod_param
       USE mod_scalars
 !
-#  if defined EW_PERIODIC || defined NS_PERIODIC
       USE exchange_2d_mod
       USE exchange_3d_mod
-#  endif
 #  ifdef DISTRIBUTE
       USE mp_exchange_mod, ONLY : mp_exchange2d, mp_exchange3d
 #  endif
@@ -143,18 +148,6 @@
 !
 !  Local variable declarations.
 !
-#  ifdef DISTRIBUTE
-#   ifdef EW_PERIODIC
-      logical :: EWperiodic=.TRUE.
-#   else
-      logical :: EWperiodic=.FALSE.
-#   endif
-#   ifdef NS_PERIODIC
-      logical :: NSperiodic=.TRUE.
-#   else
-      logical :: NSperiodic=.FALSE.
-#   endif
-#  endif
       integer :: i, j, k
 
       real(r8) :: cff, cff_r, cff1_r, cff2_r, cff_w, cff1_w, cff2_w
@@ -180,8 +173,8 @@
 !-----------------------------------------------------------------------
 !
       IF (Vtransform(ng).eq.1) THEN
-        DO j=JstrR,JendR
-          DO i=IstrR,IendR
+        DO j=JstrT,JendT
+          DO i=IstrT,IendT
 #  if defined SEDIMENT && defined SED_MORPH
 !>          h(i,j)=h(i,j)-bed_thick(i,j,nstp)+bed_thick(i,j,nnew)
 !>
@@ -195,9 +188,9 @@
           DO k=1,N(ng)
             cff_r=hc(ng)*(SCALARS(ng)%sc_r(k)-SCALARS(ng)%Cs_r(k))
             cff_w=hc(ng)*(SCALARS(ng)%sc_w(k)-SCALARS(ng)%Cs_w(k))
-            cff1_w=SCALARS(ng)%Cs_w(k)
             cff1_r=SCALARS(ng)%Cs_r(k)
-            DO i=IstrR,IendR
+            cff1_w=SCALARS(ng)%Cs_w(k)
+            DO i=IstrT,IendT
               hwater=h(i,j)
 #  ifdef ICESHELF
               hwater=hwater-ABS(zice(i,j))
@@ -279,8 +272,8 @@
 !-----------------------------------------------------------------------
 !
       ELSE IF (Vtransform(ng).eq.2) THEN
-        DO j=JstrR,JendR
-          DO i=IstrR,IendR
+        DO j=JstrT,JendT
+          DO i=IstrT,IendT
 #  if defined SEDIMENT && defined SED_MORPH
 !>          h(i,j)=h(i,j)-bed_thick(i,j,nstp)+bed_thick(i,j,nnew)
 !>
@@ -292,11 +285,11 @@
             tl_z_w(i,j,0)=-tl_h(i,j)
           END DO
           DO k=1,N(ng)
-            cff_r=hc(ng)*(SCALARS(ng)%sc_r(k)-SCALARS(ng)%Cs_r(k))
-            cff_w=hc(ng)*(SCALARS(ng)%sc_w(k)-SCALARS(ng)%Cs_w(k))
-            cff1_w=SCALARS(ng)%Cs_w(k)
+            cff_r=hc(ng)*SCALARS(ng)%sc_r(k)
+            cff_w=hc(ng)*SCALARS(ng)%sc_w(k)
             cff1_r=SCALARS(ng)%Cs_r(k)
-            DO i=IstrR,IendR
+            cff1_w=SCALARS(ng)%Cs_w(k)
+            DO i=IstrT,IendT
               hwater=h(i,j)
 #  ifdef ICESHELF
               hwater=hwater-ABS(zice(i,j))
@@ -374,72 +367,76 @@
           END DO
         END DO
       END IF
-
-#  if defined EW_PERIODIC || defined NS_PERIODIC || defined DISTRIBUTE
 !
 !-----------------------------------------------------------------------
 !  Exchange boundary information.
 !-----------------------------------------------------------------------
 !
-#   if defined EW_PERIODIC || defined NS_PERIODIC
-!>    CALL exchange_r2d_tile (ng, tile,                                 &
-!>   &                        LBi, UBi, LBj, UBj,                       &
-!>   &                        h)
+      IF (EWperiodic(ng).or.NSperiodic(ng)) THEN
+!>      CALL exchange_r2d_tile (ng, tile,                               &
+!>   &                          LBi, UBi, LBj, UBj,                     &
+!>   &                          h)
 !>
-      CALL exchange_r2d_tile (ng, tile,                                 &
-     &                        LBi, UBi, LBj, UBj,                       &
-     &                        tl_h)
-!>    CALL exchange_w3d_tile (ng, tile,                                 &
-!>   &                        LBi, UBi, LBj, UBj, 0, N(ng),             &
-!>   &                        z_w)
+        CALL exchange_r2d_tile (ng, tile,                               &
+     &                          LBi, UBi, LBj, UBj,                     &
+     &                          tl_h)
+!>      CALL exchange_w3d_tile (ng, tile,                               &
+!>   &                          LBi, UBi, LBj, UBj, 0, N(ng),           &
+!>   &                          z_w)
 !>
-      CALL exchange_w3d_tile (ng, tile,                                 &
-     &                        LBi, UBi, LBj, UBj, 0, N(ng),             &
-     &                        tl_z_w)
-!>    CALL exchange_r3d_tile (ng, tile,                                 &
-!>   &                        LBi, UBi, LBj, UBj, 1, N(ng),             &
-!>   &                        z_r)
+        CALL exchange_w3d_tile (ng, tile,                               &
+     &                          LBi, UBi, LBj, UBj, 0, N(ng),           &
+     &                          tl_z_w)
+!>      CALL exchange_r3d_tile (ng, tile,                               &
+!>   &                          LBi, UBi, LBj, UBj, 1, N(ng),           &
+!>   &                          z_r)
 !>
-      CALL exchange_r3d_tile (ng, tile,                                 &
-     &                        LBi, UBi, LBj, UBj, 1, N(ng),             &
-     &                        tl_z_r)
-!>    CALL exchange_r3d_tile (ng, tile,                                 &
-!>   &                        LBi, UBi, LBj, UBj, 1, N(ng),             &
-!>   &                        Hz)
+        CALL exchange_r3d_tile (ng, tile,                               &
+     &                          LBi, UBi, LBj, UBj, 1, N(ng),           &
+     &                          tl_z_r)
+!>      CALL exchange_r3d_tile (ng, tile,                               &
+!>   &                          LBi, UBi, LBj, UBj, 1, N(ng),           &
+!>   &                          Hz)
 !>
-      CALL exchange_r3d_tile (ng, tile,                                 &
-     &                        LBi, UBi, LBj, UBj, 1, N(ng),             &
-     &                        tl_Hz)
-#   endif
-#   ifdef DISTRIBUTE
+        CALL exchange_r3d_tile (ng, tile,                               &
+     &                          LBi, UBi, LBj, UBj, 1, N(ng),           &
+     &                          tl_Hz)
+      END IF
+
+#  ifdef DISTRIBUTE
 !>    CALL mp_exchange2d (ng, tile, iNLM, 1,                            &
 !>   &                    LBi, UBi, LBj, UBj,                           &
-!>   &                    NghostPoints, EWperiodic, NSperiodic,         &
+!>   &                    NghostPoints,                                 &
+!>   &                    EWperiodic(ng), NSperiodic(ng),               &
 !>   &                    h)
 !>
       CALL mp_exchange2d (ng, tile, iRPM, 1,                            &
      &                    LBi, UBi, LBj, UBj,                           &
-     &                    NghostPoints, EWperiodic, NSperiodic,         &
+     &                    NghostPoints,                                 &
+     &                    EWperiodic(ng), NSperiodic(ng),               &
      &                    tl_h)
 !>    CALL mp_exchange3d (ng, tile, iNLM, 1,                            &
 !>   &                    LBi, UBi, LBj, UBj, 0, N(ng),                 &
-!>   &                    NghostPoints, EWperiodic, NSperiodic,         &
+!>   &                    NghostPoints,                                 &
+!>   &                    EWperiodic(ng), NSperiodic(ng),               &
 !>   &                    z_w)
 !>
       CALL mp_exchange3d (ng, tile, iRPM, 1,                            &
      &                    LBi, UBi, LBj, UBj, 0, N(ng),                 &
-     &                    NghostPoints, EWperiodic, NSperiodic,         &
+     &                    NghostPoints,                                 &
+     &                    EWperiodic(ng), NSperiodic(ng),               &
      &                    tl_z_w)
 !>    CALL mp_exchange3d (ng, tile, iNLM, 2,                            &
 !>   &                    LBi, UBi, LBj, UBj, 1, N(ng),                 &
-!>   &                    NghostPoints, EWperiodic, NSperiodic,         &
+!>   &                    NghostPoints,                                 &
+!>   &                    EWperiodic(ng), NSperiodic(ng),               &
 !>   &                    z_r, Hz)
 !>
       CALL mp_exchange3d (ng, tile, iRPM, 2,                            &
      &                    LBi, UBi, LBj, UBj, 1, N(ng),                 &
-     &                    NghostPoints, EWperiodic, NSperiodic,         &
+     &                    NghostPoints,                                 &
+     &                    EWperiodic(ng), NSperiodic(ng),               &
      &                    tl_z_r, tl_Hz)
-#   endif
 #  endif
 
       RETURN
@@ -452,7 +449,6 @@
 !***********************************************************************
 !
       USE mod_param
-      USE mod_boundary
       USE mod_grid
 !
 !  Imported variable declarations.
@@ -463,6 +459,9 @@
 !
 #   include "tile.h"
 !
+#   ifdef PROFILE
+      CALL wclock_on (ng, iRPM, 12)
+#   endif
       CALL rp_set_depth_bry_tile (ng, tile,                             &
      &                            LBi, UBi, LBj, UBj, LBij, UBij,       &
      &                            IminS, ImaxS, JminS, JmaxS,           &
@@ -471,23 +470,11 @@
 #   ifdef ICESHELF
      &                            GRID(ng) % zice,                      &
 #   endif
-#   ifdef WEST_FSOBC
-     &                            BOUNDARY(ng) % zeta_west,             &
-     &                            BOUNDARY(ng) % tl_zeta_west,          &
-#   endif
-#   ifdef EAST_FSOBC
-     &                            BOUNDARY(ng) % zeta_east,             &
-     &                            BOUNDARY(ng) % tl_zeta_east,          &
-#   endif
-#   ifdef SOUTH_FSOBC
-     &                            BOUNDARY(ng) % zeta_south,            &
-     &                            BOUNDARY(ng) % tl_zeta_south,         &
-#   endif
-#   ifdef NORTH_FSOBC
-     &                            BOUNDARY(ng) % zeta_north,            &
-     &                            BOUNDARY(ng) % tl_zeta_north,         &
-#   endif
      &                            GRID(ng) % tl_Hz_bry)
+#   ifdef PROFILE
+      CALL wclock_off (ng, iRPM, 12)
+#   endif
+
       RETURN
       END SUBROUTINE rp_set_depth_bry
 !
@@ -499,22 +486,11 @@
 #   ifdef ICESHELF
      &                                  zice,                           &
 #   endif
-#   ifdef WEST_FSOBC
-     &                                  zeta_west, tl_zeta_west,        &
-#   endif
-#   ifdef EAST_FSOBC
-     &                                  zeta_east, tl_zeta_east,        &
-#   endif
-#   ifdef SOUTH_FSOBC
-     &                                  zeta_south, tl_zeta_south,      &
-#   endif
-#   ifdef NORTH_FSOBC
-     &                                  zeta_north, tl_zeta_north,      &
-#   endif
      &                                  tl_Hz_bry)
 !***********************************************************************
 !
       USE mod_param
+      USE mod_boundary
       USE mod_ncparam
       USE mod_scalars
 !
@@ -534,22 +510,6 @@
 #    ifdef ICESHELF
       real(r8), intent(in) :: zice(LBi:,LBj:)
 #    endif
-#    ifdef WEST_FSOBC
-      real(r8), intent(in) :: zeta_west(0:)
-      real(r8), intent(in) :: tl_zeta_west(0:)
-#    endif
-#    ifdef EAST_FSOBC
-      real(r8), intent(in) :: zeta_east(0:)
-      real(r8), intent(in) :: tl_zeta_east(0:)
-#    endif
-#    ifdef SOUTH_FSOBC
-      real(r8), intent(in) :: zeta_south(0:)
-      real(r8), intent(in) :: tl_zeta_south(0:)
-#    endif
-#    ifdef NORTH_FSOBC
-      real(r8), intent(in) :: zeta_north(0:)
-      real(r8), intent(in) :: tl_zeta_north(0:)
-#    endif
       real(r8), intent(out) :: tl_Hz_bry(LBij:,:,:)
 #   else
       real(r8), intent(in) :: h(LBi:UBi,LBj:UBj)
@@ -557,39 +517,11 @@
 #    ifdef ICESHELF
       real(r8), intent(in) :: zice(LBi:UBi,LBj:UBj)
 #    endif
-#    ifdef WEST_FSOBC
-      real(r8), intent(in) :: zeta_west(0:Jm(ng)+1)
-      real(r8), intent(in) :: tl_zeta_west(0:Jm(ng)+1)
-#    endif
-#    ifdef EAST_FSOBC
-      real(r8), intent(in) :: zeta_east(0:Jm(ng)+1)
-      real(r8), intent(in) :: tl_zeta_east(0:Jm(ng)+1)
-#    endif
-#    ifdef SOUTH_FSOBC
-      real(r8), intent(in) :: zeta_south(0:Im(ng)+1)
-      real(r8), intent(in) :: tl_zeta_south(0:Im(ng)+1)
-#    endif
-#    ifdef NORTH_FSOBC
-      real(r8), intent(in) :: zeta_north(0:Im(ng)+1)
-      real(r8), intent(in) :: tl_zeta_north(0:Im(ng)+1)
-#    endif
       real(r8), intent(out) :: tl_Hz_bry(LBij:UBij,N(ng),4)
 #   endif
 !
 !  Local variable declarations.
 !
-#   ifdef DISTRIBUTE
-#    ifdef EW_PERIODIC
-      logical :: EWperiodic=.TRUE.
-#    else
-      logical :: EWperiodic=.FALSE.
-#    endif
-#    ifdef NS_PERIODIC
-      logical :: NSperiodic=.TRUE.
-#    else
-      logical :: NSperiodic=.FALSE.
-#    endif
-#   endif
       integer :: i, ibry, j, k
 
       real(r8) :: cff_w, cff1_w, cff2_w
@@ -620,19 +552,19 @@
 !
       IF (Vtransform(ng).eq.1) THEN
 
-#   ifdef WEST_FSOBC
-        IF (WESTERN_EDGE) THEN
+        IF (tl_LBC(iwest,isFsur,ng)%acquire.and.                        &
+     &      DOMAIN(ng)%Western_Edge(tile)) THEN
           i=BOUNDS(ng)%edge(iwest,r2dvar)
-          DO j=JstrR,JendR
+          DO j=JstrT,JendT
             hwater=h(i,j)
-#    ifdef ICESHELF
+#   ifdef ICESHELF
             hwater=hwater-ABS(zice(i,j))
-#    endif
+#   endif
             tl_hwater=tl_h(i,j)
             hinv=1.0_r8/hwater
-#    if defined SEDIMENT_NOT_YET && defined SED_MORPH_NOT_YET
+#   if defined SEDIMENT_NOT_YET && defined SED_MORPH_NOT_YET
             tl_hinv=-hinv*hinv*tl_hwater
-#    endif
+#   endif
 !>          Zw(0)=-h(i,j)
 !>
             tl_Zw(0)=-tl_h(i,j)
@@ -640,43 +572,43 @@
               cff_w=hc(ng)*(SCALARS(ng)%sc_w(k)-SCALARS(ng)%Cs_w(k))
               cff1_w=SCALARS(ng)%Cs_w(k)
               z_w0=cff_w+cff1_w*hwater
-#    if defined SEDIMENT_NOT_YET && defined SED_MORPH_NOT_YET
+#   if defined SEDIMENT_NOT_YET && defined SED_MORPH_NOT_YET
               tl_z_w0=cff1_w*tl_hwate
-#    endif
-!>            Zw(k)=z_w0+zeta_west(j)*(1.0_r8+z_w0*hinv)
+#   endif
+!>            Zw(k)=z_w0+BOUNDARY(ng)%zeta_west(j)*(1.0_r8+z_w0*hinv)
 !>
-#    if defined SEDIMENT_NOT_YET && defined SED_MORPH_NOT_YET
+#   if defined SEDIMENT_NOT_YET && defined SED_MORPH_NOT_YET
               tl_Zw(k)=tl_z_w0+                                         &
-     &                 tl_zeta_west(j)*(1.0_r8+z_w0*hinv)+              &
-     &                 zeta_west(j)*z_w0*tl_hinv+                       &
-     &                 zeta_west(j)*tl_z_w0*hinv
-#    else
-              tl_Zw(k)=tl_zeta_west(j)*(1.0_r8+z_w0*hinv)
-#    endif
-#    ifdef ICESHELF
+     &                 BOUNDARY(ng)%tl_zeta_west(j)*                    &
+     &                 (1.0_r8+z_w0*hinv)+                              &
+     &                 BOUNDARY(ng)%zeta_west(j)*z_w0*tl_hinv+          &
+     &                 BOUNDARY(ng)%zeta_west(j)*tl_z_w0*hinv
+#   else
+              tl_Zw(k)=BOUNDARY(ng)%tl_zeta_west(j)*(1.0_r8+z_w0*hinv)
+#   endif
+#   ifdef ICESHELF
 !>            Zw(k)=Zw(k)-ABS(zice(i,j))
-#    endif
+#   endif
 !>            Hz_bry(j,k,iwest)=Zw(k)-Zw(k-1)
 !>
               tl_Hz_bry(j,k,iwest)=tl_Zw(k)-tl_Zw(k-1)
             END DO
           END DO
         END IF
-#   endif
 
-#   ifdef EAST_FSOBC
-        IF (EASTERN_EDGE) THEN
+        IF (tl_LBC(ieast,isFsur,ng)%acquire.and.                        &
+     &      DOMAIN(ng)%Eastern_Edge(tile)) THEN
           i=BOUNDS(ng)%edge(ieast,r2dvar)
-          DO j=JstrR,JendR
+          DO j=JstrT,JendT
             hwater=h(i,j)
-#    ifdef ICESHELF
+#   ifdef ICESHELF
             hwater=hwater-ABS(zice(i,j))
-#    endif
+#   endif
             tl_hwater=tl_h(i,j)
             hinv=1.0_r8/hwater
-#    if defined SEDIMENT_NOT_YET && defined SED_MORPH_NOT_YET
+#   if defined SEDIMENT_NOT_YET && defined SED_MORPH_NOT_YET
             tl_hinv=-hinv*hinv*tl_hwater
-#    endif
+#   endif
 !>          Zw(0)=-h(i,j)
 !>
             tl_Zw(0)=-tl_h(i,j)
@@ -684,43 +616,43 @@
               cff_w=hc(ng)*(SCALARS(ng)%sc_w(k)-SCALARS(ng)%Cs_w(k))
               cff1_w=SCALARS(ng)%Cs_w(k)
               z_w0=cff_w+cff1_w*hwater
-#    if defined SEDIMENT_NOT_YET && defined SED_MORPH_NOT_YET
+#   if defined SEDIMENT_NOT_YET && defined SED_MORPH_NOT_YET
               tl_z_w0=cff1_w*tl_hwater
-#    endif
-!>            Zw(k)=z_w0+zeta_east(j)*(1.0_r8+z_w0*hinv)
+#   endif
+!>            Zw(k)=z_w0+BOUNDARY(ng)%zeta_east(j)*(1.0_r8+z_w0*hinv)
 !>
-#    if defined SEDIMENT_NOT_YET && defined SED_MORPH_NOT_YET
+#   if defined SEDIMENT_NOT_YET && defined SED_MORPH_NOT_YET
               tl_Zw(k)=tl_z_w0+                                         &
-     &                 tl_zeta_east(j)*(1.0_r8+z_w0*hinv)+              &
-     &                 zeta_east(j)*z_w0*tl_hinv+                       &
-     &                 zeta_east(j)*tl_z_w0*hinv
-#    else
-              tl_Zw(k)=tl_zeta_east(j)*(1.0_r8+z_w0*hinv)
-#    endif
-#    ifdef ICESHELF
+     &                 BOUNDARY(ng)%tl_zeta_east(j)*                    &
+     &                 (1.0_r8+z_w0*hinv)+                              &
+     &                 BOUNDARY(ng)%zeta_east(j)*z_w0*tl_hinv+          &
+     &                 BOUNDARY(ng)%zeta_east(j)*tl_z_w0*hinv
+#   else
+              tl_Zw(k)=BOUNDARY(ng)%tl_zeta_east(j)*(1.0_r8+z_w0*hinv)
+#   endif
+#   ifdef ICESHELF
 !>            Zw(k)=Zw(k)-ABS(zice(i,j))
-#    endif
+#   endif
 !>            Hz_bry(j,k,ieast)=Zw(k)-Zw(k-1)
 !>
               tl_Hz_bry(j,k,ieast)=tl_Zw(k)-tl_Zw(k-1)
             END DO
           END DO
         END IF
-#   endif
 
-#   ifdef SOUTH_FSOBC
-        IF (SOUTHERN_EDGE) THEN
+        IF (tl_LBC(isouth,isFsur,ng)%acquire.and.                       &
+     &      DOMAIN(ng)%Southern_Edge(tile)) THEN
           j=BOUNDS(ng)%edge(isouth,r2dvar)
-          DO i=IstrR,IendR
+          DO i=IstrT,IendT
             hwater=h(i,j)
-#    ifdef ICESHELF
+#   ifdef ICESHELF
             hwater=hwater-ABS(zice(i,j))
-#    endif
+#   endif
             tl_hwater=tl_h(i,j)
             hinv=1.0_r8/hwater
-#    if defined SEDIMENT_NOT_YET && defined SED_MORPH_NOT_YET
+#   if defined SEDIMENT_NOT_YET && defined SED_MORPH_NOT_YET
             tl_hinv=-hinv*hinv*tl_hwater
-#    endif
+#   endif
 !>          Zw(0)=-h(i,j)
 !>
             tl_Zw(0)=-tl_h(i,j)
@@ -728,43 +660,43 @@
               cff_w=hc(ng)*(SCALARS(ng)%sc_w(k)-SCALARS(ng)%Cs_w(k))
               cff1_w=SCALARS(ng)%Cs_w(k)
               z_w0=cff_w+cff1_w*hwater
-#    if defined SEDIMENT_NOT_YET && defined SED_MORPH_NOT_YET
+#   if defined SEDIMENT_NOT_YET && defined SED_MORPH_NOT_YET
               tl_z_w0=cff1_w*tl_hwater
-#    endif
-!>            Zw(k)=z_w0+zeta_south(i)*(1.0_r8+z_w0*hinv)
+#   endif
+!>            Zw(k)=z_w0+BOUNDARY(ng)%zeta_south(i)*(1.0_r8+z_w0*hinv)
 !>
-#    if defined SEDIMENT_NOT_YET && defined SED_MORPH_NOT_YET
+#   if defined SEDIMENT_NOT_YET && defined SED_MORPH_NOT_YET
               tl_Zw(k)=tl_z_w0+                                         &
-     &                 tl_zeta_south(i)*(1.0_r8+z_w0*hinv)+             &
-     &                 zeta_south(i)*z_w0*tl_hinv+                      &
-     &                 zeta_south(i)*tl_z_w0*hinv
-#    else
-              tl_Zw(k)=tl_zeta_south(i)*(1.0_r8+z_w0*hinv)
-#    endif
-#    ifdef ICESHELF
+     &                 BOUNDARY(ng)%tl_zeta_south(i)*                   &
+     &                 (1.0_r8+z_w0*hinv)+                              &
+     &                 BOUNDARY(ng)%zeta_south(i)*z_w0*tl_hinv+         &
+     &                 BOUNDARY(ng)%zeta_south(i)*tl_z_w0*hinv
+#   else
+              tl_Zw(k)=BOUNDARY(ng)%tl_zeta_south(i)*(1.0_r8+z_w0*hinv)
+#   endif
+#   ifdef ICESHELF
 !>            Zw(k)=Zw(k)-ABS(zice(i,j))
-#    endif
+#   endif
 !>            Hz_bry(i,k,isouth)=Zw(k)-Zw(k-1)
 !>
               tl_Hz_bry(i,k,isouth)=tl_Zw(k)-tl_Zw(k-1)
             END DO
           END DO
         END IF
-#   endif
 
-#   ifdef NORTH_FSOBC
-        IF (NORTHERN_EDGE) THEN
+        IF (tl_LBC(inorth,isFsur,ng)%acquire.and.                       &
+     &      DOMAIN(ng)%Northern_Edge(tile)) THEN
           j=BOUNDS(ng)%edge(inorth,r2dvar)
-          DO i=IstrR,IendR
+          DO i=IstrT,IendT
             hwater=h(i,j)
-#    ifdef ICESHELF
+#   ifdef ICESHELF
             hwater=hwater-ABS(zice(i,j))
-#    endif
+#   endif
             tl_hwater=tl_h(i,j)
             hinv=1.0_r8/hwater
-#    if defined SEDIMENT_NOT_YET && defined SED_MORPH_NOT_YET
+#   if defined SEDIMENT_NOT_YET && defined SED_MORPH_NOT_YET
             tl_hinv=-hinv*hinv*tl_hwater
-#    endif
+#   endif
 !>          Zw(0)=-h(i,j)
 !>
             tl_Zw(0)=-tl_h(i,j)
@@ -772,29 +704,29 @@
               cff_w=hc(ng)*(SCALARS(ng)%sc_w(k)-SCALARS(ng)%Cs_w(k))
               cff1_w=SCALARS(ng)%Cs_w(k)
               z_w0=cff_w+cff1_w*hwater
-#    if defined SEDIMENT_NOT_YET && defined SED_MORPH_NOT_YET
+#   if defined SEDIMENT_NOT_YET && defined SED_MORPH_NOT_YET
               tl_z_w0=cff1_w*tl_hwater
-#    endif
-!>            Zw(k)=z_w0+zeta_north(i)*(1.0_r8+z_w0*hinv)
+#   endif
+!>            Zw(k)=z_w0+BOUNDARY(ng)%zeta_north(i)*(1.0_r8+z_w0*hinv)
 !>
-#    if defined SEDIMENT_NOT_YET && defined SED_MORPH_NOT_YET
+#   if defined SEDIMENT_NOT_YET && defined SED_MORPH_NOT_YET
               tl_Zw(k)=tl_z_w0+                                         &
-     &                 tl_zeta_north(i)*(1.0_r8+z_w0*hinv)+             &
-     &                 zeta_north(i)*z_w0*tl_hinv+                      &
-     &                 zeta_north(i)*tl_z_w0*hinv
-#    else
-              tl_Zw(k)=tl_zeta_north(i)*(1.0_r8+z_w0*hinv)
-#    endif
-#    ifdef ICESHELF
+     &                 BOUNDARY(ng)%tl_zeta_north(i)*                   &
+     &                 (1.0_r8+z_w0*hinv)+                              &
+     &                 BOUNDARY(ng)%zeta_north(i)*z_w0*tl_hinv+         &
+     &                 BOUNDARY(ng)%zeta_north(i)*tl_z_w0*hinv
+#   else
+              tl_Zw(k)=BOUNDARY(ng)%tl_zeta_north(i)*(1.0_r8+z_w0*hinv)
+#   endif
+#   ifdef ICESHELF
 !>            Zw(k)=Zw(k)-ABS(zice(i,j))
-#    endif
+#   endif
 !>            Hz_bry(i,k,inorth)=Zw(k)-Zw(k-1)
 !>
               tl_Hz_bry(i,k,inorth)=tl_Zw(k)-tl_Zw(k-1)
             END DO
           END DO
         END IF
-#   endif
 !
 !-----------------------------------------------------------------------
 !  New formulation: Compute vertical depths (meters, negative) at
@@ -809,19 +741,19 @@
 !
       ELSE IF (Vtransform(ng).eq.2) THEN
 
-#   ifdef WEST_FSOBC
-        IF (WESTERN_EDGE) THEN
+        IF (tl_LBC(iwest,isFsur,ng)%acquire.and.                        &
+     &      DOMAIN(ng)%Western_Edge(tile)) THEN
           i=BOUNDS(ng)%edge(iwest,r2dvar)
-          DO j=JstrR,JendR
+          DO j=JstrT,JendT
             hwater=h(i,j)
-#    ifdef ICESHELF
+#   ifdef ICESHELF
             hwater=hwater-ABS(zice(i,j))
-#    endif
+#   endif
             tl_hwater=tl_h(i,j)
             hinv=1.0_r8/(hc(ng)+hwater)
-#    if defined SEDIMENT_NOT_YET && defined SED_MORPH_NOT_YET
+#   if defined SEDIMENT_NOT_YET && defined SED_MORPH_NOT_YET
             tl_hinv=-hinv*hinv*tl_hwater
-#    endif
+#   endif
 !>          Zw(0)=-h(i,j)
 !>
             tl_Zw(0)=-tl_h(i,j)
@@ -829,44 +761,46 @@
               cff_w=hc(ng)*SCALARS(ng)%sc_w(k)
               cff1_w=SCALARS(ng)%Cs_w(k)
               cff2_w=(cff_w+cff1_w*hwater)*hinv
-#    if defined SEDIMENT_NOT_YET && defined SED_MORPH_NOT_YET
+#   if defined SEDIMENT_NOT_YET && defined SED_MORPH_NOT_YET
               tl_cff2_w=cff1_w*tl_hwater*hinv+                          &
      &                  (cff_w+cff1_w*hwater)*tl_hinv
-#    endif
-!>            Zw(k)=zeta_west(j)+(zeta_west(j)+hwater)*cff2_w
+#   endif
+!>            Zw(k)=BOUNDARY(ng)%zeta_west(j)+
+!>   &              (BOUNDARY(ng)%zeta_west(j)+hwater)*cff2_w
 !>
-#    if defined SEDIMENT_NOT_YET && defined SED_MORPH_NOT_YET
-              tl_Zw(k)=tl_zeta_west(j)+                                 &
-     &                 (tl_zeta_west(j)+tl_hwater)*cff2_w+              &
-     &                 (zeta_west(j)+hwater)*tl_cff2_w
-#    else
-              tl_Zw(k)=tl_zeta_west(j)+                                 &
-     &                 tl_zeta_west(j)*cff2_w
-#    endif
-#    ifdef ICESHELF
+#   if defined SEDIMENT_NOT_YET && defined SED_MORPH_NOT_YET
+              tl_Zw(k)=BOUNDARY(ng)%tl_zeta_west(j)+                    &
+     &                 (BOUNDARY(ng)%tl_zeta_west(j)+                   &
+     &                  tl_hwater)*cff2_w+                              &
+     &                 (BOUNDARY(ng)%zeta_west(j)+                      &
+     &                  hwater)*tl_cff2_w
+#   else
+              tl_Zw(k)=BOUNDARY(ng)%tl_zeta_west(j)+                    &
+     &                 BOUNDARY(ng)%tl_zeta_west(j)*cff2_w
+#   endif
+#   ifdef ICESHELF
 !>            Zw(k)=Zw(k)-ABS(zice(i,j))
-#    endif
+#   endif
 !>            Hz_bry(j,k,iwest)=Zw(k)-Zw(k-1)
 !>
               tl_Hz_bry(j,k,iwest)=tl_Zw(k)-tl_Zw(k-1)
             END DO
           END DO
         END IF
-#   endif
 
-#   ifdef EAST_FSOBC
-        IF (EASTERN_EDGE) THEN
+        IF (tl_LBC(ieast,isFsur,ng)%acquire.and.                        &
+     &      DOMAIN(ng)%Eastern_Edge(tile)) THEN
           i=BOUNDS(ng)%edge(ieast,r2dvar)
-          DO j=JstrR,JendR
+          DO j=JstrT,JendT
             hwater=h(i,j)
-#    ifdef ICESHELF
+#   ifdef ICESHELF
             hwater=hwater-ABS(zice(i,j))
-#    endif
+#   endif
             tl_hwater=tl_h(i,j)
             hinv=1.0_r8/(hc(ng)+hwater)
-#    if defined SEDIMENT_NOT_YET && defined SED_MORPH_NOT_YET
+#   if defined SEDIMENT_NOT_YET && defined SED_MORPH_NOT_YET
             tl_hinv=-hinv*hinv*tl_hwater
-#    endif
+#   endif
 !>          Zw(0)=-h(i,j)
 !>
             tl_Zw(0)=-tl_h(i,j)
@@ -874,44 +808,46 @@
               cff_w=hc(ng)*SCALARS(ng)%sc_w(k)
               cff1_w=SCALARS(ng)%Cs_w(k)
               cff2_w=(cff_w+cff1_w*hwater)*hinv
-#    if defined SEDIMENT_NOT_YET && defined SED_MORPH_NOT_YET
+#   if defined SEDIMENT_NOT_YET && defined SED_MORPH_NOT_YET
               tl_cff2_w=cff1_w*tl_hwater*hinv+                          &
      &                  (cff_w+cff1_w*hwater)*tl_hinv
-#    endif
-!>            Zw(k)=zeta_east(j)+(zeta_east(j)+hwater)*cff2_w
+#   endif
+!>            Zw(k)=BOUNDARY(ng)%zeta_east(j)+                          &
+!>   &              (BOUNDARY(ng)%zeta_east(j)+hwater)*cff2_w
 !>
-#    if defined SEDIMENT_NOT_YET && defined SED_MORPH_NOT_YET
-              tl_Zw(k)=tl_zeta_east(j)+                                 &
-     &                 (tl_zeta_east(j)+tl_hwater)*cff2_w+              &
-     &                 (zeta_east(j)+hwater)*tl_cff2_w
-#    else
-              tl_Zw(k)=tl_zeta_east(j)+                                 &
-     &                 tl_zeta_east(j)*cff2_w
-#    endif
-#    ifdef ICESHELF
+#   if defined SEDIMENT_NOT_YET && defined SED_MORPH_NOT_YET
+              tl_Zw(k)=BOUNDARY(ng)%tl_zeta_east(j)+                    &
+     &                 (BOUNDARY(ng)%tl_zeta_east(j)+                   &
+     &                  tl_hwater)*cff2_w+                              &
+     &                 (BOUNDARY(ng)%zeta_east(j)+                      &
+     &                  hwater)*tl_cff2_w
+#   else
+              tl_Zw(k)=BOUNDARY(ng)%tl_zeta_east(j)+                    &
+     &                 BOUNDARY(ng)%tl_zeta_east(j)*cff2_w
+#   endif
+#   ifdef ICESHELF
 !>            Zw(k)=Zw(k)-ABS(zice(i,j))
-#    endif
+#   endif
 !>            Hz_bry(j,k,ieast)=Zw(k)-Zw(k-1)
 !>
               tl_Hz_bry(j,k,ieast)=tl_Zw(k)-tl_Zw(k-1)
             END DO
           END DO
         END IF
-#   endif
 
-#   ifdef SOUTH_FSOBC
-        IF (SOUTHERN_EDGE) THEN
+        IF (tl_LBC(isouth,isFsur,ng)%acquire.and.                       &
+     &      DOMAIN(ng)%Southern_Edge(tile)) THEN
           j=BOUNDS(ng)%edge(isouth,r2dvar)
-          DO i=IstrR,IendR
+          DO i=IstrT,IendT
             hwater=h(i,j)
-#    ifdef ICESHELF
+#   ifdef ICESHELF
             hwater=hwater-ABS(zice(i,j))
-#    endif
+#   endif
             tl_hwater=tl_h(i,j)
             hinv=1.0_r8/(hc(ng)+hwater)
-#    if defined SEDIMENT_NOT_YET && defined SED_MORPH_NOT_YET
+#   if defined SEDIMENT_NOT_YET && defined SED_MORPH_NOT_YET
             tl_hinv=-hinv*hinv*tl_hwater
-#    endif
+#   endif
 !>          Zw(0)=-h(i,j)
 !>
             tl_Zw(0)=-tl_h(i,j)
@@ -919,44 +855,46 @@
               cff_w=hc(ng)*SCALARS(ng)%sc_w(k)
               cff1_w=SCALARS(ng)%Cs_w(k)
               cff2_w=(cff_w+cff1_w*hwater)*hinv
-#    if defined SEDIMENT_NOT_YET && defined SED_MORPH_NOT_YET
+#   if defined SEDIMENT_NOT_YET && defined SED_MORPH_NOT_YET
               tl_cff2_w=cff1_w*tl_hwater*hinv+                          &
      &                  (cff_w+cff1_w*hwater)*tl_hinv
-#    endif
-!>            Zw(k)=zeta_south(i)+(zeta_south(i)+hwater)*cff2_w
+#   endif
+!>            Zw(k)=BOUNDARY(ng)%zeta_south(i)+                         &
+!>   &              (BOUNDARY(ng)%zeta_south(i)+hwater)*cff2_w
 !>
-#    if defined SEDIMENT_NOT_YET && defined SED_MORPH_NOT_YET
-              tl_Zw(k)=tl_zeta_south(i)+                                &
-     &                 (tl_zeta_south(i)+tl_hwater)*cff2_w+             &
-     &                 (zeta_south(i)+hwater)*tl_cff2_w
-#    else
-              tl_Zw(k)=tl_zeta_south(i)+                                &
-     &                 tl_zeta_south(i)*cff2_w
-#    endif
-#    ifdef ICESHELF
+#   if defined SEDIMENT_NOT_YET && defined SED_MORPH_NOT_YET
+              tl_Zw(k)=BOUNDARY(ng)%tl_zeta_south(i)+                   &
+     &                 (BOUNDARY(ng)%tl_zeta_south(i)+                  &
+     &                  tl_hwater)*cff2_w+                              &
+     &                 (BOUNDARY(ng)%zeta_south(i)+                     &
+     &                  hwater)*tl_cff2_w
+#   else
+              tl_Zw(k)=BOUNDARY(ng)%tl_zeta_south(i)+                   &
+     &                 BOUNDARY(ng)%tl_zeta_south(i)*cff2_w
+#   endif
+#   ifdef ICESHELF
 !>            Zw(k)=Zw(k)-ABS(zice(i,j))
-#    endif
+#   endif
 !>            Hz_bry(i,k,isouth)=Zw(k)-Zw(k-1)
 !>
               tl_Hz_bry(i,k,isouth)=tl_Zw(k)-tl_Zw(k-1)
             END DO
           END DO
         END IF
-#   endif
 
-#   ifdef NORTH_FSOBC
-        IF (NORTHERN_EDGE) THEN
+        IF (tl_LBC(inorth,isFsur,ng)%acquire.and.                        &
+     &      DOMAIN(ng)%Northern_Edge(tile)) THEN
           j=BOUNDS(ng)%edge(inorth,r2dvar)
-          DO i=IstrR,IendR
+          DO i=IstrT,IendT
             hwater=h(i,j)
-#    ifdef ICESHELF
+#   ifdef ICESHELF
             hwater=hwater-ABS(zice(i,j))
-#    endif
+#   endif
             tl_hwater=tl_h(i,j)
             hinv=1.0_r8/(hc(ng)+hwater)
-#    if defined SEDIMENT_NOT_YET && defined SED_MORPH_NOT_YET
+#   if defined SEDIMENT_NOT_YET && defined SED_MORPH_NOT_YET
             tl_hinv=-hinv*hinv*tl_hwater
-#    endif
+#   endif
 !>          Zw(0)=-h(i,j)
 !>
             tl_Zw(0)=-tl_h(i,j)
@@ -964,30 +902,32 @@
               cff_w=hc(ng)*SCALARS(ng)%sc_w(k)
               cff1_w=SCALARS(ng)%Cs_w(k)
               cff2_w=(cff_w+cff1_w*hwater)*hinv
-#    if defined SEDIMENT_NOT_YET && defined SED_MORPH_NOT_YET
+#   if defined SEDIMENT_NOT_YET && defined SED_MORPH_NOT_YET
               tl_cff2_w=cff1_w*tl_hwater*hinv+                          &
      &                  (cff_w+cff1_w*hwater)*tl_hinv
-#    endif
-!>            Zw(k)=zeta_north(i)+(zeta_north(i)+hwater)*cff2_w
+#   endif
+!>            Zw(k)=BOUNDARY(ng)%zeta_north(i)+                         &
+!>   &              (BOUNDARY(ng)%zeta_north(i)+hwater)*cff2_w
 !>
-#    if defined SEDIMENT_NOT_YET && defined SED_MORPH_NOT_YET
-              tl_Zw(k)=tl_zeta_north(i)+                                &
-     &                 (tl_zeta_north(i)+tl_hwater)*cff2_w+             &
-     &                 (zeta_north(i)+hwater)*tl_cff2_w
-#    else
-              tl_Zw(k)=tl_zeta_north(i)+                                &
-     &                 tl_zeta_north(i)*cff2_w
-#    endif
-#    ifdef ICESHELF
+#   if defined SEDIMENT_NOT_YET && defined SED_MORPH_NOT_YET
+              tl_Zw(k)=BOUNDARY(ng)%tl_zeta_north(i)+                   &
+     &                 (BOUNDARY(ng)%tl_zeta_north(i)+                  &
+     &                  tl_hwater)*cff2_w+                              &
+     &                 (BOUNDARY(ng)%zeta_north(i)+                     &
+     &                  hwater)*tl_cff2_w
+#   else
+              tl_Zw(k)=BOUNDARY(ng)%tl_zeta_north(i)+                   &
+     &                 BOUNDARY(ng)%tl_zeta_north(i)*cff2_w
+#   endif
+#   ifdef ICESHELF
 !>            Zw(k)=Zw(k)-ABS(zice(i,j))
-#    endif
+#   endif
 !>            Hz_bry(i,k,inorth)=Zw(k)-Zw(k-1)
 !>
               tl_Hz_bry(i,k,inorth)=tl_Zw(k)-tl_Zw(k-1)
             END DO
           END DO
         END IF
-#   endif
       END IF
 
 #   ifdef DISTRIBUTE
@@ -999,12 +939,14 @@
       DO ibry=1,4
 !>      CALL mp_exchange3d_bry (ng, tile, iNLM, 1, ibry,                &
 !>   &                          LBij, UBij, 1, N(ng),                   &
-!>   &                          NghostPoints, EWperiodic, NSperiodic,   &
+!>   &                          NghostPoints,                           &
+!>   &                          EWperiodic(ng), NSperiodic(ng),         &
 !>   &                          Hz_bry(:,:,ibry))
 !>
         CALL mp_exchange3d_bry (ng, tile, iTLM, 1, ibry,                &
      &                          LBij, UBij, 1, N(ng),                   &
-     &                          NghostPoints, EWperiodic, NSperiodic,   &
+     &                          NghostPoints,                           &
+     &                          EWperiodic(ng), NSperiodic(ng),         &
      &                          tl_Hz_bry(:,:,ibry))
       END DO
 #   endif
@@ -1029,11 +971,18 @@
 !
 # include "tile.h"
 !
+# ifdef PROFILE
+      CALL wclock_on (ng, iRPM, 12)
+# endif
       CALL rp_bath_tile (ng, tile,                                      &
      &                   LBi, UBi, LBj, UBj,                            &
      &                   IminS, ImaxS, JminS, JmaxS,                    &
      &                   GRID(ng) % h,                                  &
      &                   GRID(ng) % tl_h)
+# ifdef PROFILE
+      CALL wclock_off (ng, iRPM, 12)
+# endif
+
       RETURN
       END SUBROUTINE rp_bath
 !
@@ -1045,10 +994,9 @@
 !***********************************************************************
 !
       USE mod_param
+      USE mod_scalars
 !
-# if defined EW_PERIODIC || defined NS_PERIODIC
       USE exchange_2d_mod
-# endif
 # ifdef DISTRIBUTE
       USE mp_exchange_mod, ONLY : mp_exchange2d
 # endif
@@ -1069,18 +1017,6 @@
 !
 !  Local variable declarations.
 !
-# ifdef DISTRIBUTE
-#  ifdef EW_PERIODIC
-      logical :: EWperiodic=.TRUE.
-#  else
-      logical :: EWperiodic=.FALSE.
-#  endif
-#  ifdef NS_PERIODIC
-      logical :: NSperiodic=.TRUE.
-#  else
-      logical :: NSperiodic=.FALSE.
-#  endif
-# endif
       integer :: i, j
 
 # include "set_bounds.h"
@@ -1090,22 +1026,26 @@
 !  the terms are cancelled in the barotropic pressure gradient.
 !-----------------------------------------------------------------------
 !
-      DO j=JstrR,JendR
-        DO i=IstrR,IendR
+      DO j=JstrT,JendT
+        DO i=IstrT,IendT
           tl_h(i,j)=h(i,j)
         END DO
       END DO
-# if defined EW_PERIODIC || defined NS_PERIODIC
-      CALL exchange_r2d_tile (ng, tile,                                 &
-     &                        LBi, UBi, LBj, UBj,                       &
-     &                        tl_h)
-# endif
+
+      IF (EWperiodic(ng).or.NSperiodic(ng)) THEN
+        CALL exchange_r2d_tile (ng, tile,                               &
+     &                          LBi, UBi, LBj, UBj,                     &
+     &                          tl_h)
+      END IF
+
 # ifdef DISTRIBUTE
       CALL mp_exchange2d (ng, tile, iRPM, 1,                            &
      &                    LBi, UBi, LBj, UBj,                           &
-     &                    NghostPoints, EWperiodic, NSperiodic,         &
+     &                    NghostPoints,                                 &
+     &                    EWperiodic(ng), NSperiodic(ng),               &
      &                    tl_h)
 # endif
+
       RETURN
       END SUBROUTINE rp_bath_tile
 #endif

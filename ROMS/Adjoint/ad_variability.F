@@ -2,28 +2,10 @@
       MODULE ad_variability_mod
 
 #if defined ADJOINT && defined FOUR_DVAR
-# ifdef EW_PERIODIC
-#  define IR_RANGE Istr-1,Iend+1
-#  define IU_RANGE Istr,Iend
-#  define IV_RANGE Istr,Iend
-# else
-#  define IR_RANGE IstrR,IendR
-#  define IU_RANGE Istr,IendR
-#  define IV_RANGE IstrR,IendR
-# endif
-# ifdef NS_PERIODIC
-#  define JR_RANGE Jstr-1,Jend+1
-#  define JU_RANGE Jstr,Jend
-#  define JV_RANGE Jstr,Jend
-# else
-#  define JR_RANGE JstrR,JendR
-#  define JU_RANGE JstrR,JendR
-#  define JV_RANGE Jstr,JendR
-# endif
 !
-!svn $Id: ad_variability.F 429 2009-12-20 17:30:26Z arango $
+!svn $Id$
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2010 The ROMS/TOMS Group       Andrew M. Moore   !
+!  Copyright (c) 2002-2014 The ROMS/TOMS Group       Andrew M. Moore   !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -328,18 +310,6 @@
 !
 !  Local variable declarations.
 !
-# ifdef DISTRIBUTE
-#  ifdef EW_PERIODIC
-      logical :: EWperiodic=.TRUE.
-#  else
-      logical :: EWperiodic=.FALSE.
-#  endif
-#  ifdef NS_PERIODIC
-      logical :: NSperiodic=.TRUE.
-#  else
-      logical :: NSperiodic=.FALSE.
-#  endif
-# endif
       integer :: i, ib, ir, j, rec
 # ifdef SOLVE3D
       integer :: it, k
@@ -367,11 +337,12 @@
 # ifdef DISTRIBUTE
       CALL ad_mp_exchange2d (ng, tile, iADM, 1,                         &
      &                       LBi, UBi, LBj, UBj,                        &
-     &                       NghostPoints, EWperiodic, NSperiodic,      &
+     &                       NghostPoints,                              &
+     &                       EWperiodic(ng), NSperiodic(ng),            &
      &                       ad_zeta(:,:,Linp))
 # endif
-      DO j=JR_RANGE
-        DO i=IR_RANGE
+      DO j=JstrT,JendT
+        DO i=IstrT,IendT
           ad_zeta(i,j,Linp)=ad_zeta(i,j,Linp)*zeta_std(i,j,rec)
         END DO
       END DO
@@ -382,17 +353,18 @@
 #  ifdef DISTRIBUTE
       CALL ad_mp_exchange2d (ng, tile, iADM, 2,                         &
      &                       LBi, UBi, LBj, UBj,                        &
-     &                       NghostPoints, EWperiodic, NSperiodic,      &
+     &                       NghostPoints,                              &
+     &                       EWperiodic(ng), NSperiodic(ng),            &
      &                       ad_ubar(:,:,Linp),                         &
      &                       ad_vbar(:,:,Linp))
 #  endif
-      DO j=JU_RANGE
-        DO i=IU_RANGE
+      DO j=JstrT,JendT
+        DO i=IstrP,IendT
           ad_ubar(i,j,Linp)=ad_ubar(i,j,Linp)*ubar_std(i,j,rec)
         END DO
       END DO
-      DO j=JV_RANGE
-        DO i=IV_RANGE
+      DO j=JstrP,JendT
+        DO i=IstrT,IendT
           ad_vbar(i,j,Linp)=ad_vbar(i,j,Linp)*vbar_std(i,j,rec)
         END DO
       END DO
@@ -404,18 +376,19 @@
 #  ifdef DISTRIBUTE
       CALL ad_mp_exchange3d (ng, tile, iADM, 2,                         &
      &                       LBi, UBi, LBj, UBj, 1, N(ng),              &
-     &                       NghostPoints, EWperiodic, NSperiodic,      &
+     &                       NghostPoints,                              &
+     &                       EWperiodic(ng), NSperiodic(ng),            &
      &                       ad_u(:,:,:,Linp),                          &
      &                       ad_v(:,:,:,Linp))
 #  endif
       DO k=1,N(ng)
-        DO j=JU_RANGE
-          DO i=IU_RANGE
+        DO j=JstrT,JendT
+          DO i=IstrP,IendT
             ad_u(i,j,k,Linp)=ad_u(i,j,k,Linp)*u_std(i,j,k,rec)
           END DO
         END DO
-        DO j=JV_RANGE
-          DO i=IV_RANGE
+        DO j=JstrP,JendT
+          DO i=IstrT,IendT
             ad_v(i,j,k,Linp)=ad_v(i,j,k,Linp)*v_std(i,j,k,rec)
           END DO
         END DO
@@ -426,13 +399,14 @@
 #  ifdef DISTRIBUTE
       CALL ad_mp_exchange4d (ng, tile, iADM, 1,                         &
      &                       LBi, UBi, LBj, UBj, 1, N(ng), 1, NT(ng),   &
-     &                       NghostPoints, EWperiodic, NSperiodic,      &
+     &                       NghostPoints,                              &
+     &                       EWperiodic(ng), NSperiodic(ng),            &
      &                       ad_t(:,:,:,Linp,:))
 #  endif
       DO it=1,NT(ng)
         DO k=1,N(ng)
-          DO j=JR_RANGE
-            DO i=IR_RANGE
+          DO j=JstrT,JendT
+            DO i=IstrT,IendT
               ad_t(i,j,k,Linp,it)=ad_t(i,j,k,Linp,it)*                  &
      &                            t_std(i,j,k,rec,it)
             END DO
@@ -458,33 +432,37 @@
               CALL ad_mp_exchange2d_bry (ng, tile, iADM, 1, ib,         &
      &                                   LBij, UBij,                    &
      &                                   NghostPoints,                  &
-     &                                   EWperiodic, NSperiodic,        &
+     &                                   EWperiodic(ng), NSperiodic(ng),&
      &                                   ad_zeta_obc(:,ib,ir,Linp))
             END IF
           END DO
 #  endif
-          IF ((Lobc(iwest,isFsur,ng)).and.WESTERN_EDGE) THEN
+          IF ((Lobc(iwest,isFsur,ng)).and.                              &
+     &        DOMAIN(ng)%Western_Edge(tile)) THEN
             ib=iwest
             DO j=Jstr,Jend
               ad_zeta_obc(j,ib,ir,Linp)=ad_zeta_obc(j,ib,ir,Linp)*      &
      &                                  zeta_obc_std(j,ib)
             END DO
           END IF
-          IF ((Lobc(ieast,isFsur,ng)).and.EASTERN_EDGE) THEN
+          IF ((Lobc(ieast,isFsur,ng)).and.                              &
+     &        DOMAIN(ng)%Eastern_Edge(tile)) THEN
             ib=ieast
             DO j=Jstr,Jend
               ad_zeta_obc(j,ib,ir,Linp)=ad_zeta_obc(j,ib,ir,Linp)*      &
      &                                  zeta_obc_std(j,ib)
             END DO
           END IF
-          IF ((Lobc(isouth,isFsur,ng)).and.SOUTHERN_EDGE) THEN
+          IF ((Lobc(isouth,isFsur,ng)).and.                             &
+     &        DOMAIN(ng)%Southern_Edge(tile)) THEN
             ib=isouth
             DO i=Istr,Iend
               ad_zeta_obc(i,ib,ir,Linp)=ad_zeta_obc(i,ib,ir,Linp)*      &
      &                                  zeta_obc_std(i,ib)
             END DO
           END IF
-          IF ((Lobc(inorth,isFsur,ng)).and.NORTHERN_EDGE) THEN
+          IF ((Lobc(inorth,isFsur,ng)).and.                             &
+     &        DOMAIN(ng)%Northern_Edge(tile)) THEN
             ib=inorth
             DO i=Istr,Iend
               ad_zeta_obc(i,ib,ir,Linp)=ad_zeta_obc(i,ib,ir,Linp)*      &
@@ -504,33 +482,37 @@
               CALL ad_mp_exchange2d_bry (ng, tile, iADM, 1, ib,         &
      &                                   LBij, UBij,                    &
      &                                   NghostPoints,                  &
-     &                                   EWperiodic, NSperiodic,        &
+     &                                   EWperiodic(ng), NSperiodic(ng),&
      &                                   ad_ubar_obc(:,ib,ir,Linp))
             END IF
           END DO
 #  endif
-          IF ((Lobc(iwest,isUbar,ng)).and.WESTERN_EDGE) THEN
+          IF ((Lobc(iwest,isUbar,ng)).and.                              &
+     &        DOMAIN(ng)%Western_Edge(tile)) THEN
             ib=iwest
             DO j=Jstr,Jend
               ad_ubar_obc(j,ib,ir,Linp)=ad_ubar_obc(j,ib,ir,Linp)*      &
      &                                  ubar_obc_std(j,ib)
             END DO
           END IF
-          IF ((Lobc(ieast,isUbar,ng)).and.EASTERN_EDGE) THEN
+          IF ((Lobc(ieast,isUbar,ng)).and.                              &
+     &        DOMAIN(ng)%Eastern_Edge(tile)) THEN
             ib=ieast
             DO j=Jstr,Jend
               ad_ubar_obc(j,ib,ir,Linp)=ad_ubar_obc(j,ib,ir,Linp)*      &
      &                                  ubar_obc_std(j,ib)
             END DO
           END IF
-          IF ((Lobc(isouth,isUbar,ng)).and.SOUTHERN_EDGE) THEN
+          IF ((Lobc(isouth,isUbar,ng)).and.                             &
+     &        DOMAIN(ng)%Southern_Edge(tile)) THEN
             ib=isouth
             DO i=IstrU,Iend
               ad_ubar_obc(i,ib,ir,Linp)=ad_ubar_obc(i,ib,ir,Linp)*      &
      &                                  ubar_obc_std(i,ib)
             END DO
           END IF
-          IF ((Lobc(inorth,isUbar,ng)).and.NORTHERN_EDGE) THEN
+          IF ((Lobc(inorth,isUbar,ng)).and.                             &
+     &        DOMAIN(ng)%Northern_Edge(tile)) THEN
             ib=inorth
             DO i=IstrU,Iend
               ad_ubar_obc(i,ib,ir,Linp)=ad_ubar_obc(i,ib,ir,Linp)*      &
@@ -550,33 +532,37 @@
               CALL ad_mp_exchange2d_bry (ng, tile, iADM, 1, ib,         &
      &                                   LBij, UBij,                    &
      &                                   NghostPoints,                  &
-     &                                   EWperiodic, NSperiodic,        &
+     &                                   EWperiodic(ng), NSperiodic(ng),&
      &                                   ad_vbar_obc(:,ib,ir,Linp))
             END IF
           END DO
 #  endif
-          IF ((Lobc(iwest,isVbar,ng)).and.WESTERN_EDGE) THEN
+          IF ((Lobc(iwest,isVbar,ng)).and.                              &
+     &        DOMAIN(ng)%Western_Edge(tile)) THEN
             ib=iwest
             DO j=JstrV,Jend
               ad_vbar_obc(j,ib,ir,Linp)=ad_vbar_obc(j,ib,ir,Linp)*      &
      &                                  vbar_obc_std(j,ib)
             END DO
           END IF
-          IF ((Lobc(ieast,isVbar,ng)).and.EASTERN_EDGE) THEN
+          IF ((Lobc(ieast,isVbar,ng)).and.                              &
+     &        DOMAIN(ng)%Eastern_Edge(tile)) THEN
             ib=ieast
             DO j=JstrV,Jend
               ad_vbar_obc(j,ib,ir,Linp)=ad_vbar_obc(j,ib,ir,Linp)*      &
      &                                  vbar_obc_std(j,ib)
             END DO
           END IF
-          IF ((Lobc(isouth,isVbar,ng)).and.SOUTHERN_EDGE) THEN
+          IF ((Lobc(isouth,isVbar,ng)).and.                             &
+     &        DOMAIN(ng)%Southern_Edge(tile)) THEN
             ib=isouth
             DO i=Istr,Iend
               ad_vbar_obc(i,ib,ir,Linp)=ad_vbar_obc(i,ib,ir,Linp)*      &
      &                                  vbar_obc_std(i,ib)
             END DO
           END IF
-          IF ((Lobc(inorth,isVbar,ng)).and.NORTHERN_EDGE) THEN
+          IF ((Lobc(inorth,isVbar,ng)).and.                             &
+     &        DOMAIN(ng)%Northern_Edge(tile)) THEN
             ib=inorth
             DO i=Istr,Iend
               ad_vbar_obc(i,ib,ir,Linp)=ad_vbar_obc(i,ib,ir,Linp)*      &
@@ -598,12 +584,13 @@
               CALL ad_mp_exchange3d_bry (ng, tile, iADM, 1, ib,         &
      &                                   LBij, UBij, 1, N(ng),          &
      &                                   NghostPoints,                  &
-     &                                   EWperiodic, NSperiodic,        &
+     &                                   EWperiodic(ng), NSperiodic(ng),&
      &                                   ad_u_obc(:,:,ib,ir,Linp))
             END IF
           END DO
 #   endif
-          IF ((Lobc(iwest,isUvel,ng)).and.WESTERN_EDGE) THEN
+          IF ((Lobc(iwest,isUvel,ng)).and.                              &
+     &        DOMAIN(ng)%Western_Edge(tile)) THEN
             ib=iwest
             DO k=1,N(ng)
               DO j=Jstr,Jend
@@ -612,7 +599,8 @@
               END DO
             END DO
           END IF
-          IF ((Lobc(ieast,isUvel,ng)).and.EASTERN_EDGE) THEN
+          IF ((Lobc(ieast,isUvel,ng)).and.                              &
+     &        DOMAIN(ng)%Eastern_Edge(tile)) THEN
             ib=ieast
             DO k=1,N(ng)
               DO j=Jstr,Jend
@@ -621,7 +609,8 @@
               END DO
             END DO
           END IF
-          IF ((Lobc(isouth,isUvel,ng)).and.SOUTHERN_EDGE) THEN
+          IF ((Lobc(isouth,isUvel,ng)).and.                             &
+     &        DOMAIN(ng)%Southern_Edge(tile)) THEN
             ib=isouth
             DO k=1,N(ng)
               DO i=IstrU,Iend
@@ -630,7 +619,8 @@
               END DO
             END DO
           END IF
-          IF ((Lobc(inorth,isUvel,ng)).and.NORTHERN_EDGE) THEN
+          IF ((Lobc(inorth,isUvel,ng)).and.                             &
+     &        DOMAIN(ng)%Northern_Edge(tile)) THEN
             ib=inorth
             DO k=1,N(ng)
               DO i=IstrU,Iend
@@ -652,12 +642,13 @@
               CALL ad_mp_exchange3d_bry (ng, tile, iADM, 1, ib,         &
      &                                   LBij, UBij, 1, N(ng),          &
      &                                   NghostPoints,                  &
-     &                                   EWperiodic, NSperiodic,        &
+     &                                   EWperiodic(ng), NSperiodic(ng),&
      &                                   ad_v_obc(:,:,ib,ir,Linp))
             END IF
           END DO
 #   endif
-          IF ((Lobc(iwest,isVvel,ng)).and.WESTERN_EDGE) THEN
+          IF ((Lobc(iwest,isVvel,ng)).and.                              &
+     &        DOMAIN(ng)%Western_Edge(tile)) THEN
             ib=iwest
             DO k=1,N(ng)
               DO j=JstrV,Jend
@@ -666,7 +657,8 @@
               END DO
             END DO
           END IF
-          IF ((Lobc(ieast,isVvel,ng)).and.EASTERN_EDGE) THEN
+          IF ((Lobc(ieast,isVvel,ng)).and.                              &
+     &        DOMAIN(ng)%Eastern_Edge(tile)) THEN
             ib=ieast
             DO k=1,N(ng)
               DO j=JstrV,Jend
@@ -675,7 +667,8 @@
               END DO
             END DO
           END IF
-          IF ((Lobc(isouth,isVvel,ng)).and.SOUTHERN_EDGE) THEN
+          IF ((Lobc(isouth,isVvel,ng)).and.                             &
+     &        DOMAIN(ng)%Southern_Edge(tile)) THEN
             ib=isouth
             DO k=1,N(ng)
               DO i=Istr,Iend
@@ -684,7 +677,8 @@
               END DO
             END DO
           END IF
-          IF ((Lobc(inorth,isVvel,ng)).and.NORTHERN_EDGE) THEN
+          IF ((Lobc(inorth,isVvel,ng)).and.                             &
+     &        DOMAIN(ng)%Northern_Edge(tile)) THEN
             ib=inorth
             DO k=1,N(ng)
               DO i=Istr,Iend
@@ -707,12 +701,14 @@
                 CALL ad_mp_exchange3d_bry (ng, tile, iADM, 1, ib,       &
      &                                     LBij, UBij, 1, N(ng),        &
      &                                     NghostPoints,                &
-     &                                     EWperiodic, NSperiodic,      &
+     &                                     EWperiodic(ng),              &
+     &                                     NSperiodic(ng),              &
      &                                     ad_t_obc(:,:,ib,ir,Linp,it))
               END IF
             END DO
 #   endif
-            IF ((Lobc(iwest,isTvar(it),ng)).and.WESTERN_EDGE) THEN
+            IF ((Lobc(iwest,isTvar(it),ng)).and.                        &
+     &          DOMAIN(ng)%Western_Edge(tile)) THEN
               ib=iwest
               DO k=1,N(ng)
                 DO j=Jstr,Jend
@@ -722,7 +718,8 @@
                 END DO
               END DO
             END IF
-            IF ((Lobc(ieast,isTvar(it),ng)).and.EASTERN_EDGE) THEN
+            IF ((Lobc(ieast,isTvar(it),ng)).and.                        &
+     &          DOMAIN(ng)%Eastern_Edge(tile)) THEN
               ib=ieast
               DO k=1,N(ng)
                 DO j=Jstr,Jend
@@ -732,7 +729,8 @@
                 END DO
               END DO
             END IF
-            IF ((Lobc(isouth,isTvar(it),ng)).and.SOUTHERN_EDGE) THEN
+            IF ((Lobc(isouth,isTvar(it),ng)).and.                       &
+     &          DOMAIN(ng)%Southern_Edge(tile)) THEN
               ib=isouth
               DO k=1,N(ng)
                 DO i=Istr,Iend
@@ -742,7 +740,8 @@
                 END DO
               END DO
             END IF
-            IF ((Lobc(inorth,isTvar(it),ng)).and.NORTHERN_EDGE) THEN
+            IF ((Lobc(inorth,isTvar(it),ng)).and.                       &
+     &          DOMAIN(ng)%Northern_Edge(tile)) THEN
               ib=inorth
               DO k=1,N(ng)
                 DO i=Istr,Iend
@@ -773,18 +772,19 @@
 #   ifdef DISTRIBUTE
         CALL ad_mp_exchange3d (ng, tile, iADM, 2,                       &
      &                       LBi, UBi, LBj, UBj, 1, Nfrec(ng),          &
-     &                       NghostPoints, EWperiodic, NSperiodic,      &
+     &                       NghostPoints,                              &
+     &                       EWperiodic(ng), NSperiodic(ng),            &
      &                       ad_ustr(:,:,:,Linp),                       &
      &                       ad_vstr(:,:,:,Linp))
 #   endif
         DO ir=1,Nfrec(ng)
-          DO j=JU_RANGE
-            DO i=IU_RANGE
+          DO j=JstrT,JendT
+            DO i=IstrP,IendT
               ad_ustr(i,j,ir,Linp)=ad_ustr(i,j,ir,Linp)*sustr_std(i,j)
             END DO
           END DO
-          DO j=JV_RANGE
-            DO i=IV_RANGE
+          DO j=JstrP,JendT
+            DO i=IstrT,IendT
               ad_vstr(i,j,ir,Linp)=ad_vstr(i,j,ir,Linp)*svstr_std(i,j)
             END DO
           END DO
@@ -801,12 +801,13 @@
 #   ifdef DISTRIBUTE
             CALL ad_mp_exchange3d (ng, tile, iADM, 1,                   &
      &                           LBi, UBi, LBj, UBj, 1,Nfrec(ng),       &
-     &                           NghostPoints, EWperiodic, NSperiodic,  &
+     &                           NghostPoints,                          &
+     &                           EWperiodic(ng), NSperiodic(ng),        &
      &                           ad_tflux(:,:,:,Linp,it))
 #   endif
             DO ir=1,Nfrec(ng)
-              DO j=JR_RANGE
-                DO i=IR_RANGE
+              DO j=JstrT,JendT
+                DO i=IstrT,IendT
                   ad_tflux(i,j,ir,Linp,it)=ad_tflux(i,j,ir,Linp,it)*    &
      &                                   stflx_std(i,j,it)
                 END DO
@@ -817,13 +818,6 @@
       END IF
 #  endif
 # endif
-
-# undef IR_RANGE
-# undef IU_RANGE
-# undef IV_RANGE
-# undef JR_RANGE
-# undef JU_RANGE
-# undef JV_RANGE
 
       RETURN
       END SUBROUTINE ad_variability_tile

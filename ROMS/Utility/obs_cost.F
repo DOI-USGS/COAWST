@@ -2,9 +2,9 @@
 #if defined FOUR_DVAR && defined OBSERVATIONS
       SUBROUTINE obs_cost (ng, model)
 !
-!svn $Id: obs_cost.F 429 2009-12-20 17:30:26Z arango $
+!svn $Id$
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2010 The ROMS/TOMS Group       Andrew M. Moore   !
+!  Copyright (c) 2002-2014 The ROMS/TOMS Group       Andrew M. Moore   !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -169,7 +169,11 @@
 !  the vectors used.
 !-----------------------------------------------------------------------
 !
+# ifdef DISTRIBUTE
+      NSUB=1                             ! distributed-memory
+# else
       NSUB=NtileX(ng)*NtileE(ng)
+# endif
 !$OMP CRITICAL (COST_FUN)
       tile_count=tile_count+1
       IF (tile_count.eq.NSUB) THEN

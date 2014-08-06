@@ -1,7 +1,7 @@
 !  Ice model parameters
 !
 !==============================================================================
-!  Copyright (c) 2002 ROMS/TOMS Group, version 2.0                          ===
+!  Copyright (c) 2002-2014 The ROMS/TOMS Group                                !
 !========================================================= Hernan G. Arango ===
 !                                                                             !
 ! Input parameters can be entered in ANY order, provided that the parameter   !
@@ -90,6 +90,10 @@
 
      pstar == 5.0d+03
 
+! Ice strength coefficient in quadratic form [N/m]
+
+     pstar_e == 1.4d+03
+
 ! Ice strength exponential weighting coefficient on concentration
 ! (nondimensional)
 
@@ -129,6 +133,11 @@
 ! (nondimensional)
 
      max_a == 1.0d0
+
+! Maximum melt pond fraction
+! (nondimensional)
+
+     sfwat_max == 0.1d0
 
 ! Ice-water turning angle [degrees]
 

@@ -2,9 +2,9 @@
       MODULE back_cost_mod
 #ifdef BACKGROUND
 !
-!svn $Id: back_cost.F 429 2009-12-20 17:30:26Z arango $
+!svn $Id$
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2010 The ROMS/TOMS Group       Andrew M. Moore   !
+!  Copyright (c) 2002-2014 The ROMS/TOMS Group       Andrew M. Moore   !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -57,8 +57,8 @@
 !                                                                      !
 !  The background cost function term is computed in v-space. Recall    !
 !  that in the inner loop the increment vector deltaX (x-space) and    !
-!  deltaV (v-space) are written into ITLname NetCDF file at records    !
-!  1 and 2, respectively.                                              !
+!  deltaV (v-space) are written into ITL(ng)%name NetCDF file at       !
+!  records 1 and 2, respectively.                                      !
 !                                                                      !
 !=======================================================================
 !
@@ -301,7 +301,8 @@
 !
       IF (ANY(Lobc(:,isFsur,ng))) THEN
         DO ir=1,Nbrec(ng)
-          IF ((Lobc(iwest,isFsur,ng)).and.WESTERN_EDGE) THEN
+          IF ((Lobc(iwest,isFsur,ng)).and.                              &
+     &        DOMAIN(ng)%Western_Edge(tile)) THEN
             ib=iwest
             DO j=Jstr,Jend
               cff1=tl_zeta_obc(j,ib,ir,Lsum)
@@ -313,7 +314,8 @@
               my_BackCost(isFsur)=my_BackCost(isFsur)+cff2
             END DO
           END IF
-          IF ((Lobc(ieast,isFsur,ng)).and.EASTERN_EDGE) THEN
+          IF ((Lobc(ieast,isFsur,ng)).and.                              &
+     &        DOMAIN(ng)%Eastern_Edge(tile)) THEN
             ib=ieast
             DO j=Jstr,Jend
               cff1=tl_zeta_obc(j,ib,ir,Lsum)
@@ -325,7 +327,8 @@
               my_BackCost(isFsur)=my_BackCost(isFsur)+cff2
             END DO
           END IF
-          IF ((Lobc(isouth,isFsur,ng)).and.SOUTHERN_EDGE) THEN
+          IF ((Lobc(isouth,isFsur,ng)).and.                             &
+     &        DOMAIN(ng)%Southern_Edge(tile)) THEN
             ib=isouth
             DO i=Istr,Iend
               cff1=tl_zeta_obc(i,ib,ir,Lsum)
@@ -337,7 +340,8 @@
               my_BackCost(isFsur)=my_BackCost(isFsur)+cff2
             END DO
           END IF
-          IF ((Lobc(inorth,isFsur,ng)).and.NORTHERN_EDGE) THEN
+          IF ((Lobc(inorth,isFsur,ng)).and.                             &
+     &        DOMAIN(ng)%Northern_Edge(tile)) THEN
             ib=inorth
             DO i=Istr,Iend
               cff1=tl_zeta_obc(i,ib,ir,Lsum)
@@ -376,7 +380,8 @@
 !
       IF (ANY(Lobc(:,isUbar,ng))) THEN
         DO ir=1,Nbrec(ng)
-          IF ((Lobc(iwest,isUbar,ng)).and.WESTERN_EDGE) THEN
+          IF ((Lobc(iwest,isUbar,ng)).and.                              &
+     &        DOMAIN(ng)%Western_Edge(tile)) THEN
             ib=iwest
             DO j=Jstr,Jend
               cff1=tl_ubar_obc(j,ib,ir,Lsum)
@@ -388,7 +393,8 @@
               my_BackCost(isUbar)=my_BackCost(isUbar)+cff2
             END DO
           END IF
-          IF ((Lobc(ieast,isUbar,ng)).and.EASTERN_EDGE) THEN
+          IF ((Lobc(ieast,isUbar,ng)).and.                              &
+     &        DOMAIN(ng)%Eastern_Edge(tile)) THEN
             ib=ieast
             DO j=Jstr,Jend
               cff1=tl_ubar_obc(j,ib,ir,Lsum)
@@ -400,7 +406,8 @@
               my_BackCost(isUbar)=my_BackCost(isUbar)+cff2
             END DO
           END IF
-          IF ((Lobc(isouth,isUbar,ng)).and.SOUTHERN_EDGE) THEN
+          IF ((Lobc(isouth,isUbar,ng)).and.                             &
+     &        DOMAIN(ng)%Southern_Edge(tile)) THEN
             ib=isouth
             DO i=IstrU,Iend
               cff1=tl_ubar_obc(i,ib,ir,Lsum)
@@ -412,7 +419,8 @@
               my_BackCost(isUbar)=my_BackCost(isUbar)+cff2
             END DO
           END IF
-          IF ((Lobc(inorth,isUbar,ng)).and.NORTHERN_EDGE) THEN
+          IF ((Lobc(inorth,isUbar,ng)).and.                             &
+     &        DOMAIN(ng)%Northern_Edge(tile)) THEN
             ib=inorth
             DO i=IstrU,Iend
               cff1=tl_ubar_obc(i,ib,ir,Lsum)
@@ -451,7 +459,8 @@
 !
       IF (ANY(Lobc(:,isVbar,ng))) THEN
         DO ir=1,Nbrec(ng)
-          IF ((Lobc(iwest,isVbar,ng)).and.WESTERN_EDGE) THEN
+          IF ((Lobc(iwest,isVbar,ng)).and.                              &
+     &        DOMAIN(ng)%Western_Edge(tile)) THEN
             ib=iwest
             DO j=JstrV,Jend
               cff1=tl_vbar_obc(j,ib,ir,Lsum)
@@ -463,7 +472,8 @@
               my_BackCost(isVbar)=my_BackCost(isVbar)+cff2
             END DO
           END IF
-          IF ((Lobc(ieast,isVbar,ng)).and.EASTERN_EDGE) THEN
+          IF ((Lobc(ieast,isVbar,ng)).and.                              &
+     &        DOMAIN(ng)%Eastern_Edge(tile)) THEN
             ib=ieast
             DO j=JstrV,Jend
               cff1=tl_vbar_obc(j,ib,ir,Lsum)
@@ -475,7 +485,8 @@
               my_BackCost(isVbar)=my_BackCost(isVbar)+cff2
             END DO
           END IF
-          IF ((Lobc(isouth,isVbar,ng)).and.SOUTHERN_EDGE) THEN
+          IF ((Lobc(isouth,isVbar,ng)).and.                             &
+     &        DOMAIN(ng)%Southern_Edge(tile)) THEN
             ib=isouth
             DO i=Istr,Iend
               cff1=tl_vbar_obc(i,ib,ir,Lsum)
@@ -487,7 +498,8 @@
               my_BackCost(isVbar)=my_BackCost(isVbar)+cff2
             END DO
           END IF
-          IF ((Lobc(inorth,isVbar,ng)).and.NORTHERN_EDGE) THEN
+          IF ((Lobc(inorth,isVbar,ng)).and.                             &
+     &        DOMAIN(ng)%Northern_Edge(tile)) THEN
             ib=inorth
             DO i=Istr,Iend
               cff1=tl_vbar_obc(i,ib,ir,Lsum)
@@ -557,7 +569,8 @@
 !
       IF (ANY(Lobc(:,isUvel,ng))) THEN
         DO ir=1,Nbrec(ng)
-          IF ((Lobc(iwest,isUvel,ng)).and.WESTERN_EDGE) THEN
+          IF ((Lobc(iwest,isUvel,ng)).and.                              &
+     &        DOMAIN(ng)%Western_Edge(tile)) THEN
             ib=iwest
             DO k=1,N(ng)
               DO j=Jstr,Jend
@@ -571,7 +584,8 @@
               END DO
             END DO
           END IF
-          IF ((Lobc(ieast,isUvel,ng)).and.EASTERN_EDGE) THEN
+          IF ((Lobc(ieast,isUvel,ng)).and.                              &
+     &        DOMAIN(ng)%Eastern_Edge(tile)) THEN
             ib=ieast
             DO k=1,N(ng)
               DO j=Jstr,Jend
@@ -585,7 +599,8 @@
               END DO
             END DO
           END IF
-          IF ((Lobc(isouth,isUvel,ng)).and.SOUTHERN_EDGE) THEN
+          IF ((Lobc(isouth,isUvel,ng)).and.                             &
+     &        DOMAIN(ng)%Southern_Edge(tile)) THEN
             ib=isouth
             DO k=1,N(ng)
               DO i=IstrU,Iend
@@ -599,7 +614,8 @@
               END DO
             END DO
           END IF
-          IF ((Lobc(inorth,isUvel,ng)).and.NORTHERN_EDGE) THEN
+          IF ((Lobc(inorth,isUvel,ng)).and.                             &
+     &        DOMAIN(ng)%Northern_Edge(tile)) THEN
             ib=inorth
             DO k=1,N(ng)
               DO i=IstrU,Iend
@@ -639,7 +655,8 @@
 !
       IF (ANY(Lobc(:,isVvel,ng))) THEN
         DO ir=1,Nbrec(ng)
-          IF ((Lobc(iwest,isVvel,ng)).and.WESTERN_EDGE) THEN
+          IF ((Lobc(iwest,isVvel,ng)).and.                              &
+     &        DOMAIN(ng)%Western_Edge(tile)) THEN
             ib=iwest
             DO k=1,N(ng)
               DO j=JstrV,Jend
@@ -653,7 +670,8 @@
               END DO
             END DO
           END IF
-          IF ((Lobc(ieast,isVvel,ng)).and.EASTERN_EDGE) THEN
+          IF ((Lobc(ieast,isVvel,ng)).and.                              &
+     &        DOMAIN(ng)%Eastern_Edge(tile)) THEN
             ib=ieast
             DO k=1,N(ng)
               DO j=JstrV,Jend
@@ -667,7 +685,8 @@
               END DO
             END DO
           END IF
-          IF ((Lobc(isouth,isVvel,ng)).and.SOUTHERN_EDGE) THEN
+          IF ((Lobc(isouth,isVvel,ng)).and.                             &
+     &        DOMAIN(ng)%Southern_Edge(tile)) THEN
             ib=isouth
             DO k=1,N(ng)
               DO i=Istr,Iend
@@ -681,7 +700,8 @@
               END DO
             END DO
           END IF
-          IF ((Lobc(inorth,isVvel,ng)).and.NORTHERN_EDGE) THEN
+          IF ((Lobc(inorth,isVvel,ng)).and.                             &
+     &        DOMAIN(ng)%Northern_Edge(tile)) THEN
             ib=inorth
             DO k=1,N(ng)
               DO i=Istr,Iend
@@ -724,7 +744,8 @@
       DO itrc=1,NT(ng)
         IF (ANY(Lobc(:,isTvar(itrc),ng))) THEN
           DO ir=1,Nbrec(ng)
-            IF ((Lobc(iwest,isTvar(itrc),ng)).and.WESTERN_EDGE) THEN
+            IF ((Lobc(iwest,isTvar(itrc),ng)).and.                      &
+     &          DOMAIN(ng)%Western_Edge(tile)) THEN
               ib=iwest
               DO k=1,N(ng)
                 DO j=Jstr,Jend
@@ -739,7 +760,8 @@
                 END DO
               END DO
             END IF
-            IF ((Lobc(ieast,isTvar(itrc),ng)).and.EASTERN_EDGE) THEN
+            IF ((Lobc(ieast,isTvar(itrc),ng)).and.                      &
+     &          DOMAIN(ng)%Eastern_Edge(tile)) THEN
               ib=ieast
               DO k=1,N(ng)
                 DO j=Jstr,Jend
@@ -754,7 +776,8 @@
                 END DO
               END DO
             END IF
-            IF ((Lobc(isouth,isTvar(itrc),ng)).and.SOUTHERN_EDGE) THEN
+            IF ((Lobc(isouth,isTvar(itrc),ng)).and.                     &
+     &          DOMAIN(ng)%Southern_Edge(tile)) THEN
               ib=isouth
               DO k=1,N(ng)
                 DO i=Istr,Iend
@@ -769,7 +792,8 @@
                 END DO
               END DO
             END IF
-            IF ((Lobc(inorth,isTvar(itrc),ng)).and.NORTHERN_EDGE) THEN
+            IF ((Lobc(inorth,isTvar(itrc),ng)).and.                     &
+     &          DOMAIN(ng)%Northern_Edge(tile)) THEN
               ib=inorth
               DO k=1,N(ng)
                 DO i=Istr,Iend
@@ -817,12 +841,16 @@
 ! Compute global background cost function.
 !-----------------------------------------------------------------------
 !
-      IF (SOUTH_WEST_CORNER.and.                                        &
-     &    NORTH_EAST_CORNER) THEN
+# ifdef DISTRIBUTE
+      NSUB=1                             ! distributed-memory
+# else
+      IF (DOMAIN(ng)%SouthWest_Corner(tile).and.                        &
+     &    DOMAIN(ng)%NorthEast_Corner(tile)) THEN
         NSUB=1                           ! non-tiled application
       ELSE
         NSUB=NtileX(ng)*NtileE(ng)       ! tiled application
       END IF
+# endif
 !$OMP CRITICAL (BACKCOST)
       IF (tile_count.eq.0) THEN
         DO i=0,NstateVar(ng)

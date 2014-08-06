@@ -3,7 +3,7 @@
 #if defined ICE_MOMENTUM && defined ICE_EVP
 !
 !================================================ W. Paul Budgell ======
-!  Copyright (c) 2002 ROMS/TOMS Group                                  !
+!  Copyright (c) 2002-2014 The ROMS/TOMS Group                         !
 !================================================== Hernan G. Arango ===
 !                                                                      !
 !  This routine time steps the EVP stresses                            !
@@ -30,19 +30,13 @@
 # include "tile.h"
 !
 # ifdef PROFILE
-      CALL wclock_on (ng, iNLM, 48)
+      CALL wclock_on (ng, iNLM, 55)
 # endif
 !
       CALL ice_evp_sig_tile (ng, tile,                                  &
      &                      LBi, UBi, LBj, UBj,                         &
      &                      IminS, ImaxS, JminS, JmaxS,                 &
      &                      liold(ng), lieol(ng), lienw(ng),            &
-# ifdef MASKING
-     &                      GRID(ng) % rmask,                           &
-# endif
-# ifdef WET_DRY
-     &                      GRID(ng) % rmask_wet,                       &
-# endif
      &                      GRID(ng) % pm,                              &
      &                      GRID(ng) % pn,                              &
      &                      ICE(ng) % uie,                              &
@@ -56,7 +50,7 @@
      &                      ICE(ng) % sig12                             &
      &                      )
 # ifdef PROFILE
-      CALL wclock_off (ng, iNLM, 48)
+      CALL wclock_off (ng, iNLM, 55)
 # endif
       RETURN
       END SUBROUTINE ice_evp_sig
@@ -66,12 +60,6 @@
      &                        LBi, UBi, LBj, UBj,                       &
      &                        IminS, ImaxS, JminS, JmaxS,               &
      &                        liold, lieol, lienw,                      &
-# ifdef MASKING
-     &                        rmask,                                    &
-# endif
-# ifdef WET_DRY
-     &                        rmask_wet,                                &
-# endif
      &                        pm, pn,                                   &
      &                        uie, vie,                                 &
      &                        hi, pice, zetai, eta,                     &
@@ -81,18 +69,16 @@
 !
 
       USE mod_param
+      USE mod_ncparam
       USE mod_scalars
+      USE mod_boundary
 !
-#if defined EW_PERIODIC || defined NS_PERIODIC
       USE exchange_2d_mod, ONLY : exchange_r2d_tile
-#endif
 #ifdef DISTRIBUTE
       USE mp_exchange_mod, ONLY : mp_exchange2d
 #endif
 !
-      USE sig11bc_mod, ONLY : sig11bc_tile
-      USE sig22bc_mod, ONLY : sig22bc_tile
-      USE sig12bc_mod, ONLY : sig12bc_tile
+      USE i2d_bc_mod, ONLY : i2d_bc_tile
 !
       implicit none
 !
@@ -104,12 +90,6 @@
       integer, intent(in) :: liold, lieol, lienw
 
 # ifdef ASSUMED_SHAPE
-#  ifdef MASKING
-      real(r8), intent(in) :: rmask(LBi:,LBj:)
-#  endif
-#  ifdef WET_DRY
-      real(r8), intent(in) :: rmask_wet(LBi:,LBj:)
-#  endif
       real(r8), intent(in) :: pm(LBi:,LBj:)
       real(r8), intent(in) :: pn(LBi:,LBj:)
       real(r8), intent(in) :: uie(LBi:,LBj:,:)
@@ -122,12 +102,6 @@
       real(r8), intent(inout) :: sig22(LBi:,LBj:,:)
       real(r8), intent(inout) :: sig12(LBi:,LBj:,:)
 # else
-#  ifdef MASKING
-      real(r8), intent(in) :: rmask(LBi:UBi,LBj:UBj)
-#  endif
-#  ifdef WET_DRY
-      real(r8), intent(in) :: rmask_wet(LBi:UBi,LBj:UBj)
-#  endif
       real(r8), intent(in) :: pm(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: pn(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: uie(LBi:UBi,LBj:UBj,2)
@@ -143,18 +117,6 @@
 
 ! Local variable definitions
 !
-# ifdef DISTRIBUTE
-#  ifdef EW_PERIODIC
-      logical :: EWperiodic=.TRUE.
-#  else
-      logical :: EWperiodic=.FALSE.
-#  endif
-#  ifdef NS_PERIODIC
-      logical :: NSperiodic=.TRUE.
-#  else
-      logical :: NSperiodic=.FALSE.
-#  endif
-# endif
       integer :: i, j
 
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: eps11
@@ -170,14 +132,8 @@
       real(r8) :: f1
       real(r8) :: f2
       real(r8) :: f3 
-      real(r8) :: s1
-      real(r8) :: s2
       real(r8) :: alfa
       real(r8) :: beta
-      real(r8) :: pmu
-      real(r8) :: pnu
-      real(r8) :: pmv
-      real(r8) :: pnv
       real(r8) :: epx
       real(r8) :: epy
 
@@ -240,30 +196,48 @@
         END DO 
       END DO
 
-      CALL sig11bc_tile (ng, tile,                                      &
-     &                   LBi, UBi, LBj, UBj,                            &
-     &                   lieol, lienw, sig11)
-      CALL sig22bc_tile (ng, tile,                                      &
-     &                   LBi, UBi, LBj, UBj,                            &
-     &                   lieol, lienw, sig22)
-      CALL sig12bc_tile (ng, tile,                                      &
-     &                   LBi, UBi, LBj, UBj,                            &
-     &                   lieol, lienw, sig12)
-#if defined EW_PERIODIC || defined NS_PERIODIC
-      CALL exchange_r2d_tile (ng, tile,                                 &
-     &                        LBi, UBi, LBj, UBj,                       &
-     &                        sig11(:,:,lienw))
-      CALL exchange_r2d_tile (ng, tile,                                 &
-     &                        LBi, UBi, LBj, UBj,                       &
-     &                        sig22(:,:,lienw))
-      CALL exchange_r2d_tile (ng, tile,                                 &
-     &                        LBi, UBi, LBj, UBj,                       &
-     &                        sig12(:,:,lienw))
-#endif
+      CALL i2d_bc_tile (ng, tile, iNLM,                                 &
+     &                  LBi, UBi, LBj, UBj,                             &
+     &                  IminS, ImaxS, JminS, JmaxS,                     &
+     &                  lieol, lienw,                                   &
+     &                  BOUNDARY(ng)%sig11_west(LBj:UBj),               &
+     &                  BOUNDARY(ng)%sig11_east(LBj:UBj),               &
+     &                  BOUNDARY(ng)%sig11_north(LBi:UBi),              &
+     &                  BOUNDARY(ng)%sig11_south(LBi:UBi),              &
+     &                  uie, vie, sig11, LBC(:,isSig11,ng))
+      CALL i2d_bc_tile (ng, tile, iNLM,                                 &
+     &                  LBi, UBi, LBj, UBj,                             &
+     &                  IminS, ImaxS, JminS, JmaxS,                     &
+     &                  lieol, lienw,                                   &
+     &                  BOUNDARY(ng)%sig22_west(LBj:UBj),               &
+     &                  BOUNDARY(ng)%sig22_east(LBj:UBj),               &
+     &                  BOUNDARY(ng)%sig22_north(LBi:UBi),              &
+     &                  BOUNDARY(ng)%sig22_south(LBi:UBi),              &
+     &                  uie, vie, sig22, LBC(:,isSig22,ng))
+      CALL i2d_bc_tile (ng, tile, iNLM,                                 &
+     &                  LBi, UBi, LBj, UBj,                             &
+     &                  IminS, ImaxS, JminS, JmaxS,                     &
+     &                  lieol, lienw,                                   &
+     &                  BOUNDARY(ng)%sig12_west(LBj:UBj),               &
+     &                  BOUNDARY(ng)%sig12_east(LBj:UBj),               &
+     &                  BOUNDARY(ng)%sig12_north(LBi:UBi),              &
+     &                  BOUNDARY(ng)%sig12_south(LBi:UBi),              &
+     &                  uie, vie, sig12, LBC(:,isSig12,ng))
+      IF (EWperiodic(ng).or.NSperiodic(ng)) THEN
+        CALL exchange_r2d_tile (ng, tile,                               &
+     &                          LBi, UBi, LBj, UBj,                     &
+     &                          sig11(:,:,lienw))
+        CALL exchange_r2d_tile (ng, tile,                               &
+     &                          LBi, UBi, LBj, UBj,                     &
+     &                          sig22(:,:,lienw))
+        CALL exchange_r2d_tile (ng, tile,                               &
+     &                          LBi, UBi, LBj, UBj,                     &
+     &                          sig12(:,:,lienw))
+      END IF
 # ifdef DISTRIBUTE
       CALL mp_exchange2d (ng, tile, iNLM, 3,                            &
      &                    LBi, UBi, LBj, UBj,                           &
-     &                    NghostPoints, EWperiodic, NSperiodic,         &
+     &                    NghostPoints, EWperiodic(ng), NSperiodic(ng), &
      &                    sig11(:,:,lienw), sig22(:,:,lienw),           &
      &                    sig12(:,:,lienw))
 # endif

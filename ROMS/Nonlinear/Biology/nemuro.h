@@ -1,8 +1,8 @@
       SUBROUTINE biology (ng,tile)
 !
-!svn $Id: nemuro.h 429 2009-12-20 17:30:26Z arango $
+!svn $Id$
 !************************************************** Hernan G. Arango ***
-!  Copyright (c) 2002-2010 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2014 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !***********************************************************************
@@ -69,10 +69,23 @@
 #ifdef MASKING
      &                   GRID(ng) % rmask,                              &
 #endif
+#ifdef IRON_LIMIT
+     &                   GRID(ng) % h,                                  &
+#endif
      &                   GRID(ng) % Hz,                                 &
      &                   GRID(ng) % z_r,                                &
      &                   GRID(ng) % z_w,                                &
      &                   FORCES(ng) % srflx,                            &
+#ifdef NEMURO_SED1
+     &                   OCEAN(ng) % PONsed,                            &
+     &                   OCEAN(ng) % OPALsed,                           &
+     &                   OCEAN(ng) % DENITsed,                          &
+     &                   OCEAN(ng) % PON_burial,                        &
+     &                   OCEAN(ng) % OPAL_burial,                       &
+#endif
+#ifdef PRIMARY_PROD
+     &                   OCEAN(ng) % Bio_NPP,                           &
+#endif
      &                   OCEAN(ng) % t)
 
 #ifdef PROFILE
@@ -89,8 +102,18 @@
 #ifdef MASKING
      &                         rmask,                                   &
 #endif
+#ifdef IRON_LIMIT
+     &                         h,                                       &
+#endif
      &                         Hz, z_r, z_w,                            &
      &                         srflx,                                   &
+#ifdef NEMURO_SED1
+     &                         PONsed, OPALsed, DENITsed,               &
+     &                         PON_burial, OPAL_burial,                 &
+#endif
+#ifdef PRIMARY_PROD
+     &                         Bio_NPP,                                 &
+#endif
      &                         t)
 !-----------------------------------------------------------------------
 !
@@ -110,19 +133,45 @@
 # ifdef MASKING
       real(r8), intent(in) :: rmask(LBi:,LBj:)
 # endif
+#ifdef IRON_LIMIT
+      real(r8), intent(in) :: h(LBi:,LBj:)
+# endif
       real(r8), intent(in) :: Hz(LBi:,LBj:,:)
       real(r8), intent(in) :: z_r(LBi:,LBj:,:)
       real(r8), intent(in) :: z_w(LBi:,LBj:,0:)
       real(r8), intent(in) :: srflx(LBi:,LBj:)
+# ifdef NEMURO_SED1
+      real(r8), intent(inout) :: PONsed(LBi:,LBj:)
+      real(r8), intent(inout) :: OPALsed(LBi:,LBj:)
+      real(r8), intent(inout) :: DENITsed(LBi:,LBj:)
+      real(r8), intent(inout) :: PON_burial(LBi:,LBj:)
+      real(r8), intent(inout) :: OPAL_burial(LBi:,LBj:)
+# endif
+# ifdef PRIMARY_PROD
+      real(r8), intent(out) :: Bio_NPP(LBi:,LBj:)
+# endif
       real(r8), intent(inout) :: t(LBi:,LBj:,:,:,:)
 #else
 # ifdef MASKING
       real(r8), intent(in) :: rmask(LBi:UBi,LBj:UBj)
 # endif
+# ifdef IRON_LIMIT
+      real(r8), intent(in) :: h(LBi:UBi,LBj:UBj)
+# endif
       real(r8), intent(in) :: Hz(LBi:UBi,LBj:UBj,UBk)
       real(r8), intent(in) :: z_r(LBi:UBi,LBj:UBj,UBk)
       real(r8), intent(in) :: z_w(LBi:UBi,LBj:UBj,0:UBk)
       real(r8), intent(in) :: srflx(LBi:UBi,LBj:UBj)
+# ifdef NEMURO_SED1
+      real(r8), intent(inout) :: PONsed(LBi:UBi,LBj:UBj)
+      real(r8), intent(inout) :: OPALsed(LBi:UBi,LBj:UBj)
+      real(r8), intent(inout) :: DENITsed(LBi:UBi,LBj:UBj)
+      real(r8), intent(inout) :: PON_burial(LBi:UBi,LBj:UBj)
+      real(r8), intent(inout) :: OPAL_burial(LBi:UBi,LBj:UBj)
+# endif
+# ifdef PRIMARY_PROD
+      real(r8), intent(out) :: Bio_NPP(LBi:UBi,LBj:UBj)
+# endif
       real(r8), intent(inout) :: t(LBi:UBi,LBj:UBj,UBk,3,UBt)
 #endif
 !
@@ -140,16 +189,24 @@
       real(r8) :: AttL, AttS, IrrL, IrrS, KappaL, KappaS
       real(r8) :: dtdays, dz
       real(r8) :: GppAPS, GppAPL, GppNPS, GppNPL, GppPS, GppPL
-      real(r8) :: GraPL2ZL, GraPL2ZP, GraPS2ZL, GraPS2ZS
+      real(r8) :: GraPL2ZS, GraPL2ZL, GraPL2ZP, GraPS2ZL, GraPS2ZS
       real(r8) :: GraZL2ZP, GraZS2ZL, GraZS2ZP
+!      real(r8) :: GraZS2PS, GraZL2PS, GraZL2PL, GraZL2ZS
+!      real(r8) :: GraZP2PL, GraZP2ZS, GraZP2ZL
       real(r8) :: EgeZL, EgeZP, EgeZS
       real(r8) :: ExcPL, ExcPS, ExcZL, ExcZP, ExcZS
       real(r8) :: MorPL, MorPS
       real(r8) :: ResPL, ResPS
       real(r8) :: RnewL, RnewS
-      real(r8) :: cff, cff1, cff2, cff3, cff4, cff5, cff6, cff7
-      real(r8) :: fac, fac1, fac2, fac3, fac4, fac5, fac6, fac7
+      real(r8) :: cff, cff1, cff2, cff3, cff4, cff5, cff6, cff7, cff8
+      real(r8) :: fac, fac1, fac2, fac3, fac4, fac5, fac6, fac7, fac8
       real(r8) :: cffL, cffR, cu, dltL, dltR
+      real(r8) :: Flimit
+#ifdef IRON_LIMIT
+      real(r8) :: FNratio, FCratio, FCratioE
+      real(r8) :: cffFe, Fndgcf
+      real(r8) :: h_max, Fe_min, Fe_max, Fe_rel, SiN_min, SiN_max
+#endif
 
       real(r8), dimension(Nsink) :: Wbio
 
@@ -158,10 +215,8 @@
       real(r8), dimension(IminS:ImaxS) :: PARsur
 
       real(r8), dimension(NT(ng),2) :: BioTrc
-
       real(r8), dimension(IminS:ImaxS,N(ng),NT(ng)) :: Bio
-
-      real(r8), dimension(IminS:ImaxS,N(ng),NT(ng)) :: Bio_bak
+      real(r8), dimension(IminS:ImaxS,N(ng),NT(ng)) :: Bio_old
 
       real(r8), dimension(IminS:ImaxS,0:N(ng)) :: FC
 
@@ -175,12 +230,22 @@
       real(r8), dimension(IminS:ImaxS,N(ng)) :: bL
       real(r8), dimension(IminS:ImaxS,N(ng)) :: bR
       real(r8), dimension(IminS:ImaxS,N(ng)) :: qc
+      real(r8), dimension(IminS:ImaxS,N(ng)) :: LPSiN
+#ifdef PRIMARY_PROD
+      real(r8), dimension(IminS:ImaxS,N(ng)) :: NPP_slice
+#endif
+      real(r8), dimension(IminS:ImaxS) :: frac_buried
 
 #include "set_bounds.h"
+
 !
 !-----------------------------------------------------------------------
 !  Add biological Source/Sink terms.
 !-----------------------------------------------------------------------
+!
+!  Avoid computing source/sink terms if no biological iterations.
+!
+      IF (BioIter(ng).le.0) RETURN
 !
 !  Set time-stepping size (days) according to the number of iterations.
 !
@@ -216,6 +281,14 @@
           END DO
         END DO
 !
+#ifdef PRIMARY_PROD
+        DO k=1,N(ng)
+          DO i=Istr,Iend
+            NPP_slice(i,k)=0.0_r8
+          END DO
+        END DO
+#endif
+!
 !  Extract biological variables from tracer arrays, place them into
 !  scratch arrays, and restrict their values to be positive definite.
 !  At input, all tracers (index nnew) from predictor step have
@@ -227,8 +300,8 @@
           ibio=idbio(itrc)
           DO k=1,N(ng)
             DO i=Istr,Iend
-              Bio_bak(i,k,ibio)=MAX(0.0_r8,t(i,j,k,nstp,ibio))
-              Bio(i,k,ibio)=Bio_bak(i,k,ibio)
+              Bio_old(i,k,ibio)=MAX(0.0_r8,t(i,j,k,nstp,ibio))
+              Bio(i,k,ibio)=Bio_old(i,k,ibio)
             END DO
           END DO
         END DO
@@ -246,8 +319,60 @@
 !  the fraction that is photosynthetically available, PARfrac.
 !
         DO i=Istr,Iend
+!#ifdef ANA_BIOSWRAD
+!          cff=2.0_r8*3.14159_r8*time(ng)/86400.0_r8/360.0_r8
+!          PARsur(i)=PARfrac(ng)*200.0_r8*0.5_r8*(1.0_r8-cos(cff))
+#ifdef CONST_PAR
+          PARsur(i)=PARfrac(ng)*200.0_r8
+#else
           PARsur(i)=PARfrac(ng)*srflx(i,j)*rho0*Cp
+#endif
         END DO
+!
+#if defined IRON_LIMIT && defined IRON_RELAX
+!  Relaxation of dissolved iron to climatology
+        DO k=1,N(ng)
+          DO i=Istr,Iend
+!  Set concentration and depth parameters for FeD climatology
+!  Fe concentration in (micromol-Fe/m3, or nM-Fe)
+	    h_max = 200.0_r8
+            Fe_max = 2.0_r8
+!  Set nudging time scales to 5 days
+            Fe_rel = 5.0_r8
+            Fndgcf = 1.0_r8/(Fe_rel*86400.0_r8)
+!  Relaxation for depths < h_max to simulate Fe input at coast
+            IF (h(i,j).le.h_max) THEN
+              Bio(i,k,iFeD_)=Bio(i,k,iFeD_)+                            &
+     &                       dt(ng)*Fndgcf*(Fe_max-Bio(i,k,iFeD_))
+            ELSE IF (h(i,j).gt.h_max .and. Bio(i,k,iFeD_).lt.0.1_r8) THEN
+                    Bio(i,k,iFeD_)=Bio(i,k,iFeD_)+                            &
+     &                       dt(ng)*Fndgcf*(0.1_r8-Bio(i,k,iFeD_))
+            END IF
+          END DO
+        END DO
+#endif
+!
+#if defined IRON_LIMIT && defined IRON_RSIN
+!  Variable Si:N ratio for dimatoms based on dissolved iron concentration
+!  Si:N varies between 1:1 (high iron) and 3:1 (low iron)
+        DO k=1,N(ng)
+          DO i=Istr,Iend
+            Fe_min = 0.05_r8
+            Fe_max = 2.0_r8
+            SiN_min = 1.0_r8
+            SiN_max = 3.0_r8
+            cffFe=max(0.0_r8,min(1.0_r8,(Bio(i,k,iFeD_)-Fe_min)/        &
+     &              (Fe_max-Fe_min)))
+            LPSiN(i,k)=SiN_max-cffFe*(SiN_max-SiN_min)
+          END DO
+        END DO
+#else
+        DO k=1,N(ng)
+          DO i=Istr,Iend
+            LPSiN(i,k)=RSiN(ng)
+          END DO
+        END DO
+#endif
 !
 !=======================================================================
 !  Start internal iterations to achieve convergence of the nonlinear
@@ -362,19 +487,69 @@
           DO k=1,N(ng)
             DO i=Istr,Iend
 !
+#ifdef IRON_LIMIT
+! Small phytoplankton growth reduction factor due to iron limitation
+!
+! Current Fe:N ratio [umol-Fe/mmol-N]
+              FNratio=Bio(i,k,iFeSp)/MAX(MinVal,Bio(i,k,iSphy))
+! Current F:C ratio [umol-Fe/mol-C]
+! (umol-Fe/mmol-N)*(16 M-N/106 M-C)*(1e3 mmol-C/mol-C),
+              FCratio=FNratio*(16.0_r8/106.0_r8)*1.0e3_r8
+! Empirical FCratio
+              FCratioE= B_Fe(ng)*Bio(i,k,iFeD_)**A_Fe(ng)
+! Phytoplankton growth reduction factor due to iron limitation
+! based on F:C ratio
+              Flimit = FCratio**2.0_r8/                                 &
+     &                 (FCratio**2.0_r8+SK_FeC(ng)**2.0_r8)
+!JF              Flimit = FCratio/(FCratio+SK_FeC(ng))
+#else
+              Flimit = 1.0_r8
+#endif
+!
 !  Small Phytoplankton gross primary productivity, GppPS.
 !
               cff1=cff*EXP(KGppS(ng)*Bio(i,k,itemp))*LightS(i,k)*       &
      &             Bio(i,k,iSphy)
-              cff2=cff1*EXP(-PusaIS(ng)*Bio(i,k,iNH4_))/                &
+              cff2=EXP(-PusaIS(ng)*Bio(i,k,iNH4_))/                     &
      &             (KNO3S(ng)+Bio(i,k,iNO3_))
-              cff3=cff1/(KNH4S(ng)+Bio(i,k,iNH4_))
-              Bio(i,k,iNO3_)=Bio(i,k,iNO3_)/(1.0_r8+cff2)
-              Bio(i,k,iNH4_)=Bio(i,k,iNH4_)/(1.0_r8+cff3)
-              GppNPS=Bio(i,k,iNO3_)*cff2
-              GppAPS=Bio(i,k,iNH4_)*cff3
+              cff3=1.0_r8/(KNH4S(ng)+Bio(i,k,iNH4_))
+              cff4=cff2*Bio(i,k,iNO3_)
+              cff5=cff3*Bio(i,k,iNH4_)
+              cff6=Flimit/MAX(MinVal,cff4+cff5)
+              cff4=cff1*cff2*MIN(1.0_r8,cff6)        ! Fe lim on N03
+              cff5=cff1*cff3*MIN(1.0_r8,cff6)        ! Fe lim on NH4
+              Bio(i,k,iNO3_)=Bio(i,k,iNO3_)/(1.0_r8+cff4)
+              Bio(i,k,iNH4_)=Bio(i,k,iNH4_)/(1.0_r8+cff5)
+              GppNPS=Bio(i,k,iNO3_)*cff4
+              GppAPS=Bio(i,k,iNH4_)*cff5
               GppPS=GppNPS+GppAPS
               Bio(i,k,iSphy)=Bio(i,k,iSphy)+GppPS
+#ifdef PRIMARY_PROD
+              NPP_slice(i,k)=NPP_slice(i,k)+GppPS
+#endif
+!
+#ifdef IRON_LIMIT
+! Iron uptake proportional to growth
+              cffFe=GppPS*FNratio/MAX(MinVal,Bio(i,k,iFeD_))
+              Bio(i,k,iFeD_)=Bio(i,k,iFeD_)/(1.0_r8+cffFe)
+              Bio(i,k,iFeSp)=Bio(i,k,iFeSp)+                            &
+     &                       Bio(i,k,iFeD_)*cffFe
+!
+! Iron uptake to reach appropriate Fe:C ratio
+              cffFe=dtdays*(FCratioE-FCratio)/T_fe(ng)
+              cffFe=Bio(i,k,iSphy)*cffFe*(106.0_r8/16.0_r8)*1.0e-3_r8
+              IF (cffFe.ge.0.0_r8) THEN
+                cffFe=cffFe/MAX(MinVal,Bio(i,k,iFeD_))
+                Bio(i,k,iFeD_)=Bio(i,k,iFeD_)/(1.0_r8+cffFe)
+                Bio(i,k,iFeSp)=Bio(i,k,iFeSp)+                          &
+     &                         Bio(i,k,iFeD_)*cffFe
+              ELSE
+                cffFe=-cffFe/MAX(MinVal,Bio(i,k,iFeSp))
+                Bio(i,k,iFeSp)=Bio(i,k,iFeSp)/(1.0_r8+cffFe)
+                Bio(i,k,iFeD_)=Bio(i,k,iFeD_)+                          &
+     &                         Bio(i,k,iFeSp)*cffFe
+              END IF
+#endif
 !
 !  Small Phytoplankton respiration rate, ResPS, assumed to be
 !  proportional to biomass. Use ratio of NO3 uptake to total update
@@ -386,6 +561,16 @@
               ResPS=Bio(i,k,iSphy)*cff4
               Bio(i,k,iNO3_)=Bio(i,k,iNO3_)+ResPS*RnewS
               Bio(i,k,iNH4_)=Bio(i,k,iNH4_)+ResPS*(1.0_r8-RnewS)
+#ifdef PRIMARY_PROD
+              NPP_slice(i,k)=NPP_slice(i,k)-ResPS
+#endif
+!
+#ifdef IRON_LIMIT
+! Small phytoplankton respiration Fe terms
+              Bio(i,k,iFeSp)=Bio(i,k,iFeSp)/(1.0_r8+cff4)
+              Bio(i,k,iFeD_)=Bio(i,k,iFeD_)+                            &
+     &                       Bio(i,k,iFeSp)*cff4*FeRR(ng)
+#endif
 !
 !  Small Phytoplankton extracellular excrection rate, ExcPS, assumed to
 !  be proportional to production.
@@ -393,6 +578,13 @@
               ExcPS=GppPS*GammaS(ng)
               Bio(i,k,iSphy)=Bio(i,k,iSphy)-ExcPS
               Bio(i,k,iDON_)=Bio(i,k,iDON_)+ExcPS
+!
+#ifdef IRON_LIMIT
+! Small phytoplankton excretion Fe terms
+              cffFe=ExcPS*Bio(i,k,iFeSp)/MAX(MinVal,Bio(i,k,iSphy))
+              Bio(i,k,iFeSp)=Bio(i,k,iFeSp)-cffFe
+              Bio(i,k,iFeD_)=Bio(i,k,iFeD_)+cffFe*FeRR(ng)
+#endif
             END DO
           END DO
 !
@@ -404,14 +596,31 @@
 !  uptake rate as a function of nutrient concentration.
 !
           cff=dtdays*VmaxL(ng)
-          fac1=1.0/RSiN(ng)
+!          fac1=1.0/RSiN(ng)
           fac2=dtdays*ResPL0(ng)
           DO k=1,N(ng)
             DO i=Istr,Iend
 !
-!  Large Phytoplankton gross primary productivity, GppPL. Notice that
-!  the primary productivity is limited by previous time-step silicate
-!  concentration.
+#ifdef IRON_LIMIT
+! Large phytoplankton growth reduction factor due to iron limitation
+!
+! Current Fe:N ratio [umol-Fe/mmol-N]
+              FNratio=Bio(i,k,iFeLp)/MAX(MinVal,Bio(i,k,iLphy))
+! Current F:C ratio [umol-Fe/mol-C]
+! (umol-Fe/mmol-N)*(16 M-N/106 M-C)*(1e3 mmol-C/mol-C),
+              FCratio=FNratio*(16.0_r8/106.0_r8)*1.0e3_r8
+! Empirical FCratio
+              FCratioE= B_Fe(ng)*Bio(i,k,iFeD_)**A_Fe(ng)
+! Phytoplankton growth reduction factor due to Iron limitation
+! based on F:C ratio
+              Flimit = FCratio**2.0_r8/                                 &
+     &                 (FCratio**2.0_r8+LK_FeC(ng)**2.0_r8)
+!JF              Flimit = FCratio/(FCratio+LK_FeC(ng))
+#else
+              Flimit = 1.0_r8
+#endif
+!
+!  Large Phytoplankton gross primary productivity, GppPL.
 !
               cff1=cff*EXP(KGppL(ng)*Bio(i,k,itemp))*LightL(i,k)*       &
      &             Bio(i,k,iLphy)
@@ -422,15 +631,42 @@
               cff5=cff3*Bio(i,k,iNH4_)
               cff6=Bio(i,k,iSiOH)/(KSiL(ng)+Bio(i,k,iSiOH))
               cff7=cff6/MAX(MinVal,cff4+cff5)
-              cff4=cff1*cff2*MIN(1.0_r8,cff7)     ! Si limitation on N03
-              cff5=cff1*cff3*MIN(1.0_r8,cff7)     ! Si limitation on NH4
+              cff8=Flimit/MAX(MinVal,cff4+cff5)
+              cff4=cff1*cff2*MIN(1.0_r8,MIN(cff7,cff8))   ! Si/Fe lim on N03
+              cff5=cff1*cff3*MIN(1.0_r8,MIN(cff7,cff8))   ! Si/Fe lim on NH4
               Bio(i,k,iNO3_)=Bio(i,k,iNO3_)/(1.0_r8+cff4)
               Bio(i,k,iNH4_)=Bio(i,k,iNH4_)/(1.0_r8+cff5)
               GppNPL=Bio(i,k,iNO3_)*cff4
               GppAPL=Bio(i,k,iNH4_)*cff5
               GppPL=GppNPL+GppAPL
               Bio(i,k,iLphy)=Bio(i,k,iLphy)+GppPL
-              Bio(i,k,iSiOH)=Bio(i,k,iSiOH)-GppPL*RSiN(ng)
+              Bio(i,k,iSiOH)=Bio(i,k,iSiOH)-GppPL*LPSiN(i,k)
+#ifdef PRIMARY_PROD
+              NPP_slice(i,k)=NPP_slice(i,k)+GppPL
+#endif
+!
+#ifdef IRON_LIMIT
+! Iron Uptake proportional to growth
+              cffFe=GppPL*FNratio/MAX(MinVal,Bio(i,k,iFeD_))
+              Bio(i,k,iFeD_)=Bio(i,k,iFeD_)/(1.0_r8+cffFe)
+              Bio(i,k,iFeLp)=Bio(i,k,iFeLp)+                            &
+     &                       Bio(i,k,iFeD_)*cffFe
+!
+! Iron uptake to reach appropriate Fe:C ratio
+              cffFe=dtdays*(FCratioE-FCratio)/T_fe(ng)
+              cffFe=Bio(i,k,iLphy)*cffFe*(106.0_r8/16.0_r8)*1.0e-3_r8
+              IF (cffFe.ge.0.0_r8) THEN
+                cffFe=cffFe/MAX(MinVal,Bio(i,k,iFeD_))
+                Bio(i,k,iFeD_)=Bio(i,k,iFeD_)/(1.0_r8+cffFe)
+                Bio(i,k,iFeLp)=Bio(i,k,iFeLp)+                          &
+     &                         Bio(i,k,iFeD_)*cffFe
+              ELSE
+                cffFe=-cffFe/MAX(MinVal,Bio(i,k,iFeLp))
+                Bio(i,k,iFeLp)=Bio(i,k,iFeLp)/(1.0_r8+cffFe)
+                Bio(i,k,iFeD_)=Bio(i,k,iFeD_)+                          &
+     &                         Bio(i,k,iFeLp)*cffFe
+              END IF
+#endif
 !
 !  Large Phytoplankton respiration rate, ResPL, assumed to be
 !  proportional to biomass. Use ratio of NO3 uptake to total update
@@ -443,7 +679,17 @@
               ResPL=Bio(i,k,iLphy)*cff7
               Bio(i,k,iNO3_)=Bio(i,k,iNO3_)+ResPL*RnewL
               Bio(i,k,iNH4_)=Bio(i,k,iNH4_)+ResPL*(1.0_r8-RnewL)
-              Bio(i,k,iSiOH)=Bio(i,k,iSiOH)+ResPL*RSiN(ng)
+              Bio(i,k,iSiOH)=Bio(i,k,iSiOH)+ResPL*LPSiN(i,k)
+#ifdef PRIMARY_PROD
+              NPP_slice(i,k)=NPP_slice(i,k)-ResPL
+#endif
+!
+#ifdef IRON_LIMIT
+! Large Phytoplankton respiration Fe terms
+              Bio(i,k,iFeLp)=Bio(i,k,iFeLp)/(1.0_r8+cff5)
+              Bio(i,k,iFeD_)=Bio(i,k,iFeD_)+                            &
+     &                       Bio(i,k,iFeLp)*cff5*FeRR(ng)
+#endif
 !
 !  Large Phytoplankton extracellular excrection rate, ExcPL, assumed to
 !  be proportional to production.
@@ -451,7 +697,14 @@
               ExcPL=GppPL*GammaL(ng)
               Bio(i,k,iLphy)=Bio(i,k,iLphy)-ExcPL
               Bio(i,k,iDON_)=Bio(i,k,iDON_)+ExcPL
-              Bio(i,k,iSiOH)=Bio(i,k,iSiOH)+ExcPL*RSiN(ng)
+              Bio(i,k,iSiOH)=Bio(i,k,iSiOH)+ExcPL*LPSiN(i,k)
+!
+#ifdef IRON_LIMIT
+! Large Phytoplankton excretion Fe terms
+              cffFe=ExcPL*Bio(i,k,iFeLp)/MAX(MinVal,Bio(i,k,iLphy))
+              Bio(i,k,iFeLp)=Bio(i,k,iFeLp)-cffFe
+              Bio(i,k,iFeD_)=Bio(i,k,iFeD_)+cffFe*FeRR(ng)
+#endif
             END DO
           END DO
 !
@@ -470,7 +723,17 @@
               MorPS=Bio(i,k,iSphy)*cff1
               MorPL=Bio(i,k,iLphy)*cff2
               Bio(i,k,iPON_)=Bio(i,k,iPON_)+MorPS+MorPL
-              Bio(i,k,iopal)=Bio(i,k,iopal)+MorPL*RSiN(ng)
+              Bio(i,k,iopal)=Bio(i,k,iopal)+MorPL*LPSiN(i,k)
+
+#ifdef IRON_LIMIT
+! Phytoplankton Mortality Fe terms
+              Bio(i,k,iFeSp)=Bio(i,k,iFeSp)/(1.0_r8+cff1)
+              Bio(i,k,iFeD_)=Bio(i,k,iFeD_)+                            &
+     &                       Bio(i,k,iFeSp)*cff1*FeRR(ng)
+              Bio(i,k,iFeLp)=Bio(i,k,iFeLp)/(1.0_r8+cff2)
+              Bio(i,k,iFeD_)=Bio(i,k,iFeD_)+                            &
+     &                       Bio(i,k,iFeLp)*cff2*FeRR(ng)
+#endif
             END DO
           END DO
 !
@@ -532,12 +795,13 @@
 !
 #endif
           fac1=dtdays*GRmaxSps(ng)
-          fac2=dtdays*GRmaxLps(ng)
-          fac3=dtdays*GRmaxLpl(ng)
-          fac4=dtdays*GRmaxLzs(ng)
-          fac5=dtdays*GRmaxPpl(ng)
-          fac6=dtdays*GRmaxPzs(ng)
-          fac7=dtdays*GRmaxPzl(ng)
+          fac2=dtdays*GRmaxSpl(ng)
+          fac3=dtdays*GRmaxLps(ng)
+          fac4=dtdays*GRmaxLpl(ng)
+          fac5=dtdays*GRmaxLzs(ng)
+          fac6=dtdays*GRmaxPpl(ng)
+          fac7=dtdays*GRmaxPzs(ng)
+          fac8=dtdays*GRmaxPzl(ng)
           DO k=1,N(ng)
             DO i=Istr,Iend
 !
@@ -567,63 +831,108 @@
               GraPS2ZS=cff*Bio(i,k,iSphy)
               Bio(i,k,iSzoo)=Bio(i,k,iSzoo)+GraPS2ZS
 #endif
+#ifdef IRON_LIMIT
+!     Grazing Fe terms
+              cffFe=GraPS2ZS*Bio(i,k,iFeSp)/MAX(MinVal,Bio(i,k,iSphy))
+              Bio(i,k,iFeSp)=Bio(i,k,iFeSp)-cffFe
+              Bio(i,k,iFeD_)=Bio(i,k,iFeD_)+cffFe*FeRR(ng)
+#endif
+!
+!  Small Zooplankton grazing on Large Phytoplankton, GraPL2ZS.
+!
+#if defined IVLEV_EXPLICIT
+              cff4=1.0_r8-EXP(LamL(ng)*(PL2ZSstar(ng)-Bio(i,k,iLphy)))
+              GraPL2ZS=fac2*cff2*MAX(0.0_r8,cff4)*Bio(i,k,iSzoo)
+              Bio(i,k,iLphy)=Bio(i,k,iLphy)-GraPL2ZS
+              Bio(i,k,iSzoo)=Bio(i,k,iSzoo)+GraPL2ZS
+#else
+# ifdef HOLLING_GRAZING
+              cff4=1.0_r8/(KPL2ZS(ng)+Bio(i,k,iLphy)*Bio(i,k,iLphy))
+              cff=fac2*cff2*cff4*Bio(i,k,iSzoo)*Bio(i,k,iLphy)
+# elif defined IVLEV_IMPLICIT
+              cff4=1.0_r8-EXP(LamL(ng)*(PL2ZSstar(ng)-Bio(i,k,iLphy)))
+              cff5=1.0_r8/(fac2*cff4)
+              cff=(1.0_r8+Bio(i,k,iLphy)*cff5)*cff2*Bio(i,k,iSzoo)
+# endif
+              Bio(i,k,iLphy)=Bio(i,k,iLphy)/(1.0_r8+cff)
+              GraPL2ZS=cff*Bio(i,k,iLphy)
+              Bio(i,k,iSzoo)=Bio(i,k,iSzoo)+GraPL2ZS
+#endif
+#ifdef IRON_LIMIT
+!     Grazing Fe terms
+              cffFe=GraPL2ZS*Bio(i,k,iFeLp)/MAX(MinVal,Bio(i,k,iLphy))
+              Bio(i,k,iFeLp)=Bio(i,k,iFeLp)-cffFe
+              Bio(i,k,iFeD_)=Bio(i,k,iFeD_)+cffFe*FeRR(ng)
+#endif
 !
 !  Large Zooplankton grazing on Small Phytoplankton, GraPS2ZL.
 !
 #if defined IVLEV_EXPLICIT
               cff4=1.0_r8-EXP(LamL(ng)*(PS2ZLstar(ng)-Bio(i,k,iSphy)))
-              GraPS2ZL=fac2*cff2*MAX(0.0_r8,cff4)*Bio(i,k,iLzoo)
+              GraPS2ZL=fac3*cff2*MAX(0.0_r8,cff4)*Bio(i,k,iLzoo)
               Bio(i,k,iSphy)=Bio(i,k,iSphy)-GraPS2ZL
               Bio(i,k,iLzoo)=Bio(i,k,iLzoo)+GraPS2ZL
 #else
 # ifdef HOLLING_GRAZING
               cff4=1.0_r8/(KPS2ZL(ng)+Bio(i,k,iSphy)*Bio(i,k,iSphy))
-              cff=fac2*cff2*cff4*Bio(i,k,iLzoo)*Bio(i,k,iSphy)
+              cff=fac3*cff2*cff4*Bio(i,k,iLzoo)*Bio(i,k,iSphy)
 # elif defined IVLEV_IMPLICIT
               cff4=1.0_r8-EXP(LamL(ng)*(PS2ZLstar(ng)-Bio(i,k,iSphy)))
-              cff5=1.0_r8/(fac2*cff4)
+              cff5=1.0_r8/(fac3*cff4)
               cff=(1.0_r8+Bio(i,k,iSphy)*cff5)*cff2*Bio(i,k,iLzoo)
 # endif
               Bio(i,k,iSphy)=Bio(i,k,iSphy)/(1.0_r8+cff)
               GraPS2ZL=cff*Bio(i,k,iSphy)
               Bio(i,k,iLzoo)=Bio(i,k,iLzoo)+GraPS2ZL
 #endif
+#ifdef IRON_LIMIT
+!     Grazing Fe terms
+              cffFe=GraPS2ZL*Bio(i,k,iFeSp)/MAX(MinVal,Bio(i,k,iSphy))
+              Bio(i,k,iFeSp)=Bio(i,k,iFeSp)-cffFe
+              Bio(i,k,iFeD_)=Bio(i,k,iFeD_)+cffFe*FeRR(ng)
+#endif
 !
 !  Large Zooplankton grazing on Large Phytoplankton, GraPL2ZL.
 !
 #if defined IVLEV_EXPLICIT
               cff4=1.0_r8-EXP(LamL(ng)*(PL2ZLstar(ng)-Bio(i,k,iLphy)))
-              GraPL2ZL=fac3*cff2*MAX(0.0_r8,cff4)*Bio(i,k,iLzoo)
+              GraPL2ZL=fac4*cff2*MAX(0.0_r8,cff4)*Bio(i,k,iLzoo)
               Bio(i,k,iLphy)=Bio(i,k,iLphy)-GraPL2ZL
               Bio(i,k,iLzoo)=Bio(i,k,iLzoo)+GraPL2ZL
 #else
 # ifdef HOLLING_GRAZING
               cff4=1.0_r8/(KPL2ZL(ng)+Bio(i,k,iLphy)*Bio(i,k,iLphy))
-              cff=fac3*cff2*cff4*Bio(i,k,iLzoo)*Bio(i,k,iLphy)
+              cff=fac4*cff2*cff4*Bio(i,k,iLzoo)*Bio(i,k,iLphy)
 # elif defined IVLEV_IMPLICIT
               cff4=1.0_r8-EXP(LamL(ng)*(PL2ZLstar(ng)-Bio(i,k,iLphy)))
-              cff5=1.0_r8/(fac3*cff4)
+              cff5=1.0_r8/(fac4*cff4)
               cff=(1.0_r8+Bio(i,k,iLphy)*cff5)*cff2*Bio(i,k,iLzoo)
 # endif
               Bio(i,k,iLphy)=Bio(i,k,iLphy)/(1.0_r8+cff)
               GraPL2ZL=cff*Bio(i,k,iLphy)
               Bio(i,k,iLzoo)=Bio(i,k,iLzoo)+GraPL2ZL
 #endif
+#ifdef IRON_LIMIT
+!     Grazing Fe terms
+              cffFe=GraPL2ZL*Bio(i,k,iFeLp)/MAX(MinVal,Bio(i,k,iLphy))
+              Bio(i,k,iFeLp)=Bio(i,k,iFeLp)-cffFe
+              Bio(i,k,iFeD_)=Bio(i,k,iFeD_)+cffFe*FeRR(ng)
+#endif
 !
 !  Large Zooplankton grazing on Small Zooplankton, GraZS2ZL.
 !
 #if defined IVLEV_EXPLICIT
               cff4=1.0_r8-EXP(LamL(ng)*(ZS2ZLstar(ng)-Bio(i,k,iSzoo)))
-              GraZS2ZL=fac4*cff2*MAX(0.0_r8,cff4)*Bio(i,k,iLzoo)
+              GraZS2ZL=fac5*cff2*MAX(0.0_r8,cff4)*Bio(i,k,iLzoo)
               Bio(i,k,iSzoo)=Bio(i,k,iSzoo)-GraZS2ZL
               Bio(i,k,iLzoo)=Bio(i,k,iLzoo)+GraZS2ZL
 #else
 # ifdef HOLLING_GRAZING
               cff4=1.0_r8/(KZS2ZL(ng)+Bio(i,k,iSzoo)*Bio(i,k,iSzoo))
-              cff=fac4*cff2*cff4*Bio(i,k,iLzoo)*Bio(i,k,iSzoo)
+              cff=fac5*cff2*cff4*Bio(i,k,iLzoo)*Bio(i,k,iSzoo)
 # elif defined IVLEV_IMPLICIT
               cff4=1.0_r8-EXP(LamL(ng)*(ZS2ZLstar(ng)-Bio(i,k,iSzoo)))
-              cff5=1.0_r8/(fac4*cff4)
+              cff5=1.0_r8/(fac5*cff4)
               cff=(1.0_r8+Bio(i,k,iSphy)*cff5)*cff2*Bio(i,k,iLzoo)
 # endif
               Bio(i,k,iSzoo)=Bio(i,k,iSzoo)/(1.0_r8+cff)
@@ -636,23 +945,29 @@
 #if defined IVLEV_EXPLICIT
               cff4=1.0_r8-EXP(LamP(ng)*(PL2ZPstar(ng)-Bio(i,k,iLphy)))
               cff5=EXP(-PusaiPL(ng)*(Bio(i,k,iLzoo)+Bio(i,k,iSzoo)))
-              GraPL2ZP=fac5*cff3*cff5*MAX(0.0_r8,cff4)*Bio(i,k,iPzoo)
+              GraPL2ZP=fac6*cff3*cff5*MAX(0.0_r8,cff4)*Bio(i,k,iPzoo)
               Bio(i,k,iLphy)=Bio(i,k,iLphy)-GraPL2ZP
               Bio(i,k,iPzoo)=Bio(i,k,iPzoo)+GraPL2ZP
 #else
 # ifdef HOLLING_GRAZING
               cff4=1.0_r8/(KPL2ZP(ng)+Bio(i,k,iLphy)*Bio(i,k,iLphy))
               cff5=EXP(-PusaiPL(ng)*(Bio(i,k,iLzoo)+Bio(i,k,iSzoo)))
-              cff=fac5*cff3*cff4*cff5*Bio(i,k,iPzoo)*Bio(i,k,iLphy)
+              cff=fac6*cff3*cff4*cff5*Bio(i,k,iPzoo)*Bio(i,k,iLphy)
 # elif defined IVLEV_IMPLICIT
               cff4=1.0_r8-EXP(LamP(ng)*(PL2ZPstar(ng)-Bio(i,k,iLphy)))
               cff5=EXP(-PusaiPL(ng)*(Bio(i,k,iLzoo)+Bio(i,k,iSzoo)))
-              cff6=1.0_r8/(fac5*cff4)
+              cff6=1.0_r8/(fac6*cff4)
               cff=(1.0_r8+Bio(i,k,iLphy)*cff6)*cff3*cff5*Bio(i,k,iPzoo)
 # endif
               Bio(i,k,iLphy)=Bio(i,k,iLphy)/(1.0_r8+cff)
               GraPL2ZP=cff*Bio(i,k,iLphy)
               Bio(i,k,iPzoo)=Bio(i,k,iPzoo)+GraPL2ZP
+#endif
+#ifdef IRON_LIMIT
+!     Grazing Fe terms
+              cffFe=GraPL2ZP*Bio(i,k,iFeLp)/MAX(MinVal,Bio(i,k,iLphy))
+              Bio(i,k,iFeLp)=Bio(i,k,iFeLp)-cffFe
+              Bio(i,k,iFeD_)=Bio(i,k,iFeD_)+cffFe*FeRR(ng)
 #endif
 !
 !  Predactory Zooplankton grazing on Small Zooplankton, GraZS2ZP.
@@ -660,18 +975,18 @@
 #if defined IVLEV_EXPLICIT
               cff4=1.0_r8-EXP(LamP(ng)*(ZS2ZPstar(ng)-Bio(i,k,iSzoo)))
               cff5=EXP(-PusaiZS(ng)*Bio(i,k,iLzoo))
-              GraZS2ZP=fac6*cff3*cff5*MAX(0.0_r8,cff4)*Bio(i,k,iPzoo)
+              GraZS2ZP=fac7*cff3*cff5*MAX(0.0_r8,cff4)*Bio(i,k,iPzoo)
               Bio(i,k,iSzoo)=Bio(i,k,iSzoo)-GraZS2ZP
               Bio(i,k,iPzoo)=Bio(i,k,iPzoo)+GraZS2ZP
 #else
 # ifdef HOLLING_GRAZING
               cff4=1.0_r8/(KZS2ZP(ng)+Bio(i,k,iSzoo)*Bio(i,k,iSzoo))
               cff5=EXP(-PusaiZS(ng)*Bio(i,k,iLzoo))
-              cff=fac6*cff3*cff4*cff5*Bio(i,k,iPzoo)*Bio(i,k,iSzoo)
+              cff=fac7*cff3*cff4*cff5*Bio(i,k,iPzoo)*Bio(i,k,iSzoo)
 # elif defined IVLEV_IMPLICIT
               cff4=1.0_r8-EXP(LamP(ng)*(ZS2ZPstar(ng)-Bio(i,k,iSzoo)))
               cff5=EXP(-PusaiZS(ng)*Bio(i,k,iLzoo))
-              cff6=1.0_r8/(fac6*cff4)
+              cff6=1.0_r8/(fac7*cff4)
               cff=(1.0_r8+Bio(i,k,iSzoo)*cff6)*cff3*cff5*Bio(i,k,iPzoo)
 # endif
               Bio(i,k,iSzoo)=Bio(i,k,iSzoo)/(1.0_r8+cff)
@@ -683,16 +998,16 @@
 !
 #if defined IVLEV_EXPLICIT
               cff4=1.0_r8-EXP(LamP(ng)*(ZL2ZPstar(ng)-Bio(i,k,iLzoo)))
-              GraZL2ZP=fac7*cff3*MAX(0.0_r8,cff4)*Bio(i,k,iPzoo)
+              GraZL2ZP=fac8*cff3*MAX(0.0_r8,cff4)*Bio(i,k,iPzoo)
               Bio(i,k,iLzoo)=Bio(i,k,iLzoo)-GraZL2ZP
               Bio(i,k,iPzoo)=Bio(i,k,iPzoo)+GraZL2ZP
 #else
 # ifdef HOLLING_GRAZING
               cff4=1.0_r8/(KZL2ZP(ng)+Bio(i,k,iLzoo)*Bio(i,k,iLzoo))
-              cff=fac7*cff3*cff4*Bio(i,k,iPzoo)*Bio(i,k,iLzoo)
+              cff=fac8*cff3*cff4*Bio(i,k,iPzoo)*Bio(i,k,iLzoo)
 # elif defined IVLEV_IMPLICIT
               cff4=1.0_r8-EXP(LamP(ng)*(ZL2ZPstar(ng)-Bio(i,k,iLzoo)))
-              cff5=1.0_r8/(fac7*cff4)
+              cff5=1.0_r8/(fac8*cff4)
               cff=(1.0_r8+Bio(i,k,iLzoo)*cff5)*cff3*Bio(i,k,iPzoo)
 # endif
               Bio(i,k,iLzoo)=Bio(i,k,iLzoo)/(1.0_r8+cff)
@@ -703,22 +1018,19 @@
 !  Zooplankton egestion to Particulate Organic Nitrogen (PON) and
 !  Particulate Organic Silica (opal).
 !
-              EgeZS=(1.0_r8-AlphaZS(ng))*                               &
-     &              GraPS2ZS
-              EgeZL=(1.0_r8-AlphaZL(ng))*                               &
-     &              (GraPS2ZL+GraPL2ZL+GraZS2ZL)
-              EgeZP=(1.0_r8-AlphaZP(ng))*                               &
-     &              (GraPL2ZP+GraZS2ZP+GraZL2ZP)
+              EgeZS=(1.0_r8-AlphaZS(ng))*(GraPS2ZS+GraPL2ZS)
+              EgeZL=(1.0_r8-AlphaZL(ng))*(GraPS2ZL+GraPL2ZL+GraZS2ZL)
+              EgeZP=(1.0_r8-AlphaZP(ng))*(GraPL2ZP+GraZS2ZP+GraZL2ZP)
               Bio(i,k,iSzoo)=Bio(i,k,iSzoo)-EgeZS
               Bio(i,k,iLzoo)=Bio(i,k,iLzoo)-EgeZL
               Bio(i,k,iPzoo)=Bio(i,k,iPzoo)-EgeZP
               Bio(i,k,iPON_)=Bio(i,k,iPON_)+EgeZS+EgeZL+EgeZP
-              Bio(i,k,iopal)=Bio(i,k,iopal)+(GraPL2ZL+GraPL2ZP)*RSiN(ng)
+              Bio(i,k,iopal)=Bio(i,k,iopal)+                            &
+     &                       (GraPL2ZS+GraPL2ZL+GraPL2ZP)*LPSiN(i,k)
 !
 !  Zooplankton excretion to NH4.
 !
-              ExcZS=(AlphaZS(ng)-BetaZS(ng))*                           &
-     &              GraPS2ZS
+              ExcZS=(AlphaZS(ng)-BetaZS(ng))*(GraPS2ZS+GraPL2ZS)
               ExcZL=(AlphaZL(ng)-BetaZL(ng))*                           &
      &              (GraPS2ZL+GraPL2ZL+GraZS2ZL)
               ExcZP=(AlphaZP(ng)-BetaZP(ng))*                           &
@@ -731,7 +1043,7 @@
           END DO
 !
 !-----------------------------------------------------------------------
-!  Zooplankton motality to particulate organic nitrogen.
+!  Zooplankton mortality to particulate organic nitrogen.
 !-----------------------------------------------------------------------
 !
           fac1=dtdays*MorZS0(ng)
@@ -800,6 +1112,37 @@
      &                       Bio(i,k,iopal)*cff5
             END DO
           END DO
+#ifdef NEMURO_SED1
+!ENC:  using sediment pools
+
+          DO i=Istr,Iend
+!
+!  Decomposition: Sediment Opal to SiOH4.
+!
+            cff6=fac5*EXP(KO2S(ng)*Bio(i,1,itemp))
+            OPALsed(i,j)=OPALsed(i,j)/(1.0_r8+cff6)
+            Bio(i,1,iSiOH)=Bio(i,1,iSiOH)+                              &
+      &                       OPALsed(i,j)*cff6*Hz_inv(i,1)
+!
+!  Decomposition: Sediment PON to NH4.
+!
+            cff7=fac2*EXP(KP2N(ng)*Bio(i,1,itemp))
+            PONsed(i,j)=PONsed(i,j)/(1.0_r8+cff7)
+            Bio(i,1,iNH4_)=Bio(i,1,iNH4_)+                              &
+      &                       PONsed(i,j)*cff7*Hz_inv(i,1)
+!
+!  ENC+CAS:  Our attempt at denitrification
+!  This is the NO3 that is lost to N2 due to denitrification
+!  in the sediments.  We assume 12% of PONsed remineralization is
+!  from denitrification (blame Katja, 2009)
+!
+            cff8= 0.12_r8*PONsed(i,j)*cff7*5.3_r8
+            DENITsed(i,j)=MIN( Bio(i,1,iNO3_)*Hz(i,j,1),cff8)*          &
+     &                     (1.0_r8/dtdays)
+            Bio(i,1,iNO3_)=MAX(Bio(i,1,iNO3_)-cff8*Hz_inv(i,1),0.0_r8)
+
+          END DO
+#endif
 !
 !-----------------------------------------------------------------------
 !  Vertical sinking terms: PON and Opal.
@@ -992,15 +1335,37 @@
 !       Lagrangian algorithm. What is the correct nutrient path from
 !       the benthos to the water column?  NH4 to NO3?
 !
+!
             IF (ibio.eq.iPON_) THEN
               DO i=Istr,Iend
+# ifdef NEMURO_SED1
+                cff1=FC(i,0)*6.625_r8*(1.0_r8/dtdays)
+                frac_buried(i) = 0.013_r8 + 0.53_r8*cff1**2/            &
+     &                     (7.0_r8+cff1)**2
+                cff1=FC(i,0)
+                PON_burial(i,j)=frac_buried(i)*FC(i,0)*                 &
+     &                           (1.0_r8/dtdays)
+                PONsed(i,j)=PONsed(i,j)+(1.0_r8-frac_buried(i))*cff1
+# else
                 cff1=FC(i,0)*Hz_inv(i,1)
                 Bio(i,1,iNO3_)=Bio(i,1,iNO3_)+cff1
+!ENC: put the sinking PON into the ammonia pool. Do not need this if using
+!     the sediment pools
+!               Bio(i,1,iNH4_)=Bio(i,1,iNH4_)+cff1
+!
+# endif
               END DO
             ELSE IF (ibio.eq.iopal) THEN
               DO i=Istr,Iend
+# ifdef NEMURO_SED1
+                cff1=FC(i,0)
+                OPAL_burial(i,j)=frac_buried(i)*FC(i,0)*                &
+     &                               (1.0_r8/dtdays)
+                OPALsed(i,j)=OPALsed(i,j)+(1.0_r8-frac_buried(i))*cff1
+# else
                 cff1=FC(i,0)*Hz_inv(i,1)
                 Bio(i,1,iSiOH)=Bio(i,1,iSiOH)+cff1
+# endif
               END DO
             END IF
 #endif
@@ -1009,20 +1374,40 @@
         END DO ITER_LOOP
 !
 !-----------------------------------------------------------------------
-!  Update global tracer variables (m Tunits).
+!  Update global tracer variables: Add increment due to BGC processes
+!  to tracer array in time index "nnew". Index "nnew" is solution after
+!  advection and mixing and has transport units (m Tunits) hence the
+!  increment is multiplied by Hz.  Notice that we need to subtract
+!  original values "Bio_old" at the top of the routine to just account
+!  for the concentractions affected by BGC processes. This also takes
+!  into account any constraints (non-negative concentrations, carbon
+!  concentration range) specified before entering BGC kernel. If "Bio"
+!  were unchanged by BGC processes, the increment would be exactly
+!  zero. Notice that final tracer values, t(:,:,:,nnew,:) are not
+!  bounded >=0 so that we can preserve total inventory of nutrients
+!  when advection causes tracer concentration to go negative.
 !-----------------------------------------------------------------------
 !
         DO itrc=1,NBT
           ibio=idbio(itrc)
           DO k=1,N(ng)
             DO i=Istr,Iend
-              t(i,j,k,nnew,ibio)=MAX(t(i,j,k,nnew,ibio)+                &
-     &                               (Bio(i,k,ibio)-Bio_bak(i,k,ibio))* &
-     &                               Hz(i,j,k),                         &
-     &                               0.0_r8)
+              cff=Bio(i,k,ibio)-Bio_old(i,k,ibio)
+              t(i,j,k,nnew,ibio)=t(i,j,k,nnew,ibio)+cff*Hz(i,j,k)
             END DO
           END DO
         END DO
+
+#ifdef PRIMARY_PROD
+        DO i=Istr,Iend
+	  Bio_NPP(i,j) = 0.0_r8
+        END DO
+        DO k=1,N(ng)
+          DO i=Istr,Iend
+	    Bio_NPP(i,j) = Bio_NPP(i,j) + Hz(i,j,k)*NPP_slice(i,k)
+          END DO
+        END DO
+#endif
 
       END DO J_LOOP
 

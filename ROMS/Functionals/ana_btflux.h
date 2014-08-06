@@ -1,8 +1,8 @@
       SUBROUTINE ana_btflux (ng, tile, model, itrc)
 !
-!! svn $Id: ana_btflux.h 429 2009-12-20 17:30:26Z arango $
+!! svn $Id$
 !!======================================================================
-!! Copyright (c) 2002-2010 The ROMS/TOMS Group                         !
+!! Copyright (c) 2002-2014 The ROMS/TOMS Group                         !
 !!   Licensed under a MIT/X style license                              !
 !!   See License_ROMS.txt                                              !
 !=======================================================================
@@ -85,8 +85,8 @@
 !-----------------------------------------------------------------------
 !
       IF (itrc.eq.itemp) THEN
-        DO j=JstrR,JendR
-          DO i=IstrR,IendR
+        DO j=JstrT,JendT
+          DO i=IstrT,IendT
             btflx(i,j,itrc)=0.0_r8
 #ifdef TL_IOMS
             tl_btflx(i,j,itrc)=0.0_r8
@@ -100,8 +100,8 @@
 !-----------------------------------------------------------------------
 !
       ELSE IF (itrc.eq.isalt) THEN
-        DO j=JstrR,JendR
-          DO i=IstrR,IendR
+        DO j=JstrT,JendT
+          DO i=IstrT,IendT
             btflx(i,j,itrc)=0.0_r8
 #ifdef TL_IOMS
             tl_btflx(i,j,itrc)=0.0_r8
@@ -114,8 +114,8 @@
 !-----------------------------------------------------------------------
 !
       ELSE
-        DO j=JstrR,JendR
-          DO i=IstrR,IendR
+        DO j=JstrT,JendT
+          DO i=IstrT,IendT
             btflx(i,j,itrc)=0.0_r8
 #ifdef TL_IOMS
             tl_btflx(i,j,itrc)=0.0_r8
@@ -123,5 +123,6 @@
           END DO
         END DO
       END IF
+
       RETURN
       END SUBROUTINE ana_btflux_tile

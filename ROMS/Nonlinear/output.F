@@ -4,7 +4,7 @@
 !
 !svn $Id: output.F 1597 2008-07-25 02:31:35Z jcwarner $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2010 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2014 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -18,6 +18,9 @@
 !
       USE mod_param
       USE mod_parallel
+# ifdef FILTERED
+      USE mod_filter, ONLY: FILN
+# endif
 # ifdef FLOATS
       USE mod_floats
 # endif
@@ -44,7 +47,10 @@
 !
       logical :: Ldefine, NewFile
 
-      integer :: ifile, lstr, status, tile
+      integer :: Fcount, ifile, tile
+# ifdef FILTERED_RST
+      integer :: i
+# endif
 !
       SourceFile='output.F'
 
@@ -71,6 +77,7 @@
 !  append new data to it.  Also,  notice that it is possible to
 !  create several files during a single model run.
 !
+# ifndef NO_HIS
       IF (LdefHIS(ng)) THEN
         IF (ndefHIS(ng).gt.0) THEN
           IF (idefHIS(ng).lt.0) THEN
@@ -98,18 +105,18 @@
             Ldefine=.FALSE.
           END IF
           IF (Ldefine) THEN                     ! create new file or
-            NrecHIS(ng)=0                       ! inquire existing file
+            Fcount=HIS(ng)%Fcount               ! inquire existing file
+            HIS(ng)%Nrec(Fcount)=0
             ifile=(iic(ng)-1)/ndefHIS(ng)+1
             IF (Master) THEN
-              lstr=LEN_TRIM(HISbase(ng))
-              WRITE (HISname(ng),10) HISbase(ng)(1:lstr-3),ifile
+              WRITE (HIS(ng)%name,10) TRIM(HIS(ng)%base), ifile
   10          FORMAT (a,'_',i4.4,'.nc')
             END IF
 # ifdef DISTRIBUTE
-            CALL mp_bcasts (ng, iNLM, HISname(ng))
+            CALL mp_bcasts (ng, iNLM, HIS(ng)%name)
 # endif
-            IF (ncHISid(ng).ne.-1) THEN
-              CALL netcdf_close (ng, iNLM, ncHISid(ng))
+            IF (HIS(ng)%ncid.ne.-1) THEN
+              CALL netcdf_close (ng, iNLM, HIS(ng)%ncid)
             END IF
             CALL def_his (ng, NewFile)
             IF (exit_flag.ne.NoError) RETURN
@@ -148,8 +155,89 @@
           END IF
         END IF
       END IF
+# endif
+# if defined HISTORY2
+!
+!-----------------------------------------------------------------------
+!  If appropriate, process secondary surface NetCDF file.
+!-----------------------------------------------------------------------
+!
+!  Create output time-averaged NetCDF file or prepare existing file
+!  to append new data to it. Also, notice that it is possible to
+!  create several files during a single model run.
+!
+      IF (LdefHIS2(ng)) THEN
+        IF (ndefHIS2(ng).gt.0) THEN
+          IF (idefHIS2(ng).lt.0) THEN
+            idefHIS2(ng)=((ntstart(ng)-1)/ndefHIS2(ng))*ndefHIS2(ng)
+            IF ((ndefHIS2(ng).eq.nHIS2(ng)).and.(idefHIS2(ng).le.0)) THEN
+              idefHIS2(ng)=ndefHIS2(ng)         ! one file per record
+            ELSE IF (idefHIS2(ng).lt.iic(ng)-1) THEN
+              idefHIS2(ng)=idefHIS2(ng)+ndefHIS2(ng)
+            END IF
+          END IF
+          IF ((nrrec(ng).ne.0).and.(iic(ng).eq.ntstart(ng))) THEN
+            IF ((iic(ng)-1).eq.idefHIS2(ng)) THEN
+              Ldefine=.FALSE.                    ! finished file, delay
+            ELSE                                 ! creation of next file
+              NewFile=.FALSE.
+              Ldefine=.TRUE.                     ! unfinished file, inquire
+            END IF                               ! content for appending
+            idefHIS2(ng)=idefHIS2(ng)+nHIS2(ng)  ! restart offset
+          ELSE IF ((iic(ng)-1).eq.idefHIS2(ng)) THEN
+            idefHIS2(ng)=idefHIS2(ng)+ndefHIS2(ng)
+            IF (nHIS2(ng).ne.ndefHIS2(ng).and.iic(ng).eq.ntstart(ng))   &
+     &              THEN
+              idefHIS2(ng)=idefHIS2(ng)+nHIS2(ng)
+            END IF
+            Ldefine=.TRUE.
+            NewFile=.TRUE.
+          ELSE
+            Ldefine=.FALSE.
+          END IF
+          IF (Ldefine) THEN
+            Fcount=HIS2(ng)%Fcount
+            HIS2(ng)%Nrec(Fcount)=0
+            IF (nHIS2(ng).eq.ndefHIS2(ng)) THEN
+              ifile=(iic(ng)-1)/ndefHIS2(ng)
+            ELSE
+              ifile=(iic(ng)-1)/ndefHIS2(ng)+1
+            END IF
+            IF (Master) THEN
+              WRITE (HIS2(ng)%name,20) TRIM(HIS2(ng)%base), ifile
+            END IF
+# ifdef DISTRIBUTE
+            CALL mp_bcasts (ng, iNLM, HIS2(ng)%name)
+# endif
+            IF (HIS2(ng)%ncid.ne.-1) THEN
+              CALL netcdf_close(ng, iNLM, HIS2(ng)%ncid)
+            END IF
+            CALL def_his2 (ng, Newfile)
+            IF (exit_flag.ne.NoError) RETURN
+            LwrtHIS2(ng)=.TRUE.
+          END IF
+        ELSE
+          IF (iic(ng).eq.ntstart(ng)) THEN
+            CALL def_his2 (ng, ldefout(ng))
+            IF (exit_flag.ne.NoError) RETURN
+            LwrtHIS2(ng)=.TRUE.
+            LdefHIS2(ng)=.FALSE.
+          END IF
+        END IF
+      END IF
+!
+!  Write out data into time-averaged NetCDF file.
+!
+      IF (LwrtHIS2(ng)) THEN
+        IF ((iic(ng).gt.ntstart(ng)).and.                               &
+     &      (MOD(iic(ng)-1,nHIS2(ng)).eq.0)) THEN
+          CALL wrt_his2 (ng)
+          IF (exit_flag.ne.NoError) RETURN
+        END IF
+      END IF
+# endif
 
-# if defined AVERAGES && !defined ADJOINT
+# ifdef AVERAGES
 !
 !-----------------------------------------------------------------------
 !  If appropriate, process time-averaged NetCDF file.
@@ -188,22 +276,22 @@
             Ldefine=.FALSE.
           END IF
           IF (Ldefine) THEN
-            NrecAVG(ng)=0
+            Fcount=AVG(ng)%Fcount
+            AVG(ng)%Nrec(Fcount)=0
             IF (ndefAVG(ng).eq.nAVG(ng)) THEN
               ifile=(iic(ng)-1)/ndefAVG(ng)
             ELSE
               ifile=(iic(ng)-1)/ndefAVG(ng)+1
             END IF
             IF (Master) THEN
-              lstr=LEN_TRIM(AVGbase(ng))
-              WRITE (AVGname(ng),20) AVGbase(ng)(1:lstr-3),ifile
+              WRITE (AVG(ng)%name,20) TRIM(AVG(ng)%base), ifile
   20          FORMAT (a,'_',i4.4,'.nc')
             END IF
-# ifdef DISTRIBUTE
-            CALL mp_bcasts (ng, iNLM, AVGname(ng))
-# endif
-            IF (ncAVGid(ng).ne.-1) THEN
-              CALL netcdf_close (ng, iNLM, ncAVGid(ng))
+#  ifdef DISTRIBUTE
+            CALL mp_bcasts (ng, iNLM, AVG(ng)%name)
+#  endif
+            IF (AVG(ng)%ncid.ne.-1) THEN
+              CALL netcdf_close (ng, iNLM, AVG(ng)%ncid)
             END IF
             CALL def_avg (ng, Newfile)
             IF (exit_flag.ne.NoError) RETURN
@@ -222,17 +310,99 @@
 !  Write out data into time-averaged NetCDF file.
 !
       IF (LwrtAVG(ng)) THEN
-        IF ((iic(ng).gt.ntstart(ng)).and.                               &
-     &      (MOD(iic(ng)-1,nAVG(ng)).eq.0)) THEN
+        IF (((iic(ng).gt.ntstart(ng)).and.                              &
+     &       (MOD(iic(ng)-1,nAVG(ng)).eq.0)).or.                        &
+     &      ((iic(ng).ge.ntsAVG(ng)).and.(nAVG(ng).eq.1))) THEN
           CALL wrt_avg (ng)
           IF (exit_flag.ne.NoError) RETURN
-# if defined AVERAGES_DETIDE && (defined SSH_TIDES || defined UV_TIDES)
+#  if defined AVERAGES_DETIDE && (defined SSH_TIDES || defined UV_TIDES)
           CALL wrt_tides (ng)
           IF (exit_flag.ne.NoError) RETURN
-# endif
+#  endif
         END IF
       END IF
 # endif
+# if defined AVERAGES2
+!
+!-----------------------------------------------------------------------
+!  If appropriate, process secondary time-averaged NetCDF file.
+!-----------------------------------------------------------------------
+!
+!  Create output time-averaged NetCDF file or prepare existing file
+!  to append new data to it. Also, notice that it is possible to
+!  create several files during a single model run.
+!
+      IF (LdefAVG2(ng)) THEN
+        IF (ndefAVG2(ng).gt.0) THEN
+          IF (idefAVG2(ng).lt.0) THEN
+            idefAVG2(ng)=((ntstart(ng)-1)/ndefAVG2(ng))*ndefAVG2(ng)
+            IF ((ndefAVG2(ng).eq.nAVG2(ng)).and.(idefAVG2(ng).le.0)) THEN
+              idefAVG2(ng)=ndefAVG2(ng)         ! one file per record
+            ELSE IF (idefAVG2(ng).lt.iic(ng)-1) THEN
+              idefAVG2(ng)=idefAVG2(ng)+ndefAVG2(ng)
+            END IF
+          END IF
+          IF ((nrrec(ng).ne.0).and.(iic(ng).eq.ntstart(ng))) THEN
+            IF ((iic(ng)-1).eq.idefAVG2(ng)) THEN
+              Ldefine=.FALSE.                    ! finished file, delay
+            ELSE                                 ! creation of next file
+              NewFile=.FALSE.
+              Ldefine=.TRUE.                     ! unfinished file, inquire
+            END IF                               ! content for appending
+            idefAVG2(ng)=idefAVG2(ng)+nAVG2(ng)  ! restart offset
+          ELSE IF ((iic(ng)-1).eq.idefAVG2(ng)) THEN
+            idefAVG2(ng)=idefAVG2(ng)+ndefAVG2(ng)
+            IF (nAVG2(ng).ne.ndefAVG2(ng).and.iic(ng).eq.ntstart(ng))   &
+     &              THEN
+              idefAVG2(ng)=idefAVG2(ng)+nAVG2(ng)
+            END IF
+            Ldefine=.TRUE.
+            NewFile=.TRUE.
+          ELSE
+            Ldefine=.FALSE.
+          END IF
+          IF (Ldefine) THEN
+            Fcount=AVG2(ng)%Fcount
+            AVG2(ng)%Nrec(Fcount)=0
+            IF (nAVG2(ng).eq.ndefAVG2(ng)) THEN
+              ifile=(iic(ng)-1)/ndefAVG2(ng)
+            ELSE
+              ifile=(iic(ng)-1)/ndefAVG2(ng)+1
+            END IF
+            IF (Master) THEN
+              WRITE (AVG2(ng)%name,20) TRIM(AVG2(ng)%base), ifile
+            END IF
+# ifdef DISTRIBUTE
+            CALL mp_bcasts (ng, iNLM, AVG2(ng)%name)
+# endif
+            IF (AVG2(ng)%ncid.ne.-1) THEN
+              CALL netcdf_close(ng, iNLM, AVG2(ng)%ncid)
+            END IF
+            CALL def_avg2 (ng, Newfile)
+            IF (exit_flag.ne.NoError) RETURN
+            LwrtAVG2(ng)=.TRUE.
+          END IF
+        ELSE
+          IF (iic(ng).eq.ntstart(ng)) THEN
+            CALL def_avg2 (ng, ldefout(ng))
+            IF (exit_flag.ne.NoError) RETURN
+            LwrtAVG2(ng)=.TRUE.
+            LdefAVG2(ng)=.FALSE.
+          END IF
+        END IF
+      END IF
+!
+!  Write out data into time-averaged NetCDF file.
+!
+      IF (LwrtAVG2(ng)) THEN
+        IF ((iic(ng).gt.ntstart(ng)).and.                               &
+     &      (MOD(iic(ng)-1,nAVG2(ng)).eq.0)) THEN
+          CALL wrt_avg2 (ng)
+          IF (exit_flag.ne.NoError) RETURN
+        END IF
+      END IF
+# endif
+
 # ifdef DIAGNOSTICS
 !
 !-----------------------------------------------------------------------
@@ -272,22 +442,22 @@
             Ldefine=.FALSE.
           END IF
           IF (Ldefine) THEN
-            NrecDIA(ng)=0
+            Fcount=DIA(ng)%Fcount
+            DIA(ng)%Nrec(Fcount)=0
             IF (ndefDIA(ng).eq.nDIA(ng)) THEN
               ifile=(iic(ng)-1)/ndefDIA(ng)
             ELSE
               ifile=(iic(ng)-1)/ndefDIA(ng)+1
             END IF
             IF (Master) THEN
-              lstr=LEN_TRIM(DIAbase(ng))
-              WRITE (DIAname(ng),30) DIAbase(ng)(1:lstr-3),ifile
+              WRITE (DIA(ng)%name,30) TRIM(DIA(ng)%base), ifile
   30          FORMAT (a,'_',i4.4,'.nc')
             END IF
-# ifdef DISTRIBUTE
-            CALL mp_bcasts (ng, iNLM, DIAname(ng))
-# endif
-            IF (ncDIAid(ng).ne.-1) THEN
-              CALL netcdf_close (ng, iNLM, ncDIAid(ng))
+#  ifdef DISTRIBUTE
+            CALL mp_bcasts (ng, iNLM, DIA(ng)%name)
+#  endif
+            IF (DIA(ng)%ncid.ne.-1) THEN
+              CALL netcdf_close (ng, iNLM, DIA(ng)%ncid)
             END IF
             CALL def_diags (ng, Newfile)
             IF (exit_flag.ne.NoError) RETURN
@@ -306,13 +476,15 @@
 !  Write out data into time-averaged diagnostics NetCDF file.
 !
       IF (LwrtDIA(ng)) THEN
-        IF ((iic(ng).gt.ntstart(ng)).and.                               &
-     &      (MOD(iic(ng)-1,nDIA(ng)).eq.0)) THEN
+        IF (((iic(ng).gt.ntstart(ng)).and.                              &
+     &       (MOD(iic(ng)-1,nDIA(ng)).eq.0)).or.                        &
+     &      ((iic(ng).ge.ntsDIA(ng)).and.(nDIA(ng).eq.1))) THEN
           CALL wrt_diags (ng)
           IF (exit_flag.ne.NoError) RETURN
         END IF
       END IF
 # endif
+
 # ifdef STATIONS
 !
 !-----------------------------------------------------------------------
@@ -339,6 +511,7 @@
         END IF
       END IF
 # endif
+
 # ifdef FLOATS
 !
 !-----------------------------------------------------------------------
@@ -384,17 +557,27 @@
         IF (exit_flag.ne.NoError) RETURN
         LwrtRST(ng)=.TRUE.
         LdefRST(ng)=.FALSE.
+#ifdef FILTERED_RST
+        CALL def_filt (ng)
+#endif
       END IF
 !
 !  Write out data into restart NetCDF file.
 !
       IF (LwrtRST(ng)) THEN
         IF ((iic(ng).gt.ntstart(ng)).and.                               &
-     &      (MOD(iic(ng)-1,nRST(ng)).eq.0)) THEN
+     & ((MOD(iic(ng)-1,nRST(ng)).eq.0) .or. ((iic(ng)-1)==ntimes(ng)))) THEN
           CALL wrt_rst (ng)
           IF (exit_flag.ne.NoError) RETURN
+# ifdef FILTERED_RST
+          DO i=1,FILN
+            CALL wrt_filt (ng, i)
+            IF (exit_flag.ne.NoError) RETURN
+          END DO
+# endif
         END IF
       END IF
+
 # if (defined FOUR_DVAR || defined VERIFICATION) && \
      !defined IS4DVAR_SENSITIVITY
 #  ifdef OBSERVATIONS

@@ -1,9 +1,9 @@
 #include "cppdefs.h"
       SUBROUTINE checkadj
 !
-!svn $Id: checkadj.F 429 2009-12-20 17:30:26Z arango $
+!svn $Id$
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2010 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2014 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -16,6 +16,7 @@
       USE mod_param
       USE mod_parallel
       USE mod_iounits
+      USE mod_ncparam
       USE mod_scalars
       USE mod_strings
 !
@@ -76,46 +77,6 @@
 !  adjoint-based algorithms.
 !-----------------------------------------------------------------------
 !
-      string=uppercase('assimilation_ssh')
-      ifound=INDEX(TRIM(Coptions), TRIM(string))
-      IF (ifound.ne.0) THEN
-        ic=ic+1
-        IF (Master) WRITE(stdout,20) TRIM(string),                      &
-     &                               'conflict, FATAL ERROR'
-      END IF
-
-      string=uppercase('assimilation_sst')
-      ifound=INDEX(TRIM(Coptions), TRIM(string))
-      IF (ifound.ne.0) THEN
-        ic=ic+1
-        IF (Master) WRITE(stdout,20) TRIM(string),                      &
-     &                               'conflict, FATAL ERROR'
-      END IF
-
-      string=uppercase('assimilation_t')
-      ifound=INDEX(TRIM(Coptions), TRIM(string))
-      IF (ifound.ne.0) THEN
-        ic=ic+1
-        IF (Master) WRITE(stdout,20) TRIM(string),                      &
-     &                               'conflict, FATAL ERROR'
-      END IF
-
-      string=uppercase('assimilation_uv')
-      ifound=INDEX(TRIM(Coptions), TRIM(string))
-      IF (ifound.ne.0) THEN
-        ic=ic+1
-        IF (Master) WRITE(stdout,20) TRIM(string),                      &
-     &                               'conflict, FATAL ERROR'
-      END IF
-
-      string=uppercase('assimilation_uvsur')
-      ifound=INDEX(TRIM(Coptions), TRIM(string))
-      IF (ifound.ne.0) THEN
-        ic=ic+1
-        IF (Master) WRITE(stdout,20) TRIM(string),                      &
-     &                               'conflict, FATAL ERROR'
-      END IF
-
       string=uppercase('atm_press')
       ifound=INDEX(TRIM(Coptions), TRIM(string))
       IF (ifound.ne.0) THEN
@@ -148,6 +109,13 @@
      &                               'not coded, FATAL ERROR'
       END IF
 
+      string=uppercase('bio_umaine')
+      ifound=INDEX(TRIM(Coptions), TRIM(string))
+      IF (ifound.ne.0) THEN
+        ic=ic+1
+        IF (Master) WRITE(stdout,20) TRIM(string), 'not coded'
+      END IF
+
 # ifndef NL_BULK_FLUXES
       string=uppercase('bulk_fluxes')
       ifound=INDEX(TRIM(Coptions), TRIM(string))
@@ -175,37 +143,151 @@
      &                               'not tested, WARNING'
       END IF
 
-      string=uppercase('east_fsradiation')
-      ifound=INDEX(TRIM(Coptions), TRIM(string))
-      IF (ifound.ne.0) THEN
+      IF (ANY(ad_LBC(ieast,isFsur,:)%radiation)) THEN
         ic=ic+1
-        IF (Master) WRITE(stdout,20) TRIM(string),                      &
+        IF (Master) WRITE(stdout,20) 'ad_LBC(ieast,isFsur)',            &
      &                               'not finished, FATAL ERROR'
       END IF
 
-      string=uppercase('east_m2radiation')
-      ifound=INDEX(TRIM(Coptions), TRIM(string))
-      IF (ifound.ne.0) THEN
+      IF (ANY(ad_LBC(iwest,isFsur,:)%radiation)) THEN
         ic=ic+1
-        IF (Master) WRITE(stdout,20) TRIM(string),                      &
+        IF (Master) WRITE(stdout,20) 'ad_LBC(iwest,isFsur)',            &
      &                               'not finished, FATAL ERROR'
       END IF
 
-      string=uppercase('east_m3radiation')
-      ifound=INDEX(TRIM(Coptions), TRIM(string))
-      IF (ifound.ne.0) THEN
+      IF (ANY(ad_LBC(isouth,isFsur,:)%radiation)) THEN
         ic=ic+1
-        IF (Master) WRITE(stdout,20) TRIM(string),                      &
+        IF (Master) WRITE(stdout,20) 'ad_LBC(isouth,isFsur)',           &
      &                               'not finished, FATAL ERROR'
       END IF
 
-      string=uppercase('east_tradiation')
-      ifound=INDEX(TRIM(Coptions), TRIM(string))
-      IF (ifound.ne.0) THEN
+      IF (ANY(ad_LBC(inorth,isFsur,:)%radiation)) THEN
         ic=ic+1
-        IF (Master) WRITE(stdout,20) TRIM(string),                      &
+        IF (Master) WRITE(stdout,20) 'ad_LBC(inorth,isFsur)',           &
      &                               'not finished, FATAL ERROR'
       END IF
+
+      IF (ANY(ad_LBC(ieast,isUbar,:)%radiation)) THEN
+        ic=ic+1
+        IF (Master) WRITE(stdout,20) 'ad_LBC(ieast,isUbar)',            &
+     &                               'not finished, FATAL ERROR'
+      END IF
+
+      IF (ANY(ad_LBC(iwest,isUbar,:)%radiation)) THEN
+        ic=ic+1
+        IF (Master) WRITE(stdout,20) 'ad_LBC(iwest,isUbar)',            &
+     &                               'not finished, FATAL ERROR'
+      END IF
+
+      IF (ANY(ad_LBC(isouth,isUbar,:)%radiation)) THEN
+        ic=ic+1
+        IF (Master) WRITE(stdout,20) 'ad_LBC(isouth,isUbar)',           &
+     &                               'not finished, FATAL ERROR'
+      END IF
+
+      IF (ANY(ad_LBC(inorth,isUbar,:)%radiation)) THEN
+        ic=ic+1
+        IF (Master) WRITE(stdout,20) 'ad_LBC(inorth,isUbar)',           &
+     &                               'not finished, FATAL ERROR'
+      END IF
+
+      IF (ANY(ad_LBC(ieast,isVbar,:)%radiation)) THEN
+        ic=ic+1
+        IF (Master) WRITE(stdout,20) 'ad_LBC(ieast,isVbar)',            &
+     &                               'not finished, FATAL ERROR'
+      END IF
+
+      IF (ANY(ad_LBC(iwest,isVbar,:)%radiation)) THEN
+        ic=ic+1
+        IF (Master) WRITE(stdout,20) 'ad_LBC(iwest,isVbar)',            &
+     &                               'not finished, FATAL ERROR'
+      END IF
+
+      IF (ANY(ad_LBC(isouth,isVbar,:)%radiation)) THEN
+        ic=ic+1
+        IF (Master) WRITE(stdout,20) 'ad_LBC(isouth,isVbar)',           &
+     &                               'not finished, FATAL ERROR'
+      END IF
+
+      IF (ANY(ad_LBC(inorth,isVbar,:)%radiation)) THEN
+        ic=ic+1
+        IF (Master) WRITE(stdout,20) 'ad_LBC(inorth,isVbar)',           &
+     &                               'not finished, FATAL ERROR'
+      END IF
+
+# ifdef SOLVE3D
+      IF (ANY(ad_LBC(ieast,isUvel,:)%radiation)) THEN
+        ic=ic+1
+        IF (Master) WRITE(stdout,20) 'ad_LBC(ieast,isUvel)',            &
+     &                               'not finished, FATAL ERROR'
+      END IF
+
+      IF (ANY(ad_LBC(iwest,isUvel,:)%radiation)) THEN
+        ic=ic+1
+        IF (Master) WRITE(stdout,20) 'ad_LBC(iwest,isUvel)',            &
+     &                               'not finished, FATAL ERROR'
+      END IF
+
+      IF (ANY(ad_LBC(isouth,isUvel,:)%radiation)) THEN
+        ic=ic+1
+        IF (Master) WRITE(stdout,20) 'ad_LBC(isouth,isUvel)',           &
+     &                               'not finished, FATAL ERROR'
+      END IF
+
+      IF (ANY(ad_LBC(inorth,isUvel,:)%radiation)) THEN
+        ic=ic+1
+        IF (Master) WRITE(stdout,20) 'ad_LBC(inorth,isUvel)',           &
+     &                               'not finished, FATAL ERROR'
+      END IF
+
+      IF (ANY(ad_LBC(ieast,isVvel,:)%radiation)) THEN
+        ic=ic+1
+        IF (Master) WRITE(stdout,20) 'ad_LBC(ieast,isVvel)',            &
+     &                               'not finished, FATAL ERROR'
+      END IF
+
+      IF (ANY(ad_LBC(iwest,isVvel,:)%radiation)) THEN
+        ic=ic+1
+        IF (Master) WRITE(stdout,20) 'ad_LBC(iwest,isVvel)',            &
+     &                               'not finished, FATAL ERROR'
+      END IF
+
+      IF (ANY(ad_LBC(isouth,isVvel,:)%radiation)) THEN
+        ic=ic+1
+        IF (Master) WRITE(stdout,20) 'ad_LBC(isouth,isVvel)',           &
+     &                               'not finished, FATAL ERROR'
+      END IF
+
+      IF (ANY(ad_LBC(inorth,isVvel,:)%radiation)) THEN
+        ic=ic+1
+        IF (Master) WRITE(stdout,20) 'ad_LBC(inorth,isVvel)',           &
+     &                               'not finished, FATAL ERROR'
+      END IF
+
+      IF (ANY(ad_LBC(ieast,isTvar(:),:)%radiation)) THEN
+        ic=ic+1
+        IF (Master) WRITE(stdout,20) 'ad_LBC(ieast,isTvar(:))',         &
+     &                               'not finished, FATAL ERROR'
+      END IF
+
+      IF (ANY(ad_LBC(iwest,isTvar(:),:)%radiation)) THEN
+        ic=ic+1
+        IF (Master) WRITE(stdout,20) 'ad_LBC(iwest,isTvar(:))',         &
+     &                               'not finished, FATAL ERROR'
+      END IF
+
+      IF (ANY(ad_LBC(isouth,isTvar(:),:)%radiation)) THEN
+        ic=ic+1
+        IF (Master) WRITE(stdout,20) 'ad_LBC(isouth,isTvar(:))',        &
+     &                               'not finished, FATAL ERROR'
+      END IF
+
+      IF (ANY(ad_LBC(inorth,isTvar(:),:)%radiation)) THEN
+        ic=ic+1
+        IF (Master) WRITE(stdout,20) 'ad_LBC(inorth,isTvar(:))',        &
+     &                               'not finished, FATAL ERROR'
+      END IF
+# endif
 
       string=uppercase('ecosim')
       ifound=INDEX(TRIM(Coptions), TRIM(string))
@@ -224,6 +306,14 @@
      &                               'not differentiable, WARNING'
       END IF
 # endif
+
+      string=uppercase('limit_bstress')
+      ifound=INDEX(TRIM(Coptions), TRIM(string))
+      IF (ifound.ne.0) THEN
+        ic=ic+1
+        IF (Master) WRITE(stdout,20) TRIM(string),                      &
+     &                               'not coded, FATAL ERROR'
+      END IF
 
 # ifndef FORWARD_MIXING
       string=uppercase('lmd_mixing')
@@ -269,36 +359,12 @@
      &                               'not coded, FATAL ERROR'
       END IF
 
-      string=uppercase('north_fsradiation')
+      string=uppercase('nesting')
       ifound=INDEX(TRIM(Coptions), TRIM(string))
       IF (ifound.ne.0) THEN
         ic=ic+1
         IF (Master) WRITE(stdout,20) TRIM(string),                      &
-     &                               'not finished, FATAL ERROR'
-      END IF
-
-      string=uppercase('north_m2radiation')
-      ifound=INDEX(TRIM(Coptions), TRIM(string))
-      IF (ifound.ne.0) THEN
-        ic=ic+1
-        IF (Master) WRITE(stdout,20) TRIM(string),                      &
-     &                               'not finished, FATAL ERROR'
-      END IF
-
-      string=uppercase('north_m3radiation')
-      ifound=INDEX(TRIM(Coptions), TRIM(string))
-      IF (ifound.ne.0) THEN
-        ic=ic+1
-        IF (Master) WRITE(stdout,20) TRIM(string),                      &
-     &                               'not finished, FATAL ERROR'
-      END IF
-
-      string=uppercase('north_tradiation')
-      ifound=INDEX(TRIM(Coptions), TRIM(string))
-      IF (ifound.ne.0) THEN
-        ic=ic+1
-        IF (Master) WRITE(stdout,20) TRIM(string),                      &
-     &                               'not finished, FATAL ERROR'
+     &                               'not coded, FATAL ERROR'
       END IF
 
       string=uppercase('npzd_franks')
@@ -363,38 +429,6 @@
         ic=ic+1
         IF (Master) WRITE(stdout,20) TRIM(string),                      &
      &                               'not coded, FATAL ERROR'
-      END IF
-
-      string=uppercase('south_fsradiation')
-      ifound=INDEX(TRIM(Coptions), TRIM(string))
-      IF (ifound.ne.0) THEN
-        ic=ic+1
-        IF (Master) WRITE(stdout,20) TRIM(string),                      &
-     &                               'not finished, FATAL ERROR'
-      END IF
-
-      string=uppercase('south_m2radiation')
-      ifound=INDEX(TRIM(Coptions), TRIM(string))
-      IF (ifound.ne.0) THEN
-        ic=ic+1
-        IF (Master) WRITE(stdout,20) TRIM(string),                      &
-     &                               'not finished, FATAL ERROR'
-      END IF
-
-      string=uppercase('south_m3radiation')
-      ifound=INDEX(TRIM(Coptions), TRIM(string))
-      IF (ifound.ne.0) THEN
-        ic=ic+1
-        IF (Master) WRITE(stdout,20) TRIM(string),                      &
-     &                               'not finished, FATAL ERROR'
-      END IF
-
-      string=uppercase('south_tradiation')
-      ifound=INDEX(TRIM(Coptions), TRIM(string))
-      IF (ifound.ne.0) THEN
-        ic=ic+1
-        IF (Master) WRITE(stdout,20) TRIM(string),                      &
-     &                               'not finished, FATAL ERROR'
       END IF
 
       string=uppercase('ssw_bbl')
@@ -463,38 +497,6 @@
         ic=ic+1
         IF (Master) WRITE(stdout,20) TRIM(string),                      &
      &                               'not coded, FATAL ERROR'
-      END IF
-
-      string=uppercase('west_fsradiation')
-      ifound=INDEX(TRIM(Coptions), TRIM(string))
-      IF (ifound.ne.0) THEN
-        ic=ic+1
-        IF (Master) WRITE(stdout,20) TRIM(string),                      &
-     &                               'not finished, FATAL ERROR'
-      END IF
-
-      string=uppercase('west_m2radiation')
-      ifound=INDEX(TRIM(Coptions), TRIM(string))
-      IF (ifound.ne.0) THEN
-        ic=ic+1
-        IF (Master) WRITE(stdout,20) TRIM(string),                      &
-     &                               'not finished, FATAL ERROR'
-      END IF
-
-      string=uppercase('west_m3radiation')
-      ifound=INDEX(TRIM(Coptions), TRIM(string))
-      IF (ifound.ne.0) THEN
-        ic=ic+1
-        IF (Master) WRITE(stdout,20) TRIM(string),                      &
-     &                               'not finished, FATAL ERROR'
-      END IF
-
-      string=uppercase('west_tradiation')
-      ifound=INDEX(TRIM(Coptions), TRIM(string))
-      IF (ifound.ne.0) THEN
-        ic=ic+1
-        IF (Master) WRITE(stdout,20) TRIM(string),                      &
-     &                               'not finished, FATAL ERROR'
       END IF
 
       string=uppercase('wet_dry')

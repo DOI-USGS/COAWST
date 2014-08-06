@@ -1,11 +1,11 @@
 #include "cppdefs.h"
       MODULE tl_forcing_mod
 
-#if defined TANGENT && defined WEAK_CONSTRAINT
+#if defined TANGENT && (defined WEAK_CONSTRAINT || defined FORCING_SV)
 !
-!svn $Id: tl_forcing.F 429 2009-12-20 17:30:26Z arango $
+!svn $Id$
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2010 The ROMS/TOMS Group   Emanuele Di Lorenzo   !
+!  Copyright (c) 2002-2014 The ROMS/TOMS Group   Emanuele Di Lorenzo   !
 !    Licensed under a MIT/X style license            Andrew M. Moore   !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -162,9 +162,10 @@
 !  Add given forcing to tangent linear state.
 !-----------------------------------------------------------------------
 !
-      IF (SOUTH_WEST_CORNER) THEN
+# ifdef WEAK_CONSTRAINT
+      IF (DOMAIN(ng)%SouthWest_Corner(tile)) THEN
         IF (Master) THEN
-          IF (FrequentImpulse) THEN
+          IF (FrequentImpulse(ng)) THEN
             IF (iic(ng).eq.ntstart(ng)) THEN
               WRITE (stdout,10)
  10           FORMAT (3x,'TL_FORCING   - adding weak-constraint ',      &
@@ -177,6 +178,7 @@
           END IF
         END IF
       END IF
+# endif
 !
 !  Tangent linear free-surface. The two different cases in the
 !  case of SOLVE3D are due to the fact that tl_ini_fields is

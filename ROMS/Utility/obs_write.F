@@ -2,9 +2,9 @@
 #if (defined FOUR_DVAR || defined VERIFICATION) && defined OBSERVATIONS
       SUBROUTINE obs_write (ng, tile, model)
 !
-!svn $Id: obs_write.F 431 2009-12-26 20:36:20Z arango $
+!svn $Id$
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2010 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2014 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -482,32 +482,32 @@
           DO iobs=Mstr,Mend
 #  if defined IS4DVAR
             misfit(iobs)=ObsScale(iobs)*SQRT(ObsErr(iobs))*             &
-     &                   (NLmodVal(iobs)+TLmodVal(iobs)-ObsVal(iobs))
+     &                   (NLmodVal(iobs)-ObsVal(iobs))
 #  elif defined WEAK_CONSTRAINT
             misfit(iobs)=ObsScale(iobs)/SQRT(ObsErr(iobs))*             &
      &                   (TLmodVal(iobs)-ObsVal(iobs))
 #  endif
           END DO
           IF (Nrun.eq.1) THEN
-            CALL netcdf_put_fvar (ng, model, MODname(ng),               &
+            CALL netcdf_put_fvar (ng, model, DAV(ng)%name,              &
      &                            Vname(1,idNLmi), NLmodVal(Mstr:),     &
      &                            (/NstrObs(ng)/), (/Nobs(ng)/),        &
-     &                            ncid = ncMODid(ng),                   &
-     &                            varid = modVid(idNLmi,ng))
+     &                            ncid = DAV(ng)%ncid,                  &
+     &                            varid = DAV(ng)%Vid(idNLmi))
             IF (exit_flag.ne.NoError) RETURN
 
-            CALL netcdf_put_fvar (ng, model, MODname(ng),               &
+            CALL netcdf_put_fvar (ng, model, DAV(ng)%name,              &
      &                            Vname(1,idMOMi), misfit(Mstr:),       &
      &                            (/NstrObs(ng)/), (/Nobs(ng)/),        &
-     &                            ncid = ncMODid(ng),                   &
-     &                            varid = modVid(idMOMi,ng))
+     &                            ncid = DAV(ng)%ncid,                  &
+     &                            varid = DAV(ng)%Vid(idMOMi))
             IF (exit_flag.ne.NoError) RETURN
           ELSE
-            CALL netcdf_put_fvar (ng, model, MODname(ng),               &
+            CALL netcdf_put_fvar (ng, model, DAV(ng)%name,              &
      &                            Vname(1,idMOMf), misfit(Mstr:),       &
      &                            (/NstrObs(ng)/), (/Nobs(ng)/),        &
-     &                            ncid = ncMODid(ng),                   &
-     &                            varid = modVid(idMOMf,ng))
+     &                            ncid = DAV(ng)%ncid,                  &
+     &                            varid = DAV(ng)%Vid(idMOMf))
             IF (exit_flag.ne.NoError) RETURN
           END IF
         END IF
@@ -521,14 +521,14 @@
 !  Current outer and inner loop.
 !
         IF (wrtNLmod(ng).or.wrtTLmod(ng).or.wrtRPmod(ng)) THEN
-          CALL netcdf_put_ivar (ng, model, MODname(ng), 'outer',        &
+          CALL netcdf_put_ivar (ng, model, DAV(ng)%name, 'outer',       &
      &                          outer, (/0/), (/0/),                    &
-     &                          ncid = ncMODid(ng))
+     &                          ncid = DAV(ng)%ncid)
           IF (exit_flag.ne.NoError) RETURN
 
-          CALL netcdf_put_ivar (ng, model, MODname(ng), 'inner',        &
+          CALL netcdf_put_ivar (ng, model, DAV(ng)%name, 'inner',       &
      &                          inner, (/0/), (/0/),                    &
-     &                          ncid = ncMODid(ng))
+     &                          ncid = DAV(ng)%ncid)
           IF (exit_flag.ne.NoError) RETURN
         END IF
 #endif
@@ -537,11 +537,11 @@
 !
         IF ((Nrun.eq.1).and.                                            &
      &      (wrtNLmod(ng).or.wrtTLmod(ng).or.wrtRPmod(ng))) THEN
-          CALL netcdf_put_fvar (ng, model, MODname(ng),                 &
+          CALL netcdf_put_fvar (ng, model, DAV(ng)%name,                &
      &                          Vname(1,idObsS), ObsScale(Mstr:),       &
      &                          (/NstrObs(ng)/), (/Nobs(ng)/),          &
-     &                          ncid = ncMODid(ng),                     &
-     &                          varid = modVid(idObsS,ng))
+     &                          ncid = DAV(ng)%ncid,                    &
+     &                          varid = DAV(ng)%Vid(idObsS))
           IF (exit_flag.ne.NoError) RETURN
         END IF
 
@@ -551,11 +551,11 @@
 !  locations.
 !
         IF (wrtNLmod(ng)) THEN
-          CALL netcdf_put_fvar (ng, model, MODname(ng),                 &
+          CALL netcdf_put_fvar (ng, model, DAV(ng)%name,                &
      &                          Vname(1,idNLmo), NLmodVal(Mstr:),       &
      &                          (/NstrObs(ng)/), (/Nobs(ng)/),          &
-     &                          ncid = ncMODid(ng),                     &
-     &                          varid = modVid(idNLmo,ng))
+     &                          ncid = DAV(ng)%ncid,                    &
+     &                          varid = DAV(ng)%Vid(idNLmo))
           IF (exit_flag.ne.NoError) RETURN
           haveNLmod(ng)=.TRUE.
         END IF
@@ -565,11 +565,11 @@
 !  Tangent linear model state increments at observation locations.
 !
         IF (wrtTLmod(ng).or.wrtRPmod(ng)) THEN
-          CALL netcdf_put_fvar (ng, model, MODname(ng),                 &
+          CALL netcdf_put_fvar (ng, model, DAV(ng)%name,                &
      &                          Vname(1,idTLmo), TLmodVal(Mstr:),       &
      &                          (/NstrObs(ng)/), (/Nobs(ng)/),          &
-     &                          ncid = ncMODid(ng),                     &
-     &                          varid = modVid(idTLmo,ng))
+     &                          ncid = DAV(ng)%ncid,                    &
+     &                          varid = DAV(ng)%Vid(idTLmo))
           IF (exit_flag.ne.NoError) RETURN
           haveTLmod(ng)=.TRUE.
         END IF
@@ -579,10 +579,10 @@
 !  Write the total observation impact.
 !
         IF (wrtIMPACT_TOT(ng)) THEN
-          CALL netcdf_put_fvar (ng, model, MODname(ng),                 &
+          CALL netcdf_put_fvar (ng, model, DAV(ng)%name,                &
      &                          'ObsImpact_total', TLmodVal(Mstr:),     &
      &                          (/NstrObs(ng)/), (/Nobs(ng)/),          &
-     &                          ncid = ncMODid(ng))
+     &                          ncid = DAV(ng)%ncid)
           IF (exit_flag.ne.NoError) RETURN
         END IF
 #   endif
@@ -591,10 +591,10 @@
 !  Write the observation impact of initial conditions.
 !
         IF (wrtIMPACT_IC(ng)) THEN
-          CALL netcdf_put_fvar (ng, model, MODname(ng),                 &
+          CALL netcdf_put_fvar (ng, model, DAV(ng)%name,                &
      &                          'ObsImpact_IC', TLmodVal(Mstr:),        &
      &                          (/NstrObs(ng)/), (/Nobs(ng)/),          &
-     &                          ncid = ncMODid(ng))
+     &                          ncid = DAV(ng)%ncid)
           IF (exit_flag.ne.NoError) RETURN
         END IF
 #    if defined ADJUST_WSTRESS || defined ADJUST_STFLUX
@@ -602,10 +602,10 @@
 !  Write the observation impact of surface forcing.
 !
         IF (wrtIMPACT_FC(ng)) THEN
-          CALL netcdf_put_fvar (ng, model, MODname(ng),                 &
+          CALL netcdf_put_fvar (ng, model, DAV(ng)%name,                &
      &                          'ObsImpact_FC', TLmodVal(Mstr:),        &
      &                          (/NstrObs(ng)/), (/Nobs(ng)/),          &
-     &                          ncid = ncMODid(ng))
+     &                          ncid = DAV(ng)%ncid)
           IF (exit_flag.ne.NoError) RETURN
         END IF
 #    endif
@@ -614,10 +614,10 @@
 !  Write the observation impact of boundary conditions.
 !
         IF (wrtIMPACT_BC(ng)) THEN
-          CALL netcdf_put_fvar (ng, model, MODname(ng),                 &
+          CALL netcdf_put_fvar (ng, model, DAV(ng)%name,                &
      &                          'ObsImpact_BC', TLmodVal(Mstr:),        &
      &                          (/NstrObs(ng)/), (/Nobs(ng)/),          &
-     &                          ncid = ncMODid(ng))
+     &                          ncid = DAV(ng)%ncid)
           IF (exit_flag.ne.NoError) RETURN
         END IF
 #    endif
@@ -630,10 +630,10 @@
 !  Write initial representer model increments at observation locations.
 !
         IF (Nrun.eq.1.and.wrtRPmod(ng)) THEN
-          CALL netcdf_put_fvar (ng, model, MODname(ng),                 &
+          CALL netcdf_put_fvar (ng, model, DAV(ng)%name,                &
      &                          'RPmodel_initial', TLmodVal(Mstr:),     &
      &                          (/NstrObs(ng)/), (/Nobs(ng)/) ,         &
-     &                          ncid = ncMODid(ng))
+     &                          ncid = DAV(ng)%ncid)
           IF (exit_flag.ne.NoError) RETURN
         END IF
 # endif
@@ -653,11 +653,11 @@
             Zobs(iobs)=Zobs(iobs)*ObsScale(iobs)
           END DO
 
-          CALL netcdf_put_fvar (ng, model, OBSname(ng),                 &
+          CALL netcdf_put_fvar (ng, model, OBS(ng)%name,                &
      &                          Vname(1,idObsZ), Zobs(Mstr:),           &
      &                          (/NstrObs(ng)/), (/Nobs(ng)/),          &
-     &                          ncid = ncOBSid(ng),                     &
-     &                          varid = obsVid(idObsZ,ng))
+     &                          ncid = OBS(ng)%ncid,                    &
+     &                          varid = OBS(ng)%Vid(idObsZ))
           IF (exit_flag.ne.NoError) RETURN
 
           IF (model.eq.iADM) THEN
@@ -673,11 +673,11 @@
 !  Write out reference free-surface used in the balance operator.
 !
         IF (wrtZetaRef(ng).and.balance(isFsur)) THEN
-          status=nf_fwrite2d(ng, model, ncMODid(ng), modVid(idFsur,ng), &
-     &                       0, r2dvar,                                 &
+          status=nf_fwrite2d(ng, model, DAV(ng)%ncid,                   &
+     &                       DAV(ng)%Vid(idFsur), 0, r2dvar,            &
      &                       LBi, UBi, LBj, UBj, 1.0_r8,                &
 #  ifdef MASKING
-     &                       GRID(ng) % rmask,                          &
+     &                       GRID(ng) % rmask_io,                       &
 #  endif
      &                       FOURDVAR(ng) % zeta_ref)
           IF (exit_flag.ne.NoError) RETURN
@@ -690,12 +690,12 @@
 !-----------------------------------------------------------------------
 !
         IF (wrtNLmod(ng).or.wrtTLmod(ng).or.wrtRPmod(ng)) THEN
-          CALL netcdf_sync (ng, model, MODname(ng), ncMODid(ng))
+          CALL netcdf_sync (ng, model, DAV(ng)%name, DAV(ng)%ncid)
           IF (exit_flag.ne.NoError) RETURN
 
 # ifdef SOLVE3D
           IF (Load_Zobs(ng)) THEN
-            CALL netcdf_sync (ng, model, OBSname(ng), ncOBSid(ng))
+            CALL netcdf_sync (ng, model, OBS(ng)%name, OBS(ng)%ncid)
             IF (exit_flag.ne.NoError) RETURN
           END IF
 # endif

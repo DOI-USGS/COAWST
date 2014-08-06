@@ -4,7 +4,7 @@
 !
 !svn $Id: wrt_ini.F 733 2008-09-07 01:56:45Z jcwarner $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2010 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2014 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -48,9 +48,9 @@
 !  Local variable declarations.
 !
       integer :: LBi, UBi, LBj, UBj
-      integer :: gfactor, gtype, i, itrc, status, varid
+      integer :: Fcount, gfactor, gtype, i, itrc, status, varid
 
-      real(r8) :: scale
+      real(r8) :: my_time, scale
 !
       LBi=LBOUND(GRID(ng)%h,DIM=1)
       UBi=UBOUND(GRID(ng)%h,DIM=1)
@@ -76,27 +76,31 @@
 !
 !  Set time record index.
 !
-      tINIindx(ng)=tINIindx(ng)+1
-      NrecINI(ng)=NrecINI(ng)+1
+      INI(ng)%Rindex=INI(ng)%Rindex+1
+      Fcount=INI(ng)%Fcount
+      INI(ng)%Nrec(Fcount)=INI(ng)%Nrec(Fcount)+1
 !
-!  Write out model time (s).
+!  Write out model time (s). Use the "tdays" variable here because of
+!  the management of the "time" variable due to nesting.
 !
-      CALL netcdf_put_fvar (ng, iNLM, INIname(ng),                      &
-     &                      TRIM(Vname(1,idtime)), time(ng:),           &
-     &                      (/tINIindx(ng)/), (/1/),                    &
-     &                      ncid = ncINIid(ng),                         &
-     &                      varid = iniVid(idtime,ng))
+      my_time=tdays(ng)*day2sec
+
+      CALL netcdf_put_fvar (ng, iNLM, INI(ng)%name,                     &
+     &                      TRIM(Vname(1,idtime)), my_time,             &
+     &                      (/INI(ng)%Rindex/), (/1/),                  &
+     &                      ncid = INI(ng)%ncid,                        &
+     &                      varid = INI(ng)%Vid(idtime))
       IF (exit_flag.ne.NoError) RETURN
 !
 !  Write out free-surface (m)
 !
       scale=1.0_r8
       gtype=gfactor*r2dvar
-      status=nf_fwrite2d(ng, iNLM, ncINIid(ng), iniVid(idFsur,ng),      &
-     &                   tINIindx(ng), gtype,                           &
+      status=nf_fwrite2d(ng, iNLM, INI(ng)%ncid, INI(ng)%Vid(idFsur),   &
+     &                   INI(ng)%Rindex, gtype,                         &
      &                   LBi, UBi, LBj, UBj, scale,                     &
 # ifdef MASKING
-     &                   GRID(ng) % rmask,                              &
+     &                   GRID(ng) % rmask_io,                           &
 # endif
 # ifdef WET_DRY
      &                   OCEAN(ng) % zeta(:,:,Tindex),                  &
@@ -106,7 +110,7 @@
 # endif
       IF (status.ne.nf90_noerr) THEN
         IF (Master) THEN
-          WRITE (stdout,10) TRIM(Vname(1,idFsur)), tINIindx(ng)
+          WRITE (stdout,10) TRIM(Vname(1,idFsur)), INI(ng)%Rindex
         END IF
         exit_flag=3
         ioerror=status
@@ -117,16 +121,16 @@
 !
       scale=1.0_r8
       gtype=gfactor*u2dvar
-      status=nf_fwrite2d(ng, iNLM, ncINIid(ng), iniVid(idUbar,ng),      &
-     &                   tINIindx(ng), gtype,                           &
+      status=nf_fwrite2d(ng, iNLM, INI(ng)%ncid, INI(ng)%Vid(idUbar),   &
+     &                   INI(ng)%Rindex, gtype,                         &
      &                   LBi, UBi, LBj, UBj, scale,                     &
 # ifdef MASKING
-     &                   GRID(ng) % umask,                              &
+     &                   GRID(ng) % umask_io,                           &
 # endif
      &                   OCEAN(ng) % ubar(:,:,Tindex))
       IF (status.ne.nf90_noerr) THEN
         IF (Master) THEN
-          WRITE (stdout,10) TRIM(Vname(1,idUbar)), tINIindx(ng)
+          WRITE (stdout,10) TRIM(Vname(1,idUbar)), INI(ng)%Rindex
         END IF
         exit_flag=3
         ioerror=status
@@ -137,16 +141,16 @@
 !
       scale=1.0_r8
       gtype=gfactor*v2dvar
-      status=nf_fwrite2d(ng, iNLM, ncINIid(ng), iniVid(idVbar,ng),      &
-     &                   tINIindx(ng), gtype,                           &
+      status=nf_fwrite2d(ng, iNLM, INI(ng)%ncid, INI(ng)%Vid(idVbar),   &
+     &                   INI(ng)%Rindex, gtype,                         &
      &                   LBi, UBi, LBj, UBj, scale,                     &
 # ifdef MASKING
-     &                   GRID(ng) % vmask,                              &
+     &                   GRID(ng) % vmask_io,                           &
 # endif
      &                   OCEAN(ng) % vbar(:,:,Tindex))
       IF (status.ne.nf90_noerr) THEN
         IF (Master) THEN
-          WRITE (stdout,10) TRIM(Vname(1,idVbar)), tINIindx(ng)
+          WRITE (stdout,10) TRIM(Vname(1,idVbar)), INI(ng)%Rindex
         END IF
         exit_flag=3
         ioerror=status
@@ -159,16 +163,16 @@
 !
       scale=1.0_r8
       gtype=gfactor*u3dvar
-      status=nf_fwrite3d(ng, iNLM, ncINIid(ng), iniVid(idUvel,ng),      &
-     &                   tINIindx(ng), gtype,                           &
+      status=nf_fwrite3d(ng, iNLM, INI(ng)%ncid, INI(ng)%Vid(idUvel),   &
+     &                   INI(ng)%Rindex, gtype,                         &
      &                   LBi, UBi, LBj, UBj, 1, N(ng), scale,           &
 #  ifdef MASKING
-     &                   GRID(ng) % umask,                              &
+     &                   GRID(ng) % umask_io,                           &
 #  endif
      &                   OCEAN(ng) % u(:,:,:,Tindex))
       IF (status.ne.nf90_noerr) THEN
         IF (Master) THEN
-          WRITE (stdout,10) TRIM(Vname(1,idUvel)), tINIindx(ng)
+          WRITE (stdout,10) TRIM(Vname(1,idUvel)), INI(ng)%Rindex
         END IF
         exit_flag=3
         ioerror=status
@@ -179,16 +183,16 @@
 !
       scale=1.0_r8
       gtype=gfactor*v3dvar
-      status=nf_fwrite3d(ng, iNLM, ncINIid(ng), iniVid(idVvel,ng),      &
-     &                   tINIindx(ng), gtype,                           &
+      status=nf_fwrite3d(ng, iNLM, INI(ng)%ncid, INI(ng)%Vid(idVvel),   &
+     &                   INI(ng)%Rindex, gtype,                         &
      &                   LBi, UBi, LBj, UBj, 1, N(ng), scale,           &
 #  ifdef MASKING
-     &                   GRID(ng) % vmask,                              &
+     &                   GRID(ng) % vmask_io,                           &
 #  endif
      &                   OCEAN(ng) % v(:,:,:,Tindex))
       IF (status.ne.nf90_noerr) THEN
         IF (Master) THEN
-          WRITE (stdout,10) TRIM(Vname(1,idVvel)), tINIindx(ng)
+          WRITE (stdout,10) TRIM(Vname(1,idVvel)), INI(ng)%Rindex
         END IF
         exit_flag=3
         ioerror=status
@@ -200,16 +204,16 @@
       DO itrc=1,NT(ng)
         scale=1.0_r8
         gtype=gfactor*r3dvar
-        status=nf_fwrite3d(ng, iNLM, ncINIid(ng), iniTid(itrc,ng),      &
-     &                     tINIindx(ng), gtype,                         &
+        status=nf_fwrite3d(ng, iNLM, INI(ng)%ncid, INI(ng)%Tid(itrc),   &
+     &                     INI(ng)%Rindex, gtype,                       &
      &                     LBi, UBi, LBj, UBj, 1, N(ng), scale,         &
 #  ifdef MASKING
-     &                     GRID(ng) % rmask,                            &
+     &                     GRID(ng) % rmask_io,                         &
 #  endif
      &                     OCEAN(ng) % t(:,:,:,Tindex,itrc))
         IF (status.ne.nf90_noerr) THEN
           IF (Master) THEN
-            WRITE (stdout,10) TRIM(Vname(1,idTvar(itrc))), tINIindx(ng)
+            WRITE (stdout,10) TRIM(Vname(1,idTvar(itrc))), INI(ng)%Rindex
           END IF
           exit_flag=3
           ioerror=status
@@ -222,19 +226,20 @@
 !
 !  If defined, write out vertical viscosity coefficient.
 !
-      IF (iniVid(idVvis,ng).gt.0) THEN
+      IF (INI(ng)%Vid(idVvis).gt.0) THEN
         scale=1.0_r8
         gtype=gfactor*w3dvar
-        status=nf_fwrite3d(ng, iNLM, ncINIid(ng), iniVid(idVvis,ng),    &
-     &                     tINIindx(ng), gtype,                         &
+        status=nf_fwrite3d(ng, iNLM, INI(ng)%ncid, INI(ng)%Vid(idVvis), &
+     &                     INI(ng)%Rindex, gtype,                       &
      &                     LBi, UBi, LBj, UBj, 0, N(ng), scale,         &
 #   ifdef MASKING
-     &                     GRID(ng) % rmask,                            &
+     &                     GRID(ng) % rmask_io,                         &
 #   endif
-     &                     MIXING(ng) % Akv)
+     &                     MIXING(ng) % Akv,                            &
+     &                     SetFillVal = .FALSE.)
         IF (status.ne.nf90_noerr) THEN
           IF (Master) THEN
-            WRITE (stdout,10) TRIM(Vname(1,idVvis)), tINIindx(ng)
+            WRITE (stdout,10) TRIM(Vname(1,idVvis)), INI(ng)%Rindex
           END IF
           exit_flag=3
           ioerror=status
@@ -245,19 +250,20 @@
 !  If defined, write out vertical diffusion coefficient for potential
 !  temperature.
 !
-      IF (iniVid(idTdif,ng).gt.0) THEN
+      IF (INI(ng)%Vid(idTdif).gt.0) THEN
         scale=1.0_r8
         gtype=gfactor*w3dvar
-        status=nf_fwrite3d(ng, iNLM, ncINIid(ng), iniVid(idTdif,ng),    &
-     &                     tINIindx(ng), gtype,                         &
+        status=nf_fwrite3d(ng, iNLM, INI(ng)%ncid, INI(ng)%Vid(idTdif), &
+     &                     INI(ng)%Rindex, gtype,                       &
      &                     LBi, UBi, LBj, UBj, 0, N(ng), scale,         &
 #   ifdef MASKING
-     &                     GRID(ng) % rmask,                            &
+     &                     GRID(ng) % rmask_io,                         &
 #   endif
-     &                     MIXING(ng) % Akt(:,:,:,itemp))
+     &                     MIXING(ng) % Akt(:,:,:,itemp),               &
+     &                     SetFillVal = .FALSE.)
         IF (status.ne.nf90_noerr) THEN
           IF (Master) THEN
-            WRITE (stdout,10) TRIM(Vname(1,idTdif)), tINIindx(ng)
+            WRITE (stdout,10) TRIM(Vname(1,idTdif)), INI(ng)%Rindex
           END IF
           exit_flag=3
           ioerror=status
@@ -269,19 +275,20 @@
 !
 !  If defined, write out vertical diffusion coefficient for salinity.
 !
-      IF (iniVid(idSdif,ng).gt.0) THEN
+      IF (INI(ng)%Vid(idSdif).gt.0) THEN
         scale=1.0_r8
         gtype=gfactor*w3dvar
-        status=nf_fwrite3d(ng, iNLM, ncINIid(ng), iniVid(idSdif,ng),    &
-     &                     tINIindx(ng), gtype,                         &
+        status=nf_fwrite3d(ng, iNLM, INI(ng)%ncid, INI(ng)%Vid(idSdif), &
+     &                     INI(ng)%Rindex, gtype,                       &
      &                     LBi, UBi, LBj, UBj, 0, N(ng), scale,         &
 #    ifdef MASKING
-     &                     GRID(ng) % rmask,                            &
+     &                     GRID(ng) % rmask_io,                         &
 #    endif
-     &                     MIXING(ng) % Akt(:,:,:,isalt))
+     &                     MIXING(ng) % Akt(:,:,:,isalt),               &
+     &                     SetFillVal = .FALSE.)
         IF (status.ne.nf90_noerr) THEN
           IF (Master) THEN
-            WRITE (stdout,10) TRIM(Vname(1,idSdif)), tINIindx(ng)
+            WRITE (stdout,10) TRIM(Vname(1,idSdif)), INI(ng)%Rindex
           END IF
           exit_flag=3
           ioerror=status
@@ -297,14 +304,22 @@
 !  to access data immediately after it is written.
 !-----------------------------------------------------------------------
 !
-      CALL netcdf_sync (ng, iNLM, INIname(ng), ncINIid(ng))
+      CALL netcdf_sync (ng, iNLM, INI(ng)%name, INI(ng)%ncid)
       IF (exit_flag.ne.NoError) RETURN
 
       IF (Master) THEN
 # ifdef SOLVE3D
-        WRITE (stdout,20) Nrun, Tindex, Tindex, tINIindx(ng)
+#  ifdef NESTING
+        WRITE (stdout,20) Nrun, Tindex, Tindex, INI(ng)%Rindex, ng
+#  else
+        WRITE (stdout,20) Nrun, Tindex, Tindex, INI(ng)%Rindex
+#  endif
 # else
-        WRITE (stdout,20) Nrun, Tindex, tINIindx(ng)
+#  ifdef NESTING
+        WRITE (stdout,20) Nrun, Tindex, INI(ng)%Rindex, ng
+#  else
+        WRITE (stdout,20) Nrun, Tindex, INI(ng)%Rindex
+#  endif
 # endif
       END IF
 !
@@ -312,10 +327,18 @@
      &        'into initial NetCDF file for time record: ',i4)
 # ifdef SOLVE3D
   20  FORMAT (6x,'WRT_INI   - wrote initial  fields (Iter=',i4.4,       &
+#  ifdef NESTING
+     &           ', Index=',i1,',',i1,', Rec=',i4.4,', Grid 'i2.2,')')
+#  else
      &           ', Index=',i1,',',i1,', Rec=',i4.4,')')
+#  endif
 # else
   20  FORMAT (6x,'WRT_INI   - wrote initial  fields (Iter=',i4.4,       &
+#  ifdef NESTING
+     &           ', Index=',i1,', Rec=',i4.4,', Grid ',i2.2,')')
+#  else
      &           ', Index=',i1,', Rec=',i4.4,')')
+#  endif
 # endif
       RETURN
       END SUBROUTINE wrt_ini
@@ -417,9 +440,9 @@
 !
       IF (ANY(Lobc(:,isFsur,ng))) THEN
         scale=1.0_r8
-        status=nf_fwrite2d_bry (ng, iNLM, INIname(ng), ncINIid(ng),     &
+        status=nf_fwrite2d_bry (ng, iNLM, INI(ng)%name, INI(ng)%ncid,   &
      &                          Vname(1,idSbry(isFsur)),                &
-     &                          iniVid(idSbry(isFsur),ng),              &
+     &                          INI(ng)%Vid(idSbry(isFsur)),            &
      &                          OutRec, r2dvar,                         &
      &                          LBij, UBij, Nbrec(ng), scale,           &
      &                          BOUNDARY(ng) % zeta_obc(LBij:,:,:,      &
@@ -438,9 +461,9 @@
 !
       IF (ANY(Lobc(:,isUbar,ng))) THEN
         scale=1.0_r8
-        status=nf_fwrite2d_bry (ng, iNLM, INIname(ng), ncINIid(ng),     &
+        status=nf_fwrite2d_bry (ng, iNLM, INI(ng)%name, INI(ng)%ncid,   &
      &                          Vname(1,idSbry(isUbar)),                &
-     &                          iniVid(idSbry(isUbar),ng),              &
+     &                          INI(ng)%Vid(idSbry(isUbar)),            &
      &                          OutRec, u2dvar,                         &
      &                          LBij, UBij, Nbrec(ng), scale,           &
      &                          BOUNDARY(ng) % ubar_obc(LBij:,:,:,      &
@@ -459,9 +482,9 @@
 !
       IF (ANY(Lobc(:,isVbar,ng))) THEN
         scale=1.0_r8
-        status=nf_fwrite2d_bry (ng, iNLM, INIname(ng), ncINIid(ng),     &
+        status=nf_fwrite2d_bry (ng, iNLM, INI(ng)%name, INI(ng)%ncid,   &
      &                          Vname(1,idSbry(isVbar)),                &
-     &                          iniVid(idSbry(isVbar),ng),              &
+     &                          INI(ng)%Vid(idSbry(isVbar)),            &
      &                          OutRec, v2dvar,                         &
      &                          LBij, UBij, Nbrec(ng), scale,           &
      &                          BOUNDARY(ng) % vbar_obc(LBij:,:,:,      &
@@ -482,9 +505,9 @@
 !
       IF (ANY(Lobc(:,isUvel,ng))) THEN
         scale=1.0_r8
-        status=nf_fwrite3d_bry (ng, iNLM, INIname(ng), ncINIid(ng),     &
+        status=nf_fwrite3d_bry (ng, iNLM, INI(ng)%name, INI(ng)%ncid,   &
      &                          Vname(1,idSbry(isUvel)),                &
-     &                          iniVid(idSbry(isUvel),ng),              &
+     &                          INI(ng)%Vid(idSbry(isUvel)),            &
      &                          OutRec, u3dvar,                         &
      &                          LBij, UBij, 1, N(ng), Nbrec(ng), scale, &
      &                          BOUNDARY(ng) % u_obc(LBij:,:,:,:,       &
@@ -503,9 +526,9 @@
 !
       IF (ANY(Lobc(:,isVvel,ng))) THEN
         scale=1.0_r8
-        status=nf_fwrite3d_bry (ng, iNLM, INIname(ng), ncINIid(ng),     &
+        status=nf_fwrite3d_bry (ng, iNLM, INI(ng)%name, INI(ng)%ncid,   &
      &                          Vname(1,idSbry(isVvel)),                &
-     &                          iniVid(idSbry(isVvel),ng),              &
+     &                          INI(ng)%Vid(idSbry(isVvel)),            &
      &                          OutRec, v3dvar,                         &
      &                          LBij, UBij, 1, N(ng), Nbrec(ng), scale, &
      &                          BOUNDARY(ng) % v_obc(LBij:,:,:,:,       &
@@ -525,9 +548,9 @@
       DO itrc=1,NT(ng)
         IF (ANY(Lobc(:,isTvar(itrc),ng))) THEN
           scale=1.0_r8
-          status=nf_fwrite3d_bry (ng, iNLM, INIname(ng), ncINIid(ng),   &
+          status=nf_fwrite3d_bry (ng, iNLM, INI(ng)%name, INI(ng)%ncid, &
      &                            Vname(1,idSbry(isTvar(itrc))),        &
-     &                            iniVid(idSbry(isTvar(itrc)),ng),      &
+     &                            INI(ng)%Vid(idSbry(isTvar(itrc))),    &
      &                            OutRec, r3dvar,                       &
      &                            LBij, UBij, 1, N(ng), Nbrec(ng),      &
      &                            scale,                                &
@@ -555,11 +578,11 @@
 !
       scale=rho0                            ! m2/s2 to N/m2 (Pa)
       gtype=gfactor*u3dvar
-      status=nf_fwrite3d(ng, iNLM, ncINIid(ng), iniVid(idUsms,ng),      &
+      status=nf_fwrite3d(ng, iNLM, INI(ng)%ncid, INI(ng)%Vid(idUsms),   &
      &                   OutRec, gtype,                                 &
      &                   LBi, UBi, LBj, UBj, 1, Nfrec(ng), scale,       &
 #   ifdef MASKING
-     &                   GRID(ng) % umask,                              &
+     &                   GRID(ng) % umask_io,                           &
 #   endif
      &                   FORCES(ng) % ustr(:,:,:,Tindex))
       IF (status.ne.nf90_noerr) THEN
@@ -575,11 +598,11 @@
 !
       scale=rho0                            ! m2/s2 to N/m2 (Pa)
       gtype=gfactor*v3dvar
-      status=nf_fwrite3d(ng, iNLM, ncINIid(ng), iniVid(idVsms,ng),      &
+      status=nf_fwrite3d(ng, iNLM, INI(ng)%ncid, INI(ng)%Vid(idVsms),   &
      &                   OutRec, gtype,                                 &
      &                   LBi, UBi, LBj, UBj, 1, Nfrec(ng), scale,       &
 #   ifdef MASKING
-     &                   GRID(ng) % vmask,                              &
+     &                   GRID(ng) % vmask_io,                           &
 #   endif
      &                   FORCES(ng) % vstr(:,:,:,Tindex))
       IF (status.ne.nf90_noerr) THEN
@@ -606,12 +629,12 @@
             scale=1.0_r8
           END IF
           gtype=gfactor*r3dvar
-          status=nf_fwrite3d(ng, iNLM, ncINIid(ng),                     &
-     &                       iniVid(idTsur(itrc),ng),                   &
+          status=nf_fwrite3d(ng, iNLM, INI(ng)%ncid,                    &
+     &                       INI(ng)%Vid(idTsur(itrc)),                 &
      &                       OutRec, gtype,                             &
      &                       LBi, UBi, LBj, UBj, 1, Nfrec(ng), scale,   &
 #   ifdef MASKING
-     &                       GRID(ng) % rmask,                          &
+     &                       GRID(ng) % rmask_io,                       &
 #   endif
      &                       FORCES(ng) % tflux(:,:,:,Tindex,itrc))
           IF (status.ne.nf90_noerr) THEN
@@ -632,17 +655,25 @@
 !  to access data immediately after it is written.
 !-----------------------------------------------------------------------
 !
-      CALL netcdf_sync (ng, iNLM, INIname(ng), ncINIid(ng))
+      CALL netcdf_sync (ng, iNLM, INI(ng)%name, INI(ng)%ncid)
       IF (exit_flag.ne.NoError) RETURN
 
       IF (Master) THEN
+#  ifdef NESTING
+        WRITE (stdout,20) Nrun, Tindex, OutRec, ng
+#  else
         WRITE (stdout,20) Nrun, Tindex, OutRec
+#  endif
       END IF
 !
   10  FORMAT (/,' WRT_FRC - error while writing variable: ',a,/,11x,    &
      &        'into initial NetCDF file for time record: ',i4)
   20  FORMAT (6x,'WRT_FRC   - wrote initial  fields (Iter=',i4.4,       &
+#  ifdef NESTING
+     &           ', Index=',i1,', Rec=',i4.4,', Grid ',i2.2,')')
+#  else
      &           ', Index=',i1,', Rec=',i4.4,')')
+#  endif
 
       RETURN
       END SUBROUTINE wrt_frc
@@ -742,9 +773,9 @@
 !
       IF (ANY(Lobc(:,isFsur,ng))) THEN
         scale=1.0_r8
-        status=nf_fwrite2d_bry (ng, iNLM, INIname(ng), ncINIid(ng),     &
+        status=nf_fwrite2d_bry (ng, iNLM, INI(ng)%name, INI(ng)%ncid,   &
      &                          Vname(1,idSbry(isFsur)),                &
-     &                          iniVid(idSbry(isFsur),ng),              &
+     &                          INI(ng)%Vid(idSbry(isFsur)),            &
      &                          OutRec, r2dvar,                         &
      &                          LBij, UBij, Nbrec(ng), scale,           &
      &                          BOUNDARY(ng) % ad_zeta_obc(LBij:,:,:,   &
@@ -763,9 +794,9 @@
 !
       IF (ANY(Lobc(:,isUbar,ng))) THEN
         scale=1.0_r8
-        status=nf_fwrite2d_bry (ng, iNLM, INIname(ng), ncINIid(ng),     &
+        status=nf_fwrite2d_bry (ng, iNLM, INI(ng)%name, INI(ng)%ncid,   &
      &                          Vname(1,idSbry(isUbar)),                &
-     &                          iniVid(idSbry(isUbar),ng),              &
+     &                          INI(ng)%Vid(idSbry(isUbar)),            &
      &                          OutRec, u2dvar,                         &
      &                          LBij, UBij, Nbrec(ng), scale,           &
      &                          BOUNDARY(ng) % ad_ubar_obc(LBij:,:,:,   &
@@ -784,9 +815,9 @@
 !
       IF (ANY(Lobc(:,isVbar,ng))) THEN
         scale=1.0_r8
-        status=nf_fwrite2d_bry (ng, iNLM, INIname(ng), ncINIid(ng),     &
+        status=nf_fwrite2d_bry (ng, iNLM, INI(ng)%name, INI(ng)%ncid,   &
      &                          Vname(1,idSbry(isVbar)),                &
-     &                          iniVid(idSbry(isVbar),ng),              &
+     &                          INI(ng)%Vid(idSbry(isVbar)),            &
      &                          OutRec, v2dvar,                         &
      &                          LBij, UBij, Nbrec(ng), scale,           &
      &                          BOUNDARY(ng) % ad_vbar_obc(LBij:,:,:,   &
@@ -807,9 +838,9 @@
 !
       IF (ANY(Lobc(:,isUvel,ng))) THEN
         scale=1.0_r8
-        status=nf_fwrite3d_bry (ng, iNLM, INIname(ng), ncINIid(ng),     &
+        status=nf_fwrite3d_bry (ng, iNLM, INI(ng)%name, INI(ng)%ncid,   &
      &                          Vname(1,idSbry(isUvel)),                &
-     &                          iniVid(idSbry(isUvel),ng),              &
+     &                          INI(ng)%Vid(idSbry(isUvel)),            &
      &                          OutRec, u3dvar,                         &
      &                          LBij, UBij, 1, N(ng), Nbrec(ng), scale, &
      &                          BOUNDARY(ng) % ad_u_obc(LBij:,:,:,:,    &
@@ -828,9 +859,9 @@
 !
       IF (ANY(Lobc(:,isVvel,ng))) THEN
         scale=1.0_r8
-        status=nf_fwrite3d_bry (ng, iNLM, INIname(ng), ncINIid(ng),     &
+        status=nf_fwrite3d_bry (ng, iNLM, INI(ng)%name, INI(ng)%ncid,   &
      &                          Vname(1,idSbry(isVvel)),                &
-     &                          iniVid(idSbry(isVvel),ng),              &
+     &                          INI(ng)%Vid(idSbry(isVvel)),            &
      &                          OutRec, v3dvar,                         &
      &                          LBij, UBij, 1, N(ng), Nbrec(ng), scale, &
      &                          BOUNDARY(ng) % ad_v_obc(LBij:,:,:,:,    &
@@ -850,9 +881,9 @@
       DO itrc=1,NT(ng)
         IF (ANY(Lobc(:,isTvar(itrc),ng))) THEN
           scale=1.0_r8
-          status=nf_fwrite3d_bry (ng, iNLM, INIname(ng), ncINIid(ng),   &
+          status=nf_fwrite3d_bry (ng, iNLM, INI(ng)%name, INI(ng)%ncid, &
      &                            Vname(1,idSbry(isTvar(itrc))),        &
-     &                            iniVid(idSbry(isTvar(itrc)),ng),      &
+     &                            INI(ng)%Vid(idSbry(isTvar(itrc))),    &
      &                            OutRec, r3dvar,                       &
      &                            LBij, UBij, 1, N(ng), Nbrec(ng),      &
      &                            scale,                                &
@@ -861,7 +892,7 @@
           IF (status.ne.nf90_noerr) THEN
             IF (Master) THEN
               WRITE (stdout,10) TRIM(Vname(1,idSbry(isTvar(itrc)))),    &
-     &                          tHSSindx(ng)
+     &                          HSS(ng)%Rindex
             END IF
             exit_flag=3
             ioerror=status
@@ -880,11 +911,11 @@
 !
       scale=1.0_r8
       gtype=gfactor*u3dvar
-      status=nf_fwrite3d(ng, iNLM, ncINIid(ng), iniVid(idUsms,ng),      &
+      status=nf_fwrite3d(ng, iNLM, INI(ng)%ncid, INI(ng)%Vid(idUsms),   &
      &                   OutRec, gtype,                                 &
      &                   LBi, UBi, LBj, UBj, 1, Nfrec(ng), scale,       &
 #   ifdef MASKING
-     &                   GRID(ng) % umask,                              &
+     &                   GRID(ng) % umask_io,                           &
 #   endif
      &                   FORCES(ng) % ad_ustr(:,:,:,Tindex))
       IF (status.ne.nf90_noerr) THEN
@@ -900,11 +931,11 @@
 !
       scale=1.0_r8
       gtype=gfactor*v3dvar
-      status=nf_fwrite3d(ng, iNLM, ncINIid(ng), iniVid(idVsms,ng),      &
+      status=nf_fwrite3d(ng, iNLM, INI(ng)%ncid, INI(ng)%Vid(idVsms),   &
      &                   OutRec, gtype,                                 &
      &                   LBi, UBi, LBj, UBj, 1, Nfrec(ng), scale,       &
 #   ifdef MASKING
-     &                   GRID(ng) % vmask,                              &
+     &                   GRID(ng) % vmask_io,                           &
 #   endif
      &                   FORCES(ng) % ad_vstr(:,:,:,Tindex))
       IF (status.ne.nf90_noerr) THEN
@@ -927,12 +958,12 @@
         IF (Lstflux(itrc,ng)) THEN
           scale=1.0_r8
           gtype=gfactor*r3dvar
-          status=nf_fwrite3d(ng, iNLM, ncINIid(ng),                     &
-     &                       iniVid(idTsur(itrc),ng),                   &
+          status=nf_fwrite3d(ng, iNLM, INI(ng)%ncid,                    &
+     &                       INI(ng)%Vid(idTsur(itrc)),                 &
      &                       OutRec, gtype,                             &
      &                       LBi, UBi, LBj, UBj, 1, Nfrec(ng), scale,   &
 #   ifdef MASKING
-     &                       GRID(ng) % rmask,                          &
+     &                       GRID(ng) % rmask_io,                       &
 #   endif
      &                       FORCES(ng) % ad_tflux(:,:,:,Tindex,itrc))
           IF (status.ne.nf90_noerr) THEN
@@ -953,18 +984,25 @@
 !  to access data immediately after it is written.
 !-----------------------------------------------------------------------
 !
-      CALL netcdf_sync (ng, iNLM, INIname(ng), ncINIid(ng))
+      CALL netcdf_sync (ng, iNLM, INI(ng)%name, INI(ng)%ncid)
       IF (exit_flag.ne.NoError) RETURN
 
       IF (Master) THEN
+# ifdef NESTING
+        WRITE (stdout,20) Nrun, Tindex, OutRec, ng
+# else
         WRITE (stdout,20) Nrun, Tindex, OutRec
+# endif
       END IF
 !
   10  FORMAT (/,' WRT_FRC_AD - error while writing variable: ',a,/,11x, &
      &        'into initial NetCDF file for time record: ',i4)
   20  FORMAT (6x,'WRT_FRC_AD   - wrote initial  fields (Iter=',i4.4,    &
+# ifdef NESTING
+     &           ', Index=',i1,', Rec=',i4.4,', Grid ',i2.2,')')
+# else
      &           ', Index=',i1,', Rec=',i4.4,')')
-
+# endif
       RETURN
       END SUBROUTINE wrt_frc_AD
 # endif

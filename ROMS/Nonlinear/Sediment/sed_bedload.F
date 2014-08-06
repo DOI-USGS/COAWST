@@ -12,7 +12,7 @@
 !
 !svn $Id: sed_bedload.F 429 2009-12-20 17:30:26Z arango $
 !==================================================== John C. Warner ===
-!  Copyright (c) 2002-2010 The ROMS/TOMS Group      Hernan G. Arango   !
+!  Copyright (c) 2002-2014 The ROMS/TOMS Group      Hernan G. Arango   !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -98,26 +98,26 @@
      &                       FORCES(ng) % bustr,                        &
      &                       FORCES(ng) % bvstr,                        &
 # if defined BEDLOAD_SOULSBY
-     &                   FORCES(ng) % Hwave,                            &
-     &                   FORCES(ng) % Lwave,                            &
-     &                   GRID(ng) % angler,                             &
+     &                       FORCES(ng) % Hwave,                        &
+     &                       FORCES(ng) % Lwave,                        &
+     &                       GRID(ng) % angler,                         &
 # endif
 # if defined SED_MORPH
-     &                   SEDBED(ng) % bed_thick,                        &
+     &                       SEDBED(ng) % bed_thick,                    &
 # endif
 # if defined BEDLOAD_MPM || defined BEDLOAD_SOULSBY
-     &                   GRID(ng) % h,                                  &
-     &                   GRID(ng) % om_r,                               &
-     &                   GRID(ng) % om_u,                               &
-     &                   GRID(ng) % on_r,                               &
-     &                   GRID(ng) % on_v,                               &
-     &                   SEDBED(ng) % bedldu,                           &
-     &                   SEDBED(ng) % bedldv,                           &
+     &                       GRID(ng) % h,                              &
+     &                       GRID(ng) % om_r,                           &
+     &                       GRID(ng) % om_u,                           &
+     &                       GRID(ng) % on_r,                           &
+     &                       GRID(ng) % on_v,                           &
+     &                       SEDBED(ng) % bedldu,                       &
+     &                       SEDBED(ng) % bedldv,                       &
 # endif
-     &                   SEDBED(ng) % bed,                              &
-     &                   SEDBED(ng) % bed_frac,                         &
-     &                   SEDBED(ng) % bed_mass,                         &
-     &                   SEDBED(ng) % bottom)
+     &                       SEDBED(ng) % bed,                          &
+     &                       SEDBED(ng) % bed_frac,                     &
+     &                       SEDBED(ng) % bed_mass,                     &
+     &                       SEDBED(ng) % bottom)
 # ifdef PROFILE
       CALL wclock_off (ng, iNLM, 16)
 # endif
@@ -160,17 +160,13 @@
 !***********************************************************************
 !
       USE mod_param
+      USE mod_ncparam
       USE mod_scalars
       USE mod_sediment
 !
       USE bc_3d_mod, ONLY : bc_r3d_tile
-# if defined EW_PERIODIC || defined NS_PERIODIC
-      USE exchange_2d_mod, ONLY : exchange_r2d_tile
-# endif
 # ifdef BEDLOAD
-#  if defined EW_PERIODIC || defined NS_PERIODIC
       USE exchange_2d_mod, ONLY : exchange_u2d_tile, exchange_v2d_tile
-#  endif
 # endif
 # ifdef DISTRIBUTE
       USE mp_exchange_mod, ONLY : mp_exchange3d, mp_exchange4d
@@ -277,18 +273,6 @@
 !
 !  Local variable declarations.
 !
-# ifdef DISTRIBUTE
-#  ifdef EW_PERIODIC
-      logical :: EWperiodic=.TRUE.
-#  else
-      logical :: EWperiodic=.FALSE.
-#  endif
-#  ifdef NS_PERIODIC
-      logical :: NSperiodic=.TRUE.
-#  else
-      logical :: NSperiodic=.FALSE.
-#  endif
-# endif
       integer :: i, ised, j, k
 
       real(r8), parameter :: eps = 1.0E-14_r8
@@ -347,18 +331,8 @@
         END DO
       END DO
 #  else
-#   ifdef EW_PERIODIC
-#    define I_RANGE Istr-1,Iend+1
-#   else
-#    define I_RANGE MAX(Istr-1,1),MIN(Iend+1,Lm(ng))
-#   endif
-#   ifdef NS_PERIODIC
-#    define J_RANGE Jstr-1,Jend+1
-#   else
-#    define J_RANGE MAX(Jstr-1,1),MIN(Jend+1,Mm(ng))
-#   endif
-      DO i=I_RANGE
-        DO j=J_RANGE
+      DO j=Jstrm1,Jendp1
+        DO i=Istrm1,Iendp1
 #   ifdef BSTRESS_UPWIND
           cff1=0.5_r8*(1.0_r8+SIGN(1.0_r8,bustr(i+1,j)))
           cff2=0.5_r8*(1.0_r8-SIGN(1.0_r8,bustr(i+1,j)))
@@ -383,8 +357,6 @@
      &                           (bvstr(i,j)+bvstr(i,j+1)))
         END DO
       END DO
-#   undef I_RANGE
-#   undef J_RANGE
 #  endif
 # endif
 
@@ -394,25 +366,14 @@
 !  Compute bedload sediment transport.
 !-----------------------------------------------------------------------
 !
-#  ifdef EW_PERIODIC
-#   define I_RANGE Istr-1,Iend+1
-#  else
-#   define I_RANGE MAX(Istr-1,1),MIN(Iend+1,Lm(ng))
-#  endif
-#  ifdef NS_PERIODIC
-#   define J_RANGE Jstr-1,Jend+1
-#  else
-#   define J_RANGE MAX(Jstr-1,1),MIN(Jend+1,Mm(ng))
-#  endif
-!
 ! Compute some constant bed slope parameters.
 !
       sed_angle=DTAN(33.0_r8*pi/180.0_r8)
 !
 !  Compute angle between currents and waves (radians).
 !
-      DO j=J_RANGE
-        DO i=I_RANGE
+      DO j=Jstrm1,Jendp1
+        DO i=Istrm1,Iendp1
 #  if defined BEDLOAD_SOULSBY
 !
 ! Compute angle between currents and waves, measure CCW from current
@@ -449,8 +410,8 @@
         osmgd=1.0_r8/smgd
         smgdr=SQRT(smgd)*Sd50(ised,ng)*Srho(ised,ng)
 !
-        DO j=J_RANGE
-          DO i=I_RANGE
+        DO j=Jstrm1,Jendp1
+          DO i=Istrm1,Iendp1
 #  ifdef BEDLOAD_SOULSBY
 !
 ! Compute wave asymmetry factor, based on Fredosoe and Deigaard.
@@ -625,62 +586,82 @@
 #   endif
           END DO
         END DO
-#  ifndef EW_PERIODIC
-        IF (WESTERN_EDGE) THEN
-          DO j=J_RANGE
-            FX_r(Istr-1,j)=FX_r(Istr,j)
-            FE_r(Istr-1,j)=FE_r(Istr,j)
-          END DO
+!
+!  Apply boundary conditions (gradient).
+!
+        IF (.not.(CompositeGrid(iwest,ng).or.EWperiodic(ng))) THEN
+          IF (DOMAIN(ng)%Western_Edge(tile)) THEN
+            DO j=Jstrm1,Jendp1
+              FX_r(Istr-1,j)=FX_r(Istr,j)
+              FE_r(Istr-1,j)=FE_r(Istr,j)
+            END DO
+          END IF
         END IF
-        IF (EASTERN_EDGE) THEN
-          DO j=J_RANGE
-            FX_r(Iend+1,j)=FX_r(Iend,j)
-            FE_r(Iend+1,j)=FE_r(Iend,j)
-          END DO
+        IF (.not.(CompositeGrid(ieast,ng).or.EWperiodic(ng))) THEN
+          IF (DOMAIN(ng)%Eastern_Edge(tile)) THEN
+            DO j=Jstrm1,Jendp1
+              FX_r(Iend+1,j)=FX_r(Iend,j)
+              FE_r(Iend+1,j)=FE_r(Iend,j)
+            END DO
+          END IF
         END IF
-#  endif
-#  ifndef NS_PERIODIC
-        IF (SOUTHERN_EDGE) THEN
-          DO i=I_RANGE
-            FX_r(i,Jstr-1)=FX_r(i,Jstr)
-            FE_r(i,Jstr-1)=FE_r(i,Jstr)
-          END DO
+!
+        IF (.not.(CompositeGrid(isouth,ng).or.NSperiodic(ng))) THEN
+          IF (DOMAIN(ng)%Southern_Edge(tile)) THEN
+            DO i=Istrm1,Iendp1
+              FX_r(i,Jstr-1)=FX_r(i,Jstr)
+              FE_r(i,Jstr-1)=FE_r(i,Jstr)
+            END DO
+          END IF
         END IF
-        IF (NORTHERN_EDGE) THEN
-          DO i=I_RANGE
-            FX_r(i,Jend+1)=FX_r(i,Jend)
-            FE_r(i,Jend+1)=FE_r(i,Jend)
-          END DO
+        IF (.not.(CompositeGrid(inorth,ng).or.NSperiodic(ng))) THEN
+          IF (DOMAIN(ng)%Northern_Edge(tile)) THEN
+            DO i=Istrm1,Iendp1
+              FX_r(i,Jend+1)=FX_r(i,Jend)
+              FE_r(i,Jend+1)=FE_r(i,Jend)
+            END DO
+          END IF
         END IF
-#  endif
-#  undef I_RANGE
-#  undef J_RANGE
-#  if !defined EW_PERIODIC && !defined NS_PERIODIC
-        IF ((SOUTHERN_EDGE).and.(WESTERN_EDGE)) THEN
-          FX_r(Istr-1,Jstr-1)=0.5_r8*(FX_r(Istr  ,Jstr-1)+              &
-     &                                FX_r(Istr-1,Jstr  ))
-          FE_r(Istr-1,Jstr-1)=0.5_r8*(FE_r(Istr  ,Jstr-1)+              &
-     &                                FE_r(Istr-1,Jstr  ))
+!
+        IF (.not.(CompositeGrid(isouth,ng).or.NSperiodic(ng).or.        &
+     &            CompositeGrid(iwest ,ng).or.EWperiodic(ng))) THEN
+          IF (DOMAIN(ng)%SouthWest_Corner(tile)) THEN
+            FX_r(Istr-1,Jstr-1)=0.5_r8*(FX_r(Istr  ,Jstr-1)+            &
+     &                                  FX_r(Istr-1,Jstr  ))
+            FE_r(Istr-1,Jstr-1)=0.5_r8*(FE_r(Istr  ,Jstr-1)+            &
+     &                                  FE_r(Istr-1,Jstr  ))
+          END IF
         END IF
-        IF ((SOUTHERN_EDGE).and.(EASTERN_EDGE)) THEN
-          FX_r(Iend+1,Jstr-1)=0.5_r8*(FX_r(Iend  ,Jstr-1)+              &
-     &                                FX_r(Iend+1,Jstr  ))
-          FE_r(Iend+1,Jstr-1)=0.5_r8*(FE_r(Iend  ,Jstr-1)+              &
-     &                                FE_r(Iend+1,Jstr  ))
+
+        IF (.not.(CompositeGrid(isouth,ng).or.NSperiodic(ng).or.        &
+     &            CompositeGrid(ieast ,ng).or.EWperiodic(ng))) THEN
+          IF (DOMAIN(ng)%SouthEast_Corner(tile)) THEN
+            FX_r(Iend+1,Jstr-1)=0.5_r8*(FX_r(Iend  ,Jstr-1)+            &
+     &                                  FX_r(Iend+1,Jstr  ))
+            FE_r(Iend+1,Jstr-1)=0.5_r8*(FE_r(Iend  ,Jstr-1)+            &
+     &                                  FE_r(Iend+1,Jstr  ))
+          END IF
         END IF
-        IF ((NORTHERN_EDGE).and.(WESTERN_EDGE)) THEN
-          FX_r(Istr-1,Jend+1)=0.5_r8*(FX_r(Istr-1,Jend  )+              &
-     &                                FX_r(Istr  ,Jend+1))
-          FE_r(Istr-1,Jend+1)=0.5_r8*(FE_r(Istr-1,Jend  )+              &
-     &                                FE_r(Istr  ,Jend+1))
+
+        IF (.not.(CompositeGrid(inorth,ng).or.NSperiodic(ng).or.        &
+     &            CompositeGrid(iwest ,ng).or.EWperiodic(ng))) THEN
+          IF (DOMAIN(ng)%NorthWest_Corner(tile)) THEN
+            FX_r(Istr-1,Jend+1)=0.5_r8*(FX_r(Istr-1,Jend  )+            &
+     &                                  FX_r(Istr  ,Jend+1))
+            FE_r(Istr-1,Jend+1)=0.5_r8*(FE_r(Istr-1,Jend  )+            &
+     &                                  FE_r(Istr  ,Jend+1))
+          END IF
         END IF
-        IF ((NORTHERN_EDGE).and.(EASTERN_EDGE)) THEN
-          FX_r(Iend+1,Jend+1)=0.5_r8*(FX_r(Iend+1,Jend  )+              &
-     &                                FX_r(Iend  ,Jend+1))
-          FE_r(Iend+1,Jend+1)=0.5_r8*(FE_r(Iend+1,Jend  )+              &
-     &                                FE_r(Iend  ,Jend+1))
+
+        IF (.not.(CompositeGrid(inorth,ng).or.NSperiodic(ng).or.        &
+     &            CompositeGrid(ieast ,ng).or.EWperiodic(ng))) THEN
+          IF (DOMAIN(ng)%NorthEast_Corner(tile)) THEN
+            FX_r(Iend+1,Jend+1)=0.5_r8*(FX_r(Iend+1,Jend  )+            &
+     &                                  FX_r(Iend  ,Jend+1))
+            FE_r(Iend+1,Jend+1)=0.5_r8*(FE_r(Iend+1,Jend  )+            &
+     &                                  FE_r(Iend  ,Jend+1))
+          END IF
         END IF
-#  endif
 !
 ! Compute face fluxes at u and v points before taking divergence.
 !
@@ -775,38 +756,43 @@
           END DO
         END DO
 !
-#  ifndef EW_PERIODIC
-#   ifdef WESTERN_WALL
-        IF (WESTERN_EDGE) THEN
-          DO j=Jstr-1,Jend+1
-            FX(Istr,j)=0.0_r8
-          END DO
+        IF (.not.(CompositeGrid(iwest,ng).or.EWperiodic(ng))) THEN
+          IF (DOMAIN(ng)%Western_Edge(tile)) THEN
+            IF (LBC(iwest,isTvar(idsed(ised)),ng)%closed) THEN
+              DO j=Jstr-1,Jend+1
+                FX(Istr,j)=0.0_r8
+              END DO
+            END IF
+          END IF
         END IF
-#   endif
-#   ifdef EASTERN_WALL
-        IF (EASTERN_EDGE) THEN
-          DO j=Jstr-1,Jend+1
-            FX(Iend+1,j)=0.0_r8
-          END DO
+        IF (.not.(CompositeGrid(ieast,ng).or.EWperiodic(ng))) THEN
+          IF (DOMAIN(ng)%Eastern_Edge(tile)) THEN
+            IF (LBC(ieast,isTvar(idsed(ised)),ng)%closed) THEN
+              DO j=Jstr-1,Jend+1
+                FX(Iend+1,j)=0.0_r8
+              END DO
+            END IF
+          END IF
         END IF
-#   endif
-#  endif
-#  ifndef NS_PERIODIC
-#   ifdef SOUTHERN_WALL
-        IF (SOUTHERN_EDGE) THEN
-          DO i=Istr-1,Iend+1
-            FE(i,Jstr)=0.0_r8
-          END DO
+!
+        IF (.not.(CompositeGrid(isouth,ng).or.NSperiodic(ng))) THEN
+          IF (DOMAIN(ng)%Southern_Edge(tile)) THEN
+            IF (LBC(isouth,isTvar(idsed(ised)),ng)%closed) THEN
+              DO i=Istr-1,Iend+1
+                FE(i,Jstr)=0.0_r8
+              END DO
+            END IF
+          END IF
         END IF
-#   endif
-#   ifdef NORTHERN_WALL
-        IF (NORTHERN_EDGE) THEN
-          DO i=Istr-1,Iend+1
-            FE(i,Jend+1)=0.0_r8
-          END DO
+        IF (.not.(CompositeGrid(inorth,ng).or.NSperiodic(ng))) THEN
+          IF (DOMAIN(ng)%Northern_Edge(tile)) THEN
+            IF (LBC(inorth,isTvar(idsed(ised)),ng)%closed) THEN
+              DO i=Istr-1,Iend+1
+                FE(i,Jend+1)=0.0_r8
+              END DO
+            END IF
+          END IF
         END IF
-#   endif
-#  endif
 !
 !  Determine flux divergence and evaluate change in bed properties.
 !
@@ -910,26 +896,32 @@
         CALL bc_r3d_tile (ng, tile,                                     &
      &                    LBi, UBi, LBj, UBj, 1, Nbed,                  &
      &                    bed_mass(:,:,:,nnew,ised))
-# if defined BEDLOAD && (defined EW_PERIODIC || defined NS_PERIODIC)
-        CALL exchange_u2d_tile (ng, tile,                               &
-     &                          LBi, UBi, LBj, UBj,                     &
-     &                          bedldu(:,:,ised))
-        CALL exchange_v2d_tile (ng, tile,                               &
-     &                          LBi, UBi, LBj, UBj,                     &
-     &                          bedldv(:,:,ised))
+# ifdef BEDLOAD
+        IF (EWperiodic(ng).or.NSperiodic(ng)) THEN
+          CALL exchange_u2d_tile (ng, tile,                             &
+     &                            LBi, UBi, LBj, UBj,                   &
+     &                            bedldu(:,:,ised))
+          CALL exchange_v2d_tile (ng, tile,                             &
+     &                            LBi, UBi, LBj, UBj,                   &
+     &                            bedldv(:,:,ised))
+        END IF
 # endif
       END DO
 # ifdef DISTRIBUTE
       CALL mp_exchange4d (ng, tile, iNLM, 2,                            &
      &                    LBi, UBi, LBj, UBj, 1, Nbed, 1, NST,          &
-     &                    NghostPoints, EWperiodic, NSperiodic,         &
+     &                    NghostPoints,                                 &
+     &                    EWperiodic(ng), NSperiodic(ng),               &
      &                    bed_frac,                                     &
      &                    bed_mass(:,:,:,nnew,:))
-#  if defined BEDLOAD && (defined EW_PERIODIC || defined NS_PERIODIC)
-      CALL mp_exchange3d (ng, tile, iNLM, 2,                            &
-     &                    LBi, UBi, LBj, UBj, 1, NST,                   &
-     &                    NghostPoints, EWperiodic, NSperiodic,         &
-     &                    bedldu, bedldv)
+#  ifdef BEDLOAD
+      IF (EWperiodic(ng).or.NSperiodic(ng)) THEN
+        CALL mp_exchange3d (ng, tile, iNLM, 2,                          &
+     &                      LBi, UBi, LBj, UBj, 1, NST,                 &
+     &                      NghostPoints,                               &
+     &                      EWperiodic(ng), NSperiodic(ng),             &
+     &                      bedldu, bedldv)
+      END IF
 #  endif
 # endif
 
@@ -941,7 +933,8 @@
 # ifdef DISTRIBUTE
       CALL mp_exchange4d (ng, tile, iNLM, 1,                            &
      &                    LBi, UBi, LBj, UBj, 1, Nbed, 1, MBEDP,        &
-     &                    NghostPoints, EWperiodic, NSperiodic,         &
+     &                    NghostPoints,                                 &
+     &                    EWperiodic(ng), NSperiodic(ng),               &
      &                    bed)
 # endif
 
@@ -951,7 +944,8 @@
 # ifdef DISTRIBUTE
       CALL mp_exchange3d (ng, tile, iNLM, 1,                            &
      &                    LBi, UBi, LBj, UBj, 1, MBOTP,                 &
-     &                    NghostPoints, EWperiodic, NSperiodic,         &
+     &                    NghostPoints,                                 &
+     &                    EWperiodic(ng), NSperiodic(ng),               &
      &                    bottom)
 # endif
 

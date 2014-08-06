@@ -3,7 +3,7 @@
 #ifdef ICE_MODEL
 !
 !=======================================================================
-!  Copyright (c) 2002 ROMS/TOMS Group                                  !
+!  Copyright (c) 2002-2014 The ROMS/TOMS Group                         !
 !================================================== Hernan G. Arango ===
 !                                                                      !
 !  This module sets the ice-water and ice-air stresses for the
@@ -45,10 +45,12 @@
       CALL ice_vbc_tile (ng, tile,                                      &
      &                   LBi, UBi, LBj, UBj,                            &
      &                   IminS, ImaxS, JminS, JmaxS,                    &
-     &                   nrhs(ng),                                      &
      &                   liold(ng), liuol(ng),                          &
      &                   GRID(ng) % z_r,                                &
      &                   GRID(ng) % z_w,                                &
+# ifdef ICESHELF
+     &                   GRID(ng) % zice,                               &
+# endif
      &                   OCEAN(ng) % u,                                 &
      &                   OCEAN(ng) % v,                                 &
      &                   FORCES(ng) % sustr,                            &
@@ -73,6 +75,10 @@
 # ifdef ICE_SHOREFAST
      &                   GRID(ng) % h,                                  &
 # endif
+# ifdef WET_DRY
+     &                   GRID(ng) % umask_wet,                          &
+     &                   GRID(ng) % vmask_wet,                          &
+# endif
      &                   ICE(ng) % utau_iw,                             &
      &                   ICE(ng) % chu_iw,                              &
      &                   ICE(ng) % spd_iw                               &
@@ -87,9 +93,11 @@
       SUBROUTINE ice_vbc_tile (ng, tile,                                &
      &                         LBi, UBi, LBj, UBj,                      &
      &                         IminS, ImaxS, JminS, JmaxS,              &
-     &                         nrhs,                                    &
      &                         liold, liuol,                            &
      &                         z_r, z_w,                                &
+# ifdef ICESHELF
+     &                         zice,                                    &
+# endif
      &                         u, v,                                    &
      &                         sustr, svstr, rho,                       &
      &                         Zt_avg1,                                 &
@@ -101,6 +109,9 @@
 # endif
 # ifdef ICE_SHOREFAST
      &                         h,                                       &
+# endif
+# ifdef WET_DRY
+     &                         umask_wet, vmask_wet,                    &
 # endif
      &                         utau_iw, chu_iw, spd_iw)
 !***********************************************************************
@@ -118,7 +129,6 @@
       integer, intent(in) :: ng, tile
       integer, intent(in) :: LBi, UBi, LBj, UBj
       integer, intent(in) :: IminS, ImaxS, JminS, JmaxS
-      integer, intent(in) :: nrhs
       integer, intent(in) :: liold, liuol
 
 # ifdef ASSUMED_SHAPE
@@ -151,6 +161,13 @@
       real(r8), intent(in) :: spd_iw(LBi:,LBj:)
       real(r8), intent(in) :: z_r(LBi:,LBj:,:)
       real(r8), intent(in) :: z_w(LBi:,LBj:,0:)
+#  ifdef ICESHELF
+      real(r8), intent(in) :: zice(LBi:,LBj:)
+#  endif
+#  ifdef WET_DRY
+      real(r8), intent(in) :: umask_wet(LBi:,LBj:)
+      real(r8), intent(in) :: vmask_wet(LBi:,LBj:)
+#  endif
 # else
       real(r8), intent(in) :: u(LBi:UBi,LBj:UBj,N(ng),2)
       real(r8), intent(in) :: v(LBi:UBi,LBj:UBj,N(ng),2)
@@ -181,33 +198,23 @@
       real(r8), intent(in) :: spd_iw(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: z_r(LBi:UBi,LBj:UBj,N(ng))
       real(r8), intent(in) :: z_w(LBi:UBi,LBj:UBj,0:N(ng))
+#  ifdef ICESHELF
+      real(r8), intent(in) :: zice(LBi:UBi,LBj:UBj)
+#  endif
+#  ifdef WET_DRY
+      real(r8), intent(in) :: umask_wet(LBi:UBi,LBj:UBj)
+      real(r8), intent(in) :: vmask_wet(LBi:UBi,LBj:UBj)
+#  endif
 # endif
 !
 !  Local variable declarations.
 !
-# ifdef DISTRIBUTE
-#  ifdef EW_PERIODIC
-      logical :: EWperiodic=.TRUE.
-#  else
-      logical :: EWperiodic=.FALSE.
-#  endif
-#  ifdef NS_PERIODIC
-      logical :: NSperiodic=.TRUE.
-#  else
-      logical :: NSperiodic=.FALSE.
-#  endif
-# endif
 # ifdef ICE_SHOREFAST
       real(r8) :: clear
-      real(r8) :: masu
-      real(r8) :: masv 
-      real(r8) :: hu
-      real(r8) :: hv
       real(r8) :: hh
 # endif
       integer :: i, j
 
-      integer :: k
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: spdiw
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: chuiw
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: utauiw
@@ -220,8 +227,6 @@
 # endif
       real(r8) :: tauiwu
       real(r8) :: tauiwv
-      real(r8) :: tauawu
-      real(r8) :: tauawv
       real(r8) :: aix
       real(r8) :: aiy
       real(r8) :: spd
@@ -229,8 +234,6 @@
       real(r8) :: hiy
       real(r8) :: chux
       real(r8) :: chuy
-      real(r8) :: spdu
-      real(r8) :: spdv
 
       real(r8) :: rhoO
       real(r8) :: dztop
@@ -252,11 +255,11 @@
           spd = spd_iw(i,j)
 #  ifdef ICE_SHOREFAST
           spd = max(spd,0.10_r8)
-          clear = h(i,j)+Zt_avg1(i,j)-0.9*hi(i,j,liold)
+          clear = h(i,j)+MIN(Zt_avg1(i,j),0.0_r8)-0.9*hi(i,j,liold)
           clear = MAX(clear,0.001_r8)
-          IF(clear < 1.5_r8) THEN
-            spd = (clear/1.5_r8)*spd
-          ENDIF
+          IF (clear < 5.0_r8) THEN
+            spd = (clear/5.0_r8)*spd
+          END IF
 #  else
           spd = max(spd,0.15_r8)
 #  endif
@@ -274,52 +277,74 @@
           utauiw(i,j) = max(utauiw(i,j),1.E-04_r8)
           chuiw(i,j) = kappa*utauiw(i,j)/log(zdz0)
 #   ifdef ICE_SHOREFAST
-          hh = h(i,j)+Zt_avg1(i,j)
+          hh = h(i,j)+MIN(Zt_avg1(i,j),0.0_r8)
           clear = hh-0.9_r8*hi(i,j,liold)
           clear = MAX(clear,0.0_r8)
-          IF(clear.lt.1.5_r8) chuiw(i,j) =                              &
-     &       (MAX(clear-0.5_r8,0.0_r8)/1.0_r8)*chuiw(i,j)
+          IF (clear.lt.5.0_r8) chuiw(i,j) =                             &
+     &       (MAX(clear-1.0_r8,0.0_r8)/4.0_r8)*chuiw(i,j)
 #   endif
 #  endif
         END DO
       END DO
 
       DO j=Jstr,Jend
-        DO i=IstrU,Iend
+        DO i=IstrP,Iend
           rhoO = 1000._r8 + 0.5_r8*(rho(i,j,N(ng))+rho(i-1,j,N(ng)))
           aix = 0.5_r8*(ai(i,j,liold)+ai(i-1,j,liold))
-          hix = 0.5_r8*(hi(i,j,liold)+hi(i-1,j,liold))
           chux = 0.5_r8*(chuiw(i,j)+chuiw(i-1,j))
           tauaiu(i,j) = 0.5_r8*aix*(tau_aix_n(i,j)+tau_aix_n(i-1,j))    &
      &                        /rhoice(ng)
+# ifdef WET_DRY
+          tauaiu(i,j) = tauaiu(i,j)*umask_wet(i,j)
+# endif
 # ifdef ICE_BULK_FLUXES
+#  ifdef ICESHELF
+          IF (zice(i,j).eq.0.0_r8) THEN
+#  endif
           sustr(i,j) = aix*chux*(ui(i,j,liuol)-uwater(i,j))             &
      &                 + (1.0_r8-aix)*sustr_aw(i,j)
+#  ifdef WET_DRY
+          sustr(i,j) = sustr(i,j)*umask_wet(i,j)
+#  endif
+#  ifdef ICESHELF
+          ENDIF
+#  endif
 # endif
         END DO
       END DO
 
-      DO j=JstrV,Jend
+      DO j=JstrP,Jend
         DO i=Istr,Iend
           rhoO = 1000._r8 + 0.5_r8*(rho(i,j,N(ng))+rho(i,j-1,N(ng)))
           aiy = 0.5_r8*(ai(i,j,liold)+ai(i,j-1,liold))
-          hiy = 0.5_r8*(hi(i,j,liold)+hi(i,j-1,liold))
           chuy = 0.5_r8*(chuiw(i,j)+chuiw(i,j-1))
           tauaiv(i,j) = 0.5_r8*aiy*(tau_aiy_n(i,j)+tau_aiy_n(i,j-1))    &
      &                        /rhoice(ng)
+# ifdef WET_DRY
+          tauaiv(i,j) = tauaiv(i,j)*vmask_wet(i,j)
+# endif
 # ifdef ICE_BULK_FLUXES
+#  ifdef ICESHELF
+          IF (zice(i,j).eq.0.0_r8) THEN
+#  endif
           svstr(i,j) = aiy*chuy*(vi(i,j,liuol)-vwater(i,j))             &
      &                 + (1.0_r8-aiy)*svstr_aw(i,j)
+#  ifdef WET_DRY
+          svstr(i,j) = svstr(i,j)*vmask_wet(i,j)
+#  endif
+#  ifdef ICESHELF
+          ENDIF
+#  endif
 # endif
         END DO
       END DO
 # else
       DO j=Jstr,Jend
-        DO i=IstrU,Iend
+        DO i=IstrP,Iend
            windu(i,j) = 0.5_r8*(Uwind(i-1,j)+Uwind(i,j))
         END DO
       END DO
-      DO j=JstrV,Jend
+      DO j=JstrP,Jend
         DO i=Istr,Iend
            windv(i,j) = 0.5_r8*(Vwind(i,j-1)+Vwind(i,j))
         END DO
@@ -337,18 +362,18 @@
            wind_speed(i,j) = 0.5*sqrt((windu(i,j) +  windu(i+1,j))**2   &
      &                        +(windv(i,j) +  windv(i,j+1))**2)
 # ifdef ICE_SHOREFAST
-          clear = h(i,j)+Zt_avg1(i,j)-0.9*hi(i,j,liold)
+          clear = h(i,j)+MIN(Zt_avg1(i,j),0.0_r8)-0.9*hi(i,j,liold)
           clear = MAX(clear,0.001_r8)
-          IF(clear < 1.5_r8) THEN
-            spdiw(i,j) = (clear/1.5_r8)*spdiw(i,j)
-            wind(i,j) = (clear/1.5_r8)*wind(i,j)
-          ENDIF
+          IF (clear < 5.0_r8) THEN
+            spdiw(i,j) = (clear/5.0_r8)*spdiw(i,j)
+            wind(i,j) = (clear/5.0_r8)*wind(i,j)
+          END IF
 # endif
         END DO
       END DO
 
       DO j=Jstr,Jend
-        DO i=IstrU,Iend
+        DO i=IstrP,Iend
           rhoO = 1000._r8 + 0.5_r8*(rho(i,j,N(ng))+rho(i-1,j,N(ng)))
           aix = 0.5_r8*(ai(i,j,liold)+ai(i-1,j,liold))
           hix = 0.5_r8*(hi(i,j,liold)+hi(i-1,j,liold))
@@ -360,13 +385,22 @@
           tauiwu = 0.5_r8*(spdiw(i,j)+spdiw(i-1,j))                     &
      &               *(ui(i,j,liuol)-uwater(i,j))*rhoice(ng)/rhoO
 # ifdef ICE_BULK_FLUXES
+#  ifdef ICESHELF
+          IF (zice(i,j).eq.0.0_r8) THEN
+#  endif
           sustr(i,j) = tauiwu + (1.0_r8-aix)*0.5_r8*                    &
-     &                 (sustr_aw(i,j)+sustr_aw(i-1,j))/rhoO
+     &                 (sustr_aw(i,j)+sustr_aw(i-1,j))
+#  ifdef WET_DRY
+          sustr(i,j) = sustr(i,j)*umask_wet(i,j)
+#  endif
+#  ifdef ICESHELF
+          ENDIF
+#  endif
 # endif
         END DO
       END DO
 
-      DO j=JstrV,Jend
+      DO j=JstrP,Jend
         DO i=Istr,Iend
           rhoO = 1000._r8 + 0.5_r8*(rho(i,j,N(ng))+rho(i,j-1,N(ng)))
           aiy = 0.5_r8*(ai(i,j,liold)+ai(i,j-1,liold))
@@ -379,8 +413,17 @@
           tauiwv = 0.5_r8*(spdiw(i,j)+spdiw(i,j-1))                     &
      &               *(vi(i,j,liuol)-vwater(i,j))*rhoice(ng)/rho0
 # ifdef ICE_BULK_FLUXES
+#  ifdef ICESHELF
+          IF (zice(i,j).eq.0.0_r8) THEN
+#  endif
           svstr(i,j) = tauiwv + (1.0_r8-aiy)*0.5_r8*                    &
-     &                 (svstr_aw(i,j)+svstr_aw(i,j-1))/rhoO
+     &                 (svstr_aw(i,j)+svstr_aw(i,j-1))
+#  ifdef WET_DRY
+          svstr(i,j) = svstr(i,j)*vmask_wet(i,j)
+#  endif
+#  ifdef ICESHELF
+          ENDIF
+#  endif
 # endif
         END DO
       END DO
@@ -420,11 +463,11 @@
 #ifdef DISTRIBUTE
       CALL mp_exchange2d (ng, tile, iNLM, 4,                            &
      &                    LBi, UBi, LBj, UBj,                           &
-     &                    NghostPoints, EWperiodic, NSperiodic,         &
+     &                    NghostPoints, EWperiodic(ng), NSperiodic(ng), &
      &                    sealev, utau_iw, chu_iw, sustr)
       CALL mp_exchange2d (ng, tile, iNLM, 3,                            &
      &                    LBi, UBi, LBj, UBj,                           &
-     &                    NghostPoints, EWperiodic, NSperiodic,         &
+     &                    NghostPoints, EWperiodic(ng), NSperiodic(ng), &
      &                    svstr, tauaiu, tauaiv)
 #endif
 

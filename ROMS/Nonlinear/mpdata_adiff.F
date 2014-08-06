@@ -6,12 +6,12 @@
 !
 !svn $Id: mpdata_adiff.F 732 2008-09-07 01:55:51Z jcwarner $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2010 The ROMS/TOMS Group        John C. Warner   !
+!  Copyright (c) 2002-2014 The ROMS/TOMS Group        John C. Warner   !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
 !                                                                      !
-!  This routine computes anti-difussive velocities to correct tracer   !
+!  This routine computes anti-diffusive velocities to correct tracer   !
 !  advection using MPDATA Recursive method.                            !
 !                                                                      !
 !  On Output:                                                          !
@@ -38,7 +38,6 @@
       SUBROUTINE mpdata_adiff_tile (ng, tile,                           &
      &                              LBi, UBi, LBj, UBj,                 &
      &                              IminS, ImaxS, JminS, JmaxS,         &
-     &                              nrhs,                               &
 # ifdef MASKING
      &                              rmask, umask, vmask,                &
 # endif
@@ -55,16 +54,14 @@
 !***********************************************************************
 !
       USE mod_param
+      USE mod_ncparam
       USE mod_scalars
-!
-      USE bc_3d_mod, ONLY : bc_r3d_tile
 !
 !  Imported variable declarations.
 !
       integer, intent(in) :: ng, tile
       integer, intent(in) :: LBi, UBi, LBj, UBj
       integer, intent(in) :: IminS, ImaxS, JminS, JmaxS
-      Integer, intent(in) :: nrhs
 !
 # ifdef ASSUMED_SHAPE
 #  ifdef MASKING
@@ -92,6 +89,7 @@
       real(r8), intent(in) :: W_stokes(LBi:,LBj:,0:)
 #  endif
       real(r8), intent(inout) :: Ta(IminS:,JminS:,:)
+
       real(r8), intent(out) :: Ua(IminS:,JminS:,:)
       real(r8), intent(out) :: Va(IminS:,JminS:,:)
       real(r8), intent(out) :: Wa(IminS:,JminS:,0:)
@@ -121,6 +119,7 @@
       real(r8), intent(in) :: W_stokes(LBi:UBi,LBj:UBj,0:N(ng))
 #  endif
       real(r8), intent(inout) :: Ta(IminS:ImaxS,JminS:JmaxS,N(ng))
+
       real(r8), intent(out) :: Ua(IminS:ImaxS,JminS:JmaxS,N(ng))
       real(r8), intent(out) :: Va(IminS:ImaxS,JminS:JmaxS,N(ng))
       real(r8), intent(out) :: Wa(IminS:ImaxS,JminS:JmaxS,0:N(ng))
@@ -161,117 +160,84 @@
 !
 !  Set boundary conditions to advected tracer, Ta.
 !
-# if defined EW_PERIODIC || defined COMPOSED_GRID
-#  define I_RANGE Istr-2,Iend+2
-# else
-#  define I_RANGE MAX(Istr-2,1),MIN(Iend+2,Lm(ng))
-# endif
-# if defined NS_PERIODIC || defined COMPOSED_GRID
-#  define J_RANGE Jstr-2,Jend+2
-# else
-#  define J_RANGE MAX(Jstr-2,1),MIN(Jend+2,Mm(ng))
-# endif
+      IF (.not.EWperiodic(ng)) THEN
+        IF (DOMAIN(ng)%Western_Edge(tile)) THEN
+          DO k=1,N(ng)
+            DO j=JstrVm2,Jendp2i
+              Ta(Istr-1,j,k)=Ta(Istr,j,k)
+            END DO
+          END DO
+        END IF
+        IF (DOMAIN(ng)%Eastern_Edge(tile)) THEN
+          DO k=1,N(ng)
+            DO j=JstrVm2,Jendp2i
+              Ta(Iend+1,j,k)=Ta(Iend,j,k)
+            END DO
+          END DO
+        END IF
+      END IF
 
-# if !defined EW_PERIODIC && !defined COMPOSED_GRID
-      IF (WESTERN_EDGE) THEN
-        DO k=1,N(ng)
-          DO j=J_RANGE
-            Ta(Istr-1,j,k)=Ta(Istr,j,k)
+      IF (.not.NSperiodic(ng)) THEN
+        IF (DOMAIN(ng)%Southern_Edge(tile)) THEN
+          DO k=1,N(ng)
+            DO i=IstrUm2,Iendp2i
+              Ta(i,Jstr-1,k)=Ta(i,Jstr,k)
+            END DO
           END DO
-        END DO
-      END IF
-      IF (EASTERN_EDGE) THEN
-        DO k=1,N(ng)
-          DO j=J_RANGE
-            Ta(Iend+1,j,k)=Ta(Iend,j,k)
+        END IF
+        IF (DOMAIN(ng)%Northern_Edge(tile)) THEN
+          DO k=1,N(ng)
+            DO i=IstrUm2,Iendp2i
+              Ta(i,Jend+1,k)=Ta(i,Jend,k)
+            END DO
           END DO
-        END DO
+        END IF
       END IF
-# endif
-# if !defined NS_PERIODIC && !defined COMPOSED_GRID
-      IF (SOUTHERN_EDGE) THEN
-        DO k=1,N(ng)
-          DO i=I_RANGE
-            Ta(i,Jstr-1,k)=Ta(i,Jstr,k)
+
+      IF (.not.(EWperiodic(ng).or.NSperiodic(ng))) THEN
+        IF (DOMAIN(ng)%SouthWest_Corner(tile)) THEN
+          DO k=1,N(ng)
+            Ta(Istr-1,Jstr-1,k)=0.5_r8*(Ta(Istr  ,Jstr-1,k)+            &
+     &                                  Ta(Istr-1,Jstr  ,k))
           END DO
-        END DO
-      END IF
-      IF (NORTHERN_EDGE) THEN
-        DO k=1,N(ng)
-          DO i=I_RANGE
-            Ta(i,Jend+1,k)=Ta(i,Jend,k)
+        END IF
+        IF (DOMAIN(ng)%SouthEast_Corner(tile)) THEN
+          DO k=1,N(ng)
+            Ta(Iend+1,Jstr-1,k)=0.5_r8*(Ta(Iend+1,Jstr  ,k)+            &
+     &                                  Ta(Iend  ,Jstr-1,k))
           END DO
-        END DO
+        END IF
+        IF (DOMAIN(ng)%NorthWest_Corner(tile)) THEN
+          DO k=1,N(ng)
+            Ta(Istr-1,Jend+1,k)=0.5_r8*(Ta(Istr-1,Jend  ,k)+            &
+     &                                  Ta(Istr  ,Jend+1,k))
+          END DO
+        END IF
+        IF (DOMAIN(ng)%NorthEast_Corner(tile)) THEN
+          DO k=1,N(ng)
+            Ta(Iend+1,Jend+1,k)=0.5_r8*(Ta(Iend+1,Jend  ,k)+            &
+     &                                  Ta(Iend  ,Jend+1,k))
+          END DO
+        END IF
       END IF
-# endif
-# if !defined EW_PERIODIC && !defined NS_PERIODIC && !defined COMPOSED_GRID
-      IF ((SOUTHERN_EDGE).and.(WESTERN_EDGE)) THEN
-        DO k=1,N(ng)
-          Ta(Istr-1,Jstr-1,k)=0.5_r8*(Ta(Istr  ,Jstr-1,k)+              &
-     &                                Ta(Istr-1,Jstr  ,k))
-        END DO
-      END IF
-      IF ((SOUTHERN_EDGE).and.(EASTERN_EDGE)) THEN
-        DO k=1,N(ng)
-          Ta(Iend+1,Jstr-1,k)=0.5_r8*(Ta(Iend+1,Jstr  ,k)+              &
-     &                                Ta(Iend  ,Jstr-1,k))
-        END DO
-      END IF
-      IF ((NORTHERN_EDGE).and.(WESTERN_EDGE)) THEN
-        DO k=1,N(ng)
-          Ta(Istr-1,Jend+1,k)=0.5_r8*(Ta(Istr-1,Jend  ,k)+              &
-     &                                Ta(Istr  ,Jend+1,k))
-        END DO
-      END IF
-      IF ((NORTHERN_EDGE).and.(EASTERN_EDGE)) THEN
-        DO k=1,N(ng)
-          Ta(Iend+1,Jend+1,k)=0.5_r8*(Ta(Iend+1,Jend  ,k)+              &
-     &                                Ta(Iend  ,Jend+1,k))
-        END DO
-      END IF
-# endif
-# undef I_RANGE
-# undef J_RANGE
 !
 !  Compute inverse vertical grid spacing at W-points.
 !
-# if defined EW_PERIODIC || defined COMPOSED_GRID
-#  define I_RANGE Istr-2,Iend+2
-# else
-#  define I_RANGE MAX(Istr-2,1),MIN(Iend+2,Lm(ng))
-# endif
-# if defined NS_PERIODIC || defined COMPOSED_GRID
-#  define J_RANGE Jstr-2,Jend+2
-# else
-#  define J_RANGE MAX(Jstr-2,1),MIN(Jend+2,Mm(ng))
-# endif
       DO k=1,N(ng)-1
-        DO j=J_RANGE
-          DO i=I_RANGE
+        DO j=Jstrm2,Jendp2
+          DO i=Istrm2,Iendp2
             odz(i,j,k)=1.0_r8/(z_r(i,j,k+1)-z_r(i,j,k))
           END DO
         END DO
       END DO
-#undef I_RANGE
-#undef J_RANGE
       cff=1.0_r8/dt(ng)
 !
 !  Compute nondimensional U-antidiffusive velocities, Ua. If applicable,
 !  retain up to third-order terms of the power series.
 !
-# if defined EW_PERIODIC || defined COMPOSED_GRID
-#  define I_RANGE Istr-1,Iend+2
-# else
-#  define I_RANGE MAX(Istr-1,2),MIN(Iend+2,Lm(ng))
-# endif
-# if defined NS_PERIODIC || defined COMPOSED_GRID
-#  define J_RANGE Jstr-1,Jend+1
-# else
-#  define J_RANGE MAX(Jstr-1,1),MIN(Jend+1,Mm(ng))
-# endif
-      DO j=J_RANGE
+      DO j=JstrV-1,Jendp1
         k=1
-        DO i=I_RANGE
+        DO i=IstrU-1,Iendp2
           C(i,k)=0.25_r8*                                               &
      &           ((Ta(i  ,j,k+1)-Ta(i  ,j,k  ))*odz(i  ,j,k  )+         &
      &            (Ta(i-1,j,k+1)-Ta(i-1,j,k  ))*odz(i-1,j,k  ))*        &
@@ -289,7 +255,7 @@
 # endif
         END DO
         DO k=2,N(ng)-1
-          DO i=I_RANGE
+          DO i=IstrU-1,Iendp2
             C(i,k)=0.0625_r8*                                           &
      &             ((Ta(i  ,j,k+1)-Ta(i  ,j,k  ))*odz(i  ,j,k  )+       &
      &              (Ta(i  ,j,k  )-Ta(i  ,j,k-1))*odz(i  ,j,k-1)+       &
@@ -316,7 +282,7 @@
           END DO
         END DO
         k=N(ng)
-        DO i=I_RANGE
+        DO i=IstrU-1,Iendp2
           C(i,k)=0.25_r8*                                               &
      &           ((Ta(i  ,j,k  )-Ta(i  ,j,k-1))*odz(i  ,j,k-1)+         &
      &            (Ta(i-1,j,k  )-Ta(i-1,j,k-1))*odz(i-1,j,k-1))*        &
@@ -336,7 +302,7 @@
 # endif
         END DO
         DO k=1,N(ng)
-          DO i=I_RANGE
+          DO i=IstrU-1,Iendp2
             IF ((Ta(i-1,j,k).le.0.0_r8).or.                             &
      &          (Ta(i  ,j,k).le.0.0_r8).or.                             &
      &          (ABS(Ta(i-1,j,k)-Ta(i,j,k)).le.eps2)) THEN
@@ -451,62 +417,23 @@
 !
               Ua(i,j,k)=MIN(ABS(Ua(i,j,k)),ABS(Um))*                    &
      &                  SIGN(1.0_r8,Ua(i,j,k))
-#  ifdef MASKING
+# ifdef MASKING
               Ua(i,j,k)=Ua(i,j,k)*umask(i,j)
-#  endif
-#  ifdef WET_DRY
+# endif
+# ifdef WET_DRY
               Ua(i,j,k)=Ua(i,j,k)*umask_wet(i,j)
-#  endif
+# endif
             END IF
           END DO
         END DO
       END DO
 !
-!  Set boundary conditions.
-!
-# if !defined EW_PERIODIC && !defined COMPOSED_GRID
-      IF (WESTERN_EDGE) THEN
-        DO k=1,N(ng)
-          DO j=J_RANGE
-#  ifdef WESTERN_WALL
-            Ua(Istr,j,k)=0.0_r8
-#  else
-            Ua(Istr,j,k)=Ua(Istr+1,j,k)
-#  endif
-          END DO
-        END DO
-      END IF
-      IF (EASTERN_EDGE) THEN
-        DO k=1,N(ng)
-          DO j=J_RANGE
-#  ifdef EASTERN_WALL
-            Ua(Iend+1,j,k)=0.0_r8
-#  else
-            Ua(Iend+1,j,k)=Ua(Iend,j,k)
-#  endif
-          END DO
-        END DO
-      END IF
-# endif
-# undef I_RANGE
-# undef J_RANGE
-!
 !  Compute nondimensional V-antidiffusive velocities, Va. If applicable,
 !  retain up to third-order terms of the power series.
 !
-# if defined EW_PERIODIC || defined COMPOSED_GRID
-#  define I_RANGE Istr-1,Iend+1
-# else
-#  define I_RANGE MAX(Istr-1,1),MIN(Iend+1,Lm(ng))
-# endif
-# if defined NS_PERIODIC || defined COMPOSED_GRID
-#  define J_RANGE Jstr-1,Jend+2
-# else
-#  define J_RANGE MAX(Jstr-1,2),MIN(Jend+2,Mm(ng))
-# endif
-      DO j=J_RANGE
+      DO j=JstrV-1,Jendp2
         k=1
-        DO i=I_RANGE
+        DO i=IstrU-1,Iendp1
           C(i,k)=0.25_r8*                                               &
      &           ((Ta(i,j  ,k+1)-Ta(i,j  ,k  ))*odz(i,j  ,k  )+         &
      &            (Ta(i,j-1,k+1)-Ta(i,j-1,k  ))*odz(i,j-1,k  ))*        &
@@ -524,7 +451,7 @@
 # endif
         END DO
         DO k=2,N(ng)-1
-          DO i=I_RANGE
+          DO i=IstrU-1,Iendp1
             C(i,k)=0.0625_r8*                                           &
      &             ((Ta(i,j  ,k+1)-Ta(i,j  ,k  ))*odz(i,j  ,k  )+       &
      &              (Ta(i,j  ,k  )-Ta(i,j  ,k-1))*odz(i,j  ,k-1)+       &
@@ -551,7 +478,7 @@
           END DO
         END DO
         k=N(ng)
-        DO i=I_RANGE
+        DO i=IstrU-1,Iendp1
           C(i,k)=0.25_r8*                                               &
      &           ((Ta(i,j  ,k  )-Ta(i,j  ,k-1))*odz(i,j  ,k-1)+         &
      &            (Ta(i,j-1,k  )-Ta(i,j-1,k-1))*odz(i,j-1,k-1))*        &
@@ -571,7 +498,7 @@
 # endif
         END DO
         DO k=1,N(ng)
-          DO i=I_RANGE
+          DO i=IstrU-1,Iendp1
             IF ((Ta(i,j-1,k).le.0.0_r8).or.                             &
      &          (Ta(i,j  ,k).le.0.0_r8).or.                             &
      &          (ABS(Ta(i,j-1,k)-Ta(i,j,k)).le.eps2)) THEN
@@ -687,62 +614,94 @@
 !
               Va(i,j,k)=MIN(ABS(Va(i,j,k)),ABS(Vm))*                    &
      &                  SIGN(1.0_r8,Va(i,j,k))
-#  ifdef MASKING
+# ifdef MASKING
               Va(i,j,k)=Va(i,j,k)*vmask(i,j)
-#  endif
-#  ifdef WET_DRY
+# endif
+# ifdef WET_DRY
               Va(i,j,k)=Va(i,j,k)*vmask_wet(i,j)
-#  endif
+# endif
             END IF
           END DO
         END DO
       END DO
 !
-!  Set boundary conditions.
+!  Apply boundary conditions to anti-diffusive velocities.
 !
-# if !defined NS_PERIODIC && !defined COMPOSED_GRID
-      IF (SOUTHERN_EDGE) THEN
-        DO k=1,N(ng)
-          DO i=I_RANGE
-#  ifdef SOUTHERN_WALL
-            Va(i,Jstr,k)=0.0_r8
-#  else
-            Va(i,Jstr,k)=Va(i,Jstr+1,k)
-#  endif
-          END DO
-        END DO
+      IF (.not.EWperiodic(ng)) THEN
+        IF (DOMAIN(ng)%Western_Edge(tile)) THEN
+          IF (LBC(iwest,isBu3d,ng)%closed) THEN
+            DO k=1,N(ng)
+              DO j=Jstr,Jend
+                Ua(Istr,j,k)=0.0_r8
+              END DO
+            END DO
+          ELSE
+            DO k=1,N(ng)
+              DO j=Jstr,Jend
+                Ua(Istr,j,k)=Ua(Istr+1,j,k)
+              END DO
+            END DO
+          END IF
+        END IF
+
+        IF (DOMAIN(ng)%Eastern_Edge(tile)) THEN
+          IF (LBC(ieast,isBu3d,ng)%closed) THEN
+            DO k=1,N(ng)
+              DO j=Jstr,Jend
+                Ua(Iend+1,j,k)=0.0_r8
+              END DO
+            END DO
+          ELSE
+            DO k=1,N(ng)
+              DO j=Jstr,Jend
+                Ua(Iend+1,j,k)=Ua(Iend,j,k)
+              END DO
+            END DO
+          END IF
+        END IF
       END IF
-      IF (NORTHERN_EDGE) THEN
-        DO k=1,N(ng)
-          DO i=I_RANGE
-#  ifdef NORTHERN_WALL
-            Va(i,Jend+1,k)=0.0_r8
-#  else
-            Va(i,Jend+1,k)=Va(i,Jend,k)
-#  endif
-          END DO
-        END DO
+
+      IF (.not.NSperiodic(ng)) THEN
+        IF (DOMAIN(ng)%Southern_Edge(tile)) THEN
+          IF (LBC(isouth,isBv3d,ng)%closed) THEN
+            DO k=1,N(ng)
+              DO i=Istr,Iend
+                Va(i,Jstr,k)=0.0_r8
+              END DO
+            END DO
+          ELSE
+            DO k=1,N(ng)
+              DO i=Istr,Iend
+                Va(i,Jstr,k)=Va(i,Jstr+1,k)
+              END DO
+            END DO
+          END IF
+        END IF
+
+        IF (DOMAIN(ng)%Northern_Edge(tile)) THEN
+          IF (LBC(inorth,isBv3d,ng)%closed) THEN
+            DO k=1,N(ng)
+              DO i=Istr,Iend
+                Va(i,Jend+1,k)=0.0_r8
+              END DO
+            END DO
+          ELSE
+            DO k=1,N(ng)
+              DO i=Istr,Iend
+                Va(i,Jend+1,k)=Va(i,Jend,k)
+              END DO
+            END DO
+          END IF
+        END IF
       END IF
-# endif
-# undef I_RANGE
-# undef J_RANGE
+
 !
 !  Compute nondimensional W-antidiffusive velocities, Wa. If applicable,
 !  retain up to third-order terms of the power series.
 !
-# if defined EW_PERIODIC || defined COMPOSED_GRID
-#  define I_RANGE Istr-1,Iend+1
-# else
-#  define I_RANGE MAX(Istr-1,1),MIN(Iend+1,Lm(ng))
-# endif
-# if defined NS_PERIODIC || defined COMPOSED_GRID
-#  define J_RANGE Jstr-1,Jend+1
-# else
-#  define J_RANGE MAX(Jstr-1,1),MIN(Jend+1,Mm(ng))
-# endif
-      DO j=J_RANGE
+      DO j=JstrV-1,Jendp1
         DO k=1,N(ng)-1
-          DO i=I_RANGE
+          DO i=IstrU-1,Iendp1
             IF ((Ta(i,j,k  ).le.0.0_r8).or.                             &
      &          (Ta(i,j,k+1).le.0.0_r8).or.                             &
      &          (ABS(Ta(i,j,k)-Ta(i,j,k+1)).le.eps2)) THEN
@@ -893,47 +852,34 @@
 !
               Wa(i,j,k)=MIN(ABS(Wa(i,j,k)),ABS(Wm(i,k)))*               &
      &                  SIGN(1.0_r8,Wa(i,j,k))
-#  ifdef MASKING
+# ifdef MASKING
               Wa(i,j,k)=Wa(i,j,k)*rmask(i,j)
-#  endif
-#  ifdef WET_DRY
+# endif
+# ifdef WET_DRY
               Wa(i,j,k)=Wa(i,j,k)*rmask_wet(i,j)
-#  endif
+# endif
             END IF
           END DO
         END DO
-        DO i=I_RANGE
+        DO i=IstrU-1,Iendp1
           Wa(i,j,0)=0.0_r8
           Wa(i,j,N(ng))=0.0_r8
         END DO
       END DO
-# undef I_RANGE
-# undef J_RANGE
 !
 !-----------------------------------------------------------------------
 !  Supress false oscillations in the solution by imposing appropriate
 !  limits on the transport fluxes. Compute the UP and DOWN beta-ratios
 !  described in Smolarkiewicz and Grabowski (1990).
 !-----------------------------------------------------------------------
-
-# if defined EW_PERIODIC || defined COMPOSED_GRID
-#  define I_RANGE Istr-1,Iend+1
-# else
-#  define I_RANGE MAX(Istr-1,1),MIN(Iend+1,Lm(ng))
-# endif
-# if defined NS_PERIODIC || defined COMPOSED_GRID
-#  define J_RANGE Jstr-1,Jend+1
-# else
-#  define J_RANGE MAX(Jstr-1,1),MIN(Jend+1,Mm(ng))
-# endif
 !
 !  Build special mask array used to limit the UP and DOWN beta-ratios
 !  to avoid including land/sea masking when computing limiting Tmin
 !  and Tmax values. Notice that a zero Tmin due to land mask is not
 !  considered.
 !
-      DO j=-1+J_RANGE+1
-        DO i=-1+I_RANGE+1
+      DO j=Jstrm2,Jendp2
+        DO i=Istrm2,Iendp2
 # ifdef MASKING
           mask_up(i,j)=rmask(i,j)
           mask_dn(i,j)=MAX(1.0_r8,MIN(Large,(1.0_r8-rmask(i,j))*Large))
@@ -946,9 +892,9 @@
 !
 !  Compute UP and DOWN beta-ratios.
 !
-      DO j=J_RANGE
+      DO j=JstrV-1,Jendp1
         k=1
-        DO i=I_RANGE
+        DO i=IstrU-1,Iendp1
           Tmax=MAX(Ta(i-1,j  ,k  )*mask_up(i-1,j  ),                    &
      &             t (i-1,j  ,k  )*mask_up(i-1,j  ),                    &
      &             Ta(i  ,j  ,k  )*mask_up(i  ,j  ),                    &
@@ -988,7 +934,7 @@
           beta_dn(i,j,k)=(Ta(i,j,k)-Tmin)/(cff2+eps)
         END DO
         DO k=2,N(ng)-1
-          DO i=I_RANGE
+          DO i=IstrU-1,Iendp1
             Tmax=MAX(Ta(i-1,j  ,k  )*mask_up(i-1,j  ),                  &
      &               t (i-1,j  ,k  )*mask_up(i-1,j  ),                  &
      &               Ta(i  ,j  ,k  )*mask_up(i  ,j  ),                  &
@@ -1035,7 +981,7 @@
           END DO
         END DO
         k=N(ng)
-        DO i=I_RANGE
+        DO i=IstrU-1,Iendp1
           Tmax=MAX(Ta(i-1,j  ,k  )*mask_up(i-1,j  ),                    &
      &             t (i-1,j  ,k  )*mask_up(i-1,j  ),                    &
      &             Ta(i  ,j  ,k  )*mask_up(i  ,j  ),                    &
@@ -1076,8 +1022,8 @@
         END DO
       END DO
       DO k=1,N(ng)
-        DO j=J_RANGE
-          DO i=I_RANGE
+        DO j=JstrV-1,Jendp1
+          DO i=IstrU-1,Iendp1
             IF (mask_up(i,j).eq.0.0_r8) THEN
               beta_up(i,j,k)=2.0_r8
               beta_dn(i,j,k)=2.0_r8
@@ -1085,21 +1031,12 @@
           END DO
         END DO
       END DO
-# undef I_RANGE
-# undef J_RANGE
 !
 !  Calculate monotonic velocities. Scale back to dimensional units.
 !
       DO k=1,N(ng)
-!
-# if defined EW_PERIODIC || defined COMPOSED_GRID
-#  define I_RANGE Istr,Iend+1
-# else
-#  define I_RANGE MAX(Istr,2),MIN(Iend+1,Lm(ng))
-# endif
-# define J_RANGE Jstr,Jend
-        DO j=J_RANGE
-          DO i=I_RANGE
+        DO j=Jstr,Jend
+          DO i=IstrU,Iendp1
             cff1=MIN(beta_dn(i-1,j,k),beta_up(i,j,k),1.0_r8)
             cff2=MIN(beta_up(i-1,j,k),beta_dn(i,j,k),1.0_r8)
             Ua(i,j,k)=(cff1*MAX(0.0_r8,Ua(i,j,k))+                      &
@@ -1113,40 +1050,8 @@
 # endif
           END DO
         END DO
-!
-!  Set boundary conditions.
-!
-# if !defined EW_PERIODIC && !defined COMPOSED_GRID
-      IF (WESTERN_EDGE) THEN
-          DO j=J_RANGE
-#  ifdef WESTERN_WALL
-            Ua(Istr,j,k)=0.0_r8
-#  else
-            Ua(Istr,j,k)=Ua(Istr+1,j,k)
-#  endif
-          END DO
-      END IF
-      IF (EASTERN_EDGE) THEN
-          DO j=J_RANGE
-#  ifdef EASTERN_WALL
-            Ua(Iend+1,j,k)=0.0_r8
-#  else
-            Ua(Iend+1,j,k)=Ua(Iend,j,k)
-#  endif
-          END DO
-      END IF
-# endif
-# undef I_RANGE
-# undef J_RANGE
-!
-# define I_RANGE Istr,Iend
-# if defined NS_PERIODIC || defined COMPOSED_GRID
-#  define J_RANGE Jstr,Jend+1
-# else
-#  define J_RANGE MAX(Jstr,2),MIN(Jend+1,Mm(ng))
-# endif
-        DO j=J_RANGE
-          DO i=I_RANGE
+        DO j=JstrV,Jendp1
+          DO i=Istr,Iend
             cff1=MIN(beta_dn(i,j-1,k),beta_up(i,j,k),1.0_r8)
             cff2=MIN(beta_up(i,j-1,k),beta_dn(i,j,k),1.0_r8)
             Va(i,j,k)=(cff1*MAX(0.0_r8,Va(i,j,k))+                      &
@@ -1160,31 +1065,6 @@
 # endif
           END DO
         END DO
-!
-!  Set boundary conditions.
-!
-# if !defined NS_PERIODIC && !defined COMPOSED_GRID
-      IF (SOUTHERN_EDGE) THEN
-          DO i=I_RANGE
-#  ifdef SOUTHERN_WALL
-            Va(i,Jstr,k)=0.0_r8
-#  else
-            Va(i,Jstr,k)=Va(i,Jstr+1,k)
-#  endif
-          END DO
-      END IF
-      IF (NORTHERN_EDGE) THEN
-          DO i=I_RANGE
-#  ifdef NORTHERN_WALL
-            Va(i,Jend+1,k)=0.0_r8
-#  else
-            Va(i,Jend+1,k)=Va(i,Jend,k)
-#  endif
-          END DO
-      END IF
-# endif
-# undef I_RANGE
-# undef J_RANGE
         IF (k.lt.N(ng)) THEN
           DO j=Jstr,Jend
             DO i=Istr,Iend
@@ -1203,6 +1083,76 @@
           END DO
         END IF
       END DO
+!
+!  Apply boundary conditions to anti-diffusive velocities.
+!
+      IF (.not.EWperiodic(ng)) THEN
+        IF (DOMAIN(ng)%Western_Edge(tile)) THEN
+          IF (LBC(iwest,isBu3d,ng)%closed) THEN
+            DO k=1,N(ng)
+              DO j=Jstr,Jend
+                Ua(Istr,j,k)=0.0_r8
+              END DO
+            END DO
+          ELSE
+            DO k=1,N(ng)
+              DO j=Jstr,Jend
+                Ua(Istr,j,k)=Ua(Istr+1,j,k)
+              END DO
+            END DO
+          END IF
+        END IF
+
+        IF (DOMAIN(ng)%Eastern_Edge(tile)) THEN
+          IF (LBC(ieast,isBu3d,ng)%closed) THEN
+            DO k=1,N(ng)
+              DO j=Jstr,Jend
+                Ua(Iend+1,j,k)=0.0_r8
+              END DO
+            END DO
+          ELSE
+            DO k=1,N(ng)
+              DO j=Jstr,Jend
+                Ua(Iend+1,j,k)=Ua(Iend,j,k)
+              END DO
+            END DO
+          END IF
+        END IF
+      END IF
+
+      IF (.not.NSperiodic(ng)) THEN
+        IF (DOMAIN(ng)%Southern_Edge(tile)) THEN
+          IF (LBC(isouth,isBv3d,ng)%closed) THEN
+            DO k=1,N(ng)
+              DO i=Istr,Iend
+                Va(i,Jstr,k)=0.0_r8
+              END DO
+            END DO
+          ELSE
+            DO k=1,N(ng)
+              DO i=Istr,Iend
+                Va(i,Jstr,k)=Va(i,Jstr+1,k)
+              END DO
+            END DO
+          END IF
+        END IF
+
+        IF (DOMAIN(ng)%Northern_Edge(tile)) THEN
+          IF (LBC(inorth,isBv3d,ng)%closed) THEN
+            DO k=1,N(ng)
+              DO i=Istr,Iend
+                Va(i,Jend+1,k)=0.0_r8
+              END DO
+            END DO
+          ELSE
+            DO k=1,N(ng)
+              DO i=Istr,Iend
+                Va(i,Jend+1,k)=Va(i,Jend,k)
+              END DO
+            END DO
+          END IF
+        END IF
+      END IF
 
       RETURN
       END SUBROUTINE mpdata_adiff_tile

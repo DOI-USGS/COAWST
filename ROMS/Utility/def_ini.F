@@ -4,7 +4,7 @@
 !
 !svn $Id: def_ini.F 733 2008-09-07 01:56:45Z jcwarner $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2010 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2014 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -64,8 +64,8 @@
 
       real(r8) :: Aval(6)
 
-      character (len=80) :: ncname
       character (len=120) :: Vinfo(Natt)
+      character (len=256) :: ncname
 !
       SourceFile='def_ini.F'
 
@@ -78,7 +78,7 @@
 !=======================================================================
 !
       IF (exit_flag.ne.NoError) RETURN
-      ncname=INIname(ng)
+      ncname=INI(ng)%name
 !
 !  Inquire about the dimensions and check for consistency.
 !
@@ -101,24 +101,24 @@
         IF (TRIM(var_name(i)).eq.                                       &
      &      TRIM(Vname(1,idSbry(isFsur)))) THEN
           got_var(idSbry(isFsur))=.TRUE.
-          iniVid(idSbry(isFsur),ng)=var_id(i)
+          INI(ng)%Vid(idSbry(isFsur))=var_id(i)
         ELSE IF (TRIM(var_name(i)).eq.                                  &
      &           TRIM(Vname(1,idSbry(isUbar)))) THEN
           got_var(idSbry(isUbar))=.TRUE.
-          iniVid(idSbry(isUbar),ng)=var_id(i)
+          INI(ng)%Vid(idSbry(isUbar))=var_id(i)
         ELSE IF (TRIM(var_name(i)).eq.                                  &
      &           TRIM(Vname(1,idSbry(isVbar)))) THEN
           got_var(idSbry(isVbar))=.TRUE.
-          iniVid(idSbry(isVbar),ng)=var_id(i)
+          INI(ng)%Vid(idSbry(isVbar))=var_id(i)
 #   ifdef SOLVE3D
         ELSE IF (TRIM(var_name(i)).eq.                                  &
      &           TRIM(Vname(1,idSbry(isUvel)))) THEN
           got_var(idSbry(isUvel))=.TRUE.
-          iniVid(idSbry(isUvel),ng)=var_id(i)
+          INI(ng)%Vid(idSbry(isUvel))=var_id(i)
         ELSE IF (TRIM(var_name(i)).eq.                                  &
      &           TRIM(Vname(1,idSbry(isVvel)))) THEN
           got_var(idSbry(isVvel))=.TRUE.
-          iniVid(idSbry(isVvel),ng)=var_id(i)
+          INI(ng)%Vid(idSbry(isVvel))=var_id(i)
 #   endif
         END IF
 #   ifdef SOLVE3D
@@ -126,7 +126,7 @@
           IF (TRIM(var_name(i)).eq.                                     &
      &        TRIM(Vname(1,idSbry(isTvar(itrc))))) THEN
             got_var(idSbry(isTvar(itrc)))=.TRUE.
-            iniVid(idSbry(isTvar(itrc)),ng)=var_id(i)
+            INI(ng)%Vid(idSbry(isTvar(itrc)))=var_id(i)
           END IF
         END DO
 #   endif
@@ -134,10 +134,10 @@
 #  ifdef ADJUST_WSTRESS
         IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idUsms))) THEN
           got_var(idUsms)=.TRUE.
-          iniVid(idUsms,ng)=var_id(i)
+          INI(ng)%Vid(idUsms)=var_id(i)
         ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idVsms))) THEN
           got_var(idVsms)=.TRUE.
-          iniVid(idVsms,ng)=var_id(i)
+          INI(ng)%Vid(idVsms)=var_id(i)
         END IF
 #  endif
 #  if defined ADJUST_STFLUX && defined SOLVE3D
@@ -145,7 +145,7 @@
           IF (Lstflux(itrc,ng)) THEN
             IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idTsur(itrc)))) THEN
               got_var(idTsur(itrc))=.TRUE.
-              iniVid(idTsur(itrc),ng)=var_id(i)
+              INI(ng)%Vid(idTsur(itrc))=var_id(i)
             END IF
           END IF
         END DO
@@ -178,7 +178,7 @@
 !
 !  Open initialization file for read/write.
 !
-      CALL netcdf_open (ng, iNLM, ncname, 1, ncINIid(ng))
+      CALL netcdf_open (ng, iNLM, ncname, 1, INI(ng)%ncid)
       IF (exit_flag.ne.NoError) THEN
         IF (Master) WRITE (stdout,10) TRIM(ncname)
         RETURN
@@ -187,7 +187,7 @@
 !  Put existing file into define mode so new variables can be added.
 !
       IF (Ldefine) THEN
-        CALL netcdf_redef (ng, iNLM, ncname, ncINIid(ng))
+        CALL netcdf_redef (ng, iNLM, ncname, INI(ng)%ncid)
         IF (exit_flag.ne.NoError) THEN
           IF (Master) WRITE (stdout,20) TRIM(ncname)
           RETURN
@@ -252,26 +252,26 @@
         DimIDs(12)=rec_id
 #  ifdef ADJUST_BOUNDARY
         IF (.not.got_boundary) THEN
-          status=def_dim(ng, iNLM, ncINIid(ng), ncname, 'boundary',     &
+          status=def_dim(ng, iNLM, INI(ng)%ncid, ncname, 'boundary',    &
      &                   4, DimIDs(14))
           IF (exit_flag.ne.NoError) RETURN
         END IF
         IF (.not.got_IorJ) THEN
-          status=def_dim(ng, iNLM, ncINIid(ng), ncname, 'IorJ',         &
+          status=def_dim(ng, iNLM, INI(ng)%ncid, ncname, 'IorJ',        &
      &                   IOBOUNDS(ng)%IorJ, IorJdim)
           IF (exit_flag.ne.NoError) RETURN
         END IF
 #  endif
 #  if defined ADJUST_STFLUX || defined ADJUST_WSTRESS
         IF (.not.got_frc_adjust) THEN
-          status=def_dim(ng, iNLM, ncINIid(ng), ncname, 'frc_adjust',   &
+          status=def_dim(ng, iNLM, INI(ng)%ncid, ncname, 'frc_adjust',  &
      &                   Nfrec(ng), frecdim)
           IF (exit_flag.ne.NoError) RETURN
         END IF
 #  endif
 #  ifdef ADJUST_BOUNDARY
         IF (.not.got_obc_adjust) THEN
-          status=def_dim(ng, iNLM, ncINIid(ng), ncname, 'obc_adjust',   &
+          status=def_dim(ng, iNLM, INI(ng)%ncid, ncname, 'obc_adjust',  &
      &                   Nbrec(ng), brecdim)
           IF (exit_flag.ne.NoError) RETURN
         END IF
@@ -300,7 +300,7 @@
 #  endif
 #  ifdef ADJUST_WSTRESS
 !
-!  Define dimension vectors for staggered u-momemtum type variables.
+!  Define dimension vectors for staggered u-momentum type variables.
 !
         u4dfrc(1)=DimIDs( 2)
         u4dfrc(2)=DimIDs( 6)
@@ -309,7 +309,7 @@
 #  endif
 #  ifdef ADJUST_WSTRESS
 !
-!  Define dimension vectors for staggered v-momemtum type variables.
+!  Define dimension vectors for staggered v-momentum type variables.
 !
         v4dfrc(1)=DimIDs( 3)
         v4dfrc(2)=DimIDs( 7)
@@ -346,7 +346,7 @@
           Vinfo(14)=Vname(4,ifield)
           Vinfo(16)=Vname(1,idtime)
           Aval(5)=REAL(Iinfo(1,ifield,ng),r8)
-          status=def_var(ng, iNLM, ncINIid(ng), iniVid(ifield,ng),      &
+          status=def_var(ng, iNLM, INI(ng)%ncid, INI(ng)%Vid(ifield),   &
      &                   NF_FOUT, 4, t2dobc, Aval, Vinfo, ncname,       &
      &                   SetFillVal = .FALSE.)
           IF (exit_flag.ne.NoError) RETURN
@@ -362,7 +362,7 @@
           Vinfo(14)=Vname(4,ifield)
           Vinfo(16)=Vname(1,idtime)
           Aval(5)=REAL(Iinfo(1,ifield,ng),r8)
-          status=def_var(ng, iNLM, ncINIid(ng), iniVid(ifield,ng),      &
+          status=def_var(ng, iNLM, INI(ng)%ncid, INI(ng)%Vid(ifield),   &
      &                   NF_FOUT, 4, t2dobc, Aval, Vinfo, ncname,       &
      &                   SetFillVal = .FALSE.)
           IF (exit_flag.ne.NoError) RETURN
@@ -378,7 +378,7 @@
           Vinfo(14)=Vname(4,ifield)
           Vinfo(16)=Vname(1,idtime)
           Aval(5)=REAL(Iinfo(1,ifield,ng),r8)
-          status=def_var(ng, iNLM, ncINIid(ng), iniVid(ifield,ng),      &
+          status=def_var(ng, iNLM, INI(ng)%ncid, INI(ng)%Vid(ifield),   &
      &                   NF_FOUT, 4, t2dobc, Aval, Vinfo, ncname,       &
      &                   SetFillVal = .FALSE.)
           IF (exit_flag.ne.NoError) RETURN
@@ -396,7 +396,7 @@
           Vinfo(14)=Vname(4,ifield)
           Vinfo(16)=Vname(1,idtime)
           Aval(5)=REAL(Iinfo(1,ifield,ng),r8)
-          status=def_var(ng, iNLM, ncINIid(ng), iniVid(ifield,ng),      &
+          status=def_var(ng, iNLM, INI(ng)%ncid, INI(ng)%Vid(ifield),   &
      &                   NF_FOUT, 5, t3dobc, Aval, Vinfo, ncname,       &
      &                   SetFillVal = .FALSE.)
           IF (exit_flag.ne.NoError) RETURN
@@ -412,7 +412,7 @@
           Vinfo(14)=Vname(4,ifield)
           Vinfo(16)=Vname(1,idtime)
           Aval(5)=REAL(Iinfo(1,ifield,ng),r8)
-          status=def_var(ng, iNLM, ncINIid(ng), iniVid(ifield,ng),      &
+          status=def_var(ng, iNLM, INI(ng)%ncid, INI(ng)%Vid(ifield),   &
      &                   NF_FOUT, 5, t3dobc, Aval, Vinfo, ncname,       &
      &                   SetFillVal = .FALSE.)
           IF (exit_flag.ne.NoError) RETURN
@@ -429,7 +429,7 @@
             Vinfo(14)=Vname(4,ifield)
             Vinfo(16)=Vname(1,idtime)
             Aval(5)=REAL(Iinfo(1,ifield,ng),r8)
-            status=def_var(ng, iNLM, ncINIid(ng), iniVid(ifield,ng),    &
+            status=def_var(ng, iNLM, INI(ng)%ncid, INI(ng)%Vid(ifield), &
      &                     NF_FOUT, 5, t3dobc, Aval, Vinfo, ncname,     &
      &                     SetFillVal = .FALSE.)
             IF (exit_flag.ne.NoError) RETURN
@@ -450,7 +450,7 @@
 #   endif
           Vinfo(22)='coordinates'
           Aval(5)=REAL(u2dvar,r8)
-          status=def_var(ng, iNLM, ncINIid(ng), iniVid(idUsms,ng),      &
+          status=def_var(ng, iNLM, INI(ng)%ncid, INI(ng)%Vid(idUsms),   &
      &                   NF_FOUT, 4, u4dfrc, Aval, Vinfo, ncname)
           IF (exit_flag.ne.NoError) RETURN
         END IF
@@ -466,7 +466,7 @@
 #   endif
           Vinfo(22)='coordinates'
           Aval(5)=REAL(v2dvar,r8)
-          status=def_var(ng, iNLM, ncINIid(ng), iniVid(idVsms,ng),      &
+          status=def_var(ng, iNLM, INI(ng)%ncid, INI(ng)%Vid(idVsms),   &
      &                   NF_FOUT, 4, v4dfrc, Aval, Vinfo, ncname)
           IF (exit_flag.ne.NoError) RETURN
         END IF
@@ -492,8 +492,8 @@
 #   endif
             Vinfo(22)='coordinates'
             Aval(5)=REAL(r2dvar,r8)
-            status=def_var(ng, iNLM, ncINIid(ng),                       &
-     &                     iniVid(idTsur(itrc),ng), NF_FOUT,            &
+            status=def_var(ng, iNLM, INI(ng)%ncid,                      &
+     &                     INI(ng)%Vid(idTsur(itrc)), NF_FOUT,          &
      &                     4, t4dfrc, Aval, Vinfo, ncname)
             IF (exit_flag.ne.NoError) RETURN
           END IF
@@ -504,7 +504,7 @@
 !  Leave definition mode.
 !-----------------------------------------------------------------------
 !
-        CALL netcdf_enddef (ng, iNLM, ncname, ncINIid(ng))
+        CALL netcdf_enddef (ng, iNLM, ncname, INI(ng)%ncid)
         IF (exit_flag.ne.NoError) RETURN
 
       END IF DEFINE
@@ -516,7 +516,7 @@
 !=======================================================================
 !
       IF (.not.LdefINI(ng)) THEN
-        ncname=INIname(ng)
+        ncname=INI(ng)%name
 
 # if !(defined ADJUST_STFLUX || defined ADJUST_WSTRESS)
 !
@@ -532,7 +532,7 @@
 !
 !  Open initialization file for read/write.
 !
-        CALL netcdf_open (ng, iNLM, ncname, 1, ncINIid(ng))
+        CALL netcdf_open (ng, iNLM, ncname, 1, INI(ng)%ncid)
         IF (exit_flag.ne.NoError) THEN
           WRITE (stdout,10) TRIM(ncname)
           RETURN
@@ -551,34 +551,34 @@
         DO i=1,n_var
           IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idtime))) THEN
             got_var(idtime)=.TRUE.
-            iniVid(idtime,ng)=var_id(i)
+            INI(ng)%Vid(idtime)=var_id(i)
           ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idFsur))) THEN
             got_var(idFsur)=.TRUE.
-            iniVid(idFsur,ng)=var_id(i)
+            INI(ng)%Vid(idFsur)=var_id(i)
           ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idUbar))) THEN
             got_var(idUbar)=.TRUE.
-            iniVid(idUbar,ng)=var_id(i)
+            INI(ng)%Vid(idUbar)=var_id(i)
           ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idVbar))) THEN
             got_var(idVbar)=.TRUE.
-            iniVid(idVbar,ng)=var_id(i)
+            INI(ng)%Vid(idVbar)=var_id(i)
 # ifdef SOLVE3D
           ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idUvel))) THEN
             got_var(idUvel)=.TRUE.
-            iniVid(idUvel,ng)=var_id(i)
+            INI(ng)%Vid(idUvel)=var_id(i)
           ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idVvel))) THEN
             got_var(idVvel)=.TRUE.
-            iniVid(idVvel,ng)=var_id(i)
+            INI(ng)%Vid(idVvel)=var_id(i)
 #  if defined BVF_MIXING || defined LMD_MIXING || \
       defined GLS_MIXING || defined MY25_MIXING
           ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idVvis))) THEN
             got_var(idVvis)=.TRUE.
-            iniVid(idVvis,ng)=var_id(i)
+            INI(ng)%Vid(idVvis)=var_id(i)
           ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idTdif))) THEN
             got_var(idTdif)=.TRUE.
-            iniVid(idTdif,ng)=var_id(i)
+            INI(ng)%Vid(idTdif)=var_id(i)
           ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idSdif))) THEN
             got_var(idSdif)=.TRUE.
-            iniVid(idSdif,ng)=var_id(i)
+            INI(ng)%Vid(idSdif)=var_id(i)
 #  endif
 # endif
           END IF
@@ -586,7 +586,7 @@
           DO itrc=1,NT(ng)
             IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idTvar(itrc)))) THEN
               got_var(idTvar(itrc))=.TRUE.
-              iniTid(itrc,ng)=var_id(i)
+              INI(ng)%Tid(itrc)=var_id(i)
             END IF
           END DO
 # endif
@@ -644,7 +644,7 @@
 !
 !  Set unlimited time record dimension to the appropriate value.
 !
-        tINIindx(ng)=rec_size
+        INI(ng)%Rindex=rec_size
       END IF
 !
   10  FORMAT (/,' DEF_INI - unable to open initial NetCDF file: ',a)

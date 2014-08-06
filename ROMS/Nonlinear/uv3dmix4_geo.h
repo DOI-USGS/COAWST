@@ -2,7 +2,7 @@
 !
 !svn $Id: uv3dmix4_geo.h 585 2012-01-03 18:44:28Z arango $
 !************************************************** Hernan G. Arango ***
-!  Copyright (c) 2002-2012 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2014 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !***********************************************************************
@@ -737,160 +737,175 @@
 !  Apply boundary conditions (closed or gradient; except periodic)
 !  to the first harmonic operator.
 !
-      IF (.not.ComposedGrid(ng)) THEN
-        IF (.not.EWperiodic(ng)) THEN
-          IF (DOMAIN(ng)%Western_Edge(tile)) THEN
-            IF (LBC(iwest,isUvel,ng)%closed) THEN
-              DO k=1,N(ng)
-                DO j=Jstrm1,Jendp1
-                  LapU(IstrU-1,j,k)=0.0_r8
-                END DO
+      IF (.not.(CompositeGrid(iwest,ng).or.EWperiodic(ng))) THEN
+        IF (DOMAIN(ng)%Western_Edge(tile)) THEN
+          IF (LBC(iwest,isUvel,ng)%closed) THEN
+            DO k=1,N(ng)
+              DO j=Jstrm1,Jendp1
+                LapU(IstrU-1,j,k)=0.0_r8
               END DO
-            ELSE
-              DO k=1,N(ng)
-                DO j=Jstrm1,Jendp1
-                  LapU(IstrU-1,j,k)=LapU(IstrU,j,k)
-                END DO
+            END DO
+          ELSE
+            DO k=1,N(ng)
+              DO j=Jstrm1,Jendp1
+                LapU(IstrU-1,j,k)=LapU(IstrU,j,k)
               END DO
-            END IF
-            IF (LBC(iwest,isVvel,ng)%closed) THEN
-              DO k=1,N(ng)
-                DO j=JstrVm1,Jendp1
-                  LapV(Istr-1,j,k)=gamma2(ng)*LapV(Istr,j,k)
-                END DO
-              END DO
-            ELSE
-              DO k=1,N(ng)
-                DO j=JstrVm1,Jendp1
-                  LapV(Istr-1,j,k)=0.0_r8
-                END DO
-              END DO
-            END IF
+            END DO
           END IF
-
-          IF (DOMAIN(ng)%Eastern_Edge(tile)) THEN
-            IF (LBC(ieast,isUvel,ng)%closed) THEN
-              DO k=1,N(ng)
-                DO j=Jstrm1,Jendp1
-                  LapU(Iend+1,j,k)=0.0_r8
-                END DO
+          IF (LBC(iwest,isVvel,ng)%closed) THEN
+            DO k=1,N(ng)
+              DO j=JstrVm1,Jendp1
+                LapV(Istr-1,j,k)=gamma2(ng)*LapV(Istr,j,k)
               END DO
-            ELSE
-              DO k=1,N(ng)
-                DO j=Jstrm1,Jendp1
-                  LapU(Iend+1,j,k)=LapU(Iend,j,k)
-                END DO
+            END DO
+          ELSE
+            DO k=1,N(ng)
+              DO j=JstrVm1,Jendp1
+                LapV(Istr-1,j,k)=0.0_r8
               END DO
-            END IF
-            IF (LBC(ieast,isVvel,ng)%closed) THEN
-              DO k=1,N(ng)
-                DO j=JstrVm1,Jendp1
-                  LapV(Iend+1,j,k)=gamma2(ng)*LapV(Iend,j,k)
-                END DO
-              END DO
-            ELSE
-              DO k=1,N(ng)
-                DO j=JstrVm1,Jendp1
-                  LapV(Iend+1,j,k)=0.0_r8
-                END DO
-              END DO
-            END IF
+            END DO
           END IF
         END IF
-
-        IF (.not.NSperiodic(ng)) THEN
-          IF (DOMAIN(ng)%Southern_Edge(tile)) THEN
-            IF (LBC(isouth,isUvel,ng)%closed) THEN
-              DO k=1,N(ng)
-                DO i=IstrUm1,Iendp1
-                  LapU(i,Jstr-1,k)=gamma2(ng)*LapU(i,Jstr,k)
-                END DO
+      END IF
+!
+      IF (.not.(CompositeGrid(ieast,ng).or.EWperiodic(ng))) THEN
+        IF (DOMAIN(ng)%Eastern_Edge(tile)) THEN
+          IF (LBC(ieast,isUvel,ng)%closed) THEN
+            DO k=1,N(ng)
+              DO j=Jstrm1,Jendp1
+                LapU(Iend+1,j,k)=0.0_r8
               END DO
-            ELSE
-              DO k=1,N(ng)
-                DO i=IstrUm1,Iendp1
-                  LapU(i,Jstr-1,k)=0.0_r8
-                END DO
+            END DO
+          ELSE
+            DO k=1,N(ng)
+              DO j=Jstrm1,Jendp1
+                LapU(Iend+1,j,k)=LapU(Iend,j,k)
               END DO
-            END IF
-            IF (LBC(isouth,isVvel,ng)%closed) THEN
-              DO k=1,N(ng)
-                DO i=Istrm1,Iendp1
-                  LapV(i,JstrV-1,k)=0.0_r8
-                END DO
-              END DO
-            ELSE
-              DO k=1,N(ng)
-                DO i=Istrm1,Iendp1
-                  LapV(i,JstrV-1,k)=LapV(i,JstrV,k)
-                END DO
-              END DO
-            END IF
+            END DO
           END IF
-
-          IF (DOMAIN(ng)%Northern_Edge(tile)) THEN
-            IF (LBC(inorth,isUvel,ng)%closed) THEN
-              DO k=1,N(ng)
-                DO i=IstrUm1,Iendp1
-                  LapU(i,Jend+1,k)=gamma2(ng)*LapU(i,Jend,k)
-                END DO
+          IF (LBC(ieast,isVvel,ng)%closed) THEN
+            DO k=1,N(ng)
+              DO j=JstrVm1,Jendp1
+                LapV(Iend+1,j,k)=gamma2(ng)*LapV(Iend,j,k)
               END DO
-            ELSE
-              DO k=1,N(ng)
-                DO i=IstrUm1,Iendp1
-                  LapU(i,Jend+1,k)=0.0_r8
-                END DO
+            END DO
+          ELSE
+            DO k=1,N(ng)
+              DO j=JstrVm1,Jendp1
+                LapV(Iend+1,j,k)=0.0_r8
               END DO
-            END IF
-            IF (LBC(inorth,isVvel,ng)%closed) THEN
-              DO k=1,N(ng)
-                DO i=Istrm1,Iendp1
-                  LapV(i,Jend+1,k)=0.0_r8
-                END DO
-              END DO
-            ELSE
-              DO k=1,N(ng)
-                DO i=Istrm1,Iendp1
-                  LapV(i,Jend+1,k)=LapV(i,Jend,k)
-                END DO
-              END DO
-            END IF
+            END DO
           END IF
         END IF
+      END IF
+!
+      IF (.not.(CompositeGrid(isouth,ng).or.NSperiodic(ng))) THEN
+        IF (DOMAIN(ng)%Southern_Edge(tile)) THEN
+          IF (LBC(isouth,isUvel,ng)%closed) THEN
+            DO k=1,N(ng)
+              DO i=IstrUm1,Iendp1
+                LapU(i,Jstr-1,k)=gamma2(ng)*LapU(i,Jstr,k)
+              END DO
+            END DO
+          ELSE
+            DO k=1,N(ng)
+              DO i=IstrUm1,Iendp1
+                LapU(i,Jstr-1,k)=0.0_r8
+              END DO
+            END DO
+          END IF
+          IF (LBC(isouth,isVvel,ng)%closed) THEN
+            DO k=1,N(ng)
+              DO i=Istrm1,Iendp1
+                LapV(i,JstrV-1,k)=0.0_r8
+              END DO
+            END DO
+          ELSE
+            DO k=1,N(ng)
+              DO i=Istrm1,Iendp1
+                LapV(i,JstrV-1,k)=LapV(i,JstrV,k)
+              END DO
+            END DO
+          END IF
+        END IF
+      END IF
+!
+      IF (.not.(CompositeGrid(inorth,ng).or.NSperiodic(ng))) THEN
+        IF (DOMAIN(ng)%Northern_Edge(tile)) THEN
+          IF (LBC(inorth,isUvel,ng)%closed) THEN
+            DO k=1,N(ng)
+              DO i=IstrUm1,Iendp1
+                LapU(i,Jend+1,k)=gamma2(ng)*LapU(i,Jend,k)
+              END DO
+            END DO
+          ELSE
+            DO k=1,N(ng)
+              DO i=IstrUm1,Iendp1
+                LapU(i,Jend+1,k)=0.0_r8
+              END DO
+            END DO
+          END IF
+          IF (LBC(inorth,isVvel,ng)%closed) THEN
+            DO k=1,N(ng)
+              DO i=Istrm1,Iendp1
+                LapV(i,Jend+1,k)=0.0_r8
+              END DO
+            END DO
+          ELSE
+            DO k=1,N(ng)
+              DO i=Istrm1,Iendp1
+                LapV(i,Jend+1,k)=LapV(i,Jend,k)
+              END DO
+            END DO
+          END IF
+        END IF
+      END IF
+!
+      IF (.not.(CompositeGrid(isouth,ng).or.NSperiodic(ng).or.          &
+     &          CompositeGrid(iwest ,ng).or.EWperiodic(ng))) THEN
+        IF (DOMAIN(ng)%SouthWest_Corner(tile)) THEN
+          DO k=1,N(ng)
+            LapU(Istr  ,Jstr-1,k)=0.5_r8*(LapU(Istr+1,Jstr-1,k)+        &
+     &                                    LapU(Istr  ,Jstr  ,k))
+            LapV(Istr-1,Jstr  ,k)=0.5_r8*(LapV(Istr-1,Jstr+1,k)+        &
+     &                                    LapV(Istr  ,Jstr  ,k))
+          END DO
+        END IF
+      END IF
 
-        IF (.not.(EWperiodic(ng).or.NSperiodic(ng))) THEN
-          IF (DOMAIN(ng)%SouthWest_Corner(tile)) THEN
-            DO k=1,N(ng)
-              LapU(Istr  ,Jstr-1,k)=0.5_r8*(LapU(Istr+1,Jstr-1,k)+      &
-     &                                      LapU(Istr  ,Jstr  ,k))
-              LapV(Istr-1,Jstr  ,k)=0.5_r8*(LapV(Istr-1,Jstr+1,k)+      &
-     &                                      LapV(Istr  ,Jstr  ,k))
-            END DO
-          END IF
-          IF (DOMAIN(ng)%SouthEast_Corner(tile)) THEN
-            DO k=1,N(ng)
-              LapU(Iend+1,Jstr-1,k)=0.5_r8*(LapU(Iend  ,Jstr-1,k)+      &
-     &                                      LapU(Iend+1,Jstr  ,k))
-              LapV(Iend+1,Jstr  ,k)=0.5_r8*(LapV(Iend  ,Jstr  ,k)+      &
-     &                                      LapV(Iend+1,Jstr+1,k))
-            END DO
-          END IF
-          IF (DOMAIN(ng)%NorthWest_Corner(tile)) THEN
-            DO k=1,N(ng)
-              LapU(Istr  ,Jend+1,k)=0.5_r8*(LapU(Istr+1,Jend+1,k)+      &
-     &                                      LapU(Istr  ,Jend  ,k))
-              LapV(Istr-1,Jend+1,k)=0.5_r8*(LapV(Istr  ,Jend+1,k)+      &
-     &                                      LapV(Istr-1,Jend  ,k))
-            END DO
-          END IF
-          IF (DOMAIN(ng)%NorthEast_Corner(tile)) THEN
-            DO k=1,N(ng)
-              LapU(Iend+1,Jend+1,k)=0.5_r8*(LapU(Iend  ,Jend+1,k)+      &
-     &                                      LapU(Iend+1,Jend  ,k))
-              LapV(Iend+1,Jend+1,k)=0.5_r8*(LapV(Iend  ,Jend+1,k)+      &
-     &                                      LapV(Iend+1,Jend  ,k))
-            END DO
-          END IF
+      IF (.not.(CompositeGrid(isouth,ng).or.NSperiodic(ng).or.          &
+     &          CompositeGrid(ieast ,ng).or.EWperiodic(ng))) THEN
+        IF (DOMAIN(ng)%SouthEast_Corner(tile)) THEN
+          DO k=1,N(ng)
+            LapU(Iend+1,Jstr-1,k)=0.5_r8*(LapU(Iend  ,Jstr-1,k)+        &
+     &                                    LapU(Iend+1,Jstr  ,k))
+            LapV(Iend+1,Jstr  ,k)=0.5_r8*(LapV(Iend  ,Jstr  ,k)+        &
+     &                                    LapV(Iend+1,Jstr+1,k))
+          END DO
+        END IF
+      END IF
+
+      IF (.not.(CompositeGrid(inorth,ng).or.NSperiodic(ng).or.          &
+     &          CompositeGrid(iwest ,ng).or.EWperiodic(ng))) THEN
+        IF (DOMAIN(ng)%NorthWest_Corner(tile)) THEN
+          DO k=1,N(ng)
+            LapU(Istr  ,Jend+1,k)=0.5_r8*(LapU(Istr+1,Jend+1,k)+        &
+     &                                    LapU(Istr  ,Jend  ,k))
+            LapV(Istr-1,Jend+1,k)=0.5_r8*(LapV(Istr  ,Jend+1,k)+        &
+     &                                    LapV(Istr-1,Jend  ,k))
+          END DO
+        END IF
+      END IF
+
+      IF (.not.(CompositeGrid(inorth,ng).or.NSperiodic(ng).or.          &
+     &          CompositeGrid(ieast ,ng).or.EWperiodic(ng))) THEN
+        IF (DOMAIN(ng)%NorthEast_Corner(tile)) THEN
+          DO k=1,N(ng)
+            LapU(Iend+1,Jend+1,k)=0.5_r8*(LapU(Iend  ,Jend+1,k)+        &
+     &                                    LapU(Iend+1,Jend  ,k))
+            LapV(Iend+1,Jend+1,k)=0.5_r8*(LapV(Iend  ,Jend+1,k)+        &
+     &                                    LapV(Iend+1,Jend  ,k))
+          END DO
         END IF
       END IF
 !

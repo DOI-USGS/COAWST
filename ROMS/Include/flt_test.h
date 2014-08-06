@@ -1,7 +1,7 @@
 /*
 ** svn $Id: flt_test.h 429 2009-12-20 17:30:26Z arango $
 *******************************************************************************
-** Copyright (c) 2002-2010 The ROMS/TOMS Group                               **
+** Copyright (c) 2002-2014 The ROMS/TOMS Group                               **
 **   Licensed under a MIT/X style license                                    **
 **   See License_ROMS.txt                                                    **
 *******************************************************************************
@@ -20,9 +20,6 @@
 #define MIX_S_UV
 #define FLOATS
 #define MASKING
-#define EW_PERIODIC
-#define NORTHERN_WALL
-#define SOUTHERN_WALL
 #define ANA_GRID
 #define ANA_INITIAL
 #define ANA_SMFLUX

@@ -4,7 +4,7 @@
 !
 !svn $Id: exchange_2d.F 503 2008-01-10 00:11:51Z arango $
 !=======================================================================
-!  Copyright (c) 2002-2010 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2014 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                           Hernan G. Arango   !
 !==================================================== John C. Warner ===
@@ -14,7 +14,7 @@
 !=======================================================================
 !
       implicit none
-
+!
       CONTAINS
 !
 !***********************************************************************
@@ -29,20 +29,18 @@
      &                        DU_avg1, DV_avg1,                         &
      &                        rmask_wet_avg,                            &
 # endif
-     &                        pmask_wet,                                &
-     &                        rmask_full, umask_full, vmask_full,       &
-     &                        rmask_wet, umask_wet, vmask_wet,          &
-     &                        pmask_io, rmask_io, umask_io, vmask_io)
+     &                        pmask_wet, pmask_io,                      &
+     &                        rmask_wet, rmask_io,                      &
+     &                        umask_wet, umask_io,                      &
+     &                        vmask_wet, vmask_io)
 !***********************************************************************
 !
       USE mod_param
+      USE mod_ncparam
       USE mod_scalars
-# if defined UV_PSOURCE
       USE mod_sources
-# endif
-# if defined EW_PERIODIC || defined NS_PERIODIC
+!
       USE exchange_2d_mod
-# endif
 # ifdef DISTRIBUTE
       USE mp_exchange_mod, ONLY : mp_exchange2d
 # endif
@@ -67,19 +65,18 @@
       real(r8), intent(in) :: DV_avg1(LBi:,LBj:)
       real(r8), intent(inout) :: rmask_wet_avg(LBi:,LBj:)
 #  endif
-      real(r8), intent(out) :: pmask_wet(LBi:,LBj:)
-      real(r8), intent(out) :: rmask_full(LBi:,LBj:)
-      real(r8), intent(out) :: rmask_wet(LBi:,LBj:)
-      real(r8), intent(out) :: umask_full(LBi:,LBj:)
-      real(r8), intent(out) :: umask_wet(LBi:,LBj:)
-      real(r8), intent(out) :: vmask_full(LBi:,LBj:)
-      real(r8), intent(out) :: vmask_wet(LBi:,LBj:)
       real(r8), intent(out) :: pmask_io(LBi:,LBj:)
       real(r8), intent(out) :: rmask_io(LBi:,LBj:)
       real(r8), intent(out) :: umask_io(LBi:,LBj:)
       real(r8), intent(out) :: vmask_io(LBi:,LBj:)
 
+      real(r8), intent(out) :: pmask_wet(LBi:,LBj:)
+      real(r8), intent(out) :: rmask_wet(LBi:,LBj:)
+      real(r8), intent(out) :: umask_wet(LBi:,LBj:)
+      real(r8), intent(out) :: vmask_wet(LBi:,LBj:)
+
 # else
+
       real(r8), intent(in) :: h(LBi:UBi,LBj:UBj)
 #  ifdef MASKING
       real(r8), intent(in) :: pmask(LBi:UBi,LBj:UBj)
@@ -93,34 +90,20 @@
       real(r8), intent(in) :: DV_avg1(LBi:UBi,LBj:UBj)
       real(r8), intent(inout) :: rmask_wet_avg(LBi:UBi,LBj:UBj)
 #  endif
-      real(r8), intent(out) :: pmask_wet(LBi:UBi,LBj:UBj)
-      real(r8), intent(out) :: rmask_full(LBi:UBi,LBj:UBj)
-      real(r8), intent(out) :: rmask_wet(LBi:UBi,LBj:UBj)
-      real(r8), intent(out) :: umask_full(LBi:UBi,LBj:UBj)
-      real(r8), intent(out) :: umask_wet(LBi:UBi,LBj:UBj)
-      real(r8), intent(out) :: vmask_full(LBi:UBi,LBj:UBj)
-      real(r8), intent(out) :: vmask_wet(LBi:UBi,LBj:UBj)
       real(r8), intent(out) :: pmask_io(LBi:UBi,LBj:UBj)
       real(r8), intent(out) :: rmask_io(LBi:UBi,LBj:UBj)
       real(r8), intent(out) :: umask_io(LBi:UBi,LBj:UBj)
       real(r8), intent(out) :: vmask_io(LBi:UBi,LBj:UBj)
+
+      real(r8), intent(out) :: pmask_wet(LBi:UBi,LBj:UBj)
+      real(r8), intent(out) :: rmask_wet(LBi:UBi,LBj:UBj)
+      real(r8), intent(out) :: umask_wet(LBi:UBi,LBj:UBj)
+      real(r8), intent(out) :: vmask_wet(LBi:UBi,LBj:UBj)
 # endif
 !
 !  Local variable declarations.
 !
-# ifdef DISTRIBUTE
-#  ifdef EW_PERIODIC
-      logical :: EWperiodic=.TRUE.
-#  else
-      logical :: EWperiodic=.FALSE.
-#  endif
-#  ifdef NS_PERIODIC
-      logical :: NSperiodic=.TRUE.
-#  else
-      logical :: NSperiodic=.FALSE.
-#  endif
-# endif
-      integer :: i, j, is
+      integer :: i, is, j
 
       real(r8) :: cff, cff1, cff2, cff5, cff6, cff7
       real(r8), parameter :: eps = 1.0E-10_r8
@@ -151,6 +134,15 @@
         DO j=JstrR,JendR
           DO i=IstrR,IendR
             rmask_wet(i,j)=wetdry(i,j)
+          END DO
+        END DO
+!
+!  Wet/dry mask at PSI-points.
+!
+        DO j=Jstr,JendR
+          DO i=Istr,IendR
+            pmask_wet(i,j)=wetdry(i-1,j  )*wetdry(i  ,j  )*             &
+     &                     wetdry(i-1,j-1)*wetdry(i  ,j-1)
           END DO
         END DO
 !
@@ -205,10 +197,21 @@
             wetdry(i,j)=AINT(rmask_wet_avg(i,j)*cff)
           END DO
         END DO
+!
+!  Wet/dry mask at RHO-points, averaged over all fast time-steps.
+!
         DO j=JstrR,JendR
           DO i=IstrR,IendR
             rmask_wet(i,j)=wetdry(i,j)
-            rmask_full(i,j)=rmask_wet(i,j)*rmask(i,j)
+          END DO
+        END DO
+!
+!  Wet/dry mask at PSI-points, averaged over all fast time-steps.
+!
+        DO j=Jstr,JendR
+          DO i=Istr,IendR
+            pmask_wet(i,j)=wetdry(i-1,j  )*wetdry(i  ,j  )*             &
+     &                     wetdry(i-1,j-1)*wetdry(i  ,j-1)
           END DO
         END DO
 !
@@ -231,8 +234,7 @@
                 umask_wet(i,j)=0.0_r8
               END IF
             END IF
-!
-            umask_full(i,j)=umask_wet(i,j)*umask(i,j)
+            umask_wet(i,j)=umask_wet(i,j)*umask(i,j)
           END DO
         END DO
 !
@@ -255,56 +257,10 @@
                 vmask_wet(i,j)=0.0_r8
               END IF
             END IF
-!
-            vmask_full(i,j)=vmask_wet(i,j)*vmask(i,j)
+            vmask_wet(i,j)=vmask_wet(i,j)*vmask(i,j)
           END DO
         END DO
       END IF
-# endif
-# if defined EW_PERIODIC || defined NS_PERIODIC
-      IF (iif(ng).gt.nfast(ng)) THEN
-        CALL exchange_r2d_tile (ng, tile,                               &
-     &                          LBi, UBi, LBj, UBj,                     &
-     &                          rmask_full)
-        CALL exchange_u2d_tile (ng, tile,                               &
-     &                          LBi, UBi, LBj, UBj,                     &
-     &                          umask_full)
-        CALL exchange_v2d_tile (ng, tile,                               &
-     &                          LBi, UBi, LBj, UBj,                     &
-     &                          vmask_full)
-      END IF
-      CALL exchange_r2d_tile (ng, tile,                                 &
-     &                        LBi, UBi, LBj, UBj,                       &
-     &                        rmask_wet)
-      CALL exchange_u2d_tile (ng, tile,                                 &
-     &                        LBi, UBi, LBj, UBj,                       &
-     &                        umask_wet)
-      CALL exchange_v2d_tile (ng, tile,                                 &
-     &                        LBi, UBi, LBj, UBj,                       &
-     &                        vmask_wet)
-#  ifdef SOLVE3D
-      CALL exchange_r2d_tile (ng, tile,                                 &
-     &                        LBi, UBi, LBj, UBj,                       &
-     &                        rmask_wet_avg)
-#  endif
-# endif
-# ifdef DISTRIBUTE
-      IF (iif(ng).gt.nfast(ng)) THEN
-        CALL mp_exchange2d (ng, tile, iNLM, 3,                          &
-     &                      LBi, UBi, LBj, UBj,                         &
-     &                      NghostPoints, EWperiodic, NSperiodic,       &
-     &                      rmask_full, umask_full, vmask_full)
-      END IF
-      CALL mp_exchange2d (ng, tile, iNLM, 3,                            &
-     &                    LBi, UBi, LBj, UBj,                           &
-     &                    NghostPoints, EWperiodic, NSperiodic,         &
-     &                    rmask_wet, umask_wet, vmask_wet)
-#  ifdef SOLVE3D
-      CALL mp_exchange2d (ng, tile, iNLM, 1,                            &
-     &                    LBi, UBi, LBj, UBj,                           &
-     &                    NghostPoints, EWperiodic, NSperiodic,         &
-     &                    rmask_wet_avg)
-#  endif
 # endif
 !
 ! Set no-slip boundary conditions on land-mask boundaries regardless of
@@ -366,22 +322,44 @@
           END DO
         END DO
       END IF
-# if defined EW_PERIODIC || defined NS_PERIODIC
-      IF (iif(ng).gt.nfast(ng)) THEN
+!
+!  Exchange boundary data.
+!
+      IF (EWperiodic(ng).or.NSperiodic(ng)) THEN
         CALL exchange_p2d_tile (ng, tile,                               &
      &                          LBi, UBi, LBj, UBj,                     &
      &                          pmask_wet)
-      END IF
+        CALL exchange_r2d_tile (ng, tile,                               &
+     &                          LBi, UBi, LBj, UBj,                     &
+     &                          rmask_wet)
+        CALL exchange_u2d_tile (ng, tile,                               &
+     &                          LBi, UBi, LBj, UBj,                     &
+     &                          umask_wet)
+        CALL exchange_v2d_tile (ng, tile,                               &
+     &                          LBi, UBi, LBj, UBj,                     &
+     &                          vmask_wet)
+# ifdef SOLVE3D
+        CALL exchange_r2d_tile (ng, tile,                               &
+     &                          LBi, UBi, LBj, UBj,                     &
+     &                          rmask_wet_avg)
 # endif
-# ifdef DISTRIBUTE
-      IF (iif(ng).gt.nfast(ng)) THEN
-        CALL mp_exchange2d (ng, tile, iNLM, 1,                          &
-     &                      LBi, UBi, LBj, UBj,                         &
-     &                      NghostPoints, EWperiodic, NSperiodic,       &
-     &                      pmask_wet)
       END IF
-# endif
 
+# ifdef DISTRIBUTE
+      CALL mp_exchange2d (ng, tile, iNLM, 4,                            &
+     &                    LBi, UBi, LBj, UBj,                           &
+     &                    NghostPoints,                                 &
+     &                    EWperiodic(ng), NSperiodic(ng),               &
+     &                    pmask_wet, rmask_wet, umask_wet, vmask_wet)
+#  ifdef SOLVE3D
+      CALL mp_exchange2d (ng, tile, iNLM, 1,                            &
+     &                    LBi, UBi, LBj, UBj,                           &
+     &                    NghostPoints,                                 &
+     &                    EWperiodic(ng), NSperiodic(ng),               &
+     &                    rmask_wet_avg)
+#  endif
+# endif
+!
 !-----------------------------------------------------------------------
 !  Set masks for I/O purposes.
 !-----------------------------------------------------------------------
@@ -411,29 +389,28 @@
             vmask_io(i,j)=vmask_wet(i,j)*vmask(i,j)
           END DO
         END DO
-
-# ifdef UV_PSOURCE
 !
 !  Insure that masks at mass point source locations are set to water
 !  to avoid writting output with FillValue at those locations.
 !
-        DO is=1,Nsrc(ng)
-          i=SOURCES(ng)%Isrc(is)
-          j=SOURCES(ng)%Jsrc(is)
-          IF (((IstrR.le.i).and.(i.le.IendR)).and.                      &
-     &        ((JstrR.le.j).and.(j.le.JendR))) THEN
-            IF (INT(SOURCES(ng)%Dsrc(is)).eq.0) THEN
-              umask_io(i,j)=1.0_r8
-            ELSE
-              vmask_io(i,j)=1.0_r8
+        IF (LuvSrc(ng)) THEN
+          DO is=1,Nsrc(ng)
+            i=SOURCES(ng)%Isrc(is)
+            j=SOURCES(ng)%Jsrc(is)
+            IF (((IstrR.le.i).and.(i.le.IendR)).and.                    &
+     &          ((JstrR.le.j).and.(j.le.JendR))) THEN
+              IF (INT(SOURCES(ng)%Dsrc(is)).eq.0) THEN
+                umask_io(i,j)=1.0_r8
+              ELSE
+                vmask_io(i,j)=1.0_r8
+              END IF
             END IF
-          END IF
-        END DO
-# endif
+          END DO
+        END IF
 !
 !  Exchange boundary data.
 !
-# if defined EW_PERIODIC || defined NS_PERIODIC
+        IF (EWperiodic(ng).or.NSperiodic(ng)) THEN
           CALL exchange_p2d_tile (ng, tile,                             &
      &                            LBi, UBi, LBj, UBj,                   &
      &                            pmask_io)
@@ -446,12 +423,12 @@
           CALL exchange_v2d_tile (ng, tile,                             &
      &                            LBi, UBi, LBj, UBj,                   &
      &                            vmask_io)
-# endif
+        END IF
 # ifdef DISTRIBUTE
         CALL mp_exchange2d (ng, tile, iNLM, 4,                          &
      &                      LBi, UBi, LBj, UBj,                         &
      &                      NghostPoints,                               &
-     &                      EWperiodic, NSperiodic,                     &
+     &                      EWperiodic(ng), NSperiodic(ng),             &
      &                      pmask_io, rmask_io, umask_io, vmask_io)
 # endif
       END IF

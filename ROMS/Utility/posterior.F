@@ -4,29 +4,10 @@
 #if defined WEAK_CONSTRAINT   && \
    (defined POSTERIOR_EOFS    || defined POSTERIOR_ERROR_I || \
     defined POSTERIOR_ERROR_F)
-# ifdef EW_PERIODIC
-#  define IR_RANGE Istr-1,Iend+1
-#  define IU_RANGE Istr,Iend
-#  define IV_RANGE Istr,Iend
-# else
-#  define IR_RANGE IstrR,IendR
-#  define IU_RANGE Istr,IendR
-#  define IV_RANGE IstrR,IendR
-# endif
-# ifdef NS_PERIODIC
-#  define JR_RANGE Jstr-1,Jend+1
-#  define JU_RANGE Jstr,Jend
-#  define JV_RANGE Jstr,Jend
-# else
-#  define JR_RANGE JstrR,JendR
-#  define JU_RANGE JstrR,JendR
-#  define JV_RANGE Jstr,JendR
-# endif
-
 !
-!svn $Id: posterior.F 429 2009-12-20 17:30:26Z arango $
+!svn $Id$
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2010 The ROMS/TOMS Group       Andrew M. Moore   !
+!  Copyright (c) 2002-2014 The ROMS/TOMS Group       Andrew M. Moore   !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -669,10 +650,10 @@
         IF (Ltrace) THEN
           ae_trace(innLoop+1)=ae_delta(innLoop,outLoop)
 
-          CALL netcdf_put_fvar (ng, model, HSSname(ng), 'ae_trace',     &
+          CALL netcdf_put_fvar (ng, model, HSS(ng)%name, 'ae_trace',    &
      &                          ae_trace(innLoop+1:),                   &
      &                          (/innLoop+1/), (/1/),                   &
-     &                          ncid = ncHSSid(ng))
+     &                          ncid = HSS(ng)%ncid)
           IF (exit_flag.ne.NoError) RETURN
 
           IF (Master) THEN
@@ -686,7 +667,7 @@
         END IF
         IF (ae_delta(innLoop,outLoop).le.0.0_r8) THEN
           PRINT *, ' AE_DELTA not positive.'
-          PRINT *, ' AE_DELTA = ', ae_delta(innLoop,outLoop),            &
+          PRINT *, ' AE_DELTA = ', ae_delta(innLoop,outLoop),           &
      &             ', outer = ', outLoop, ', inner = ', innLoop
           exit_flag=8
           RETURN
@@ -1319,8 +1300,6 @@
 
       real(r8) :: fac, fac1, fac2
 
-      character (len=80) :: ncname
-
 # include "set_bounds.h"
 !
 !-----------------------------------------------------------------------
@@ -1329,8 +1308,8 @@
 !
 !  Free-surface.
 !
-      DO j=JstrR,JendR
-        DO i=IstrR,IendR
+      DO j=JstrT,JendT
+        DO i=IstrT,IendT
           tl_zeta(i,j,Lout)=d_zeta(i,j)
 # ifdef MASKING
           tl_zeta(i,j,Lout)=tl_zeta(i,j,Lout)*rmask(i,j)
@@ -1344,7 +1323,8 @@
 !
       IF (ANY(Lobc(:,isFsur,ng))) THEN
         DO ir=1,Nbrec(ng)
-          IF ((Lobc(iwest,isFsur,ng)).and.WESTERN_EDGE) THEN
+          IF ((Lobc(iwest,isFsur,ng)).and.                              &
+     &        DOMAIN(ng)%Western_Edge(tile)) THEN
             ib=iwest
             DO j=Jstr,Jend
               tl_zeta_obc(j,ib,ir,Lout)=d_zeta_obc(j,ib,ir)
@@ -1354,7 +1334,8 @@
 #  endif
             END DO
           END IF
-          IF ((Lobc(ieast,isFsur,ng)).and.EASTERN_EDGE) THEN
+          IF ((Lobc(ieast,isFsur,ng)).and.                              &
+     &        DOMAIN(ng)%Eastern_Edge(tile)) THEN
             ib=ieast
             DO j=Jstr,Jend
               tl_zeta_obc(j,ib,ir,Lout)=d_zeta_obc(j,ib,ir)
@@ -1364,7 +1345,8 @@
 #  endif
             END DO
           END IF
-          IF ((Lobc(isouth,isFsur,ng)).and.SOUTHERN_EDGE) THEN
+          IF ((Lobc(isouth,isFsur,ng)).and.                             &
+     &        DOMAIN(ng)%Southern_Edge(tile)) THEN
             ib=isouth
             DO i=Istr,Iend
               tl_zeta_obc(i,ib,ir,Lout)=d_zeta_obc(i,ib,ir)
@@ -1374,7 +1356,8 @@
 #  endif
             END DO
           END IF
-          IF ((Lobc(inorth,isFsur,ng)).and.NORTHERN_EDGE) THEN
+          IF ((Lobc(inorth,isFsur,ng)).and.                             &
+     &        DOMAIN(ng)%Northern_Edge(tile)) THEN
             ib=inorth
             DO i=Istr,Iend
               tl_zeta_obc(i,ib,ir,Lout)=d_zeta_obc(i,ib,ir)
@@ -1392,8 +1375,8 @@
 !
 !  2D U-momentum.
 !
-      DO j=JstrR,JendR
-        DO i=Istr,IendR
+      DO j=JstrT,JendT
+        DO i=IstrP,IendT
           tl_ubar(i,j,Lout)=d_ubar(i,j)
 #  ifdef MASKING
           tl_ubar(i,j,Lout)=tl_ubar(i,j,Lout)*umask(i,j)
@@ -1408,7 +1391,8 @@
 !
       IF (ANY(Lobc(:,isUbar,ng))) THEN
         DO ir=1,Nbrec(ng)
-          IF ((Lobc(iwest,isUbar,ng)).and.WESTERN_EDGE) THEN
+          IF ((Lobc(iwest,isUbar,ng)).and.                              &
+     &        DOMAIN(ng)%Western_Edge(tile)) THEN
             ib=iwest
             DO j=Jstr,Jend
               tl_ubar_obc(j,ib,ir,Lout)=d_ubar_obc(j,ib,ir)
@@ -1418,7 +1402,8 @@
 #  endif
             END DO
           END IF
-          IF ((Lobc(ieast,isUbar,ng)).and.EASTERN_EDGE) THEN
+          IF ((Lobc(ieast,isUbar,ng)).and.                              &
+     &        DOMAIN(ng)%Eastern_Edge(tile)) THEN
             ib=ieast
             DO j=Jstr,Jend
               tl_ubar_obc(j,ib,ir,Lout)=d_ubar_obc(j,ib,ir)
@@ -1428,7 +1413,8 @@
 #  endif
             END DO
           END IF
-          IF ((Lobc(isouth,isUbar,ng)).and.SOUTHERN_EDGE) THEN
+          IF ((Lobc(isouth,isUbar,ng)).and.                             &
+     &        DOMAIN(ng)%Southern_Edge(tile)) THEN
             ib=isouth
             DO i=IstrU,Iend
               tl_ubar_obc(i,ib,ir,Lout)=d_ubar_obc(i,ib,ir)
@@ -1438,7 +1424,8 @@
 #  endif
             END DO
           END IF
-          IF ((Lobc(inorth,isUbar,ng)).and.NORTHERN_EDGE) THEN
+          IF ((Lobc(inorth,isUbar,ng)).and.                             &
+     &        DOMAIN(ng)%Northern_Edge(tile)) THEN
             ib=inorth
             DO i=IstrU,Iend
               tl_ubar_obc(i,ib,ir,Lout)=d_ubar_obc(i,ib,ir)
@@ -1456,8 +1443,8 @@
 !
 !  2D V-momentum.
 !
-      DO j=Jstr,JendR
-        DO i=IstrR,IendR
+      DO j=JstrP,JendT
+        DO i=IstrT,IendT
           tl_vbar(i,j,Lout)=d_vbar(i,j)
 #  ifdef MASKING
           tl_vbar(i,j,Lout)=tl_vbar(i,j,Lout)*vmask(i,j)
@@ -1472,7 +1459,8 @@
 !
       IF (ANY(Lobc(:,isVbar,ng))) THEN
         DO ir=1,Nbrec(ng)
-          IF ((Lobc(iwest,isVbar,ng)).and.WESTERN_EDGE) THEN
+          IF ((Lobc(iwest,isVbar,ng)).and.                              &
+     &        DOMAIN(ng)%Western_Edge(tile)) THEN
             ib=iwest
             DO j=JstrV,Jend
               tl_vbar_obc(j,ib,ir,Lout)=d_vbar_obc(j,ib,ir)
@@ -1482,7 +1470,8 @@
 #  endif
             END DO
           END IF
-          IF ((Lobc(ieast,isVbar,ng)).and.EASTERN_EDGE) THEN
+          IF ((Lobc(ieast,isVbar,ng)).and.                              &
+     &        DOMAIN(ng)%Eastern_Edge(tile)) THEN
             ib=ieast
             DO j=JstrV,Jend
               tl_vbar_obc(j,ib,ir,Lout)=d_vbar_obc(j,ib,ir)
@@ -1492,7 +1481,8 @@
 #  endif
             END DO
           END IF
-          IF ((Lobc(isouth,isVbar,ng)).and.SOUTHERN_EDGE) THEN
+          IF ((Lobc(isouth,isVbar,ng)).and.                             &
+     &        DOMAIN(ng)%Southern_Edge(tile)) THEN
             ib=isouth
             DO i=Istr,Iend
               tl_vbar_obc(i,ib,ir,Lout)=d_vbar_obc(i,ib,ir)
@@ -1502,7 +1492,8 @@
 #  endif
             END DO
           END IF
-          IF ((Lobc(inorth,isVbar,ng)).and.NORTHERN_EDGE) THEN
+          IF ((Lobc(inorth,isVbar,ng)).and.                             &
+     &        DOMAIN(ng)%Northern_Edge(tile)) THEN
             ib=inorth
             DO i=Istr,Iend
               tl_vbar_obc(i,ib,ir,Lout)=d_vbar_obc(i,ib,ir)
@@ -1521,16 +1512,16 @@
 !  Surface momentum stress.
 !
       DO ir=1,Nfrec(ng)
-        DO j=JstrR,JendR
-          DO i=Istr,IendR
+        DO j=JstrT,JendT
+          DO i=IstrP,IendT
             tl_ustr(i,j,ir,Lout)=d_sustr(i,j,ir)
 #  ifdef MASKING
             tl_ustr(i,j,ir,Lout)=tl_ustr(i,j,ir,Lout)*umask(i,j)
 #  endif
           END DO
         END DO
-        DO j=Jstr,JendR
-          DO i=IstrR,IendR
+        DO j=JstrP,JendT
+          DO i=IstrT,IendT
             tl_vstr(i,j,ir,Lout)=d_svstr(i,j,ir)
 #  ifdef MASKING
             tl_vstr(i,j,ir,Lout)=tl_vstr(i,j,ir,Lout)*vmask(i,j)
@@ -1545,8 +1536,8 @@
 !  3D U-momentum.
 !
       DO k=1,N(ng)
-        DO j=JstrR,JendR
-          DO i=Istr,IendR
+        DO j=JstrT,JendT
+          DO i=IstrP,IendT
             tl_u(i,j,k,Lout)=d_u(i,j,k)
 #  ifdef MASKING
             tl_u(i,j,k,Lout)=tl_u(i,j,k,Lout)*umask(i,j)
@@ -1561,7 +1552,8 @@
 !
       IF (ANY(Lobc(:,isUvel,ng))) THEN
         DO ir=1,Nbrec(ng)
-          IF ((Lobc(iwest,isUvel,ng)).and.WESTERN_EDGE) THEN
+          IF ((Lobc(iwest,isUvel,ng)).and.                              &
+     &        DOMAIN(ng)%Western_Edge(tile)) THEN
             ib=iwest
             DO k=1,N(ng)
               DO j=Jstr,Jend
@@ -1573,7 +1565,8 @@
               END DO
             END DO
           END IF
-          IF ((Lobc(ieast,isUvel,ng)).and.EASTERN_EDGE) THEN
+          IF ((Lobc(ieast,isUvel,ng)).and.                              &
+     &        DOMAIN(ng)%Eastern_Edge(tile)) THEN
             ib=ieast
             DO k=1,N(ng)
               DO j=Jstr,Jend
@@ -1585,7 +1578,8 @@
               END DO
             END DO
           END IF
-          IF ((Lobc(isouth,isUvel,ng)).and.SOUTHERN_EDGE) THEN
+          IF ((Lobc(isouth,isUvel,ng)).and.                             &
+     &        DOMAIN(ng)%Southern_Edge(tile)) THEN
             ib=isouth
             DO k=1,N(ng)
               DO i=IstrU,Iend
@@ -1597,7 +1591,8 @@
               END DO
             END DO
           END IF
-          IF ((Lobc(inorth,isUvel,ng)).and.NORTHERN_EDGE) THEN
+          IF ((Lobc(inorth,isUvel,ng)).and.                             &
+     &        DOMAIN(ng)%Northern_Edge(tile)) THEN
             ib=inorth
             DO k=1,N(ng)
               DO i=IstrU,Iend
@@ -1616,8 +1611,8 @@
 !  3D V-momentum.
 !
       DO k=1,N(ng)
-        DO j=Jstr,JendR
-          DO i=IstrR,IendR
+        DO j=JstrP,JendT
+          DO i=IstrT,IendT
             tl_v(i,j,k,Lout)=d_v(i,j,k)
 #  ifdef MASKING
             tl_v(i,j,k,Lout)=tl_v(i,j,k,Lout)*vmask(i,j)
@@ -1632,7 +1627,8 @@
 !
       IF (ANY(Lobc(:,isVvel,ng))) THEN
         DO ir=1,Nbrec(ng)
-          IF ((Lobc(iwest,isVvel,ng)).and.WESTERN_EDGE) THEN
+          IF ((Lobc(iwest,isVvel,ng)).and.                              &
+     &        DOMAIN(ng)%Western_Edge(tile)) THEN
             ib=iwest
             DO k=1,N(ng)
               DO j=JstrV,Jend
@@ -1644,7 +1640,8 @@
               END DO
             END DO
           END IF
-          IF ((Lobc(ieast,isVvel,ng)).and.EASTERN_EDGE) THEN
+          IF ((Lobc(ieast,isVvel,ng)).and.                              &
+     &        DOMAIN(ng)%Eastern_Edge(tile)) THEN
             ib=ieast
             DO k=1,N(ng)
               DO j=JstrV,Jend
@@ -1656,7 +1653,8 @@
               END DO
             END DO
           END IF
-          IF ((Lobc(isouth,isVvel,ng)).and.SOUTHERN_EDGE) THEN
+          IF ((Lobc(isouth,isVvel,ng)).and.                             &
+     &        DOMAIN(ng)%Southern_Edge(tile)) THEN
             ib=isouth
             DO k=1,N(ng)
               DO i=Istr,Iend
@@ -1668,7 +1666,8 @@
               END DO
             END DO
           END IF
-          IF ((Lobc(inorth,isVvel,ng)).and.NORTHERN_EDGE) THEN
+          IF ((Lobc(inorth,isVvel,ng)).and.                             &
+     &        DOMAIN(ng)%Northern_Edge(tile)) THEN
             ib=inorth
             DO k=1,N(ng)
               DO i=Istr,Iend
@@ -1688,8 +1687,8 @@
 !
       DO it=1,NT(ng)
         DO k=1,N(ng)
-          DO j=JstrR,JendR
-            DO i=IstrR,IendR
+          DO j=JstrT,JendT
+            DO i=IstrT,IendT
               tl_t(i,j,k,Lout,it)=d_t(i,j,k,it)
 #  ifdef MASKING
               tl_t(i,j,k,Lout,it)=tl_t(i,j,k,Lout,it)*rmask(i,j)
@@ -1706,7 +1705,8 @@
       DO it=1,NT(ng)
         IF (ANY(Lobc(:,isTvar(it),ng))) THEN
           DO ir=1,Nbrec(ng)
-            IF ((Lobc(iwest,isTvar(it),ng)).and.WESTERN_EDGE) THEN
+            IF ((Lobc(iwest,isTvar(it),ng)).and.                        &
+     &          DOMAIN(ng)%Western_Edge(tile)) THEN
               ib=iwest
               DO k=1,N(ng)
                 DO j=Jstr,Jend
@@ -1718,7 +1718,8 @@
                 END DO
               END DO
             END IF
-            IF ((Lobc(ieast,isTvar(it),ng)).and.EASTERN_EDGE) THEN
+            IF ((Lobc(ieast,isTvar(it),ng)).and.                        &
+     &          DOMAIN(ng)%Eastern_Edge(tile)) THEN
               ib=ieast
               DO k=1,N(ng)
                 DO j=Jstr,Jend
@@ -1730,7 +1731,8 @@
                 END DO
               END DO
             END IF
-            IF ((Lobc(isouth,isTvar(it),ng)).and.SOUTHERN_EDGE) THEN
+            IF ((Lobc(isouth,isTvar(it),ng)).and.                       &
+     &          DOMAIN(ng)%Southern_Edge(tile)) THEN
               ib=isouth
               DO k=1,N(ng)
                 DO i=Istr,Iend
@@ -1742,7 +1744,8 @@
                 END DO
               END DO
             END IF
-            IF ((Lobc(inorth,isTvar(it),ng)).and.NORTHERN_EDGE) THEN
+            IF ((Lobc(inorth,isTvar(it),ng)).and.                       &
+     &          DOMAIN(ng)%Northern_Edge(tile)) THEN
               ib=inorth
               DO k=1,N(ng)
                 DO i=Istr,Iend
@@ -1766,8 +1769,8 @@
       DO it=1,NT(ng)
         IF (Lstflux(it,ng)) THEN
           DO ir=1,Nfrec(ng)
-            DO j=JstrR,JendR
-              DO i=IstrR,IendR
+            DO j=JstrT,JendT
+              DO i=IstrT,IendT
                 tl_tflux(i,j,ir,Lout,it)=d_stflx(i,j,ir,it)
 #   ifdef MASKING
                 tl_tflux(i,j,ir,Lout,it)=tl_tflux(i,j,ir,Lout,it)*      &
@@ -2587,8 +2590,8 @@
 !
 !  Free-sruface.
 !
-      DO j=JstrR,JendR
-        DO i=IstrR,IendR
+      DO j=JstrT,JendT
+        DO i=IstrT,IendT
           d_zeta(i,j)=ad_zeta(i,j,Lnew)
 # ifdef MASKING
           d_zeta(i,j)=d_zeta(i,j)*rmask(i,j)
@@ -2602,7 +2605,8 @@
 !
       IF (ANY(Lobc(:,isFsur,ng))) THEN
         DO ir=1,Nbrec(ng)
-          IF ((Lobc(iwest,isFsur,ng)).and.WESTERN_EDGE) THEN
+          IF ((Lobc(iwest,isFsur,ng)).and.                              &
+     &        DOMAIN(ng)%Western_Edge(tile)) THEN
             ib=iwest
             DO j=Jstr,Jend
               d_zeta_obc(j,ib,ir)=ad_zeta_obc(j,ib,ir,Lnew)
@@ -2612,7 +2616,8 @@
 #  endif
             END DO
           END IF
-          IF ((Lobc(ieast,isFsur,ng)).and.EASTERN_EDGE) THEN
+          IF ((Lobc(ieast,isFsur,ng)).and.                              &
+     &        DOMAIN(ng)%Eastern_Edge(tile)) THEN
             ib=ieast
             DO j=Jstr,Jend
               d_zeta_obc(j,ib,ir)=ad_zeta_obc(j,ib,ir,Lnew)
@@ -2622,7 +2627,8 @@
 #  endif
             END DO
           END IF
-          IF ((Lobc(isouth,isFsur,ng)).and.SOUTHERN_EDGE) THEN
+          IF ((Lobc(isouth,isFsur,ng)).and.                             &
+     &        DOMAIN(ng)%Southern_Edge(tile)) THEN
             ib=isouth
             DO i=Istr,Iend
               d_zeta_obc(i,ib,ir)=ad_zeta_obc(i,ib,ir,Lnew)
@@ -2632,7 +2638,8 @@
 #  endif
             END DO
           END IF
-          IF ((Lobc(inorth,isFsur,ng)).and.NORTHERN_EDGE) THEN
+          IF ((Lobc(inorth,isFsur,ng)).and.                             &
+     &        DOMAIN(ng)%Northern_Edge(tile)) THEN
             ib=inorth
             DO i=Istr,Iend
               d_zeta_obc(i,ib,ir)=ad_zeta_obc(i,ib,ir,Lnew)
@@ -2650,8 +2657,8 @@
 !
 !  2D U-momentum.
 !
-      DO j=JstrR,JendR
-        DO i=Istr,IendR
+      DO j=JstrT,JendT
+        DO i=IstrP,IendT
           d_ubar(i,j)=ad_ubar(i,j,Lnew)
 #  ifdef MASKING
           d_ubar(i,j)=d_ubar(i,j)*umask(i,j)
@@ -2666,7 +2673,8 @@
 !
       IF (ANY(Lobc(:,isUbar,ng))) THEN
         DO ir=1,Nbrec(ng)
-          IF ((Lobc(iwest,isUbar,ng)).and.WESTERN_EDGE) THEN
+          IF ((Lobc(iwest,isUbar,ng)).and.                              &
+     &        DOMAIN(ng)%Western_Edge(tile)) THEN
             ib=iwest
             DO j=Jstr,Jend
               d_ubar_obc(j,ib,ir)=ad_ubar_obc(j,ib,ir,Lnew)
@@ -2676,7 +2684,8 @@
 #  endif
             END DO
           END IF
-          IF ((Lobc(ieast,isUbar,ng)).and.EASTERN_EDGE) THEN
+          IF ((Lobc(ieast,isUbar,ng)).and.                              &
+     &        DOMAIN(ng)%Eastern_Edge(tile)) THEN
             ib=ieast
             DO j=Jstr,Jend
               d_ubar_obc(j,ib,ir)=ad_ubar_obc(j,ib,ir,Lnew)
@@ -2686,7 +2695,8 @@
 #  endif
             END DO
           END IF
-          IF ((Lobc(isouth,isUbar,ng)).and.SOUTHERN_EDGE) THEN
+          IF ((Lobc(isouth,isUbar,ng)).and.                             &
+     &        DOMAIN(ng)%Southern_Edge(tile)) THEN
             ib=isouth
             DO i=IstrU,Iend
               d_ubar_obc(i,ib,ir)=ad_ubar_obc(i,ib,ir,Lnew)
@@ -2696,7 +2706,8 @@
 #  endif
             END DO
           END IF
-          IF ((Lobc(inorth,isUbar,ng)).and.NORTHERN_EDGE) THEN
+          IF ((Lobc(inorth,isUbar,ng)).and.                             &
+     &        DOMAIN(ng)%Northern_Edge(tile)) THEN
             ib=inorth
             DO i=IstrU,Iend
               d_ubar_obc(i,ib,ir)=ad_ubar_obc(i,ib,ir,Lnew)
@@ -2714,8 +2725,8 @@
 !
 !  2D V-momentum.
 !
-      DO j=Jstr,JendR
-        DO i=IstrR,IendR
+      DO j=JstrP,JendT
+        DO i=IstrT,IendT
           d_vbar(i,j)=ad_vbar(i,j,Lnew)
 #  ifdef MASKING
           d_vbar(i,j)=d_vbar(i,j)*vmask(i,j)
@@ -2730,7 +2741,8 @@
 !
       IF (ANY(Lobc(:,isVbar,ng))) THEN
         DO ir=1,Nbrec(ng)
-          IF ((Lobc(iwest,isVbar,ng)).and.WESTERN_EDGE) THEN
+          IF ((Lobc(iwest,isVbar,ng)).and.                              &
+     &        DOMAIN(ng)%Western_Edge(tile)) THEN
             ib=iwest
             DO j=JstrV,Jend
               d_vbar_obc(j,ib,ir)=ad_vbar_obc(j,ib,ir,Lnew)
@@ -2740,7 +2752,8 @@
 #  endif
             END DO
           END IF
-          IF ((Lobc(ieast,isVbar,ng)).and.EASTERN_EDGE) THEN
+          IF ((Lobc(ieast,isVbar,ng)).and.                              &
+     &        DOMAIN(ng)%Eastern_Edge(tile)) THEN
             ib=ieast
             DO j=JstrV,Jend
               d_vbar_obc(j,ib,ir)=ad_vbar_obc(j,ib,ir,Lnew)
@@ -2750,7 +2763,8 @@
 #  endif
             END DO
           END IF
-          IF ((Lobc(isouth,isVbar,ng)).and.SOUTHERN_EDGE) THEN
+          IF ((Lobc(isouth,isVbar,ng)).and.                             &
+     &        DOMAIN(ng)%Southern_Edge(tile)) THEN
             ib=isouth
             DO i=Istr,Iend
               d_vbar_obc(i,ib,ir)=ad_vbar_obc(i,ib,ir,Lnew)
@@ -2760,7 +2774,8 @@
 #  endif
             END DO
           END IF
-          IF ((Lobc(inorth,isVbar,ng)).and.NORTHERN_EDGE) THEN
+          IF ((Lobc(inorth,isVbar,ng)).and.                             &
+     &        DOMAIN(ng)%Northern_Edge(tile)) THEN
             ib=inorth
             DO i=Istr,Iend
               d_vbar_obc(i,ib,ir)=ad_vbar_obc(i,ib,ir,Lnew)
@@ -2779,16 +2794,16 @@
 !  Surface momentum stress.
 !
       DO ir=1,Nfrec(ng)
-        DO j=JstrR,JendR
-          DO i=Istr,IendR
+        DO j=JstrT,JendT
+          DO i=IstrP,IendT
             d_sustr(i,j,ir)=ad_ustr(i,j,ir,Lnew)
 #  ifdef MASKING
             d_sustr(i,j,ir)=d_sustr(i,j,ir)*umask(i,j)
 #  endif
           END DO
         END DO
-        DO j=Jstr,JendR
-          DO i=IstrR,IendR
+        DO j=JstrP,JendT
+          DO i=IstrT,IendT
             d_svstr(i,j,ir)=ad_vstr(i,j,ir,Lnew)
 #  ifdef MASKING
             d_svstr(i,j,ir)=d_svstr(i,j,ir)*vmask(i,j)
@@ -2803,8 +2818,8 @@
 !  3D U-momentum.
 !
       DO k=1,N(ng)
-        DO j=JstrR,JendR
-          DO i=Istr,IendR
+        DO j=JstrT,JendT
+          DO i=IstrP,IendT
             d_u(i,j,k)=ad_u(i,j,k,Lnew)
 #  ifdef MASKING
             d_u(i,j,k)=d_u(i,j,k)*umask(i,j)
@@ -2819,7 +2834,8 @@
 !
       IF (ANY(Lobc(:,isUvel,ng))) THEN
         DO ir=1,Nbrec(ng)
-          IF ((Lobc(iwest,isUvel,ng)).and.WESTERN_EDGE) THEN
+          IF ((Lobc(iwest,isUvel,ng)).and.                              &
+     &        DOMAIN(ng)%Western_Edge(tile)) THEN
             ib=iwest
             DO k=1,N(ng)
               DO j=Jstr,Jend
@@ -2831,7 +2847,8 @@
               END DO
             END DO
           END IF
-          IF ((Lobc(ieast,isUvel,ng)).and.EASTERN_EDGE) THEN
+          IF ((Lobc(ieast,isUvel,ng)).and.                              &
+     &        DOMAIN(ng)%Eastern_Edge(tile)) THEN
             ib=ieast
             DO k=1,N(ng)
               DO j=Jstr,Jend
@@ -2843,7 +2860,8 @@
               END DO
             END DO
           END IF
-          IF ((Lobc(isouth,isUvel,ng)).and.SOUTHERN_EDGE) THEN
+          IF ((Lobc(isouth,isUvel,ng)).and.                             &
+     &        DOMAIN(ng)%Southern_Edge(tile)) THEN
             ib=isouth
             DO k=1,N(ng)
               DO i=IstrU,Iend
@@ -2855,7 +2873,8 @@
               END DO
             END DO
           END IF
-          IF ((Lobc(inorth,isUvel,ng)).and.NORTHERN_EDGE) THEN
+          IF ((Lobc(inorth,isUvel,ng)).and.                             &
+     &        DOMAIN(ng)%Northern_Edge(tile)) THEN
             ib=inorth
             DO k=1,N(ng)
               DO i=IstrU,Iend
@@ -2874,8 +2893,8 @@
 !  3D V-momentum.
 !
       DO k=1,N(ng)
-        DO j=Jstr,JendR
-          DO i=IstrR,IendR
+        DO j=JstrP,JendT
+          DO i=IstrT,IendT
             d_v(i,j,k)=ad_v(i,j,k,Lnew)
 #  ifdef MASKING
             d_v(i,j,k)=d_v(i,j,k)*vmask(i,j)
@@ -2890,7 +2909,8 @@
 !
       IF (ANY(Lobc(:,isVvel,ng))) THEN
         DO ir=1,Nbrec(ng)
-          IF ((Lobc(iwest,isVvel,ng)).and.WESTERN_EDGE) THEN
+          IF ((Lobc(iwest,isVvel,ng)).and.                              &
+     &        DOMAIN(ng)%Western_Edge(tile)) THEN
             ib=iwest
             DO k=1,N(ng)
               DO j=JstrV,Jend
@@ -2902,7 +2922,8 @@
               END DO
             END DO
           END IF
-          IF ((Lobc(ieast,isVvel,ng)).and.EASTERN_EDGE) THEN
+          IF ((Lobc(ieast,isVvel,ng)).and.                              &
+     &        DOMAIN(ng)%Eastern_Edge(tile)) THEN
             ib=ieast
             DO k=1,N(ng)
               DO j=JstrV,Jend
@@ -2914,7 +2935,8 @@
               END DO
             END DO
           END IF
-          IF ((Lobc(isouth,isVvel,ng)).and.SOUTHERN_EDGE) THEN
+          IF ((Lobc(isouth,isVvel,ng)).and.                             &
+     &        DOMAIN(ng)%Southern_Edge(tile)) THEN
             ib=isouth
             DO k=1,N(ng)
               DO i=Istr,Iend
@@ -2926,7 +2948,8 @@
               END DO
             END DO
           END IF
-          IF ((Lobc(inorth,isVvel,ng)).and.NORTHERN_EDGE) THEN
+          IF ((Lobc(inorth,isVvel,ng)).and.                             &
+     &        DOMAIN(ng)%Northern_Edge(tile)) THEN
             ib=inorth
             DO k=1,N(ng)
               DO i=Istr,Iend
@@ -2946,8 +2969,8 @@
 !
       DO it=1,NT(ng)
         DO k=1,N(ng)
-          DO j=JstrR,JendR
-            DO i=IstrR,IendR
+          DO j=JstrT,JendT
+            DO i=IstrT,IendT
               d_t(i,j,k,it)=ad_t(i,j,k,Lnew,it)
 #  ifdef MASKING
               d_t(i,j,k,it)=d_t(i,j,k,it)*rmask(i,j)
@@ -2964,7 +2987,8 @@
       DO it=1,NT(ng)
         IF (ANY(Lobc(:,isTvar(it),ng))) THEN
           DO ir=1,Nbrec(ng)
-            IF ((Lobc(iwest,isTvar(it),ng)).and.WESTERN_EDGE) THEN
+            IF ((Lobc(iwest,isTvar(it),ng)).and.                        &
+     &          DOMAIN(ng)%Western_Edge(tile)) THEN
               ib=iwest
               DO k=1,N(ng)
                 DO j=Jstr,Jend
@@ -2976,7 +3000,8 @@
                 END DO
               END DO
             END IF
-            IF ((Lobc(ieast,isTvar(it),ng)).and.EASTERN_EDGE) THEN
+            IF ((Lobc(ieast,isTvar(it),ng)).and.                        &
+     &          DOMAIN(ng)%Eastern_Edge(tile)) THEN
               ib=ieast
               DO k=1,N(ng)
                 DO j=Jstr,Jend
@@ -2988,7 +3013,8 @@
                 END DO
               END DO
             END IF
-            IF ((Lobc(isouth,isTvar(it),ng)).and.SOUTHERN_EDGE) THEN
+            IF ((Lobc(isouth,isTvar(it),ng)).and.                       &
+     &          DOMAIN(ng)%Southern_Edge(tile)) THEN
               ib=isouth
               DO k=1,N(ng)
                 DO i=Istr,Iend
@@ -3000,7 +3026,8 @@
                 END DO
               END DO
             END IF
-            IF ((Lobc(inorth,isTvar(it),ng)).and.NORTHERN_EDGE) THEN
+            IF ((Lobc(inorth,isTvar(it),ng)).and.                       &
+     &          DOMAIN(ng)%Northern_Edge(tile)) THEN
               ib=inorth
               DO k=1,N(ng)
                 DO i=Istr,Iend
@@ -3024,8 +3051,8 @@
       DO it=1,NT(ng)
         IF (Lstflux(it,ng)) THEN
           DO ir=1,Nfrec(ng)
-            DO j=JstrR,JendR
-              DO i=IstrR,IendR
+            DO j=JstrT,JendT
+              DO i=IstrT,IendT
                 d_stflx(i,j,ir,it)=ad_tflux(i,j,ir,Lnew,it)
 #   ifdef MASKING
                 d_stflx(i,j,ir,it)=d_stflx(i,j,ir,it)*rmask(i,j)
@@ -3318,7 +3345,7 @@
 
       real(r8), dimension(Ninner) :: zu, zgam
 
-      character (len=80) :: ncname
+      character (len=256) :: ncname
 
 # include "set_bounds.h"
 !
@@ -3333,7 +3360,7 @@
 !  convolved Lanczos vector of the stabilized representer matrix
 !  which are temporarily stored in the hessian netcdf file.
 !
-      ncname=HSSname(ng)
+      ncname=HSS(ng)%name
       DO ivec=1,Ninner
         rec=ivec
 !
@@ -3343,7 +3370,7 @@
         CALL read_state (ng, tile, model,                               &
      &                   LBi, UBi, LBj, UBj, LBij, UBij,                &
      &                   Ltmp1, rec,                                    &
-     &                   0, ncHSSid(ng), ncname,                        &
+     &                   0, HSS(ng)%ncid, ncname,                       &
 # ifdef MASKING
      &                   rmask, umask, vmask,                           &
 # endif
@@ -3462,7 +3489,7 @@
 # endif
      &                       nl_zeta)
 !
-      ncname=HSSname(ng)
+      ncname=HSS(ng)%name
       DO ivec=1,Ninner
         rec=ivec
 !
@@ -3472,7 +3499,7 @@
         CALL read_state (ng, tile, model,                               &
      &                   LBi, UBi, LBj, UBj, LBij, UBij,                &
      &                   Ltmp1, rec,                                    &
-     &                   0, ncHSSid(ng), ncname,                        &
+     &                   0, HSS(ng)%ncid, ncname,                       &
 # ifdef MASKING
      &                   rmask, umask, vmask,                           &
 # endif
@@ -3576,8 +3603,8 @@
 !
 !  Free-surface.
 !
-      DO j=JstrR,JendR
-        DO i=IstrR,IendR
+      DO j=JstrT,JendT
+        DO i=IstrT,IendT
           ad_zeta(i,j,Lnew)=tl_zeta(i,j,Lnew)-ad_zeta(i,j,Lnew)
 # ifdef MASKING
           ad_zeta(i,j,Lnew)=ad_zeta(i,j,Lnew)*rmask(i,j)
@@ -3591,7 +3618,8 @@
 !
       IF (ANY(Lobc(:,isFsur,ng))) THEN
         DO ir=1,Nbrec(ng)
-          IF ((Lobc(iwest,isFsur,ng)).and.WESTERN_EDGE) THEN
+          IF ((Lobc(iwest,isFsur,ng)).and.                              &
+     &        DOMAIN(ng)%Western_Edge(tile)) THEN
             ib=iwest
             DO j=Jstr,Jend
               ad_zeta_obc(j,ib,ir,Lnew)=tl_zeta_obc(j,ib,ir,Lnew)-      &
@@ -3602,7 +3630,8 @@
 #  endif
             END DO
           END IF
-          IF ((Lobc(ieast,isFsur,ng)).and.EASTERN_EDGE) THEN
+          IF ((Lobc(ieast,isFsur,ng)).and.                              &
+     &        DOMAIN(ng)%Eastern_Edge(tile)) THEN
             ib=ieast
             DO j=Jstr,Jend
               ad_zeta_obc(j,ib,ir,Lnew)=tl_zeta_obc(j,ib,ir,Lnew)-      &
@@ -3613,7 +3642,8 @@
 #  endif
             END DO
           END IF
-          IF ((Lobc(isouth,isFsur,ng)).and.SOUTHERN_EDGE) THEN
+          IF ((Lobc(isouth,isFsur,ng)).and.                             &
+     &        DOMAIN(ng)%Southern_Edge(tile)) THEN
             ib=isouth
             DO i=Istr,Iend
               ad_zeta_obc(i,ib,ir,Lnew)=tl_zeta_obc(i,ib,ir,Lnew)-      &
@@ -3624,7 +3654,8 @@
 #  endif
             END DO
           END IF
-          IF ((Lobc(inorth,isFsur,ng)).and.NORTHERN_EDGE) THEN
+          IF ((Lobc(inorth,isFsur,ng)).and.                             &
+     &        DOMAIN(ng)%Northern_Edge(tile)) THEN
             ib=inorth
             DO i=Istr,Iend
               ad_zeta_obc(i,ib,ir,Lnew)=tl_zeta_obc(i,ib,ir,Lnew)-      &
@@ -3643,8 +3674,8 @@
 !
 !  2D U-momentum.
 !
-      DO j=JstrR,JendR
-        DO i=Istr,IendR
+      DO j=JstrT,JendT
+        DO i=IstrP,IendT
           ad_ubar(i,j,Lnew)=tl_ubar(i,j,Lnew)-ad_ubar(i,j,Lnew)
 #  ifdef MASKING
           ad_ubar(i,j,Lnew)=ad_ubar(i,j,Lnew)*umask(i,j)
@@ -3659,7 +3690,8 @@
 !
       IF (ANY(Lobc(:,isUbar,ng))) THEN
         DO ir=1,Nbrec(ng)
-          IF ((Lobc(iwest,isUbar,ng)).and.WESTERN_EDGE) THEN
+          IF ((Lobc(iwest,isUbar,ng)).and.                              &
+     &        DOMAIN(ng)%Western_Edge(tile)) THEN
             ib=iwest
             DO j=Jstr,Jend
               ad_ubar_obc(j,ib,ir,Lnew)=tl_ubar_obc(j,ib,ir,Lnew)-      &
@@ -3670,7 +3702,8 @@
 #  endif
             END DO
           END IF
-          IF ((Lobc(ieast,isUbar,ng)).and.EASTERN_EDGE) THEN
+          IF ((Lobc(ieast,isUbar,ng)).and.                              &
+     &        DOMAIN(ng)%Eastern_Edge(tile)) THEN
             ib=ieast
             DO j=Jstr,Jend
               ad_ubar_obc(j,ib,ir,Lnew)=tl_ubar_obc(j,ib,ir,Lnew)-      &
@@ -3681,7 +3714,8 @@
 #  endif
             END DO
           END IF
-          IF ((Lobc(isouth,isUbar,ng)).and.SOUTHERN_EDGE) THEN
+          IF ((Lobc(isouth,isUbar,ng)).and.                             &
+     &        DOMAIN(ng)%Southern_Edge(tile)) THEN
             ib=isouth
             DO i=IstrU,Iend
               ad_ubar_obc(i,ib,ir,Lnew)=tl_ubar_obc(i,ib,ir,Lnew)-      &
@@ -3692,7 +3726,8 @@
 #  endif
             END DO
           END IF
-          IF ((Lobc(inorth,isUbar,ng)).and.NORTHERN_EDGE) THEN
+          IF ((Lobc(inorth,isUbar,ng)).and.                             &
+     &        DOMAIN(ng)%Northern_Edge(tile)) THEN
             ib=inorth
             DO i=IstrU,Iend
               ad_ubar_obc(i,ib,ir,Lnew)=tl_ubar_obc(i,ib,ir,Lnew)-      &
@@ -3711,8 +3746,8 @@
 !
 !  2D V-momentum.
 !
-      DO j=Jstr,JendR
-        DO i=IstrR,IendR
+      DO j=JstrP,JendT
+        DO i=IstrT,IendT
           ad_vbar(i,j,Lnew)=tl_vbar(i,j,Lnew)-ad_vbar(i,j,Lnew)
 #  ifdef MASKING
           ad_vbar(i,j,Lnew)=ad_vbar(i,j,Lnew)*vmask(i,j)
@@ -3727,7 +3762,8 @@
 !
       IF (ANY(Lobc(:,isVbar,ng))) THEN
         DO ir=1,Nbrec(ng)
-          IF ((Lobc(iwest,isVbar,ng)).and.WESTERN_EDGE) THEN
+          IF ((Lobc(iwest,isVbar,ng)).and.                              &
+     &        DOMAIN(ng)%Western_Edge(tile)) THEN
             ib=iwest
             DO j=JstrV,Jend
               ad_vbar_obc(j,ib,ir,Lnew)=tl_vbar_obc(j,ib,ir,Lnew)-      &
@@ -3738,7 +3774,8 @@
 #  endif
             END DO
           END IF
-          IF ((Lobc(ieast,isVbar,ng)).and.EASTERN_EDGE) THEN
+          IF ((Lobc(ieast,isVbar,ng)).and.                              &
+     &        DOMAIN(ng)%Eastern_Edge(tile)) THEN
             ib=ieast
             DO j=JstrV,Jend
               ad_vbar_obc(j,ib,ir,Lnew)=tl_vbar_obc(j,ib,ir,Lnew)-      &
@@ -3749,7 +3786,8 @@
 #  endif
             END DO
           END IF
-          IF ((Lobc(isouth,isVbar,ng)).and.SOUTHERN_EDGE) THEN
+          IF ((Lobc(isouth,isVbar,ng)).and.                             &
+     &        DOMAIN(ng)%Southern_Edge(tile)) THEN
             ib=isouth
             DO i=Istr,Iend
               ad_vbar_obc(i,ib,ir,Lnew)=tl_vbar_obc(i,ib,ir,Lnew)-      &
@@ -3760,7 +3798,8 @@
 #  endif
             END DO
           END IF
-          IF ((Lobc(inorth,isVbar,ng)).and.NORTHERN_EDGE) THEN
+          IF ((Lobc(inorth,isVbar,ng)).and.                             &
+     &        DOMAIN(ng)%Northern_Edge(tile)) THEN
             ib=inorth
             DO i=Istr,Iend
               ad_vbar_obc(i,ib,ir,Lnew)=tl_vbar_obc(i,ib,ir,Lnew)-      &
@@ -3780,8 +3819,8 @@
 !  Surface momentum stress.
 !
       DO ir=1,Nfrec(ng)
-        DO j=JstrR,JendR
-          DO i=Istr,IendR
+        DO j=JstrT,JendT
+          DO i=IstrP,IendT
             ad_ustr(i,j,ir,Lnew)=tl_ustr(i,j,ir,Lnew)-                  &
      &                           ad_ustr(i,j,ir,Lnew)
 #  ifdef MASKING
@@ -3789,8 +3828,8 @@
 #  endif
           END DO
         END DO
-        DO j=Jstr,JendR
-          DO i=IstrR,IendR
+        DO j=JstrP,JendT
+          DO i=IstrT,IendT
             ad_vstr(i,j,ir,Lnew)=tl_vstr(i,j,ir,Lnew)-                  &
      &                           ad_vstr(i,j,ir,Lnew)
 #  ifdef MASKING
@@ -3806,8 +3845,8 @@
 !  3D U-momentum.
 !
       DO k=1,N(ng)
-        DO j=JstrR,JendR
-          DO i=Istr,IendR
+        DO j=JstrT,JendT
+          DO i=IstrP,IendT
             ad_u(i,j,k,Lnew)=tl_u(i,j,k,Lnew)-ad_u(i,j,k,Lnew)
 #  ifdef MASKING
             ad_u(i,j,k,Lnew)=ad_u(i,j,k,Lnew)*umask(i,j)
@@ -3822,7 +3861,8 @@
 !
       IF (ANY(Lobc(:,isUvel,ng))) THEN
         DO ir=1,Nbrec(ng)
-          IF ((Lobc(iwest,isUvel,ng)).and.WESTERN_EDGE) THEN
+          IF ((Lobc(iwest,isUvel,ng)).and.                              &
+     &        DOMAIN(ng)%Western_Edge(tile)) THEN
             ib=iwest
             DO k=1,N(ng)
               DO j=Jstr,Jend
@@ -3835,7 +3875,8 @@
               END DO
             END DO
           END IF
-          IF ((Lobc(ieast,isUvel,ng)).and.EASTERN_EDGE) THEN
+          IF ((Lobc(ieast,isUvel,ng)).and.                              &
+     &        DOMAIN(ng)%Eastern_Edge(tile)) THEN
             ib=ieast
             DO k=1,N(ng)
               DO j=Jstr,Jend
@@ -3848,7 +3889,8 @@
               END DO
             END DO
           END IF
-          IF ((Lobc(isouth,isUvel,ng)).and.SOUTHERN_EDGE) THEN
+          IF ((Lobc(isouth,isUvel,ng)).and.                             &
+     &        DOMAIN(ng)%Southern_Edge(tile)) THEN
             ib=isouth
             DO k=1,N(ng)
               DO i=IstrU,Iend
@@ -3861,7 +3903,8 @@
               END DO
             END DO
           END IF
-          IF ((Lobc(inorth,isUvel,ng)).and.NORTHERN_EDGE) THEN
+          IF ((Lobc(inorth,isUvel,ng)).and.                             &
+     &        DOMAIN(ng)%Northern_Edge(tile)) THEN
             ib=inorth
             DO k=1,N(ng)
               DO i=IstrU,Iend
@@ -3881,8 +3924,8 @@
 !  3D V-momentum.
 !
       DO k=1,N(ng)
-        DO j=Jstr,JendR
-          DO i=IstrR,IendR
+        DO j=JstrP,JendT
+          DO i=IstrT,IendT
             ad_v(i,j,k,Lnew)=tl_v(i,j,k,Lnew)-ad_v(i,j,k,Lnew)
 #  ifdef MASKING
             ad_v(i,j,k,Lnew)=ad_v(i,j,k,Lnew)*vmask(i,j)
@@ -3897,7 +3940,8 @@
 !
       IF (ANY(Lobc(:,isVvel,ng))) THEN
         DO ir=1,Nbrec(ng)
-          IF ((Lobc(iwest,isVvel,ng)).and.WESTERN_EDGE) THEN
+          IF ((Lobc(iwest,isVvel,ng)).and.                              &
+     &        DOMAIN(ng)%Western_Edge(tile)) THEN
             ib=iwest
             DO k=1,N(ng)
               DO j=JstrV,Jend
@@ -3910,7 +3954,8 @@
               END DO
             END DO
           END IF
-          IF ((Lobc(ieast,isVvel,ng)).and.EASTERN_EDGE) THEN
+          IF ((Lobc(ieast,isVvel,ng)).and.                              &
+     &        DOMAIN(ng)%Eastern_Edge(tile)) THEN
             ib=ieast
             DO k=1,N(ng)
               DO j=JstrV,Jend
@@ -3923,7 +3968,8 @@
               END DO
             END DO
           END IF
-          IF ((Lobc(isouth,isVvel,ng)).and.SOUTHERN_EDGE) THEN
+          IF ((Lobc(isouth,isVvel,ng)).and.                             &
+     &        DOMAIN(ng)%Southern_Edge(tile)) THEN
             ib=isouth
             DO k=1,N(ng)
               DO i=Istr,Iend
@@ -3936,7 +3982,8 @@
               END DO
             END DO
           END IF
-          IF ((Lobc(inorth,isVvel,ng)).and.NORTHERN_EDGE) THEN
+          IF ((Lobc(inorth,isVvel,ng)).and.                             &
+     &        DOMAIN(ng)%Northern_Edge(tile)) THEN
             ib=inorth
             DO k=1,N(ng)
               DO i=Istr,Iend
@@ -3957,8 +4004,8 @@
 !
       DO it=1,NT(ng)
         DO k=1,N(ng)
-          DO j=JstrR,JendR
-            DO i=IstrR,IendR
+          DO j=JstrT,JendT
+            DO i=IstrT,IendT
               ad_t(i,j,k,Lnew,it)=tl_t(i,j,k,Lnew,it)-                  &
      &                            ad_t(i,j,k,Lnew,it)
 #  ifdef MASKING
@@ -3976,7 +4023,8 @@
       DO it=1,NT(ng)
         IF (ANY(Lobc(:,isTvar(it),ng))) THEN
           DO ir=1,Nbrec(ng)
-            IF ((Lobc(iwest,isTvar(it),ng)).and.WESTERN_EDGE) THEN
+            IF ((Lobc(iwest,isTvar(it),ng)).and.                        &
+     &          DOMAIN(ng)%Western_Edge(tile)) THEN
               ib=iwest
               DO k=1,N(ng)
                 DO j=Jstr,Jend
@@ -3990,7 +4038,8 @@
                 END DO
               END DO
             END IF
-            IF ((Lobc(ieast,isTvar(it),ng)).and.EASTERN_EDGE) THEN
+            IF ((Lobc(ieast,isTvar(it),ng)).and.                        &
+     &          DOMAIN(ng)%Eastern_Edge(tile)) THEN
               ib=ieast
               DO k=1,N(ng)
                 DO j=Jstr,Jend
@@ -4004,7 +4053,8 @@
                 END DO
               END DO
             END IF
-            IF ((Lobc(isouth,isTvar(it),ng)).and.SOUTHERN_EDGE) THEN
+            IF ((Lobc(isouth,isTvar(it),ng)).and.                       &
+     &          DOMAIN(ng)%Southern_Edge(tile)) THEN
               ib=isouth
               DO k=1,N(ng)
                 DO i=Istr,Iend
@@ -4018,7 +4068,8 @@
                 END DO
               END DO
             END IF
-            IF ((Lobc(inorth,isTvar(it),ng)).and.NORTHERN_EDGE) THEN
+            IF ((Lobc(inorth,isTvar(it),ng)).and.                       &
+     &          DOMAIN(ng)%Northern_Edge(tile)) THEN
               ib=inorth
               DO k=1,N(ng)
                 DO i=Istr,Iend
@@ -4044,8 +4095,8 @@
       DO it=1,NT(ng)
         IF (Lstflux(it,ng)) THEN
           DO ir=1,Nfrec(ng)
-            DO j=JstrR,JendR
-              DO i=IstrR,IendR
+            DO j=JstrT,JendT
+              DO i=IstrT,IendT
                 ad_tflux(i,j,ir,Lnew,it)=tl_tflux(i,j,ir,Lnew,it)-      &
      &                                   ad_tflux(i,j,ir,Lnew,it)
 #   ifdef MASKING
@@ -4316,7 +4367,7 @@
       real(r8), dimension(0:NstateVar(ng)) :: dot
       real(r8), dimension(0:NpostI) :: DotProd, dot_new, dot_old
 
-      character (len=80) :: ncname
+      character (len=256) :: ncname
 
 # include "set_bounds.h"
 !
@@ -4382,14 +4433,14 @@
 !
 !  Determine adjoint file to process.
 !
-        ncname=ADJname(ng)
+        ncname=ADM(ng)%name
 !
 !  Read in the previous (innLoop-1) orthonormal Lanczos vector.
 !
         CALL read_state (ng, tile, model,                               &
      &                   LBi, UBi, LBj, UBj, LBij, UBij,                &
      &                   Lwrk, innLoop-1,                               &
-     &                   ndefADJ(ng), ncADJid(ng), ncname,              &
+     &                   ndefADJ(ng), ADM(ng)%ncid, ncname,             &
 # ifdef MASKING
      &                   rmask, umask, vmask,                           &
 # endif
@@ -4465,7 +4516,7 @@
 !  read are orthogonal to each other. The reversed order of the loop
 !  is important for the Lanczos vector calculations.
 !
-      ncname=ADJname(ng)
+      ncname=ADM(ng)%name
 !
       DO rec=innLoop,1,-1
 !
@@ -4476,7 +4527,7 @@
         CALL read_state (ng, tile, model,                               &
      &                   LBi, UBi, LBj, UBj, LBij, UBij,                &
      &                   Lwrk, rec,                                     &
-     &                   ndefADJ(ng), ncADJid(ng), ncname,              &
+     &                   ndefADJ(ng), ADM(ng)%ncid, ncname,             &
 # ifdef MASKING
      &                   rmask, umask, vmask,                           &
 # endif
@@ -4678,7 +4729,7 @@
 !
 !  Determine adjoint file to process.
 !
-      ncname=ADJname(ng)
+      ncname=ADM(ng)%name
 !
       DO rec=innLoop,1,-1
 !
@@ -4690,7 +4741,7 @@
         CALL read_state (ng, tile, model,                               &
      &                   LBi, UBi, LBj, UBj, LBij, UBij,                &
      &                   Lwrk, rec,                                     &
-     &                   ndefADJ(ng), ncADJid(ng), ncname,              &
+     &                   ndefADJ(ng), ADM(ng)%ncid, ncname,             &
 #  ifdef MASKING
      &                   rmask, umask, vmask,                           &
 #  endif
@@ -5063,7 +5114,7 @@
 
       real(r8), dimension(0:NstateVar(ng)) :: dot
 
-      character (len=80) :: ncname
+      character (len=256) :: ncname
 
 # include "set_bounds.h"
 !
@@ -5085,9 +5136,9 @@
 !
 !  Write out number of converged eigenvalues.
 !
-      CALL netcdf_put_ivar (ng, model, HSSname(ng), 'nConvRitz',        &
+      CALL netcdf_put_ivar (ng, model, HSS(ng)%name, 'nConvRitz',       &
      &                      nConvRitz, (/0/), (/0/),                    &
-     &                      ncid = ncHSSid(ng))
+     &                      ncid = HSS(ng)%ncid)
       IF (exit_flag.ne.NoError) RETURN
 !
 !-----------------------------------------------------------------------
@@ -5099,7 +5150,7 @@
 !
       IF (Master) WRITE (stdout,10)
 !
-      tHSSindx(ng)=0
+      HSS(ng)%Rindex=0
 !
       COLUMNS : DO nvec=innLoop,1,-1
 !
@@ -5135,7 +5186,7 @@
 !
 !  Compute Hessian eigenvectors.
 !
-        ncname=ADJname(ng)
+        ncname=ADM(ng)%name
 !
         ROWS : DO rec=1,innLoop
 !
@@ -5145,7 +5196,7 @@
           CALL read_state (ng, tile, model,                             &
      &                     LBi, UBi, LBj, UBj, LBij, UBij,              &
      &                     Lwrk, rec,                                   &
-     &                     ndefADJ(ng), ncADJid(ng), ncname,            &
+     &                     ndefADJ(ng), ADM(ng)%ncid, ncname,           &
 # ifdef MASKING
      &                     rmask, umask, vmask,                         &
 # endif
@@ -5229,7 +5280,7 @@
 !  Use nl_var(1) as temporary storage since we need to preserve
 !  ad_var(Lnew).
 !
-      ncname=HSSname(ng)
+      ncname=HSS(ng)%name
       IF (Master) WRITE (stdout,30)
 !
       DO nvec=1,innLoop
@@ -5240,7 +5291,7 @@
         CALL read_state (ng, tile, model,                               &
      &                   LBi, UBi, LBj, UBj, LBij, UBij,                &
      &                   Lold, nvec,                                    &
-     &                   0, ncHSSid(ng), ncname,                        &
+     &                   0, HSS(ng)%ncid, ncname,                       &
 # ifdef MASKING
      &                   rmask, umask, vmask,                           &
 # endif
@@ -5312,7 +5363,7 @@
           CALL read_state (ng, tile, model,                             &
      &                     LBi, UBi, LBj, UBj, LBij, UBij,              &
      &                     Lwrk, rec,                                   &
-     &                     0, ncHSSid(ng), ncname,                      &
+     &                     0, HSS(ng)%ncid, ncname,                     &
 # ifdef MASKING
      &                     rmask, umask, vmask,                         &
 # endif
@@ -5528,20 +5579,20 @@
 !
 !  Write out converged Ritz eigenvalues and is associated accuracy.
 !
-        CALL netcdf_put_fvar (ng, model, HSSname(ng), 'Ritz',           &
+        CALL netcdf_put_fvar (ng, model, HSS(ng)%name, 'Ritz',          &
      &                        Ritz(nvec:), (/nvec/), (/1/),             &
-     &                        ncid = ncHSSid(ng))
+     &                        ncid = HSS(ng)%ncid)
         IF (exit_flag.ne.NoError) RETURN
 
-        CALL netcdf_put_fvar (ng, model, HSSname(ng), 'Ritz_error',     &
+        CALL netcdf_put_fvar (ng, model, HSS(ng)%name, 'Ritz_error',    &
      &                        RitzErr(nvec:), (/nvec/), (/1/),          &
-     &                        ncid = ncHSSid(ng))
+     &                        ncid = HSS(ng)%ncid)
         IF (exit_flag.ne.NoError) RETURN
 !
 !  Replace record "nvec" of Hessian eigenvectors NetCDF with the
 !  normalized value in adjoint state arrays at index Lold.
 !
-        tHSSindx(ng)=nvec-1
+        HSS(ng)%Rindex=nvec-1
         LwrtState2d(ng)=.TRUE.
         CALL wrt_hessian (ng, Lold, Lold)
         LwrtState2d(ng)=.FALSE.
@@ -5555,7 +5606,6 @@
 
       RETURN
       END SUBROUTINE posterior_eofs
-
 #endif
 
       END MODULE posterior_mod

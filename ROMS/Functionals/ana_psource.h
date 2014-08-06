@@ -2,7 +2,7 @@
 !
 !! svn $Id: ana_psource.h 429 2009-12-20 17:30:26Z arango $
 !!======================================================================
-!! Copyright (c) 2002-2010 The ROMS/TOMS Group                         !
+!! Copyright (c) 2002-2014 The ROMS/TOMS Group                         !
 !!   Licensed under a MIT/X style license                              !
 !!   See License_ROMS.txt                                              !
 !=======================================================================
@@ -16,7 +16,6 @@
       USE mod_grid
       USE mod_ncparam
       USE mod_ocean
-      USE mod_sources
       USE mod_stepping
 !
       integer, intent(in) :: ng, tile, model
@@ -26,7 +25,7 @@
       CALL ana_psource_tile (ng, tile, model,                           &
      &                       LBi, UBi, LBj, UBj,                        &
      &                       IminS, ImaxS, JminS, JmaxS,                &
-     &                       nnew(ng), knew(ng), Msrc(ng), Nsrc(ng),    &
+     &                       nnew(ng), knew(ng),                        &
      &                       OCEAN(ng) % zeta,                          &
      &                       OCEAN(ng) % ubar,                          &
      &                       OCEAN(ng) % vbar,                          &
@@ -37,20 +36,7 @@
 #endif
      &                       GRID(ng) % h,                              &
      &                       GRID(ng) % on_u,                           &
-     &                       GRID(ng) % om_v,                           &
-     &                       SOURCES(ng) % Isrc,                        &
-     &                       SOURCES(ng) % Jsrc,                        &
-     &                       SOURCES(ng) % Dsrc,                        &
-#ifdef SOLVE3D
-# if defined UV_PSOURCE || defined Q_PSOURCE
-     &                       SOURCES(ng) % Qshape,                      &
-     &                       SOURCES(ng) % Qsrc,                        &
-# endif
-# ifdef TS_PSOURCE
-     &                       SOURCES(ng) % Tsrc,                        &
-# endif
-#endif
-     &                       SOURCES(ng) % Qbar)
+     &                       GRID(ng) % om_v)
 !
 ! Set analytical header file name used.
 !
@@ -69,22 +55,12 @@
       SUBROUTINE ana_psource_tile (ng, tile, model,                     &
      &                             LBi, UBi, LBj, UBj,                  &
      &                             IminS, ImaxS, JminS, JmaxS,          &
-     &                             nnew, knew, Msrc, Nsrc,              &
+     &                             nnew, knew,                          &
      &                             zeta, ubar, vbar,                    &
 #ifdef SOLVE3D
      &                             u, v, z_w,                           &
 #endif
-     &                             h, on_u, om_v,                       &
-     &                             Isrc, Jsrc, Dsrc,                    &
-#ifdef SOLVE3D
-# if defined UV_PSOURCE || defined Q_PSOURCE
-     &                             Qshape, Qsrc,                        &
-# endif
-# ifdef TS_PSOURCE
-     &                             Tsrc,                                &
-# endif
-#endif
-     &                             Qbar)
+     &                             h, on_u, om_v)
 !***********************************************************************
 !
       USE mod_param
@@ -93,6 +69,8 @@
 #ifdef SEDIMENT
       USE mod_sediment
 #endif
+      USE mod_sources
+
 #ifdef DISTRIBUTE
 !
       USE distribute_mod, ONLY : mp_bcastf, mp_bcasti
@@ -105,14 +83,8 @@
       integer, intent(in) :: LBi, UBi, LBj, UBj
       integer, intent(in) :: IminS, ImaxS, JminS, JmaxS
       integer, intent(in) :: nnew, knew
-      integer, intent(in) :: Msrc
-
-      integer, intent(out) :: Nsrc
 !
 #ifdef ASSUMED_SHAPE
-      integer, intent(inout) :: Isrc(:)
-      integer, intent(inout) :: Jsrc(:)
-
       real(r8), intent(in) :: zeta(LBi:,LBj:,:)
       real(r8), intent(in) :: ubar(LBi:,LBj:,:)
       real(r8), intent(in) :: vbar(LBi:,LBj:,:)
@@ -124,22 +96,7 @@
       real(r8), intent(in) :: h(LBi:,LBj:)
       real(r8), intent(in) :: on_u(LBi:,LBj:)
       real(r8), intent(in) :: om_v(LBi:,LBj:)
-
-      real(r8), intent(inout) :: Dsrc(:)
-      real(r8), intent(inout) :: Qbar(:)
-# ifdef SOLVE3D
-#  if defined UV_PSOURCE || defined Q_PSOURCE
-      real(r8), intent(inout) :: Qshape(:,:)
-      real(r8), intent(inout) :: Qsrc(:,:)
-#  endif
-#  ifdef TS_PSOURCE
-      real(r8), intent(inout) :: Tsrc(:,:,:)
-#  endif
-# endif
 #else
-      integer, intent(inout) :: Isrc(Msrc)
-      integer, intent(inout) :: Jsrc(Msrc)
-
       real(r8), intent(in) :: zeta(LBi:UBi,LBj:UBj,3)
       real(r8), intent(in) :: ubar(LBi:UBi,LBj:UBj,3)
       real(r8), intent(in) :: vbar(LBi:UBi,LBj:UBj,3)
@@ -151,18 +108,6 @@
       real(r8), intent(in) :: h(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: on_u(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: om_v(LBi:UBi,LBj:UBj)
-
-      real(r8), intent(inout) :: Dsrc(Msrc)
-      real(r8), intent(inout) :: Qbar(Msrc)
-# ifdef SOLVE3D
-#  if defined UV_PSOURCE || defined Q_PSOURCE
-      real(r8), intent(inout) :: Qshape(Msrc,N(ng))
-      real(r8), intent(inout) :: Qsrc(Msrc,N(ng))
-#  endif
-#  ifdef TS_PSOURCE
-      real(r8), intent(inout) :: Tsrc(Msrc,N(ng),NT(ng))
-#  endif
-# endif
 #endif
 !
 !  Local variable declarations.
@@ -174,7 +119,7 @@
       real(r8) :: cff, fac, my_area_east, my_area_west
 
 #if defined DISTRIBUTE && defined SOLVE3D
-      real(r8), dimension(Msrc*N(ng)) :: Pwrk
+      real(r8), dimension(Msrc(ng)*N(ng)) :: Pwrk
 #endif
 #if defined DISTRIBUTE
       real(r8), dimension(2) :: buffer
@@ -185,325 +130,342 @@
 #include "set_bounds.h"
 !
 !-----------------------------------------------------------------------
-!  Set tracer and/or mass point sources and/or sink.
+!  If initialization, set point Sources and/or Sinks locations.
 !-----------------------------------------------------------------------
 !
       IF (iic(ng).eq.ntstart(ng)) THEN
 !
 !  Set-up point Sources/Sink number (Nsrc), direction (Dsrc), I- and
-!  J-grid locations (Isrc,Jsrc), and logical switch for type of tracer
-!  to apply (LtracerSrc).  Currently, the direction can be along
+!  J-grid locations (Isrc,Jsrc). Currently, the direction can be along
 !  XI-direction (Dsrc = 0) or along ETA-direction (Dsrc > 0).  The
 !  mass sources are located at U- or V-points so the grid locations
 !  should range from 1 =< Isrc =< L  and  1 =< Jsrc =< M.
 !
 #if defined RIVERPLUME1
-        IF (Master.and.SOUTH_WEST_TEST) THEN
-          Nsrc=1
-          Dsrc(Nsrc)=0.0_r8
-          Isrc(Nsrc)=1
-          Jsrc(Nsrc)=50
-          LtracerSrc(itemp,ng)=.TRUE.
-          LtracerSrc(isalt,ng)=.TRUE.
+        IF (Master.and.DOMAIN(ng)%SouthWest_Test(tile)) THEN
+          Nsrc(ng)=1
+          SOURCES(ng)%Dsrc(Nsrc(ng))=0.0_r8
+          SOURCES(ng)%Isrc(Nsrc(ng))=1
+          SOURCES(ng)%Jsrc(Nsrc(ng))=50
         END IF
 #elif defined RIVERPLUME2
-        IF (Master.and.SOUTH_WEST_TEST) THEN
-          Nsrc=1+Lm(ng)*2
-          LtracerSrc(itemp,ng)=.TRUE.
-          LtracerSrc(isalt,ng)=.TRUE.
-          DO is=1,(Nsrc-1)/2
-            Dsrc(is)=1.0_r8
-            Isrc(is)=is
-            Jsrc(is)=1
+        IF (Master.and.DOMAIN(ng)%SouthWest_Test(tile)) THEN
+          Nsrc(ng)=1+Lm(ng)*2
+          DO is=1,(Nsrc(ng)-1)/2
+            SOURCES(ng)%Dsrc(is)=1.0_r8
+            SOURCES(ng)%Isrc(is)=is
+            SOURCES(ng)%Jsrc(is)=1
           END DO
-          DO is=(Nsrc-1)/2+1,Nsrc-1
-            Dsrc(is)=1.0_r8
-            Isrc(is)=is-Lm(ng)
-            Jsrc(is)=Mm(ng)+1
+          DO is=(Nsrc(ng)-1)/2+1,Nsrc(ng)-1
+            SOURCES(ng)%Dsrc(is)=1.0_r8
+            SOURCES(ng)%Isrc(is)=is-Lm(ng)
+            SOURCES(ng)%Jsrc(is)=Mm(ng)+1
           END DO
-          Dsrc(Nsrc)=0.0_r8
-          Isrc(Nsrc)=1
-          Jsrc(Nsrc)=60
+          SOURCES(ng)%Dsrc(Nsrc(ng))=0.0_r8
+          SOURCES(ng)%Isrc(Nsrc(ng))=1
+          SOURCES(ng)%Jsrc(Nsrc(ng))=60
         END IF
 #elif defined SED_TEST1
-        IF (Master.and.SOUTH_WEST_TEST) THEN
-          Nsrc=Mm(ng)*2
-          LtracerSrc(itemp,ng)=.TRUE.
-          LtracerSrc(isalt,ng)=.TRUE.
-          DO is=1,Nsrc/2
-            Dsrc(is)=0.0_r8
-            Isrc(is)=1
-            Jsrc(is)=is
+        IF (Master.and.DOMAIN(ng)%SouthWest_Test(tile)) THEN
+          Nsrc(ng)=Mm(ng)*2
+          DO is=1,Nsrc(ng)/2
+            SOURCES(ng)%Dsrc(is)=0.0_r8
+            SOURCES(ng)%Isrc(is)=1
+            SOURCES(ng)%Jsrc(is)=is
           END DO
-          DO is=Nsrc/2+1,Nsrc
-            Dsrc(is)=0.0_r8
-            Isrc(is)=Lm(ng)+1
-            Jsrc(is)=is-Mm(ng)
+          DO is=Nsrc(ng)/2+1,Nsrc(ng)
+            SOURCES(ng)%Dsrc(is)=0.0_r8
+            SOURCES(ng)%Isrc(is)=Lm(ng)+1
+            SOURCES(ng)%Jsrc(is)=is-Mm(ng)
           END DO
         END IF
 #else
-        ana_psource.h: No values provided for LtracerSrc, Nsrc, Dsrc,
-                                              Isrc, Jsrc.
+        ana_psource.h: No values provided for Nsrc, Dsrc, Isrc, Jsrc.
 #endif
+
 #ifdef DISTRIBUTE
 !
 !  Broadcast point sources/sinks information to all nodes.
 !
-        CALL mp_bcasti (ng, iNLM, Nsrc)
-        CALL mp_bcasti (ng, iNLM, Isrc)
-        CALL mp_bcasti (ng, iNLM, Jsrc)
-        CALL mp_bcastf (ng, iNLM, Dsrc)
+        CALL mp_bcasti (ng, iNLM, Nsrc(ng))
+        CALL mp_bcasti (ng, iNLM, SOURCES(ng)%Isrc)
+        CALL mp_bcasti (ng, iNLM, SOURCES(ng)%Jsrc)
+        CALL mp_bcastf (ng, iNLM, SOURCES(ng)%Dsrc)
 #endif
       END IF
+!
+!-----------------------------------------------------------------------
+!  Set momentum point Sources and/or Sinks.
+!-----------------------------------------------------------------------
+!
+      MOMENTUM : IF (LuvSrc(ng).or.LwSrc(ng)) THEN
 
-#if defined UV_PSOURCE || defined Q_PSOURCE
-# ifdef SOLVE3D
+#ifdef SOLVE3D
 !
 !  If appropriate, set-up nondimensional shape function to distribute
 !  mass point sources/sinks vertically.  It must add to unity!!.
 !
-#  ifdef DISTRIBUTE
-      Qshape=Pspv
-#  endif
-      Npts=Msrc*N(ng)
+# ifdef DISTRIBUTE
+        SOURCES(ng)%Qshape=Pspv
+# endif
+        Npts=Msrc(ng)*N(ng)
 
 !$OMP BARRIER
 
-#  if defined SED_TEST1
-      DO k=1,N(ng)
-        DO is=1,Nsrc
-          i=Isrc(is)
-          j=Jsrc(is)
-          IF (((IstrR.le.i).and.(i.le.IendR)).and.                      &
-     &        ((JstrR.le.j).and.(j.le.JendR))) THEN
-            IF (ubar(i,j,knew).ne.0.0_r8) THEN
-              cff=ABS(u(i,j,k,nnew)/ubar(i,j,knew))
-            ELSE
-              cff=1.0_r8
-            END IF
-            Qshape(is,k)=cff*                                           &
-     &                   (z_w(i-1,j,k    )-z_w(i-1,j,k-1)+              &
-     &                    z_w(i  ,j,k    )-z_w(i  ,j,k-1))/             &
-     &                   (z_w(i-1,j,N(ng))-z_w(i-1,j,0  )+              &
-     &                    z_w(i  ,j,N(ng))-z_w(i  ,j,0  ))
-          END IF
-        END DO
-      END DO
-#   ifdef DISTRIBUTE
-      Pwrk=RESHAPE(Qshape,(/Npts/))
-      CALL mp_collect (ng, iNLM, Npts, Pspv, Pwrk)
-      Qshape=RESHAPE(Pwrk,(/Msrc,N(ng)/))
-#   endif
-#  elif defined RIVERPLUME2
-      DO k=1,N(ng)
-        DO is=1,Nsrc-1
-          i=Isrc(is)
-          j=Jsrc(is)
-          IF (((IstrR.le.i).and.(i.le.IendR)).and.                      &
-     &        ((JstrR.le.j).and.(j.le.JendR))) THEN
-            IF (vbar(i,j,knew).ne.0.0_r8) THEN
-              cff=ABS(v(i,j,k,nnew)/vbar(i,j,knew))
-            ELSE
-              cff=1.0_r8
-            END IF
-            Qshape(is,k)=cff*                                           &
-     &                   (z_w(i,j-1,k)-z_w(i,j-1,k-1)+                  &
-     &                    z_w(i,j  ,k)-z_w(i,j  ,k-1))/                 &
-     &                   (z_w(i,j-1,N(ng))-z_w(i,j-1,0)+                &
-     &                    z_w(i,j  ,N(ng))-z_w(i,j  ,0))
-          END IF
-        END DO
-      END DO
-      IF (Master.and.SOUTH_WEST_TEST) THEN
+# if defined SED_TEST1
         DO k=1,N(ng)
-          Qshape(Nsrc,k)=1.0_r8/REAL(N(ng),r8)
+          DO is=1,Nsrc(ng)
+            i=SOURCES(ng)%Isrc(is)
+            j=SOURCES(ng)%Jsrc(is)
+            IF (((IstrT.le.i).and.(i.le.IendT)).and.                    &
+     &           ((JstrT.le.j).and.(j.le.JendT))) THEN
+              IF (ubar(i,j,knew).ne.0.0_r8) THEN
+                cff=ABS(u(i,j,k,nnew)/ubar(i,j,knew))
+              ELSE
+                cff=1.0_r8
+              END IF
+              SOURCES(ng)%Qshape(is,k)=cff*                             &
+     &                                 (z_w(i-1,j,k    )-               &
+     &                                  z_w(i-1,j,k-1  )+               &
+     &                                  z_w(i  ,j,k    )-               &
+     &                                  z_w(i  ,j,k-1  ))/              &
+     &                                 (z_w(i-1,j,N(ng))-               &
+     &                                  z_w(i-1,j,0    )+               &
+     &                                  z_w(i  ,j,N(ng))-               &
+     &                                  z_w(i  ,j,0    ))
+            END IF
+          END DO
         END DO
-      END IF
-#   ifdef DISTRIBUTE
-      Pwrk=RESHAPE(Qshape,(/Npts/))
-      CALL mp_collect (ng, iNLM, Npts, Pspv, Pwrk)
-      Qshape=RESHAPE(Pwrk,(/Msrc,N(ng)/))
-#   endif
-#  else
+#  ifdef DISTRIBUTE
+        Pwrk=RESHAPE(SOURCES(ng)%Qshape,(/Npts/))
+        CALL mp_collect (ng, iNLM, Npts, Pspv, Pwrk)
+        SOURCES(ng)%Qshape=RESHAPE(Pwrk,(/Msrc,N(ng)/))
+#  endif
+
+# elif defined RIVERPLUME2
+        DO k=1,N(ng)
+          DO is=1,Nsrc(ng)-1
+            i=SOURCES(ng)%Isrc(is)
+            j=SOURCES(ng)%Jsrc(is)
+            IF (((IstrT.le.i).and.(i.le.IendT)).and.                    &
+     &          ((JstrT.le.j).and.(j.le.JendT))) THEN
+              IF (vbar(i,j,knew).ne.0.0_r8) THEN
+                cff=ABS(v(i,j,k,nnew)/vbar(i,j,knew))
+              ELSE
+                cff=1.0_r8
+              END IF
+              SOURCES(ng)%Qshape(is,k)=cff*                             &
+     &                                 (z_w(i,j-1,k    )-               &
+     &                                  z_w(i,j-1,k-1  )+               &
+     &                                  z_w(i,j  ,k    )-               &
+     &                                  z_w(i,j  ,k-1  ))/              &
+     &                                 (z_w(i,j-1,N(ng))-               &
+     &                                  z_w(i,j-1,0    )+               &
+     &                                  z_w(i,j  ,N(ng))-
+     &                                  z_w(i,j  ,0    ))
+            END IF
+          END DO
+        END DO
+        IF (Master.and.DOMAIN(ng)%SouthWest_Test(tile)) THEN
+          DO k=1,N(ng)
+            SOURCES(ng0%Qshape(Nsrc(ng),k)=1.0_r8/REAL(N(ng),r8)
+          END DO
+        END IF
+#  ifdef DISTRIBUTE
+        Pwrk=RESHAPE(SOURCES(ng)%Qshape,(/Npts/))
+        CALL mp_collect (ng, iNLM, Npts, Pspv, Pwrk)
+        SOURCES(ng)%Qshape=RESHAPE(Pwrk,(/Msrc,N(ng)/))
+#  endif
+
+# else
 !!
 !!  Notice that there is not need for distributed-memory communications
 !!  here since the computation below does not have a parallel tile
 !!  dependency. All the nodes are computing this simple statement.
 !!
-      IF (NORTH_EAST_TEST) THEN
-        DO k=1,N(ng)
-          DO is=1,Nsrc
-            Qshape(is,k)=1.0_r8/REAL(N(ng),r8)
+        IF (DOMAIN(ng)%NorthEast_Test(tile)) THEN
+          DO k=1,N(ng)
+            DO is=1,Nsrc(ng)
+              SOURCES(ng)%Qshape(is,k)=1.0_r8/REAL(N(ng),r8)
+            END DO
           END DO
-        END DO
-      END IF
-#  endif
+        END IF
 # endif
+#endif
 !
 !  Set-up vertically integrated mass transport (m3/s) of point
 !  Sources/Sinks (positive in the positive U- or V-direction and
 !  viceversa).
 !
-# ifdef DISTRIBUTE
-      Qbar=Pspv
-# endif
+#ifdef DISTRIBUTE
+        SOURCES(ng)%Qbar=Pspv
+#endif
 
 !$OMP BARRIER
 
-# if defined RIVERPLUME1
-      IF ((tdays(ng)-dstart).lt.0.5_r8) THEN
-        fac=1.0_r8+TANH((time(ng)-43200.0_r8)/43200.0_r8)
-      ELSE
-        fac=1.0_r8
-      END IF
-      DO is=1,Nsrc
-        Qbar(is)=fac*1500.0_r8
-      END DO
-# elif defined RIVERPLUME2
-      DO is=1,(Nsrc-1)/2                     ! North end
-        i=Isrc(is)
-        j=Jsrc(is)
-        IF (((IstrR.le.i).and.(i.le.IendR)).and.                        &
-     &      ((JstrR.le.j).and.(j.le.JendR))) THEN
-          Qbar(is)=-0.05_r8*om_v(i,j)*                                  &
-     &             (0.5_r8*(zeta(i,j-1,knew)+h(i,j-1)+                  &
-     &                      zeta(i  ,j,knew)+h(i  ,j)))
+#if defined RIVERPLUME1
+        IF ((tdays(ng)-dstart).lt.0.5_r8) THEN
+          fac=1.0_r8+TANH((time(ng)-43200.0_r8)/43200.0_r8)
+        ELSE
+          fac=1.0_r8
         END IF
-      END DO
-      DO is=(Nsrc-1)/2+1,Nsrc-1              ! South end
-        i=Isrc(is)
-        j=Jsrc(is)
-        IF (((IstrR.le.i).and.(i.le.IendR)).and.                        &
-     &      ((JstrR.le.j).and.(j.le.JendR))) THEN
-          Qbar(is)=-0.05_r8*om_v(i,j)*                                  &
-     &             (0.5_r8*(zeta(i,j-1,knew)+h(i,j-1)+                  &
-     &                      zeta(i  ,j,knew)+h(i  ,j)))
-        END IF
-      END DO
-      IF (Master.and.SOUTH_WEST_TEST) THEN
-        Qbar(Nsrc)=1500.0_r8                 ! West wall
-      END IF
-#  ifdef DISTRIBUTE
-      CALL mp_collect (ng, iNLM, Msrc, Pspv, Qbar)
-#  endif
-# elif defined SED_TEST1
-      my_area_west=0.0_r8                    ! West end
-      fac=-36.0_r8*10.0_r8*1.0_r8
-      DO is=1,Nsrc/2
-        i=Isrc(is)
-        j=Jsrc(is)
-        IF (((IstrR.le.i).and.(i.le.IendR)).and.                        &
-     &      ((JstrR.le.j).and.(j.le.JendR))) THEN
-          cff=0.5_r8*(zeta(i-1,j,knew)+h(i-1,j)+                        &
-     &                zeta(i  ,j,knew)+h(i  ,j))*on_u(i,j)
-          Qbar(is)=fac*cff
-          my_area_west=my_area_west+cff
-        END IF
-      END DO
-!
-      my_area_east=0.0_r8                    ! East end
-      fac=-36.0_r8*10.0_r8*1.0_r8
-      DO is=Nsrc/2+1,Nsrc
-        i=Isrc(is)
-        j=Jsrc(is)
-        IF (((IstrR.le.i).and.(i.le.IendR)).and.                        &
-     &      ((JstrR.le.j).and.(j.le.JendR))) THEN
-          cff=0.5_r8*(zeta(i-1,j,knew)+h(i-1,j)+                        &
-     &                zeta(i  ,j,knew)+h(i  ,j))*on_u(i,j)
-          Qbar(is)=fac*cff
-          my_area_east=my_area_east+cff
-        END IF
-      END DO
-!
-      IF (SOUTH_WEST_CORNER.and.                                        &
-     &    NORTH_EAST_CORNER) THEN
-        NSUB=1                           ! non-tiled application
-      ELSE
-        NSUB=NtileX(ng)*NtileE(ng)       ! tiled application
-      END IF
-!$OMP CRITICAL (PSOURCE)
-      IF (tile_count.eq.0) THEN
-        area_west=0.0_r8
-        area_east=0.0_r8
-      END IF
-      area_west=area_west+my_area_west
-      area_east=area_east+my_area_east
-      tile_count=tile_count+1
-      IF (tile_count.eq.NSUB) THEN
-        tile_count=0
-#  ifdef DISTRIBUTE
-        buffer(1)=area_west
-        buffer(2)=area_east
-        io_handle(1)='SUM'
-        io_handle(2)='SUM'
-        CALL mp_reduce (ng, iNLM, 2, buffer, io_handle)
-        area_west=buffer(1)
-        area_east=buffer(1)
-#  endif
-        DO is=1,Nsrc/2
-          Qbar(is)=Qbar(is)/area_west
+        DO is=1,Nsrc(ng)
+          SOURCES(ng)%Qbar(is)=fac*1500.0_r8
         END DO
-        DO is=Nsrc/2+1,Nsrc
-          Qbar(is)=Qbar(is)/area_east
-        END DO
-      END IF
-!$OMP END CRITICAL (PSOURCE)
 
-#  ifdef DISTRIBUTE
-      CALL mp_collect (ng, iNLM, Msrc, Pspv, Qbar)
-#  endif
-# else
-      ana_psource.h: No values provided for Qbar.
+#elif defined RIVERPLUME2
+        DO is=1,(Nsrc(ng)-1)/2               ! North end
+          i=SOURCES(ng)%Isrc(is)
+          j=SOURCES(ng)%Jsrc(is)
+          IF (((IstrT.le.i).and.(i.le.IendT)).and.                      &
+     &        ((JstrT.le.j).and.(j.le.JendT))) THEN
+            SOURCES(ng)%Qbar(is)=-0.05_r8*om_v(i,j)*                    &
+     &                           (0.5_r8*(zeta(i,j-1,knew)+h(i,j-1)+    &
+     &                                    zeta(i  ,j,knew)+h(i  ,j)))
+          END IF
+        END DO
+        DO is=(Nsrc(ng)-1)/2+1,Nsrc(ng)-1    ! South end
+          i=SOURCES(ng)%Isrc(is)
+          j=SOURCES(ng)%Jsrc(is)
+          IF (((IstrT.le.i).and.(i.le.IendT)).and.                      &
+     &        ((JstrT.le.j).and.(j.le.JendT))) THEN
+            SOURCES(ng)%Qbar(is)=-0.05_r8*om_v(i,j)*                    &
+     &                           (0.5_r8*(zeta(i,j-1,knew)+h(i,j-1)+    &
+     &                                    zeta(i  ,j,knew)+h(i  ,j)))
+          END IF
+        END DO
+        IF (Master.and.DOMAIN(ng)%SouthWest_Test(tile)) THEN
+          SOURCES(ng)%Qbar(Nsrc)=1500.0_r8   ! West wall
+        END IF
+# ifdef DISTRIBUTE
+        CALL mp_collect (ng, iNLM, Msrc, Pspv, SOURCES(ng)%Qbar)
 # endif
 
-# ifdef SOLVE3D
+#elif defined SED_TEST1
+        my_area_west=0.0_r8                  ! West end
+        fac=-36.0_r8*10.0_r8*1.0_r8
+        DO is=1,Nsrc(ng)/2
+          i=SOURCES(ng)%Isrc(is)
+          j=SOURCES(ng)%Jsrc(is)
+          IF (((IstrT.le.i).and.(i.le.IendT)).and.                      &
+     &        ((JstrT.le.j).and.(j.le.JendT))) THEN
+            cff=0.5_r8*(zeta(i-1,j,knew)+h(i-1,j)+                      &
+     &                  zeta(i  ,j,knew)+h(i  ,j))*on_u(i,j)
+            SOURCES(ng)%Qbar(is)=fac*cff
+            my_area_west=my_area_west+cff
+          END IF
+        END DO
+!
+        my_area_east=0.0_r8                  ! East end
+        fac=-36.0_r8*10.0_r8*1.0_r8
+        DO is=Nsrc(ng)/2+1,Nsrc(ng)
+          i=SOURCES(ng)%Isrc(is)
+          j=SOURCES(ng)%Jsrc(is)
+          IF (((IstrT.le.i).and.(i.le.IendT)).and.                      &
+     &        ((JstrT.le.j).and.(j.le.JendT))) THEN
+            cff=0.5_r8*(zeta(i-1,j,knew)+h(i-1,j)+                      &
+     &                  zeta(i  ,j,knew)+h(i  ,j))*on_u(i,j)
+            SOURCES(ng)%Qbar(is)=fac*cff
+            my_area_east=my_area_east+cff
+          END IF
+        END DO
+!
+# ifdef DISTRIBUTE
+        NSUB=1                           ! distributed-memory
+# else
+        IF (DOMAIN(ng)%SouthWest_Corner(tile).and.                      &
+     &    DOMAIN(ng)%NorthEast_Corner(tile)) THEN
+          NSUB=1                         ! non-tiled application
+        ELSE
+          NSUB=NtileX(ng)*NtileE(ng)     ! tiled application
+        END IF
+# endif
+!$OMP CRITICAL (PSOURCE)
+        IF (tile_count.eq.0) THEN
+          area_west=0.0_r8
+          area_east=0.0_r8
+        END IF
+        area_west=area_west+my_area_west
+        area_east=area_east+my_area_east
+        tile_count=tile_count+1
+        IF (tile_count.eq.NSUB) THEN
+          tile_count=0
+# ifdef DISTRIBUTE
+          buffer(1)=area_west
+          buffer(2)=area_east
+          io_handle(1)='SUM'
+          io_handle(2)='SUM'
+          CALL mp_reduce (ng, iNLM, 2, buffer, io_handle)
+          area_west=buffer(1)
+          area_east=buffer(1)
+# endif
+          DO is=1,Nsrc(ng)/2
+            SOURCES(ng)%Qbar(is)=Qbar(is)/area_west
+          END DO
+          DO is=Nsrc(ng)/2+1,Nsrc(ng)
+            SOURCES(ng)%Qbar(is)=Qbar(is)/area_east
+          END DO
+        END IF
+!$OMP END CRITICAL (PSOURCE)
+
+# ifdef DISTRIBUTE
+        CALL mp_collect (ng, iNLM, Msrc, Pspv, SOURCES(ng)%Qbar)
+# endif
+#else
+        ana_psource.h: No values provided for Qbar.
+#endif
+
+#ifdef SOLVE3D
 !
 !  Set-up mass transport profile (m3/s) of point Sources/Sinks.
 !
 !$OMP BARRIER
 
-      IF (NORTH_EAST_TEST) THEN
-        DO k=1,N(ng)
-          DO is=1,Nsrc
-            Qsrc(is,k)=Qbar(is)*Qshape(is,k)
+        IF (DOMAIN(ng)%NorthEast_Test(tile)) THEN
+          DO k=1,N(ng)
+            DO is=1,Nsrc(ng)
+              SOURCES(ng)%Qsrc(is,k)=SOURCES(ng)%Qbar(is)*              &
+     &                               SOURCES(ng)%Qshape(is,k)
+            END DO
           END DO
-        END DO
-      END IF
-# endif
+        END IF
 #endif
+      END IF MOMENTUM
 
-#if defined TS_PSOURCE && defined SOLVE3D
+#ifdef SOLVE3D
+!
+!-----------------------------------------------------------------------
+!  Set tracers point Sources and/or Sinks.
+!-----------------------------------------------------------------------
+!
+      TRACERS : IF (ANY(LtracerSrc(:,ng))) THEN
+        SOURCES(ng)%Tsrc=0.0_r8                      ! initialize
 !
 !  Set-up tracer (tracer units) point Sources/Sinks.
 !
 # if defined RIVERPLUME1
-      IF (NORTH_EAST_TEST) THEN
-        DO k=1,N(ng)
-          DO is=1,Nsrc
-            Tsrc(is,k,itemp)=T0(ng)
-            Tsrc(is,k,isalt)=0.0_r8
-#  ifdef SEDIMENT
-            DO ised=1,NST
-              Tsrc(is,k,ised+2)=0.0_r8
+        IF (DOMAIN(ng)%NorthEast_Test(tile)) THEN
+          DO k=1,N(ng)
+            DO is=1,Nsrc(ng)
+              SOURCES(ng)%Tsrc(is,k,itemp)=T0(ng)
+              SOURCES(ng)%Tsrc(is,k,isalt)=0.0_r8
             END DO
-#  endif
           END DO
-        END DO
-      END IF
+        END IF
+
 # elif defined RIVERPLUME2
-      IF (NORTH_EAST_TEST) THEN
-        DO k=1,N(ng)
-          DO is=1,Nsrc-1
-            Tsrc(is,k,itemp)=T0(ng)
-            Tsrc(is,k,isalt)=S0(ng)
+        IF (DOMAIN(ng)%NorthEast_Test(tile)) THEN
+          DO k=1,N(ng)
+            DO is=1,Nsrc(ng)
+              SOURCES(ng)%Tsrc(is,k,itemp)=T0(ng)
+              SOURCES(ng)%Tsrc(is,k,isalt)=S0(ng)
+            END DO
           END DO
-          Tsrc(Nsrc,k,itemp)=T0(ng)
-          Tsrc(Nsrc,k,isalt)=0.0_r8
-        END DO
-      END IF
+        END IF
 # else
-      ana_psource.h: No values provided for Tsrc.
+        ana_psource.h: No values provided for Tsrc.
 # endif
+      END IF TRACERS
 #endif
 
       RETURN

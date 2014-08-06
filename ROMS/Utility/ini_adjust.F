@@ -2,27 +2,13 @@
       MODULE ini_adjust_mod
 
 #if defined TLM_CHECK  || defined OPT_PERTURBATION || \
-    defined FORCING_SV || \
+    defined FORCING_SV || defined STOCHASTIC_OPT || \
+    defined HESSIAN_SV || defined HESSIAN_SO || defined HESSIAN_FSV || \
     (defined ADJOINT   && defined TANGENT)
-
-# ifdef EW_PERIODIC
-#  define IU_RANGE Istr,Iend
-#  define IV_RANGE Istr,Iend
-# else
-#  define IU_RANGE Istr,IendR
-#  define IV_RANGE IstrR,IendR
-# endif
-# ifdef NS_PERIODIC
-#  define JU_RANGE Jstr,Jend
-#  define JV_RANGE Jstr,Jend
-# else
-#  define JU_RANGE JstrR,JendR
-#  define JV_RANGE Jstr,JendR
-# endif
 !
 !svn $Id: ini_adjust.F 733 2008-09-07 01:56:45Z jcwarner $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2010 The ROMS/TOMS Group       Andrew M. Moore   !
+!  Copyright (c) 2002-2014 The ROMS/TOMS Group       Andrew M. Moore   !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -47,13 +33,17 @@
 # ifdef TLM_CHECK
       PUBLIC :: ini_perturb
 # endif
-# if defined TL_W4DVAR ||  defined W4DVAR || defined W4DVAR_SENSITIVITY
+# if defined TL_W4DVAR          || defined W4DVAR      || \
+     defined W4DVAR_SENSITIVITY || defined ARRAY_MODES || \
+     defined CLIPPING
       PUBLIC :: rp_ini_adjust
 # endif
 # ifdef TLM_CHECK
       PUBLIC :: tl_ini_perturb
 # endif
-# if defined OPT_PERTURBATION || defined FORCING_SV
+# if defined OPT_PERTURBATION || defined FORCING_SV || \
+     defined STOCHASTIC_OPT   || defined HESSIAN_SV || \
+     defined HESSIAN_SO       || defined HESSIAN_FSV
       PUBLIC :: ad_ini_perturb
 # endif
 
@@ -122,6 +112,7 @@
 #   ifdef PROFILE
       CALL wclock_off (ng, iNLM, 7)
 #   endif
+
       RETURN
       END SUBROUTINE ini_adjust
 !
@@ -213,16 +204,17 @@
 !-----------------------------------------------------------------------
 !
 #   ifndef SOLVE3D
-      DO j=JstrR,JendR
-        DO i=Istr,IendR
+      DO j=JstrT,JendT
+        DO i=IstrP,IendT
           ubar(i,j,Lout)=ubar(i,j,Lout)+tl_ubar(i,j,Linp)
 #    ifdef MASKING
           ubar(i,j,Lout)=ubar(i,j,Lout)*umask(i,j)
 #    endif
         END DO
       END DO
-      DO j=Jstr,JendR
-        DO i=IstrR,IendR
+
+      DO j=JstrP,JendT
+        DO i=IstrT,IendT
           vbar(i,j,Lout)=vbar(i,j,Lout)+tl_vbar(i,j,Linp)
 #    ifdef MASKING
           vbar(i,j,Lout)=vbar(i,j,Lout)*vmask(i,j)
@@ -230,8 +222,9 @@
         END DO
       END DO
 #   endif
-      DO j=JstrR,JendR
-        DO i=IstrR,IendR
+
+      DO j=JstrT,JendT
+        DO i=IstrT,IendT
           zeta(i,j,Lout)=zeta(i,j,Lout)+tl_zeta(i,j,Linp)
 #   ifdef MASKING
           zeta(i,j,Lout)=zeta(i,j,Lout)*rmask(i,j)
@@ -247,16 +240,17 @@
 !-----------------------------------------------------------------------
 !
       DO k=1,N(ng)
-        DO j=JstrR,JendR
-          DO i=Istr,IendR
+        DO j=JstrT,JendT
+          DO i=IstrP,IendT
             u(i,j,k,Lout)=u(i,j,k,Lout)+tl_u(i,j,k,Linp)
 #    ifdef MASKING
             u(i,j,k,Lout)=u(i,j,k,Lout)*umask(i,j)
 #    endif
           END DO
         END DO
-        DO j=Jstr,JendR
-          DO i=IstrR,IendR
+
+        DO j=JstrP,JendT
+          DO i=IstrT,IendT
             v(i,j,k,Lout)=v(i,j,k,Lout)+tl_v(i,j,k,Linp)
 #    ifdef MASKING
             v(i,j,k,Lout)=v(i,j,k,Lout)*vmask(i,j)
@@ -264,10 +258,11 @@
           END DO
         END DO
       END DO
+
       DO itrc=1,NT(ng)
         DO k=1,N(ng)
-          DO j=JstrR,JendR
-            DO i=IstrR,IendR
+          DO j=JstrT,JendT
+            DO i=IstrT,IendT
               t(i,j,k,Lout,itrc)=t(i,j,k,Lout,itrc)+                    &
      &                           tl_t(i,j,k,Linp,itrc)
 #    ifdef MASKING
@@ -278,6 +273,7 @@
         END DO
       END DO
 #   endif
+
       RETURN
       END SUBROUTINE ini_adjust_tile
 #  endif
@@ -345,6 +341,7 @@
 #   ifdef PROFILE
       CALL wclock_off (ng, iNLM, 7)
 #   endif
+
       RETURN
       END SUBROUTINE ini_adjust
 !
@@ -436,16 +433,17 @@
 !-----------------------------------------------------------------------
 !
 #   ifndef SOLVE3D
-      DO j=JstrR,JendR
-        DO i=Istr,IendR
+      DO j=JstrT,JendT
+        DO i=IstrP,IendT
           ubar(i,j,Lout)=ubar(i,j,Lout)+ad_ubar(i,j,Linp)
 #    ifdef MASKING
           ubar(i,j,Lout)=ubar(i,j,Lout)*umask(i,j)
 #    endif
         END DO
       END DO
-      DO j=Jstr,JendR
-        DO i=IstrR,IendR
+
+      DO j=JstrP,JendT
+        DO i=IstrT,IendT
           vbar(i,j,Lout)=vbar(i,j,Lout)+ad_vbar(i,j,Linp)
 #    ifdef MASKING
           vbar(i,j,Lout)=vbar(i,j,Lout)*vmask(i,j)
@@ -453,8 +451,9 @@
         END DO
       END DO
 #   endif
-      DO j=JstrR,JendR
-        DO i=IstrR,IendR
+
+      DO j=JstrT,JendT
+        DO i=IstrT,IendT
           zeta(i,j,Lout)=zeta(i,j,Lout)+ad_zeta(i,j,Linp)
 #   ifdef MASKING
           zeta(i,j,Lout)=zeta(i,j,Lout)*rmask(i,j)
@@ -470,16 +469,17 @@
 !-----------------------------------------------------------------------
 !
       DO k=1,N(ng)
-        DO j=JstrR,JendR
-          DO i=Istr,IendR
+        DO j=JstrT,JendT
+          DO i=IstrP,IendT
             u(i,j,k,Lout)=u(i,j,k,Lout)+ad_u(i,j,k,Linp)
 #    ifdef MASKING
             u(i,j,k,Lout)=u(i,j,k,Lout)*umask(i,j)
 #    endif
           END DO
         END DO
-        DO j=Jstr,JendR
-          DO i=IstrR,IendR
+
+        DO j=JstrP,JendT
+          DO i=IstrT,IendT
             v(i,j,k,Lout)=v(i,j,k,Lout)+ad_v(i,j,k,Linp)
 #    ifdef MASKING
             v(i,j,k,Lout)=v(i,j,k,Lout)*vmask(i,j)
@@ -487,10 +487,11 @@
           END DO
         END DO
       END DO
+
       DO itrc=1,NT(ng)
         DO k=1,N(ng)
-          DO j=JstrR,JendR
-            DO i=IstrR,IendR
+          DO j=JstrT,JendT
+            DO i=IstrT,IendT
               t(i,j,k,Lout,itrc)=t(i,j,k,Lout,itrc)+                    &
      &                           ad_t(i,j,k,Linp,itrc)
 #    ifdef MASKING
@@ -501,11 +502,14 @@
         END DO
       END DO
 #   endif
+
       RETURN
       END SUBROUTINE ini_adjust_tile
 #  endif
 
-#  if defined TL_W4DVAR || defined W4DVAR || defined W4DVAR_SENSITIVITY
+#  if defined TL_W4DVAR          || defined W4DVAR      || \
+      defined W4DVAR_SENSITIVITY || defined ARRAY_MODES || \
+      defined CLIPPING
       SUBROUTINE rp_ini_adjust (ng, tile, Linp, Lout)
 !
 !=======================================================================
@@ -578,6 +582,7 @@
 #   ifdef PROFILE
       CALL wclock_off (ng, iRPM, 7)
 #   endif
+
       RETURN
       END SUBROUTINE rp_ini_adjust
 !
@@ -701,16 +706,17 @@
 !-----------------------------------------------------------------------
 !
 #   ifndef SOLVE3D
-      DO j=JstrR,JendR
-        DO i=Istr,IendR
+      DO j=JstrT,JendT
+        DO i=IstrP,IendT
           tl_ubar(i,j,Lout)=ubar(i,j,Linp)+ad_ubar(i,j,Lout)
 #    ifdef MASKING
           tl_ubar(i,j,Lout)=tl_ubar(i,j,Lout)*umask(i,j)
 #    endif
         END DO
       END DO
-      DO j=Jstr,JendR
-        DO i=IstrR,IendR
+
+      DO j=JstrP,JendT
+        DO i=IstrT,IendT
           tl_vbar(i,j,Lout)=vbar(i,j,Linp)+ad_vbar(i,j,Lout)
 #    ifdef MASKING
           tl_vbar(i,j,Lout)=tl_vbar(i,j,Lout)*vmask(i,j)
@@ -718,8 +724,9 @@
         END DO
       END DO
 #   endif
-      DO j=JstrR,JendR
-        DO i=IstrR,IendR
+
+      DO j=JstrT,JendT
+        DO i=IstrT,IendT
           tl_zeta(i,j,Lout)=zeta(i,j,Linp)+ad_zeta(i,j,Lout)
 #   ifdef MASKING
           tl_zeta(i,j,Lout)=tl_zeta(i,j,Lout)*rmask(i,j)
@@ -735,16 +742,17 @@
 !-----------------------------------------------------------------------
 !
       DO k=1,N(ng)
-        DO j=JstrR,JendR
-          DO i=Istr,IendR
+        DO j=JstrT,JendT
+          DO i=IstrP,IendT
             tl_u(i,j,k,Lout)=u(i,j,k,Linp)+ad_u(i,j,k,Lout)
 #    ifdef MASKING
             tl_u(i,j,k,Lout)=tl_u(i,j,k,Lout)*umask(i,j)
 #    endif
           END DO
         END DO
-        DO j=Jstr,JendR
-          DO i=IstrR,IendR
+
+        DO j=JstrP,JendT
+          DO i=IstrT,IendT
             tl_v(i,j,k,Lout)=v(i,j,k,Linp)+ad_v(i,j,k,Lout)
 #    ifdef MASKING
             tl_v(i,j,k,Lout)=tl_v(i,j,k,Lout)*vmask(i,j)
@@ -752,10 +760,11 @@
           END DO
         END DO
       END DO
+
       DO itrc=1,NT(ng)
         DO k=1,N(ng)
-          DO j=JstrR,JendR
-            DO i=IstrR,IendR
+          DO j=JstrT,JendT
+            DO i=IstrT,IendT
               tl_t(i,j,k,Lout,itrc)=t(i,j,k,Linp,itrc)+                 &
      &                              ad_t(i,j,k,Lout,itrc)
 #    ifdef MASKING
@@ -766,6 +775,7 @@
         END DO
       END DO
 #   endif
+
       RETURN
       END SUBROUTINE rp_ini_adjust_tile
 #  endif
@@ -876,6 +886,7 @@
 #  ifdef PROFILE
       CALL wclock_off (ng, iTLM, 7)
 #  endif
+
       RETURN
       END SUBROUTINE load_ADtoTL
 !
@@ -1259,6 +1270,7 @@
 #  ifdef PROFILE
       CALL wclock_off (ng, iADM, 7)
 #  endif
+
       RETURN
       END SUBROUTINE load_TLtoAD
 !
@@ -1457,7 +1469,7 @@
 !  variables.
 !-----------------------------------------------------------------------
 !
-!  Add tangent lnear state tp adjoint state.
+!  Add tangent linear state to adjoint state.
 !
 !    ad_var(Lout) = fac1 * ad_var(Lout) + fac2 * tl_var(Linp)
 !
@@ -1613,6 +1625,7 @@
 #  ifdef PROFILE
       CALL wclock_off (ng, iNLM, 7)
 #  endif
+
       RETURN
       END SUBROUTINE ini_perturb
 !
@@ -1647,11 +1660,9 @@
       USE mod_iounits
       USE mod_scalars
 !
-#  if defined EW_PERIODIC || defined NS_PERIODIC
       USE exchange_2d_mod
-#   ifdef SOLVE3D
+#  ifdef SOLVE3D
       USE exchange_3d_mod
-#   endif
 #  endif
 #  ifdef DISTRIBUTE
       USE mp_exchange_mod, ONLY : mp_exchange2d
@@ -1756,19 +1767,7 @@
 !
 !  Local variable declarations.
 !
-# ifdef DISTRIBUTE
-#  ifdef EW_PERIODIC
-      logical :: EWperiodic=.TRUE.
-#  else
-      logical :: EWperiodic=.FALSE.
-#  endif
-#  ifdef NS_PERIODIC
-      logical :: NSperiodic=.TRUE.
-#  else
-      logical :: NSperiodic=.FALSE.
-#  endif
-# endif
-      integer :: i, j
+      integer :: i, ic, j
 #  ifdef SOLVE3D
       integer :: itrc, k
 #  endif
@@ -1806,22 +1805,22 @@
 !
       p=10.0_r8**REAL(-inner,r8)
       scale=1.0_r8/SQRT(adDotProduct)
-      IF (SOUTH_WEST_CORNER) THEN
+      IF (DOMAIN(ng)%SouthWest_Corner(tile)) THEN
         IF (Master) WRITE (stdout,10)
       END IF
 !
 !  Free-surface.
 !
       IF ((StateVar(outer).eq.0).or.(StateVar(outer).eq.isFsur)) THEN
-        DO j=JstrR,JendR
-          DO i=IstrR,IendR
+        DO j=JstrB,JendB
+          DO i=IstrB,IendB
             zeta(i,j,Lout)=zeta(i,j,Lout)+p*ad_zeta(i,j,Linp)*scale
 #  ifdef MASKING
             zeta(i,j,Lout)=zeta(i,j,Lout)*rmask(i,j)
 #  endif
           END DO
         END DO
-        IF (SOUTH_WEST_TEST) THEN
+        IF (DOMAIN(ng)%SouthWest_Test(tile)) THEN
           IF (Master) THEN
             WRITE (stdout,20) outer, inner,                             &
      &                        TRIM(Vname(1,idSvar(isFsur)))
@@ -1832,15 +1831,15 @@
 !  2D u-momentum component.
 !
       IF ((StateVar(outer).eq.0).or.(StateVar(outer).eq.isUbar)) THEN
-        DO j=JstrR,JendR
-          DO i=Istr,IendR
+        DO j=JstrB,JendB
+          DO i=IstrM,IendB
             ubar(i,j,Lout)=ubar(i,j,Lout)+p*ad_ubar(i,j,Linp)*scale
 #  ifdef MASKING
             ubar(i,j,Lout)=ubar(i,j,Lout)*umask(i,j)
 #  endif
           END DO
         END DO
-        IF (SOUTH_WEST_TEST) THEN
+        IF (DOMAIN(ng)%SouthWest_Test(tile)) THEN
           IF (Master) THEN
             WRITE (stdout,20) outer, inner,                             &
      &                        TRIM(Vname(1,idSvar(isUbar)))
@@ -1851,15 +1850,15 @@
 !  2D v-momentum component.
 !
       IF ((StateVar(outer).eq.0).or.(StateVar(outer).eq.isVbar)) THEN
-        DO j=Jstr,JendR
-          DO i=IstrR,IendR
+        DO j=JstrM,JendB
+          DO i=IstrB,IendB
             vbar(i,j,Lout)=vbar(i,j,Lout)+p*ad_vbar(i,j,Linp)*scale
 #  ifdef MASKING
             vbar(i,j,Lout)=vbar(i,j,Lout)*vmask(i,j)
 #  endif
           END DO
         END DO
-        IF (SOUTH_WEST_TEST) THEN
+        IF (DOMAIN(ng)%SouthWest_Test(tile)) THEN
           IF (Master) THEN
             WRITE (stdout,20) outer, inner,                             &
      &                        TRIM(Vname(1,idSvar(isVbar)))
@@ -1872,8 +1871,8 @@
 !
       IF ((StateVar(outer).eq.0).or.(StateVar(outer).eq.isUvel)) THEN
         DO k=1,N(ng)
-          DO j=JstrR,JendR
-            DO i=Istr,IendR
+          DO j=JstrB,JendB
+            DO i=IstrM,IendB
               u(i,j,k,Lout)=u(i,j,k,Lout)+p*ad_u(i,j,k,Linp)*scale
 #   ifdef MASKING
               u(i,j,k,Lout)=u(i,j,k,Lout)*umask(i,j)
@@ -1881,7 +1880,7 @@
             END DO
           END DO
         END DO
-        IF (SOUTH_WEST_TEST) THEN
+        IF (DOMAIN(ng)%SouthWest_Test(tile)) THEN
           IF (Master) THEN
             WRITE (stdout,20) outer, inner,                             &
      &                        TRIM(Vname(1,idSvar(isUvel)))
@@ -1893,8 +1892,8 @@
 !
       IF ((StateVar(outer).eq.0).or.(StateVar(outer).eq.isVvel)) THEN
         DO k=1,N(ng)
-          DO j=Jstr,JendR
-            DO i=IstrR,IendR
+          DO j=JstrM,JendB
+            DO i=IstrB,IendB
               v(i,j,k,Lout)=v(i,j,k,Lout)+p*ad_v(i,j,k,Linp)*scale
 #   ifdef MASKING
               v(i,j,k,Lout)=v(i,j,k,Lout)*vmask(i,j)
@@ -1902,7 +1901,7 @@
             END DO
           END DO
         END DO
-        IF (SOUTH_WEST_TEST) THEN
+        IF (DOMAIN(ng)%SouthWest_Test(tile)) THEN
           IF (Master) THEN
             WRITE (stdout,20) outer, inner,                             &
      &                        TRIM(Vname(1,idSvar(isVvel)))
@@ -1916,8 +1915,8 @@
         IF ((StateVar(outer).eq.0).or.                                  &
      &      (StateVar(outer).eq.isTvar(itrc))) THEN
           DO k=1,N(ng)
-            DO j=JstrR,JendR
-              DO i=IstrR,IendR
+            DO j=JstrB,JendB
+              DO i=IstrB,IendB
                 t(i,j,k,Lout,itrc)=t(i,j,k,Lout,itrc)+                  &
      &                             p*ad_t(i,j,k,Linp,itrc)*scale
 #   ifdef MASKING
@@ -1926,7 +1925,7 @@
               END DO
             END DO
           END DO
-          IF (SOUTH_WEST_TEST) THEN
+          IF (DOMAIN(ng)%SouthWest_Test(tile)) THEN
             IF (Master) THEN
               WRITE (stdout,20) outer, inner,                           &
      &                          TRIM(Vname(1,idSvar(isTvar(itrc))))
@@ -1958,31 +1957,33 @@
      &                 Lout, Lout, Lout,                                &
      &                 ubar, vbar, zeta)
 #  endif
-#  if defined EW_PERIODIC || defined NS_PERIODIC
 !
-      CALL exchange_r2d_tile (ng, tile,                                 &
-     &                        LBi, UBi, LBj, UBj,                       &
-     &                        zeta(:,:,Lout))
-#   ifndef SOLVE3D
-      CALL exchange_u2d_tile (ng, tile,                                 &
-     &                        LBi, UBi, LBj, UBj,                       &
-     &                        ubar(:,:,Lout))
-      CALL exchange_v2d_tile (ng, tile,                                 &
-     &                        LBi, UBi, LBj, UBj,                       &
-     &                        vbar(:,:,Lout))
-#   endif
+      IF (EWperiodic(ng).or.NSperiodic(ng)) THEN
+        CALL exchange_r2d_tile (ng, tile,                               &
+     &                          LBi, UBi, LBj, UBj,                     &
+     &                          zeta(:,:,Lout))
+#  ifndef SOLVE3D
+        CALL exchange_u2d_tile (ng, tile,                               &
+     &                          LBi, UBi, LBj, UBj,                     &
+     &                          ubar(:,:,Lout))
+        CALL exchange_v2d_tile (ng, tile,                               &
+     &                          LBi, UBi, LBj, UBj,                     &
+     &                          vbar(:,:,Lout))
+      END IF
 #  endif
 
 #  ifdef DISTRIBUTE
 !
       CALL mp_exchange2d (ng, tile, iNLM, 1,                            &
      &                    LBi, UBi, LBj, UBj,                           &
-     &                    NghostPoints, EWperiodic, NSperiodic,         &
+     &                    NghostPoints,                                 &
+     &                    EWperiodic(ng), NSperiodic(ng),               &
      &                    zeta(:,:,Lout))
 #   ifndef SOLVE3D
       CALL mp_exchange2d (ng, tile, iNLM, 2,                            &
      &                    LBi, UBi, LBj, UBj,                           &
-     &                    NghostPoints, EWperiodic, NSperiodic,         &
+     &                    NghostPoints,                                 &
+     &                    EWperiodic(ng), NSperiodic(ng),               &
      &                    ubar(:,:,Lout),                               &
      &                    vbar(:,:,Lout))
 #   endif
@@ -2019,38 +2020,44 @@
      &                 LBi, UBi, LBj, UBj, N(ng),                       &
      &                 IminS, ImaxS, JminS, JmaxS,                      &
      &                 Lout, Lout, v)
+!
+      ic=0
       DO itrc=1,NT(ng)
-        CALL t3dbc_tile (ng, tile, itrc,                                &
+        IF (LtracerCLM(itrc,ng).and.LnudgeTCLM(itrc,ng)) THEN
+          ic=ic+1
+        END IF
+        CALL t3dbc_tile (ng, tile, itrc, ic,                            &
      &                   LBi, UBi, LBj, UBj, N(ng), NT(ng),             &
      &                   IminS, ImaxS, JminS, JmaxS,                    &
      &                   Lout, Lout, t)
       END DO
-
-#   if defined EW_PERIODIC || defined NS_PERIODIC
 !
-      CALL exchange_u3d_tile (ng, tile,                                 &
-     &                        LBi, UBi, LBj, UBj, 1, N(ng),             &
-     &                        u(:,:,:,Lout))
-      CALL exchange_v3d_tile (ng, tile,                                 &
-     &                        LBi, UBi, LBj, UBj, 1, N(ng),             &
-     &                        v(:,:,:,Lout))
-      DO itrc=1,NT(ng)
-        CALL exchange_r3d_tile (ng, tile,                               &
+      IF (EWperiodic(ng).or.NSperiodic(ng)) THEN
+        CALL exchange_u3d_tile (ng, tile,                               &
      &                          LBi, UBi, LBj, UBj, 1, N(ng),           &
-     &                          t(:,:,:,Lout,itrc))
-      END DO
-#   endif
+     &                          u(:,:,:,Lout))
+        CALL exchange_v3d_tile (ng, tile,                               &
+     &                          LBi, UBi, LBj, UBj, 1, N(ng),           &
+     &                          v(:,:,:,Lout))
+        DO itrc=1,NT(ng)
+          CALL exchange_r3d_tile (ng, tile,                             &
+     &                            LBi, UBi, LBj, UBj, 1, N(ng),         &
+     &                            t(:,:,:,Lout,itrc))
+        END DO
+      END IF
 
 #   ifdef DISTRIBUTE
 !
       CALL mp_exchange3d (ng, tile, iNLM, 2,                            &
      &                    LBi, UBi, LBj, UBj, 1, N(ng),                 &
-     &                    NghostPoints, EWperiodic, NSperiodic,         &
+     &                    NghostPoints,                                 &
+     &                    EWperiodic(ng), NSperiodic(ng),               &
      &                    u(:,:,:,Lout),                                &
      &                    v(:,:,:,Lout))
       CALL mp_exchange4d (ng, tile, iNLM, 1,                            &
      &                    LBi, UBi, LBj, UBj, 1, N(ng), 1, NT(ng),      &
-     &                    NghostPoints, EWperiodic, NSperiodic,         &
+     &                    NghostPoints,                                 &
+     &                    EWperiodic(ng), NSperiodic(ng),               &
      &                    t(:,:,:,Lout,:))
 #   endif
 #  endif
@@ -2058,11 +2065,14 @@
  10   FORMAT (/,' Perturbing Nonlinear model Initial Conditions:',/)
  20   FORMAT (' (Outer,Inner) = ','(',i4.4,',',i4.4,')',3x,             &
      &        'Perturbing State Variable: ',a)
+
       RETURN
       END SUBROUTINE ini_perturb_tile
 # endif
 
-# if defined OPT_PERTURBATION || defined FORCING_SV
+# if defined OPT_PERTURBATION || defined FORCING_SV || \
+     defined STOCHASTIC_OPT   || defined HESSIAN_SV || \
+     defined HESSIAN_SO       || defined HESSIAN_FSV
 
       SUBROUTINE ad_ini_perturb (ng, tile, Kinp, Kout, Ninp, Nout)
 !
@@ -2124,6 +2134,7 @@
 #  ifdef PROFILE
       CALL wclock_off (ng, iADM, 7)
 #  endif
+
       RETURN
       END SUBROUTINE ad_ini_perturb
 !
@@ -2235,10 +2246,10 @@
 !-----------------------------------------------------------------------
 
 #  ifdef FULL_GRID
-#   define I_R_RANGE IstrR,IendR
-#   define I_U_RANGE Istr,IendR
-#   define J_R_RANGE JstrR,JendR
-#   define J_V_RANGE Jstr,JendR
+#   define I_R_RANGE IstrT,IendT
+#   define I_U_RANGE IstrP,IendT
+#   define J_R_RANGE JstrT,JendT
+#   define J_V_RANGE JstrP,JendT
 #  else
 #   define I_R_RANGE Istr,Iend
 #   define I_U_RANGE IstrU,Iend
@@ -2426,6 +2437,7 @@
 #  ifdef PROFILE
       CALL wclock_off (ng, iTLM, 7)
 #  endif
+
       RETURN
       END SUBROUTINE tl_ini_perturb
 !
@@ -2462,11 +2474,9 @@
       USE mod_iounits
       USE mod_scalars
 !
-#  if defined EW_PERIODIC || defined NS_PERIODIC
       USE exchange_2d_mod
-#   ifdef SOLVE3D
+#  ifdef SOLVE3D
       USE exchange_3d_mod
-#   endif
 #  endif
 #  ifdef DISTRIBUTE
       USE mp_exchange_mod, ONLY : mp_exchange2d
@@ -2589,19 +2599,7 @@
 !
 !  Local variable declarations.
 !
-# ifdef DISTRIBUTE
-#  ifdef EW_PERIODIC
-      logical :: EWperiodic=.TRUE.
-#  else
-      logical :: EWperiodic=.FALSE.
-#  endif
-#  ifdef NS_PERIODIC
-      logical :: NSperiodic=.TRUE.
-#  else
-      logical :: NSperiodic=.FALSE.
-#  endif
-# endif
-      integer :: i, j
+      integer :: i, ic, j
 #  ifdef SOLVE3D
       integer :: itrc, k
 #  endif
@@ -2639,22 +2637,22 @@
 !
       p=10.0_r8**REAL(-inner,r8)
       scale=1.0_r8/SQRT(adDotProduct)
-      IF (SOUTH_WEST_TEST) THEN
+      IF (DOMAIN(ng)%SouthWest_Test(tile)) THEN
         IF (Master) WRITE (stdout,10)
       END IF
 !
 !  Free-surface.
 !
       IF ((StateVar(outer).eq.0).or.(StateVar(outer).eq.isFsur)) THEN
-        DO j=JstrR,JendR
-          DO i=IstrR,IendR
+        DO j=JstrB,JendB
+          DO i=IstrB,IendB
             tl_zeta(i,j,Lout)=p*ad_zeta(i,j,Linp)*scale
 #  ifdef MASKING
             tl_zeta(i,j,Lout)=tl_zeta(i,j,Lout)*rmask(i,j)
 #  endif
           END DO
         END DO
-        IF (SOUTH_WEST_TEST) THEN
+        IF (DOMAIN(ng)%SouthWest_Test(tile)) THEN
           IF (Master) THEN
             WRITE (stdout,20) outer, inner,                             &
      &                        TRIM(Vname(1,idSvar(isFsur)))
@@ -2665,15 +2663,15 @@
 !  2D u-momentum component.
 !
       IF ((StateVar(outer).eq.0).or.(StateVar(outer).eq.isUbar)) THEN
-        DO j=JstrR,JendR
-          DO i=Istr,IendR
+        DO j=JstrB,JendB
+          DO i=IstrM,IendB
             tl_ubar(i,j,Lout)=p*ad_ubar(i,j,Linp)*scale
 #  ifdef MASKING
             tl_ubar(i,j,Lout)=tl_ubar(i,j,Lout)*umask(i,j)
 #  endif
           END DO
         END DO
-        IF (SOUTH_WEST_TEST) THEN
+        IF (DOMAIN(ng)%SouthWest_Test(tile)) THEN
           IF (Master) THEN
             WRITE (stdout,20) outer, inner,                             &
      &                        TRIM(Vname(1,idSvar(isUbar)))
@@ -2684,15 +2682,15 @@
 !  2D v-momentum component.
 !
       IF ((StateVar(outer).eq.0).or.(StateVar(outer).eq.isVbar)) THEN
-        DO j=Jstr,JendR
-          DO i=IstrR,IendR
+        DO j=JstrM,JendB
+          DO i=IstrB,IendB
             tl_vbar(i,j,Lout)=p*ad_vbar(i,j,Linp)*scale
 #  ifdef MASKING
             tl_vbar(i,j,Lout)=tl_vbar(i,j,Lout)*vmask(i,j)
 #  endif
           END DO
         END DO
-        IF (SOUTH_WEST_TEST) THEN
+        IF (DOMAIN(ng)%SouthWest_Test(tile)) THEN
           IF (Master) THEN
             WRITE (stdout,20) outer, inner,                             &
      &                        TRIM(Vname(1,idSvar(isVbar)))
@@ -2705,8 +2703,8 @@
 !
       IF ((StateVar(outer).eq.0).or.(StateVar(outer).eq.isUvel)) THEN
         DO k=1,N(ng)
-          DO j=JstrR,JendR
-            DO i=Istr,IendR
+          DO j=JstrB,JendB
+            DO i=IstrM,IendB
               tl_u(i,j,k,Lout)=p*ad_u(i,j,k,Linp)*scale
 #   ifdef MASKING
               tl_u(i,j,k,Lout)=tl_u(i,j,k,Lout)*umask(i,j)
@@ -2714,7 +2712,7 @@
             END DO
           END DO
         END DO
-        IF (SOUTH_WEST_TEST) THEN
+        IF (DOMAIN(ng)%SouthWest_Test(tile)) THEN
           IF (Master) THEN
             WRITE (stdout,20) outer, inner,                             &
      &                        TRIM(Vname(1,idSvar(isUvel)))
@@ -2726,8 +2724,8 @@
 !
       IF ((StateVar(outer).eq.0).or.(StateVar(outer).eq.isVvel)) THEN
         DO k=1,N(ng)
-          DO j=Jstr,JendR
-            DO i=IstrR,IendR
+          DO j=JstrM,JendB
+            DO i=IstrB,IendB
               tl_v(i,j,k,Lout)=p*ad_v(i,j,k,Linp)*scale
 #   ifdef MASKING
               tl_v(i,j,k,Lout)=tl_v(i,j,k,Lout)*vmask(i,j)
@@ -2735,7 +2733,7 @@
             END DO
           END DO
         END DO
-        IF (SOUTH_WEST_TEST) THEN
+        IF (DOMAIN(ng)%SouthWest_Test(tile)) THEN
           IF (Master) THEN
             WRITE (stdout,20) outer, inner,                             &
      &                        TRIM(Vname(1,idSvar(isVvel)))
@@ -2749,8 +2747,8 @@
         IF ((StateVar(outer).eq.0).or.                                  &
      &      (StateVar(outer).eq.isTvar(itrc))) THEN
           DO k=1,N(ng)
-            DO j=JstrR,JendR
-              DO i=IstrR,IendR
+            DO j=JstrB,JendB
+              DO i=IstrB,IendB
                 tl_t(i,j,k,Lout,itrc)=p*ad_t(i,j,k,Linp,itrc)*scale
 #   ifdef MASKING
                 tl_t(i,j,k,Lout,itrc)=tl_t(i,j,k,Lout,itrc)*rmask(i,j)
@@ -2758,7 +2756,7 @@
               END DO
             END DO
           END DO
-          IF (SOUTH_WEST_TEST) THEN
+          IF (DOMAIN(ng)%SouthWest_Test(tile)) THEN
             IF (Master) THEN
               WRITE (stdout,20) outer, inner,                           &
      &                          TRIM(Vname(1,idSvar(isTvar(itrc))))
@@ -2792,32 +2790,33 @@
      &                    ubar, vbar, zeta,                             &
      &                    tl_ubar, tl_vbar, tl_zeta)
 #  endif
-
-#  if defined EW_PERIODIC || defined NS_PERIODIC
 !
-      CALL exchange_r2d_tile (ng, tile,                                 &
-     &                        LBi, UBi, LBj, UBj,                       &
-     &                        tl_zeta(:,:,Lout))
-#   ifndef SOLVE3D
-      CALL exchange_u2d_tile (ng, tile,                                 &
-     &                        LBi, UBi, LBj, UBj,                       &
-     &                        tl_ubar(:,:,Lout))
-      CALL exchange_v2d_tile (ng, tile,                                 &
-     &                        LBi, UBi, LBj, UBj,                       &
-     &                        tl_vbar(:,:,Lout))
-#   endif
+      IF (EWperiodic(ng).or.NSperiodic(ng)) THEN
+        CALL exchange_r2d_tile (ng, tile,                               &
+     &                          LBi, UBi, LBj, UBj,                     &
+     &                          tl_zeta(:,:,Lout))
+#  ifndef SOLVE3D
+        CALL exchange_u2d_tile (ng, tile,                               &
+     &                          LBi, UBi, LBj, UBj,                     &
+     &                          tl_ubar(:,:,Lout))
+        CALL exchange_v2d_tile (ng, tile,                               &
+     &                          LBi, UBi, LBj, UBj,                     &
+     &                          tl_vbar(:,:,Lout))
 #  endif
+      END IF
 
 #  ifdef DISTRIBUTE
 !
       CALL mp_exchange2d (ng, tile, iTLM, 1,                            &
      &                    LBi, UBi, LBj, UBj,                           &
-     &                    NghostPoints, EWperiodic, NSperiodic,         &
+     &                    NghostPoints,                                 &
+     &                    EWperiodic(ng), NSperiodic(ng),               &
      &                    tl_zeta(:,:,Lout))
 #   ifndef SOLVE3D
       CALL mp_exchange2d (ng, tile, iTLM, 2,                            &
      &                    LBi, UBi, LBj, UBj,                           &
-     &                    NghostPoints, EWperiodic, NSperiodic,         &
+     &                    NghostPoints,                                 &
+     &                    EWperiodic(ng), NSperiodic(ng),               &
      &                    tl_ubar(:,:,Lout),                            &
      &                    tl_vbar(:,:,Lout))
 #   endif
@@ -2854,38 +2853,44 @@
      &                    LBi, UBi, LBj, UBj, N(ng),                    &
      &                    IminS, ImaxS, JminS, JmaxS,                   &
      &                    Lout, Lout, tl_v)
+!
+      ic=0
       DO itrc=1,NT(ng)
-        CALL tl_t3dbc_tile (ng, tile, itrc,                             &
+        IF (LtracerCLM(itrc,ng).and.LnudgeTCLM(itrc,ng)) THEN
+          ic=ic+1
+        END IF
+        CALL tl_t3dbc_tile (ng, tile, itrc, ic,                         &
      &                      LBi, UBi, LBj, UBj, N(ng), NT(ng),          &
      &                      IminS, ImaxS, JminS, JmaxS,                 &
      &                      Lout, Lout, tl_t)
       END DO
-
-#   if defined EW_PERIODIC || defined NS_PERIODIC
 !
-      CALL exchange_u3d_tile (ng, tile,                                 &
-     &                        LBi, UBi, LBj, UBj, 1, N(ng),             &
-     &                        tl_u(:,:,:,Lout))
-      CALL exchange_v3d_tile (ng, tile,                                 &
-     &                        LBi, UBi, LBj, UBj, 1, N(ng),             &
-     &                        tl_v(:,:,:,Lout))
-      DO itrc=1,NT(ng)
-        CALL exchange_r3d_tile (ng, tile,                               &
+      IF (EWperiodic(ng).or.NSperiodic(ng)) THEN
+        CALL exchange_u3d_tile (ng, tile,                               &
      &                          LBi, UBi, LBj, UBj, 1, N(ng),           &
-     &                          t(:,:,:,Lout,itrc))
-      END DO
-#   endif
+     &                          tl_u(:,:,:,Lout))
+        CALL exchange_v3d_tile (ng, tile,                               &
+     &                          LBi, UBi, LBj, UBj, 1, N(ng),           &
+     &                          tl_v(:,:,:,Lout))
+        DO itrc=1,NT(ng)
+          CALL exchange_r3d_tile (ng, tile,                             &
+     &                            LBi, UBi, LBj, UBj, 1, N(ng),         &
+     &                            t(:,:,:,Lout,itrc))
+        END DO
+      END IF
 
 #   ifdef DISTRIBUTE
 !
       CALL mp_exchange3d (ng, tile, iNLM, 2,                            &
      &                    LBi, UBi, LBj, UBj, 1, N(ng),                 &
-     &                    NghostPoints, EWperiodic, NSperiodic,         &
+     &                    NghostPoints,                                 &
+     &                    EWperiodic(ng), NSperiodic(ng),               &
      &                    tl_u(:,:,:,Lout),                             &
      &                    tl_v(:,:,:,Lout))
       CALL mp_exchange4d (ng, tile, iNLM, 1,                            &
      &                    LBi, UBi, LBj, UBj, 1, N(ng), 1, NT(ng),      &
-     &                    NghostPoints, EWperiodic, NSperiodic,         &
+     &                    NghostPoints,                                 &
+     &                    EWperiodic(ng), NSperiodic(ng),               &
      &                    tl_t(:,:,:,Lout,:))
 #   endif
 #  endif
@@ -2893,12 +2898,9 @@
  10   FORMAT (/,' Perturbing Tangent Linear Initial Conditions:',/)
  20   FORMAT (' (Outer,Inner) = ','(',i4.4,',',i4.4,')',3x,             &
      &        'Perturbing State Variable: ',a)
+
       RETURN
       END SUBROUTINE tl_ini_perturb_tile
 # endif
-# undef IU_RANGE
-# undef IV_RANGE
-# undef JU_RANGE
-# undef JV_RANGE
 #endif
       END MODULE ini_adjust_mod

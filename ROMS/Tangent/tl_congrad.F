@@ -4,9 +4,9 @@
       SUBROUTINE tl_congrad (ng, model, outLoop, innLoop, NinnLoop,     &
      &                       Lcgini)
 !
-!svn $Id: tl_congrad.F 429 2009-12-20 17:30:26Z arango $
+!svn $Id$
 !=================================================== Andrew M. Moore ===
-!  Copyright (c) 2002-2010 The ROMS/TOMS Group      Hernan G. Arango   !
+!  Copyright (c) 2002-2014 The ROMS/TOMS Group      Hernan G. Arango   !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -137,11 +137,22 @@
 
       real(r8) :: dla, zbet
       real(r8) :: tl_dla
+# ifdef MINRES
+      real(r8) :: zsum, zck, zgk
+      real(r8) :: tl_zsum, tl_zck, tl_zgk
+# endif
 
       real(r8), dimension(NinnLoop) :: zu, zgam
       real(r8), dimension(NinnLoop) :: tl_zu, tl_zrhs
       real(r8), dimension(Ndatum(ng)) :: pgrad, zt
       real(r8), dimension(Ndatum(ng)) :: tl_px, tl_pgrad, tl_zt
+# ifdef MINRES
+      real(r8), dimension(innLoop,innLoop) :: ztriT, zLT, zLTt
+      real(r8), dimension(innLoop,innLoop) :: tl_ztriT, tl_zLT
+      real(r8), dimension(innLoop,innLoop) :: tl_zLTt
+      real(r8), dimension(innLoop) :: tau, zwork1, ze, zeref
+      real(r8), dimension(innLoop) :: tl_tau, tl_zwork1, tl_ze, tl_zeref
+# endif
 !
 !=======================================================================
 !  Weak constraint 4DVar conjugate gradient, Lanczos-based algorithm.
@@ -615,12 +626,146 @@
      &                          zcglwk(iobs,innLoop+1,outLoop)*         &
      &                          tl_zgrad0(iobs)
           END DO
+          IF (innLoop.eq.NinnLoop) THEN
+# ifdef MINRES
+!
+!  Use the minimum residual method as described by Paige and Saunders
+!  ("Sparse Indefinite Systems of Linear Equations", 1975, SIAM Journal
+!  on Numerical Analysis, 617-619). Specifically we refer to equations
+!  6.10 and 6.11 of this paper.
+!
+!  Perform a LQ factorization of the tridiagonal matrix.
+!
+          ztriT=0.0_r8
+          tl_ztriT=0.0_r8
+          DO i=1,innLoop
+            ztriT(i,i)=cg_delta(i,outLoop)
+            tl_ztriT(i,i)=tl_cg_delta(i)
+          END DO
+          DO i=1,innLoop-1
+            ztriT(i,i+1)=cg_beta(i+1,outLoop)
+            tl_ztriT(i,i+1)=tl_cg_beta(i+1)
+          END DO
+          DO i=2,innLoop
+            ztriT(i,i-1)=cg_beta(i,outLoop)
+            tl_ztriT(i,i-1)=tl_cg_beta(i)
+          END DO
+!
+!  Note: tl_sqlq also computes the LQ factorization of ztriT.
+!
+          CALL tl_sqlq(innLoop, ztriT, tl_ztriT, tau, tl_tau, zwork1,   &
+     &                 tl_zwork1)
+!
+!   Isolate L=zLT and its transpose.
+!
+          zLT=0.0_r8
+          tl_zLT=0.0_r8
+          zLTt=0.0_r8
+          tl_zLTt=0.0_r8
+          DO i=1,innLoop
+            DO j=1,i
+              zLT(i,j)=ztriT(i,j)
+              tl_zLT(i,j)=tl_ztriT(i,j)
+            END DO
+          END DO
+          DO j=1,innLoop
+            DO i=1,innLoop
+              zLTt(i,j)=zLT(j,i)
+              tl_zLTt(i,j)=tl_zLT(j,i)
+            END DO
+          END DO
+!
+!   Now form ze=beta1*Q*e1.
+!
+          ze=0.0_r8
+          tl_ze=0.0_r8
+          DO i=1,innLoop
+            ze(i)=-cg_QG(i,outLoop)
+            tl_ze(i)=-tl_cg_QG(i)
+          END DO
+          DO i=1,innLoop
+            DO j=1,innLoop
+              zeref(j)=0.0_r8
+              tl_zeref(j)=0.0_r8
+            END DO
+            zeref(i)=1.0_r8
+            tl_zeref(i)=0.0_r8
+            DO j=i+1,innLoop
+              zeref(j)=ztriT(i,j)
+              tl_zeref(j)=tl_ztriT(i,j)
+            END DO
+            zsum=0.0_r8
+            tl_zsum=0.0_r8
+            DO j=1,innLoop
+              zsum=zsum+ze(j)*zeref(j)
+              tl_zsum=tl_zsum+tl_ze(j)*zeref(j)+ze(j)*tl_zeref(j)
+            END DO
+            DO j=1,innLoop
+              ze(j)=ze(j)-tau(i)*zsum*zeref(j)
+              tl_ze(j)=tl_ze(j)-tl_tau(i)*zsum*zeref(j)-                &
+     &                          tau(i)*tl_zsum*zeref(j)-                &
+     &                          tau(i)*zsum*tl_zeref(j)
+            END DO
+          END DO
+!
+!   Now form ze=D*ze (using equation 5.6 and 6.5 also).
+!
+          zgk=SQRT(zLT(innLoop,innLoop)*zLT(innLoop,innLoop)+           &
+     &        cg_beta(innLoop+1,outLoop)*cg_beta(innLoop+1,outLoop))
+          IF (zgk.GT.0.0_r8) THEN
+            tl_zgk=(tl_zLT(innLoop,innLoop)*zLT(innLoop,innLoop)+       &
+     &              tl_cg_beta(innLoop+1)*cg_beta(innLoop+1,outLoop))/  &
+     &             zgk
+          ELSE
+            tl_zgk=0.0_r8
+          ENDIF
+          zck=zLT(innLoop,innLoop)/zgk
+          tl_zck=tl_zLT(innLoop,innLoop)/zgk-tl_zgk*zck/zgk
+          ze(innLoop)=zck*ze(innLoop)
+          tl_ze(innLoop)=tl_zck*ze(innLoop)+zck*tl_ze(innLoop)
+!
+!   Now compute tl_ze=inv(L')*(tl_ze-tl_L'*ze).
+!
+!   First solve for ze=inv(L')*ze.
+!
+          DO j=innLoop,1,-1
+            ze(j)=ze(j)/zLTt(j,j)
+            DO i=1,j-1
+              ze(i)=ze(i)-ze(j)*zLTt(i,j)
+            END DO
+          END DO
+!
+!   Next compute tl_rhs=tl_L'*ze then subtract from tl_ze.
+!
+          DO i=1,innLoop
+            tl_zrhs(i)=0.0_r8
+            DO j=1,innLoop
+              tl_zrhs(i)=tl_zrhs(i)+tl_zLTt(i,j)*ze(j)
+            END DO
+            tl_ze(i)=tl_ze(i)-tl_zrhs(i)
+          END DO
+!
+!   Now solve the linear triangular system.
+!
+          DO j=innLoop,1,-1
+            tl_ze(j)=tl_ze(j)/zLTt(j,j)
+            DO i=1,j-1
+              tl_ze(i)=tl_ze(i)-tl_ze(j)*zLTt(i,j)
+            END DO
+          END DO
+!
+!   Copy the solution ze into zu.
+!
+          DO i=1,innLoop
+            zu(i)=ze(i)
+            tl_zu(i)=tl_ze(i)
+          END DO
+# else
 !
 !  Calculate the new solution based upon the new, orthonormalized
 !  Lanczos vector. First, the tridiagonal system is solved by
 !  decomposition and forward/backward substitution.
 !
-          IF (innLoop.eq.NinnLoop) THEN
             IF (NinnLoop.eq.1) THEN
               zu(1)=-cg_QG(1,outLoop)/cg_delta(1,outLoop)
               tl_zrhs(1)=-tl_cg_QG(1)-tl_cg_delta(1)*zu(1)
@@ -681,6 +826,7 @@
 !>   &                 cg_beta(innLoop+1,outLoop)*                      &
 !>   &                 zcglwk(iobs,innLoop+1,outLoop)*zwork(innLoop,3)
 !>          END DO
+# endif
 
             DO iobs=1,Ndatum(ng)
 !>            px(iobs)=0.0_r8

@@ -1,7 +1,7 @@
 /*
-** svn $Id: nemuro_def.h 429 2009-12-20 17:30:26Z arango $
+** svn $Id$
 *************************************************** Hernan G. Arango ***
-** Copyright (c) 2002-2010 The ROMS/TOMS Group                        **
+** Copyright (c) 2002-2014 The ROMS/TOMS Group                        **
 **   Licensed under a MIT/X style license                             **
 **   See License_ROMS.txt                                             **
 ************************************************************************
@@ -277,6 +277,15 @@
      &               SetParAccess = .FALSE.)
       IF (exit_flag.ne.NoError) RETURN
 
+      Vinfo( 1)='GRmaxSpl'
+      Vinfo( 2)='small zooplankton maximum grazing rate on '//          &
+     &          'large phytoplankton at 0 Celsius'
+      Vinfo( 3)='day-1'
+      status=def_var(ng, model, ncid, varid, NF_TYPE,                   &
+     &               1, (/0/), Aval, Vinfo, ncname,                     &
+     &               SetParAccess = .FALSE.)
+      IF (exit_flag.ne.NoError) RETURN
+
       Vinfo( 1)='GRmaxLps'
       Vinfo( 2)='large zooplankton maximum grazing rate on '//          &
      &          'small phytoplankton at 0 Celsius'
@@ -392,6 +401,15 @@
      &               SetParAccess = .FALSE.)
       IF (exit_flag.ne.NoError) RETURN
 
+      Vinfo( 1)='K_PL2ZS'
+      Vinfo( 2)='small zooplankton squared half-saturation '//          &
+     &          'coefficient for ingestion on large phytoplankton'
+      Vinfo( 3)='millimole_N2 meter-6'
+      status=def_var(ng, model, ncid, varid, NF_TYPE,                   &
+     &               1, (/0/), Aval, Vinfo, ncname,                     &
+     &               SetParAccess = .FALSE.)
+      IF (exit_flag.ne.NoError) RETURN
+
       Vinfo( 1)='K_PS2ZL'
       Vinfo( 2)='large zooplankton squared half-saturation '//          &
      &          'coefficient for ingestion on small phytoplankton'
@@ -451,6 +469,15 @@
       Vinfo( 1)='PS2ZSstar'
       Vinfo( 2)='small zooplankton threshold value for grazing '//      &
      &          'on small phytoplankton'
+      Vinfo( 3)='millimole_N meter-3'
+      status=def_var(ng, model, ncid, varid, NF_TYPE,                   &
+     &               1, (/0/), Aval, Vinfo, ncname,                     &
+     &               SetParAccess = .FALSE.)
+      IF (exit_flag.ne.NoError) RETURN
+
+      Vinfo( 1)='PL2ZSstar'
+      Vinfo( 2)='small zooplankton threshold value for grazing '//      &
+     &          'on large phytoplankton'
       Vinfo( 3)='millimole_N meter-3'
       status=def_var(ng, model, ncid, varid, NF_TYPE,                   &
      &               1, (/0/), Aval, Vinfo, ncname,                     &
@@ -700,3 +727,53 @@
      &               1, (/0/), Aval, Vinfo, ncname,                     &
      &               SetParAccess = .FALSE.)
       IF (exit_flag.ne.NoError) RETURN
+
+#ifdef IRON_LIMIT
+      Vinfo( 1)='T_Fe'
+      Vinfo( 2)='Iron updake timescale'
+      Vinfo( 3)='day'
+      status=def_var(ng, model, ncid, varid, NF_TYPE,                   &
+     &               1, (/0/), Aval, Vinfo, ncname,                     &
+     &               SetParAccess = .FALSE.)
+      IF (exit_flag.ne.NoError) RETURN
+
+      Vinfo( 1)='A_Fe'
+      Vinfo( 2)='Empirical FE:C power'
+      Vinfo( 3)='nondimensional'
+      status=def_var(ng, model, ncid, varid, NF_TYPE,                   &
+     &               1, (/0/), Aval, Vinfo, ncname,                     &
+     &               SetParAccess = .FALSE.)
+      IF (exit_flag.ne.NoError) RETURN
+
+      Vinfo( 1)='B_Fe'
+      Vinfo( 2)='Empirical FE:C coefficient'
+      Vinfo( 3)='meter-1 C'
+      status=def_var(ng, model, ncid, varid, NF_TYPE,                   &
+     &               1, (/0/), Aval, Vinfo, ncname,                     &
+     &               SetParAccess = .FALSE.)
+      IF (exit_flag.ne.NoError) RETURN
+
+      Vinfo( 1)='SK_FeC'
+      Vinfo( 2)='Small phytoplankton Fe:C at F=0.5'
+      Vinfo( 3)='muM-Fe/M-C'
+      status=def_var(ng, model, ncid, varid, NF_TYPE,                   &
+     &               1, (/0/), Aval, Vinfo, ncname,                     &
+     &               SetParAccess = .FALSE.)
+      IF (exit_flag.ne.NoError) RETURN
+
+      Vinfo( 1)='LK_FeC'
+      Vinfo( 2)='Large phytoplankton Fe:C at F=0.5'
+      Vinfo( 3)='muM-Fe/M-C'
+      status=def_var(ng, model, ncid, varid, NF_TYPE,                   &
+     &               1, (/0/), Aval, Vinfo, ncname,                     &
+     &               SetParAccess = .FALSE.)
+      IF (exit_flag.ne.NoError) RETURN
+
+      Vinfo( 1)='FeRR'
+      Vinfo( 2)='Fe remineralization rate'
+      Vinfo( 3)='day-1'
+      status=def_var(ng, model, ncid, varid, NF_TYPE,                   &
+     &               1, (/0/), Aval, Vinfo, ncname,                     &
+     &               SetParAccess = .FALSE.)
+      IF (exit_flag.ne.NoError) RETURN
+#endif

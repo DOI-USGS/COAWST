@@ -1,7 +1,7 @@
 !
-!svn $Id: ecosim_mod.h 429 2009-12-20 17:30:26Z arango $
+!svn $Id$
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2010 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2014 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -295,109 +295,109 @@
 !
 !  Number of biological iterations.
 !
-      integer, dimension(Ngrids) :: BioIter
+      integer, allocatable :: BioIter(:)
 !
 !  Control flags.
 !
-      logical, dimension(Ngrids) :: RtUVR_flag
-      logical, dimension(Ngrids) :: NFIX_flag
-      logical, dimension(Ngrids) :: Regen_flag
+      logical, allocatable :: RtUVR_flag(:)
+      logical, allocatable :: NFIX_flag(:)
+      logical, allocatable :: Regen_flag(:)
 !
 !  Phytoplankton parameters.
 !
-      real(r8), dimension(Nphy,Ngrids) :: HsNO3
-      real(r8), dimension(Nphy,Ngrids) :: HsNH4
-      real(r8), dimension(Nphy,Ngrids) :: HsSiO
-      real(r8), dimension(Nphy,Ngrids) :: HsPO4
-      real(r8), dimension(Nphy,Ngrids) :: HsFe
-      real(r8), dimension(Nphy,Ngrids) :: GtALG_max
-      real(r8), dimension(Nphy,Ngrids) :: PhyTbase
-      real(r8), dimension(Nphy,Ngrids) :: PhyTfac
-      real(r8), dimension(Nphy,Ngrids) :: BET_
-      real(r8), dimension(Nphy,Ngrids) :: maxC2nALG
-      real(r8), dimension(Nphy,Ngrids) :: minC2nALG
-      real(r8), dimension(Nphy,Ngrids) :: C2nALGminABS
-      real(r8), dimension(Nphy,Ngrids) :: maxC2SiALG
-      real(r8), dimension(Nphy,Ngrids) :: minC2SiALG
-      real(r8), dimension(Nphy,Ngrids) :: C2SiALGminABS
-      real(r8), dimension(Nphy,Ngrids) :: maxC2pALG
-      real(r8), dimension(Nphy,Ngrids) :: minC2pALG
-      real(r8), dimension(Nphy,Ngrids) :: C2pALGminABS
-      real(r8), dimension(Nphy,Ngrids) :: maxC2FeALG
-      real(r8), dimension(Nphy,Ngrids) :: minC2FeALG
-      real(r8), dimension(Nphy,Ngrids) :: C2FeALGminABS
-      real(r8), dimension(Nphy,Ngrids) :: qu_yld
-      real(r8), dimension(Nphy,Ngrids) :: E0_comp
-      real(r8), dimension(Nphy,Ngrids) :: E0_inhib
-      real(r8), dimension(Nphy,Ngrids) :: inhib_fac
-      real(r8), dimension(Nphy,Ngrids) :: C2CHL_max
-      real(r8), dimension(Nphy,Ngrids) :: mxC2Cl
-      real(r8), dimension(Nphy,Ngrids) :: b_C2Cl
-      real(r8), dimension(Nphy,Ngrids) :: mxC2Cn
-      real(r8), dimension(Nphy,Ngrids) :: b_C2Cn
-      real(r8), dimension(Nphy,Ngrids) :: mxPacEff
-      real(r8), dimension(Nphy,Ngrids) :: b_PacEff
-      real(r8), dimension(Nphy,Ngrids) :: mxChlB
-      real(r8), dimension(Nphy,Ngrids) :: b_ChlB
-      real(r8), dimension(Nphy,Ngrids) :: mxChlC
-      real(r8), dimension(Nphy,Ngrids) :: b_ChlC
-      real(r8), dimension(Nphy,Ngrids) :: mxPSC
-      real(r8), dimension(Nphy,Ngrids) :: b_PSC
-      real(r8), dimension(Nphy,Ngrids) :: mxPPC
-      real(r8), dimension(Nphy,Ngrids) :: b_PPC
-      real(r8), dimension(Nphy,Ngrids) :: mxLPUb
-      real(r8), dimension(Nphy,Ngrids) :: b_LPUb
-      real(r8), dimension(Nphy,Ngrids) :: mxHPUb
-      real(r8), dimension(Nphy,Ngrids) :: b_HPUb
-      real(r8), dimension(Nphy,Ngrids) :: FecDOC
-      real(r8), dimension(Nphy,Nfec,Ngrids) :: FecPEL
-      real(r8), dimension(Nphy,Ngrids) :: FecCYC
-      real(r8), dimension(Nphy,Ngrids) :: ExALG
-      real(r8), dimension(Nphy,Ngrids) :: WS
-      real(r8), dimension(Nphy,Ngrids) :: HsGRZ
-      real(r8), dimension(Nphy,Ngrids) :: MinRefuge
-      real(r8), dimension(Nphy,Ngrids) :: RefugeDep
-      real(r8), dimension(Nphy,Ngrids) :: Norm_Vol
-      real(r8), dimension(Nphy,Ngrids) :: Norm_Surf
-      real(r8), dimension(Nphy,Ngrids) :: HsDOP
-      real(r8), dimension(Nphy,Ngrids) :: C2pALKPHOS
-      real(r8), dimension(Nphy,Ngrids) :: HsDON
-      real(r8), dimension(Nphy,Ngrids) :: C2nNupDON
+      real(r8), allocatable :: HsNO3(:,:)
+      real(r8), allocatable :: HsNH4(:,:)
+      real(r8), allocatable :: HsSiO(:,:)
+      real(r8), allocatable :: HsPO4(:,:)
+      real(r8), allocatable :: HsFe(:,:)
+      real(r8), allocatable :: GtALG_max(:,:)
+      real(r8), allocatable :: PhyTbase(:,:)
+      real(r8), allocatable :: PhyTfac(:,:)
+      real(r8), allocatable :: BET_(:,:)
+      real(r8), allocatable :: maxC2nALG(:,:)
+      real(r8), allocatable :: minC2nALG(:,:)
+      real(r8), allocatable :: C2nALGminABS(:,:)
+      real(r8), allocatable :: maxC2SiALG(:,:)
+      real(r8), allocatable :: minC2SiALG(:,:)
+      real(r8), allocatable :: C2SiALGminABS(:,:)
+      real(r8), allocatable :: maxC2pALG(:,:)
+      real(r8), allocatable :: minC2pALG(:,:)
+      real(r8), allocatable :: C2pALGminABS(:,:)
+      real(r8), allocatable :: maxC2FeALG(:,:)
+      real(r8), allocatable :: minC2FeALG(:,:)
+      real(r8), allocatable :: C2FeALGminABS(:,:)
+      real(r8), allocatable :: qu_yld(:,:)
+      real(r8), allocatable :: E0_comp(:,:)
+      real(r8), allocatable :: E0_inhib(:,:)
+      real(r8), allocatable :: inhib_fac(:,:)
+      real(r8), allocatable :: C2CHL_max(:,:)
+      real(r8), allocatable :: mxC2Cl(:,:)
+      real(r8), allocatable :: b_C2Cl(:,:)
+      real(r8), allocatable :: mxC2Cn(:,:)
+      real(r8), allocatable :: b_C2Cn(:,:)
+      real(r8), allocatable :: mxPacEff(:,:)
+      real(r8), allocatable :: b_PacEff(:,:)
+      real(r8), allocatable :: mxChlB(:,:)
+      real(r8), allocatable :: b_ChlB(:,:)
+      real(r8), allocatable :: mxChlC(:,:)
+      real(r8), allocatable :: b_ChlC(:,:)
+      real(r8), allocatable :: mxPSC(:,:)
+      real(r8), allocatable :: b_PSC(:,:)
+      real(r8), allocatable :: mxPPC(:,:)
+      real(r8), allocatable :: b_PPC(:,:)
+      real(r8), allocatable :: mxLPUb(:,:)
+      real(r8), allocatable :: b_LPUb(:,:)
+      real(r8), allocatable :: mxHPUb(:,:)
+      real(r8), allocatable :: b_HPUb(:,:)
+      real(r8), allocatable :: FecDOC(:,:)
+      real(r8), allocatable :: FecPEL(:,:,:)
+      real(r8), allocatable :: FecCYC(:,:)
+      real(r8), allocatable :: ExALG(:,:)
+      real(r8), allocatable :: WS(:,:)
+      real(r8), allocatable :: HsGRZ(:,:)
+      real(r8), allocatable :: MinRefuge(:,:)
+      real(r8), allocatable :: RefugeDep(:,:)
+      real(r8), allocatable :: Norm_Vol(:,:)
+      real(r8), allocatable :: Norm_Surf(:,:)
+      real(r8), allocatable :: HsDOP(:,:)
+      real(r8), allocatable :: C2pALKPHOS(:,:)
+      real(r8), allocatable :: HsDON(:,:)
+      real(r8), allocatable :: C2nNupDON(:,:)
 !
 !  Bacteria parameters.
 !
-      real(r8), dimension(Nbac,Ngrids) :: HsDOC_ba
-      real(r8), dimension(Nbac,Ngrids) :: GtBAC_max
-      real(r8), dimension(Nbac,Ngrids) :: BacTbase
-      real(r8), dimension(Nbac,Ngrids) :: BacTfac
-      real(r8), dimension(Ngrids) :: C2nBAC
-      real(r8), dimension(Ngrids) :: C2pBAC
-      real(r8), dimension(Ngrids) :: C2FeBAC
-      real(r8), dimension(Ngrids) :: BacDOC
-      real(r8), dimension(Ngrids) :: BacPEL
-      real(r8), dimension(Ngrids) :: BacCYC
-      real(r8), dimension(Ngrids) :: ExBAC_c
-      real(r8), dimension(Ngrids) :: ExBacC2N
-      real(r8), dimension(Ngrids) :: Bac_Ceff
-      real(r8), dimension(Ngrids) :: RtNIT
-      real(r8), dimension(Ngrids) :: HsNIT
+      real(r8), allocatable :: HsDOC_ba(:,:)
+      real(r8), allocatable :: GtBAC_max(:,:)
+      real(r8), allocatable :: BacTbase(:,:)
+      real(r8), allocatable :: BacTfac(:,:)
+      real(r8), allocatable :: C2nBAC(:)
+      real(r8), allocatable :: C2pBAC(:)
+      real(r8), allocatable :: C2FeBAC(:)
+      real(r8), allocatable :: BacDOC(:)
+      real(r8), allocatable :: BacPEL(:)
+      real(r8), allocatable :: BacCYC(:)
+      real(r8), allocatable :: ExBAC_c(:)
+      real(r8), allocatable :: ExBacC2N(:)
+      real(r8), allocatable :: Bac_Ceff(:)
+      real(r8), allocatable :: RtNIT(:)
+      real(r8), allocatable :: HsNIT(:)
 !
 !  DOM parameters.
 !
-      real(r8), dimension(Ndom,Ngrids) :: cDOCfrac_c
-      real(r8), dimension(Ngrids) :: RtUVR_DIC
-      real(r8), dimension(Ngrids) :: RtUVR_DOC
+      real(r8), allocatable :: cDOCfrac_c(:,:)
+      real(r8), allocatable :: RtUVR_DIC(:)
+      real(r8), allocatable :: RtUVR_DOC(:)
 !
 !  Fecal parameters.
 !
-      real(r8), dimension(Nfec,Ngrids) :: WF
-      real(r8), dimension(Nfec,Ngrids) :: RegTbase
-      real(r8), dimension(Nfec,Ngrids) :: RegTfac
-      real(r8), dimension(Nfec,Ngrids) :: RegCR
-      real(r8), dimension(Nfec,Ngrids) :: RegNR
-      real(r8), dimension(Nfec,Ngrids) :: RegSR
-      real(r8), dimension(Nfec,Ngrids) :: RegPR
-      real(r8), dimension(Nfec,Ngrids) :: RegFR
+      real(r8), allocatable :: WF(:,:)
+      real(r8), allocatable :: RegTbase(:,:)
+      real(r8), allocatable :: RegTfac(:,:)
+      real(r8), allocatable :: RegCR(:,:)
+      real(r8), allocatable :: RegNR(:,:)
+      real(r8), allocatable :: RegSR(:,:)
+      real(r8), allocatable :: RegPR(:,:)
+      real(r8), allocatable :: RegFR(:,:)
 !
 !-----------------------------------------------------------------------
 !  Internal parameters.
@@ -424,23 +424,23 @@
 !
 !  Phytoplankton calculated paramters.
 !
-      real(r8), dimension(Nphy,Ngrids) :: ImaxC2nALG   ! inverse C2nALG
-      real(r8), dimension(Nphy,Ngrids) :: ImaxC2SiALG  ! inverse C2SiALG
-      real(r8), dimension(Nphy,Ngrids) :: ImaxC2pALG   ! inverse C2pALG
-      real(r8), dimension(Nphy,Ngrids) :: ImaxC2FeALG  ! inverse C2FeALG
+      real(r8), allocatable :: ImaxC2nALG(:,:)   ! inverse C2nALG
+      real(r8), allocatable :: ImaxC2SiALG(:,:)  ! inverse C2SiALG
+      real(r8), allocatable :: ImaxC2pALG(:,:)   ! inverse C2pALG
+      real(r8), allocatable :: ImaxC2FeALG(:,:)  ! inverse C2FeALG
 !
 !  Bacteria calculated parameters.
 !
-      real(r8), dimension(Ngrids) :: N2cBAC
-      real(r8), dimension(Ngrids) :: P2cBAC
-      real(r8), dimension(Ngrids) :: Fe2cBAC
-      real(r8), dimension(Nbac,Ngrids) :: HsNH4_ba
-      real(r8), dimension(Nbac,Ngrids) :: HsPO4_ba
-      real(r8), dimension(Nbac,Ngrids) :: HsFe_ba
-      real(r8), dimension(Ngrids) :: R_ExBAC_c
-      real(r8), dimension(Ngrids) :: ExBAC_n
-      real(r8), dimension(Ngrids) :: Frac_ExBAC_n
-      real(r8), dimension(Ngrids) :: I_Bac_Ceff
+      real(r8), allocatable :: N2cBAC(:)
+      real(r8), allocatable :: P2cBAC(:)
+      real(r8), allocatable :: Fe2cBAC(:)
+      real(r8), allocatable :: HsNH4_ba(:,:)
+      real(r8), allocatable :: HsPO4_ba(:,:)
+      real(r8), allocatable :: HsFe_ba(:,:)
+      real(r8), allocatable :: R_ExBAC_c(:)
+      real(r8), allocatable :: ExBAC_n(:)
+      real(r8), allocatable :: Frac_ExBAC_n(:)
+      real(r8), allocatable :: I_Bac_Ceff(:)
 !
 !  Absorption parameters.
 !
@@ -501,8 +501,321 @@
       END DO
 !
 !-----------------------------------------------------------------------
-!  Initialize tracer identification indices.
+!  Allocate various module variables.
 !-----------------------------------------------------------------------
+!
+      IF (.not.allocated(BioIter)) THEN
+        allocate ( BioIter(Ngrids) )
+      END IF
+      IF (.not.allocated(RtUVR_flag)) THEN
+        allocate ( RtUVR_flag(Ngrids) )
+      END IF
+      IF (.not.allocated(NFIX_flag)) THEN
+        allocate ( NFIX_flag(Ngrids) )
+      END IF
+      IF (.not.allocated(Regen_flag)) THEN
+        allocate ( Regen_flag(Ngrids) )
+      END IF
+!
+      IF (.not.allocated(HsNO3)) THEN
+        allocate ( HsNO3(Nphy,Ngrids) )
+      END IF
+      IF (.not.allocated(HsNH4)) THEN
+        allocate ( HsNH4(Nphy,Ngrids) )
+      END IF
+      IF (.not.allocated(HsSiO)) THEN
+        allocate ( HsSiO(Nphy,Ngrids) )
+      END IF
+      IF (.not.allocated(HsPO4)) THEN
+        allocate ( HsPO4(Nphy,Ngrids) )
+      END IF
+      IF (.not.allocated(HsFe)) THEN
+        allocate ( HsFe(Nphy,Ngrids) )
+      END IF
+      IF (.not.allocated(GtALG_max)) THEN
+        allocate ( GtALG_max(Nphy,Ngrids) )
+      END IF
+      IF (.not.allocated(PhyTbase)) THEN
+        allocate ( PhyTbase(Nphy,Ngrids) )
+      END IF
+      IF (.not.allocated(PhyTfac)) THEN
+        allocate ( PhyTfac(Nphy,Ngrids) )
+      END IF
+      IF (.not.allocated(BET_)) THEN
+        allocate ( BET_(Nphy,Ngrids) )
+      END IF
+      IF (.not.allocated(maxC2nALG)) THEN
+        allocate ( maxC2nALG(Nphy,Ngrids) )
+      END IF
+      IF (.not.allocated(minC2nALG)) THEN
+        allocate ( minC2nALG(Nphy,Ngrids) )
+      END IF
+      IF (.not.allocated(C2nALGminABS)) THEN
+        allocate ( C2nALGminABS(Nphy,Ngrids) )
+      END IF
+      IF (.not.allocated(maxC2SiALG)) THEN
+        allocate ( maxC2SiALG(Nphy,Ngrids) )
+      END IF
+      IF (.not.allocated(minC2SiALG)) THEN
+        allocate ( minC2SiALG(Nphy,Ngrids) )
+      END IF
+      IF (.not.allocated(C2SiALGminABS)) THEN
+        allocate ( C2SiALGminABS(Nphy,Ngrids) )
+      END IF
+      IF (.not.allocated(maxC2pALG)) THEN
+        allocate ( maxC2pALG(Nphy,Ngrids) )
+      END IF
+      IF (.not.allocated(minC2pALG)) THEN
+        allocate ( minC2pALG(Nphy,Ngrids) )
+      END IF
+      IF (.not.allocated(C2pALGminABS)) THEN
+        allocate ( C2pALGminABS(Nphy,Ngrids) )
+      END IF
+      IF (.not.allocated(maxC2FeALG)) THEN
+        allocate ( maxC2FeALG(Nphy,Ngrids) )
+      END IF
+      IF (.not.allocated(minC2FeALG)) THEN
+        allocate ( minC2FeALG(Nphy,Ngrids) )
+      END IF
+      IF (.not.allocated(C2FeALGminABS)) THEN
+        allocate ( C2FeALGminABS(Nphy,Ngrids) )
+      END IF
+      IF (.not.allocated(qu_yld)) THEN
+        allocate ( qu_yld(Nphy,Ngrids) )
+      END IF
+      IF (.not.allocated(E0_comp)) THEN
+        allocate ( E0_comp(Nphy,Ngrids) )
+      END IF
+      IF (.not.allocated(E0_inhib)) THEN
+        allocate ( E0_inhib(Nphy,Ngrids) )
+      END IF
+      IF (.not.allocated(inhib_fac)) THEN
+        allocate ( inhib_fac(Nphy,Ngrids) )
+      END IF
+      IF (.not.allocated(C2CHL_max)) THEN
+        allocate ( C2CHL_max(Nphy,Ngrids) )
+      END IF
+      IF (.not.allocated(mxC2Cl)) THEN
+        allocate ( mxC2Cl(Nphy,Ngrids) )
+      END IF
+      IF (.not.allocated(b_C2Cl)) THEN
+        allocate ( b_C2Cl(Nphy,Ngrids) )
+      END IF
+      IF (.not.allocated(mxC2Cn)) THEN
+        allocate ( mxC2Cn(Nphy,Ngrids) )
+      END IF
+      IF (.not.allocated(b_C2Cn)) THEN
+        allocate ( b_C2Cn(Nphy,Ngrids) )
+      END IF
+      IF (.not.allocated(mxPacEff)) THEN
+        allocate ( mxPacEff(Nphy,Ngrids) )
+      END IF
+      IF (.not.allocated(b_PacEff)) THEN
+        allocate ( b_PacEff(Nphy,Ngrids) )
+      END IF
+      IF (.not.allocated(mxChlB)) THEN
+        allocate ( mxChlB(Nphy,Ngrids) )
+      END IF
+      IF (.not.allocated(b_ChlB)) THEN
+        allocate ( b_ChlB(Nphy,Ngrids) )
+      END IF
+      IF (.not.allocated(mxChlC)) THEN
+        allocate ( mxChlC(Nphy,Ngrids) )
+      END IF
+      IF (.not.allocated(b_ChlC)) THEN
+        allocate ( b_ChlC(Nphy,Ngrids) )
+      END IF
+      IF (.not.allocated(mxPSC)) THEN
+        allocate ( mxPSC(Nphy,Ngrids) )
+      END IF
+      IF (.not.allocated(b_PSC)) THEN
+        allocate ( b_PSC(Nphy,Ngrids) )
+      END IF
+      IF (.not.allocated(mxPPC)) THEN
+        allocate ( mxPPC(Nphy,Ngrids) )
+      END IF
+      IF (.not.allocated(b_PPC)) THEN
+        allocate ( b_PPC(Nphy,Ngrids) )
+      END IF
+      IF (.not.allocated(mxLPUb)) THEN
+        allocate ( mxLPUb(Nphy,Ngrids) )
+      END IF
+      IF (.not.allocated(b_LPUb)) THEN
+        allocate ( b_LPUb(Nphy,Ngrids) )
+      END IF
+      IF (.not.allocated(mxHPUb)) THEN
+        allocate ( mxHPUb(Nphy,Ngrids) )
+      END IF
+      IF (.not.allocated(b_HPUb)) THEN
+        allocate ( b_HPUb(Nphy,Ngrids) )
+      END IF
+      IF (.not.allocated(FecDOC)) THEN
+        allocate ( FecDOC(Nphy,Ngrids) )
+      END IF
+      IF (.not.allocated(FecPEL)) THEN
+        allocate ( FecPEL(Nphy,Nfec,Ngrids) )
+      END IF
+      IF (.not.allocated(FecCYC)) THEN
+        allocate ( FecCYC(Nphy,Ngrids) )
+      END IF
+      IF (.not.allocated(ExALG)) THEN
+        allocate ( ExALG(Nphy,Ngrids) )
+      END IF
+      IF (.not.allocated(WS)) THEN
+        allocate ( WS(Nphy,Ngrids) )
+      END IF
+      IF (.not.allocated(HsGRZ)) THEN
+        allocate ( HsGRZ(Nphy,Ngrids) )
+      END IF
+      IF (.not.allocated(MinRefuge)) THEN
+        allocate ( MinRefuge(Nphy,Ngrids) )
+      END IF
+      IF (.not.allocated(RefugeDep)) THEN
+        allocate ( RefugeDep(Nphy,Ngrids) )
+      END IF
+      IF (.not.allocated(Norm_Vol)) THEN
+        allocate ( Norm_Vol(Nphy,Ngrids) )
+      END IF
+      IF (.not.allocated(Norm_Surf)) THEN
+        allocate ( Norm_Surf(Nphy,Ngrids) )
+      END IF
+      IF (.not.allocated(HsDOP)) THEN
+        allocate ( HsDOP(Nphy,Ngrids) )
+      END IF
+      IF (.not.allocated(C2pALKPHOS)) THEN
+        allocate ( C2pALKPHOS(Nphy,Ngrids) )
+      END IF
+      IF (.not.allocated(HsDON)) THEN
+        allocate ( HsDON(Nphy,Ngrids) )
+      END IF
+      IF (.not.allocated(C2nNupDON)) THEN
+        allocate ( C2nNupDON(Nphy,Ngrids) )
+      END IF
+!
+      IF (.not.allocated(HsDOC_ba)) THEN
+        allocate ( HsDOC_ba(Nbac,Ngrids) )
+      END IF
+      IF (.not.allocated(GtBAC_max)) THEN
+        allocate ( GtBAC_max(Nbac,Ngrids) )
+      END IF
+      IF (.not.allocated(BacTbase)) THEN
+        allocate ( BacTbase(Nbac,Ngrids) )
+      END IF
+      IF (.not.allocated(BacTfac)) THEN
+        allocate ( BacTfac(Nbac,Ngrids) )
+      END IF
+      IF (.not.allocated(C2nBAC)) THEN
+        allocate ( C2nBAC(Ngrids) )
+      END IF
+      IF (.not.allocated(C2pBAC)) THEN
+        allocate ( C2pBAC(Ngrids) )
+      END IF
+      IF (.not.allocated(C2FeBAC)) THEN
+        allocate ( C2FeBAC(Ngrids) )
+      END IF
+      IF (.not.allocated(BacDOC)) THEN
+        allocate ( BacDOC(Ngrids) )
+      END IF
+      IF (.not.allocated(BacPEL)) THEN
+        allocate ( BacPEL(Ngrids) )
+      END IF
+      IF (.not.allocated(BacCYC)) THEN
+        allocate ( BacCYC(Ngrids) )
+      END IF
+      IF (.not.allocated(ExBAC_c)) THEN
+        allocate ( ExBAC_c(Ngrids) )
+      END IF
+      IF (.not.allocated(ExBacC2N)) THEN
+        allocate ( ExBacC2N(Ngrids) )
+      END IF
+      IF (.not.allocated(Bac_Ceff)) THEN
+        allocate ( Bac_Ceff(Ngrids) )
+      END IF
+      IF (.not.allocated(RtNIT)) THEN
+        allocate ( RtNIT(Ngrids) )
+      END IF
+      IF (.not.allocated(HsNIT)) THEN
+        allocate ( HsNIT(Ngrids) )
+      END IF
+!
+      IF (.not.allocated(cDOCfrac_c)) THEN
+        allocate ( cDOCfrac_c(Ndom,Ngrids) )
+      END IF
+      IF (.not.allocated(RtUVR_DIC)) THEN
+        allocate ( RtUVR_DIC(Ngrids) )
+      END IF
+      IF (.not.allocated(RtUVR_DOC)) THEN
+        allocate ( RtUVR_DOC(Ngrids) )
+      END IF
+!
+      IF (.not.allocated(WF)) THEN
+        allocate ( WF(Nfec,Ngrids) )
+      END IF
+      IF (.not.allocated(RegTbase)) THEN
+        allocate ( RegTbase(Nfec,Ngrids) )
+      END IF
+      IF (.not.allocated(RegTfac)) THEN
+        allocate ( RegTfac(Nfec,Ngrids) )
+      END IF
+      IF (.not.allocated(RegCR)) THEN
+        allocate ( RegCR(Nfec,Ngrids) )
+      END IF
+      IF (.not.allocated(RegNR)) THEN
+        allocate ( RegNR(Nfec,Ngrids) )
+      END IF
+      IF (.not.allocated(RegSR)) THEN
+        allocate ( RegSR(Nfec,Ngrids) )
+      END IF
+      IF (.not.allocated(RegPR)) THEN
+        allocate ( RegPR(Nfec,Ngrids) )
+      END IF
+      IF (.not.allocated(RegFR)) THEN
+        allocate ( RegFR(Nfec,Ngrids) )
+      END IF
+!
+      IF (.not.allocated(ImaxC2nALG)) THEN
+        allocate ( ImaxC2nALG(Nphy,Ngrids) )
+      END IF
+      IF (.not.allocated(ImaxC2SiALG)) THEN
+        allocate ( ImaxC2SiALG(Nphy,Ngrids) )
+      END IF
+      IF (.not.allocated(ImaxC2pALG)) THEN
+        allocate ( ImaxC2pALG(Nphy,Ngrids) )
+      END IF
+      IF (.not.allocated(ImaxC2FeALG)) THEN
+        allocate ( ImaxC2FeALG(Nphy,Ngrids) )
+      END IF
+!
+      IF (.not.allocated(N2cBAC)) THEN
+        allocate ( N2cBAC(Ngrids) )
+      END IF
+      IF (.not.allocated(P2cBAC)) THEN
+        allocate ( P2cBAC(Ngrids) )
+      END IF
+      IF (.not.allocated(Fe2cBAC)) THEN
+        allocate ( Fe2cBAC(Ngrids) )
+      END IF
+      IF (.not.allocated(HsNH4_ba)) THEN
+        allocate ( HsNH4_ba(Nbac,Ngrids) )
+      END IF
+      IF (.not.allocated(HsPO4_ba)) THEN
+        allocate ( HsPO4_ba(Nbac,Ngrids) )
+      END IF
+      IF (.not.allocated(HsFe_ba)) THEN
+        allocate ( HsFe_ba(Nbac,Ngrids) )
+      END IF
+      IF (.not.allocated(R_ExBAC_c)) THEN
+        allocate ( R_ExBAC_c(Ngrids) )
+      END IF
+      IF (.not.allocated(ExBAC_n)) THEN
+        allocate ( ExBAC_n(Ngrids) )
+      END IF
+      IF (.not.allocated(Frac_ExBAC_n)) THEN
+        allocate ( Frac_ExBAC_n(Ngrids) )
+      END IF
+      IF (.not.allocated(I_Bac_Ceff)) THEN
+        allocate ( I_Bac_Ceff(Ngrids) )
+      END IF
 !
 !  Allocate biological tracer vector.
 !
@@ -510,7 +823,9 @@
         allocate ( idbio(NBT) )
       END IF
 !
-!  Set identification indices.
+!-----------------------------------------------------------------------
+!  Initialize tracer identification indices.
+!-----------------------------------------------------------------------
 !
       ic=NAT+NPT+NCS+NNS
       DO i=1,NBT
@@ -571,7 +886,9 @@
         END DO
       END DO
 !
+!-----------------------------------------------------------------------
 !  Set EcoSim group variable names.
+!-----------------------------------------------------------------------
 !
       DO i=1,Nphy
         PhyName(i)=PhyGroups(PHY(i))

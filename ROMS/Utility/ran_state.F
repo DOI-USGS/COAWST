@@ -1,8 +1,8 @@
         MODULE ran_state
 !
-!svn $Id: ran_state.F 429 2009-12-20 17:30:26Z arango $
+!svn $Id$
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2010 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2014 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -179,8 +179,6 @@
       SUBROUTINE ran_deallocate
 !
 !=======================================================================
-!  Copyright (c) 2006 ROMS/TOMS Group                                  !
-!=======================================================================
 !                                                                      !
 !  User interface to release the workspace used by random number       !
 !  routines.                                                           !
@@ -222,9 +220,9 @@
       ELSE IF (PRESENT(put)) THEN
         IF (lenran.eq.0) RETURN
         ranseeds=RESHAPE(put,SHAPE(ranseeds))
-        WHERE (ranseeds(:,1:3).lt.0)                                     &
+        WHERE (ranseeds(:,1:3).lt.0)                                    &
      &    ranseeds(:,1:3)=NOT(ranseeds(:,1:3))
-        WHERE (ranseeds(:,4:5).eq.0)                                     &
+        WHERE (ranseeds(:,4:5).eq.0)                                    &
      &    ranseeds(:,4:5)=1
           iran0=ranseeds(1,1)
           jran0=ranseeds(1,2)

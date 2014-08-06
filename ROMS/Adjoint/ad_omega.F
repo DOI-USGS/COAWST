@@ -2,9 +2,9 @@
       MODULE ad_omega_mod
 #if defined ADJOINT && defined SOLVE3D
 !
-!svn $Id: ad_omega.F 429 2009-12-20 17:30:26Z arango $
+!svn $Id$
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2010 The ROMS/TOMS Group       Andrew M. Moore   !
+!  Copyright (c) 2002-2014 The ROMS/TOMS Group       Andrew M. Moore   !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -35,11 +35,6 @@
       USE mod_ocean
 # if defined SEDIMENT && defined SED_MORPH
       USE mod_sedbed
-# endif
-# ifdef Q_PSOURCE
-      USE mod_sources
-# endif
-# if defined Q_PSOURCE || (defined SEDIMENT && defined SED_MORPH)
       USE mod_stepping
 # endif
 !
@@ -59,15 +54,6 @@
      &                    IminS, ImaxS, JminS, JmaxS,                   &
 # if defined SEDIMENT_NOT_YET && defined SED_MORPH_NOT_YET
      &                    nstp(ng), nnew(ng),                           &
-# endif
-# ifdef Q_PSOURCE
-     &                    Msrc(ng), Nsrc(ng),                           &
-     &                    SOURCES(ng) % Isrc,                           &
-     &                    SOURCES(ng) % Jsrc,                           &
-     &                    SOURCES(ng) % Dsrc,                           &
-     &                    SOURCES(ng) % Qsrc,                           &
-# endif
-# if defined SEDIMENT_NOT_YET && defined SED_MORPH_NOT_YET
      &                    GRID(ng) % omn,                               &
      &                    SEDBED(ng) % bed_thick,                       &
      &                    SEDBED(ng) % ad_bed_thick,                    &
@@ -92,12 +78,6 @@
      &                          IminS, ImaxS, JminS, JmaxS,             &
 # if defined SEDIMENT_NOT_YET && defined SED_MORPH_NOT_YET
      &                          nstp, nnew,                             &
-# endif
-# ifdef Q_PSOURCE
-     &                          Msrc, Nsrc,                             &
-     &                          Isrc, Jsrc, Dsrc, Qsrc,                 &
-# endif
-# if defined SEDIMENT_NOT_YET && defined SED_MORPH_NOT_YET
      &                          omn,
      &                          bed_thick, ad_bed_thick,                &
 # endif
@@ -108,6 +88,7 @@
 !
       USE mod_param
       USE mod_scalars
+      USE mod_sources
 !
       USE ad_bc_3d_mod, ONLY : ad_bc_w3d_tile
       USE bc_3d_mod, ONLY : bc_w3d_tile
@@ -124,18 +105,8 @@
 # if defined SEDIMENT_NOT_YET && defined SED_MORPH_NOT_YET
       integer, intent(in) :: nstp, nnew
 # endif
-# ifdef Q_PSOURCE
-      integer, intent(in) :: Msrc, Nsrc
-# endif
 !
 # ifdef ASSUMED_SHAPE
-#  ifdef Q_PSOURCE
-      integer, intent(in) :: Isrc(:)
-      integer, intent(in) :: Jsrc(:)
-
-      real(r8), intent(in) :: Dsrc(:)
-      real(r8), intent(in) :: Qsrc(:,:)
-#  endif
       real(r8), intent(in) :: Huon(LBi:,LBj:,:)
       real(r8), intent(in) :: Hvom(LBi:,LBj:,:)
       real(r8), intent(in) :: z_w(LBi:,LBj:,0:)
@@ -153,13 +124,6 @@
 
 # else
 
-#  ifdef Q_PSOURCE
-      integer, intent(in) :: Isrc(Msrc)
-      integer, intent(in) :: Jsrc(Msrc)
-
-      real(r8), intent(in) :: Dsrc(Msrc)
-      real(r8), intent(in) :: Qsrc(Msrc,N(ng))
-#  endif
       real(r8), intent(in) :: Huon(LBi:UBi,LBj:UBj,N(ng))
       real(r8), intent(in) :: Hvom(LBi:UBi,LBj:UBj,N(ng))
       real(r8), intent(in) :: z_w(LBi:UBi,LBj:UBj,0:N(ng))
@@ -178,22 +142,7 @@
 !
 !  Local variable declarations.
 !
-# ifdef DISTRIBUTE
-#  ifdef EW_PERIODIC
-      logical :: EWperiodic=.TRUE.
-#  else
-      logical :: EWperiodic=.FALSE.
-#  endif
-#  ifdef NS_PERIODIC
-      logical :: NSperiodic=.TRUE.
-#  else
-      logical :: NSperiodic=.FALSE.
-#  endif
-# endif
-      integer :: i, j, k
-# ifdef Q_PSOURCE
-      integer :: ii, jj, is
-# endif
+      integer :: i, ii, is, j, jj, k
       real(r8) :: cff
       real(r8) :: ad_cff, adfac
 # if defined SEDIMENT_NOT_YET && defined SED_MORPH_NOT_YET
@@ -222,12 +171,14 @@
 # ifdef DISTRIBUTE
 !>    CALL mp_exchange3d (ng, tile, iTLM, 1,                            &
 !>   &                    LBi, UBi, LBj, UBj, 0, N(ng),                 &
-!>   &                    NghostPoints, EWperiodic, NSperiodic,         &
+!>   &                    NghostPoints,                                 &
+!>   &                    EWperiodic(ng), NSperiodic(ng),               &
 !>   &                    tl_W)
 !>
       CALL ad_mp_exchange3d (ng, tile, iADM, 1,                         &
      &                       LBi, UBi, LBj, UBj, 0, N(ng),              &
-     &                       NghostPoints, EWperiodic, NSperiodic,      &
+     &                       NghostPoints,                              &
+     &                       EWperiodic(ng), NSperiodic(ng),            &
      &                       ad_W)
 # endif
 !>    CALL bc_w3d_tile (ng, tile,                                       &
@@ -268,22 +219,23 @@
      &                Hvom(i,j+1,k)-Hvom(i,j,k))
           END DO
         END DO
-# ifdef Q_PSOURCE
 !
-!  Apply mass point sources - Volume influx.
+!  Apply mass point sources (volume vertical influx), if any.
 !
-        DO is=1,Nsrc
-          ii=Isrc(is)
-          jj=Jsrc(is)
-          IF (((IstrR.le.ii).and.(ii.le.IendR)).and.                    &
-     &        ((JstrR.le.jj).and.(jj.le.JendR)).and.                    &
-     &        (j.eq.jj)) THEN
-            DO k=1,N(ng)
-              W(ii,jj,k)=W(ii,jj,k)+Qsrc(is,k)
-            END DO
-          END IF
-        END DO
-# endif
+        IF (LwSrc(ng)) THEN
+          DO is=1,Nsrc(ng)
+            ii=SOURCES(ng)%Isrc(is)
+            jj=SOURCES(ng)%Jsrc(is)
+            IF (((IstrR.le.ii).and.(ii.le.IendR)).and.                  &
+     &          ((JstrR.le.jj).and.(jj.le.JendR)).and.                  &
+     &          (j.eq.jj)) THEN
+              DO k=1,N(ng)
+                W(ii,jj,k)=W(ii,jj,k)+SOURCES(ng)%Qsrc(is,k)
+              END DO
+            END IF
+          END DO
+        END IF
+!
         DO i=Istr,Iend
           wrk(i)=W(i,j,N(ng))/(z_w(i,j,N(ng))-z_w(i,j,0))
         END DO
@@ -325,24 +277,25 @@
           ad_z_w(i,j,N(ng))=ad_z_w(i,j,N(ng))+adfac
           ad_cff=0.0_r8
         END DO
-# ifdef Q_PSOURCE
 !
-!  Apply mass point sources - Volume influx.
+!  Apply mass point sources (volume vertical influx), if any.
 !
-        DO is=1,Nsrc
-          ii=Isrc(is)
-          jj=Jsrc(is)
-          IF (((IstrR.le.ii).and.(ii.le.IendR)).and.                    &
-     &        ((JstrR.le.jj).and.(jj.le.JendR)).and.                    &
-     &        (j.eq.jj)) THEN
-            DO k=1,N(ng)
-!>            tl_W(ii,jj,k)=tl_W(ii,jj,k)+0.0_r8
+        IF (LwSrc(ng)) THEN
+          DO is=1,Nsrc(ng)
+            ii=SOURCES(ng)%Isrc(is)
+            jj=SOURCES(ng)%Jsrc(is)
+            IF (((IstrR.le.ii).and.(ii.le.IendR)).and.                  &
+     &          ((JstrR.le.jj).and.(jj.le.JendR)).and.                  &
+     &          (j.eq.jj)) THEN
+              DO k=1,N(ng)
+!>              tl_W(ii,jj,k)=tl_W(ii,jj,k)+0.0_r8
 !>
-!!            ad_W(ii,jj,k)=ad_W(ii,jj,k)+0.0_r8
-            END DO
-          END IF
-        END DO
-# endif
+!!              ad_W(ii,jj,k)=ad_W(ii,jj,k)+0.0_r8
+              END DO
+            END IF
+          END DO
+        END IF
+!
 !>      DO k=1,N(ng)
 !>
         DO k=N(ng),1,-1
@@ -405,7 +358,8 @@
 # ifdef DISTRIBUTE
       CALL mp_exchange3d (ng, tile, iADM, 1,                            &
      &                    LBi, UBi, LBj, UBj, 0, N(ng),                 &
-     &                    NghostPoints, EWperiodic, NSperiodic,         &
+     &                    NghostPoints,                                 &
+     &                    EWperiodic(ng), NSperiodic(ng),               &
      &                    W)
 # endif
 
