@@ -1,0 +1,16 @@
+
+
+% for useast to car6
+% me had : Istr=411; Iend=549; Jstr=210; Jend=259;    % car_grd6 from useast
+F=coarse2fine('USeast_grd19.nc','Car_nest5.nc',5,411,549,210,259);
+Gnames={'USeast_grd19.nc','Car_nest5.nc'}
+[S,G]=contact(Gnames,'USeast_Car_contact.nc');
+
+%for inlet test refined
+% me had :  Istr=24; Iend=54; Jstr=40; Jend=56; 
+F=coarse2fine('inlet_test_grid.nc','inlet_test_grid_ref5.nc',5,24,54,40,56);
+Gnames={'inlet_test_grid.nc','inlet_test_grid_ref5.nc'}
+[S,G]=contact(Gnames,'inlet_test_contact_ref5.nc');
+
+i did this with mods to C:\work\matlab\rutgers_roms\grid\get_roms_grid
+
