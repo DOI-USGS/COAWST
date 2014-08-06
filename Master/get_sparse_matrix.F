@@ -141,7 +141,7 @@
       total(1)=1
       status=nf90_get_var(ncid, varid, sparse_weights, start, total)
 !
-! Get the destination grid mask
+! Get the source grid mask
 !
       status=nf90_inq_varid(ncSPSid,'dst_grid_imask', varid)
       IF (status.ne.nf90_noerr) THEN

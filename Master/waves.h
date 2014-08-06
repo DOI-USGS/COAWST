@@ -19,8 +19,6 @@
       integer :: ng, MyError, MyRank, exit_flag
       integer, parameter :: stdout = 6
       integer, parameter :: NoError = 0
-
-      real(s4) :: cff
 !
       exit_flag=0
 #ifdef DISTRIBUTE
@@ -50,13 +48,12 @@
 # endif
 #endif
 
-      cff=1.0
       IF (exit_flag.eq.NoError) THEN
-        CALL SWAN_driver_init (MPI_COMM_WORLD, cff)
+        CALL SWAN_driver_init (MPI_COMM_WORLD)
       END IF
 
       IF (exit_flag.eq.NoError) THEN
-        CALL SWAN_driver_run (cff)
+        CALL SWAN_driver_run
       END IF
 
       CALL SWAN_driver_finalize

@@ -5,7 +5,7 @@
 !
 !svn $Id: roms_export.F 429 2009-12-20 17:30:26Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2010 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2014 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -115,73 +115,38 @@
 !  U-type variables.
 !
       ELSE IF (gtype.eq.u2dvar) THEN
-#  ifdef REFINED_GRID
-        DO j=JstrT,JendT
-          DO i=IstrTU+1,IendTU
-            Awork(i,j)=0.5_r8*(InpField(i  ,j)+                         &
-     &                         InpField(i+1,j))
-          END DO
-        END DO
-        IF (WESTERN_EDGE) THEN
-          DO j=JstrT,JendT
-            Awork(IstrT,j)=Awork(IstrT+1,j)
-          END DO
-        END IF
-        IF (EASTERN_EDGE) THEN
-          DO j=JstrT,JendT
-            Awork(IendT,j)=Awork(IendT-1,j)
-          END DO
-        END IF
-        IF ((SOUTHERN_EDGE).and.(WESTERN_EDGE)) THEN
-!          Awork(Istr-1,Jstr-1)=0.5_r8*(Awork(Istr  ,Jstr-1)+            &
-!     &                                 Awork(Istr-1,Jstr  ))
-        END IF
-        IF ((SOUTHERN_EDGE).and.(EASTERN_EDGE)) THEN
-!          Awork(Iend+1,Jstr-1)=0.5_r8*(Awork(Iend  ,Jstr-1)+            &
-!     &                                 Awork(Iend+1,Jstr  ))
-        END IF
-        IF ((NORTHERN_EDGE).and.(WESTERN_EDGE)) THEN
-!          Awork(Istr-1,Jend+1)=0.5_r8*(Awork(Istr-1,Jend  )+            &
-!     &                                 Awork(Istr  ,Jend+1))
-        END IF
-        IF ((NORTHERN_EDGE).and.(EASTERN_EDGE)) THEN
-!          Awork(Iend+1,Jend+1)=0.5_r8*(Awork(Iend+1,Jend  )+            &
-!     &                                 Awork(Iend  ,Jend+1))
-        END IF
-#  else
         DO j=JstrR,JendR
           DO i=Istr,Iend
             Awork(i,j)=0.5_r8*(InpField(i  ,j)+                         &
      &                         InpField(i+1,j))
           END DO
         END DO
-        IF (WESTERN_EDGE) THEN
+        IF (DOMAIN(ng)%Western_Edge(tile)) THEN
           DO j=Jstr,Jend
             Awork(Istr-1,j)=Awork(Istr,j)
           END DO
         END IF
-        IF (EASTERN_EDGE) THEN
+        IF (DOMAIN(ng)%Eastern_Edge(tile)) THEN
           DO j=Jstr,Jend
             Awork(Iend+1,j)=Awork(Iend,j)
           END DO
         END IF
-        IF ((SOUTHERN_EDGE).and.(WESTERN_EDGE)) THEN
+        IF (DOMAIN(ng)%SouthWest_Corner(tile)) THEN
           Awork(Istr-1,Jstr-1)=0.5_r8*(Awork(Istr  ,Jstr-1)+            &
      &                                 Awork(Istr-1,Jstr  ))
         END IF
-        IF ((SOUTHERN_EDGE).and.(EASTERN_EDGE)) THEN
+        IF (DOMAIN(ng)%SouthEast_Corner(tile)) THEN
           Awork(Iend+1,Jstr-1)=0.5_r8*(Awork(Iend  ,Jstr-1)+            &
      &                                 Awork(Iend+1,Jstr  ))
         END IF
-        IF ((NORTHERN_EDGE).and.(WESTERN_EDGE)) THEN
+        IF (DOMAIN(ng)%NorthWest_Corner(tile)) THEN
           Awork(Istr-1,Jend+1)=0.5_r8*(Awork(Istr-1,Jend  )+            &
      &                                 Awork(Istr  ,Jend+1))
         END IF
-        IF ((NORTHERN_EDGE).and.(EASTERN_EDGE)) THEN
+        IF (DOMAIN(ng)%NorthEast_Corner(tile)) THEN
           Awork(Iend+1,Jend+1)=0.5_r8*(Awork(Iend+1,Jend  )+            &
      &                                 Awork(Iend  ,Jend+1))
         END IF
-#  endif
 !
 !  Pack into export vector.
 !
@@ -198,73 +163,38 @@
 !  V-type variables.
 !
       ELSE IF (gtype.eq.v2dvar) THEN
-#  ifdef REFINED_GRID
-        DO j=JstrTV+1,JendTV
-          DO i=IstrT,IendT
-            Awork(i,j)=0.5_r8*(InpField(i,j  )+                         &
-     &                         InpField(i,j+1))
-          END DO
-        END DO
-        IF (NORTHERN_EDGE) THEN
-          DO i=IstrT,IendT
-            Awork(i,JendT)=Awork(i,JendT-1)
-          END DO
-        END IF
-        IF (SOUTHERN_EDGE) THEN
-          DO i=IstrT,IendT
-            Awork(i,JstrT)=Awork(i,JstrT+1)
-          END DO
-        END IF
-        IF ((SOUTHERN_EDGE).and.(WESTERN_EDGE)) THEN
-!          Awork(Istr-1,Jstr-1)=0.5_r8*(Awork(Istr  ,Jstr-1)+            &
-!     &                                 Awork(Istr-1,Jstr  ))
-        END IF
-        IF ((SOUTHERN_EDGE).and.(EASTERN_EDGE)) THEN
-!          Awork(Iend+1,Jstr-1)=0.5_r8*(Awork(Iend  ,Jstr-1)+            &
-!     &                                 Awork(Iend+1,Jstr  ))
-        END IF
-        IF ((NORTHERN_EDGE).and.(WESTERN_EDGE)) THEN
-!          Awork(Istr-1,Jend+1)=0.5_r8*(Awork(Istr-1,Jend  )+            &
-!     &                                 Awork(Istr  ,Jend+1))
-        END IF
-        IF ((NORTHERN_EDGE).and.(EASTERN_EDGE)) THEN
-!          Awork(Iend+1,Jend+1)=0.5_r8*(Awork(Iend+1,Jend  )+            &
-!     &                                 Awork(Iend  ,Jend+1))
-        END IF
-#  else
         DO j=Jstr,Jend
           DO i=IstrR,IendR
             Awork(i,j)=0.5_r8*(InpField(i,j  )+                         &
      &                         InpField(i,j+1))
           END DO
         END DO
-        IF (NORTHERN_EDGE) THEN
+        IF (DOMAIN(ng)%Northern_Edge(tile)) THEN
           DO i=Istr,Iend
             Awork(i,Jend+1)=Awork(i,Jend)
           END DO
         END IF
-        IF (SOUTHERN_EDGE) THEN
+        IF (DOMAIN(ng)%Southern_Edge(tile)) THEN
           DO i=Istr,Iend
             Awork(i,Jstr-1)=Awork(i,Jstr)
           END DO
         END IF
-        IF ((SOUTHERN_EDGE).and.(WESTERN_EDGE)) THEN
+        IF (DOMAIN(ng)%SouthWest_Corner(tile)) THEN
           Awork(Istr-1,Jstr-1)=0.5_r8*(Awork(Istr  ,Jstr-1)+            &
      &                                 Awork(Istr-1,Jstr  ))
         END IF
-        IF ((SOUTHERN_EDGE).and.(EASTERN_EDGE)) THEN
+        IF (DOMAIN(ng)%SouthEast_Corner(tile)) THEN
           Awork(Iend+1,Jstr-1)=0.5_r8*(Awork(Iend  ,Jstr-1)+            &
      &                                 Awork(Iend+1,Jstr  ))
         END IF
-        IF ((NORTHERN_EDGE).and.(WESTERN_EDGE)) THEN
+        IF (DOMAIN(ng)%NorthWest_Corner(tile)) THEN
           Awork(Istr-1,Jend+1)=0.5_r8*(Awork(Istr-1,Jend  )+            &
      &                                 Awork(Istr  ,Jend+1))
         END IF
-        IF ((NORTHERN_EDGE).and.(EASTERN_EDGE)) THEN
+        IF (DOMAIN(ng)%NorthEast_Corner(tile)) THEN
           Awork(Iend+1,Jend+1)=0.5_r8*(Awork(Iend+1,Jend  )+            &
      &                                 Awork(Iend  ,Jend+1))
         END IF
-#  endif
 !
 !  Pack into export vector.
 !

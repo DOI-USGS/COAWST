@@ -5,7 +5,7 @@
 !
 !svn $Id: roms_import.F 594 2008-04-01 18:11:31Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2010 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2014 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -40,10 +40,9 @@
 !
       USE mod_param
       USE mod_ncparam
+      USE mod_scalars
 !
-# if defined EW_PERIODIC || defined NS_PERIODIC
       USE exchange_2d_mod
-# endif
 # ifdef DISTRIBUTE
       USE distribute_mod,  ONLY : mp_reduce
       USE mp_exchange_mod, ONLY : mp_exchange2d
@@ -80,18 +79,6 @@
 !
 !  Local variable declarations.
 !
-# ifdef DISTRIBUTE
-#  ifdef EW_PERIODIC
-      logical :: EWperiodic=.TRUE.
-#  else
-      logical :: EWperiodic=.FALSE.
-#  endif
-#  ifdef NS_PERIODIC
-      logical :: NSperiodic=.TRUE.
-#  else
-      logical :: NSperiodic=.FALSE.
-#  endif
-# endif
       integer :: i, ij, j
 
       real(r8), parameter :: Large = 1.0E+20_r8
@@ -140,25 +127,26 @@
 !  Exchange boundary information.
 !-----------------------------------------------------------------------
 !
-# if defined EW_PERIODIC || defined NS_PERIODIC
-      IF (gtype.eq.r2dvar) THEN
-        CALL exchange_r2d_tile (ng, tile,                               &
-     &                          LBi, UBi, LBj, UBj,                     &
-     &                          OutField)
-      ELSE IF (gtype.eq.u2dvar) THEN
-        CALL exchange_u2d_tile (ng, tile,                               &
-     &                          LBi, UBi, LBj, UBj,                     &
-     &                          OutField)
-      ELSE IF (gtype.eq.v2dvar) THEN
-        CALL exchange_v2d_tile (ng, tile,                               &
-     &                          LBi, UBi, LBj, UBj,                     &
-     &                          OutField)
+      IF (EWperiodic(ng).or.NSperiodic(ng)) THEN
+        IF (gtype.eq.r2dvar) THEN
+          CALL exchange_r2d_tile (ng, tile,                             &
+     &                            LBi, UBi, LBj, UBj,                   &
+     &                            OutField)
+        ELSE IF (gtype.eq.u2dvar) THEN
+          CALL exchange_u2d_tile (ng, tile,                             &
+     &                            LBi, UBi, LBj, UBj,                   &
+     &                            OutField)
+        ELSE IF (gtype.eq.v2dvar) THEN
+          CALL exchange_v2d_tile (ng, tile,                             &
+     &                            LBi, UBi, LBj, UBj,                   &
+     &                            OutField)
+        END IF
       END IF
-# endif
 # ifdef DISTRIBUTE
       CALL mp_exchange2d (ng, tile, iNLM, 1,                            &
      &                    LBi, UBi, LBj, UBj,                           &
-     &                    NghostPoints, EWperiodic, NSperiodic,         &
+     &                    NghostPoints,                                 &
+     &                    EWperiodic(ng), NSperiodic(ng),               &
      &                    OutField)
 # endif
 

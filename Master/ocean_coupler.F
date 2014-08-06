@@ -5,7 +5,7 @@
 !
 !svn $Id: ocean_coupler.F 755 2008-09-14 19:07:08Z jcwarner $
 !==================================================== John C. Warner ===
-!  Copyright (c) 2002-2010 The ROMS/TOMS Group      Hernan G. Arango   !
+!  Copyright (c) 2002-2014 The ROMS/TOMS Group      Hernan G. Arango   !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -48,8 +48,12 @@
 !
 !  Intercomponent transfer.
 !
-      USE m_Transfer, ONLY: MCT_Send => send
-      USE m_Transfer, ONLY: MCT_Recv => recv
+      USE m_Transfer, ONLY: MCT_send => send
+      USE m_Transfer, ONLY: MCT_recv => recv
+      USE m_Transfer, ONLY: MCT_isend => isend
+      USE m_Transfer, ONLY: MCT_irecv => irecv
+      USE m_Transfer, ONLY: MCT_waitr => waitrecv
+      USE m_Transfer, ONLY: MCT_waits => waitsend
 
 # if defined MCT_INTERP_OC2WV || defined MCT_INTERP_OC2AT
 !
@@ -85,14 +89,19 @@
 !
       PRIVATE
 
+      PUBLIC :: ocean_coupling
 # ifdef SWAN_COUPLING
       PUBLIC :: initialize_ocn2wav_coupling
+      PUBLIC :: initialize_ocn2wav_routers
       PUBLIC :: ocn2wav_coupling
+      PUBLIC :: ocnfwav_coupling
       PUBLIC :: finalize_ocn2wav_coupling
 # endif
 # ifdef WRF_COUPLING
       PUBLIC :: initialize_ocn2atm_coupling
+      PUBLIC :: initialize_ocn2atm_routers
       PUBLIC :: ocn2atm_coupling
+      PUBLIC :: ocnfatm_coupling
       PUBLIC :: finalize_ocn2atm_coupling
 # endif
 !
@@ -100,18 +109,25 @@
 !
       TYPE T_GlobalSegMap_G
         TYPE(GlobalSegMap) :: GSMapROMS       ! GloabalSegMap variables
-# ifdef MCT_INTERP_OC2WV
-        TYPE(GlobalSegMap) :: GSMapSWAN       ! GloabalSegMap variables
-# endif
-# ifdef MCT_INTERP_OC2AT
-        TYPE(GlobalSegMap) :: GSMapWRF        ! GloabalSegMap variables
-# endif
       END TYPE T_GlobalSegMap_G
       TYPE (T_GlobalSegMap_G), ALLOCATABLE :: GlobalSegMap_G(:)
 
+# ifdef MCT_INTERP_OC2WV
+      TYPE T_GSMapInterp_W
+        TYPE(GlobalSegMap) :: GSMapSWAN       ! GloabalSegMap variables
+      END TYPE T_GSMapInterp_W
+      TYPE (T_GSMapInterp_W), ALLOCATABLE :: GSMapInterp_W(:,:)
+# endif
+# ifdef MCT_INTERP_OC2AT
+      TYPE T_GSMapInterp_A
+        TYPE(GlobalSegMap) :: GSMapWRF        ! GloabalSegMap variables
+      END TYPE T_GSMapInterp_A
+      TYPE (T_GSMapInterp_A), ALLOCATABLE :: GSMapInterp_A(:,:)
+# endif
+
       TYPE T_AttrVect_G
 # ifdef SWAN_COUPLING
-        TYPE(AttrVect) :: wav2ocn_AV            ! AttrVect variables
+        TYPE(AttrVect) :: wav2ocn_AV          ! AttrVect variables
         TYPE(AttrVect) :: ocn2wav_AV
 # endif
 # ifdef WRF_COUPLING
@@ -121,36 +137,53 @@
       END TYPE T_AttrVect_G
       TYPE (T_AttrVect_G), ALLOCATABLE :: AttrVect_G(:)
 
-      TYPE T_Router_G
 # ifdef SWAN_COUPLING
-        TYPE(Router)   :: ROMStoSWAN            ! Router variables
+      TYPE T_Router_W
+        TYPE(Router)   :: ROMStoSWAN          ! Router variables
+      END TYPE T_Router_W
+      TYPE (T_Router_W), ALLOCATABLE :: Router_W(:,:)
 # endif
 # ifdef WRF_COUPLING
-        TYPE(Router)   :: ROMStoWRF             ! Router variables
+      TYPE T_Router_A
+        TYPE(Router)   :: ROMStoWRF           ! Router variables
+      END TYPE T_Router_A
+      TYPE (T_Router_A), ALLOCATABLE :: Router_A(:,:)
 # endif
-      END TYPE T_Router_G
-      TYPE (T_Router_G), ALLOCATABLE :: Router_G(:)
 
 # ifdef MCT_INTERP_OC2WV
-      TYPE(AttrVect) :: wav2ocn_AV2           ! AttrVect variables
-      TYPE(AttrVect) :: ocn2wav_AV2 
+      TYPE T_AV2_W
+        TYPE(AttrVect) :: wav2ocn_AV2         ! AttrVect variables
+        TYPE(AttrVect) :: ocn2wav_AV2 
+      END TYPE T_AV2_W
+      TYPE (T_AV2_W), ALLOCATABLE :: AV2_W(:,:)
+
       TYPE(SparseMatrix) :: sMatO             ! Sparse matrix elements
       TYPE(SparseMatrix) :: sMatW             ! Sparse matrix elements
-      TYPE(SparseMatrixPlus) :: W2OMatPlus    ! Sparse matrix plus elements
-      TYPE(SparseMatrixPlus) :: O2WMatPlus    ! Sparse matrix plus elements
+
+      TYPE T_SMPlus_W
+        TYPE(SparseMatrixPlus) :: W2OMatPlus  ! Sparse matrix plus elements
+        TYPE(SparseMatrixPlus) :: O2WMatPlus  ! Sparse matrix plus elements
+      END TYPE T_SMPlus_W
+      TYPE (T_SMPlus_W), ALLOCATABLE :: SMPlus_W(:,:)
 # endif
+
 # ifdef MCT_INTERP_OC2AT
-      TYPE(AttrVect) :: atm2ocn_AV2           ! AttrVect variables
-      TYPE(AttrVect) :: ocn2atm_AV2
+      TYPE T_AV2_A
+        TYPE(AttrVect) :: atm2ocn_AV2           ! AttrVect variables
+        TYPE(AttrVect) :: ocn2atm_AV2
+      END TYPE T_AV2_A
+      TYPE (T_AV2_A), ALLOCATABLE :: AV2_A(:,:)
+
 #  if !defined MCT_INTERP_OC2WV
       TYPE(SparseMatrix) :: sMatO             ! Sparse matrix elements
 #  endif
       TYPE(SparseMatrix) :: sMatA             ! Sparse matrix elements
-      TYPE T_SMPlus_G
-        TYPE(SparseMatrixPlus) :: A2OMatPlus    ! Sparse matrix plus elements
-        TYPE(SparseMatrixPlus) :: O2AMatPlus    ! Sparse matrix plus elements
-      END TYPE T_SMPlus_G
-      TYPE (T_SMPlus_G), ALLOCATABLE :: SMPlus_G(:)
+
+      TYPE T_SMPlus_A
+        TYPE(SparseMatrixPlus) :: A2OMatPlus  ! Sparse matrix plus elements
+        TYPE(SparseMatrixPlus) :: O2AMatPlus  ! Sparse matrix plus elements
+      END TYPE T_SMPlus_A
+      TYPE (T_SMPlus_A), ALLOCATABLE :: SMPlus_A(:,:)
 # endif
 
       CONTAINS
@@ -169,6 +202,118 @@
 # ifdef WRF_COUPLING
 #  include "mct_roms_wrf.h"
 # endif
+
+
+/*
+************************************************************************
+*  Include main driver to determin which grids are performing excahgnes.
+************************************************************************
+*/
+
+      SUBROUTINE ocean_coupling (nl)
+!
+!=======================================================================
+!                                                                      !
+!  Determine which roms grids are going to exchange data to otehr      !
+!  model grids and call those exchange.                                !
+!                                                                      !
+!=======================================================================
+!
+      USE mod_parallel
+      USE mct_coupler_params
+      USE mod_scalars
+!
+!  Imported variable definitions.
+!
+      integer, intent(in) :: nl
+!
+!  Local variable declarations.
+!
+      integer :: MyError, nprocs, tile
+      integer :: ng, iw, ia, ig, nlay, offset
+!
+!-----------------------------------------------------------------------
+!
+# ifdef AIR_OCEAN
+!
+!-----------------------------------------------------------------------
+!  Couple ocean to atmosphere model every nOCN_ATM timesteps.
+!-----------------------------------------------------------------------
+!
+      IF (nl.eq.1) THEN
+        DO ia=1,Natm_grids
+          DO nlay=1,NestLayers
+            DO ig=1,GridsInLayer(nlay)
+              ng=GridNumber(ig,nlay)
+              offset=-1 !nlay-NestLayers
+              IF (MOD(iic(ng)+offset,nOCNFATM(ng,ia)).eq.0) THEN
+                DO tile=first_tile(ng),last_tile(ng),+1
+                  CALL ocnfatm_coupling (ng, ia, tile)
+                END DO
+              END IF
+            END DO
+          END DO
+        END DO
+      END IF
+!
+      IF (nl.eq.1) THEN
+        DO ia=1,Natm_grids
+          DO nlay=1,NestLayers
+            DO ig=1,GridsInLayer(nlay)
+              ng=GridNumber(ig,nlay)
+              offset=-1 !nlay-NestLayers
+              IF (MOD(iic(ng)+offset,nOCN2ATM(ng,ia)).eq.0) THEN
+                DO tile=first_tile(ng),last_tile(ng),+1
+                  CALL ocn2atm_coupling (ng, ia, tile)
+                END DO
+              END IF
+            END DO
+          END DO
+        END DO
+      END IF
+# endif
+# ifdef WAVES_OCEAN
+!
+!-----------------------------------------------------------------------
+!  Exchange fields from ocn to wav every TI_OCN2WAV steps and
+!                  from wav to ocn every TI_WAV2OCN steps.
+!-----------------------------------------------------------------------
+!
+      IF (nl.eq.1) THEN
+        DO iw=1,Nwav_grids
+          DO nlay=1,NestLayers
+            DO ig=1,GridsInLayer(nlay)
+              ng=GridNumber(ig,nlay)
+              offset=nlay-NestLayers
+              IF (MOD(iic(ng)+offset,nOCNFWAV(ng,iw)).eq.0) THEN
+                DO tile=first_tile(ng),last_tile(ng),+1
+                  CALL ocnfwav_coupling (ng, iw, tile)
+                END DO
+              END IF
+            END DO
+          END DO
+        END DO
+      END IF
+!
+      IF (nl.eq.1) THEN
+        DO iw=1,Nwav_grids
+          DO nlay=1,NestLayers
+            DO ig=1,GridsInLayer(nlay)
+              ng=GridNumber(ig,nlay)
+              offset=nlay-NestLayers
+              IF (MOD(iic(ng)+offset,nOCN2WAV(ng,iw)).eq.0) THEN
+                DO tile=first_tile(ng),last_tile(ng),+1
+                  CALL ocn2wav_coupling (ng, iw, tile)
+                END DO
+              END IF
+            END DO
+          END DO
+        END DO
+      END IF
+# endif
+
+      RETURN
+      END SUBROUTINE ocean_coupling
 
 #endif
       END MODULE ocean_coupler_mod

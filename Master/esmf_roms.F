@@ -8,7 +8,7 @@
 !
 !svn $Id: esmf_roms.F 607 2008-04-23 04:02:27Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2010 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2014 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -987,10 +987,10 @@
       IF (CheckError(status, 'ESMF', 'ROMS_SetClock',                   &
      &               'setting stop time')) RETURN
 !
-!  Set time interval, use the minimum value of all nested grids.
+!  Set time interval, use the maximum value of all nested grids.
 !  Currently, only integer type variables are implemented in ESMF.
 !
-      MyTimeStep=INT(MINVAL(dt))
+      MyTimeStep=INT(MAXVAL(dt))
       CALL ESMF_TimeIntervalSet (TimeStep(Iocean),                      &
      &                           s=MyTimeStep,                          &
      &                           rc=status)
@@ -1882,13 +1882,6 @@
       logical :: GetImport = .FALSE.
       logical :: PutExport = .FALSE.
 
-      logical, save :: first = .TRUE.
-
-      integer :: Nsteps, ng
-
-      integer, save, dimension(Ngrids) :: Tstr   ! starting time-step
-      integer, save, dimension(Ngrids) :: Tend   ! ending   time-step
-
       TYPE (ESMF_TIME) :: CheckTime
 !
 !-----------------------------------------------------------------------
@@ -1900,7 +1893,7 @@
 !  by an external time step, TimeStep(0). Also, ROMS start time and
 !  stop time are, repectively, the minimum and maximum values of all
 !  nested grids (see routine ROMS_SetClock above).  Similarly, ROMS
-!  time step is the minimum value of all nested grids.
+!  time step is the maximum value of all nested grids.
 !
       CheckTime=CurrTime(0)-TimeStep(Iocean)
       IF ((StartTime(Iocean) <= CheckTime).and.                         &
@@ -1927,30 +1920,6 @@
         IF (CheckError(status, 'ESMF', 'ROMS_SetRun',                   &
      &                 'getting ROMS current time')) RETURN
 !
-!  Determine starting and ending time-steps.
-!
-        Nsteps=INT((CurrTime(0)-CurrTime(Iocean))/TimeStep(Iocean))
-        IF (First) THEN
-          first=.FALSE.
-          DO ng=1,Ngrids
-            Tstr(ng)=ntstart(ng)
-            Tend(ng)=Tstr(ng)+Nsteps-1
-          END DO
-        ELSE
-          DO ng=1,Ngrids
-            Tstr(ng)=Tend(ng)+1
-            Tend(ng)=Tstr(ng)+Nsteps-1
-          END DO
-        END IF
-!
-!  Add extra time step at stop time to finalize ROMS IO.
-!
-        DO ng=1,Ngrids
-          IF (Tend(ng).eq.ntend(ng)) THEN
-            Tend(ng)=Tend(ng)+1
-          END IF
-        END DO
-!
 !  Advance ROMS internal time clock.
 !
         CALL ESMF_ClockAdvance (TimeClock(Iocean),                      &
@@ -1967,9 +1936,10 @@
      &                   'importing data from coupled models')) RETURN
         END IF
 !
-!  Run ROMS for specified time-steps.
+!  Run ROMS for specified time interval (seconds).
 !
-        CALL ROMS_run (Tstr, Tend)
+        RunInterval=CurrTime(0)-CurrTime(Iocean)
+        CALL ROMS_run (RunInterval)
         IF (CheckError(exit_flag, 'ROMS', 'ROMS_SetRun',                &
      &                 'running ROMS')) THEN
           status=ESMF_FAILURE

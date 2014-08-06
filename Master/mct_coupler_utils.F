@@ -1,7 +1,7 @@
 #include "cppdefs.h"
 
       MODULE mct_coupler_utils_mod
-#ifdef MODEL_COUPLING
+#ifdef COAWST_COUPLING
 
       implicit none
 

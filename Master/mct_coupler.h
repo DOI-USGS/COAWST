@@ -25,7 +25,6 @@
 !=======================================================================
 !
 #if defined ROMS_COUPLING
-!     USE mod_param
       USE mod_iounits
       USE mod_scalars
 #endif
@@ -37,10 +36,8 @@
       USE module_wrf_top, ONLY : wrf_run
       USE module_wrf_top, ONLY : wrf_finalize
 #endif
-!     USE mod_parallel
       USE mct_coupler_params
       USE mod_coupler_iounits
-!     USE read_couplepar_mod
 !
       USE m_MCTWorld, ONLY : MCTWorld_clean => clean
 
@@ -69,14 +66,9 @@
       logical, save :: first
 
       integer :: MyColor, MyCOMM, MyError, MyKey, Nnodes
-      integer :: MyRank
-      integer :: ng, pelast
+      integer :: MyRank, pelast
       integer :: Ocncolor, Wavcolor, Atmcolor
-
-#if defined ROMS_COUPLING
-      integer, dimension(Ngrids) :: Tstr   ! starting ROMS time-step
-      integer, dimension(Ngrids) :: Tend   ! ending   ROMS time-step
-#endif
+      integer :: ng, iw, io, ia, icc, lcm, gcdlcm
 
       real(m4) :: CouplingTime             ! single precision
 !
@@ -95,53 +87,219 @@
       CALL mpi_comm_rank (MPI_COMM_WORLD, MyRank, MyError)
 !
 !  Read in coupled model parameters from standard input.
-!    
-      CALL read_CouplePar
+!
+      CALL read_coawst_par(1)
+!
+!  Now that we know the input file names and locations for each model,
+!  for each model read in the number of grids and the grid time steps.
+!
+      CALL read_model_inputs
+!
+      CALL allocate_coupler_params
+!
+#if defined MCT_INTERP_OC2WV || defined MCT_INTERP_OC2AT || \
+     defined MCT_INTERP_WV2AT
+!
+!  Read coupled model sparse matrix file names from standard input.
+!
+        CALL allocate_coupler_iounits
+	CALL read_coawst_par(2)
+#endif
+!
+!  Compute the mct send and recv instances.
+!
+!  For each model grid, determine the number of steps it should
+!  compute before it sends data out.
+!  For example, nWAV2OCN(1,2) is the number of steps the wave model 
+!  grid 1 should take before it sends data to the ocn grid 2.
+!
+#ifdef WAVES_OCEAN
+      DO iw=1,Nwav_grids
+        DO io=1,Nocn_grids
+          lcm=gcdlcm(dtwav(iw),dtocn(io))
+          IF (MOD(TI_WAV2OCN,REAL(lcm,m8)).eq.0) THEN
+            nWAV2OCN(iw,io)=INT(TI_WAV2OCN/dtwav(iw))
+          ELSE
+            lcm=gcdlcm(TI_WAV2OCN,REAL(lcm,m8))
+            nWAV2OCN(iw,io)=INT(REAL(lcm,m8)/dtwav(iw))
+          END IF
+        END DO
+      END DO
+!
+      DO io=1,Nocn_grids
+        DO iw=1,Nwav_grids
+          lcm=gcdlcm(dtwav(iw),dtocn(io))
+          IF (MOD(TI_OCN2WAV,REAL(lcm,m8)).eq.0) THEN
+            nOCN2WAV(io,iw)=INT(TI_OCN2WAV/dtocn(io))
+          ELSE
+            lcm=gcdlcm(TI_OCN2WAV,REAL(lcm,m8))
+            nOCN2WAV(io,iw)=INT(REAL(lcm,m8)/dtocn(io))
+          END IF
+        END DO
+      END DO
+#endif
+#ifdef AIR_OCEAN
+      DO ia=1,Natm_grids
+        DO io=1,Nocn_grids
+          lcm=gcdlcm(dtatm(ia),dtocn(io))
+          IF (MOD(TI_ATM2OCN,REAL(lcm,m8)).eq.0) THEN
+            nATM2OCN(ia,io)=INT(TI_ATM2OCN/dtatm(ia))
+          ELSE
+            lcm=gcdlcm(TI_ATM2OCN,REAL(lcm,m8))
+            nATM2OCN(ia,io)=INT(REAL(lcm,m8)/dtatm(ia))
+          END IF
+        END DO
+      END DO
+!
+      DO io=1,Nocn_grids
+        DO ia=1,Natm_grids
+          lcm=gcdlcm(dtatm(ia),dtocn(io))
+          IF (MOD(TI_OCN2ATM,REAL(lcm,m8)).eq.0) THEN
+            nOCN2ATM(io,ia)=INT(TI_OCN2ATM/dtocn(io))
+          ELSE
+            lcm=gcdlcm(TI_OCN2ATM,REAL(lcm,m8))
+            nOCN2ATM(io,ia)=INT(REAL(lcm,m8)/dtocn(io))
+          END IF
+        END DO
+      END DO
+#endif
+#ifdef AIR_WAVES
+      DO ia=1,Natm_grids
+        DO iw=1,Nwav_grids
+          lcm=gcdlcm(dtatm(ia),dtwav(iw))
+          IF (MOD(TI_ATM2WAV,REAL(lcm,m8)).eq.0) THEN
+            nATM2WAV(ia,iw)=INT(TI_ATM2WAV/dtatm(ia))
+          ELSE
+            lcm=gcdlcm(TI_ATM2WAV,REAL(lcm,m8))
+            nATM2WAV(ia,iw)=INT(REAL(lcm,m8)/dtatm(ia))
+          END IF
+        END DO
+      END DO
+!
+      DO iw=1,Nwav_grids
+        DO ia=1,Natm_grids
+          lcm=gcdlcm(dtatm(ia),dtwav(iw))
+          IF (MOD(TI_WAV2ATM,REAL(lcm,m8)).eq.0) THEN
+            nWAV2ATM(iw,ia)=INT(TI_WAV2ATM/dtwav(iw))
+          ELSE
+            lcm=gcdlcm(TI_WAV2ATM,REAL(lcm,m8))
+            nWAV2ATM(iw,ia)=INT(REAL(lcm,m8)/dtwav(iw))
+          END IF
+        END DO
+      END DO
+#endif
+!
+!  Similarly, for each model grid, determine the number of steps 
+!  it should compute before it recvs data from somewhere.
+!  For example, nWAVFOCN(1,2) is the number of steps the wave model 
+!  grid 1 should take before it gets data from ocn grid 2.
+!
+#ifdef WAVES_OCEAN
+      DO iw=1,Nwav_grids
+        DO io=1,Nocn_grids
+          lcm=gcdlcm(dtwav(iw),dtocn(io))
+          IF (MOD(TI_OCN2WAV,REAL(lcm,m8)).eq.0) THEN
+            nWAVFOCN(iw,io)=INT(TI_OCN2WAV/dtwav(iw))
+          ELSE
+            lcm=gcdlcm(TI_OCN2WAV,REAL(lcm,m8))
+            nWAVFOCN(iw,io)=INT(REAL(lcm,m8)/dtwav(iw))
+          END IF
+        END DO
+      END DO
+!
+      DO io=1,Nocn_grids
+        DO iw=1,Nwav_grids
+          lcm=gcdlcm(dtwav(iw),dtocn(io))
+          IF (MOD(TI_WAV2OCN,REAL(lcm,m8)).eq.0) THEN
+            nOCNFWAV(io,iw)=INT(TI_WAV2OCN/dtocn(io))
+          ELSE
+            lcm=gcdlcm(TI_WAV2OCN,REAL(lcm,m8))
+            nOCNFWAV(io,iw)=INT(REAL(lcm,m8)/dtocn(io))
+          END IF
+        END DO
+      END DO
+#endif
+#ifdef AIR_OCEAN
+      DO ia=1,Natm_grids
+        DO io=1,Nocn_grids
+          lcm=gcdlcm(dtatm(ia),dtocn(io))
+          IF (MOD(TI_OCN2ATM,REAL(lcm,m8)).eq.0) THEN
+            nATMFOCN(ia,io)=INT(TI_OCN2ATM/dtatm(ia))
+          ELSE
+            lcm=gcdlcm(TI_OCN2ATM,REAL(lcm,m8))
+            nATMFOCN(ia,io)=INT(REAL(lcm,m8)/dtatm(ia))
+          END IF
+        END DO
+      END DO
+!
+      DO io=1,Nocn_grids
+        DO ia=1,Natm_grids
+          lcm=gcdlcm(dtatm(ia),dtocn(io))
+          IF (MOD(TI_ATM2OCN,REAL(lcm,m8)).eq.0) THEN
+            nOCNFATM(io,ia)=INT(TI_ATM2OCN/dtocn(io))
+          ELSE
+            lcm=gcdlcm(TI_ATM2OCN,REAL(lcm,m8))
+            nOCNFATM(io,ia)=INT(REAL(lcm,m8)/dtocn(io))
+          END IF
+        END DO
+      END DO
+#endif
+#ifdef AIR_WAVES
+      DO ia=1,Natm_grids
+        DO iw=1,Nwav_grids
+          lcm=gcdlcm(dtatm(ia),dtwav(iw))
+          IF (MOD(TI_WAV2ATM,REAL(lcm,m8)).eq.0) THEN
+            nATMFWAV(ia,iw)=INT(TI_WAV2ATM/dtatm(ia))
+          ELSE
+            lcm=gcdlcm(TI_WAV2ATM,REAL(lcm,m8))
+            nATMFWAV(ia,iw)=INT(REAL(lcm,m8)/dtatm(ia))
+          END IF
+        END DO
+      END DO
+!
+      DO iw=1,Nwav_grids
+        DO ia=1,Natm_grids
+          lcm=gcdlcm(dtatm(ia),dtwav(iw))
+          IF (MOD(TI_ATM2WAV,REAL(lcm,m8)).eq.0) THEN
+            nWAVFATM(iw,ia)=INT(TI_ATM2WAV/dtwav(iw))
+          ELSE
+            lcm=gcdlcm(TI_ATM2WAV,REAL(lcm,m8))
+            nWAVFATM(iw,ia)=INT(REAL(lcm,m8)/dtwav(iw))
+          END IF
+        END DO
+      END DO
+#endif
 !
 !  Allocate several coupling variables.
 !
-#ifdef REFINED_GRID
-# ifdef ROMS_COUPLING
-      allocate(ocnids(Ngrids))
-# endif
-# ifdef SWAN_COUPLING
-      allocate(wavids(Ngridss))
-# endif
+#ifdef ROMS_COUPLING
+      allocate(ocnids(Nocn_grids))
+#endif
+#ifdef SWAN_COUPLING
+      allocate(wavids(Nwav_grids))
+#endif
+#ifdef WRF_COUPLING
+      allocate(atmids(Natm_grids))
 #endif
 !
       N_mctmodels=0
-      OCNid=0
-      WAVid=0
-      ATMid=0
 #ifdef ROMS_COUPLING
-# ifdef REFINED_GRID
-      DO ng=1,Ngrids
+      DO ng=1,Nocn_grids
         N_mctmodels=N_mctmodels+1
         ocnids(ng)=N_mctmodels
       END DO
-      OCNid=ocnids(1)
-# else
-      N_mctmodels=N_mctmodels+1
-      OCNid=N_mctmodels
-# endif
 #endif
 #ifdef SWAN_COUPLING
-# ifdef REFINED_GRID
-      DO ng=1,Ngridss
+      DO ng=1,Nwav_grids
         N_mctmodels=N_mctmodels+1
         wavids(ng)=N_mctmodels
       END DO
-      WAVid=wavids(1)
-# else
-      N_mctmodels=N_mctmodels+1
-      WAVid=N_mctmodels
-# endif
 #endif
 #ifdef WRF_COUPLING
-!     DO ng=1,max_dom
-      N_mctmodels=N_mctmodels+1
-      ATMid=N_mctmodels
-!     END DO
+      DO ng=1,Natm_grids
+        N_mctmodels=N_mctmodels+1
+        atmids(ng)=N_mctmodels
+     END DO
 #endif
 !
 !  Assign processors to the models.
@@ -219,8 +377,8 @@
 !
 #if defined SWAN_COUPLING
       IF (MyColor.eq.WAVcolor) THEN
-        CALL SWAN_driver_init (MyCOMM, REAL(TI_WAV_OCN))
-        CALL SWAN_driver_run (REAL(TI_WAV_OCN))
+        CALL SWAN_driver_init (MyCOMM)
+        CALL SWAN_driver_run
         CALL SWAN_driver_finalize
       END IF
 #elif defined REFDIF_COUPLING
@@ -233,13 +391,7 @@
 #endif
 #ifdef WRF_COUPLING
       IF (MyColor.eq.ATMcolor) THEN
-        CALL wrf_init (MyCOMM, N_mctmodels,                             &
-#  ifdef REFINED_GRID
-     &                 ocnids,                                          &
-#  endif
-     &                 OCNid, ATMid, WAVid,                             &
-     &                 WRF_CPL_GRID,                                    &
-     &                 REAL(TI_ATM_OCN),REAL(TI_ATM_WAV))
+        CALL wrf_init (MyCOMM)
         CALL wrf_run
         CALL wrf_finalize
       END IF
@@ -251,12 +403,12 @@
         IF (exit_flag.eq.NoError) THEN
           CALL ROMS_initialize (first, MyCOMM)
         END IF
-        DO ng=1,Ngrids
-          Tstr(ng)=ntstart(ng)
-          Tend(ng)=ntend(ng)+1
-        END DO
         IF (exit_flag.eq.NoError) THEN
-          CALL ROMS_run (Tstr, Tend)
+          run_time=0.0_m8
+          DO ng=1,Ngrids
+            run_time=MAX(run_time, dt(ng)*ntimes(ng))
+          END DO
+          CALL ROMS_run (run_time)
         END IF
         CALL ROMS_finalize
 # if defined SWAN_COUPLING || defined REFDIF_COUPLING
@@ -277,5 +429,62 @@
       CALL mpi_finalize (MyError)
 
       STOP
-
       END PROGRAM mct_coupler
+
+      FUNCTION gcdlcm (dtAin, dtBin)
+!
+!=======================================================================
+!                                                                      !
+!  This function computes the greatest common denominator              !
+!  and lowest common multiple.                                         !
+!                                                                      !
+!  On Input:                                                           !
+!     dtA        time step of model A                                  !
+!     dtB        time step of model B                                  !
+!                                                                      !
+!  On Output:                                                          !
+!     lcm        least common multiple                                 !
+!                                                                      !
+!=======================================================================
+!
+      USE mod_coupler_kinds
+!
+      implicit none
+!
+!  Imported variable declarations.
+!
+      real(m8), intent(in) :: dtAin, dtBin
+      integer :: gcdlcm
+!
+!  Local variable declarations.
+!
+      logical :: stayin
+      real(m8) :: r, m, n, p, gcd, dtA, dtB
+!
+!-----------------------------------------------------------------------
+!  Compute greatest common denominator and least common multiplier.
+!-----------------------------------------------------------------------
+      dtA=dtAin
+      dtB=dtBin
+      m=dtA
+      n=dtB
+      IF (dtA.gt.dtB) THEN
+        p=dtA
+        dtA=dtB
+        dtB=p
+      END IF
+      stayin=.true.
+      DO WHILE (stayin)
+        r=mod(dtB,dtA)
+        IF (r.eq.0) THEN
+          gcd=dtA
+          stayin=.false.
+        ELSE
+          dtB=dtA
+          dtA=r
+        END IF
+      END DO
+      gcdlcm=m*n/dtA
+
+      RETURN
+      END FUNCTION gcdlcm

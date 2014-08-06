@@ -1,8 +1,8 @@
 #include "cppdefs.h"
 !!
-!!svn $Id: ocean_control.F 645 2008-07-16 19:26:48Z arango $
+!!svn $Id$
 !!================================================= Hernan G. Arango ===
-!! Copyright (c) 2002-2010 The ROMS/TOMS Group       Andrew M. Moore   !
+!! Copyright (c) 2002-2014 The ROMS/TOMS Group       Andrew M. Moore   !
 !!   Licensed under a MIT/X style license                              !
 !!   See License_ROMS.txt                                              !
 !!======================================================================
@@ -12,10 +12,13 @@
 !!  ad_ocean.h             Adjoint model driver                        !
 !!  adsen_ocean.h          Adjoint sensitivity analysis driver         !
 !!  afte_ocean.h           Adjoint finite time eigenmodes driver       !
-!!  convolution.h          Error covariance convolution driver         !
+!!  array_modes_w4dvar.h   W4DVAR array modes driver                   !
 !!  correlation.h          Error covariance correlation driver         !
 !!  fte_ocean.h            Finite time eigenmodes driver               !
 !!  fsv_ocean.h            Forcing singular vectors driver             !
+!!  hessian_fsv_ocean.h    Hessian forcing singular vectors driver     !
+!!  hessian_op_ocean.h     Hessian singular vectors driver             !
+!!  hessian_so_ocean.h     Hessian stochastic optimals driver          !
 !!  is4dvar_ocean.h        Strong constraint, incremental 4DVar data   !
 !!                           assimilation driver                       !
 !!  nl_ocean.h             Nonlinear model driver (default)            !
@@ -28,6 +31,7 @@
 !!  obs_sen_w4dvar.h       Observations sensitivity driver to the      !
 !!                           W4DVAR  data assimilation system          !
 !!  rp_ocean.h             Representer tangent linear model driver     !
+!!  so_ocean.h             Stochastic optimals driver                  !
 !!  so_semi_ocean.h        Stochastic optimals, semi-norm driver       !
 !!  symmetry.h             Representer matrix, symmetry driver         !
 !!  pert_ocean.h           Tangent linear and adjoint models sanity    !
@@ -52,8 +56,6 @@
 #  include "adsen_ocean.h"
 # elif defined AFT_EIGENMODES
 #  include "afte_ocean.h"
-# elif defined CONVOLUTION
-#  include "convolution.h"
 # elif defined CORRELATION
 #  include "correlation.h"
 # elif defined FT_EIGENMODES
@@ -64,8 +66,18 @@
 #  include "obs_sen_is4dvar.h"
 # elif defined OPT_PERTURBATION
 #  include "op_ocean.h"
+# elif defined HESSIAN_SV
+#  include "hessian_op_ocean.h"
+# elif defined HESSIAN_FSV
+#  include "hessian_fsv_ocean.h"
 # elif defined OPT_OBSERVATIONS
 #  include "optobs_ocean.h"
+# elif defined STOCHASTIC_OPT
+#  ifdef HESSIAN_SO
+#    include "hessian_so_ocean.h"
+#  else
+#    include "so_ocean.h"
+#  endif
 # elif defined SO_SEMI
 #  include "so_semi_ocean.h"
 # elif defined TLM_CHECK
@@ -90,6 +102,8 @@
 #  include "obs_sen_w4dvar.h"
 # elif defined TL_W4DVAR
 #  include "tl_w4dvar_ocean.h"
+# elif defined ARRAY_MODES || defined CLIPPING
+#  include "array_modes_w4dvar.h"
 # else
 #  if defined TLM_DRIVER
 #   include "tl_ocean.h"
@@ -97,7 +111,7 @@
 #   include "rp_ocean.h"
 #  elif defined ADM_DRIVER
 #   include "ad_ocean.h"
-#  elif defined ROMS_MODEL
+#  else
 #   include "nl_ocean.h"
 #  endif
 # endif
