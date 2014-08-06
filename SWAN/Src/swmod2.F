@@ -1070,7 +1070,7 @@
       INTEGER :: Numspecl
       INTEGER :: NBGRPT_last
       INTEGER, SAVE, ALLOCATABLE :: BGRIDPG(:,:)
-# ifdef REFINED_GRID
+# ifdef NESTING
       INTEGER, SAVE, ALLOCATABLE :: Numspec(:)
       INTEGER, SAVE, ALLOCATABLE :: ac2size(:)
       INTEGER, SAVE, ALLOCATABLE :: sstp(:)
@@ -1175,9 +1175,11 @@
 
       MODULE M_COUPLING
         INTEGER, SAVE :: Gridnum
+        INTEGER, SAVE :: NUM_SGRIDS
+        integer, allocatable :: iics(:)
       END MODULE M_COUPLING
 
-# ifdef REFINED_GRID
+# ifdef NESTING
       MODULE M_SREFINED
       TYPE T_REFINED_MOD
         REAL, POINTER :: BOUNDHINDX_G(:)

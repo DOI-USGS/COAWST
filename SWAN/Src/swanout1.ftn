@@ -665,7 +665,7 @@
 
       END SUBROUTINE SWOUTR
 #endif
-#ifdef MODEL_COUPLING
+#ifdef COAWST_COUPLING
 !
 !***********************************************************************
 !     This is a copy of SWOUTP used for coupling.                      *

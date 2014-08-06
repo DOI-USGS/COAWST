@@ -77,7 +77,7 @@
       IF (.not.allocated(sstp)) allocate (sstp(Ngridss))
       IF (.not.allocated(snew)) allocate (snew(Ngridss))
 #endif
-#if !defined MODEL_COUPLING
+#if !defined COAWST_COUPLING
 !
 !  Establish MPI rank.
 !

@@ -1,7 +1,7 @@
 #include "swancpp.h"
       MODULE WAVES_COUPLER_MOD
 
-#if defined MODEL_COUPLING && defined MCT_LIB
+#if defined COAWST_COUPLING && defined MCT_LIB
 !
 !svn $Id: waves_coupler.F 756 2008-09-14 20:18:28Z jcwarner $
 !==================================================== John C. Warner ===

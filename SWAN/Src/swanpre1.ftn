@@ -1162,14 +1162,14 @@
         IF (KEYWIS ('BOT')) THEN
           IGRD = 1
           PSNAME = 'BOTTGRID'
-#ifdef MODEL_COUPLING
+#ifdef COAWST_COUPLING
           CALL SINPGR (IGRD, IGR2, PSNAME, ng)
 #endif
         ELSE IF (KEYWIS ('CUR')) THEN
           IGRD = 2
           IGR2 = 3                                                        10.26
           PSNAME = 'VXGRID  '
-#ifdef MODEL_COUPLING
+#ifdef COAWST_COUPLING
           CALL SINPGR (IGRD, IGR2, PSNAME, ng)
           IGR1 = 2
           IGR2 = 3
@@ -1189,19 +1189,19 @@
         ELSE IF (KEYWIS ('VX')) THEN
           IGRD = 2
           PSNAME = 'VXGRID  '
-#ifdef MODEL_COUPLING
+#ifdef COAWST_COUPLING
           CALL SINPGR (IGRD, IGR2, PSNAME, ng)
 #endif
         ELSE IF (KEYWIS ('VY')) THEN
           IGRD = 3
           PSNAME = 'VYGRID  '
-#ifdef MODEL_COUPLING
+#ifdef COAWST_COUPLING
           CALL SINPGR (IGRD, IGR2, PSNAME, ng)
 #endif
         ELSE IF (KEYWIS ('FR')) THEN
           IGRD = 4
           PSNAME = 'FRICGRID'
-#ifdef MODEL_COUPLING
+#ifdef COAWST_COUPLING
           CALL SINPGR (IGRD, IGR2, PSNAME, ng)
           IGR1   = 4
           VARFR  = .TRUE.
@@ -1216,7 +1216,7 @@
           IGRD = 5
           IGR2 = 6                                                          10.26
           PSNAME = 'WXGRID  '
-#ifdef MODEL_COUPLING
+#ifdef COAWST_COUPLING
           CALL SINPGR (IGRD, IGR2, PSNAME, ng)
           LWINDR = 2                                                        30.10
           IWIND  = LWINDM                                                   30.10
@@ -1248,19 +1248,19 @@
         ELSE IF (KEYWIS ('WX')) THEN
           IGRD = 5
           PSNAME = 'WXGRID  '
-#ifdef MODEL_COUPLING
+#ifdef COAWST_COUPLING
           CALL SINPGR (IGRD, IGR2, PSNAME, ng)
 #endif
         ELSE IF (KEYWIS ('WY')) THEN
           IGRD = 6
           PSNAME = 'WYGRID  '
-#ifdef MODEL_COUPLING
+#ifdef COAWST_COUPLING
           CALL SINPGR (IGRD, IGR2, PSNAME, ng)
 #endif
         ELSE IF (KEYWIS ('WLEV')) THEN                                    20.38
           IGRD = 7
           PSNAME = 'WLEVGRID'
-#ifdef MODEL_COUPLING
+#ifdef COAWST_COUPLING
           CALL SINPGR (IGRD, IGR2, PSNAME, ng)
           IGR1 = 7
           VARWLV = .TRUE.
@@ -1278,7 +1278,7 @@
 !         air-sea temperature difference                                  40.03
           IGRD = 10
           PSNAME = 'ASTDGRID'
-#ifdef MODEL_COUPLING
+#ifdef COAWST_COUPLING
           CALL SINPGR (IGRD, IGR2, PSNAME, ng)
 #endif
         ELSE IF (KEYWIS ('NPLA')) THEN                                    40.55
@@ -1288,12 +1288,12 @@
         ELSE
           IGRD = 1
           PSNAME = 'BOTTGRID'
-#ifdef MODEL_COUPLING
+#ifdef COAWST_COUPLING
           CALL SINPGR (IGRD, IGR2, PSNAME, ng)
 #endif
         ENDIF
 !
-#ifndef MODEL_COUPLING
+#ifndef COAWST_COUPLING
         CALL SINPGR (IGRD, IGR2, PSNAME, ng)                              40.31
 #endif
         IF (STPNOW()) RETURN                                              34.01
@@ -3677,7 +3677,7 @@
       ELSE IF (KEYWIS ('FR')) THEN
         IGR1   = 4
         VARFR  = .TRUE.
-#if !defined MODEL_COUPLING
+#if !defined COAWST_COUPLING
         MCMVAR = MCMVAR + 2                                               40.00
         JFRC2  = MCMVAR - 1                                               40.00
         JFRC3  = MCMVAR                                                   40.00

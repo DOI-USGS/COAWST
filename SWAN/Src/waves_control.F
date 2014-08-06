@@ -19,7 +19,13 @@
 !                                                                      !
 !=======================================================================
 !
+# ifdef COAWST_COUPLING
+      USE mct_coupler_params
+# endif
+      USE M_COUPLING
+
       implicit none
+
 
       PRIVATE
       PUBLIC  :: SWAN_driver_init
@@ -28,7 +34,7 @@
 
       CONTAINS
 
-      SUBROUTINE SWAN_driver_init (MyCOMM, CouplingTime)
+      SUBROUTINE SWAN_driver_init (MyCOMM)
 !
 !=======================================================================
 !                                                                      !
@@ -44,66 +50,89 @@
       USE SWCOMM3
       USE TIMECOMM
       USE M_MPI
-#ifdef REFINED_GRID
+#ifdef COAWST_COUPLING
+      USE WAVES_COUPLER_MOD, ONLY: INITIALIZE_WAV_ROUTERS
+#endif
+#ifdef NESTING
       USE INTERP_SWAN_MOD, ONLY: swan_ref_init
 #endif
 !
 !  Imported variable declarations.
 !
       integer, intent(in) :: MyCOMM
-      real(m4), intent(in)  :: CouplingTime             ! single precision
+!     real(m4), intent(in)  :: CouplingTime             ! single precision
 !
 !  Local variable declarations.
 !
-      integer :: ng, i, MyRank, MyError
+      integer :: ng, i, iw, MyRank, MyError
       integer :: ngp, ngc
-#ifdef REFINED_GRID
-!
-!  Set refined grid parameters.
-!
-      mysparent(1)=1
-      myschild(1)=2
-      DO ng=2,Ngridss
-        mysparent(ng)=ng-1
-        myschild(ng)=ng+1
-      END DO
-      myschild(Ngridss)=Ngridss
-!
-! Allocate some arrays for refinement.
-!
-
-      IF (.not.allocated(Numspec)) allocate (Numspec(Ngridss))
-      IF (.not.allocated(ac2size)) allocate (ac2size(Ngridss))
-      IF (.not.allocated(sstp)) allocate (sstp(Ngridss))
-      IF (.not.allocated(snew)) allocate (snew(Ngridss))
-#endif
-#if !defined MODEL_COUPLING
+      character (len=160) :: tempname
+#if !defined COAWST_COUPLING
 !
 !  Establish MPI rank.
 !
       CALL mpi_comm_rank (MyCOMM, MyRank, MyError)
 !
 !     here we need to get name of wname.
+!     Read the first file to see how many grids there are.
 !
-      DO ng=1,Ngridss
+      IF (MyRank.eq.0) CALL getarg (1,tempname)
+      i=IOnamesize
+      CALL mpi_bcast (tempname, i, MPI_BYTE, 0, MyCOMM, MyError)
+!
+!     go read the first swan grid to get Num_swan grids
+!
+      CALL get_numswan_grids(tempname)
+      call allocate_swan_iounits
+!
+!     Now we have the total number of grids so get any more
+!     input files.
+!
+      DO ng=1,NUM_SGRIDS
         IF (MyRank.eq.0) CALL getarg (ng,Wname(ng))
       END DO
-      i=IOnamesize*ng
+      i=IOnamesize*NUM_SGRIDS
       CALL mpi_bcast (Wname, i, MPI_BYTE, 0, MyCOMM, MyError)
 #endif
+#ifdef NESTING
+!
+!  Set refined grid parameters.
+!
+      mysparent(1)=1
+      myschild(1)=2
+      DO ng=2,NUM_SGRIDS
+        mysparent(ng)=ng-1
+        myschild(ng)=ng+1
+      END DO
+      myschild(NUM_SGRIDS)=NUM_SGRIDS
+!
+! Allocate some arrays for refinement.
+!
+      IF (.not.allocated(Numspec)) allocate (Numspec(NUM_SGRIDS))
+      IF (.not.allocated(ac2size)) allocate (ac2size(NUM_SGRIDS))
+      IF (.not.allocated(sstp)) allocate (sstp(NUM_SGRIDS))
+      IF (.not.allocated(snew)) allocate (snew(NUM_SGRIDS))
+#endif
+!
+!  Initialize the time counter.
+!
+      IF (.not.ALLOCATED(iics)) ALLOCATE (iics(NUM_SGRIDS))
+      DO iw=1,NUM_SGRIDS
+        iics(iw)=0
+      END DO
 !
 !  Initialize the grids.
 !
-      DO ng=1,Ngridss
-#ifdef REFINED_GRID
+      DO ng=1,NUM_SGRIDS
+#ifdef NESTING
         ngp=mysparent(ng)
         ngc=myschild(ng)
 #else
         ngp=1
         ngc=1
 #endif
-        CALL SWAN_INITIALIZE (ng, ngc, ngp, Ngridss, MyCOMM, Wname(ng))
-#ifdef REFINED_GRID
+        CALL SWAN_INITIALIZE (ng, ngc, ngp, NUM_SGRIDS, MyCOMM, Wname(ng))
+#ifdef NESTING
 !
 ! Call routine to initialize the child refined grid bc arrays.
 !
@@ -113,13 +142,22 @@
 #endif
         CALL SWSYNC
       END DO
+
+#ifdef COAWST_COUPLING
+!
+!  Initialize the MCT routers to ROMS. This has to be
+!  done outside an 'ng' loop so that it is synchronous 
+!  with ROMS.
+!
+      CALL INITIALIZE_WAV_ROUTERS
+#endif
 !
 !  The call to run here does not do a time step, it fills the bc arrays,
 !  fill AC2 array of bound spec data for child grids, and enters into MCT.
 !
-      DO ng=1,Ngridss
+      DO ng=1,NUM_SGRIDS
         CALL SWSYNC
-#ifdef REFINED_GRID
+#ifdef NESTING
         ngp=mysparent(ng)
         ngc=myschild(ng)
         sstp(ng)=1
@@ -128,15 +166,20 @@
         ngp=1
         ngc=1
 #endif
-!
-        CALL SWAN_RUN (CouplingTime, 0, ng, ngc, ngp, 0, Ngridss)
-!
+        CALL SWAN_RUN (0, ng, ngc, ngp, 0, NUM_SGRIDS)
       END DO
+#ifdef COAWST_COUPLING
+!
+!     --- couple models during output computations
+!
+        CALL SWSYNC
+        CALL SWAN_CPL (0)
+#endif
 
       RETURN
       END SUBROUTINE SWAN_driver_init
 
-      SUBROUTINE SWAN_driver_run (CouplingTime)
+      SUBROUTINE SWAN_driver_run
 !
 !=======================================================================
 !                                                                      !
@@ -155,69 +198,77 @@
 !
 !  Imported variable declarations.
 !
-      real(m4), intent(in)  :: CouplingTime             ! single precision
+!     real(m4), intent(in)  :: CouplingTime             ! single precision
 !
 !  Local variable declarations.
 !
-      integer :: i, ng, MyRank, MyError
+      integer :: i, iw, ng, MyRank, MyError
       integer, allocatable :: run_grid(:)
-      integer, allocatable :: count(:)
+      integer, allocatable :: run_cplr(:)
       real :: rtime, rtime_start, cff
       integer :: ngp, ngc
       CALL mpi_comm_rank (WAV_COMM_WORLD, MyRank, MyError)
 !
 !  Set some initial run time parameters here.
 !
-      IF (.not.ALLOCATED(run_grid)) ALLOCATE (run_grid(Ngridss))
-      IF (.not.ALLOCATED(count)) ALLOCATE (count(Ngridss))
-      DO ng=1,Ngridss
-        run_grid(ng)=1
-        count(ng)=0
+      IF (.not.ALLOCATED(run_grid)) ALLOCATE (run_grid(NUM_SGRIDS))
+      IF (.not.ALLOCATED(run_cplr)) ALLOCATE (run_cplr(NUM_SGRIDS))
+      DO iw=1,NUM_SGRIDS
+        run_grid(iw)=1
+        run_cplr(iw)=1
       END DO
       rtime_start=0.
       rtime=rtime_start
 !
 !  Main job control loop here.
 !
-      DO WHILE (count(Ngridss).lt.MTC_G(Ngridss))
+      DO WHILE (iics(NUM_SGRIDS).lt.MTC_G(NUM_SGRIDS))
 !
 !  Advance grids in time that have run_grid flag == 1
 !  For the first entry, all grids step individual dts.
 !
-        DO ng=1,Ngridss
+        DO ng=1,NUM_SGRIDS
           IF (run_grid(ng).eq.1) THEN
-            count(ng)=count(ng)+1
-#ifdef REFINED_GRID
+            iics(ng)=iics(ng)+1
+#ifdef NESTING
             ngp=mysparent(ng)
             ngc=myschild(ng)
-            sstp(ng)=1+MOD(count(ng),2)
+            sstp(ng)=1+MOD(iics(ng),2)
             snew(ng)=3-sstp(ng)
 #else
             ngp=1
             ngc=1
 #endif
-            CALL SWAN_RUN (CouplingTime, count(ng), ng, ngc, ngp,       &
-     &                     1, Ngridss)
+            CALL SWAN_RUN (iics(ng), ng, ngc, ngp, 1, NUM_SGRIDS)
             run_grid(ng)=0
           END IF
         END DO
 !
 !  Advance the time counter by the smallest dt.
 !
-        rtime=rtime+DT_G(Ngridss)
+        rtime=rtime+DT_G(NUM_SGRIDS)
 !
 !  Determine what grids can be time stepped. This is determined
 !  by comparing dt(each grid) to global time rtime.
 !
-        DO ng=1,Ngridss
+        DO ng=1,NUM_SGRIDS
           cff=rtime-rtime_start
           IF (MOD(cff,REAL(DT_G(ng))).eq.0) THEN
             run_grid(ng)=1
           END IF
         END DO
+#ifdef COAWST_COUPLING
+        IF (run_grid(1).eq.1) THEN
+!
+!     --- receive data from other coupled models.
+          CALL SWSYNC
+          CALL SWAN_CPL (1)
+         END IF
+#endif
       END DO
       IF (ALLOCATED(run_grid)) DEALLOCATE (run_grid)
-      IF (ALLOCATED(count)) DEALLOCATE (count)
+      IF (ALLOCATED(run_cplr)) DEALLOCATE (run_cplr)
+      IF (ALLOCATED(iics)) DEALLOCATE (iics)
 
       RETURN
       END SUBROUTINE SWAN_driver_run
@@ -236,8 +287,8 @@
 !
       integer :: ng
 
-      DO ng=1,Ngridss
-        CALL SWAN_FINALIZE (ng, Ngridss)
+      DO ng=1,NUM_SGRIDS
+        CALL SWAN_FINALIZE (ng, NUM_SGRIDS)
       END DO
 
       RETURN

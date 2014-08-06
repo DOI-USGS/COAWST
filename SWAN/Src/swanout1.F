@@ -5,7 +5,7 @@
 !  Contents of this file:
 !     SWOUTP
 #ifdef SWAN_MODEL
-!     SWOUTC - for coupled simultaions
+!     SWOUTO - for coupled simultaions to ocean
 !     SWOUTR - for refinement
 #endif
 !     SWORDC
@@ -492,7 +492,7 @@
 !
   200 RETURN
       END SUBROUTINE SWOUTP
-#ifdef REFINED_GRID
+#ifdef NESTING
 !***********************************************************************
 !     This is a copy of SWOUTP used for refinement.                    *
 !
@@ -665,17 +665,17 @@
 
       END SUBROUTINE SWOUTR
 #endif
-#ifdef MODEL_COUPLING
+#ifdef WAVES_OCEAN
 !
 !***********************************************************************
-!     This is a copy of SWOUTP used for coupling.                      *
+!     This is a copy of SWOUTP used for coupling to ocean model.       *
 !
-      SUBROUTINE SWOUTC (AC2             ,                                40.31 30.90
+      SUBROUTINE SWOUTO (AC2             ,                                40.31 30.90
      &                   SPCSIG          ,SPCDIR  ,                       30.72
      &                   COMPDA          ,XYTST   ,
      &                   KGRPNT          ,XCGRID  ,                       30.72
      &                   YCGRID          ,OURQT   ,                       40.51 40.30
-     &                   CouplingTime, ng, first)
+     &                   CouplingTime    ,ng      ,io, first)
 !                                                                      *
 !***********************************************************************
 !
@@ -689,7 +689,7 @@
       USE M_PARALL                                                        40.31
       USE SwanGriddata                                                    40.80
       USE M_MPI
-      USE WAVES_COUPLER_MOD, ONLY: WAV_COUPLING
+      USE WAVES_COUPLER_MOD, ONLY: WAV2OCN_COUPLING
 !
 !   --|-----------------------------------------------------------|--
 !     | Delft University of Technology                            |
@@ -793,7 +793,7 @@
       REAL    SPCSIG(MSC)                                                 30.72
       REAL    XCGRID(MXC,MYC),    YCGRID(MXC,MYC)                         30.72
 
-      INTEGER, intent(in) :: ng, first
+      INTEGER, intent(in) :: ng, io, first
 
       REAL    OURQT
       INTEGER :: MXK, MYK, MIP
@@ -1038,9 +1038,9 @@
 !
   68    CONTINUE                                                          40.31
 
-!     Couple to ocean model
-        CALL WAV_COUPLING (MIP, NVOQP, VOQR, VOQ(1), IRQ,
-     &                     IVTYPE, COMPDA, Numcouple, ng)
+!       Couple to ocean model
+        CALL WAV2OCN_COUPLING (MIP, NVOQP, VOQR, VOQ(1), IRQ,
+     &                         IVTYPE, COMPDA, Numcouple, ng, io)
         IF (STPNOW()) RETURN
         DEALLOCATE(VOQ,CROSS,IONOD)
   70  CONTINUE
@@ -1049,7 +1049,402 @@
 !
       DEALLOCATE (Cpltype, OQI, OQR)
   200 RETURN
-      END SUBROUTINE SWOUTC
+      END SUBROUTINE SWOUTO
+#endif
+#ifdef WRF_COUPLING
+!
+!***********************************************************************
+!     This is a copy of SWOUTP used for coupling to atm model.         *
+!
+      SUBROUTINE SWOUTA (AC2             ,                                40.31 30.90
+     &                   SPCSIG          ,SPCDIR  ,                       30.72
+     &                   COMPDA          ,XYTST   ,
+     &                   KGRPNT          ,XCGRID  ,                       30.72
+     &                   YCGRID          ,OURQT   ,                       40.51 40.30
+     &                   CouplingTime    ,ng      ,ia, first)
+!                                                                      *
+!***********************************************************************
+!
+      USE TIMECOMM                                                        40.41
+      USE OCPCOMM4                                                        40.41
+      USE SWCOMM1                                                         40.41
+      USE SWCOMM2                                                         40.80
+      USE SWCOMM3                                                         40.41
+      USE SWCOMM4                                                         40.41
+      USE OUTP_DATA                                                       40.31
+      USE M_PARALL                                                        40.31
+      USE SwanGriddata                                                    40.80
+      USE M_MPI
+#  ifdef AIR_WAVES
+      USE WAVES_COUPLER_MOD, ONLY: WAV2ATM_COUPLING
+#  endif
+!
+!   --|-----------------------------------------------------------|--
+!     | Delft University of Technology                            |
+!     | Faculty of Civil Engineering                              |
+!     | Environmental Fluid Mechanics Section                     |
+!     | P.O. Box 5048, 2600 GA  Delft, The Netherlands            |
+!     |                                                           |
+!     | Programmers: The SWAN team                                |
+!   --|-----------------------------------------------------------|--
+!
+!
+!     SWAN (Simulating WAves Nearshore); a third generation wave model
+!     Copyright (C) 2009  Delft University of Technology
+!
+!     This program is free software; you can redistribute it and/or
+!     modify it under the terms of the GNU General Public License as
+!     published by the Free Software Foundation; either version 2 of
+!     the License, or (at your option) any later version.
+!
+!     This program is distributed in the hope that it will be useful,
+!     but WITHOUT ANY WARRANTY; without even the implied warranty of
+!     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+!     GNU General Public License for more details.
+!
+!     A copy of the GNU General Public License is available at
+!     http://www.gnu.org/copyleft/gpl.html#SEC3
+!     or by writing to the Free Software Foundation, Inc.,
+!     59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+!
+!
+!  0. Authors
+!
+!     30.72: IJsbrand Haagsma
+!     30.74: IJsbrand Haagsma (Include version)
+!     30.81: Annette  Kieftenburg
+!     30.82: IJsbrand Haagsma
+!     30.90: IJsbrand Haagsma (Equivalence version)
+!     34.01: Jeroen Adema
+!     40.00, 40.13: Nico Booij
+!     40.02: IJsbrand Haagsma
+!     40.30: Marcel Zijlema
+!     40.31: Marcel Zijlema
+!     40.41: Marcel Zijlema
+!     40.51: Marcel Zijlema
+!     40.80: Marcel Zijlema
+!     40.86: Nico Booij
+!     40.90: Nico Booij
+!
+!  1. Updates
+!
+!     10.10, Aug. 94: computation of force is added (subr. SWOEXF)
+!                     arrays NE and NED added
+!     30.72, Oct. 97: changed floating point comparison to avoid equality
+!                     comparisons
+!     30.74, Nov. 97: Prepared for version with INCLUDE statements
+!     30.72, Feb. 98: Introduced generic names XCGRID, YCGRID and SPCSIG for SWAN
+!     40.00, June 98: argument KGRBND added, call SWPLOT and SWOEXC
+!                     modified
+!     30.90, Oct. 98: Introduced EQUIVALENCE POOL-arrays
+!     30.82, Oct. 98: Updated description of several variables
+!     30.81, Jan. 99: Replaced variable STATUS by IERR (because STATUS is a
+!                     reserved word)
+!     40.00, Jan. 99: argument RTYPE added in call SWODDC
+!     34.01, Feb. 99: Introducing STPNOW
+!     40.02, Oct. 00: Made TYPE of several equivalenced arrays correct
+!     40.02, Oct. 00: Modified argument list of SWPLOT to avoid int/real conflict
+!     40.13, Oct. 01: Forces always computed by post-processing procedure
+!     40.30, Jan. 03: introduction distributed-memory approach using MPI
+!     40.31, Nov. 03: removing POOL construction and HPGL-functionality
+!     40.41, Oct. 04: common blocks replaced by modules, include files removed
+!     40.51, Feb. 05: optimization output process in parallel mode
+!     40.80, Feb. 08: computation of wave-induced force on unstructured grid added
+!     40.86, Feb. 08: arguments added to calls of subroutines
+!                     to prevent interpolation over obstacles
+!     40.90, June 08: arguments added to call of subroutine SWSPEC
+!                     to prevent interpolation over obstacles
+!
+!  2. Purpose
+!
+!     Processing of the output requests
+!
+!  3. Method
+!
+!     ---
+!
+!  4. Argument variables
+!
+! i   OURQT : array indicating at what time requested output              40.51
+!             is processed                                                40.51
+! i   SPCDIR: (*,1); spectral directions (radians)                        30.82
+!             (*,2); cosine of spectral directions                        30.82
+!             (*,3); sine of spectral directions                          30.82
+!             (*,4); cosine^2 of spectral directions                      30.82
+!             (*,5); cosine*sine of spectral directions                   30.82
+!             (*,6); sine^2 of spectral directions                        30.82
+! i   SPCSIG: Relative frequencies in computational domain in sigma-space 30.72
+! i   XCGRID: Coordinates of computational grid in x-direction            30.72
+! i   YCGRID: Coordinates of computational grid in y-direction            30.72
+!
+      REAL    SPCDIR(MDC,6)                                               30.82
+      REAL    SPCSIG(MSC)                                                 30.72
+      REAL    XCGRID(MXC,MYC),    YCGRID(MXC,MYC)                         30.72
+
+      INTEGER, intent(in) :: ng, ia, first
+
+      REAL    OURQT
+      INTEGER :: MXK, MYK, MIP
+      LOGICAL cplout, userout
+      INTEGER offset
+      REAL    CouplingTime
+!
+!     AC2     real arr input  action density in all computational points
+!     SPCDIR  real arr input  spectral directions, cosines and sines
+!     UX2     real arr input  current velocity x-comp.
+!     UY2     real arr input  current velocity y-comp.
+!     UBOT    real arr input  orbital velocities at bottom
+!     WX2     real arr input  wind velocity x-comp.
+!     WY2     real arr input  wind velocity y-comp.
+!
+!  8. Subroutines used
+!
+!     SWBLOK
+!     SWTABP
+!     SWSPEC
+!     FOR
+!
+      LOGICAL STPNOW                                                      34.01
+!
+!  9. Subroutines calling
+!
+!     MAIN program
+!
+! 10. Error messages
+!
+!     If an output request is of an unknown type, an error message
+!     is printed.
+!
+! 11. Remarks
+!
+!     Data:
+!
+!     output requests are encoded in array OUTREQ; these are set by
+!     commands TABLE, BLOCK, SPEC, etc. (see subr SWREOQ in file SWANPRE2)
+!     each output request refers to one set of output locations,
+!     and to one or more output quantities.
+!     1st value in OUTREQ: time of next output, 2nd value: interval between
+!     outputs, 3d value: type of output request RTYPE (encoded as integer),
+!     4&5: PSNAME (name of point set),
+!     6: file unit number, 7..10: output filename,
+!     other: dependent on type of output.
+!
+!     data on output locations are in array OUTDA; these are set by
+!     commands FRAME, POINTS, CURVE etc. (see subr SWREPS in file SWANPRE2)
+!     each set is characterized by its name (SNAME in the code)
+!     STYPE is the type of set (i.e. 'F' for Frame etc.)
+!
+!     properties of output quantities are in arrays OVSNAM, OVLNAM,
+!     OVUNIT, OVSVTY etc.; these are set in subr SWINIT (file SWANMAIN)
+!     each output quantity is assigned a fixed number; i.e. 1=Xp, 2=Yp,
+!     7=Dissip, 10=Hs, 11=Tm01 etc.
+!     subr SVARTP determines the above number from the name of the
+!     quantity as it appears in the user command; this is compared with
+!     OVKEYW.
+!
+!     Procedure:
+!
+!     After the coordinates of all output locations have been determined,
+!     values of all output quantities are calculated, and written into
+!     2d array VOQ (one or two columns for each output quantity, one line
+!     for each location). array VOQR shows with quantity is written in
+!     each column.
+!     After array VOQ is filled, the actual output starts; which subroutine
+!     is called depends on RTYPE (see structure scheme below).
+!
+! 12. Structure
+!
+!     ----------------------------------------------------------------
+!     For all output requests do
+!         Call SWORDC (analyzes output req.; gives name of output
+!                      point set, type of output RTYPE
+!                      and number of quantities per point)
+!         Call SWODDC (analyzes output data; gives number of output
+!                      points)
+!         ------------------------------------------------------------
+!         Call SWOEXC (compute coordinates of output points)
+!         Call SWOEXD (compute depth, current vel. dissipation etc.)
+!         Call SWOEXA (compute action density and related quant.)
+!         Call SWOEXF (compute wave-driven force)
+!         ------------------------------------------------------------
+!         If RTYPE = 'BLKP', 'BLKD' or 'BLKL' then
+!                     call SWBLOK for block output
+!         If RTYPE = 'TABP' or 'TABD' then call SWTABP for output in
+!                     table
+!         If RTYPE = 'SPEC' then call SWSPEC for spectral output
+!     ----------------------------------------------------------------
+!     If program is run in stationary mode                                40.00
+!     Then Close all opened files                                         40.00
+!     ----------------------------------------------------------------
+!
+! 13. Source text
+!
+      INTEGER   VOQR(NMOVAR)   ,BKC           ,                           40.31
+     &          XYTST(*)       ,KGRPNT(MXC,MYC),IERR                      30.81 30.21
+!
+      REAL      AC2(MDC,MSC,MCGRD) ,
+     &          COMPDA(MCGRD,MCMVAR)
+      LOGICAL, ALLOCATABLE :: CROSS(:,:) ! true if obstacle is between    40.86
+                                         ! output point and computational 40.86
+                                         ! grid point                     40.86
+!
+      INTEGER :: Numcouple, IVTYP
+      INTEGER, ALLOCATABLE :: CplType(:)
+      INTEGER, ALLOCATABLE :: OQI(:)
+      REAL, ALLOCATABLE :: OQR(:)
+!      LOGICAL, ALLOCATABLE :: OQPROC(:)
+
+      INTEGER, ALLOCATABLE :: IONOD(:)                                    40.51
+      REAL, ALLOCATABLE :: ACLOC(:), AUX1(:), VOQ(:)                      40.31
+      REAL, ALLOCATABLE :: FORCE(:,:)                                     40.80
+      REAL              :: KNUM(MSC), CG(MSC), NE(MSC), NED(MSC)          40.31
+      TYPE(OPSDAT), POINTER :: CUOPS                                      40.31
+      TYPE(ORQDAT), POINTER :: CORQ                                       40.31
+!
+      LOGICAL   OQPROC(NMOVAR)
+      LOGICAL   LOGACT
+      CHARACTER RTYPE *4, STYPE *1, PNAME *8, PTYPE *1
+      SAVE IENT
+      DATA IENT /0/
+      CALL STRACE (IENT, 'SWOUTP')
+
+!     Numcouple=3
+!     ALLOCATE (Cpltype(Numcouple))
+!     Cpltype(1)=10                      ! HSIGN   SWOEXA
+!     Cpltype(2)=12                      ! RTP     SWOEXA
+!      Cpltype(3)=71                      ! WLENP   SWOEXA
+
+      Numcouple=11
+      ALLOCATE (Cpltype(Numcouple))
+      Cpltype(1)=54                      ! DISBOT  SWOEXD
+      Cpltype(2)=55                      ! DISSURF SWOEXD
+      Cpltype(3)=56                      ! DISWCAP SWOEXD
+      Cpltype(4)=50                      ! TMBOT   SWOEXD
+      Cpltype(5)=6                       ! UBOT    SWOEXD
+      Cpltype(6)=8                       ! QB      SWOEXD
+      Cpltype(7)=10                      ! HSIGN   SWOEXA
+      Cpltype(8)=12                      ! RTP     SWOEXA
+      Cpltype(9)=13                      ! DIR     SWOEXA
+      Cpltype(10)=17                     ! WLEN    SWOEXA
+      Cpltype(11)=71                     ! WLENP   SWOEXA
+
+!
+      ALLOCATE (OQI(4))
+      OQI(1) = 0
+      OQI(3) = 1
+      OQI(4) = 4
+
+      ALLOCATE (OQR(2))
+
+      RTYPE = 'BLKP'
+      SNAME = 'COMPGRID'
+!
+!     Repeat for all couple requests:
+!
+      DO 70 IRQ = 1, Numcouple
+!
+        IF (first.eq.0) THEN
+          OQR(1) = 0.0
+        ELSE
+          OQR(1) = CouplingTime
+        END IF
+        OQR(2) = CouplingTime
+        OQI(2) = IRQ
+        BKC   = 0
+        NVOQP = 0
+        IVTYP = Cpltype(IRQ)
+!
+!       call SWORDC to analyse output request encoded in array OUTREQ
+!       NVOQP (number of output quantities)
+!
+        CALL SWORDC (OQI, OQR, IVTYP, RTYPE,
+     &               SNAME, NVOQP, OQPROC, BKC, VOQR, OURQT,
+     &               LOGACT)
+!
+        NVOQP=MAX(Numcouple,5)
+        IVTYPE=Cpltype(IRQ)
+!
+!       call SWODDC to analyse output data; results: STYPE (type of output
+!       point set), MIP (number of output locations) etc.
+!
+        CUOPS => OPSDATZ_MOD(ng)%FOPS
+        STYPE = CUOPS%PSTYPE                                              40.31
+        MIP   = CUOPS%MIP                                                 40.31
+        CALL SWODDC (CUOPS%OPI, CUOPS%OPR, SNAME, STYPE, MIP, MXK,        40.31
+     &               MYK, XNLEN, YNLEN, MXN, MYN, XPCN, YPCN, ALPCN,
+     &               XCGRID,YCGRID,RTYPE)                                 40.00
+!
+!       assign memory to array VOQ (contains output quantities for all
+!                                   output points)
+        ALLOCATE(VOQ(MIP*NVOQP))                                          40.31
+!
+!       assign memory to array CROSS (indicates crossing of obstacles     40.86
+!                                     in between output and grid points)  40.86
+        ALLOCATE(CROSS(4,MIP))                                            40.86
+!
+!       assign memory to array IONOD (indicates in which subdomain        40.51
+!                                     output points are located)          40.51
+        ALLOCATE(IONOD(MIP))                                              40.51
+        IONOD = -999                                                      40.51
+!
+!       call SWOEXC to calculate quantities dependent only on coordinates
+!
+        CALL SWOEXC (STYPE               ,                                40.31
+     &               CUOPS%OPI           ,CUOPS%OPR           ,           40.31
+     &               CUOPS%XP            ,CUOPS%YP            ,           40.31
+     &               MIP                 ,VOQ(1)              ,           40.31 30.90
+     &               VOQ(1+MIP)          ,VOQ(1+2*MIP)        ,           40.31 30.90
+     &               VOQ(1+3*MIP)        ,KGRPNT              ,           40.31 30.90
+     &               XCGRID              ,YCGRID              ,           30.21
+     &               CROSS                                    )           40.86 40.00
+!
+        ALLOCATE(FORCE(0,0))                                              40.80
+!
+!       call SWOEXD to interpolate quantities which are computed during the
+!       SWAN computation, such as Qb, Dissipation, Ursell etc.
+!
+        CALL SWOEXD (OQPROC, MIP, VOQ(1+2*MIP),                           40.31 30.90
+     &               VOQ(1+3*MIP), VOQR, VOQ(1),                          40.31 30.90
+     &               COMPDA, KGRPNT, FORCE, CROSS, IONOD)                 40.86 40.80 40.31
+!
+        DEALLOCATE(FORCE)                                                 40.80
+!
+        IF (BKC .GT. 0) THEN
+!
+!         assign memory to array ACLOC (contains spectrum for one output point)
+!
+          ALLOCATE(ACLOC(MDC*MSC))                                        40.31
+!
+!         call SWOEXA to compute quantities for which spectrum is needed
+!         (except wave-induced force)
+!
+          CALL SWOEXA (OQPROC              ,BKC                 ,
+     &                 MIP                 ,VOQ(1+2*MIP)        ,         40.31 30.90
+     &                 VOQ(1+3*MIP)        ,VOQR                ,         40.31 30.90
+     &                 VOQ(1)              ,AC2                 ,         40.31 30.90
+     &                 ACLOC               ,SPCSIG              ,         40.31 30.90
+     &                 KNUM                ,CG                  ,         40.31 30.90
+     &                 SPCDIR              ,NE                  ,         40.31 30.90
+     &                 NED                 ,KGRPNT              ,         40.31 30.90
+     &                 COMPDA(1,JDP2)      ,CROSS               )         40.86
+!
+          DEALLOCATE(ACLOC)                                               40.31
+        ENDIF
+!
+  68    CONTINUE                                                          40.31
+
+!       Couple to atm model
+        CALL WAV2ATM_COUPLING (MIP, NVOQP, VOQR, VOQ(1), IRQ,
+     &                         IVTYPE, COMPDA, Numcouple, ng, ia)
+        IF (STPNOW()) RETURN
+        DEALLOCATE(VOQ,CROSS,IONOD)
+  70  CONTINUE
+!
+!     Termination of output
+!
+      DEALLOCATE (Cpltype, OQI, OQR)
+  200 RETURN
+      END SUBROUTINE SWOUTA
 #endif
 !***********************************************************************
 !                                                                      *

@@ -44,7 +44,7 @@
       USE M_PARALL                                                        40.31
       USE SwanGriddata                                                    40.80
       USE M_PARALL2
-# ifdef MODEL_COUPLING
+# ifdef COAWST_COUPLING
       USE WAVES_COUPLER_MOD, ONLY: INITIALIZE_WAV_COUPLING
 # endif
 # ifdef WRF_COUPLING
@@ -505,7 +505,7 @@
              OURQT=>PARALL2_MOD(ng)%OURQT_G
              OURQT = -9999.
 !         ENDIF
-# ifdef MODEL_COUPLING
+# ifdef COAWST_COUPLING
 !
 !         --- initialize MCT coupling
 !
@@ -723,7 +723,7 @@
             CALL SWOUTP ( AC2   , SPCSIG, SPCDIR, COMPDA, XYTST ,
      &                    KGRPNT, XCGRID, YCGRID, OURQT , ng)
 
-# ifdef MODEL_COUPLING
+# ifdef COAWST_COUPLING
 !           --- couple models during output computations
 
             nWAV_steps=MAX(1,INT(CouplingTime/DT))
@@ -787,7 +787,7 @@
       USE M_COUPLING
       USE SWPOINT_MOD, ONLY: INIT_POINTERS, DEALLOCATE_SWAN_ARRAYS
 !
-# ifdef MODEL_COUPLING
+# ifdef COAWST_COUPLING
       USE WAVES_COUPLER_MOD, ONLY : finalize_wav_coupling
 # endif
 !# if defined WRF_COUPLING
@@ -907,7 +907,7 @@
 
       CALL DEALLOCATE_SWAN_ARRAYS (ng, Numgrids)
 
-# ifdef MODEL_COUPLING
+# ifdef COAWST_COUPLING
 !
 !  Terminate MCT coupling.
 !
@@ -7871,7 +7871,7 @@
           IF (INDX.GT.1) THEN                                             40.00
             XP = XCGRID(IX,IY)
             YP = YCGRID(IX,IY)
-#ifdef MODEL_COUPLING
+#ifdef COAWST_COUPLING
             UU = SVALQI (XP, YP, IGR1, ARR, 1, IX, IY)
 #else
             UU = SVALQI (XP, YP, IGR1, ARR, 0, IX, IY)                    40.31 30.90
@@ -7879,7 +7879,7 @@
             IF (IGR2.EQ.0) THEN
               COMPDA(INDX,JX3) = UU
             ELSE
-#ifdef MODEL_COUPLING
+#ifdef COAWST_COUPLING
               VV = SVALQI (XP, YP, IGR2, ARR2, 1, IX, IY)
 #else
               VV = SVALQI (XP, YP, IGR2, ARR2, 0, IX, IY)                 40.31 30.90

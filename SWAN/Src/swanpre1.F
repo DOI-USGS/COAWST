@@ -18,7 +18,7 @@
 !***********************************************************************
 !                                                                      *
 #ifdef SWAN_MODEL
-      SUBROUTINE SWREAD (COMPUT, ng, Numgrids)
+      SUBROUTINE SWREAD (COMPUT, ng)
 #else
       SUBROUTINE SWREAD (COMPUT)                                          40.31 30.90
 #endif
@@ -42,6 +42,9 @@
       USE M_OBSTA                                                         40.31
       USE M_PARALL                                                        40.31
       USE SwanGriddata                                                    40.80
+#ifdef SWAN_MODEL
+      USE M_COUPLING
+#endif
 !
 !
 !   --|-----------------------------------------------------------|--
@@ -257,7 +260,7 @@
 !  5. Parameter variables
 !
 #ifdef SWAN_MODEL
-      INTEGER, INTENT(in) :: ng, Numgrids
+      INTEGER, INTENT(in) :: ng
 #endif
       INTEGER, PARAMETER :: MXINCL = 10                                   40.03
       INTEGER, PARAMETER :: NVOTP  = 15                                   40.87
@@ -423,7 +426,7 @@
 #if defined SWAN_MODEL
       REAL, ALLOCATABLE :: TARR(:)                                        40.31
       IF ((ng.eq.1).and.(.not.ALLOCATED(LOGCOM_G)))                     &
-     &                        ALLOCATE (LOGCOM_G(Numgrids,6))
+     &                        ALLOCATE (LOGCOM_G(NUM_SGRIDS,6))
       LOGCOM=>LOGCOM_G(ng,:)
       LOGCOM(1:6) = .FALSE.
 #endif
@@ -787,6 +790,21 @@
       ENDIF                                                               40.02
 !
 !     ------------------------------------------------------------------
+!
+!     NUM_SWAN_GRIDS : number of swan grids for refinement
+!
+! =============================================================
+!
+!   NUM_SWAN_GRIDS  -> 1
+!
+! =============================================================
+!
+      IF (KEYWIS ('NSGRIDS')) THEN                                       JCW
+          CALL ININTG('NUMS',NUM_SGRIDS,'UNC',1)
+        GO TO 100                                                       
+      ENDIF                                                               
+!
+! ------------------------------------------------------------------
 !
 !     COORD : spherical or cartesian coordinates
 !
@@ -1162,14 +1180,14 @@
         IF (KEYWIS ('BOT')) THEN
           IGRD = 1
           PSNAME = 'BOTTGRID'
-#ifdef MODEL_COUPLING
+#ifdef COAWST_COUPLING
           CALL SINPGR (IGRD, IGR2, PSNAME, ng)
 #endif
         ELSE IF (KEYWIS ('CUR')) THEN
           IGRD = 2
           IGR2 = 3                                                        10.26
           PSNAME = 'VXGRID  '
-#ifdef MODEL_COUPLING
+#ifdef COAWST_COUPLING
           CALL SINPGR (IGRD, IGR2, PSNAME, ng)
           IGR1 = 2
           IGR2 = 3
@@ -1189,19 +1207,19 @@
         ELSE IF (KEYWIS ('VX')) THEN
           IGRD = 2
           PSNAME = 'VXGRID  '
-#ifdef MODEL_COUPLING
+#ifdef COAWST_COUPLING
           CALL SINPGR (IGRD, IGR2, PSNAME, ng)
 #endif
         ELSE IF (KEYWIS ('VY')) THEN
           IGRD = 3
           PSNAME = 'VYGRID  '
-#ifdef MODEL_COUPLING
+#ifdef COAWST_COUPLING
           CALL SINPGR (IGRD, IGR2, PSNAME, ng)
 #endif
         ELSE IF (KEYWIS ('FR')) THEN
           IGRD = 4
           PSNAME = 'FRICGRID'
-#ifdef MODEL_COUPLING
+#ifdef COAWST_COUPLING
           CALL SINPGR (IGRD, IGR2, PSNAME, ng)
           IGR1   = 4
           VARFR  = .TRUE.
@@ -1216,7 +1234,7 @@
           IGRD = 5
           IGR2 = 6                                                          10.26
           PSNAME = 'WXGRID  '
-#ifdef MODEL_COUPLING
+#ifdef COAWST_COUPLING
           CALL SINPGR (IGRD, IGR2, PSNAME, ng)
           LWINDR = 2                                                        30.10
           IWIND  = LWINDM                                                   30.10
@@ -1248,19 +1266,19 @@
         ELSE IF (KEYWIS ('WX')) THEN
           IGRD = 5
           PSNAME = 'WXGRID  '
-#ifdef MODEL_COUPLING
+#ifdef COAWST_COUPLING
           CALL SINPGR (IGRD, IGR2, PSNAME, ng)
 #endif
         ELSE IF (KEYWIS ('WY')) THEN
           IGRD = 6
           PSNAME = 'WYGRID  '
-#ifdef MODEL_COUPLING
+#ifdef COAWST_COUPLING
           CALL SINPGR (IGRD, IGR2, PSNAME, ng)
 #endif
         ELSE IF (KEYWIS ('WLEV')) THEN                                    20.38
           IGRD = 7
           PSNAME = 'WLEVGRID'
-#ifdef MODEL_COUPLING
+#ifdef COAWST_COUPLING
           CALL SINPGR (IGRD, IGR2, PSNAME, ng)
           IGR1 = 7
           VARWLV = .TRUE.
@@ -1278,7 +1296,7 @@
 !         air-sea temperature difference                                  40.03
           IGRD = 10
           PSNAME = 'ASTDGRID'
-#ifdef MODEL_COUPLING
+#ifdef COAWST_COUPLING
           CALL SINPGR (IGRD, IGR2, PSNAME, ng)
 #endif
         ELSE IF (KEYWIS ('NPLA')) THEN                                    40.55
@@ -1288,12 +1306,12 @@
         ELSE
           IGRD = 1
           PSNAME = 'BOTTGRID'
-#ifdef MODEL_COUPLING
+#ifdef COAWST_COUPLING
           CALL SINPGR (IGRD, IGR2, PSNAME, ng)
 #endif
         ENDIF
 !
-#ifndef MODEL_COUPLING
+#ifndef COAWST_COUPLING
         CALL SINPGR (IGRD, IGR2, PSNAME, ng)                              40.31
 #endif
         IF (STPNOW()) RETURN                                              34.01
@@ -3677,7 +3695,7 @@
       ELSE IF (KEYWIS ('FR')) THEN
         IGR1   = 4
         VARFR  = .TRUE.
-#if !defined MODEL_COUPLING
+#if !defined COAWST_COUPLING
         MCMVAR = MCMVAR + 2                                               40.00
         JFRC2  = MCMVAR - 1                                               40.00
         JFRC3  = MCMVAR                                                   40.00

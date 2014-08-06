@@ -1,7 +1,7 @@
 #include "swancpp.h"
 
       MODULE interp_swan_mod
-#if defined WRF_COUPLING || defined REFINED_GRID
+#if defined WRF_COUPLING || defined NESTING
 !
 !=======================================================================
 !  This module contains some original functions as well as             !
@@ -117,7 +117,7 @@
       END SUBROUTINE compute_angler
 # endif
 
-# ifdef REFINED_GRID
+# ifdef NESTING
       SUBROUTINE swan_ref_init (ng, ngp)
 !
 !=======================================================================

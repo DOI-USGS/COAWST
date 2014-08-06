@@ -44,7 +44,7 @@
       USE M_PARALL                                                        40.31
       USE SwanGriddata                                                    40.80
       USE M_PARALL2
-# ifdef MODEL_COUPLING
+# ifdef COAWST_COUPLING
       USE WAVES_COUPLER_MOD, ONLY: INITIALIZE_WAV_COUPLING
 # endif
 # ifdef WRF_COUPLING
@@ -345,7 +345,7 @@
 !       --- read and process user commands
 
 !TIMG        CALL SWTSTA(3)                                                    40.23
-        CALL SWREAD (COMPUT, ng, Numgrids)                                40.31 30.90
+        CALL SWREAD (COMPUT, ng)                                          40.31 30.90
 !TIMG        CALL SWTSTO(3)                                                    40.23
         IF (STPNOW()) RETURN                                              34.01
 
@@ -383,7 +383,7 @@
         ALLOCATE (PARALL2_MOD(ng)%BGRIDP_G(6*NBGRPT))
         BGRIDP=>PARALL2_MOD(ng)%BGRIDP_G
 !
-#ifdef REFINED_GRID
+#ifdef NESTING
 !
 !       Numspec is the number of boundary points for each grid that is 
 !       a child. This value is not necessary for ng=1, but it is 
@@ -505,7 +505,7 @@
              OURQT=>PARALL2_MOD(ng)%OURQT_G
              OURQT = -9999.
 !         ENDIF
-# ifdef MODEL_COUPLING
+# ifdef COAWST_COUPLING
 !
 !         --- initialize MCT coupling
 !
@@ -517,11 +517,16 @@
       END SUBROUTINE SWAN_INITIALIZE
 !***********************************************************************
 !                                                                      *
-      SUBROUTINE SWAN_RUN (CouplingTime, IT_in, ng, ngc, ngp, 
-     &                     first, Ngrids)
+      SUBROUTINE SWAN_RUN (IT_in, ng, ngc, ngp, first, Ngrids)
 !                                                                      *
 !***********************************************************************
 !
+# ifdef COAWST_COUPLING
+      USE mct_coupler_params
+#  ifdef ROMS_COUPLING
+      USE WAVES_COUPLER_MOD, ONLY: WAVFOCN_COUPLING
+#  endif
+# endif
       USE TIMECOMM
       USE OCPCOMM2
       USE OCPCOMM4
@@ -535,15 +540,15 @@
       USE M_PARALL2
       USE M_COUPLING
       USE SWPOINT_MOD, ONLY: INIT_POINTERS
-# ifdef REFINED_GRID
+# ifdef NESTING
       USE M_SREFINED
 # endif
 !
       IMPLICIT NONE
 !
-      REAL,  intent(in) :: CouplingTime
+!     REAL,  intent(in) :: CouplingTime
       INTEGER,  intent(in) :: IT_in, ng, ngc, ngp, first, Ngrids
-      INTEGER   IUNIT
+      INTEGER   IUNIT, io, ia
       INTEGER   IOSTAT, IT0, IT, SAVITE, ILEN
       INTEGER   INERR
       INTEGER   IERR
@@ -608,7 +613,7 @@
       NCOMPT=>COMPT_MOD(ng)%NCOMPT_G
       RCOMPT=>COMPT_MOD(ng)%RCOMPT_G
 
-# ifdef REFINED_GRID
+# ifdef NESTING
 !
 !     AC2_parent is the action density array filled for each grid that is 
 !     a parent.
@@ -649,7 +654,7 @@
 !
 !TIMG            CALL SWTSTA(7)                                                40.23
 !
-# ifdef REFINED_GRID
+# ifdef NESTING
             CALL SNEXTI ( BSPECS, BGRIDP, COMPDA, AC1   , AC2   ,         40.31
      &                    SPCSIG, SPCDIR, XCGRID, YCGRID, KGRPNT,         40.31
      &                    XYTST , DEPTH , WLEVL , FRIC  , UXB   ,         40.31
@@ -723,17 +728,7 @@
             CALL SWOUTP ( AC2   , SPCSIG, SPCDIR, COMPDA, XYTST ,
      &                    KGRPNT, XCGRID, YCGRID, OURQT , ng)
 
-# ifdef MODEL_COUPLING
-!           --- couple models during output computations
-
-            nWAV_steps=MAX(1,INT(CouplingTime/DT))
-            IF (MOD(IT, nWAV_steps).eq.0) THEN
-              CALL SWOUTC ( AC2   , SPCSIG, SPCDIR, COMPDA, XYTST ,
-     &                      KGRPNT, XCGRID, YCGRID, OURQT ,
-     &                      CouplingTime, ng, first)
-            END IF
-# endif
-# ifdef REFINED_GRID
+# ifdef NESTING
 !
 !  Determine the AC data in this current grid, acting as a parent.
 !
@@ -767,6 +762,118 @@
       RETURN
       END SUBROUTINE SWAN_RUN
 
+
+# ifdef COAWST_COUPLING
+!***********************************************************************
+!                                                                      *
+      SUBROUTINE SWAN_CPL (first)
+!                                                                      *
+!***********************************************************************
+!
+      USE M_COUPLING
+      USE mct_coupler_params
+#  ifdef ROMS_COUPLING
+      USE WAVES_COUPLER_MOD, ONLY: WAVFOCN_COUPLING
+#  endif
+#  ifdef WRF_COUPLING
+      USE WAVES_COUPLER_MOD, ONLY: WAVFATM_COUPLING
+#  endif
+       USE M_GENARR
+      USE M_PARALL2
+      USE SWPOINT_MOD, ONLY: INIT_POINTERS
+      USE SWPOINT_MOD, ONLY: INIT_COUPLING_POINTERS
+# ifdef NESTING
+      USE M_SREFINED
+# endif
+!
+      IMPLICIT NONE
+!
+      INTEGER,  intent(in) :: first
+      INTEGER   io, iw, ia, offset, run_couple
+
+# ifdef ROMS_COUPLING
+!
+!     Send data to ocn model.
+      DO iw=1,NUM_SGRIDS
+        CALL INIT_POINTERS(iw)
+        CALL INIT_COUPLING_POINTERS(iw)
+        DO io=1,Nocn_grids
+          run_couple=1
+          IF ((first.eq.1).and.(iics(iw).eq.0)) run_couple=0
+          IF (MOD(iics(iw), nWAV2OCN(iw,io)).ne.0) run_couple=0
+          IF (run_couple.eq.1) THEN
+            CALL SWOUTO ( AC2   , SPCSIG, SPCDIR, COMPDA, XYTST ,
+     &                    KGRPNT, XCGRID, YCGRID, OURQT ,
+     &                    REAL(TI_WAV2OCN), iw, io, first)
+          ELSE
+            GOTO 40
+          END IF
+        END DO
+      END DO
+  40  CONTINUE
+!
+!     Call to get data from ocn model.
+      DO iw=1,NUM_SGRIDS
+        CALL INIT_POINTERS(iw)
+        CALL INIT_COUPLING_POINTERS(iw)
+        DO io=1,Nocn_grids
+          run_couple=1
+          IF ((first.eq.1).and.(iics(iw).eq.0)) run_couple=0
+          IF (MOD(iics(iw), nWAVFOCN(iw,io)).ne.0) run_couple=0
+          IF (run_couple.eq.1) THEN
+            CALL WAVFOCN_COUPLING (COMPDA, iw, io)
+          ELSE
+            GOTO 50
+          END IF
+        END DO
+      END DO
+  50  CONTINUE
+# endif
+# ifdef WRF_COUPLING
+!
+!     Call to get data from atm model.
+      DO ia=1,Natm_grids
+        DO iw=1,NUM_SGRIDS
+          CALL INIT_POINTERS(iw)
+          CALL INIT_COUPLING_POINTERS(iw)
+          run_couple=1
+          IF ((first.eq.1).and.(iics(iw).eq.0)) run_couple=0
+          IF (MOD(iics(iw), nWAVFATM(iw,ia)).ne.0) run_couple=0
+          IF (run_couple.eq.1) THEN
+            CALL WAVFATM_COUPLING (COMPDA, iw, ia)
+          ELSE
+            GOTO 55
+          END IF
+        END DO
+      END DO
+  55  CONTINUE
+!
+!     Send data to atm model.
+      DO ia=1,Natm_grids
+        DO iw=1,NUM_SGRIDS
+          CALL INIT_POINTERS(iw)
+          CALL INIT_COUPLING_POINTERS(iw)
+          run_couple=1
+          IF ((first.eq.1).and.(iics(iw).eq.0)) run_couple=0
+          IF (MOD(iics(iw), nWAV2ATM(iw,ia)).ne.0) run_couple=0
+          IF (run_couple.eq.1) THEN
+            CALL SWOUTA ( AC2   , SPCSIG, SPCDIR, COMPDA, XYTST ,
+     &                    KGRPNT, XCGRID, YCGRID, OURQT ,
+     &                    REAL(TI_WAV2ATM), iw, ia, first)
+          ELSE
+            GOTO 45
+          END IF
+        END DO
+      END DO
+  45  CONTINUE
+# endif
+
+      RETURN
+      END SUBROUTINE SWAN_CPL
+# endif
+
+
+
 !***********************************************************************
 !                                                                      *
       SUBROUTINE SWAN_FINALIZE (ng, Numgrids)
@@ -787,7 +894,7 @@
       USE M_COUPLING
       USE SWPOINT_MOD, ONLY: INIT_POINTERS, DEALLOCATE_SWAN_ARRAYS
 !
-# ifdef MODEL_COUPLING
+# ifdef COAWST_COUPLING
       USE WAVES_COUPLER_MOD, ONLY : finalize_wav_coupling
 # endif
 !# if defined WRF_COUPLING
@@ -851,7 +958,7 @@
       AC1=>   PARALL2_MOD(ng)%AC1_G
       COMPDA=>PARALL2_MOD(ng)%COMPDA_G
       OURQT=> PARALL2_MOD(ng)%OURQT_G
-#ifdef REFINED_GRID
+#ifdef NESTING
       AC2_parent =>PARALL2_MOD(ng)%AC2_parent_G
 #endif
 !
@@ -867,7 +974,7 @@
 !      CALL the final read of the input file
 !TIMG        CALL SWTSTA(3)                                                    40.23
       CALL SWSYNC                                                         40.30
-      CALL SWREAD (COMPUT, ng, Numgrids)                                  40.31 30.90
+      CALL SWREAD (COMPUT, ng)                                            40.31 30.90
 !TIMG        CALL SWTSTO(3)                                                    40.23
       IF (STPNOW()) RETURN                                                34.01
 
@@ -907,7 +1014,7 @@
 
       CALL DEALLOCATE_SWAN_ARRAYS (ng, Numgrids)
 
-# ifdef MODEL_COUPLING
+# ifdef COAWST_COUPLING
 !
 !  Terminate MCT coupling.
 !
@@ -3437,7 +3544,7 @@
       INTEGER, ALLOCATABLE :: CROSSGL(:,:)                                40.31
 !
       TYPE(BSDAT) , POINTER :: CURRBS                                     40.31
-#if !defined REFINED_GRID
+#if !defined NESTING
       TYPE(BGPDAT), POINTER :: CURBGP                                     40.31
 #endif
       SAVE IENT
@@ -5850,7 +5957,7 @@
       USE M_MPI
       USE mod_coupler_kinds
 #endif
-#ifdef REFINED_GRID
+#ifdef NESTING
       USE M_SREFINED
 #endif
 !
@@ -5940,7 +6047,7 @@
 #if defined SWAN_MODEL
       INTEGER offset, spcount, IX, IY
       INTEGER, intent(in) :: ng, ngp, ITjcw
-# ifdef REFINED_GRID
+# ifdef NESTING
       REAL, INTENT(IN) :: AC2_parent(MSC*MDC*Numspec(ng),2)
       REAL        AC2LOC(MCGRD)                                           40.31
 # else
@@ -6016,7 +6123,7 @@
 !
       INTEGER     IERR
       REAL        TSTVAL(10)                                              40.00
-# ifdef REFINED_GRID
+# ifdef NESTING
       REAL        fac, fac1, fac2, fac3
       INTEGER     TIDX1, TIDX2
 # endif
@@ -6100,7 +6207,7 @@
              END IF
            END DO
         END IF
-# ifdef REFINED_GRID
+# ifdef NESTING
       ELSE
 !
 !     Obtain 2dspec array AC2 from parent grid.
@@ -7871,7 +7978,7 @@
           IF (INDX.GT.1) THEN                                             40.00
             XP = XCGRID(IX,IY)
             YP = YCGRID(IX,IY)
-#ifdef MODEL_COUPLING
+#ifdef COAWST_COUPLING
             UU = SVALQI (XP, YP, IGR1, ARR, 1, IX, IY)
 #else
             UU = SVALQI (XP, YP, IGR1, ARR, 0, IX, IY)                    40.31 30.90
@@ -7879,7 +7986,7 @@
             IF (IGR2.EQ.0) THEN
               COMPDA(INDX,JX3) = UU
             ELSE
-#ifdef MODEL_COUPLING
+#ifdef COAWST_COUPLING
               VV = SVALQI (XP, YP, IGR2, ARR2, 1, IX, IY)
 #else
               VV = SVALQI (XP, YP, IGR2, ARR2, 0, IX, IY)                 40.31 30.90
