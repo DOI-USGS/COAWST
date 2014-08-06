@@ -22,7 +22,7 @@
 
   integer :: iprint
 
-  integer , parameter :: maxlvl = 100
+  integer , parameter :: maxlvl = 150
 
   real :: startlat, startlon, deltalat, deltalon
   real :: level
@@ -171,8 +171,8 @@ end program g2print
       real :: level
       real :: scale_factor
       integer :: iplvl, lvl2
-      ! For subroutine outout
-      integer , parameter :: maxlvl = 100
+      ! For subroutine output
+      integer , parameter :: maxlvl = 150
       real , dimension(maxlvl) :: plvl
       integer :: nlvl
       integer , dimension(maxlvl) :: level_array
@@ -406,7 +406,7 @@ end program g2print
    
            call build_hdate(hdate,year,month,day,hour,minute,second)
            if (verbose) print *, 'G2 hdate = ',hdate
-!          call geth_newdate(hdate,hdate,3600*fcst)   ! no need for thin in print
+!          call geth_newdate(hdate,hdate,3600*fcst)   ! no need for this in print
 !          print *, 'G2 hdate (fcst?) = ',hdate
 
            !--
@@ -573,7 +573,8 @@ end program g2print
 
          ! Continue to unpack GRIB2 field.
          if (debug_level .gt. 100) write(6,*) 'numfields = ',numfields
-         do n=1,numfields ! e.g. U and V would =2, otherwise its usually =1
+         NUM_FIELDS: do n = 1, numfields 
+! e.g. U and V would =2, otherwise its usually =1
            call gf_getfld(cgrib,lengrib,n,unpack,expand,gfld,ierr)
            if (ierr.ne.0) then
              write(*,*) ' ERROR extracting field gf_getfld = ',ierr
@@ -871,13 +872,17 @@ end program g2print
            else if(gfld%ipdtmpl(10).eq.101 .or.&    ! sea level, sfc, or trop
                 gfld%ipdtmpl(10).eq.1 .or. gfld%ipdtmpl(10).eq.7) then 
              level = 0
+           else if(gfld%ipdtmpl(10).eq.106) then  ! below ground sfc is in cm in Vtable
+             level= 100. * gfld%ipdtmpl(12)*(10.**(-1.*gfld%ipdtmpl(11)))
            else
-             level=gfld%ipdtmpl(12)
+             level=gfld%ipdtmpl(12) * 10.** (-1.*gfld%ipdtmpl(11))
            endif
            if (gfld%ipdtmpl(13) .eq. 255) then
              lvl2 = 0
+           else if(gfld%ipdtmpl(10).eq.106) then   ! below ground sfc is in cm in Vtable
+             lvl2 = 100. * gfld%ipdtmpl(15) * 10.** (-1.*gfld%ipdtmpl(14))
            else
-             lvl2 = gfld%ipdtmpl(15)
+             lvl2 = gfld%ipdtmpl(15) * 10.** (-1.*gfld%ipdtmpl(14))
            endif
 !           Account for multiple forecast hours in one file
            if (gfld%ipdtnum.eq.0 .or. gfld%ipdtnum.eq.1 .or. gfld%ipdtnum.eq. 8) then
@@ -894,16 +899,24 @@ end program g2print
              endif
            endif
 
-         write(6,987) itot,gfld%discipline,gfld%ipdtmpl(1),  &
-           gfld%ipdtmpl(2),gfld%ipdtmpl(10),int(level),&
-           lvl2,gfld%ipdtnum,pabbrev,hdate,fcst
-  987     format(2i4,i5,i4,i8,i8,i8,i8,3x,a10,a20,i5.2)
+           ! Non-standard Product Definition Templates need to be reported
+           string = '                      '
+           if ( gfld%ipdtnum .eq. 8 ) then
+             string = '  PDT4.8'
+           else if ( gfld%ipdtnum .eq. 1 ) then
+             string = '  PDT4.1'
+           endif
+           write(6,987) itot,gfld%discipline,gfld%ipdtmpl(1),  &
+             gfld%ipdtmpl(2),gfld%ipdtmpl(10),int(level),&
+             lvl2,gfld%ipdtnum,pabbrev,hdate,fcst,string
+  987     format(2i4,i5,i4,i8,i8,i8,i8,3x,a10,a20,i5.2,a10)
+
          endif
 
          ! Deallocate arrays decoding GRIB2 record.
          call gf_free(gfld)
 
-         enddo ! 1,numfields
+         enddo NUM_FIELDS
 
       enddo VERSION ! skgb
 

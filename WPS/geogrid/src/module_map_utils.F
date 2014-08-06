@@ -925,7 +925,7 @@ MODULE map_utils
       rho = sqrt((x*proj%dx)**2.0 + (y*proj%dx)**2.0)
       t = rho * tc / (A_WGS84 * mc) 
 
-      lon = h*proj%stdlon + h*atan2(h*x,h*(-y))
+      lon = h*proj%stdlon*rad_per_deg + h*atan2(h*x,h*(-y))
 
       chi = PI/2.0-2.0*atan(t)
       a = 1./2.*E_WGS84**2. + 5./24.*E_WGS84**4. +  1./40.*E_WGS84**6.  +    73./2016.*E_WGS84**8.
@@ -1621,10 +1621,14 @@ MODULE map_utils
       rlat = ilat * rad_per_deg
       rlon = ilon * rad_per_deg
 
-      IF (PRESENT(direction) .AND. (direction < 0)) THEN
-         ! The equations are exactly the same except for one small difference
-         ! with respect to longitude ...
-         dlam = PI - lam_0
+      IF (PRESENT(direction)) THEN 
+         IF (direction < 0) THEN
+            ! The equations are exactly the same except for one small difference
+            ! with respect to longitude ...
+            dlam = PI - lam_0
+         ELSE
+            dlam = lam_np
+         END IF
       ELSE
          dlam = lam_np
       END IF
