@@ -282,7 +282,7 @@
 # endif
 #endif
 
-#if defined BBL_MODEL
+#if defined BBL_MODEL || defined WAVES_OCEAN
           real(r8), pointer :: Uwave_rms(:,:)
 # ifndef ANA_WWAVE
           real(r8), pointer :: Uwave_rmsG(:,:,:)
@@ -717,7 +717,7 @@
 # endif
 #endif
 
-#if defined BBL_MODEL
+#if defined BBL_MODEL || defined WAVES_OCEAN
       allocate ( FORCES(ng) % Uwave_rms(LBi:UBi,LBj:UBj) )
 # ifndef ANA_WWAVE
       allocate ( FORCES(ng) % Uwave_rmsG(LBi:UBi,LBj:UBj,2) )
@@ -1248,7 +1248,7 @@
             FORCES(ng) % Pwave_botG(i,j,2) = IniVal
 # endif
 #endif
-#if defined BBL_MODEL
+#if defined BBL_MODEL || defined WAVES_OCEAN
             FORCES(ng) % Uwave_rms(i,j) = IniVal
 # ifndef ANA_WWAVE
             FORCES(ng) % Uwave_rmsG(i,j,1) = IniVal

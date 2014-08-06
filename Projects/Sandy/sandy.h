@@ -14,7 +14,7 @@
 #define WRF_MODEL
 #define SWAN_MODEL
 #define ROMS_MODEL
-/* #define NESTING */
+#define NESTING
 #define MCT_LIB
 #define MCT_INTERP_OC2AT
 #define MCT_INTERP_WV2AT

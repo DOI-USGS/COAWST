@@ -241,10 +241,10 @@
 !-----------------------------------------------------------------------
 !
       IF (nl.eq.1) THEN
-        DO ia=1,Natm_grids
-          DO nlay=1,NestLayers
-            DO ig=1,GridsInLayer(nlay)
-              ng=GridNumber(ig,nlay)
+        DO nlay=1,NestLayers
+          DO ig=1,GridsInLayer(nlay)
+            ng=GridNumber(ig,nlay)
+            DO ia=1,Natm_grids
               offset=-1 !nlay-NestLayers
               IF (MOD(iic(ng)+offset,nOCNFATM(ng,ia)).eq.0) THEN
                 DO tile=first_tile(ng),last_tile(ng),+1
@@ -257,10 +257,10 @@
       END IF
 !
       IF (nl.eq.1) THEN
-        DO ia=1,Natm_grids
-          DO nlay=1,NestLayers
-            DO ig=1,GridsInLayer(nlay)
-              ng=GridNumber(ig,nlay)
+        DO nlay=1,NestLayers
+          DO ig=1,GridsInLayer(nlay)
+            ng=GridNumber(ig,nlay)
+            DO ia=1,Natm_grids
               offset=-1 !nlay-NestLayers
               IF (MOD(iic(ng)+offset,nOCN2ATM(ng,ia)).eq.0) THEN
                 DO tile=first_tile(ng),last_tile(ng),+1

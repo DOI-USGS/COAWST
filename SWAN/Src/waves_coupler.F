@@ -334,7 +334,7 @@
 !
 ! Load the dst grid as a coupling mask.
 !
-          allocate(W2A_CPLMASK(ng,ia)%dst_mask(num_sparse_elems))
+          allocate(W2A_CPLMASK(ng,ia)%dst_mask(nRows))
           DO i=1,nRows
             W2A_CPLMASK(ng,ia)%dst_mask(i)=dst_grid_imask(i)
           END DO
@@ -360,10 +360,10 @@
 ! scatter dst_grid_imask to be used as cpl_mask
 !
         IF (INODE.ne.MASTER) THEN
-          num_sparse_elems=dst_grid_dims(1)*dst_grid_dims(2)
-          allocate(W2A_CPLMASK(ng,ia)%dst_mask(num_sparse_elems))
+          nRows=dst_grid_dims(1)*dst_grid_dims(2)
+          allocate(W2A_CPLMASK(ng,ia)%dst_mask(nRows))
         END IF
-        CALL mpi_bcast(W2A_CPLMASK(ng,ia)%dst_mask, num_sparse_elems,   &
+        CALL mpi_bcast(W2A_CPLMASK(ng,ia)%dst_mask, nRows,              &
      &                 MPI_INTEGER, 0,                                  &
      &                 WAV_COMM_WORLD, MyError)
 !
@@ -929,42 +929,42 @@
 !  Send wave fields bundle to atm model.
 !-----------------------------------------------------------------------
 !
- 35       FORMAT (a14,i2,a21,i5)
+ 35     FORMAT (a14,i2,a21,i5)
 !
 !  Send fields to atmosphere model.
 !
-          Tag=ia*10+ng
+        Tag=ia*10+ng
 #  ifdef MCT_INTERP_WV2AT
-          CALL MCT_MatVecMul(AttrVect_G(ng)%wav2atm_AV,                 &
-     &                       SMPlus_G(ng,ia)%W2AMatPlus,                &
-     &                       AV2_A(ng,ia)%wav2atm_AV2)
+        CALL MCT_MatVecMul(AttrVect_G(ng)%wav2atm_AV,                   &
+     &                     SMPlus_G(ng,ia)%W2AMatPlus,                  &
+     &                     AV2_A(ng,ia)%wav2atm_AV2)
 !
 !  Now add in the CPL_MASK before we send it over to wrf.
 !  Get the number of grid points on this processor.
 !
-      Asize=GlobalSegMap_lsize (GSMapInterp_A(ng,ia)%GSMapWRF,          &
+        Asize=GlobalSegMap_lsize (GSMapInterp_A(ng,ia)%GSMapWRF,        &
      &                          WAV_COMM_WORLD)
-      allocate (Amask(Asize))
-      Amask=0.0
-          write(*,*) 'wav 2 atm 2 ', asize
+        allocate (Amask(Asize))
+        Amask=0.0
 !
 !  Ask for points in this tile.
 !
-      CALL GlobalSegMap_Ordpnts (GSMapInterp_A(ng,ia)%GSMapWRF,          &
-     &                           MyRank, pointw)
+        CALL GlobalSegMap_Ordpnts (GSMapInterp_A(ng,ia)%GSMapWRF,       &
+     &                             MyRank, pointw)
 !
 !  Load the dst grid cpl mask into the attr vect.
 !
-      DO i=1,Asize
-        Amask(pointw(i))=REAL(W2A_CPLMASK(ng,ia)%dst_mask(pointw(i)))
-      END DO
-      CALL AttrVect_importRAttr (AV2_A(ng,ia)%wav2atm_AV2, "CPL_MASK",  &
-     &                           Amask, Asize)
-          CALL MCT_isend (AV2_A(ng,ia)%wav2atm_AV2,                     &
-     &                    Router_A(ng,ia)%SWANtoWRF, Tag)
+        DO i=1,Asize
+        Amask(pointw(i))=                                               &
+     &                 REAL(W2A_CPLMASK(ng,ia)%dst_mask(pointw(i)),m8)
+        END DO
+        CALL AttrVect_importRAttr (AV2_A(ng,ia)%wav2atm_AV2, "CPL_MASK",&
+     &                             Amask, Asize)
+        CALL MCT_isend (AV2_A(ng,ia)%wav2atm_AV2,                       &
+     &                  Router_A(ng,ia)%SWANtoWRF, Tag)
 #  else
-          CALL MCT_isend (AttrVect_G(ng)%wav2atm_AV,                    &
-     &                    Router_A(ng,ia)%SWANtoWRF, Tag)
+        CALL MCT_isend (AttrVect_G(ng)%wav2atm_AV,                      &
+     &                  Router_A(ng,ia)%SWANtoWRF, Tag)
 #  endif
         CALL MCT_waits (Router_A(ng,ia)%SWANtoWRF)
         IF (MYRANK.EQ.0) THEN

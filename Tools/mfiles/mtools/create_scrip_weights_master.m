@@ -12,8 +12,8 @@
 %%%%%%%  Begin USER Input Section  %%%%%%%%%%%%%
 
 %step 1:  Enter the number of grids for each model:
-Ngrids_roms=1;
-Ngrids_swan=1;
+Ngrids_roms=2;
+Ngrids_swan=2;
 Ngrids_wrf=2;
 
 %step 2a: Enter the grids for the ROMS model:
@@ -47,13 +47,10 @@ wrf_grids{1}='wrfinput_d01';
 wrf_grids{2}='wrfinput_d02';
 
 %step 3: enter location of scrip.exe
-scrip_exe='c:/work/models/COAWST_v3.1/Lib/SCRIP/scrip.exe';
-%scrip_exe='e:/data/models/COAWST_tests/coawst_v3.1/coawst_v3.1_svn/Lib/SCRIP/scrip.exe';
+scrip_exe='e:/data/models/COAWST/Lib/SCRIP/scrip.exe';
 
 %step 4: enter working dir
-%wdir='c:/work/models/COAWST_v3.1/Projects/Inlet_test/Refined';
-wdir='c:/work/models/COAWST_tests/COAWST_v3.1_119/Projects/Sandy';
-%wdir='e:\data\models\COAWST_tests\coawst_v3.1\coawst_v3.1_svn\Projects\Sandy';
+wdir='e:\data\models\COAWST\Projects\Sandy';
 
 %step 5: Select the process steps to create the SCRIP files.
 

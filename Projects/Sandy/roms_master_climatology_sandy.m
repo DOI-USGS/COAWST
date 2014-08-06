@@ -24,7 +24,7 @@
 %%%%%%%%%%%%%%%%%%%%%   START OF USER INPUT  %%%%%%%%%%%%%%%%%%%%%%%%%%
 
 % (1) Enter start date (T1) and number of days to get climatology data 
-T1=datenum(2012,10,28,0,0,0); %start date
+T1=datenum(2012,10,28,12,0,0); %start date
 %number of days to create clm for
 numdays=3;
 dayFrequency=1;

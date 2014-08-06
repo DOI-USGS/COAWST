@@ -224,7 +224,7 @@
 !
 ! Load the dst grid as a coupling mask.
 !
-          allocate(O2A_CPLMASK(ng,ia)%dst_mask(num_sparse_elems))
+          allocate(O2A_CPLMASK(ng,ia)%dst_mask(nRows))
           DO i=1,nRows
             O2A_CPLMASK(ng,ia)%dst_mask(i)=dst_grid_imask(i)
           END DO
@@ -251,10 +251,10 @@
 ! scatter dst_grid_imask to be used as cpl_mask
 !
         IF (Myrank.ne.MyMaster) THEN
-          num_sparse_elems=dst_grid_dims(1)*dst_grid_dims(2)
-          allocate(O2A_CPLMASK(ng,ia)%dst_mask(num_sparse_elems))
+          nRows=dst_grid_dims(1)*dst_grid_dims(2)
+          allocate(O2A_CPLMASK(ng,ia)%dst_mask(nRows))
         END IF
-        CALL mpi_bcast(O2A_CPLMASK(ng,ia)%dst_mask, num_sparse_elems,   &
+        CALL mpi_bcast(O2A_CPLMASK(ng,ia)%dst_mask,nRows,               &
      &                 MPI_INTEGER, MyMaster,                           &
      &                 OCN_COMM_WORLD, MyError)
 !

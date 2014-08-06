@@ -832,10 +832,10 @@
 # ifdef WRF_COUPLING
 !
 !     Call to get data from atm model.
-      DO ia=1,Natm_grids
-        DO iw=1,NUM_SGRIDS
-          CALL INIT_POINTERS(iw)
-          CALL INIT_COUPLING_POINTERS(iw)
+      DO iw=1,NUM_SGRIDS
+        CALL INIT_POINTERS(iw)
+        CALL INIT_COUPLING_POINTERS(iw)
+        DO ia=1,Natm_grids
           run_couple=1
           IF ((first.eq.1).and.(iics(iw).eq.0)) run_couple=0
           IF (MOD(iics(iw), nWAVFATM(iw,ia)).ne.0) run_couple=0
@@ -849,10 +849,10 @@
   55  CONTINUE
 !
 !     Send data to atm model.
-      DO ia=1,Natm_grids
-        DO iw=1,NUM_SGRIDS
-          CALL INIT_POINTERS(iw)
-          CALL INIT_COUPLING_POINTERS(iw)
+      DO iw=1,NUM_SGRIDS
+        CALL INIT_POINTERS(iw)
+        CALL INIT_COUPLING_POINTERS(iw)
+        DO ia=1,Natm_grids
           run_couple=1
           IF ((first.eq.1).and.(iics(iw).eq.0)) run_couple=0
           IF (MOD(iics(iw), nWAV2ATM(iw,ia)).ne.0) run_couple=0

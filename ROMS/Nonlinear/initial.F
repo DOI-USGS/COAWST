@@ -952,8 +952,8 @@
         roms_facoup(io)=0
         roms_2acoup(io)=0
       END DO
-      DO ia=1,Natm_grids
-        DO ng=1,Ngrids
+      DO ng=1,Ngrids
+        DO ia=1,Natm_grids
           DO tile=first_tile(ng),last_tile(ng),+1
             CALL ocnfatm_coupling (ng, ia, tile)
           END DO
@@ -961,8 +961,8 @@
           IF (Master) WRITE (stdout,'(/)')
         END DO
       END DO
-      DO ia=1,Natm_grids
-        DO ng=1,Ngrids
+      DO ng=1,Ngrids
+        DO ia=1,Natm_grids
           DO tile=first_tile(ng),last_tile(ng),+1
             CALL ocn2atm_coupling (ng, ia, tile)
           END DO

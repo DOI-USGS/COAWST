@@ -318,7 +318,7 @@
 !
 !  Initialize attribute vector for data from SWAN.
 !
-# ifdef MCT_INTERP_OC2AT
+#  ifdef MCT_INTERP_WV2AT
       CALL AttrVect_init (AttrVect_G(ia)%wav2atm_AV,                    &
      &                    rList="HSIGN:WLENP:RTP:CPL_MASK",             &
      &                    lsize=gsmsize)
@@ -414,110 +414,80 @@
               offset=-1
             END IF
 # ifdef ROMS_COUPLING
-            ia=1
             IF (MOD(num_steps+offset, nATM2OCN(1,1)).eq.0) THEN
               DO io=1,Nocn_grids
-!                IF (MOD(num_steps, nATM2OCN(ia,io)).eq.0) THEN
-                  CALL atm2ocn_coupling (grid,ia,io)
-!                END IF
-              END DO
-              grid_ptr => grid
-              DO WHILE ( ASSOCIATED( grid_ptr ) )
-                DO kid = 1, max_nests
-                  IF ( ASSOCIATED( grid_ptr%nests(kid)%ptr ) ) THEN
-                    ia=ia+1
-!                   offset=0
-                    num_ksteps=grid_ptr%itimestep
-                    DO io=1,Nocn_grids
-!                     write(*,*) 'atm2ocn ', ia,io,num_ksteps, nATM2OCN(ia,io)
-!                      IF (MOD(num_ksteps+offset, nATM2OCN(ia,io)).eq.0) THEN
-                        CALL atm2ocn_coupling (grid_ptr%nests(kid)%ptr,ia,io)
-!                      END IF
-                    END DO
-                  END IF
+                ia=1
+                CALL atm2ocn_coupling (grid,ia,io)
+                grid_ptr => grid
+                DO WHILE ( ASSOCIATED( grid_ptr ) )
+                  DO kid = 1, max_nests
+                    IF ( ASSOCIATED( grid_ptr%nests(kid)%ptr ) ) THEN
+                      ia=ia+1
+                      num_ksteps=grid_ptr%itimestep
+                      CALL atm2ocn_coupling (grid_ptr%nests(kid)%ptr,ia,io)
+                    END IF
+                  END DO
+                  grid_ptr => grid_ptr%sibling
                 END DO
-                grid_ptr => grid_ptr%sibling
               END DO
             END IF
 !
-              ia=1
            IF (MOD(num_steps+offset, nATMFOCN(1,1)).eq.0) THEN
-              DO io=1,Nocn_grids
-!                IF (MOD(num_steps, nATMFOCN(ia,io)).eq.0) THEN
-                  CALL atmfocn_coupling (grid,ia,io)
-!                END IF
-              END DO
-              grid_ptr => grid
-              DO WHILE ( ASSOCIATED( grid_ptr ) )
-                DO kid = 1, max_nests
-                  IF ( ASSOCIATED( grid_ptr%nests(kid)%ptr ) ) THEN
-                    ia=ia+1
-!                   offset=0
-                    num_ksteps=grid_ptr%itimestep
-                    DO io=1,Nocn_grids
-!                      IF (MOD(num_ksteps+offset, nATMFOCN(ia,io)).eq.0) THEN
-                        CALL atmfocn_coupling (grid_ptr%nests(kid)%ptr,ia,io)
-!                      END IF
-                    END DO
-                  END IF
-                END DO
-                grid_ptr => grid_ptr%sibling
-              END DO
-            END IF
+             DO io=1,Nocn_grids
+               ia=1
+         write(*,*) 'wrf call ocn cp'
+               CALL atmfocn_coupling (grid,ia,io)
+               grid_ptr => grid
+               DO WHILE ( ASSOCIATED( grid_ptr ) )
+                 DO kid = 1, max_nests
+                   IF ( ASSOCIATED( grid_ptr%nests(kid)%ptr ) ) THEN
+                     ia=ia+1
+                     num_ksteps=grid_ptr%itimestep
+                     CALL atmfocn_coupling (grid_ptr%nests(kid)%ptr,ia,io)
+                   END IF
+                 END DO
+                 grid_ptr => grid_ptr%sibling
+               END DO
+             END DO
+           END IF
 # endif
 
 # ifdef SWAN_COUPLING
-              ia=1
             IF (MOD(num_steps+offset, nATM2WAV(1,1)).eq.0) THEN
               DO iw=1,Nwav_grids
-!                IF (MOD(num_steps, nATM2WAV(ia,iw)).eq.0) THEN
-                  CALL atm2wav_coupling (grid,ia,iw)
-!                END IF
-              END DO
-              grid_ptr => grid
-              DO WHILE ( ASSOCIATED( grid_ptr ) )
-                DO kid = 1, max_nests
-                  IF ( ASSOCIATED( grid_ptr%nests(kid)%ptr ) ) THEN
-                    ia=ia+1
-!                   offset=0
-                    num_ksteps=grid_ptr%itimestep
-                    DO iw=1,Nwav_grids
-!                     write(*,*) 'atm2wav ', ia,iw,num_ksteps, nATM2WAV(ia,iw)
-!                      IF (MOD(num_ksteps+offset, nATM2WAV(ia,iw)).eq.0) THEN
-                        CALL atm2wav_coupling (grid_ptr%nests(kid)%ptr,ia,iw)
-!                      END IF
-                    END DO
-                  END IF
+                ia=1
+                CALL atm2wav_coupling (grid,ia,iw)
+                grid_ptr => grid
+                DO WHILE ( ASSOCIATED( grid_ptr ) )
+                  DO kid = 1, max_nests
+                    IF ( ASSOCIATED( grid_ptr%nests(kid)%ptr ) ) THEN
+                      ia=ia+1
+                      num_ksteps=grid_ptr%itimestep
+                      CALL atm2wav_coupling (grid_ptr%nests(kid)%ptr,ia,iw)
+                    END IF
+                  END DO
+                  grid_ptr => grid_ptr%sibling
                 END DO
-                grid_ptr => grid_ptr%sibling
               END DO
             END IF
 !
-              ia=1
             IF (MOD(num_steps+offset, nATMFWAV(1,1)).eq.0) THEN
               DO iw=1,Nwav_grids
-!                IF (MOD(num_steps, nATMFWAV(ia,iw)).eq.0) THEN
-                  CALL atmfwav_coupling (grid,ia,iw)
-!                END IF
-              END DO
-              grid_ptr => grid
-              DO WHILE ( ASSOCIATED( grid_ptr ) )
-                DO kid = 1, max_nests
-                  IF ( ASSOCIATED( grid_ptr%nests(kid)%ptr ) ) THEN
-                    ia=ia+1
-!                   offset=0
-                    num_ksteps=grid_ptr%itimestep
-                    DO iw=1,Nwav_grids
-!                      IF (MOD(num_ksteps+offset, nATMFWAV(ia,iw)).eq.0) THEN
-                        CALL atmfwav_coupling (grid_ptr%nests(kid)%ptr,ia,iw)
-!                      END IF
-                    END DO
-                  END IF
+                ia=1
+                CALL atmfwav_coupling (grid,ia,iw)
+                grid_ptr => grid
+                DO WHILE ( ASSOCIATED( grid_ptr ) )
+                  DO kid = 1, max_nests
+                    IF ( ASSOCIATED( grid_ptr%nests(kid)%ptr ) ) THEN
+                      ia=ia+1
+                      num_ksteps=grid_ptr%itimestep
+                      CALL atmfwav_coupling (grid_ptr%nests(kid)%ptr,ia,iw)
+                    END IF
+                  END DO
+                  grid_ptr => grid_ptr%sibling
                 END DO
-                grid_ptr => grid_ptr%sibling
               END DO
             END IF
-
 # endif
 
       RETURN
@@ -1250,7 +1220,7 @@
 !
 !  CPL_MASK
 !
-#  ifdef MCT_INTERP_OC2AT
+#  ifdef MCT_INTERP_WV2AT
       CALL AttrVect_exportRAttr (AttrVect_G(ia)%wav2atm_AV, "CPL_MASK", &
      &                           AA, Asize)
       ij=0

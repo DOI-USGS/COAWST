@@ -57,12 +57,16 @@
         aline=ADJUSTL(line)
         IF(aline(1:7).eq.'NSGRIDS') THEN
           read(aline(8:12),'(i5)') NUM_SGRIDS
-        END IF
 # ifdef NESTING
-        IF (NUM_SGRIDS.eq.1) THEN
-          WRITE(out,'(a40)') 'Num swan grids should be > 1 for nesting'
-        END IF
+          IF (NUM_SGRIDS.eq.1) THEN
+            WRITE(out,'(a40)') 'Num swan grids should be > 1 for nesting'
+          END IF
+# else
+          IF (NUM_SGRIDS.ne.1) THEN
+            WRITE(out,'(a40)') 'Num swan grids should = 1 for no nesting'
+          END IF
 # endif
+        END IF
       END DO
  116  IF (MyRank.eq.MyMaster) WRITE (out,60) line
 !     exit_flag=4
