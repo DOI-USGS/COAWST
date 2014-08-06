@@ -10,14 +10,17 @@ clear
 %%%%%%%%%% BEGIN user input   %%%%%%%%%%%%
 %
 %1) Enter name of swan .grd ascii grid file.
-grid_file = 'inlet_test_grid_coord2.grd';
+%grid_file = 'inlet_test_grid_coord.grd';
+%grid_file = 'inlet_test_grid_coord2.grd';
+grid_file = 'inlet_test_grid_ref3_coord.grd';
 
 %2) Enter the grid size. This will be +1 from the values entered for the 
 %   SWAN input file. For example, if you use:
 %   CGRID CURVILINEAR 86 81 EXC 9.999000e+003 & ...
 %   THEN enter Numx = 87;  Numy = 82;
-Numx=87;
-Numy=82;
+%Numx=77; Numy=72;   % this was for inlet_test_grid_coord
+%Numx=87; Numy=82;   % this was for inlet_test_grid_coord diff grid
+Numx=92; Numy=50;   % this was for inlet_test_grid_ref3_coord
 
 %3) Are the grid coordinates in lat/lon or in meters?
 %   Enter 0 for lat/lon,  1 for meters.
@@ -26,18 +29,31 @@ grid_coords=1;  % this was in meters
 
 %3) Enter name of the bathy file. This will be used to compute the
 %   grid mask.
-bath_file = 'inlet_test_bathy2.bot';
+%bath_file = 'inlet_test_bathy.bot';
+%bath_file = 'inlet_test_bathy2.bot';
+bath_file = 'inlet_test_bathy_ref3.bot';
 
 %4) Enter name of netcdf output file to use by scrip.
-out_file = 'inlet_test_swan_scrip.nc';
+%out_file = 'inlet_test_swan_scrip.nc';
+out_file = 'inlet_test_swan_ref3_scrip.nc';
+
 
 %%%%%%%%%% END of user input   %%%%%%%%%%%%
 
 %load the swan grid and bathy
 bath=load(bath_file);
-bath=reshape(bath,Numx,Numy)';
+%bath=reshape(bath,Numx,Numy)';
+%bath=reshape(bath,Numy,Numx);
 mask=ones(size(bath));
 mask(bath==9999)=0;
+
+%mask=mask*0;
+%Istr=25; Iend=54; Jstr=41; Jend=56;
+%mask(Jstr:Jend,Istr:Iend)=0;
+mask(:,1)=0;
+mask(:,end)=0;
+mask(1,:)=0;
+mask(end,:)=0;
 
 grd=load(grid_file);
 gridsize=length(grd)/2;

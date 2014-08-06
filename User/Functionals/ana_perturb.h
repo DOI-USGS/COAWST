@@ -1,8 +1,8 @@
       SUBROUTINE ana_perturb (ng, tile, model)
 !
-!! svn $Id: ana_perturb.h 429 2009-12-20 17:30:26Z arango $
+!! svn $Id$
 !!======================================================================
-!! Copyright (c) 2002-2010 The ROMS/TOMS Group                         !
+!! Copyright (c) 2002-2014 The ROMS/TOMS Group                         !
 !!   Licensed under a MIT/X style license                              !
 !!   See License_ROMS.txt                                              !
 !=======================================================================
@@ -489,8 +489,8 @@
 !-----------------------------------------------------------------------
 !
       IF (TLmodel) THEN
-        DO j=JstrR,JendR
-          DO i=Istr,IendR
+        DO j=JstrT,JendT
+          DO i=IstrP,IendT
             IF ((ivarTL.eq.isUbar).and.                                 &
      &          (i.eq.IperTL).and.(j.eq.JperTL)) THEN
               tl_ubar(i,j,kstp)=1.0_r8
@@ -499,8 +499,8 @@
             END IF
           END DO
         END DO
-        DO j=Jstr,JendR
-          DO i=IstrR,IendR
+        DO j=JstrP,JendT
+          DO i=IstrT,IendT
             IF ((ivarTL.eq.isVbar).and.                                 &
      &          (i.eq.IperTL).and.(j.eq.JperTL)) THEN
               tl_vbar(i,j,kstp)=1.0_r8
@@ -512,8 +512,8 @@
       END IF
 !
       IF (ADmodel) THEN
-        DO j=JstrR,JendR
-          DO i=Istr,IendR
+        DO j=JstrT,JendT
+          DO i=IstrP,IendT
             IF ((ivarAD.eq.isUbar).and.                                 &
      &          (i.eq.IperAD).and.(j.eq.JperAD)) THEN
               ad_ubar(i,j,knew)=1.0_r8
@@ -522,8 +522,8 @@
             END IF
           END DO
         END DO
-        DO j=Jstr,JendR
-          DO i=IstrR,IendR
+        DO j=JstrP,JendT
+          DO i=IstrT,IendT
             IF ((ivarAD.eq.isVbar).and.                                 &
      &          (i.eq.IperAD).and.(j.eq.JperAD)) THEN
               ad_vbar(i,j,knew)=1.0_r8
@@ -541,8 +541,8 @@
 !
       IF (TLmodel) THEN
         DO ir=1,Nfrec(ng)
-          DO j=JstrR,JendR
-            DO i=Istr,IendR
+          DO j=JstrT,JendT
+            DO i=IstrP,IendT
               IF ((ivarTL.eq.isUstr).and.                               &
      &            (i.eq.IperTL).and.(j.eq.JperTL).and.                  &
      &            (ir.eq.KperTL)) THEN
@@ -552,8 +552,8 @@
               END IF
             END DO
           END DO
-          DO j=Jstr,JendR
-            DO i=IstrR,IendR
+          DO j=JstrP,JendT
+            DO i=IstrT,IendT
               IF ((ivarTL.eq.isVstr).and.                               &
      &            (i.eq.IperTL).and.(j.eq.JperTL).and.                  &
      &            (ir.eq.KperTL)) THEN
@@ -568,8 +568,8 @@
 !
       IF (ADmodel) THEN
         DO ir=1,Nfrec(ng)
-          DO j=JstrR,JendR
-            DO i=Istr,IendR
+          DO j=JstrT,JendT
+            DO i=IstrP,IendT
               IF ((ivarAD.eq.isUstr).and.                               &
      &            (i.eq.IperAD).and.(j.eq.JperAD).and.                  &
      &            (ir.eq.KperAD)) THEN
@@ -579,8 +579,8 @@
               END IF
             END DO
           END DO
-          DO j=Jstr,JendR
-            DO i=IstrR,IendR
+          DO j=JstrP,JendT
+            DO i=IstrT,IendT
               IF ((ivarAD.eq.isVstr).and.                               &
      &            (i.eq.IperAD).and.(j.eq.JperAD).and.                  &
      &            (ir.eq.KperAD)) THEN
@@ -599,8 +599,8 @@
 !-----------------------------------------------------------------------
 !
       IF (TLmodel) THEN
-        DO j=JstrR,JendR
-          DO i=IstrR,IendR
+        DO j=JstrT,JendT
+          DO i=IstrT,IendT
             IF ((ivarTL.eq.isFsur).and.                                 &
      &          (i.eq.IperTL).and.(j.eq.JperTL)) THEN
               tl_zeta(i,j,kstp)=1.0_r8
@@ -612,8 +612,8 @@
       END IF
 !
       IF (ADmodel) THEN
-        DO j=JstrR,JendR
-          DO i=IstrR,IendR
+        DO j=JstrT,JendT
+          DO i=IstrT,IendT
             IF ((ivarAD.eq.isFsur).and.                                 &
      &          (i.eq.IperAD).and.(j.eq.JperAD)) THEN
               ad_zeta(i,j,knew)=1.0_r8
@@ -632,8 +632,8 @@
 !
       IF (TLmodel) THEN
         DO k=1,N(ng)
-          DO j=JstrR,JendR
-            DO i=Istr,IendR
+          DO j=JstrT,JendT
+            DO i=IstrP,IendT
               IF ((ivarTL.eq.isUvel).and.                               &
      &            (i.eq.IperTL).and.(j.eq.JperTL).and.                  &
      &            (k.eq.KperTL)) THEN
@@ -643,8 +643,8 @@
               END IF
             END DO
           END DO
-          DO j=Jstr,JendR
-            DO i=IstrR,IendR
+          DO j=JstrP,JendT
+            DO i=IstrT,IendT
               IF ((ivarTL.eq.isVvel).and.                               &
      &            (i.eq.IperTL).and.(j.eq.JperTL).and.                  &
      &            (k.eq.KperTL)) THEN
@@ -659,8 +659,8 @@
 !
       IF (ADmodel) THEN
         DO k=1,N(ng)
-          DO j=JstrR,JendR
-            DO i=Istr,IendR
+          DO j=JstrT,JendT
+            DO i=IstrP,IendT
               IF ((ivarAD.eq.isUvel).and.                               &
      &            (i.eq.IperAD).and.(j.eq.JperAD).and.                  &
      &            (k.eq.KperAD)) THEN
@@ -670,8 +670,8 @@
               END IF
             END DO
           END DO
-          DO j=Jstr,JendR
-            DO i=IstrR,IendR
+          DO j=JstrP,JendT
+            DO i=IstrT,IendT
               IF ((ivarAD.eq.isVvel).and.                               &
      &            (i.eq.IperAD).and.(j.eq.JperAD).and.                  &
      &            (k.eq.KperAD)) THEN
@@ -691,8 +691,8 @@
       IF (TLmodel) THEN
         DO itrc=1,NT(ng)
           DO k=1,N(ng)
-            DO j=JstrR,JendR
-              DO i=IstrR,IendR
+            DO j=JstrT,JendT
+              DO i=IstrT,IendT
                 IF ((ivarTL.eq.isTvar(itrc)).and.                       &
      &              (i.eq.IperTL).and.(j.eq.JperTL).and.                &
      &              (k.eq.KperTL)) THEN
@@ -709,8 +709,8 @@
       IF (ADmodel) THEN
         DO itrc=1,NT(ng)
           DO k=1,N(ng)
-            DO j=JstrR,JendR
-              DO i=IstrR,IendR
+            DO j=JstrT,JendT
+              DO i=IstrT,IendT
                 IF ((ivarAD.eq.isTvar(itrc)).and.                       &
      &              (i.eq.IperAD).and.(j.eq.JperAD).and.                &
      &              (k.eq.KperAD)) THEN
@@ -732,8 +732,8 @@
       IF (TLmodel) THEN
         DO itrc=1,NT(ng)
           DO ir=1,Nfrec(ng)
-            DO j=JstrR,JendR
-              DO i=IstrR,IendR
+            DO j=JstrT,JendT
+              DO i=IstrT,IendT
                 IF ((ivarTL.eq.isTsur(itrc)).and.                       &
      &              (i.eq.IperTL).and.(j.eq.JperTL).and.                &
      &              (ir.eq.KperTL)) THEN
@@ -750,8 +750,8 @@
       IF (ADmodel) THEN
         DO itrc=1,NT(ng)
           DO ir=1,Nfrec(ng)
-            DO j=JstrR,JendR
-              DO i=IstrR,IendR
+            DO j=JstrT,JendT
+              DO i=IstrT,IendT
                 IF ((ivarAD.eq.isTsur(itrc)).and.                       &
      &              (i.eq.IperAD).and.(j.eq.JperAD).and.                &
      &              (ir.eq.KperAD)) THEN
@@ -771,10 +771,10 @@
 !  Perturb open boundary conditions.
 !-----------------------------------------------------------------------
 !
-      Lperturb(iwest )=WESTERN_EDGE
-      Lperturb(ieast )=EASTERN_EDGE
-      Lperturb(isouth)=SOUTHERN_EDGE
-      Lperturb(inorth)=NORTHERN_EDGE
+      Lperturb(iwest )=DOMAIN(ng)%Western_Edge (tile)
+      Lperturb(ieast )=DOMAIN(ng)%Eastern_Edge (tile)
+      Lperturb(isouth)=DOMAIN(ng)%Southern_Edge(tile)
+      Lperturb(inorth)=DOMAIN(ng)%Northern_Edge(tile)
 
       DO ir=1,Nbrec(ng)
         DO ib=1,4

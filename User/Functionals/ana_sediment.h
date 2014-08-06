@@ -1,8 +1,8 @@
       SUBROUTINE ana_sediment (ng, tile, model)
 !
-!! svn $Id: ana_sediment.h 429 2009-12-20 17:30:26Z arango $
+!! svn $Id$
 !!======================================================================
-!! Copyright (c) 2002-2010 The ROMS/TOMS Group                         !
+!! Copyright (c) 2002-2014 The ROMS/TOMS Group                         !
 !!   Licensed under a MIT/X style license                              !
 !!   See License_ROMS.txt                                              !
 !=======================================================================
@@ -77,13 +77,6 @@
       USE mod_scalars
       USE mod_sediment
 !
-#if defined EW_PERIODIC || defined NS_PERIODIC
-      USE exchange_3d_mod, ONLY : exchange_r3d_tile
-#endif
-#ifdef DISTRIBUTE
-      USE mp_exchange_mod, ONLY : mp_exchange3d, mp_exchange4d
-#endif
-!
 !  Imported variable declarations.
 !
       integer, intent(in) :: ng, tile, model
@@ -124,19 +117,6 @@
 !
 !  Local variable declarations.
 !
-#ifdef DISTRIBUTE
-# ifdef EW_PERIODIC
-      logical :: EWperiodic=.TRUE.
-# else
-      logical :: EWperiodic=.FALSE.
-# endif
-# ifdef NS_PERIODIC
-      logical :: NSperiodic=.TRUE.
-# else
-      logical :: NSperiodic=.FALSE.
-# endif
-#endif
-
       integer :: i, ised, j, k
 
       real(r8) :: cff1, cff2, cff3, cff4
@@ -151,15 +131,15 @@
 !-----------------------------------------------------------------------
 !
 # if defined MY_APPLICATION
-      DO j=JstrR,JendR
-        DO i=IstrR,IendR
+      DO j=JstrT,JendT
+        DO i=IstrT,IendT
           bottom(i,j,isd50)=???
           bottom(i,j,idens)=???
         END DO
       END DO
 # else
       ana_sediment.h: no values provided for bottom(:,:,isd50) and
-                                             bottom(:,:,idens).
+                                             bottom(:,:,idens)
 # endif
 
 # if defined MB_BBL || defined SSW_BBL
@@ -170,8 +150,8 @@
 !-----------------------------------------------------------------------
 !
 #  if defined MY_APPLICATION
-      DO j=JstrR,JendR
-        DO i=IstrR,IendR
+      DO j=JstrT,JendT
+        DO i=IstrT,IendT
           bottom(i,j,itauc)=???
         END DO
       END DO
@@ -184,12 +164,12 @@
 !
 !-----------------------------------------------------------------------
 !  If only Blass bottom boundary layer and not sediment model, set
-!  sediiment settling velocity (m/s).
+!  sediment settling velocity (m/s).
 !-----------------------------------------------------------------------
 !
 #  if defined MY_APPLICATION
-      DO j=JstrR,JendR
-        DO i=IstrR,IendR
+      DO j=JstrT,JendT
+        DO i=IstrT,IendT
           bottom(i,j,iwsed)=???
         END DO
       END DO
@@ -197,7 +177,6 @@
       ana_sediment.h: no values provided for bottom(:,:,iwsed).
 #  endif
 # endif
-
 #endif
 
 #ifdef SEDIMENT
@@ -208,8 +187,8 @@
 !
       DO ised=1,NST
         DO k=1,N(ng)
-          DO j=JstrR,JendR
-            DO i=IstrR,IendR
+          DO j=JstrT,JendT
+            DO i=IstrT,IendT
               t(i,j,k,1,idsed(ised))=Csed(ised,ng)
             END DO
           END DO
@@ -217,14 +196,14 @@
       END DO
 !
 !-----------------------------------------------------------------------
-!  Initial sediment bed layer properties of
-!  age, thickness, porosity, and initialize sediment bottom
-!  properites of ripple length, ripple height, and default Zob.
+!  Initial sediment bed layer properties of age, thickness, porosity,
+!  and initialize sediment bottom properites of ripple length, ripple
+!  height, and default Zob.
 !-----------------------------------------------------------------------
 !
 # if defined MY_APPLICATION
-      DO j=JstrR,JendR
-        DO i=IstrR,IendR
+      DO j=JstrT,JendT
+        DO i=IstrT,IendT
 !
 !  Set bed layer properties.
 !
@@ -233,7 +212,7 @@
              bed(i,j,k,ithck)=???
              bed(i,j,k,iporo)=???
              DO ised=1,NST
-               bed_frac(i,j,k,ised)=1.0_r8/FLOAT(NST)
+               bed_frac(i,j,k,ised)=1.0_r8/REAL(NST,r8)
              END DO
           END DO
 !
@@ -254,8 +233,8 @@
 !-----------------------------------------------------------------------
 !
       DO k=1,Nbed
-        DO j=JstrR,JendR
-          DO i=IstrR,IendR
+        DO j=JstrT,JendT
+          DO i=IstrT,IendT
 !
 !  Calculate mass so it is consistent with density, thickness, and
 !  porosity.
@@ -272,8 +251,8 @@
 !
 !  Set exposed sediment layer properties.
 !
-      DO j=JstrR,JendR
-        DO i=IstrR,IendR
+      DO j=JstrT,JendT
+        DO i=IstrT,IendT
           cff1=1.0_r8
           cff2=1.0_r8
           cff3=1.0_r8
@@ -301,5 +280,6 @@
         END DO
       END DO
 #endif
+
       RETURN
       END SUBROUTINE ana_sediment_tile

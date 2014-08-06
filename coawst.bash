@@ -2,7 +2,7 @@
 #
 # svn $Id: build.bash 429 2009-12-20 17:30:26Z jcwarner $
 #::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
-# Copyright (c) 2002-2010 The ROMS/TOMS Group                           :::
+# Copyright (c) 2002-2014 The ROMS/TOMS Group                           :::
 #   Licensed under a MIT/X style license                                :::
 #   See License_ROMS.txt                                                :::
 #::::::::::::::::::::::::::::::::::::::::::::::::::::: Hernan G. Arango :::
@@ -90,18 +90,16 @@ done
 # determine the name of the ".h" header file with the application
 # CPP definitions.
 
-export   ROMS_APPLICATION=SHOREFACE
-
-# Set number of Nested grids for ROMS and or SWAN. This feature is activated
-# with the cpp option REFINED_GRID. If you are using both ROMS and SWAN, 
-# you need to have the same number of grids for both models.
-
-export     NestedGrids=1
+#export   ROMS_APPLICATION=INLET_TEST
+#export   ROMS_APPLICATION=JOE_TC
+export   ROMS_APPLICATION=SANDY
 
 # Set a local environmental variable to define the path to the directories
 # where all this project's files are kept.
 
-export     MY_ROOT_DIR=/cygdrive/c/work/models/COAWST
+#export     MY_ROOT_DIR=/raid3/jcwarner/Projects/coawst_v3.1/coawst_v3.1_105
+export     MY_ROOT_DIR=/cygdrive/c/work/models/COAWST_tests/coawst_v3.1_111
+#export     MY_ROOT_DIR=/cygdrive/e/data/models/COAWST_tests/coawst_v3.1/coawst_
 export     MY_PROJECT_DIR=${MY_ROOT_DIR}
 
 # The path to the user's local current ROMS source code.
@@ -119,7 +117,7 @@ export        MY_ROMS_SRC=${MY_ROOT_DIR}/
 # Set path of the directory containing makefile configuration (*.mk) files.
 # The user has the option to specify a customized version of these files
 # in a different directory than the one distributed with the source code,
-# ${MY_ROMS_SCR}/Compilers. If this is the case, the you need to keep
+# ${MY_ROMS_SRC}/Compilers. If this is the case, the you need to keep
 # these configurations files up-to-date.
 
 #export         COMPILERS=${MY_ROMS_SRC}/Compilers
@@ -130,235 +128,255 @@ export        MY_ROMS_SRC=${MY_ROOT_DIR}/
 # different variants of the same application without modifying its header
 # file. If this is the case, specify each options here using the -D syntax.
 # Notice also that you need to use shell's quoting syntax to enclose the
-# definition.  Both single or double quotes works. For example, to write
-# time-averaged fields set:
+# definition.  Both single or double quotes work. For example,
 #
 #export      MY_CPP_FLAGS="-DAVERAGES"
+#export      MY_CPP_FLAGS="${MY_CPP_FLAGS} -DDEBUGGING"
+#
+# can be used to write time-averaged fields. Notice that you can have as
+# many definitions as you want by appending values.
+
+#export      MY_CPP_FLAGS="-D"
 
 # Other user defined environmental variables. See the ROMS makefile for
 # details on other options the user might want to set here. Be sure to
-# leave the switched meant to be off set to an empty string or commented
+# leave the switches meant to be off set to an empty string or commented
 # out. Any string value (including off) will evaluate to TRUE in
-# conditional if-stamentents.
+# conditional if-statements.
 
- export           USE_MPI=
- export        USE_MPIF90=
+ export           USE_MPI=on            # distributed-memory parallelism
+ export        USE_MPIF90=              # compile with mpif90 script
+#export         which_MPI=mpich         # compile with MPICH library
+#export         which_MPI=mpich2        # compile with MPICH2 library
+ export         which_MPI=openmpi       # compile with OpenMPI library
+
+#export        USE_OpenMP=on            # shared-memory parallelism
+
  export              FORT=ifort
 #export              FORT=gfortran
 #export              FORT=pgi
 
-#export        USE_OpenMP=on
+ export         USE_DEBUG=              # use Fortran debugging flags
+ export         USE_LARGE=              # activate 64-bit compilation
+#export       USE_NETCDF4=on            # compile with NetCDF-4 library
+#export   USE_PARALLEL_IO=on            # Parallel I/O with Netcdf-4/HDF5
 
- export         USE_DEBUG=
- export         USE_LARGE=
-#export       USE_NETCDF4=on
+#export       USE_MY_LIBS=on            # use my library paths below
 
-# There are several MPI libraries out there. The user can select here the
-# appropriate "mpif90" script to compile, provided that the makefile
-# macro file (say, Linux-pgi.mk) in the Compilers directory has:
+# There are several MPI libraries available. Here, we set the desired
+# "mpif90" script to use during compilation. This only works if the make
+# configuration file (say, Linux-pgi.mk) in the "Compilers" directory
+# has the following definition for FC (Fortran Compiler) in the USE_MPI
+# section:
 #
 #              FC := mpif90
 #
-# "mpif90" defined without any path. Recall that you still need to use the
-# appropriate "mpirun" to execute. Also notice that the path where the
-# MPI library is installed is computer dependent.
+# that is, "mpif90" defined without any path. Notice that the path
+# where the MPI library is installed is computer dependent. Recall
+# that you still need to use the appropriate "mpirun" to execute.
 
 if [ -n "${USE_MPIF90:+1}" ]; then
   case "$FORT" in
     ifort )
-#     export PATH=/opt/intelsoft/mpich/bin:$PATH
-      export PATH=/opt/intelsoft/mpich2/bin:$PATH
-#     export PATH=/opt/intelsoft/openmpi/bin:$PATH
+      if [ "${which_MPI}" = "mpich" ]; then
+        export PATH=/opt/intelsoft/mpich/bin:$PATH
+      elif [ "${which_MPI}" = "mpich2" ]; then
+        export PATH=/opt/intelsoft/mpich2/bin:$PATH
+      elif [ "${which_MPI}" = "openmpi" ]; then
+        export PATH=/opt/intelsoft/openmpi/bin:$PATH
+      fi
       ;;
 
     pgi )
-#     export PATH=/opt/pgisoft/mpich/bin:$PATH
-      export PATH=/opt/pgisoft/mpich2/bin:$PATH
-#     export PATH=/opt/pgisoft/openmpi/bin:$PATH
+      if [ "${which_MPI}" = "mpich" ]; then
+        export PATH=/opt/pgisoft/mpich/bin:$PATH
+      elif [ "${which_MPI}" = "mpich2" ]; then
+        export PATH=/opt/pgisoft/mpich2/bin:$PATH
+      elif [ "${which_MPI}" = "openmpi" ]; then
+        export PATH=/opt/pgisoft/openmpi/bin:$PATH
+      fi
       ;;
 
     gfortran )
-#     export PATH=/opt/gfortransoft/mpich2/bin:$PATH
-      export PATH=/opt/gfortansoft/openmpi/bin:$PATH
-      ;;
-
-    g95 )
-#     export PATH=/opt/g95soft/mpich2/bin:$PATH
-      export PATH=/opt/g95soft/openmpi/bin:$PATH
+      if [ "${which_MPI}" = "mpich2" ]; then
+        export PATH=/opt/gfortransoft/mpich2/bin:$PATH
+      elif [ "${which_MPI}" = "openmpi" ]; then
+        export PATH=/opt/gfortransoft/openmpi/bin:$PATH
+      fi
       ;;
 
   esac
 fi
 
-# The path of the libraries required by ROMS can be set here using
-# environmental variables which take precedence to the values
-# specified in the makefile macro definitions file (Compilers/*.mk).
-# If so desired, uncomment the local USE_MY_LIBS definition below
-# and edit the paths to your values. For most applications, only
-# the location of the NetCDF library (NETCDF_LIBDIR) and include
-# directorry (NETCDF_INCDIR) are needed!
+# If the USE_MY_LIBS is activated above, the path of the libraries
+# required by ROMS can be set here using environmental variables
+# which take precedence to the values specified in the make macro
+# definitions file (Compilers/*.mk). For most applications, only
+# the location of the NetCDF library is needed during compilation.
 #
-# Notice that when the USE_NETCDF4 macro is activated, we need a
-# serial and parallel version of the NetCDF-4/HDF5 library. The
-# parallel library uses parallel I/O through MPI-I/O so we need
-# compile also with the MPI library. This is fine in ROMS
-# distributed-memory applications.  However, in serial or
-# shared-memory ROMS applications we need to use the serial
-# version of the NetCDF-4/HDF5 to avoid conflicts with the
-# compiler. Recall also that the MPI library comes in several
-# flavors: MPICH, MPICH2, OpenMPI.
-
-#export           USE_MY_LIBS=on
+# Notice that when the USE_NETCDF4 macro is activated, we need the
+# serial or parallel version of the NetCDF-4/HDF5 library. The
+# configuration script NC_CONFIG (available since NetCDF 4.0.1)
+# is used to set up all the required libraries according to the
+# installed options (openDAP, netCDF4/HDF5 file format). The
+# parallel library uses the MPI-I/O layer (usually available
+# in MPICH2 and OpenMPI) requiring compiling with the selected
+# MPI library.
+#
+# In ROMS distributed-memory applications, you may use either the
+# serial or parallel version of the NetCDF-4/HDF5 library. The
+# parallel version is required when parallel I/O is activated
+# (ROMS cpp option PARALLEL_IO and HDF5).
+#
+# However, in serial or shared-memory ROMS applications, we need
+# to use the serial version of the NetCDF-4/HDF5 to avoid conflicts
+# with the compiler. We cannot activate MPI constructs in serial
+# or shared-memory ROMS code. Hybrid parallelism is not possible.
+#
+# Recall also that the MPI library comes in several flavors:
+# MPICH, MPICH2, OpenMPI, etc.
 
 if [ -n "${USE_MY_LIBS:+1}" ]; then
   case "$FORT" in
     ifort )
-      export           ESMF_DIR=/opt/intelsoft/esmf-3.1.0
-      export            ESMF_OS=Linux
-      export      ESMF_COMPILER=ifort
-      export          ESMF_BOPT=O
-      export           ESMF_ABI=64
-      export          ESMF_COMM=mpich
-      export          ESMF_SITE=default
-      export         MCT_INCDIR=/opt/intelsoft/mct/include
-      export         MCT_LIBDIR=/opt/intelsoft/mct/lib
+      export             ESMF_OS=Linux
+      export       ESMF_COMPILER=ifort
+      export           ESMF_BOPT=O
+      export            ESMF_ABI=64
+      export           ESMF_COMM=mpich
+      export           ESMF_SITE=default
 
-      export      ARPACK_LIBDIR=/opt/intelsoft/serial/ARPACK
+      export       ARPACK_LIBDIR=/opt/intelsoft/serial/ARPACK
       if [ -n "${USE_MPI:+1}" ]; then
-#       export   PARPACK_LIBDIR=/opt/intelsoft/mpich/PARPACK
-        export   PARPACK_LIBDIR=/opt/intelsoft/mpich2/PARPACK
-#       export   PARPACK_LIBDIR=/opt/intelsoft/openmpi/PARPACK
+        if [ "${which_MPI}" = "mpich" ]; then
+          export        ESMF_DIR=/opt/intelsoft/mpich/esmf
+          export      MCT_INCDIR=/opt/intelsoft/mpich/mct/include
+          export      MCT_LIBDIR=/opt/intelsoft/mpich/mct/lib
+          export  PARPACK_LIBDIR=/opt/intelsoft/mpich/PARPACK
+        elif [ "${which_MPI}" = "mpich2" ]; then
+          export        ESMF_DIR=/opt/intelsoft/mpich2/esmf
+          export      MCT_INCDIR=/opt/intelsoft/mpich2/mct/include
+          export      MCT_LIBDIR=/opt/intelsoft/mpich2/mct/lib
+          export  PARPACK_LIBDIR=/opt/intelsoft/mpich2/PARPACK
+        elif [ "${which_MPI}" = "openmpi" ]; then
+          export        ESMF_DIR=/opt/intelsoft/openmpi/esmf
+          export      MCT_INCDIR=/opt/intelsoft/openmpi/mct/include
+          export      MCT_LIBDIR=/opt/intelsoft/openmpi/mct/lib
+          export  PARPACK_LIBDIR=/opt/intelsoft/openmpi/PARPACK
+        fi
       fi
 
       if [ -n "${USE_NETCDF4:+1}" ]; then
-        if [ -n "${USE_MPI:+1}" ]; then
-#         export  NETCDF_INCDIR=/opt/intelsoft/mpich/netcdf4/include
-#         export  NETCDF_LIBDIR=/opt/intelsoft/mpich/netcdf4/lib
-#         export    HDF5_LIBDIR=/opt/intelsoft/mpich/hdf5/lib
-
-          export  NETCDF_INCDIR=/opt/intelsoft/mpich2/netcdf4/include
-          export  NETCDF_LIBDIR=/opt/intelsoft/mpich2/netcdf4/lib
-          export    HDF5_LIBDIR=/opt/intelsoft/mpich2/hdf5/lib
-
-#         export  NETCDF_INCDIR=/opt/intelsoft/openmpi/netcdf4/include
-#         export  NETCDF_LIBDIR=/opt/intelsoft/openmpi/netcdf4/lib
-#         export    HDF5_LIBDIR=/opt/intelsoft/openmpi/hdf5/lib
+        if [ -n "${USE_PARALLEL_IO:+1}" ] && [ -n "${USE_MPI:+1}" ]; then
+          if [ "${which_MPI}" = "mpich" ]; then
+            export     NC_CONFIG=/opt/intelsoft/mpich/netcdf4/bin/nc-config
+            export NETCDF_INCDIR=/opt/intelsoft/mpich/netcdf4/include
+          elif [ "${which_MPI}" = "mpich2" ]; then
+            export     NC_CONFIG=/opt/intelsoft/mpich2/netcdf4/bin/nc-config
+            export NETCDF_INCDIR=/opt/intelsoft/mpich2/netcdf4/include
+          elif [ "${which_MPI}" = "openmpi" ]; then
+            export     NC_CONFIG=/opt/intelsoft/openmpi/netcdf4/bin/nc-config
+            export NETCDF_INCDIR=/opt/intelsoft/openmpi/netcdf4/include
+          fi
         else
-          export  NETCDF_INCDIR=/opt/intelsoft/serial/netcdf4/include
-          export  NETCDF_LIBDIR=/opt/intelsoft/serial/netcdf4/lib
-          export    HDF5_LIBDIR=/opt/intelsoft/serial/hdf5/lib
+          export       NC_CONFIG=/opt/intelsoft/serial/netcdf4/bin/nc-config
+          export   NETCDF_INCDIR=/opt/intelsoft/serial/netcdf4/include
         fi
       else
-        export    NETCDF_INCDIR=/opt/intelsoft/serial/netcdf3/include
-        export    NETCDF_LIBDIR=/opt/intelsoft/serial/netcdf3/lib
+        export     NETCDF_INCDIR=/opt/intelsoft/serial/netcdf3/include
+        export     NETCDF_LIBDIR=/opt/intelsoft/serial/netcdf3/lib
       fi
       ;;
 
     pgi )
-      export           ESMF_DIR=/opt/pgisoft/esmf-3.1.0
-      export            ESMF_OS=Linux
-      export      ESMF_COMPILER=pgi
-      export          ESMF_BOPT=O
-      export           ESMF_ABI=64
-      export          ESMF_COMM=mpich
-      export          ESMF_SITE=default
-      export         MCT_INCDIR=/opt/pgisoft/mct/include
-      export         MCT_LIBDIR=/opt/pgisoft/mct/lib
+      export             ESMF_OS=Linux
+      export       ESMF_COMPILER=pgi
+      export           ESMF_BOPT=O
+      export            ESMF_ABI=64
+      export           ESMF_COMM=mpich
+      export           ESMF_SITE=default
 
-      export      ARPACK_LIBDIR=/opt/pgisoft/serial/ARPACK
+      export       ARPACK_LIBDIR=/opt/pgisoft/serial/ARPACK
       if [ -n "${USE_MPI:+1}" ]; then
-        export   PARPACK_LIBDIR=/opt/pgisoft/mpich/PARPACK
-#       export   PARPACK_LIBDIR=/opt/pgisoft/mpich2/PARPACK
-#       export   PARPACK_LIBDIR=/opt/pgisoft/openmpi/PARPACK
+        if [ "${which_MPI}" = "mpich" ]; then
+          export        ESMF_DIR=/opt/pgisoft/mpich/esmf
+          export      MCT_INCDIR=/opt/pgisoft/mpich/mct/include
+          export      MCT_LIBDIR=/opt/pgisoft/mpich/mct/lib
+          export  PARPACK_LIBDIR=/opt/pgisoft/mpich/PARPACK
+        elif [ "${which_MPI}" = "mpich2" ]; then
+          export        ESMF_DIR=/opt/pgisoft/mpich2/esmf
+          export      MCT_INCDIR=/opt/pgisoft/mpich2/mct/include
+          export      MCT_LIBDIR=/opt/pgisoft/mpich2/mct/lib
+          export  PARPACK_LIBDIR=/opt/pgisoft/mpich2/PARPACK
+        elif [ "${which_MPI}" = "openmpi" ]; then
+          export        ESMF_DIR=/opt/pgisoft/openmpi/esmf
+          export      MCT_INCDIR=/opt/pgisoft/openmpi/mct/include
+          export      MCT_LIBDIR=/opt/pgisoft/openmpi/mct/lib
+          export  PARPACK_LIBDIR=/opt/pgisoft/openmpi/PARPACK
+        fi
       fi
 
       if [ -n "${USE_NETCDF4:+1}" ]; then
-        if [ -n "${USE_MPI:+1}" ]; then
-#         export  NETCDF_INCDIR=/opt/pgisoft/mpich/netcdf4/include
-#         export  NETCDF_LIBDIR=/opt/pgisoft/mpich/netcdf4/lib
-#         export    HDF5_LIBDIR=/opt/pgisoft/mpich/hdf5/lib
-
-          export  NETCDF_INCDIR=/opt/pgisoft/mpich2/netcdf4/include
-          export  NETCDF_LIBDIR=/opt/pgisoft/mpich2/netcdf4/lib
-          export    HDF5_LIBDIR=/opt/pgisoft/mpich2/hdf5/lib
-
-#         export  NETCDF_INCDIR=/opt/pgisoft/openmpi/netcdf4/include
-#         export  NETCDF_LIBDIR=/opt/pgisoft/openmpi/netcdf4/lib
-#         export    HDF5_LIBDIR=/opt/pgisoft/openmpi/hdf5/lib
+        if [ -n "${USE_PARALLEL_IO:+1}" ] && [ -n "${USE_MPI:+1}" ]; then
+          if [ "${which_MPI}" = "mpich" ]; then
+            export     NC_CONFIG=/opt/pgisoft/mpich/netcdf4/bin/nc-config
+            export NETCDF_INCDIR=/opt/pgisoft/mpich/netcdf4/include
+          elif [ "${which_MPI}" = "mpich2" ]; then
+            export     NC_CONFIG=/opt/pgisoft/mpich2/netcdf4/bin/nc-config
+            export NETCDF_INCDIR=/opt/pgisoft/mpich2/netcdf4/include
+          elif [ "${which_MPI}" = "openmpi" ]; then
+            export     NC_CONFIG=/opt/pgisoft/openmpi/netcdf4/bin/nc-config
+            export NETCDF_INCDIR=/opt/pgisoft/openmpi/netcdf4/include
+          fi
         else
-          export  NETCDF_INCDIR=/opt/pgisoft/serial/netcdf4/include
-          export  NETCDF_LIBDIR=/opt/pgisoft/serial/netcdf4/lib
-          export    HDF5_LIBDIR=/opt/pgisoft/serial/hdf5/lib
+          export       NC_CONFIG=/opt/pgisoft/serial/netcdf4/bin/nc-config
+          export   NETCDF_INCDIR=/opt/pgisoft/serial/netcdf4/include
         fi
       else
-        export    NETCDF_INCDIR=/opt/pgisoft/serial/netcdf3/include
-        export    NETCDF_LIBDIR=/opt/pgisoft/serial/netcdf3/lib
+        export     NETCDF_INCDIR=/opt/pgisoft/serial/netcdf3/include
+        export     NETCDF_LIBDIR=/opt/pgisoft/serial/netcdf3/lib
       fi
       ;;
 
     gfortran )
-      export         MCT_INCDIR=/opt/gfortransoft/mct/include
-      export         MCT_LIBDIR=/opt/gfortransoft/mct/lib
+      export             ESMF_OS=Linux
+      export       ESMF_COMPILER=gfortran
+      export           ESMF_BOPT=O
+      export            ESMF_ABI=64
+      export           ESMF_COMM=mpich
+      export           ESMF_SITE=default
 
-      export      ARPACK_LIBDIR=/opt/gfortransoft/serial/ARPACK
+      export       ARPACK_LIBDIR=/opt/gfortransoft/serial/ARPACK
       if [ -n "${USE_MPI:+1}" ]; then
-#       export   PARPACK_LIBDIR=/opt/gfortransoft/mpich/PARPACK
-        export   PARPACK_LIBDIR=/opt/gfortransoft/mpich2/PARPACK
-#       export   PARPACK_LIBDIR=/opt/gfortransoft/openmpi/PARPACK
+        if [ "${which_MPI}" = "mpich2" ]; then
+          export        ESMF_DIR=/opt/gfortransoft/mpich2/esmf
+          export      MCT_INCDIR=/opt/gfortransoft/mpich2/mct/include
+          export      MCT_LIBDIR=/opt/gfortransoft/mpich2/mct/lib
+          export  PARPACK_LIBDIR=/opt/gfortransoft/mpich2/PARPACK
+        elif [ "${which_MPI}" = "openmpi" ]; then
+          export        ESMF_DIR=/opt/gfortransoft/openmpi/esmf
+          export      MCT_INCDIR=/opt/gfortransoft/openmpi/mct/include
+          export      MCT_LIBDIR=/opt/gfortransoft/openmpi/mct/lib
+          export  PARPACK_LIBDIR=/opt/gfortransoft/openmpi/PARPACK
+        fi
       fi
 
       if [ -n "${USE_NETCDF4:+1}" ]; then
-        if [ -n "${USE_MPI:+1}" ]; then
-#         export  NETCDF_INCDIR=/opt/gfortransoft/mpich/netcdf4/include
-#         export  NETCDF_LIBDIR=/opt/gfortransoft/mpich/netcdf4/lib
-#         export    HDF5_LIBDIR=/opt/gfortransoft/mpich/hdf5/lib
-
-          export  NETCDF_INCDIR=/opt/gfortransoft/mpich2/netcdf4/include
-          export  NETCDF_LIBDIR=/opt/gfortransoft/mpich2/netcdf4/lib
-          export    HDF5_LIBDIR=/opt/gfortransoft/mpich2/hdf5/lib
-
-#         export  NETCDF_INCDIR=/opt/gfortransoft/openmpi/netcdf4/include
-#         export  NETCDF_LIBDIR=/opt/gfortransoft/openmpi/netcdf4/lib
-#         export    HDF5_LIBDIR=/opt/gfortransoft/openmpi/hdf5/lib
+        if [ -n "${USE_PARALLEL_IO:+1}" ] && [ -n "${USE_MPI:+1}" ]; then
+          if [ "${which_MPI}" = "mpich2" ]; then
+            export     NC_CONFIG=/opt/gfortransoft/mpich2/netcdf4/bin/nc-config
+            export NETCDF_INCDIR=/opt/gfortransoft/mpich2/netcdf4/include
+          elif [ "${which_MPI}" = "openmpi" ]; then
+            export     NC_CONFIG=/opt/gfortransoft/openmpi/netcdf4/bin/nc-config
+            export NETCDF_INCDIR=/opt/gfortransoft/openmpi/netcdf4/include
+          fi
         else
-          export  NETCDF_INCDIR=/opt/gfortransoft/serial/netcdf4/include
-          export  NETCDF_LIBDIR=/opt/gfortransoft/serial/netcdf4/lib
-          export    HDF5_LIBDIR=/opt/gfortransoft/serial/hdf5/lib
+          export       NC_CONFIG=/opt/gfortransoft/serial/netcdf4/bin/nc-config
+          export   NETCDF_INCDIR=/opt/gfortransoft/serial/netcdf4/include
         fi
       else
-          export  NETCDF_INCDIR=/opt/gfortransoft/serial/netcdf3/include
-          export  NETCDF_LIBDIR=/opt/gfortransoft/serial/netcdf3/lib
-      fi
-      ;;
-
-    g95 )
-      export         MCT_INCDIR=/opt/g95soft/mct/include
-      export         MCT_LIBDIR=/opt/g95soft/mct/lib
-
-      export      ARPACK_LIBDIR=/opt/g95soft/serial/ARPACK
-      if [ -n "${USE_MPI:+1}" ]; then
-#       export   PARPACK_LIBDIR=/opt/g95soft/mpich/PARPACK
-        export   PARPACK_LIBDIR=/opt/g95soft/mpich2/PARPACK
-        export   PARPACK_LIBDIR=/opt/g95soft/openmpi/PARPACK
-      fi
-
-      if [ -n "${USE_NETCDF4:+1}" ]; then
-        if [ -n "${USE_MPI:+1}" ]; then
-          export  NETCDF_INCDIR=/opt/g95soft/mpich2/netcdf4/include
-          export  NETCDF_LIBDIR=/opt/g95soft/mpich2/netcdf4/lib
-          export    HDF5_LIBDIR=/opt/g95soft/mpich2/hdf5/lib
-
-#         export  NETCDF_INCDIR=/opt/g95soft/openmpi/netcdf4/include
-#         export  NETCDF_LIBDIR=/opt/g95soft/openmpi/netcdf4/lib
-#         export    HDF5_LIBDIR=/opt/g95soft/openmpi/hdf5/lib
-        else
-          export  NETCDF_INCDIR=/opt/g95soft/serial/netcdf4/include
-          export  NETCDF_LIBDIR=/opt/g95soft/serial/netcdf4/lib
-          export    HDF5_LIBDIR=/opt/g95soft/serial/hdf5/lib
-        fi
-      else
-        export    NETCDF_INCDIR=/opt/g95soft/serial/netcdf3/include
-        export    NETCDF_LIBDIR=/opt/g95soft/serial/netcdf3/lib
+        export     NETCDF_INCDIR=/opt/gfortransoft/serial/netcdf3/include
+        export     NETCDF_LIBDIR=/opt/gfortransoft/serial/netcdf3/lib
       fi
       ;;
 
@@ -372,8 +390,20 @@ fi
 # customized biology model header file (like fennel.h, nemuro.h, ecosim.h,
 # etc).
 
-  export     MY_HEADER_DIR=${MY_PROJECT_DIR}/ROMS/Include
-  export MY_ANALYTICAL_DIR=${MY_PROJECT_DIR}/ROMS/Functionals
+#  export     MY_HEADER_DIR=${MY_PROJECT_DIR}/ROMS/Include
+#  export MY_ANALYTICAL_DIR=${MY_PROJECT_DIR}/ROMS/Functionals
+#  export     MY_HEADER_DIR=${MY_PROJECT_DIR}/Projects/Inlet_test/Coupled
+#  export MY_ANALYTICAL_DIR=${MY_PROJECT_DIR}/Projects/Inlet_test/Coupled
+  export     MY_HEADER_DIR=${MY_PROJECT_DIR}/Projects/Inlet_test/Refined
+  export MY_ANALYTICAL_DIR=${MY_PROJECT_DIR}/Projects/Inlet_test/Refined
+#  export     MY_HEADER_DIR=${MY_PROJECT_DIR}/Projects/Inlet_test/DiffGrid
+#  export MY_ANALYTICAL_DIR=${MY_PROJECT_DIR}/Projects/Inlet_test/DiffGrid
+#  export     MY_HEADER_DIR=${MY_PROJECT_DIR}/Projects/Inlet_test/Swanonly
+#  export MY_ANALYTICAL_DIR=${MY_PROJECT_DIR}/Projects/Inlet_test/Swanonly
+#  export     MY_HEADER_DIR=${MY_PROJECT_DIR}/Projects/JOE_TCs
+#  export MY_ANALYTICAL_DIR=${MY_PROJECT_DIR}/Projects/JOE_TCs
+  export     MY_HEADER_DIR=${MY_PROJECT_DIR}/Projects/Sandy
+  export MY_ANALYTICAL_DIR=${MY_PROJECT_DIR}/Projects/Sandy
 
 # Put the binary to execute in the following directory.
 

@@ -1,27 +1,24 @@
 netcdf s4dvar_std_b {
 
 dimensions:
-        xi_rho = 62 ;
-        xi_u = 61 ;
-        xi_v = 62 ;
-        xi_psi = 61 ;
-        eta_rho = 62 ;
-        eta_u = 62 ;
-        eta_v = 61 ;
-        eta_psi = 61 ;
-        IorJ = 62 ;
-        N = 30 ;
+        xi_rho = 56 ;
+        eta_rho = 55 ;
+        xi_u = 55 ;
+        eta_u = 55 ;
+        xi_v = 56 ;
+        eta_v = 54 ;
+        IorJ = 56 ;
         s_rho = 30 ;
-        s_w = 30 ;
+        s_w = 31 ;
         boundary = 4 ;
 
         ocean_time = UNLIMITED ; // (0 currently)
 
 variables:
-        char spherical ;
+        int spherical ;
                 spherical:long_name = "grid type logical switch" ;
-                spherical:flag_values = "T, F" ;
-                spherical:flag_meanings = "spherical Cartesian" ;
+                spherical:flag_values = "0, 1" ;
+                spherical:flag_meanings = "Cartesian spherical" ;
         int Vtransform ;
                 Vtransform:long_name = "vertical terrain-following transformation equation" ;
         int Vstretching ;
@@ -87,9 +84,9 @@ variables:
 		lat_v:units = "degree_north" ;
                 lat_v:standard_name = "latitude" ;
 	double ocean_time(ocean_time) ;
-		ocean_time:long_name = "averaged time since initialization" ;
-		ocean_time:units = "seconds since 2006-01-01 00:00:00" ;
-		ocean_time:calendar = "365.25_day" ;
+		ocean_time:long_name = "time since initialization" ;
+		ocean_time:units = "seconds since 1968-05-23 00:00:00 GMT" ;
+		ocean_time:calendar = "gregorian" ;
 	double zeta_obc(ocean_time, boundary, IorJ) ;
 		zeta_obc:long_name = "free-surface open boundaries standard deviation" ;
 		zeta_obc:units = "meter" ;
@@ -121,8 +118,9 @@ variables:
 
 // global attributes:
 		:type = "ROMS/TOMS 4DVAR open boundary conditions error covariance standard deviation" ;
-                :boundary_index = "West=1, South=2, East=3, North=4" ;
-		:Conventions = "CF-1.0" ;
-		:title = "ROMS/TOMS 3.0 - Shallow Water 2006 Experiment, Coarse Grid" ;
-		:history = "ROMS/TOMS, Version 3.1, Thursday - Februry 16, 2009 -  2:00:00 PM" ;
+		:Conventions = "CF-1.4" ;
+		:boundary_index = "West=1, South=2, East=3, North=4" ;
+		:title = "California Current System, 1/3 degree resolution (WC13)" ;
+		:grd_file = "wc13_grd.nc" ;
+		:history = "Monday - June 21, 2010 -  11:00:00 AM" ;
 }

@@ -1,9 +1,9 @@
 !
 !  EcoSim Biological Model Parameters.
 !
-!svn $Id: ecosim.in 429 2009-12-20 17:30:26Z arango $
+!svn $Id$
 !========================================================= Hernan G. Arango ===
-!  Copyright (c) 2002-2010 The ROMS/TOMS Group              W. Paul Bissett   !
+!  Copyright (c) 2002-2014 The ROMS/TOMS Group              W. Paul Bissett   !
 !    Licensed under a MIT/X style license                                     !
 !    See License_ROMS.txt                                                     !
 !==============================================================================
@@ -537,6 +537,12 @@
        ad_TNU2 == 61*0.0d0                       ! m2/s
        ad_TNU4 == 61*0.0d0                       ! m4/s
 
+! Logical switches (TRUE/FALSE) to increase/decrease horizontal diffusivity
+! in specific areas of the application domain (like sponge areas) for the
+! desired grid: [Ngrids]
+
+ LtracerSponge == 61*F
+
 ! Vertical mixing coefficients for biological tracers for nonlinear model and
 ! basic state scale factor in adjoint-based algorithms: [NBT,Ngrids] values
 ! are expected.
@@ -550,17 +556,100 @@
 
          TNUDG == 61*0.0d0                       ! days
 
-! Logical switches (TRUE/FALSE) to specify which variables to consider on
-! tracers point Sources/Sinks (like river runoff): [NBT,Ngrids] values are
-! expected. See glossary below for details.
+! Set lateral boundary conditions keyword. Notice that a value is expected
+! for each boundary segment per nested grid for each state variable.
+!
+! The biological tracer variables require [1:4,1:NBT,Ngrids] values. The
+! boundary order is: 1=west, 2=south, 3=east, and 4=north. That is,
+! anticlockwise starting at the western boundary.
+!
+! The keyword is case insensitive and usually has three characters. However,
+! it is possible to have compound keywords, if applicable. For example, the
+! keyword "RadNud" implies radiation boundary condition with nudging. This
+! combination is usually used in active/passive radiation conditions.
+!
+! NOTICE: It is possible to specify the lateral boundary conditions for
+! ======  all biological tracers in a compact form with a single entry.
+! If so, all the biological tracers are assumed to have the same boundary
+! condition as in the single entry.
+!
+!   Keyword    Lateral Boundary Condition Type
+!
+!   Cla        Clamped                                _____N_____     j=Mm
+!   Clo        Closed                                |     4     |
+!   Gra        Gradient                              |           |
+!   Nes        Nested                              1 W           E 3
+!   Nud        Nudging                               |           |
+!   Per        Periodic                              |_____S_____|
+!   Rad        Radiation                                   2          j=1
+!                                                   i=1         i=Lm
+!                   W       S       E       N
+!                   e       o       a       o
+!                   s       u       s       r
+!                   t       t       t       t
+!                           h               h
+!
+!                   1       2       3       4
+
+   LBC(isTvar) ==   Per     Clo     Per     Clo      ! idbio(:), compact
+
+! Adjoint-based algorithms can have different lateral boundary
+! conditions keywords.
+
+ad_LBC(isTvar) ==   Per     Clo     Per     Clo      ! idbio(:), compact
+
+! Logical switches (TRUE/FALSE) to activate biological tracers point
+! Sources/Sinks (like river runoff) and to specify which tracer variables
+! to consider: [NBT,Ngrids] values are expected. See glossary below for
+! details.
 
     LtracerSrc == 61*F
 
-! Logical switches (T/F)  to write biological tracers into output NetCDF
-! files, [NBT,Ngrids] values are expected.
+! Logical switches (TRUE/FALSE) to read and process biological tracer
+! climatology fields: [NBT,Ngrids] values are expected. See glossary below
+! for details.
 
-  Hout(idTvar) == 61*T                           ! biological tracer
-  Hout(idTsur) == 61*F                           ! surface tracer flux
+    LtracerCLM == 61*F
+
+! Logical switches (TRUE/FALSE) to nudge the desired biological tracer
+! climatology field. If not analytical climatology fields, users need to
+! turn on the logical switches above to process the fields from the
+! climatology NetCDF file that are needed for nudging; [NBT,Ngrids]
+! values are expected. See glossary below for details.
+
+    LnudgeTCLM == 61*F
+
+! Logical switches (TRUE/FALSE) to write biological fields into HISTORY output
+! file, [NBT,Ngrids] values are expected.
+
+  Hout(idTvar) == 61*T   ! ..., DIC, ...           biological tracer
+  Hout(idTsur) == 61*F   ! ..., DIC_sflux, ...     surface tracer flux
+
+! Logical switches (TRUE/FALSE) to activate writing of time-averaged fields
+! into AVERAGE output file, [NBT,Ngrids] values are expected.
+
+  Aout(idTvar) == 61*T   ! ..., DIC, ...           biological tracer
+
+  Aout(idTTav) == 61*F   ! ..., DIC_2, ...         quadratic <t*t> tracer terms
+  Aout(idUTav) == 61*F   ! ..., u_DIC, ...         quadratic <u*t> tracer terms
+  Aout(idVTav) == 61*F   ! ..., v_DIC, ...         quadratic <v*t> tracer terms
+  Aout(iHUTav) == 61*F   ! ..., Huon_DIC, ...      tracer volume flux, <Huon*t>
+  Aout(iHVTav) == 61*F   ! ..., Hvom_DIC, ...      tracer volume flux, <Hvom*t>
+
+! Logical switches (TRUE/FALSE) to activate writing of time-averaged,
+! biological tracer diagnostic terms into DIAGNOSTIC output file:
+! [1:NBT,Ngrids].
+
+  Dout(iTrate) == 61*T   ! ..., DIC_rate, ...      time rate of change
+  Dout(iThadv) == 61*T   ! ..., DIC_hadv, ...      horizontal total advection
+  Dout(iTxadv) == 61*T   ! ..., DIC_xadv, ...      horizontal XI-advection
+  Dout(iTyadv) == 61*T   ! ..., DIC_yadv, ...      horizontal ETA-advection
+  Dout(iTvadv) == 61*T   ! ..., DIC_vadv, ...      vertical advection
+  Dout(iThdif) == 61*T   ! ..., DIC_hdiff, ...     horizontal total diffusion
+  Dout(iTxdif) == 61*T   ! ..., DIC_xdiff, ...     horizontal XI-diffusion
+  Dout(iTydif) == 61*T   ! ..., DIC_ydiff, ...     horizontal ETA-diffusion
+  Dout(iTsdif) == 61*T   ! ..., DIC_sdiff, ...     horizontal S-diffusion
+  Dout(iTvdif) == 61*T   ! ..., DIC_vdiff, ...     vertical diffusion
 
 !
 !  GLOSSARY:
@@ -570,67 +659,67 @@
 ! EcoSim Biological Model Parameters. It is configured with 61 biological
 ! tracers by default:
 !
-!   idbio( 1)     DIC concentration
-!   idbio( 2)     Iron concentration
-!   idbio( 3)     Ammonium concentration
-!   idbio( 4)     Nitrate concentration
-!   idbio( 5)     Phosphate concentration
-!   idbio( 6)     Silica concentration
-!   idbio( 7)     Bacteria, Carbon Group 1
-!   idbio( 8)     Bacteria, Iron Group 1
-!   idbio( 9)     Bacteria, Nitrogen Group 1
-!   idbio(10)     Bacteria, Phosphorus Group 1
-!   idbio(11)     Color degradational matter, Carbon Group 1
-!   idbio(12)     Dissolved organic matter, Carbon Group 1
-!   idbio(13)     Dissolved organic matter, Nitrogen Group 1
-!   idbio(14)     Dissolved organic matter, Phosphorus Group 1
-!   idbio(15)     Color degradational matter, Carbon Group 2
-!   idbio(16)     Dissolved organic matter, Carbon Group 2
-!   idbio(17)     Dissolved organic matter, Nitrogen Group 2
-!   idbio(18)     Dissolved organic matter, Phosphorus Group 2
-!   idbio(19)     Fecal matter, Carbon Group 1
-!   idbio(20)     Fecal matter, Iron Group 1
-!   idbio(21)     Fecal matter, Nitrogen Group 1
-!   idbio(22)     Fecal matter, Phosphorus Group 1
-!   idbio(23)     Fecal matter, Silica Group 1
-!   idbio(24)     Fecal matter, Carbon Group 2
-!   idbio(25)     Fecal matter, Iron Group 2
-!   idbio(26)     Fecal matter, Nitrogen Group 2
-!   idbio(27)     Fecal matter, Phosphorus Group 2
-!   idbio(28)     Fecal matter, Silica Group 2
-!   idbio(29)     Small diatom, Carbon Group
-!   idbio(30)     Small diatom, Iron Group
-!   idbio(31)     Small diatom, Nitrogen Group
-!   idbio(32)     Small diatom, Phosphorus Group
-!   idbio(33)     Large diatom, Carbon Group
-!   idbio(34)     Large diatom, Iron Group
-!   idbio(35)     Large diatom, Nitrogen Group
-!   idbio(36)     Large diatom, Phosphorus Group
-!   idbio(37)     Large dinoflagellate, Carbon Group
-!   idbio(38)     Large dinoflagellate, Iron Group
-!   idbio(39)     Large dinoflagellate, Nitrogen Group
-!   idbio(40)     Large dinoflagellate, Phosphorus Group
-!   idbio(41)     Synechococcus, Carbon Group
-!   idbio(42)     Synechococcus, Iron Group
-!   idbio(43)     Synechococcus, Nitrogen Group
-!   idbio(44)     Synechococcus, Phosphorus Group
-!   idbio(45)     Small diatom, Silica Group
-!   idbio(46)     Large diatom, Silica Group
-!   idbio(47)     Small diatom, chlorophyll-a
-!   idbio(48)     Large diatom, chlorophyll-a
-!   idbio(49)     Large dinoflagellate, chlorophyll-a
-!   idbio(50)     Synechococcus, chlorophyll-a
-!   idbio(51)     Small diatom, chlorophyll-c
-!   idbio(52)     Large diatom, chlorophyll-c
-!   idbio(53)     Large dinoflagellate, chlorophyll-c
-!   idbio(54)     Small diatom, photosynthetic carotenoids
-!   idbio(55)     Large diatom, photosynthetic carotenoids
-!   idbio(56)     Large dinoflagellate, photosynthetic carotenoids
-!   idbio(57)     Small diatom, photoprotective carotenoids
-!   idbio(58)     Large diatom, photoprotective carotenoids
-!   idbio(59)     Large dinoflagellate, photoprotective carotenoids
-!   idbio(60)     Synechococcus, photoprotective carotenoids
-!   idbio(61)     Synechococcus, high urobilin phycoeurythin carotenoids
+! idbio( 1)     DIC          DIC concentration
+! idbio( 2)     FeO          Iron concentration
+! idbio( 3)     NH4          Ammonium concentration
+! idbio( 4)     NO3          Nitrate concentration
+! idbio( 5)     PO4          Phosphate concentration
+! idbio( 6)     SiO          Silica concentration
+! idbio( 7)     Bac_C1       Bacteria, Carbon Group 1
+! idbio( 8)     Bac_F1       Bacteria, Iron Group 1
+! idbio( 9)     Bac_N1       Bacteria, Nitrogen Group 1
+! idbio(10)     Bac_P1       Bacteria, Phosphorus Group 1
+! idbio(11)     CDM_C1       Color degradational matter, Carbon Group 1
+! idbio(12)     DOM_C1       Dissolved organic matter, Carbon Group 1
+! idbio(13)     DOM_N1       Dissolved organic matter, Nitrogen Group 1
+! idbio(14)     DOM_P1       Dissolved organic matter, Phosphorus Group 1
+! idbio(15)     CDM_C2       Color degradational matter, Carbon Group 2
+! idbio(16)     DOM_C2       Dissolved organic matter, Carbon Group 2
+! idbio(17)     DOM_N2       Dissolved organic matter, Nitrogen Group 2
+! idbio(18)     DOM_P2       Dissolved organic matter, Phosphorus Group 2
+! idbio(19)     Fec_C1       Fecal matter, Carbon Group 1
+! idbio(20)     Fec_F1       Fecal matter, Iron Group 1
+! idbio(21)     Fec_N1       Fecal matter, Nitrogen Group 1
+! idbio(22)     Fec_P1       Fecal matter, Phosphorus Group 1
+! idbio(23)     Fec_S1       Fecal matter, Silica Group 1
+! idbio(24)     Fec_C2       Fecal matter, Carbon Group 2
+! idbio(25)     Fec_F2       Fecal matter, Iron Group 2
+! idbio(26)     Fec_N2       Fecal matter, Nitrogen Group 2
+! idbio(27)     Fec_P2       Fecal matter, Phosphorus Group 2
+! idbio(28)     Fec_S2       Fecal matter, Silica Group 2
+! idbio(29)     Phy_C1       Small diatom, Carbon Group 1
+! idbio(30)     Phy_F1       Small diatom, Iron Group 1
+! idbio(31)     Phy_N1       Small diatom, Nitrogen Group 1
+! idbio(32)     Phy_P1       Small diatom, Phosphorus Group 1
+! idbio(33)     Phy_C2       Large diatom, Carbon Group 2
+! idbio(34)     Phy_F2       Large diatom, Iron Group 2
+! idbio(35)     Phy_N2       Large diatom, Nitrogen Group 2
+! idbio(36)     Phy_P2       Large diatom, Phosphorus Group 2
+! idbio(37)     Phy_C3       Large dinoflagellate, Carbon Group 3
+! idbio(38)     Phy_F3       Large dinoflagellate, Iron Group 3
+! idbio(39)     Phy_N3       Large dinoflagellate, Nitrogen Group 3
+! idbio(40)     Phy_P3       Large dinoflagellate, Phosphorus Group 3
+! idbio(41)     Phy_C4       Synechococcus, Carbon Group 4
+! idbio(42)     Phy_F4       Synechococcus, Iron Group 4
+! idbio(43)     Phy_N4       Synechococcus, Nitrogen Group 4
+! idbio(44)     Phy_P4       Synechococcus, Phosphorus Group 4
+! idbio(45)     Phy_S1       Small diatom, Silica Group 1
+! idbio(46)     Phy_S2       Large diatom, Silica Group 2
+! idbio(47)     Pigs_11      Small diatom, chlorophyll-a
+! idbio(48)     Pigs_21      Large diatom, chlorophyll-a
+! idbio(49)     Pigs_31      Large dinoflagellate, chlorophyll-a
+! idbio(50)     Pigs_41      Synechococcus, chlorophyll-a
+! idbio(51)     Pigs_13      Small diatom, chlorophyll-c
+! idbio(52)     Pigs_23      Large diatom, chlorophyll-c
+! idbio(53)     Pigs_33      Large dinoflagellate, chlorophyll-c
+! idbio(54)     Pigs_14      Small diatom, photosynthetic carotenoids
+! idbio(55)     Pigs_24      Large diatom, photosynthetic carotenoids
+! idbio(56)     Pigs_34      Large dinoflagellate, photosynthetic carotenoids
+! idbio(57)     Pigs_15      Small diatom, photoprotective carotenoids
+! idbio(58)     Pigs_25      Large diatom, photoprotective carotenoids
+! idbio(59)     Pigs_35      Large dinoflagellate, photoprotective carotenoids
+! idbio(60)     Pigs_45      Synechococcus, photoprotective carotenoids
+! idbio(61)     Pigs_47      Synechococcus, urobilin phycoeurythin carotenoids
 !
 !==============================================================================
 !
@@ -1021,6 +1110,28 @@
 !                   horizontal diffusion is activated, ad_TNU4 is the mixing
 !                   coefficient for the largest grid-cell in the domain.
 !
+!  LtracerSponge  Logical switches (TRUE/FALSE) to increase/decrease horizontal
+!                   diffusivity of biological tracers in specific areas of the
+!                   domain. It can be used to specify sponge areas with larger
+!                   horizontal mixing coefficients for damping of high
+!                   frequency noise due to open boundary conditions or nesting.
+!                   The CPP option SPONGE is now deprecated and replaced with
+!                   this switch to facilitate or not sponge areas over a
+!                   particular nested grid; [1:NBT,1:Ngrids] values are
+!                   expected.
+!
+!                   The horizontal mixing distribution is specified in
+!                   "ini_hmixcoef.F" as:
+!
+!                     diff2(i,j,itrc) = diff_factor(i,j) * diff2(i,j,itrc)
+!                     diff4(i,j,itrc) = diff_factor(i,j) * diff4(i,j,itrc)
+!
+!                   The variable "diff_factor" can be read from the grid
+!                   NetCDF file. Alternately, the horizontal diffusion in the
+!                   sponge area can be set-up with analytical functions in
+!                   "ana_sponge.h" using CPP ANA_SPONGE when these switches
+!                   are turned ON for a particular grid.
+!
 !  AKT_BAK        Background vertical mixing coefficient (m2/s) for biological
 !                   tracer variables, [1:NBT,1:Ngrids] values are expected.
 !
@@ -1036,25 +1147,85 @@
 !                   will be computed internally.
 !
 !------------------------------------------------------------------------------
-!  Tracer point Sources/Sink sources switches.
+! Lateral boundary conditions parameters.
 !------------------------------------------------------------------------------
 !
-!  LtracerSrc     Logical switches (T/F) to specify which tracer variables
-!                   to consider when the option TS_PSOURCE is activated;
-!                   [1:NBT,1:Ngrids] values are expected.
+! The lateral boundary conditions are now specified with logical switches
+! instead of CPP flags to allow nested grid configurations. Their values are
+! load into structured array:
+!
+!    LBC(1:4, nLBCvar, Ngrids)
+!
+! where 1:4 are the number of boundary edges, nLBCvar are the number LBC state
+! variables, and Ngrids is the number of nested grids. For Example, to apply
+! gradient boundary conditions to any tracer we use:
+!
+!    LBC(iwest,  isTvar(itrc), ng) % gradient
+!    LBC(ieast,  isTvar(itrc), ng) % gradient
+!    LBC(isouth, isTvar(itrc), ng) % gradient
+!    LBC(inorth, isTvar(itrc), ng) % gradient
+!
+! The lateral boundary conditions for biological tracers are entered with
+! a keyword. This keyword is case insensitive and usually has three characters.
+! However, it is possible to have compound keywords, if applicable. For example,
+! the keyword "RadNud" implies radiation boundary condition with nudging. This
+! combination is usually used in active/passive radiation conditions.
+!
+! It is possible to specify the lateral boundary conditions for all biological
+! tracers in a compact form with a single entry.  for example, in a East-West
+! periodic application we can just have:
+!
+!                   W       S       E       N
+!                   e       o       a       o
+!                   s       u       s       r
+!                   t       t       t       t
+!                           h               h
+!
+!                   1       2       3       4
+!
+!  LBC(isTvar) ==   Per     Clo     Per     Clo
+!
+! Then, the standard input processing routine will assume that all the
+! biological tracers have the same lateral boundary condition specified by
+! the single entry.
+!
+!   Keyword    Lateral Boundary Condition Type
+!
+!   Cla        Clamped                                _____N_____     j=Mm
+!   Clo        Closed                                |     4     |
+!   Gra        Gradient                              |           |
+!   Nes        Nested                              1 W           E 3
+!   Nud        Nudging                               |           |
+!   Per        Periodic                              |_____S_____|
+!   Rad        Radiation                                   2          j=1
+!                                                   i=1         i=Lm
+!
+!  LBC(isTvar)    Biological Tracers, [1:4, 1:NBT, Ngrids] values are expected.
+!
+! Similarly, the adjoint-based algorithms (ADM, TLM, RPM) can have different
+! lateral boundary conditions keywords:
+!
+!  ad_LBC(isTvar) Biological Tracers, [1:4, 1:NBT, Ngrids] values are expected.
+!
+!------------------------------------------------------------------------------
+!  Tracer point Sources/Sink sources switches: [1:NBT,1:Ngrids].
+!------------------------------------------------------------------------------
+!
+!  LtracerSrc     Logical switches (T/F) to activate biological tracer
+!                   variables point Sources/Sinks.
 !
 !                     LtracerSrc(idbio(  1),ng)
 !                     ...              ...
 !                     LtracerSrc(idbio(NBT),ng)
 !
-!                   Recall that TS_PSOURCE is usually activated to add river
-!                   runoff as a point source. At minimum, it is necessary to
-!                   specify both temperature and salinity for all rivers. The
-!                   other tracers are optional. The user needs to know the
+!                   Recall that these switches are usually activated to add
+!                   river runoff as a point source. At minimum, it is necessary
+!                   to specify both temperature and salinity for all rivers.
+!                   The other tracers are optional. The user needs to know the
 !                   correspondence between biological variables and indices
 !                   idbio(1:NBT) when activating one or more of these switches.
 !
-!                   This logical switch REPLACES and ELIMINATES the need to
+!                   These logical switches REPLACES and ELIMINATES the need to
 !                   have or read the variable "river_flag(river)" in the input
 !                   rivers forcing NetCDF file:
 !
@@ -1081,13 +1252,99 @@
 !                   values for all rivers, even if their values are zero.
 !
 !------------------------------------------------------------------------------
-! Logical switches (T/F) to activate writing of fields into output files.
+!  Tracer climatology processing switches: [1:NBT,1:Ngrids].
 !------------------------------------------------------------------------------
 !
-!  Hout             Logical switches to write out biological tracers into
-!                     output NetCDF files, [1:NBT,1:Ngrids] values are
-!                     expected.
+!  LtracerCLM     Logical switches (T/F) to process biological tracer variables
+!                   climatology.  The CPP option TCLIMATOLOGY is now obsolete
+!                   and replaced with these switches to facilitate nesting
+!                   applications. Currently, the CLIMA(ng)%tclm is used for
+!                   horizontal mixing, sponges, and nudging.
 !
-!                      Hout(idTvar)     biological tracers
-!                      Hout(idTsur)     biological tracers surface flux
+!                     LtracerCLM(idbio(  1),ng)
+!                     ...              ...
+!                     LtracerCLM(idbio(NBT),ng)
+!
+!                   These switches also controls which climatology tracer
+!                   fields needs to be processed.  So we may reduce the
+!                   memory allocation for the CLIMA(ng)%tclm array.
+!
+!------------------------------------------------------------------------------
+!  Logical switches for nudging to climatology: [1:NBT,1:Ngrids].
+!------------------------------------------------------------------------------
+!
+!  LnudgeTCLM     Logical switches (T/F) to activate the nugding of biological
+!                   tracer variables climatology. These switches also control
+!                   which biological tracer variables to nudge. The CPP option
+!                   TCLM_NUDGING is now obsolete and replaced with these
+!                   switches to facilitate nesting.
+!
+!                     LnudgeTCLM(idbio(  1),ng)
+!                     ...              ...
+!                     LnudgeTCLM(idbio(NBT),ng)
+!
+!                   User also needs to TURN ON the respective logical switches
+!                   "LtracerCLM", described above, to process the required 3D
+!                   biological tracer climatology data. This data can be set
+!                   with analytical functions (ANA_TCLIMA) or read from input
+!                   climatology NetCDF file(s).
+!
+!                   The nudging coefficients CLIMA(ng)%Tnudgcof can be set
+!                   with analytical functions in "ana_nudgcoef.h"  using CPP
+!                   option ANA_NUDGCOEF.  Otherwise, it will be read from
+!                   NetCDF file NUDNAME.
+!
+!------------------------------------------------------------------------------
+! Logical switches (T/F) to activate writing of fields into HISTORY file.
+!------------------------------------------------------------------------------
+!
+!  Hout             Logical switches to write out biological fields into
+!                     output HISTORY NetCDF file, [1:NBT,1:Ngrids] values
+!                     are expected:
+!
+!                     Hout(idTvar)      biological tracers
+!                     Hout(idTsur)      biological tracers surface flux
+!
+!                     The idTvar(idbio(:)) and idTsur(idbio(:)) indices are
+!                     provided above.
+!
+!------------------------------------------------------------------------------
+! Logical switches (T/F) to activate writing of fields into AVERAGE file.
+!------------------------------------------------------------------------------
+!
+!  Aout             Logical switches to write out biological fields into
+!                     output AVERAGE NetCDF file, [1:NBT,1:Ngrids] values
+!                     are expected:
+!
+!                     Aout(idTvar)      biological tracers
+!
+!                     Aout(idTTav)      quadratic <t*t> tracers terms
+!                     Aout(idUTav)      quadratic <u*t> tracers terms
+!                     Aout(idVTav)      quadratic <v*t> tracers terms
+!                     Aout(iHUTav)      tracer u-volume flux, <Huon*t>
+!                     Aout(iHVTav)      tracer v-volume flux, <Hvom*t>
+!
+!                     The idTvar(idbio(:)) indices are provided above.
+!
+!------------------------------------------------------------------------------
+! Logical switches (T/F) to activate writing of time-averaged fields into
+! DIAGNOSTIC file.
+!------------------------------------------------------------------------------
+!
+!  Time-averaged, biological tracers  diagnostic terms, [1:NBT,Ngrids] values
+!  expected: (if DIAGNOSTICS_TS)
+!
+!                   Dout(idDtrc(idbio(1:NBT),iT....),1:Ngrids)
+!
+!  Dout(iTrate)     Write out time rate of change.
+!  Dout(iThadv)     Write out horizontal total advection.
+!  Dout(iTxadv)     Write out horizontal  XI-advection.
+!  Dout(iTyadv)     Write out horizontal ETA-advection.
+!  Dout(iTvadv)     Write out vertical advection.
+!  Dout(iThdif)     Write out horizontal total diffusion, if TS_DIF2 or TS_DIF4
+!  Dout(iTxdif)     Write out horizonta1  XI-diffusion, if TS_DIF2 or TS_DIF4.
+!  Dout(iTydif)     Write out horizontal ETA-diffusion, if TS_DIF2 or TS_DIF4.
+!  Dout(iTsdif)     Write out horizontal   S-diffusion, if TS_DIF2 or TS_DIF4
+!                     and rotated tensor (MIX_GEO_TS or MIX_ISO_TS).
+!  Dout(iTvdif)     Write out vertical diffusion.
 !

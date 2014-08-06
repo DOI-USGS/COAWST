@@ -1,7 +1,7 @@
 /*
-** svn $Id: sw06_coarse.h 429 2009-12-20 17:30:26Z arango $
+** svn $Id$
 *******************************************************************************
-** Copyright (c) 2002-2010 The ROMS/TOMS Group                               **
+** Copyright (c) 2002-2014 The ROMS/TOMS Group                               **
 **   Licensed under a MIT/X style license                                    **
 **   See License_ROMS.txt                                                    **
 *******************************************************************************
@@ -49,12 +49,9 @@
 # define SALINITY
 # define NONLIN_EOS
 # define CURVGRID
-# define SPONGE
 # undef  AVERAGES
 # define MASKING
 # define SPLINES
-# undef  UV_PSOURCE
-# undef  TS_PSOURCE
 # define SOLAR_SOURCE
 
 # define GLS_MIXING
@@ -77,44 +74,15 @@
 # ifdef SSH_TIDES
 #  define FSOBC_REDUCED
 #  define ADD_FSOBC
-#  define EAST_FSCHAPMAN
-#  define WEST_FSCHAPMAN
-#  define SOUTH_FSCHAPMAN
-# else
-#  define EAST_FSGRADIENT
-#  define WEST_FSGRADIENT
-#  define SOUTH_FSGRADIENT
 # endif
 # if defined UV_TIDES || defined SSH_TIDES
 #  define ADD_M2OBC
-#  define EAST_M2FLATHER
-#  define WEST_M2FLATHER
-#  define SOUTH_M2FLATHER
-# else
-#  define EAST_M2RADIATION
-#  define WEST_M2RADIATION
-#  define SOUTH_M2RADIATION
 # endif
-# define NORTHERN_WALL
-# define EAST_M3GRADIENT
-# define WEST_M3GRADIENT
-# define SOUTH_M3GRADIENT
-# define EAST_TGRADIENT
-# define WEST_TGRADIENT
-# define SOUTH_TGRADIENT
-# define RADIATION_2D
-
-# undef  TCLIMATOLOGY
-# undef  TCLM_NUDGING
-# undef  M3CLM_NUDGING
 
 # define ANA_BSFLUX
 # define ANA_BTFLUX
 # define ANA_SSFLUX
 
-# undef  FORWARD_READ
-# undef  FORWARD_WRITE
-# undef FORWARD_MIXING
 # define OUT_DOUBLE
 
 #else
@@ -138,12 +106,9 @@
 # define SALINITY
 # define NONLIN_EOS
 # define CURVGRID
-# define SPONGE
 # undef  AVERAGES
 # define MASKING
 # define SPLINES
-# undef  UV_PSOURCE
-# undef  TS_PSOURCE
 # define SOLAR_SOURCE
 
 # define GLS_MIXING
@@ -159,36 +124,9 @@
 # ifdef SSH_TIDES
 #  define FSOBC_REDUCED
 #  define ADD_FSOBC
-#  define EAST_FSCHAPMAN
-#  define WEST_FSCHAPMAN
-#  define SOUTH_FSCHAPMAN
-# else
-#  define EAST_FSGRADIENT
-#  define WEST_FSGRADIENT
-#  define SOUTH_FSGRADIENT
-# endif
 # if defined UV_TIDES || defined SSH_TIDES
 #  define ADD_M2OBC
-#  define EAST_M2FLATHER
-#  define WEST_M2FLATHER
-#  define SOUTH_M2FLATHER
-# else
-#  define EAST_M2RADIATION
-#  define WEST_M2RADIATION
-#  define SOUTH_M2RADIATION
 # endif
-# define RADIATION_2D
-# define NORTHERN_WALL
-# define EAST_M3GRADIENT
-# define WEST_M3GRADIENT
-# define SOUTH_M3GRADIENT
-# define EAST_TGRADIENT
-# define WEST_TGRADIENT
-# define SOUTH_TGRADIENT
-
-# undef  TCLIMATOLOGY
-# undef  TCLM_NUDGING
-# undef  M3CLM_NUDGING
 
 # define ANA_BSFLUX
 # define ANA_BTFLUX

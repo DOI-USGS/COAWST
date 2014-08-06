@@ -1,0 +1,57 @@
+#! /bin/sh
+#
+# A minimal netCDF configuration script nc-config
+
+prefix=/usr
+exec_prefix=${prefix}
+libdir=${exec_prefix}/lib
+includedir=${prefix}/include
+
+libs="-L${libdir} -lnetcdf"
+flibs="-L${libdir} -lnetcdf -lnetcdff"
+
+usage()
+{
+    cat <<EOF
+Usage: nc-config [OPTION]
+
+Available values for OPTION include:
+
+  --help        display this help message and exit
+  --libs        library linking information for netcdf
+  --flibs       libraries needed to link a Fortran program
+  --prefix      Install prefix
+
+EOF
+
+    exit $1
+}
+
+if test $# -eq 0; then
+    usage 1
+fi
+
+while test $# -gt 0; do
+    case "$1" in
+    --help)
+   usage 0
+   ;;
+     --libs)
+          echo $libs
+          ;;
+    --flibs)
+          echo $flibs
+          ;;
+    --prefix)
+          echo "${prefix}"
+          ;;
+    *)
+        echo "unknown option: $1"
+   usage
+   exit 1
+   ;;
+    esac
+    shift
+done
+
+exit 0

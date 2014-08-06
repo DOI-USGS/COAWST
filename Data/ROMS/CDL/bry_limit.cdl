@@ -8,7 +8,7 @@ dimensions:
 	xi_v = 66 ;
 	eta_v = 193 ;
 	s_rho = 30 ;
-        s-w = 31 ;
+        s_w = 31 ;
 	zeta_time = 22 ;
 	v2d_time = 22 ;
 	v3d_time = 22 ;
@@ -16,10 +16,10 @@ dimensions:
 	salt_time = 22 ;
 
 variables:
-        char spherical ;
+        int spherical ;
                 spherical:long_name = "grid type logical switch" ;
-                spherical:flag_values = "T, F" ;
-                spherical:flag_meanings = "spherical Cartesian" ;
+                spherical:flag_values = "0, 1" ;
+                spherical:flag_meanings = "Cartesian spherical" ;
         int Vtransform ;
                 Vtransform:long_name = "vertical terrain-following transformation equation" ;
         int Vstretching ;
@@ -86,19 +86,24 @@ variables:
                 lat_v:standard_name = "latitude" ;
 	double zeta_time(zeta_time) ;
 		zeta_time:long_name = "free-surface time" ;
-		zeta_time:units = "days since 0000-01-01 00:00:00" ;
+		zeta_time:units = "seconds since 1968-05-23 00:00:00 GMT" ;
+		zeta_time:calendar = "gregorian" ;
 	double v2d_time(v2d_time) ;
 		v2d_time:long_name = "2D momentum time" ;
-		v2d_time:units = "days since 0000-01-01 00:00:00" ;
+		v2d_time:units = "seconds since 1968-05-23 00:00:00 GMT" ;
+		v2d_time:calendar = "gregorian" ;
 	double v3d_time(v3d_time) ;
 		v3d_time:long_name = "3D momentum time" ;
-		v3d_time:units = "days since 0000-01-01 00:00:00" ;
+		v3d_time:units = "seconds since 1968-05-23 00:00:00 GMT" ;
+		v3d_time:calendar = "gregorian" ;
 	double temp_time(temp_time) ;
 		temp_time:long_name = "potential temperature time" ;
-		temp_time:units = "days since 0000-01-01 00:00:00" ;
+		temp_time:units = "seconds since 1968-05-23 00:00:00 GMT" ;
+		temp_time:calendar = "gregorian" ;
 	double salt_time(salt_time) ;
 		salt_time:long_name = "surface net heat flux time" ;
-		salt_time:units = "days since 0000-01-01 00:00:00" ;
+		salt_time:units = "seconds since 1968-05-23 00:00:00 GMT" ;
+		salt_time:calendar = "gregorian" ;
 	float zeta_west(zeta_time, eta_rho) ;
 		zeta_west:long_name = "free-surface western boundary condition" ;
 		zeta_west:units = "meter" ;
@@ -210,8 +215,8 @@ variables:
 
 // global attributes:
 		:type = "BOUNDARY FORCING" ;
+                :Conventions = "CF-1.4" ;
 		:title = "Northeast North American (NENA) Shelf Model" ;
 		:grd_file = "roms_nena_grid_2.nc" ;
-		:history = "BOUNDARY file, 1.0  , 27-Mar-2002 13:11:22" ;
-
+		:history = "27-Mar-2002 13:11:22" ;
 }

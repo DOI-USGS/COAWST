@@ -1,6 +1,6 @@
-# $Id: makefile 787 2008-10-14 00:37:50Z jcwarner $
+# svn $Id$
 #::::::::::::::::::::::::::::::::::::::::::::::::::::: Hernan G. Arango :::
-# Copyright (c) 2002-2010 The ROMS/TOMS Group             Kate Hedstrom :::
+# Copyright (c) 2002-2014 The ROMS/TOMS Group             Kate Hedstrom :::
 #   Licensed under a MIT/X style license                                :::
 #   See License_ROMS.txt                                                :::
 #::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
@@ -38,6 +38,7 @@ $(if $(filter $(MAKE_VERSION),$(NEED_VERSION)),,        \
 
   sources    :=
   libraries  :=
+  c_sources  := 
 
 #==========================================================================
 #  Start of user-defined options. In some macro definitions below: "on" or
@@ -86,12 +87,6 @@ MY_ANALYTICAL_DIR ?=
 #
 
 MY_CPP_FLAGS ?=
-
-#  Set number of ROMS nested and/or composed grid.  Currently, only
-#  one grid is supported.  This option will be available in the near
-#  future.
-
- NestedGrids ?= 1
 
 #  Activate debugging compiler options:
 
@@ -174,6 +169,18 @@ ifeq "$(strip $(SCRATCH_DIR))" "./"
   clean_list += $(CURDIR)/*.ipo
 endif
 
+ifdef USE_ROMS
+#--------------------------------------------------------------------------
+#  Notice that the token "libraries" is initialize with the ROMS/Utility
+#  library to account for calls to objects in other ROMS libraries or
+#  cycling dependencies. These type of dependencies are problematic in
+#  some compilers during linking. This library appears twice at linking
+#  step (begining and almost the end of ROMS library list).
+#--------------------------------------------------------------------------
+
+  libraries  := $(SCRATCH_DIR)/libUTIL.a
+endif
+
 #--------------------------------------------------------------------------
 #  Set Pattern rules.
 #--------------------------------------------------------------------------
@@ -251,6 +258,11 @@ source-dir-to-binary-dir = $(addprefix $(SCRATCH_DIR)/, $(notdir $1))
 source-to-object = $(call source-dir-to-binary-dir,   \
                    $(subst .F,.o,$1))
 
+# $(call source-to-object, source-file-list)
+c-source-to-object = $(call source-dir-to-binary-dir,       \
+                     $(subst .c,.o,$(filter %.c,$1))        \
+                     $(subst .cc,.o,$(filter %.cc,$1)))
+
 # $(call make-library, library-name, source-file-list)
 define make-library
    libraries += $(SCRATCH_DIR)/$1
@@ -258,6 +270,18 @@ define make-library
 
    $(SCRATCH_DIR)/$1: $(call source-dir-to-binary-dir,    \
                       $(subst .F,.o,$2))
+	$(AR) $(ARFLAGS) $$@ $$^
+	$(RANLIB) $$@
+endef
+
+# $(call make-c-library, library-name, source-file-list)
+define make-c-library
+   libraries += $(SCRATCH_DIR)/$1
+   c_sources += $2
+
+   $(SCRATCH_DIR)/$1: $(call source-dir-to-binary-dir,    \
+                      $(subst .c,.o,$(filter %.c,$2))     \
+                      $(subst .cc,.o,$(filter %.cc,$2)))
 	$(AR) $(ARFLAGS) $$@ $$^
 	$(RANLIB) $$@
 endef
@@ -273,7 +297,13 @@ define compile-rules
     $(call f90-source,$f),$f))
 endef
 
-# $(call one-compile-rule, binary-file, f90-file, source-files)
+# $(c-compile-rules)
+define c-compile-rules
+  $(foreach f, $(local_c_src),       \
+    $(call one-c-compile-rule,$(call c-source-to-object,$f), $f))
+endef
+
+# $(call one-compile-rule, binary-file, f90-file, source-file)
 define one-compile-rule
   $1: $2 $3
 	cd $$(SCRATCH_DIR); $$(FC) -c $$(FFLAGS) $(notdir $2)
@@ -281,6 +311,13 @@ define one-compile-rule
   $2: $3
 	$$(CPP) $$(CPPFLAGS) $$(MY_CPP_FLAGS) $$< > $$@
 	$$(CLEAN) $$@
+
+endef
+
+# $(call one-c-compile-rule, binary-file, source-file)
+define one-c-compile-rule
+  $1: $2
+	cd $$(SCRATCH_DIR); $$(CXX) -c $$(CXXFLAGS) $$<
 
 endef
 
@@ -354,7 +391,6 @@ CPPFLAGS += -D$(shell echo ${FORT} | tr "-" "_" | tr [a-z] [A-Z])
 CPPFLAGS += -D'ROOT_DIR="$(ROOTDIR)"'
 ifdef ROMS_APPLICATION
   CPPFLAGS  += $(ROMS_CPPFLAGS)
-  CPPFLAGS  += -DNestedGrids=$(NestedGrids)
   MDEPFLAGS += -DROMS_HEADER="$(HEADER)"
 endif
 
@@ -483,6 +519,7 @@ else ifdef USE_SWAN
 endif
 
 vpath %.F $(modules)
+vpath %.cc $(modules)
 vpath %.h $(includes)
 vpath %.f90 $(SCRATCH_DIR)
 vpath %.o $(SCRATCH_DIR)
@@ -523,6 +560,7 @@ $(SCRATCH_DIR):
 $(SCRATCH_DIR)/mod_strings.f90: CPPFLAGS += -DMY_OS='"$(OS)"' \
               -DMY_CPU='"$(CPU)"' -DMY_FORT='"$(FORT)"' \
               -DMY_FC='"$(FC)"' -DMY_FFLAGS='"$(FFLAGS)"'
+
 #--------------------------------------------------------------------------
 #  ROMS/TOMS libraries.
 #--------------------------------------------------------------------------
@@ -608,8 +646,7 @@ endif
 .PHONY: tarfile
 
 tarfile:
-#		tar --exclude=".svn" --exclude Output -cvf coawst_v1.1.tar *
-		tar --exclude=".svn" -cvf coawst_v3.0.tar *.bash run_* *.TBL RRTM* makefile ROMS/ SWAN/ WRF/ WPS/ Master/ Tools/ Compilers/ Data/ Projects/Breakwater Projects/coawst Projects/Dogbone Projects/Ducknc Projects/Estuary_test2 Projects/Griz_Bay Projects/Inlet_test Projects/JOE_TCd Projects/JOE_TCs Projects/JOE_TCw Projects/lentz_test Projects/LIP Projects/Refined_chan Projects/Rip_current Projects/Rotate_test Projects/Sedbed_toy Projects/Soliton_refined Projects/Trench Projects/Visser Projects/wetdry
+		tar --exclude=".svn" --exclude Output -cvf coawst_v3.1.tar *
 
 .PHONY: zipfile
 

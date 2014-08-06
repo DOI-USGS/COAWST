@@ -5,10 +5,10 @@ dimensions:
 	state_variable = 7 ;
 	datum = UNLIMITED ; // (0 currently)
 variables:
-        char spherical ;
+        int spherical ;
                 spherical:long_name = "grid type logical switch" ;
-                spherical:flag_values = "T, F" ;
-                spherical:flag_meanings = "spherical Cartesian" ;
+                spherical:flag_values = "0, 1" ;
+                spherical:flag_meanings = "Cartesian spherical" ;
 	int Nobs(survey) ;
 		Nobs:long_name = "number of observations with the same survey time" ;
 	double survey_time(survey) ;
@@ -19,13 +19,12 @@ variables:
 		obs_variance:units = "squared state variable units" ;
 	int obs_type(datum) ;
 		obs_type:long_name = "model state variable associated with observation" ;
-		obs_type:option_1 = "free-surface" ;
-		obs_type:option_2 = "vertically integrated u-momentum component" ;
-		obs_type:option_3 = "vertically integrated v-momentum component" ;
-		obs_type:option_4 = "u-momentum component" ;
-		obs_type:option_5 = "v-momentum component" ;
-		obs_type:option_6 = "potential temperature" ;
-		obs_type:option_7 = "salinity" ;
+                obs_type:flag_values = "1, 2, 3, 4, 5, 6, 7" ;
+		obs_type:flag_meanings = "zeta ubar vbar u v temperature salinity" ;
+	int obs_provenance(datum) ;
+		obs_provenance:long_name = "observation origin" ;
+		obs_provenance:flag_values = 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11 ;
+		obs_provenance:flag_meanings = "gridded_AVISO_SLA blended_SST XBT_Met_Office CTD_temperature_Met_Office CTD_salinity_Met_Office ARGO_temperature_Met_Office ARGO_salinity_Met_Office CTD_temperature_CalCOFI CTD_salinity_CalCOFI CTD_temperature_GLOBEC CTD_salinity_GLOBEC" ;
 	double obs_time(datum) ;
 		obs_time:long_name = "time of observation" ;
 		obs_time:units = "day" ;
@@ -54,7 +53,29 @@ variables:
 
 // global attributes:
 		:type = "ROMS Observations" ;
-		:title = "ROMS/TOMS 3.0 - Eastern Australia Current 1/4 Application" ;
-		:state_units = "Free-sruface (m), 2D momentum (m/s), 3D momentum (m/s), potential temperature (Celsius), salinity (PSU)" ;
-		:history = "4DVAR observations, Wednesday - February 15, 2006 - 1:37:14.3733 AM" ;
+		:title = "California Current System, 1/3 degree resolution (WC13)" ;
+		:Conventions = "CF-1.4" ;
+		:grd_file = "wc13_grd.nc" ;
+		:state_variables = "\n",
+			"1: free-surface (m) \n",
+			"2: vertically integrated u-momentum component (m/s) \n",
+			"3: vertically integrated v-momentum component (m/s) \n",
+			"4: u-momentum component (m/s) \n",
+			"5: v-momentum component (m/s) \n",
+			"6: potential temperature (Celsius) \n",
+			"7: salinity (nondimensional)" ;
+		:obs_provenance = "\n",
+			" 1: gridded AVISO sea level anomaly \n",
+			" 2: blended satellite SST \n",
+			" 3: XBT temperature from Met Office \n",
+			" 4: CTD temperature from Met Office \n",
+			" 5: CTD salinity from Met Office \n",
+			" 6: ARGO floats temperature from Met Office \n",
+			" 7: ARGO floats salinity from Met Office \n",
+			" 8: CTD temperature from CalCOFI \n",
+			" 9: CTD salinity from CalCOFI \n",
+			"10: CTD temperature from GLOBEC \n",
+			"11: CTD salinity from GLOBEC " ;
+		:source = "http://hadobs.metoffice.com/en3" ;
+		:history = "4DVAR observations, Monday - June 21, 2010 - 11:00:00 AM" ;
 }

@@ -1,8 +1,8 @@
       SUBROUTINE ana_initial (ng, tile, model)
 !
-!! svn $Id: ana_initial.h 429 2009-12-20 17:30:26Z arango $
+!! svn $Id$
 !!======================================================================
-!! Copyright (c) 2002-2010 The ROMS/TOMS Group                         !
+!! Copyright (c) 2002-2014 The ROMS/TOMS Group                         !
 !!   Licensed under a MIT/X style license                              !
 !!   See License_ROMS.txt                                              !
 !=======================================================================
@@ -24,26 +24,28 @@
 
 #include "tile.h"
 !
-      CALL ana_initial_tile (ng, tile, model,                           &
-     &                       LBi, UBi, LBj, UBj,                        &
-     &                       IminS, ImaxS, JminS, JmaxS,                &
-     &                       GRID(ng) % h,                              &
+      IF (model.eq.iNLM) THEN
+        CALL ana_NLMinitial_tile (ng, tile, model,                      &
+     &                            LBi, UBi, LBj, UBj,                   &
+     &                            IminS, ImaxS, JminS, JmaxS,           &
+     &                            GRID(ng) % h,                         &
 #ifdef SPHERICAL
-     &                       GRID(ng) % lonr,                           &
-     &                       GRID(ng) % latr,                           &
+     &                            GRID(ng) % lonr,                      &
+     &                            GRID(ng) % latr,                      &
 #else
-     &                       GRID(ng) % xr,                             &
-     &                       GRID(ng) % yr,                             &
+     &                            GRID(ng) % xr,                        &
+     &                            GRID(ng) % yr,                        &
 #endif
 #ifdef SOLVE3D
-     &                       GRID(ng) % z_r,                            &
-     &                       OCEAN(ng) % u,                             &
-     &                       OCEAN(ng) % v,                             &
-     &                       OCEAN(ng) % t,                             &
+     &                            GRID(ng) % z_r,                       &
+     &                            OCEAN(ng) % u,                        &
+     &                            OCEAN(ng) % v,                        &
+     &                            OCEAN(ng) % t,                        &
 #endif
-     &                       OCEAN(ng) % ubar,                          &
-     &                       OCEAN(ng) % vbar,                          &
-     &                       OCEAN(ng) % zeta)
+     &                            OCEAN(ng) % ubar,                     &
+     &                            OCEAN(ng) % vbar,                     &
+     &                            OCEAN(ng) % zeta)
+      END IF
 !
 ! Set analytical header file name used.
 !
@@ -59,20 +61,20 @@
       END SUBROUTINE ana_initial
 !
 !***********************************************************************
-      SUBROUTINE ana_initial_tile (ng, tile, model,                     &
-     &                             LBi, UBi, LBj, UBj,                  &
-     &                             IminS, ImaxS, JminS, JmaxS,          &
-     &                             h,                                   &
+      SUBROUTINE ana_NLMinitial_tile (ng, tile, model,                  &
+     &                                LBi, UBi, LBj, UBj,               &
+     &                                IminS, ImaxS, JminS, JmaxS,       &
+     &                                h,                                &
 #ifdef SPHERICAL
-     &                             lonr, latr,                          &
+     &                                lonr, latr,                       &
 #else
-     &                             xr, yr,                              &
+     &                                xr, yr,                           &
 #endif
 #ifdef SOLVE3D
-     &                             z_r,                                 &
-     &                             u, v, t,                             &
+     &                                z_r,                              &
+     &                                u, v, t,                          &
 #endif
-     &                             ubar, vbar, zeta)
+     &                                ubar, vbar, zeta)
 !***********************************************************************
 !
       USE mod_param
@@ -136,24 +138,24 @@
 !-----------------------------------------------------------------------
 !
 #if defined MY_APPLICATION
-      DO j=JstrR,JendR
-        DO i=Istr,IendR
+      DO j=JstrT,JendT
+        DO i=IstrP,IendT
           ubar(i,j,1)=???
         END DO
       END DO
-      DO j=Jstr,JendR
-        DO i=IstrR,IendR
+      DO j=JstrP,JendT
+        DO i=IstrT,IendT
           vbar(i,j,1)=???
         END DO
       END DO
 #else
-      DO j=JstrR,JendR
-        DO i=Istr,IendR
+      DO j=JstrT,JendT
+        DO i=IstrP,IendT
           ubar(i,j,1)=0.0_r8
         END DO
       END DO
-      DO j=Jstr,JendR
-        DO i=IstrR,IendR
+      DO j=JstrP,JendT
+        DO i=IstrT,IendT
           vbar(i,j,1)=0.0_r8
         END DO
       END DO
@@ -164,14 +166,14 @@
 !-----------------------------------------------------------------------
 !
 #if defined MY_APPLICATION
-      DO j=JstrR,JendR
-        DO i=IstrR,IendR
+      DO j=JstrT,JendT
+        DO i=IstrT,IendT
           zeta(i,j,1)=???
         END DO
       END DO
 #else
-      DO j=JstrR,JendR
-        DO i=IstrR,IendR
+      DO j=JstrT,JendT
+        DO i=IstrT,IendT
           zeta(i,j,1)=0.0_r8
         END DO
       END DO
@@ -185,26 +187,26 @@
 !
 # if defined MY_APPLICATION
       DO k=1,N(ng)
-       DO j=JstrR,JendR
-         DO i=Istr,IendR
+       DO j=JstrT,JendT
+         DO i=IstrP,IendT
             u(i,j,k,1)=???
           END DO
         END DO
-        DO j=Jstr,JendR
-          DO i=IstrR,IendR
+        DO j=JstrP,JendT
+          DO i=IstrT,IendT
             v(i,j,k,1)=???
           END DO
         END DO
       END DO
 # else
       DO k=1,N(ng)
-       DO j=JstrR,JendR
-         DO i=Istr,IendR
+       DO j=JstrT,JendT
+         DO i=IstrP,IendT
             u(i,j,k,1)=0.0_r8
           END DO
         END DO
-        DO j=Jstr,JendR
-          DO i=IstrR,IendR
+        DO j=JstrP,JendT
+          DO i=IstrT,IendT
             v(i,j,k,1)=0.0_r8
           END DO
         END DO
@@ -220,8 +222,8 @@
 !
 # if defined MY_APPLICATION
       DO k=1,N(ng)
-        DO j=JstrR,JendR
-          DO i=IstrR,IendR
+        DO j=JstrT,JendT
+          DO i=IstrT,IendT
             t(i,j,k,1,itemp)=???
 #  ifdef SALINITY
             t(i,j,k,1,isalt)=???
@@ -231,8 +233,8 @@
       END DO
 # else
       DO k=1,N(ng)
-        DO j=JstrR,JendR
-          DO i=IstrR,IendR
+        DO j=JstrT,JendT
+          DO i=IstrT,IendT
             t(i,j,k,1,itemp)=T0(ng)
 #  ifdef SALINITY
             t(i,j,k,1,isalt)=S0(ng)
@@ -242,6 +244,5 @@
       END DO
 # endif
 #endif
-
       RETURN
-      END SUBROUTINE ana_initial_tile
+      END SUBROUTINE ana_NLMinitial_tile

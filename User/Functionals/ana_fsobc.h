@@ -1,8 +1,8 @@
       SUBROUTINE ana_fsobc (ng, tile, model)
 !
-!! svn $Id: ana_fsobc.h 429 2009-12-20 17:30:26Z arango $
+!! svn $Id$
 !!======================================================================
-!! Copyright (c) 2002-2010 The ROMS/TOMS Group                         !
+!! Copyright (c) 2002-2014 The ROMS/TOMS Group                         !
 !!   Licensed under a MIT/X style license                              !
 !!   See License_ROMS.txt                                              !
 !=======================================================================
@@ -47,6 +47,7 @@
       USE mod_param
       USE mod_boundary
       USE mod_grid
+      USE mod_ncparam
       USE mod_scalars
 !
 !  Imported variable declarations.
@@ -66,34 +67,33 @@
 !-----------------------------------------------------------------------
 !
 #if defined MY_APPLICATION
-# ifdef EAST_FSOBC
-      IF (EASTERN_EDGE) THEN
-        DO j=JstrR,JendR
+      IF (LBC(ieast,isFsur,ng)%acquire.and.                             &
+     &    DOMAIN(ng)%Eastern_Edge(tile)) THEN
+        DO j=JstrT,JendT
           BOUNDARY(ng)%zeta_east(j)=0.0_r8
         END DO
       END IF
-# endif
-# ifdef WEST_FSOBC
-      IF (WESTERN_EDGE) THEN
-        DO j=JstrR,JendR
+
+      IF (LBC(iwest,isFsur,ng)%acquire.and.                             &
+     &    DOMAIN(ng)%Western_Edge(tile)) THEN
+        DO j=JstrT,JendT
           BOUNDARY(ng)%zeta_west(j)=0.0_r8
         END DO
       END IF
-# endif
-# ifdef SOUTH_FSOBC
-      IF (SOUTHERN_EDGE) THEN
-        DO i=IstrR,IendR
+
+      IF (LBC(isouth,isFsur,ng)%acquire.and.                            &
+     &    DOMAIN(ng)%Southern_Edge(tile)) THEN
+        DO i=IstrT,IendT
           BOUNDARY(ng)%zeta_south(i)=0.0_r8
         END DO
       END IF
-# endif
-# ifdef NORTH_FSOBC
-      IF (NORTHERN_EDGE) THEN
-        DO i=IstrR,IendR
+
+      IF (LBC(inorth,isFsur,ng)%acquire.and.                            &
+     &    DOMAIN(ng)%Northern_Edge(tile)) THEN
+        DO i=IstrT,IendT
           BOUNDARY(ng)%zeta_north(i)=0.0_r8
         END DO
       END IF
-# endif
 #else
       ana_fsobc.h: No values provided for BOUNDARY(ng)%zeta_xxxx.
 #endif

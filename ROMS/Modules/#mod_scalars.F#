@@ -1,0 +1,2257 @@
+#include "cppdefs.h"
+      MODULE mod_scalars
+!
+!svn $Id: mod_scalars.F 787 2008-10-14 00:37:50Z jcwarner $
+!================================================== Hernan G. Arango ===
+!  Copyright (c) 2002-2010 The ROMS/TOMS Group                         !
+!    Licensed under a MIT/X style license                              !
+!    See License_ROMS.txt                                              !
+!=======================================================================
+!
+        USE mod_param
+#ifdef NO_4BYTE_REALS
+        USE netcdf
+#endif
+!
+        implicit none
+!
+!-----------------------------------------------------------------------
+! Multiple grid structure.
+!-----------------------------------------------------------------------
+!
+#if defined READ_WATER && defined MASKING && defined DISTRIBUTE
+!    IJwater       IJ-indices of water points.
+#endif
+!    Lstate        Logical switches to control computations of the
+!                    model state.
+!    SOstate       Logical switches to control computations of the
+!                    stochastic optimals.
+#ifdef STATIONS
+!    Sflag         Station extraction special flag:
+!                    Sflag = 0  => locations in terms of (I,J) pairs.
+!                    Sflag = 1  => locations in terms of (lon,lat) pairs.
+!    SposX         Longitude or frational I-coordinate station location.
+!    SposY         Latitude  or frational J-coordinate station location.
+#endif
+!    Cs_r          Set of S-curves used to stretch the vertical grid
+!                    that follows the bathymetry at vertical RHO-points.
+!    Cs_w          Set of S-curves used to stretch the vertical grid
+!                    that follows the bathymetry at vertical W-points.
+!    sc_r          S-coordinate independent variable, [-1 < sc < 0] at
+!                    vertical RHO-points.
+!    sc_w          S-coordinate independent variable, [-1 < sc < 0] at
+!                    vertical W-points.
+!
+        TYPE T_SCALARS
+
+          logical, pointer :: Lstate(:)
+          logical, pointer :: SOstate(:)
+#if defined READ_WATER && defined MASKING && defined DISTRIBUTE
+          integer , pointer :: IJwater(:,:)
+#endif
+#ifdef STATIONS
+          integer,  pointer :: Sflag(:)
+
+          real(r8), pointer :: SposX(:)
+          real(r8), pointer :: SposY(:)
+#endif
+          real(r8), pointer :: Cs_r(:)
+          real(r8), pointer :: Cs_w(:)
+          real(r8), pointer :: sc_r(:)
+          real(r8), pointer :: sc_w(:)
+
+        END TYPE T_SCALARS
+
+        TYPE (T_SCALARS), allocatable :: SCALARS(:)
+!
+!-----------------------------------------------------------------------
+!  Tracer identification indices.
+!-----------------------------------------------------------------------
+!
+        integer :: itemp              ! Potential temperature
+        integer :: isalt              ! Salinity
+#ifdef T_PASSIVE
+        integer, pointer :: inert(:)  ! inert tracers
+#endif
+#ifdef DIAGNOSTICS
+!
+!-----------------------------------------------------------------------
+!  Diagnostic fields identification indices.
+!-----------------------------------------------------------------------
+!
+# ifdef DIAGNOSTICS_TS
+        integer :: iTrate          ! Tracer, time rate of change
+        integer :: iTvadv          ! Tracer, vertical advection
+        integer :: iThadv          ! Tracer, horizontal advection
+        integer :: iTxadv          ! Tracer, horizontal X-advection
+        integer :: iTyadv          ! Tracer, horizontal Y-advection
+        integer :: iTvdif          ! Tracer, vertical diffusion
+        integer :: iThdif          ! Tracer, horizontal diffusion
+        integer :: iTxdif          ! Tracer, horizontal X-diffusion
+        integer :: iTydif          ! Tracer, horizontal Y-diffusion
+        integer :: iTsdif          ! Tracer, horizontal S-diffusion
+# endif
+# ifdef DIAGNOSTICS_UV
+        integer :: M2fcor          ! 2D momentum, Coriolis
+        integer :: M2hadv          ! 2D momentum, horizontal advection
+        integer :: M2xadv          ! 2D momentum, horizontal X-advection
+        integer :: M2yadv          ! 2D momentum, horizontal Y-advection
+#  ifdef WEC_MELLOR
+        integer :: M2hrad          ! 2D momentum, horizontal stresses
+#  endif
+#  ifdef WEC_VF
+        integer :: M2hjvf          ! 2D momentum, horizontal J vortex force
+        integer :: M2kvrf          ! 2D momentum, K vortex force
+        integer :: M2fsco          ! 2D momentum, coriolis-stokes
+        integer :: M2bstm          ! 2D momentum, bottom streaming
+        integer :: M2sstm          ! 2D momentum, surface streaming
+        integer :: M2wrol          ! 2D momentum, wave roller accel
+        integer :: M2wbrk          ! 2D momentum, wave breaking
+        integer :: M2zeta          ! 2D momentum, Eulerian sea level adjustment
+        integer :: M2zetw          ! 2D momentum, quasi-static sea level adjustment
+        integer :: M2zqsp          ! 2D momentum, quasi-static pressure
+        integer :: M2zbeh          ! 2D momentum, Bernoulli head
+#  endif
+        integer :: M2pgrd          ! 2D momentum, pressure gradient
+        integer :: M2hvis          ! 2D momentum, horizontal viscosity
+        integer :: M2xvis          ! 2D momentum, horizontal X-viscosity
+        integer :: M2yvis          ! 2D momentum, horizontal Y-viscosity
+        integer :: M2sstr          ! 2D momentum, surface stress
+        integer :: M2bstr          ! 2D momentum, bottom stress
+        integer :: M2rate          ! 2D momentum, time rate of change
+#  ifdef SOLVE3D
+        integer :: M3fcor          ! 3D momentum, Coriolis
+        integer :: M3vadv          ! 3D momentum, vertical advection
+        integer :: M3hadv          ! 3D momentum, horizontal advection
+        integer :: M3xadv          ! 3D momentum, horizontal X-advection
+        integer :: M3yadv          ! 3D momentum, horizontal Y-advection
+#   ifdef WEC_MELLOR
+        integer :: M3hrad          ! 3D momentum, horizontal stresses
+        integer :: M3vrad          ! 3D momentum, vertical stresses
+#   endif
+#   ifdef WEC_VF
+        integer :: M3vjvf          ! 3D momentum, vertical J vortex force
+        integer :: M3hjvf          ! 3D momentum, horizontal J vortex force
+        integer :: M3kvrf          ! 3D momentum, K vortex force
+        integer :: M3fsco          ! 3D momentum, coriolis-stokes
+        integer :: M3bstm          ! 3D momentum, bottom streaming
+        integer :: M3sstm          ! 3D momentum, surface streaming
+        integer :: M3wrol          ! 3D momentum, wave roller accel
+        integer :: M3wbrk          ! 3D momentum, wave breaking
+#   endif
+        integer :: M3pgrd          ! 3D momentum, pressure gradient
+        integer :: M3vvis          ! 3D momentum, vertical viscosity
+        integer :: M3hvis          ! 3D momentum, horizontal viscosity
+        integer :: M3xvis          ! 3D momentum, horizontal X-viscosity
+        integer :: M3yvis          ! 3D momentum, horizontal Y-viscosity
+        integer :: M3rate          ! 3D momentum, time rate of change
+#  endif
+# endif
+#endif
+#ifdef FLOATS
+!
+!-----------------------------------------------------------------------
+!  Floats fields identification indices.
+!-----------------------------------------------------------------------
+!
+        integer, parameter :: itstr = 0          ! release time
+        integer, parameter :: ixgrd = 1          ! x-grid location
+        integer, parameter :: iygrd = 2          ! y-grid location
+        integer, parameter :: izgrd = 3          ! z-grid location
+        integer, parameter :: iflon = 4          ! longitude location
+        integer, parameter :: iflat = 5          ! latitude location
+        integer, parameter :: idpth = 6          ! depth
+        integer, parameter :: ixrhs = 7          ! x-slope
+        integer, parameter :: iyrhs = 8          ! y-slope
+        integer, parameter :: izrhs = 9          ! z-slope
+        integer, parameter :: ifden = 10         ! density anomaly
+# ifdef FLOAT_VWALK
+        integer, parameter :: ifakt = 11         ! diffusivity, Akt
+        integer, parameter :: ifdak = 12         ! d(Akt)/d(s)
+# endif
+# ifdef SOLVE3D
+!
+!  Tracer variables indices in the track array.
+!
+        integer, allocatable :: ifTvar(:)
+# endif
+!
+!  Set float tracjectory types:
+!
+!     flt_Lagran:  3D Lagrangian floats
+!     flt_Isobar:  Isobaric floats, p=g*(z+zeta)=constant
+!     flt_Geopot:  Geopotential floats, constant depth
+!
+      integer, parameter :: flt_Lagran = 1
+      integer, parameter :: flt_Isobar = 2
+      integer, parameter :: flt_Geopot = 3
+
+# ifdef FLOAT_VWALK
+!
+!  Vertical random walk, initial seed state.
+!
+      integer :: flt_iseed
+# endif
+#endif
+!
+!-----------------------------------------------------------------------
+!  Time stepping indices, variables, and clocks.
+!-----------------------------------------------------------------------
+!
+!    indx1         2D timestep rolling counter.
+!    iic           Timestep counter for 3D primitive equations.
+!    iif           Timestep counter for 2D primitive equations.
+!    ndtfast       Number of barotropic timesteps between each
+!                    baroclinic timestep.
+!    nfast         Number of barotropic timesteps needed to compute
+!                    time-averaged barotropic variables centered at
+!                    time level n+1.
+!    dt            Size baroclinic timestep (s).
+!    dtfast        Size barotropic timestep (s).
+!    tdays         Model time clock (days).
+!    time          Model time clock (s).
+!    time_code     Model time clock (string, Day HH:MM:SS)
+!    AVGtime       Model time clock for averages output (s).
+!    DIAtime       Model time clock for diagnostics output (s).
+!    IMPtime       Impulse forcing time (s) to process.
+!    ObsTime       Observation time (s) to process.
+!    FrcTime       Adjoint or tangent linear Impulse forcing time (s).
+!    r_date        Model initialization reference date (vector):
+!                    r_date(1) => reference date (YYYYMMDD.dd).
+!                    r_date(2) => year.
+!                    r_date(3) => year day.
+!                    r_date(4) => month.
+!                    r_date(5) => day.
+!                    r_date(6) => hour.
+!                    r_date(7) => minute.
+!                    r_date(8) => second.
+!    dstart        Time stamp assigned to model initialization (usually
+!                    a Calendar day, like modified Julian Day).
+!    tide_start    Reference time for tidal forcing (days).
+!    time_ref      Reference time for "units" attribute (YYYYMMDD.dd).
+!    r_text        Model initialization reference text (string).
+!
+        logical, dimension(Ngrids) :: PerfectRST
+        logical, dimension(Ngrids) :: PREDICTOR_2D_STEP
+
+#ifdef TIDES_ASTRO
+        logical, dimension(Ngrids) :: FIRST_TIDES_ASTRO
+#endif
+
+        integer, dimension(Ngrids) :: indx1
+        integer, dimension(Ngrids) :: iic
+        integer, dimension(Ngrids) :: iif
+        integer, dimension(Ngrids) :: ndtfast
+        integer, dimension(Ngrids) :: nfast
+
+        real(r8), dimension(Ngrids) :: dt                ! seconds
+        real(r8), dimension(Ngrids) :: dtfast            ! seconds
+        real(r8), dimension(Ngrids) :: tdays             ! days
+        real(r8), dimension(Ngrids) :: time              ! seconds
+        real(r8), dimension(Ngrids) :: AVGtime           ! seconds
+        real(r8), dimension(Ngrids) :: DIAtime           ! seconds
+        real(r8), dimension(Ngrids) :: IMPtime           ! seconds
+        real(r8), dimension(Ngrids) :: ObsTime           ! seconds
+        real(r8), dimension(Ngrids) :: FrcTime           ! seconds
+
+        real(r8), dimension(8) :: r_date
+        real(r8) :: dstart = 0.0_r8                      ! days
+        real(r8) :: tide_start = 0.0_r8                  ! days
+        real(r8) :: time_ref = 0.0_r8                    ! YYYYMMDD.dd
+        real(r8) :: days_year = 365.25_r8                ! days per year
+
+        character (len=14) :: time_code(Ngrids)          ! DD HH:MM:SS
+        character (len=19) :: r_text
+
+#if defined POWER_LAW && defined SOLVE3D
+!
+!  Power-law shape filter parameters for time-averaging of barotropic
+!  Fields.  The power-law shape filters are given by:
+!
+!     F(xi)=xi^Falpha*(1-xi^Fbeta)-Fgamma*xi
+!
+!  Possible settings of parameters to yield the second-order accuracy:
+!
+!     Falpha  Fbeta      Fgamma
+!     ------------------------------
+!      2.0     1.0    0.1181  0.169     The problem here is setting
+!      2.0     2.0    0.1576  0.234     Fgamma. Its value here is
+!      2.0     3.0    0.1772  0.266     understood as the MAXIMUM
+!      2.0     4.0    0.1892  0.284     allowed. It is computed using
+!      2.0     5.0    0.1976  0.296     a Newton iteration scheme.
+!      2.0     6.0    0.2039  0.304
+!      2.0     8.0    0.2129  0.314
+!
+!  NOTE: Theoretical values of Fgamma presented in the table above are
+!  derived assuming "exact" barotropic mode stepping. Consequently, it
+!  does not account for effects caused by Forward-Euler (FE) startup
+!  of the barotropic mode at every 3D time step.  As the result, the
+!  code may become unstable if the theoretical value of Fgamma is used
+!  when mode splitting ratio "ndtfast" is small, thus yielding non-
+!  negligible start up effects.  To compensate this, the accepted
+!  value of Fgamma is reduced relatively to theoretical one, depending
+!  on splitting ratio "ndtfast".  This measure is empirical. It is
+!  shown to work with setting of "ndtfast" as low as 15, which is
+!  more robust that the Hamming Window the squared cosine weights
+!  options in "set_weights".
+!
+        real(r8) :: Falpha = 2.0_r8
+        real(r8) :: Fbeta  = 4.0_r8
+        real(r8) :: Fgamma = 0.284_r8
+# endif
+!
+!  Total number timesteps in current run. In 3D configurations, "ntimes"
+!  is the total of baroclinic timesteps. In 2D configuration, "ntimes"
+!  is the total of barotropic timesteps.
+!
+        integer, dimension(Ngrids) :: ntimes
+!
+!  Number of time interval divisions for stochastic optimals.  It must
+!  a multiple of "ntimes".
+!
+        integer :: Nintervals = 1
+!
+!  Starting, current, and ending ensemble run parameters.
+!
+        integer :: ERstr = 1                    ! Starting value
+        integer :: ERend = 1                    ! Ending value
+        integer :: Ninner = 1                   ! number of inner loops
+        integer :: Nouter = 1                   ! number of outer loops
+        integer :: Nrun = 1                     ! Current counter
+        integer :: inner = 0                    ! inner loop counter
+        integer :: outer = 0                    ! outer loop counter
+# ifdef SENSITIVITY_4DVAR
+        integer :: NrunSAVE = 0                 ! Loop counter
+# endif
+!
+!  First, starting, and ending timestepping parameters
+!
+        integer, dimension(Ngrids) :: ntfirst   ! Forward-Euler step
+        integer, dimension(Ngrids) :: ntstart   ! Start step
+        integer, dimension(Ngrids) :: ntend     ! End step
+!
+!  Adjoint model or tangent linear model impulse forcing time record
+!  counter and number of records available.
+!
+        integer, dimension(Ngrids) :: FrcRec
+        integer, dimension(Ngrids) :: NrecFrc
+!
+!-----------------------------------------------------------------------
+!  Control switches.
+!-----------------------------------------------------------------------
+!
+!  These switches are designed to control computational options within
+!  nested and/or multiple connected grids.  They are .TRUE. by default.
+!  They can turned off for a particular grind in input scripts.
+!
+        logical, dimension(Ngrids) :: Lassimilate
+        logical, dimension(Ngrids) :: Lbiology
+        logical, dimension(Ngrids) :: Lfloats
+#ifdef ICE_MODEL
+        logical, dimension(Ngrids) :: Lice
+#endif
+        logical, dimension(Ngrids) :: Lsediment
+        logical, dimension(Ngrids) :: Lstations
+!
+!-----------------------------------------------------------------------
+!  Physical constants.
+!-----------------------------------------------------------------------
+!
+!    Cp            Specific heat for seawater (Joules/Kg/degC).
+!    Csolar        Solar irradiantion constant (W/m2).
+!    Eradius       Earth equatorial radius (m).
+!    StefBo        Stefan-Boltzmann constant (W/m2/K4).
+!    emmiss        Infrared emmissivity.
+!    g             Acceleration due to gravity (m/s2).
+!    gorho0        gravity divided by mean density anomaly.
+!    rhow          fresh water density (kg/m3).
+!    vonKar        von Karman constant.
+!
+        real(r8) :: Cp = 3985.0_r8              ! Joules/kg/degC
+        real(r8) :: Csolar = 1353.0_r8          ! 1360-1380 W/m2
+        real(r8) :: Eradius = 6371315.0_r8      ! m
+        real(r8) :: StefBo = 5.67E-8_r8         ! Watts/m2/K4
+        real(r8) :: emmiss = 0.97_r8            ! non_dimensional
+        real(r8) :: rhow = 1000.0_r8            ! kg/m3
+#ifdef SOLITON
+        real(r8) :: g = 1.0_r8                  ! non-dimensional
+#else
+        real(r8) :: g = 9.81_r8                 ! m/s2
+#endif
+        real(r8) :: gorho0                      ! m4/s2/kg
+        real(r8) :: vonKar = 0.41_r8            ! non-dimensional
+!
+!-----------------------------------------------------------------------
+!  Various model parameters.  Some of these parameters are overwritten
+!  with the values provided from model standard input script.
+!-----------------------------------------------------------------------
+!
+!  Switch for spherical grid (lon,lat) configurations.
+!
+        logical :: spherical = .FALSE.
+!
+!  Switch to compute the grid stiffness.
+!
+        logical :: Lstiffness = .TRUE.
+!
+!  Switch indicating which tracer field need to be processed for
+!  Sources/Sinks terms.
+!
+        logical, allocatable :: LtracerSrc(:,:)
+!
+!  Execution termination flag.
+!
+!    exit_flag = 0   No error
+!    exit_flag = 1   Blows up
+!    exit_flag = 2   Input error
+!    exit_flag = 3   Output error
+!    exit_flag = 4   IO error
+!    exit_flag = 5   Configuration error
+!    exit_flag = 6   Partition error
+!    exit_flag = 7   Illegal input parameter
+!    exit_flag = 8   Fatal algorithm result
+!
+        integer :: exit_flag = 0
+        integer :: blowup = 0
+        integer :: NoError = 0
+!
+!  Set threshold maximum speed (m/s) and density anomaly (kg/m3) to
+!  test if the model is blowing-up.
+!
+        real(r8), dimension(Ngrids) :: maxspeed
+        real(r8), dimension(Ngrids) :: maxrho
+!
+        real(r8) :: max_speed = 20.0_r8         ! m/s
+        real(r8) :: max_rho = 200.0_r8          ! kg/m3
+!
+!  Interpolation scheme.
+!
+        integer, parameter :: linear = 0        ! linear interpolation
+        integer, parameter :: cubic  = 1        ! cubic  interpolation
+!
+        integer :: InterpFlag = linear          ! interpolation flag
+!        integer :: InterpFlag = cubic          ! interpolation flag
+!
+!  Shallowest and Deepest levels to apply bottom momemtum stresses as
+!  a bodyforce
+!
+        integer, dimension(Ngrids) :: levsfrc
+        integer, dimension(Ngrids) :: levbfrc
+!
+!  Vertical coordinates transform.  Currently, there are two vertical
+!  transformation equations (see set_scoord.F for details):
+!
+!    Original transform (Vtransform=1):
+!
+!         z_r(x,y,s,t) = Zo_r + zeta(x,y,t) * [1.0 + Zo_r / h(x,y)]
+!
+!                 Zo_r = hc * [s(k) - C(k)] + C(k) * h(x,y)
+!
+!    New transform (Vtransform=2):
+!
+!         z_r(x,y,s,t) = zeta(x,y,t) + [zeta(x,y,t)+ h(x,y)] * Zo_r
+!
+!                 Zo_r = [hc * s(k) + C(k) * h(x,y)] / [hc + h(x,y)]
+!
+        integer :: Vtransform(Ngrids)
+!
+!  Vertical grid stretching function flag:
+!
+!    Vstretcing = 1   Original function (Song and Haidvogel, 1994)
+!               = 2   A. Shchepetkin (ROMS-UCLA) function
+!               = 3   R. Geyer BBL function
+!
+        integer :: Vstretching(Ngrids)
+!
+!  Vertical grid stretching parameters.
+!
+!    Tcline        Width (m) of surface or bottom boundary layer in
+!                    which higher vertical resolution is required
+!                    during stretching.
+!    hc            S-coordinate critical depth, hc=MIN(hmin,Tcline).
+!    theta_s       S-coordinate surface control parameter.
+!    theta_b       S-coordinate bottom control parameter.
+!
+        real(r8), dimension(Ngrids) :: Tcline   ! m, positive
+        real(r8), dimension(Ngrids) :: hc       ! m, positive
+        real(r8), dimension(Ngrids) :: theta_s  ! 0 < theta_s < 20
+        real(r8), dimension(Ngrids) :: theta_b  ! 0 < theta_b < 1
+!
+!  Bathymetry range values.
+!
+        real(r8), dimension(Ngrids) :: hmin     ! m, positive
+        real(r8), dimension(Ngrids) :: hmax     ! m, positive
+!
+!  Length (m) of domain box in the XI- and ETA-directions.
+!
+        real(r8), dimension(Ngrids) :: xl       ! m
+        real(r8), dimension(Ngrids) :: el       ! m
+!
+!  Minimum and Maximum longitude and latitude at RHO-points
+!
+        real(r8), dimension(Ngrids) :: LonMin   ! degrees east
+        real(r8), dimension(Ngrids) :: LonMax   ! degrees east
+        real(r8), dimension(Ngrids) :: LatMin   ! degrees north
+        real(r8), dimension(Ngrids) :: LatMax   ! degrees north
+!
+!  Diagnostic volume averaged variables.
+!
+        integer, dimension(Ngrids) :: first_time
+
+        real(r8) :: avgke = 0.0_r8              ! Kinetic energy
+        real(r8) :: avgpe = 0.0_r8              ! Potential energy
+        real(r8) :: avgkp = 0.0_r8              ! Total energy
+        real(r8) :: volume = 0.0_r8             ! diagnostics volume
+        real(r8) :: ad_volume = 0.0_r8          ! adjoint volume
+        real(r8) :: TotVolume = 0.0_r8          ! Total volume
+        real(r8) :: MaxVolume = 0.0_r8          ! Minimum cell volume
+        real(r8) :: MinVolume = 0.0_r8          ! Maximum cell volume
+!
+!  Minimun and maximum grid spacing
+!
+        real(r8), dimension(Ngrids) :: DXmin
+        real(r8), dimension(Ngrids) :: DXmax
+        real(r8), dimension(Ngrids) :: DYmin
+        real(r8), dimension(Ngrids) :: DYmax
+        real(r8), dimension(Ngrids) :: DZmin
+        real(r8), dimension(Ngrids) :: DZmax
+!
+!  Maximum size of a grid node (m) over the whole curvilinear grid
+!  application. Used for scaling horizontal mixing by the grid size.
+!
+        real(r8), dimension(Ngrids) :: grdmax
+#ifdef DIFF_3DCOEF
+        real(r8), dimension(Ngrids) :: DiffMin  ! Minimun diffusion
+        real(r8), dimension(Ngrids) :: DiffMax  ! Maximum diffusion
+#endif
+#ifdef VISC_3DCOEF
+        real(r8), dimension(Ngrids) :: ViscMin  ! Minimum viscosity
+        real(r8), dimension(Ngrids) :: ViscMax  ! Maximum viscosity
+#endif
+!
+!  Courant Numbers.
+!
+        real(r8) :: Cu_min = 0.0_r8             ! Minimun barotropic
+        real(r8) :: Cu_max = 0.0_r8             ! Maximun barotropic
+        real(r8) :: Cu_Cor = 0.0_r8             ! Maximun Coriolis
+!
+!  Linear equation of state parameters.
+!
+!    R0            Background constant density anomaly (kg/m3).
+!    Tcoef         Thermal expansion coefficient (1/Celsius).
+!    Scoef         Saline contraction coefficient (1/PSU).
+!
+        real(r8), dimension(Ngrids) :: R0
+        real(r8), dimension(Ngrids) :: Tcoef
+        real(r8), dimension(Ngrids) :: Scoef
+!
+!  Background potential temperature (Celsius) and salinity (PSU) values
+!  used in analytical initializations.
+!
+        real(r8), dimension(Ngrids) :: T0
+        real(r8), dimension(Ngrids) :: S0
+!
+!  Slipperiness variable, either 1.0 (free slip) or -1.0 (no slip).
+!
+        real(r8), dimension(Ngrids) :: gamma2
+!
+!  Weighting coefficient for the newest (implicit) time step derivatives
+!  in the Crack-Nicolson implicit scheme (usually, lambda=0.5).
+!
+#ifdef SPLINES
+        real(r8) :: lambda = 1.0_r8             ! backward implicit
+#else
+!!      real(r8) :: lambda = 0.5_r8
+        real(r8) :: lambda = 1.0_r8             ! backward implicit
+#endif
+!
+!  Jerlov water type to assign everywhere, range values: 1 - 5.
+!
+        integer, dimension(Ngrids) :: lmd_Jwt
+!
+!  Grid r-factor (non-dimensional).
+!
+        real(r8) :: rx0 = 0.0_r8                ! Beckmann and Haidvogel
+        real(r8) :: rx1 = 0.0_r8                ! Haney
+!
+!  Linear (m/s) and quadratic (nondimensional) bottom drag coefficients.
+!
+        real(r8), dimension(Ngrids) :: rdrg
+        real(r8), dimension(Ngrids) :: rdrg2
+!
+!  Minimum and maximum threshold for transfer coefficient of momentum.
+!
+        real(r8) :: Cdb_min = 0.000001_r8
+        real(r8) :: Cdb_max = 0.5_r8
+!
+!  Surface and bottom roughness (m)
+!
+        real(r8), dimension(Ngrids) :: Zos
+        real(r8), dimension(Ngrids) :: Zob
+!
+!  Minimum depth for wetting and drying (m).
+!
+        real(r8), dimension(Ngrids) :: Dcrit
+!
+!  Mean density (Kg/m3) used when the Boussinesq approximation is
+!  inferred.
+!
+        real(r8) :: rho0 = 1025.0_r8
+!
+!  Background Brunt-Vaisala frequency (1/s2)
+!
+        real(r8) :: bvf_bak = 0.00001_r8
+
+#ifdef PROPAGATOR
+!
+!  Number of converged Ritz values and relative accuracy of computed
+!  Ritz values.
+!
+        integer  :: Nconv = 0
+        real(r8) :: Ritz_tol = 1.0E-15_r8
+#endif
+!
+!  Vector containing USER generic parameters.
+!
+        integer :: Nuser
+        real(r8), dimension(25) :: user(25)
+!
+!  Weights for the time average of 2D fields.
+!
+        real(r8), dimension(2,0:256,Ngrids) :: weight
+!
+!  Constants.
+!
+        real(r8), parameter :: pi = 3.14159265358979323846_r8
+        real(r8), parameter :: deg2rad = pi / 180.0_r8
+        real(r8), parameter :: rad2deg = 180.0_r8 / pi
+        real(r8), parameter :: day2sec = 86400.0_r8
+        real(r8), parameter :: sec2day = 1.0_r8 / 86400.0_r8
+#ifdef NO_4BYTE_REALS
+        real(r8), parameter :: spval = NF90_FILL_DOUBLE
+#else
+        real(r8), parameter :: spval = 1.0E+37_r8
+#endif
+        real(r8), parameter :: jul_off = 2440000.0_r8
+!
+!  Set special check value.  Notice that a smaller value is assigned
+!  to account for both NetCDF fill value and roundoff. There are
+!  many Matlab scripts out there that do not inquire correctly
+!  the spval from the _FillValue attribute in single/double
+!  precision.
+!
+        real(r8), parameter :: spval_check = 1.0E+35_r8
+!
+!-----------------------------------------------------------------------
+!  Horizontal and vertical constant mixing coefficients.
+!-----------------------------------------------------------------------
+!
+!    Akk_bak       Background vertical mixing coefficient (m2/s) for
+!                    turbulent energy.
+!    Akp_bak       Background vertical mixing coefficient (m2/s) for
+!                    generic statistical field "psi".
+!    Akt_bak       Background vertical mixing coefficient (m2/s) for
+!                    tracers.
+!    Akv_bak       Background vertical mixing coefficient (m2/s) for
+!                    momentum.
+!    Kdiff         Isopycnal mixing thickness diffusivity (m2/s) for
+!                    tracers.
+!    ad_visc2      ADM lateral harmonic constant mixing coefficient
+!                    (m2/s) for momentum.
+!    nl_visc2      NLM lateral harmonic constant mixing coefficient
+!                    (m2/s) for momentum.
+!    tl_visc2      TLM lateral harmonic constant mixing coefficient
+!                    (m2/s) for momentum.
+!    visc2         Current lateral harmonic constant mixing coefficient
+!                    (m2/s) for momentum.
+!    ad_visc4      ADM lateral biharmonic (squared root) constant
+!                     mixing coefficient (m2 s^-1/2) for momentum.
+!    nl_visc4      NLM lateral biharmonic (squared root) constant
+!                     mixing coefficient (m2 s^-1/2) for momentum.
+!    tl_visc4      TLM lateral biharmonic (squared root) constant
+!                     mixing coefficient (m2 s^-1/2) for momentum.
+!    visc4         Current lateral biharmonic (squared root) constant
+!                     mixing coefficient (m2 s^-1/2) for momentum.
+!    ad_tnu2       ADM lateral harmonic constant mixing coefficient
+!                    (m2/s) for tracer type variables.
+!    nl_tnu2       NLM lateral harmonic constant mixing coefficient
+!                    (m2/s) for tracer type variables.
+!    tl_tnu2       TLM lateral harmonic constant mixing coefficient
+!                    (m2/s) for tracer type variables.
+!    tnu2          Current lateral harmonic constant mixing coefficient
+!                    (m2/s) for tracer type variables.
+!    ad_tnu4       ADM lateral biharmonic (squared root) constant
+!                     mixing coefficient (m2 s^-1/2) for tracers.
+!    nl_tnu4       NLM lateral biharmonic (squared root) constant
+!                     mixing coefficient (m2 s^-1/2) for tracers.
+!    tl_tnu4       TLM lateral biharmonic (squared root) constant
+!                     mixing coefficient (m2 s^-1/2) for tracers.
+!    tnu4          Current lateral biharmonic (squared root) constant
+!                     mixing coefficient (m2 s^-1/2) for tracers.
+!    tkenu2        Lateral harmonic constant mixing coefficient
+!                    (m2/s) for turbulent energy.
+!    tkenu4        Lateral biharmonic (squared root) constant mixing
+!                    coefficient (m2 s^-1/2) for turbulent energy.
+!
+        real(r8), dimension(Ngrids) :: Akk_bak       ! m2/s
+        real(r8), dimension(Ngrids) :: Akp_bak       ! m2/s
+        real(r8), dimension(Ngrids) :: Akv_bak       ! m2/s
+
+        real(r8), dimension(Ngrids) :: ad_visc2      ! m2/s
+        real(r8), dimension(Ngrids) :: nl_visc2      ! m2/s
+        real(r8), dimension(Ngrids) :: tl_visc2      ! m2/s
+        real(r8), dimension(Ngrids) :: visc2         ! m2/s
+
+        real(r8), dimension(Ngrids) :: ad_visc4      ! m2 s-1/2
+        real(r8), dimension(Ngrids) :: nl_visc4      ! m2 s-1/2
+        real(r8), dimension(Ngrids) :: tl_visc4      ! m2 s-1/2
+        real(r8), dimension(Ngrids) :: visc4         ! m2 s-1/2
+
+        real(r8), dimension(Ngrids) :: tkenu2        ! m2/s
+        real(r8), dimension(Ngrids) :: tkenu4        ! m2 s-1/2
+
+        real(r8), allocatable :: Akt_bak(:,:)        ! m2/s
+        real(r8), allocatable :: Kdiff(:,:)          ! m2/s
+
+        real(r8), allocatable :: ad_tnu2(:,:)        ! m2/s
+        real(r8), allocatable :: nl_tnu2(:,:)        ! m2/s
+        real(r8), allocatable :: tl_tnu2(:,:)        ! m2/s
+        real(r8), allocatable :: tnu2(:,:)           ! m2/s
+
+        real(r8), allocatable :: ad_tnu4(:,:)        ! m2 s-1/2
+        real(r8), allocatable :: nl_tnu4(:,:)        ! m2 s-1/2
+        real(r8), allocatable :: tl_tnu4(:,:)        ! m2 s-1/2
+        real(r8), allocatable :: tnu4(:,:)           ! m2 s-1/2
+!
+!  Horizontal diffusive relaxation coefficients (m2/s) used to smooth
+!  representer tangent linear solution during Picard iterations to
+!  improve stability and convergence.
+!
+        real(r8), dimension(Ngrids) :: tl_M2diff     ! 2D momentum
+        real(r8), dimension(Ngrids) :: tl_M3diff     ! 3D momentum
+
+        real(r8), allocatable :: tl_Tdiff(:,:)       ! tracers
+!
+!  Basic state vertical mixing coefficient scale factors for adjoint
+!  based algorithms. In some applications, a smaller/larger values of
+!  vertical mixing are necessary for stability.
+!
+        real(r8), dimension(Ngrids) :: ad_Akv_fac    ! ADM momentum
+        real(r8), dimension(Ngrids) :: tl_Akv_fac    ! TLM momentum
+
+        real(r8), allocatable :: ad_Akt_fac(:,:)     ! ADM tracers
+        real(r8), allocatable :: tl_Akt_fac(:,:)     ! TLM tracers
+!
+!-----------------------------------------------------------------------
+!  IO parameters.
+!-----------------------------------------------------------------------
+!
+!  Switches to activate creation and writing of output NetCDF files.
+!
+        logical, dimension(Ngrids) :: LdefADJ    ! Adjoint file
+        logical, dimension(Ngrids) :: LdefAVG    ! Average file
+        logical, dimension(Ngrids) :: LdefDIA    ! Diagnostics file
+        logical, dimension(Ngrids) :: LdefERR    ! 4DVar error file
+        logical, dimension(Ngrids) :: LdefFLT    ! Floats file
+        logical, dimension(Ngrids) :: LdefHIS    ! History file
+        logical, dimension(Ngrids) :: LdefHSS    ! Hessian file
+        logical, dimension(Ngrids) :: LdefINI    ! Initial file
+        logical, dimension(Ngrids) :: LdefIRP    ! Initial RPM file
+        logical, dimension(Ngrids) :: LdefITL    ! Initial TLM file
+        logical, dimension(Ngrids) :: LdefLCZ    ! Lanczos file
+        logical, dimension(Ngrids) :: LdefMOD    ! 4DVAR file
+        logical, dimension(Ngrids) :: LdefRST    ! Restart file
+        logical, dimension(Ngrids) :: LdefSTA    ! Stations file
+        logical, dimension(Ngrids) :: LdefTIDE   ! tide forcing file
+        logical, dimension(Ngrids) :: LdefTLM    ! Tangent linear file
+        logical, dimension(Ngrids) :: LdefTLF    ! TLM/RPM impulse file
+
+        logical, dimension(Ngrids) :: LwrtADJ    ! Write adjoint file
+        logical, dimension(Ngrids) :: LwrtAVG    ! Write average file
+        logical, dimension(Ngrids) :: LwrtDIA    ! Write diagnostic file
+        logical, dimension(Ngrids) :: LwrtHIS    ! Write history file
+        logical, dimension(Ngrids) :: LwrtPER    ! Write during ensemble
+        logical, dimension(Ngrids) :: LwrtRST    ! Write restart file
+        logical, dimension(Ngrids) :: LwrtTLM    ! Write tangent file
+        logical, dimension(Ngrids) :: LwrtTLF    ! Write impulse file
+
+        logical, dimension(4,Ngrids) :: LdefNRM  ! Norm file
+        logical, dimension(4,Ngrids) :: LwrtNRM  ! Write norm file
+!
+!  Switch to write out adjoint 2D state arrays instead of IO solution
+!  arrays and adjoint ocean time. This is used in 4DVAR for IO
+!  maniputations.
+!
+        logical, dimension(Ngrids) :: LwrtState2d
+        logical, dimension(Ngrids) :: LwrtTime
+!
+!  Switch to write out adjoint surface forcing fields adjusted by the
+!  4DVAR algorithms.
+!
+        logical, dimension(Ngrids) :: Ladjusted
+!
+!  Switch to write application set-up information to standard output.
+!
+        logical, dimension(Ngrids) :: LwrtInfo
+!
+!  Switch used to create new output NetCDF files. If TRUE, new output
+!  files are created. If FALSE, data is appended to an existing output
+!  files.  Used only for history, average and station files.
+!
+        logical, dimension(Ngrids) :: ldefout    ! New output files
+!
+!  Number of timesteps between creation of new output files.
+!
+        integer, dimension(Ngrids) :: ndefADJ    ! Adjoint file
+        integer, dimension(Ngrids) :: ndefAVG    ! Average file
+        integer, dimension(Ngrids) :: ndefDIA    ! Diagnostics file
+        integer, dimension(Ngrids) :: ndefHIS    ! History file
+        integer, dimension(Ngrids) :: ndefTLM    ! Tangent linear file
+!
+!  Starting timestep for accumulation of output.
+!
+        integer, dimension(Ngrids) :: ntsAVG     ! Average file
+        integer, dimension(Ngrids) :: ntsDIA     ! Diagnostics file
+!
+!  Number of timesteps between writing of output data.
+!
+        integer, dimension(Ngrids) :: nADJ       ! Adjoint file
+        integer, dimension(Ngrids) :: nAVG       ! Average file
+        integer, dimension(Ngrids) :: nDIA       ! Diagnostics file
+        integer, dimension(Ngrids) :: nFLT       ! Floats file
+        integer, dimension(Ngrids) :: nHIS       ! History file
+        integer, dimension(Ngrids) :: nRST       ! Restart file
+        integer, dimension(Ngrids) :: nSTA       ! Stations file
+        integer, dimension(Ngrids) :: nTLM       ! Tangent linear file
+!
+!  Number of time records written into output files.
+!
+        integer, dimension(Ngrids) :: NrecADJ    ! Adjoint file
+        integer, dimension(Ngrids) :: NrecAVG    ! Average file
+        integer, dimension(Ngrids) :: NrecDIA    ! Diagnostics file
+        integer, dimension(Ngrids) :: NrecERR    ! 4DVar error file
+        integer, dimension(Ngrids) :: NrecFLT    ! Floats file
+        integer, dimension(Ngrids) :: NrecHIS    ! History file
+        integer, dimension(Ngrids) :: NrecHSS    ! Hessian file
+        integer, dimension(Ngrids) :: NrecINI    ! NLM Initial file
+        integer, dimension(Ngrids) :: NrecITL    ! TLM Initial file
+        integer, dimension(Ngrids) :: NrecLCZ    ! Lanczos file
+        integer, dimension(Ngrids) :: NrecRST    ! Restart file
+        integer, dimension(Ngrids) :: NrecSTA    ! Station file
+        integer, dimension(Ngrids) :: NrecTLM    ! Tangent linear file
+
+        integer, dimension(4,Ngrids) :: NrecNRM  ! norm file
+!
+!  Number of timesteps between print of single line information to
+!  standard output.
+!
+        integer, dimension(Ngrids) :: ninfo
+!
+!  Number of timesteps between 4DVAR adjustment of open boundaries.
+!  In strong constraint 4DVAR, it is possible to open bounadies at
+!  other intervals in addition to initial time. These parameters are
+!  used to store the appropriate number of open boundary records in
+!  output history NetCDF files.
+!
+!    Nbrec(:) = 1 + ntimes(:) / nOBC(:)
+!
+!  Here, it is assumed that nOBC is a multiple of NTIMES or greater
+!  than NTIMES. If nOBC > NTIMES, only one record is stored in the
+!  output history NetCDF files and the adjustment is for constant
+!  open boundaries with constant correction.
+!
+        integer, dimension(Ngrids) :: nOBC       ! number of timesteps
+        integer, dimension(Ngrids) :: Nbrec      ! number of records
+        integer, dimension(Ngrids) :: OBCcount   ! record counter
+
+#ifdef ADJUST_BOUNDARY
+!
+!  Logical switches to process open boundary arrays during 4DVar
+!  adjustments.
+!
+        logical, allocatable :: Lobc(:,:,:)
+!
+!  Time (s) of surface forcing adjustment.
+!
+        real(r8), allocatable :: OBC_time(:,:)
+#endif
+!
+!  Number of timesteps between adjustment of 4DVAR surface forcing
+!  fields. In strong constraint 4DVAR, it is possible to adjust surface
+!  forcing fields at other intervals in addition to initial time.
+!  These parameters are used to store the appropriate number of
+!  surface forcing records in output history NetCDF files.
+!
+!    Nfrec(:) = 1 + ntimes(:) / nSFF(:)
+!
+!  Here, it is assumed that nSFF is a multiple of NTIMES or greater
+!  than NTIMES. If nSFF > NTIMES, only one record is stored in the
+!  output history NetCDF files and the adjustment is for constant
+!  forcing with constant correction.
+!
+        integer, dimension(Ngrids) :: nSFF       ! number of timesteps
+        integer, dimension(Ngrids) :: Nfrec      ! number of records
+        integer, dimension(Ngrids) :: SFcount    ! record counter
+
+#ifdef ADJUST_STFLUX
+!
+!  Logical switches to process surface tracer fluxes during 4DVar
+!  adjustments.
+!
+        logical, allocatable :: Lstflux(:,:)
+#endif
+#if defined ADJUST_STFLUX || defined ADJUST_WSTRESS
+!
+!  Time (s) of surface forcing adjustment.
+!
+        real(r8), allocatable :: SF_time(:,:)
+#endif
+!
+!  Restart time record to read from disk and use as the initial
+!  conditions. Use nrrec=0 for new solutions. If nrrec is negative
+!  (say, nrrec=-1), the model will restart from the most recent
+!  time record. That is, the initialization record is assigned
+!  internally.
+!
+        integer, dimension(Ngrids) :: nrrec
+#ifdef FLOATS
+!
+!  Floats restart switch.
+!
+        integer, dimension(Ngrids) :: frrec
+#endif
+!
+!  Switch to activate processing of input data.  This switch becomes
+!  very useful when reading input data serially in parallel
+!  applications.
+!
+        logical, dimension(Ngrids) :: synchro_flag
+!
+!  Switch to inialize model with latest time record from initial
+!  (restart/history) NetCDF file.
+!
+        logical, dimension(Ngrids) :: LastRec
+!
+!  Generalized Statbility Theory (GST) parameters.
+!
+        logical :: LrstGST                  ! restart switch
+        integer :: MaxIterGST               ! Number of iterations
+        integer :: nGST                     ! check pointing interval
+!
+!  Switches used to recycle time records in some output file. If TRUE,
+!  only the latest two time records are maintained.  If FALSE, all
+!  field records are saved.
+!
+        logical, dimension(Ngrids) :: LcycleADJ
+        logical, dimension(Ngrids) :: LcycleRST
+        logical, dimension(Ngrids) :: LcycleTLM
+
+#if defined AVERAGES_DETIDE && (defined SSH_TIDES || defined UV_TIDES)
+!
+!  Counter storing the number of accumulated harmonic records used
+!  for detiding.
+!
+        integer, dimension(Ngrids) :: Hcount
+#endif
+!
+!-----------------------------------------------------------------------
+!  Adjoint sensitivity parameters.
+!-----------------------------------------------------------------------
+!
+!  Starting and ending vertical levels of the 3D adjoint state whose
+!  sensitivity is required.
+!
+        integer, dimension(Ngrids) :: KstrS        ! starting level
+        integer, dimension(Ngrids) :: KendS        ! ending level
+!
+!  Starting and ending day for adjoint sensitivity forcing.
+!
+        real(r8), dimension(Ngrids) :: DstrS       ! starting day
+        real(r8), dimension(Ngrids) :: DendS       ! ending day
+!
+!-----------------------------------------------------------------------
+!  Stochastic optimals parameters.
+!-----------------------------------------------------------------------
+!
+!  Trace of stochastic optimals matrix.
+!
+        real(r8), dimension(Ngrids) :: TRnorm
+!
+!  Stochastic optimals time decorrelation scale (days) assumed for
+!  red noise processes.
+!
+        real(r8), dimension(Ngrids) :: SO_decay
+!
+!  Stochastic optimals surface forcing standard deviation for
+!  dimensionalization.
+!
+        real(r8), allocatable :: SO_sdev(:,:)
+
+#if defined FOUR_DVAR || defined VERIFICATION
+!
+!------------------------------------------------------------------------
+!  Background/model error covariance parameters.
+!------------------------------------------------------------------------
+!
+!  Maximum number of model state variables to process.
+!
+        integer :: MstateVar
+!
+!  Logical switch to compute initial conditions, model and surface
+!  forcing error covariance normalization factors.
+!
+        logical,  allocatable :: Cnorm(:,:)
+!
+!  Logical switch to compute boundary conditions error covariance
+!  normalization factors.
+!
+        logical,  allocatable :: CnormB(:,:)
+!
+!  Logical switches to process weak constraint forcing as intermittent
+!  or continuous impulses.
+!
+        logical :: SporadicImpulse = .FALSE.     ! intermittent impulses
+        logical :: FrequentImpulse = .FALSE.     ! continuous impulses
+!
+!  Stability and accuracy factor used to scale the time-step of the
+!  horizontal and vertical convolution operator below its theoretical
+!  (CFL) limit. Notice that four values are needed for these factors to
+!  facilitate the error covariance modeling for initial conditions (1),
+!  model (2), boundary conditions (3), and surface forcing (4).
+!
+        real(r8), dimension(4) :: Hgamma
+        real(r8), dimension(4) :: Vgamma
+!
+!  Parameters used to compute balanced salinity in terms of temperature
+!  using empirical T-S relationships in error covariance balance
+!  operator.
+!
+        real(r8), dimension(Ngrids) :: dTdz_min  ! minimum dT/ds (C/m)
+        real(r8), dimension(Ngrids) :: ml_depth  ! mixed-layer depth (m)
+!
+!  Balance operator level of no motion depth (m; positive) used when
+!  computing balanced free-surface contribution.
+!
+        real(r8), dimension(Ngrids) :: LNM_depth
+!
+! Balance operator level of no motion flag used to compute balanced
+! free-surface contribution:
+!
+!      [0] Integrate from local bottom to the surface
+!      [1] Integrate from LNM_depth to surface or integrate from local bottom
+!          if shallower than LNM_depth
+!
+        integer :: LNM_flag
+!
+! Balance operator logical switches for state variables to consider in the
+! error covariance multivariate constraints.
+!
+        logical, allocatable :: balance(:)
+!
+!  Initial conditions, model and surface forcing error covariance
+!  horizontal decorrelation scales (m).
+!
+        real(r8), allocatable :: Hdecay(:,:,:)
+!
+!  Initial conditions, model and surface forcing error covariance
+!  vertical decorrelation scales (m).
+!
+        real(r8), allocatable :: Vdecay(:,:,:)
+!
+!  Boundary conditions error covariance horizontal decorrelation
+!  scales (m).
+!
+        real(r8), allocatable :: HdecayB(:,:,:)
+!
+!  Boundary conditions error covariance vertical decorrelation
+!  scales (m).
+!
+        real(r8), allocatable :: VdecayB(:,:,:)
+#endif
+!
+!-----------------------------------------------------------------------
+!  Nudging variables for passive (outflow) and active (inflow) oepn
+!  boundary conditions.
+!-----------------------------------------------------------------------
+!
+!    iwest         West  identification index in boundary arrays.
+!    isouth        South identification index in boundary arrays.
+!    ieast         East  identification index in boundary arrays.
+!    inorth        North identification index in boundary arrays.
+!    obcfac        Factor between passive and active open boundary
+!                    conditions (nondimensional and greater than one).
+!                    The nudging time scales for the active conditions
+!                    are obtained by multiplying the passive values by
+!                    factor.
+!    FSobc_in      Active and strong time-scale (1/sec) coefficients
+!                    for nudging towards free-surface data at  inflow.
+!    FSobc_out     Passive and weak  time-scale (1/sec) coefficients
+!                    for nudging towards free-surface data at outflow.
+!    M2obc_in      Active and strong time-scale (1/sec) coefficients
+!                    for nudging towards 2D momentum data at  inflow.
+!    M2obc_out     Passive and weak  time-scale (1/sec) coefficients
+!                    for nudging towards 2D momentum data at outflow.
+!    M3obc_in      Active and strong time-scale (1/sec) coefficients
+!                    for nudging towards 3D momentum data at  inflow.
+!    M3obc_out     Passive and weak  time-scale (1/sec) coefficients
+!                    for nudging towards 3D momentum data at outflow.
+!    Tobc_in       Active and strong time-scale (1/sec) coefficients
+!                    for nudging towards tracer data at  inflow.
+!    Tobc_out      Passive and weak  time-scale (1/sec) coefficients
+!                    for nudging towards tracer data at outflow.
+!
+        integer, parameter :: iwest = 1
+        integer, parameter :: isouth = 2
+        integer, parameter :: ieast = 3
+        integer, parameter :: inorth = 4
+
+        real(r8), dimension(Ngrids) :: obcfac
+        real(r8), dimension(Ngrids,4) :: FSobc_in
+        real(r8), dimension(Ngrids,4) :: FSobc_out
+        real(r8), dimension(Ngrids,4) :: M2obc_in
+        real(r8), dimension(Ngrids,4) :: M2obc_out
+#ifdef SOLVE3D
+        real(r8), dimension(Ngrids,4) :: M3obc_in
+        real(r8), dimension(Ngrids,4) :: M3obc_out
+        real(r8), allocatable :: Tobc_in(:,:,:)
+        real(r8), allocatable :: Tobc_out(:,:,:)
+#endif
+!
+!  Inverse time-scales (1/s) for nudging at open boundaries and sponge
+!  areas.
+!
+        real(r8), dimension(Ngrids) :: Znudg       ! Free-surface
+        real(r8), dimension(Ngrids) :: M2nudg      ! 2D momentum
+        real(r8), dimension(Ngrids) :: M3nudg      ! 3D momentum
+        real(r8), allocatable :: Tnudg (:,:)       ! Tracers
+!
+!  Inverse time-scales (1/s) for assimilation via nudging.
+!
+        real(r8), dimension(Ngrids) :: Znudass     ! Free-surface
+        real(r8), dimension(Ngrids) :: M2nudass    ! 2D momentum
+        real(r8), dimension(Ngrids) :: M3nudass    ! 3D momentum
+        real(r8), allocatable :: Tnudass(:,:)      ! Tracers
+!
+!  Variables used to impose mass flux conservation in open boundary
+!  configurations.
+!
+        real(r8) :: bc_area = 0.0_r8
+        real(r8) :: bc_flux = 0.0_r8
+        real(r8) :: ubar_xs = 0.0_r8
+#if defined TANGENT || defined TL_IOMS
+        real(r8) :: tl_bc_area = 0.0_r8
+        real(r8) :: tl_bc_flux = 0.0_r8
+        real(r8) :: tl_ubar_xs = 0.0_r8
+#endif
+#ifdef ADJOINT
+        real(r8) :: ad_bc_area = 0.0_r8
+        real(r8) :: ad_bc_flux = 0.0_r8
+        real(r8) :: ad_ubar_xs = 0.0_r8
+#endif
+
+#ifdef BULK_FLUXES
+!
+!-----------------------------------------------------------------------
+! Constants used in surface fluxes bulk parameterization.
+!-----------------------------------------------------------------------
+!
+!    blk_Cpa       Specific heat capacity for dry air (J/kg/K).
+!    blk_Cpw       Specific heat capacity for seawater (J/kg/K).
+!    blk_Rgas      Gas constant for dry air (J/kg/K).
+!    blk_Zabl      Height (m) of atmospheric boundary layer.
+!    blk_ZQ        Height (m) of surface air humidity measurement.
+!    blk_ZT        Height (m) of surface air temperature measurement.
+!    blk_ZW        Height (m) of surface winds measurement.
+!    blk_beta      Beta parameter evaluated from Fairall low windspeed
+!                    turbulence data.
+!    blk_dter      Temperature change.
+!    blk_tcw       Thermal conductivity of water (W/m/K).
+!    blk_visw      Kinematic viscosity water (m2/s).
+!
+        real(r8) :: blk_Cpa = 1004.67_r8      ! (J/kg/K), Businger 1982
+        real(r8) :: blk_Cpw = 4000.0_r8       ! (J/kg/K)
+        real(r8) :: blk_Rgas = 287.1_r8       ! (J/kg/K)
+        real(r8) :: blk_Zabl = 600.0_r8       ! (m)
+        real(r8) :: blk_beta = 1.2_r8         ! non-dimensional
+        real(r8) :: blk_dter = 0.3_r8         ! (K)
+        real(r8) :: blk_tcw = 0.6_r8          ! (W/m/K)
+        real(r8) :: blk_visw = 0.000001_r8    ! (m2/s)
+
+        real(r8), dimension(Ngrids) :: blk_ZQ     ! (m)
+        real(r8), dimension(Ngrids) :: blk_ZT     ! (m)
+        real(r8), dimension(Ngrids) :: blk_ZW     ! (m)
+#endif
+# if defined SG_BBL || defined SSW_BBL
+!
+!-----------------------------------------------------------------------
+!  Closure parameters associated with Styles and Glenn (1999) bottom
+!  currents and waves boundary layer.
+!-----------------------------------------------------------------------
+!
+!    sg_Cdmax      Upper limit on bottom darg coefficient.
+!    sg_alpha      Free parameter indicating the constant stress
+!                    region of the wave boundary layer.
+!    sg_g          Acceleration of gravity (m/s2).
+!    sg_kappa      Von Karman constant.
+!    sg_mp         Nondimensional closure constant.
+!    sg_n          Maximum number of iterations for bisection method.
+!    sg_nu         Kinematic viscosity of seawater (m2/s).
+!    sg_pi         Ratio of circumference to diameter.
+!    sg_tol        Convergence criterion.
+!    sg_ustarcdef  Default bottom stress (m/s).
+!    sg_z100       Depth (m), 100 cm above bottom.
+!    sg_z1p        Nondimensional closure constant.
+!    sg_zrmin      Minimum allowed height (m) of current above bed.
+!                    Otherwise, logarithmic interpolation is used.
+!    sg_znotcdef   Default apparent hydraulic roughness (m).
+!    sg_znotdef    Default hydraulic roughness (m).
+!
+        integer, parameter :: sg_n = 20
+
+        real(r8), parameter :: sg_pi = pi
+
+        real(r8) :: sg_Cdmax = 0.01_r8         ! non-dimensional
+        real(r8) :: sg_alpha = 1.0_r8          ! non-dimensional
+        real(r8) :: sg_g = 9.81_r8             ! (m/s2)
+        real(r8) :: sg_kappa = 0.41_r8         ! non-dimensional
+        real(r8) :: sg_nu = 0.00000119_r8      ! (m2/s)
+        real(r8) :: sg_tol = 0.0001_r8         ! non-dimensional
+        real(r8) :: sg_ustarcdef = 0.01_r8     ! (m/s)
+        real(r8) :: sg_z100 = 1.0_r8           ! (m)
+        real(r8) :: sg_z1min = 0.20_r8         ! (m)
+        real(r8) :: sg_z1p                     ! non-dimensional
+        real(r8) :: sg_znotcdef = 0.01_r8      ! (m)
+        real(r8) :: sg_znotdef                 ! (m)
+
+        complex(c8) :: sg_mp
+# endif
+#if defined LMD_SKPP || defined SOLAR_SOURCE
+!
+!-----------------------------------------------------------------------
+!  Water clarity parameters.
+!-----------------------------------------------------------------------
+!
+!    lmd_mu1       Reciprocal of the absorption coefficient for solar
+!                    wavelength band 1 as a function of the Jerlov
+!                    water type.
+!    lmd_mu2       Reciprocal of the absorption coefficient for solar
+!                    wavelength band 2 as a function of the Jerlov
+!                    water type.
+!    lmd_r1        Fraction of total radiance for wavelength band 1 as
+!                    a function of the Jerlov water type.
+!
+        real(r8), dimension(5) :: lmd_mu1 =                             &
+     &            (/ 0.35_r8, 0.6_r8, 1.0_r8, 1.5_r8, 1.4_r8 /)
+
+        real(r8), dimension(5) :: lmd_mu2 =                             &
+     &            (/ 23.0_r8, 20.0_r8, 17.0_r8, 14.0_r8, 7.9_r8 /)
+
+        real(r8), dimension(5) :: lmd_r1 =                              &
+     &            (/ 0.58_r8, 0.62_r8, 0.67_r8, 0.77_r8, 0.78_r8 /)
+#endif
+
+#ifdef LMD_MIXING
+!
+!-----------------------------------------------------------------------
+!  Large et al. (1994) K-profile parameterization.
+!-----------------------------------------------------------------------
+!
+!    lmd_Ri0       Critical gradient Richardson number below which
+!                    turbulent mixing occurs.
+!    lmd_Rrho0     Value of double-diffusive density ratio where
+!                    mixing goes to zero in salt fingering.
+!    lmd_bvfcon    Brunt-Vaisala frequency (1/s2) limit for convection.
+!    lmd_fdd       Scaling factor for double diffusion of temperature
+!                    in salt fingering case (lmd_fdd=0.7).
+!    lmd_nu        Molecular viscosity (m2/s).
+!    lmd_nu0c      Maximum interior convective viscosity and diffusivity
+!                    due to shear instability.
+!    lmd_nu0m      Maximum interior viscosity (m2/s) due shear
+!                    instability.
+!    lmd_nu0s      Maximum interior diffusivity (m2/s) due shear
+!                    instability.
+!    lmd_nuf       Scaling factor for double diffusion in salt
+!                    fingering.
+!    lmd_nuwm      Interior viscosity (m2/s) due to wave breaking.
+!    lmd_nuws      Interior diffusivity (m2/s) due to wave breaking.
+!    lmd_sdd1      Double diffusion constant for salinity in diffusive
+!                    convection case (lmd_sdd1=0.15).
+!    lmd_sdd2      Double diffusion constant for salinity in diffusive
+!                    convection case (lmd_sdd2=1.85).
+!    lmd_sdd3      Double diffusion constant for salinity in diffusive
+!                    convection case (lmd_sdd3=0.85).
+!    lmd_tdd1      Double diffusion constant for temperature
+!                    in diffusive convection case (lmd_tdd1=0.909).
+!    lmd_tdd2      Double diffusion constant for temperature in
+!                    diffusive convection case (lmd_tdd2=4.6).
+!    lmd_tdd3      Double diffusion constant for temperature in
+!                    diffusive convection case (lmd_tdd3=0.54).
+!
+        real(r8) :: lmd_Ri0 = 0.7_r8          ! non-dimensional
+        real(r8) :: lmd_Rrho0 = 1.9_r8        ! m2/s
+        real(r8) :: lmd_bvfcon = -2.0E-5_r8   ! 1/s2
+        real(r8) :: lmd_fdd = 0.7_r8          ! non-dimensional
+        real(r8) :: lmd_nu = 1.5E-6_r8        ! m2/s
+        real(r8) :: lmd_nu0c = 0.01_r8        ! m2/s
+!!      real(r8) :: lmd_nu0c = 0.1_r8         ! m2/s
+!!      real(r8) :: lmd_nu0c = 0.05_r8        ! m2/s
+        real(r8) :: lmd_nu0m = 10.0E-4_r8     ! m2/s
+        real(r8) :: lmd_nu0s = 10.0E-4_r8     ! m2/s
+!!      real(r8) :: lmd_nu0m = 50.0E-4_r8     ! m2/s
+!!      real(r8) :: lmd_nu0s = 50.0E-4_r8     ! m2/s
+        real(r8) :: lmd_nuf = 10.0E-4_r8      ! m2/s
+# ifdef DAMEE_4
+        real(r8) :: lmd_nuwm = 1.0E-4_r8      ! m2/s
+        real(r8) :: lmd_nuws = 1.0E-5_r8      ! m2/s
+# else
+        real(r8) :: lmd_nuwm = 1.0E-5_r8      ! m2/s
+        real(r8) :: lmd_nuws = 1.0E-6_r8      ! m2/s
+# endif
+        real(r8) :: lmd_sdd1 = 0.15_r8        ! non-dimensional
+        real(r8) :: lmd_sdd2 = 1.85_r8        ! non-dimensional
+        real(r8) :: lmd_sdd3 = 0.85_r8        ! non-dimensional
+        real(r8) :: lmd_tdd1 = 0.909_r8       ! non-dimensional
+        real(r8) :: lmd_tdd2 = 4.6_r8         ! non-dimensional
+        real(r8) :: lmd_tdd3 = 0.54_r8        ! non-dimensional
+
+# if defined LMD_SKPP || defined LMD_BKPP
+!
+!-----------------------------------------------------------------------
+!  Large et al. (1994) oceanic boundary layer parameters.
+!-----------------------------------------------------------------------
+!
+!    lmd_Cg        Proportionality coefficient parameterizing nonlocal
+!                    transport.
+!    lmd_Cstar     Proportionality coefficient parameterizing nonlocal
+!                    transport.
+!    lmd_Cv        Ratio of interior Brunt-Vaisala frequency to that
+!                    at entrainment depth "he".
+!    lmd_Ric       Critical bulk Richardson number.
+!    lmd_am        Coefficient of flux profile for momentum in their
+!                    1/3 power law regimes.
+!    lmd_as        Coefficient of flux profile for tracers in their
+!                    1/3 power law regimes.
+!    lmd_betaT     Ratio of entrainment flux to surface buoyancy flux.
+!    lmd_cekman    Constant used in the computation of Ekman depth.
+!    lmd_cmonob    Constant used in the computation of Monin-Obukhov
+!                    depth.
+!    lmd_cm        Coefficient of flux profile for momentum in their
+!                    1/3 power law regimes.
+!    lmd_cs        Coefficient of flux profile for tracers in their
+!                    1/3 power law regimes.
+!    lmd_epsilon   Non-dimensional extent of the surface layer.
+!    lmd_zetam     Maximum stability parameter "zeta" value of the 1/3
+!                    power law regime of flux profile for momentum.
+!    lmd_zetas     Maximum stability parameter "zeta" value of the 1/3
+!                    power law regime of flux profile for tracers.
+!
+        real(r8) :: lmd_Cg
+        real(r8) :: lmd_Cstar = 10.0_r8
+        real(r8) :: lmd_Cv = 1.25_r8
+!!      real(r8) :: lmd_Cv = 1.4_r8
+!!      real(r8) :: lmd_Cv = 1.6_r8
+!!      real(r8) :: lmd_Cv = 1.8_r8
+!!      real(r8) :: lmd_Ric = 0.25_r8
+        real(r8) :: lmd_Ric = 0.3_r8
+!!      real(r8) :: lmd_Ric = 0.5_r8
+!!      real(r8) :: lmd_Ric = 0.75_r8
+        real(r8) :: lmd_am = 1.257_r8
+        real(r8) :: lmd_as = -28.86_r8
+        real(r8) :: lmd_betaT = -0.2_r8
+        real(r8) :: lmd_cekman = 0.7_r8
+        real(r8) :: lmd_cmonob = 1.0_r8
+        real(r8) :: lmd_cm = 8.36_r8
+        real(r8) :: lmd_cs = 98.96_r8
+        real(r8) :: lmd_epsilon = 0.1_r8
+        real(r8) :: lmd_zetam = -0.2_r8
+        real(r8) :: lmd_zetas = -1.0_r8
+# endif
+#endif
+!
+!-----------------------------------------------------------------------
+!  Generic Length Scale parameters.
+!-----------------------------------------------------------------------
+!
+!    gls_Gh0
+!    gls_Ghcri
+!    gls_Ghmin
+!    gls_Kmin      Minimum value of specific turbulent kinetic energy.
+!    gls_Pmin      Minimum Value of dissipation.
+!    gls_cmu0      Stability coefficient (non-dimensional).
+!    gls_c1        Shear production coefficient (non-dimensional).
+!    gls_c2        Dissipation coefficient (non-dimensional).
+!    gls_c3m       Buoyancy production coefficient (minus).
+!    gls_c3p       Buoyancy production coefficient (plus).
+!    gls_E2
+!    gls_m         Turbulent kinetic energy exponent (non-dimensional).
+!    gls_n         Turbulent length scale exponent (non-dimensional).
+!    gls_p         Stability exponent (non-dimensional).
+!    gls_sigk      Constant Schmidt number (non-dimensional) for
+!                    turbulent kinetic energy diffusivity.
+!    gls_sigp      Constant Schmidt number (non-dimensional) for
+!                    turbulent generic statistical field, "psi".
+!
+        real(r8), dimension(Ngrids) :: gls_m
+        real(r8), dimension(Ngrids) :: gls_n
+        real(r8), dimension(Ngrids) :: gls_p
+        real(r8), dimension(Ngrids) :: gls_sigk
+        real(r8), dimension(Ngrids) :: gls_sigp
+        real(r8), dimension(Ngrids) :: gls_cmu0
+        real(r8), dimension(Ngrids) :: gls_cmupr
+        real(r8), dimension(Ngrids) :: gls_c1
+        real(r8), dimension(Ngrids) :: gls_c2
+        real(r8), dimension(Ngrids) :: gls_c3m
+        real(r8), dimension(Ngrids) :: gls_c3p
+        real(r8), dimension(Ngrids) :: gls_Kmin
+        real(r8), dimension(Ngrids) :: gls_Pmin
+#ifdef GLS_MIXING
+# if defined CANUTO_A || defined CANUTO_B
+        real(r8) :: gls_s0
+        real(r8) :: gls_s1
+        real(r8) :: gls_s2
+        real(r8) :: gls_s3
+        real(r8) :: gls_s4
+        real(r8) :: gls_s5
+        real(r8) :: gls_s6
+        real(r8) :: gls_b0
+        real(r8) :: gls_b1
+        real(r8) :: gls_b2
+        real(r8) :: gls_b3
+        real(r8) :: gls_b4
+        real(r8) :: gls_b5
+# endif
+# ifdef CANUTO_A
+        real(r8), parameter :: gls_Gh0 = 0.0329_r8 ! 0.0329 GOTM, 0.0673 Burchard
+        real(r8), parameter :: gls_Ghcri = 0.03_r8
+        real(r8), parameter :: gls_L1 = 0.107_r8
+        real(r8), parameter :: gls_L2 = 0.0032_r8
+        real(r8), parameter :: gls_L3 = 0.0864_r8
+        real(r8), parameter :: gls_L4 = 0.12_r8
+        real(r8), parameter :: gls_L5 = 11.9_r8
+        real(r8), parameter :: gls_L6 = 0.4_r8
+        real(r8), parameter :: gls_L7 = 0.0_r8
+        real(r8), parameter :: gls_L8 = 0.48_r8
+# elif defined CANUTO_B
+        real(r8), parameter :: gls_Gh0 = 0.0444_r8 ! 0.044 GOTM, 0.0673 Burchard
+        real(r8), parameter :: gls_Ghcri = 0.0414_r8
+        real(r8), parameter :: gls_L1 = 0.127_r8
+        real(r8), parameter :: gls_L2 = 0.00336_r8
+        real(r8), parameter :: gls_L3 = 0.0906_r8
+        real(r8), parameter :: gls_L4 = 0.101_r8
+        real(r8), parameter :: gls_L5 = 11.2_r8
+        real(r8), parameter :: gls_L6 = 0.4_r8
+        real(r8), parameter :: gls_L7 = 0.0_r8
+        real(r8), parameter :: gls_L8 = 0.318_r8
+# else
+        real(r8), parameter :: gls_Gh0 = 0.028_r8
+        real(r8), parameter :: gls_Ghcri = 0.02_r8
+# endif
+        real(r8), parameter :: gls_Ghmin = -0.28_r8
+        real(r8), parameter :: gls_E2 = 1.33_r8
+#endif
+!
+! Constants used in the various formulation of surface flux boundary
+! conditions for the GLS vertical turbulence closure in terms of
+! Charnok surface roughness (CHARNOK_ALPHA), roughness from wave
+! amplitude (zos_hsig_alpha), wave dissipation (SZ_ALPHA), and
+! Craig and Banner wave breaking (CRGBAN_CW).
+!
+        real(r8), dimension(Ngrids) :: charnok_alpha
+        real(r8), dimension(Ngrids) :: zos_hsig_alpha
+        real(r8), dimension(Ngrids) :: sz_alpha
+        real(r8), dimension(Ngrids) :: crgban_cw
+        real(r8), dimension(Ngrids) :: wec_alpha
+
+#if defined MY25_MIXING || defined GLS_MIXING
+!
+!-----------------------------------------------------------------------
+!  Mellor-Yamada (1982) Level 2.5 vertical mixing variables.
+!-----------------------------------------------------------------------
+!
+!    my_A1         Turbulent closure A1 constant.
+!    my_A2         Turbulent closure A2 constant.
+!    my_B1         Turbulent closure B1 constant.
+!    my_B1p2o3     B1**(2/3).
+!    my_B1pm1o3    B1**(-1/3).
+!    my_B2         Turbulent closure B2 constant.
+!    my_C1         Turbulent closure C1 constant.
+!    my_C2         Turbulent closure C2 constant.
+!    my_C3         Turbulent closure C3 constant.
+!    my_E1         Turbulent closure E1 constant.
+!    my_E1o2       0.5*E1
+!    my_E2         Turbulent closure E2 constant.
+!    my_Gh0        Lower bound on Galperin et al. stability function.
+!    my_Sh1        Tracers stability function constant factor.
+!    my_Sh2        Tracers stability function constant factor.
+!    my_Sm1        Momentum stability function constant factor.
+!    my_Sm2        Momentum stability function constant factor.
+!    my_Sm3        Momentum stability function constant factor.
+!    my_Sm4        Momentum stability function constant factor.
+!    my_Sq         Scale for vertical mixing of turbulent energy.
+!    my_dtfac      Asselin time filter coefficient.
+!    my_lmax       Upper bound on the turbulent length scale.
+!    my_qmin       Lower bound on turbulent energy "tke" and "gls".
+!
+        real(r8), parameter :: my_A1 = 0.92_r8
+        real(r8), parameter :: my_A2 = 0.74_r8
+        real(r8), parameter :: my_B1 = 16.6_r8
+        real(r8), parameter :: my_B2 = 10.1_r8
+        real(r8), parameter :: my_C1 = 0.08_r8
+        real(r8), parameter :: my_C2 = 0.7_r8
+        real(r8), parameter :: my_C3 = 0.2_r8
+        real(r8), parameter :: my_E1 = 1.8_r8
+        real(r8), parameter :: my_E2 = 1.33_r8
+        real(r8), parameter :: my_Gh0 = 0.0233_r8
+        real(r8), parameter :: my_Sq = 0.2_r8
+        real(r8), parameter :: my_dtfac = 0.05_r8
+        real(r8), parameter :: my_lmax = 0.53_r8
+        real(r8), parameter :: my_qmin = 1.0E-8_r8
+
+        real(r8) :: my_B1p2o3
+        real(r8) :: my_B1pm1o3
+        real(r8) :: my_E1o2
+        real(r8) :: my_Sh1
+        real(r8) :: my_Sh2
+        real(r8) :: my_Sm1
+        real(r8) :: my_Sm2
+        real(r8) :: my_Sm3
+        real(r8) :: my_Sm4
+#endif
+#ifdef BVF_MIXING
+!
+!-----------------------------------------------------------------------
+!  Brunt-Vaisala frequency based vertical mixing variables.
+!-----------------------------------------------------------------------
+!
+!    bvf_numax     Upper bound vertical diffusion (m2/s).
+!    bvf_numin     Lower bound vertical diffusion (m2/s).
+!    bvf_nu0       Proportionality constant (m2/s2).
+!    bvf_nu0c      Convective diffusion (m2/s) in static unstable
+!                    regime.
+!
+        real(r8) :: bvf_numax = 4.0E-4_r8      ! m2/s
+        real(r8) :: bvf_numin = 3.0E-5_r8      ! m2/s
+        real(r8) :: bvf_nu0 = 1.0E-7_r8        ! m2/s2
+        real(r8) :: bvf_nu0c = 1.0_r8          ! m2/s
+#endif
+!
+!-----------------------------------------------------------------------
+!  Tangent linear and adjoint model parameters.
+!-----------------------------------------------------------------------
+!
+!  Tangent linear and adjoint model control switches.
+!
+        logical :: TLmodel = .FALSE.
+        logical :: ADmodel = .FALSE.
+
+#if defined ASSIMILATION || defined NUDGING
+!
+!-----------------------------------------------------------------------
+!  Data assimilation parameters.
+!-----------------------------------------------------------------------
+!
+!  Switches to assimilate observations.
+!
+        logical, dimension(Ngrids) :: assi_SSH      ! Sea surface height
+        logical, dimension(Ngrids) :: assi_SST      ! SST
+        logical, dimension(Ngrids) :: assi_UVsur    ! Surface currents
+        logical, dimension(Ngrids) :: assi_UV       ! 3D currents
+        logical, allocatable :: assi_T(:,:)         ! Tracers
+!
+!  Switches to extend vertically surface observations.
+!
+        logical, dimension(Ngrids) :: extend_SST    ! SST
+        logical, dimension(Ngrids) :: extend_UV     ! Surface currents
+!
+!  Switches activated at the beggining of observations assimilation.
+!
+        logical, dimension(Ngrids) :: first_SSH     ! Sea surface height
+        logical, dimension(Ngrids) :: first_UV      ! Currents
+        logical, allocatable :: first_T(:,:)        ! Tracers
+!
+!  Switches indicating assimilation of observations at the current
+!  timestep.
+!
+        logical, dimension(Ngrids) :: update_SSH    ! Sea surface height
+        logical, dimension(Ngrids) :: update_SST    ! SST
+        logical, dimension(Ngrids) :: update_UVsur  ! Surface currents
+        logical, dimension(Ngrids) :: update_UV     ! Currents
+        logical, allocatable :: update_T(:,:)       ! Tracers
+!
+!  Starting time (days) for assimilation of observations.
+!
+        real(r8), dimension(Ngrids) :: timeSSHobs   ! Sea surface height
+        real(r8), dimension(Ngrids):: timeVobs      ! Currents
+        real(r8), allocatable :: timeTobs(:,:)      ! Tracers
+!
+!  Time (days) for current observations snapshots.
+!
+        real(r8), dimension(2,Ngrids) :: tSSHobs    ! Sea surface height
+        real(r8), dimension(2,Ngrids) :: tVobs      ! Currents
+        real(r8), allocatable :: tTobs(:,:,:)       ! Tracers
+!
+!  Latest observation time (seconds, monotonic) of read data.
+!
+        real(r8), dimension(Ngrids) :: tsSSHobs     ! Sea surface height
+        real(r8), dimension(Ngrids) :: tsVobs       ! Currents
+        real(r8), allocatable :: tsTobs(:,:)        ! Tracers
+!
+!  Current Observations error variance minimum and maximum values.
+!
+        real(r8), dimension(Ngrids) :: EobsSSHmin   ! Sea surface height
+        real(r8), dimension(Ngrids) :: EobsSSHmax
+        real(r8), dimension(Ngrids) :: EobsSSTmin   ! SST
+        real(r8), dimension(Ngrids) :: EobsSSTmax
+        real(r8), dimension(Ngrids) :: EobsUVmin    ! Currents
+        real(r8), dimension(Ngrids) :: EobsUVmax
+        real(r8), allocatable :: EobsTmin(:,:)      ! Tracers
+        real(r8), allocatable :: EobsTmax(:,:)
+!
+!  Observations vertical extension coefficients.
+!
+        integer, parameter :: KP = 100
+
+        integer, dimension(Ngrids) :: npSST
+        integer, dimension(Ngrids) :: npUV
+
+        real(r8), dimension(0:KP,Ngrids) :: pcoef_SST   ! SST
+        real(r8), dimension(0:KP,Ngrids) :: pcoef_U     ! U-velocity
+        real(r8), dimension(0:KP,Ngrids) :: pcoef_V     ! V-vlocity
+!
+!  Observations error variance extension coefficients.
+!
+        real(r8), dimension(0:KP,Ngrids) :: perr_SST    ! SST
+        real(r8), dimension(0:KP,Ngrids) :: perr_V      ! Currents
+!
+!  Extension depth parameters.
+!
+!    ZmSST         Maximum valid depth for SST extension basis function.
+!    ZoSST         E-folding depth  to extend vertically SST
+!                    non-dimensional error variance.
+!    ZmUV          Maximum valid depth for surface velocity extension
+!                    basis functions.
+!    ZoUV          E-folding depth to extend vertically surface
+!                    currents non-dimensional.
+!
+        real(r8), dimension(Ngrids) :: ZmSST            ! m
+        real(r8), dimension(Ngrids) :: ZoSST            ! m, positive
+        real(r8), dimension(Ngrids) :: ZmUV             ! m
+        real(r8), dimension(Ngrids) :: ZoUV             ! m, positive
+!
+!  Initial model error (percentage, 0-100%).
+!
+        real(r8), dimension(Ngrids) :: Emod0
+!
+!  Empirical model error growth scale (days).
+!
+        real(r8), dimension(Ngrids) :: Tgrowth
+!
+!  Correlation between model and observations.
+!
+        real(r8), dimension(Ngrids) :: cor
+!
+!  Model RMS error adjustment factor due to truncation.
+!
+        real(r8) :: err_fct
+#endif
+#ifdef ICE_MODEL
+        integer, dimension(Ngrids) :: nstrs
+        integer, dimension(Ngrids) :: nevp
+        integer, dimension(Ngrids) :: ievp
+
+        real(r8) :: tol     =  1.0E-16
+        real(r8) :: ice_emiss =  0.97_r8
+        real(r8) :: spec_heat_air =  1004._r8
+        real(r8) :: trans_coeff = 1.75E-3
+        real(r8) :: sublim_latent_heat = 2.834E+6
+        real(r8) :: t0deg = 273.15_r8
+
+        real(r8), dimension(Ngrids) :: dtice
+        real(r8), dimension(Ngrids) :: dtice_eq
+        real(r8), dimension(Ngrids) :: dte
+        real(r8), dimension(Ngrids) :: rhoice
+        real(r8), dimension(Ngrids) :: cdiw
+        real(r8), dimension(Ngrids) :: cdai
+        real(r8), dimension(Ngrids) :: rho_air
+        real(r8), dimension(Ngrids) :: rhosnow_dry
+        real(r8), dimension(Ngrids) :: rhosnow_wet
+        real(r8), dimension(Ngrids) :: pstar
+        real(r8), dimension(Ngrids) :: zetamax
+        real(r8), dimension(Ngrids) :: zetamin
+        real(r8), dimension(Ngrids) :: ellip_sq
+        real(r8), dimension(Ngrids) :: astren
+        real(r8), dimension(Ngrids) :: alphai
+        real(r8), dimension(Ngrids) :: min_h
+        real(r8), dimension(Ngrids) :: min_a
+        real(r8), dimension(Ngrids) :: max_a
+        real(r8), dimension(Ngrids) :: stressang
+#endif
+
+      CONTAINS
+
+      SUBROUTINE initialize_scalars
+!
+!=======================================================================
+!                                                                      !
+!  This routine initializes several variables in module "mod_scalars"  !
+!  for all nested grids.                                               !
+!                                                                      !
+!=======================================================================
+!
+!  Local variable declarations.
+!
+      integer :: i, ic, j, ng, itrc
+
+      real(r8), parameter :: IniVal = 0.0_r8
+!
+!-----------------------------------------------------------------------
+!  Allocate and initialize variables in module structure.
+!-----------------------------------------------------------------------
+!
+      allocate ( SCALARS(Ngrids) )
+
+      DO ng=1,Ngrids
+
+#ifdef SOLVE3D
+        allocate ( SCALARS(ng) % Lstate(5+MT) )
+        SCALARS(ng) % Lstate(1:5+MT) = .FALSE.
+#else
+        allocate ( SCALARS(ng) % Lstate(3) )
+        SCALARS(ng) % Lstate(1:3) = .FALSE.
+#endif
+#ifdef SOLVE3D
+        allocate ( SCALARS(ng) % SOstate(2+MT) )
+        SCALARS(ng) % SOstate(1:2+MT) = .FALSE.
+#else
+        allocate ( SCALARS(ng) % SOstate(2) )
+        SCALARS(ng) % SOstate(1:2) = .FALSE.
+#endif
+#if defined READ_WATER && defined MASKING && defined DISTRIBUTE
+        allocate ( SCALARS(ng) % IJwater((Lm(ng)+2)*(Mm(ng)+2),4) )
+        SCALARS(ng) % IJwater = 0
+#endif
+
+        allocate ( SCALARS(ng) % Cs_r(N(ng)) )
+        SCALARS(ng) % Cs_r(1:N(ng)) = IniVal
+
+        allocate ( SCALARS(ng) % Cs_w(0:N(ng)) )
+        SCALARS(ng) % Cs_w(0:N(ng)) = IniVal
+
+        allocate ( SCALARS(ng) % sc_r(N(ng)) )
+        SCALARS(ng) % sc_r(1:N(ng)) = IniVal
+
+        allocate ( SCALARS(ng) % sc_w(0:N(ng)) )
+        SCALARS(ng) % sc_w(0:N(ng)) = IniVal
+
+      END DO
+!
+!-----------------------------------------------------------------------
+!  Select the bigger value of number of tracer between all grids. Then,
+!  allocate tracer type variables.
+!-----------------------------------------------------------------------
+!
+#if defined FOUR_DVAR || defined VERIFICATION
+      MstateVar=5+MT
+# ifdef ADJUST_WSTRESS
+      MstateVar=MstateVar+2
+# endif
+# ifdef ADJUST_STFLUX
+      MstateVar=MstateVar+MT
+# endif
+!
+#endif
+      allocate ( LtracerSrc(MT,Ngrids) )
+      allocate ( Akt_bak(MT,Ngrids) )
+      allocate ( ad_Akt_fac(MT,Ngrids) )
+      allocate ( tl_Akt_fac(MT,Ngrids) )
+      allocate ( Kdiff(MT,Ngrids) )
+      allocate ( SO_sdev(2+MT,Ngrids) )
+      allocate ( ad_tnu2(MT,Ngrids) )
+      allocate ( nl_tnu2(MT,Ngrids) )
+      allocate ( tl_tnu2(MT,Ngrids) )
+      allocate ( tnu2(MT,Ngrids) )
+      allocate ( ad_tnu4(MT,Ngrids) )
+      allocate ( nl_tnu4(MT,Ngrids) )
+      allocate ( tl_tnu4(MT,Ngrids) )
+      allocate ( tnu4(MT,Ngrids) )
+      allocate ( tl_Tdiff(MT,Ngrids) )
+#ifdef SOLVE3D
+      allocate ( Tobc_in(MT,Ngrids,4) )
+      Tobc_in = IniVal
+      allocate ( Tobc_out(MT,Ngrids,4) )
+      Tobc_out = IniVal
+# if defined FLOATS && defined SOLVE3D
+        allocate ( ifTvar(MT) )
+# endif
+# ifdef T_PASSIVE
+      allocate ( inert(NPT) )
+# endif
+#endif
+      allocate ( Tnudg(MT,Ngrids) )
+      allocate ( Tnudass(MT,Ngrids) )
+#if defined ASSIMILATION || defined NUDGING
+      allocate ( assi_T(MT,Ngrids) )
+      allocate ( first_T(MT,Ngrids) )
+      allocate ( update_T(MT,Ngrids) )
+      allocate ( timeTobs(MT,Ngrids) )
+      allocate ( tTobs(MT,2,Ngrids) )
+      allocate ( tsTobs(MT,Ngrids) )
+      allocate ( EobsTmin(MT,Ngrids) )
+      allocate ( EobsTmax(MT,Ngrids) )
+#endif
+#if defined FOUR_DVAR || defined VERIFICATION
+      allocate ( balance(MstateVar) )
+
+      allocate ( Cnorm(2,MstateVar) )
+
+      allocate ( Hdecay(2,MstateVar,Ngrids) )
+      allocate ( Vdecay(2,MstateVar,Ngrids) )
+
+      allocate ( CnormB(MstateVar,4) )
+
+      allocate ( HdecayB(MstateVar,4,Ngrids) )
+      allocate ( VdecayB(MstateVar,4,Ngrids) )
+#endif
+#ifdef ADJUST_BOUNDARY
+      allocate ( Lobc(4,MstateVar,Ngrids) )
+#endif
+#ifdef ADJUST_STFLUX
+      allocate ( Lstflux(MT,Ngrids) )
+#endif
+!
+!---------------------------------------------------------------------
+!  Set tracer identification indices.
+!---------------------------------------------------------------------
+!
+      itemp=1
+      isalt=2
+      ic=NAT
+
+#ifdef T_PASSIVE
+!
+!  Indices for inert passive tracers to advect and diffuse.
+!
+      DO i=1,NPT
+        ic=ic+1
+        inert(i)=ic
+      END DO
+#endif
+
+#if defined FLOATS && defined SOLVE3D
+!
+!  Indices for tracer variables in the floats array track.
+!
+# ifdef FLOAT_VWALK
+      ic=12
+# else
+      ic=10
+# endif
+      DO i=1,MT
+        ic=ic+1
+        ifTvar(i)=ic
+      END DO
+#endif
+
+#ifdef DIAGNOSTICS
+!
+!---------------------------------------------------------------------
+!  Set diagnostic fields identification indices.
+!---------------------------------------------------------------------
+
+# ifdef DIAGNOSTICS_TS
+!
+!  Indices for tracer diagnostic variables.
+!
+      iThadv=1
+      iTxadv=2
+      iTyadv=3
+      iTvadv=4
+      ic=4
+#  if defined TS_DIF2 || defined TS_DIF4
+      iThdif=ic+1
+      iTxdif=ic+2
+      iTydif=ic+3
+      ic=ic+3
+#   if defined MIX_GEO_TS || defined MIX_ISO_TS
+      iTsdif=ic+1
+      ic=ic+1
+#   endif
+#  endif
+      iTvdif=ic+1
+      iTrate=ic+2
+# endif
+# ifdef DIAGNOSTICS_UV
+!
+!  Indices for 2D momentum diagnostic variables.  In some places in
+!  the code a compact DO-loop (idiag=1:M2pgrd) is used to improve
+!  flexibility. Therefore, the order of indices is very important.
+!  Only those fields that require special treatment are set below
+!  the M2pgrd index.
+!
+      ic=0
+#  if defined UV_COR
+      M2fcor=ic+1
+      ic=ic+1
+#  endif
+#  if defined UV_ADV
+      M2hadv=ic+1
+      M2xadv=ic+2
+      M2yadv=ic+3
+      ic=ic+3
+#  endif
+#  if defined WEC_MELLOR
+      M2hrad=ic+1
+      ic=ic+1
+#  endif
+#  if defined WEC_VF
+#   if defined UV_COR
+      M2fsco=ic+1
+      ic=ic+1
+#   endif
+#   ifdef BOTTOM_STREAMING
+      M2bstm=ic+1
+      ic=ic+1
+#   endif
+#   ifdef SURFACE_STREAMING
+      M2sstm=ic+1
+      ic=ic+1
+#   endif
+      M2hjvf=ic+1
+      M2kvrf=ic+2
+      M2wrol=ic+3
+      M2wbrk=ic+4
+      ic=ic+4
+#  endif
+#  if defined UV_VIS2 || defined UV_VIS4
+      M2hvis=ic+1
+      M2xvis=ic+2
+      M2yvis=ic+3
+      ic=ic+3
+#  endif
+      M2pgrd=ic+1
+      M2sstr=ic+2             ! These indices need to be
+      M2bstr=ic+3             ! specified last to allow a
+#  if defined WEC_VF
+      M2zeta=ic+4
+      M2zetw=ic+5
+      M2zqsp=ic+6
+      M2zbeh=ic+7
+#  endif
+      M2rate=NDM2d            ! compact DO-loop structure
+#  ifdef SOLVE3D
+!
+!  Indices for 3D momentum diagnostic variables.  In some places in
+!  the code a compact DO-loop (idiag=1:M3pgrd) is used to improve
+!  flexibility. Therefore, the order of indices is very important.
+!  Only those fields that require special treatment are set below
+!  the M3pgrd index.
+!
+      ic=0
+#   if defined UV_COR
+      M3fcor=ic+1
+      ic=ic+1
+#   endif
+#   if defined UV_ADV
+      M3vadv=ic+1
+      M3hadv=ic+2
+      M3xadv=ic+3
+      M3yadv=ic+4
+      ic=ic+4
+#   endif
+#   if defined WEC_MELLOR
+      M3hrad=ic+1
+      M3vrad=ic+2
+      ic=ic+2
+#   endif
+#   if defined WEC_VF
+#    if defined UV_COR
+      M3fsco=ic+1
+      ic=ic+1
+#    endif
+#    ifdef BOTTOM_STREAMING
+      M3bstm=ic+1
+      ic=ic+1
+#    endif
+#    ifdef SURFACE_STREAMING
+      M3sstm=ic+1
+      ic=ic+1
+#    endif
+      M3vjvf=ic+1
+      M3hjvf=ic+2
+      M3kvrf=ic+3
+      M3wrol=ic+4
+      M3wbrk=ic+5
+      ic=ic+5
+#   endif
+      M3pgrd=ic+1             ! needs to be here, indices below
+      M3vvis=ic+2             ! require special treatment
+#   if defined UV_VIS2 || defined UV_VIS4
+      M3hvis=ic+3
+      M3xvis=ic+4
+      M3yvis=ic+5
+#   endif
+      M3rate=NDM3d
+#  endif
+# endif
+#endif
+!
+!-----------------------------------------------------------------------
+!  Activate all computation control switches.
+!-----------------------------------------------------------------------
+!
+      DO ng=1,Ngrids
+        LastRec(ng)=.FALSE.
+        Lassimilate(ng)=.TRUE.
+        Lbiology(ng)=.TRUE.
+        LcycleADJ(ng)=.FALSE.
+        LcycleRST(ng)=.FALSE.
+        LcycleTLM(ng)=.FALSE.
+        Lfloats(ng)=.TRUE.
+#ifdef ICE_MODEL
+        Lice(ng)=.TRUE.
+#endif
+        Lsediment(ng)=.TRUE.
+        Lstations(ng)=.TRUE.
+#ifdef TIDES_ASTRO
+        FIRST_TIDES_ASTRO(ng) = .TRUE.
+#endif
+      END DO
+
+#ifdef ADJUST_BOUNDARY
+!
+!-----------------------------------------------------------------------
+!  Initilize switches to process open boundary arrays for 4DVar
+!  adjustments.
+!-----------------------------------------------------------------------
+!
+      DO ng=1,Ngrids
+        DO j=1,MstateVar
+          DO i=1,4
+            Lobc(i,j,ng)=.FALSE.
+          END DO
+        END DO
+      END DO
+#endif
+#ifdef ADJUST_STFLUX
+!
+!-----------------------------------------------------------------------
+!  Initilize switches to process surface tracer fluexes for 4DVar
+!  adjustments.
+!-----------------------------------------------------------------------
+!
+      DO ng=1,Ngrids
+        DO i=1,MT
+          Lstflux(i,ng)=.FALSE.
+        END DO
+      END DO
+#endif
+!
+!-----------------------------------------------------------------------
+!  Initialize several scalar variables.
+!-----------------------------------------------------------------------
+!
+      gorho0=g/rho0
+      DO ng=1,Ngrids
+        ntfirst(ng)=1
+        ntstart(ng)=1
+        ntend(ng)=0
+        gamma2(ng)=-1.0_r8
+        Vtransform(ng)=1
+        Vstretching(ng)=1
+#if defined AVERAGES_DETIDE && (defined SSH_TIDES || defined UV_TIDES)
+        Hcount(ng)=0
+#endif
+#ifdef ADJUST_BOUNDARY
+        OBCcount(ng)=0
+#endif
+#if defined ADJUST_STFLUX || defined ADJUST_WSTRESS
+        SFcount(ng)=0
+#endif
+        first_time(ng)=0
+        DO itrc=1,MT
+          LtracerSrc(itrc,ng)=.FALSE.
+          ad_Akt_fac(itrc,ng)=1.0_r8
+          tl_Akt_fac(itrc,ng)=1.0_r8
+          ad_tnu2(itrc,ng)=IniVal
+          nl_tnu2(itrc,ng)=IniVal
+          tl_tnu2(itrc,ng)=IniVal
+          tnu2(itrc,ng)=IniVal
+          ad_tnu4(itrc,ng)=IniVal
+          nl_tnu4(itrc,ng)=IniVal
+          tl_tnu4(itrc,ng)=IniVal
+          tnu4(itrc,ng)=IniVal
+        END DO
+        ad_Akv_fac(ng)=1.0_r8
+        tl_Akv_fac(ng)=1.0_r8
+        ad_visc2(ng)=IniVal
+        nl_visc2(ng)=IniVal
+        tl_visc2(ng)=IniVal
+        visc2(ng)=IniVal
+        ad_visc4(ng)=IniVal
+        nl_visc4(ng)=IniVal
+        tl_visc4(ng)=IniVal
+        visc4(ng)=IniVal
+#ifdef BULK_FLUXES
+        blk_ZQ(ng)=10.0_r8
+        blk_ZT(ng)=10.0_r8
+        blk_ZW(ng)=10.0_r8
+#endif
+        DO i=1,4
+          FSobc_in (ng,i)=IniVal
+          FSobc_out(ng,i)=IniVal
+          M2obc_in (ng,i)=IniVal
+          M2obc_out(ng,i)=IniVal
+#ifdef SOLVE3D
+          M3obc_in (ng,i)=IniVal
+          M3obc_out(ng,i)=IniVal
+#endif
+        END DO
+      END DO
+#if defined FLOATS && defined FLOAT_VWALK
+      flt_iseed=149876
+#endif
+#if defined LMD_SKPP || defined LMD_BKPP
+!
+!  Proportionality coefficient parameterizing boundary layer
+!  nonlocal transport.
+!
+      lmd_Cg=lmd_Cstar*                                                 &
+     &       vonKar*(lmd_cs*vonKar*lmd_epsilon)**(1.0_r8/3.0_r8)
+#endif
+
+#if defined FOUR_DVAR || defined VERIFICATION
+!
+!  Initialize error covariace variables.
+!
+      balance=.FALSE.
+
+      Cnorm=.FALSE.
+      Hdecay=IniVal
+      Vdecay=IniVal
+
+      CnormB=.FALSE.
+      HdecayB=IniVal
+      VdecayB=IniVal
+#endif
+!
+!  Initialize several IO flags.
+!
+      DO ng=1,Ngrids
+
+        PerfectRST(ng)=.FALSE.
+
+        Ladjusted(ng)=.FALSE.
+
+        LdefADJ(ng)=.FALSE.
+        LdefAVG(ng)=.TRUE.
+        LdefDIA(ng)=.TRUE.
+        LdefERR(ng)=.FALSE.
+#ifdef FLOATS
+        LdefFLT(ng)=.TRUE.
+#endif
+        LdefHIS(ng)=.TRUE.
+        LdefINI(ng)=.FALSE.
+        LdefIRP(ng)=.FALSE.
+        LdefITL(ng)=.FALSE.
+        LdefMOD(ng)=.FALSE.
+        LdefRST(ng)=.TRUE.
+        LdefSTA(ng)=.TRUE.
+        LdefTLM(ng)=.FALSE.
+#if defined AVERAGES_DETIDE && (defined SSH_TIDES || defined UV_TIDES)
+        LdefTIDE(ng)=.TRUE.
+#endif
+        LwrtADJ(ng)=.FALSE.
+        LwrtAVG(ng)=.FALSE.
+        LwrtDIA(ng)=.FALSE.
+        LwrtHIS(ng)=.FALSE.
+        LwrtPER(ng)=.FALSE.
+        LwrtRST(ng)=.FALSE.
+        LwrtTLM(ng)=.FALSE.
+        LwrtInfo(ng)=.TRUE.
+        LwrtState2d(ng)=.FALSE.
+        LwrtTime(ng)=.TRUE.
+        ldefout(ng)=.FALSE.
+
+        synchro_flag(ng)=.FALSE.
+
+        NrecADJ(ng)=0
+        NrecAVG(ng)=0
+        NrecDIA(ng)=0
+        NrecERR(ng)=0
+        NrecFLT(ng)=0
+        NrecINI(ng)=0
+        NrecITL(ng)=0
+        NrecHIS(ng)=0
+        NrecHSS(ng)=0
+        NrecRST(ng)=0
+        NrecSTA(ng)=0
+        NrecTLM(ng)=0
+
+        NrecNRM(1:4,ng)=0
+
+      END DO
+
+# if defined SG_BBL || defined SSW_BBL
+!
+!  Nondimensional closure parameters associated with Styles and Glenn
+!  (1999) bottom currents and waves boundary layer.
+!
+      sg_z1p=sg_alpha
+      sg_mp=CMPLX(SQRT(1.0_r8/(2.0_r8*sg_z1p)),                         &
+     &            SQRT(1.0_r8/(2.0_r8*sg_z1p)))
+#endif
+#if defined GLS_MIXING || defined MY25_MIXING
+# if defined CANUTO_A || defined CANUTO_B
+!
+! Compute parameters for Canuto et al. (2001) stability functions.
+!   (Canuto, V.M., Cheng, H.Y., and Dubovikov, M.S., 2001: Ocean
+!    turbulence. Part I: One-point closure model - momentum and
+!    heat vertical diffusivities, JPO, 1413-1426).
+!
+      gls_s0=3.0_r8/2.0_r8*gls_L1*gls_L5**2
+      gls_s1=-gls_L4*(gls_L6+gls_L7)+2.0_r8*gls_L4*gls_L5*              &
+     &        (gls_L1-1.0_r8/3.0_r8*gls_L2-gls_L3)+3.0_r8/2.0_r8*       &
+     &        gls_L1*gls_L5*gls_L8
+      gls_s2=-3.0_r8/8.0_r8*gls_L1*(gls_L6**2-gls_L7**2)
+      gls_s4=2.0_r8*gls_L5
+      gls_s5=2.0_r8*gls_L4
+      gls_s6=2.0_r8/3.0_r8*gls_L5*(3.0_r8*gls_L3**2-gls_L2**2)-         &
+     &       1.0_r8/2.0_r8*gls_L5*gls_L1*(3.0_r8*gls_L3-gls_L2)+        &
+     &       3.0_r8/4.0_r8*gls_L1*(gls_L6-gls_L7)
+      gls_b0=3.0_r8*gls_L5**2
+      gls_b1=gls_L5*(7.0_r8*gls_L4+3.0_r8*gls_L8)
+      gls_b2=gls_L5**2*(3.0_r8*gls_L3**2-gls_L2**2)-                    &
+     &       3.0_r8/4.0_r8*(gls_L6**2-gls_L7**2)
+      gls_b3=gls_L4*(4.0_r8*gls_L4+3.0_r8*gls_L8)
+      gls_b5=1.0_r8/4.0_r8*(gls_L2**2-3.0_r8*gls_L3**2)*                &
+     &       (gls_L6**2-gls_L7**2)
+      gls_b4=gls_L4*(gls_L2*gls_L6-3.0_r8*gls_L3*gls_L7-                &
+     &       gls_L5*(gls_L2**2-gls_L3**2))+gls_L5*gls_L8*               &
+     &       (3.0_r8*gls_L3**2-gls_L2**2)
+# endif
+!
+!  Coefficients used to compute stability functions for tracer and
+!  momentum.
+!
+      my_B1p2o3=my_B1**(2.0_r8/3.0_r8)
+      my_B1pm1o3=1.0_r8/(my_B1**(1.0_r8/3.0_r8))
+      my_E1o2=0.5_r8*my_E1
+      my_Sm1=my_A1*my_A2*((my_B2-3.0_r8*my_A2)*                         &
+     &                    (1.0_r8-6.0_r8*my_A1/my_B1)-                  &
+     &                    3.0_r8*my_C1*(my_B2+6.0_r8*my_A1))
+      my_Sm2=9.0_r8*my_A1*my_A2
+      my_Sh1=my_A2*(1.0_r8-6.0_r8*my_A1/my_B1)
+# ifdef KANTHA_CLAYSON
+      my_Sh2=3.0_r8*my_A2*(6.0_r8*my_A1+my_B2*(1.0_r8-my_C3))
+      my_Sm4=18.0_r8*my_A1*my_A1+9.0_r8*my_A1*my_A2*(1.0_r8-my_C2)
+# else
+      my_Sh2=3.0_r8*my_A2*(6.0_r8*my_A1+my_B2)
+      my_Sm3=my_A1*(1.0_r8-3.0_r8*my_C1-6.0_r8*my_A1/my_B1)
+      my_Sm4=18.0_r8*my_A1*my_A1+9.0_r8*my_A1*my_A2
+# endif
+#endif
+
+      RETURN
+      END SUBROUTINE initialize_scalars
+
+      END MODULE mod_scalars

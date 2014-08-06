@@ -12,10 +12,10 @@ dimensions:
 	bry_time = UNLIMITED ; // (0 currently)
 
 variables:
-        char spherical ;
+        int spherical ;
                 spherical:long_name = "grid type logical switch" ;
-                spherical:flag_values = "T, F" ;
-                spherical:flag_meanings = "spherical Cartesian" ;
+                spherical:flag_values = "0, 1" ;
+                spherical:flag_meanings = "Cartesian spherical" ;
         int Vtransform ;
                 Vtransform:long_name = "vertical terrain-following transformation equation" ;
         int Vstretching ;
@@ -82,7 +82,8 @@ variables:
                 lat_v:standard_name = "latitude" ;
 	double bry_time(bry_time) ;
 		bry_time:long_name = "open boundary conditions time" ;
-		bry_time:units = "days since 0000-01-01 00:00:00" ;
+		bry_time:units = "seconds since 1968-05-23 00:00:00 GMT" ;
+		bry_time:calendar = "gregorian" ;
 	float zeta_west(bry_time, eta_rho) ;
 		zeta_west:long_name = "free-surface western boundary condition" ;
 		zeta_west:units = "meter" ;
@@ -194,8 +195,8 @@ variables:
 
 // global attributes:
 		:type = "BOUNDARY FORCING" ;
+                :Conventions = "CF-1.4" ;
 		:title = "Northeast North American (NENA) Shelf Model" ;
 		:grd_file = "roms_nena_grid_2.nc" ;
-		:history = "BOUNDARY file, 1.0  , 27-Mar-2002 13:11:22" ;
-
+		:history = "27-Mar-2002 13:11:22" ;
 }

@@ -12,10 +12,12 @@ clear
 %1) Enter name of roms netcdf grid file.
 %grid_file = 'joe_tc_coarse_grd.nc';
 grid_file = 'inlet_test_grid.nc';
+%grid_file = 'inlet_test_grid_ref3.nc';
 
 %2) Enter name of netcdf output file to use by scrip.
 %out_file = 'joe_tc_coarse_roms_scrip.nc';
 out_file = 'inlet_test_roms_scrip.nc';
+%out_file = 'inlet_test_roms_ref3_scrip.nc';
 
 %%%%%%%%%% END of user input   %%%%%%%%%%%%
 
@@ -25,7 +27,7 @@ netcdf_load(grid_file)
 [LP,MP]=size(h);
 %gridsize=LP*MP;
 
-if ((spherical=='F')||(spherical=='f'))
+if ((spherical=='F')||(spherical=='f'))||(spherical==0)
 %  lon_rho=x_rho;
 %  lat_rho=y_rho;
 %  lon_psi=x_psi;
@@ -86,6 +88,15 @@ netcdf.putVar(nc,v1, [MP, LP]);
 
 disp('step 0/4, filling grid mask')
 %get grid mask
+
+mask_rho=mask_rho*0;
+Istr=25; Iend=54; Jstr=41; Jend=56;
+mask_rho(Istr:Iend,Jstr:Jend)=1;
+%mask_rho(:,1)=0;
+%mask_rho(:,end)=0;
+%mask_rho(1,:)=0;
+%mask_rho(end,:)=0;
+
 count=0;
 for jj=1:MP
   for ii=1:LP

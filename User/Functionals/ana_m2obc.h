@@ -1,8 +1,8 @@
       SUBROUTINE ana_m2obc (ng, tile, model)
 !
-!! svn $Id: ana_m2obc.h 429 2009-12-20 17:30:26Z arango $
+!! svn $Id$
 !!======================================================================
-!! Copyright (c) 2002-2010 The ROMS/TOMS Group                         !
+!! Copyright (c) 2002-2014 The ROMS/TOMS Group                         !
 !!   Licensed under a MIT/X style license                              !
 !!   See License_ROMS.txt                                              !
 !=======================================================================
@@ -66,6 +66,7 @@
       USE mod_param
       USE mod_boundary
       USE mod_grid
+      USE mod_ncparam
       USE mod_scalars
 !
 !  Imported variable declarations.
@@ -108,46 +109,49 @@
 !-----------------------------------------------------------------------
 !
 #if defined MY_APPLICATION
-# ifdef EAST_M2OBC
-      IF (EASTERN_EDGE) THEN
-        DO j=JstrR,JendR
+      IF (LBC(ieast,isUbar,ng)%acquire.and.                             &
+     &    LBC(ieast,isVbar,ng)%acquire.and.                             &
+     &    DOMAIN(ng)%Eastern_Edge(tile)) THEN
+        DO j=JstrT,JendT
           BOUNDARY(ng)%ubar_east(j)=???
         END DO
-        DO j=Jstr,JendR
+        DO j=JstrP,JendT
           BOUNDARY(ng)%vbar_east(j)=???
         END DO
       END IF
-# endif
-# ifdef WEST_M2OBC
-      IF (WESTERN_EDGE) THEN
-        DO j=JstrR,JendR
+
+      IF (LBC(iwest,isUbar,ng)%acquire.and.                             &
+     &    LBC(iwest,isVbar,ng)%acquire.and.                             &
+     &    DOMAIN(ng)%Western_Edge(tile)) THEN
+        DO j=JstrT,JendT
           BOUNDARY(ng)%ubar_west(j)=???
         END DO
-        DO j=Jstr,JendR
+        DO j=JstrP,JendT
           BOUNDARY(ng)%vbar_west(j)=???
         END DO
       END IF
-# endif
-# ifdef SOUTH_M2OBC
-      IF (SOUTHERN_EDGE) THEN
-        DO i=Istr,IendR
+
+      IF (LBC(isouth,isUbar,ng)%acquire.and.                            &
+     &    LBC(isouth,isVbar,ng)%acquire.and.                            &
+     &    DOMAIN(ng)%Southern_Edge(tile)) THEN
+        DO i=IstrP,IendT
           BOUNDARY(ng)%ubar_south(i)=???
         END DO
-        DO i=IstrR,IendR
+        DO i=IstrT,IendT
           BOUNDARY(ng)%vbar_south(i)=???
         END DO
       END IF
-# endif
-# ifdef NORTH_M2OBC
-      IF (NORTHERN_EDGE) THEN
-        DO i=Istr,IendR
+
+      IF (LBC(inorth,isUbar,ng)%acquire.and.                            &
+     &    LBC(inorth,isVbar,ng)%acquire.and.                            &
+     &    DOMAIN(ng)%Northern_Edge(tile)) THEN
+        DO i=IstrP,IendT
           BOUNDARY(ng)%ubar_north(i)=???
         END DO
-        DO i=IstrR,IendR
+        DO i=IstrT,IendT
           BOUNDARY(ng)%vbar_north(i)=???
         END DO
       END IF
-# endif
 #else
       ana_m2obc.h: No values provided for BOUNDARY(ng)%ubar_xxxx
                                           BOUNDARY(ng)%vbar_xxxx

@@ -14,10 +14,10 @@ dimensions:
 	salt_time = 12 ;
 
 variables:
-        char spherical ;
+        int spherical ;
                 spherical:long_name = "grid type logical switch" ;
-                spherical:flag_values = "T, F" ;
-                spherical:flag_meanings = "spherical Cartesian" ;
+                spherical:flag_values = "0, 1" ;
+                spherical:flag_meanings = "Cartesian spherical" ;
         int Vtransform ;
                 Vtransform:long_name = "vertical terrain-following transformation equation" ;
         int Vstretching ;

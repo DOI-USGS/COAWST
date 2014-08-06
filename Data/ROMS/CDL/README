@@ -6,7 +6,7 @@ files structure. There is a lot of software out there to generate
 such input files. It is very difficult to write generic programs
 because it depends on the application. However, there is a very easy
 way to generate these files using the CDL and the NetCDF "ncgen"
-program. 
+program.
 
 The ROMS metadata design is very rich and extensive. See "varinfo.dat"
 for a list of all the variables names, units, attributes, associated time
@@ -37,12 +37,14 @@ Currently, you can find the following CDL scripts:
     bry_limit.cdl            Boundary NetCDF file (various time dimensions)
     bry_unlimit.cdl          Boundary NetCDF file (unlimited time dimensions)
 
-    s4dvar_obs.cdl           4DVAR observations
+    adsend.cdf               Adjoint sensitivity functional
 
-    s4dvar_std_m.cdl         4DVAR model error covariance standard deviation
-    s4dvar_std_i.cdl         4DVAR initial conditions error covariance standard deviation
-    s4dvar_std_b.cdl         4DVAR open boundaries error covariance standard deviation
-    s4dvar_std_f.cdl         4DVAR surface forcing error covariance standard deviation
+    s4dvar_obs.cdl           4D-Var observations
+
+    s4dvar_std_m.cdl         4D-Var model error covariance standard deviation
+    s4dvar_std_i.cdl         4D-Var initial conditions error covariance standard deviation
+    s4dvar_std_b.cdl         4D-Var open boundaries error covariance standard deviation
+    s4dvar_std_f.cdl         4D-Var surface forcing error covariance standard deviation
 
 
 Currently, there are two vertical, terrain-following coordinates
@@ -84,7 +86,7 @@ transformation in ROMS.  You need to choose the appropriate
                 s_w:positive = "up" ;
                 s_w:standard_name = "ocean_s_coordinate_g2" ;
                 s_w:formula_terms = "s: s_w C: Cs_w eta: zeta depth: h depth_c: hc" ;
- 
+
 Notice that the nondimentional, fractional, stretched vertical coordinate
 is the same excet to the value of the attribute "standard_name".
 

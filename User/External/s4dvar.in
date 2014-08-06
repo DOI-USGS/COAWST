@@ -1,8 +1,8 @@
 !  4DVar assimilation input parameters.
 !
-!svn $Id: s4dvar.in 437 2010-01-06 03:22:10Z arango $
+!svn $Id$
 !========================================================= Hernan G. Arango ===
-!  Copyright (c) 2002-2010 The ROMS/TOMS Group                                !
+!  Copyright (c) 2002-2014 The ROMS/TOMS Group                                !
 !    Licensed under a MIT/X style license                                     !
 !    See License_ROMS.txt                                                     !
 !==============================================================================
@@ -46,7 +46,7 @@
 ! empirical T-S relationships in the error covariance balance operator,
 ! [1:Ngrids].
 
-       dTdz_min == 0.001d0                ! minimun dT/dz (Celsius/m)
+       dTdz_min == 0.001d0                ! minimum dT/dz (Celsius/m)
        ml_depth == 100.0d0                ! mixed-layer depth (m; positive)
 
 ! Balance operator level of no motion depth (m) used when computing balanced
@@ -71,6 +71,14 @@ balance(isSalt) =  T                      ! salinity
 balance(isFsur) =  T                      ! free-sruface
 balance(isVbar) =  F                      ! 2D momentum (ubar, vbar)
 balance(isVvel) =  T                      ! 3D momentum (u, v)
+
+! Parameter to process the Nvct eigenvector of the stabilized representer
+! matrix when computing array modes (here, Nvct=Ninner is the most important
+! while Nvct=1 is the less important) OR cut-off parameter for the clipped
+! analysis to disregard potentially unphysical array modes (that is, all
+! the eigenvectors < Nctv are disgarded).
+
+           Nvct =  50
 
 ! Upper bound on the relative error of the gradient for the Lanczos
 ! conjugate gradient algorithm.
@@ -425,6 +433,26 @@ HdecayF(isTsur) == 100.0d+3  100.0d+3             ! 1:NT surface tracers flux
 !                      implies that balance(isSalt) needs to be TRUE too.
 !
 !------------------------------------------------------------------------------
+!  Array modes parameter.
+!------------------------------------------------------------------------------
+!
+!  Nvct           Either eigenvector of the stabilized representer matrix to
+!                 process to computing array modes when option ARRAY_MODES is
+!                 activated. In this case, Nvct =< Ninner,
+!
+!                   Nvct=1         less important eigenvector
+!                   Nvct=Ninner    most important eigenvector
+!
+!                 or cut-off eigenvector for the clipped analysis when
+!                 the option CLIPPING is activated to remove potentially
+!                 unphysical array modes.  In this case, Nvct =< Ninner. All
+!                 the eigenvectors are ordered according to their significance,
+!                 Nvct=Ninner is the most important.
+!
+!                   Nvct:Ninner    eigenvectors will be processed
+!                   1:Nvct-1       eigenvectors will be disgarded
+!
+!------------------------------------------------------------------------------
 ! Lanczos conjugate gradient algorithm parameters.
 !------------------------------------------------------------------------------
 !
@@ -683,7 +711,7 @@ HdecayF(isTsur) == 100.0d+3  100.0d+3             ! 1:NT surface tracers flux
 !                integretating the 3D momentum increments.
 !
 !------------------------------------------------------------------------------
-!  Input/Output NetCDF files (a string with a maximum of eighty characters).
+!  Input/Output NetCDF files (a string with a maximum of 256 characters).
 !------------------------------------------------------------------------------
 !
 !  STDnameM       Input model error covariance

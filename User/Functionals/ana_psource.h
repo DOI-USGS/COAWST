@@ -1,8 +1,8 @@
       SUBROUTINE ana_psource (ng, tile, model)
 !
-!! svn $Id: ana_psource.h 429 2009-12-20 17:30:26Z arango $
+!! svn $Id$
 !!======================================================================
-!! Copyright (c) 2002-2010 The ROMS/TOMS Group                         !
+!! Copyright (c) 2002-2014 The ROMS/TOMS Group                         !
 !!   Licensed under a MIT/X style license                              !
 !!   See License_ROMS.txt                                              !
 !=======================================================================
@@ -16,7 +16,6 @@
       USE mod_grid
       USE mod_ncparam
       USE mod_ocean
-      USE mod_sources
       USE mod_stepping
 !
       integer, intent(in) :: ng, tile, model
@@ -26,7 +25,7 @@
       CALL ana_psource_tile (ng, tile, model,                           &
      &                       LBi, UBi, LBj, UBj,                        &
      &                       IminS, ImaxS, JminS, JmaxS,                &
-     &                       nnew(ng), knew(ng), Msrc(ng), Nsrc(ng),    &
+     &                       nnew(ng), knew(ng),                        &
      &                       OCEAN(ng) % zeta,                          &
      &                       OCEAN(ng) % ubar,                          &
      &                       OCEAN(ng) % vbar,                          &
@@ -37,20 +36,7 @@
 #endif
      &                       GRID(ng) % h,                              &
      &                       GRID(ng) % on_u,                           &
-     &                       GRID(ng) % om_v,                           &
-     &                       SOURCES(ng) % Isrc,                        &
-     &                       SOURCES(ng) % Jsrc,                        &
-     &                       SOURCES(ng) % Dsrc,                        &
-#ifdef SOLVE3D
-# if defined UV_PSOURCE || defined Q_PSOURCE
-     &                       SOURCES(ng) % Qshape,                      &
-     &                       SOURCES(ng) % Qsrc,                        &
-# endif
-# ifdef TS_PSOURCE
-     &                       SOURCES(ng) % Tsrc,                        &
-# endif
-#endif
-     &                       SOURCES(ng) % Qbar)
+     &                       GRID(ng) % om_v)
 !
 ! Set analytical header file name used.
 !
@@ -69,22 +55,12 @@
       SUBROUTINE ana_psource_tile (ng, tile, model,                     &
      &                             LBi, UBi, LBj, UBj,                  &
      &                             IminS, ImaxS, JminS, JmaxS,          &
-     &                             nnew, knew, Msrc, Nsrc,              &
+     &                             nnew, knew,                          &
      &                             zeta, ubar, vbar,                    &
 #ifdef SOLVE3D
      &                             u, v, z_w,                           &
 #endif
-     &                             h, on_u, om_v,                       &
-     &                             Isrc, Jsrc, Dsrc,                    &
-#ifdef SOLVE3D
-# if defined UV_PSOURCE || defined Q_PSOURCE
-     &                             Qshape, Qsrc,                        &
-# endif
-# ifdef TS_PSOURCE
-     &                             Tsrc,                                &
-# endif
-#endif
-     &                             Qbar)
+     &                             h, on_u, om_v)
 !***********************************************************************
 !
       USE mod_param
@@ -93,6 +69,8 @@
 #ifdef SEDIMENT
       USE mod_sediment
 #endif
+      USE mod_sources
+
 #ifdef DISTRIBUTE
 !
       USE distribute_mod, ONLY : mp_bcastf, mp_bcasti
@@ -105,14 +83,8 @@
       integer, intent(in) :: LBi, UBi, LBj, UBj
       integer, intent(in) :: IminS, ImaxS, JminS, JmaxS
       integer, intent(in) :: nnew, knew
-      integer, intent(in) :: Msrc
-
-      integer, intent(out) :: Nsrc
 !
 #ifdef ASSUMED_SHAPE
-      integer, intent(inout) :: Isrc(:)
-      integer, intent(inout) :: Jsrc(:)
-
       real(r8), intent(in) :: zeta(LBi:,LBj:,:)
       real(r8), intent(in) :: ubar(LBi:,LBj:,:)
       real(r8), intent(in) :: vbar(LBi:,LBj:,:)
@@ -124,22 +96,7 @@
       real(r8), intent(in) :: h(LBi:,LBj:)
       real(r8), intent(in) :: on_u(LBi:,LBj:)
       real(r8), intent(in) :: om_v(LBi:,LBj:)
-
-      real(r8), intent(inout) :: Dsrc(:)
-      real(r8), intent(inout) :: Qbar(:)
-# ifdef SOLVE3D
-#  if defined UV_PSOURCE || defined Q_PSOURCE
-      real(r8), intent(inout) :: Qshape(:,:)
-      real(r8), intent(inout) :: Qsrc(:,:)
-#  endif
-#  ifdef TS_PSOURCE
-      real(r8), intent(inout) :: Tsrc(:,:,:)
-#  endif
-# endif
 #else
-      integer, intent(inout) :: Isrc(Msrc)
-      integer, intent(inout) :: Jsrc(Msrc)
-
       real(r8), intent(in) :: zeta(LBi:UBi,LBj:UBj,3)
       real(r8), intent(in) :: ubar(LBi:UBi,LBj:UBj,3)
       real(r8), intent(in) :: vbar(LBi:UBi,LBj:UBj,3)
@@ -151,18 +108,6 @@
       real(r8), intent(in) :: h(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: on_u(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: om_v(LBi:UBi,LBj:UBj)
-
-      real(r8), intent(inout) :: Dsrc(Msrc)
-      real(r8), intent(inout) :: Qbar(Msrc)
-# ifdef SOLVE3D
-#  if defined UV_PSOURCE || defined Q_PSOURCE
-      real(r8), intent(inout) :: Qshape(Msrc,N(ng))
-      real(r8), intent(inout) :: Qsrc(Msrc,N(ng))
-#  endif
-#  ifdef TS_PSOURCE
-      real(r8), intent(inout) :: Tsrc(Msrc,N(ng),NT(ng))
-#  endif
-# endif
 #endif
 !
 !  Local variable declarations.
@@ -173,7 +118,7 @@
       real(r8) :: cff, fac
 
 #if defined DISTRIBUTE && defined SOLVE3D
-      real(r8), dimension(Msrc*N(ng)) :: Pwrk
+      real(r8), dimension(Msrc(ng)*N(ng)) :: Pwrk
 #endif
 #if defined DISTRIBUTE
       real(r8), dimension(2) :: buffer
@@ -184,7 +129,7 @@
 #include "set_bounds.h"
 !
 !-----------------------------------------------------------------------
-!  Set tracer and/or mass point sources and/or sink.
+!  If initialization, set point Sources and/or Sinks locations.
 !-----------------------------------------------------------------------
 !
 !! WARNING:  This routine is extremely difficult in parallel
@@ -194,50 +139,51 @@
       IF (iic(ng).eq.ntstart(ng)) THEN
 !
 !  Set-up point Sources/Sink number (Nsrc), direction (Dsrc), I- and
-!  J-grid locations (Isrc,Jsrc), and logical switch for type of tracer
-!  to apply (LtraceSrc).  Currently, the direction can be along
+!  J-grid locations (Isrc,Jsrc). Currently, the direction can be along
 !  XI-direction (Dsrc = 0) or along ETA-direction (Dsrc > 0).  The
 !  mass sources are located at U- or V-points so the grid locations
 !  should range from 1 =< Isrc =< L  and  1 =< Jsrc =< M.
 !
 #if defined MY_APPLICATION
-        IF (Master.and.SOUTH_WEST_TEST) THEN
-          Nsrc=???
-          LtracerSrc(itemp,ng)=.TRUE.
-          LtracerSrc(isalt,ng)=.TRUE.
-          Dsrc(:)=???
-          Isrc(:)=???
-          Jsrc(:)=???
+        IF (Master.and.DOMAIN(ng)%SouthWest_Test(tile)) THEN
+          Nsrc(ng)=???
+          SOURCES(ng)%Dsrc(:)=???
+          SOURCES(ng)%Isrc(:)=???
+          SOURCES(ng)%Jsrc(:)=???
         END IF
 #else
-        ana_psource.h: No values provided for LtracerSrc, Nsrc, Dsrc,
-                                              Isrc, Jsrc.
+        ana_psource.h: No values provided for Nsrc, Dsrc, Isrc, Jsrc.
 #endif
 #ifdef DISTRIBUTE
 !
 !  Broadcast point sources/sinks information to all nodes.
 !
-        CALL mp_bcasti (ng, iNLM, Nsrc)
-        CALL mp_bcasti (ng, iNLM, Isrc)
-        CALL mp_bcasti (ng, iNLM, Jsrc)
-        CALL mp_bcastf (ng, iNLM, Dsrc)
+        CALL mp_bcasti (ng, iNLM, Nsrc(ng))
+        CALL mp_bcasti (ng, iNLM, SOURCES(ng)%Isrc)
+        CALL mp_bcasti (ng, iNLM, SOURCES(ng)%Jsrc)
+        CALL mp_bcastf (ng, iNLM, SOURCES(ng)%Dsrc)
 #endif
       END IF
+!
+!-----------------------------------------------------------------------
+!  Set momentum point Sources and/or Sinks.
+!-----------------------------------------------------------------------
+!
+      MOMENTUM : IF (LuvSrc(ng).or.LwSrc(ng)) THEN
 
-#if defined UV_PSOURCE || defined Q_PSOURCE
-# ifdef SOLVE3D
+#ifdef SOLVE3D
 !
 !  If appropriate, set-up nondimensional shape function to distribute
 !  mass point sources/sinks vertically.  It must add to unity!!.
 !
-#  ifdef DISTRIBUTE
-      Qshape=Pspv
-#  endif
-      Npts=Msrc*N(ng)
+# ifdef DISTRIBUTE
+        SOURCES(ng)%Qshape=Pspv
+# endif
+        Npts=Msrc(ng)*N(ng)
 
-!$OMP BARRRIER
+!$OMP BARRIER
 
-#  if defined MY_APPLICATION
+# if defined MY_APPLICATION
 !!
 !!  Notice that in the simple statement below there is not need for
 !!  distributed-memory communications since the computation below
@@ -246,29 +192,29 @@
 !!  "ROMS/Functionals/ana_psource.h" for examples that has parallel
 !!  tile dependency.
 !!
-      IF (NORTH_EAST_TEST) THEN
-        DO k=1,N(ng)
-          DO is=1,Nsrc
-            Qshape(is,k)=1.0_r8/REAL(N(ng),r8)
+        IF (DOMAIN(ng)%NorthEast_Test(tile)) THEN
+          DO k=1,N(ng)
+            DO is=1,Nsrc(ng)
+              SOURCES(ng)%Qshape(is,k)=1.0_r8/REAL(N(ng),r8)
+            END DO
           END DO
-        END DO
-      END IF
-#  else
+        END IF
+# else
         ana_psource.h: No values provided for Qshape.
-#  endif
 # endif
+#endif
 !
 !  Set-up vertically integrated mass transport (m3/s) of point
 !  Sources/Sinks (positive in the positive U- or V-direction and
 !  viceversa).
 !
-# ifdef DISTRIBUTE
-      Qbar=Pspv
-# endif
+#ifdef DISTRIBUTE
+        SOURCES(ng)%Qbar=Pspv
+#endif
 
 !$OMP BARRIER
 
-# if defined MY_APPLICATION
+#if defined MY_APPLICATION
 !!
 !!  Notice that in the simple statement below there is not need for
 !!  distributed-memory communications since the computation below
@@ -277,47 +223,56 @@
 !!  "ROMS/Functional/ana_psource.h" for examples that has parallel
 !!  tile dependency.
 !!
-      IF (SOUTH_WEST_TEST) THEN
-        DO is=1,Nsrc
-          Qbar(is)=???
-        END DO
-      END IF
-# else
-      ana_psource.h: No values provided for Qbar.
-# endif
+        IF (DOMAIN(ng)%SouthWest_Test(tile)) THEN
+          DO is=1,Nsrc(ng)
+            SOURCES(ng)%Qbar(is)=???
+          END DO
+        END IF
+#else
+        ana_psource.h: No values provided for Qbar.
+#endif
 
-# ifdef SOLVE3D
+#ifdef SOLVE3D
 !
 !  Set-up mass transport profile (m3/s) of point Sources/Sinks.
 !
 !$OMP BARRIER
 
-      IF (NORTH_EAST_TEST) THEN
-        DO k=1,N(ng)
-          DO is=1,Nsrc
-            Qsrc(is,k)=Qbar(is)*Qshape(is,k)
+        IF (DOMAIN(ng)%NorthEast_Test(tile)) THEN
+          DO k=1,N(ng)
+            DO is=1,Nsrc(ng)
+              SOURCES(ng)%Qsrc(is,k)=SOURCES(ng)%Qbar(is)*              &
+     &                               SOURCES(ng)%Qshape(is,k)
+            END DO
           END DO
-        END DO
-      END IF
-# endif
+        END IF
 #endif
+      END IF MOMENTUM
 
-#if defined TS_PSOURCE && defined SOLVE3D
+#ifdef SOLVE3D
+!
+!-----------------------------------------------------------------------
+!  Set tracers point Sources and/or Sinks.
+!-----------------------------------------------------------------------
+!
+      TRACERS : IF (ANY(LtracerSrc(:,ng))) THEN
+        SOURCES(ng)%Tsrc=0.0_r8                      ! initialize
 !
 !  Set-up tracer (tracer units) point Sources/Sinks.
 !
 # if defined MY_APPLICATION
-      IF (NORTH_WEST_TEST) THEN
-        DO k=1,N(ng)
-          DO is=1,Nsrc
-            Tsrc(is,k,itemp)=???
-            Tsrc(is,k,isalt)=???
+        IF (DOMAIN(ng)%NorthWest_Test(tile)) THEN
+          DO k=1,N(ng)
+            DO is=1,Nsrc(ng)
+              SOURCES(ng)%Tsrc(is,k,itemp)=???
+              SOURCES(ng)%Tsrc(is,k,isalt)=???
+            END DO
           END DO
-        END DO
-      END IF
+        END IF
 # else
-      ana_psource.h: No values provided for Tsrc.
+        ana_psource.h: No values provided for Tsrc.
 # endif
+      END IF TRACERS
 #endif
 
       RETURN

@@ -1,8 +1,8 @@
       SUBROUTINE ana_specir (ng, tile, model)
 !
-!! svn $Id: ana_specir.h 429 2009-12-20 17:30:26Z arango $
+!! svn $Id$
 !!======================================================================
-!! Copyright (c) 2002-2010 The ROMS/TOMS Group                         !
+!! Copyright (c) 2002-2014 The ROMS/TOMS Group                         !
 !!   Licensed under a MIT/X style license                              !
 !!   See License_ROMS.txt                                              !
 !=======================================================================
@@ -68,13 +68,11 @@
 !***********************************************************************
 !
       USE mod_param
-      USE mod_scalars
       USE mod_eclight
       USE mod_iounits
+      USE mod_scalars
 !
-#if defined EW_PERIODIC || defined NS_PERIODIC
       USE exchange_3d_mod, ONLY : exchange_r3d_tile
-#endif
 #ifdef DISTRIBUTE
       USE mp_exchange_mod, ONLY : mp_exchange3d
 #endif
@@ -124,18 +122,6 @@
 !
 !  Local variable declarations.
 !
-#ifdef DISTRIBUTE
-# ifdef EW_PERIODIC
-      logical :: EWperiodic=.TRUE.
-# else
-      logical :: EWperiodic=.FALSE.
-# endif
-# ifdef NS_PERIODIC
-      logical :: NSperiodic=.TRUE.
-# else
-      logical :: NSperiodic=.FALSE.
-# endif
-#endif
       integer :: i, iband, ic, j, nc
       integer :: iday, month, year
 
@@ -193,8 +179,8 @@
 !
 !  Compute spectral irradiance.
 !
-      DO j=JstrR,JendR
-        DO i=IstrR,IendR
+      DO j=JstrT,JendT
+        DO i=IstrT,IendT
 
           LatRad=latr(i,j)*deg2rad
           LonRad=lonr(i,j)*deg2rad
@@ -428,19 +414,23 @@
           END IF
         END DO
       END DO
+!
+!  Exchange boundary data.
+!
+      IF (EWperiodic(ng).or.NSperiodic(ng)) THEN
+        CALL exchange_r3d_tile (ng, tile,                               &
+     &                          LBi, UBi, LBj, UBj, 1, NBands,          &
+     &                          SpecIr)
+        CALL exchange_r3d_tile (ng, tile,                               &
+     &                          LBi, UBi, LBj, UBj, 1, NBands,          &
+     &                          avcos)
+      END IF
 
-#if defined EW_PERIODIC || defined NS_PERIODIC
-      CALL exchange_r3d_tile (ng, tile,                                 &
-     &                        LBi, UBi, LBj, UBj, 1, NBands,            &
-     &                        SpecIr)
-      CALL exchange_r3d_tile (ng, tile,                                 &
-     &                        LBi, UBi, LBj, UBj, 1, NBands,            &
-     &                        avcos)
-#endif
 #ifdef DISTRIBUTE
       CALL mp_exchange3d (ng, tile, model, 2,                           &
      &                    LBi, UBi, LBj, UBj, 1, NBands,                &
-     &                    NghostPoints, EWperiodic, NSperiodic,         &
+     &                    NghostPoints,                                 &
+     &                    EWperiodic(ng), NSperiodic(ng),               &
      &                    SpecIr, avcos)
 #endif
 

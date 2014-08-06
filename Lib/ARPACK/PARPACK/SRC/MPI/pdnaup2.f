@@ -279,7 +279,7 @@ c
          eps23 = pdlamch (comm, 'Epsilon-Machine')
          eps23 = eps23**(2.0  / 3.0 )
 c
-         if (ido .eq. -2) then
+         if (ido .eq. 0) then
             nev0   = nev
             np0    = np
          end if
