@@ -125,23 +125,11 @@
 !  Local variable declarations.
 !
 #ifdef DISTRIBUTE
-# ifdef EW_PERIODIC
-      logical :: EWperiodic=.TRUE.
-# else
-      logical :: EWperiodic=.FALSE.
-# endif
-# ifdef NS_PERIODIC
-      logical :: NSperiodic=.TRUE.
-# else
-      logical :: NSperiodic=.FALSE.
-# endif
-#endif
-#ifdef DISTRIBUTE
       integer :: Tstr, Tend
 #endif
       integer :: i, ised, j, k
       real(r8) :: cff1, cff2, cff3, cff4, Kvisc, phinot
-      real(r8), parameter :: absolute_zoMIN = 5.0d-5  ! in Harris-Wiberg
+
 #include "set_bounds.h"
 
 #if defined BBL_MODEL && !defined SEDIMENT
@@ -151,21 +139,7 @@
 !  sediment grain diameter (m) and density (kg/m3).
 !-----------------------------------------------------------------------
 !
-# if defined BL_TEST || defined NJ_BIGHT
-      DO j=JstrR,JendR
-        DO i=IstrR,IendR
-          bottom(i,j,isd50)=0.0005_r8
-          bottom(i,j,idens)=2650.0_r8
-        END DO
-      END DO
-# elif defined LAKE_SIGNELL || defined ADRIA02
-      DO j=JstrR,JendR
-        DO i=IstrR,IendR
-          bottom(i,j,isd50)=0.000150_r8    ! 150 microns
-          bottom(i,j,idens)=2650.0_r8
-        END DO
-      END DO
-# elif defined SED_TOY
+# if defined INLET_TEST
       DO j=JstrR,JendR
         DO i=IstrR,IendR
           bottom(i,j,isd50)=0.0005_r8
@@ -265,8 +239,8 @@
 !-----------------------------------------------------------------------
 !
 # if defined INLET_TEST
-      DO j=JstrT,JendT
-        DO i=IstrT,IendT
+      DO j=JstrR,JendR
+        DO i=IstrR,IendR
 !
 !  Set bed layer properties.
 !
@@ -296,8 +270,8 @@
 !-----------------------------------------------------------------------
 !
       DO k=1,Nbed
-        DO j=JstrT,JendT
-          DO i=IstrT,IendT
+        DO j=JstrR,JendR
+          DO i=IstrR,IendR
 !
 !  Calculate mass so it is consistent with density, thickness, and
 !  porosity.
@@ -314,8 +288,8 @@
 !
 !  Set exposed sediment layer properties.
 !
-      DO j=JstrT,JendT
-        DO i=IstrT,IendT
+      DO j=JstrR,JendR
+        DO i=IstrR,IendR
           cff1=1.0_r8
           cff2=1.0_r8
           cff3=1.0_r8
@@ -330,7 +304,6 @@
           bottom(i,j,idens)=cff2
           bottom(i,j,iwsed)=cff3
           bottom(i,j,itauc)=cff4
-          bottom(i,j,izNik)=MAX(2.5_r8*cff1/30.0_r8, absolute_zoMIN)
 #  ifdef SED_BIODIFF
           bottom(i,j,idoff)=0.0_r8
           bottom(i,j,idslp)=0.0_r8

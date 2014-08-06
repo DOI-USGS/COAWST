@@ -41,36 +41,30 @@
   NnodesWAV =  1                     ! wave model
   NnodesOCN =  1                     ! ocean model
 
-! Time interval (seconds) between coupling of models.
+! Time interval (seconds) between exchange of fields between models.
 
-  TI_ATM_WAV =     0.0d0              ! atmosphere-wave coupling interval
-  TI_ATM_OCN =     0.0d0              ! atmosphere-ocean coupling interval
-  TI_WAV_OCN =   600.0d0              ! wave-ocean coupling interval
+  TI_ATM2WAV =     0.0d0              ! atmosphere to wave coupling interval
+  TI_ATM2OCN =     0.0d0              ! atmosphere to ocean coupling interval
+  TI_WAV2ATM =     0.0d0              ! wave to atmosphere coupling interval
+  TI_WAV2OCN =   600.0d0              ! wave to ocean coupling interval
+  TI_OCN2WAV =   600.0d0              ! ocean to wave coupling interval
+  TI_OCN2ATM =     0.0d0              ! ocean to atmosphere coupling interval
 
 ! Enter names of Atm, Wav, and Ocn input files.
 ! The Wav program needs multiple input files, one for each grid.
 
-   ATM_name = atmos.in                                            ! atmospheric model, not used yet
+   ATM_name = namelist.input                                      ! WRF input file
    WAV_name = Projects/Inlet_test/Coupled/swan_inlet_test.in      ! wave model
    OCN_name = Projects/Inlet_test/Coupled/ocean_inlet_test.in     ! ocean model
 
 ! Sparse matrix interpolation weights files.
 
-   W2ONAME == swan2roms_weights.nc
+   W2ONAME == wav2ocn_weights.nc
    W2ANAME == wav2atm_weights.nc
    A2ONAME == atm2ocn_weights.nc
    A2WNAME == atm2wav_weights.nc
    O2ANAME == ocn2atm_weights.nc
-   O2WNAME == roms2swan_weights.nc
-
-!
-!  If you are running a simulation using WRF + either ROMS or SWAN, 
-!  then this featuere sets the WRF grid that will exchange fileds to 
-!  ROMS and/or SWAN. In the future, we will have more options
-!  to couple various levels of R/S grids to various WRF grids. But we 
-!  need to start somewhere, and for now you can only choose 1 WRF grid.
-!
-   WRF_CPL_GRID == 1                       ! 1 = parent
+   O2WNAME == ocn2wav_weights.nc
 !
 !  GLOSSARY:
 !  =========
@@ -112,11 +106,4 @@
 ! A2WNAME      Atmosphere to wave netcdf sparse matrix grid file.
 ! O2ANAME      Ocean to atmosphere netcdf sparse matrix grid file.
 ! O2WNAME      Ocean to wave netcdf sparse matrix grid file.
-!
-!------------------------------------------------------------------------------
-! WRF grid nesting level to be used for coupling to ROMS and/or SWAN 
-! grid(s).
-!------------------------------------------------------------------------------
-!
-!   WRF_COUPLED_GRID  WRF grid number to be used for the coupling. Default 1.
 !

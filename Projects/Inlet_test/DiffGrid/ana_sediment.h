@@ -125,18 +125,6 @@
 !  Local variable declarations.
 !
 #ifdef DISTRIBUTE
-# ifdef EW_PERIODIC
-      logical :: EWperiodic=.TRUE.
-# else
-      logical :: EWperiodic=.FALSE.
-# endif
-# ifdef NS_PERIODIC
-      logical :: NSperiodic=.TRUE.
-# else
-      logical :: NSperiodic=.FALSE.
-# endif
-#endif
-#ifdef DISTRIBUTE
       integer :: Tstr, Tend
 #endif
       integer :: i, ised, j, k
@@ -151,21 +139,7 @@
 !  sediment grain diameter (m) and density (kg/m3).
 !-----------------------------------------------------------------------
 !
-# if defined BL_TEST || defined NJ_BIGHT
-      DO j=JstrR,JendR
-        DO i=IstrR,IendR
-          bottom(i,j,isd50)=0.0005_r8
-          bottom(i,j,idens)=2650.0_r8
-        END DO
-      END DO
-# elif defined LAKE_SIGNELL || defined ADRIA02
-      DO j=JstrR,JendR
-        DO i=IstrR,IendR
-          bottom(i,j,isd50)=0.000150_r8    ! 150 microns
-          bottom(i,j,idens)=2650.0_r8
-        END DO
-      END DO
-# elif defined SED_TOY
+# if defined INLET_TEST
       DO j=JstrR,JendR
         DO i=IstrR,IendR
           bottom(i,j,isd50)=0.0005_r8
@@ -264,51 +238,7 @@
 !  height, and default Zob.
 !-----------------------------------------------------------------------
 !
-# if defined LAKE_SIGNELL || defined ADRIA02
-      DO j=JstrR,JendR
-        DO i=IstrR,IendR
-!
-!  Set bed layer properties.
-!
-          DO k=1,Nbed
-            bed(i,j,k,iaged)=time(ng)
-            bed(i,j,k,ithck)=0.10_r8
-            bed(i,j,k,iporo)=0.90_r8
-            DO ised=1,NST
-              bed_frac(i,j,k,ised)=1.0_r8/FLOAT(NST)
-            END DO
-          END DO
-!
-!  Set exposed sediment layer properties.
-!
-          bottom(i,j,irlen)=0.10_r8
-          bottom(i,j,irhgt)=0.01_r8
-          bottom(i,j,izdef)=Zob(ng)
-        END DO
-      END DO
-# elif defined ESTUARY_TEST
-      DO j=JstrR,JendR
-        DO i=IstrR,IendR
-!
-!  Set bed layer properties.
-!
-          DO k=1,Nbed
-            bed(i,j,k,iaged)=time(ng)
-            bed(i,j,k,ithck)=0.001_r8
-            bed(i,j,k,iporo)=0.90_r8
-            DO ised=1,NST
-              bed_frac(i,j,k,ised)=1.0_r8/FLOAT(NST)
-            END DO
-          END DO
-!
-!  Set exposed sediment layer properties.
-!
-          bottom(i,j,irlen)=0.10_r8
-          bottom(i,j,irhgt)=0.01_r8
-          bottom(i,j,izdef)=Zob(ng)
-        END DO
-      END DO
-# elif defined INLET_TEST
+# if defined INLET_TEST
       DO j=JstrR,JendR
         DO i=IstrR,IendR
 !
@@ -327,100 +257,6 @@
 !
           bottom(i,j,irlen)=0.10_r8
           bottom(i,j,irhgt)=0.01_r8
-          bottom(i,j,izdef)=Zob(ng)
-        END DO
-      END DO
-# elif defined SED_TOY
-      DO j=JstrR,JendR
-        DO i=IstrR,IendR
-!
-!  Set bed layer properties.
-!
-          DO k=1,Nbed
-             bed(i,j,k,iaged)=time(ng)
-             bed(i,j,k,ithck)=0.01_r8
-             bed(i,j,k,iporo)=0.30_r8
-!!           DO ised=1,NST
-!!             bed_frac(i,j,k,ised)=1.0_r8/FLOAT(NST)
-!!           END DO
-             bed_frac(i,j,k,1)=1.0_r8
-             bed_frac(i,j,k,2)=0.0_r8
-          END DO
-!
-!  Set exposed sediment layer properties.
-!
-          bottom(i,j,irlen)=0.10_r8
-          bottom(i,j,irhgt)=0.01_r8
-          bottom(i,j,izdef)=Zob(ng)
-        END DO
-      END DO
-      DO j=JstrR,JendR
-        DO i=IstrR,IendR
-        END DO
-      END DO
-# elif defined SED_TEST1
-      DO j=JstrR,JendR
-        DO i=IstrR,IendR
-!
-!  Set bed layer properties.
-!
-          DO k=1,Nbed
-             bed(i,j,k,iaged)=time(ng)
-             bed(i,j,k,ithck)=15.00_r8
-             bed(i,j,k,iporo)=0.50_r8
-             DO ised=1,NST
-               bed_frac(i,j,k,ised)=1.0_r8/FLOAT(NST)
-             END DO
-          END DO
-!
-!  Set exposed sediment layer properties.
-!
-          bottom(i,j,irlen)=0.10_r8
-          bottom(i,j,irhgt)=0.01_r8
-          bottom(i,j,izdef)=Zob(ng)
-        END DO
-      END DO
-# elif defined SHOREFACE
-      DO j=JstrR,JendR
-        DO i=IstrR,IendR
-!
-!  Set bed layer properties.
-!
-          DO k=1,Nbed
-            bed(i,j,k,iaged)=time(ng)
-            bed(i,j,k,ithck)=5.0_r8
-            bed(i,j,k,iporo)=0.50_r8
-            DO ised=1,NST
-              bed_frac(i,j,k,ised)=1.0_r8/FLOAT(NST)
-            END DO
-          END DO
-!
-!  Set exposed sediment layer properties.
-!
-          bottom(i,j,irlen)=0.10_r8
-          bottom(i,j,irhgt)=0.01_r8
-          bottom(i,j,izdef)=Zob(ng)
-        END DO
-      END DO
-# elif defined TEST_CHAN
-      DO j=JstrR,JendR
-        DO i=IstrR,IendR
-!
-!  Set bed layer properties.
-!
-          DO k=1,Nbed
-            bed(i,j,k,iaged)=time(ng)
-            bed(i,j,k,ithck)=1.0_r8
-            bed(i,j,k,iporo)=0.90_r8
-            DO ised=1,NST
-              bed_frac(i,j,k,ised)=1.0_r8/FLOAT(NST)
-            END DO
-          END DO
-!
-!  Set exposed sediment layer properties.
-!
-          bottom(i,j,irlen)=0.0_r8
-          bottom(i,j,irhgt)=0.0_r8
           bottom(i,j,izdef)=Zob(ng)
         END DO
       END DO

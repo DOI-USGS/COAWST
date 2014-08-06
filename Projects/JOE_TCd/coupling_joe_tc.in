@@ -61,15 +61,6 @@
    A2WNAME == Projects/JOE_TCd/atm2wav_weights_consv.nc
    O2ANAME == Projects/JOE_TCd/ocn2atm_weights_consv.nc
    O2WNAME == Projects/JOE_TCd/ocn2wav_weights.nc
-
-!
-!  If you are running a simulation using WRF + either ROMS or SWAN, 
-!  then this featuere sets the WRF grid that will exchange fileds to 
-!  ROMS and/or SWAN. In the future, we will have more options
-!  to couple various levels of R/S grids to various WRF grids. But we 
-!  need to start somewhere, and for now you can only choose 1 WRF grid.
-!
-   WRF_CPL_GRID == 1                       ! 1 = parent
 !
 !  GLOSSARY:
 !  =========

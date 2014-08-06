@@ -43,9 +43,12 @@
 
 ! Time interval (seconds) between coupling of models.
 
-   TI_ATM_WAV =   600.0d0            ! atmosphere-wave coupling interval
-   TI_ATM_OCN =   600.0d0            ! atmosphere-ocean coupling interval
-   TI_WAV_OCN =   600.0d0            ! wave-ocean coupling interval
+  TI_ATM2WAV =   600.0d0              ! atmosphere to wave coupling interval
+  TI_ATM2OCN =   600.0d0              ! atmosphere to ocean coupling interval
+  TI_WAV2ATM =   600.0d0              ! wave to atmosphere coupling interval
+  TI_WAV2OCN =   600.0d0              ! wave to ocean coupling interval
+  TI_OCN2WAV =   600.0d0              ! ocean to wave coupling interval
+  TI_OCN2ATM =   600.0d0              ! ocean to atmosphere coupling interval
 
 ! Coupled model standard input file name.
 
@@ -61,15 +64,6 @@
    A2WNAME == Projects/JOE_TC/atm2wav_weights.nc
    O2ANAME == Projects/JOE_TC/ocn2atm_weights.nc
    O2WNAME == Projects/JOE_TC/ocn2wav_weights.nc
-
-!
-!  If you are running a simulation using WRF + either ROMS or SWAN, 
-!  then this featuere sets the WRF grid that will exchange fileds to 
-!  ROMS and/or SWAN. In the future, we will have more options
-!  to couple various levels of R/S grids to various WRF grids. But we 
-!  need to start somewhere, and for now you can only choose 1 WRF grid.
-!
-   WRF_CPL_GRID == 1                       ! 1 = parent
 !
 !  GLOSSARY:
 !  =========
@@ -111,11 +105,4 @@
 ! A2WNAME      Atmosphere to wave netcdf sparse matrix grid file.
 ! O2ANAME      Ocean to atmosphere netcdf sparse matrix grid file.
 ! O2WNAME      Ocean to wave netcdf sparse matrix grid file.
-!
-!------------------------------------------------------------------------------
-! WRF grid nesting level to be used for coupling to ROMS and/or SWAN 
-! grid(s).
-!------------------------------------------------------------------------------
-!
-!   WRF_COUPLED_GRID  WRF grid number to be used for the coupling. Default 1.
 !

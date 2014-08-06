@@ -14,7 +14,7 @@
 */
 
 #define ROMS_MODEL
-#define REFINED_GRID
+#define NESTING
 
 #define WRITE_GRID
 #define OUT_DOUBLE

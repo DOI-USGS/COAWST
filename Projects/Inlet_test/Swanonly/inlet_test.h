@@ -12,4 +12,4 @@
 */
 
 #define SWAN_MODEL
-#define REFINED_GRID
+#undef  NESTING

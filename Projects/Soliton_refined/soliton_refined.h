@@ -13,7 +13,7 @@
 */
 
 #define ROMS_MODEL
-#define REFINED_GRID
+#define NESTING
 #define OUT_DOUBLE
 
 #define UV_ADV

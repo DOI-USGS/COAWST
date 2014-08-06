@@ -15,9 +15,10 @@
 */
 
 #define ROMS_MODEL
+#define NESTING
 #define SWAN_MODEL
 #define MCT_LIB
-#define REFINED_GRID
+#define MCT_INTERP_OC2WV
 
 #define UV_VIS2
 #define MIX_S_UV
@@ -25,20 +26,7 @@
 #define UV_ADV
 #undef  UV_COR
 #define TS_MPDATA
-#undef  TS_U3HADVECTION
 #define DJ_GRADPS
-
-#define SOUTHERN_WALL
-#define FSOBC_REDUCED
-#define NORTH_FSGRADIENT
-#define NORTH_M2REDUCED
-#define NORTH_M3GRADIENT
-#define WEST_FSGRADIENT
-#define WEST_M2GRADIENT
-#define WEST_M3GRADIENT
-#define EAST_FSGRADIENT
-#define EAST_M2GRADIENT
-#define EAST_M3GRADIENT
 
 #define SOLVE3D
 #define SPLINES
@@ -86,4 +74,4 @@
 # define ANA_SRFLUX
 #endif
 
-#define STATIONS
+#undef  STATIONS

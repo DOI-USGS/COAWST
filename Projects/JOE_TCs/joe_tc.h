@@ -15,10 +15,10 @@
 # undef ExpA
 # undef ExpB
 # undef ExpC
-# undef ExpD
+# define ExpD
 # undef ExpE
 # undef ExpF
-# define ExpG
+# undef ExpG
 
 #ifdef ExpA1            /* WRF<->SWAN */
 # define WRF_MODEL
@@ -143,12 +143,6 @@
 #  define KANTHA_CLAYSON
 #  define N2S2_HORAVG
 # endif
-
-/* Boundary condition */
-# define WESTERN_WALL
-# define NORTHERN_WALL
-# define SOUTHERN_WALL
-# define EASTERN_WALL
 
 /* Output */
 # define DIAGNOSTICS_UV
