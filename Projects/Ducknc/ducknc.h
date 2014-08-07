@@ -33,19 +33,6 @@
 #undef  SALINITY
 #define SOLVE3D
 #define SPLINES
-#define NS_PERIODIC
-
-#define EAST_M2GRADIENT
-/*
-#define EAST_M2REDUCED*/
-#define FSOBC_REDUCED
-#define EAST_M3GRADIENT
-#define EAST_TGRADIENT
-#define EAST_M2SGRADIENT
-#define EAST_M3SGRADIENT
-#define WESTERN_WALL
-
-
 #define MASKING
 
 #define ANA_FSOBC

@@ -11,6 +11,14 @@
 **  Waves-ocean (SWAN/ROMS) two-way coupling test.
 */
 
+#define ROMS_MODEL
+#define SWAN_MODEL
+#define MCT_LIB
+
+#define WEC_VF
+#define WDISS_WAVEMOD
+#define UV_KIRBY
+
 #define UV_VIS2
 #define MIX_S_UV
 #undef  ANA_GRID
@@ -19,19 +27,13 @@
 #undef  UV_COR
 #define TS_U3HADVECTION
 #define DJ_GRADPS
-#define SOUTHERN_WALL
-#define EASTERN_WALL
-#define WESTERN_WALL
-#define NORTH_FSCHAPMAN
-#define NORTH_M2REDUCED
-#define NORTH_M3GRADIENT
+
 #define ANA_FSOBC
 #define ANA_M2OBC
 #define FSOBC_REDUCED
 #define SOLVE3D
 #define SPLINES
-#define SWAN_COUPLING
-#define NEARSHORE_MELLOR
+#define WEC_VF
 #define WET_DRY
 #define ANA_INITIAL
 #define ANA_SMFLUX
