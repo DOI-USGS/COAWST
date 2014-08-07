@@ -108,6 +108,7 @@
         ALLOCATE(GSMapInterp_A(Nocn_grids,Natm_grids))
       END IF
 #endif
+      OCNid=ocnids(ng)
 #if !defined WAVES_OCEAN
       IF (ng.eq.1) THEN
         ALLOCATE(GlobalSegMap_G(Nocn_grids))
@@ -116,7 +117,6 @@
 !
 !  Initialize MCT coupled model registry.
 !
-      OCNid=ocnids(ng)
       IF (Nocn_grids.gt.1) THEN
         CALL MCTWorld_init (N_mctmodels, MPI_COMM_WORLD,                &
      &                      OCN_COMM_WORLD,myids=ocnids)

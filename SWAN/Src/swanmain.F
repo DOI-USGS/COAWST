@@ -800,7 +800,7 @@
         DO io=1,Nocn_grids
           run_couple=1
           IF ((first.eq.1).and.(iics(iw).eq.0)) run_couple=0
-          IF (MOD(iics(iw), nWAV2OCN(iw,io)).ne.0) run_couple=0
+          IF (MOD(iics(1), nWAV2OCN(1,1)).ne.0) run_couple=0
           IF (run_couple.eq.1) THEN
             CALL SWOUTO ( AC2   , SPCSIG, SPCDIR, COMPDA, XYTST ,
      &                    KGRPNT, XCGRID, YCGRID, OURQT ,
@@ -819,7 +819,7 @@
         DO io=1,Nocn_grids
           run_couple=1
           IF ((first.eq.1).and.(iics(iw).eq.0)) run_couple=0
-          IF (MOD(iics(iw), nWAVFOCN(iw,io)).ne.0) run_couple=0
+          IF (MOD(iics(1), nWAVFOCN(1,1)).ne.0) run_couple=0
           IF (run_couple.eq.1) THEN
             CALL WAVFOCN_COUPLING (COMPDA, iw, io)
           ELSE
@@ -838,7 +838,7 @@
         DO ia=1,Natm_grids
           run_couple=1
           IF ((first.eq.1).and.(iics(iw).eq.0)) run_couple=0
-          IF (MOD(iics(iw), nWAVFATM(iw,ia)).ne.0) run_couple=0
+          IF (MOD(iics(1), nWAVFATM(1,1)).ne.0) run_couple=0
           IF (run_couple.eq.1) THEN
             CALL WAVFATM_COUPLING (COMPDA, iw, ia)
           ELSE
@@ -855,7 +855,7 @@
         DO ia=1,Natm_grids
           run_couple=1
           IF ((first.eq.1).and.(iics(iw).eq.0)) run_couple=0
-          IF (MOD(iics(iw), nWAV2ATM(iw,ia)).ne.0) run_couple=0
+          IF (MOD(iics(1), nWAV2ATM(1,1)).ne.0) run_couple=0
           IF (run_couple.eq.1) THEN
             CALL SWOUTA ( AC2   , SPCSIG, SPCDIR, COMPDA, XYTST ,
      &                    KGRPNT, XCGRID, YCGRID, OURQT ,

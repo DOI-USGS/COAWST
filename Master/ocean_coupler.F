@@ -245,8 +245,8 @@
           DO ig=1,GridsInLayer(nlay)
             ng=GridNumber(ig,nlay)
             DO ia=1,Natm_grids
-              offset=-1 !nlay-NestLayers
-              IF (MOD(iic(ng)+offset,nOCNFATM(ng,ia)).eq.0) THEN
+              offset=1 !nlay-NestLayers
+              IF (MOD(iic(1)+offset,nOCNFATM(1,1)).eq.0) THEN
                 DO tile=first_tile(ng),last_tile(ng),+1
                   CALL ocnfatm_coupling (ng, ia, tile)
                 END DO
@@ -261,8 +261,8 @@
           DO ig=1,GridsInLayer(nlay)
             ng=GridNumber(ig,nlay)
             DO ia=1,Natm_grids
-              offset=-1 !nlay-NestLayers
-              IF (MOD(iic(ng)+offset,nOCN2ATM(ng,ia)).eq.0) THEN
+              offset=1 !nlay-NestLayers
+              IF (MOD(iic(1)+offset,nOCN2ATM(1,1)).eq.0) THEN
                 DO tile=first_tile(ng),last_tile(ng),+1
                   CALL ocn2atm_coupling (ng, ia, tile)
                 END DO
@@ -284,8 +284,8 @@
           DO nlay=1,NestLayers
             DO ig=1,GridsInLayer(nlay)
               ng=GridNumber(ig,nlay)
-              offset=nlay-NestLayers
-              IF (MOD(iic(ng)+offset,nOCNFWAV(ng,iw)).eq.0) THEN
+              offset=1 !nlay-NestLayers
+              IF (MOD(iic(1)+offset,nOCNFWAV(1,1)).eq.0) THEN
                 DO tile=first_tile(ng),last_tile(ng),+1
                   CALL ocnfwav_coupling (ng, iw, tile)
                 END DO
@@ -300,8 +300,8 @@
           DO nlay=1,NestLayers
             DO ig=1,GridsInLayer(nlay)
               ng=GridNumber(ig,nlay)
-              offset=nlay-NestLayers
-              IF (MOD(iic(ng)+offset,nOCN2WAV(ng,iw)).eq.0) THEN
+              offset=1 !nlay-NestLayers
+              IF (MOD(iic(1)+offset,nOCN2WAV(1,1)).eq.0) THEN
                 DO tile=first_tile(ng),last_tile(ng),+1
                   CALL ocn2wav_coupling (ng, iw, tile)
                 END DO

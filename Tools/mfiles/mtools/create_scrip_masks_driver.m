@@ -309,12 +309,12 @@ for ma=1:Ngrids_wrf
     tot_mask{ma}=tot_mask{ma}+dst_mask;
     eval(['O',num2str(mo),'src_A',num2str(ma),'dst=dst_mask;'])
 %
-    if (mo==1)
-%     modify the wrfinput_d** cplmask
-      eval(['cplmask{ma}=ncread(''wrfinput_d0',num2str(ma),''',''CPLMASK'');'])
+%   modify the wrfinput_d** cplmask  - Hold off on this for now. 
+%   if (mo==1)
+%     eval(['cplmask{ma}=ncread(''wrfinput_d0',num2str(ma),''',''CPLMASK'');'])
       cplmask{ma}=1-dst_mask;
-      eval(['ncwrite(''wrfinput_d0',num2str(ma),''',''CPLMASK'',cplmask{ma});'])
-    end
+%     eval(['ncwrite(''wrfinput_d0',num2str(ma),''',''CPLMASK'',cplmask{ma});'])
+%   end
   end
 % Add land/sea mask to total mask
 %   tot_mask{ma}=tot_mask{ma}+(1-mask_rho_a{ma});
@@ -441,12 +441,12 @@ for ma=1:Ngrids_wrf
     tot_mask{ma}=tot_mask{ma}+dst_mask;
     eval(['W',num2str(mw),'src_A',num2str(ma),'dst=dst_mask;'])
 %
-    if (mw==1)
-%     modify the wrfinput_d** cplmask
-      eval(['cplmask{ma}=ncread(''wrfinput_d0',num2str(ma),''',''CPLMASK'');'])
+%   modify the wrfinput_d** cplmask
+%   if (mw==1)
+%     eval(['cplmask{ma}=ncread(''wrfinput_d0',num2str(ma),''',''CPLMASK'');'])
       cplmask{ma}=1-dst_mask;
-      eval(['ncwrite(''wrfinput_d0',num2str(ma),''',''CPLMASK'',cplmask{ma});'])
-    end
+%     eval(['ncwrite(''wrfinput_d0',num2str(ma),''',''CPLMASK'',cplmask{ma});'])
+%   end
   end
 % Add land/sea mask to total mask
 %   tot_mask{ma}=tot_mask{ma}+(1-mask_rho_a{ma});

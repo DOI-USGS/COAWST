@@ -107,6 +107,25 @@ hnew(2:end-1,2:end-1)=0.2*(h(1:end-2,2:end-1)+h(2:end-1,2:end-1)+h(3:end,2:end-1
                        h(2:end-1,1:end-2)+h(2:end-1,3:end));
 ncwrite('Sandy_roms_grid_ref3.nc','h',hnew);
 
+%recompute child mask based on WRF mask
+netcdf_load('wrfinput_d02');
+F = TriScatteredInterp(double(XLONG(:)),double(XLAT(:)), ...
+                       double(1-LANDMASK(:)),'nearest');
+roms_mask=F(lon_rho,lat_rho);
+figure
+pcolorjw(lon_rho,lat_rho,roms_mask)
+water = double(roms_mask);
+u_mask = water(1:end-1,:) & water(2:end,:);
+v_mask= water(:,1:end-1) & water(:,2:end);
+psi_mask= water(1:end-1,1:end-1) & water(1:end-1,2:end) & water(2:end,1:end-1) & water(2:end,2:end);
+ncwrite('Sandy_roms_grid_ref3.nc','mask_rho',roms_mask);
+ncwrite('Sandy_roms_grid_ref3.nc','mask_u',double(u_mask));
+ncwrite('Sandy_roms_grid_ref3.nc','mask_v',double(v_mask));
+ncwrite('Sandy_roms_grid_ref3.nc','mask_psi',double(psi_mask));
+
+
+% thne use mask tool to adjust child masking
+
 
 %step 10: create roms init conditions, bc's, and nudging files.
 % I copied Tools/mfiles/roms_clm/roms_master_climatology_coawst_mw.m
