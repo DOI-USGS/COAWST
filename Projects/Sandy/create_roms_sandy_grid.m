@@ -80,8 +80,8 @@ hnew(2:end-1,2:end-1)=0.2*(h(1:end-2,2:end-1)+h(2:end-1,2:end-1)+h(3:end,2:end-1
                        h(2:end-1,1:end-2)+h(2:end-1,3:end));
 figure
 pcolorjw(lon_rho,lat_rho,h)
-h(isnan(h))=5;
-ncwrite(roms_grid,'h',h);
+hnew(isnan(hnew))=5;
+ncwrite(roms_grid,'h',hnew);
 
 %step 9: create ocean child grid.
 % Select child indices
@@ -99,6 +99,14 @@ F=coarse2fine('Sandy_roms_grid.nc','Sandy_roms_grid_ref3.nc', ...
               ref_ratio,Istr,Iend,Jstr,Jend);
 Gnames={'Sandy_roms_grid.nc','Sandy_roms_grid_ref3.nc'};
 [S,G]=contact(Gnames,'Sandy_roms_contact.nc');
+
+%smooth h a little
+netcdf_load('Sandy_roms_grid_ref3.nc')
+hnew=h;
+hnew(2:end-1,2:end-1)=0.2*(h(1:end-2,2:end-1)+h(2:end-1,2:end-1)+h(3:end,2:end-1)+ ...
+                       h(2:end-1,1:end-2)+h(2:end-1,3:end));
+ncwrite('Sandy_roms_grid_ref3.nc','h',hnew);
+
 
 %step 10: create roms init conditions, bc's, and nudging files.
 % I copied Tools/mfiles/roms_clm/roms_master_climatology_coawst_mw.m
