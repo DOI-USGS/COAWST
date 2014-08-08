@@ -15,10 +15,10 @@
 # undef ExpA
 # undef ExpB
 # undef ExpC
-# define ExpD
+# undef ExpD
 # undef ExpE
 # undef ExpF
-# undef ExpG
+# define ExpG
 
 #ifdef ExpA1            /* WRF<->SWAN */
 # define WRF_MODEL

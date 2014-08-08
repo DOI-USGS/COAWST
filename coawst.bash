@@ -100,6 +100,7 @@ export   ROMS_APPLICATION=${COAWST_APPLICATION}
 # where all this project's files are kept.
 
 export     MY_ROOT_DIR=/cygdrive/c/work/models/COAWST
+export     MY_PROJECT_DIR=${MY_ROOT_DIR}
 
 # The path to the user's local current ROMS source code.
 #
@@ -391,8 +392,8 @@ fi
 
 #  export     MY_HEADER_DIR=${MY_PROJECT_DIR}/ROMS/Include
 #  export MY_ANALYTICAL_DIR=${MY_PROJECT_DIR}/ROMS/Functionals
-   export     MY_HEADER_DIR=${MY_PROJECT_DIR}/Projects/Inlet_test/Coupled
-   export MY_ANALYTICAL_DIR=${MY_PROJECT_DIR}/Projects/Inlet_test/Coupled
+   export     MY_HEADER_DIR=${MY_PROJECT_DIR}/Projects/Inlet_test/Refined
+   export MY_ANALYTICAL_DIR=${MY_PROJECT_DIR}/Projects/Inlet_test/Refined
 
 # Put the binary to execute in the following directory.
 

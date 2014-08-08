@@ -66,12 +66,12 @@
 !            wav2 to ocn2
 !            wav2 to ocn3 ....for all the ocean models.
 
-   W2ONAME == Projects/JOE_TCs/wav2ocn_weights.nc
-   W2ANAME == Projects/JOE_TCs/wav2atm_weights.nc
-   A2ONAME == Projects/JOE_TCs/atm2ocn_weights.nc
-   A2WNAME == Projects/JOE_TCs/atm2wav_weights.nc
-   O2ANAME == Projects/JOE_TCs/ocn2atm_weights.nc
-   O2WNAME == Projects/JOE_TCs/ocn2wav_weights.nc
+   W2ONAME == wav2ocn_weights.nc
+   W2ANAME == wav2atm_weights.nc
+   A2ONAME == atm2ocn_weights.nc
+   A2WNAME == atm2wav_weights.nc
+   O2ANAME == ocn2atm_weights.nc
+   O2WNAME == ocn2wav_weights.nc
 !
 !  GLOSSARY:
 !  =========

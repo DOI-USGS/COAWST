@@ -7,39 +7,40 @@
 %
 % jcwarner 29June2014
 %
-% set up for Projects/Inlet_test/Refined
-%
+% specialized for Project/Sandy
+
 
 %%%%%%%  Begin USER Input Section  %%%%%%%%%%%%%
 
 %step 1:  Enter the number of grids for each model:
 Ngrids_roms=2;
 Ngrids_swan=2;
-Ngrids_wrf=0;
+Ngrids_wrf=2;
 
 %step 2a: Enter the grids for the ROMS model:
-roms_grids{1}='inlet_test_grid.nc';
-roms_grids{2}='inlet_test_grid_ref3.nc';
+roms_grids{1}='Sandy_roms_grid.nc';
+roms_grids{2}='Sandy_roms_grid_ref3.nc';
 
 %step 2b: Enter the grids for the SWAN model:
-%Inlet_test_refined
- swan_coord{1}='inlet_test_grid_coord.grd';
- swan_coord{2}='inlet_test_grid_coord_ref3.grd';
- Numx{1}=77; Numy{1}=72;   % this was for inlet_test_grid_coord
- Numx{2}=92; Numy{2}=50;   % this was for inlet_test_grid_ref3_coord
- cartesian{1}=1;  % this was in meters
- cartesian{2}=1;  % this was in meters
- bath_file{1}='inlet_test_bathy.bot';
- bath_file{2}='inlet_test_bathy_ref3.bot';
+%Sandy
+swan_coord{1}='Sandy_swan_coord.grd';
+swan_coord{2}='Sandy_swan_coord_ref3.grd';
+Numx{1}=84;  Numy{1}=64;   % for swan grid 1
+Numx{2}=122; Numy{2}=83;   % for swan grid 2
+cartesian{1}=0;  % this was in lon/lat space
+cartesian{2}=0;  % this was in lon/lat space
+bath_file{1}='Sandy_swan_bathy.bot';
+bath_file{2}='Sandy_swan_bathy_ref3.bot';
 
 %step 2c: Enter the grids for the WRF model:
 wrf_grids{1}='wrfinput_d01';
+wrf_grids{2}='wrfinput_d02';
 
 %step 3: enter location of scrip.exe
-scrip_exe='c:/work/models/COAWST/Lib/SCRIP/scrip.exe';
+scrip_exe='e:/data/models/COAWST/Lib/SCRIP/scrip.exe';
 
 %step 4: enter working dir
-wdir='c:\work\models\COAWST\Projects\Inlet_test\Refined';
+wdir='e:\data\models\COAWST\Projects\Sandy';
 
 %step 5: Select the process steps to create the SCRIP files.
 
