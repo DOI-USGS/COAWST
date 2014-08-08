@@ -42,17 +42,28 @@
 
 ! Time interval (seconds) between coupling of models.
 
- TI_ATM_WAV =   600.0d0              ! atmosphere-wave coupling interval
- TI_ATM_OCN =   600.0d0              ! atmosphere-ocean coupling interval
- TI_WAV_OCN =   600.0d0              ! wave-ocean coupling interval
+  TI_ATM2WAV =   600.0d0              ! atmosphere to wave coupling interval
+  TI_ATM2OCN =   600.0d0              ! atmosphere to ocean coupling interval
+  TI_WAV2ATM =   600.0d0              ! wave to atmosphere coupling interval
+  TI_WAV2OCN =   600.0d0              ! wave to ocean coupling interval
+  TI_OCN2WAV =   600.0d0              ! ocean to wave coupling interval
+  TI_OCN2ATM =   600.0d0              ! ocean to atmosphere coupling interval
 
-! Coupled model standard input file name.
+! Enter names of Atm, Wav, and Ocn input files.
+! The Wav program needs multiple input files, one for each grid.
 
   ATM_name = namelist.input                              ! atmospheric model
   WAV_name = Projects/Rotate_test/INPUT_SWAN_ROT_TEST    ! wave model
   OCN_name = Projects/Rotate_test/ocean_rot_test.in      ! ocean model
 
-! Sparse matrix interpolation weights files.
+! Sparse matrix interpolation weights files. The file names
+! must be provided in a specific order. For example: 
+! W2ONAME == wav1 to ocn1
+!            wav1 to ocn2
+!            wav1 to ocn3 ....for all the ocean models.
+!            wav2 to ocn1
+!            wav2 to ocn2
+!            wav2 to ocn3 ....for all the ocean models.
 
    W2ONAME == wav2ocn_weights_consv.nc
    W2ANAME == wav2atm_weights_consv.nc
@@ -73,13 +84,6 @@
 ! NnodesWAV     Number of processes allocated to the wave model.
 ! NnodesOCN     Number of processes allocated to the ocean model.
 !
-! The total sum of active coupled model must be equal to the total number
-! of processors. Currently, ROMS/TOMS supports the following modes of
-! coupling with CPP-options (see Drivers/master.F):
-!
-!               AIR_OCEAN      Atmosphere-ocean coupling
-!               WAVES_OCEAN    Waves-ocean coupling
-!
 !------------------------------------------------------------------------------
 ! Time interval between coupling of models.
 !------------------------------------------------------------------------------
@@ -87,15 +91,29 @@
 ! It is assumed that the time interval is an integer multiple of the
 ! individual coupled models in the system.
 !
-! TI_ATM_WAV    Atmosphere-wave coupling interval (seconds; integer).
-! TI_ATM_OCN    Atmosphere-ocean coupling interval (seconds; integer).
-! TI_WAV_OCN    Wave-ocean coupling interval (seconds).
+! TI_ATM2WAV   Atmosphere to wave coupling interval (seconds)
+! TI_ATM2OCN   Atmosphere to ocean coupling interval(seconds)
+! TI_WAV2ATM   Wave to atmosphere coupling interval (seconds)
+! TI_WAV2OCN   Wave to ocean coupling interval      (seconds)
+! TI_OCN2WAV   Ocean to wave coupling interval      (seconds)
+! TI_OCN2ATM   Ocean to atmosphere coupling interval(seconds)
 !
 !------------------------------------------------------------------------------
 ! Coupled models standard input file names.
 !------------------------------------------------------------------------------
 !
-!  ATM_name     Atmospheric model standand input.
-!  WAV_name     Wave model standard input.
-!  OCN_name     Ocean model standard input.
+! ATM_name     Atmospheric model standand input.
+! WAV_name     Wave model standard input.
+! OCN_name     Ocean model standard input.
+!
+!------------------------------------------------------------------------------
+! Sparse matrix interpolation weights files.
+!------------------------------------------------------------------------------
+!
+! W2ONAME      Wave to ocean netcdf sparse matrix grid files.
+! W2ANAME      Wave to atmosphere netcdf sparse matrix grid files.
+! A2ONAME      Atmosphere to ocean netcdf sparse matrix grid files.
+! A2WNAME      Atmosphere to wave netcdf sparse matrix grid files.
+! O2ANAME      Ocean to atmosphere netcdf sparse matrix grid files.
+! O2WNAME      Ocean to wave netcdf sparse matrix grid files.
 !

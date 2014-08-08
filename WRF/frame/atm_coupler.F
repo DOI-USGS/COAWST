@@ -1074,7 +1074,11 @@
       DO j=js,je
         DO i=is,ie
           ij=ij+1
+#    ifdef SST_CONST
+          Amask(ij)=0.
+#    else
           Amask(ij)=AA(ij)
+#    endif
         END DO
       END DO
 #  endif

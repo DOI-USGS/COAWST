@@ -90,17 +90,16 @@ done
 # determine the name of the ".h" header file with the application
 # CPP definitions.
 
-#export   ROMS_APPLICATION=INLET_TEST
-#export   ROMS_APPLICATION=JOE_TC
-export   ROMS_APPLICATION=SANDY
+export   COAWST_APPLICATION=INLET_TEST
+
+# Set the ROMS_APPLICATION to be the same as the COAWST_APP.  We use the COAWST
+# APP for other checks.
+export   ROMS_APPLICATION=${COAWST_APPLICATION}
 
 # Set a local environmental variable to define the path to the directories
 # where all this project's files are kept.
 
-#export     MY_ROOT_DIR=/raid3/jcwarner/Projects/coawst_v3.1/coawst_v3.1_105
-export     MY_ROOT_DIR=/cygdrive/c/work/models/COAWST_tests/coawst_v3.1_111
-#export     MY_ROOT_DIR=/cygdrive/e/data/models/COAWST_tests/coawst_v3.1/coawst_
-export     MY_PROJECT_DIR=${MY_ROOT_DIR}
+export     MY_ROOT_DIR=/cygdrive/c/work/models/COAWST
 
 # The path to the user's local current ROMS source code.
 #
@@ -392,18 +391,8 @@ fi
 
 #  export     MY_HEADER_DIR=${MY_PROJECT_DIR}/ROMS/Include
 #  export MY_ANALYTICAL_DIR=${MY_PROJECT_DIR}/ROMS/Functionals
-#  export     MY_HEADER_DIR=${MY_PROJECT_DIR}/Projects/Inlet_test/Coupled
-#  export MY_ANALYTICAL_DIR=${MY_PROJECT_DIR}/Projects/Inlet_test/Coupled
-  export     MY_HEADER_DIR=${MY_PROJECT_DIR}/Projects/Inlet_test/Refined
-  export MY_ANALYTICAL_DIR=${MY_PROJECT_DIR}/Projects/Inlet_test/Refined
-#  export     MY_HEADER_DIR=${MY_PROJECT_DIR}/Projects/Inlet_test/DiffGrid
-#  export MY_ANALYTICAL_DIR=${MY_PROJECT_DIR}/Projects/Inlet_test/DiffGrid
-#  export     MY_HEADER_DIR=${MY_PROJECT_DIR}/Projects/Inlet_test/Swanonly
-#  export MY_ANALYTICAL_DIR=${MY_PROJECT_DIR}/Projects/Inlet_test/Swanonly
-#  export     MY_HEADER_DIR=${MY_PROJECT_DIR}/Projects/JOE_TCs
-#  export MY_ANALYTICAL_DIR=${MY_PROJECT_DIR}/Projects/JOE_TCs
-  export     MY_HEADER_DIR=${MY_PROJECT_DIR}/Projects/Sandy
-  export MY_ANALYTICAL_DIR=${MY_PROJECT_DIR}/Projects/Sandy
+   export     MY_HEADER_DIR=${MY_PROJECT_DIR}/Projects/Inlet_test/Coupled
+   export MY_ANALYTICAL_DIR=${MY_PROJECT_DIR}/Projects/Inlet_test/Coupled
 
 # Put the binary to execute in the following directory.
 

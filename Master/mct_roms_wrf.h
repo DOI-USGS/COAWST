@@ -653,11 +653,7 @@
       DO j=JstrR,JendR
         DO i=IstrR,IendR
           ij=ij+1
-#ifdef SST_CONST
-          A(ij)=0._r8  ! exp A. rhe 03/13/08
-#else       
           A(ij)=OCEAN(ng)%t(i,j,N(ng),nstp(ng),itemp)
-#endif
         END DO
       END DO
       CALL AttrVect_importRAttr (AttrVect_G(ng)%ocn2atm_AV, "SST", A,   &
@@ -1068,7 +1064,7 @@
           ij=ij+1
           IF (ia.eq.1) THEN
             FORCES(ng)%Tair(i,j)=A(ij)
-          ELSE 
+          ELSE
             FORCES(ng)%Tair(i,j)=FORCES(ng)%Tair(i,j)+A(ij)
           END IF
         END DO
