@@ -143,7 +143,7 @@
       END DO
 # endif
 !
-# if defined EMINUSP && defined EMINUSP_SSH
+# if defined RUNOFF && defined RUNOFF_SSH
 !
 ! Correct sea level for surface runoff
 ! Apply to fast-time averaged free-surface height
