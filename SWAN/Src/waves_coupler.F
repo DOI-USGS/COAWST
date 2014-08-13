@@ -955,8 +955,7 @@
 !  Load the dst grid cpl mask into the attr vect.
 !
         DO i=1,Asize
-        Amask(pointw(i))=                                               &
-     &                 REAL(W2A_CPLMASK(ng,ia)%dst_mask(pointw(i)),m8)
+          Amask(i)=REAL(W2A_CPLMASK(ng,ia)%dst_mask(pointw(i)),m8)
         END DO
         CALL AttrVect_importRAttr (AV2_A(ng,ia)%wav2atm_AV2, "CPL_MASK",&
      &                             Amask, Asize)
