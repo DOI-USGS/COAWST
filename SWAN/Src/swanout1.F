@@ -591,6 +591,7 @@
 !
       TIDX=sstp(ng)
       AC2_parent(:,TIDX)=0.
+      AC_EXCH=0.
 !
 ! Set no cross obstacles.
 !

@@ -139,7 +139,7 @@
 ! Locals.
       integer :: i, j, count, IX, IY, MyError
       integer :: Xmin, Xmax, Ymin, Ymax
-      INTEGER IARRL(5), IARRC(5,0:NPROC-1)
+      INTEGER IARRL(5), IARRC(5,1:NPROC)
       real, allocatable :: Ipos(:,:), Jpos(:,:), angler(:,:)
       real :: IJspv
       logical :: rectangular
@@ -155,10 +155,15 @@
       BOUNDHINDY=0.
       ALLOCATE (REFINED_MOD(ng)%BOUNDHINDPF_G(Numspec(ng)))
       BOUNDHINDPF =>REFINED_MOD(ng)%BOUNDHINDPF_G
-      BOUNDHINDPF=0
       ALLOCATE (REFINED_MOD(ng)%BOUNDHINDPR_G(Numspec(ng)))
       BOUNDHINDPR =>REFINED_MOD(ng)%BOUNDHINDPR_G
-      BOUNDHINDPR=0
+      IF (NPROC.gt.1) THEN
+        BOUNDHINDPF=0
+        BOUNDHINDPR=0
+      ELSE
+        BOUNDHINDPF=1
+        BOUNDHINDPR=1
+      END IF
       ALLOCATE (REFINED_MOD(ng)%BOUNDHINDIX_G(Numspec(ng)))
       BOUNDHINDIX =>REFINED_MOD(ng)%BOUNDHINDIX_G
       BOUNDHINDIX=0
@@ -244,38 +249,40 @@
 !  BOUNDHINDPF = which processor is going to fill the AC2 for this point.
 !  BOUNDHINDPR = which processor is able to read this data to fill its AC2 array.
 !
-      DO i=1,Numspec(ng)
-        IF (MXCGL_G(ngp).gt.MYCGL_G(ngp)) THEN
-          DO j=0,NPROC-1
-            IF (BOUNDHINDPF(i).eq.0) THEN
-              IF ((BOUNDHINDX(i).ge.IARRC(1,j)).and.                  &
-     &            (BOUNDHINDX(i).le.IARRC(2,j)-4)) THEN
-                BOUNDHINDPF(i)=j+1
+      IF (NPROC.gt.1) THEN
+        DO i=1,Numspec(ng)
+          IF (MXCGL_G(ngp).gt.MYCGL_G(ngp)) THEN
+            DO j=1,NPROC
+              IF (BOUNDHINDPF(i).eq.0) THEN
+                IF ((BOUNDHINDX(i).ge.IARRC(1,j)).and.                  &
+     &              (BOUNDHINDX(i).le.IARRC(2,j)-4)) THEN
+                  BOUNDHINDPF(i)=j
+                ENDIF
               ENDIF
-            ENDIF
-          END DO
-        ELSE
-          DO j=0,NPROC-1
-            IF (BOUNDHINDPF(i).eq.0) THEN
-              IF ((BOUNDHINDY(i).ge.IARRC(3,j)).and.                    &
-     &            (BOUNDHINDY(i).le.IARRC(4,j)-4)) THEN
-                BOUNDHINDPF(i)=j+1
+            END DO
+          ELSE
+            DO j=1,NPROC
+              IF (BOUNDHINDPF(i).eq.0) THEN
+                IF ((BOUNDHINDY(i).ge.IARRC(3,j)).and.                    &
+     &              (BOUNDHINDY(i).le.IARRC(4,j)-4)) THEN
+                  BOUNDHINDPF(i)=j
+                ENDIF
               ENDIF
+            END DO
+          ENDIF
+          IF (MXCGL.gt.MYCGL) THEN
+            IF ((BOUNDHINDIX(i).ge.MXF).and.                               &
+     &          (BOUNDHINDIX(i).le.MXL)) THEN
+              BOUNDHINDPR(i)=INODE
             ENDIF
-          END DO
-        ENDIF
-        IF (MXCGL.gt.MYCGL) THEN
-          IF ((BOUNDHINDIX(i).ge.MXF).and.                               &
-     &        (BOUNDHINDIX(i).le.MXL)) THEN
-            BOUNDHINDPR(i)=INODE
+          ELSE
+            IF ((BOUNDHINDIY(i).ge.MYF).and.                               &
+     &          (BOUNDHINDIY(i).le.MYL)) THEN
+              BOUNDHINDPR(i)=INODE
+            ENDIF
           ENDIF
-        ELSE
-          IF ((BOUNDHINDIY(i).ge.MYF).and.                               &
-     &        (BOUNDHINDIY(i).le.MYL)) THEN
-            BOUNDHINDPR(i)=INODE
-          ENDIF
-        ENDIF
-      END DO
+        END DO
+      END IF
 
       deallocate(Ipos,Jpos)
 
