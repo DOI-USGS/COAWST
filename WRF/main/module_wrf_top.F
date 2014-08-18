@@ -447,7 +447,7 @@ CONTAINS
 
 #ifdef WRF_COUPLING
    INTEGER :: last_step
-   last_step=0
+   last_step=-1
    CALL       wrf_debug ( 100 , 'wrf: calling integrate' )
    CALL integrate ( head_grid, last_step )
    CALL       wrf_debug ( 100 , 'wrf: back from integrate' )

@@ -17,8 +17,8 @@
  end_second                          = 00,   00,   00,
  interval_seconds                    = 21600
  input_from_file                     = .true.,.true.,.true.,
- history_interval                    = 30,   15,   60,
- frames_per_outfile                  = 1,    1, 1000,
+ history_interval                    = 30,   30,   60,
+ frames_per_outfile                  = 1000, 1000, 1000,
  restart                             = .false.,
  restart_interval                    = 5000,
  io_form_history                     = 2
@@ -26,6 +26,9 @@
  io_form_input                       = 2
  io_form_boundary                    = 2
  debug_level                         = 0
+ auxinput4_inname                    = "wrflowinp_d<domain>"
+ auxinput4_interval                  = 360, 360, 360,
+ io_form_auxinput4                   = 2
  /
 
  &domains
@@ -70,6 +73,8 @@
  surface_input_source                = 1,
  num_soil_layers                     = 4,
  sf_urban_physics                    = 0,     0,     0,
+ num_land_cat                        = 24
+ sst_update                          = 1,
  /
 
  &fdda

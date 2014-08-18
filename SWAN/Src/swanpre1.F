@@ -6055,7 +6055,12 @@
      &           PTNSUBGRD = .FALSE.                                      40.62
 !
               READ (NREF, 102) RLINE
-              INDX = KGRPNT(IX,IY)
+              IF (PTNSUBGRD) THEN
+                INDX = KGRPNT(IX,IY)
+              ELSE
+                INDX = 0
+              END IF
+!jcw          INDX = KGRPNT(IX,IY)
               IF (INDX.EQ.1 .AND. PTNSUBGRD) THEN                         40.62
                 IF (RLINE(1:6).NE.'NODATA') THEN
                    CALL MSGERR (2,

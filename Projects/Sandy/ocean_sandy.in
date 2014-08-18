@@ -146,22 +146,22 @@ GridsInLayer =  1 1
 !
 !                   1       2       3       4
 
-   LBC(isFsur) ==   Gra     Fla     Fla     Clo \       ! free-surface
+   LBC(isFsur) ==   Gra     Cha     Gra     Clo \       ! free-surface
                     Nes     Nes     Nes     Nes
-   LBC(isUbar) ==   Gra     Fla     Fla     Clo \       ! 2D U-momentum
+   LBC(isUbar) ==   Gra     Fla     Gra     Clo \       ! 2D U-momentum
                     Nes     Nes     Nes     Nes
-   LBC(isVbar) ==   Gra     Fla     Fla     Clo \       ! 2D V-momentum
+   LBC(isVbar) ==   Gra     Fla     Gra     Clo \       ! 2D V-momentum
                     Nes     Nes     Nes     Nes
-   LBC(isUvel) ==   Gra     RadNud  RadNud  Clo \       ! 3D U-momentum
+   LBC(isUvel) ==   Gra     Cla     Gra     Gra \       ! 3D U-momentum
                     Nes     Nes     Nes     Nes
-   LBC(isVvel) ==   Gra     RadNud  RadNud  Clo \       ! 3D V-momentum
+   LBC(isVvel) ==   Gra     RadNud  Gra     Gra \       ! 3D V-momentum
                     Nes     Nes     Nes     Nes
    LBC(isMtke) ==   Gra     Gra     Gra     Clo \       ! mixing TKE
                     Nes     Nes     Nes     Nes
 
    LBC(isTvar) ==   Gra     RadNud  RadNud  Clo \       ! temperature
-                    Nes     Nes     Nes     Nes 
-                    Gra     Nud     Nud     Clo \       ! salinity
+                    Gra     RadNud  RadNud  Clo         ! salinity
+                    Nes     Nes     Nes     Nes \
                     Nes     Nes     Nes     Nes
 
 ! Wec boundary conditions
@@ -283,7 +283,7 @@ ad_VolCons(north) ==  F                            ! northern boundary
 ! Harmonic/biharmonic horizontal diffusion of tracer for nonlinear model
 ! and adjoint-based algorithms: [1:NAT+NPT,Ngrids].
 
-        TNU2 == 0.2d0  0.2d0                    ! m2/s
+        TNU2 == 0.2d0  0.2d0 0.2d0  0.2d0       ! m2/s
         TNU4 == 0.0d0  0.0d0                    ! m4/s
 
      ad_TNU2 == 0.0d0  0.0d0                    ! m2/s
@@ -292,7 +292,7 @@ ad_VolCons(north) ==  F                            ! northern boundary
 ! Harmonic/biharmonic, horizontal viscosity coefficient for nonlinear model
 ! and adjoint-based algorithms: [Ngrids].
 
-       VISC2 == 0.5d0 0.5d0                     ! m2/s
+       VISC2 == 0.10d0 0.10d0                   ! m2/s
        VISC4 == 0.0d0                           ! m4/s
 
     ad_VISC2 == 0.0d0                           ! m2/s
@@ -402,10 +402,10 @@ LtracerSponge == F F                            ! temperature, salinity, inert
 ! Nudging/relaxation time scales, inverse scales will be computed
 ! internally, [1:Ngrids].
 
-       TNUDG == 0.0d0  0.0d0               ! days
+       TNUDG == 1.0d0  1.0d0               ! days
        ZNUDG == 0.0d0                      ! days
       M2NUDG == 0.0d0                      ! days
-      M3NUDG == 0.0d0                      ! days
+      M3NUDG == 1.0d0                      ! days
 
 ! Factor between passive (outflow) and active (inflow) open boundary
 ! conditions, [1:Ngrids]. If OBCFAC > 1, nudging on inflow is stronger

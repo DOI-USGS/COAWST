@@ -393,7 +393,7 @@
       IF (MyColor.eq.ATMcolor) THEN
         CALL wrf_init (MyCOMM)
         CALL wrf_run
-        CALL wrf_finalize
+        CALL wrf_finalize(.TRUE.)
       END IF
 #endif
 #ifdef ROMS_COUPLING

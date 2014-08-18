@@ -1466,14 +1466,16 @@
 ! MYC = # cells y-dir in this tile including haloy.
 ! COMPDA has only active wet points + 1.
 !
-        DO INDX = 1, MCGRD
 # ifdef WAVES_OCEAN
-          COMPDA(INDX,JWLV1)=COMPDA(INDX,JWLV2)
-          COMPDA(INDX,JVX1) =COMPDA(INDX,JVX2)
-          COMPDA(INDX,JVY1) =COMPDA(INDX,JVY2)
-          COMPDA(INDX,JFRC3)=COMPDA(INDX,JFRC2)
+        IF (io.eq.1) THEN
+          DO INDX = 1, MCGRD
+            COMPDA(INDX,JWLV1)=COMPDA(INDX,JWLV2)
+            COMPDA(INDX,JVX1) =COMPDA(INDX,JVX2)
+            COMPDA(INDX,JVY1) =COMPDA(INDX,JVY2)
+            COMPDA(INDX,JFRC3)=COMPDA(INDX,JFRC2)
+          END DO
+        END IF
 # endif
-        END DO
 !
 ! Insert bot level, water level, velx, vely, fric, and winds 
 ! into SWAN arrays.
@@ -1635,13 +1637,13 @@
       CALL MCT_MatVecMul(AV2_A(ng,ia)%atm2wav_AV2,                      &
      &                   SMPlus_G(ng,ia)%A2WMatPlus,                    &
      &                   AttrVect_G(ng)%atm2wav_AV)
-#else
+# else
       CALL MCT_irecv (AttrVect_G(ng)%atm2wav_AV,                        &
      &                Router_A(ng,ia)%SWANtoWRF, Tag)
 !     Wait to make sure the WRF data has arrived.
       CALL MCT_waitr (AttrVect_G(ng)%atm2wav_AV,                        &
      &                Router_A(ng,ia)%SWANtoWRF)
-#endif
+# endif
         IF (MYRANK.EQ.0) THEN
           WRITE (SCREEN,35)'== SWAN grid ',ng,' recv data from WRF grid'&
      &                     ,ia
@@ -1912,18 +1914,20 @@
 ! active (wet points) using array KGRPNT.
 !
 !
+# ifdef AIR_WAVES
 ! Move values at 'present' time level 2 to 'old' time level 1.
 ! MCGRD = MXC*MYC+1-#masked cells.
 ! MXC = # cells x-dir in this tile including halox.
 ! MYC = # cells y-dir in this tile including haloy.
 ! COMPDA has only active wet points + 1.
 !
-        DO INDX = 1, MCGRD
-# ifdef AIR_WAVES
-          COMPDA(INDX,JWX3) =COMPDA(INDX,JWX2)
-          COMPDA(INDX,JWY3) =COMPDA(INDX,JWY2)
+        IF (ia.eq.1) THEN
+          DO INDX = 1, MCGRD
+            COMPDA(INDX,JWX3) =COMPDA(INDX,JWX2)
+            COMPDA(INDX,JWY3) =COMPDA(INDX,JWY2)
+          END DO
+        END IF
 # endif
-        END DO
 !
 ! Insert bot level, water level, velx, vely, fric, and winds 
 ! into SWAN arrays.

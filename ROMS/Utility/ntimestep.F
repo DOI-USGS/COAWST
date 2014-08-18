@@ -94,8 +94,9 @@
           ELSE IF (RefinedGrid(ng).and.(RefineScale(ng).gt.0)) THEN
             IF (step_counter(ng).le.(WindowSteps(ig)+1)) THEN
 !jcw          my_Nsteps(ig)=RefineScale(ng)
+!             step_counter(ng)=step_counter(ng)+RefineScale(ng)
               my_Nsteps(ig)=INT(dt(ng-1)/dt(ng))
-              step_counter(ng)=step_counter(ng)+RefineScale(ng)
+              step_counter(ng)=step_counter(ng)+my_Nsteps(ig)
             ELSE
               my_Nsteps(ig)=0
             END IF
