@@ -431,6 +431,7 @@ RECURSIVE SUBROUTINE integrate ( grid )
 #ifdef WRF_COUPLING
 !           Call last final coupling.
 !           Perform data exchange between all grids.
+            num_steps=head_grid%itimestep
             IF (grid%id.eq.1) THEN
               CALL atm_coupling (grid, num_steps)
               last_step=num_steps

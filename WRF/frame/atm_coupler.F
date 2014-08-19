@@ -1371,7 +1371,6 @@
 !-----------------------------------------------------------------------
 !
 !     CALL Router_clean (RoutWRFtoROMS)
-      write(*,*) 'atm coupl in final'
       DO ia=1,Natm_grids
         CALL GlobalSegMap_clean (GlobalSegMap_G(ia)%GSMapWRF)
 # ifdef ROMS_COUPLING
