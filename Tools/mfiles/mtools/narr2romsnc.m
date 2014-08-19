@@ -18,25 +18,28 @@
 %%%%%%%%%%%%%%%%%%%%%   START OF USER INPUT  %%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %(1) enter path and names of NARR wind netcdf files:
-ncu = netcdf.open('e:\data\South_Carolina\data\wind\uwnd.10m.2003.nc','NC_NOWRITE');
-ncv = netcdf.open('e:\data\South_Carolina\data\wind\vwnd.10m.2003.nc','NC_NOWRITE');
+ncu = netcdf.open('e:\data\models\COAWST\Projects\Sandy\uwnd.10m.2012.nc','NC_NOWRITE');
+ncv = netcdf.open('e:\data\models\COAWST\Projects\Sandy\vwnd.10m.2012.nc','NC_NOWRITE');
 
 %(2) Enter name of output ROMS netcdf wind forcing file
-ROMS_NARR_name='roms_narr_Dec2003.nc';
+ROMS_NARR_name='roms_narr_Oct2012.nc';
+%ROMS_NARR_name='roms_narr_ref3_Oct2012.nc';
 
 %(3) Enter name of output SWAN ASCII wind forcing file
-SWAN_NARR_name='swan_narr_Dec2003.dat';
+SWAN_NARR_name='swan_narr_Oct2012.dat';
+%SWAN_NARR_name='swan_narr_ref3_Oct2012.dat';
 
 %(4) Enter start and end dates
-wind_start = datenum('01-Dec-2003');
-wind_end   = datenum('31-Dec-2003');
+wind_start = datenum('27-Oct-2012');
+wind_end   = datenum('31-Oct-2012');
 
 %(5) Need to interpolate winds to a roms grid or a user defined grid.
 % Set one of these to a 1, the other to a 0.
-interpto_roms_grid = 0;
-interpto_user_grid = 1;
+interpto_roms_grid = 1;
+interpto_user_grid = 0;
 if (interpto_roms_grid)
-  model_grid='E:\data\Carolinas\modeling\Grids\USeast_grd19.nc';
+  model_grid='e:\data\models\COAWST\Projects\Sandy\Sandy_roms_grid.nc';
+% model_grid='e:\data\models\COAWST\Projects\Sandy\Sandy_roms_grid_ref3.nc';
 else
   lon_rho=[255:0.25:310]-360;
   lat_rho=[ 10:0.25:50 ];  % Create a 1/4 degree lat-lon grid

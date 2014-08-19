@@ -22,31 +22,31 @@
 % The TPAR files created are saved in the working directory and are named
 % generically (numbered). Any existing TPAR files will be overwritten !!!!
 %
-working_drive='d:';
-working_dir='data\models\COAWST\Tools\mfiles\swan_forc\';
+working_drive='e:';
+working_dir='data\models\COAWST\Projects\Sandy\';
 eval(['cd ',working_drive,'\',working_dir,';']);
 
 %2) Enter dates of data requested.
-yearww3='2005';    %input year of data yyyy 
-mmww3='05';        %input month of data mm
+yearww3='2012';    %input year of data yyyy 
+mmww3='10';       %input month of data mm
 ddww3='00';        %keep this as '00'
 
 %3) Enter the ww3 grid area
-ww3_area='multi_1.glo_30m';    %western north atlantic
+ww3_area='multi_1.at_10m';    %western north atlantic
 
 %4) Enter path\name of SWAN netcdf grid. This is typically the same
 % as the roms grid.
-modelgrid='D:/data/Carolinas/modeling/Grids/USeast_grd17.nc';
+modelgrid='e:/data/models/COAWST/Projects/Sandy/Sandy_roms_grid.nc';
 
 %5) Enter the spacings of TPAR file locations around the perimeter
 % of the grid. One TPAR file every 'specres' point.
 % ww3_specpoints assumes masking of 0 for land and NaN for water
-specres=20; % spec point resolution
+specres=10; % spec point resolution
 
 % flag for simulations that change month (e.g., goes from October 10 to
 % November 20)
 long_run=0;  % DEFAULT
-long_run=1;
+%long_run=1;
 if long_run
     total_number_months=2; % total number of months 
                         % (not the length of the run, but rather the number

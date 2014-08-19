@@ -36,9 +36,9 @@ end
   ny=Numy{mw};
   zz=[1:1:nx*ny];
   zz=reshape(zz,nx,ny);
-  zt=griddata(lon_rho_w{mw},lat_rho_w{mw},zz,lon_rho_w{mw+1}(2,2),lat_rho_w{mw+1}(2,2),'nearest');
+  zt=griddata(lon_rho_w{mw},lat_rho_w{mw},zz,lon_rho_w{mw+1}(1,1),lat_rho_w{mw+1}(1,1),'nearest');
   [Istr_w{mw},Jstr_w{mw}]=ind2ij(zz,zt);
-  zt=griddata(lon_rho_w{mw},lat_rho_w{mw},zz,lon_rho_w{mw+1}(end-1,end-1),lat_rho_w{mw+1}(end-1,end-1),'nearest');
+  zt=griddata(lon_rho_w{mw},lat_rho_w{mw},zz,lon_rho_w{mw+1}(end,end),lat_rho_w{mw+1}(end,end),'nearest');
   [Iend_w{mw},Jend_w{mw}]=ind2ij(zz,zt);
 end
 
@@ -64,9 +64,9 @@ for mo=1:Ngrids_roms-1
   [nx,ny]=size(mask_rho_o{mo});
   zz=[1:1:nx*ny];
   zz=reshape(zz,nx,ny);
-  zt=griddata(lon_rho_o{mo},lat_rho_o{mo},zz,lon_rho_o{mo+1}(2,2),lat_rho_o{mo+1}(2,2),'nearest');
+  zt=griddata(lon_rho_o{mo},lat_rho_o{mo},zz,lon_rho_o{mo+1}(1,1),lat_rho_o{mo+1}(1,1),'nearest');
   [Istr_o{mo},Jstr_o{mo}]=ind2ij(zz,zt);
-  zt=griddata(lon_rho_o{mo},lat_rho_o{mo},zz,lon_rho_o{mo+1}(end-1,end-1),lat_rho_o{mo+1}(end-1,end-1),'nearest');
+  zt=griddata(lon_rho_o{mo},lat_rho_o{mo},zz,lon_rho_o{mo+1}(end,end),lat_rho_o{mo+1}(end,end),'nearest');
   [Iend_o{mo},Jend_o{mo}]=ind2ij(zz,zt);
 end
 
@@ -86,9 +86,9 @@ for ma=1:Ngrids_wrf-1
   [nx,ny]=size(mask_rho_a{ma});
   zz=[1:1:nx*ny];
   zz=reshape(zz,nx,ny);
-  zt=griddata(lon_rho_a{ma},lat_rho_a{ma},zz,lon_rho_a{ma+1}(2,2),lat_rho_a{ma+1}(2,2),'nearest');
+  zt=griddata(lon_rho_a{ma},lat_rho_a{ma},zz,lon_rho_a{ma+1}(1,1),lat_rho_a{ma+1}(1,1),'nearest');
   [Istr_a{ma},Jstr_a{ma}]=ind2ij(zz,zt);
-  zt=griddata(lon_rho_a{ma},lat_rho_a{ma},zz,lon_rho_a{ma+1}(end-1,end-1),lat_rho_a{ma+1}(end-1,end-1),'nearest');
+  zt=griddata(lon_rho_a{ma},lat_rho_a{ma},zz,lon_rho_a{ma+1}(end-1,end-1),lat_rho_a{ma+1}(end,end),'nearest');
   [Iend_a{ma},Jend_a{ma}]=ind2ij(zz,zt);
 end
 
@@ -124,8 +124,11 @@ for mw=1:Ngrids_swan
     tot_mask{mw}=tot_mask{mw}+(1-mask_rho_w{mw});
     if(sum(1-tot_mask{mw}(:))~=0)
       disp('had to adjust totmask for O1src_W1dst')
-      zz=find(tot_mask{mw}==0);
+      zz=find(tot_mask{mw}~=1);
       eval(['O1src_W',num2str(mw),'dst(zz)=1;'])
+      for mo=2:Ngrids_roms
+        eval(['O',num2str(mo),'src_W',num2str(mw),'dst(zz)=0;'])
+      end
       tot_mask{mw}(zz)=1;
     end
 end
@@ -137,18 +140,15 @@ for mw=1:Ngrids_swan
     subplot(1,Ngrids_roms+2,mo)
     eval(['dst=O',num2str(mo),'src_W',num2str(mw),'dst;'])
     pcolorjw(lon_rho_w{mw},lat_rho_w{mw},dst)
-    caxis([0 1])
     title(['mask from OCN grid ',num2str(mo)])
     colorbar
   end
   subplot(1,Ngrids_roms+2,Ngrids_roms+1)
     pcolorjw(lon_rho_w{mw},lat_rho_w{mw},1-mask_rho_w{mw})
-    caxis([0 1])
     title(['Landmask in SWAN grid ',num2str(mw)])
     colorbar
   subplot(1,Ngrids_roms+2,Ngrids_roms+2)
     pcolorjw(lon_rho_w{mw},lat_rho_w{mw},tot_mask{mw})
-    caxis([0 1])
     title(['TOTAL masking for SWAN grid ',num2str(mw)])
     colorbar
   set(gcf,'name',['SWAN grid ',num2str(mw),' destination masks'])
@@ -186,8 +186,11 @@ for mo=1:Ngrids_roms
     tot_mask{mo}=tot_mask{mo}+(1-mask_rho_o{mo});
     if(sum(1-tot_mask{mo}(:))~=0)
       disp(['had to adjust totmask for W1src_O',num2str(mo),'dst'])
-      zz=find(tot_mask{mo}==0);
+      zz=find(tot_mask{mo}~=1);
       eval(['W1src_O',num2str(mo),'dst(zz)=1;'])
+      for mw=2:Ngrids_swan
+        eval(['W',num2str(mw),'src_O',num2str(mo),'dst(zz)=0;'])
+      end
       tot_mask{mo}(zz)=1;
     end
 end
@@ -199,18 +202,15 @@ for mo=1:Ngrids_roms
     subplot(1,Ngrids_swan+2,mw)
     eval(['dst=W',num2str(mw),'src_O',num2str(mo),'dst;'])
     pcolorjw(lon_rho_o{mo},lat_rho_o{mo},dst)
-    caxis([0 1])
     title(['mask from SWAN grid ',num2str(mw)])
     colorbar
   end
   subplot(1,Ngrids_swan+2,Ngrids_swan+1)
     pcolorjw(lon_rho_o{mo},lat_rho_o{mo},1-mask_rho_o{mo})
-    caxis([0 1])
     title(['Landmask in OCN grid ',num2str(mo)])
     colorbar
   subplot(1,Ngrids_swan+2,Ngrids_swan+2)
     pcolorjw(lon_rho_o{mo},lat_rho_o{mo},tot_mask{mo})
-    caxis([0 1])
     title(['TOTAL masking for OCN grid ',num2str(mo)])
     colorbar
     set(gcf,'name',['ROMS grid ',num2str(mo),' destination masks'])
@@ -249,8 +249,11 @@ for mo=1:Ngrids_roms
     tot_mask{mo}=tot_mask{mo}+(1-mask_rho_o{mo});
     if(sum(1-tot_mask{mo}(:))~=0)
       disp('had to adjust totmask for A1src_O1dst')
-      zz=find(tot_mask{mo}==0);
+      zz=find(tot_mask{mo}~=1);
       eval(['A1src_O',num2str(mo),'dst(zz)=1;'])
+      for ma=2:Ngrids_wrf
+        eval(['A',num2str(ma),'src_O',num2str(mo),'dst(zz)=0;'])
+      end
       tot_mask{mo}(zz)=1;
     end
 end
@@ -262,18 +265,15 @@ for mo=1:Ngrids_roms
     subplot(1,Ngrids_wrf+2,ma)
     eval(['dst=A',num2str(ma),'src_O',num2str(mo),'dst;'])
     pcolorjw(lon_rho_o{mo},lat_rho_o{mo},dst)
-    caxis([0 1])
     title(['mask from WRF grid ',num2str(ma)])
     colorbar
   end
   subplot(1,Ngrids_wrf+2,Ngrids_wrf+1)
     pcolorjw(lon_rho_o{mo},lat_rho_o{mo},1-mask_rho_o{mo})
-    caxis([0 1])
     title(['Landmask in ROMS grid ',num2str(mo)])
     colorbar
   subplot(1,Ngrids_wrf+2,Ngrids_wrf+2)
     pcolorjw(lon_rho_o{mo},lat_rho_o{mo},tot_mask{mo})
-    caxis([0 1])
     title(['TOTAL masking for ROMS grid ',num2str(mo)])
     colorbar
   set(gcf,'name',['ROMS grid ',num2str(mo),' destination masks'])
@@ -321,8 +321,11 @@ for ma=1:Ngrids_wrf
     tot_mask{ma}=tot_mask{ma}+cplmask{ma};
     if(sum(1-tot_mask{ma}(:))~=0)
       disp(['had to adjust totmask for O1src_A',num2str(ma),'dst'])
-      zz=find(tot_mask{ma}==0);
+      zz=find(tot_mask{ma}~=1);
       eval(['O1src_A',num2str(ma),'dst(zz)=1;'])
+      for mo=2:Ngrids_roms
+        eval(['O',num2str(mo),'src_A',num2str(ma),'dst(zz)=0;'])
+      end
       tot_mask{ma}(zz)=1;
     end
 end
@@ -334,18 +337,15 @@ for ma=1:Ngrids_wrf
     subplot(1,Ngrids_roms+2,mo)
     eval(['dst=O',num2str(mo),'src_A',num2str(ma),'dst;'])
     pcolorjw(lon_rho_a{ma},lat_rho_a{ma},dst)
-    caxis([0 1])
     title(['mask from ROMS grid ',num2str(mo)])
     colorbar
   end
   subplot(1,Ngrids_roms+2,Ngrids_roms+1)
     pcolorjw(lon_rho_a{ma},lat_rho_a{ma},cplmask{ma})
-    caxis([0 1])
     title(['CPLMASK in ATM grid ',num2str(ma)])
     colorbar
   subplot(1,Ngrids_roms+2,Ngrids_roms+2)
     pcolorjw(lon_rho_a{ma},lat_rho_a{ma},tot_mask{ma})
-    caxis([0 1])
     title(['TOTAL masking for WRF grid ',num2str(ma)])
     colorbar
   set(gcf,'name',['WRF grid ',num2str(ma),' destination masks'])
@@ -384,8 +384,11 @@ for mw=1:Ngrids_swan
     tot_mask{mw}=tot_mask{mw}+(1-mask_rho_w{mw});
     if(sum(1-tot_mask{mw}(:))~=0)
       disp('had to adjust totmask for A1src_W1dst')
-      zz=find(tot_mask{mw}==0);
+      zz=find(tot_mask{mw}~=1);
       eval(['A1src_W',num2str(mw),'dst(zz)=1;'])
+      for ma=2:Ngrids_wrf
+        eval(['A',num2str(ma),'src_W',num2str(mw),'dst(zz)=0;'])
+      end
       tot_mask{mw}(zz)=1;
     end
 end
@@ -397,18 +400,15 @@ for mw=1:Ngrids_swan
     subplot(1,Ngrids_wrf+2,ma)
     eval(['dst=A',num2str(ma),'src_W',num2str(mw),'dst;'])
     pcolorjw(lon_rho_w{mw},lat_rho_w{mw},dst)
-    caxis([0 1])
     title(['mask from WRF grid ',num2str(ma)])
     colorbar
   end
   subplot(1,Ngrids_wrf+2,Ngrids_wrf+1)
     pcolorjw(lon_rho_w{mw},lat_rho_w{mw},1-mask_rho_w{mw})
-    caxis([0 1])
     title(['Landmask in SWAN grid ',num2str(mw)])
     colorbar
   subplot(1,Ngrids_wrf+2,Ngrids_wrf+2)
     pcolorjw(lon_rho_w{mw},lat_rho_w{mw},tot_mask{mw})
-    caxis([0 1])
     title(['TOTAL masking for SWAN grid ',num2str(mw)])
     colorbar
   set(gcf,'name',['SWAN grid ',num2str(mw),' destination masks'])
@@ -453,8 +453,11 @@ for ma=1:Ngrids_wrf
     tot_mask{ma}=tot_mask{ma}+cplmask{ma};
     if(sum(1-tot_mask{ma}(:))~=0)
       disp(['had to adjust totmask for W1src_A',num2str(ma),'dst'])
-      zz=find(tot_mask{ma}==0);
+      zz=find(tot_mask{ma}~=1);
       eval(['W1src_A',num2str(ma),'dst(zz)=1;'])
+      for mw=2:Ngrids_swan
+        eval(['W',num2str(mw),'src_A',num2str(ma),'dst(zz)=0;'])
+      end
       tot_mask{ma}(zz)=1;
     end
 end
@@ -466,18 +469,15 @@ for ma=1:Ngrids_wrf
     subplot(1,Ngrids_swan+2,mw)
     eval(['dst=W',num2str(mw),'src_A',num2str(ma),'dst;'])
     pcolorjw(lon_rho_a{ma},lat_rho_a{ma},dst)
-    caxis([0 1])
     title(['mask from SWAN grid ',num2str(mw)])
     colorbar
   end
   subplot(1,Ngrids_swan+2,Ngrids_swan+1)
     pcolorjw(lon_rho_a{ma},lat_rho_a{ma},cplmask{ma})
-    caxis([0 1])
     title(['CPLMASK in ATM grid ',num2str(ma)])
     colorbar
   subplot(1,Ngrids_swan+2,Ngrids_swan+2)
     pcolorjw(lon_rho_a{ma},lat_rho_a{ma},tot_mask{ma})
-    caxis([0 1])
     title(['TOTAL masking for WRF grid ',num2str(ma)])
     colorbar
   set(gcf,'name',['WRF grid ',num2str(ma),' destination masks'])
