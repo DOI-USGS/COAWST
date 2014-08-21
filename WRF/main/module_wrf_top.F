@@ -133,6 +133,7 @@ CONTAINS
 #endif
 #include "version_decl"
 
+
 !<DESCRIPTION>
 ! Program_name, a global variable defined in frame/module_domain.F, is
 ! set, then a routine <a href=init_modules.html>init_modules</a> is
@@ -343,6 +344,7 @@ CONTAINS
                                      grid       = head_grid ,          &
                                      parent     = null_domain ,        &
                                      kid        = -1                   )
+
    CALL       wrf_debug ( 100 , 'wrf: calling model_to_grid_config_rec ' )
    CALL model_to_grid_config_rec ( head_grid%id , model_config_rec , config_flags )
    CALL       wrf_debug ( 100 , 'wrf: calling set_scalar_indices_from_config ' )

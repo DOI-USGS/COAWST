@@ -20,21 +20,21 @@ IPLOT=0;            % 1 to make plots, 0 for no plots
 IWRITE=1;           % 1 to write output to netcdf, 0 for no output
 
 % (1) Specify existing Grid File and new tide Forcing Files 
-      Gname='E:\data\Carolinas\modeling\bc_ic\USeast_grd15.nc';
-      Fname='tide_forc_USeast_grd16_adcirc_train.nc';
+      Gname='C:\work\models\COAWST\Projects\Sandy2\Sandy_roms_grid.nc';
+      Fname='tide_forc_Sandy.nc';
 
 % (2) Enter ROMS start time.  This will be used to calculate the proper phase
 %     for the tidal constituents.  If you change the start time, this routine
 %     must be run again to adjust the tidal phases. 
 %            YYYY   MO   DA    HR     MI    SC
-      g = [  2003,  08,  15,   0,     0,    0];   % us east
+      g = [  2012,  10,  28,   0,     0,    0];   % us east
       disp(['Tidal Start Time =' datestr(g)])
 
 % (3) Select Adcirc or topex/osu tidal constituent data 
       adcirc=1
       osu=0
       if (adcirc)
-        load COAWST_data\tide\adcirc_ec2001v2e_fix.mat tri lon lat u v elev depth periods freq names
+        load c:\work\models\COAWST_data\tide\adcirc_ec2001v2e_fix.mat tri lon lat u v elev depth periods freq names
         names=names';
       end
       if (osu)

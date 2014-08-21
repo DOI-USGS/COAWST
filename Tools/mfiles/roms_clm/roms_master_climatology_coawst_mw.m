@@ -72,8 +72,8 @@ updatinit_coawst_mw(fn,gn,'coawst_ini.nc',wdr,T1)
 %% Call to create the long climatology (clm) file
 if numdays>1
     disp('going to create more days of clm and bnd files')
-    eval(['!cp coawst_clm.nc coawst_clm_',datestr(T1,'yyyymmdd'),'.nc'])
-    eval(['!cp coawst_bdy.nc coawst_bdy_',datestr(T1,'yyyymmdd'),'.nc'])
+    eval(['!copy coawst_clm.nc coawst_clm_',datestr(T1,'yyyymmdd'),'.nc'])
+    eval(['!copy coawst_bdy.nc coawst_bdy_',datestr(T1,'yyyymmdd'),'.nc'])
     for it=dayFrequency:dayFrequency:numdays-1      %1st day already created, NEED to set number of days at top!
         fname=['coawst_clm_',datestr(T1+it,'yyyymmdd'),'.nc']
         fn=updatclim_coawst_mw(T1+it,gn,fname,wdr,url)

@@ -15,7 +15,7 @@ MODULE module_sf_noahdrv
   USE module_sf_noahlsm_glacial_only, only: sflx_glacial
   USE module_sf_bep,      only: bep
   USE module_sf_bep_bem,  only: bep_bem
-#ifdef WRF_CHEM
+#if ( WRF_CHEM == 1 )
   USE module_data_gocart_dust
 #endif
 !-------------------------------
@@ -1555,15 +1555,18 @@ CONTAINS
      CALL  SOIL_VEG_GEN_PARM( MMINLU, MMINSL )
    ENDIF
 
-#ifdef WRF_CHEM
-!
-! need this parameter for dust parameterization in wrf/chem
-!
-   do I=1,NSLTYPE
-      porosity(i)=maxsmc(i)
-      drypoint(i)=drysmc(i)
-   enddo
-#endif
+! GAC-->
+! 20130219 - No longer need these - see module_data_gocart_dust
+!#if ( WRF_CHEM == 1 )
+!!
+!! need this parameter for dust parameterization in wrf/chem
+!!
+!   do I=1,NSLTYPE
+!      porosity(i)=maxsmc(i)
+!      drypoint(i)=drysmc(i)
+!   enddo
+!#endif
+! <--GAC
 
    IF(.not.restart)THEN
 
