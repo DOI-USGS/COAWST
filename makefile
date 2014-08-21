@@ -599,6 +599,7 @@ ifdef USE_WRF
 	cd $(WRF_DIR); ls;                                        \
 	echo " "; echo " ";                                       \
 	echo "Compiling wrf";                                     \
+	./configure;                                              \
 	./compile em_real;                                        \
 	echo "";                                                  \
 	echo "-------- Finished compiling WRF ------------"
