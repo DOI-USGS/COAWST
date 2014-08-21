@@ -18,8 +18,8 @@
 %%%%%%%%%%%%%%%%%%%%%   START OF USER INPUT  %%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %(1) enter path and names of NARR wind netcdf files:
-ncu = netcdf.open('e:\data\models\COAWST\Projects\Sandy\uwnd.10m.2012.nc','NC_NOWRITE');
-ncv = netcdf.open('e:\data\models\COAWST\Projects\Sandy\vwnd.10m.2012.nc','NC_NOWRITE');
+ncu = netcdf.open('uwnd.10m.2012.nc','NC_NOWRITE');
+ncv = netcdf.open('vwnd.10m.2012.nc','NC_NOWRITE');
 
 %(2) Enter name of output ROMS netcdf wind forcing file
 ROMS_NARR_name='roms_narr_Oct2012.nc';
@@ -38,7 +38,7 @@ wind_end   = datenum('31-Oct-2012');
 interpto_roms_grid = 1;
 interpto_user_grid = 0;
 if (interpto_roms_grid)
-  model_grid='e:\data\models\COAWST\Projects\Sandy\Sandy_roms_grid.nc';
+  model_grid='Sandy_roms_grid.nc';
 % model_grid='e:\data\models\COAWST\Projects\Sandy\Sandy_roms_grid_ref3.nc';
 else
   lon_rho=[255:0.25:310]-360;
