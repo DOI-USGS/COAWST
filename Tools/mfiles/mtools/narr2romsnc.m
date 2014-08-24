@@ -22,12 +22,12 @@ ncu = netcdf.open('uwnd.10m.2012.nc','NC_NOWRITE');
 ncv = netcdf.open('vwnd.10m.2012.nc','NC_NOWRITE');
 
 %(2) Enter name of output ROMS netcdf wind forcing file
-%ROMS_NARR_name='roms_narr_Oct2012.nc';
-ROMS_NARR_name='roms_narr_ref3_Oct2012.nc';
+ROMS_NARR_name='roms_narr_Oct2012.nc';
+%ROMS_NARR_name='roms_narr_ref3_Oct2012.nc';
 
 %(3) Enter name of output SWAN ASCII wind forcing file
-%SWAN_NARR_name='swan_narr_Oct2012.dat';
-SWAN_NARR_name='swan_narr_ref3_Oct2012.dat';
+SWAN_NARR_name='swan_narr_Oct2012.dat';
+%SWAN_NARR_name='swan_narr_ref3_Oct2012.dat';
 
 %(4) Enter start and end dates
 wind_start = datenum('27-Oct-2012');
@@ -38,8 +38,8 @@ wind_end   = datenum('31-Oct-2012');
 interpto_roms_grid = 1;
 interpto_user_grid = 0;
 if (interpto_roms_grid)
-%  model_grid='Sandy_roms_grid.nc';
- model_grid='Sandy_roms_grid_ref3.nc';
+  model_grid='Sandy_roms_grid.nc';
+% model_grid='Sandy_roms_grid_ref3.nc';
 else
   lon_rho=[255:0.25:310]-360;
   lat_rho=[ 10:0.25:50 ];  % Create a 1/4 degree lat-lon grid

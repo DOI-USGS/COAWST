@@ -36,9 +36,9 @@ end
   ny=Numy{mw};
   zz=[1:1:nx*ny];
   zz=reshape(zz,nx,ny);
-  zt=griddata(lon_rho_w{mw},lat_rho_w{mw},zz,lon_rho_w{mw+1}(1,1),lat_rho_w{mw+1}(1,1),'nearest');
+  zt=griddata(lon_rho_w{mw},lat_rho_w{mw},zz,lon_rho_w{mw+1}(2,2),lat_rho_w{mw+1}(2,2),'nearest');
   [Istr_w{mw},Jstr_w{mw}]=ind2ij(zz,zt);
-  zt=griddata(lon_rho_w{mw},lat_rho_w{mw},zz,lon_rho_w{mw+1}(end,end),lat_rho_w{mw+1}(end,end),'nearest');
+  zt=griddata(lon_rho_w{mw},lat_rho_w{mw},zz,lon_rho_w{mw+1}(end-1,end-1),lat_rho_w{mw+1}(end-1,end-1),'nearest');
   [Iend_w{mw},Jend_w{mw}]=ind2ij(zz,zt);
 end
 
@@ -64,9 +64,9 @@ for mo=1:Ngrids_roms-1
   [nx,ny]=size(mask_rho_o{mo});
   zz=[1:1:nx*ny];
   zz=reshape(zz,nx,ny);
-  zt=griddata(lon_rho_o{mo},lat_rho_o{mo},zz,lon_rho_o{mo+1}(1,1),lat_rho_o{mo+1}(1,1),'nearest');
+  zt=griddata(lon_rho_o{mo},lat_rho_o{mo},zz,lon_rho_o{mo+1}(2,2),lat_rho_o{mo+1}(2,2),'nearest');
   [Istr_o{mo},Jstr_o{mo}]=ind2ij(zz,zt);
-  zt=griddata(lon_rho_o{mo},lat_rho_o{mo},zz,lon_rho_o{mo+1}(end,end),lat_rho_o{mo+1}(end,end),'nearest');
+  zt=griddata(lon_rho_o{mo},lat_rho_o{mo},zz,lon_rho_o{mo+1}(end-1,end-1),lat_rho_o{mo+1}(end-1,end-1),'nearest');
   [Iend_o{mo},Jend_o{mo}]=ind2ij(zz,zt);
 end
 
@@ -86,9 +86,9 @@ for ma=1:Ngrids_wrf-1
   [nx,ny]=size(mask_rho_a{ma});
   zz=[1:1:nx*ny];
   zz=reshape(zz,nx,ny);
-  zt=griddata(lon_rho_a{ma},lat_rho_a{ma},zz,lon_rho_a{ma+1}(1,1),lat_rho_a{ma+1}(1,1),'nearest');
+  zt=griddata(lon_rho_a{ma},lat_rho_a{ma},zz,lon_rho_a{ma+1}(2,2),lat_rho_a{ma+1}(2,2),'nearest');
   [Istr_a{ma},Jstr_a{ma}]=ind2ij(zz,zt);
-  zt=griddata(lon_rho_a{ma},lat_rho_a{ma},zz,lon_rho_a{ma+1}(end-1,end-1),lat_rho_a{ma+1}(end,end),'nearest');
+  zt=griddata(lon_rho_a{ma},lat_rho_a{ma},zz,lon_rho_a{ma+1}(end-1,end-1),lat_rho_a{ma+1}(end-1,end-1),'nearest');
   [Iend_a{ma},Jend_a{ma}]=ind2ij(zz,zt);
 end
 

@@ -32,7 +32,8 @@ end
 clear time;
 
 % get user times
-[junk,tid1,ib]=intersect(tg,T1);
+%[junk,tid1,ib]=intersect(tg,T1);
+[junk,tid1,ib]=intersect(tg,floor(T1)); %modify to be nearest jcw 23Aug2014
 if tid1
 else
     tid1=length(tg);
