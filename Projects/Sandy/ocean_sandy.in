@@ -876,10 +876,10 @@ Dout(iTvdif) == F F     ! temp_vdiff, ...    vertical diffusion
 
 ! Input NetCDF file names, [1:Ngrids].
 
-     GRDNAME == Projects/Sandy2/Sandy_roms_grid.nc \
-                Projects/Sandy2/Sandy_roms_grid_ref3.nc
-     ININAME == Projects/Sandy2/Sandy_ini.nc \
-                Projects/Sandy2/Sandy_ini_ref3.nc
+     GRDNAME == Projects/Sandy/Sandy_roms_grid.nc \
+                Projects/Sandy/Sandy_roms_grid_ref3.nc
+     ININAME == Projects/Sandy/Sandy_ini.nc \
+                Projects/Sandy/Sandy_ini_ref3.nc
      ITLNAME == ocean_itl.nc
      IRPNAME == ocean_irp.nc
      IADNAME == ocean_iad.nc
@@ -890,7 +890,7 @@ Dout(iTvdif) == F F     ! temp_vdiff, ...    vertical diffusion
 ! NetCDF file is special and complex. It is currently generated using
 ! the script "matlab/grid/contact.m" from the Matlab repository.
 
-     NGCNAME =  Projects/Sandy2/Sandy_roms_contact.nc
+     NGCNAME =  Projects/Sandy/Sandy_roms_contact.nc
 
 ! Input lateral boundary conditions and climatology file names.  The
 ! USER has the option to split input data time records into several
@@ -902,7 +902,7 @@ Dout(iTvdif) == F F     ! temp_vdiff, ...    vertical diffusion
      CLMNAME == ocean_clm.nc
 
      NBCFILES == 1                          ! number of boundary files
-     BRYNAME == Projects/Sandy2/Sandy_bdy.nc
+     BRYNAME == Projects/Sandy/Sandy_bdy.nc
 
 ! Input climatology nudging coefficients file name.
 
@@ -924,9 +924,10 @@ Dout(iTvdif) == F F     ! temp_vdiff, ...    vertical diffusion
 ! per entry with a continuation (\) or vertical bar (|) symbol after each
 ! entry, except the last one.
 
-     NFFILES == 1                          ! number of unique forcing files
+     NFFILES == 1 1                        ! number of unique forcing files
 
-     FRCNAME == ocean_frc.nc               ! forcing file 1, grid 1
+     FRCNAME == Projects/Sandy/roms_narr_Oct2012.nc \
+                Projects/Sandy/roms_narr_ref3_Oct2012.nc   ! forcing file 1, grid 1
 
 ! Output NetCDF file names, [1:Ngrids].
 

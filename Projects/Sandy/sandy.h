@@ -59,17 +59,16 @@
 
 /* Grid and Initial */
 # define MASKING
-# undef NO_MASK_TEMP        /* JBZ 28 Jan 09, undefined */
 
 /* Forcing */
 # ifdef WRF_MODEL
-#  undef BULK_FLUXES
+#  undef  BULK_FLUXES
 #  define ATM2OCN_FLUXES
 #  define ANA_SSFLUX
-#  undef LONGWAVE_OUT
+#  undef  LONGWAVE_OUT
 #  define ATM_PRESS
 # else
-#  undef  ANA_SMFLUX
+#  define ANA_SMFLUX
 #  define ANA_STFLUX
 #  define ANA_SSFLUX
 # endif
