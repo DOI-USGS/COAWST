@@ -1437,7 +1437,7 @@
 ! array for DEPTH and computational array COMPDA. Only insert
 ! active (wet points) using array KGRPNT.
 !
-# ifdef WAVES_OCEAN
+# if defined WAVES_OCEAN && defined SED_MORPH
 ! Insert depth into SWAN array.
 ! Here the depth is really the bottom level. 
 ! When the user requests depth for output, that value is written
@@ -1510,22 +1510,26 @@
 #  else
               COMPDA(INDX,JFRC2)=cff2
 #  endif
-              cff=TEMPMCT(IP,iddep)+TEMPMCT(IP,idwlv)
-              IF (cff.gt.0.) THEN
+!             cff=TEMPMCT(IP,iddep)+TEMPMCT(IP,idwlv)
+!             IF (cff.gt.0.) THEN
                 IF (io.eq.1) THEN
+#  ifdef SED_MORPH
                   COMPDA(INDX,JBOTLV)=TEMPMCT(IP,iddep)
+#  endif
                   COMPDA(INDX,JWLV2)=TEMPMCT(IP,idwlv)
                   COMPDA(INDX,JVX2)=TEMPMCT(IP,idvlx)
                   COMPDA(INDX,JVY2)=TEMPMCT(IP,idvly)
                 ELSE
+#  ifdef SED_MORPH
                   COMPDA(INDX,JBOTLV)=COMPDA(INDX,JBOTLV)+              &
      &                                TEMPMCT(IP,iddep)
+#  endif
                   COMPDA(INDX,JWLV2)=COMPDA(INDX,JWLV2)+                &
      &                               TEMPMCT(IP,idwlv)
                   COMPDA(INDX,JVX2)=COMPDA(INDX,JVX2)+TEMPMCT(IP,idvlx)
                   COMPDA(INDX,JVY2)=COMPDA(INDX,JVY2)+TEMPMCT(IP,idvly)
                 END IF
-              END IF
+!             END IF
 # endif
             END IF
           END DO
