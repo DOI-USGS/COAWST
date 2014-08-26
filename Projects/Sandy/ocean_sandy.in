@@ -146,21 +146,21 @@ GridsInLayer =  1 1
 !
 !                   1       2       3       4
 
-   LBC(isFsur) ==   Gra     Cha     Gra     Clo \       ! free-surface
+   LBC(isFsur) ==   Gra     Cha     Gra     Gra \       ! free-surface
                     Nes     Nes     Nes     Nes
-   LBC(isUbar) ==   Gra     Fla     Gra     Clo \       ! 2D U-momentum
+   LBC(isUbar) ==   Gra     Fla     Fla     Gra \       ! 2D U-momentum
                     Nes     Nes     Nes     Nes
-   LBC(isVbar) ==   Gra     Fla     Gra     Clo \       ! 2D V-momentum
+   LBC(isVbar) ==   Gra     Fla     Fla     Gra \       ! 2D V-momentum
                     Nes     Nes     Nes     Nes
-   LBC(isUvel) ==   Gra     Cla     Gra     Gra \       ! 3D U-momentum
+   LBC(isUvel) ==   Gra     RadNud  Gra     Gra \       ! 3D U-momentum
                     Nes     Nes     Nes     Nes
    LBC(isVvel) ==   Gra     RadNud  Gra     Gra \       ! 3D V-momentum
                     Nes     Nes     Nes     Nes
-   LBC(isMtke) ==   Gra     Gra     Gra     Clo \       ! mixing TKE
+   LBC(isMtke) ==   Gra     Gra     Gra     Gra \       ! mixing TKE
                     Nes     Nes     Nes     Nes
 
-   LBC(isTvar) ==   Gra     RadNud  RadNud  Clo \       ! temperature
-                    Gra     RadNud  RadNud  Clo         ! salinity
+   LBC(isTvar) ==   Gra     RadNud  RadNud  Gra \       ! temperature
+                    Gra     RadNud  RadNud  Gra         ! salinity
                     Nes     Nes     Nes     Nes \
                     Nes     Nes     Nes     Nes
 
