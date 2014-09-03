@@ -65,7 +65,7 @@
      &                            FORCES(ng) % Dwave,                   &
      &                            FORCES(ng) % Lwave,                   &
      &                            FORCES(ng) % Dissip_break,            &
-# ifdef ROLLER_SVENDSEN || ROLLER_MONO
+# if defined ROLLER_SVENDSEN || ROLLER_MONO
      &                            FORCES(ng) % Wave_break,              &
 # endif
      &                            FORCES(ng) % Dissip_roller,           &
@@ -87,7 +87,7 @@
      &                                  ubar, vbar, zeta,               &
      &                                  Hwave, Dwave, Lwave,            &
      &                                  Dissip_break,                   &
-# ifdef ROLLER_SVENDSEN || ROLLER_MONO
+# if defined ROLLER_SVENDSEN || ROLLER_MONO
      &                                  Wave_break,                     &
 # endif                                   
      &                                  Dissip_roller,                  &
@@ -125,7 +125,7 @@
       real(r8), intent(in) :: Dwave(LBi:,LBj:)
       real(r8), intent(in) :: Lwave(LBi:,LBj:)
       real(r8), intent(in) :: Dissip_break(LBi:,LBj:)
-#  ifdef ROLLER_SVENDSEN || ROLLER_MONO
+#  if defined ROLLER_SVENDSEN || ROLLER_MONO
       real(r8), intent(in) :: Wave_break(LBi:,LBj:)
 #  endif
       real(r8), intent(inout) :: Dissip_roller(LBi:,LBj:)
@@ -147,7 +147,7 @@
       real(r8), intent(in) :: Dwave(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: Lwave(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: Dissip_break(LBi:UBi,LBj:UBj)
-#  ifdef ROLLER_SVENDSEN || ROLLER_MONO
+#  if defined ROLLER_SVENDSEN || ROLLER_MONO
       real(r8), intent(in) :: Wave_break(LBi:UBi,LBj:UBj)
 #  endif
       real(r8), intent(inout) :: Dissip_roller(LBi:UBi,LBj:UBj)

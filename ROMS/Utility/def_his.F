@@ -1559,7 +1559,7 @@
           END IF
         END DO
 
-# ifdef BULK_FLUXES || defined ATM2OCN_FLUXES
+# if defined BULK_FLUXES || defined ATM2OCN_FLUXES
 !
 !  Define latent heat flux.
 !
