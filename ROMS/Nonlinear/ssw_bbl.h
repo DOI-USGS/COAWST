@@ -639,7 +639,7 @@
         DO i=IstrU,Iend
           anglec=Ur_sg(i,j)/(0.5*(Umag(i-1,j)+Umag(i,j)))
           bustr(i,j)=0.5_r8*(Tauc(i-1,j)+Tauc(i,j))*anglec
-#  ifdef LIMIT_BSTRESS
+#  ifdef WET_DRY
           cff2=0.75_r8*0.5_r8*(z_w(i-1,j,1)+z_w(i,j,1)-                 &
      &                         z_w(i-1,j,0)-z_w(i,j,0))
           bustr(i,j)=SIGN(1.0_r8,bustr(i,j))*MIN(ABS(bustr(i,j)),       &
@@ -651,7 +651,7 @@
         DO i=Istr,Iend
           anglec=Vr_sg(i,j)/(0.5_r8*(Umag(i,j-1)+Umag(i,j)))
           bvstr(i,j)=0.5_r8*(Tauc(i,j-1)+Tauc(i,j))*anglec
-#  ifdef LIMIT_BSTRESS
+#  ifdef WET_DRY
           cff2=0.75_r8*0.5_r8*(z_w(i,j-1,1)+z_w(i,j,1)-                 &
      &                         z_w(i,j-1,0)-z_w(i,j,0))
           bvstr(i,j)=SIGN(1.0_r8,bvstr(i,j))*MIN(ABS(bvstr(i,j)),       &

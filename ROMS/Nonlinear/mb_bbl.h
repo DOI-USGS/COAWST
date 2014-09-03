@@ -584,12 +584,24 @@
         DO i=IstrU,Iend
           angleC=Ur_mb(i,j)/(0.5*(Umag(i-1,j)+Umag(i,j)))
           bustr(i,j)=0.5_r8*(tauCW(i-1,j)+tauCW(i,j))*angleC
+# ifdef WET_DRY
+          cff2=0.75_r8*0.5_r8*(z_w(i-1,j,1)+z_w(i,j,1)-                 &
+     &                         z_w(i-1,j,0)-z_w(i,j,0))
+          bustr(i,j)=SIGN(1.0_r8,bustr(i,j))*MIN(ABS(bustr(i,j)),       &
+     &               ABS(u(i,j,1,nrhs))*cff2/dt(ng))
+# endif
         END DO
       END DO
       DO j=JstrV,Jend
         DO i=Istr,Iend
           angleC=Vr_mb(i,j)/(0.5_r8*(Umag(i,j-1)+Umag(i,j)))
           bvstr(i,j)=0.5_r8*(tauCW(i,j-1)+tauCW(i,j))*angleC
+# ifdef WET_DRY
+          cff2=0.75_r8*0.5_r8*(z_w(i,j-1,1)+z_w(i,j,1)-                 &
+     &                         z_w(i,j-1,0)-z_w(i,j,0))
+          bvstr(i,j)=SIGN(1.0_r8,bvstr(i,j))*MIN(ABS(bvstr(i,j)),       &
+     &               ABS(v(i,j,1,nrhs))*cff2/dt(ng))
+# endif
         END DO
       END DO
       DO j=Jstr,Jend

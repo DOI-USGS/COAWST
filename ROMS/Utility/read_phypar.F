@@ -1392,7 +1392,7 @@
                 RETURN
               END IF
               Npts=load_l(Nval, Cval, Ngrids, Hout(idVbms,:))
-#ifdef BBL
+#ifdef BBL_MODEL
             CASE ('Hout(idUbrs)')
               IF (idUbrs.eq.0) THEN
                 IF (Master) WRITE (out,280) 'idUbrs'
@@ -2326,7 +2326,7 @@
               Npts=load_l(Nval, Cval, Ngrids, Aout(idUbms,:))
             CASE ('Aout(idVbms)')
               Npts=load_l(Nval, Cval, Ngrids, Aout(idVbms,:))
-# ifdef BBL
+# ifdef BBL_MODEL
             CASE ('Aout(idUbrs)')
               Npts=load_l(Nval, Cval, Ngrids, Aout(idUbrs,:))
             CASE ('Aout(idVbrs)')

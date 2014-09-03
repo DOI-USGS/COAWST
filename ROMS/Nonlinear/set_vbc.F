@@ -806,7 +806,7 @@
 !  Set kinematic bottom momentum flux (m2/s2).
 !-----------------------------------------------------------------------
 
-#   ifdef LIMIT_BSTRESS
+#   ifdef WET_DRY
 !
 !  Set limiting factor for bottom stress. The bottom stress is adjusted
 !  to not change the direction of momentum.  It only should slow down
@@ -835,7 +835,7 @@
           cff2=SQRT(u(i,j,1,nrhs)*u(i,j,1,nrhs)+cff1*cff1)
           bustr(i,j)=0.5_r8*(wrk(i-1,j)+wrk(i,j))*                      &
      &               u(i,j,1,nrhs)*cff2
-#    ifdef LIMIT_BSTRESS
+#    ifdef WET_DRY
           cff3=cff*0.5_r8*(Hz(i-1,j,1)+Hz(i,j,1))
           bustr(i,j)=SIGN(1.0_r8, bustr(i,j))*                          &
      &               MIN(ABS(bustr(i,j)),                               &
@@ -852,7 +852,7 @@
           cff2=SQRT(cff1*cff1+v(i,j,1,nrhs)*v(i,j,1,nrhs))
           bvstr(i,j)=0.5_r8*(wrk(i,j-1)+wrk(i,j))*                      &
      &               v(i,j,1,nrhs)*cff2
-#    ifdef LIMIT_BSTRESS
+#    ifdef WET_DRY
           cff3=cff*0.5_r8*(Hz(i,j-1,1)+Hz(i,j,1))
           bvstr(i,j)=SIGN(1.0_r8, bvstr(i,j))*                          &
      &               MIN(ABS(bvstr(i,j)),                               &
@@ -873,7 +873,7 @@
           cff2=SQRT(u(i,j,1,nrhs)*u(i,j,1,nrhs)+cff1*cff1)
           bustr(i,j)=0.5_r8*(rdrag2(i-1,j)+rdrag2(i,j))*                &
      &               u(i,j,1,nrhs)*cff2
-#    ifdef LIMIT_BSTRESS
+#    ifdef WET_DRY
           cff3=cff*0.5_r8*(Hz(i-1,j,1)+Hz(i,j,1))
           bustr(i,j)=SIGN(1.0_r8, bustr(i,j))*                          &
      &               MIN(ABS(bustr(i,j)),                               &
@@ -890,7 +890,7 @@
           cff2=SQRT(cff1*cff1+v(i,j,1,nrhs)*v(i,j,1,nrhs))
           bvstr(i,j)=0.5_r8*(rdrag2(i,j-1)+rdrag2(i,j))*                &
      &               v(i,j,1,nrhs)*cff2
-#    ifdef LIMIT_BSTRESS
+#    ifdef WET_DRY
           cff3=cff*0.5_r8*(Hz(i,j-1,1)+Hz(i,j,1))
           bvstr(i,j)=SIGN(1.0_r8, bvstr(i,j))*                          &
      &               MIN(ABS(bvstr(i,j)),                               &
@@ -906,7 +906,7 @@
         DO i=IstrU,Iend
           bustr(i,j)=0.5_r8*(rdrag(i-1,j)+rdrag(i,j))*                  &
      &               u(i,j,1,nrhs)
-#    ifdef LIMIT_BSTRESS
+#    ifdef WET_DRY
           cff1=cff*0.5_r8*(Hz(i-1,j,1)+Hz(i,j,1))
           bustr(i,j)=SIGN(1.0_r8, bustr(i,j))*                          &
      &               MIN(ABS(bustr(i,j)),                               &
@@ -918,7 +918,7 @@
         DO i=Istr,Iend
           bvstr(i,j)=0.5_r8*(rdrag(i,j-1)+rdrag(i,j))*                  &
      &               v(i,j,1,nrhs)
-#    ifdef LIMIT_BSTRESS
+#    ifdef WET_DRY
           cff1=cff*0.5_r8*(Hz(i,j-1,1)+Hz(i,j,1))
           bvstr(i,j)=SIGN(1.0_r8, bvstr(i,j))*                          &
      &               MIN(ABS(bvstr(i,j)),                               &

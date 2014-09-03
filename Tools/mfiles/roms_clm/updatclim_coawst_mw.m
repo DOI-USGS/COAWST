@@ -188,7 +188,7 @@ netcdf.putVar(RN,tempid,shiftdim(v,1));
 
 clear u; clear v;
 tempid=netcdf.inqVarID(RN,'ocean_time');
-netcdf.putVar(RN,tempid,tg2(tid1)*3600*24);
+netcdf.putVar(RN,tempid,tg2(tid1));
 tempid=netcdf.inqVarID(RN,'zeta_time');
 netcdf.putVar(RN,tempid,tg2(tid1));
 tempid=netcdf.inqVarID(RN,'v2d_time');

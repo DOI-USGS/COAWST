@@ -1161,6 +1161,7 @@
         DO i=IstrR,IendR
           ij=ij+1
           cff=ATAN2(A(ij),A1(ij))
+          IF (cff.lt.0.0_r8) cff=cff+2.0_r8*pi
           IF (iw.eq.1) THEN
             FORCES(ng)%Dwave(i,j)=cff
           ELSE
