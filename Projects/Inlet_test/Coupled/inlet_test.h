@@ -72,3 +72,4 @@
 # define ANA_SRFLUX
 #endif
 
+#define AVERAGES

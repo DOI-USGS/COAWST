@@ -596,9 +596,6 @@ Hout(idWrol) == T T     ! rollA              wave roller action density
 
 Hout(idRunoff) == F F   ! Runoff             surface runoff from land
 Hout(idPair) == F F     ! Pair               surface air pressure
-Hout(idUair) == F F     ! Uair               surface U-wind component
-Hout(idVair) == F F     ! Vair               surface V-wind component
-
 Hout(idTsur) == F F F F ! shflux, ssflux     surface net heat and salt flux
 Hout(idLhea) == F F     ! latent             latent heat flux
 Hout(idShea) == F F     ! sensible           sensible heat flux
@@ -745,9 +742,6 @@ Aout(idWrol) == F       ! rollA              wave roller action density
 
 Aout(idRunoff) == F     ! Runoff             surface runoff from land
 Aout(idPair) == F       ! Pair               surface air pressure
-Aout(idUair) == F       ! Uair               surface U-wind component
-Aout(idVair) == F       ! Vair               surface V-wind component
-
 Aout(idTsur) == F F     ! shflux, ssflux     surface net heat and salt flux
 Aout(idLhea) == F       ! latent             latent heat flux
 Aout(idShea) == F       ! sensible           sensible heat flux

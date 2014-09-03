@@ -240,7 +240,7 @@ ad_VolCons(north) ==  F                            ! northern boundary
         NHIS == 60
      NDEFHIS == 0
       NTSAVG == 1
-        NAVG == 3600
+        NAVG == 60
      NDEFAVG == 0
       NTSDIA == 1
         NDIA == 3600
@@ -584,9 +584,6 @@ Hout(idWrol) == T       ! rollA              wave roller action density
 
 Hout(idRunoff) == F     ! Runoff             surface runoff from land
 Hout(idPair) == F       ! Pair               surface air pressure
-Hout(idUair) == F       ! Uair               surface U-wind component
-Hout(idVair) == F       ! Vair               surface V-wind component
-
 Hout(idTsur) == F F     ! shflux, ssflux     surface net heat and salt flux
 Hout(idLhea) == F       ! latent             latent heat flux
 Hout(idShea) == F       ! sensible           sensible heat flux
@@ -709,22 +706,22 @@ Aout(idV2rs) == F       ! vbar_Wecstress     WEC 2D V-stress
 Aout(idU3rs) == F       ! u_Rstress          WEC 3D U-stress
 Aout(idV3rs) == F       ! v_Rstress          WEC 3D V-stress
 
-Aout(idU2Sd) == F       ! ubar_stokes        2D U-Stokes velocity
-Aout(idV2Sd) == F       ! vbar_stokes        2D V-Stokes velocity
+Aout(idU2Sd) == T       ! ubar_stokes        2D U-Stokes velocity
+Aout(idV2Sd) == T       ! vbar_stokes        2D V-Stokes velocity
 Aout(idU3Sd) == F       ! u_stokes           3D U-Stokes velocity
 Aout(idV3Sd) == F       ! v_stokes           3D V-Stokes velocity
 Aout(idW3Sd) == F       ! omega_stokes       3D Omega-Stokes velocity
 Aout(idW3St) == F       ! w_stokes           3D W-Stokes velocity
-Aout(idWamp) == F       ! Hwave              wave height
-Aout(idWlen) == F       ! Lwave              wave length-mean
+Aout(idWamp) == T       ! Hwave              wave height
+Aout(idWlen) == T       ! Lwave              wave length-mean
 Aout(idWlep) == F       ! Lwavep             wave length-peak
-Aout(idWdir) == F       ! Dwave              wave direction
+Aout(idWdir) == T       ! Dwave              wave direction
 Aout(idWptp) == F       ! Pwave_top          wave surface period
 Aout(idWpbt) == F       ! Pwave_bot          wave bottom period
 Aout(idWorb) == F       ! Uwave_rms          wave bottom orbital velocity
 Aout(idWbrk) == F       ! Wave_break         wave breaking (percent)
-Aout(idUwav) == F       ! uWave              wave-depth avgeraged U-velocity
-Aout(idVwav) == F       ! vWave              wave-depth avgeraged V-velocity
+Aout(idUwav) == T       ! uWave              wave-depth avgeraged U-velocity
+Aout(idVwav) == T       ! vWave              wave-depth avgeraged V-velocity
 Aout(idWdif) == F       ! Dissip_fric        wave dissipation due to bottom friction
 Aout(idWdib) == F       ! Dissip_break       wave dissipation due to breaking
 Aout(idWdiw) == F       ! Dissip_wcap        wave dissipation due to white capping
@@ -733,9 +730,6 @@ Aout(idWrol) == F       ! rollA              wave roller action density
 
 Aout(idRunoff) == F     ! Runoff             surface runoff from land
 Aout(idPair) == F       ! Pair               surface air pressure
-Aout(idUair) == F       ! Uair               surface U-wind component
-Aout(idVair) == F       ! Vair               surface V-wind component
-
 Aout(idTsur) == F F     ! shflux, ssflux     surface net heat and salt flux
 Aout(idLhea) == F       ! latent             latent heat flux
 Aout(idShea) == F       ! sensible           sensible heat flux
@@ -922,7 +916,7 @@ Dout(iTvdif) == F F     ! temp_vdiff, ...    vertical diffusion
      TLMNAME == ocean_tlm.nc
      TLFNAME == ocean_tlf.nc
      ADJNAME == ocean_adj.nc
-     AVGNAME == ocean_avg.nc
+     AVGNAME == ocean_avg_coupled.nc
      DIANAME == ocean_dia.nc
      STANAME == ocean_sta.nc
      FLTNAME == ocean_flt.nc

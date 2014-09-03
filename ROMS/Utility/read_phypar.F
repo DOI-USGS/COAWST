@@ -2347,8 +2347,8 @@
               Npts=load_l(Nval, Cval, Ngrids, Aout(idVbot,:))
             CASE ('Aout(idUbur)')
               Npts=load_l(Nval, Cval, Ngrids, Aout(idUbur,:))
-            CASE ('Aout(idVbur)')
-              Npts=load_l(Nval, Cval, Ngrids, Aout(idVbur,:))
+            CASE ('Aout(idVbvr)')
+              Npts=load_l(Nval, Cval, Ngrids, Aout(idVbvr,:))
 # endif
 # ifdef WEC_MELLOR
             CASE ('Aout(idW2xx)')

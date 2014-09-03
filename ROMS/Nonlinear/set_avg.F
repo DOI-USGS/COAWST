@@ -818,12 +818,12 @@
             END DO
           END DO
         END IF
-        IF (Aout(idVbur,ng)) THEN
+        IF (Aout(idVbvr,ng)) THEN
           DO j=JstrR,JendR
             DO i=Istr,IendR
-              AVERAGE(ng)%avgVbur(i,j)=BBL(ng)%Vbur(i,j)
+              AVERAGE(ng)%avgVbvr(i,j)=BBL(ng)%Vbur(i,j)
 #  ifdef WET_DRY
-              AVERAGE(ng)%avgVbur(i,j)=AVERAGE(ng)%avgVbur(i,j)*        &
+              AVERAGE(ng)%avgVbvr(i,j)=AVERAGE(ng)%avgVbvr(i,j)*        &
      &                                 GRID(ng)%umask_io(i,j)
 #  endif
             END DO
@@ -1854,7 +1854,7 @@
         IF (Aout(idUwav,ng)) THEN
           DO j=JstrR,JendR
             DO i=IstrR,IendR
-              AVERAGE(ng)%avgUwav(i,j)=FORCES(ng)%uWave(i,j)
+              AVERAGE(ng)%avgUwav(i,j)=OCEAN(ng)%uWave(i,j)
 #  ifdef WET_DRY
               AVERAGE(ng)%avgUwav(i,j)=AVERAGE(ng)%avgUwav(i,j)*        &
      &                                 GRID(ng)%rmask_io(i,j)
@@ -1865,7 +1865,7 @@
         IF (Aout(idVwav,ng)) THEN
           DO j=JstrR,JendR
             DO i=IstrR,IendR
-              AVERAGE(ng)%avgVwav(i,j)=FORCES(ng)%vWave(i,j)
+              AVERAGE(ng)%avgVwav(i,j)=OCEAN(ng)%vWave(i,j)
 #  ifdef WET_DRY
               AVERAGE(ng)%avgVwav(i,j)=AVERAGE(ng)%avgVwav(i,j)*        &
      &                                 GRID(ng)%rmask_io(i,j)
@@ -2712,10 +2712,10 @@
             END DO
           END DO
         END IF
-        IF (Aout(idVbur,ng)) THEN
+        IF (Aout(idVbvr,ng)) THEN
           DO j=JstrR,JendR
             DO i=IstrR,IendR
-              AVERAGE(ng)%avgVbur(i,j)=AVERAGE(ng)%avgVbur(i,j)+        &
+              AVERAGE(ng)%avgVbvr(i,j)=AVERAGE(ng)%avgVbvr(i,j)+        &
 # ifdef WET_DRY
      &                                GRID(ng)%rmask_io(i,j)*           &
 # endif
@@ -3748,7 +3748,7 @@
 #  ifdef WET_DRY
      &                                 GRID(ng)%rmask_io(i,j)*          &
 #  endif
-     &                                 FORCES(ng)%uWave(i,j)
+     &                                 OCEAN(ng)%uWave(i,j)
             END DO
           END DO
         END IF
@@ -3759,7 +3759,7 @@
 #  ifdef WET_DRY
      &                                 GRID(ng)%rmask_io(i,j)*          &
 #  endif
-     &                                 FORCES(ng)%vWave(i,j)
+     &                                 OCEAN(ng)%vWave(i,j)
             END DO
           END DO
         END IF

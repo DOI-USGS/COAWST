@@ -260,7 +260,7 @@
           real(r8), pointer :: avgUbot(:,:)
           real(r8), pointer :: avgVbot(:,:)
           real(r8), pointer :: avgUbur(:,:)
-          real(r8), pointer :: avgVbur(:,:)
+          real(r8), pointer :: avgVbvr(:,:)
 # endif
 
 # ifdef SOLVE3D
@@ -657,8 +657,8 @@
       IF (Aout(idUbur,ng)) THEN
         allocate ( AVERAGE(ng) % avgUbur(LBi:UBi,LBj:UBj) )
       END IF
-      IF (Aout(idVbur,ng)) THEN
-        allocate ( AVERAGE(ng) % avgVbur(LBi:UBi,LBj:UBj) )
+      IF (Aout(idVbvr,ng)) THEN
+        allocate ( AVERAGE(ng) % avgVbvr(LBi:UBi,LBj:UBj) )
       END IF
 # endif
 

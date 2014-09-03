@@ -3699,19 +3699,19 @@
 !
 !  Write out bottom v-cur above the bed at rho points.
 !
-      IF (Aout(idVbur,ng)) THEN
+      IF (Aout(idVbvr,ng)) THEN
         scale=1.0_r8
         gtype=gfactor*r2dvar
-        status=nf_fwrite2d(ng, iNLM, AVG(ng)%ncid, AVG(ng)%Vid(idVbur), &
+        status=nf_fwrite2d(ng, iNLM, AVG(ng)%ncid, AVG(ng)%Vid(idVbvr), &
      &                     AVG(ng)%Rindex, gtype,                       &
      &                     LBi, UBi, LBj, UBj, scale,                   &
 # ifdef MASKING
      &                     GRID(ng) % rmask_avg,                        &
 # endif
-     &                     AVERAGE(ng) % avgVbur)
+     &                     AVERAGE(ng) % avgVbvr)
         IF (status.ne.nf90_noerr) THEN
           IF (Master) THEN
-            WRITE (stdout,10) TRIM(Vname(1,idVbur)), AVG(ng)%Rindex
+            WRITE (stdout,10) TRIM(Vname(1,idVbvr)), AVG(ng)%Rindex
           END IF
           exit_flag=3
           ioerror=status
