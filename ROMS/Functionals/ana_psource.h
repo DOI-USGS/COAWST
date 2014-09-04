@@ -261,20 +261,20 @@
      &                                  z_w(i,j  ,k-1  ))/              &
      &                                 (z_w(i,j-1,N(ng))-               &
      &                                  z_w(i,j-1,0    )+               &
-     &                                  z_w(i,j  ,N(ng))-
+     &                                  z_w(i,j  ,N(ng))-               &
      &                                  z_w(i,j  ,0    ))
             END IF
           END DO
         END DO
         IF (Master.and.DOMAIN(ng)%SouthWest_Test(tile)) THEN
           DO k=1,N(ng)
-            SOURCES(ng0%Qshape(Nsrc(ng),k)=1.0_r8/REAL(N(ng),r8)
+            SOURCES(ng)%Qshape(Nsrc(ng),k)=1.0_r8/REAL(N(ng),r8)
           END DO
         END IF
 #  ifdef DISTRIBUTE
         Pwrk=RESHAPE(SOURCES(ng)%Qshape,(/Npts/))
         CALL mp_collect (ng, iNLM, Npts, Pspv, Pwrk)
-        SOURCES(ng)%Qshape=RESHAPE(Pwrk,(/Msrc,N(ng)/))
+        SOURCES(ng)%Qshape=RESHAPE(Pwrk,(/Msrc(ng),N(ng)/))
 #  endif
 
 # else
@@ -338,7 +338,7 @@
           SOURCES(ng)%Qbar(Nsrc)=1500.0_r8   ! West wall
         END IF
 # ifdef DISTRIBUTE
-        CALL mp_collect (ng, iNLM, Msrc, Pspv, SOURCES(ng)%Qbar)
+        CALL mp_collect (ng, iNLM, Msrc(ng), Pspv, SOURCES(ng)%Qbar)
 # endif
 
 #elif defined SED_TEST1
@@ -460,6 +460,8 @@
               SOURCES(ng)%Tsrc(is,k,itemp)=T0(ng)
               SOURCES(ng)%Tsrc(is,k,isalt)=S0(ng)
             END DO
+            SOURCES(ng)%Tsrc(Nsrc(ng),k,itemp)=T0(ng)
+            SOURCES(ng)%Tsrc(Nsrc(ng),k,isalt)=0.0_r8
           END DO
         END IF
 # else
