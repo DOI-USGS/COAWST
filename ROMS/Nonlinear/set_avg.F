@@ -7191,6 +7191,9 @@
       USE mod_ocean
       USE mod_scalars
       USE mod_tides
+#  ifdef WET_DRY
+      USE mod_grid
+#  endif
 !
       implicit none
 !
