@@ -751,6 +751,13 @@
                 END DO
               END DO
             END IF
+            IF (Aout(idWdiv,ng)) THEN
+              DO j=JstrR,JendR
+                DO i=IstrR,IendR
+                  FILTER(ng)%filWdiv(i,j,f) = ICE(ng)%wdiv(i,j)*fw(iw)
+                END DO
+              END DO
+            END IF
             IF (Aout(idSig11,ng)) THEN
               DO j=JstrR,JendR
                 DO i=IstrR,IendR
@@ -1157,6 +1164,14 @@
                   DO i=IstrR,IendR
                     FILTER(ng)%filWro(i,j,f)=FILTER(ng)%filWro(i,j,f)+  &
      &                                    ICE(ng)%wro(i,j)*fw(iw)
+                  END DO
+                END DO
+              END IF
+              IF (Aout(idWdiv,ng)) THEN
+                DO j=JstrR,JendR
+                  DO i=IstrR,IendR
+                    FILTER(ng)%filWdiv(i,j,f)=FILTER(ng)%filWdiv(i,j,f)+&
+     &                                    ICE(ng)%wdiv(i,j)*fw(iw)
                   END DO
                 END DO
               END IF
@@ -1572,6 +1587,13 @@
               DO j=JstrR,JendR
                 DO i=IstrR,IendR
                   AVERAGE(ng)%avgWro(i,j)=FILTER(ng)%filWro(i,j,f)
+                END DO
+              END DO
+            END IF
+            IF (Aout(idWdiv,ng)) THEN
+              DO j=JstrR,JendR
+                DO i=IstrR,IendR
+                  AVERAGE(ng)%avgWdiv(i,j)=FILTER(ng)%filWdiv(i,j,f)
                 END DO
               END DO
             END IF

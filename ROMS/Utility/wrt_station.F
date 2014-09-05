@@ -434,6 +434,106 @@
         IF (exit_flag.ne.NoError) RETURN
       END IF
 
+#  ifdef NEMURO_SED1
+!
+!  Write out PON in sediment.
+!
+      IF (Sout(idPONsed,ng)) THEN
+        scale=1.0_r8
+        CALL extract_sta2d (ng, iNLM, Cgrid, idPONsed, r2dvar,          &
+     &                      LBi, UBi, LBj, UBj,                         &
+     &                      scale, OCEAN(ng)%PONsed,                    &
+     &                      Nstation(ng), Xpos, Ypos, psta)
+        CALL netcdf_put_fvar (ng, iNLM, STA(ng)%name,                   &
+     &                        TRIM(Vname(1,idPONsed)), psta,            &
+     &                        (/1,STA(ng)%Rindex/), (/Nstation(ng),1/), &
+     &                        ncid = STA(ng)%ncid,                      &
+     &                        varid = STA(ng)%Vid(idPONsed))
+        IF (exit_flag.ne.NoError) RETURN
+      END IF
+!
+!  Write out OPAL in sediment.
+!
+      IF (Sout(idOPALsed,ng)) THEN
+        scale=1.0_r8
+        CALL extract_sta2d (ng, iNLM, Cgrid, idOPALsed, r2dvar,         &
+     &                      LBi, UBi, LBj, UBj,                         &
+     &                      scale, OCEAN(ng)%OPALsed,                   &
+     &                      Nstation(ng), Xpos, Ypos, psta)
+        CALL netcdf_put_fvar (ng, iNLM, STA(ng)%name,                   &
+     &                        TRIM(Vname(1,idOPALsed)), psta,           &
+     &                        (/1,STA(ng)%Rindex/), (/Nstation(ng),1/), &
+     &                        ncid = STA(ng)%ncid,                      &
+     &                        varid = STA(ng)%Vid(idOPALsed))
+        IF (exit_flag.ne.NoError) RETURN
+      END IF
+!
+!  Write out DENIT in sediment.
+!
+      IF (Sout(idDENITsed,ng)) THEN
+        scale=1.0_r8
+        CALL extract_sta2d (ng, iNLM, Cgrid, idDENITsed, r2dvar,        &
+     &                      LBi, UBi, LBj, UBj,                         &
+     &                      scale, OCEAN(ng)%DENITsed,                  &
+     &                      Nstation(ng), Xpos, Ypos, psta)
+        CALL netcdf_put_fvar (ng, iNLM, STA(ng)%name,                   &
+     &                        TRIM(Vname(1,idDENITsed)), psta,          &
+     &                        (/1,STA(ng)%Rindex/), (/Nstation(ng),1/), &
+     &                        ncid = STA(ng)%ncid,                      &
+     &                        varid = STA(ng)%Vid(idDENITsed))
+        IF (exit_flag.ne.NoError) RETURN
+      END IF
+!
+!  Write out buried PON in sediment.
+!
+      IF (Sout(idPONbur,ng)) THEN
+        scale=1.0_r8
+        CALL extract_sta2d (ng, iNLM, Cgrid, idPONbur, r2dvar,          &
+     &                      LBi, UBi, LBj, UBj,                         &
+     &                      scale, OCEAN(ng)%PON_burial,                &
+     &                      Nstation(ng), Xpos, Ypos, psta)
+        CALL netcdf_put_fvar (ng, iNLM, STA(ng)%name,                   &
+     &                        TRIM(Vname(1,idPONbur)), psta,            &
+     &                        (/1,STA(ng)%Rindex/), (/Nstation(ng),1/), &
+     &                        ncid = STA(ng)%ncid,                      &
+     &                        varid = STA(ng)%Vid(idPONbur))
+        IF (exit_flag.ne.NoError) RETURN
+      END IF
+!
+!  Write out buried OPAL in sediment.
+!
+      IF (Sout(idOPALbur,ng)) THEN
+        scale=1.0_r8
+        CALL extract_sta2d (ng, iNLM, Cgrid, idOPALbur, r2dvar,         &
+     &                      LBi, UBi, LBj, UBj,                         &
+     &                      scale, OCEAN(ng)%OPAL_burial,               &
+     &                      Nstation(ng), Xpos, Ypos, psta)
+        CALL netcdf_put_fvar (ng, iNLM, STA(ng)%name,                   &
+     &                        TRIM(Vname(1,idOPALbur)), psta,           &
+     &                        (/1,STA(ng)%Rindex/), (/Nstation(ng),1/), &
+     &                        ncid = STA(ng)%ncid,                      &
+     &                        varid = STA(ng)%Vid(idOPALbur))
+        IF (exit_flag.ne.NoError) RETURN
+      END IF
+#  endif
+#  ifdef PRIMARY_PROD
+!
+!  Write out Net primary productivity.
+!
+      IF (Sout(idNPP,ng)) THEN
+        scale=1.0_r8
+        CALL extract_sta2d (ng, iNLM, Cgrid, idNPP, r2dvar,             &
+     &                      LBi, UBi, LBj, UBj,                         &
+     &                      scale, OCEAN(ng)%Bio_NPP,                   &
+     &                      Nstation(ng), Xpos, Ypos, psta)
+        CALL netcdf_put_fvar (ng, iNLM, STA(ng)%name,                   &
+     &                        TRIM(Vname(1,idNPP)), psta,               &
+     &                        (/1,STA(ng)%Rindex/), (/Nstation(ng),1/), &
+     &                        ncid = STA(ng)%ncid,                      &
+     &                        varid = STA(ng)%Vid(idNPP))
+        IF (exit_flag.ne.NoError) RETURN
+      END IF
+#  endif
 #  ifdef LMD_SKPP
 !
 !  Write out depth of surface boundary layer.

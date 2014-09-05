@@ -410,6 +410,7 @@
         integer  :: idWao          ! ice growth/melt rate
         integer  :: idWio          ! ice growth/melt rate
         integer  :: idWro          ! ice pond runoff
+        integer  :: idWdiv         ! ice advective change
         integer  :: idSfwat        ! surface melt water thickness on ice
         integer  :: idAgeice       ! age of sea ice (time since formation)
         integer  :: idIomflx       ! ice-ocean mass flux
@@ -1996,6 +1997,8 @@
                 idWio=varid
               CASE ('idWro')
                 idWro=varid
+              CASE ('idWdiv')
+                idWdiv=varid
               CASE ('idSfwat')
                 idSfwat=varid
               CASE ('idAgeice')

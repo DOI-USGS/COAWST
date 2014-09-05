@@ -900,6 +900,15 @@
   'r2dvar'
   1.0d0
 
+'wdiv'
+  'rate of ice divergence'
+  'm^3 s-1'
+  'ice divergence rate, scalar, series'
+  'ocean_time'
+  'idWdiv'
+  'r2dvar'
+  1.0d0
+
 'sfwat'
   'surface melt water thickness on ice'
   'meter'

@@ -22,6 +22,7 @@
           real(r8), pointer :: wao(:,:)
           real(r8), pointer :: wio(:,:)
           real(r8), pointer :: wro(:,:)
+          real(r8), pointer :: wdiv(:,:)
           real(r8), pointer :: tis(:,:)
           real(r8), pointer :: ti(:,:,:)
           real(r8), pointer :: enthalpi(:,:,:)
@@ -44,7 +45,6 @@
           real(r8), pointer :: sealev(:,:)
           real(r8), pointer :: s0mk(:,:)
           real(r8), pointer :: t0mk(:,:)
-          real(r8), pointer :: stflx_wk(:,:,:)
           real(r8), pointer :: sig11(:,:,:)
           real(r8), pointer :: sig22(:,:,:)
           real(r8), pointer :: sig12(:,:,:)
@@ -100,6 +100,7 @@
       allocate ( ICE(ng) % wao(LBi:UBi,LBj:UBj) )
       allocate ( ICE(ng) % wio(LBi:UBi,LBj:UBj) )
       allocate ( ICE(ng) % wro(LBi:UBi,LBj:UBj) )
+      allocate ( ICE(ng) % wdiv(LBi:UBi,LBj:UBj) )
       allocate ( ICE(ng) % tis(LBi:UBi,LBj:UBj) )
       allocate ( ICE(ng) % ti(LBi:UBi,LBj:UBj,2) )
       allocate ( ICE(ng) % enthalpi(LBi:UBi,LBj:UBj,2) )
@@ -122,7 +123,6 @@
       allocate ( ICE(ng) % sealev(LBi:UBi,LBj:UBj) )
       allocate ( ICE(ng) % s0mk(LBi:UBi,LBj:UBj) )
       allocate ( ICE(ng) % t0mk(LBi:UBi,LBj:UBj) )
-      allocate ( ICE(ng) % stflx_wk(LBi:UBi,LBj:UBj,2) )
       allocate ( ICE(ng) % sig11(LBi:UBi,LBj:UBj,2) )
       allocate ( ICE(ng) % sig22(LBi:UBi,LBj:UBj,2) )
       allocate ( ICE(ng) % sig12(LBi:UBi,LBj:UBj,2) )
@@ -233,6 +233,7 @@
           ICE(ng) % wao(i,j) = IniVal
           ICE(ng) % wio(i,j) = IniVal
           ICE(ng) % wro(i,j) = IniVal
+          ICE(ng) % wdiv(i,j) = IniVal
           ICE(ng) % tis(i,j) = IniVal
           ICE(ng) % ti(i,j,1) = IniVal
           ICE(ng) % ti(i,j,2) = IniVal
@@ -258,8 +259,6 @@
           ICE(ng) % sealev(i,j) = IniVal
           ICE(ng) % s0mk(i,j) = IniVal
           ICE(ng) % t0mk(i,j) = IniVal
-          ICE(ng) % stflx_wk(i,j,1) = IniVal
-          ICE(ng) % stflx_wk(i,j,2) = IniVal
           ICE(ng) % sig11(i,j,1) = IniVal
           ICE(ng) % sig11(i,j,2) = IniVal
           ICE(ng) % sig22(i,j,1) = IniVal

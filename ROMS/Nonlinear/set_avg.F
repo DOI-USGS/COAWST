@@ -1238,6 +1238,17 @@
             END DO
           END DO
         END IF
+        IF (Aout(idWdiv,ng)) THEN
+          DO j=JstrR,JendR
+            DO i=IstrR,IendR
+              AVERAGE(ng)%avgWdiv(i,j)=ICE(ng)%wdiv(i,j)
+#  ifdef WET_DRY
+              AVERAGE(ng)%avgWdiv(i,j)=AVERAGE(ng)%avgWdiv(i,j)*        &
+     &                                GRID(ng)%rmask_io(i,j)
+#  endif
+            END DO
+          END DO
+        END IF
         IF (Aout(idTauiw,ng)) THEN
           DO j=JstrR,JendR
             DO i=IstrR,IendR
@@ -3130,6 +3141,17 @@
      &                                 GRID(ng)%rmask_io(i,j)*          &
 #  endif
      &                                 ICE(ng)%wro(i,j)
+            END DO
+          END DO
+        END IF
+        IF (Aout(idWdiv,ng)) THEN
+          DO j=JstrR,JendR
+            DO i=Istr,IendR
+              AVERAGE(ng)%avgWdiv(i,j)=AVERAGE(ng)%avgWdiv(i,j)+        &
+#  ifdef WET_DRY
+     &                                 GRID(ng)%rmask_io(i,j)*          &
+#  endif
+     &                                 ICE(ng)%wdiv(i,j)
             END DO
           END DO
         END IF
@@ -5757,6 +5779,27 @@
 #  endif
           END IF
         END IF
+        IF (Aout(idWdiv,ng)) THEN
+          DO j=JstrR,JendR
+            DO i=IstrR,IendR
+              AVERAGE(ng)%avgWdiv(i,j)=rfac(i,j)*                       &
+     &                   AVERAGE(ng)%avgWdiv(i,j)
+             END DO
+           END DO
+           IF (EWperiodic(ng).or.NSperiodic(ng)) THEN
+             CALL exchange_r2d_tile (ng, tile,                          &
+     &                              LBi, UBi, LBj, UBj,                 &
+     &                              AVERAGE(ng)%avgWdiv)
+#  ifdef DISTRIBUTE
+            CALL mp_exchange2d (ng, tile, iNLM, 1,                      &
+     &                          LBi, UBi, LBj, UBj,                     &
+     &                          NghostPoints,                           &
+     &                          EWperiodic(ng), NSperiodic(ng),         &
+     &                          AVERAGE(ng)%avgWdiv)
+#   endif
+          END IF
+        END IF
+
         IF (Aout(idTauiw,ng)) THEN
           DO j=JstrR,JendR
             DO i=IstrR,IendR

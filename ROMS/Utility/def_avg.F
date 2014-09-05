@@ -2722,6 +2722,25 @@
      &                   nvd3, t2dgrd, Aval, Vinfo, ncname)
           IF (exit_flag.ne.NoError) RETURN
         END IF
+!
+!  Define ice divergence rate.
+!
+        IF (Aout(idWdiv,ng)) THEN
+          Vinfo( 1)=Vname(1,idWdiv)
+          WRITE (Vinfo( 2),'(a,1x,a)') Prefix, TRIM(Vname(2,idWdiv))
+          Vinfo( 3)=Vname(3,idWdiv)
+          Vinfo(14)=Vname(4,idWdiv)
+          Vinfo(16)=Vname(1,idtime)
+#  if defined WRITE_WATER && defined MASKING
+          Vinfo(20)='mask_rho'
+#  endif
+          Vinfo(22)='coordinates'
+          Aval(5)=REAL(Iinfo(1,idWdiv,ng),r8)
+          status=def_var(ng, model, AVG(ng)%ncid,                       &
+     &                   AVG(ng)%Vid(idWdiv), NF_FOUT,                  &
+     &                   nvd3, t2dgrd, Aval, Vinfo, ncname)
+          IF (exit_flag.ne.NoError) RETURN
+        END IF
 # endif
 # ifdef WEC_MELLOR
 !
@@ -3649,6 +3668,9 @@
           ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idWro))) THEN
             got_var(idWro)=.true.
             AVG(ng)%Vid(idWro)=var_id(i)
+          ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idWdiv))) THEN
+            got_var(idWdiv)=.true.
+            AVG(ng)%Vid(idWdiv)=var_id(i)
 #  endif
 #  if defined RUNOFF
           ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idRunoff))) THEN
@@ -4411,6 +4433,12 @@
         END IF
         IF (.not.got_var(idWro).and.Aout(idWro,ng)) THEN
           IF (Master) WRITE (stdout,60) TRIM(Vname(1,idWro)),           &
+     &                                  TRIM(ncname)
+          exit_flag=3
+          RETURN
+        END IF
+        IF (.not.got_var(idWdiv).and.Aout(idWdiv,ng)) THEN
+          IF (Master) WRITE (stdout,60) TRIM(Vname(1,idWdiv)),          &
      &                                  TRIM(ncname)
           exit_flag=3
           RETURN

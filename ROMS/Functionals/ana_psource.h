@@ -239,7 +239,7 @@
 #  ifdef DISTRIBUTE
         Pwrk=RESHAPE(SOURCES(ng)%Qshape,(/Npts/))
         CALL mp_collect (ng, iNLM, Npts, Pspv, Pwrk)
-        SOURCES(ng)%Qshape=RESHAPE(Pwrk,(/Msrc,N(ng)/))
+        SOURCES(ng)%Qshape=RESHAPE(Pwrk,(/Msrc(ng),N(ng)/))
 #  endif
 
 # elif defined RIVERPLUME2
@@ -409,7 +409,7 @@
 !$OMP END CRITICAL (PSOURCE)
 
 # ifdef DISTRIBUTE
-        CALL mp_collect (ng, iNLM, Msrc, Pspv, SOURCES(ng)%Qbar)
+        CALL mp_collect (ng, iNLM, Msrc(ng), Pspv, SOURCES(ng)%Qbar)
 # endif
 #else
         ana_psource.h: No values provided for Qbar.

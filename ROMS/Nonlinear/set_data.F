@@ -240,7 +240,8 @@
 #     ifdef DISTRIBUTE
         CALL mp_exchange2d (ng, tile, iNLM, 2,                          &
      &                      LBi, UBi, LBj, UBj,                         &
-     &                      NghostPoints, EWperiodic, NSperiodic,       &
+     &                      NghostPoints,                               &
+     &                      EWperiodic(ng), NSperiodic(ng),             &
      &                      FORCES(ng)%nustr,                           &
      &                      FORCES(ng)%nvstr)
 #     endif
@@ -944,11 +945,19 @@
 #  ifdef SOLVE3D
         DO itrc=1,NT(ng)
           IF (LtracerSrc(itrc,ng)) THEN
+#   ifdef ONE_TRACER_SOURCE
+            CALL set_ngfld (ng, iNLM, idRtrc(itrc), 1, 1, 1,            &
+     &                      1, 1, 1,                                    &
+     &                      SOURCES(ng) % TsrcG(:,itrc),                &
+     &                      SOURCES(ng) % Tsrc(itrc),                   &
+     &                      update)
+#   else
             CALL set_ngfld (ng, iNLM, idRtrc(itrc), 1, Nsrc(ng), N(ng), &
      &                      1, Nsrc(ng), N(ng),                         &
      &                      SOURCES(ng) % TsrcG(:,:,:,itrc),            &
      &                      SOURCES(ng) % Tsrc(:,:,itrc),               &
      &                      update)
+#   endif
             IF (exit_flag.ne.NoError) RETURN
           END IF
         END DO
@@ -1744,7 +1753,8 @@
 #  ifdef DISTRIBUTE
         CALL mp_exchange3d (ng, tile, iNLM, 1,                          &
      &                    LBi, UBi, LBj, UBj, 1, 2,                     &
-     &                    NghostPoints, EWperiodic, NSperiodic,         &
+     &                    NghostPoints,                                 &
+     &                    EWperiodic(ng), NSperiodic(ng),               &
      &                    OCEAN(ng)%zeta)
 #  endif
 # endif
@@ -1792,7 +1802,8 @@
 #  ifdef DISTRIBUTE
         CALL mp_exchange3d (ng, tile, iNLM, 2,                          &
      &                    LBi, UBi, LBj, UBj, 1, 2,                     &
-     &                    NghostPoints, EWperiodic, NSperiodic,         &
+     &                    NghostPoints,                                 &
+     &                    EWperiodic(ng), NSperiodic(ng),               &
      &                    OCEAN(ng)%ubar, OCEAN(ng)%vbar)
 #  endif
 # endif
@@ -1845,7 +1856,8 @@
         DO i=1,2
           CALL mp_exchange3d (ng, tile, iNLM, 2,                        &
      &                    LBi, UBi, LBj, UBj, 0, N(ng),                 &
-     &                    NghostPoints, EWperiodic, NSperiodic,         &
+     &                    NghostPoints,                                 &
+     &                    EWperiodic(ng), NSperiodic(ng),               &
      &                    OCEAN(ng)%u(:,:,:,i),OCEAN(ng)%v(:,:,:,i))
       END DO
 #   endif
@@ -1902,7 +1914,8 @@
         DO i=1,2
           CALL mp_exchange3d (ng, tile, iNLM, 1,                        &
      &                    LBi, UBi, LBj, UBj, 1, N(ng),                 &
-     &                    NghostPoints, EWperiodic, NSperiodic,         &
+     &                    NghostPoints,                                 &
+     &                    EWperiodic(ng), NSperiodic(ng),               &
      &                    OCEAN(ng)%t(:,:,:,i,itrc))
         END DO
       END DO
@@ -1986,7 +1999,8 @@
 #   ifdef DISTRIBUTE
       CALL mp_exchange3d (ng, tile, iNLM, 1,                            &
      &                    LBi, UBi, LBj, UBj, 0, N(ng),                 &
-     &                    NghostPoints, EWperiodic, NSperiodic,         &
+     &                    NghostPoints,                                 &
+     &                    EWperiodic(ng), NSperiodic(ng),               &
      &                    OCEAN(ng)%W)
 #   endif
 #  endif
@@ -2023,7 +2037,8 @@
 #   ifdef DISTRIBUTE
       CALL mp_exchange3d (ng, tile, iNLM, 1,                            &
      &                    LBi, UBi, LBj, UBj, 0, N(ng),                 &
-     &                    NghostPoints, EWperiodic, NSperiodic,         &
+     &                    NghostPoints,                                 &
+     &                    EWperiodic(ng), NSperiodic(ng),               &
      &                    MIXING(ng)%Akt(:,:,:,2))
 #   endif
 #  endif

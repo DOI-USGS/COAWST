@@ -405,6 +405,7 @@
           real(r8), pointer :: avgWao(:,:)
           real(r8), pointer :: avgWio(:,:)
           real(r8), pointer :: avgWro(:,:)
+          real(r8), pointer :: avgWdiv(:,:)
           real(r8), pointer :: avgchu_iw(:,:)
           real(r8), pointer :: avgutau_iw(:,:)
 #  endif
@@ -937,6 +938,9 @@
       END IF
       IF (Aout(idWro,ng)) THEN
         allocate ( AVERAGE(ng) % avgWro(LBi:UBi,LBj:UBj) )
+      END IF
+      IF (Aout(idWdiv,ng)) THEN
+        allocate ( AVERAGE(ng) % avgWdiv(LBi:UBi,LBj:UBj) )
       END IF
       IF (Aout(idTauiw,ng)) THEN
         allocate ( AVERAGE(ng) % avgutau_iw(LBi:UBi,LBj:UBj) )
@@ -2308,6 +2312,13 @@
         DO j=Jmin,Jmax
           DO i=Imin,Imax
             AVERAGE(ng) % avgWro(i,j) = IniVal
+          END DO
+        END DO
+      END IF
+      IF (Aout(idWdiv,ng)) THEN
+        DO j=Jmin,Jmax
+          DO i=Imin,Imax
+            AVERAGE(ng) % avgWdiv(i,j) = IniVal
           END DO
         END DO
       END IF

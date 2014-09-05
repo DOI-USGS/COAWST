@@ -504,6 +504,42 @@
             CASE ('Aout2(idS0mk)')
               Npts=load_l(Nval, Cval, Ngrids, Aout2(idS0mk,:))
 #endif
+#ifdef HISTORY2
+            CASE ('Hout2(idUice)')
+              Npts=load_l(Nval, Cval, Ngrids, Hout2(idUice,:))
+            CASE ('Hout2(idVice)')
+              Npts=load_l(Nval, Cval, Ngrids, Hout2(idVice,:))
+            CASE ('Hout2(idUiceE)')
+              Npts=load_l(Nval, Cval, Ngrids, Hout2(idUiceE,:))
+            CASE ('Hout2(idViceN)')
+              Npts=load_l(Nval, Cval, Ngrids, Hout2(idViceN,:))
+            CASE ('Hout2(idAice)')
+              Npts=load_l(Nval, Cval, Ngrids, Hout2(idAice,:))
+            CASE ('Hout2(idHice)')
+              Npts=load_l(Nval, Cval, Ngrids, Hout2(idHice,:))
+            CASE ('Hout2(idHsno)')
+              Npts=load_l(Nval, Cval, Ngrids, Hout2(idHsno,:))
+            CASE ('Hout2(idTice)')
+              Npts=load_l(Nval, Cval, Ngrids, Hout2(idTice,:))
+            CASE ('Hout2(idTimid)')
+              Npts=load_l(Nval, Cval, Ngrids, Hout2(idTimid,:))
+            CASE ('Hout2(idTauiw)')
+              Npts=load_l(Nval, Cval, Ngrids, Hout2(idTauiw,:))
+            CASE ('Hout2(idChuiw)')
+              Npts=load_l(Nval, Cval, Ngrids, Hout2(idChuiw,:))
+            CASE ('Hout2(idSfwat)')
+              Npts=load_l(Nval, Cval, Ngrids, Hout2(idSfwat,:))
+            CASE ('Hout2(idAgeice)')
+              Npts=load_l(Nval, Cval, Ngrids, Hout2(idAgeice,:))
+            CASE ('Hout2(idIomflx)')
+              Npts=load_l(Nval, Cval, Ngrids, Hout2(idIomflx,:))
+            CASE ('Hout2(idSig11)')
+              Npts=load_l(Nval, Cval, Ngrids, Hout2(idSig11,:))
+            CASE ('Hout2(idSig12)')
+              Npts=load_l(Nval, Cval, Ngrids, Hout2(idSig12,:))
+            CASE ('Hout2(idSig22)')
+              Npts=load_l(Nval, Cval, Ngrids, Hout2(idSig22,:))
+#endif
           END SELECT
         END IF
       END DO
@@ -781,6 +817,60 @@
           IF (Aout2(idS0mk,ng)) WRITE (out,70) Aout2(idS0mk,ng),        &
      &       'Aout2(idS0mk)',                                           &
      &       'Write out salinity of molecular sublayer under ice.'
+#endif
+#ifdef HISTORY2
+          IF (Hout2(idUice,ng)) WRITE (out,70) Hout2(idUice,ng),        &
+     &       'Hout2(idUice)',                                           &
+     &       'Write out U-component ice velocity.'
+          IF (Hout2(idVice,ng)) WRITE (out,70) Hout2(idVice,ng),        &
+     &       'Hout2(idVice)',                                           &
+     &       'Write out V-component ice velocity.'
+          IF (Hout2(idUiceE,ng)) WRITE (out,70) Hout2(idUiceE,ng),      &
+     &       'Hout2(idUiceE)',                                          &
+     &       'Write out East component ice velocity.'
+          IF (Hout2(idViceN,ng)) WRITE (out,70) Hout2(idViceN,ng),      &
+     &       'Hout2(idViceN)',                                          &
+     &       'Write out North component ice velocity.'
+          IF (Hout2(idAice,ng)) WRITE (out,70) Hout2(idAice,ng),        &
+     &       'Hout2(idAice)',                                           &
+     &       'Write out ice concentration.'
+          IF (Hout2(idHice,ng)) WRITE (out,70) Hout2(idHice,ng),        &
+     &       'Hout2(idHice)',                                           &
+     &       'Write out average ice thickness.'
+          IF (Hout2(idHsno,ng)) WRITE (out,70) Hout2(idHsno,ng),        &
+     &       'Hout2(idHsno)',                                           &
+     &       'Write out snow thickness.'
+          IF (Hout2(idTice,ng)) WRITE (out,70) Hout2(idTice,ng),        &
+     &       'Hout2(idTice)',                                           &
+     &       'Write out ice/snow surface temperature.'
+          IF (Hout2(idTimid,ng)) WRITE (out,70) Hout2(idTimid,ng),      &
+     &       'Hout2(idTimid)',                                          &
+     &       'Write out interior ice temperature.'
+          IF (Hout2(idSfwat,ng)) WRITE (out,70) Hout2(idSfwat,ng),      &
+     &       'Hout2(idSfwat)',                                          &
+     &       'Write out surface water (on ice) thickness.'
+          IF (Hout2(idAgeice,ng)) WRITE (out,70) Hout2(idAgeice,ng),    &
+     &       'Hout2(idAgeice)',                                         &
+     &       'Write out ice age.'
+          IF (Hout2(idIomflx,ng)) WRITE (out,70) Hout2(idIomflx,ng),    &
+     &       'Hout2(idIomflx)',                                         &
+     &       'Write out ice-ocean mass flux'
+          IF (Hout2(idSig11,ng)) WRITE (out,70) Hout2(idSig11,ng),      &
+     &       'Hout2(idSig11)',                                          &
+     &       'Write out internal ice stress component 11.'
+          IF (Hout2(idSig12,ng)) WRITE (out,70) Hout2(idSig12,ng),      &
+     &       'Hout2(idSig12)',                                          &
+     &       'Write out internal ice stress component 12.'
+          IF (Hout2(idSig22,ng)) WRITE (out,70) Hout2(idSig22,ng),      &
+     &       'Hout2(idSig22)',                                          &
+     &       'Write out internal ice stress component 22.'
+          IF (Hout2(idTauiw,ng)) WRITE (out,70) Hout2(idTauiw,ng),      &
+     &       'Hout2(idTauiw)',                                          &
+     &       'Write out ice-water friction velocity.'
+          IF (Hout2(idChuiw,ng)) WRITE (out,70) Hout2(idChuiw,ng),      &
+     &       'Hout2(idChuiw)',                                          &
+     &       'Write out ice-water momentum transfer coefficient.'
+
 #endif
         END DO
       END IF

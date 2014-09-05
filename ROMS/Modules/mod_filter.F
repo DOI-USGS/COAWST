@@ -89,6 +89,7 @@
           real(r8), pointer :: filWao(:,:,:)
           real(r8), pointer :: filWio(:,:,:)
           real(r8), pointer :: filWro(:,:,:)
+          real(r8), pointer :: filWdiv(:,:,:)
           real(r8), pointer :: filsig11(:,:,:)
           real(r8), pointer :: filsig22(:,:,:)
           real(r8), pointer :: filsig12(:,:,:)
@@ -344,6 +345,9 @@
       END IF
       IF (Aout(idWro,ng)) THEN
         allocate ( FILTER(NG) % filWro(LBi:UBi,LBj:UBj,FILN) )
+      END IF
+      IF (Aout(idWdiv,ng)) THEN
+        allocate ( FILTER(NG) % filWdiv(LBi:UBi,LBj:UBj,FILN) )
       END IF
       IF (Aout(idTauiw,ng)) THEN
         allocate ( FILTER(NG) % filutau_iw(LBi:UBi,LBj:UBj,FILN) )
@@ -835,6 +839,15 @@
           DO j=Jmin,Jmax
             DO i=Imin,Imax
               FILTER(ng) % filWro(i,j,if) = IniVal
+            END DO
+          END DO
+        END DO
+      END IF
+      IF (Aout(idWdiv,ng)) THEN
+        DO if=1,FILN
+          DO j=Jmin,Jmax
+            DO i=Imin,Imax
+              FILTER(ng) % filWdiv(i,j,if) = IniVal
             END DO
           END DO
         END DO

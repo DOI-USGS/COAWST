@@ -165,3 +165,93 @@
 ! Zero degree Celsius in Kelvin
 
      t0deg = 273.15d0
+
+! Logical switches (TRUE/FALSE) to activate writing of ice prognostic
+! variables into HISTORY output file.
+Hout(idUice) == T
+Hout(idVice) == T
+Hout(idUiceE) == F
+Hout(idViceN) == F
+Hout(idAice) == T
+Hout(idHice) == T
+Hout(idTice) == T
+Hout(idHsno) == T
+Hout(idTimid) == T
+Hout(idSfwat) == T
+Hout(idTauiw) == F
+Hout(idChuiw) == F
+Hout(idAgeice) == T
+Hout(idSig11) == T
+Hout(idSig12) == T
+Hout(idSig22) == T
+Hout(idWfr) == T
+Hout(idWai) == T
+Hout(idWao) == T
+Hout(idWio) == T
+Hout(idWro) == T
+Hout(idWdiv) == T
+Hout(idIomflx) == T
+
+! Logical switches (TRUE/FALSE) to activate writing of ice prognostic
+! variables into AVERAGES output file.
+Aout(idUice) == T
+Aout(idVice) == T
+Aout(idUiceE) == F
+Aout(idViceN) == F
+Aout(idAice) == T
+Aout(idHice) == T
+Aout(idTice) == T
+Aout(idHsno) == T
+Aout(idTimid) == T
+Aout(idSfwat) == T
+Aout(idTauiw) == F
+Aout(idChuiw) == F
+Aout(idAgeice) == T
+Aout(idSig11) == T
+Aout(idSig12) == T
+Aout(idSig22) == T
+Aout(idWfr) == T
+Aout(idWai) == T
+Aout(idWao) == T
+Aout(idWio) == T
+Aout(idWro) == T
+Aout(idWdiv) == T
+Aout(idIomflx) == T
+
+! Logical switches (TRUE/FALSE) to activate writing of ice prognostic
+! variables into AVERAGES2 output file.
+Aout2(idUice) == T
+Aout2(idVice) == T
+Aout2(idUiceE) == F
+Aout2(idViceN) == F
+Aout2(idAice) == T
+Aout2(idHice) == T
+Aout2(idTice) == T
+Aout2(idHsno) == T
+Aout2(idTimid) == T
+Aout2(idSfwat) == T
+Aout2(idTauiw) == F
+Aout2(idChuiw) == F
+Aout2(idAgeice) == T
+Aout2(idSig11) == F
+Aout2(idSig12) == F
+Aout2(idSig22) == F
+
+! Logical switches (TRUE/FALSE) to activate writing of ice prognostic
+! variables into HISTORY output file.
+Hout2(idUice) == T
+Hout2(idVice) == T
+Hout2(idUiceE) == T
+Hout2(idViceN) == T
+Hout2(idAice) == T
+Hout2(idHice) == T
+Hout2(idTice) == T
+Hout2(idHsno) == T
+Hout2(idTimid) == T
+Hout2(idSfwat) == T
+Hout2(idTauiw) == F
+Hout2(idChuiw) == F
+Hout2(idAgeice) == T
+Hout2(idSig11) == F
+Hout2(idSig12) == F
+Hout2(idSig22) == F
