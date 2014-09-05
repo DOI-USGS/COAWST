@@ -1301,6 +1301,8 @@
               idWpbt=varid
             CASE ('idWorb')
               idWorb=varid
+            CASE ('idWrol')
+              idWrol=varid
             CASE ('idW2xx')
               idW2xx=varid
             CASE ('idW2xy')
