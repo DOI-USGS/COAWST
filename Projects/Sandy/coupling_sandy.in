@@ -54,9 +54,9 @@
 ! The Wav program needs multiple input files, one for each grid.
 
    ATM_name = namelist.input                            ! atmospheric model
-   WAV_name = Projects/Sandy2/swan_sandy.in \
-              Projects/Sandy2/swan_sandy_ref3.in         ! wave model
-   OCN_name = Projects/Sandy2/ocean_sandy.in             ! ocean model
+   WAV_name = Projects/Sandy/swan_sandy.in \
+              Projects/Sandy/swan_sandy_ref3.in         ! wave model
+   OCN_name = Projects/Sandy/ocean_sandy.in             ! ocean model
 
 ! Sparse matrix interpolation weights files. The file names
 ! must be provided in a specific order. For example: 
@@ -67,30 +67,30 @@
 !            wav2 to ocn2
 !            wav2 to ocn3 ....for all the ocean models.
 
-   W2ONAME == Projects/Sandy2/wav1_to_ocn1_weights.nc \
-              Projects/Sandy2/wav1_to_ocn2_weights.nc \
-              Projects/Sandy2/wav2_to_ocn1_weights.nc \
-              Projects/Sandy2/wav2_to_ocn2_weights.nc
-   W2ANAME == Projects/Sandy2/wav1_to_atm1_weights.nc \
-              Projects/Sandy2/wav1_to_atm2_weights.nc \
-              Projects/Sandy2/wav2_to_atm1_weights.nc \
-              Projects/Sandy2/wav2_to_atm2_weights.nc
-   A2ONAME == Projects/Sandy2/atm1_to_ocn1_weights.nc \
-              Projects/Sandy2/atm1_to_ocn2_weights.nc \
-              Projects/Sandy2/atm2_to_ocn1_weights.nc \
-              Projects/Sandy2/atm2_to_ocn2_weights.nc
-   A2WNAME == Projects/Sandy2/atm1_to_wav1_weights.nc \
-              Projects/Sandy2/atm1_to_wav2_weights.nc \
-              Projects/Sandy2/atm2_to_wav1_weights.nc \
-              Projects/Sandy2/atm2_to_wav2_weights.nc
-   O2ANAME == Projects/Sandy2/ocn1_to_atm1_weights.nc \
-              Projects/Sandy2/ocn1_to_atm2_weights.nc \
-              Projects/Sandy2/ocn2_to_atm1_weights.nc \
-              Projects/Sandy2/ocn2_to_atm2_weights.nc
-   O2WNAME == Projects/Sandy2/ocn1_to_wav1_weights.nc \
-              Projects/Sandy2/ocn1_to_wav2_weights.nc \
-              Projects/Sandy2/ocn2_to_wav1_weights.nc \
-              Projects/Sandy2/ocn2_to_wav2_weights.nc
+   W2ONAME == Projects/Sandy/wav1_to_ocn1_weights.nc \
+              Projects/Sandy/wav1_to_ocn2_weights.nc \
+              Projects/Sandy/wav2_to_ocn1_weights.nc \
+              Projects/Sandy/wav2_to_ocn2_weights.nc
+   W2ANAME == Projects/Sandy/wav1_to_atm1_weights.nc \
+              Projects/Sandy/wav1_to_atm2_weights.nc \
+              Projects/Sandy/wav2_to_atm1_weights.nc \
+              Projects/Sandy/wav2_to_atm2_weights.nc
+   A2ONAME == Projects/Sandy/atm1_to_ocn1_weights.nc \
+              Projects/Sandy/atm1_to_ocn2_weights.nc \
+              Projects/Sandy/atm2_to_ocn1_weights.nc \
+              Projects/Sandy/atm2_to_ocn2_weights.nc
+   A2WNAME == Projects/Sandy/atm1_to_wav1_weights.nc \
+              Projects/Sandy/atm1_to_wav2_weights.nc \
+              Projects/Sandy/atm2_to_wav1_weights.nc \
+              Projects/Sandy/atm2_to_wav2_weights.nc
+   O2ANAME == Projects/Sandy/ocn1_to_atm1_weights.nc \
+              Projects/Sandy/ocn1_to_atm2_weights.nc \
+              Projects/Sandy/ocn2_to_atm1_weights.nc \
+              Projects/Sandy/ocn2_to_atm2_weights.nc
+   O2WNAME == Projects/Sandy/ocn1_to_wav1_weights.nc \
+              Projects/Sandy/ocn1_to_wav2_weights.nc \
+              Projects/Sandy/ocn2_to_wav1_weights.nc \
+              Projects/Sandy/ocn2_to_wav2_weights.nc
 !
 !  GLOSSARY:
 !  =========

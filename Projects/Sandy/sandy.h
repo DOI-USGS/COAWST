@@ -74,6 +74,7 @@
 # endif
 # define ANA_BTFLUX
 # define ANA_BSFLUX
+# define EMINUSP
 
 /* Turbulence closure */
 # define GLS_MIXING
