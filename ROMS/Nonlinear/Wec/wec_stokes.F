@@ -204,7 +204,7 @@
 !
       integer :: i, j, k
       real(r8) :: cff, cff2, cff3, cff4, cff5, cff6
-      real(r8) :: fac1, fac2
+      real(r8) :: fac1, fac2, fac3
       real(r8), parameter :: eps = 1.0E-14_r8
       real(r8), parameter :: kDmax = 300.0_r8       !5.0_r8
       real(r8), parameter :: Lwave_min = 1.0_r8
@@ -249,33 +249,36 @@
 !---------------------------------------------------------------------------
 ! Stokes velocities.
 !---------------------------------------------------------------------------
-      DO k=1,N(ng)
 !
 !  Compute u-stokes velocities, Eqn. 2.
 !
-        DO j=Jstr,Jend
-          DO i=IstrU,Iend
-            fac2=((z_r(i-1,j,k)+z_r(i,j,k))-                            &
-     &            (z_w(i-1,j,0)+z_w(i,j,0)))/                           &
-     &           (Dstp(i-1,j)+Dstp(i,j))
-            cff=fac1*om_u(i,j)*on_u(i,j)
-            cff2=(waveE(i-1,j)+waveE(i,j))
-# if defined WEC_ROLLER
-            cff2=cff2+(rollA(i-1,j)*sigma(i-1,j)+                       &
-     &                 rollA(i,j)*sigma(i,j))
-# endif
-            cff3=(kD(i-1,j)+kD(i,j))
+      DO j=Jstr,Jend
+        DO i=IstrU,Iend
 # ifdef WEC_MELLOR
-
+          cff=fac1*om_u(i,j)*on_u(i,j)
+# endif
+          cff2=(waveE(i-1,j)+waveE(i,j))
+# if defined WEC_ROLLER
+          cff2=cff2+(rollA(i-1,j)*sigma(i-1,j)+                        &
+     &               rollA(i,j)*sigma(i,j))
+# endif
+          cff3=kD(i-1,j)+kD(i,j)
+          cff4=wavenx(i-1,j)+wavenx(i,j)
+          cff5=wavec(i-1,j)+wavec(i,j)
+          cff6=waven(i-1,j)+waven(i,j)
+          fac3=z_w(i-1,j,0)+z_w(i,j,0)
+          DO k=1,N(ng)
+            fac1=0.5_r8*((z_w(i-1,j,k  )+z_w(i,j,k  ))-fac3)
+            fac2=0.5_r8*((z_w(i-1,j,k-1)+z_w(i,j,k-1))-fac3)
+# ifdef WEC_MELLOR
 !
 !  Store old value to compute tendency term.
 !
             rulag3d(i,j,k)=u_stokes(i,j,k)
 # endif
-            u_stokes(i,j,k)=cff2*                                       &
-     &                     (wavenx(i-1,j)+wavenx(i,j))/                 &
-     &                     (wavec (i-1,j)+wavec (i,j))*                 & 
-     &                     COSH(cff3*fac2)/SINH(cff3)
+            u_stokes(i,j,k)=cff2*cff4/(cff5*SINH(cff3))*                &
+     &                      (SINH(cff6*fac1)-SINH(cff6*fac2))/          &
+     &                      (cff6*(fac1-fac2))
 # ifdef MASKING
             u_stokes(i,j,k)=u_stokes(i,j,k)*umask(i,j)
 # endif
@@ -292,31 +295,37 @@
 # endif
           END DO
         END DO
+      END DO
 !
 !  Compute v-stokes velocity, Eqn. 2.
 !
-        DO j=JstrV,Jend
-          DO i=Istr,Iend
-            fac2=((z_r(i,j-1,k)+z_r(i,j,k))-                            &
-     &            (z_w(i,j-1,0)+z_w(i,j,0)))/                           &
-     &           (Dstp(i,j-1)+Dstp(i,j))
-            cff=fac1*om_v(i,j)*on_v(i,j)
-            cff2=(waveE(i,j-1)+waveE(i,j))
-# if defined WEC_ROLLER
-            cff2=cff2+(rollA(i,j-1)*sigma(i,j-1)+                       &
-     &                  rollA(i,j)*sigma(i,j))
+      DO j=JstrV,Jend
+        DO i=Istr,Iend
+# ifdef WEC_MELLOR
+          cff=fac1*om_v(i,j)*on_v(i,j)
 # endif
-            cff3=(kD(i,j-1)+kD(i,j))
+          cff2=(waveE(i,j-1)+waveE(i,j))
+# if defined WEC_ROLLER
+          cff2=cff2+(rollA(i,j-1)*sigma(i,j-1)+                         &
+     &               rollA(i,j)*sigma(i,j))
+# endif
+          cff3=kD(i,j-1)+kD(i,j)
+          cff4=waveny(i,j-1)+waveny(i,j)
+          cff5=wavec(i,j-1)+wavec(i,j)
+          cff6=waven(i,j-1)+waven(i,j)
+          fac3=z_w(i,j-1,0)+z_w(i,j,0)
+          DO k=1,N(ng)
+            fac1=0.5_r8*((z_w(i,j-1,k  )+z_w(i,j,k  ))-fac3)
+            fac2=0.5_r8*((z_w(i,j-1,k-1)+z_w(i,j,k-1))-fac3)
 # ifdef WEC_MELLOR
 !
 !  Store old value to compute tendency term.
 !
             rvlag3d(i,j,k)=v_stokes(i,j,k)
 # endif
-            v_stokes(i,j,k)=cff2*                                       &
-     &                      (waveny(i,j-1)+waveny(i,j))/                &
-     &                      (wavec (i,j-1)+wavec (i,j))*                &
-     &                      COSH(cff3*fac2)/SINH(cff3)
+            v_stokes(i,j,k)=cff2*cff4/(cff5*SINH(cff3))*                &
+     &                      (SINH(cff6*fac1)-SINH(cff6*fac2))/          &
+     &                      (cff6*(fac1-fac2))
 # ifdef MASKING
             v_stokes(i,j,k)=v_stokes(i,j,k)*vmask(i,j)
 # endif
