@@ -8,8 +8,8 @@
 **
 ** Options for Estuary test.
 **
-** Application flag:   ESTUARY_TEST
-** Input script:       ocean_estuary_test.in
+** Application flag:   ESTUARY_TEST2
+** Input script:       ocean_estuary_test2.in
 */
 
 #define ROMS_MODEL
@@ -25,16 +25,6 @@
 #undef  UV_COR
 #define UV_VIS2
 #define MIX_S_UV
-
-#define EAST_FSGRADIENT
-#define EAST_M2CLAMPED
-#define EAST_M3GRADIENT
-#define EAST_TCLAMPED
-#define WEST_FSCHAPMAN
-#define WEST_M2REDUCED
-#define FSOBC_REDUCED
-#define WEST_M3GRADIENT
-#define WEST_TCLAMPED
 
 #define GLS_MIXING
 #if defined GLS_MIXING

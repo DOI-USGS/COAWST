@@ -56,6 +56,7 @@
       USE mod_param
       USE mod_scalars
       USE mod_boundary
+      USE mod_ncparam
       USE mod_ocean
 #if defined SEDIMENT
       USE mod_sediment
@@ -88,8 +89,8 @@
 !-----------------------------------------------------------------------
 !
 #ifdef ESTUARY_TEST2
-# ifdef EAST_TOBC
-      IF (EASTERN_EDGE) THEN
+      IF (ANY(LBC(ieast,isTvar(:),ng)%acquire).and.                     &
+     &    DOMAIN(ng)%Eastern_Edge(tile)) THEN
         DO k=1,N(ng)
           DO j=JstrR,JendR
             BOUNDARY(ng)%t_east(j,k,itemp)=T0(ng)
@@ -102,9 +103,9 @@
           END DO
         END DO
       END IF
-# endif
-# ifdef WEST_TOBC
-      IF (WESTERN_EDGE) THEN
+
+      IF (ANY(LBC(iwest,isTvar(:),ng)%acquire).and.                     &
+     &    DOMAIN(ng)%Western_Edge(tile)) THEN
         DO k=1,N(ng)
           DO j=JstrR,JendR
             BOUNDARY(ng)%t_west(j,k,itemp)=T0(ng)
@@ -117,52 +118,50 @@
           END DO
         END DO
       END IF
-# endif
 #else
-# ifdef EAST_TOBC
-      IF (EASTERN_EDGE) THEN
+      IF (ANY(LBC(ieast,isTvar(:),ng)%acquire).and.                     &
+     &    DOMAIN(ng)%Eastern_Edge(tile)) THEN
         DO itrc=1,NT(ng)
           DO k=1,N(ng)
-            DO j=JstrR,JendR
+            DO j=JstrT,JendT
               BOUNDARY(ng)%t_east(j,k,itrc)=0.0_r8
             END DO
           END DO
         END DO
       END IF
-# endif
-# ifdef WEST_TOBC
-      IF (WESTERN_EDGE) THEN
+
+      IF (ANY(LBC(iwest,isTvar(:),ng)%acquire).and.                     &
+     &    DOMAIN(ng)%Western_Edge(tile)) THEN
         DO itrc=1,NT(ng)
           DO k=1,N(ng)
-            DO j=JstrR,JendR
+            DO j=JstrT,JendT
               BOUNDARY(ng)%t_west(j,k,itrc)=0.0_r8
             END DO
           END DO
         END DO
       END IF
-# endif
-# ifdef SOUTH_TOBC
-      IF (SOUTHERN_EDGE) THEN
+
+      IF (ANY(LBC(isouth,isTvar(:),ng)%acquire).and.                    &
+     &    DOMAIN(ng)%Southern_Edge(tile)) THEN
         DO itrc=1,NT(ng)
           DO k=1,N(ng)
-            DO i=IstrR,IendR
+            DO i=IstrT,IendT
               BOUNDARY(ng)%t_south(i,k,itrc)=0.0_r8
             END DO
           END DO
         END DO
       END IF
-# endif
-# ifdef NORTH_TOBC
-      IF (NORTHERN_EDGE) THEN
+
+      IF (ANY(LBC(inorth,isTvar(:),ng)%acquire).and.                    &
+     &    DOMAIN(ng)%Northern_Edge(tile)) THEN
         DO itrc=1,NT(ng)
           DO k=1,N(ng)
-            DO i=IstrR,IendR
+            DO i=IstrT,IendT
               BOUNDARY(ng)%t_north(i,k,itrc)=0.0_r8
             END DO
           END DO
         END DO
       END IF
-# endif
 #endif
       RETURN
       END SUBROUTINE ana_tobc_tile

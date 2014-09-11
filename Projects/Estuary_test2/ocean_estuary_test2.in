@@ -64,7 +64,7 @@
 !
 ! Application title.
 
-       TITLE = Breakwater
+       TITLE = Suspended Sediment Test in an Estuary
 
 ! C-preprocessing Flag.
 
@@ -146,15 +146,15 @@ GridsInLayer =  1
 !
 !                   1       2       3       4
 
-   LBC(isFsur) ==   Clo     Clo     Clo     Cha         ! free-surface
-   LBC(isUbar) ==   Clo     Clo     Clo     Red         ! 2D U-momentum
-   LBC(isVbar) ==   Clo     Clo     Clo     Red         ! 2D V-momentum
-   LBC(isUvel) ==   Clo     Clo     Clo     Gra         ! 3D U-momentum
-   LBC(isVvel) ==   Clo     Clo     Clo     Gra         ! 3D V-momentum
-   LBC(isMtke) ==   Clo     Clo     Clo     Gra         ! mixing TKE
+   LBC(isFsur) ==   Cha     Clo     Gra     Clo         ! free-surface
+   LBC(isUbar) ==   Red     Clo     Cla     Clo         ! 2D U-momentum
+   LBC(isVbar) ==   Red     Clo     Cla     Clo         ! 2D V-momentum
+   LBC(isUvel) ==   Gra     Clo     Gra     Clo         ! 3D U-momentum
+   LBC(isVvel) ==   Gra     Clo     Gra     Clo         ! 3D V-momentum
+   LBC(isMtke) ==   Gra     Clo     Gra     Clo         ! mixing TKE
 
-   LBC(isTvar) ==   Clo     Clo     Clo     Gra \       ! temperature
-                    Clo     Clo     Clo     Gra         ! salinity
+   LBC(isTvar) ==   Cla     Clo     Cla     Clo \       ! temperature
+                    Cla     Clo     Cla     Clo         ! salinity
 
 ! Wec boundary conditions
 
@@ -165,29 +165,29 @@ GridsInLayer =  1
 
 ! Ice boundary conditions
 
-   LBC(isAice) ==   Clo     Per     Clo     Per         ! ice concentration
-   LBC(isHice) ==   Clo     Per     Clo     Per         ! ice thickness
-   LBC(isHsno) ==   Clo     Per     Clo     Per         ! snow thickness
-   LBC(isTice) ==   Clo     Per     Clo     Per         ! ice temperature
-   LBC(isSfwat)==   Clo     Per     Clo     Per         ! surface water
-   LBC(isSig11)==   Clo     Per     Clo     Per         ! sigma-11
-   LBC(isSig12)==   Clo     Per     Clo     Per         ! sigma-12
-   LBC(isSig22)==   Clo     Per     Clo     Per         ! sigma-22
-   LBC(isUice) ==   Clo     Per     Clo     Per         ! ice U-momentum
-   LBC(isVice) ==   Clo     Per     Clo     Per         ! ice V-momentum
+   LBC(isAice) ==   Clo     Clo     Clo     Clo         ! ice concentration
+   LBC(isHice) ==   Clo     Clo     Clo     Clo         ! ice thickness
+   LBC(isHsno) ==   Clo     Clo     Clo     Clo         ! snow thickness
+   LBC(isTice) ==   Clo     Clo     Clo     Clo         ! ice temperature
+   LBC(isSfwat)==   Clo     Clo     Clo     Clo         ! surface water
+   LBC(isSig11)==   Clo     Clo     Clo     Clo         ! sigma-11
+   LBC(isSig12)==   Clo     Clo     Clo     Clo         ! sigma-12
+   LBC(isSig22)==   Clo     Clo     Clo     Clo         ! sigma-22
+   LBC(isUice) ==   Clo     Clo     Clo     Clo         ! ice U-momentum
+   LBC(isVice) ==   Clo     Clo     Clo     Clo         ! ice V-momentum
 
 ! Adjoint-based algorithms can have different lateral boundary
 ! conditions keywords.
 
-ad_LBC(isFsur) ==   Cha     Per     Clo     Per         ! free-surface
-ad_LBC(isUbar) ==   Fla     Per     Clo     Per         ! 2D U-momentum
-ad_LBC(isVbar) ==   Fla     Per     Clo     Per         ! 2D U-momentum
-ad_LBC(isUvel) ==   Gra     Per     Clo     Per         ! 3D U-momentum
-ad_LBC(isVvel) ==   Gra     Per     Clo     Per         ! 3D V-momentum
-ad_LBC(isMtke) ==   Gra     Per     Clo     Per         ! mixing TKE
+ad_LBC(isFsur) ==   Cha     Clo     Gra     Clo         ! free-surface
+ad_LBC(isUbar) ==   Red     Clo     Cla     Clo         ! 2D U-momentum
+ad_LBC(isVbar) ==   Red     Clo     Cla     Clo         ! 2D U-momentum
+ad_LBC(isUvel) ==   Gra     Clo     Gra     Clo         ! 3D U-momentum
+ad_LBC(isVvel) ==   Gra     Clo     Gra     Clo         ! 3D V-momentum
+ad_LBC(isMtke) ==   Gra     Clo     Gra     Clo         ! mixing TKE
 
-ad_LBC(isTvar) ==   Gra     Per     Clo     Per \       ! temperature
-                    Gra     Per     Clo     Per         ! salinity
+ad_LBC(isTvar) ==   Cla     Clo     Cla     Clo \       ! temperature
+                    Cla     Clo     Cla     Clo         ! salinity
 
 ! Set lateral open boundary edge volume conservation switch for
 ! nonlinear model and adjoint-based algorithms. Usually activated
@@ -206,8 +206,8 @@ ad_VolCons(north) ==  F                            ! northern boundary
 
 ! Time-Stepping parameters.
 
-      NTIMES == 345600
-          DT == 0.25d0
+      NTIMES == 43200
+          DT == 10.0d0
      NDTFAST == 20
 
 ! Model iteration loops parameters.
@@ -229,33 +229,33 @@ ad_VolCons(north) ==  F                            ! northern boundary
 
        NRREC == 0
    LcycleRST == T
-        NRST == 360
+        NRST == 720
         NSTA == 1
         NFLT == 1
-       NINFO == 1
+       NINFO == 10
 
 ! Output history, average, diagnostic files parameters.
 
      LDEFOUT == T
-        NHIS == 4800
+        NHIS == 360
      NDEFHIS == 0
       NTSAVG == 1
-        NAVG == 72
+        NAVG == 1440
      NDEFAVG == 0
       NTSDIA == 1
-        NDIA == 72
+        NDIA == 1440
      NDEFDIA == 0
 
 ! Output tangent linear and adjoint models parameters.
 
    LcycleTLM == F
-        NTLM == 720
+        NTLM == 60
      NDEFTLM == 0
    LcycleADJ == F
-        NADJ == 720
+        NADJ == 60
      NDEFADJ == 0
-        NSFF == 720
-        NOBC == 720
+        NSFF == 60
+        NOBC == 60
 
 ! GST output and check pointing restart parameters.
 

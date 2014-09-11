@@ -47,6 +47,7 @@
       USE mod_param
       USE mod_boundary
       USE mod_grid
+      USE mod_ncparam
       USE mod_scalars
 !
 !  Imported variable declarations.
@@ -67,44 +68,42 @@
 !-----------------------------------------------------------------------
 !
 #if defined ESTUARY_TEST2
-# ifdef WEST_FSOBC
       ramp=TANH((tdays(ng)-dstart)/1.0_r8)
-      IF (WESTERN_EDGE) THEN
+      IF (LBC(iwest,isFsur,ng)%acquire.and.                             &
+     &    DOMAIN(ng)%Western_Edge(tile)) THEN
         cff=2.0_r8*SIN(2.0_r8*pi*time(ng)/(12.0_r8*3600.0_r8))
         DO j=JstrR,JendR
           BOUNDARY(ng)%zeta_west(j)=cff*ramp
         END DO
       END IF
-# endif
 #else
-# ifdef EAST_FSOBC
-      IF (EASTERN_EDGE) THEN
-        DO j=JstrR,JendR
+      IF (LBC(ieast,isFsur,ng)%acquire.and.                             &
+     &    DOMAIN(ng)%Eastern_Edge(tile)) THEN
+        DO j=JstrT,JendT
           BOUNDARY(ng)%zeta_east(j)=0.0_r8
         END DO
       END IF
-# endif
-# ifdef WEST_FSOBC
-      IF (WESTERN_EDGE) THEN
-        DO j=JstrR,JendR
+
+      IF (LBC(iwest,isFsur,ng)%acquire.and.                             &
+     &    DOMAIN(ng)%Western_Edge(tile)) THEN
+        DO j=JstrT,JendT
           BOUNDARY(ng)%zeta_west(j)=0.0_r8
         END DO
       END IF
-# endif
-# ifdef SOUTH_FSOBC
-      IF (SOUTHERN_EDGE) THEN
-        DO i=IstrR,IendR
+
+      IF (LBC(isouth,isFsur,ng)%acquire.and.                            &
+     &    DOMAIN(ng)%Southern_Edge(tile)) THEN
+        DO i=IstrT,IendT
           BOUNDARY(ng)%zeta_south(i)=0.0_r8
         END DO
       END IF
-# endif
-# ifdef NORTH_FSOBC
-      IF (NORTHERN_EDGE) THEN
-        DO i=IstrR,IendR
+
+      IF (LBC(inorth,isFsur,ng)%acquire.and.                            &
+     &    DOMAIN(ng)%Northern_Edge(tile)) THEN
+        DO i=IstrT,IendT
           BOUNDARY(ng)%zeta_north(i)=0.0_r8
         END DO
       END IF
-# endif
 #endif
       RETURN
       END SUBROUTINE ana_fsobc_tile
