@@ -101,6 +101,10 @@ else
  endif
 endif
 
+ifdef USE_SWAN
+           FFLAGS += -assume byterecl
+endif
+
 ifdef USE_MCT
        MCT_INCDIR ?= /opt/intelsoft/mct/include
        MCT_LIBDIR ?= /opt/intelsoft/mct/lib
