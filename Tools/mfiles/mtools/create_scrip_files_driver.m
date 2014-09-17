@@ -1,4 +1,4 @@
-% function create_scrip_input_files
+% script create_scrip_input_files
 %
 % This m file is part of a series of routines driven by "create_scrip_weights_master.m"
 % Calls scrip for each combination of grids to create the weights files.

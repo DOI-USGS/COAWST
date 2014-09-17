@@ -35,7 +35,9 @@
       integer :: MyRank, MyError, MyMaster, DT, num, den
       integer :: cdecode_line, cload_i, cload_r, indx
       integer :: Ivalue(1)
-
+# if defined WRF_COUPLING
+      integer :: sstupdate
+# endif
       real(m8), dimension(100) :: Rval
       real(m8) :: FAC
 
@@ -214,6 +216,7 @@
      &        /,a80)
  230  CONTINUE
 !
+      sstupdate=0
       DO WHILE (.TRUE.)
         READ (inp,'(a)',ERR=215,END=240) line
         aline=ADJUSTL(line)
@@ -247,13 +250,13 @@
           aline=aline(indx+1:LEN(aline))
           indx=INDEX(aline,',')
           read(aline(1:indx-1),'(i5)') num
-! get den
+!  get den
           aline=saveline3
           indx=INDEX(aline,'=')
           aline=aline(indx+1:LEN(aline))
           indx=INDEX(aline,',')
           read(aline(1:indx-1),'(i5)') den
-! compute dt = DT + num/den
+!  compute dt = DT + num/den
           IF (den.eq.0) THEN
             dtatm(1)=REAL(DT,m8)
           ELSE
@@ -270,12 +273,26 @@
             dtatm(ia)=dtatm(1)/REAL(den,m8)
           END DO
         END IF
+        IF(aline(1:10).eq.'sst_update') THEN
+          indx=INDEX(aline,'=')
+          aline=aline(indx+1:LEN(aline))
+          indx=MAX(INDEX(aline,','),LEN(aline))
+          read(aline(1:indx-1),'(i5)') sstupdate
+        END IF
       END DO
 !
  215  IF (MyRank.eq.MyMaster) WRITE (out,60) line
 !     exit_flag=4
       RETURN
  240  CLOSE (inp)
+#  if !defined SST_CONSTANT
+      IF (sstupdate.eq.0) THEN
+        WRITE (stdout,65) sstupdate
+ 65     FORMAT (/,' Recommend that sst_update be set to = 1 in the '    &
+     &            'namelist.input for model coupling, not = ',i5)
+!       STOP
+      END IF
+#  endif
 # endif
 
   60  FORMAT (/,'read model inputs - Error while processing line: ',/,a)
