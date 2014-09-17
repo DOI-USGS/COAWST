@@ -2293,7 +2293,7 @@
       END IF
 # endif
 # if defined BULK_FLUXES || defined ECOSIM || defined ATM_PRESS \
-  || defined ATM2OCN_FLUXES
+  || defined ATM2OCN_FLUXES || defined CCSM_FLUXES2D
 !
 !  Write out surface air pressure.
 !

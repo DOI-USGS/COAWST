@@ -345,8 +345,8 @@
 #if defined WEC_ROLLER
           real(r8), pointer :: rollA(:,:)
 #endif
-#if defined BULK_FLUXES || defined ECOSIM || defined ATM_PRESS \
-     || defined CCSM_FLUXES2D
+# if defined BULK_FLUXES || defined ECOSIM || defined ATM_PRESS \
+  || defined ATM2OCN_FLUXES || defined CCSM_FLUXES2D
           real(r8), pointer :: Pair(:,:)
 # ifndef ANA_PAIR
           real(r8), pointer :: PairG(:,:,:)
@@ -784,10 +784,9 @@
 # endif
 #endif
 
-#if defined BULK_FLUXES || defined ECOSIM || defined ATM_PRESS \
-    || defined CCSM_FLUXES2D
+# if defined BULK_FLUXES || defined ECOSIM || defined ATM_PRESS \
+  || defined ATM2OCN_FLUXES || defined CCSM_FLUXES2D
       allocate ( FORCES(ng) % Pair(LBi:UBi,LBj:UBj) )
-
 # ifndef ANA_PAIR
       allocate ( FORCES(ng) % PairG(LBi:UBi,LBj:UBj,2) )
 # endif
@@ -1319,8 +1318,8 @@
             FORCES(ng) % TairG(i,j,2) = IniVal
 # endif
 #endif
-#if defined BULK_FLUXES || defined ECOSIM || defined ATM_PRESS || \
-     defined CCSM_FLUXES2D
+# if defined BULK_FLUXES || defined ECOSIM || defined ATM_PRESS \
+  || defined ATM2OCN_FLUXES || defined CCSM_FLUXES2D
             FORCES(ng) % Pair(i,j) = IniVal
 # ifndef ANA_PAIR
             FORCES(ng) % PairG(i,j,1) = IniVal

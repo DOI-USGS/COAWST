@@ -1436,7 +1436,8 @@
           IF (exit_flag.ne.NoError) RETURN
         END IF
 # endif
-# if defined BULK_FLUXES || defined ECOSIM || defined ATM_PRESS
+# if defined BULK_FLUXES || defined ECOSIM || defined ATM_PRESS \
+  || defined ATM2OCN_FLUXES || defined CCSM_FLUXES2D
 !
 !  Define surface air pressure.
 !
@@ -3574,7 +3575,8 @@
             got_var(idRunoff)=.TRUE.
             HIS(ng)%Vid(idRunoff)=var_id(i)
 # endif
-# if defined BULK_FLUXES || defined ECOSIM || defined ATM_PRESS
+# if defined BULK_FLUXES || defined ECOSIM || defined ATM_PRESS \
+  || defined ATM2OCN_FLUXES || defined CCSM_FLUXES2D
           ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idPair))) THEN
             got_var(idPair)=.TRUE.
             HIS(ng)%Vid(idPair)=var_id(i)
@@ -4223,7 +4225,8 @@
           RETURN
         END IF
 # endif
-# if defined BULK_FLUXES || defined ECOSIM || defined ATM_PRESS
+# if defined BULK_FLUXES || defined ECOSIM || defined ATM_PRESS \
+  || defined ATM2OCN_FLUXES || defined CCSM_FLUXES2D
         IF (.not.got_var(idPair).and.Hout(idPair,ng)) THEN
           IF (Master) WRITE (stdout,60) TRIM(Vname(1,idPair)),          &
      &                                  TRIM(ncname)

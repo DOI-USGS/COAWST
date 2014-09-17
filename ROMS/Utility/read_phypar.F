@@ -1766,7 +1766,8 @@
               END IF
               Npts=load_l(Nval, Cval, Ngrids, Hout(idRunoff,:))
 # endif
-# if defined BULK_FLUXES || defined ECOSIM || defined ATM_PRESS
+# if defined BULK_FLUXES || defined ECOSIM || defined ATM_PRESS \
+  || defined ATM2OCN_FLUXES || defined CCSM_FLUXES2D
             CASE ('Hout(idPair)')
               IF (idPair.eq.0) THEN
                 IF (Master) WRITE (out,280) 'idPair'
@@ -2466,7 +2467,8 @@
             CASE ('Aout(idRunoff)')
               Npts=load_l(Nval, Cval, Ngrids, Aout(idRunoff,:))
 #  endif
-#  if defined BULK_FLUXES || defined ECOSIM || defined ATM_PRESS
+# if defined BULK_FLUXES || defined ECOSIM || defined ATM_PRESS \
+  || defined ATM2OCN_FLUXES || defined CCSM_FLUXES2D
             CASE ('Aout(idPair)')
               Npts=load_l(Nval, Cval, Ngrids, Aout(idPair,:))
 #  endif
@@ -5481,7 +5483,8 @@
      &       'Hout(idRunoff)',                                          &
      &       'Write out surface fresh water input via runoff.'
 # endif
-# if defined BULK_FLUXES || defined ECOSIM || defined ATM_PRESS
+# if defined BULK_FLUXES || defined ECOSIM || defined ATM_PRESS \
+  || defined ATM2OCN_FLUXES || defined CCSM_FLUXES2D
           IF (Hout(idPair,ng)) WRITE (out,170) Hout(idPair,ng),         &
      &       'Hout(idPair)',                                            &
      &       'Write out surface air pressure.'
@@ -6003,7 +6006,8 @@
      &       'Aout(idRunoff)',                                          &
      &       'Write out averaged surface fresh water input via runoff.'
 #  endif
-#  if defined BULK_FLUXES || defined ECOSIM || defined ATM_PRESS
+#  if defined BULK_FLUXES || defined ECOSIM || defined ATM_PRESS \
+   || defined ATM2OCN_FLUXES || defined CCSM_FLUXES2D
           IF (Aout(idPair,ng)) WRITE (out,170) Aout(idPair,ng),         &
      &       'Aout(idPair)',                                            &
      &       'Write out averaged surface air pressure.'
