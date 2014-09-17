@@ -27,7 +27,7 @@ IWRITE=1;           % 1 to write output to netcdf, 0 for no output
 %     for the tidal constituents.  If you change the start time, this routine
 %     must be run again to adjust the tidal phases. 
 %            YYYY   MO   DA    HR     MI    SC
-      g = [  2012,  10,  28,   0,     0,    0];   % us east
+      g = [  2012,  10,  28,   0,     0,    0];   % GMT
       disp(['Tidal Start Time =' datestr(g)])
 
 % (3) Select Adcirc or topex/osu tidal constituent data 
