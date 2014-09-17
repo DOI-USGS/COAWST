@@ -37,7 +37,7 @@
       integer :: Ivalue(1)
 
       real(m8), dimension(100) :: Rval
-      real(m8) :: FAC
+      real(m8) :: FAC, DTr
 
       character (len=1 ), parameter :: blank = ' '
       character (len=1 ) :: KEY
@@ -130,7 +130,7 @@
           END DO
           DO i=1,1
             indx=INDEX(aline,blank)
-            read(aline(1:indx),'(i10)') DT
+            read(aline(1:indx),'(f10.2)') DTr
 !            read(aline(1:indx),'("(i",indx,")"') DT
             dtwav(iw)=REAL(DT,m8)
             aline=aline(indx+1:LEN(aline))
@@ -173,7 +173,7 @@
             END DO
             DO i=1,1
               indx=INDEX(aline,blank)
-              read(aline(1:indx),'(i10)') DT
+              read(aline(1:indx),'(f10.2)') DTr
               dtwav(iw)=REAL(DT,m8)
               aline=aline(indx+1:LEN(aline))
             END DO

@@ -90,7 +90,7 @@ done
 # determine the name of the ".h" header file with the application
 # CPP definitions.
 
-export   COAWST_APPLICATION=INLET_TEST
+export   COAWST_APPLICATION=RIP_CURRENT
 
 # Set the ROMS_APPLICATION to be the same as the COAWST_APP.  We use the COAWST
 # APP for other checks.
@@ -156,7 +156,7 @@ export        MY_ROMS_SRC=${MY_ROOT_DIR}/
 #export              FORT=gfortran
 #export              FORT=pgi
 
- export         USE_DEBUG=              # use Fortran debugging flags
+ export         USE_DEBUG=on              # use Fortran debugging flags
  export         USE_LARGE=              # activate 64-bit compilation
 #export       USE_NETCDF4=on            # compile with NetCDF-4 library
 #export   USE_PARALLEL_IO=on            # Parallel I/O with Netcdf-4/HDF5
@@ -392,8 +392,8 @@ fi
 
 #  export     MY_HEADER_DIR=${MY_PROJECT_DIR}/ROMS/Include
 #  export MY_ANALYTICAL_DIR=${MY_PROJECT_DIR}/ROMS/Functionals
-   export     MY_HEADER_DIR=${MY_PROJECT_DIR}/Projects/Inlet_test/Coupled
-   export MY_ANALYTICAL_DIR=${MY_PROJECT_DIR}/Projects/Inlet_test/coupled
+   export     MY_HEADER_DIR=${MY_PROJECT_DIR}/Projects/Rip_current
+   export MY_ANALYTICAL_DIR=${MY_PROJECT_DIR}/Projects/Rip_current
 
 # Put the binary to execute in the following directory.
 

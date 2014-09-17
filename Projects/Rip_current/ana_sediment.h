@@ -2,7 +2,7 @@
 !
 !! svn $Id: ana_sediment.h 737 2008-09-07 02:06:44Z jcwarner $
 !!======================================================================
-!! Copyright (c) 2002-2010 The ROMS/TOMS Group                         !
+!! Copyright (c) 2002-2014 The ROMS/TOMS Group                         !
 !!   Licensed under a MIT/X style license                              !
 !!   See License_ROMS.txt                                              !
 !=======================================================================
@@ -74,15 +74,9 @@
 !***********************************************************************
 !
       USE mod_param
+      USE mod_ncparam
       USE mod_scalars
       USE mod_sediment
-!
-#if defined EW_PERIODIC || defined NS_PERIODIC
-      USE exchange_3d_mod, ONLY : exchange_r3d_tile
-#endif
-#ifdef DISTRIBUTE
-      USE mp_exchange_mod, ONLY : mp_exchange3d, mp_exchange4d
-#endif
 !
 !  Imported variable declarations.
 !
@@ -125,18 +119,6 @@
 !  Local variable declarations.
 !
 #ifdef DISTRIBUTE
-# ifdef EW_PERIODIC
-      logical :: EWperiodic=.TRUE.
-# else
-      logical :: EWperiodic=.FALSE.
-# endif
-# ifdef NS_PERIODIC
-      logical :: NSperiodic=.TRUE.
-# else
-      logical :: NSperiodic=.FALSE.
-# endif
-#endif
-#ifdef DISTRIBUTE
       integer :: Tstr, Tend
 #endif
       integer :: i, ised, j, k
@@ -152,8 +134,8 @@
 !-----------------------------------------------------------------------
 !
 # if defined RIP_CURRENT
-      DO j=JstrR,JendR
-        DO i=IstrR,IendR
+      DO j=JstrT,JendT
+        DO i=IstrT,IendT
           bottom(i,j,isd50)=0.00015_r8
           bottom(i,j,idens)=2650.0_r8
         END DO
@@ -176,8 +158,8 @@
 !  Yalin method (Miller et. al, 1977).
 !
       Kvisc=0.0013_r8/rho0
-      DO j=JstrR,JendR
-        DO i=IstrR,IendR
+      DO j=JstrT,JendT
+        DO i=IstrT,IendT
           rhoWater=rho(i,j,1)+1000.0_r8
           cff=SQRT((bottom(i,j,idens)-rhoWater)*                        &
      &             g*bottom(i,j,isd50)*bottom(i,j,isd50)*               &
@@ -200,8 +182,8 @@
         END DO
       END DO
 #  else
-      DO j=JstrR,JendR
-        DO i=IstrR,IendR
+      DO j=JstrT,JendT
+        DO i=IstrT,IendT
           bottom(i,j,itauc)=0.15_r8/rho0
         END DO
       END DO
@@ -209,13 +191,13 @@
 !
 !-----------------------------------------------------------------------
 !  If only Blass bottom boundary layer and not sediment model, set
-!  sediiment settling velocity (m/s).
+!  sediment settling velocity (m/s).
 !-----------------------------------------------------------------------
 !
       Kvisc=0.0013_r8/rho0
-      DO j=JstrR,JendR
-        DO i=IstrR,IendR
-          bottom(i,j,iwsed)=0.011_r8
+      DO j=JstrT,JendT
+        DO i=IstrT,IendT
+          bottom(i,j,iwsed)=0.02_r8
 !!
 !! Consider Souslby (1997) estimate of settling velocity.
 !!
@@ -236,8 +218,8 @@
 !
       DO ised=1,NST
         DO k=1,N(ng)
-          DO j=JstrR,JendR
-            DO i=IstrR,IendR
+          DO j=JstrT,JendT
+            DO i=IstrT,IendT
               t(i,j,k,1,idsed(ised))=Csed(ised,ng)
             END DO
           END DO
@@ -251,8 +233,8 @@
 !-----------------------------------------------------------------------
 !
 # if defined RIP_CURRENT
-      DO j=JstrR,JendR
-        DO i=IstrR,IendR
+      DO j=JstrT,JendT
+        DO i=IstrT,IendT
 !
 !  Set bed layer properties.
 !
@@ -282,17 +264,17 @@
 !-----------------------------------------------------------------------
 !
       DO k=1,Nbed
-        DO j=JstrR,JendR
-          DO i=IstrR,IendR
+        DO j=JstrT,JendT
+          DO i=IstrT,IendT
 !
 !  Calculate mass so it is consistent with density, thickness, and
 !  porosity.
 !
              DO ised=1,NST
                bed_mass(i,j,k,1,ised)=bed(i,j,k,ithck)*                 &
-     &                                 Srho(ised,ng)*                   &
-     &                                 (1.0_r8-bed(i,j,k,iporo))*       &
-     &                                 bed_frac(i,j,k,ised)
+     &                                Srho(ised,ng)*                    &
+     &                                (1.0_r8-bed(i,j,k,iporo))*        &
+     &                                bed_frac(i,j,k,ised)
              END DO
           END DO
         END DO
@@ -300,8 +282,8 @@
 !
 !  Set exposed sediment layer properties.
 !
-      DO j=JstrR,JendR
-        DO i=IstrR,IendR
+      DO j=JstrT,JendT
+        DO i=IstrT,IendT
           cff1=1.0_r8
           cff2=1.0_r8
           cff3=1.0_r8
@@ -329,5 +311,6 @@
         END DO
       END DO
 #endif
+
       RETURN
       END SUBROUTINE ana_sediment_tile

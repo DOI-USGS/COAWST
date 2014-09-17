@@ -37,12 +37,6 @@
 #undef  AVERAGES
 #undef  AVERAGES_WEC
 
-/* Boundary Conditions */
-#define EASTERN_WALL
-#define WESTERN_WALL
-#define NORTHERN_WALL
-#define SOUTHERN_WALL
-
 #undef  ANA_GRID
 #define ANA_INITIAL
 #define ANA_SMFLUX
