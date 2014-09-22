@@ -147,8 +147,8 @@ GridsInLayer =  1
 !                   1       2       3       4
 
    LBC(isFsur) ==   Clo     Per     Gra     Per         ! free-surface
-   LBC(isUbar) ==   Clo     Per     Gra     Per         ! 2D U-momentum
-   LBC(isVbar) ==   Clo     Per     Gra     Per         ! 2D V-momentum
+   LBC(isUbar) ==   Clo     Per     Red     Per         ! 2D U-momentum
+   LBC(isVbar) ==   Clo     Per     Red     Per         ! 2D V-momentum
    LBC(isUvel) ==   Clo     Per     Gra     Per         ! 3D U-momentum
    LBC(isVvel) ==   Clo     Per     Gra     Per         ! 3D V-momentum
    LBC(isMtke) ==   Clo     Per     Gra     Per         ! mixing TKE
@@ -158,10 +158,10 @@ GridsInLayer =  1
 
 ! Wec boundary conditions
 
-   LBC(isU2Sd) ==   Clo     Per     Clo     Per         ! 2D U-stokes
-   LBC(isV2Sd) ==   Clo     Per     Clo     Per         ! 2D V-stokes
-   LBC(isU3Sd) ==   Clo     Per     Clo     Per         ! 3D U-stokes
-   LBC(isV3Sd) ==   Clo     Per     Clo     Per         ! 3D V-stokes
+   LBC(isU2Sd) ==   Clo     Per     Gra     Per         ! 2D U-stokes
+   LBC(isV2Sd) ==   Clo     Per     Gra     Per         ! 2D V-stokes
+   LBC(isU3Sd) ==   Clo     Per     Gra     Per         ! 3D U-stokes
+   LBC(isV3Sd) ==   Clo     Per     Gra     Per         ! 3D V-stokes
 
 ! Ice boundary conditions
 
