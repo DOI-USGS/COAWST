@@ -6,9 +6,17 @@
 % for roms and swan. The wrf files
 % are assumed to already be created.
 %
-%
 % cd Projects/Sandy
 % This is a place to create all the necessary files.
+%
+% Step 0.  We are drawing heavily on the work of the scientists at
+% NCAR who already created the WRF input files. These were provided
+% by Dave Gill and Cindy Bruyere. They provided a link to a WRF
+% tutorial here:
+%
+%If you are interested in the WRF-only processing (allowing you to define the atmospheric domain), please take a look at the following web page:
+%http://www2.mmm.ucar.edu/wrf/OnLineTutorial/compilation_tutorial.php
+%
 %
 % Step 1:  ROMS grid
 %
