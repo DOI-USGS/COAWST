@@ -152,6 +152,7 @@
 ! 
 ! Compute contribution of wave breaking induced mixing to Akv
 !
+      DO k=1,N(ng)
         fac1=0.5_r8*SQRT(2.0_r8)
         fac2=(z_r(i,j,k)-z_w(i,j,0))*oDstp(i,j)
         DO j=Jstr,Jend
@@ -168,6 +169,7 @@
      &                 Dstp(i,j)*cff3*oroller(i,j)
           END DO
         END DO
+      END DO   
 # if defined EW_PERIODIC || defined NS_PERIODIC
       CALL exchange_w3d_tile (ng, tile,                                 &
      &                        LBi, UBi, LBj, UBj, 0, N(ng),             &
