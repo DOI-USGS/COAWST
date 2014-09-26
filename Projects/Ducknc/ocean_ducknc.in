@@ -147,8 +147,8 @@ GridsInLayer =  1
 !                   1       2       3       4
 
    LBC(isFsur) ==   Clo     Per     Gra     Per         ! free-surface
-   LBC(isUbar) ==   Clo     Per     Red     Per         ! 2D U-momentum
-   LBC(isVbar) ==   Clo     Per     Red     Per         ! 2D V-momentum
+   LBC(isUbar) ==   Clo     Per     Gra     Per         ! 2D U-momentum
+   LBC(isVbar) ==   Clo     Per     Gra     Per         ! 2D V-momentum
    LBC(isUvel) ==   Clo     Per     Gra     Per         ! 3D U-momentum
    LBC(isVvel) ==   Clo     Per     Gra     Per         ! 3D V-momentum
    LBC(isMtke) ==   Clo     Per     Gra     Per         ! mixing TKE
@@ -336,7 +336,7 @@ LtracerSponge == F F                            ! temperature, salinity, inert
  ZOS_HSIG_ALPHA == 0.5d0                        ! roughness from wave amplitude
        SZ_ALPHA == 0.25d0                       ! roughness from wave dissipation
       CRGBAN_CW == 100.0d0                      ! Craig and Banner wave breaking
-      WEC_ALPHA == 0.0d0                        ! 0: all wave dissip goes to break and none to roller.
+      WEC_ALPHA == 1.0d0                        ! 0: all wave dissip goes to break and none to roller.
                                                 ! 1: all wave dissip goes to roller and none to breaking.
 
 ! Constants used in momentum stress computation.

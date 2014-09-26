@@ -86,7 +86,7 @@
 
 ! Number of grids in each nesting layer [1:NestLayers].
 
-GridsInLayer =  1
+  GridsInLayer =  1
 
 ! Grid dimension parameters. See notes below in the Glossary for how to set
 ! these parameters correctly.

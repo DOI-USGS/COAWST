@@ -864,7 +864,7 @@ Dout(iTvdif) == F F     ! temp_vdiff, ...    vertical diffusion
 
 ! Input NetCDF file names, [1:Ngrids].
 
-     GRDNAME == Projects/Breakwater/ocean_breakwater_grd.nc
+     GRDNAME == Projects/Estuary_test2/estuary_test2_grid.nc
      ININAME == ocean_ini.nc
      ITLNAME == ocean_itl.nc
      IRPNAME == ocean_irp.nc
@@ -918,7 +918,7 @@ Dout(iTvdif) == F F     ! temp_vdiff, ...    vertical diffusion
 
      GSTNAME == ocean_gst.nc
      RSTNAME == ocean_rst.nc 
-     HISNAME == ocean_breakwater_his.nc
+     HISNAME == ocean_estuary2_his.nc
      TLMNAME == ocean_tlm.nc
      TLFNAME == ocean_tlf.nc
      ADJNAME == ocean_adj.nc

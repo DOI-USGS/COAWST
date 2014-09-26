@@ -16,12 +16,6 @@
 #define WET_DRY
 #undef  UV_ADV
 #define TS_FIXED
-#define NORTHERN_WALL
-#define SOUTHERN_WALL
-#define WESTERN_WALL
-#define EAST_FSCLAMPED
-#define EAST_M2REDUCED
-#define FSOBC_REDUCED
 #define ANA_SMFLUX
 #define UV_LDRAG
 

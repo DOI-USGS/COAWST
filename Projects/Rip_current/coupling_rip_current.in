@@ -56,7 +56,6 @@
    WAV_name = Projects/Rip_current/swan_rip_current.in    ! wave model
    OCN_name = Projects/Rip_current/ocean_rip_current.in   ! ocean model
 
-
 ! Sparse matrix interpolation weights files. The file names
 ! must be provided in a specific order. For example: 
 ! W2ONAME == wav1 to ocn1

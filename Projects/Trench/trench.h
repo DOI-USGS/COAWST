@@ -13,6 +13,7 @@
 **
 **  Trench migration suspended sediment test.
 */
+#define ROMS_MODEL
 
 #undef  LOG_PROFILE
 #define UV_ADV
@@ -27,16 +28,6 @@
 # define SED_MORPH
 #endif
 #undef SPLINES
-#define NORTHERN_WALL
-#define SOUTHERN_WALL
-#define WEST_FSGRADIENT
-#define WEST_M2CLAMPED
-#define WEST_M3GRADIENT
-#define WEST_TCLAMPED
-#define EAST_FSGRADIENT
-#define EAST_M2CLAMPED
-#define EAST_M3GRADIENT
-#define EAST_TGRADIENT
 #undef  ANA_VMIX
 #define GLS_MIXING
 #ifdef GLS_MIXING
