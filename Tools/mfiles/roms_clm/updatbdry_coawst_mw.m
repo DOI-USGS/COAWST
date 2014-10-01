@@ -25,19 +25,19 @@ disp(' ## Filling Variables in netcdf file with data...')
 
 %% Time
 zettimeid = netcdf.inqVarID(nc_bndry,'zeta_time');
-netcdf.putVar(nc_bndry,zettimeid,ocean_time/(3600*24));
+netcdf.putVar(nc_bndry,zettimeid,ocean_time);
 
 v2dtimeid = netcdf.inqVarID(nc_bndry,'v2d_time');
-netcdf.putVar(nc_bndry,v2dtimeid,ocean_time/(3600*24));
+netcdf.putVar(nc_bndry,v2dtimeid,ocean_time);
 
 v3dtimeid = netcdf.inqVarID(nc_bndry,'v3d_time');
-netcdf.putVar(nc_bndry,v3dtimeid,ocean_time/(3600*24));
+netcdf.putVar(nc_bndry,v3dtimeid,ocean_time);
 
 saltimeid = netcdf.inqVarID(nc_bndry,'salt_time');
-netcdf.putVar(nc_bndry,saltimeid,ocean_time/(3600*24));
+netcdf.putVar(nc_bndry,saltimeid,ocean_time);
 
 tmptimeid = netcdf.inqVarID(nc_bndry,'temp_time');
-netcdf.putVar(nc_bndry,tmptimeid,ocean_time/(3600*24));
+netcdf.putVar(nc_bndry,tmptimeid,ocean_time);
 
 %% zeta
 zetclmid = netcdf.inqVarID(nc_clm,'zeta');%get id
