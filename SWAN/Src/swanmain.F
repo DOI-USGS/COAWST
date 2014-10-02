@@ -557,7 +557,7 @@
       CHARACTER*20 NUMSTR, CHARS(1)
       CHARACTER*80 MSGSTR
       LOGICAL   LOPEN
-      INTEGER nWAV_steps
+      INTEGER nWAV_steps, do_output
       LOGICAL STPNOW
 !
 !         ---  Time-stepping SWAN.
@@ -725,9 +725,12 @@
 
 !TIMG            CALL SWTSTA(9)                                                    40.23
 
-            CALL SWOUTP ( AC2   , SPCSIG, SPCDIR, COMPDA, XYTST ,
-     &                    KGRPNT, XCGRID, YCGRID, OURQT , ng)
-
+            do_output=1
+            IF ((NSTATC.NE.1).and.(IT.eq.0)) do_output=0
+            IF (do_output.EQ.1) THEN
+              CALL SWOUTP ( AC2   , SPCSIG, SPCDIR, COMPDA, XYTST ,
+     &                      KGRPNT, XCGRID, YCGRID, OURQT , ng)
+            END IF
 # ifdef NESTING
 !
 !  Determine the AC data in this current grid, acting as a parent.
