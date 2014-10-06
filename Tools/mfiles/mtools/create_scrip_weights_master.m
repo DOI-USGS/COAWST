@@ -66,11 +66,11 @@ check_scrip_weights=1;
 eval(['cd ',wdir])
 
 if (create_scrip_masks)
-  create_scrip_masks_driver_alexandra
+  create_scrip_masks_driver
 end
 
 if (create_scrip_files)
-  create_scrip_files_driver_alexandra
+  create_scrip_files_driver
 end
 
 if (check_scrip_weights)
