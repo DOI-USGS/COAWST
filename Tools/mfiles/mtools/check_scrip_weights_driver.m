@@ -44,22 +44,24 @@ end
 %
 %%%%%%%%%%%%%%%%%%%%%   ATM2OCN    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %
-for mo=1:Ngrids_roms
-  for ma=1:Ngrids_wrf
-    interp_file=['atm',num2str(ma),'_to_','ocn',num2str(mo),'_weights.nc']
-    src_lon=lon_rho_a{ma};
-    src_lat=lat_rho_a{ma};
-    src_mask=mask_rho_a{ma};
-    dst_lon=lon_rho_o{mo};
-    dst_lat=lat_rho_o{mo};
-    dst_mask=mask_rho_o{mo};
-    add_new_weights(interp_file,src_lon,src_lat,src_mask,dst_lon,dst_lat,dst_mask)
+if (1)
+  for mo=1:Ngrids_roms
+    for ma=1:Ngrids_wrf
+      interp_file=['atm',num2str(ma),'_to_','ocn',num2str(mo),'_weights.nc']
+      src_lon=lon_rho_a{ma};
+      src_lat=lat_rho_a{ma};
+      src_mask=mask_rho_a{ma};
+      dst_lon=lon_rho_o{mo};
+      dst_lat=lat_rho_o{mo};
+      dst_mask=mask_rho_o{mo};
+      add_new_weights(interp_file,src_lon,src_lat,src_mask,dst_lon,dst_lat,dst_mask)
+    end
   end
 end
 %
 %%%%%%%%%%%%%%%%%%%%%   OCN2ATM    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %
-if (0)
+if (1)
   for ma=1:Ngrids_wrf
     for mo=1:Ngrids_roms
       interp_file=['ocn',num2str(mo),'_to_','atm',num2str(ma),'_weights.nc']

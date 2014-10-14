@@ -28,7 +28,7 @@ function add_new_weights(interp_file,src_lon,src_lat,src_mask,dst_lon,dst_lat,ds
     end
 %
     add_dst_address=setdiff(zz2,dst_address);
-    if (length(add_dst_address)>0)
+    if (~isempty(add_dst_address))
 %
 %     plot the points we are getting weights for.
       figure
@@ -67,11 +67,11 @@ function add_new_weights(interp_file,src_lon,src_lat,src_mask,dst_lon,dst_lat,ds
       add_wts = netcdf.defDim(nc,'add_wts',length(add_dst_address));
 %
       disp(' ## Defining Variables')
-      v1 = netcdf.defVar(nc,'add_src_address','short',add_wts);
+      v1 = netcdf.defVar(nc,'add_src_address','int',add_wts);
       netcdf.putAtt(nc,v1,'long_name','src_address_for_masked_src_cells')
       netcdf.putAtt(nc,v1,'units','---')
 %
-      v2 = netcdf.defVar(nc,'add_dst_address','short',add_wts);
+      v2 = netcdf.defVar(nc,'add_dst_address','int',add_wts);
       netcdf.putAtt(nc,v2,'long_name','dst_address_for_masked_src_cells')
       netcdf.putAtt(nc,v2,'units','---')
 %
@@ -82,8 +82,9 @@ function add_new_weights(interp_file,src_lon,src_lat,src_mask,dst_lon,dst_lat,ds
       netcdf.close(nc);
 %
       disp(' ## Adding new weights')
-      ncwrite(interp_file,'add_src_address',add_src_address);
+      ncwrite(interp_file,'add_src_address',single(add_src_address));
       ncwrite(interp_file,'add_dst_address',add_dst_address);
       ncwrite(interp_file,'add_remap_matrix',add_remap_matrix);
     end
 end
+ 
