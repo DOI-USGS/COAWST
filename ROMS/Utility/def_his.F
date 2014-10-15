@@ -3639,6 +3639,14 @@
             got_var(idVbms)=.TRUE.
             HIS(ng)%Vid(idVbms)=var_id(i)
 #ifdef SOLVE3D
+# ifdef UV_KIRBY
+          ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idUwav))) THEN
+            got_var(idUwav)=.TRUE.
+            HIS(ng)%Vid(idUwav)=var_id(i)
+          ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idVwav))) THEN
+            got_var(idVwav)=.TRUE.
+            HIS(ng)%Vid(idVwav)=var_id(i)
+# endif
 # ifdef BBL_MODEL
           ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idUbrs))) THEN
             got_var(idUbrs)=.TRUE.
@@ -3658,6 +3666,9 @@
           ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idVbcs))) THEN
             got_var(idVbcs)=.TRUE.
             HIS(ng)%Vid(idVbcs)=var_id(i)
+          ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idUVwc))) THEN
+            got_var(idUVwc)=.TRUE.
+            HIS(ng)%Vid(idUVwc)=var_id(i)
           ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idUbot))) THEN
             got_var(idUbot)=.TRUE.
             HIS(ng)%Vid(idUbot)=var_id(i)
@@ -4340,6 +4351,20 @@
           RETURN
         END IF
 #ifdef SOLVE3D
+# ifdef UV_KIRBY
+        IF (.not.got_var(idUwav).and.Hout(idUwav,ng)) THEN
+          IF (Master) WRITE (stdout,60) TRIM(Vname(1,idUwav)),          &
+     &                                  TRIM(ncname)
+          exit_flag=3
+          RETURN
+        END IF
+        IF (.not.got_var(idVwav).and.Hout(idVwav,ng)) THEN
+          IF (Master) WRITE (stdout,60) TRIM(Vname(1,idVwav)),          &
+     &                                  TRIM(ncname)
+          exit_flag=3
+          RETURN
+        END IF
+# endif
 # ifdef BBL_MODEL
         IF (.not.got_var(idUbrs).and.Hout(idUbrs,ng)) THEN
           IF (Master) WRITE (stdout,60) TRIM(Vname(1,idUbrs)),          &
@@ -4367,6 +4392,12 @@
         END IF
         IF (.not.got_var(idUbcs).and.Hout(idUbcs,ng)) THEN
           IF (Master) WRITE (stdout,60) TRIM(Vname(1,idUbcs)),          &
+     &                                  TRIM(ncname)
+          exit_flag=3
+          RETURN
+        END IF
+        IF (.not.got_var(idUVwc).and.Hout(idUVwc,ng)) THEN
+          IF (Master) WRITE (stdout,60) TRIM(Vname(1,idUVwc)),          &
      &                                  TRIM(ncname)
           exit_flag=3
           RETURN
