@@ -4641,6 +4641,310 @@
 !     End of subroutine ACTION
       RETURN
       END
+#ifdef SWAN_MODEL
+!****************************************************************
+!
+      SUBROUTINE SINTGRL_INIT (SPCDIR  ,KWAVE   ,AC2     ,
+     &                         DEP2    ,UBOT             ,
+     &                         TMBOT   ,DIRBOT)
+!
+!****************************************************************
+!
+      USE OCPCOMM4                                                        40.41
+      USE SWCOMM1                                                         40.41
+      USE SWCOMM3                                                         40.41
+      USE SWCOMM4                                                         40.41
+      USE M_WCAP
+!
+      IMPLICIT NONE
+!
+!   --|-----------------------------------------------------------|--
+!     | Delft University of Technology                            |
+!     | Faculty of Civil Engineering                              |
+!     | Environmental Fluid Mechanics Section                     |
+!     | P.O. Box 5048, 2600 GA  Delft, The Netherlands            |
+!     |                                                           |
+!     | Programmers: The SWAN team                                |
+!   --|-----------------------------------------------------------|--
+!
+!
+!     SWAN (Simulating WAves Nearshore); a third generation wave model
+!     Copyright (C) 1993-2013  Delft University of Technology
+!
+!     This program is free software; you can redistribute it and/or
+!     modify it under the terms of the GNU General Public License as
+!     published by the Free Software Foundation; either version 2 of
+!     the License, or (at your option) any later version.
+!
+!     This program is distributed in the hope that it will be useful,
+!     but WITHOUT ANY WARRANTY; without even the implied warranty of
+!     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+!     GNU General Public License for more details.
+!
+!     A copy of the GNU General Public License is available at
+!     http://www.gnu.org/copyleft/gpl.html#SEC3
+!     or by writing to the Free Software Foundation, Inc.,
+!     59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+!
+!
+!  0. Authors
+!
+!     40.02: IJsbrand Haagsma
+!     40.08: Erick Rogers
+!     40.13: Nico Booij
+!     40.16: IJsbrand Haagsma
+!     40.22: John Cazes and Tim Campbell
+!     40.41: Marcel Zijlema
+!     40.51: Marcel Zijlema
+!     41.38: James Salmon
+!
+!  1. Updates
+!
+!     40.02, Jan. 00: New, based on the old SDISPA subroutine
+!     40.02, Oct. 00: KWAVE removed in call BRKPAR
+!     40.13, Aug. 01: reduction of spectrum not for Mode Noupdate
+!     40.22, Sep. 01: Changed array definitions to use the parameter      40.22
+!                     MICMAX instead of ICMAX.                            40.22
+!     40.22, Sep. 01: Changed allocated arrays to static arrays to fix    40.22
+!                     OpenMP problems with arrays allocated in parallel   40.22
+!                     regions.                                            40.22
+!     40.22, Oct. 01: PSURF(2) is no longer used as a variable
+!     40.16, Dec. 01: Implemented limiter switches
+!     40.41, Oct. 04: common blocks replaced by modules, include files removed
+!     40.51, Feb. 05: near bottom wave period added
+!     41.38, Apr. 12: extension to nkd scaling
+!     JCW copy of SINTGRL, used to compute some bottom properties at initial.
+!
+!  2. Purpose
+!
+!     To compute several integrals used in SWAN and some general parameters
+!
+!  3. Method
+!
+!     The total energy ETOT is calculate as the following integral
+!
+!     ETOT = Integrate [ AC2(theta,sigma) sigma dsigma dtheta ]
+!
+!     To avoid too high dissipation by breaking, ETOT is maximised by a maximum
+!     total energy EMAX based on the maximum wave heigth HM:
+!
+!     HM    = PSURF(2) depth
+!
+!                      2
+!     EMAX  = 0.25 * HM
+!
+!     When EMAX > ETOT, then the action density AC2 is reduced by EMAX/ETOT
+!
+!     In the physicaly unrealistic case that ETOT <= 0, the integrals and other parameters
+!     get values that represent a steady sea-state with wind close to zero.
+!
+!     The following integrals are calculated:
+!
+!                                                       2
+!     AB2   = Integrate [ (AC2(theta,sigma) sigma / Sinh [ K(sigma) depth ]) dsigma dtheta ]
+!
+!     ACTOT = Integrate [ AC2(theta,sigma) dsigma dtheta ]
+!
+!     EDRKTOT=Integrate [ (AC2(theta,sigma) sigma / Sqrt [ K(sigma) ]) dsigma dtheta ]
+!
+!     EKTOT = Integrate [ AC2(theta,sigma) K(sigma) sigma dsigma dtheta ]
+!
+!                                               2
+!     ETOT1 = Integrate [ AC2(theta,sigma) sigma dsigma dtheta ]
+!
+!                                               3
+!     ETOT2 = Integrate [ AC2(theta,sigma) sigma dsigma dtheta ]
+!
+!                                               5
+!     ETOT4 = Integrate [ AC2(theta,sigma) sigma dsigma dtheta ]
+!
+!                                                3      2
+!     UB2   = Integrate [ (AC2(theta,sigma) sigma / Sinh [ K(sigma) depth ]) dsigma dtheta ]
+!
+!PSD Next 2 integrals are used for DIRBOT calculation 09/21/2011
+!
+!                                                     3      2
+!     EBSINTOT   = Integrate [ (AC2(theta,sigma) sigma / Sinh [ K(sigma) depth ]) Sin [ theta ] dsigma dtheta ]
+!
+!                                                     3      2
+!     EBCOSTOT   = Integrate [ (AC2(theta,sigma) sigma / Sinh [ K(sigma) depth ]) Cos [ theta ] dsigma dtheta ]
+!
+!     For reasons of ??, in the calculation of UB2, AB2, ETOTM2, ETOTM4, the high frequency
+!     tail is ignored.
+!
+!     Based on these integrals the following parameters are calculated:
+!
+!                               2
+!     KM_WAM  = (ETOT / EDRKTOT)
+!     SIGM01  = ETOT1 / ETOT
+!     SIGM_10 = ETOT  / ACTOT
+!     UBOT    = Sqrt [ UB2 ]             NOTE: THIS IS THE ROOT MEAN SQUARE OF THE ORBITAL MOTION NEAR THE BOTTOM!!!
+!                                        Note: this is Urms according to Madsen (1994)
+!     TMBOT   = PI Sqrt [ 2 AB2 / UB2 ]   ! new since 40.85
+!     TMBOT   = 2*PI AB2 / UB2            !we thoguth this was the right way
+!     DIRBOT = ATAN2 [ EBSINTOT / EBCOSTOT] !PSD 09/21/2011 follows Madsen (1994)
+!
+!  4. Argument variables
+!
+!     AC2   : Action density as function of ID, IS, IX and IY
+!     DEP2  : Water depth
+!     KWAVE : Wavenumber
+!     UBOT  : Near bottom velocity as function of IX and IY
+!     TMBOT : near bottom wave period                                     40.51
+!     DIRBOT : bottom wave mean direction !PSD 09/21/2011
+
+      REAL, INTENT(IN)     :: DEP2(MCGRD)
+!     Changed ICMAX to MICMAX, since MICMAX doesn't vary over gridpoint   40.22
+      REAL, INTENT(IN)     :: KWAVE(MSC,MICMAX)                           40.22
+      REAL, INTENT(IN)     :: SPCDIR(MDC,6)
+!
+      REAL, INTENT(IN) :: AC2(MDC,MSC,MCGRD)
+      REAL, INTENT(IN OUT) :: UBOT(MCGRD)
+      REAL, INTENT(IN OUT) :: TMBOT(MCGRD)                                40.51
+      REAL, INTENT(IN OUT) :: DIRBOT(MCGRD)                               !PSD 09/21/2011
+!
+      REAL :: ETOT
+!
+!  6. Local variables
+!
+!     IENT  : Number of entries in this subroutine
+!     IS    : Counter for the relative frequency band
+!
+      INTEGER       :: IS, ID
+      INTEGER, SAVE :: IENT = 0
+!
+!     AB2                : Sum of E_DSHKD2_DS_DD
+!     ACTOT_DSIG         : Integration term for calculating ACTOT
+!     ARR                : auxiliary array
+!     EDRKTOT_SWELL      : Swell-part of EDRKTOT
+!     EMAX               : Maximum energy according calculated HM
+!     ETOT_DRK_DSIG      : Integration term for calculating EDRKTOT
+!     ETOT_K_DSIG        : Integration term for calculating EKTOT
+!     ETOT_DSHKD2_DSIG   : Integration term for calculating AB2
+!     ETOT_DSIG          : Integration term for calculating ETOT
+!     ETOT_SIG_DSIG      : Integration term for calculating ETOT1
+!     ETOT_SIG2_DSIG     : Integration term for calculating ETOT2
+!     ETOT_SIG2_DSHKD2_DSIG: Integration term for calculating UB2
+!     ETOT_SIG4_DSIG     : Integration term for calculating ETOT4
+!     ETOT_SIG_2_DSIG    : Integration term for calculating ETOT_2
+!     ETOT_2             : (negative) second moment of the energy density
+!     EBSIN              : Integration term for calculatng EBSINTOT !PSD 09/21/2011
+!     EBCOS              : Integration term for calculating EBCOSTOT !PSD 09/21/2011     
+!     EBSINTOT           : Numerator in calculating DIRBOT !PSD 09/21/2011
+!     EBCOSTOT           : Denominator in calculating DIRBOT !PSD 09/21/2011
+!     FRINT_X_DDIR       : FRINTF * DDIR
+!     KLOC               : help variable to compute wave number based on sigma0,-2
+!     SINH_K_X_DEP_2     : SINH(KWAVE*DEP2)**2
+!     UB2                : Sum of ETOT_SIG2_DSHKD2_DSIG
+!     WH                 : fraction of breaking waves
+!
+      REAL              :: AB2, UB2, ETOT_2
+      REAL              :: FRINTF_X_DDIR
+!
+      REAL              :: ETOT_DSIG(MSC)                                 40.22
+      REAL              :: ACTOT_DSIG(MSC), ETOT_DSHKD2_DSIG(MSC)         40.22
+      REAL              :: SINH_K_X_DEP_2(MSC)                            40.22
+      REAL              :: ETOT_SIG2_DSHKD2_DSIG(MSC)                     40.22
+      REAL              :: EBCOSTOT, EBSINTOT                             !PSD 09/21/2011
+      REAL              :: EBSIN(MSC)                                     !PSD 09/21/2011
+      REAL              :: EBCOS(MSC)                                     !PSD 09/21/2011
+      REAL              :: EBSIN_INT(MSC)                                 !PSD 09/23/2011
+      REAL              :: EBCOS_INT(MSC)                                 !PSD 09/23/2011
+!
+!     9. STRUCTURE
+!
+!   ----------------------------------------------------------
+!   Determine ETOT
+!   If energy level is too large compared with depth
+!   Then reduce action densities
+!   ------------------------------------------------------
+!   For all spectral frequencies do
+!       determine wavenumber K and K*depth
+!       For every spectral direction do
+!           add AC2 to sum of action densities
+!       --------------------------------------------------
+!       add contributions to various moments of energy density
+!   ---------------------------------------------------------
+!   add tail contributions
+!   determine average frequency and wavenumber
+!   ----------------------------------------------------------
+!   If B&J surf breaking is used
+!   Then call FRABRE to compute fraction of breaking waves
+!   ----------------------------------------------------------
+!   determine orbital motion near the bottom
+!   ----------------------------------------------------------
+!
+! 13. Source text:
+!
+      IF (LTRACE) CALL STRACE (IENT,'SINTGRL_INIT')
+!
+!     Initialisation
+!
+      UBOT(KCGRD(1)) = 0.
+      TMBOT(KCGRD(1))= 0.
+      DIRBOT(KCGRD(1)) = 0.                                           !PSD 09/21/2011
+!
+!     Calculate total spectral energy
+!
+      FRINTF_X_DDIR = FRINTF * DDIR
+      ETOT_DSIG(:)  = SUM(AC2(:,:,KCGRD(1)),DIM=1) * SIGPOW(:,2) *
+     &                FRINTF_X_DDIR
+      ETOT          = SUM(ETOT_DSIG)
+!
+!     *** add high frequency tail ***
+!
+      ETOT = ETOT + ETOT_DSIG(MSC) * PWTAIL(6) / FRINTF
+!
+      IF ( ETOT .GT. 0. ) THEN
+!
+!     Calculate all other integrals
+!
+        SINH_K_X_DEP_2(:)   = SINH(MIN(30.,
+     &                             KWAVE(:,1)*DEP2(KCGRD(1)))
+     &                            )**2
+        ACTOT_DSIG(:)       = SUM(AC2(:,:,KCGRD(1)),DIM=1) *
+     &                        SIGPOW(:,1) * FRINTF_X_DDIR
+        ETOT_DSIG(:)        = ACTOT_DSIG(:) * SIGPOW(:,1)
+        ETOT_DSHKD2_DSIG(:) = ETOT_DSIG(:) / SINH_K_X_DEP_2(:)
+        ETOT_SIG2_DSHKD2_DSIG(:) = ETOT_DSHKD2_DSIG(:) *
+     &                             SIGPOW(:,2)
+!
+        UB2           = SUM(ETOT_SIG2_DSHKD2_DSIG)
+        AB2           = SUM(ETOT_DSHKD2_DSIG)
+!
+!     Calculate the orbital velocity UBOT and
+!     near bottom wave period TMBOT                                       40.51
+!
+        IF ( UB2 .GT. 0.) UBOT(KCGRD(1)) = SQRT ( UB2 )
+! These next 2 lines are the way in the new swan
+!       IF ( UB2.GT.0. .AND. AB2.GT.0. )                                  40.51
+!    &                             TMBOT(KCGRD(1)) = PI*SQRT(2.*AB2/UB2)  40.51
+! These next 2 lines are the way we think it should be.
+        IF ( UB2.GT.0. .AND. AB2.GT.0. )                                  40.51
+     &                               TMBOT(KCGRD(1)) = PI2*SQRT(AB2/UB2)  40.51
+!PSD 09/21/2011 calculations for DIRBOT
+        IF (UB2.GT.0.) THEN
+          EBCOSTOT = 0.
+          EBSINTOT = 0.
+          DO IS=1,MSC
+            EBCOS(IS) = SUM(AC2(:,IS,KCGRD(1))*SPCDIR(:,2))
+            EBSIN(IS) = SUM(AC2(:,IS,KCGRD(1))*SPCDIR(:,3))
+          ENDDO 
+            EBCOS_INT = EBCOS(:) * SIGPOW(:,4) / SINH_K_X_DEP_2(:)
+            EBSIN_INT = EBSIN(:) * SIGPOW(:,4) / SINH_K_X_DEP_2(:)
+            EBCOSTOT = SUM(EBCOS_INT(:) * FRINTF_X_DDIR)
+            EBSINTOT = SUM(EBSIN_INT(:) * FRINTF_X_DDIR)
+            DIRBOT(KCGRD(1)) = ATAN2(EBSINTOT,EBCOSTOT)
+        ELSE
+          DIRBOT(KCGRD(1)) = OVEXCV(71)
+        ENDIF
+      ENDIF
+!
+      RETURN
+!
+      END SUBROUTINE SINTGRL_INIT
+#endif
+
 !****************************************************************
 !
       SUBROUTINE SINTGRL(SPCDIR  ,KWAVE   ,AC2     ,                      40.02

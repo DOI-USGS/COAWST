@@ -560,6 +560,8 @@
       INTEGER nWAV_steps, do_output
       LOGICAL STPNOW
 !
+      INTEGER IX, IY, IC
+      REAL, DIMENSION(:,:), ALLOCATABLE :: CGO,KWAVE
 !         ---  Time-stepping SWAN.
       Gridnum=ng
 !
@@ -713,6 +715,37 @@
 
             ENDIF
 !
+            IF ((NSTATC.EQ.1).AND.(IT.EQ.0)) THEN
+!  For a non-statioary run, call to init some bottom properties 
+!  during the first call to swan_run.
+!
+              ALLOCATE(CGO(MSC,MICMAX))
+              ALLOCATE(KWAVE(MSC,MICMAX))
+              DO IY=1,MYC
+                DO IX=1,MXC
+                  DO IC = 1, MICMAX
+                    KCGRD(IC)  = KGRPNT(IX,IY)
+                  END DO
+                  IF ((KCGRD(1).GT.1) .OR.                              &
+     &                (COMPDA(KCGRD(1),JDP2).GT.DEPMIN)) THEN
+                    CGO    = 0.
+                    KWAVE  = 0.
+                    CALL SWAPAR ( COMPDA(1,JDP2), KWAVE, CGO, SPCSIG )
+                    CALL SINTGRL_INIT  (SPCDIR,  KWAVE, AC2,
+     &                                  COMPDA(1,JDP2), COMPDA(1,JUBOT),
+     &                                  COMPDA(1,JPBOT),COMPDA(1,JDBOT))
+                    IF (STPNOW()) RETURN
+                  ELSE
+                    COMPDA(KCGRD(1),JUBOT) = 0.
+                    COMPDA(KCGRD(1),JPBOT) = 0.
+                    COMPDA(KCGRD(1),JDBOT) = 0.
+                  END IF
+                END DO
+              END DO
+              DEALLOCATE(CGO)
+              DEALLOCATE(KWAVE)
+            ENDIF
+!
             SAVITE = ITEST                                                30.21
             IF (IOUTES .GT. ITEST) ITEST = IOUTES
 
@@ -724,7 +757,10 @@
 !           --- carry out the output requests
 
 !TIMG            CALL SWTSTA(9)                                                    40.23
-
+!
+!  Prevent call to output for a stationary run during 
+!  first call to swan_run.
+!
             do_output=1
             IF ((NSTATC.NE.1).and.(IT.eq.0)) do_output=0
             IF (do_output.EQ.1) THEN
