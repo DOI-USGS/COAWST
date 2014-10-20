@@ -203,10 +203,10 @@
 !  Local variable declarations.
 !
       integer :: i, j, k
-      real(r8) :: cff, cff2, cff3, cff4, cff5, cff6
-      real(r8) :: fac1, fac2, fac3
+      real(r8) :: cff, cff2, cff3, cff4, cff5, cff6, cff7
+      real(r8) :: fac1, fac2, fac3, ofac3
       real(r8), parameter :: eps = 1.0E-14_r8
-      real(r8), parameter :: kDmax = 300.0_r8       !5.0_r8
+      real(r8), parameter :: kDmax = 200.0_r8
       real(r8), parameter :: Lwave_min = 1.0_r8
       real(r8), dimension(IminS:ImaxS) :: wrk
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: Dstp
@@ -222,6 +222,7 @@
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: Hvoms
 # include "set_bounds.h"
       fac1=1.0_r8/dt(ng)
+      fac2=1.0_r8/g
       DO j=Jstr-1,Jend+1
         DO i=Istr-1,Iend+1
 !
@@ -239,9 +240,9 @@
           sigma(i,j)=SQRT(g*waven(i,j)*TANH(waven(i,j)*Dstp(i,j)))
           waveE(i,j)=0.0625_r8*g*Hwave(i,j)*Hwave(i,j)
 !
-!  Compute wave celerity and nonlinear water depth
+!  Compute wave celerity and kD
 !
-          kD(i,j)=MIN(waven(i,j)*Dstp(i,j)+eps,kDmax)
+          kD(i,j)=MIN(waven(i,j)*Dstp(i,j),kDmax)
           wavec(i,j)=SQRT(g*owaven(i,j)*TANH(kD(i,j)))
         END DO
       END DO
@@ -262,23 +263,28 @@
           cff2=cff2+(rollA(i-1,j)*sigma(i-1,j)+                        &
      &               rollA(i,j)*sigma(i,j))
 # endif
-          cff3=kD(i-1,j)+kD(i,j)
+          cff3=(kD(i-1,j)+kD(i,j))
+!         cff3=(waven(i-1,j)+waven(i,j))*(Dstp(i-1,j)+Dstp(i,j))
           cff4=wavenx(i-1,j)+wavenx(i,j)
           cff5=wavec(i-1,j)+wavec(i,j)
-          cff6=waven(i-1,j)+waven(i,j)
-          fac3=z_w(i-1,j,0)+z_w(i,j,0)
+          fac3=Dstp(i-1,j)+Dstp(i,j)
+          ofac3=1.0_r8/fac3
           DO k=1,N(ng)
-            fac1=0.5_r8*((z_w(i-1,j,k  )+z_w(i,j,k  ))-fac3)
-            fac2=0.5_r8*((z_w(i-1,j,k-1)+z_w(i,j,k-1))-fac3)
+            cff6=-1.0_r8+((z_w(i-1,j,k)+z_w(i,j,k))-                   &
+     &                   (z_w(i-1,j,0)+z_w(i,j,0)))*ofac3
+            cff7=-1.0_r8+((z_w(i-1,j,k-1)+z_w(i,j,k-1))-               &
+     &                   (z_w(i-1,j,0)+z_w(i,j,0)))*ofac3
 # ifdef WEC_MELLOR
 !
 !  Store old value to compute tendency term.
 !
             rulag3d(i,j,k)=u_stokes(i,j,k)
 # endif
-            u_stokes(i,j,k)=cff2*cff4/(cff5*SINH(cff3))*                &
-     &                      (SINH(cff6*fac1)-SINH(cff6*fac2))/          &
-     &                      (cff6*(fac1-fac2))
+            u_stokes(i,j,k)=0.25_r8*cff2*cff4*cff5*fac2/               &
+     &                      (fac3*(cff6-cff7))/                        &
+     &                      (SINH(0.5_r8*cff3)**2.0_r8)*               &
+     &                      SINH(0.5_r8*cff3*(cff6-cff7))*             &
+     &                      COSH(0.5_r8*cff3*(cff6+cff7+2.0_r8))
 # ifdef MASKING
             u_stokes(i,j,k)=u_stokes(i,j,k)*umask(i,j)
 # endif
@@ -289,8 +295,8 @@
 !
 !  Finalize computation of stokes tendency term.
 !
-            rulag3d(i,j,k)=0.5_r8*cff*                                  &
-     &                     (Hz(i,j,k)+Hz(i-1,j,k))*                     &
+            rulag3d(i,j,k)=0.5_r8*cff*                                 &
+     &                     (Hz(i,j,k)+Hz(i-1,j,k))*                    &
      &                     (u_stokes(i,j,k)-rulag3d(i,j,k))
 # endif
           END DO
@@ -306,26 +312,31 @@
 # endif
           cff2=(waveE(i,j-1)+waveE(i,j))
 # if defined WEC_ROLLER
-          cff2=cff2+(rollA(i,j-1)*sigma(i,j-1)+                         &
+          cff2=cff2+(rollA(i,j-1)*sigma(i,j-1)+                        &
      &               rollA(i,j)*sigma(i,j))
 # endif
-          cff3=kD(i,j-1)+kD(i,j)
+          cff3=(kD(i,j-1)+kD(i,j))
+!         cff3=(waven(i,j-1)+waven(i,j))*(Dstp(i,j-1)+Dstp(i,j))
           cff4=waveny(i,j-1)+waveny(i,j)
           cff5=wavec(i,j-1)+wavec(i,j)
-          cff6=waven(i,j-1)+waven(i,j)
-          fac3=z_w(i,j-1,0)+z_w(i,j,0)
+          fac3=Dstp(i,j-1)+Dstp(i,j)
+          ofac3=1.0_r8/fac3
           DO k=1,N(ng)
-            fac1=0.5_r8*((z_w(i,j-1,k  )+z_w(i,j,k  ))-fac3)
-            fac2=0.5_r8*((z_w(i,j-1,k-1)+z_w(i,j,k-1))-fac3)
+            cff6=-1.0_r8+((z_w(i,j-1,k  )+z_w(i,j,k))-                  &
+     &                    (z_w(i,j-1,0  )+z_w(i,j,0)))*ofac3
+            cff7=-1.0_r8+((z_w(i,j-1,k-1)+z_w(i,j,k-1))-                &
+     &                    (z_w(i,j-1,0  )+z_w(i,j,0)))*ofac3
 # ifdef WEC_MELLOR
 !
 !  Store old value to compute tendency term.
 !
             rvlag3d(i,j,k)=v_stokes(i,j,k)
 # endif
-            v_stokes(i,j,k)=cff2*cff4/(cff5*SINH(cff3))*                &
-     &                      (SINH(cff6*fac1)-SINH(cff6*fac2))/          &
-     &                      (cff6*(fac1-fac2))
+            v_stokes(i,j,k)=0.25_r8*cff2*cff4*cff5*fac2/                &
+     &                      (fac3*(cff6-cff7))/                         &
+     &                      (SINH(0.5_r8*cff3)**2.0_r8)*                &
+     &                      SINH(0.5_r8*cff3*(cff6-cff7))*              &
+     &                      COSH(0.5_r8*cff3*(cff6+cff7+2.0_r8))
 # ifdef MASKING
             v_stokes(i,j,k)=v_stokes(i,j,k)*vmask(i,j)
 # endif
