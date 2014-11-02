@@ -150,7 +150,7 @@ endif
 
          BIN_WIN32 = "$$(cygpath --windows $(BIN))"
         LIBS_WIN32 += "$$(cygpath --windows $(NETCDF_LIB))"
-        LIBS_WIN32 += "c:\cygwin\lib\gcc\i686-pc-cygwin\4.8.3\libgcc.a"
+        LIBS_WIN32 += "c:\cygwin\lib\gcc\i686-pc-cygwin\3.4.4\libgcc.a"
 ifdef USE_ARPACK
         LIBS_WIN32 += "$$(cygpath --windows $(ARPACK_LIB))"
 endif

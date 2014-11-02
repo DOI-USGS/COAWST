@@ -134,7 +134,7 @@
       real(r8), parameter :: eps2= 1.0E-10_r8
 
       real(r8) :: A, B, Tmax, Tmin, Um, Vm, X, Y, Z
-      real(r8) :: cff, cff1, cff2, sig_alfa
+      real(r8) :: cff, cff1, cff2, sig_alfa, fac
 # ifdef MPDATA_HOT
       real(r8) :: AA, BB, CC, AB, AC, BC
       real(r8) :: XX, YY, ZZ, XY, XZ, YZ
@@ -153,6 +153,11 @@
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS,N(ng)) :: odz
 
 # include "set_bounds.h"
+# ifdef TS_MPDATA_LIMIT
+      fac=0.25_r8
+# else
+      fac=1.0_r8
+# endif
 !
 !-----------------------------------------------------------------------
 !  Compute anti-diffusive MPDATA velocities (Ua,Va,Wa).
@@ -237,7 +242,8 @@
 !
       DO j=JstrV-1,Jendp1
         k=1
-        DO i=IstrU-1,Iendp2
+!       DO i=IstrU-1,Iendp2
+        DO i=IstrUm1,Iendp2
           C(i,k)=0.25_r8*                                               &
      &           ((Ta(i  ,j,k+1)-Ta(i  ,j,k  ))*odz(i  ,j,k  )+         &
      &            (Ta(i-1,j,k+1)-Ta(i-1,j,k  ))*odz(i-1,j,k  ))*        &
@@ -415,7 +421,7 @@
 !
 !  Limit by physical velocity.
 !
-              Ua(i,j,k)=MIN(ABS(Ua(i,j,k)),ABS(Um))*                    &
+              Ua(i,j,k)=MIN(ABS(Ua(i,j,k)),fac*ABS(Um))*                &
      &                  SIGN(1.0_r8,Ua(i,j,k))
 # ifdef MASKING
               Ua(i,j,k)=Ua(i,j,k)*umask(i,j)
@@ -431,7 +437,8 @@
 !  Compute nondimensional V-antidiffusive velocities, Va. If applicable,
 !  retain up to third-order terms of the power series.
 !
-      DO j=JstrV-1,Jendp2
+!     DO j=JstrV-1,Jendp2
+      DO j=JstrVm1,Jendp2
         k=1
         DO i=IstrU-1,Iendp1
           C(i,k)=0.25_r8*                                               &
@@ -612,7 +619,7 @@
 !
 !  Limit by physical velocity.
 !
-              Va(i,j,k)=MIN(ABS(Va(i,j,k)),ABS(Vm))*                    &
+              Va(i,j,k)=MIN(ABS(Va(i,j,k)),fac*ABS(Vm))*                &
      &                  SIGN(1.0_r8,Va(i,j,k))
 # ifdef MASKING
               Va(i,j,k)=Va(i,j,k)*vmask(i,j)
@@ -631,13 +638,15 @@
         IF (DOMAIN(ng)%Western_Edge(tile)) THEN
           IF (LBC(iwest,isBu3d,ng)%closed) THEN
             DO k=1,N(ng)
-              DO j=Jstr,Jend
+!             DO j=Jstr,Jend
+              DO j=Jstrm1,Jendp1
                 Ua(Istr,j,k)=0.0_r8
               END DO
             END DO
           ELSE
             DO k=1,N(ng)
-              DO j=Jstr,Jend
+!             DO j=Jstr,Jend
+              DO j=Jstrm1,Jendp1
                 Ua(Istr,j,k)=Ua(Istr+1,j,k)
               END DO
             END DO
@@ -647,13 +656,15 @@
         IF (DOMAIN(ng)%Eastern_Edge(tile)) THEN
           IF (LBC(ieast,isBu3d,ng)%closed) THEN
             DO k=1,N(ng)
-              DO j=Jstr,Jend
+!             DO j=Jstr,Jend
+              DO j=Jstrm1,Jendp1
                 Ua(Iend+1,j,k)=0.0_r8
               END DO
             END DO
           ELSE
             DO k=1,N(ng)
-              DO j=Jstr,Jend
+!             DO j=Jstr,Jend
+              DO j=Jstrm1,Jendp1
                 Ua(Iend+1,j,k)=Ua(Iend,j,k)
               END DO
             END DO
@@ -665,13 +676,15 @@
         IF (DOMAIN(ng)%Southern_Edge(tile)) THEN
           IF (LBC(isouth,isBv3d,ng)%closed) THEN
             DO k=1,N(ng)
-              DO i=Istr,Iend
+!             DO i=Istr,Iend
+              DO i=Istrm1,Iendp1
                 Va(i,Jstr,k)=0.0_r8
               END DO
             END DO
           ELSE
             DO k=1,N(ng)
-              DO i=Istr,Iend
+!             DO i=Istr,Iend
+              DO i=Istrm1,Iendp1
                 Va(i,Jstr,k)=Va(i,Jstr+1,k)
               END DO
             END DO
@@ -681,13 +694,15 @@
         IF (DOMAIN(ng)%Northern_Edge(tile)) THEN
           IF (LBC(inorth,isBv3d,ng)%closed) THEN
             DO k=1,N(ng)
-              DO i=Istr,Iend
+!             DO i=Istr,Iend
+              DO i=Istrm1,Iendp1
                 Va(i,Jend+1,k)=0.0_r8
               END DO
             END DO
           ELSE
             DO k=1,N(ng)
-              DO i=Istr,Iend
+!             DO i=Istr,Iend
+              DO i=Istrm1,Iendp1
                 Va(i,Jend+1,k)=Va(i,Jend,k)
               END DO
             END DO
@@ -850,7 +865,7 @@
 !
 !  Limit by physical velocity.
 !
-              Wa(i,j,k)=MIN(ABS(Wa(i,j,k)),ABS(Wm(i,k)))*               &
+              Wa(i,j,k)=MIN(ABS(Wa(i,j,k)),fac*ABS(Wm(i,k)))*           &
      &                  SIGN(1.0_r8,Wa(i,j,k))
 # ifdef MASKING
               Wa(i,j,k)=Wa(i,j,k)*rmask(i,j)
