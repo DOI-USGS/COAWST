@@ -2261,6 +2261,24 @@
       END IF
 
 # ifdef SOLVE3D
+#  ifdef WET_DRY_LIMIT
+      DO j=Jstr,Jend
+        DO i=IstrU,Iend
+          cff5=ABS(ABS(umask_wet(i,j))-1.0_r8)
+          cff6=0.5_r8+DSIGN(0.5_r8,rhs_ubar(i,j))*umask_wet(i,j)
+          cff7=0.5_r8*umask_wet(i,j)*cff5+cff6*(1.0_r8-cff5)
+          rhs_ubar(i,j)=rhs_ubar(i,j)*cff7
+        END DO
+      END DO
+      DO j=JstrV,Jend
+        DO i=Istr,Iend
+          cff5=ABS(ABS(vmask_wet(i,j))-1.0_r8)
+          cff6=0.5_r8+DSIGN(0.5_r8,rhs_vbar(i,j))*vmask_wet(i,j)
+          cff7=0.5_r8*vmask_wet(i,j)*cff5+cff6*(1.0_r8-cff5)
+          rhs_vbar(i,j)=rhs_vbar(i,j)*cff7
+        END DO
+      END DO
+#  endif
 !
 !-----------------------------------------------------------------------
 !  Coupling between 2D and 3D equations.
