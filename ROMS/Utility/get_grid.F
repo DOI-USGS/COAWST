@@ -52,7 +52,7 @@
       logical :: GotScope(6)
 # endif
       integer :: tile, LBi, UBi, LBj, UBj
-      integer :: cr, gtype, i, it, status, vindex
+      integer :: cr, gtype, i, status, vindex
 # if defined UV_DRAG_GRID && !defined ANA_DRAG
       integer :: varid_dragL, varid_dragQ, varid_ZoBL
 # endif
@@ -296,9 +296,9 @@
 !
 !  Scan the variable list and read in needed variables.
 !
-      DO it=1,n_var
+      DO i=1,n_var
 
-        SELECT CASE (TRIM(ADJUSTL(var_name(it))))
+        SELECT CASE (TRIM(ADJUSTL(var_name(i))))
 !
 !  Read in basin X-length.
 !
@@ -321,7 +321,7 @@
           CASE ('h')
             gtype=r2dvar
             status=nf_fread2d(ng, model, ncname, GRD(ng)%ncid,          &
-     &                        var_name(it), var_id(it),                 &
+     &                        var_name(i), var_id(i),                   &
      &                        0, gtype, Vsize,                          &
      &                        LBi, UBi, LBj, UBj,                       &
      &                        Fscl, hmin(ng), hmax(ng),                 &
@@ -330,9 +330,6 @@
 # endif
      &                        GRID(ng) % h)
             IF (status.ne.nf90_noerr) THEN
-              IF (Master) THEN
-                WRITE (stdout,30) 'h', TRIM(ncname)
-              END IF
               exit_flag=2
               ioerror=status
               EXIT
@@ -365,7 +362,7 @@
           CASE ('mask_rho')
             gtype=r2dvar
             status=nf_fread2d(ng, model, ncname, GRD(ng)%ncid,          &
-     &                        var_name(it), var_id(it),                 &
+     &                        var_name(i), var_id(i),                   &
      &                        0, gtype, Vsize,                          &
      &                        LBi, UBi, LBj, UBj,                       &
      &                        Fscl, Fmin, Fmax,                         &
@@ -403,7 +400,7 @@
           CASE ('mask_u')
             gtype=u2dvar
             status=nf_fread2d(ng, model, ncname, GRD(ng)%ncid,          &
-     &                        var_name(it), var_id(it),                 &
+     &                        var_name(i), var_id(i),                   &
      &                        0, gtype, Vsize,                          &
      &                        LBi, UBi, LBj, UBj,                       &
      &                        Fscl, Fmin, Fmax,                         &
@@ -441,7 +438,7 @@
           CASE ('mask_v')
             gtype=v2dvar
             status=nf_fread2d(ng, model, ncname, GRD(ng)%ncid,          &
-     &                        var_name(it), var_id(it),                 &
+     &                        var_name(i), var_id(i),                   &
      &                        0, gtype, Vsize,                          &
      &                        LBi, UBi, LBj, UBj,                       &
      &                        Fscl, Fmin, Fmax,                         &
@@ -479,7 +476,7 @@
           CASE ('mask_psi')
             gtype=p2dvar
             status=nf_fread2d(ng, model, ncname, GRD(ng)%ncid,          &
-     &                        var_name(it), var_id(it),                 &
+     &                        var_name(i), var_id(i),                   &
      &                        0, gtype, Vsize,                          &
      &                        LBi, UBi, LBj, UBj,                       &
      &                        Fscl, Fmin, Fmax,                         &
@@ -510,7 +507,7 @@
           CASE ('zice')
             gtype=r2dvar
             status=nf_fread2d(ng, model, ncname, GRD(ng)%ncid,          &
-     &                        var_name(it), var_id(it),                 &
+     &                        var_name(i), var_id(i),                   &
      &                        0, gtype, Vsize,                          &
      &                        LBi, UBi, LBj, UBj,                       &
      &                        Fscl, Fmin, Fmax,                         &
@@ -545,7 +542,7 @@
           CASE ('wtype_grid')
             gtype=r2dvar
             status=nf_fread2d(ng, model, ncname, GRD(ng)%ncid,          &
-     &                        var_name(it), var_id(it), 0,              &
+     &                        var_name(i), var_id(i), 0,                &
      &                        gtype, Vsize, LBi, UBi, LBj, UBj,         &
      &                        Fscl, Fmin, Fmax,                         &
 #  ifdef MASKING
@@ -647,7 +644,7 @@
           CASE ('f')
             gtype=r2dvar
             status=nf_fread2d(ng, model, ncname, GRD(ng)%ncid,          &
-     &                        var_name(it), var_id(it),                 &
+     &                        var_name(i), var_id(i),                   &
      &                        0, gtype, Vsize,                          &
      &                        LBi, UBi, LBj, UBj,                       &
      &                        Fscl, Fmin, Fmax,                         &
@@ -688,7 +685,7 @@
           CASE ('pm')
             gtype=r2dvar
             status=nf_fread2d(ng, model, ncname, GRD(ng)%ncid,          &
-     &                        var_name(it), var_id(it),                 &
+     &                        var_name(i), var_id(i),                   &
      &                        0, gtype, Vsize,                          &
      &                        LBi, UBi, LBj, UBj,                       &
      &                        Fscl, Fmin, Fmax,                         &
@@ -729,7 +726,7 @@
           CASE ('pn')
             gtype=r2dvar
             status=nf_fread2d(ng, model, ncname, GRD(ng)%ncid,          &
-     &                        var_name(it), var_id(it),                 &
+     &                        var_name(i), var_id(i),                   &
      &                        0, gtype, Vsize,                          &
      &                        LBi, UBi, LBj, UBj,                       &
      &                        Fscl, Fmin, Fmax,                         &
@@ -770,7 +767,7 @@
           CASE ('dmde')
             gtype=r2dvar
             status=nf_fread2d(ng, model, ncname, GRD(ng)%ncid,          &
-     &                        var_name(it), var_id(it),                 &
+     &                        var_name(i), var_id(i),                   &
      &                        0, gtype, Vsize,                          &
      &                        LBi, UBi, LBj, UBj,                       &
      &                        Fscl, Fmin, Fmax,                         &
@@ -810,7 +807,7 @@
           CASE ('dndx')
             gtype=r2dvar
             status=nf_fread2d(ng, model, ncname, GRD(ng)%ncid,          &
-     &                        var_name(it), var_id(it),                 &
+     &                        var_name(i), var_id(i),                   &
      &                        0, gtype, Vsize,                          &
      &                        LBi, UBi, LBj, UBj,                       &
      &                        Fscl, Fmin, Fmax,                         &
@@ -851,7 +848,7 @@
           CASE ('x_psi')
             gtype=p2dvar
             status=nf_fread2d(ng, model, ncname, GRD(ng)%ncid,          &
-     &                        var_name(it), var_id(it),                 &
+     &                        var_name(i), var_id(i),                   &
      &                        0, gtype, Vsize,                          &
      &                        LBi, UBi, LBj, UBj,                       &
      &                        Fscl, Fmin, Fmax,                         &
@@ -877,7 +874,7 @@
           CASE ('y_psi')
             gtype=p2dvar
             status=nf_fread2d(ng, model, ncname, GRD(ng)%ncid,          &
-     &                        var_name(it), var_id(it),                 &
+     &                        var_name(i), var_id(i),                   &
      &                        0, gtype, Vsize,                          &
      &                        LBi, UBi, LBj, UBj,                       &
      &                        Fscl, Fmin, Fmax,                         &
@@ -903,7 +900,7 @@
           CASE ('x_rho')
             gtype=r2dvar
             status=nf_fread2d(ng, model, ncname, GRD(ng)%ncid,          &
-     &                        var_name(it), var_id(it),                 &
+     &                        var_name(i), var_id(i),                   &
      &                        0, gtype, Vsize,                          &
      &                        LBi, UBi, LBj, UBj,                       &
      &                        Fscl, Fmin, Fmax,                         &
@@ -940,7 +937,7 @@
           CASE ('y_rho')
             gtype=r2dvar
             status=nf_fread2d(ng, model, ncname, GRD(ng)%ncid,          &
-     &                        var_name(it), var_id(it),                 &
+     &                        var_name(i), var_id(i),                   &
      &                        0, gtype, Vsize,                          &
      &                        LBi, UBi, LBj, UBj,                       &
      &                        Fscl, Fmin, Fmax,                         &
@@ -977,7 +974,7 @@
           CASE ('x_u')
             gtype=u2dvar
             status=nf_fread2d(ng, model, ncname, GRD(ng)%ncid,          &
-     &                        var_name(it), var_id(it),                 &
+     &                        var_name(i), var_id(i),                   &
      &                        0, gtype, Vsize,                          &
      &                        LBi, UBi, LBj, UBj,                       &
      &                        Fscl, Fmin, Fmax,                         &
@@ -1014,7 +1011,7 @@
           CASE ('y_u')
             gtype=u2dvar
             status=nf_fread2d(ng, model, ncname, GRD(ng)%ncid,          &
-     &                        var_name(it), var_id(it),                 &
+     &                        var_name(i), var_id(i),                   &
      &                        0, gtype, Vsize,                          &
      &                        LBi, UBi, LBj, UBj,                       &
      &                        Fscl, Fmin, Fmax,                         &
@@ -1051,7 +1048,7 @@
           CASE ('x_v')
             gtype=v2dvar
             status=nf_fread2d(ng, model, ncname, GRD(ng)%ncid,          &
-     &                        var_name(it), var_id(it),                 &
+     &                        var_name(i), var_id(i),                   &
      &                        0, gtype, Vsize,                          &
      &                        LBi, UBi, LBj, UBj,                       &
      &                        Fscl, Fmin, Fmax,                         &
@@ -1088,7 +1085,7 @@
           CASE ('y_v')
             gtype=v2dvar
             status=nf_fread2d(ng, model, ncname, GRD(ng)%ncid,          &
-     &                        var_name(it), var_id(it),                 &
+     &                        var_name(i), var_id(i),                   &
      &                        0, gtype, Vsize,                          &
      &                        LBi, UBi, LBj, UBj,                       &
      &                        Fscl, Fmin, Fmax,                         &
@@ -1126,7 +1123,7 @@
             IF (spherical) THEN
               gtype=p2dvar
               status=nf_fread2d(ng, model, ncname, GRD(ng)%ncid,        &
-     &                          var_name(it), var_id(it),               &
+     &                          var_name(i), var_id(i),                 &
      &                          0, gtype, Vsize,                        &
      &                          LBi, UBi, LBj, UBj,                     &
      &                          Fscl, Fmin, Fmax,                       &
@@ -1154,7 +1151,7 @@
             IF (spherical) THEN
               gtype=p2dvar
               status=nf_fread2d(ng, model, ncname, GRD(ng)%ncid,        &
-     &                          var_name(it), var_id(it),               &
+     &                          var_name(i), var_id(i),                 &
      &                          0, gtype, Vsize,                        &
      &                          LBi, UBi, LBj, UBj,                     &
      &                          Fscl, Fmin, Fmax,                       &
@@ -1182,7 +1179,7 @@
             IF (spherical) THEN
               gtype=r2dvar
               status=nf_fread2d(ng, model, ncname, GRD(ng)%ncid,        &
-     &                          var_name(it), var_id(it),               &
+     &                          var_name(i), var_id(i),                 &
      &                          0, gtype, Vsize,                        &
      &                          LBi, UBi, LBj, UBj,                     &
      &                          Fscl, LonMin(ng), LonMax(ng),           &
@@ -1219,7 +1216,7 @@
             IF (spherical) THEN
               gtype=r2dvar
               status=nf_fread2d(ng, model, ncname, GRD(ng)%ncid,        &
-     &                          var_name(it), var_id(it),               &
+     &                          var_name(i), var_id(i),                 &
      &                          0, gtype, Vsize,                        &
      &                          LBi, UBi, LBj, UBj,                     &
      &                          Fscl, LatMin(ng), LatMax(ng),           &
@@ -1256,7 +1253,7 @@
             IF (spherical) THEN
               gtype=u2dvar
               status=nf_fread2d(ng, model, ncname, GRD(ng)%ncid,        &
-     &                          var_name(it), var_id(it),               &
+     &                          var_name(i), var_id(i),                 &
      &                          0, gtype, Vsize,                        &
      &                          LBi, UBi, LBj, UBj,                     &
      &                          Fscl, Fmin, Fmax,                       &
@@ -1293,7 +1290,7 @@
             IF (spherical) THEN
               gtype=u2dvar
               status=nf_fread2d(ng, model, ncname, GRD(ng)%ncid,        &
-     &                          var_name(it), var_id(it),               &
+     &                          var_name(i), var_id(i),                 &
      &                          0, gtype, Vsize,                        &
      &                          LBi, UBi, LBj, UBj,                     &
      &                          Fscl, Fmin, Fmax,                       &
@@ -1330,7 +1327,7 @@
             IF (spherical) THEN
               gtype=v2dvar
               status=nf_fread2d(ng, model, ncname, GRD(ng)%ncid,        &
-     &                          var_name(it), var_id(it),               &
+     &                          var_name(i), var_id(i),                 &
      &                          0, gtype, Vsize,                        &
      &                          LBi, UBi, LBj, UBj,                     &
      &                          Fscl, Fmin, Fmax,                       &
@@ -1367,7 +1364,7 @@
             IF (spherical) THEN
               gtype=v2dvar
               status=nf_fread2d(ng, model, ncname, GRD(ng)%ncid,        &
-     &                          var_name(it), var_id(it),               &
+     &                          var_name(i), var_id(i),                 &
      &                          0, gtype, Vsize,                        &
      &                          LBi, UBi, LBj, UBj,                     &
      &                          Fscl, Fmin, Fmax,                       &
@@ -1403,7 +1400,7 @@
           CASE ('angle')
             gtype=r2dvar
             status=nf_fread2d(ng, model, ncname, GRD(ng)%ncid,          &
-     &                        var_name(it), var_id(it),                 &
+     &                        var_name(i), var_id(i),                   &
      &                        0, gtype, Vsize,                          &
      &                        LBi, UBi, LBj, UBj,                       &
      &                        Fscl, Fmin, Fmax,                         &
@@ -1446,7 +1443,7 @@
           CASE ('scope_rho')
             gtype=r2dvar
             status=nf_fread2d(ng, model, ncname, GRD(ng)%ncid,          &
-     &                        var_name(it), var_id(it),                 &
+     &                        var_name(i), var_id(i),                   &
      &                        0, gtype, Vsize,                          &
      &                        LBi, UBi, LBj, UBj,                       &
      &                        Fscl, Fmin, Fmax,                         &
@@ -1478,7 +1475,7 @@
           CASE ('scope_u')
             gtype=u2dvar
             status=nf_fread2d(ng, model, ncname, GRD(ng)%ncid,          &
-     &                        var_name(it), var_id(it),                 &
+     &                        var_name(i), var_id(i),                   &
      &                        0, gtype, Vsize,                          &
      &                        LBi, UBi, LBj, UBj,                       &
      &                        Fscl, Fmin, Fmax,                         &
@@ -1510,7 +1507,7 @@
           CASE ('scope_v')
             gtype=v2dvar
             status=nf_fread2d(ng, model, ncname, GRD(ng)%ncid,          &
-     &                        var_name(it), var_id(it),                 &
+     &                        var_name(i), var_id(i),                   &
      &                        0, gtype, Vsize,                          &
      &                        LBi, UBi, LBj, UBj,                       &
      &                        Fscl, Fmin, Fmax,                         &
@@ -1537,24 +1534,18 @@
      &                          GRID(ng) % Vscope)
 #  endif
 # endif
+        END SELECT
+      END DO
+      IF (exit_flag.ne.NoError) THEN
+        IF (Master) WRITE (stdout,30) TRIM(var_name(i)), TRIM(ncname)
+        RETURN
+      END IF
 
 # if defined UV_DRAG_GRID && !defined ANA_DRAG
 #  ifdef UV_LOGDRAG
 !
 !  Read in spacially varying bottom roughness length (m).
 !
-          CASE ('lon_rho')
-            IF (spherical) THEN
-              gtype=r2dvar
-              status=nf_fread2d(ng, model, ncname, GRD(ng)%ncid,        &
-     &                          var_name(it), var_id(it),               &
-     &                          0, gtype, Vsize,                        &
-     &                          LBi, UBi, LBj, UBj,                     &
-     &                          Fscl, LonMin(ng), LonMax(ng),           &
-# ifdef MASKING
-     &                          GRID(ng) % rmask,                       &
-# endif
-     &                          GRID(ng) % lonr)
       gtype=r2dvar
       status=nf_fread2d(ng, model, ncname, GRD(ng)%ncid,                &
      &                  Vname(1,idZoBL), varid_ZoBL,                    &
@@ -1589,65 +1580,64 @@
 !
 !  Read in spacially varying linear drag coefficients (m/s).
 !
-          CASE ('rdrag')
-            gtype=r2dvar
-            status=nf_fread2d(ng, model, ncname, GRD(ng)%ncid,          &
-     &                        var_name(it), var_id(it),                 &
-     &                        0, gtype, Vsize,                          &
-     &                        LBi, UBi, LBj, UBj,                       &
-     &                        Fscl, Fmin, Fmax,                         &
-# ifdef MASKING
-     &                        GRID(ng) % rmask,                         &
-# endif
-     &                        GRID(ng) % rdrag)
-          IF (status.ne.nf90_noerr) THEN
-            IF (Master) WRITE (stdout,30) TRIM(Vname(1,idragL)),        &
+      gtype=r2dvar
+      status=nf_fread2d(ng, model, ncname, GRD(ng)%ncid,                &
+     &                  Vname(1,idragL), varid_dragL,                   &
+     &                  0, gtype, Vsize,                                &
+     &                  LBi, UBi, LBj, UBj,                             &
+     &                  Fscl, Fmin, Fmax,                               &
+#   ifdef MASKING
+     &                  GRID(ng) % rmask,                               &
+#   endif
+     &                  GRID(ng) % rdrag)
+      IF (status.ne.nf90_noerr) THEN
+        IF (Master) WRITE (stdout,30) TRIM(Vname(1,idragL)),            &
      &                                TRIM(ncname)
-            exit_flag=2
-            ioerror=status
-            RETURN
-          END IF
-          IF (EWperiodic(ng).or.NSperiodic(ng)) THEN
-            CALL exchange_r2d_tile (ng, tile,                           &
+        exit_flag=2
+        ioerror=status
+        RETURN
+      END IF
+      IF (EWperiodic(ng).or.NSperiodic(ng)) THEN
+        CALL exchange_r2d_tile (ng, tile,                               &
      &                          LBi, UBi, LBj, UBj,                     &
-          END IF
+     &                          GRID(ng) % rdrag)
+      END IF
 #   ifdef DISTRIBUTE
-          CALL mp_exchange2d (ng, tile, model, 1,                       &
-     &                        LBi, UBi, LBj, UBj,                       &
-     &                        NghostPoints,                             &
-     &                        EWperiodic(ng), NSperiodic(ng),           &
-     &                        GRID(ng) % rdrag)
+      CALL mp_exchange2d (ng, tile, model, 1,                           &
+     &                    LBi, UBi, LBj, UBj,                           &
+     &                    NghostPoints,                                 &
+     &                    EWperiodic(ng), NSperiodic(ng),               &
+     &                    GRID(ng) % rdrag)
 #   endif
 #  endif
 #  ifdef UV_QDRAG
 !
 !  Read in spacially varying quadratic drag coefficients.
 !
-          CASE ('rdrag2')
-            gtype=r2dvar
-            status=nf_fread2d(ng, model, ncname, GRD(ng)%ncid,          &
-     &                        var_name(it), var_id(it),                 &
-     &                        0, gtype, Vsize,                          &
-     &                        LBi, UBi, LBj, UBj,                       &
-     &                        Fscl, Fmin, Fmax,                         &
-# ifdef MASKING
-     &                        GRID(ng) % rmask,                         &
-# endif
-     &                        GRID(ng) % rdrag2)
-          IF (status.ne.nf90_noerr) THEN
-            IF (Master) WRITE (stdout,30) TRIM(Vname(1,idragQ)),        &
+      gtype=r2dvar
+      status=nf_fread2d(ng, model, ncname, GRD(ng)%ncid,                &
+     &                  Vname(1,idragQ), varid_dragQ,                   &
+     &                  0, gtype, Vsize,                                &
+     &                  LBi, UBi, LBj, UBj,                             &
+     &                  Fscl, Fmin, Fmax,                               &
+#   ifdef MASKING
+     &                  GRID(ng) % rmask,                               &
+#   endif
+     &                  GRID(ng) % rdrag2)
+      IF (status.ne.nf90_noerr) THEN
+        IF (Master) WRITE (stdout,30) TRIM(Vname(1,idragQ)),            &
      &                                TRIM(ncname)
-            exit_flag=2
-            ioerror=status
-            RETURN
-          END IF
-          IF (EWperiodic(ng).or.NSperiodic(ng)) THEN
-            CALL exchange_r2d_tile (ng, tile,                           &
+        exit_flag=2
+        ioerror=status
+        RETURN
+      END IF
+      IF (EWperiodic(ng).or.NSperiodic(ng)) THEN
+        CALL exchange_r2d_tile (ng, tile,                               &
      &                          LBi, UBi, LBj, UBj,                     &
      &                          GRID(ng) % rdrag2)
-          END IF
+      END IF
 #   ifdef DISTRIBUTE
-          CALL mp_exchange2d (ng, tile, model, 1,                       &
+      CALL mp_exchange2d (ng, tile, model, 1,                           &
      &                    LBi, UBi, LBj, UBj,                           &
      &                    NghostPoints,                                 &
      &                    EWperiodic(ng), NSperiodic(ng),               &
