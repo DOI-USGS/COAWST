@@ -946,7 +946,7 @@
 !  Set internal switch for nudging to climatology fields.
 !
 #ifdef SOLVE3D
-        IF (LnudgeM3CLM(ng).or.                                         &
+        IF (LnudgeM2CLM(ng).or.                                         &
      &      LnudgeM3CLM(ng).or.                                         &
      &      ANY(LnudgeTCLM(:,ng))) THEN
           Lnudging(ng)=.TRUE.
