@@ -18,9 +18,9 @@
 # ifdef BBL_MODEL
       USE mod_bbl
 # endif
-#ifdef ICE_MODEL
+# ifdef ICE_MODEL
       USE mod_ice
-#endif
+# endif
       USE mod_forces
       USE mod_grid
       USE mod_iounits
@@ -1279,8 +1279,6 @@
      &                        varid = STA(ng)%Vid(idW2yy))
         IF (exit_flag.ne.NoError) RETURN
       END IF
-# endif
-# ifdef WEC
 !
 !  Write out total 2D U-radiation stress.
 !
@@ -1313,41 +1311,6 @@
      &                        varid = STA(ng)%Vid(idV2rs))
         IF (exit_flag.ne.NoError) RETURN
       END IF
-!
-!  Write out 2D U-momentum Stokes drift velocity.
-!
-      IF (Sout(idU2Sd,ng)) THEN
-        scale=1.0_r8
-        CALL extract_sta2d (ng, iNLM, Cgrid, idU2Sd, u2dvar,            &
-     &                      LBi, UBi, LBj, UBj,                         &
-     &                      scale, OCEAN(ng) % ubar_stokes,             &
-     &                      Nstation(ng), Xpos, Ypos, psta)
-        CALL netcdf_put_fvar (ng, iNLM, STA(ng)%name,                   &
-     &                        TRIM(Vname(1,idU2Sd)), psta,              &
-     &                        (/1,STA(ng)%Rindex/), (/Nstation(ng),1/), &
-     &                        ncid = STA(ng)%ncid,                      &
-     &                        varid = STA(ng)%Vid(idU2Sd))
-        IF (exit_flag.ne.NoError) RETURN
-      END IF
-!
-!  Write out 2D V-momentum Stokes drift velocity.
-!
-      IF (Sout(idV2Sd,ng)) THEN
-        scale=1.0_r8
-        CALL extract_sta2d (ng, iNLM, Cgrid, idV2Sd, v2dvar,            &
-     &                      LBi, UBi, LBj, UBj,                         &
-     &                      scale, OCEAN(ng) % ubar_stokes,             &
-     &                      Nstation(ng), Xpos, Ypos, psta)
-        CALL netcdf_put_fvar (ng, iNLM, STA(ng)%name,                   &
-     &                        TRIM(Vname(1,idV2Sd)), psta,              &
-     &                        (/1,STA(ng)%Rindex/), (/Nstation(ng),1/), &
-     &                        ncid = STA(ng)%ncid,                      &
-     &                        varid = STA(ng)%Vid(idV2Sd))
-        IF (exit_flag.ne.NoError) RETURN
-      END IF
-
-# endif
-# ifdef WEC_MELLOR
 #  ifdef SOLVE3D
 !
 !  Write out 3D radiation stress, Sxx-horizontal component.
@@ -1449,8 +1412,8 @@
         CALL netcdf_put_fvar (ng, iNLM, STAname(ng),                    &
      &                        TRIM(Vname(1,idU2Sd)), psta,              &
      &                        (/1,tSTAindx(ng)/), (/Nstation(ng),1/),   &
-     &                        ncid = ncSTAid(ng),                       &
-     &                        varid = staVid(idU2Sd,ng))
+     &                        ncid = STA(ng)%ncid,                      &
+     &                        varid = STA(ng)%Vid(idU2Sd))
         IF (exit_flag.ne.NoError) RETURN
       END IF
 !
@@ -1460,13 +1423,13 @@
         scale=1.0_r8
         CALL extract_sta2d (ng, iNLM, Cgrid, idV2Sd, v2dvar,            &
      &                      LBi, UBi, LBj, UBj,                         &
-     &                      scale, OCEAN(ng) % ubar_stokes,             &
+     &                      scale, OCEAN(ng) % vbar_stokes,             &
      &                      Nstation(ng), Xpos, Ypos, psta)
         CALL netcdf_put_fvar (ng, iNLM, STAname(ng),                    &
      &                        TRIM(Vname(1,idV2Sd)), psta,              &
      &                        (/1,tSTAindx(ng)/), (/Nstation(ng),1/),   &
-     &                        ncid = ncSTAid(ng),                       &
-     &                        varid = staVid(idV2Sd,ng))
+     &                        ncid = STA(ng)%ncid,                      &
+     &                        varid = STA(ng)%Vid(idV2Sd))
         IF (exit_flag.ne.NoError) RETURN
       END IF
 !
@@ -1481,8 +1444,8 @@
         CALL netcdf_put_fvar (ng, iNLM, STAname(ng),                    &
      &                        TRIM(Vname(1,idU2rs)), psta,              &
      &                        (/1,tSTAindx(ng)/), (/Nstation(ng),1/),   &
-     &                        ncid = ncSTAid(ng),                       &
-     &                        varid = staVid(idU2rs,ng))
+     &                        ncid = STA(ng)%ncid,                      &
+     &                        varid = STA(ng)%Vid(idU2rs))
         IF (exit_flag.ne.NoError) RETURN
       END IF
 !
@@ -1497,9 +1460,9 @@
         CALL netcdf_put_fvar (ng, iNLM, STAname(ng),                    &
      &                        TRIM(Vname(1,idV2rs)), psta,              &
      &                        (/1,tSTAindx(ng)/), (/Nstation(ng),1/),   &
-     &                        ncid = ncSTAid(ng),                       &
-     &                        varid = staVid(idV2rs,ng))
-        IF (exit_flag.ne.NoError) RETURN
+     &                        ncid = STA(ng)%ncid,                      &
+     &                        varid = STA(ng)%Vid(idV2rs))
+       IF (exit_flag.ne.NoError) RETURN
       END IF
 #  ifdef SOLVE3D
 !
@@ -1532,8 +1495,8 @@
      &                        TRIM(Vname(1,idV3Sd)), rsta,              &
      &                        (/1,1,tSTAindx(ng)/),                     &
      &                        (/N(ng),Nstation(ng),1/),                 &
-     &                        ncid = ncSTAid(ng),                       &
-     &                        varid = staVid(idV3Sd,ng))
+     &                        ncid = STA(ng)%ncid,                      &
+     &                        varid = STA(ng)%Vid(idV3Sd))
         IF (exit_flag.ne.NoError) RETURN
       END IF
 !
@@ -1549,13 +1512,12 @@
      &                        TRIM(Vname(1,idW3Sd)), rsta,              &
      &                        (/1,1,tSTAindx(ng)/),                     &
      &                        (/N(ng),Nstation(ng),1/),                 &
-     &                        ncid = ncSTAid(ng),                       &
-     &                        varid = staVid(idW3Sd,ng))
+     &                        ncid = STA(ng)%ncid,                      &
+     &                        varid = STA(ng)%Vid(idW3Sd))
         IF (exit_flag.ne.NoError) RETURN
       END IF
-
 !
-!  Write out 3D W-momentum stokes velocity test
+!  Write out 3D W-momentum stokes velocity
 !
       IF (Sout(idW3St,ng)) THEN
         scale=1.0_r8
@@ -1567,8 +1529,8 @@
      &                        TRIM(Vname(1,idW3St)), rsta,              &
      &                        (/1,1,tSTAindx(ng)/),                     &
      &                        (/N(ng),Nstation(ng),1/),                 &
-     &                        ncid = ncSTAid(ng),                       &
-     &                        varid = staVid(idW3St,ng))
+     &                        ncid = STA(ng)%ncid,                      &
+     &                        varid = STA(ng)%Vid(idW3St))
         IF (exit_flag.ne.NoError) RETURN
       END IF
 !
@@ -1584,8 +1546,8 @@
      &                        TRIM(Vname(1,idU3rs)), rsta,              &
      &                        (/1,1,tSTAindx(ng)/),                     &
      &                        (/N(ng),Nstation(ng),1/),                 &
-     &                        ncid = ncSTAid(ng),                       &
-     &                        varid = staVid(idU3rs,ng))
+     &                        ncid = STA(ng)%ncid,                      &
+     &                        varid = STA(ng)%Vid(idU3rs))
         IF (exit_flag.ne.NoError) RETURN
       END IF
 !
@@ -1601,8 +1563,8 @@
      &                        TRIM(Vname(1,idV3rs)), rsta,              &
      &                        (/1,1,tSTAindx(ng)/),                     &
      &                        (/N(ng),Nstation(ng),1/),                 &
-     &                        ncid = ncSTAid(ng),                       &
-     &                        varid = staVid(idV3rs,ng))
+     &                        ncid = STA(ng)%ncid,                      &
+     &                        varid = STA(ng)%Vid(idV3rs))
         IF (exit_flag.ne.NoError) RETURN
       END IF
 #  endif
@@ -1656,8 +1618,8 @@
         CALL netcdf_put_fvar (ng, iNLM, STAname(ng),                    &
      &                        TRIM(Vname(1,idWlep)), psta,              &
      &                        (/1,tSTAindx(ng)/), (/Nstation(ng),1/),   &
-     &                        ncid = ncSTAid(ng),                       &
-     &                        varid = staVid(idWlep,ng))
+     &                        ncid = STA(ng)%ncid,                      &
+     &                        varid = STA(ng)%Vid(idWlep))
         IF (exit_flag.ne.NoError) RETURN
       END IF
 # endif
@@ -1746,8 +1708,8 @@
         CALL netcdf_put_fvar (ng, iNLM, STAname(ng),                    &
      &                        TRIM(Vname(1,idWdif)), psta,              &
      &                        (/1,tSTAindx(ng)/), (/Nstation(ng),1/),   &
-     &                        ncid = ncSTAid(ng),                       &
-     &                        varid = staVid(idWdif,ng))
+     &                        ncid = STA(ng)%ncid,                      &
+     &                        varid = STA(ng)%Vid(idWdif))
         IF (exit_flag.ne.NoError) RETURN
       END IF
 # endif
@@ -1765,8 +1727,8 @@
         CALL netcdf_put_fvar (ng, iNLM, STAname(ng),                    &
      &                        TRIM(Vname(1,idWdib)), psta,              &
      &                        (/1,tSTAindx(ng)/), (/Nstation(ng),1/),   &
-     &                        ncid = ncSTAid(ng),                       &
-     &                        varid = staVid(idWdib,ng))
+     &                        ncid = STA(ng)%ncid,                      &
+     &                        varid = STA(ng)%Vid(idWdib))
         IF (exit_flag.ne.NoError) RETURN
       END IF
 !
@@ -1781,8 +1743,8 @@
         CALL netcdf_put_fvar (ng, iNLM, STAname(ng),                    &
      &                        TRIM(Vname(1,idWdiw)), psta,              &
      &                        (/1,tSTAindx(ng)/), (/Nstation(ng),1/),   &
-     &                        ncid = ncSTAid(ng),                       &
-     &                        varid = staVid(idWdiw,ng))
+     &                        ncid = STA(ng)%ncid,                      &
+     &                        varid = STA(ng)%Vid(idWdiw))
         IF (exit_flag.ne.NoError) RETURN
       END IF
 # endif
@@ -1799,8 +1761,8 @@
         CALL netcdf_put_fvar (ng, iNLM, STA(ng)%name,                   &
      &                        TRIM(Vname(1,idWdis)), psta,              &
      &                        (/1,tSTAindx(ng)/), (/Nstation(ng),1/),   &
-     &                        ncid = ncSTAid(ng),                       &
-     &                        varid = staVid(idWdis,ng))
+     &                        ncid = STA(ng)%ncid,                      &
+     &                        varid = STA(ng)%Vid(idWdis))
         IF (exit_flag.ne.NoError) RETURN
       END IF
 # endif
@@ -1817,8 +1779,8 @@
         CALL netcdf_put_fvar (ng, iNLM, STAname(ng),                    &
      &                        TRIM(Vname(1,idWrol)), psta,              &
      &                        (/1,tSTAindx(ng)/), (/Nstation(ng),1/),   &
-     &                        ncid = ncSTAid(ng),                       &
-     &                        varid = staVid(idWrol,ng))
+     &                        ncid = STA(ng)%ncid,                      &
+     &                        varid = STA(ng)%Vid(idWrol))
         IF (exit_flag.ne.NoError) RETURN
       END IF
 # endif
@@ -1835,8 +1797,8 @@
         CALL netcdf_put_fvar (ng, iNLM, STAname(ng),                    &
      &                        TRIM(Vname(1,idWbrk)), psta,              &
      &                        (/1,tSTAindx(ng)/), (/Nstation(ng),1/),   &
-     &                        ncid = ncSTAid(ng),                       &
-     &                        varid = staVid(idWbrk,ng))
+     &                        ncid = STA(ng)%ncid,                      &
+     &                        varid = STA(ng)%Vid(idWbrk))
         IF (exit_flag.ne.NoError) RETURN
       END IF
 # endif
@@ -1853,8 +1815,8 @@
         CALL netcdf_put_fvar (ng, iNLM, STAname(ng),                    &
      &                        TRIM(Vname(1,idWztw)), psta,              &
      &                        (/1,tSTAindx(ng)/), (/Nstation(ng),1/),   &
-     &                        ncid = ncSTAid(ng),                       &
-     &                        varid = staVid(idWztw,ng))
+     &                        ncid = STA(ng)%ncid,                      &
+     &                        varid = STA(ng)%Vid(idWztw))
         IF (exit_flag.ne.NoError) RETURN
       END IF
 !
@@ -1869,8 +1831,8 @@
         CALL netcdf_put_fvar (ng, iNLM, STAname(ng),                    &
      &                        TRIM(Vname(1,idWqsp)), psta,              &
      &                        (/1,tSTAindx(ng)/), (/Nstation(ng),1/),   &
-     &                        ncid = ncSTAid(ng),                       &
-     &                        varid = staVid(idWqsp,ng))
+     &                        ncid = STA(ng)%ncid,                      &
+     &                        varid = STA(ng)%Vid(idWqsp))
         IF (exit_flag.ne.NoError) RETURN
       END IF
 !
@@ -1885,8 +1847,8 @@
         CALL netcdf_put_fvar (ng, iNLM, STAname(ng),                    &
      &                        TRIM(Vname(1,idWbeh)), psta,              &
      &                        (/1,tSTAindx(ng)/), (/Nstation(ng),1/),   &
-     &                        ncid = ncSTAid(ng),                       &
-     &                        varid = staVid(idWbeh,ng))
+     &                        ncid = STA(ng)%ncid,                      &
+     &                        varid = STA(ng)%Vid(idWbeh))
         IF (exit_flag.ne.NoError) RETURN
       END IF
 # endif
