@@ -1409,9 +1409,9 @@
      &                      LBi, UBi, LBj, UBj,                         &
      &                      scale, OCEAN(ng) % ubar_stokes,             &
      &                      Nstation(ng), Xpos, Ypos, psta)
-        CALL netcdf_put_fvar (ng, iNLM, STAname(ng),                    &
+        CALL netcdf_put_fvar (ng, iNLM, STA(ng)%name,                   &
      &                        TRIM(Vname(1,idU2Sd)), psta,              &
-     &                        (/1,tSTAindx(ng)/), (/Nstation(ng),1/),   &
+     &                        (/1,STA(ng)%Rindex/), (/Nstation(ng),1/), &
      &                        ncid = STA(ng)%ncid,                      &
      &                        varid = STA(ng)%Vid(idU2Sd))
         IF (exit_flag.ne.NoError) RETURN
@@ -1425,9 +1425,9 @@
      &                      LBi, UBi, LBj, UBj,                         &
      &                      scale, OCEAN(ng) % vbar_stokes,             &
      &                      Nstation(ng), Xpos, Ypos, psta)
-        CALL netcdf_put_fvar (ng, iNLM, STAname(ng),                    &
+        CALL netcdf_put_fvar (ng, iNLM, STA(ng)%name,                   &
      &                        TRIM(Vname(1,idV2Sd)), psta,              &
-     &                        (/1,tSTAindx(ng)/), (/Nstation(ng),1/),   &
+     &                        (/1,STA(ng)%Rindex/), (/Nstation(ng),1/), &
      &                        ncid = STA(ng)%ncid,                      &
      &                        varid = STA(ng)%Vid(idV2Sd))
         IF (exit_flag.ne.NoError) RETURN
@@ -1441,9 +1441,9 @@
      &                      LBi, UBi, LBj, UBj,                         &
      &                      scale, MIXING(ng) % rustr2d,                &
      &                      Nstation(ng), Xpos, Ypos, psta)
-        CALL netcdf_put_fvar (ng, iNLM, STAname(ng),                    &
+        CALL netcdf_put_fvar (ng, iNLM, STA(ng)%name,                   &
      &                        TRIM(Vname(1,idU2rs)), psta,              &
-     &                        (/1,tSTAindx(ng)/), (/Nstation(ng),1/),   &
+     &                        (/1,STA(ng)%Rindex/), (/Nstation(ng),1/), &
      &                        ncid = STA(ng)%ncid,                      &
      &                        varid = STA(ng)%Vid(idU2rs))
         IF (exit_flag.ne.NoError) RETURN
@@ -1457,9 +1457,9 @@
      &                      LBi, UBi, LBj, UBj,                         &
      &                      scale, MIXING(ng) % rvstr2d,                &
      &                      Nstation(ng), Xpos, Ypos, psta)
-        CALL netcdf_put_fvar (ng, iNLM, STAname(ng),                    &
+        CALL netcdf_put_fvar (ng, iNLM, STA(ng)%name,                   &
      &                        TRIM(Vname(1,idV2rs)), psta,              &
-     &                        (/1,tSTAindx(ng)/), (/Nstation(ng),1/),   &
+     &                        (/1,STA(ng)%Rindex/), (/Nstation(ng),1/), &
      &                        ncid = STA(ng)%ncid,                      &
      &                        varid = STA(ng)%Vid(idV2rs))
        IF (exit_flag.ne.NoError) RETURN
@@ -1493,7 +1493,7 @@
      &                      NposR, XposR, YposR, ZposR, rsta)
         CALL netcdf_put_fvar (ng, iNLM, STA(ng)%name,                   &
      &                        TRIM(Vname(1,idV3Sd)), rsta,              &
-     &                        (/1,1,tSTAindx(ng)/),                     &
+     &                        (/1,1,STA(ng)%Rindex/),                   &
      &                        (/N(ng),Nstation(ng),1/),                 &
      &                        ncid = STA(ng)%ncid,                      &
      &                        varid = STA(ng)%Vid(idV3Sd))
@@ -1508,9 +1508,9 @@
      &                      LBi, UBi, LBj, UBj, 0, N(ng),               &
      &                      scale, OCEAN(ng) % W_stokes,                &
      &                      NposR, XposR, YposR, ZposR, rsta)
-        CALL netcdf_put_fvar (ng, iNLM, STAname(ng),                    &
+        CALL netcdf_put_fvar (ng, iNLM, STA(ng)%name,                   &
      &                        TRIM(Vname(1,idW3Sd)), rsta,              &
-     &                        (/1,1,tSTAindx(ng)/),                     &
+     &                        (/1,1,STA(ng)%Rindex/),                   &
      &                        (/N(ng),Nstation(ng),1/),                 &
      &                        ncid = STA(ng)%ncid,                      &
      &                        varid = STA(ng)%Vid(idW3Sd))
@@ -1525,9 +1525,9 @@
      &                      LBi, UBi, LBj, UBj, 0, N(ng),               &
      &                      scale, OCEAN(ng) % wstvel,                  &
      &                      NposR, XposR, YposR, ZposR, rsta)
-        CALL netcdf_put_fvar (ng, iNLM, STAname(ng),                    &
+        CALL netcdf_put_fvar (ng, iNLM, STA(ng)%name,                   &
      &                        TRIM(Vname(1,idW3St)), rsta,              &
-     &                        (/1,1,tSTAindx(ng)/),                     &
+     &                        (/1,1,STA(ng)%Rindex/),                   &
      &                        (/N(ng),Nstation(ng),1/),                 &
      &                        ncid = STA(ng)%ncid,                      &
      &                        varid = STA(ng)%Vid(idW3St))
@@ -1542,9 +1542,9 @@
      &                      LBi, UBi, LBj, UBj, 1, N(ng),               &
      &                      scale, MIXING(ng) % rustr3d,                &
      &                      NposR, XposR, YposR, ZposR, rsta)
-        CALL netcdf_put_fvar (ng, iNLM, STAname(ng),                    &
+        CALL netcdf_put_fvar (ng, iNLM, STA(ng)%name,                   &
      &                        TRIM(Vname(1,idU3rs)), rsta,              &
-     &                        (/1,1,tSTAindx(ng)/),                     &
+     &                        (/1,1,STA(ng)%Rindex/),                   &
      &                        (/N(ng),Nstation(ng),1/),                 &
      &                        ncid = STA(ng)%ncid,                      &
      &                        varid = STA(ng)%Vid(idU3rs))
@@ -1559,9 +1559,9 @@
      &                      LBi, UBi, LBj, UBj, 1, N(ng),               &
      &                      scale, MIXING(ng) % rvstr3d,                &
      &                      NposR, XposR, YposR, ZposR, rsta)
-        CALL netcdf_put_fvar (ng, iNLM, STAname(ng),                    &
+        CALL netcdf_put_fvar (ng, iNLM, STA(ng)%name,                   &
      &                        TRIM(Vname(1,idV3rs)), rsta,              &
-     &                        (/1,1,tSTAindx(ng)/),                     &
+     &                        (/1,1,STA(ng)%Rindex/),                   &
      &                        (/N(ng),Nstation(ng),1/),                 &
      &                        ncid = STA(ng)%ncid,                      &
      &                        varid = STA(ng)%Vid(idV3rs))
@@ -1615,9 +1615,9 @@
      &                      LBi, UBi, LBj, UBj,                         &
      &                      scale, FORCES(ng) % Lwavep,                 &
      &                      Nstation(ng), Xpos, Ypos, psta)
-        CALL netcdf_put_fvar (ng, iNLM, STAname(ng),                    &
+        CALL netcdf_put_fvar (ng, iNLM, STA(ng)%name,                   &
      &                        TRIM(Vname(1,idWlep)), psta,              &
-     &                        (/1,tSTAindx(ng)/), (/Nstation(ng),1/),   &
+     &                        (/1,STA(ng)%Rindex/), (/Nstation(ng),1/), &
      &                        ncid = STA(ng)%ncid,                      &
      &                        varid = STA(ng)%Vid(idWlep))
         IF (exit_flag.ne.NoError) RETURN
@@ -1705,9 +1705,9 @@
      &                      LBi, UBi, LBj, UBj,                         &
      &                      scale, FORCES(ng) % Dissip_fric,            &
      &                      Nstation(ng), Xpos, Ypos, psta)
-        CALL netcdf_put_fvar (ng, iNLM, STAname(ng),                    &
+        CALL netcdf_put_fvar (ng, iNLM, STA(ng)%name,                   &
      &                        TRIM(Vname(1,idWdif)), psta,              &
-     &                        (/1,tSTAindx(ng)/), (/Nstation(ng),1/),   &
+     &                        (/1,STA(ng)%Rindex/), (/Nstation(ng),1/), &
      &                        ncid = STA(ng)%ncid,                      &
      &                        varid = STA(ng)%Vid(idWdif))
         IF (exit_flag.ne.NoError) RETURN
@@ -1724,9 +1724,9 @@
      &                      LBi, UBi, LBj, UBj,                         &
      &                      scale, FORCES(ng) % Dissip_break,           &
      &                      Nstation(ng), Xpos, Ypos, psta)
-        CALL netcdf_put_fvar (ng, iNLM, STAname(ng),                    &
+        CALL netcdf_put_fvar (ng, iNLM, STA(ng)%name,                   &
      &                        TRIM(Vname(1,idWdib)), psta,              &
-     &                        (/1,tSTAindx(ng)/), (/Nstation(ng),1/),   &
+     &                        (/1,STA(ng)%Rindex/), (/Nstation(ng),1/), &
      &                        ncid = STA(ng)%ncid,                      &
      &                        varid = STA(ng)%Vid(idWdib))
         IF (exit_flag.ne.NoError) RETURN
@@ -1740,9 +1740,9 @@
      &                      LBi, UBi, LBj, UBj,                         &
      &                      scale, FORCES(ng) % Dissip_wcap,            &
      &                      Nstation(ng), Xpos, Ypos, psta)
-        CALL netcdf_put_fvar (ng, iNLM, STAname(ng),                    &
+        CALL netcdf_put_fvar (ng, iNLM, STA(ng)%name,                   &
      &                        TRIM(Vname(1,idWdiw)), psta,              &
-     &                        (/1,tSTAindx(ng)/), (/Nstation(ng),1/),   &
+     &                        (/1,STA(ng)%Rindex/), (/Nstation(ng),1/), &
      &                        ncid = STA(ng)%ncid,                      &
      &                        varid = STA(ng)%Vid(idWdiw))
         IF (exit_flag.ne.NoError) RETURN
@@ -1760,7 +1760,7 @@
      &                      Nstation(ng), Xpos, Ypos, psta)
         CALL netcdf_put_fvar (ng, iNLM, STA(ng)%name,                   &
      &                        TRIM(Vname(1,idWdis)), psta,              &
-     &                        (/1,tSTAindx(ng)/), (/Nstation(ng),1/),   &
+     &                        (/1,STA(ng)%Rindex/), (/Nstation(ng),1/), &
      &                        ncid = STA(ng)%ncid,                      &
      &                        varid = STA(ng)%Vid(idWdis))
         IF (exit_flag.ne.NoError) RETURN
@@ -1776,9 +1776,9 @@
      &                      LBi, UBi, LBj, UBj,                         &
      &                      scale, FORCES(ng) % rollA,                  &
      &                      Nstation(ng), Xpos, Ypos, psta)
-        CALL netcdf_put_fvar (ng, iNLM, STAname(ng),                    &
+        CALL netcdf_put_fvar (ng, iNLM, STA(ng)%name,                   &
      &                        TRIM(Vname(1,idWrol)), psta,              &
-     &                        (/1,tSTAindx(ng)/), (/Nstation(ng),1/),   &
+     &                        (/1,STA(ng)%Rindex/), (/Nstation(ng),1/), &
      &                        ncid = STA(ng)%ncid,                      &
      &                        varid = STA(ng)%Vid(idWrol))
         IF (exit_flag.ne.NoError) RETURN
@@ -1794,9 +1794,9 @@
      &                      LBi, UBi, LBj, UBj,                         &
      &                      scale, FORCES(ng) % Wave_break,             &
      &                      Nstation(ng), Xpos, Ypos, psta)
-        CALL netcdf_put_fvar (ng, iNLM, STAname(ng),                    &
+        CALL netcdf_put_fvar (ng, iNLM, STA(ng)%name,                   &
      &                        TRIM(Vname(1,idWbrk)), psta,              &
-     &                        (/1,tSTAindx(ng)/), (/Nstation(ng),1/),   &
+     &                        (/1,STA(ng)%Rindex/), (/Nstation(ng),1/), &
      &                        ncid = STA(ng)%ncid,                      &
      &                        varid = STA(ng)%Vid(idWbrk))
         IF (exit_flag.ne.NoError) RETURN
@@ -1812,9 +1812,9 @@
      &                      LBi, UBi, LBj, UBj,                         &
      &                      scale, OCEAN(ng) % zeta(:,:,KOUT),          &
      &                      Nstation(ng), Xpos, Ypos, psta)
-        CALL netcdf_put_fvar (ng, iNLM, STAname(ng),                    &
+        CALL netcdf_put_fvar (ng, iNLM, STA(ng)%name,                   &
      &                        TRIM(Vname(1,idWztw)), psta,              &
-     &                        (/1,tSTAindx(ng)/), (/Nstation(ng),1/),   &
+     &                        (/1,STA(ng)%Rindex/), (/Nstation(ng),1/), &
      &                        ncid = STA(ng)%ncid,                      &
      &                        varid = STA(ng)%Vid(idWztw))
         IF (exit_flag.ne.NoError) RETURN
@@ -1828,9 +1828,9 @@
      &                      LBi, UBi, LBj, UBj,                         &
      &                      scale, OCEAN(ng) % qsp,                     &
      &                      Nstation(ng), Xpos, Ypos, psta)
-        CALL netcdf_put_fvar (ng, iNLM, STAname(ng),                    &
+        CALL netcdf_put_fvar (ng, iNLM, STA(ng)%name,                   &
      &                        TRIM(Vname(1,idWqsp)), psta,              &
-     &                        (/1,tSTAindx(ng)/), (/Nstation(ng),1/),   &
+     &                        (/1,STA(ng)%Rindex/), (/Nstation(ng),1/), &
      &                        ncid = STA(ng)%ncid,                      &
      &                        varid = STA(ng)%Vid(idWqsp))
         IF (exit_flag.ne.NoError) RETURN
@@ -1844,9 +1844,9 @@
      &                      LBi, UBi, LBj, UBj,                         &
      &                      scale, OCEAN(ng) % bh,                      &
      &                      Nstation(ng), Xpos, Ypos, psta)
-        CALL netcdf_put_fvar (ng, iNLM, STAname(ng),                    &
+        CALL netcdf_put_fvar (ng, iNLM, STA(ng)%name,                   &
      &                        TRIM(Vname(1,idWbeh)), psta,              &
-     &                        (/1,tSTAindx(ng)/), (/Nstation(ng),1/),   &
+     &                        (/1,STA(ng)%Rindex/), (/Nstation(ng),1/), &
      &                        ncid = STA(ng)%ncid,                      &
      &                        varid = STA(ng)%Vid(idWbeh))
         IF (exit_flag.ne.NoError) RETURN

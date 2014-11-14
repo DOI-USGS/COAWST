@@ -393,7 +393,7 @@ fi
 #  export     MY_HEADER_DIR=${MY_PROJECT_DIR}/ROMS/Include
 #  export MY_ANALYTICAL_DIR=${MY_PROJECT_DIR}/ROMS/Functionals
    export     MY_HEADER_DIR=${MY_PROJECT_DIR}/Projects/Inlet_test/Coupled
-   export MY_ANALYTICAL_DIR=${MY_PROJECT_DIR}/Projects/Inlet_test/coupled
+   export MY_ANALYTICAL_DIR=${MY_PROJECT_DIR}/Projects/Inlet_test/Coupled
 
 # Put the binary to execute in the following directory.
 

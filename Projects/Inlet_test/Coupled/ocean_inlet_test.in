@@ -924,7 +924,7 @@ Dout(iTvdif) == F F     ! temp_vdiff, ...    vertical diffusion
 ! Input ASCII parameter filenames.
 
      APARNAM =  ROMS/External/s4dvar.in
-     SPOSNAM =  ROMS/External/stations.in
+     SPOSNAM =  Projects/Inlet_test/Coupled/stations_inlet_test.in
      FPOSNAM =  ROMS/External/floats.in
      BPARNAM =  ROMS/External/bioFasham.in
      SPARNAM =  Projects/Inlet_test/Coupled/sediment_inlet_test.in 

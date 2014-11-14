@@ -73,3 +73,4 @@
 #endif
 
 #define AVERAGES
+#define STATIONS

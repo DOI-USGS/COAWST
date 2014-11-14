@@ -1649,7 +1649,7 @@
 !
 !  Read in spacially varying linear drag coefficients (m/s).
 !
-          CASE ('wavedrag')
+!         CASE ('wavedrag')
             gtype=r2dvar
             status=nf_fread2d(ng, model, ncname, GRD(ng)%ncid,          &
      &                        var_name(it), var_id(it),                 &
@@ -1680,8 +1680,6 @@
      &                    GRID(ng) % wavedrag)
 #  endif
 # endif
-        END SELECT
-      END DO
       IF (exit_flag.ne.NoError) THEN
         IF (Master) WRITE (stdout,30) TRIM(var_name(i)), TRIM(ncname)
         RETURN
