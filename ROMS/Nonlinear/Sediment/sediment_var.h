@@ -64,8 +64,16 @@
                 idBott(iactv)=varid
               CASE ('idBott(ishgt)')
                 idBott(ishgt)=varid
+#if defined SED_BIOMASS
               CASE ('idBott(imaxD)')
                 idBott(imaxD)=varid
+#endif
+#if defined SED_BIOMASS && defined SEAGRASS_BOTTOM
+              CASE ('idBott(isgrH)')
+                idBott(isgrH)=varid
+              CASE ('idBott(isgrD)')
+                idBott(isgrD)=varid
+#endif
               CASE ('idBott(idnet)')
                 idBott(idnet)=varid
 #if defined COHESIVE_BED || defined SED_BIODIFF || defined MIXED_BED

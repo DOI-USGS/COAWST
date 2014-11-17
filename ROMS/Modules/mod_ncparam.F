@@ -86,6 +86,9 @@
         integer, parameter :: v3dvar = 8         ! 3D V-variable
         integer, parameter :: w3dvar = 9         ! 3D W-variable
         integer, parameter :: b3dvar = 10        ! 3D BED-sediment
+#ifdef SPECTRAL_LIGHT
+        integer, parameter :: s3dvar = 11        ! 3D spectral light variable
+#endif
 !
 !  Number of horizontal interior and boundary water points.
 !
@@ -1061,6 +1064,10 @@
               gtype=w3dvar
             CASE ('b3dvar')
               gtype=b3dvar
+#ifdef SPECTRAL_LIGHT
+            CASE ('s3dvar')
+              gtype=s3dvar
+#endif
             CASE DEFAULT
               gtype=0
           END SELECT
@@ -1758,6 +1765,16 @@
               idDu3d(M3vvis)=varid
             CASE ('idDv3d(M3vvis)')
               idDv3d(M3vvis)=varid
+#  ifdef SGR_FLOW
+            CASE ('idDu3d(M3fsgr)')
+              idDu3d(M3fsgr)=varid
+            CASE ('idDv3d(M3fsgr)')
+              idDv3d(M3fsgr)=varid
+            CASE ('idDu2d(M2fsgr)')
+              idDu2d(M2fsgr)=varid
+            CASE ('idDv2d(M2fsgr)')
+              idDv2d(M2fsgr)=varid
+#  endif
             CASE ('idDu3d(M3rate)')
               idDu3d(M3rate)=varid
             CASE ('idDv3d(M3rate)')
@@ -2022,8 +2039,10 @@
 #endif
 
 #ifdef BIOLOGY
-# if defined BIO_FENNEL
+# if defined BIO_FENNEL && !defined SPECTRAL_LIGHT
 #  include <fennel_var.h>
+# elif defined BIO_FENNEL && defined SPECTRAL_LIGHT
+#  include <spect_fennel_var.h>
 # elif defined BIO_UMAINE
 #  include <umaine_var.h>
 # elif defined ECOSIM

@@ -1,7 +1,7 @@
 !
 !  ROMS/TOMS Standard Input parameters.
 !
-!svn $Id: ocean_sed_toy.in 438 2010-01-10 17:20:24Z arango $
+!svn $Id$
 !========================================================= Hernan G. Arango ===
 !  Copyright (c) 2002-2014 The ROMS/TOMS Group                                !
 !    Licensed under a MIT/X style license                                     !
@@ -64,17 +64,16 @@
 !
 ! Application title.
 
-       TITLE = One-dimension (vertical) Sediment Toy
+       TITLE = One-dimension (vertical) Biology Toy
 
 ! C-preprocessing Flag.
 
-    MyAppCPP = SEDBED_TOY
+    MyAppCPP = SPEC_LIGHT
 
 ! Input variable information file name.  This file needs to be processed
 ! first so all information arrays can be initialized properly.
 
-!     VARNAME = ROMS/External/varinfo.dat
-     VARNAME = varinfo.dat
+     VARNAME = ROMS/External/varinfo.dat
 
 ! Number of nested grids.
 
@@ -93,15 +92,17 @@ GridsInLayer =  1
 ! these parameters correctly.
 
           Lm == 4             ! Number of I-direction INTERIOR RHO-points
-          Mm == 3             ! Number of J-direction INTERIOR RHO-points
-           N == 20            ! Number of vertical levels
+          Mm == 4             ! Number of J-direction INTERIOR RHO-points
+           N == 30            ! Number of vertical levels
 
-        Nbed =  41            ! Number of sediment bed layers
+        NBAND =  30           ! Number of output spectral irradiance bands
+
+        Nbed =  1             ! Number of sediment bed layers
 
          NAT =  2             ! Number of active tracers (usually, 2)
          NPT =  0             ! Number of inactive passive tracers
-         NCS =  2             ! Number of cohesive (mud) sediment tracers
-         NNS =  2             ! Number of non-cohesive (sand) sediment tracers
+         NCS =  0             ! Number of cohesive (mud) sediment tracers
+         NNS =  1             ! Number of non-cohesive (sand) sediment tracers
 
 ! Domain decomposition parameters for serial, distributed-memory or
 ! shared-memory configurations used to determine tile horizontal range
@@ -199,9 +200,9 @@ ad_VolCons(north) ==  F                            ! northern boundary
 
 ! Time-Stepping parameters.
 
-      NTIMES == 86400
-          DT == 5.0d0
-     NDTFAST == 20
+      NTIMES == 1600
+          DT == 540.0d0
+     NDTFAST == 30
 
 ! Model iteration loops parameters.
 
@@ -223,32 +224,32 @@ ad_VolCons(north) ==  F                            ! northern boundary
        NRREC == 0
    LcycleRST == T
         NRST == 99999
-        NSTA == 15
-        NFLT == 15
-       NINFO == 40
+        NSTA == 1
+        NFLT == 1
+       NINFO == 1
 
 ! Output history, average, diagnostic files parameters.
 
      LDEFOUT == T
-        NHIS == 400
+        NHIS == 2
      NDEFHIS == 0
       NTSAVG == 1
-        NAVG == 100
+        NAVG == 99999
      NDEFAVG == 0
       NTSDIA == 1
-        NDIA == 100
+        NDIA == 99999
      NDEFDIA == 0
 
 ! Output tangent linear and adjoint models parameters.
 
    LcycleTLM == F
-        NTLM == 100
+        NTLM == 80
      NDEFTLM == 0
    LcycleADJ == F
-        NADJ == 100
+        NADJ == 80
      NDEFADJ == 0
-        NSFF == 100
-        NOBC == 100
+        NSFF == 80
+        NOBC == 80
 
 ! GST output and check pointing restart parameters.
 
@@ -264,7 +265,7 @@ ad_VolCons(north) ==  F                            ! northern boundary
 ! Harmonic/biharmonic horizontal diffusion of tracer for nonlinear model
 ! and adjoint-based algorithms: [1:NAT+NPT,Ngrids].
 
-        TNU2 == 5.0d0  5.0d0                    ! m2/s
+        TNU2 == 0.0d0  0.0d0                    ! m2/s
         TNU4 == 2*0.0d0                         ! m4/s
 
      ad_TNU2 == 0.0d0  0.0d0                    ! m2/s
@@ -273,15 +274,15 @@ ad_VolCons(north) ==  F                            ! northern boundary
 ! Harmonic/biharmonic, horizontal viscosity coefficient for nonlinear model
 ! and adjoint-based algorithms: [Ngrids].
 
-       VISC2 == 0.0d0                           ! m2/s
-       VISC4 == 0.0d0                           ! m4/s
+       VISC2 == 50.0d0                          ! m2/s
+       VISC4 == 4.0d+8                          ! m4/s
 
     ad_VISC2 == 0.0d0                           ! m2/s
     ad_VISC4 == 0.0d0                           ! m4/s
 
 ! Logical switches (TRUE/FALSE) to increase/decrease horizontal viscosity
 ! and/or diffusivity in specific areas of the application domain (like
-! sponge areas) for the desired application grid.
+! sponge areas) for the desired application applica.
 
     LuvSponge == F                              ! horizontal momentum
 LtracerSponge == F F                            ! temperature, salinity, inert
@@ -309,19 +310,19 @@ LtracerSponge == F F                            ! temperature, salinity, inert
 
 ! Generic length-scale turbulence closure parameters.
 
-       GLS_P == -1.0d0                          ! k-omega
-       GLS_M == 0.5d0
+       GLS_P == 3.0d0                           ! K-epsilon
+       GLS_M == 1.5d0
        GLS_N == -1.0d0
     GLS_Kmin == 7.6d-6
     GLS_Pmin == 1.0d-12
 
     GLS_CMU0 == 0.5477d0
-      GLS_C1 == 0.555d0
-      GLS_C2 == 0.833d0
-     GLS_C3M == -0.6d0
+      GLS_C1 == 1.44d0
+      GLS_C2 == 1.92d0
+     GLS_C3M == -0.4d0
      GLS_C3P == 1.0d0
-    GLS_SIGK == 2.0d0
-    GLS_SIGP == 2.0d0
+    GLS_SIGK == 1.0d0
+    GLS_SIGP == 1.30d0
 
 ! Constants used in surface turbulent kinetic energy flux computation.
 
@@ -329,12 +330,14 @@ LtracerSponge == F F                            ! temperature, salinity, inert
  ZOS_HSIG_ALPHA == 0.5d0            ! roughness from wave amplitude
        SZ_ALPHA == 0.25d0           ! roughness from wave dissipation
       CRGBAN_CW == 100.0d0          ! Craig and Banner wave breaking
+      WEC_ALPHA == 0.0d0            ! 0: all wave dissip goes to break and none to roller.
+                                    ! 1: all wave dissip goes to roller and none to breaking.
 
 ! Constants used in momentum stress computation.
 
         RDRG == 3.0d-04                    ! m/s
        RDRG2 == 3.0d-03                    ! nondimensional
-         Zob == 0.0005d0                   ! m
+         Zob == 0.02d0                     ! m
          Zos == 0.02d0                     ! m
 
 ! Height (m) of atmospheric measurements for Bulk fluxes parameterization.
@@ -361,9 +364,9 @@ LtracerSponge == F F                            ! temperature, salinity, inert
 
 ! Vertical S-coordinates parameters (see below for details), [1:Ngrids].
 
-     THETA_S == 1.0d0                      ! surface stretching parameter
-     THETA_B == 0.8d0                      ! bottom  stretching parameter
-      TCLINE == 0.0d0                      ! critical depth (m)
+     THETA_S == 5.0d0                      ! surface stretching parameter
+     THETA_B == 0.4d0                      ! bottom  stretching parameter
+      TCLINE == 50.0d0                     ! critical depth (m)
 
 ! Mean Density and Brunt-Vaisala frequency.
 
@@ -507,26 +510,26 @@ Hout(idVbar) == T       ! vbar               2D V-velocity
 Hout(idu2dE) == F       ! ubar_eastward      2D U-eastward  at RHO-points
 Hout(idv2dN) == F       ! vbar_northward     2D V-northward at RHO-points
 Hout(idFsur) == T       ! zeta               free-surface
-Hout(idBath) == T       ! bath               time-dependent bathymetry
+Hout(idBath) == F       ! bath               time-dependent bathymetry
 
 Hout(idTvar) == T T     ! temp, salt         temperature and salinity
 
-Hout(idUsms) == T       ! sustr              surface U-stress
-Hout(idVsms) == T       ! svstr              surface V-stress
-Hout(idUbms) == T       ! bustr              bottom U-stress
-Hout(idVbms) == T       ! bvstr              bottom V-stress
+Hout(idUsms) == F       ! sustr              surface U-stress
+Hout(idVsms) == F       ! svstr              surface V-stress
+Hout(idUbms) == F       ! bustr              bottom U-stress
+Hout(idVbms) == F       ! bvstr              bottom V-stress
 
-Hout(idUbrs) == T       ! bustrc             bottom U-current stress
-Hout(idVbrs) == T       ! bvstrc             bottom V-current stress
-Hout(idUbws) == T       ! bustrw             bottom U-wave stress
-Hout(idVbws) == T       ! bvstrw             bottom V-wave stress
-Hout(idUbcs) == T       ! bustrcwmax         bottom max wave-current U-stress
-Hout(idVbcs) == T       ! bvstrcwmax         bottom max wave-current V-stress
+Hout(idUbrs) == F       ! bustrc             bottom U-current stress
+Hout(idVbrs) == F       ! bvstrc             bottom V-current stress
+Hout(idUbws) == F       ! bustrw             bottom U-wave stress
+Hout(idVbws) == F       ! bvstrw             bottom V-wave stress
+Hout(idUbcs) == F       ! bustrcwmax         bottom max wave-current U-stress
+Hout(idVbcs) == F       ! bvstrcwmax         bottom max wave-current V-stress
 
-Hout(idUbot) == T       ! Ubot               bed wave orbital U-velocity
-Hout(idVbot) == T       ! Vbot               bed wave orbital V-velocity
-Hout(idUbur) == T       ! Ur                 bottom U-velocity above bed
-Hout(idVbvr) == T       ! Vr                 bottom V-velocity above bed
+Hout(idUbot) == F       ! Ubot               bed wave orbital U-velocity
+Hout(idVbot) == F       ! Vbot               bed wave orbital V-velocity
+Hout(idUbur) == F       ! Ur                 bottom U-velocity above bed
+Hout(idVbvr) == F       ! Vr                 bottom V-velocity above bed
 
 Hout(idW2xx) == F       ! Sxx_bar            2D radiation stress, Sxx component
 Hout(idW2xy) == F       ! Sxy_bar            2D radiation stress, Sxy component
@@ -570,7 +573,7 @@ Hout(idrain) == F       ! rain               precipitation rate
 Hout(idDano) == T       ! rho                density anomaly
 Hout(idVvis) == T       ! AKv                vertical viscosity
 Hout(idTdif) == T       ! AKt                vertical T-diffusion
-Hout(idSdif) == F       ! AKs                vertical Salinity diffusion
+Hout(idSdif) == T       ! AKs                vertical Salinity diffusion
 Hout(idHsbl) == T       ! Hsbl               depth of surface boundary layer
 Hout(idHbbl) == T       ! Hbbl               depth of bottom boundary layer
 Hout(idMtke) == F       ! tke                turbulent kinetic energy
@@ -609,7 +612,7 @@ Hout(idMtls) == F       ! gls                turbulent length scale
 !                                 1 1 1 1 1 1 1
 !               1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6
 
-Hout(idBott) == T T T T T T T F T T T F F F T F
+Hout(idBott) == T T T T T T T T T F F F F F F F
 
 ! Logical switches (TRUE/FALSE) to activate writing of time-averaged
 ! fields into AVERAGE output file.
@@ -764,20 +767,19 @@ Dout(iTvdif) == T T     ! temp_vdiff, ...    vertical diffusion
 
 ! Input NetCDF file names, [1:Ngrids].
 
-     GRDNAME == ocean_grd.nc
-!     ININAME == Projects/Sedbed_toy/restrat_mix_ini.nc
-     ININAME == restrat_mix_ini.nc
-     ITLNAME == ocean_itl.nc
-     IRPNAME == ocean_irp.nc
-     IADNAME == ocean_iad.nc
-     FWDNAME == ocean_fwd.nc
-     ADSNAME == ocean_ads.nc
+     GRDNAME == Projects/Spec_light/spec_light_grd.nc
+     ININAME == Projects/Spec_light/spec_light_ini.nc
+     ITLNAME == /dev/null
+     IRPNAME == /dev/null
+     IADNAME == /dev/null
+     FWDNAME == /dev/null
+     ADSNAME == /dev/null
 
 ! Nesting grids connectivity data: contact points information. This
 ! NetCDF file is special and complex. It is currently generated using
 ! the script "matlab/grid/contact.m" from the Matlab repository.
 
-     NGCNAME =  ocean_ngc.nc
+     NGCNAME =  bio_toy_ngc.nc
 
 ! Input lateral boundary conditions and climatology file names.  The
 ! USER has the option to split input data time records into several
@@ -789,15 +791,15 @@ Dout(iTvdif) == T T     ! temp_vdiff, ...    vertical diffusion
      CLMNAME == ocean_clm.nc
 
      NBCFILES == 1                          ! number of boundary files
-     BRYNAME == ocean_bry.nc
+     BRYNAME == /dev/null
 
 ! Input climatology nudging coefficients file name.
 
-     NUDNAME == ocean_nud.nc
+     NUDNAME == bio_toy_nud.nc
 
 ! Input Sources/Sinks forcing (like river runoff) file name.
 
-     SSFNAME == ocean_rivers.nc
+     SSFNAME == bio_toy_rivers.nc
 
 ! Input forcing NetCDF file name(s).  The USER has the option to enter
 ! several file names for each nested grid.  For example, the USER may
@@ -812,9 +814,7 @@ Dout(iTvdif) == T T     ! temp_vdiff, ...    vertical diffusion
 ! entry, except the last one.
 
      NFFILES == 1                          ! number of unique forcing files
-
-!     FRCNAME == Projects/Sedbed_toy/wind_restrat_2events.nc               ! forcing file 1, grid 1
-     FRCNAME == wind_restrat_2events.nc               ! forcing file 1, grid 1
+     FRCNAME == Projects/Spec_light/spec_light_frc.nc
 
 ! Output NetCDF file names, [1:Ngrids].
 
@@ -834,9 +834,8 @@ Dout(iTvdif) == T T     ! temp_vdiff, ...    vertical diffusion
      APARNAM =  ROMS/External/s4dvar.in
      SPOSNAM =  ROMS/External/stations.in
      FPOSNAM =  ROMS/External/floats.in
-     BPARNAM =  ROMS/External/bio_Fennel.in
-!     SPARNAM =  Projects/Sedbed_toy/sediment_sedbed_toy.in
-     SPARNAM =  sediment_sedbed_toy.in
+     BPARNAM =  Projects/Spec_light/bio_spec_light.in
+     SPARNAM =  Projects/Spec_light/sediment_spec_light.in
      USRNAME =  ROMS/External/MyFile.dat
 
 !

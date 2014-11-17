@@ -600,6 +600,10 @@
                 text='lon_rho lat_rho s_w'
               ELSE IF (INT(Aval(5)).eq.b3dvar) THEN
                 text='lon_rho lat_rho'
+#ifdef SPECTRAL_LIGHT
+              ELSE IF (INT(Aval(5)).eq.s3dvar) THEN
+                text='lon_rho lat_rho'
+#endif
               ELSE IF (INT(Aval(5)).eq.u2dvar) THEN
                 text='lon_u lat_u'
               ELSE IF (INT(Aval(5)).eq.u3dvar) THEN
@@ -626,6 +630,10 @@
                 text='x_rho y_rho s_w'
               ELSE IF (INT(Aval(5)).eq.b3dvar) THEN
                 text='x_rho y_rho'
+#ifdef SPECTRAL_LIGHT
+              ELSE IF (INT(Aval(5)).eq.s3dvar) THEN
+                text='x_rho y_rho'
+#endif
               ELSE IF (INT(Aval(5)).eq.u2dvar) THEN
                 text='x_u y_u'
               ELSE IF (INT(Aval(5)).eq.u3dvar) THEN

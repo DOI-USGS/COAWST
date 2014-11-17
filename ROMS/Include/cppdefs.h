@@ -481,6 +481,24 @@
 ** OCMIP_OXYGEN_SC     use if Schmidt number from Keeling et al. (1998)      **
 ** TALK_NONCONSERV     use if nonconservative computation of alkalinity      **
 **                                                                           **
+** Spectral Fennel biology model OPTIONS:                                    **
+**                                                                           **
+** SPECTRAL_LIGHT      use for spectral light as part of Fennel. Gallegos    **
+** CDOM_DEFAULT        use for constant default CDOM for spectral light      **
+** CDOM_VARIABLE       use for variable CDOM for spectral light              **
+** MOD_SWR_SPECT       modulate shortwave radiation with Gallegos spectrum   **
+** MOD_SWR_HOMO        modulate shortwave radiation evenly through spectrum  **
+** CHL_BACKSCAT        add chlorophyll backscatter in attenuation            **
+**                                                                           **
+** Vegetation growth and flow model OPTIONS:                                 **
+**                                                                           **
+** VEGETATION          use to activate submerged/emergent vegetation effects **
+** SAV                 activate submerged vegetation (seagrass) effects      **
+** EMERGENT_VEG        activate emergent vegetation (marsh) effects          **
+** SEAGRASS_SINK       use bottom sink of N due to benthic seagrass proxy    **
+** SEAGRASS_LIGHT      add N sink (seagrass proxy) as function of light      **
+** SEAGRASS_LIGHT_CONST constant N sink (seagrass proxy) if light exceeded   **
+**                                                                           **
 ** Bering Sea biology model OPTIONS:                                         **
 **                                                                           **
 ** BEST_NPZ            use if Gibson et al. Bering Sea model                 **

@@ -177,6 +177,11 @@
 #   endif
 #  endif
 
+#  if defined VARIABLE_CDOM && defined SPECTRAL_LIGHT
+        status=def_dim(ng, iTLM, TLF(ng)%ncid, ncname, 'Ndom',          &
+     &                 Ndom, DimIDs(27))
+        IF (exit_flag.ne.NoError) RETURN
+#  endif
 #  ifdef ECOSIM
         status=def_dim(ng, iTLM, TLF(ng)%ncid, ncname, 'Nphy',          &
      &                 Nphy, DimIDs(25))

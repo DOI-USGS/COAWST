@@ -28,6 +28,7 @@
 !                       'v3dvar' => 3D V-variable.                            !
 !                       'w3dvar' => 3D W-variable.                            !
 !                       'b3dvar' => 3D BED-sediment.                          !
+!                       's3dvar' => 3D spectral light variable.               !
 !       add_offset    Value added to data.                                    !
 !       scale         Scale to convert input data to model units.             !
 !                                                                             !

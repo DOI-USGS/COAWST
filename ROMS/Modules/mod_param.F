@@ -72,6 +72,7 @@
 !  NTCLM      Total number of climatology tracer type variables to     !
 !               process.                                               !
 !                                                                      !
+!  NBAND      Number of bands in the spectral irradiance model.        !
 !  Nbed       Number of sediment bed layers.                           !
 !  NCS        Number of cohesive (mud) sediment tracers.               !
 !  NNS        Number of non-cohesive (sand) sediment tracers.          !
@@ -453,6 +454,9 @@
 !  Number of biological tracers.
 !
       integer :: NBT = 0
+#if defined BIO_FENNEL && defined SPECTRAL_LIGHT
+      integer :: NBAND = 0
+#endif
 !
 !-----------------------------------------------------------------------
 !  Sediment tracers parameters.
@@ -886,6 +890,9 @@
       NDM2d=NDM2d+8  ! zeta, zetaw, zqsp, zbeh (all 4 = prsgrd),
                        ! K- and Horiz- VF, roller, break
 #   endif
+#   ifdef SGR_FLOW
+      NDM2d=NDM2d+1  ! Resistance imposed on the flow by seagrass
+#   endif
 #   ifdef UV_COR
       NDM2d=NDM2d+1  ! Coriolis
 #   endif
@@ -921,6 +928,10 @@
 #    endif
       NDM3d=NDM3d+5  ! wave break, roller, K- Horiz and Jvert- VF
       NDrhs=NDrhs+5
+#   endif
+#   ifdef SGR_FLOW
+      NDM3d=NDM3d+1  ! Resistance imposed on the flow by seagrass
+      NDrhs=NDrhs+1
 #   endif
 #   ifdef UV_COR
       NDM3d=NDM3d+1  ! Coriolis

@@ -303,6 +303,10 @@
               gtype=w3dvar
             CASE ('b3dvar')
               gtype=b3dvar
+#ifdef SPECTRAL_LIGHT
+            CASE ('s3dvar')
+              gtype=s3dvar
+#endif
             CASE DEFAULT
               gtype=0
           END SELECT

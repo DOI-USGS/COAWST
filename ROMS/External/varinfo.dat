@@ -3457,10 +3457,28 @@
 
 'bed_inund_depth'                                  ! Output
   'inundation depth'
-  'meter'                                          ! [kg/m2]
-  'max_depth, scalar, series'
+  'meter'                                          ! [m]
+  'bed_inund_depth, scalar, series'
   'ocean_time'
   'idBott(imaxD)'
+  'r2dvar'
+  1.0d0
+
+'seagrass_height'                                  ! Input/Output
+  'seagrass height'
+  'meter'                                          ! [m]
+  'seagrass_height, scalar, series'
+  'ocean_time'
+  'idBott(isgrH)'
+  'r2dvar'
+  1.0d0
+
+'seagrass_density'                                  ! Input/Output
+  'seagrass shoot density'
+  'shoots meter-2'                                  ! [shoots/m2]
+  'seagrass_density, scalar, series'
+  'ocean_time'
+  'idBott(isgrD)'
   'r2dvar'
   1.0d0
 
@@ -4067,6 +4085,42 @@
   'ocean_time'
   'idTads(iFdis)'
   'r3dvar'
+  1.0d0
+
+'PARout'                                           ! Input/Output
+  'Photosynthetically Available Radiation (PAR)'
+  'Watts meter-2'                                  ! [Watts/m2 ]
+  'PARout, scalar, series'
+  'ocean_time'
+  'idPARo'
+  'r3dvar'
+  1.0d0
+
+'PARs'                                           ! Input/Output
+  'Spectral Photosynthetically Available Radiation (PAR)'
+  'Watts meter-2 nm-1'                            ! [Watts/m2/nm]
+  'PARs, scalar, series'
+  'ocean_time'
+  'idPARs'
+  's3dvar'
+  1.0d0
+
+'SpKd'                                           ! Input/Output
+  'Spectral Attenuation (Kd)'
+  'meter-1'                                        ! [1/m]
+  'SpKd, scalar, series'
+  'ocean_time'
+  'idSpKd'
+  's3dvar'
+  1.0d0
+
+'SgrN'                                             ! Input/Output
+  'Seagrass concentration'
+  'millimole_nitrogen meter-3'                     ! [millimole/m3]
+  'SgrN, scalar, series'
+  'ocean_time'
+  'idsgrn'
+  'r2dvar'
   1.0d0
 
 'phytoplankton'                                    ! Input/Output
@@ -7711,6 +7765,24 @@
   'v2dvar'
   1.0d0
 
+'ubar_fsgr'                                          ! Input/Output
+  '2D u-momentum, seagrass drag force term'
+  'meter second-2'                                 ! [m/s2]
+  'ubar_fsgr, scalar, series'
+  'ocean_time'
+  'idDu2d(M2fsgr)'
+  'u2dvar'
+  1.0d0
+
+'vbar_fsgr'                                          ! Input/Output
+  '2D v-momentum, seagrass drag force term'
+  'meter second-2'                                 ! [m/s2]
+  'vbar_fsgr, scalar, series'
+  'ocean_time'
+  'idDv2d(M2fsgr)'
+  'v2dvar'
+  1.0d0
+
 !
 !  3D momentum diagnostic terms.
 !
@@ -8108,6 +8180,24 @@
   'v_vvisc, scalar, series'
   'ocean_time'
   'idDv3d(M3vvis)'
+  'v3dvar'
+  1.0d0
+
+'u_fsgr'                                          ! Input/Output
+  '3D u-momentum, seagrass drag force term'
+  'meter second-2'                                 ! [m/s2]
+  'u_fsgr, scalar, series'
+  'ocean_time'
+  'idDu3d(M3fsgr)'
+  'u3dvar'
+  1.0d0
+
+'v_fsgr'                                          ! Input/Output
+  '3D v-momentum, seagrass drag force term'
+  'meter second-2'                                 ! [m/s2]
+  'v_fsgr, scalar, series'
+  'ocean_time'
+  'idDv3d(M3fsgr)'
   'v3dvar'
   1.0d0
 

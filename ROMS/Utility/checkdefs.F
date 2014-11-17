@@ -755,6 +755,78 @@
       is=LEN_TRIM(Coptions)+1
       Coptions(is:is+17)=' DIAGNOSTICS_BIO,'
 #endif
+#if defined SPECTRAL_LIGHT && defined BIO_FENNEL
+      IF (Master) WRITE (stdout,20) 'SPECTRAL_LIGHT',                   &
+     &   'Computing and writing spectral light terms.'
+      is=LEN_TRIM(Coptions)+1
+      Coptions(is:is+16)=' SPECTRAL_LIGHT,'
+#endif
+#if defined SPECTRAL_LIGHT && defined CDOM_DEFAULT
+      IF (Master) WRITE (stdout,20) 'CDOM_DEFAULT',                     &
+     &   'Constant default CDOM value for spectral light terms.'
+      is=LEN_TRIM(Coptions)+1
+      Coptions(is:is+14)=' CDOM_DEFAULT,'
+#endif
+#if defined SPECTRAL_LIGHT && defined CDOM_VARIABLE
+      IF (Master) WRITE (stdout,20) 'CDOM_VARIABLE',                    &
+     &   'Variable CDOM for spectral light terms.'
+      is=LEN_TRIM(Coptions)+1
+      Coptions(is:is+15)=' CDOM_VARIABLE,'
+#endif
+#if defined SPECTRAL_LIGHT && defined MOD_SWR_SPECT
+      IF (Master) WRITE (stdout,20) 'MOD_SWR_SPECT',                    &
+     &   'modulate shortwave radiation PARsur using Gallegos spectrum.'
+      is=LEN_TRIM(Coptions)+1
+      Coptions(is:is+15)=' MOD_SWR_SPECT,'
+#endif
+#if defined SPECTRAL_LIGHT && defined MOD_SWR_HOMO
+      IF (Master) WRITE (stdout,20) 'MOD_SWR_HOMO',                     &
+     &   'modulate shortwave radiation PARsur evenly through spectrum.'
+      is=LEN_TRIM(Coptions)+1
+      Coptions(is:is+14)=' MOD_SWR_HOMO,'
+#endif
+#if defined SPECTRAL_LIGHT && defined CHL_BACKSCAT
+      IF (Master) WRITE (stdout,20) 'CHL_BACKSCAT',                     &
+     &   'Chlorophyll backscatter from ecosim (not in gallegos).'
+      is=LEN_TRIM(Coptions)+1
+      Coptions(is:is+14)=' CHL_BACKSCAT,'
+#endif
+#if defined VEGETATION 
+      IF (Master) WRITE (stdout,20) 'VEGETATION',                       &
+     &   'active submerged/emergent vegetation effects.'
+      is=LEN_TRIM(Coptions)+1
+      Coptions(is:is+12)=' VEGETATION,'
+#endif
+#if defined SAV 
+      IF (Master) WRITE (stdout,20) 'SAV',                              &
+     &   'submerged aquatic vegetation (e.g., seagrass).'
+      is=LEN_TRIM(Coptions)+1
+      Coptions(is:is+5)=' SAV,'
+#endif
+#if defined EMERGENT_VEG 
+      IF (Master) WRITE (stdout,20) 'EMERGENT_VEG',                     &
+     &   'emergent vegetation (e.g., marsh).'
+      is=LEN_TRIM(Coptions)+1
+      Coptions(is:is+14)=' EMERGENT_VEG,'
+#endif
+#if defined SAV && defined SEAGRASS_SINK
+      IF (Master) WRITE (stdout,20) 'SEAGRASS_SINK',                    &
+     &   'bottom sink of N due to benthic seagrass proxy.'
+      is=LEN_TRIM(Coptions)+1
+      Coptions(is:is+15)=' SEAGRASS_SINK,'
+#endif
+#if defined SEAGRASS_SINK && defined SEAGRASS_LIGHT_CONST
+      IF (Master) WRITE (stdout,20) 'SEAGRASS_LIGHT_CONST',             &
+     &   'N sink (seagrass proxy) constant % if light more than limit.'
+      is=LEN_TRIM(Coptions)+1
+      Coptions(is:is+22)=' SEAGRASS_LIGHT_CONST,'
+#endif
+#if defined SEAGRASS_SINK && defined SEAGRASS_LIGHT
+      IF (Master) WRITE (stdout,20) 'SEAGRASS_LIGHT',                   &
+     &   'N sink (seagrass proxy) as a function of light.'
+      is=LEN_TRIM(Coptions)+1
+      Coptions(is:is+16)=' SEAGRASS_LIGHT,'
+#endif
 #ifdef DIAGNOSTICS_TS
       IF (Master) WRITE (stdout,20) 'DIAGNOSTICS_TS',                   &
      &   'Computing and writing tracer diagnostic terms.'

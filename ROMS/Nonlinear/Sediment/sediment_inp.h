@@ -965,9 +965,10 @@
               i=idSbed(ibtcr)
               DO ng=1,Ngrids
                 Hout(i,ng)=Lbed(ng)
+              END DO
 #endif
 #if defined SED_FLOCS
-            CASE ('l_ADS') THEN
+            CASE ('l_ADS')
               Npts=load_l(Nval, Cval, Ngrids, l_ADS)
             CASE ('l_ASH')
               Npts=load_l(Nval, Cval, Ngrids, l_ASH)
@@ -1023,6 +1024,25 @@
               DO ng=1,Ngrids
                 Hout(i,ng)=Lbed(ng)
               END DO
+#if defined SED_BIOMASS
+            CASE ('nTbiom')
+              Npts=load_l(Nval, Cval, Ngrids, nTbiom)
+            CASE ('SGR_DIAM')
+              Npts=load_r(Nval, Rval, Ngrids, Rbed)
+              DO ng=1,Ngrids
+                sgr_diam(ng)=Rbed(ng)
+              END DO
+            CASE ('SGR_DENS')
+              Npts=load_r(Nval, Rval, Ngrids, Rbed)
+              DO ng=1,Ngrids
+                sgr_density(ng)=Rbed(ng)
+              END DO
+            CASE ('SGR_HTHRES')
+              Npts=load_r(Nval, Rval, Ngrids, Rbed)
+              DO ng=1,Ngrids
+                sgr_Hthres(ng)=Rbed(ng)
+              END DO
+#endif
           END SELECT
         END IF
       END DO

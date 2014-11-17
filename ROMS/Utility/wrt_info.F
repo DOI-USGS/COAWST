@@ -1268,8 +1268,10 @@
 #endif
 
 #if defined BIOLOGY && defined SOLVE3D
-# if defined BIO_FENNEL
+# if defined BIO_FENNEL && !defined SPECTRAL_LIGHT
 #  include <fennel_wrt.h>
+# elif defined BIO_FENNEL && defined SPECTRAL_LIGHT
+#  include <spect_fennel_wrt.h>
 # elif defined ECOSIM
 #  include <ecosim_wrt.h>
 # elif defined NEMURO

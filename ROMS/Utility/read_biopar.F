@@ -13,8 +13,10 @@
 !!                                                                     !
 !!======================================================================
 !!
-# if defined BIO_FENNEL
+# if defined BIO_FENNEL && !defined SPECTRAL_LIGHT
 #  include <fennel_inp.h>
+# elif defined BIO_FENNEL && defined SPECTRAL_LIGHT
+#  include <spect_fennel_inp.h>
 # elif defined ECOSIM
 #  include <ecosim_inp.h>
 # elif defined BEST_NPZ

@@ -21,13 +21,15 @@
 #undef  TS_C2VADVECTION
 #define TS_MPDATA
 #undef  SALINITY
-#define SPLINES
+#undef  SPLINES
 #define OUT_DOUBLE
 #define EW_PERIODIC
 #define NS_PERIODIC
 #define ANA_GRID
 #undef  ANA_INITIAL
 #define ANA_SMFLUX
+#define ATM_PRESS
+#define ANA_PAIR
 #define SOLVE3D
 #ifdef SOLVE3D
 # undef  ANA_SEDIMENT
@@ -39,21 +41,13 @@
 # define ANA_SSFLUX
 # define ANA_STFLUX
 #endif
-#undef  ANA_VMIX
-#undef  ANA_WWAVE
+#undef   ANA_VMIX
+#define  ANA_WWAVE
 
 #undef  UV_LOGDRAG
 #undef  UV_LDRAG
 #undef  UV_QDRAG
 
-#define TCLIMATOLOGY
-#define TCLM_NUDGING
-#define M3CLIMATOLOGY
-#define M3CLM_NUDGING
-#undef  M2CLIMATOLOGY
-#undef  M2CLM_NUDGING
-#undef  ZCLIMATOLOGY
-#undef  ZCLM_NUDGING
 
 #undef  SG_BBL
 #ifdef SG_BBL
@@ -71,7 +65,8 @@
 
 #define SSW_BBL
 #ifdef SSW_BBL
-# define SSW_CALC_ZNOT
+# define SSW_CALC_UB
+# undef SSW_CALC_ZNOT
 # undef  SSW_LOGINT
 #endif
 
@@ -90,13 +85,18 @@
 # define SUSPLOAD
 # undef  BEDLOAD_SOULSBY
 # undef  BEDLOAD_MPM
-# define SED_DENS
-# define COHESIVE_BED
-# define SED_MORPH
+# undef  SED_DENS
+# undef  COHESIVE_BED
+# undef  BF_TCR
+# undef  LINEAR_TCR
+# undef  POWERLAW_TCR
+# define  MIXED_BED
+# undef  SED_MORPH
 # define SED_FLOCS
 # define FLOC_TURB_DISS	      
-# undef FLOC_BBL_DISS	      
-# define SED_DEFLOC
-# define SED_TAU_CD_LIN
+# undef  FLOC_BBL_DISS	      
+# undef  SED_DEFLOC
+# define  SED_TAU_CD_CONST
+# undef  SED_TAU_CD_LIN
 # undef  SED_BIODIFF
 #endif

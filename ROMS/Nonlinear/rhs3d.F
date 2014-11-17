@@ -60,6 +60,9 @@
 # ifdef UV_VIS4
       USE uv3dmix_mod, ONLY : uv3dmix4
 # endif
+# ifdef SGR_FLOW
+      USE mod_sedbed
+# endif	  
 !
 !  Imported variable declarations.
 !
@@ -147,6 +150,10 @@
      &                 FORCES(ng) % bvstr,                              &
      &                 FORCES(ng) % sustr,                              &
      &                 FORCES(ng) % svstr,                              &
+# if defined SGR_FLOW
+     &                 OCEAN(ng) % rusgr,                               &
+     &                 OCEAN(ng) % rvsgr,                               &
+# endif	 
      &                 OCEAN(ng) % u,                                   &
      &                 OCEAN(ng) % v,                                   &
      &                 OCEAN(ng) % W,                                   &
@@ -210,6 +217,9 @@
 # endif
      &                       bustr, bvstr,                              &
      &                       sustr, svstr,                              &
+# if defined SGR_FLOW
+     &                       rusgr, rvsgr,                              &
+# endif	 
      &                       u, v, W,                                   &
 # ifdef WEC
      &                       u_stokes, v_stokes, W_stokes,              &
@@ -260,6 +270,10 @@
       real(r8), intent(in) :: bvstr(LBi:,LBj:)
       real(r8), intent(in) :: sustr(LBi:,LBj:)
       real(r8), intent(in) :: svstr(LBi:,LBj:)
+# if defined SGR_FLOW
+      real(r8), intent(in) :: rusgr(LBi:,LBj:,:)
+      real(r8), intent(in) :: rvsgr(LBi:,LBj:,:)
+# endif	 
       real(r8), intent(in) :: u(LBi:,LBj:,:,:)
       real(r8), intent(in) :: v(LBi:,LBj:,:,:)
       real(r8), intent(in) :: W(LBi:,LBj:,0:)
@@ -308,6 +322,10 @@
       real(r8), intent(in) :: bvstr(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: sustr(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: svstr(LBi:UBi,LBj:UBj)
+# if defined SGR_FLOW
+      real(r8), intent(in) :: rusgr(LBi:UBi,LBj:UBj,:)
+      real(r8), intent(in) :: rvsgr(LBi:UBi,LBj:UBj,:)
+# endif	 
       real(r8), intent(in) :: u(LBi:UBi,LBj:UBj,N(ng),2)
       real(r8), intent(in) :: v(LBi:UBi,LBj:UBj,N(ng),2)
       real(r8), intent(in) :: W(LBi:UBi,LBj:UBj,0:N(ng))
@@ -508,6 +526,36 @@
         END DO
       END DO
 # endif
+!
+#  ifdef SGR_FLOW
+!-----------------------------------------------------------------------
+!  Resistance imposed on the flow by the submerged (seagrass: sgr) 
+!  or emergent (marsh) vegetation.
+!-----------------------------------------------------------------------
+!
+      DO k=1,N(ng)
+! Interpolate at cell face	
+        DO j=Jstr,Jend
+          DO i=IstrU,Iend
+            cff=rusgr(i,j,k)
+            ru(i,j,k,nrhs)=ru(i,j,k,nrhs)-cff
+#  ifdef DIAGNOSTICS_UV
+            DiaRU(i,j,k,nrhs,M3fsgr)=cff
+#  endif
+          END DO
+        END DO
+        DO j=JstrV,Jend
+          DO i=Istr,Iend
+            cff=rvsgr(i,j,k)
+            rv(i,j,k,nrhs)=rv(i,j,k,nrhs)-cff
+#  ifdef DIAGNOSTICS_UV
+            DiaRV(i,j,k,nrhs,M3fsgr)=cff
+#  endif
+          END DO
+        END DO
+      END DO  
+	  
+#  endif
 !
       K_LOOP : DO k=1,N(ng)
 

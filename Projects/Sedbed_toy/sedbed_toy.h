@@ -25,11 +25,6 @@
 #define SPLINES
 #define OUT_DOUBLE
 
-
-/*  Boundary conditions */
-#define EW_PERIODIC
-#define NS_PERIODIC
-
 #define ANA_GRID
 #undef  ANA_INITIAL
 #undef  ANA_SMFLUX

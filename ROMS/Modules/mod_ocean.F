@@ -34,6 +34,18 @@
 !                                                                      !
 !  pH           Surface concentration of hydrogen ions.                !
 !                                                                      !
+#ifdef SPECTRAL_LIGHT
+!  PARout       Photosynthetically Available Radiation (PAR)           !
+!  PARs         Spectral PAR                                           !
+!  SpKd         Spectral Attenuation                                   !
+#endif
+#ifdef SEAGRASS_SINK
+! SgrN          Seagrass in mols of N                                  !
+#endif
+#ifdef SGR_FLOW
+! rusgr         Vegetation effect on u velocity by Seagrass            !
+! rvsgr         Vegetation effect on u velocity by Seagrass            !
+#endif
 #ifdef WEC
 !  Wave effect on currents variables                                   !
 !
@@ -125,6 +137,18 @@
 # endif
 # if (defined BIO_FENNEL || defined BIO_UMAINE) && defined CARBON
           real(r8), pointer :: pH(:,:)
+# endif
+# if defined BIO_FENNEL && defined SPECTRAL_LIGHT
+          real(r8), pointer :: PARout(:,:,:)
+          real(r8), pointer :: PARs(:,:,:)
+          real(r8), pointer :: SpKd(:,:,:)
+# endif
+# if defined SEAGRASS_SINK
+          real(r8), pointer :: SgrN(:,:)
+# endif
+# ifdef SGR_FLOW
+          real(r8), pointer :: rusgr(:,:,:)
+          real(r8), pointer :: rvsgr(:,:,:)
 # endif
 #endif
 
@@ -382,6 +406,18 @@
 
 # if (defined BIO_FENNEL || defined BIO_UMAINE) && defined CARBON
       allocate ( OCEAN(ng) % pH(LBi:UBi,LBj:UBj) )
+# endif
+# if defined BIO_FENNEL && defined SPECTRAL_LIGHT
+      allocate ( OCEAN(ng) % PARout(LBi:UBi,LBj:UBj,N(ng)) )
+      allocate ( OCEAN(ng) % PARs(LBi:UBi,LBj:UBj,NBAND) )
+      allocate ( OCEAN(ng) % SpKd(LBi:UBi,LBj:UBj,NBAND) )
+# endif
+# if defined BIO_FENNEL && defined SEAGRASS_SINK
+      allocate ( OCEAN(ng) % SgrN(LBi:UBi,LBj:UBj) )
+# endif
+# ifdef SGR_FLOW
+      allocate ( OCEAN(ng) % rusgr(LBi:UBi,LBj:UBj,0:N(ng)) )
+      allocate ( OCEAN(ng) % rvsgr(LBi:UBi,LBj:UBj,0:N(ng)) )
 # endif
 #endif
 #if defined TANGENT || defined TL_IOMS
@@ -691,6 +727,9 @@
             OCEAN(ng) % uwave(i,j) = IniVal
             OCEAN(ng) % vwave(i,j) = IniVal
 #endif
+#if defined BIO_FENNEL && defined SEAGRASS_SINK 
+            OCEAN(ng) % SgrN(i,j) = IniVal
+#endif
           END DO
 #ifdef SOLVE3D
           DO k=1,N(ng)
@@ -702,6 +741,9 @@
               OCEAN(ng) % u(i,j,k,2) = IniVal
               OCEAN(ng) % v(i,j,k,1) = IniVal
               OCEAN(ng) % v(i,j,k,2) = IniVal
+# if defined BIO_FENNEL && defined SPECTRAL_LIGHT 
+              OCEAN(ng) % PARout(i,j,k) = IniVal
+# endif
 # if defined WEC
 #  ifdef WEC_MELLOR
               OCEAN(ng) % rulag3d(i,j,k) = IniVal
@@ -712,6 +754,14 @@
 # endif
             END DO
           END DO
+# if defined BIO_FENNEL && defined SPECTRAL_LIGHT
+          DO k=1,NBAND
+            DO i=Imin,Imax
+              OCEAN(ng) % PARs(i,j,k) = IniVal
+              OCEAN(ng) % SpKd(i,j,k) = IniVal
+            END DO
+          END DO
+# endif
           DO k=0,N(ng)
             DO i=Imin,Imax
               OCEAN(ng) % ru(i,j,k,1) = IniVal
@@ -724,6 +774,10 @@
 # if defined WEC
               OCEAN(ng) % W_stokes(i,j,k) = IniVal
               OCEAN(ng) % wstvel(i,j,k) = IniVal
+# endif
+# if defined SGR_FLOW
+              OCEAN(ng) % rusgr(i,j,k) = IniVal
+              OCEAN(ng) % rvsgr(i,j,k) = IniVal
 # endif
             END DO
           END DO

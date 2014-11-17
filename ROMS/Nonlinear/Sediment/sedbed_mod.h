@@ -66,6 +66,10 @@
 #if defined MIXED_BED
 !                   bottom(:,:,idprp) => cohesive behavior             !
 #endif
+#if defined SEAGRASS_BOTTOM
+!                   bottom(:,:,isgrH) => Seagrass height               !
+!                   bottom(:,:,isgrD) => Seagrass shoot density        !
+#endif
 #if defined SEDIMENT && defined SUSPLOAD
 !  ero_flux       Flux from erosion.                                   !
 !  settling_flux  Flux from settling.                                  !

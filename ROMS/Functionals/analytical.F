@@ -144,8 +144,8 @@
 
 # ifdef SOLVE3D
 #  if defined ANA_HUMIDITY && \
-    (defined BULK_FLUXES || defined ECOSIM || \
-    (defined ANA_SRFLUX  && defined ALBEDO) )
+    (defined BULK_FLUXES || defined ECOSIM || defined SPECTRAL_LIGHT \
+    || (defined ANA_SRFLUX  && defined ALBEDO) )
 #   include <ana_humid.h>
 #  endif
 # endif
@@ -187,7 +187,7 @@
 # endif
 
 # if defined ANA_PAIR && (defined BULK_FLUXES || defined ECOSIM || \
-                          defined ATM_PRESS)
+                      defined SPECTRAL_LIGHT || defined ATM_PRESS)
 #  include <ana_pair.h>
 # endif
 
@@ -242,7 +242,7 @@
 #  include <ana_srflux.h>
 # endif
 
-# if defined ECOSIM && defined SOLVE3D
+# if (defined ECOSIM || defined SPECTRAL_LIGHT) && defined SOLVE3D
 #  include <ana_specir.h>
 # endif
 
@@ -271,8 +271,8 @@
 
 # ifdef SOLVE3D
 #  if defined ANA_TAIR && \
-    (defined BULK_FLUXES || defined ECOSIM || \
-    (defined ANA_SRFLUX && defined ALBEDO) )
+    (defined BULK_FLUXES || defined ECOSIM ||  \
+     defined SPECTRAL_LIGHT ||(defined ANA_SRFLUX && defined ALBEDO) )
 #   include <ana_tair.h>
 #  endif
 # endif
@@ -289,7 +289,8 @@
 #  include <ana_vmix.h>
 # endif
 
-# if defined ANA_WINDS && (defined BULK_FLUXES || defined ECOSIM)
+# if defined ANA_WINDS && (defined BULK_FLUXES || defined ECOSIM || \
+    defined SPECTRAL_LIGHT)
 #  include <ana_winds.h>
 # endif
 

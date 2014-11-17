@@ -248,7 +248,8 @@
 
 #if (!defined ANA_WINDS && !defined AIR_OCEAN && \
      !defined NCEP_FLUXES) && \
-    (defined BULK_FLUXES2D || defined BULK_FLUXES || defined ECOSIM)
+    (defined BULK_FLUXES2D || defined BULK_FLUXES || \
+     defined ECOSIM || defined SPECTRAL_LIGHT)
 !
 !-----------------------------------------------------------------------
 !  Surface wind components.
@@ -355,7 +356,8 @@
 #endif
 
 #if (!defined ANA_PAIR && !defined AIR_OCEAN) && (defined BULK_FLUXES \
-      || defined ECOSIM || defined CCSM_FLUXES2D || defined ATM_PRESS)
+      || defined ECOSIM || defined CCSM_FLUXES2D || defined ATM_PRESS \
+      || defined SPECTRAL_LIGHT)
 !
 !-----------------------------------------------------------------------
 !  Surface air pressure.
@@ -482,7 +484,8 @@
 
 # if (!defined ANA_TAIR && !defined AIR_OCEAN) && \
     ( defined BULK_FLUXES || defined ECOSIM || defined CCSM_FLUXES2D || \
-     (defined SHORTWAVE && defined ANA_SRFLUX && defined ALBEDO) )
+     (defined SHORTWAVE && defined ANA_SRFLUX && defined ALBEDO) \
+     || defined SPECTRAL_LIGHT)
 !
 !-----------------------------------------------------------------------
 !  Surface air temperature.
@@ -500,7 +503,8 @@
 
 # if (!defined ANA_HUMIDITY && !defined AIR_OCEAN) && \
     ( defined BULK_FLUXES || defined ECOSIM || defined CCSM_FLUXES2D || \
-     (defined SHORTWAVE && defined ANA_SRFLUX && defined ALBEDO) )
+     (defined SHORTWAVE && defined ANA_SRFLUX && defined ALBEDO) \
+    || defined SPECTRAL_LIGHT)
 !
 !-----------------------------------------------------------------------
 !  Surface air humidity.

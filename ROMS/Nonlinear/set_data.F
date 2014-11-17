@@ -250,7 +250,8 @@
 #  endif
 # else
 
-#  if (defined BULK_FLUXES || defined ECOSIM || defined CCSM_FLUXES2D || \
+#  if (defined BULK_FLUXES || defined ECOSIM || \
+       defined SPECTRAL_LIGHT || defined CCSM_FLUXES2D || \
     (defined SHORTWAVE && defined ANA_SRFLUX && defined ALBEDO)) && \
     !defined AIR_OCEAN
 !
@@ -270,7 +271,8 @@
 #   endif
 #  endif
 
-#  if (defined BULK_FLUXES || defined ECOSIM || defined CCSM_FLUXES2D || \
+#  if (defined BULK_FLUXES || defined ECOSIM || \
+       defined SPECTRAL_LIGHT || defined CCSM_FLUXES2D || \
      (defined SHORTWAVE && defined ANA_SRFLUX && defined ALBEDO)) && \
      !defined AIR_OCEAN
 !
@@ -376,7 +378,8 @@
 #  endif
 # endif
 
-#  if (defined BULK_FLUXES || defined BULK_FLUXES2D || defined ECOSIM) && !defined AIR_OCEAN
+#  if (defined BULK_FLUXES || defined BULK_FLUXES2D || defined ECOSIM \
+       || defined SPECTRAL_LIGHT) && !defined AIR_OCEAN
 !
 !-----------------------------------------------------------------------
 !  Set surface winds (m/s).
@@ -758,8 +761,9 @@
       END IF
 # endif
 
-#  if (defined BULK_FLUXES || defined ECOSIM || defined CCSM_FLUXES2D || defined ATM_PRESS) && \
-   !defined AIR_OCEAN
+#  if (defined BULK_FLUXES || defined ECOSIM || \
+       defined SPECTRAL_LIGHT || defined CCSM_FLUXES2D ||  \
+       defined ATM_PRESS) && !defined AIR_OCEAN
 !
 !-----------------------------------------------------------------------
 !  Set surface air pressure (mb).
@@ -887,7 +891,7 @@
       IF (exit_flag.ne.NoError) RETURN
 # endif
 
-# if defined ECOSIM && defined SOLVE3D
+# if defined SOLVE3D && (defined ECOSIM || defined SPECTRAL_LIGHT)
 !
 !-----------------------------------------------------------------------
 !  Compute spectral irradiance and cosine of average zenith angle of

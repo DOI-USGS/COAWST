@@ -119,9 +119,7 @@
       USE mod_sediment
 !
       USE bc_3d_mod, ONLY : bc_r3d_tile
-# if defined EW_PERIODIC || defined NS_PERIODIC
       USE exchange_2d_mod, ONLY : exchange_r2d_tile
-# endif
 # ifdef DISTRIBUTE
       USE mp_exchange_mod, ONLY : mp_exchange3d, mp_exchange4d
 # endif
@@ -191,18 +189,6 @@
 !
 !  Local variable declarations.
 !
-# ifdef DISTRIBUTE
-#  ifdef EW_PERIODIC
-      logical :: EWperiodic=.TRUE.
-#  else
-      logical :: EWperiodic=.FALSE.
-#  endif
-#  ifdef NS_PERIODIC
-      logical :: NSperiodic=.TRUE.
-#  else
-      logical :: NSperiodic=.FALSE.
-#  endif
-# endif
       integer :: Ksed, i, ised, j, k, ks
       integer :: bnew, nnn
 
@@ -244,18 +230,8 @@ minlayer_thick(ng) = newlayer_thick(ng)
         END DO
       END DO
 #  else
-#   ifdef EW_PERIODIC
-#    define I_RANGE Istr-1,Iend+1
-#   else
-#    define I_RANGE MAX(Istr-1,1),MIN(Iend+1,Lm(ng))
-#   endif
-#   ifdef NS_PERIODIC
-#    define J_RANGE Jstr-1,Jend+1
-#   else
-#    define J_RANGE MAX(Jstr-1,1),MIN(Jend+1,Mm(ng))
-#   endif
-      DO i=I_RANGE
-        DO j=J_RANGE
+      DO j=Jstrm1,Jendp1
+        DO i=Istrm1,Iendp1
           tau_w(i,j)=0.5_r8*SQRT((bustr(i,j)+bustr(i+1,j))*             &
      &                           (bustr(i,j)+bustr(i+1,j))+             &
      &                           (bvstr(i,j)+bvstr(i,j+1))*             &
@@ -265,8 +241,6 @@ minlayer_thick(ng) = newlayer_thick(ng)
 #   endif
         END DO
       END DO
-#   undef I_RANGE
-#   undef J_RANGE
 #  endif
 # endif
 !
@@ -642,11 +616,11 @@ minlayer_thick(ng) = newlayer_thick(ng)
             END DO
           END DO
         END DO
-#  if defined EW_PERIODIC || defined NS_PERIODIC
-        CALL exchange_r2d_tile (ng, tile,                               &
-     &                          LBi, UBi, LBj, UBj,                     &
-     &                          bed_thick(:,:,nnew))
-#  endif
+        IF (EWperiodic(ng).or.NSperiodic(ng)) THEN
+          CALL exchange_r2d_tile (ng, tile,                             &
+     &                            LBi, UBi, LBj, UBj,                   &
+     &                            bed_thick(:,:,nnew))
+        END IF
 # endif
 !
 !-----------------------------------------------------------------------
@@ -664,7 +638,8 @@ minlayer_thick(ng) = newlayer_thick(ng)
 # ifdef DISTRIBUTE
       CALL mp_exchange4d (ng, tile, iNLM, 2,                            &
      &                    LBi, UBi, LBj, UBj, 1, Nbed, 1, NST,          &
-     &                    NghostPoints, EWperiodic, NSperiodic,         &
+     &                    NghostPoints,                                 &
+     &                    EWperiodic(ng), NSperiodic(ng),               &
      &                    bed_frac,                                     &
      &                    bed_mass(:,:,:,nnew,:))
 # endif
@@ -677,7 +652,8 @@ minlayer_thick(ng) = newlayer_thick(ng)
 # ifdef DISTRIBUTE
       CALL mp_exchange4d (ng, tile, iNLM, 1,                            &
      &                    LBi, UBi, LBj, UBj, 1, Nbed, 1, MBEDP,        &
-     &                    NghostPoints, EWperiodic, NSperiodic,         &
+     &                    NghostPoints,                                 &
+     &                    EWperiodic(ng), NSperiodic(ng),               &
      &                    bed)
 # endif
 

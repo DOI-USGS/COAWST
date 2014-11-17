@@ -320,8 +320,9 @@
 # endif
 #endif
 
-#if defined BULK_FLUXES || defined BULK_FLUXES2D || defined ECOSIM \
-    || defined CCSM_FLUXES2D || defined ATM2OCN_FLUXES
+#if defined BULK_FLUXES || defined BULK_FLUXES2D || defined ECOSIM || \
+    defined CCSM_FLUXES2D || defined ATM2OCN_FLUXES || \
+    defined SPECTRAL_LIGHT
           real(r8), pointer :: Uwind(:,:)
           real(r8), pointer :: Vwind(:,:)
 # ifndef ANA_WINDS
@@ -331,7 +332,7 @@
 #endif
 
 #if defined BULK_FLUXES || defined ECOSIM || defined CCSM_FLUXES2D || \
-    (defined SHORTWAVE && defined ANA_SRFLUX)
+    defined SPECTRAL_LIGHT || (defined SHORTWAVE && defined ANA_SRFLUX)
           real(r8), pointer :: Hair(:,:)
 # ifndef ANA_HUMIDITY
           real(r8), pointer :: HairG(:,:,:)
@@ -345,8 +346,9 @@
 #if defined WEC_ROLLER
           real(r8), pointer :: rollA(:,:)
 #endif
-# if defined BULK_FLUXES || defined ECOSIM || defined ATM_PRESS \
-  || defined ATM2OCN_FLUXES || defined CCSM_FLUXES2D
+# if defined BULK_FLUXES || defined ECOSIM || defined ATM_PRESS || \
+     defined SPECTRAL_LIGHT  || defined ATM2OCN_FLUXES ||          \
+     defined CCSM_FLUXES2D
           real(r8), pointer :: Pair(:,:)
 # ifndef ANA_PAIR
           real(r8), pointer :: PairG(:,:,:)
@@ -465,7 +467,7 @@
 #  endif
 # endif
 
-# ifdef ECOSIM
+# if defined ECOSIM  || defined SPECTRAL_LIGHT
           real(r8), pointer :: SpecIr(:,:,:)
           real(r8), pointer :: avcos(:,:,:)
 # endif
@@ -582,7 +584,7 @@
 !=======================================================================
 !
       USE mod_param
-#ifdef BIOLOGY
+#if defined BIOLOGY
       USE mod_biology
 #endif
 #if defined ADJUST_STFLUX || defined ADJUST_WSTRESS
@@ -760,7 +762,7 @@
       allocate ( FORCES(ng) % rollA(LBi:UBi,LBj:UBj) )
 #endif
 #if defined BULK_FLUXES || defined BULK_FLUXES2D || defined ECOSIM || \
-    defined ATM2OCN_FLUXES
+    defined SPECTRAL_LIGHT || defined ATM2OCN_FLUXES
       allocate ( FORCES(ng) % Uwind(LBi:UBi,LBj:UBj) )
       allocate ( FORCES(ng) % Vwind(LBi:UBi,LBj:UBj) )
 # ifndef ANA_WINDS
@@ -770,7 +772,7 @@
 #endif
 
 #if defined BULK_FLUXES || defined ECOSIM || defined CCSM_FLUXES2D ||  \
-    (defined SHORTWAVE && defined ANA_SRFLUX)
+    defined SPECTRAL_LIGHT || (defined SHORTWAVE && defined ANA_SRFLUX)
       allocate ( FORCES(ng) % Hair(LBi:UBi,LBj:UBj) )
 
 # ifndef ANA_HUMIDITY
@@ -784,8 +786,8 @@
 # endif
 #endif
 
-# if defined BULK_FLUXES || defined ECOSIM || defined ATM_PRESS \
-  || defined ATM2OCN_FLUXES || defined CCSM_FLUXES2D
+# if defined BULK_FLUXES || defined ECOSIM || defined ATM_PRESS || \
+     defined SPECTRAL_LIGHT || defined ATM2OCN_FLUXES || defined CCSM_FLUXES2D
       allocate ( FORCES(ng) % Pair(LBi:UBi,LBj:UBj) )
 # ifndef ANA_PAIR
       allocate ( FORCES(ng) % PairG(LBi:UBi,LBj:UBj,2) )
@@ -917,7 +919,7 @@
 #  endif
 # endif
 
-# ifdef ECOSIM
+# if defined ECOSIM || defined SPECTRAL_LIGHT 
       allocate ( FORCES(ng) % SpecIr(LBi:UBi,LBj:UBj,NBands) )
       allocate ( FORCES(ng) % avcos(LBi:UBi,LBj:UBj,NBands) )
 # endif
@@ -1295,7 +1297,7 @@
             FORCES(ng) % rollA(i,j) = IniVal
 #endif
 #if defined BULK_FLUXES || defined BULK_FLUXES2D || defined ECOSIM || \
-    defined ATM2OCN_FLUXES
+    defined SPECTRAL_LIGHT || defined ATM2OCN_FLUXES
             FORCES(ng) % Uwind(i,j) = IniVal
             FORCES(ng) % Vwind(i,j) = IniVal
 # ifndef ANA_WINDS
@@ -1306,7 +1308,7 @@
 # endif
 #endif
 #if defined BULK_FLUXES || defined ECOSIM || defined CCSM_FLUXES2D || \
-    (defined SHORTWAVE && defined ANA_SRFLUX)
+    defined SPECTRAL_LIGHT || (defined SHORTWAVE && defined ANA_SRFLUX)
             FORCES(ng) % Hair(i,j) = IniVal
             FORCES(ng) % Tair(i,j) = IniVal
 # ifndef ANA_HUMIDITY
@@ -1318,8 +1320,8 @@
             FORCES(ng) % TairG(i,j,2) = IniVal
 # endif
 #endif
-# if defined BULK_FLUXES || defined ECOSIM || defined ATM_PRESS \
-  || defined ATM2OCN_FLUXES || defined CCSM_FLUXES2D
+# if defined BULK_FLUXES || defined ECOSIM || defined ATM_PRESS || \
+     defined SPECTRAL_LIGHT || defined ATM2OCN_FLUXES || defined CCSM_FLUXES2D
             FORCES(ng) % Pair(i,j) = IniVal
 # ifndef ANA_PAIR
             FORCES(ng) % PairG(i,j,1) = IniVal
@@ -1447,7 +1449,7 @@
               FORCES(ng) % btflxG(i,j,2,itrc) = IniVal
 # endif
             END DO
-# ifdef ECOSIM
+# if defined ECOSIM || defined SPECTRAL_LIGHT 
             DO itrc=1,NBands
               FORCES(ng) % SpecIr(i,j,itrc) = IniVal
               FORCES(ng) % avcos(i,j,itrc) = IniVal

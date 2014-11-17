@@ -270,6 +270,17 @@
                 END IF
               END DO
 #endif
+#if defined BIO_FENNEL && defined SPECTRAL_LIGHT
+            CASE ('NBAND') 
+              Npts=load_i(Nval, Rval, 1, Ivalue)
+              NBAND=Ivalue(1)
+              IF (NBAND.le.0) THEN
+                IF (Master) WRITE (out,290) 'NBAND = ', NBAND,          &
+     &            'must be greater than zero.'
+                exit_flag=5
+              RETURN
+            END IF
+#endif
 #if defined SEDIMENT && defined SOLVE3D
             CASE ('Nbed')
               Npts=load_i(Nval, Rval, 1, Ivalue)
@@ -3584,6 +3595,30 @@
                 Dout(idDu3d(M3vvis),ng)=Ldiag(ng)
                 Dout(idDv3d(M3vvis),ng)=Ldiag(ng)
               END DO
+#  ifdef SGR_FLOW
+            CASE ('Dout(M3fsgr)')
+              IF (M3fsgr.le.0) THEN
+                IF (Master) WRITE (out,280) 'M3fsgr'
+                exit_flag=5
+                RETURN
+              END IF
+              Npts=load_l(Nval, Cval, Ngrids, Ldiag)
+              DO ng=1,Ngrids
+                Dout(idDu3d(M3fsgr),ng)=Ldiag(ng)
+                Dout(idDv3d(M3fsgr),ng)=Ldiag(ng)
+              END DO
+            CASE ('Dout(M2fsgr)')
+              IF (M2fsgr.le.0) THEN
+                IF (Master) WRITE (out,280) 'M2fsgr'
+                exit_flag=5
+                RETURN
+              END IF
+              Npts=load_l(Nval, Cval, Ngrids, Ldiag)
+              DO ng=1,Ngrids
+                Dout(idDu2d(M2fsgr),ng)=Ldiag(ng)
+                Dout(idDv2d(M2fsgr),ng)=Ldiag(ng)
+              END DO
+#  endif
 # endif
 #endif
 #if defined DIAGNOSTICS_TS && defined SOLVE3D

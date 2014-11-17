@@ -61,6 +61,8 @@
 !   iactv           Active layer thickness for erosive potential (m).  !
 !   ishgt           Sediment saltation height (m).                     !
 !   imaxD           Maximum inundation depth.                          !
+!   isgrH           Seagrass height.                                   !
+!   isgrD           Seagrass shoot density.                            !
 !   idnet           Erosion or deposition.                             !
 !   idoff           Offset for calculation of dmix erodibility         !
 !                     profile (m).                                     !
@@ -74,6 +76,7 @@
 !   idbzp           Bed biodifusivity phi.                             !
 !   idprp           Cohesive behavior.                                 !
 !                                                                      !
+!   nTbiom          Number of hours for depth integration              !
 !=======================================================================
 !
       USE mod_param
@@ -103,6 +106,10 @@
 !
 #if defined MIXED_BED
       integer, parameter :: MBOTP = 27     ! Bottom properties
+#elif defined SEAGRASS_BOTTOM && defined MIXED_BED
+      integer, parameter :: MBOTP = 29     ! Bottom properties
+#elif defined SEAGRASS_BOTTOM && !defined MIXED_BED
+      integer, parameter :: MBOTP = 20     ! Bottom properties
 #elif defined COHESIVE_BED || defined SED_BIODIFF
       integer, parameter :: MBOTP = 26     ! Bottom properties
 #else
@@ -150,6 +157,13 @@
 #endif
 #if defined MIXED_BED
       integer, parameter :: idprp = 27     ! cohesive behavior
+#endif
+#if defined SED_BIOMASS && defined SEAGRASS_BOTTOM && defined MIXED_BED
+      integer, parameter :: isgrD = 28     ! seagrass shoot density
+      integer, parameter :: isgrH = 29     ! seagrass height
+#elif defined SED_BIOMASS && defined SEAGRASS_BOTTOM && !defined MIXED_BED 
+      integer, parameter :: isgrD = 19     ! seagrass shoot density
+      integer, parameter :: isgrH = 20     ! seagrass height
 #endif
 !
 !  Sediment metadata indices vectors.
@@ -199,6 +213,12 @@
 #if defined SED_FLOCS && defined SED_DEFLOC
       real(r8), allocatable :: mud_frac_eq(:,:) ! Equilibrium fractional class distribution
       real(r8), allocatable :: t_dfloc(:)       ! Time scale of bed deflocculation
+#endif
+#if defined SED_BIOMASS
+      integer :: nTbiom        ! Number of hours for depth integration
+      real(r8), allocatable :: sgr_diam(:)     ! Seagrass diameter
+      real(r8), allocatable :: sgr_density(:)  ! Seagrass density (no shoot density)
+      real(r8), allocatable :: sgr_Hthres(:)   ! Seagrass height threshold 
 #endif
 
       CONTAINS
@@ -268,6 +288,20 @@
       IF (.not.allocated(transN)) THEN
         allocate ( transN(Ngrids) )
         transN = IniVal
+      END IF
+#endif
+#if defined SED_BIOMASS
+      IF (.not.allocated(sgr_diam)) THEN
+        allocate ( sgr_diam(Ngrids) )
+        sgr_diam = IniVal
+      END IF
+      IF (.not.allocated(sgr_density)) THEN
+        allocate ( sgr_density(Ngrids) )
+        sgr_density = IniVal
+      END IF
+      IF (.not.allocated(sgr_Hthres)) THEN
+        allocate ( sgr_Hthres(Ngrids) )
+        sgr_Hthres = IniVal
       END IF
 #endif
 !

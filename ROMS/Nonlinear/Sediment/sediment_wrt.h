@@ -13,7 +13,7 @@
 */
 
 !
-!  Write out Nemuro ecosystem model parameters.
+!  Write out sediment model parameters.
 !
       CALL netcdf_put_fvar (ng, model, ncname, 'minlayer_thick',        &
      &                      minlayer_thick(ng), (/0/), (/0/),           &

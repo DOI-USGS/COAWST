@@ -23,8 +23,10 @@
 
 # if defined BEST_NPZ
 #  include <bestnpz.h>
-# elif defined BIO_FENNEL
+# elif defined BIO_FENNEL && !defined SPECTRAL_LIGHT
 #  include <fennel.h>
+# elif defined BIO_FENNEL && defined SPECTRAL_LIGHT
+#  include <spect_fennel.h>
 # elif defined ECOSIM
 #  include <ecosim.h>
 # elif defined NEMURO

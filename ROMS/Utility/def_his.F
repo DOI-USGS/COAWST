@@ -58,7 +58,9 @@
       integer :: t2dobc(4)
 #endif
 
-#ifdef INWAVE_MODEL
+#if defined BIO_FENNEL && defined SPECTRAL_LIGHT
+      integer :: DimIDs(34)
+#elif defined INWAVE_MODEL 
       integer :: DimIDs(33)
 #else
       integer :: DimIDs(32)
@@ -76,6 +78,9 @@
 #ifdef SOLVE3D
 # ifdef SEDIMENT
       integer :: b3dgrd(4)
+# endif
+# if defined BIO_FENNEL && defined SPECTRAL_LIGHT
+      integer :: s3dgrd(4)
 # endif
       integer :: t3dgrd(4), u3dgrd(4), v3dgrd(4), w3dgrd(4)
 # ifdef ADJUST_BOUNDARY
@@ -174,7 +179,7 @@
         IF (exit_flag.ne.NoError) RETURN
 #endif
 #ifdef INWAVE_MODEL
-        status=def_dim(ng, iNLM, ncHISid(ng), ncname,'ND',              &
+        status=def_dim(ng, iNLM, HIS(ng)%ncid, ncname,'ND',             &
                        ND(ng), DimIDs(33))
 #endif
 
@@ -227,6 +232,18 @@
      &                 IOBOUNDS(ng)%xy_rho*Nbed, DimIDs(24))
         IF (exit_flag.ne.NoError) RETURN
 #  endif
+# endif
+
+# if defined BIO_FENNEL && defined SPECTRAL_LIGHT
+        status=def_dim(ng, iNLM, HIS(ng)%ncid, ncname, 'NBAND',         &
+     &                 NBAND, DimIDs(34))
+        IF (exit_flag.ne.NoError) RETURN
+# endif
+
+# if defined VARIABLE_CDOM && defined SPECTRAL_LIGHT
+        status=def_dim(ng, iNLM, HIS(ng)%ncid, ncname, 'Ndom',          &
+     &                 Ndom, DimIDs(27))
+        IF (exit_flag.ne.NoError) RETURN
 # endif
 
 # ifdef ECOSIM
@@ -409,6 +426,15 @@
         b3dgrd(3)=DimIDs(16)
         b3dgrd(4)=DimIDs(12)
 #  endif
+# endif
+# if defined BIO_FENNEL && defined SPECTRAL_LIGHT 
+!
+!  Define dimension vector for spectral light type variables.
+!
+        s3dgrd(1)=DimIDs( 1)
+        s3dgrd(2)=DimIDs( 5)
+        s3dgrd(3)=DimIDs(34)
+        s3dgrd(4)=DimIDs(12)
 # endif
 #endif
 !
@@ -1725,6 +1751,78 @@
         END IF
 # endif
 #endif
+!
+# if defined BIO_FENNEL && defined SPECTRAL_LIGHT
+!  Define Photosynthetically Available Radiation (PAR)
+!
+        IF (Hout(idPARo,ng)) THEN
+          Vinfo( 1)=Vname(1,idPARo)
+          Vinfo( 2)=Vname(2,idPARo)
+          Vinfo( 3)=Vname(3,idPARo)
+          Vinfo(14)=Vname(4,idPARo)
+          Vinfo(16)=Vname(1,idtime)
+#  if defined WRITE_WATER && defined MASKING
+          Vinfo(20)='mask_rho'
+#  endif
+          Vinfo(22)='coordinates'
+          Aval(5)=REAL(Iinfo(1,idPARo,ng),r8)
+          status=def_var(ng, iNLM, HIS(ng)%ncid, HIS(ng)%Vid(idPARo),   &
+     &                   NF_FOUT, nvd4, t3dgrd, Aval, Vinfo, ncname)
+        END IF
+!  Define Spectral Photosynthetically Available Radiation (PARs)
+!
+        IF (Hout(idPARs,ng)) THEN
+          Vinfo( 1)=Vname(1,idPARs)
+          Vinfo( 2)=Vname(2,idPARs)
+          Vinfo( 3)=Vname(3,idPARs)
+          Vinfo(14)=Vname(4,idPARs)
+          Vinfo(16)=Vname(1,idtime)
+#  if defined WRITE_WATER && defined MASKING
+          Vinfo(20)='mask_rho'
+#  endif
+          Vinfo(22)='coordinates'
+          Aval(5)=REAL(Iinfo(1,idPARs,ng),r8)
+          status=def_var(ng, iNLM, HIS(ng)%ncid, HIS(ng)%Vid(idPARs),   &
+     &                   NF_FOUT, nvd4, s3dgrd, Aval, Vinfo, ncname)
+        END IF
+!
+!  Define Spectral attenuation (SpKd)
+!
+        IF (Hout(idSpKd,ng)) THEN
+          Vinfo( 1)=Vname(1,idSpKd)
+          Vinfo( 2)=Vname(2,idSpKd)
+          Vinfo( 3)=Vname(3,idSpKd)
+          Vinfo(14)=Vname(4,idSpKd)
+          Vinfo(16)=Vname(1,idtime)
+#  if defined WRITE_WATER && defined MASKING
+          Vinfo(20)='mask_rho'
+#  endif
+          Vinfo(22)='coordinates'
+          Aval(5)=REAL(Iinfo(1,idSpKd,ng),r8)
+          status=def_var(ng, iNLM, HIS(ng)%ncid, HIS(ng)%Vid(idSpKd),   &
+     &                   NF_FOUT, nvd4, s3dgrd, Aval, Vinfo, ncname)
+        END IF
+# endif
+!
+# if defined SAV && defined SEAGRASS_SINK
+!
+!  Define Seagrass
+!
+        IF (Hout(idsgrn,ng)) THEN
+          Vinfo( 1)=Vname(1,idsgrn)
+          Vinfo( 2)=Vname(2,idsgrn)
+          Vinfo( 3)=Vname(3,idsgrn)
+          Vinfo(14)=Vname(4,idsgrn)
+          Vinfo(16)=Vname(1,idtime)
+#  if defined WRITE_WATER && defined MASKING
+          Vinfo(20)='mask_rho'
+#  endif
+          Vinfo(22)='coordinates'
+          Aval(5)=REAL(Iinfo(1,idsgrn,ng),r8)
+          status=def_var(ng, iNLM, HIS(ng)%ncid, HIS(ng)%Vid(idsgrn),   &
+     &                   NF_FOUT, nvd3, t2dgrd, Aval, Vinfo, ncname)
+        END IF
+# endif
 !
 !  Define surface U-momentum stress.
 !

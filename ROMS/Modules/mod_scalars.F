@@ -145,6 +145,10 @@
         integer :: M3xvis          ! 3D momentum, horizontal X-viscosity
         integer :: M3yvis          ! 3D momentum, horizontal Y-viscosity
         integer :: M3rate          ! 3D momentum, time rate of change
+#   ifdef SGR_FLOW
+        integer :: M3fsgr          ! 3D momentum, seagrass drag force
+        integer :: M2fsgr          ! 2D momentum, seagrass drag force
+#   endif
 #  endif
 # endif
 #endif
@@ -2311,6 +2315,10 @@
       M2wbrk=ic+4
       ic=ic+4
 #  endif
+#  ifdef SGR_FLOW
+      M2fsgr=ic+1
+      ic=ic+1
+#  endif
 #  if defined UV_VIS2 || defined UV_VIS4
       M2hvis=ic+1
       M2xvis=ic+2
@@ -2371,6 +2379,10 @@
       M3wrol=ic+4
       M3wbrk=ic+5
       ic=ic+5
+#   endif
+#   ifdef SGR_FLOW
+      M3fsgr=ic+1
+      ic=ic+1
 #   endif
       M3pgrd=ic+1             ! needs to be here, indices below
       M3vvis=ic+2             ! require special treatment

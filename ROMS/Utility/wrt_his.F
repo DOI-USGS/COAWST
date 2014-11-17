@@ -39,6 +39,9 @@
       USE mod_sedbed
       USE mod_sediment
 #endif
+#if defined BIOLOGY
+      USE mod_biology
+#endif
       USE mod_stepping
 !
       USE nf_fwrite2d_mod, ONLY : nf_fwrite2d
@@ -2292,8 +2295,8 @@
         END IF
       END IF
 # endif
-# if defined BULK_FLUXES || defined ECOSIM || defined ATM_PRESS \
-  || defined ATM2OCN_FLUXES || defined CCSM_FLUXES2D
+# if defined BULK_FLUXES || defined ECOSIM || defined ATM_PRESS || \
+     defined ATM2OCN_FLUXES || defined CCSM_FLUXES2D
 !
 !  Write out surface air pressure.
 !
@@ -2621,6 +2624,109 @@
         END IF
       END IF
 # endif
+#endif
+!
+#ifdef BIO_FENNEL && SPECTRAL_LIGHT
+!  Write out Photosynthetically Available Radiation (PAR)
+!
+      IF (Hout(idPARo,ng)) THEN
+        scale=1.0_r8
+        gtype=gfactor*r3dvar
+        status=nf_fwrite3d(ng, iNLM, HIS(ng)%ncid, HIS(ng)%Vid(idPARo), &
+     &                     HIS(ng)%Rindex, gtype,                       &
+     &                     LBi, UBi, LBj, UBj, 1, N(ng), scale,         &
+# ifdef MASKING
+#  ifdef WET_DRY
+     &                     GRID(ng) % rmask_full,                       &
+#  else
+     &                     GRID(ng) % rmask,                            &
+#  endif
+# endif
+     &                     OCEAN(ng) % PARout)
+        IF (status.ne.nf90_noerr) THEN
+          IF (Master) THEN
+            WRITE (stdout,10) TRIM(Vname(1,idPARo)), HIS(ng)%Rindex
+          END IF
+          exit_flag=3
+          ioerror=status
+          RETURN
+        END IF
+      END IF
+
+!  Write out Spectral Photosynthetically Available Radiation (PARs)
+!
+      IF (Hout(idPARs,ng)) THEN
+        scale=1.0_r8
+        gtype=gfactor*s3dvar
+        status=nf_fwrite3d(ng, iNLM, HIS(ng)%ncid, HIS(ng)%Vid(idPARs), &
+     &                     HIS(ng)%Rindex, gtype,                       &
+     &                     LBi, UBi, LBj, UBj, 1, NBAND, scale,         &
+# ifdef MASKING
+#  ifdef WET_DRY
+     &                     GRID(ng) % rmask_full,                       &
+#  else
+     &                     GRID(ng) % rmask,                            &
+#  endif
+# endif
+     &                     OCEAN(ng) % PARs)
+        IF (status.ne.nf90_noerr) THEN
+          IF (Master) THEN
+            WRITE (stdout,10) TRIM(Vname(1,idPARs)), HIS(ng)%Rindex
+          END IF
+          exit_flag=3
+          ioerror=status
+          RETURN
+        END IF
+      END IF
+!  Write out Spectral Attenuation Kd
+!
+      IF (Hout(idSpKd,ng)) THEN
+        scale=1.0_r8
+        gtype=gfactor*s3dvar
+        status=nf_fwrite3d(ng, iNLM, HIS(ng)%ncid, HIS(ng)%Vid(idSpKd), &
+     &                     HIS(ng)%Rindex, gtype,                       &
+     &                     LBi, UBi, LBj, UBj, 1, NBAND, scale,         &
+# ifdef MASKING
+#  ifdef WET_DRY
+     &                     GRID(ng) % rmask_full,                       &
+#  else
+     &                     GRID(ng) % rmask,                            &
+#  endif
+# endif
+     &                     OCEAN(ng) % SpKd)
+        IF (status.ne.nf90_noerr) THEN
+          IF (Master) THEN
+            WRITE (stdout,10) TRIM(Vname(1,idSpKd)), HIS(ng)%Rindex
+          END IF
+          exit_flag=3
+          ioerror=status
+          RETURN
+        END IF
+      END IF
+#endif
+!
+#ifdef SAV && SEAGRASS_SINK
+!  Write out Seagrass
+!
+      IF (Hout(idsgrn,ng)) THEN
+        scale=1.0_r8
+        gtype=gfactor*r2dvar
+        status=nf_fwrite2d(ng, iNLM, HIS(ng)%ncid, HIS(ng)%Vid(idsgrn), &
+     &                     HIS(ng)%Rindex, gtype,                       &
+     &                     LBi, UBi, LBj, UBj, scale,                   &
+# ifdef MASKING
+     &                     GRID(ng) % rmask,                            &
+# endif
+     &                     OCEAN(ng) % SgrN)
+        IF (status.ne.nf90_noerr) THEN
+          IF (Master) THEN
+            WRITE (stdout,10) TRIM(Vname(1,idsgrn)), HIS(ng)%Rindex
+          END IF
+          exit_flag=3
+          ioerror=status
+          RETURN
+        END IF
+      END IF
 #endif
 !
 !  Write out surface U-momentum stress.

@@ -55,6 +55,9 @@
      &                      GRID(ng) % rmask_wet,                       &
 #  endif
 # endif
+# ifdef SPECTRAL_LIGHT
+     &                      OCEAN(ng) % SgrN,                           &
+# endif
      &                      GRID(ng) % z_w,                             &
      &                      SEDBED(ng) % Dstp_max,                      &
      &                      SEDBED(ng) % bottom,                        &
@@ -75,6 +78,9 @@
 #  ifdef WET_DRY
      &                            rmask_wet,                            &
 #  endif
+# endif
+# ifdef SPECTRAL_LIGHT
+     &                            SgrN,                                 &
 # endif
      &                            z_w,                                  &
      &                            Dstp_max,                             &
@@ -99,6 +105,9 @@
       real(r8), intent(in) :: rmask_wet(LBi:,LBj:)
 #   endif
 #  endif
+#  ifdef SPECTRAL_LIGHT
+      real(r8), intent(in) :: SgrN(LBi:,LBj:)
+#  endif
       real(r8), intent(in) :: z_w(LBi:,LBj:,0:)
       real(r8), intent(inout) :: Dstp_max(LBi:,LBj:,:)
       real(r8), intent(inout) :: bottom(LBi:,LBj:,:)
@@ -110,30 +119,23 @@
       real(r8), intent(in) :: rmask_wet(LBi:UBi,LBj:UBj)
 #   endif
 #  endif
+#  ifdef SPECTRAL_LIGHT
+      real(r8), intent(in) :: SgrN(LBi:UBi,LBj:UBj)
+#  endif
       real(r8), intent(in) :: z_w(LBi:UBi,LBj:UBj,0:UBk)
-      real(r8), intent(inout) :: Dstp_max(LBi:UBi,LBj:UBj,MBOTP)
+      real(r8), intent(inout) :: Dstp_max(LBi:UBi,LBj:UBj,24)
       real(r8), intent(inout) :: bottom(LBi:UBi,LBj:UBj,MBOTP)
       real(r8), intent(inout) :: settling_flux(LBi:UBi,LBj:UBj,NST)
 # endif
 !
 !  Local variable declarations.
 !
-# ifdef DISTRIBUTE
-#  ifdef EW_PERIODIC
-      logical :: EWperiodic=.TRUE.
-#  else
-      logical :: EWperiodic=.FALSE.
-#  endif
-#  ifdef NS_PERIODIC
-      logical :: NSperiodic=.TRUE.
-#  else
-      logical :: NSperiodic=.FALSE.
-#  endif
-# endif
       integer :: i, j, k, ised
       integer :: sstp, nbio_steps
-
       real(r8) :: cff, Dstp
+# ifdef SEAGRASS_BOTTOM
+      real(r8) :: sgr_kgmmol
+# endif
 
 # include "set_bounds.h"
 
@@ -165,12 +167,42 @@
             Dstp=z_w(i,j,N(ng))-z_w(i,j,0)
             Dstp_max(i,j,sstp)=Dstp
             cff=0.0_r8
-            DO k=1,24                        ! should be a variable, also above
+            DO k=1,nTbiom                        
               cff=MAX(cff,Dstp_max(i,j,k))
             END DO
             bottom(i,j,imaxD)=cff
           END DO
         END IF
+!
+!  Seagrass as a bottom property
+!
+# ifdef SEAGRASS_BOTTOM
+        DO i=Istr,Iend
+!          sgr_diam=0.01_r8
+#  ifdef SEAGRASS_SINK
+!         SgrN has units of millimole_nitrogen meter-3
+!         change moles to kg (2.8e-5 kg/millimole N2) switch to right formula
+!         cylinder height is mass over (density*pi*r*r)
+!         shoot height is cylinder height / shoot density
+          sgr_kgmmol = 2.8e-5_r8
+!         sgr_density = 500.0_r8
+!         sgr_Hthres = 1.25_r8
+          cff = SgrN(i,j)*sgr_kgmmol/                                   &
+     &                    (0.25_r8*sgr_diam*sgr_diam*pi*sgr_density)
+!
+          bottom(i,j,isgrH) = cff/bottom(i,j,isgrD)
+!
+          IF (bottom(i,j,isgrH).lg.sgr_Hthres) THEN
+               bottom(i,j,isgrD)=bottom(i,j,isgrD)*                     &
+     &                    bottom(i,j,isgrH)/sgr_Hthres
+               bottom(i,j,isgrH) = sgr_Hthres
+          END IF
+#  else
+          bottom(i,j,isgrH)=1.25_r8
+          bottom(i,j,isgrD)=400.0_r8
+#  endif
+        END DO
+# endif
 !
 !  Update settling flux for depositing bio mass.
 !
