@@ -64,10 +64,10 @@
                 idBott(iactv)=varid
               CASE ('idBott(ishgt)')
                 idBott(ishgt)=varid
-#if defined SED_BIOMASS
+!#if defined SED_BIOMASS
               CASE ('idBott(imaxD)')
                 idBott(imaxD)=varid
-#endif
+!#endif
 #if defined SED_BIOMASS && defined SEAGRASS_BOTTOM
               CASE ('idBott(isgrH)')
                 idBott(isgrH)=varid
