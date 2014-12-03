@@ -89,7 +89,8 @@ ifdef USE_DEBUG
          CXXFLAGS += -g
 else
            FFLAGS += -O3 -ffast-math
-           FFLAGS +=  -ftree-vectorize -ftree-loop-linear -funroll-loops -w -ffree-form -ffree-line-length-none -fconvert=big-endian -frecord-marker=4  
+           FFLAGS += -ftree-vectorize -ftree-loop-linear -funroll-loops -w -ffree-form -ffree-line-length-none -frecord-marker=4
+##                   -fconvert=big-endian
 endif
 
 ifdef USE_MCT
