@@ -24,8 +24,8 @@ RECURSIVE SUBROUTINE integrate ( grid )
    USE atm_coupler_mod, ONLY: initialize_atm_coupling
    USE atm_coupler_mod, ONLY: initialize_atm_routers
    USE atm_coupler_mod, ONLY: atm_coupling
-   USE atm_coupler_mod, ONLY: atm_coupling_aux4
 # ifdef ROMS_COUPLING
+   USE atm_coupler_mod, ONLY: atm_coupling_aux4
    USE atm_coupler_mod, ONLY: atm2ocn_coupling
    USE atm_coupler_mod, ONLY: atmfocn_coupling
 # endif
@@ -350,7 +350,7 @@ RECURSIVE SUBROUTINE integrate ( grid )
             CALL dfi_accumulate ( grid )
 
             CALL med_before_solve_io ( grid , config_flags )
-#ifdef WRF_COUPLING
+#ifdef ROMS_COUPLING
 !           Overwrite the SST update with the coupled SST.
             IF ((grid%id.eq.1).and.                                     &
      &               (config_flags%io_form_auxinput4 .GT. 0)) THEN

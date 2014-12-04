@@ -292,7 +292,7 @@
 !
           DO i=1,num_sparse_elems
             j=sparse_rows(i)
-            cff=REAL(dst_grid_imask(j),r8)
+            cff=REAL(dst_grid_imask(j),m8)
             sparse_weights(i)=sparse_weights(i)*cff
           END DO
 
@@ -328,7 +328,7 @@
 !
           DO i=1,num_sparse_elems
             j=sparse_rows(i)
-            cff=REAL(dst_grid_imask(j),r8)
+            cff=REAL(dst_grid_imask(j),m8)
             sparse_weights(i)=sparse_weights(i)*cff
           END DO
 !
@@ -1632,7 +1632,7 @@
 !  Receive fields from atmosphere model.
 !
       Tag=0*100+ia*10+ng
-# ifdef MCT_INTERP_OC2AT
+# ifdef MCT_INTERP_WV2AT
       CALL MCT_irecv (AV2_A(ng,ia)%atm2wav_AV2,                         &
      &                Router_A(ng,ia)%SWANtoWRF, Tag)
 !     Wait to make sure the WRF data has arrived.

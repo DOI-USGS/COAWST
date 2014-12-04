@@ -17,9 +17,7 @@
 # undef ExpC
 # undef ExpD
 # undef ExpE
-# undef ExpF
-# undef ExpG
-# define ExpH
+# define ExpF
 
 #ifdef ExpA1            /* WRF<->SWAN */
 # define WRF_MODEL
@@ -52,15 +50,8 @@
 # define SWAN_MODEL
 # define COARE_TAYLOR_YELLAND
 #endif
-            /* WRF<->ROMS<-> SWAN; WRF<->SWAN: WRF wind to SWAN, SWAN roughness coef to WRF PBL scheme */
-#ifdef ExpE /* Joe finds out WRF PBL condition, if it accepts wave info*/
-# define WRF_MODEL
-# define ROMS_MODEL
-# define SWAN_MODEL
-# define COARE_TAYLOR_YELLAND
-#endif
 
-#ifdef ExpF  /*Same as ExpD, but will SWAN BBL dynamics */
+#ifdef ExpE  /*Same as ExpD, but will SWAN BBL dynamics */
 # define WRF_MODEL
 # define ROMS_MODEL
 # define SWAN_MODEL
@@ -68,37 +59,26 @@
 # define SSW_BBL
 #endif
 
-#ifdef ExpG /*Same as ExpD, but will both SWAN BBL dynamics and SWAN radiation stress*/
+#ifdef ExpF /*Same as ExpE, but will both SWAN BBL dynamics and SWAN radiation stress*/
 # define SWAN_MODEL
 # define WRF_MODEL
 # define ROMS_MODEL
 # define COARE_TAYLOR_YELLAND
-# undef  WEC_VF
+# define WEC_VF
 # define SSW_BBL
 #endif
 
-
-#ifdef ExpH /*Same as ExpG, but roms+swan on a different grid than wrf*/
-# define ROMS_MODEL
-# define WRF_MODEL
-# define SWAN_MODEL
-# define COARE_TAYLOR_YELLAND
-# undef  WEC_VF
-# define SSW_BBL
-# define MCT_LIB
-# ifdef ROMS_MODEL
-#  define MCT_INTERP_OC2AT
-# endif
-# ifdef SWAN_MODEL
-#  define MCT_INTERP_WV2AT
-# endif
+#define MCT_LIB
+#if defined WRF_MODEL && defined ROMS_MODEL
+# define MCT_INTERP_OC2AT
+#endif
+#if defined WRF_MODEL && defined SWAN_MODEL
+# define MCT_INTERP_WV2AT
 #endif
 
-#if defined WRF_MODEL || defined SWAN_MODEL
+#if defined WRF_MODEL && defined SWAN_MODEL
 # define DRAGLIM_DAVIS
 #endif
-
-
 
 #ifdef ROMS_MODEL
 /* Physics + numerics */
@@ -132,10 +112,6 @@
 
 /* Grid and Initial */
 # define MASKING
-/*#define ANA_GRID
-  #define ANA_INITIAL
-  #define ANA_MASK*/
-# undef NO_MASK_TEMP        /* JBZ 28 Jan 09, undefined */
 
 /* Forcing */
 # ifdef WRF_MODEL
@@ -165,13 +141,4 @@
 # define DIAGNOSTICS_UV
 # define DIAGNOSTICS_TS
 
-/* Biological module */
-# undef  NPZD_POWELL
-
-# if defined NPZD_POWELL
-#  define ANA_BIOLOGY
-#  define ANA_SPFLUX
-#  define ANA_BPFLUX
-#  define ANA_SRFLUX
-# endif
 #endif

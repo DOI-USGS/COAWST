@@ -502,6 +502,7 @@
       RETURN
       END SUBROUTINE atm_coupling
 
+# ifdef ROMS_COUPLING
       SUBROUTINE atm_coupling_aux4(grid, num_steps)
 !
 !=======================================================================
@@ -525,7 +526,6 @@
       integer :: io, ia
       integer :: kid, num_ksteps
 !
-# ifdef ROMS_COUPLING
       DO io=1,Nocn_grids
         ia=1
         CALL atmfocn_coupling (grid,ia,io,1)
@@ -540,10 +540,10 @@
           grid_ptr => grid_ptr%sibling
         END DO
       END DO
-# endif
 
       RETURN
       END SUBROUTINE atm_coupling_aux4
+# endif
 
 # ifdef ROMS_COUPLING
       SUBROUTINE atm2ocn_coupling (grid, ia, io)
