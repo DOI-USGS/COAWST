@@ -205,10 +205,10 @@
         IF (STPNOW()) RETURN
         CLOSE(NREF, STATUS='DELETE')
         OQI(1) = NREF
-        CALL swn_outnc_openblockfile(FILENM, MYK, MXK,
-     &                               OVLNAM, VOQ(:,VOQR(1)),
-     &                               VOQ(:,VOQR(2)),
-     &                               OQI, OQR, IVTYP, IRQ)
+!jcw    CALL swn_outnc_openblockfile(FILENM, MYK, MXK,
+!    &                               OVLNAM, VOQ(:,VOQR(1)),
+!    &                               VOQ(:,VOQR(2)),
+!    &                               OQI, OQR, IVTYP, IRQ)
       ENDIF
       IDLA = OQI(4)                                                       40.31 30.00
       NVAR = OQI(3)                                                       40.31 30.00
