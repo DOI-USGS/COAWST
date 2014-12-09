@@ -1789,6 +1789,7 @@
                 S(ibry,i,igrid)%periodic  = S(ibry,ifield,igrid)%periodic
                 S(ibry,i,igrid)%radiation = S(ibry,ifield,igrid)%radiation
                 S(ibry,i,igrid)%nudging   = S(ibry,ifield,igrid)%nudging
+                S(ibry,i,igrid)%acquire   = S(ibry,ifield,igrid)%acquire
               END DO
               ic=ic+1
             END DO

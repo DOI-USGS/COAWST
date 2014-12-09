@@ -332,7 +332,8 @@ RECURSIVE SUBROUTINE integrate ( grid )
 !           After all nests are opened, and initialized into MCT,
 !           call to init routers and do initial data exchange.
             num_steps=head_grid%itimestep
-            IF (num_steps.eq.0) THEN
+!           IF (num_steps.eq.0) THEN
+            IF (last_step.eq.-1) THEN
 !             init the routers between all atm, ocn, and wav grids. 
               CALL initialize_atm_routers
             END IF
