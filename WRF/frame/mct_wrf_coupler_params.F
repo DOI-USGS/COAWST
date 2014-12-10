@@ -27,6 +27,7 @@
         integer, pointer :: dst_mask(:)
       END TYPE T_DST_GRID
       TYPE (T_DST_GRID), allocatable :: O2A_CPLMASK(:,:)
+      TYPE (T_DST_GRID), allocatable :: A2O_CPLMASK(:,:)
       TYPE (T_DST_GRID), allocatable :: W2A_CPLMASK(:,:)
 
 # endif
@@ -145,6 +146,7 @@
      defined MCT_INTERP_WV2AT
 #  ifdef AIR_OCEAN
       allocate(O2A_CPLMASK(Nocn_grids,Natm_grids))
+      allocate(A2O_CPLMASK(Natm_grids,Nocn_grids))
 #  endif
 #  ifdef AIR_WAVES
       allocate(W2A_CPLMASK(Nwav_grids,Natm_grids))

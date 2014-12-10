@@ -183,6 +183,14 @@
             cff=REAL(dst_grid_imask(j),r8)
             sparse_weights(i)=sparse_weights(i)*cff
           END DO
+!
+! Load the dst grid as a coupling mask.
+!
+          allocate(A2O_CPLMASK(ia,ng)%dst_mask(nRows))
+          DO i=1,nRows
+            A2O_CPLMASK(ia,ng)%dst_mask(i)=dst_grid_imask(i)
+          END DO
+
 
           call SparseMatrix_init(sMatA,nRows,nCols,num_sparse_elems)
           call SparseMatrix_importGRowInd(sMatA, sparse_rows,           &
@@ -200,6 +208,21 @@
           deallocate ( dst_grid_imask )
         END IF
 !
+!
+        CALL mpi_bcast(dst_grid_dims, 2, MPI_INTEGER, MyMaster,         &
+     &                 OCN_COMM_WORLD, MyError)
+!
+! scatter dst_grid_imask to be used as cpl_mask
+!
+        IF (Myrank.ne.MyMaster) THEN
+          nRows=dst_grid_dims(1)*dst_grid_dims(2)
+          allocate(A2O_CPLMASK(ia,ng)%dst_mask(nRows))
+        END IF
+        CALL mpi_bcast(A2O_CPLMASK(ia,ng)%dst_mask,nRows,               &
+     &                 MPI_INTEGER, MyMaster,                           &
+     &                 OCN_COMM_WORLD, MyError)
+
+
 !!!!!!!!!!!!!!!!!!!!!!
 ! Second work on ocean to atm.
 !!!!!!!!!!!!!!!!!!!!!!
@@ -828,6 +851,9 @@
       real(r8) :: RecvTime, SendTime, buffer(2), wtime(2)
 
       real(r8), pointer :: A(:)
+#ifdef MCT_INTERP_OC2AT
+      integer, pointer :: points(:)
+#endif
       real(r8) :: BBR, cff1, cff2
       character (len=3 ), dimension(2) :: op_handle
       character (len=40) :: code
@@ -849,6 +875,15 @@
      &                          OCN_COMM_WORLD)
       allocate ( A(Asize) )
       A=0.0_r8
+
+#ifdef MCT_INTERP_OC2AT
+!
+!  Ask for points in this tile.
+!
+      CALL GlobalSegMap_Ordpnts (GlobalSegMap_G(ng)%GSMapROMS,          &
+     &                           MyRank, points)
+#endif
+
 !
 !-----------------------------------------------------------------------
 !  Import fields from atmosphere model (WRF) to ocean model (ROMS).
@@ -923,9 +958,17 @@
           BBR=0.97_r8*5.67E-8_r8*BBR
           A(ij)=A(ij)-BBR
           IF (ia.eq.1) THEN
+#ifdef MCT_INTERP_OC2AT
+            FORCES(ng)%lrflx(i,j)=A(ij)*cff*REAL(A2O_CPLMASK(ia,ng)%dst_mask(points(ij)))
+#else
             FORCES(ng)%lrflx(i,j)=A(ij)*cff
+#endif
           ELSE
+#ifdef MCT_INTERP_OC2AT
+            FORCES(ng)%lrflx(i,j)=FORCES(ng)%lrflx(i,j)+A(ij)*cff*REAL(A2O_CPLMASK(ia,ng)%dst_mask(points(ij)))
+#else
             FORCES(ng)%lrflx(i,j)=FORCES(ng)%lrflx(i,j)+A(ij)*cff
+#endif
           END IF
         END DO
       END DO
@@ -1313,6 +1356,10 @@
 !  Deallocate communication arrays.
 !
       deallocate (A)
+#ifdef MCT_INTERP_OC2AT
+      deallocate (points)
+#endif
+
 !
  10   FORMAT (' OCNFATM_COUPLING - error while receiving fields from ', &
      &        a, i4)
