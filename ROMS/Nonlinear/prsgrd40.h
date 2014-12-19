@@ -48,6 +48,10 @@
      &                  LBi, UBi, LBj, UBj,                             &
      &                  IminS, ImaxS, JminS, JmaxS,                     &
      &                  nrhs(ng),                                       &
+#ifdef WET_DRY
+     &                  GRID(ng)%umask_wet,                             &
+     &                  GRID(ng)%vmask_wet,                             &
+#endif
      &                  GRID(ng) % om_v,                                &
      &                  GRID(ng) % on_u,                                &
      &                  GRID(ng) % Hz,                                  &
@@ -76,6 +80,9 @@
      &                        LBi, UBi, LBj, UBj,                       &
      &                        IminS, ImaxS, JminS, JmaxS,               &
      &                        nrhs,                                     &
+#ifdef WET_DRY
+     &                        umask_wet, vmask_wet,                     &
+#endif
      &                        om_v, on_u,                               &
      &                        Hz, z_w,                                  &
      &                        rho,                                      &
@@ -210,6 +217,9 @@
      &                              FX(i  ,j,k)+                        &
      &                              FC(i,k  )-                          &
      &                              FC(i,k-1)))*on_u(i,j)
+#ifdef WET_DRY
+              ru(i,j,k,nrhs)=ru(i,j,k,nrhs)*umask_wet(i,j)
+#endif
 #ifdef DIAGNOSTICS_UV
               DiaRU(i,j,k,nrhs,M3pgrd)=ru(i,j,k,nrhs)
 #endif
@@ -237,6 +247,9 @@
      &                              FX(i,j  ,k)+                        &
      &                              FC(i,k  )-                          &
      &                              FC(i,k-1)))*om_v(i,j)
+#ifdef WET_DRY
+              rv(i,j,k,nrhs)=rv(i,j,k,nrhs)*vmask_wet(i,j)
+#endif
 #ifdef DIAGNOSTICS_UV
               DiaRV(i,j,k,nrhs,M3pgrd)=rv(i,j,k,nrhs)
 #endif

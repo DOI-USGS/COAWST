@@ -1706,6 +1706,38 @@
           IF (exit_flag.ne.NoError) RETURN
         END IF
 # endif
+# if defined WAVES_DSPR
+!
+!  Define waves directional spreading.
+!
+        IF (Sout(idWvds,ng)) THEN
+          Vinfo( 1)=Vname(1,idWvds)
+          Vinfo( 2)=Vname(2,idWvds)
+          Vinfo( 3)=Vname(3,idWvds)
+          Vinfo(14)=Vname(4,idWvds)
+          Vinfo(16)=Vname(1,idtime)
+          status=def_var(ng, iNLM, STA(ng)%ncid, STA(ng)%Vid(idWvds),   &
+     &                   NF_FOUT, 2, pgrd, Aval, Vinfo, ncname,         &
+     &                   SetFillVal = .TRUE.,                           &
+     &                   SetParAccess = .FALSE.)
+          IF (exit_flag.ne.NoError) RETURN
+        END IF
+!
+!  Define wave spectrum peakedness.
+!
+        IF (Sout(idWvqp,ng)) THEN
+          Vinfo( 1)=Vname(1,idWvqp)
+          Vinfo( 2)=Vname(2,idWvqp)
+          Vinfo( 3)=Vname(3,idWvqp)
+          Vinfo(14)=Vname(4,idWvqp)
+          Vinfo(16)=Vname(1,idtime)
+          status=def_var(ng, iNLM, STA(ng)%ncid, STA(ng)%Vid(idWvqp),   &
+     &                   NF_FOUT, 2, pgrd, Aval, Vinfo, ncname,         &
+     &                   SetFillVal = .TRUE.,                           &
+     &                   SetParAccess = .FALSE.)
+          IF (exit_flag.ne.NoError) RETURN
+        END IF
+# endif
 # if defined WEC_VF
 !
 !  Define WEC quasi-static sea level adjustment.
@@ -2357,6 +2389,17 @@
             got_var(idVbvr)=.TRUE.
             STA(ng)%Vid(idVbvr)=var_id(i)
 #  endif
+#  if defined WET_DRY
+          ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idRwet))) THEN
+            got_var(idRwet)=.TRUE.
+            STA(ng)%Vid(idRwet)=var_id(i)
+          ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idUwet))) THEN
+            got_var(idUwet)=.TRUE.
+            STA(ng)%Vid(idUwet)=var_id(i)
+          ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idVwet))) THEN
+            got_var(idVwet)=.TRUE.
+            STA(ng)%Vid(idVwet)=var_id(i)
+#  endif
 #  ifdef ICE_MODEL
           ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idUice))) THEN
             got_var(idUice)=.TRUE.
@@ -2557,6 +2600,14 @@
           ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idWbrk))) THEN
             got_var(idWbrk)=.TRUE.
             STA(ng)%Vid(idWbrk)=var_id(i)
+# endif
+# if defined WAVES_DSPR
+          ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idWvds))) THEN
+            got_var(idWvds)=.TRUE.
+            STA(ng)%Vid(idWvds)=var_id(i)
+          ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idWvqp))) THEN
+            got_var(idWvqp)=.TRUE.
+            STA(ng)%Vid(idWvqp)=var_id(i)
 # endif
 # if defined WEC_VF
           ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idWztw))) THEN
@@ -3179,6 +3230,20 @@
           RETURN
         END IF
 # endif
+# if defined WAVES_DSPR
+        IF (.not.got_var(idWvds).and.Sout(idWvds,ng)) THEN
+          IF (Master) WRITE (stdout,60) TRIM(Vname(1,idWvds)),          &
+     &                                  TRIM(ncname)
+          exit_flag=3
+          RETURN
+        END IF
+        IF (.not.got_var(idWvqp).and.Sout(idWvqp,ng)) THEN
+          IF (Master) WRITE (stdout,60) TRIM(Vname(1,idWvqp)),          &
+     &                                  TRIM(ncname)
+          exit_flag=3
+          RETURN
+        END IF
+# endif
 # if defined WEC_VF
         IF (.not.got_var(idWztw).and.Sout(idWztw,ng)) THEN
           IF (Master) WRITE (stdout,60) TRIM(Vname(1,idWztw)),          &
@@ -3242,6 +3307,26 @@
           END IF
         END DO
 #  endif
+# endif
+# if defined WET_DRY
+        IF (.not.got_var(idRwet).and.Sout(idRwet,ng)) THEN
+          IF (Master) WRITE (stdout,60) TRIM(Vname(1,idRwet)),          &
+     &                                  TRIM(ncname)
+          exit_flag=3
+          RETURN
+        END IF
+        IF (.not.got_var(idUwet).and.Sout(idUwet,ng)) THEN
+          IF (Master) WRITE (stdout,60) TRIM(Vname(1,idUwet)),          &
+     &                                  TRIM(ncname)
+          exit_flag=3
+          RETURN
+        END IF
+        IF (.not.got_var(idVwet).and.Sout(idVwet,ng)) THEN
+          IF (Master) WRITE (stdout,60) TRIM(Vname(1,idVwet)),          &
+     &                                  TRIM(ncname)
+          exit_flag=3
+          RETURN
+        END IF
 # endif
 # ifdef ICE_MODEL
         IF (.not.got_var(idUice).and.Sout(idUice,ng)) THEN

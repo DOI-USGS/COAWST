@@ -14,8 +14,8 @@
 !  between nested grids. It process the contact region points between  !
 !  data donor and data receiver grids.                                 !
 !                                                                      !
-!  The locations of the spatial interpolation weights in the donor     !
-!  grid with respect the receiver grid contact region at contat        !
+!  The locations of the linear interpolation weights in the donor      !
+!  grid with respect the receiver grid contact region at contact       !
 !  point x(Irg,Jrg,Krg) are:                                           !
 !                                                                      !
 !                       8___________7   (Idg+1,Jdg+1,Kdg)              !
@@ -46,14 +46,21 @@
 !                                                                      !
 !  bry_fluxes       Extracts horizontat advective fluxes the contact   !
 !                     boundary of donor and receiver grids.            !
+!  check_massflux   If refinement, check mass fluxes between coarse    !
+!                     and fine grids for volume conservation. It is    !
+!                     use only for debugging and diagnostics.          !
 !  correct_tracer   Correct coarse grid tracer at the refinement grid  !
 !                     boundary with the refined accumulated fluxes     !
+!  do_twoway        Logical function to determine at which time-step   !
+!                     the two-way exchange takes place.                !
 !  fill_contact     Used to Fill grid metrics at contact points.       !
 !  fine2coarse      Replace coarse grid state variables with the       !
 !                     averaged fine grid values (two-way nesting)      !
 !                                                                      !
 !  get_contact2d    Get 2D field donor grid cell holding contact point !
 !  get_contact3d    Get 3D field donor grid cell holding contact point !
+!  get_persisted2d  Get 2D field persisted values on contact points    !
+!  mask_hweights    Scale horizontal interpolation weights with masking!
 !  put_contact2d    Set 2D field contact points, spatial interpolation !
 !  put_contact3d    Set 3D field contact points, spatial interpolation !
 !                                                                      !
@@ -61,7 +68,7 @@
 !  put_refine3d     Interpolate (space-time) 3D state variables        !
 !                                                                      !
 !  z_weights        Set donor grid vertical indices (cell holding      !
-!                     contact point) and verical interpolation         !
+!                     contact point) and vertical interpolation        !
 !                     weights                                          !
 !                                                                      !
 !  WARNINGS:                                                           !
@@ -90,7 +97,11 @@
 !
       PUBLIC  :: nesting
       PUBLIC  :: bry_fluxes
+# ifndef ONE_WAY
+      PUBLIC  :: do_twoway
+# endif
       PUBLIC  :: fill_contact
+      PRIVATE :: check_massflux
 # ifdef SOLVE3D
       PRIVATE :: correct_tracer
       PRIVATE :: correct_tracer_tile
@@ -106,7 +117,9 @@
 # endif
       PRIVATE :: get_composite
       PRIVATE :: get_metrics
+      PRIVATE :: get_persisted2d
       PRIVATE :: get_refine
+      PRIVATE :: mask_hweights
       PRIVATE :: put_composite
       PRIVATE :: put_refine
       PRIVATE :: put_refine2d
@@ -152,18 +165,36 @@
 !
 !  Local variable declarations.
 !
+      logical :: LputFsur
       integer :: subs, tile, thread
 # ifdef SOLVE3D
       integer :: ngc
 !
 !-----------------------------------------------------------------------
-!  Process verical indices and interpolation weigths associated with
+!  Process vertical indices and interpolation weigths associated with
 !  depth.
 !-----------------------------------------------------------------------
 !
       IF (isection.eq.nzwgt) THEN
         DO tile=last_tile(ng),first_tile(ng),-1
           CALL z_weights (ng, model, tile)
+        END DO
+!$OMP BARRIER
+        RETURN
+      END IF
+# endif
+
+# if defined MASKING || defined WET_DRY
+!
+!-----------------------------------------------------------------------
+!  If Land/Sea masking, scale horizontal interpolation weights to
+!  account for land contact points. If wetting and drying, the scaling
+!  is done at every time-step because masking is time dependent.
+!-----------------------------------------------------------------------
+!
+      IF (isection.eq.nmask) THEN
+        DO tile=last_tile(ng),first_tile(ng),-1
+          CALL mask_hweights (ng, model, tile)
         END DO
 !$OMP BARRIER
         RETURN
@@ -196,13 +227,30 @@
 !$OMP BARRIER
 !
 !  Fill refinement grid contact points variables by interpolating
-!  (space, time) from extracted donor grid data.
+!  (space, time) from extracted donor grid data.  The free-surface
+!  needs to be processed first and in a separate parallel region
+!  because of shared-memory applications.
 !
         ELSE IF (isection.eq.nputD) THEN
+          LputFsur=.TRUE.
           DO tile=first_tile(ng),last_tile(ng),+1
-            CALL put_refine (ng, model, tile)
+            CALL put_refine (ng, model, tile, LputFsur)
           END DO
 !$OMP BARRIER
+!
+          LputFsur=.FALSE.
+          DO tile=first_tile(ng),last_tile(ng),+1
+            CALL put_refine (ng, model, tile, LputFsur)
+          END DO
+!$OMP BARRIER
+!
+!  If refinement, check mass flux conservation between coarser and
+!  finer grids.
+!
+        ELSE IF (isection.eq.nmflx) THEN
+          DO tile=first_tile(ng),last_tile(ng),+1
+            CALL check_massflux (ng, model, tile)
+          END DO
 
 # ifndef ONE_WAY
 !
@@ -210,14 +258,14 @@
 !
         ELSE IF (isection.eq.n2way) THEN
 
-          ngc=RefineDonor(ng)                ! coarse grid number
+          ngc=CoarserDonor(ng)               ! coarse grid number
 
 #  if defined SOLVE3D && !defined NO_CORRECT_TRACER
 !
 !  Correct coarse grid tracer values at the refinement grid, ng,
 !  boundary with the refined accumulated fluxes (Hz*u*T/n, Hz*v*T/m).
 !
-          DO tile=first_tile(ng),last_tile(ng),+1
+          DO tile=first_tile(ngc),last_tile(ngc),+1
             CALL correct_tracer (ngc, ng, model, tile)
           END DO
 !$OMP BARRIER
@@ -226,7 +274,7 @@
 !  Replace coarse grid 2D state variables with the averaged fine grid
 !  values (two-way coupling).
 !
-          DO tile=last_tile(ng),first_tile(ng),-1
+          DO tile=last_tile(ngc),first_tile(ngc),-1
             CALL fine2coarse (ng, model, r2dvar, tile)
           END DO
 !$OMP BARRIER
@@ -245,7 +293,7 @@
 !  Replace coarse grid 3D state variables with the averaged fine grid
 !  values (two-way coupling).
 !
-          DO tile=last_tile(ng),first_tile(ng),-1
+          DO tile=last_tile(ngc),first_tile(ngc),-1
             CALL fine2coarse (ng, model, r3dvar, tile)
           END DO
 !$OMP BARRIER
@@ -335,7 +383,7 @@
 
 # ifdef DISTRIBUTE
 !
-      USE distribute_mod, ONLY : mp_collect
+      USE distribute_mod, ONLY : mp_assemble
 # endif
 !
 !  Imported variable declarations.
@@ -367,14 +415,13 @@
 !  Local variable declarations.
 !
       integer :: Istr, Iend, Jstr, Jend
-      integer :: Ib, Jb, i, j, m
+      integer :: Ib_east, Ib_west, Jb_north, Jb_south
+      integer :: i, j, m
 
 # ifdef DISTRIBUTE
-      integer :: Npts
+      integer :: NptsWE, NptsSN
 
       real(r8), parameter :: Fspv = 0.0_r8
-
-      real(r8), dimension(2*(IUB-ILB+1)+2*(JUB-JLB+1)) :: Fwrk
 # endif
 !
 !-----------------------------------------------------------------------
@@ -391,6 +438,9 @@
 # ifdef DISTRIBUTE
 !
 !  Initialize arrays to facilitate collective communications.
+!
+      NptsWE=JUB-JLB+1
+      NptsSN=IUB-ILB+1
 !
       F_west =Fspv
       F_east =Fspv
@@ -453,37 +503,29 @@
 !
 !  Western/Eastern boundaries.
 !
+        Ib_west=I_left(dg)
+        Ib_east=I_right(dg)
         DO j=Jstr,Jend
-          Ib=BRY_CONTACT(iwest,cr)%Ib(j)
-          Jb=BRY_CONTACT(iwest,cr)%Jb(j)
-          IF (((Istr.le.Ib).and.(Ib.le.Iend)).and.                      &
-     &        ((Jstr.le.Jb).and.(Jb.le.Jend))) THEN
-            F_west(Jb)=FX(Ib,Jb)*scale
+          IF ((Istr.le.Ib_west).and.(Ib_west.le.Iend)) THEN
+            F_west(j)=FX(Ib_west,j)*scale
           END IF
 !
-          Ib=BRY_CONTACT(ieast,cr)%Ib(j)
-          Jb=BRY_CONTACT(ieast,cr)%Jb(j)
-          IF (((Istr.le.Ib).and.(Ib.le.Iend)).and.                      &
-     &        ((Jstr.le.Jb).and.(Jb.le.Jend))) THEN
-            F_east(Jb)=FX(Ib,Jb)*scale
+          IF ((Istr.le.Ib_east).and.(Ib_east.le.Iend)) THEN
+            F_east(j)=FX(Ib_east,j)*scale
           END IF
         END DO
 !
 !  Southern/Northern boundaries.
 !
+        Jb_south=J_bottom(dg)
+        Jb_north=J_top(dg)
         DO i=Istr,Iend
-          Ib=BRY_CONTACT(isouth,cr)%Ib(i)
-          Jb=BRY_CONTACT(isouth,cr)%Jb(i)
-          IF (((Istr.le.Ib).and.(Ib.le.Iend)).and.                      &
-     &        ((Jstr.le.Jb).and.(Jb.le.Jend))) THEN
-            F_south(Ib)=FE(Ib,Jb)*scale
+          IF ((Jstr.le.Jb_south).and.(Jb_south.le.Jend)) THEN
+            F_south(i)=FE(i,Jb_south)*scale
           END IF
 !
-          Ib=BRY_CONTACT(inorth,cr)%Ib(i)
-          Jb=BRY_CONTACT(inorth,cr)%Jb(i)
-          IF (((Istr.le.Ib).and.(Ib.le.Iend)).and.                      &
-     &        ((Jstr.le.Jb).and.(Jb.le.Jend))) THEN
-            F_north(Ib)=FE(Ib,Jb)*scale
+          IF ((Jstr.le.Jb_north).and.(Jb_north.le.Jend)) THEN
+            F_north(i)=FE(i,Jb_north)*scale
           END IF
         END DO
       END IF
@@ -494,56 +536,476 @@
 !  Gather and broadcast data from all nodes.
 !-----------------------------------------------------------------------
 !
-      Npts=(2*(IUB-ILB+1)+2*(JUB-JLB+1))
-!
-!  Pack data for efficient communications.
-!
-      m=0
-      DO j=JLB,JUB
-        m=m+1
-        Fwrk(m)=F_west(j)
-      END DO
-      DO j=JLB,JUB
-        m=m+1
-        Fwrk(m)=F_east(j)
-      END DO
-      DO i=ILB,IUB
-        m=m+1
-        Fwrk(m)=F_south(i)
-      END DO
-      DO i=ILB,IUB
-        m=m+1
-        Fwrk(m)=F_north(i)
-      END DO
-!
-!  Collect data from all nodes.
-!
-      CALL mp_collect (dg, model, Npts, Fspv, Fwrk)
+      CALL mp_assemble (dg, model, NptsWE, Fspv, F_west (JLB:))
       IF (exit_flag.ne.NoError) RETURN
-!
-!  Unpack data.
-!
-      m=0
-      DO j=JLB,JUB
-        m=m+1
-        F_west(j)=Fwrk(m)
-      END DO
-      DO j=JLB,JUB
-        m=m+1
-        F_east(j)=Fwrk(m)
-      END DO
-      DO i=ILB,IUB
-        m=m+1
-        F_south(i)=Fwrk(m)
-      END DO
-      DO i=ILB,IUB
-        m=m+1
-        F_north(i)=Fwrk(m)
-      END DO
+
+      CALL mp_assemble (dg, model, NptsWE, Fspv, F_east (JLB:))
+      IF (exit_flag.ne.NoError) RETURN
+
+      CALL mp_assemble (dg, model, NptsSN, Fspv, F_south(ILB:))
+      IF (exit_flag.ne.NoError) RETURN
+
+      CALL mp_assemble (dg, model, NptsSN, Fspv, F_north(ILB:))
+      IF (exit_flag.ne.NoError) RETURN
 # endif
 
       RETURN
       END SUBROUTINE bry_fluxes
+!
+      SUBROUTINE check_massflux (ngf, model, tile)
+!
+!=======================================================================
+!                                                                      !
+!  If refinement, this routine check mass fluxes between coarse and    !
+!  fine grids for mass and volume conservation. It is only used for    !
+!  diagnostic purposes.                                                !
+!                                                                      !
+!  On Input:                                                           !
+!                                                                      !
+!     ngf          Finer grid number (integer)                         !
+!     model        Calling model identifier (integer)                  !
+!     tile         Domain tile partition (integer)                     !
+!                                                                      !
+!  On Output:    (mod_nesting)                                         !
+!                                                                      !
+!     BRY_CONTACT  Updated Mflux in structure.                         !
+!                                                                      !
+!=======================================================================
+!
+      USE mod_param
+      USE mod_parallel
+      USE mod_nesting
+      USE mod_scalars
+
+# ifdef DISTRIBUTE
+!
+      USE distribute_mod, ONLY : mp_assemble
+# endif
+!
+!  Imported variable declarations.
+!
+      integer, intent(in) :: ngf, model, tile
+!
+!  Local variable declarations.
+!
+# ifdef DISTRIBUTE
+      integer :: ILB, IUB, JLB, JUB, NptsSN, NptsWE, my_tile
+# endif
+      integer :: Iedge, Ibc, Ibc_min, Ibc_max, Ibf, Io
+      integer :: Jedge, Jbc, Jbc_min, Jbc_max, Jbf, Jo
+      integer :: Istr, Iend, Jstr, Jend
+      integer :: cjcr, cr, dg, half, icr, isum, jsum, m, rg
+      integer :: tnew, told
+
+# ifdef DISTRIBUTE
+      real(r8), parameter :: spv = 0.0_r8
+# endif
+      real(r8) :: EastSum, NorthSum, SouthSum, WestSum
+# ifdef NESTING_DEBUG
+      real(r8) :: MFratio
+# endif
+!
+!-----------------------------------------------------------------------
+!  Check mass and volume conservation durin refinement between coarse
+!  and fine grids.
+!-----------------------------------------------------------------------
+!
+      DO cr=1,Ncontact
+!
+!  Get data donor and data receiver grid numbers.
+!
+        dg=Rcontact(cr)%donor_grid
+        rg=Rcontact(cr)%receiver_grid
+!
+!  Process only contact region data for requested nested finer grid
+!  "ngf". Notice that the donor grid is coarser than receiver grid.
+!
+        IF ((rg.eq.ngf).and.(DXmax(dg).gt.DXmax(rg))) THEN
+!
+!  Set tile starting and ending indices for donor coarser grid.
+!
+          Istr=BOUNDS(dg)%Istr(tile)
+          Iend=BOUNDS(dg)%Iend(tile)
+          Jstr=BOUNDS(dg)%Jstr(tile)
+          Jend=BOUNDS(dg)%Jend(tile)
+!
+!  Set time rolling indices and conjugate region where the coarser
+!  donor grid becomes the receiver grid.
+!
+          told=3-RollingIndex(cr)
+          tnew=RollingIndex(cr)
+          DO icr=1,Ncontact
+            IF ((rg.eq.Rcontact(icr)%donor_grid).and.                   &
+     &          (dg.eq.Rcontact(icr)%receiver_grid)) THEN
+              cjcr=icr
+              EXIT
+            END IF
+          END DO
+
+# ifdef DISTRIBUTE
+!
+!  Set global size of boundary edges for coarse grid (donor index).
+!
+          my_tile=-1
+          ILB=BOUNDS(dg)%LBi(my_tile)
+          IUB=BOUNDS(dg)%UBi(my_tile)
+          JLB=BOUNDS(dg)%LBj(my_tile)
+          JUB=BOUNDS(dg)%UBj(my_tile)
+          NptsWE=JUB-JLB+1
+          NptsSN=IUB-ILB+1
+!
+!  If distributed-memory, initialize arrays used to check mass flux
+!  conservation with special value (zero) to facilitate the global
+!  reduction when collecting data between all nodes.
+!
+          BRY_CONTACT(iwest ,cjcr)%Mflux=spv
+          BRY_CONTACT(ieast ,cjcr)%Mflux=spv
+          BRY_CONTACT(isouth,cjcr)%Mflux=spv
+          BRY_CONTACT(inorth,cjcr)%Mflux=spv
+# endif
+!
+!  Set finer grid center (half) and offset indices (Io and Jo) for
+!  coarser grid (I,J) coordinates.
+!
+          half=(RefineScale(ngf)-1)/2
+          Io=half+1
+          Jo=half+1
+!
+!-----------------------------------------------------------------------
+!  Average finer grid western boundary mass fluxes and load them to the
+!  BRY_CONTACT structure.
+!-----------------------------------------------------------------------
+!
+          Ibc=I_left(ngf)
+          Jbc_min=J_bottom(ngf)
+          Jbc_max=J_top(ngf)-1            ! interior points, no top
+!                                           left corner
+# ifdef NESTING_DEBUG
+          IF (DOMAIN(ng)%SouthWest_Test(tile)) THEN
+            IF (Master) THEN
+              WRITE (300,10) 'Western Boundary Mass Fluxes: ',          &
+     &                       cr, dg, rg, iif(rg), iic(rg), INT(time(rg))
+            END IF
+          END IF
+!
+# endif
+          DO Jbc=Jstr,Jend
+            IF (((Istr.le.Ibc).and.(Ibc.le.Iend)).and.                  &
+     &          ((Jbc_min.le.Jbc).and.(Jbc.le.Jbc_max))) THEN
+!
+!  Sum finer grid western boundary mass fluxes within coarser grid cell.
+!
+              WestSum=0.0_r8
+              Jedge=Jo+(Jbc-Jbc_min)*RefineScale(ngf)
+              DO jsum=-half,half
+                Jbf=Jedge+jsum
+                WestSum=WestSum+BRY_CONTACT(iwest,cr)%Mflux(Jbf)
+              END DO
+              m=BRY_CONTACT(iwest,cr)%C2Bindex(Jbf)     ! pick last one
+!
+!  Load coarser grid western boundary mass flux that have been averaged
+!  from finer grid. These values can be compared with the coarser grid
+!  values REFINED(cr)%DU_avg2 to check if the mass flux between coarser
+!  and finer grid is conserved.
+!
+              BRY_CONTACT(iwest,cjcr)%Mflux(Jbc)=WestSum
+
+# ifdef NESTING_DEBUG
+              IF (WestSum.ne.0) THEN
+                MFratio=REFINED(cr)%DU_avg2(1,m,tnew)/WestSum
+              ELSE
+                MFratio=1.0_r8
+              END IF
+              WRITE (300,30) Jbc, REFINED(cr)%DU_avg2(1,m,tnew),        &
+     &                       WestSum, MFratio
+# endif
+            END IF
+          END DO
+!
+!-----------------------------------------------------------------------
+!  Average finer grid eastern boundary mass fluxes and load them to the
+!  BRY_CONTACT structure.
+!-----------------------------------------------------------------------
+!
+          Ibc=I_right(ngf)
+          Jbc_min=J_bottom(ngf)
+          Jbc_max=J_top(ngf)-1            ! interior points, no top
+!                                           right corner
+# ifdef NESTING_DEBUG
+          IF (DOMAIN(ng)%SouthWest_Test(tile)) THEN
+            IF (Master) THEN
+              WRITE (300,10) 'Eastern Boundary Mass Fluxes: ',          &
+     &                       cr, dg, rg, iif(rg), iic(rg), INT(time(rg))
+            END IF
+          END IF
+!
+# endif
+          DO Jbc=Jstr,Jend
+            IF (((Istr.le.Ibc).and.(Ibc.le.Iend)).and.                  &
+     &          ((Jbc_min.le.Jbc).and.(Jbc.le.Jbc_max))) THEN
+!
+!  Sum finer grid eastern boundary mass fluxes within coarser grid cell.
+!
+              EastSum=0.0_r8
+              Jedge=Jo+(Jbc-Jbc_min)*RefineScale(ngf)
+              DO jsum=-half,half
+                Jbf=Jedge+jsum
+                EastSum=WestSum+BRY_CONTACT(ieast,cr)%Mflux(Jbf)
+              END DO
+              m=BRY_CONTACT(ieast,cr)%C2Bindex(Jbf)     ! pick last one
+!
+!  Load coarser grid eastern boundary mass flux that have been averaged
+!  from finer grid. These values can be compared with the coarser grid
+!  values REFINED(cr)%DU_avg2 to check if the mass flux between coarser
+!  and finer grid is conserved.
+!
+              BRY_CONTACT(ieast,cjcr)%Mflux(Jbc)=EastSum
+
+# ifdef NESTING_DEBUG
+              IF (EastSum.ne.0) THEN
+                MFratio=REFINED(cr)%DU_avg2(1,m,tnew)/WestSum
+              ELSE
+                MFratio=1.0_r8
+              END IF
+              WRITE (300,30) Jbc, REFINED(cr)%DU_avg2(1,m,tnew),        &
+     &                       EastSum, MFratio
+# endif
+            END IF
+          END DO
+!
+!-----------------------------------------------------------------------
+!  Average finer grid southern boundary mass fluxes and load them to the
+!  BRY_CONTACT structure.
+!-----------------------------------------------------------------------
+!
+          Jbc=J_bottom(ngf)
+          Ibc_min=I_left(ngf)
+          Ibc_max=I_right(ngf)-1          ! interior points, no bottom
+!                                           right corner
+# ifdef NESTING_DEBUG
+          IF (DOMAIN(ng)%SouthWest_Test(tile)) THEN
+            IF (Master) THEN
+              WRITE (300,20) 'Southern Boundary Mass Fluxes: ',         &
+     &                       cr, dg, rg, iif(rg), iic(rg), INT(time(rg))
+            END IF
+          END IF
+!
+# endif
+          DO Ibc=Istr,Iend
+            IF (((Ibc_min.le.Ibc).and.(Ibc.le.Ibc_max)).and.            &
+     &          ((Jstr.le.Jbc).and.(Jbc.le.Jend))) THEN
+!
+!  Sum finer grid southern boundary mass fluxes within coarser grid
+!  cell.
+!
+              SouthSum=0.0_r8
+              Iedge=Io+(Ibc-Ibc_min)*RefineScale(ngf)
+              DO isum=-half,half
+                Ibf=Iedge+isum
+                SouthSum=SouthSum+BRY_CONTACT(isouth,cr)%Mflux(Ibf)
+              END DO
+              m=BRY_CONTACT(isouth,cr)%C2Bindex(Ibf)    ! pick last one
+!
+!  Load coarser grid southern boundary mass flux that have been averaged
+!  from finer grid. These values can be compared with the coarser grid
+!  values REFINED(cr)%DU_avg2 to check if the mass flux between coarser
+!  and finer grid is conserved.
+!
+              BRY_CONTACT(isouth,cjcr)%Mflux(Ibc)=SouthSum
+
+# ifdef NESTING_DEBUG
+              IF (EastSum.ne.0) THEN
+                MFratio=REFINED(cr)%DV_avg2(1,m,tnew)/SouthSum
+              ELSE
+                MFratio=1.0_r8
+              END IF
+              WRITE (300,30) Ibc, REFINED(cr)%DV_avg2(1,m,tnew),        &
+     &                       SouthSum, MFratio
+# endif
+            END IF
+          END DO
+!
+!-----------------------------------------------------------------------
+!  Average finer grid northern boundary mass fluxes and load them to the
+!  BRY_CONTACT structure.
+!-----------------------------------------------------------------------
+!
+          Jbc=J_top(ngf)
+          Ibc_min=I_left(ngf)
+          Ibc_max=I_right(ngf)-1          ! interior points, no top
+!                                           right corner
+# ifdef NESTING_DEBUG
+          IF (DOMAIN(ng)%SouthWest_Test(tile)) THEN
+            IF (Master) THEN
+              WRITE (300,20) 'Northern Boundary Mass Fluxes: ',         &
+     &                       cr, dg, rg, iif(rg), iic(rg), INT(time(rg))
+            END IF
+          END IF
+!
+# endif
+          DO Ibc=Istr,Iend
+            IF (((Ibc_min.le.Ibc).and.(Ibc.le.Ibc_max)).and.            &
+     &          ((Jstr.le.Jbc).and.(Jbc.le.Jend))) THEN
+!
+!  Sum finer grid northern boundary mass fluxes within coarser grid
+!  cell.
+!
+              NorthSum=0.0_r8
+              Iedge=Io+(Ibc-Ibc_min)*RefineScale(ngf)
+              DO isum=-half,half
+                Ibf=Iedge+isum
+                NorthSum=NorthSum+BRY_CONTACT(inorth,cr)%Mflux(Ibf)
+              END DO
+              m=BRY_CONTACT(isouth,cr)%C2Bindex(Ibf)    ! pick last one
+!
+!  Load coarser grid northern boundary mass flux that have been averaged
+!  from finer grid. These values can be compared with the coarser grid
+!  values REFINED(cr)%DU_avg2 to check if the mass flux between coarser
+!  and finer grid is conserved.
+!
+              BRY_CONTACT(inorth,cjcr)%Mflux(Ibc)=NorthSum
+
+# ifdef NESTING_DEBUG
+              IF (EastSum.ne.0) THEN
+                MFratio=REFINED(cr)%DV_avg2(1,m,tnew)/SouthSum
+              ELSE
+                MFratio=1.0_r8
+              END IF
+              WRITE (300,30) Ibc, REFINED(cr)%DV_avg2(1,m,tnew),        &
+     &                       NorthSum, MFratio
+# endif
+            END IF
+          END DO
+
+# ifdef DISTRIBUTE
+!
+!  Collect data from all nodes.
+!
+          CALL mp_assemble (dg, model, NptsWE, spv,                      &
+     &                      BRY_CONTACT(iwest ,cjcr)%Mflux(JLB:))
+          CALL mp_assemble (dg, model, NptsWE, spv,                      &
+     &                      BRY_CONTACT(ieast ,cjcr)%Mflux(JLB:))
+          CALL mp_assemble (dg, model, NptsSN, spv,                      &
+     &                      BRY_CONTACT(isouth,cjcr)%Mflux(ILB:))
+          CALL mp_assemble (dg, model, NptsSN, spv,                      &
+     &                      BRY_CONTACT(inorth,cjcr)%Mflux(ILB:))
+# endif
+        END IF
+      END DO
+
+# ifdef NESTING_DEBUG
+!
+      CALL my_flush (300)
+!
+  10  FORMAT (/,1x,a,/,/,4x,'cr = ',i2.2,4x,'dg = ',i2.2,4x,'rg = ',    &
+     &        i2.2,4x,'iif(rg) = ',i3.3,4x,'iic(rg) = ',i7.7,4x,        &
+     &        'time(rg) = ',i7.7,/,/,2x,'Coarse',6x,'Coarse Grid',8x,   &
+     &        'Fine Grid',11x,'Ratio',/,4x,'Jb',9x,'DU_avg2',9x,        &
+     &        'SUM(DU_avg2)',/)
+  20  FORMAT (/,1x,a,/,/,4x,'cr = ',i2.2,4x,'dg = ',i2.2,4x,'rg = ',    &
+     &        i2.2,4x,'iif(rg) = ',i3.3,4x,'iic(rg) = ',i7.7,4x,        &
+     &        'time(rg) = ',i7.7,/,/,2x,'Coarse',6x,'Coarse Grid',8x,   &
+     &        'Fine Grid',11x,'Ratio',/,4x,'Ib',9x,'DV_avg2',9x,        &
+     &        'SUM(DV_avg2)',/)
+  30  FORMAT (4x,i4.4,3(3x,1p,e15.8))
+# endif
+
+      RETURN
+      END SUBROUTINE check_massflux
+
+# ifndef ONE_WAY
+!
+      FUNCTION do_twoway (nl, il, istep, ng) RESULT (doit)
+!
+!=======================================================================
+!                                                                      !
+!  This function determines if the two-way exchange between finer to   !
+!  coarser grid is appropriate. In complex nesting applications with   !
+!  telescoping grids, grid with RefineScale > 0 including finer grids  !
+!  inside, the two-way feedback between finer and coarse grids needs   !
+!  to be in the correct sequence.                                      !
+!                                                                      !
+!  This function is called from either main2d or main3d.               !
+!                                                                      !
+!  On Input:                                                           !
+!                                                                      !
+!     nl         Latest time-stepped nested layer index (integer)      !
+!     il         Current nested layer index in the two-way DO loop     !
+!                  call from main2d or main3d (integer)                !
+!     istep      Current rime-step counter from STEP_LOOP in main2d    !
+!                  or main3d (integer)                                 !
+!                                                                      !
+!  On Output:                                                          !
+!                                                                      !
+!     ng         Finer grid number to process in the fine to coarse    !
+!                  feedback (integer)                                  !
+!     doit       The value of the result is TRUE/FALSE if the exchage  !
+!                  is required or not (logical)                        !
+!                                                                      !
+!=======================================================================
+!
+      USE mod_param
+      USE mod_nesting
+      USE mod_scalars
+!
+!  Imported variable declarations.
+!
+      integer, intent(in) :: nl, il, istep
+
+      integer, intent(out) :: ng
+!
+!  Local variable declarations.
+!
+      logical :: doit
+
+      integer :: dgc, dgf, ig
+!
+!-----------------------------------------------------------------------
+!  Determine if two-way exchage is required at the corrent time-step.
+!-----------------------------------------------------------------------
+!
+      doit=.FALSE.
+!
+      DO ig=1,GridsInLayer(il)
+        ng=GridNumber(ig,il)
+!
+!  Chech if ng is a refined grid, RefineScale(ng) > 0.
+!
+        IF (RefinedGrid(ng).and.(RefineScale(ng).gt.0)) THEN
+!
+!  If telescoping grid, the sequence of exchanges when all the nested
+!  grid reach the coarser grid (ng=1) time needs to be done in the
+!  correct sequence: finest grid exchage first.
+!
+          IF (Telescoping(ng)) THEN
+            dgc=coarserDonor(ng)                      ! for debbuging
+            dgf=FinerDonor(ng)
+            IF (TwoWayCounter(dgf).eq.RefineSteps(dgf)) THEN
+              doit=.TRUE.
+              EXIT
+            END IF
+!
+!  If not telescoping, the exchange is in terms of the "istep" counter
+!  but also at the right sequence.
+!
+          ELSE
+            IF ((istep.eq.RefineSteps(ng)).and.(il.eq.nl)) THEN
+              doit=.TRUE.
+              EXIT
+            END IF
+          END IF
+        END IF
+      END DO
+!
+!  Update two-way exchange counter between fine and coarse grids.
+!
+      IF (doit) THEN
+        TwoWayCounter(ng)=TwoWayCounter(ng)+1
+      END IF
+
+      RETURN
+      END FUNCTION do_twoway
+# endif
 !
       SUBROUTINE fill_contact (rg, model, tile,                         &
      &                         cr, Npoints, contact,                    &
@@ -666,6 +1128,792 @@
       RETURN
       END SUBROUTINE fill_contact
 
+# if defined MASKING || defined WET_DRY
+!
+      SUBROUTINE mask_hweights (ng, model, tile)
+!
+!=======================================================================
+!                                                                      !
+!  This routine scales the horizontal interpolation weights to account !
+!  for Land/Sea masking in  the nested contact region.  If wetting and !
+!  drying,  the scaling is done at every time step since the  Land/Sea !
+!  masking is time dependent.                                          !
+!                                                                      !
+!  On Input:                                                           !
+!                                                                      !
+!     rg         Receiver grid number (integer)                        !
+!     model      Calling model identifier (integer)                    !
+!     tile       Domain tile partition (integer)                       !
+!                                                                      !
+!  On Output:                                                          !
+!                                                                      !
+!     Lweight    Updated linear interpolation weights                  !
+#  ifdef QUADRATIC_WEIGHTS
+!     Qweight    Updated quadratic interpolation weights               !
+#  endif
+!                                                                      !
+!=======================================================================
+!
+      USE mod_param
+      USE mod_grid
+      USE mod_nesting
+      USE mod_scalars
+
+#  ifdef DISTRIBUTE
+!
+      USE distribute_mod, ONLY : mp_assemble
+#  endif
+!
+!  Imported variable declarations.
+!
+      integer, intent(in) :: ng, model, tile
+!
+!  Local variable declarations.
+!
+      integer :: cr, dg,  m, rg
+      integer :: Istr, Iend, Jstr, Jend
+      integer :: Idg, Idgp1, Jdg, Jdgp1
+      integer :: NpointsR, NpointsU, NpointsV
+#  ifdef DISTRIBUTE
+      integer :: Lpoints, Qpoints
+#  endif
+
+      real(r8) :: cff
+      real(r8) :: LWsum, LWsum_check, MaskLWsum
+#  ifdef QUADRATIC_WEIGHTS
+      real(r8) :: QWsum, QWsum_check, MaskQWsum
+#  endif
+#  ifdef DISTRIBUTE
+      real(r8), parameter :: spv = 0.0_r8
+#  endif
+      real(r8), dimension(4) :: Lweight
+#  ifdef QUADRATIC_WEIGHTS
+      real(r8), dimension(9) :: Qweight
+#  endif
+#  ifdef DISTRIBUTE
+      real(r8), allocatable :: LW(:,:)
+#   ifdef QUADRATIC_WEIGHTS
+      real(r8), allocatable :: QW(:,:)
+#   endif
+#  endif
+!
+!=======================================================================
+!  If appropriate, scale horizontal interpolation weights to account
+!  for Land/Sea masking.
+!=======================================================================
+!
+      DO cr=1,Ncontact
+!
+!  Get data donor and data receiver grid numbers.
+!
+        dg=Rcontact(cr)%donor_grid
+        rg=Rcontact(cr)%receiver_grid
+!
+        SCALE_WEIGHTS : IF (RefinedGrid(rg).and.                        &
+     &                      (dg.eq.ng).and.(dg.lt.rg)) THEN
+!
+!  Scale interpolation weigths for RHO-contact points.
+!
+          Istr=BOUNDS(dg) % Istr(tile)
+          Iend=BOUNDS(dg) % Iend(tile)
+          Jstr=BOUNDS(dg) % Jstr(tile)
+          Jend=BOUNDS(dg) % Jend(tile)
+!
+!-----------------------------------------------------------------------
+!  Scale horizontal interpolation weigths for RHO-contact points.
+!-----------------------------------------------------------------------
+!
+          NpointsR=Rcontact(cr)%Npoints
+
+#  ifdef DISTRIBUTE
+!
+!  If distributed-memory, allocate and initialize working arrays
+!  with special value (zero) to facilitate the global reduction
+!  when collecting data between all nodes.
+!
+          Lpoints=4*NpointsR
+          IF (.not.allocated(LW)) THEN
+            allocate ( LW(4,NpointsR) )
+          END IF
+          LW=spv
+
+#   ifdef QUADRATIC_WEIGHTS
+          Qpoints=9*NpointsR
+          IF (.not.allocated(QW)) THEN
+            allocate ( QW(9,NpointsR) )
+          END IF
+          QW=spv
+#   endif
+#  endif
+!
+!  Scale interpolation weights.
+!
+          DO m=1,NpointsR
+            Idg  =Rcontact(cr)%Idg(m)
+            Idgp1=MIN(Idg+1, BOUNDS(dg)%UBi(-1))
+            Jdg  =Rcontact(cr)%Jdg(m)
+            Jdgp1=MIN(Jdg+1, BOUNDS(dg)%UBj(-1))
+            IF (((Istr.le.Idg).and.(Idg.le.Iend)).and.                  &
+     &          ((Jstr.le.Jdg).and.(Jdg.le.Jend))) THEN
+!
+!  Linear interpolation weights.
+!
+              MaskLWsum=GRID(dg)%rmask_full(Idg  ,Jdg  )+               &
+     &                  GRID(dg)%rmask_full(Idgp1,Jdg  )+               &
+     &                  GRID(dg)%rmask_full(Idgp1,Jdgp1)+               &
+     &                  GRID(dg)%rmask_full(Idg  ,Jdgp1)
+              IF (MaskLWsum.lt.4) THEN
+#  ifdef WET_DRY
+                Lweight(1)=Rcontact(cr)%LweightUnmasked(1,m)*           &
+     &                     GRID(dg)%rmask_full(Idg  ,Jdg  )
+                Lweight(2)=Rcontact(cr)%LweightUnmasked(2,m)*           &
+     &                     GRID(dg)%rmask_full(Idgp1,Jdg  )
+                Lweight(3)=Rcontact(cr)%LweightUnmasked(3,m)*           &
+     &                     GRID(dg)%rmask_full(Idgp1,Jdgp1)
+                Lweight(4)=Rcontact(cr)%LweightUnmasked(4,m)*           &
+     &                     GRID(dg)%rmask_full(Idg  ,Jdgp1)
+#  else
+                Lweight(1)=Rcontact(cr)%Lweight(1,m)*                   &
+     &                     GRID(dg)%rmask_full(Idg  ,Jdg  )
+                Lweight(2)=Rcontact(cr)%Lweight(2,m)*                   &
+     &                     GRID(dg)%rmask_full(Idgp1,Jdg  )
+                Lweight(3)=Rcontact(cr)%Lweight(3,m)*                   &
+     &                     GRID(dg)%rmask_full(Idgp1,Jdgp1)
+                Lweight(4)=Rcontact(cr)%Lweight(4,m)*                   &
+     &                     GRID(dg)%rmask_full(Idg  ,Jdgp1)
+#  endif
+                LWsum=SUM(Lweight)
+                IF (LWsum.gt.0) THEN
+                  cff=1.0_r8/LWsum
+                  Lweight(1)=cff*Lweight(1)    ! using only water points
+                  Lweight(2)=cff*Lweight(2)    ! in the interpolation of
+                  Lweight(3)=cff*Lweight(3)    ! of contact points
+                  Lweight(4)=cff*Lweight(4)
+                ELSE
+                  Lweight=0.0_r8               ! all the donor grid
+                END IF                         ! corners are on land
+                LWsum_check=SUM(Lweight)
+#  ifdef DISTRIBUTE
+                LW(1,m)=Lweight(1)
+                LW(2,m)=Lweight(2)
+                LW(3,m)=Lweight(3)
+                LW(4,m)=Lweight(4)
+              ELSE
+                LW(1,m)=Rcontact(cr)%Lweight(1,m)   ! we need to load
+                LW(2,m)=Rcontact(cr)%Lweight(2,m)   ! unscaled values
+                LW(3,m)=Rcontact(cr)%Lweight(3,m)   ! to facilitate
+                LW(4,m)=Rcontact(cr)%Lweight(4,m)   ! parallel reduction
+#  else
+                Rcontact(cr)%Lweight(1,m)=Lweight(1)
+                Rcontact(cr)%Lweight(2,m)=Lweight(2)
+                Rcontact(cr)%Lweight(3,m)=Lweight(3)
+                Rcontact(cr)%Lweight(4,m)=Lweight(4)
+#  endif
+              END IF
+
+#  ifdef QUADRATIC_WEIGHTS
+!
+!  Quadratic interpolation weights.
+!
+              MaskQWsum=GRID(dg)%rmask_full(Idg-1, Jdg-1)+              &
+     &                  GRID(dg)%rmask_full(Idg  , Jdg-1)+              &
+     &                  GRID(dg)%rmask_full(Idgp1, Jdg-1)+              &
+     &                  GRID(dg)%rmask_full(Idg-1, Jdg  )+              &
+     &                  GRID(dg)%rmask_full(Idg  , Jdg  )+              &
+     &                  GRID(dg)%rmask_full(Idgp1, Jdg  )+              &
+     &                  GRID(dg)%rmask_full(Idg-1, Jdgp1)+              &
+     &                  GRID(dg)%rmask_full(Idg  , Jdgp1)+              &
+     &                  GRID(dg)%rmask_full(Idgp1, Jdgp1)
+              IF (MaskQWsum.lt.9) THEN
+#   ifdef WET_DRY
+                Qweight(1)=Rcontact(cr)%QweightUnmasked(1,m)*           &
+     &                     GRID(dg)%rmask_full(Idg-1,Jdg-1)
+                Qweight(2)=Rcontact(cr)%QweightUnmasked(2,m)*           &
+     &                     GRID(dg)%rmask_full(Idg  ,Jdg-1)
+                Qweight(3)=Rcontact(cr)%QweightUnmasked(3,m)*           &
+     &                     GRID(dg)%rmask_full(Idgp1,Jdg-1)
+                Qweight(4)=Rcontact(cr)%QweightUnmasked(4,m)*           &
+     &                     GRID(dg)%rmask_full(Idg-1,Jdg  )
+                Qweight(5)=Rcontact(cr)%QweightUnmasked(5,m)*           &
+     &                     GRID(dg)%rmask_full(Idg  ,Jdg  )
+                Qweight(6)=Rcontact(cr)%QweightUnmasked(6,m)*           &
+     &                     GRID(dg)%rmask_full(Idgp1,Jdg  )
+                Qweight(7)=Rcontact(cr)%QweightUnmasked(7,m)*           &
+     &                     GRID(dg)%rmask_full(Idg-1,Jdgp1)
+                Qweight(8)=Rcontact(cr)%QweightUnmasked(8,m)*           &
+     &                     GRID(dg)%rmask_full(Idg  ,Jdgp1)
+                Qweight(9)=Rcontact(cr)%QweightUnmasked(9,m)*           &
+     &                     GRID(dg)%rmask_full(Idgp1,Jdgp1)
+#   else
+                Qweight(1)=Rcontact(cr)%Qweight(1,m)*                   &
+     &                     GRID(dg)%rmask_full(Idg-1,Jdg-1)
+                Qweight(2)=Rcontact(cr)%Qweight(2,m)*                   &
+     &                     GRID(dg)%rmask_full(Idg  ,Jdg-1)
+                Qweight(3)=Rcontact(cr)%Qweight(3,m)*                   &
+     &                     GRID(dg)%rmask_full(Idgp1,Jdg-1)
+                Qweight(4)=Rcontact(cr)%Qweight(4,m)*                   &
+     &                     GRID(dg)%rmask_full(Idg-1,Jdg  )
+                Qweight(5)=Rcontact(cr)%Qweight(5,m)*                   &
+     &                     GRID(dg)%rmask_full(Idg  ,Jdg  )
+                Qweight(6)=Rcontact(cr)%Qweight(6,m)*                   &
+     &                     GRID(dg)%rmask_full(Idgp1,Jdg  )
+                Qweight(7)=Rcontact(cr)%Qweight(7,m)*                   &
+     &                     GRID(dg)%rmask_full(Idg-1,Jdgp1)
+                Qweight(8)=Rcontact(cr)%Qweight(8,m)*                   &
+     &                     GRID(dg)%rmask_full(Idg  ,Jdgp1)
+                Qweight(9)=Rcontact(cr)%Qweight(9,m)*                   &
+     &                     GRID(dg)%rmask_full(Idgp1,Jdgp1)
+#   endif
+                QWsum=SUM(Qweight)
+                IF (QWsum.gt.0) THEN
+                  cff=1.0_r8/QWsum
+                  Qweight(1)=cff*Qweight(1)    ! using only water points
+                  Qweight(2)=cff*Qweight(2)    ! in the interpolation of
+                  Qweight(3)=cff*Qweight(3)    ! of contact points
+                  Qweight(4)=cff*Qweight(4)
+                  Qweight(5)=cff*Qweight(5)
+                  Qweight(6)=cff*Qweight(6)
+                  Qweight(7)=cff*Qweight(7)
+                  Qweight(8)=cff*Qweight(8)
+                  Qweight(9)=cff*Qweight(9)
+                ELSE
+                  Qweight=0.0_r8               ! all the donor grid
+                END IF                         ! corners are on land
+                QWsum_check=SUM(Qweight)
+#   ifdef DISTRIBUTE
+                QW(1,m)=Qweight(1)
+                QW(2,m)=Qweight(2)
+                QW(3,m)=Qweight(3)
+                QW(4,m)=Qweight(4)
+                QW(5,m)=Qweight(5)
+                QW(6,m)=Qweight(6)
+                QW(7,m)=Qweight(7)
+                QW(8,m)=Qweight(8)
+                QW(9,m)=Qweight(9)
+              ELSE
+                QW(1,m)=Rcontact(cr)%Qweight(1,m)   ! we need to load
+                QW(2,m)=Rcontact(cr)%Qweight(2,m)   ! unscaled values
+                QW(3,m)=Rcontact(cr)%Qweight(3,m)   ! to facilitate
+                QW(4,m)=Rcontact(cr)%Qweight(4,m)   ! parallel reduction
+                QW(5,m)=Rcontact(cr)%Qweight(5,m)
+                QW(6,m)=Rcontact(cr)%Qweight(6,m)
+                QW(7,m)=Rcontact(cr)%Qweight(7,m)
+                QW(8,m)=Rcontact(cr)%Qweight(8,m)
+                QW(9,m)=Rcontact(cr)%Qweight(9,m)
+#   else
+                Rcontact(cr)%Qweight(1,m)=Qweight(1)
+                Rcontact(cr)%Qweight(2,m)=Qweight(2)
+                Rcontact(cr)%Qweight(3,m)=Qweight(3)
+                Rcontact(cr)%Qweight(4,m)=Qweight(4)
+                Rcontact(cr)%Qweight(5,m)=Qweight(5)
+                Rcontact(cr)%Qweight(6,m)=Qweight(6)
+                Rcontact(cr)%Qweight(7,m)=Qweight(7)
+                Rcontact(cr)%Qweight(8,m)=Qweight(8)
+                Rcontact(cr)%Qweight(9,m)=Qweight(9)
+#   endif
+              END IF
+#  endif
+            END IF
+          END DO
+
+#  ifdef DISTRIBUTE
+!
+!  Exchange data between all parallel nodes.
+!
+          CALL mp_assemble (dg, model, Lpoints, spv, LW)
+          IF (exit_flag.ne.NoError) RETURN
+
+#   ifdef QUADRATIC_WEIGHTS
+          CALL mp_assemble (dg, model, Qpoints, spv, QW)
+          IF (exit_flag.ne.NoError) RETURN
+#   endif
+!
+!  Load exchanged weights.
+!
+          Rcontact(cr)%Lweight(1:4,1:NpointsR)=LW(1:4,1:NpointsR)
+#   ifdef QUADRATIC_WEIGHTS
+          Rcontact(cr)%Qweight(1:9,1:NpointsR)=QW(1:9,1:NpointsR)
+#   endif
+!
+!  Deallocate local work arrays.
+!
+          IF (allocated(LW)) THEN
+            deallocate (LW)
+          END IF
+
+#   ifdef QUADRATIC_WEIGHTS
+          IF (allocated(QW)) THEN
+            deallocate (QW)
+          END IF
+#   endif
+#  endif
+!
+!-----------------------------------------------------------------------
+!  Scale interpolation weigths for U-contact points.
+!-----------------------------------------------------------------------
+!
+          NpointsU=Ucontact(cr)%Npoints
+
+#  ifdef DISTRIBUTE
+!
+!  If distributed-memory, allocate and initialize working arrays
+!  with special value (zero) to facilitate the global reduction
+!  when collecting data between all nodes.
+!
+          Lpoints=4*NpointsU
+          IF (.not.allocated(LW)) THEN
+            allocate ( LW(4,NpointsU) )
+          END IF
+          LW=spv
+
+#   ifdef QUADRATIC_WEIGHTS
+          Qpoints=9*NpointsU
+          IF (.not.allocated(QW)) THEN
+            allocate ( QW(9,NpointsU) )
+          END IF
+          QW=spv
+#   endif
+#  endif
+!
+!  Scale interpolation weights.
+!
+          DO m=1,NpointsU
+            Idg  =Ucontact(cr)%Idg(m)
+            Idgp1=MIN(Idg+1, BOUNDS(dg)%UBi(-1))
+            Jdg  =Ucontact(cr)%Jdg(m)
+            Jdgp1=MIN(Jdg+1, BOUNDS(dg)%UBj(-1))
+            IF (((Istr.le.Idg).and.(Idg.le.Iend)).and.                  &
+     &          ((Jstr.le.Jdg).and.(Jdg.le.Jend))) THEN
+!
+!  Linear interpolation weights.
+!
+              MaskLWsum=GRID(dg)%umask_full(Idg  ,Jdg  )+               &
+     &                  GRID(dg)%umask_full(Idgp1,Jdg  )+               &
+     &                  GRID(dg)%umask_full(Idgp1,Jdgp1)+               &
+     &                  GRID(dg)%umask_full(Idg  ,Jdgp1)
+              IF (MaskLWsum.lt.4) THEN
+#  ifdef WET_DRY
+                Lweight(1)=Ucontact(cr)%LweightUnmasked(1,m)*           &
+     &                     GRID(dg)%umask_full(Idg  ,Jdg  )
+                Lweight(2)=Ucontact(cr)%LweightUnmasked(2,m)*           &
+     &                     GRID(dg)%umask_full(Idgp1,Jdg  )
+                Lweight(3)=Ucontact(cr)%LweightUnmasked(3,m)*           &
+     &                     GRID(dg)%umask_full(Idgp1,Jdgp1)
+                Lweight(4)=Ucontact(cr)%LweightUnmasked(4,m)*           &
+     &                     GRID(dg)%umask_full(Idg  ,Jdgp1)
+#  else
+                Lweight(1)=Ucontact(cr)%Lweight(1,m)*                   &
+     &                     GRID(dg)%umask_full(Idg  ,Jdg  )
+                Lweight(2)=Ucontact(cr)%Lweight(2,m)*                   &
+     &                     GRID(dg)%umask_full(Idgp1,Jdg  )
+                Lweight(3)=Ucontact(cr)%Lweight(3,m)*                   &
+     &                     GRID(dg)%umask_full(Idgp1,Jdgp1)
+                Lweight(4)=Ucontact(cr)%Lweight(4,m)*                   &
+     &                     GRID(dg)%umask_full(Idg  ,Jdgp1)
+#  endif
+                LWsum=SUM(Lweight)
+                IF (LWsum.gt.0) THEN
+                  cff=1.0_r8/LWsum
+                  Lweight(1)=cff*Lweight(1)    ! using only water points
+                  Lweight(2)=cff*Lweight(2)    ! in the interpolation of
+                  Lweight(3)=cff*Lweight(3)    ! of contact points
+                  Lweight(4)=cff*Lweight(4)
+                ELSE
+                  Lweight=0.0_r8               ! All the donor grid
+                END IF                         ! corners are on land
+                LWsum_check=SUM(Lweight)
+#  ifdef DISTRIBUTE
+                LW(1,m)=Lweight(1)
+                LW(2,m)=Lweight(2)
+                LW(3,m)=Lweight(3)
+                LW(4,m)=Lweight(4)
+              ELSE
+                LW(1,m)=Ucontact(cr)%Lweight(1,m)   ! we need to load
+                LW(2,m)=Ucontact(cr)%Lweight(2,m)   ! unscaled values
+                LW(3,m)=Ucontact(cr)%Lweight(3,m)   ! to facilitate
+                LW(4,m)=Ucontact(cr)%Lweight(4,m)   ! parallel reduction
+#  else
+                Ucontact(cr)%Lweight(1,m)=Lweight(1)
+                Ucontact(cr)%Lweight(2,m)=Lweight(2)
+                Ucontact(cr)%Lweight(3,m)=Lweight(3)
+                Ucontact(cr)%Lweight(4,m)=Lweight(4)
+#  endif
+              END IF
+
+#  ifdef QUADRATIC_WEIGHTS
+!
+!  Quadratic interpolation weights.
+!
+              MaskQWsum=GRID(dg)%umask_full(Idg-1, Jdg-1)+              &
+     &                  GRID(dg)%umask_full(Idg  , Jdg-1)+              &
+     &                  GRID(dg)%umask_full(Idgp1, Jdg-1)+              &
+     &                  GRID(dg)%umask_full(Idg-1, Jdg  )+              &
+     &                  GRID(dg)%umask_full(Idg  , Jdg  )+              &
+     &                  GRID(dg)%umask_full(Idgp1, Jdg  )+              &
+     &                  GRID(dg)%umask_full(Idg-1, Jdgp1)+              &
+     &                  GRID(dg)%umask_full(Idg  , Jdgp1)+              &
+     &                  GRID(dg)%umask_full(Idgp1, Jdgp1)
+              IF (MaskQWsum.lt.9) THEN
+#   ifdef WET_DRY
+                Qweight(1)=Ucontact(cr)%QweightUnmasked(1,m)*           &
+     &                     GRID(dg)%umask_full(Idg-1,Jdg-1)
+                Qweight(2)=Ucontact(cr)%QweightUnmasked(2,m)*           &
+     &                     GRID(dg)%umask_full(Idg  ,Jdg-1)
+                Qweight(3)=Ucontact(cr)%QweightUnmasked(3,m)*           &
+     &                     GRID(dg)%umask_full(Idgp1,Jdg-1)
+                Qweight(4)=Ucontact(cr)%QweightUnmasked(4,m)*           &
+     &                     GRID(dg)%umask_full(Idg-1,Jdg  )
+                Qweight(5)=Ucontact(cr)%QweightUnmasked(5,m)*           &
+     &                     GRID(dg)%umask_full(Idg  ,Jdg  )
+                Qweight(6)=Ucontact(cr)%QweightUnmasked(6,m)*           &
+     &                     GRID(dg)%umask_full(Idgp1,Jdg  )
+                Qweight(7)=Ucontact(cr)%QweightUnmasked(7,m)*           &
+     &                     GRID(dg)%umask_full(Idg-1,Jdgp1)
+                Qweight(8)=Ucontact(cr)%QweightUnmasked(8,m)*           &
+     &                     GRID(dg)%umask_full(Idg  ,Jdgp1)
+                Qweight(9)=Ucontact(cr)%QweightUnmasked(9,m)*           &
+     &                     GRID(dg)%umask_full(Idgp1,Jdgp1)
+#   else
+                Qweight(1)=Ucontact(cr)%Qweight(1,m)*                   &
+     &                     GRID(dg)%umask_full(Idg-1,Jdg-1)
+                Qweight(2)=Ucontact(cr)%Qweight(2,m)*                   &
+     &                     GRID(dg)%umask_full(Idg  ,Jdg-1)
+                Qweight(3)=Ucontact(cr)%Qweight(3,m)*                   &
+     &                     GRID(dg)%umask_full(Idgp1,Jdg-1)
+                Qweight(4)=Ucontact(cr)%Qweight(4,m)*                   &
+     &                     GRID(dg)%umask_full(Idg-1,Jdg  )
+                Qweight(5)=Ucontact(cr)%Qweight(5,m)*                   &
+     &                     GRID(dg)%umask_full(Idg  ,Jdg  )
+                Qweight(6)=Ucontact(cr)%Qweight(6,m)*                   &
+     &                     GRID(dg)%umask_full(Idgp1,Jdg  )
+                Qweight(7)=Ucontact(cr)%Qweight(7,m)*                   &
+     &                     GRID(dg)%umask_full(Idg-1,Jdgp1)
+                Qweight(8)=Ucontact(cr)%Qweight(8,m)*                   &
+     &                     GRID(dg)%umask_full(Idg  ,Jdgp1)
+                Qweight(9)=Ucontact(cr)%Qweight(9,m)*                   &
+     &                     GRID(dg)%umask_full(Idgp1,Jdgp1)
+#   endif
+                QWsum=SUM(Qweight)
+                IF (QWsum.gt.0) THEN
+                  cff=1.0_r8/QWsum
+                  Qweight(1)=cff*Qweight(1)    ! using only water points
+                  Qweight(2)=cff*Qweight(2)    ! in the interpolation of
+                  Qweight(3)=cff*Qweight(3)    ! of contact points
+                  Qweight(4)=cff*Qweight(4)
+                  Qweight(5)=cff*Qweight(5)
+                  Qweight(6)=cff*Qweight(6)
+                  Qweight(7)=cff*Qweight(7)
+                  Qweight(8)=cff*Qweight(8)
+                  Qweight(9)=cff*Qweight(9)
+                ELSE
+                  Qweight=0.0_r8               ! All the donor grid
+                END IF                         ! corners are on land
+                QWsum_check=SUM(Qweight)
+#   ifdef DISTRIBUTE
+                QW(1,m)=Qweight(1)
+                QW(2,m)=Qweight(2)
+                QW(3,m)=Qweight(3)
+                QW(4,m)=Qweight(4)
+                QW(5,m)=Qweight(5)
+                QW(6,m)=Qweight(6)
+                QW(7,m)=Qweight(7)
+                QW(8,m)=Qweight(8)
+                QW(9,m)=Qweight(9)
+              ELSE
+                QW(1,m)=Ucontact(cr)%Qweight(1,m)   ! we need to load
+                QW(2,m)=Ucontact(cr)%Qweight(2,m)   ! unscaled values
+                QW(3,m)=Ucontact(cr)%Qweight(3,m)   ! to facilitate
+                QW(4,m)=Ucontact(cr)%Qweight(4,m)   ! parallel reduction
+                QW(5,m)=Ucontact(cr)%Qweight(5,m)
+                QW(6,m)=Ucontact(cr)%Qweight(6,m)
+                QW(7,m)=Ucontact(cr)%Qweight(7,m)
+                QW(8,m)=Ucontact(cr)%Qweight(8,m)
+                QW(9,m)=Ucontact(cr)%Qweight(9,m)
+#   else
+                Ucontact(cr)%Qweight(1,m)=Qweight(1)
+                Ucontact(cr)%Qweight(2,m)=Qweight(2)
+                Ucontact(cr)%Qweight(3,m)=Qweight(3)
+                Ucontact(cr)%Qweight(4,m)=Qweight(4)
+                Ucontact(cr)%Qweight(5,m)=Qweight(5)
+                Ucontact(cr)%Qweight(6,m)=Qweight(6)
+                Ucontact(cr)%Qweight(7,m)=Qweight(7)
+                Ucontact(cr)%Qweight(8,m)=Qweight(8)
+                Ucontact(cr)%Qweight(9,m)=Qweight(9)
+#   endif
+              END IF
+#  endif
+            END IF
+          END DO
+
+#  ifdef DISTRIBUTE
+!
+!  Exchange data between all parallel nodes.
+!
+          CALL mp_assemble (dg, model, Lpoints, spv, LW)
+          IF (exit_flag.ne.NoError) RETURN
+
+#   ifdef QUADRATIC_WEIGHTS
+          CALL mp_assemble (dg, model, Qpoints, spv, QW)
+          IF (exit_flag.ne.NoError) RETURN
+#   endif
+!
+!  Load exchanged weights.
+!
+          Ucontact(cr)%Lweight(1:4,1:NpointsU)=LW(1:4,1:NpointsU)
+#   ifdef QUADRATIC_WEIGHTS
+          Ucontact(cr)%Qweight(1:9,1:NpointsU)=QW(1:9,1:NpointsU)
+#   endif
+!
+!  Deallocate local work arrays.
+!
+          IF (allocated(LW)) THEN
+            deallocate (LW)
+          END IF
+
+#   ifdef QUADRATIC_WEIGHTS
+          IF (allocated(QW)) THEN
+            deallocate (QW)
+          END IF
+#   endif
+#  endif
+!
+!-----------------------------------------------------------------------
+!  Scale interpolation weigths for V-contact points.
+!-----------------------------------------------------------------------
+!
+          NpointsV=Vcontact(cr)%Npoints
+
+#  ifdef DISTRIBUTE
+!
+!  If distributed-memory, allocate and initialize working arrays
+!  with special value (zero) to facilitate the global reduction
+!  when collecting data between all nodes.
+!
+          Lpoints=4*NpointsV
+          IF (.not.allocated(LW)) THEN
+            allocate ( LW(4,NpointsV) )
+          END IF
+          LW=spv
+
+#   ifdef QUADRATIC_WEIGHTS
+          Lpoints=9*NpointsV
+          IF (.not.allocated(QW)) THEN
+            allocate ( QW(9,NpointsV) )
+          END IF
+          QW=spv
+#   endif
+#  endif
+!
+!  Scale interpolation weights.
+!
+          DO m=1,NpointsV
+            Idg  =Vcontact(cr)%Idg(m)
+            Idgp1=MIN(Idg+1, BOUNDS(dg)%UBi(-1))
+            Jdg  =Vcontact(cr)%Jdg(m)
+            Jdgp1=MIN(Jdg+1, BOUNDS(dg)%UBj(-1))
+            IF (((Istr.le.Idg).and.(Idg.le.Iend)).and.                  &
+     &          ((Jstr.le.Jdg).and.(Jdg.le.Jend))) THEN
+!
+!  Linear interpolation weights.
+!
+              MaskLWsum=GRID(dg)%vmask_full(Idg  ,Jdg  )+               &
+     &                  GRID(dg)%vmask_full(Idgp1,Jdg  )+               &
+     &                  GRID(dg)%vmask_full(Idgp1,Jdgp1)+               &
+     &                  GRID(dg)%vmask_full(Idg  ,Jdgp1)
+              IF (MaskLWsum.lt.4) THEN
+#  ifdef WET_DRY
+                Lweight(1)=Vcontact(cr)%LweightUnmasked(1,m)*           &
+     &                     GRID(dg)%vmask_full(Idg  ,Jdg  )
+                Lweight(2)=Vcontact(cr)%LweightUnmasked(2,m)*           &
+     &                     GRID(dg)%vmask_full(Idgp1,Jdg  )
+                Lweight(3)=Vcontact(cr)%LweightUnmasked(3,m)*           &
+     &                     GRID(dg)%vmask_full(Idgp1,Jdgp1)
+                Lweight(4)=Vcontact(cr)%LweightUnmasked(4,m)*           &
+     &                     GRID(dg)%vmask_full(Idg  ,Jdgp1)
+#  else
+                Lweight(1)=Vcontact(cr)%Lweight(1,m)*                   &
+     &                     GRID(dg)%vmask_full(Idg  ,Jdg  )
+                Lweight(2)=Vcontact(cr)%Lweight(2,m)*                   &
+     &                     GRID(dg)%vmask_full(Idgp1,Jdg  )
+                Lweight(3)=Vcontact(cr)%Lweight(3,m)*                   &
+     &                     GRID(dg)%vmask_full(Idgp1,Jdgp1)
+                Lweight(4)=Vcontact(cr)%Lweight(4,m)*                   &
+     &                     GRID(dg)%vmask_full(Idg  ,Jdgp1)
+#  endif
+                LWsum=SUM(Lweight)
+                IF (LWsum.gt.0) THEN
+                  cff=1.0_r8/LWsum
+                  Lweight(1)=cff*Lweight(1)    ! using only water points
+                  Lweight(2)=cff*Lweight(2)    ! in the interpolation of
+                  Lweight(3)=cff*Lweight(3)    ! of contact points
+                  Lweight(4)=cff*Lweight(4)
+                ELSE
+                  Lweight=0.0_r8               ! All the donor grid
+                END IF                         ! corners are on land
+                LWsum_check=SUM(Lweight)
+#  ifdef DISTRIBUTE
+                LW(1,m)=Lweight(1)
+                LW(2,m)=Lweight(2)
+                LW(3,m)=Lweight(3)
+                LW(4,m)=Lweight(4)
+              ELSE
+                LW(1,m)=Vcontact(cr)%Lweight(1,m)   ! we need to load
+                LW(2,m)=Vcontact(cr)%Lweight(2,m)   ! unscaled values
+                LW(3,m)=Vcontact(cr)%Lweight(3,m)   ! to facilitate
+                LW(4,m)=Vcontact(cr)%Lweight(4,m)   ! parallel reduction
+#  else
+                Vcontact(cr)%Lweight(1,m)=Lweight(1)
+                Vcontact(cr)%Lweight(2,m)=Lweight(2)
+                Vcontact(cr)%Lweight(3,m)=Lweight(3)
+                Vcontact(cr)%Lweight(4,m)=Lweight(4)
+#  endif
+              END IF
+
+#  ifdef QUADRATIC_WEIGHTS
+!
+!  Quadratic interpolation weights.
+!
+              MaskQWsum=GRID(dg)%vmask_full(Idg-1, Jdg-1)+              &
+     &                  GRID(dg)%vmask_full(Idg  , Jdg-1)+              &
+     &                  GRID(dg)%vmask_full(Idgp1, Jdg-1)+              &
+     &                  GRID(dg)%vmask_full(Idg-1, Jdg  )+              &
+     &                  GRID(dg)%vmask_full(Idg  , Jdg  )+              &
+     &                  GRID(dg)%vmask_full(Idgp1, Jdg  )+              &
+     &                  GRID(dg)%vmask_full(Idg-1, Jdgp1)+              &
+     &                  GRID(dg)%vmask_full(Idg  , Jdgp1)+              &
+     &                  GRID(dg)%vmask_full(Idgp1, Jdgp1)
+              IF (MaskQWsum.lt.9) THEN
+#   ifdef WET_DRY
+                Qweight(1)=Vcontact(cr)%QweightUnmasked(1,m)*           &
+     &                     GRID(dg)%vmask_full(Idg-1,Jdg-1)
+                Qweight(2)=Vcontact(cr)%QweightUnmasked(2,m)*           &
+     &                     GRID(dg)%vmask_full(Idg  ,Jdg-1)
+                Qweight(3)=Vcontact(cr)%QweightUnmasked(3,m)*           &
+     &                     GRID(dg)%vmask_full(Idgp1,Jdg-1)
+                Qweight(4)=Vcontact(cr)%QweightUnmasked(4,m)*           &
+     &                     GRID(dg)%vmask_full(Idg-1,Jdg  )
+                Qweight(5)=Vcontact(cr)%QweightUnmasked(5,m)*           &
+     &                     GRID(dg)%vmask_full(Idg  ,Jdg  )
+                Qweight(6)=Vcontact(cr)%QweightUnmasked(6,m)*           &
+     &                     GRID(dg)%vmask_full(Idgp1,Jdg  )
+                Qweight(7)=Vcontact(cr)%QweightUnmasked(7,m)*           &
+     &                     GRID(dg)%vmask_full(Idg-1,Jdgp1)
+                Qweight(8)=Vcontact(cr)%QweightUnmasked(8,m)*           &
+     &                     GRID(dg)%vmask_full(Idg  ,Jdgp1)
+                Qweight(9)=Vcontact(cr)%QweightUnmasked(9,m)*           &
+     &                     GRID(dg)%vmask_full(Idgp1,Jdgp1)
+#   else
+                Qweight(1)=Vcontact(cr)%Qweight(1,m)*                   &
+     &                     GRID(dg)%vmask_full(Idg-1,Jdg-1)
+                Qweight(2)=Vcontact(cr)%Qweight(2,m)*                   &
+     &                     GRID(dg)%vmask_full(Idg  ,Jdg-1)
+                Qweight(3)=Vcontact(cr)%Qweight(3,m)*                   &
+     &                     GRID(dg)%vmask_full(Idgp1,Jdg-1)
+                Qweight(4)=Vcontact(cr)%Qweight(4,m)*                   &
+     &                     GRID(dg)%vmask_full(Idg-1,Jdg  )
+                Qweight(5)=Vcontact(cr)%Qweight(5,m)*                   &
+     &                     GRID(dg)%vmask_full(Idg  ,Jdg  )
+                Qweight(6)=Vcontact(cr)%Qweight(6,m)*                   &
+     &                     GRID(dg)%vmask_full(Idgp1,Jdg  )
+                Qweight(7)=Vcontact(cr)%Qweight(7,m)*                   &
+     &                     GRID(dg)%vmask_full(Idg-1,Jdgp1)
+                Qweight(8)=Vcontact(cr)%Qweight(8,m)*                   &
+     &                     GRID(dg)%vmask_full(Idg  ,Jdgp1)
+                Qweight(9)=Vcontact(cr)%Qweight(9,m)*                   &
+     &                     GRID(dg)%vmask_full(Idgp1,Jdgp1)
+#   endif
+                QWsum=SUM(Qweight)
+                IF (QWsum.gt.0) THEN
+                  cff=1.0_r8/QWsum
+                  Qweight(1)=cff*Qweight(1)    ! using only water points
+                  Qweight(2)=cff*Qweight(2)    ! in the interpolation of
+                  Qweight(3)=cff*Qweight(3)    ! of contact points
+                  Qweight(4)=cff*Qweight(4)
+                  Qweight(5)=cff*Qweight(5)
+                  Qweight(6)=cff*Qweight(6)
+                  Qweight(7)=cff*Qweight(7)
+                  Qweight(8)=cff*Qweight(8)
+                  Qweight(9)=cff*Qweight(9)
+                ELSE
+                  Qweight=0.0_r8               ! All the donor grid
+                END IF                         ! corners are on land
+                END IF
+                QWsum_check=SUM(Qweight)
+#   ifdef DISTRIBUTE
+                QW(1,m)=Qweight(1)
+                QW(2,m)=Qweight(2)
+                QW(3,m)=Qweight(3)
+                QW(4,m)=Qweight(4)
+                QW(5,m)=Qweight(5)
+                QW(6,m)=Qweight(6)
+                QW(7,m)=Qweight(7)
+                QW(8,m)=Qweight(8)
+                QW(9,m)=Qweight(9)
+              ELSE
+                QW(1,m)=Vcontact(cr)%Qweight(1,m)   ! we need to load
+                QW(2,m)=Vcontact(cr)%Qweight(2,m)   ! unscaled values
+                QW(3,m)=Vcontact(cr)%Qweight(3,m)   ! to facilitate
+                QW(4,m)=Vcontact(cr)%Qweight(4,m)   ! parallel reduction
+                QW(5,m)=Vcontact(cr)%Qweight(5,m)
+                QW(6,m)=Vcontact(cr)%Qweight(6,m)
+                QW(7,m)=Vcontact(cr)%Qweight(7,m)
+                QW(8,m)=Vcontact(cr)%Qweight(8,m)
+                QW(9,m)=Vcontact(cr)%Qweight(9,m)
+#   else
+                Vcontact(cr)%Qweight(1,m)=Qweight(1)
+                Vcontact(cr)%Qweight(2,m)=Qweight(2)
+                Vcontact(cr)%Qweight(3,m)=Qweight(3)
+                Vcontact(cr)%Qweight(4,m)=Qweight(4)
+                Vcontact(cr)%Qweight(5,m)=Qweight(5)
+                Vcontact(cr)%Qweight(6,m)=Qweight(6)
+                Vcontact(cr)%Qweight(7,m)=Qweight(7)
+                Vcontact(cr)%Qweight(8,m)=Qweight(8)
+                Vcontact(cr)%Qweight(9,m)=Qweight(9)
+#   endif
+              END IF
+#  endif
+            END IF
+          END DO
+
+#  ifdef DISTRIBUTE
+!
+!  Exchange data between all parallel nodes.
+!
+          CALL mp_assemble (dg, model, Lpoints, spv, LW)
+          IF (exit_flag.ne.NoError) RETURN
+
+#   ifdef QUADRATIC_WEIGHTS
+          CALL mp_assemble (dg, model, Qpoints, spv, QW)
+          IF (exit_flag.ne.NoError) RETURN
+#   endif
+!
+!  Load exchanged weights.
+!
+          Vcontact(cr)%Lweight(1:4,1:NpointsV)=LW(1:4,1:NpointsV)
+#   ifdef QUADRATIC_WEIGHTS
+          Vcontact(cr)%Qweight(1:9,1:NpointsV)=QW(1:9,1:NpointsV)
+#   endif
+!
+!  Deallocate local work arrays.
+!
+          IF (allocated(LW)) THEN
+            deallocate (LW)
+          END IF
+
+#   ifdef QUADRATIC_WEIGHTS
+          IF (allocated(QW)) THEN
+            deallocate (QW)
+          END IF
+#   endif
+#  endif
+
+        END IF SCALE_WEIGHTS
+      END DO
+
+      RETURN
+      END SUBROUTINE mask_hweights
+# endif
+!
       SUBROUTINE get_composite (ng, model, isection, tile)
 !
 !=======================================================================
@@ -947,10 +2195,11 @@
       USE mod_param
       USE mod_grid
       USE mod_nesting
+      USE mod_scalars
 
 #  ifdef DISTRIBUTE
 !
-      USE distribute_mod, ONLY : mp_collect
+      USE distribute_mod, ONLY : mp_assemble
 #  endif
 !
 !  Imported variable declarations.
@@ -994,7 +2243,7 @@
           END IF
         END DO
 !
-!  Extract grid spacing at U-points.
+!  Extract grid spacing at V-points.
 !
         Istr=BOUNDS(dg) % IstrT(tile)
         Iend=BOUNDS(dg) % IendT(tile)
@@ -1017,10 +2266,11 @@
 !
 !  Exchange data between all nodes.
 !
-        CALL mp_collect (dg, model, NpointsU, spv,                      &
-     &                   REFINED(cr) % on_u)
-        CALL mp_collect (dg, model, NpointsV, spv,                      &
-     &                   REFINED(cr) % om_v)
+        CALL mp_assemble (dg, model, NpointsU, spv, REFINED(cr) % on_u)
+        IF (exit_flag.ne.NoError) RETURN
+
+        CALL mp_assemble (dg, model, NpointsV, spv, REFINED(cr) % om_v)
+        IF (exit_flag.ne.NoError) RETURN
 #  endif
 
       END DO
@@ -1039,6 +2289,14 @@
 !  The extracted data is stored in two-time rolling records which      !
 !  are needed for the space and time interpolation in 'put_refine'.    !
 !                                                                      !
+!  Except for initialization, this routine is called at the bottom     !
+!  of the donor grid time step so all the values are updated for the   !
+!  time(dg)+dt(dg). That is, in 2D applications it is called after     !
+!  "step2d" corrector step and in 3D applications it is called after   !
+!  "step3d_t". This is done to have the coarser grid snapshots at      !
+!  time(dg) and time(dg)+dt(dg) to bound the interpolation of the      !
+!  finer grid contact points.                                          !
+!                                                                      !
 !  On Input:                                                           !
 !                                                                      !
 !     ng         Refinement grid number (integer)                      !
@@ -1052,6 +2310,7 @@
 !=======================================================================
 !
       USE mod_param
+      USE mod_parallel
       USE mod_coupling
       USE mod_ncparam
       USE mod_nesting
@@ -1065,7 +2324,10 @@
 !
 !  Local variable declarations.
 !
-      integer :: Tindex2d, cr, dg, ir, rg, t1, t2
+# ifdef NESTING_DEBUG
+      logical, save :: first = .TRUE.
+# endif
+      integer :: Tindex2d, cr, dg, ir, rg, tnew
 # ifdef SOLVE3D
       integer :: Tindex3d, itrc
 # endif
@@ -1086,8 +2348,7 @@
 !
 !  Process only contact region data for requested nested grid "ng".
 !
-        IF (((rg.eq.ng).and.(RefineScale(rg).gt.0)).or.                 &
-     &      (RefineDonor(rg).eq.ng)) THEN
+        IF ((dg.eq.CoarserDonor(rg)).and.(dg.eq.ng)) THEN
 !
 !  Set donor grid lower and upper array indices.
 !
@@ -1096,25 +2357,58 @@
           LBj=BOUNDS(dg)%LBj(tile)
           UBj=BOUNDS(dg)%UBj(tile)
 !
-!  Set rolling time indices. The contact data is stored in two time
-!  levels.
+!  Update rolling time indices. The contact data is stored in two time
+!  levels.  We need a special case for ROMS initialization in "main2d"
+!  or "main3d" after the processing "ini_fields".  Notice that a dt(dg)
+!  is added because this routine is called after the end of the time
+!  step.
 !
-          IF (iic(dg).eq.ntstart(dg)) THEN
-            IF (ng.eq.dg) THEN
-              t1=1                     ! coarser grid initial conditions
-            ELSE
-              t1=2                     ! after coarser grid first step
-            END IF
+          IF (RollingIndex(cr).eq.0) THEN
+            tnew=1                                  ! ROMS
+            RollingIndex(cr)=tnew                   ! initialization
+            RollingTime(tnew,cr)=time(dg)           ! step
           ELSE
-# ifdef SOLVE3D
-            t1=nnew(dg)
-# else
-            t1=knew(dg)
-# endif
+            tnew=3-RollingIndex(cr)
+            RollingIndex(cr)=tnew
+            RollingTime(tnew,cr)=time(dg)+dt(dg)
           END IF
-          Tindex2d=kstp(dg)
+!
+!  Set donor grid time index to process. In 3D applications, the 2D
+!  record index to use can be either 1 or 2 since both ubar(:,:,1:2)
+!  and vbar(:,:,1:2) are set to its time-averaged values in "step3d_uv".
+!  That is, we can use Tindex2d=kstp(dg) or Tindex2d=knew(dg). However,
+!  in 2D applications we need to use Tindex2d=knew(dg).
+!
+          Tindex2d=knew(dg)
 # ifdef SOLVE3D
           Tindex3d=nnew(dg)
+# endif
+
+# ifdef NESTING_DEBUG
+!
+!  If debugging, write information into Fortran unit 100 to check the
+!  logic of processing donor grid data.
+!
+          IF (DOMAIN(ng)%SouthWest_Test(tile)) THEN
+            IF (Master) THEN
+              IF (first) THEN
+                first=.FALSE.
+                WRITE (100,10)
+              END IF
+              WRITE (100,20) ng, cr, dg, rg, iic(dg), iic(rg),          &
+     &                       3-tnew, tnew, Tindex2d, Tindex3d,          &
+     &                       INT(RollingTime(3-tnew,cr)),               &
+     &                       INT(RollingTime(tnew,cr)),                 &
+     &                       INT(time(ng))
+ 10           FORMAT (2x,'ng',2x,'cr',2x,'dg',2x,'rg',5x,'iic',4x,'iic',&
+     &                3x,'told',3x,'tnew',2x,'Tindex',1x,'Tindex',      &
+     &                2x,'time',3x,'time',3x,'time',/,20x,'(dg)',       &
+     &                3x,'(rg)',18x,'2D',5x,'3D',4x,'told',3x,'tnew',   &
+     &                3x,'(ng)',/)
+ 20           FORMAT (4i4,9i7)
+              CALL my_flush (100)
+            END IF
+          END IF
 # endif
 !
 !  Extract free-surface.
@@ -1124,7 +2418,7 @@
      &                        cr, Rcontact(cr)%Npoints, Rcontact,       &
      &                        LBi, UBi, LBj, UBj,                       &
      &                        COUPLING(dg) % Zt_avg1,                   &
-     &                        REFINED(cr) % zeta(:,:,t1))
+     &                        REFINED(cr) % zeta(:,:,tnew))
 !
 !  Extract 2D momentum components (ubar, vbar).
 !
@@ -1133,14 +2427,14 @@
      &                        cr, Ucontact(cr)%Npoints, Ucontact,       &
      &                        LBi, UBi, LBj, UBj,                       &
      &                        OCEAN(dg) % ubar(:,:,Tindex2d),           &
-     &                        REFINED(cr) % ubar(:,:,t1))
+     &                        REFINED(cr) % ubar(:,:,tnew))
 
           CALL get_contact2d (dg, model, tile,                          &
      &                        v2dvar, Vname(1,idVbar),                  &
      &                        cr, Vcontact(cr)%Npoints, Vcontact,       &
      &                        LBi, UBi, LBj, UBj,                       &
      &                        OCEAN(dg) % vbar(:,:,Tindex2d),           &
-     &                        REFINED(cr) % vbar(:,:,t1))
+     &                        REFINED(cr) % vbar(:,:,tnew))
 
 # ifdef SOLVE3D
 !
@@ -1148,19 +2442,19 @@
 !  only the values at the finer grid physical boundary to impose mass
 !  flux conservation in routine "put_refine2d".
 !
-          CALL get_contact2d (dg, model, tile,                          &
-     &                        u2dvar, 'DU_avg2',                        &
-     &                        cr, Ucontact(cr)%Npoints, Ucontact,       &
-     &                        LBi, UBi, LBj, UBj,                       &
-     &                        COUPLING(dg) % DU_avg2,                   &
-     &                        REFINED(cr) % DU_avg2(:,:,t1))
+          CALL get_persisted2d (dg, rg, model, tile,                    &
+     &                          u2dvar, 'DU_avg2',                      &
+     &                          cr, Ucontact(cr)%Npoints, Ucontact,     &
+     &                          LBi, UBi, LBj, UBj,                     &
+     &                          COUPLING(dg) % DU_avg2,                 &
+     &                          REFINED(cr) % DU_avg2(:,:,tnew))
 
-          CALL get_contact2d (dg, model, tile,                          &
-     &                        v2dvar, 'DV_avg2',                        &
-     &                        cr, Vcontact(cr)%Npoints, Vcontact,       &
-     &                        LBi, UBi, LBj, UBj,                       &
-     &                        COUPLING(dg) % DV_avg2,                   &
-     &                        REFINED(cr) % DV_avg2(:,:,t1))
+          CALL get_persisted2d (dg, rg, model, tile,                    &
+     &                          v2dvar, 'DV_avg2',                      &
+     &                          cr, Vcontact(cr)%Npoints, Vcontact,     &
+     &                          LBi, UBi, LBj, UBj,                     &
+     &                          COUPLING(dg) % DV_avg2,                 &
+     &                          REFINED(cr) % DV_avg2(:,:,tnew))
 !
 !  Tracer-type variables.
 !
@@ -1170,7 +2464,7 @@
      &                          cr, Rcontact(cr)%Npoints, Rcontact,     &
      &                          LBi, UBi, LBj, UBj, 1, N(dg),           &
      &                          OCEAN(dg) % t(:,:,:,Tindex3d,itrc),     &
-     &                          REFINED(cr) % t(:,:,:,t1,itrc))
+     &                          REFINED(cr) % t(:,:,:,tnew,itrc))
           END DO
 !
 !  Extract 3D momentum components (u, v).
@@ -1180,14 +2474,14 @@
      &                        cr, Ucontact(cr)%Npoints, Ucontact,       &
      &                        LBi, UBi, LBj, UBj, 1, N(dg),             &
      &                        OCEAN(dg) % u(:,:,:,Tindex3d),            &
-     &                        REFINED(cr) % u(:,:,:,t1))
+     &                        REFINED(cr) % u(:,:,:,tnew))
 
           CALL get_contact3d (dg, model, tile,                          &
      &                        v3dvar, Vname(1,idVvel),                  &
      &                        cr, Vcontact(cr)%Npoints, Vcontact,       &
      &                        LBi, UBi, LBj, UBj, 1, N(dg),             &
      &                        OCEAN(dg) % v(:,:,:,Tindex3d),            &
-     &                        REFINED(cr) % v(:,:,:,t1))
+     &                        REFINED(cr) % v(:,:,:,tnew))
 # endif
         END IF
       END DO
@@ -1552,18 +2846,21 @@
       RETURN
       END SUBROUTINE put_composite
 !
-      SUBROUTINE put_refine (ng, model, tile)
+      SUBROUTINE put_refine (ng, model, tile, LputFsur)
 !
 !=======================================================================
 !                                                                      !
 !  This routine interpolates refinement grid contact points from donor !
-!  grid data extracted in routine 'get_refine'.                        !
+!  grid data extracted in routine 'get_refine'. Notice that because of !
+!  shared-memory parallelism,  the free-surface is processed first and !
+!  in a different parallel region.
 !                                                                      !
 !  On Input:                                                           !
 !                                                                      !
 !     ng         Refinement grid number (integer)                      !
 !     model      Calling model identifier (integer)                    !
 !     tile       Domain tile partition (integer)                       !
+!     LputFsur   Switch to process or not free-surface (logical)       !
 !                                                                      !
 !=======================================================================
 !
@@ -1579,6 +2876,7 @@
 !
 !  Imported variable declarations.
 !
+      logical, intent(in) :: LputFsur
       integer, intent(in) :: ng, model, tile
 !
 !  Local variable declarations.
@@ -1602,9 +2900,11 @@
         dg=Rcontact(cr)%donor_grid
         rg=Rcontact(cr)%receiver_grid
 !
-!  Process only contact region data for requested nested grid "ng".
+!  Process only contact region data for requested nested grid "ng", if
+!  donor grid is coarser than receiver grid.  That is, we are only
+!  processing external contact points areas.
 !
-        IF (rg.eq.ng) THEN
+        IF ((rg.eq.ng).and.(DXmax(dg).gt.DXmax(rg))) THEN
 !
 !  Set receiver grid lower and upper array indices.
 !
@@ -1613,19 +2913,26 @@
           LBj=BOUNDS(rg)%LBj(tile)
           UBj=BOUNDS(rg)%UBj(tile)
 !
-!  Fill 2D state variables contact points.
+!  Fill free-surface separatelly.
 !
-          CALL put_refine2d (ng, dg, cr, model, tile,                   &
-     &                       LBi, UBi, LBj, UBj)
+          IF (LputFsur) THEN
+            CALL put_refine2d (ng, dg, cr, model, tile, LputFsur,       &
+     &                         LBi, UBi, LBj, UBj)
+          ELSE
+!
+!  Fill other 2D state variables (like momentum) contact points.
+!
+            CALL put_refine2d (ng, dg, cr, model, tile, LputFsur,       &
+     &                         LBi, UBi, LBj, UBj)
 
 # ifdef SOLVE3D
 !
 !  Fill 3D state variables contact points.
 !
-          CALL put_refine3d (ng, dg, cr, model, tile,                   &
-     &                       LBi, UBi, LBj, UBj)
+            CALL put_refine3d (ng, dg, cr, model, tile,                 &
+     &                         LBi, UBi, LBj, UBj)
 # endif
-
+          END IF
         END IF
       END DO
 
@@ -1721,11 +3028,11 @@
 !
 !  Local variable declarations.
 !
-      integer :: Iedge, Ibc, Ibc_min, Ibf, Io
-      integer :: Jedge, Jbc, Jbc_min, Jbf, Jo
+      integer :: Iedge, Ibc, Ibc_min, Ibc_max, Ibf, Io
+      integer :: Jedge, Jbc, Jbc_min, Jbc_max, Jbf, Jo
       integer :: Istr, Iend, Jstr, Jend
       integer :: Istrm2, Iendp2, Jstrm2, Jendp2
-      integer :: i, ic, isum, itrc, j, jsum, k, half, m
+      integer :: Tindex, i, ic, isum, itrc, j, jsum, k, half
       integer :: cr, dg, dgcr, rg, rgcr
 
       real(r8) :: TFC, TFF, Tvalue, cff
@@ -1780,6 +3087,13 @@
       Io=half+1
       Jo=half+1
 !
+!  Set coarse grid tracer index to correct. Since the exchange of data
+!  is done at the bottom of main3d, we need to use the newest time
+!  index, I think.
+!
+      Tindex=nstp(ngc)                ! HGA: Why this index is stable?
+!!    Tindex=nnew(ngc)                ! Gets a lot of noise at boundary
+!
 !=======================================================================
 !  Compute vertically integrated horizontal advective tracer flux for
 !  coarser at the finer grid physical boundary.  Then, correct coarser
@@ -1799,14 +3113,13 @@
 !  Finer grid western boundary.
 !-----------------------------------------------------------------------
 !
-!!      Jbc_min=BRY_CONTACT(iwest,rgcr)%Jbmin
-        Jbc_min=BRY_CONTACT(iwest,rgcr)%Jbmin+1
-        DO j=Jstr,Jend
-          m=BRY_CONTACT(iwest,rgcr)%C2Bindex(j)
-          Ibc=BRY_CONTACT(iwest,rgcr)%Ib(j)
-          Jbc=BRY_CONTACT(iwest,rgcr)%Jb(j)
-          IF (((Istr.le.Ibc).and.(Ibc.le.Iend)).and.                    &
-     &        ((Jstr.le.Jbc).and.(Jbc.le.Jend))) THEN
+        Ibc=I_left(ngf)
+        Jbc_min=J_bottom(ngf)
+        Jbc_max=J_top(ngf)-1              ! interior points, no top
+!                                           left corner
+        DO Jbc=Jstr,Jend
+          IF (((Istr.le.Ibc-1).and.(Ibc-1.le.Iend)).and.                &
+     &        ((Jbc_min.le.Jbc).and.(Jbc.le.Jbc_max))) THEN
 !
 !  Sum vertically coarse grid horizontal advective tracer flux,
 !  Hz*u*T/n, from last time-step.
@@ -1837,7 +3150,7 @@
      &          Dinv(Ibc-1,Jbc)
             DO k=1,N(ngc)
               Tvalue=MAX(0.0_r8,                                        &
-     &                   OCEAN(ngc)%t(Ibc-1,Jbc,k,nstp(ngc),itrc)-      &
+     &                   OCEAN(ngc)%t(Ibc-1,Jbc,k,Tindex,itrc)-         &
      &                   cff*(TFF-TFC))
               IF (LtracerCLM(itrc,ngc).and.LnudgeTCLM(itrc,ngc)) THEN
                 Tvalue=Tvalue+                                          &
@@ -1847,7 +3160,7 @@
 #  ifdef MASKING
               Tvalue=Tvalue*GRID(ngc)%rmask(Ibc-1,Jbc)
 #  endif
-              OCEAN(ngc)%t(Ibc-1,Jbc,k,nstp(ngc),itrc)=Tvalue
+              OCEAN(ngc)%t(Ibc-1,Jbc,k,Tindex,itrc)=Tvalue
             END DO
           END IF
         END DO
@@ -1856,14 +3169,13 @@
 !  Finer grid eastern boundary.
 !-----------------------------------------------------------------------
 !
-!!      Jbc_min=BRY_CONTACT(ieast,rgcr)%Jbmin
-        Jbc_min=BRY_CONTACT(ieast,rgcr)%Jbmin+1
-        DO j=Jstr,Jend
-          m=BRY_CONTACT(ieast,rgcr)%C2Bindex(j)
-          Ibc=BRY_CONTACT(ieast,rgcr)%Ib(j)
-          Jbc=BRY_CONTACT(ieast,rgcr)%Jb(j)
+        Ibc=I_right(ngf)
+        Jbc_min=J_bottom(ngf)
+        Jbc_max=J_top(ngf)-1              ! interior points, no top
+!                                           right corner
+        DO Jbc=Jstr,Jend
           IF (((Istr.le.Ibc).and.(Ibc.le.Iend)).and.                    &
-     &        ((Jstr.le.Jbc).and.(Jbc.le.Jend))) THEN
+     &        ((Jbc_min.le.Jbc).and.(Jbc.le.Jbc_max))) THEN
 !
 !  Sum vertically coarse grid horizontal advective tracer flux,
 !  Hz*u*T/n, from last time-step.
@@ -1887,14 +3199,14 @@
               END DO
             END DO
 !
-!  Correct coarse grid tracer at the finer grid western boundary.
+!  Correct coarse grid tracer at the finer grid eastern boundary.
 !
             cff=GRID(ngc)%pm(Ibc,Jbc)*                                  &
      &          GRID(ngc)%pn(Ibc,Jbc)*                                  &
      &          Dinv(Ibc,Jbc)
             DO k=1,N(ngc)
               Tvalue=MAX(0.0_r8,                                        &
-     &                   OCEAN(ngc)%t(Ibc,Jbc,k,nstp(ngc),itrc)-        &
+     &                   OCEAN(ngc)%t(Ibc,Jbc,k,Tindex,itrc)-           &
      &                   cff*(TFF-TFC))
               IF (LtracerCLM(itrc,ngc).and.LnudgeTCLM(itrc,ngc)) THEN
                 Tvalue=Tvalue+                                          &
@@ -1904,7 +3216,7 @@
 #  ifdef MASKING
               Tvalue=Tvalue*GRID(ngc)%rmask(Ibc,Jbc)
 #  endif
-              OCEAN(ngc)%t(Ibc,Jbc,k,nstp(ngc),itrc)=Tvalue
+              OCEAN(ngc)%t(Ibc,Jbc,k,Tindex,itrc)=Tvalue
             END DO
           END IF
         END DO
@@ -1913,14 +3225,13 @@
 !  Finer grid southern boundary.
 !-----------------------------------------------------------------------
 !
-!!      Ibc_min=BRY_CONTACT(isouth,rgcr)%Ibmin
-        Ibc_min=BRY_CONTACT(isouth,rgcr)%Ibmin+1
-        DO i=Istr,Iend
-          m=BRY_CONTACT(isouth,rgcr)%C2Bindex(i)
-          Ibc=BRY_CONTACT(isouth,rgcr)%Ib(i)
-          Jbc=BRY_CONTACT(isouth,rgcr)%Jb(i)
-          IF (((Istr.le.Ibc).and.(Ibc.le.Iend)).and.                    &
-     &        ((Jstr.le.Jbc).and.(Jbc.le.Jend))) THEN
+        Jbc=J_bottom(ngf)
+        Ibc_min=I_left(ngf)
+        Ibc_max=I_right(ngf)-1            ! interior points, no bottom
+!                                           right corner
+        DO Ibc=Istr,Iend
+          IF (((Ibc_min.le.Ibc).and.(Ibc.le.Ibc_max)).and.              &
+     &        ((Jstr.le.Jbc-1).and.(Jbc-1.le.Jend))) THEN
 !
 !  Sum vertically coarse grid horizontal advective tracer flux,
 !  Hz*v*T/m, from last time-step.
@@ -1944,14 +3255,14 @@
               END DO
             END DO
 !
-!  Correct coarse grid tracer at the finer grid western boundary.
+!  Correct coarse grid tracer at the finer grid southern boundary.
 !
             cff=GRID(ngc)%pm(Ibc,Jbc-1)*                                &
      &          GRID(ngc)%pn(Ibc,Jbc-1)*                                &
      &          Dinv(Ibc,Jbc-1)
             DO k=1,N(ngc)
               Tvalue=MAX(0.0_r8,                                        &
-     &                   OCEAN(ngc)%t(Ibc,Jbc-1,k,nstp(ngc),itrc)-      &
+     &                   OCEAN(ngc)%t(Ibc,Jbc-1,k,Tindex,itrc)-         &
      &                   cff*(TFF-TFC))
               IF (LtracerCLM(itrc,ngc).and.LnudgeTCLM(itrc,ngc)) THEN
                 Tvalue=Tvalue+                                          &
@@ -1961,7 +3272,7 @@
 #  ifdef MASKING
               Tvalue=Tvalue*GRID(ngc)%rmask(Ibc,Jbc-1)
 #  endif
-              OCEAN(ngc)%t(Ibc,Jbc-1,k,nstp(ngc),itrc)=Tvalue
+              OCEAN(ngc)%t(Ibc,Jbc-1,k,Tindex,itrc)=Tvalue
             END DO
           END IF
         END DO
@@ -1970,13 +3281,12 @@
 !  Finer grid northern boundary.
 !-----------------------------------------------------------------------
 !
-!!      Ibc_min=BRY_CONTACT(inorth,rgcr)%Ibmin
-        Ibc_min=BRY_CONTACT(inorth,rgcr)%Ibmin+1
-        DO i=Istr,Iend
-          m=BRY_CONTACT(inorth,rgcr)%C2Bindex(i)
-          Ibc=BRY_CONTACT(inorth,rgcr)%Ib(i)
-          Jbc=BRY_CONTACT(inorth,rgcr)%Jb(i)
-          IF (((Istr.le.Ibc).and.(Ibc.le.Iend)).and.                    &
+        Jbc=J_top(ngf)
+        Ibc_min=I_left(ngf)
+        Ibc_max=I_right(ngf)-1            ! interior points, no top
+!                                           right corner
+        DO Ibc=Istr,Iend
+          IF (((Ibc_min.le.Ibc).and.(Ibc.le.Ibc_max)).and.              &
      &        ((Jstr.le.Jbc).and.(Jbc.le.Jend))) THEN
 !
 !  Sum vertically coarse grid horizontal advective tracer flux,
@@ -2001,14 +3311,14 @@
               END DO
             END DO
 !
-!  Correct coarse grid tracer at the finer grid western boundary.
+!  Correct coarse grid tracer at the finer grid northern boundary.
 !
             cff=GRID(ngc)%pm(Ibc,Jbc)*                                  &
      &          GRID(ngc)%pn(Ibc,Jbc)*                                  &
      &          Dinv(Ibc,Jbc)
             DO k=1,N(ngc)
               Tvalue=MAX(0.0_r8,                                        &
-     &                   OCEAN(ngc)%t(Ibc,Jbc,k,nstp(ngc),itrc)-        &
+     &                   OCEAN(ngc)%t(Ibc,Jbc,k,Tindex,itrc)-           &
      &                   cff*(TFF-TFC))
               IF (LtracerCLM(itrc,ngc).and.LnudgeTCLM(itrc,ngc)) THEN
                 Tvalue=Tvalue+                                          &
@@ -2018,7 +3328,7 @@
 #  ifdef MASKING
               Tvalue=Tvalue*GRID(ngc)%rmask(Ibc,Jbc)
 #  endif
-              OCEAN(ngc)%t(Ibc,Jbc,k,nstp(ngc),itrc)=Tvalue
+              OCEAN(ngc)%t(Ibc,Jbc,k,Tindex,itrc)=Tvalue
             END DO
           END IF
         END DO
@@ -2035,7 +3345,7 @@
      &                    1, NT(ngc),                                   &
      &                    NghostPoints,                                 &
      &                    EWperiodic(ngc), NSperiodic(ngc),             &
-     &                    OCEAN(ngc)%t(:,:,:,nstp(ngc),:))
+     &                    OCEAN(ngc)%t(:,:,:,Tindex,:))
 #  endif
 
       RETURN
@@ -2066,9 +3376,11 @@
 !=======================================================================
 !
       USE mod_param
+      USE mod_parallel
       USE mod_coupling
       USE mod_forces
       USE mod_grid
+      USE mod_iounits
       USE mod_ncparam
       USE mod_nesting
       USE mod_ocean
@@ -2093,14 +3405,16 @@
 !  Local variable declarations.
 !
       logical :: AreaAvg
+      integer :: LBiD, UBiD, LBjD, UBjD
+      integer :: LBiR, UBiR, LBjR, UBjR
+      integer :: Dindex2d, Rindex2d
+# ifdef SOLVE3D
+      integer :: Dindex3d, Rindex3d
+# endif
       integer :: cr, dg, k, rg, nrec, rec
-
 # ifdef SOLVE3D
       integer :: itrc
 # endif
-      integer :: LBiD, UBiD, LBjD, UBjD
-      integer :: LBiR, UBiR, LBjR, UBjR
-      integer :: Tindex
 !
 !-----------------------------------------------------------------------
 !  Average interior fine grid state variable data to the coarse grid
@@ -2117,9 +3431,10 @@
 !  Process contact region if the current refinement grid "ng" is the
 !  donor grid.  The coarse grid "rg" is the receiver grid and the
 !  contact structure has all the information necessary for fine to
-!  coarse coupling.
+!  coarse coupling. The donor grid size is always smaller than the
+!  receiver coarser grid.
 !
-        IF (ng.eq.dg) THEN
+        IF ((ng.eq.dg).and.(DXmax(dg).lt.DXmax(rg))) THEN
 !
 !  Set donor and receiver grids lower and upper array indices.
 !
@@ -2133,6 +3448,27 @@
           LBjR=BOUNDS(rg)%LBj(tile)
           UBjR=BOUNDS(rg)%UBj(tile)
 !
+!  Report.
+!
+          IF (DOMAIN(ng)%SouthWest_Test(tile)) THEN
+            IF (Master.and.(vtype.eq.r2dvar)) THEN
+              WRITE (stdout,10) dg, rg, cr
+  10          FORMAT (6x,'FINE2COARSE - exchanging data between grids:',&
+     &                ' dg = ',i2.2,' and rg = ',i2.2,'  at cr = ',i2.2)
+            END IF
+          END IF
+!
+!  Set state variable indices to process for donor and receiver grids.
+!  Since the exchange of data is done at the bottom of main2d/main3d,
+!  we need to use the newest time indices.
+!
+          Dindex2d=knew(dg)         ! Donor    2D variables index
+          Rindex2d=knew(rg)         ! Receiver 3D variables index
+# ifdef SOLVE3D
+          Dindex3d=nnew(dg)         ! Donor    3D variables index
+          Rindex3d=nnew(rg)         ! Receiver 3D variables index
+# endif
+!
 !-----------------------------------------------------------------------
 !  Process 2D state variables.
 !-----------------------------------------------------------------------
@@ -2141,7 +3477,7 @@
 !
 !  Free-surface.
 !
-            AreaAvg=.TRUE.
+            AreaAvg=.FALSE.
 # ifdef SOLVE3D
             CALL fine2coarse2d (rg, dg, model, tile,                    &
      &                          r2dvar, 'Zt_avg1',                      &
@@ -2154,8 +3490,8 @@
      &                          GRID(rg)%pm,                            &
      &                          GRID(rg)%pn,                            &
 #  ifdef MASKING
-     &                          GRID(dg)%rmask,                         &
-     &                          GRID(rg)%rmask,                         &
+     &                          GRID(dg)%rmask_full,                    &
+     &                          GRID(rg)%rmask_full,                    &
 #  endif
      &                          COUPLING(dg)%Zt_avg1,                   &
      &                          COUPLING(rg)%Zt_avg1)
@@ -2171,12 +3507,11 @@
      &                          GRID(rg)%pm,                            &
      &                          GRID(rg)%pn,                            &
 #  ifdef MASKING
-     &                          GRID(dg)%rmask,                         &
-     &                          GRID(rg)%rmask,                         &
+     &                          GRID(dg)%rmask_full,                    &
+     &                          GRID(rg)%rmask_full,                    &
 #  endif
-     &                          OCEAN(dg)%zeta(:,:,knew(dg)),           &
-     &                          OCEAN(rg)%zeta(:,:,1),                  &
-     &                          OCEAN(rg)%zeta(:,:,2))
+     &                          OCEAN(dg)%zeta(:,:,Dindex2d),           &
+     &                          OCEAN(rg)%zeta(:,:,Rindex2d))
 # endif
             IF (exit_flag.ne.NoError) RETURN
 !
@@ -2194,12 +3529,16 @@
      &                          GRID(rg)%pm,                            &
      &                          GRID(rg)%pn,                            &
 # ifdef MASKING
-     &                          GRID(dg)%umask,                         &
-     &                          GRID(rg)%umask,                         &
+     &                          GRID(dg)%umask_full,                    &
+     &                          GRID(rg)%umask_full,                    &
 # endif
-     &                          OCEAN(dg)%ubar(:,:,knew(dg)),           &
+     &                          OCEAN(dg)%ubar(:,:,Dindex2d),           &
+# ifdef SOLVE3D
      &                          OCEAN(rg)%ubar(:,:,1),                  &
      &                          OCEAN(rg)%ubar(:,:,2))
+# else
+     &                          OCEAN(rg)%ubar(:,:,Rindex2d))
+# endif
             IF (exit_flag.ne.NoError) RETURN
 !
             CALL fine2coarse2d (rg, dg, model, tile,                    &
@@ -2213,12 +3552,16 @@
      &                          GRID(rg)%pm,                            &
      &                          GRID(rg)%pn,                            &
 # ifdef MASKING
-     &                          GRID(dg)%vmask,                         &
-     &                          GRID(rg)%vmask,                         &
+     &                          GRID(dg)%vmask_full,                    &
+     &                          GRID(rg)%vmask_full,                    &
 # endif
-     &                          OCEAN(dg)%vbar(:,:,knew(dg)),           &
+     &                          OCEAN(dg)%vbar(:,:,Dindex2d),           &
+# ifdef SOLVE3D
      &                          OCEAN(rg)%vbar(:,:,1),                  &
      &                          OCEAN(rg)%vbar(:,:,2))
+# else
+     &                          OCEAN(rg)%vbar(:,:,Rindex2d))
+# endif
             IF (exit_flag.ne.NoError) RETURN
 
 # ifdef SOLVE3D
@@ -2244,11 +3587,11 @@
      &                            GRID(rg)%pm,                          &
      &                            GRID(rg)%pn,                          &
 #  ifdef MASKING
-     &                            GRID(dg)%rmask,                       &
-     &                            GRID(rg)%rmask,                       &
+     &                            GRID(dg)%rmask_full,                  &
+     &                            GRID(rg)%rmask_full,                  &
 #  endif
-     &                            OCEAN(dg)%t(:,:,:,nnew(dg),itrc),     &
-     &                            OCEAN(rg)%t(:,:,:,nstp(rg),itrc))
+     &                            OCEAN(dg)%t(:,:,:,Dindex3d,itrc),     &
+     &                            OCEAN(rg)%t(:,:,:,Rindex3d,itrc))
               IF (exit_flag.ne.NoError) RETURN
             END DO
 !
@@ -2266,11 +3609,11 @@
      &                          GRID(rg)%pm,                            &
      &                          GRID(rg)%pn,                            &
 #  ifdef MASKING
-     &                          GRID(dg)%umask,                         &
-     &                          GRID(rg)%umask,                         &
+     &                          GRID(dg)%umask_full,                    &
+     &                          GRID(rg)%umask_full,                    &
 #  endif
-     &                          OCEAN(dg)%u(:,:,:,nnew(dg)),            &
-     &                          OCEAN(rg)%u(:,:,:,nstp(rg)))
+     &                          OCEAN(dg)%u(:,:,:,Dindex3d),            &
+     &                          OCEAN(rg)%u(:,:,:,Rindex3d))
             IF (exit_flag.ne.NoError) RETURN
 !
             CALL fine2coarse3d (rg, dg, model, tile,                    &
@@ -2284,11 +3627,11 @@
      &                          GRID(rg)%pm,                            &
      &                          GRID(rg)%pn,                            &
 #  ifdef MASKING
-     &                          GRID(dg)%vmask,                         &
-     &                          GRID(rg)%vmask,                         &
+     &                          GRID(dg)%vmask_full,                    &
+     &                          GRID(rg)%vmask_full,                    &
 #  endif
-     &                          OCEAN(dg)%v(:,:,:,nnew(dg)),            &
-     &                          OCEAN(rg)%v(:,:,:,nstp(rg)))
+     &                          OCEAN(dg)%v(:,:,:,Dindex3d),            &
+     &                          OCEAN(rg)%v(:,:,:,Rindex3d))
             IF (exit_flag.ne.NoError) RETURN
 # endif
           END IF
@@ -2302,13 +3645,6 @@
             CALL exchange_r2d_tile (rg, tile,                           &
      &                              LBiR, UBiR, LBjR, UBjR,             &
      &                              COUPLING(rg)%Zt_avg1)
-# else
-            DO k=1,2
-              CALL exchange_r2d_tile (rg, tile,                         &
-     &                                LBiR, UBiR, LBjR, UBjR,           &
-     &                                OCEAN(rg)%zeta(:,:,k))
-            END DO
-# endif
             DO k=1,2
               CALL exchange_u2d_tile (rg, tile,                         &
      &                                LBiR, UBiR, LBjR, UBjR,           &
@@ -2317,17 +3653,29 @@
      &                                LBiR, UBiR, LBjR, UBjR,           &
      &                                OCEAN(rg)%vbar(:,:,k))
             END DO
+# else
+            CALL exchange_r2d_tile (rg, tile,                           &
+     &                              LBiR, UBiR, LBjR, UBjR,             &
+     &                              OCEAN(rg)%zeta(:,:,Rindex2d))
+            CALL exchange_u2d_tile (rg, tile,                           &
+     &                              LBiR, UBiR, LBjR, UBjR,             &
+     &                              OCEAN(rg)%ubar(:,:,Rindex2d))
+            CALL exchange_v2d_tile (rg, tile,                           &
+     &                              LBiR, UBiR, LBjR, UBjR,             &
+     &                              OCEAN(rg)%vbar(:,:,Rindex2d))
+
+# endif
 # ifdef SOLVE3D
             CALL exchange_u3d_tile (rg, tile,                           &
      &                              LBiR, UBiR, LBjR, UBjR, 1, N(rg),   &
-     &                              OCEAN(rg)%u(:,:,:,nstp(rg)))
+     &                              OCEAN(rg)%u(:,:,:,Rindex3d))
             CALL exchange_v3d_tile (rg, tile,                           &
      &                              LBiR, UBiR, LBjR, UBjR, 1, N(rg),   &
-     &                              OCEAN(rg)%v(:,:,:,nstp(rg)))
+     &                              OCEAN(rg)%v(:,:,:,Rindex3d))
             DO itrc=1,NT(rg)
               CALL exchange_r3d_tile (rg, tile,                         &
      &                                LBiR, UBiR, LBjR, UBjR, 1, N(rg), &
-     &                                OCEAN(rg)%t(:,:,:,nstp(rg),itrc))
+     &                                OCEAN(rg)%t(:,:,:,Rindex3d,itrc))
             END DO
 # endif
           END IF
@@ -2340,14 +3688,6 @@
      &                        NghostPoints,                             &
      &                        EWperiodic(rg), NSperiodic(rg),           &
      &                        COUPLING(rg)%Zt_avg1)
-#  else
-          CALL mp_exchange2d (rg, tile, model, 2,                       &
-     &                        LBiR, UBiR, LBjR, UBjR,                   &
-     &                        NghostPoints,                             &
-     &                        EWperiodic(rg), NSperiodic(rg),           &
-     &                        OCEAN(rg)%zeta(:,:,1),                    &
-     &                        OCEAN(rg)%zeta(:,:,2))
-#  endif
           CALL mp_exchange2d (rg, tile, model, 4,                       &
      &                        LBiR, UBiR, LBjR, UBjR,                   &
      &                        NghostPoints,                             &
@@ -2356,19 +3696,28 @@
      &                        OCEAN(rg)%vbar(:,:,1),                    &
      &                        OCEAN(rg)%ubar(:,:,2),                    &
      &                        OCEAN(rg)%vbar(:,:,2))
+#  else
+          CALL mp_exchange2d (rg, tile, model, 3,                       &
+     &                        LBiR, UBiR, LBjR, UBjR,                   &
+     &                        NghostPoints,                             &
+     &                        EWperiodic(rg), NSperiodic(rg),           &
+     &                        OCEAN(rg)%zeta(:,:,Rindex2d),             &
+     &                        OCEAN(rg)%ubar(:,:,Rindex2d),             &
+     &                        OCEAN(rg)%vbar(:,:,Rindex2d))
+#  endif
 #  ifdef SOLVE3D
           CALL mp_exchange3d (rg, tile, model, 2,                       &
      &                        LBiR, UBiR, LBjR, UBjR, 1, N(rg),         &
      &                        NghostPoints,                             &
      &                        EWperiodic(rg), NSperiodic(rg),           &
-     &                        OCEAN(rg)%u(:,:,:,nstp(rg)),              &
-     &                        OCEAN(rg)%v(:,:,:,nstp(rg)))
+     &                        OCEAN(rg)%u(:,:,:,Rindex3d),              &
+     &                        OCEAN(rg)%v(:,:,:,Rindex3d))
           CALL mp_exchange4d (rg, tile, model, 1,                       &
      &                        LBiR, UBiR, LBjR, UBjR, 1, N(rg),         &
      &                        1, NT(rg),                                &
      &                        NghostPoints,                             &
      &                        EWperiodic(rg), NSperiodic(rg),           &
-     &                        OCEAN(rg)%t(:,:,:,nstp(rg),:))
+     &                        OCEAN(rg)%t(:,:,:,Rindex3d,:))
 #  endif
 # endif
         END IF
@@ -2377,7 +3726,7 @@
       RETURN
       END SUBROUTINE fine2coarse
 !
-      SUBROUTINE fine2coarse2D (ng, dg, model, tile,                    &
+      SUBROUTINE fine2coarse2d (ng, dg, model, tile,                    &
      &                          gtype, svname,                          &
      &                          AreaAvg, Rscale,                        &
      &                          cr, Npoints, contact,                   &
@@ -2538,6 +3887,7 @@
       integer :: LBi, UBi, LBj, UBj
 # endif
 
+      real(r8) :: areaC_inv, my_area, my_areasum, ratio
       real(r8) :: my_avg, my_count, my_sum
 
 # ifdef DISTRIBUTE
@@ -2627,37 +3977,36 @@
      &        ((Jstr.le.Jc).and.(Jc.le.Jend))) THEN
             my_count=0.0_r8
             my_sum=0.0_r8
+            my_areasum=0.0_r8
             DO Jadd=-half,half
               DO Iadd=-half,half
+                my_area=dxF(i+Iadd,j+Jadd)*dyF(i+Iadd,j+Jadd)
+                my_areasum=my_areasum+my_area
 # ifdef MASKING
                 my_sum=my_sum+                                          &
-     &                 F(i+Iadd,j+Jadd)*                                &
-     &                 dxF(i+Iadd,j+Jadd)*dyF(i+Iadd,j+Jadd)*           &
-     &                 Fmsk(i+Iadd,j+Jadd)
-                my_count=my_count+Fmsk(i+Iadd,j+Jadd)
+     &                 F(i+Iadd,j+Jadd)*my_area*                        &
+     &                 MIN(1.0_r8,Fmsk(i+Iadd,j+Jadd))
+                my_count=my_count+MIN(1.0_r8,Fmsk(i+Iadd,j+Jadd))
 # else
                 my_sum=my_sum+                                          &
-     &                 F(i+Iadd,j+Jadd)*                                &
-     &                 dxF(i+Iadd,j+Jadd)*dyF(i+Iadd,j+Jadd)
+     &                 F(i+Iadd,j+Jadd)*my_area
 # endif
               END DO
             END DO
-            SELECT CASE (gtype)
+            SELECT CASE (gtype)              ! coarse grid inverse area
               CASE (r2dvar)
-                my_avg=my_sum*                                          &
-     &                 pmC(Ic,Jc)*pnC(Ic,Jc)
+                areaC_inv=pmC(Ic,Jc)*pnC(Ic,Jc)
               CASE (u2dvar)
-                my_avg=my_sum*                                          &
-     &                 0.25_r8*(pmC(Ic-1,Jc)+pmC(Ic,Jc))*               &
-     &                         (pnC(Ic-1,Jc)+pnC(Ic,Jc))
+                areaC_inv=0.25_r8*(pmC(Ic-1,Jc)+pmC(Ic,Jc))*            &
+     &                            (pnC(Ic-1,Jc)+pnC(Ic,Jc))
               CASE (v2dvar)
-                my_avg=my_sum*                                          &
-     &                 0.25_r8*(pmC(Ic,Jc-1)+pmC(Ic,Jc))*               &
-     &                         (pnC(Ic,Jc-1)+pnC(Ic,Jc))
+                areaC_inv=0.25_r8*(pmC(Ic,Jc-1)+pmC(Ic,Jc))*            &
+     &                            (pnC(Ic,Jc-1)+pnC(Ic,Jc))
               CASE DEFAULT
-                my_avg=my_sum*                                          &
-     &                 pmC(Ic,Jc)*pnC(Ic,Jc)
+                areaC_inv=pmC(Ic,Jc)*pnC(Ic,Jc)
             END SELECT
+            ratio=my_areasum*areaC_inv       ! for debugging purposes
+            my_avg=my_sum*areaC_inv
 # ifdef MASKING
             IF (my_count.gt.0.0_r8) THEN
               my_avg=my_avg*Rscale*Rscale/my_count
@@ -2686,7 +4035,7 @@
 # ifdef MASKING
                 my_sum=my_sum+                                          &
      &                 F(i+Iadd,j+Jadd)*Fmsk(i+Iadd,j+Jadd)
-                my_count=my_count+Fmsk(i+Iadd,j+Jadd)
+                my_count=my_count+MIN(1.0_r8,Fmsk(i+Iadd,j+Jadd))
 # else
                 my_sum=my_sum+                                          &
      &                 F(i+Iadd,j+Jadd)
@@ -2729,10 +4078,10 @@
 # endif
 
       RETURN
-      END SUBROUTINE fine2coarse2D
+      END SUBROUTINE fine2coarse2d
 !
 # ifdef SOLVE3D
-      SUBROUTINE fine2coarse3D (ng, dg, model, tile,                    &
+      SUBROUTINE fine2coarse3d (ng, dg, model, tile,                    &
      &                          gtype, svname,                          &
      &                          AreaAvg, Rscale,                        &
      &                          cr, Npoints, contact,                   &
@@ -2827,9 +4176,7 @@
 
 #  ifdef DISTRIBUTE
 !
-#   ifdef MASKING
       USE distribute_mod, ONLY : mp_aggregate2d
-#   endif
       USE distribute_mod, ONLY : mp_aggregate3d
 #  endif
 !
@@ -2896,6 +4243,7 @@
       integer :: LBi, UBi, LBj, UBj
 #  endif
 
+      real(r8) :: areaC_inv, my_area, my_areasum, ratio
       real(r8) :: my_avg, my_count, my_sum
 
 #  ifdef DISTRIBUTE
@@ -2987,37 +4335,36 @@
      &          ((Jstr.le.Jc).and.(Jc.le.Jend))) THEN
               my_count=0.0_r8
               my_sum=0.0_r8
+              my_areasum=0.0_r8
               DO Jadd=-half,half
                 DO Iadd=-half,half
+                  my_area=dxF(i+Iadd,j+Jadd)*dyF(i+Iadd,j+Jadd)
+                  my_areasum=my_areasum+my_area
 #  ifdef MASKING
                   my_sum=my_sum+                                        &
-     &                   F(i+Iadd,j+Jadd,k)*                            &
-     &                   dxF(i+Iadd,j+Jadd)*dyF(i+Iadd,j+Jadd)*         &
-     &                   Fmsk(i+Iadd,j+Jadd)
-                  my_count=my_count+Fmsk(i+Iadd,j+Jadd)
+     &                   F(i+Iadd,j+Jadd,k)*my_area*                    &
+     &                   MIN(1.0_r8,Fmsk(i+Iadd,j+Jadd))
+                  my_count=my_count+MIN(1.0_r8,Fmsk(i+Iadd,j+Jadd))
 #  else
                   my_sum=my_sum+                                        &
-     &                   F(i+Iadd,j+Jadd,k)*                            &
-     &                   dxF(i+Iadd,j+Jadd)*dyF(i+Iadd,j+Jadd)
+     &                   F(i+Iadd,j+Jadd,k)*my_area
 #  endif
                 END DO
               END DO
-              SELECT CASE (gtype)
+              SELECT CASE (gtype)            ! coarse grid inverse area
                 CASE (r3dvar)
-                  my_avg=my_sum*                                        &
-     &                   pmC(Ic,Jc)*pnC(Ic,Jc)
+                  areaC_inv=pmC(Ic,Jc)*pnC(Ic,Jc)
                 CASE (u3dvar)
-                  my_avg=my_sum*                                        &
-     &                   0.25_r8*(pmC(Ic-1,Jc)+pmC(Ic,Jc))*             &
-     &                           (pnC(Ic-1,Jc)+pnC(Ic,Jc))
+                  areaC_inv=0.25_r8*(pmC(Ic-1,Jc)+pmC(Ic,Jc))*          &
+     &                              (pnC(Ic-1,Jc)+pnC(Ic,Jc))
                 CASE (v3dvar)
-                  my_avg=my_sum*                                        &
-     &                   0.25_r8*(pmC(Ic,Jc-1)+pmC(Ic,Jc))*             &
-     &                           (pnC(Ic,Jc-1)+pnC(Ic,Jc))
+                  areaC_inv=0.25_r8*(pmC(Ic,Jc-1)+pmC(Ic,Jc))*          &
+     &                              (pnC(Ic,Jc-1)+pnC(Ic,Jc))
                 CASE DEFAULT
-                  my_avg=my_sum*                                        &
-     &                   pmC(Ic,Jc)*pnC(Ic,Jc)
+                  areaC_inv=pmC(Ic,Jc)*pnC(Ic,Jc)
               END SELECT
+              ratio=my_areasum*areaC_inv     ! for debugging purposes
+              my_avg=my_sum*areaC_inv
 #  ifdef MASKING
               IF (my_count.gt.0.0_r8) THEN
                 my_avg=my_avg*Rscale*Rscale/my_count
@@ -3045,7 +4392,7 @@
 #  ifdef MASKING
                   my_sum=my_sum+                                        &
      &                   F(i+Iadd,j+Jadd,k)*Fmsk(i+Iadd,j+Jadd)
-                  my_count=my_count+Fmsk(i+Iadd,j+Jadd)
+                  my_count=my_count+MIN(1.0_r8,Fmsk(i+Iadd,j+Jadd))
 #  else
                   my_sum=my_sum+                                        &
      &                   F(i+Iadd,j+Jadd,k)
@@ -3086,7 +4433,7 @@
 #  endif
 
       RETURN
-      END SUBROUTINE fine2coarse3D
+      END SUBROUTINE fine2coarse3d
 # endif
 !
       SUBROUTINE get_contact2d (dg, model, tile,                        &
@@ -3099,7 +4446,7 @@
 !                                                                      !
 !  This routine gets the donor grid data (Ac) necessary  to process    !
 !  the contact points for a 2D state variable (Ad). It extracts the    !
-!  donor cell points containing each contact point, Ac(:,4).           !
+!  donor cell points containing each contact point, Ac(1:4,:).         !
 !                                                                      !
 !  On Input:                                                           !
 !                                                                      !
@@ -3129,7 +4476,7 @@
 
 # ifdef DISTRIBUTE
 !
-      USE distribute_mod, ONLY : mp_collect
+      USE distribute_mod, ONLY : mp_assemble
 # endif
 !
 !  Imported variable declarations.
@@ -3160,10 +4507,6 @@
 # endif
 
       real(r8), parameter :: Aspv = 0.0_r8
-
-# ifdef DISTRIBUTE
-      real(r8), dimension(4*Npoints) :: Awrk
-# endif
 !
 !-----------------------------------------------------------------------
 !  Initialize.
@@ -3244,10 +4587,9 @@
 !
 !  Gather and broadcast data from all nodes.
 !
-      Awrk=RESHAPE(Ac,(/Npts/))
-      CALL mp_collect (dg, model, Npts, Aspv, Awrk)
-      Ac=RESHAPE(Awrk, (/4,Npoints/))
+      CALL mp_assemble (dg, model, Npts, Aspv, Ac)
 # endif
+
       RETURN
       END SUBROUTINE get_contact2d
 
@@ -3263,7 +4605,7 @@
 !                                                                      !
 !  This routine gets the donor grid data (Ac) necessary  to process    !
 !  the contact points for a 3D state variable (Ad). It extracts the    !
-!  donor cell points containing each contact point, Ac(:,k,4).         !
+!  donor cell points containing each contact point, Ac(1:4,k,:).       !
 !                                                                      !
 !  On Input:                                                           !
 !                                                                      !
@@ -3293,7 +4635,7 @@
 
 #  ifdef DISTRIBUTE
 !
-      USE distribute_mod, ONLY : mp_collect
+      USE distribute_mod, ONLY : mp_assemble
 #  endif
 !
 !  Imported variable declarations.
@@ -3311,7 +4653,7 @@
       real(r8), intent(inout) :: Ac(:,LBk:,:)
 #  else
       real(r8), intent(in) :: Ad(LBi:UBi,LBj:UBj,LBk:UBk)
-      real(r8), intent(inout) :: Ac(Npoints,LBk:UBk,4)
+      real(r8), intent(inout) :: Ac(4,LBk:UBk,Npoints)
 #  endif
 !
 !  Local variable declarations.
@@ -3324,10 +4666,6 @@
 #  endif
 
       real(r8), parameter :: Aspv = 0.0_r8
-
-#  ifdef DISTRIBUTE
-      real(r8), dimension(4*(UBk-LBk+1)*Npoints) :: Awrk
-#  endif
 !
 !-----------------------------------------------------------------------
 !  Initialize.
@@ -3412,13 +4750,212 @@
 !
 !  Gather and broadcast data from all nodes.
 !
-      Awrk=RESHAPE(Ac,(/Npts/))
-      CALL mp_collect (dg, model, Npts, Aspv, Awrk)
-      Ac=RESHAPE(Awrk, (/4,UBk-LBk+1,Npoints/))
+      CALL mp_assemble (dg, model, Npts, Aspv, Ac(:,LBk:,:))
 #  endif
+
       RETURN
       END SUBROUTINE get_contact3d
 # endif
+!
+      SUBROUTINE get_persisted2d (dg, rg, model, tile,                  &
+     &                            gtype, svname,                        &
+     &                            cr, Npoints, contact,                 &
+     &                            LBi, UBi, LBj, UBj,                   &
+     &                            Ad, Ac)
+!
+!=======================================================================
+!                                                                      !
+!  This routine gets the donor grid data (Ac) necessary  to process    !
+!  the contact points for a 2D flux variable (Ad). It extracts the     !
+!  donor cell points containing each contact point, Ac(1:4,:).         !
+!                                                                      !
+!  This routine is different that 'get_contact2d'.  It is used in      !
+!  refinement to impose the appropriate coarser grid flux to insure    !
+!  volume and mass conservation.  The value of the coarse grid cell    !
+!  is presisted over the refined grid points along its physical        !
+!  boundary.  This will facilitate that the sum of all the refined     !
+!  grid point is the same as that of the coarse grid containing such   !
+!  points.  The spatial interpolation as set in 'get_contact2d' will   !
+!  not conserve volume and mass.                                       !
+!                                                                      !
+!  On Input:                                                           !
+!                                                                      !
+!     dg         Donor grid number (integer)                           !
+!     rg         Receiver grid number (integer)                        !
+!     model      Calling model identifier (integer)                    !
+!     tile       Domain tile partition (integer)                       !
+!     gtype      C-grid variable type (integer)                        !
+!     svname     State variable name (string)                          !
+!     cr         Contact region number to process (integer)            !
+!     Npoints    Number of points in the contact region (integer)      !
+!     contact    Contact region information variables (T_NGC structure)!
+!     LBi        Donor grid, I-dimension Lower bound (integer)         !
+!     UBi        Donor grid, I-dimension Upper bound (integer)         !
+!     LBj        Donor grid, J-dimension Lower bound (integer)         !
+!     UBj        Donor grid, J-dimension Upper bound (integer)         !
+!     Ad         Donor grid data (2D array)                            !
+!                                                                      !
+!  On Input:                                                           !
+!                                                                      !
+!     Ac         2D flux variable contact point data                   !
+!                                                                      !
+!=======================================================================
+!
+      USE mod_param
+      USE mod_ncparam
+      USE mod_nesting
+      USE mod_scalars
+
+# ifdef DISTRIBUTE
+!
+      USE distribute_mod, ONLY : mp_assemble
+# endif
+!
+!  Imported variable declarations.
+!
+      integer, intent(in) :: dg, rg, model, tile
+      integer, intent(in) :: gtype, cr, Npoints
+      integer, intent(in) :: LBi, UBi, LBj, UBj
+!
+      character(len=*), intent(in) :: svname
+!
+      TYPE (T_NGC), intent(in) :: contact(:)
+!
+# ifdef ASSUMED_SHAPE
+      real(r8), intent(in) :: Ad(LBi:,LBj:)
+      real(r8), intent(inout) :: Ac(:,:)
+# else
+      real(r8), intent(in) :: Ad(LBi:UBi,LBj:UBj)
+      real(r8), intent(inout) :: Ac(Npoints,4)
+# endif
+!
+!  Local variable declarations.
+!
+      integer :: Idg, Ip1, Irg, Jdg, Jp1, Jrg
+      integer :: Imin, Imax, Jmin, Jmax
+      integer :: Istr, Iend, Jstr, Jend
+      integer :: i, i_add, j, j_add, m, m_add
+# ifdef DISTRIBUTE
+      integer :: Npts
+# endif
+
+      real(r8), parameter :: Aspv = 0.0_r8
+      real(r8):: Rscale
+!
+!-----------------------------------------------------------------------
+!  Initialize.
+!-----------------------------------------------------------------------
+
+# ifdef DISTRIBUTE
+!
+!  Initialize contact points array to special value to facilite
+!  distribute-memory data collection from all nodes.
+!
+      Npts=4*Npoints
+      DO m=1,Npoints
+        Ac(1,m)=Aspv
+        Ac(2,m)=Aspv
+        Ac(3,m)=Aspv
+        Ac(4,m)=Aspv
+      END DO
+# endif
+!
+!  Set starting and ending tile indices for the donor grids.
+!
+      SELECT CASE (gtype)
+        CASE (r2dvar)
+          Imin=BOUNDS(dg) % IstrT(-1)    ! full RHO-grid range
+          Imax=BOUNDS(dg) % IendT(-1)
+          Jmin=BOUNDS(dg) % JstrT(-1)
+          Jmax=BOUNDS(dg) % JendT(-1)
+!
+          Istr=BOUNDS(dg) % IstrT(tile)  ! domain partition range
+          Iend=BOUNDS(dg) % IendT(tile)
+          Jstr=BOUNDS(dg) % JstrT(tile)
+          Jend=BOUNDS(dg) % JendT(tile)
+!
+          m_add=NstrR(cr)-1
+        CASE (u2dvar)
+          Imin=BOUNDS(dg) % IstrP(-1)    ! full U-grid range
+          Imax=BOUNDS(dg) % IendT(-1)
+          Jmin=BOUNDS(dg) % JstrT(-1)
+          Jmax=BOUNDS(dg) % JendT(-1)
+!
+          Istr=BOUNDS(dg) % IstrP(tile)  ! domain partition range
+          Iend=BOUNDS(dg) % IendT(tile)
+          Jstr=BOUNDS(dg) % JstrT(tile)
+          Jend=BOUNDS(dg) % JendT(tile)
+!
+          m_add=NstrU(cr)-1
+        CASE (v2dvar)
+          Imin=BOUNDS(dg) % IstrT(-1)    ! full V-grid range
+          Imax=BOUNDS(dg) % IendT(-1)
+          Jmin=BOUNDS(dg) % JstrP(-1)
+          Jmax=BOUNDS(dg) % JendT(-1)
+!
+          Istr=BOUNDS(dg) % IstrT(tile)  ! domain partition range
+          Iend=BOUNDS(dg) % IendT(tile)
+          Jstr=BOUNDS(dg) % JstrP(tile)
+          Jend=BOUNDS(dg) % JendT(tile)
+!
+          m_add=NstrV(cr)-1
+      END SELECT
+!
+!-----------------------------------------------------------------------
+!  Extract donor grid data at contact points.
+!-----------------------------------------------------------------------
+!
+!  Notice that the indices i+1 and j+1 are bounded the maximum values
+!  of the grid. This implies that contact point lies on the grid
+!  boundary.
+!
+      Rscale=1.0_r8/REAL(RefineScale(rg))
+      DO m=1,Npoints
+        Idg=contact(cr)%Idg(m)
+        Jdg=contact(cr)%Jdg(m)
+        Irg=contact(cr)%Irg(m)
+        Jrg=contact(cr)%Jrg(m)
+        Ip1=MIN(Idg+1,Imax)
+        Jp1=MIN(Jdg+1,Jmax)
+        IF (((Istr.le.Idg).and.(Idg.le.Iend)).and.                      &
+     &      ((Jstr.le.Jdg).and.(Jdg.le.Jend))) THEN
+          IF (on_boundary(m+m_add).gt.0) THEN
+            IF ((on_boundary(m+m_add).eq.1).or.                         &
+     &          (on_boundary(m+m_add).eq.3)) THEN       ! western and
+              j_add=INT(REAL(Jrg-1,r8)*Rscale)          ! eastern edges
+              j=J_bottom(rg)+j_add
+              Ac(1,m)=Ad(Idg,j)
+              Ac(2,m)=Ad(Idg,j)
+              Ac(3,m)=Ad(Idg,j)
+              Ac(4,m)=Ad(Idg,j)
+            ELSE IF ((on_boundary(m+m_add).eq.2).or.                    &
+     &               (on_boundary(m+m_add).eq.4)) THEN  ! southern and
+              i_add=INT(REAL(Irg-1,r8)*Rscale)          ! northern edges
+              i=I_left(rg)+i_add
+              Ac(1,m)=Ad(i,Jdg)
+              Ac(2,m)=Ad(i,Jdg)
+              Ac(3,m)=Ad(i,Jdg)
+              Ac(4,m)=Ad(i,Jdg)
+            END IF
+          ELSE
+            Ac(1,m)=Ad(Idg,Jdg)               ! contact point is not at
+            Ac(2,m)=Ad(Ip1,Jdg)               ! physical boundary, just
+            Ac(3,m)=Ad(Ip1,Jp1)               ! set values for spatial
+            Ac(4,m)=Ad(Idg,Jp1)               ! interpolation (not used)
+          END IF
+        END IF
+      END DO
+
+# ifdef DISTRIBUTE
+!
+!  Gather and broadcast data from all nodes.
+!
+      CALL mp_assemble (dg, model, Npts, Aspv, Ac)
+      IF (exit_flag.ne.NoError) RETURN
+# endif
+
+      RETURN
+      END SUBROUTINE get_persisted2d
 !
       SUBROUTINE put_contact2d (rg, model, tile,                        &
      &                          gtype, svname,                          &
@@ -3434,7 +4971,7 @@
 !  This routine uses extracted donor grid data (Ac) to spatially       !
 !  interpolate a 2D state variable  at the receiver grid contact       !
 !  points.  If the donor and receiver grids are coincident,  the       !
-!  Hweight(1,:) is unity and Hweight(2:4,:) are zero.                  !
+!  Lweight(1,:) is unity and Lweight(2:4,:) are zero.                  !
 !                                                                      !
 !  On Input:                                                           !
 !                                                                      !
@@ -3525,10 +5062,10 @@
         j=contact(cr)%Jrg(m)
         IF (((Istr.le.i).and.(i.le.Iend)).and.                          &
      &      ((Jstr.le.j).and.(j.le.Jend))) THEN
-          Ar(i,j)=contact(cr)%Hweight(1,m)*Ac(1,m)+                     &
-     &            contact(cr)%Hweight(2,m)*Ac(2,m)+                     &
-     &            contact(cr)%Hweight(3,m)*Ac(3,m)+                     &
-     &            contact(cr)%Hweight(4,m)*Ac(4,m)
+          Ar(i,j)=contact(cr)%Lweight(1,m)*Ac(1,m)+                     &
+     &            contact(cr)%Lweight(2,m)*Ac(2,m)+                     &
+     &            contact(cr)%Lweight(3,m)*Ac(3,m)+                     &
+     &            contact(cr)%Lweight(4,m)*Ac(4,m)
 # ifdef MASKING
           Ar(i,j)=Ar(i,j)*Amask(i,j)
 # endif
@@ -3554,7 +5091,7 @@
 !  This routine uses extracted donor grid data (Ac) to spatially       !
 !  interpolate a 3D state variable  at the receiver grid contact       !
 !  points.  If the donor and receiver grids  are concident,  the       !
-!  Hweight(1,:) is unity and Hweight(2:4,:) are zero.                  !
+!  Lweight(1,:) is unity and Lweight(2:4,:) are zero.                  !
 !                                                                      !
 !  On Input:                                                           !
 !                                                                      !
@@ -3661,14 +5198,14 @@
           kdgm1=MAX(kdg-1,Kmin)
           IF (((Istr.le.i).and.(i.le.Iend)).and.                        &
      &        ((Jstr.le.j).and.(j.le.Jend))) THEN
-            cff(1)=contact(cr)%Hweight(1,m)*contact(cr)%Vweight(1,k,m)
-            cff(2)=contact(cr)%Hweight(2,m)*contact(cr)%Vweight(1,k,m)
-            cff(3)=contact(cr)%Hweight(3,m)*contact(cr)%Vweight(1,k,m)
-            cff(4)=contact(cr)%Hweight(4,m)*contact(cr)%Vweight(1,k,m)
-            cff(5)=contact(cr)%Hweight(1,m)*contact(cr)%Vweight(2,k,m)
-            cff(6)=contact(cr)%Hweight(2,m)*contact(cr)%Vweight(2,k,m)
-            cff(7)=contact(cr)%Hweight(3,m)*contact(cr)%Vweight(2,k,m)
-            cff(8)=contact(cr)%Hweight(4,m)*contact(cr)%Vweight(2,k,m)
+            cff(1)=contact(cr)%Lweight(1,m)*contact(cr)%Vweight(1,k,m)
+            cff(2)=contact(cr)%Lweight(2,m)*contact(cr)%Vweight(1,k,m)
+            cff(3)=contact(cr)%Lweight(3,m)*contact(cr)%Vweight(1,k,m)
+            cff(4)=contact(cr)%Lweight(4,m)*contact(cr)%Vweight(1,k,m)
+            cff(5)=contact(cr)%Lweight(1,m)*contact(cr)%Vweight(2,k,m)
+            cff(6)=contact(cr)%Lweight(2,m)*contact(cr)%Vweight(2,k,m)
+            cff(7)=contact(cr)%Lweight(3,m)*contact(cr)%Vweight(2,k,m)
+            cff(8)=contact(cr)%Lweight(4,m)*contact(cr)%Vweight(2,k,m)
             Ar(i,j,k)=cff(1)*Ac(1,kdgm1,m)+                             &
      &                cff(2)*Ac(2,kdgm1,m)+                             &
      &                cff(3)*Ac(3,kdgm1,m)+                             &
@@ -3688,13 +5225,15 @@
       END SUBROUTINE put_contact3d
 # endif
 !
-      SUBROUTINE put_refine2d (ng, dg, cr, model, tile,                 &
+      SUBROUTINE put_refine2d (ng, dg, cr, model, tile, LputFsur,       &
      &                         LBi, UBi, LBj, UBj)
 !
 !=======================================================================
 !                                                                      !
 !  This routine interpolates (space, time) refinement grid 2D state    !
-!  variables contact points using data from the donor grid.            !
+!  variables contact points using data from the donor grid.  Notice    !
+!  that because of shared-memory parallelism,  the  free-surface is    !
+!  processed first and in a different parallel region.                 !
 !                                                                      !
 !  On Input:                                                           !
 !                                                                      !
@@ -3703,6 +5242,7 @@
 !     cr         Contact region number to process (integer)            !
 !     model      Calling model identifier (integer)                    !
 !     tile       Domain tile partition (integer)                       !
+!     LputFsur   Switch to process or not free-surface (logical)       !
 !     LBi        Receiver grid, I-dimension Lower bound (integer)      !
 !     UBi        Receiver grid, I-dimension Upper bound (integer)      !
 !     LBj        Receiver grid, J-dimension Lower bound (integer)      !
@@ -3717,20 +5257,24 @@
 !=======================================================================
 !
       USE mod_param
+      USE mod_parallel
       USE mod_coupling
       USE mod_grid
       USE mod_nesting
       USE mod_ocean
       USE mod_scalars
       USE mod_stepping
+      USE mod_iounits
 
 # ifdef DISTRIBUTE
 !
+      USE distribute_mod, ONLY : mp_assemble
       USE mp_exchange_mod, ONLY : mp_exchange2d
 # endif
 !
 !  Imported variable declarations.
 !
+      logical, intent(in) :: LputFsur
       integer, intent(in) :: ng, dg, cr, model, tile
       integer, intent(in) :: LBi, UBi, LBj, UBj
 !
@@ -3738,9 +5282,17 @@
 !
       logical :: Uboundary, Vboundary
 
-      integer :: i, irec, j, m, t1, t2
+# ifdef DISTRIBUTE
+      integer :: ILB, IUB, JLB, JUB, NptsSN, NptsWE, my_tile
+# endif
+      integer :: NSUB, i, irec, j, m, tnew, told
+      integer :: Idg, Jdg
 
-      real(r8) :: cff, cff1, fac, fac1, fac2
+# ifdef DISTRIBUTE
+      real(r8), parameter :: spv = 0.0_r8
+# endif
+      real(r8) :: Wnew, Wold
+      real(r8) :: cff, cff1, fac
       real(r8) :: my_value
 
 # include "set_bounds.h"
@@ -3749,74 +5301,106 @@
 !  Interpolate (space, time) refinement grid contact points for 2D state
 !  variables from donor grid.
 !-----------------------------------------------------------------------
+
+# ifdef DISTRIBUTE
 !
-!  Set time interpolation weights.
+!  Set global size of boundary edges.
 !
-      fac1=(time(dg)+dt(dg))-(time(ng)+dt(ng))
-      fac2=time(ng)-(time(dg)-dt(dg))
-      fac=1.0_r8/(fac1+fac2)
-      fac1=fac*fac1
-      fac2=fac*fac2
+      IF (.not.LputFsur) THEN
+        my_tile=-1
+        ILB=BOUNDS(ng)%LBi(my_tile)
+        IUB=BOUNDS(ng)%UBi(my_tile)
+        JLB=BOUNDS(ng)%LBj(my_tile)
+        JUB=BOUNDS(ng)%UBj(my_tile)
+        NptsWE=JUB-JLB+1
+        NptsSN=IUB-ILB+1
+!
+!  If distributed-memory, initialize arrays used to check mass flux
+!  conservation with special value (zero) to facilitate the global
+!  reduction when collecting data between all nodes.
+!
+        BRY_CONTACT(iwest ,cr)%Mflux=spv
+        BRY_CONTACT(ieast ,cr)%Mflux=spv
+        BRY_CONTACT(isouth,cr)%Mflux=spv
+        BRY_CONTACT(inorth,cr)%Mflux=spv
+      END IF
+# endif
 !
 !  Set time snapshot indices for the donor grid data.
 !
-# ifdef SOLVE3D
-      IF (iic(dg).eq.ntstart(dg)) THEN
-        t1=1
-        t2=2
-      ELSE
-        t1=nstp(dg)
-        t2=nnew(dg)
-      END IF
-# else
-      IF (iic(dg).eq.ntstart(dg)) THEN
-        t1=1
-        t2=2
-      ELSE
-        t1=kstp(dg)
-        t2=3-t1
-      END IF
-# endif
+      told=3-RollingIndex(cr)
+      tnew=RollingIndex(cr)
 !
-!  Free-surface.
+!  Set time interpolation weights.
 !
-      DO m=1,Rcontact(cr)%Npoints
-        i=Rcontact(cr)%Irg(m)
-        j=Rcontact(cr)%Jrg(m)
-        IF (((IstrT.le.i).and.(i.le.IendT)).and.                        &
-     &      ((JstrT.le.j).and.(j.le.JendT))) THEN
-          my_value=fac1*(Rcontact(cr)%Hweight(1,m)*                     &
-     &                                REFINED(cr)%zeta(1,m,t1)+         &
-     &                   Rcontact(cr)%Hweight(2,m)*                     &
-     &                                REFINED(cr)%zeta(2,m,t1)+         &
-     &                   Rcontact(cr)%Hweight(3,m)*                     &
-     &                                REFINED(cr)%zeta(3,m,t1)+         &
-     &                   Rcontact(cr)%Hweight(4,m)*                     &
-     &                                REFINED(cr)%zeta(4,m,t1))+        &
-     &             fac2*(Rcontact(cr)%Hweight(1,m)*                     &
-     &                                REFINED(cr)%zeta(1,m,t2)+         &
-     &                   Rcontact(cr)%Hweight(2,m)*                     &
-     &                                REFINED(cr)%zeta(2,m,t2)+         &
-     &                   Rcontact(cr)%Hweight(3,m)*                     &
-     &                                REFINED(cr)%zeta(3,m,t2)+         &
-     &                   Rcontact(cr)%Hweight(4,m)*                     &
-     &                                REFINED(cr)%zeta(4,m,t2))
+      Wold=RollingTime(tnew,cr)-time(ng)
+      Wnew=time(ng)-RollingTime(told,cr)
+      fac=1.0_r8/(Wold+Wnew)
+      Wold=fac*Wold
+      Wnew=fac*Wnew
+!
+      IF (((Wold*Wnew).lt.0.0_r8).or.((Wold+Wnew).le.0.0_r8)) THEN
+        IF (DOMAIN(ng)%SouthWest_Test(tile)) THEN
+          IF (Master) THEN
+            WRITE (stdout,10) cr, dg, ng,                               &
+     &                        iic(dg), told, tnew,                      &
+     &                        iic(ng), Wold, Wnew,                      &
+     &                        INT(time(ng)),                            &
+     &                        INT(RollingTime(told,cr)),                &
+     &                        INT(RollingTime(tnew,cr))
+          END IF
+          exit_flag=8
+        END IF
+      END IF
+!
+!-----------------------------------------------------------------------
+!  Process free-surface.
+!-----------------------------------------------------------------------
+!
+      FREE_SURFACE : IF (LputFsur) THEN
+        DO m=1,Rcontact(cr)%Npoints
+          i=Rcontact(cr)%Irg(m)
+          j=Rcontact(cr)%Jrg(m)
+          IF (((IstrT.le.i).and.(i.le.IendT)).and.                      &
+     &        ((JstrT.le.j).and.(j.le.JendT))) THEN
+            my_value=Wold*(Rcontact(cr)%Lweight(1,m)*                   &
+     &                                  REFINED(cr)%zeta(1,m,told)+     &
+     &                     Rcontact(cr)%Lweight(2,m)*                   &
+     &                                  REFINED(cr)%zeta(2,m,told)+     &
+     &                     Rcontact(cr)%Lweight(3,m)*                   &
+     &                                  REFINED(cr)%zeta(3,m,told)+     &
+     &                     Rcontact(cr)%Lweight(4,m)*                   &
+     &                                  REFINED(cr)%zeta(4,m,told))+    &
+     &               Wnew*(Rcontact(cr)%Lweight(1,m)*                   &
+     &                                  REFINED(cr)%zeta(1,m,tnew)+     &
+     &                     Rcontact(cr)%Lweight(2,m)*                   &
+     &                                  REFINED(cr)%zeta(2,m,tnew)+     &
+     &                     Rcontact(cr)%Lweight(3,m)*                   &
+     &                                  REFINED(cr)%zeta(3,m,tnew)+     &
+     &                     Rcontact(cr)%Lweight(4,m)*                   &
+     &                                  REFINED(cr)%zeta(4,m,tnew))
 # ifdef MASKING
-          my_value=my_value*GRID(ng)%rmask(i,j)
+            my_value=my_value*GRID(ng)%rmask(i,j)
 # endif
 # ifdef WET_DRY
-          IF (my_value.le.(Dcrit(ng)-GRID(ng)%h(i,j))) THEN
-            my_value=Dcrit(ng)-GRID(ng)%h(i,j)
-          END IF
+            IF (my_value.le.(Dcrit(ng)-GRID(ng)%h(i,j))) THEN
+              my_value=Dcrit(ng)-GRID(ng)%h(i,j)
+            END IF
 # endif
-          OCEAN(ng)%zeta(i,j,1)=my_value
-          OCEAN(ng)%zeta(i,j,2)=my_value
-          OCEAN(ng)%zeta(i,j,3)=my_value
+            OCEAN(ng)%zeta(i,j,1)=my_value
+            OCEAN(ng)%zeta(i,j,2)=my_value
+            OCEAN(ng)%zeta(i,j,3)=my_value
 # ifdef SOLVE3D
-          COUPLING(ng)%Zt_avg1(i,j)=my_value
+            COUPLING(ng)%Zt_avg1(i,j)=my_value
 # endif
-        END IF
-      END DO
+          END IF
+        END DO
+
+      ELSE
+!
+!-----------------------------------------------------------------------
+!  Process 2D momentum.
+!-----------------------------------------------------------------------
 !
 !  2D momentum in the XI-direction.
 # ifdef SOLVE3D
@@ -3827,48 +5411,48 @@
 !  done for adjoint correctness.
 # endif
 !
-      DO m=1,Ucontact(cr)%Npoints
-        i=Ucontact(cr)%Irg(m)
-        j=Ucontact(cr)%Jrg(m)
-        IF (((IstrP.le.i).and.(i.le.IendT)).and.                        &
-     &      ((JstrT.le.j).and.(j.le.JendT))) THEN
-          my_value=fac1*(Ucontact(cr)%Hweight(1,m)*                     &
-     &                                REFINED(cr)%ubar(1,m,t1)+         &
-     &                   Ucontact(cr)%Hweight(2,m)*                     &
-     &                                REFINED(cr)%ubar(2,m,t1)+         &
-     &                   Ucontact(cr)%Hweight(3,m)*                     &
-     &                                REFINED(cr)%ubar(3,m,t1)+         &
-     &                   Ucontact(cr)%Hweight(4,m)*                     &
-     &                                REFINED(cr)%ubar(4,m,t1))+        &
-     &             fac2*(Ucontact(cr)%Hweight(1,m)*                     &
-     &                                REFINED(cr)%ubar(1,m,t2)+         &
-     &                   Ucontact(cr)%Hweight(2,m)*                     &
-     &                                REFINED(cr)%ubar(2,m,t2)+         &
-     &                   Ucontact(cr)%Hweight(3,m)*                     &
-     &                                REFINED(cr)%ubar(3,m,t2)+         &
-     &                   Ucontact(cr)%Hweight(4,m)*                     &
-     &                                REFINED(cr)%ubar(4,m,t2))
+        DO m=1,Ucontact(cr)%Npoints
+          i=Ucontact(cr)%Irg(m)
+          j=Ucontact(cr)%Jrg(m)
+          IF (((IstrP.le.i).and.(i.le.IendT)).and.                      &
+     &        ((JstrT.le.j).and.(j.le.JendT))) THEN
+            my_value=Wold*(Ucontact(cr)%Lweight(1,m)*                   &
+     &                                  REFINED(cr)%ubar(1,m,told)+     &
+     &                     Ucontact(cr)%Lweight(2,m)*                   &
+     &                                  REFINED(cr)%ubar(2,m,told)+     &
+     &                     Ucontact(cr)%Lweight(3,m)*                   &
+     &                                  REFINED(cr)%ubar(3,m,told)+     &
+     &                     Ucontact(cr)%Lweight(4,m)*                   &
+     &                                  REFINED(cr)%ubar(4,m,told))+    &
+     &               Wnew*(Ucontact(cr)%Lweight(1,m)*                   &
+     &                                  REFINED(cr)%ubar(1,m,tnew)+     &
+     &                     Ucontact(cr)%Lweight(2,m)*                   &
+     &                                  REFINED(cr)%ubar(2,m,tnew)+     &
+     &                     Ucontact(cr)%Lweight(3,m)*                   &
+     &                                  REFINED(cr)%ubar(3,m,tnew)+     &
+     &                     Ucontact(cr)%Lweight(4,m)*                   &
+     &                                  REFINED(cr)%ubar(4,m,tnew))
 # ifdef MASKING
-          my_value=my_value*GRID(ng)%umask(i,j)
+            my_value=my_value*GRID(ng)%umask(i,j)
 # endif
 # ifdef WET_DRY
-          my_value=my_value*GRID(ng)%umask_wet(i,j)
+            my_value=my_value*GRID(ng)%umask_wet(i,j)
 # endif
-          DO irec=1,3
+            DO irec=1,3
 # ifdef SOLVE3D
-            Uboundary=(m.eq.BRY_CONTACT(iwest,cr)%C2Bindex(j)).or.      &
-     &                (m.eq.BRY_CONTACT(ieast,cr)%C2Bindex(j))
-            IF(.not.(Uboundary.and.(irec.eq.indx1(ng)))) THEN
-              OCEAN(ng)%ubar(i,j,irec)=my_value
-!!          ELSE                                     ! for debugging
-!!            OCEAN(ng)%ubar(i,j,irec)=0.0_r8        ! purposes
-            END IF
+              Uboundary=(m.eq.BRY_CONTACT(iwest,cr)%C2Bindex(j)).or.    &
+     &                  (m.eq.BRY_CONTACT(ieast,cr)%C2Bindex(j))
+              IF(.not.(Uboundary.and.(irec.eq.indx1(ng)))) THEN
+                OCEAN(ng)%ubar(i,j,irec)=my_value
+!!            ELSE                                   ! for debugging
+!!              OCEAN(ng)%ubar(i,j,irec)=0.0_r8      ! purposes
+              END IF
 # else
-            OCEAN(ng)%ubar(i,j,irec)=my_value
+              OCEAN(ng)%ubar(i,j,irec)=my_value
 # endif
-          END DO
-        END IF
-      END DO
+            END DO
+          END IF
+        END DO
 !
 !  2D momentum in the ETA-direction.
 # ifdef SOLVE3D
@@ -3879,48 +5463,48 @@
 !  done for adjoint correctness.
 # endif
 !
-      DO m=1,Vcontact(cr)%Npoints
-        i=Vcontact(cr)%Irg(m)
-        j=Vcontact(cr)%Jrg(m)
-        IF (((IstrT.le.i).and.(i.le.IendT)).and.                        &
-     &      ((JstrP.le.j).and.(j.le.JendT))) THEN
-          my_value=fac1*(Vcontact(cr)%Hweight(1,m)*                     &
-     &                                REFINED(cr)%vbar(1,m,t1)+         &
-     &                   Vcontact(cr)%Hweight(2,m)*                     &
-     &                                REFINED(cr)%vbar(2,m,t1)+         &
-     &                   Vcontact(cr)%Hweight(3,m)*                     &
-     &                                REFINED(cr)%vbar(3,m,t1)+         &
-     &                   Vcontact(cr)%Hweight(4,m)*                     &
-     &                                REFINED(cr)%vbar(4,m,t1))+        &
-     &             fac2*(Vcontact(cr)%Hweight(1,m)*                     &
-     &                                REFINED(cr)%vbar(1,m,t2)+         &
-     &                   Vcontact(cr)%Hweight(2,m)*                     &
-     &                                REFINED(cr)%vbar(2,m,t2)+         &
-     &                   Vcontact(cr)%Hweight(3,m)*                     &
-     &                                REFINED(cr)%vbar(3,m,t2)+         &
-     &                   Vcontact(cr)%Hweight(4,m)*                     &
-     &                                REFINED(cr)%vbar(4,m,t2))
+        DO m=1,Vcontact(cr)%Npoints
+          i=Vcontact(cr)%Irg(m)
+          j=Vcontact(cr)%Jrg(m)
+          IF (((IstrT.le.i).and.(i.le.IendT)).and.                      &
+     &        ((JstrP.le.j).and.(j.le.JendT))) THEN
+            my_value=Wold*(Vcontact(cr)%Lweight(1,m)*                   &
+     &                                  REFINED(cr)%vbar(1,m,told)+     &
+     &                     Vcontact(cr)%Lweight(2,m)*                   &
+     &                                  REFINED(cr)%vbar(2,m,told)+     &
+     &                     Vcontact(cr)%Lweight(3,m)*                   &
+     &                                  REFINED(cr)%vbar(3,m,told)+     &
+     &                     Vcontact(cr)%Lweight(4,m)*                   &
+     &                                  REFINED(cr)%vbar(4,m,told))+    &
+     &               Wnew*(Vcontact(cr)%Lweight(1,m)*                   &
+     &                                  REFINED(cr)%vbar(1,m,tnew)+     &
+     &                     Vcontact(cr)%Lweight(2,m)*                   &
+     &                                  REFINED(cr)%vbar(2,m,tnew)+     &
+     &                     Vcontact(cr)%Lweight(3,m)*                   &
+     &                                  REFINED(cr)%vbar(3,m,tnew)+     &
+     &                     Vcontact(cr)%Lweight(4,m)*                   &
+     &                                  REFINED(cr)%vbar(4,m,tnew))
 # ifdef MASKING
-          my_value=my_value*GRID(ng)%vmask(i,j)
+            my_value=my_value*GRID(ng)%vmask(i,j)
 # endif
 # ifdef WET_DRY
-          my_value=my_value*GRID(ng)%vmask_wet(i,j)
+            my_value=my_value*GRID(ng)%vmask_wet(i,j)
 # endif
-          DO irec=1,3
+            DO irec=1,3
 # ifdef SOLVE3D
-            Vboundary=(m.eq.BRY_CONTACT(isouth,cr)%C2Bindex(i)).or.     &
-     &                (m.eq.BRY_CONTACT(inorth,cr)%C2Bindex(i))
-            IF(.not.(Vboundary.and.(irec.eq.indx1(ng)))) THEN
-              OCEAN(ng)%vbar(i,j,irec)=my_value
-!!          ELSE                                     ! for debugging
-!!            OCEAN(ng)%vbar(i,j,irec)=0.0_r8        ! purposes
-            END IF
+              Vboundary=(m.eq.BRY_CONTACT(isouth,cr)%C2Bindex(i)).or.   &
+     &                  (m.eq.BRY_CONTACT(inorth,cr)%C2Bindex(i))
+              IF(.not.(Vboundary.and.(irec.eq.indx1(ng)))) THEN
+                OCEAN(ng)%vbar(i,j,irec)=my_value
+!!            ELSE                                   ! for debugging
+!!              OCEAN(ng)%vbar(i,j,irec)=0.0_r8      ! purposes
+              END IF
 # else
-            OCEAN(ng)%vbar(i,j,irec)=my_value
+              OCEAN(ng)%vbar(i,j,irec)=my_value
 # endif
-          END DO
-        END IF
-      END DO
+            END DO
+          END IF
+        END DO
 
 # ifdef SOLVE3D
 !
@@ -3936,135 +5520,132 @@
 !
 !    vbar(:,Jbry,indx1) = DV_avg2(:,Jbry) * pm(:,Jbry) / D(:,Jbry)
 !
-!  We use the latest coarse grid mass flux, REFINED(cr)%DU_avg(1,:,t1),
+!  We use the latest coarse grid mass flux REFINED(cr)%DU_avg(1,:,tnew)
 !  with a linear variation (cff1) to ensure that the sum of the refined
 !  grid fluxes equals the coarse grid flux.
-# ifdef WEC
-!  With WEC, we need to subtract the stokes velocity component of the 
-!  mass flux because it will be added back in during step2d.
-# endif
 !-----------------------------------------------------------------------
 !
 !  Western edge.
 !
-      IF (DOMAIN(ng)%Western_Edge(tile)) THEN
-        DO j=Jstr,Jend
-          m=BRY_CONTACT(iwest,cr)%C2Bindex(j)
-          cff=0.5_r8*GRID(ng)%on_u(Istr,j)*                             &
-              (GRID(ng)%h(Istr-1,j)+                                    &
-     &         OCEAN(ng)%zeta(Istr-1,j,indx1(ng))+                      &
-     &         GRID(ng)%h(Istr  ,j)+                                    &
-     &         OCEAN(ng)%zeta(Istr  ,j,indx1(ng)))
-          cff1=GRID(ng)%on_u(Istr,j)/REFINED(cr)%on_u(m)
+        IF (DOMAIN(ng)%Western_Edge(tile)) THEN
+          DO j=Jstr,Jend
+            m=BRY_CONTACT(iwest,cr)%C2Bindex(j)
+            Idg=Ucontact(cr)%Idg(m)                 ! for debugging
+            Jdg=Ucontact(cr)%Jdg(m)                 ! purposes
+            cff=0.5_r8*GRID(ng)%on_u(Istr,j)*                           &
+                (GRID(ng)%h(Istr-1,j)+                                  &
+     &           OCEAN(ng)%zeta(Istr-1,j,indx1(ng))+                    &
+     &           GRID(ng)%h(Istr  ,j)+                                  &
+     &           OCEAN(ng)%zeta(Istr  ,j,indx1(ng)))
+            cff1=GRID(ng)%on_u(Istr,j)/REFINED(cr)%on_u(m)
 #  ifdef TIME_INTERP_FLUX
-          my_value=cff1*(fac1*REFINED(cr)%DU_avg2(1,m,t1)+              &
-     &                   fac2*REFINED(cr)%DU_avg2(1,m,t2))/cff
+            my_value=cff1*(Wold*REFINED(cr)%DU_avg2(1,m,told)+          &
+     &                     Wnew*REFINED(cr)%DU_avg2(1,m,tnew))/cff
 #  else
-          my_value=cff1*REFINED(cr)%DU_avg2(1,m,t2)/cff
-#  endif
-#  ifdef WEC
-          my_value=my_value-OCEAN(ng)%ubar_stokes(Istr,j)
+            my_value=cff1*REFINED(cr)%DU_avg2(1,m,tnew)/cff
 #  endif
 #  ifdef MASKING
-          my_value=my_value*GRID(ng)%umask(Istr,j)
+            my_value=my_value*GRID(ng)%umask(Istr,j)
 #  endif
 #  ifdef WET_DRY
-          my_value=my_value*GRID(ng)%umask_wet(Istr,j)
+            my_value=my_value*GRID(ng)%umask_wet(Istr,j)
 #  endif
-          OCEAN(ng)%ubar(Istr,j,indx1(ng))=my_value
-        END DO
-      END IF
+            BRY_CONTACT(iwest,cr)%Mflux(j)=cff*my_value
+            OCEAN(ng)%ubar(Istr,j,indx1(ng))=my_value
+          END DO
+        END IF
 !
 !  Eastern edge.
 !
-      IF (DOMAIN(ng)%Eastern_Edge(tile)) THEN
-        DO j=Jstr,Jend
-          m=BRY_CONTACT(ieast,cr)%C2Bindex(j)
-          cff=0.5_r8*GRID(ng)%on_u(Iend+1,j)*                           &
-     &        (GRID(ng)%h(Iend+1,j)+                                    &
-     &         OCEAN(ng)%zeta(Iend+1,j,indx1(ng))+                      &
-     &         GRID(ng)%h(Iend  ,j)+                                    &
-     &         OCEAN(ng)%zeta(Iend  ,j,indx1(ng)))
-          cff1=GRID(ng)%on_u(Iend+1,j)/REFINED(cr)%on_u(m)
+        IF (DOMAIN(ng)%Eastern_Edge(tile)) THEN
+          DO j=Jstr,Jend
+            m=BRY_CONTACT(ieast,cr)%C2Bindex(j)
+            Idg=Ucontact(cr)%Idg(m)                 ! for debugging
+            Jdg=Ucontact(cr)%Jdg(m)                 ! purposes
+            cff=0.5_r8*GRID(ng)%on_u(Iend+1,j)*                         &
+     &          (GRID(ng)%h(Iend+1,j)+                                  &
+     &           OCEAN(ng)%zeta(Iend+1,j,indx1(ng))+                    &
+     &           GRID(ng)%h(Iend  ,j)+                                  &
+     &           OCEAN(ng)%zeta(Iend  ,j,indx1(ng)))
+            cff1=GRID(ng)%on_u(Iend+1,j)/REFINED(cr)%on_u(m)
 #  ifdef TIME_INTERP_FLUX
-          my_value=cff1*(fac1*REFINED(cr)%DU_avg2(1,m,t1)+              &
-     &                   fac2*REFINED(cr)%DU_avg2(1,m,t2))/cff
+            my_value=cff1*(Wold*REFINED(cr)%DU_avg2(1,m,told)+          &
+     &                     Wnew*REFINED(cr)%DU_avg2(1,m,tnew))/cff
 #  else
-          my_value=cff1*REFINED(cr)%DU_avg2(1,m,t2)/cff
-#  endif
-#  ifdef WEC
-          my_value=my_value-OCEAN(ng)%ubar_stokes(Iend+1,j)
+            my_value=cff1*REFINED(cr)%DU_avg2(1,m,tnew)/cff
 #  endif
 #  ifdef MASKING
-          my_value=my_value*GRID(ng)%umask(Iend+1,j)
+            my_value=my_value*GRID(ng)%umask(Iend+1,j)
 #  endif
 #  ifdef WET_DRY
-          my_value=my_value*GRID(ng)%umask_wet(Iend+1,j)
+            my_value=my_value*GRID(ng)%umask_wet(Iend+1,j)
 #  endif
-          OCEAN(ng)%ubar(Iend+1,j,indx1(ng))=my_value
-        END DO
-      END IF
+            BRY_CONTACT(ieast,cr)%Mflux(j)=cff*my_value
+            OCEAN(ng)%ubar(Iend+1,j,indx1(ng))=my_value
+          END DO
+        END IF
 !
 !  Southern edge.
 !
-      IF (DOMAIN(ng)%Southern_Edge(tile)) THEN
-        DO i=Istr,Iend
-          m=BRY_CONTACT(isouth,cr)%C2Bindex(i)
-          cff=0.5_r8*GRID(ng)%om_v(i,Jstr)*                             &
-     &        (GRID(ng)%h(i,Jstr-1)+                                    &
-     &         OCEAN(ng)%zeta(i,Jstr-1,indx1(ng))+                      &
-     &         GRID(ng)%h(i,Jstr  )+                                    &
-     &         OCEAN(ng)%zeta(i,Jstr  ,indx1(ng)))
-          cff1=GRID(ng)%om_v(i,Jstr)/REFINED(cr)%om_v(m)
+        IF (DOMAIN(ng)%Southern_Edge(tile)) THEN
+          DO i=Istr,Iend
+            m=BRY_CONTACT(isouth,cr)%C2Bindex(i)
+            Idg=Vcontact(cr)%Idg(m)                 ! for debugging
+            Jdg=Vcontact(cr)%Jdg(m)                 ! purposes
+            cff=0.5_r8*GRID(ng)%om_v(i,Jstr)*                           &
+     &          (GRID(ng)%h(i,Jstr-1)+                                  &
+     &           OCEAN(ng)%zeta(i,Jstr-1,indx1(ng))+                    &
+     &           GRID(ng)%h(i,Jstr  )+                                  &
+     &           OCEAN(ng)%zeta(i,Jstr  ,indx1(ng)))
+            cff1=GRID(ng)%om_v(i,Jstr)/REFINED(cr)%om_v(m)
 #  ifdef TIME_INTERP_FLUX
-          my_value=cff1*(fac1*REFINED(cr)%DV_avg2(1,m,t1)+              &
-     &                   fac2*REFINED(cr)%DV_avg2(1,m,t2))/cff
+            my_value=cff1*(Wold*REFINED(cr)%DV_avg2(1,m,told)+          &
+     &                     Wnew*REFINED(cr)%DV_avg2(1,m,tnew))/cff
 #  else
-          my_value=cff1*REFINED(cr)%DV_avg2(1,m,t2)/cff
-#  endif
-#  ifdef WEC
-          my_value=my_value-OCEAN(ng)%vbar_stokes(i,Jstr)
+            my_value=cff1*REFINED(cr)%DV_avg2(1,m,tnew)/cff
 #  endif
 #  ifdef MASKING
-          my_value=my_value*GRID(ng)%vmask(i,Jstr)
+            my_value=my_value*GRID(ng)%vmask(i,Jstr)
 #  endif
 #  ifdef WET_DRY
-          my_value=my_value*GRID(ng)%vmask_wet(i,Jstr)
+            my_value=my_value*GRID(ng)%vmask_wet(i,Jstr)
 #  endif
-          OCEAN(ng)%vbar(i,Jstr,indx1(ng))=my_value
-        END DO
-      END IF
+            BRY_CONTACT(isouth,cr)%Mflux(i)=cff*my_value
+            OCEAN(ng)%vbar(i,Jstr,indx1(ng))=my_value
+          END DO
+        END IF
 !
 !  Northern edge.
 !
-      IF (DOMAIN(ng)%Northern_Edge(tile)) THEN
-        DO i=Istr,Iend
-          m=BRY_CONTACT(inorth,cr)%C2Bindex(i)
-          cff=0.5_r8*GRID(ng)%om_v(i,Jend+1)*                           &
-     &        (GRID(ng)%h(i,Jend+1)+                                    &
-     &         OCEAN(ng)%zeta(i,Jend+1,indx1(ng))+                      &
-     &         GRID(ng)%h(i,Jend  )+                                    &
-     &         OCEAN(ng)%zeta(i,Jend  ,indx1(ng)))
-          cff1=GRID(ng)%om_v(i,Jend+1)/REFINED(cr)%om_v(m)
+        IF (DOMAIN(ng)%Northern_Edge(tile)) THEN
+          DO i=Istr,Iend
+            m=BRY_CONTACT(inorth,cr)%C2Bindex(i)
+            Idg=Vcontact(cr)%Idg(m)                 ! for debugging
+            Jdg=Vcontact(cr)%Jdg(m)                 ! purposes
+            cff=0.5_r8*GRID(ng)%om_v(i,Jend+1)*                         &
+     &          (GRID(ng)%h(i,Jend+1)+                                  &
+     &           OCEAN(ng)%zeta(i,Jend+1,indx1(ng))+                    &
+     &           GRID(ng)%h(i,Jend  )+                                  &
+     &           OCEAN(ng)%zeta(i,Jend  ,indx1(ng)))
+            cff1=GRID(ng)%om_v(i,Jend+1)/REFINED(cr)%om_v(m)
 #  ifdef TIME_INTERP_FLUX
-          my_value=cff1*(fac1*REFINED(cr)%DV_avg2(1,m,t1)+              &
-     &                   fac2*REFINED(cr)%DV_avg2(1,m,t2))/cff
+            my_value=cff1*(Wold*REFINED(cr)%DV_avg2(1,m,told)+          &
+     &                     Wnew*REFINED(cr)%DV_avg2(1,m,tnew))/cff
 #  else
-          my_value=cff1*REFINED(cr)%DV_avg2(1,m,t2)/cff
-#  endif
-#  ifdef WEC
-          my_value=my_value-OCEAN(ng)%vbar_stokes(i,Jend+1)
+            my_value=cff1*REFINED(cr)%DV_avg2(1,m,tnew)/cff
 #  endif
 #  ifdef MASKING
-          my_value=my_value*GRID(ng)%vmask(i,Jend+1)
+            my_value=my_value*GRID(ng)%vmask(i,Jend+1)
 #  endif
 #  ifdef WET_DRY
-          my_value=my_value*GRID(ng)%vmask_wet(i,Jend+1)
+            my_value=my_value*GRID(ng)%vmask_wet(i,Jend+1)
 #  endif
-          OCEAN(ng)%vbar(i,Jend+1,indx1(ng))=my_value
-        END DO
-      END IF
+            BRY_CONTACT(inorth,cr)%Mflux(i)=cff*my_value
+            OCEAN(ng)%vbar(i,Jend+1,indx1(ng))=my_value
+          END DO
+        END IF
 # endif
+      END IF FREE_SURFACE
 
 # ifdef DISTRIBUTE
 !
@@ -4072,16 +5653,69 @@
 !  Exchange tile information.
 !-----------------------------------------------------------------------
 !
-      DO irec=1,3
+!  Free-surface.
+!
+      IF (LputFsur) THEN
+        CALL mp_exchange2d (ng, tile, model,                            &
+#  ifdef SOLVE3D
+     &                      4,                                          &
+#  else
+     &                      3,                                          &
+#  endif
+     &                      LBi, UBi, LBj, UBj,                         &
+     &                      NghostPoints,                               &
+     &                      EWperiodic(ng), NSperiodic(ng),             &
+#  ifdef SOLVE3D
+     &                      COUPLING(ng)%Zt_avg1,                       &
+#  endif
+     &                      OCEAN(ng)%zeta(:,:,1),                      &
+     &                      OCEAN(ng)%zeta(:,:,2),                      &
+     &                      OCEAN(ng)%zeta(:,:,3))
+!
+!  2D momentum.
+!
+      ELSE
         CALL mp_exchange2d (ng, tile, model, 3,                         &
      &                      LBi, UBi, LBj, UBj,                         &
      &                      NghostPoints,                               &
      &                      EWperiodic(ng), NSperiodic(ng),             &
-     &                      OCEAN(ng)%zeta(:,:,irec),                   &
-     &                      OCEAN(ng)%ubar(:,:,irec),                   &
-     &                      OCEAN(ng)%vbar(:,:,irec))
-      END DO
+     &                      OCEAN(ng)%ubar(:,:,1),                      &
+     &                      OCEAN(ng)%ubar(:,:,2),                      &
+     &                      OCEAN(ng)%ubar(:,:,3))
+
+        CALL mp_exchange2d (ng, tile, model, 3,                         &
+     &                      LBi, UBi, LBj, UBj,                         &
+     &                      NghostPoints,                               &
+     &                      EWperiodic(ng), NSperiodic(ng),             &
+     &                      OCEAN(ng)%vbar(:,:,1),                      &
+     &                      OCEAN(ng)%vbar(:,:,2),                      &
+     &                      OCEAN(ng)%vbar(:,:,3))
+!
+        CALL mp_assemble (ng, model, NptsWE, spv,                        &
+     &                    BRY_CONTACT(iwest ,cr)%Mflux(JLB:))
+        CALL mp_assemble (ng, model, NptsWE, spv,                        &
+     &                    BRY_CONTACT(ieast ,cr)%Mflux(JLB:))
+        CALL mp_assemble (ng, model, NptsSN, spv,                        &
+     &                    BRY_CONTACT(isouth,cr)%Mflux(ILB:))
+        CALL mp_assemble (ng, model, NptsSN, spv,                        &
+     &                    BRY_CONTACT(inorth,cr)%Mflux(ILB:))
+      END IF
 # endif
+!
+  10  FORMAT (/,' PUT_REFINE2D - unbounded contact points temporal: ',  &
+     &          ' interpolation:',                                      &
+     &        /,2x,  'cr       = ',i2.2,                                &
+     &          8x,'dg         = ',i2.2,                                &
+     &          8x,'ng         = ',i2.2,                                &
+     &        /,2x,  'iic(dg)  = ',i7.7,                                &
+     &          3x,'told       = ',i1,                                  &
+     &          9x,'tnew       = ',i1,                                  &
+     &        /,2x,  'iic(ng)  = ',i7.7,                                &
+     &          3x,'Wold       = ',f8.5,                                &
+     &          2x,'Wnew       = ',f8.5,                                &
+     &        /,2x,  'time(ng) = ',i7.7,                                &
+     &          3x,'time(told) = ',i7.7,                                &
+     &          3x,'time(tnew) = ',i7.7)
 
       RETURN
       END SUBROUTINE put_refine2d
@@ -4117,11 +5751,13 @@
 !=======================================================================
 !
       USE mod_param
+      USE mod_parallel
       USE mod_grid
       USE mod_nesting
       USE mod_ocean
       USE mod_scalars
       USE mod_stepping
+      USE mod_iounits
 
 #  ifdef DISTRIBUTE
 !
@@ -4135,9 +5771,12 @@
 !
 !  Local variable declarations.
 !
-      integer :: i, itrc, j, k, m, t1, t2
+# ifdef NESTING_DEBUG
+      logical, save :: first = .TRUE.
+# endif
+      integer :: i, itrc, j, k, m, tnew, told
 
-      real(r8) :: fac, fac1, fac2
+      real(r8) :: Wnew, Wold, fac
       real(r8) :: my_value
 
 #  include "set_bounds.h"
@@ -4147,23 +5786,58 @@
 !  variables from donor grid.
 !-----------------------------------------------------------------------
 !
-!  Set time interpolation weights.
-!
-      fac1=(time(dg)+dt(dg))-(time(ng)+dt(ng))
-      fac2=time(ng)-(time(dg)-dt(dg))
-      fac=1.0_r8/(fac1+fac2)
-      fac1=fac*fac1
-      fac2=fac*fac2
-!
 !  Set time snapshot indices for the donor grid data.
 !
-      IF (iic(dg).eq.ntstart(dg)) THEN
-        t1=1
-        t2=2
-      ELSE
-        t1=nstp(dg)
-        t2=nnew(dg)
+      told=3-RollingIndex(cr)
+      tnew=RollingIndex(cr)
+!
+!  Set time interpolation weights.
+!
+      Wold=RollingTime(tnew,cr)-time(ng)
+      Wnew=time(ng)-RollingTime(told,cr)
+      fac=1.0_r8/(Wold+Wnew)
+      Wold=fac*Wold
+      Wnew=fac*Wnew
+!
+      IF (((Wold*Wnew).lt.0.0_r8).or.((Wold+Wnew).le.0.0_r8)) THEN
+        IF (DOMAIN(ng)%SouthWest_Test(tile)) THEN
+          IF (Master) THEN
+            WRITE (stdout,10) cr, dg, ng,                               &
+     &                        iic(dg), told, tnew,                      &
+     &                        iic(ng), Wold, Wnew,                      &
+     &                        INT(time(ng)),                            &
+     &                        INT(RollingTime(told,cr)),                &
+     &                        INT(RollingTime(tnew,cr))
+          END IF
+          exit_flag=8
+        END IF
       END IF
+
+# ifdef NESTING_DEBUG
+!
+!  If debugging, write information into Fortran unit 200 to check the
+!  logic of interpolating from donor grid data.
+!
+      IF (DOMAIN(ng)%SouthWest_Test(tile)) THEN
+        IF (Master) THEN
+          IF (first) THEN
+            first=.FALSE.
+            WRITE (200,20)
+          END IF
+          WRITE (200,30) cr, dg, ng, iic(dg), iic(ng), told,  tnew,     &
+     &                   INT(time(ng)),                                 &
+     &                   INT(RollingTime(told,cr)),                     &
+     &                   INT(RollingTime(tnew,cr)),                     &
+     &                   Wold, Wnew
+ 20       FORMAT (3x,'cr',3x,'dg',3x,'ng',3x,'iic',2x,'iic',1x,'told',  &
+     &            1x,'tnew',3x,'time',3x,'time',3x,'time',5x,'Wold',    &
+     &            7x,'Wnew',/,17x,'(dg)',1x,'(ng)',13x,'(ng)',3x,       &
+     &            'told',3x,'tnew',/)
+ 30       FORMAT (7i5,3i7,2f11.4)
+          CALL my_flush (200)
+        END IF
+      END IF
+# endif
 !
 !  Tracer-type variables.
 !
@@ -4174,22 +5848,24 @@
      &      ((JstrT.le.j).and.(j.le.JendT))) THEN
           DO itrc=1,NT(ng)
             DO k=1,N(ng)
-              my_value=fac1*(Rcontact(cr)%Hweight(1,m)*                 &
-     &                                    REFINED(cr)%t(1,k,m,t1,itrc)+ &
-     &                       Rcontact(cr)%Hweight(2,m)*                 &
-     &                                    REFINED(cr)%t(2,k,m,t1,itrc)+ &
-     &                       Rcontact(cr)%Hweight(3,m)*                 &
-     &                                    REFINED(cr)%t(3,k,m,t1,itrc)+ &
-     &                       Rcontact(cr)%Hweight(4,m)*                 &
-     &                                    REFINED(cr)%t(4,k,m,t1,itrc))+&
-     &                 fac2*(Rcontact(cr)%Hweight(1,m)*                 &
-     &                                    REFINED(cr)%t(1,k,m,t2,itrc)+ &
-     &                       Rcontact(cr)%Hweight(2,m)*                 &
-     &                                    REFINED(cr)%t(2,k,m,t2,itrc)+ &
-     &                       Rcontact(cr)%Hweight(3,m)*                 &
-     &                                    REFINED(cr)%t(3,k,m,t2,itrc)+ &
-     &                       Rcontact(cr)%Hweight(4,m)*                 &
-     &                                    REFINED(cr)%t(4,k,m,t2,itrc))
+              my_value=Wold*                                            &
+     &                 (Rcontact(cr)%Lweight(1,m)*                      &
+     &                               REFINED(cr)%t(1,k,m,told,itrc)+    &
+     &                  Rcontact(cr)%Lweight(2,m)*                      &
+     &                               REFINED(cr)%t(2,k,m,told,itrc)+    &
+     &                  Rcontact(cr)%Lweight(3,m)*                      &
+     &                               REFINED(cr)%t(3,k,m,told,itrc)+    &
+     &                  Rcontact(cr)%Lweight(4,m)*                      &
+     &                               REFINED(cr)%t(4,k,m,told,itrc))+   &
+     &                 Wnew*                                            &
+     &                 (Rcontact(cr)%Lweight(1,m)*                      &
+     &                               REFINED(cr)%t(1,k,m,tnew,itrc)+    &
+     &                  Rcontact(cr)%Lweight(2,m)*                      &
+     &                               REFINED(cr)%t(2,k,m,tnew,itrc)+    &
+     &                  Rcontact(cr)%Lweight(3,m)*                      &
+     &                               REFINED(cr)%t(3,k,m,tnew,itrc)+    &
+     &                  Rcontact(cr)%Lweight(4,m)*                      &
+     &                               REFINED(cr)%t(4,k,m,tnew,itrc))
 #  ifdef MASKING
               my_value=my_value*GRID(ng)%rmask(i,j)
 #  endif
@@ -4209,22 +5885,24 @@
         IF (((IstrP.le.i).and.(i.le.IendT)).and.                        &
      &      ((JstrT.le.j).and.(j.le.JendT))) THEN
           DO k=1,N(ng)
-            my_value=fac1*(Ucontact(cr)%Hweight(1,m)*                   &
-     &                                  REFINED(cr)%u(1,k,m,t1)+        &
-     &                     Ucontact(cr)%Hweight(2,m)*                   &
-     &                                  REFINED(cr)%u(2,k,m,t1)+        &
-     &                     Ucontact(cr)%Hweight(3,m)*                   &
-     &                                  REFINED(cr)%u(3,k,m,t1)+        &
-     &                     Ucontact(cr)%Hweight(4,m)*                   &
-     &                                  REFINED(cr)%u(4,k,m,t1))+       &
-     &               fac2*(Ucontact(cr)%Hweight(1,m)*                   &
-     &                                  REFINED(cr)%u(1,k,m,t2)+        &
-     &                     Ucontact(cr)%Hweight(2,m)*                   &
-     &                                  REFINED(cr)%u(2,k,m,t2)+        &
-     &                     Ucontact(cr)%Hweight(3,m)*                   &
-     &                                  REFINED(cr)%u(3,k,m,t2)+        &
-     &                     Ucontact(cr)%Hweight(4,m)*                   &
-     &                                  REFINED(cr)%u(4,k,m,t2))
+            my_value=Wold*                                              &
+     &               (Ucontact(cr)%Lweight(1,m)*                        &
+     &                             REFINED(cr)%u(1,k,m,told)+           &
+     &                Ucontact(cr)%Lweight(2,m)*                        &
+     &                             REFINED(cr)%u(2,k,m,told)+           &
+     &                Ucontact(cr)%Lweight(3,m)*                        &
+     &                             REFINED(cr)%u(3,k,m,told)+           &
+     &                Ucontact(cr)%Lweight(4,m)*                        &
+     &                             REFINED(cr)%u(4,k,m,told))+          &
+     &               Wnew*                                              &
+     &               (Ucontact(cr)%Lweight(1,m)*                        &
+     &                             REFINED(cr)%u(1,k,m,tnew)+           &
+     &                Ucontact(cr)%Lweight(2,m)*                        &
+     &                             REFINED(cr)%u(2,k,m,tnew)+           &
+     &                Ucontact(cr)%Lweight(3,m)*                        &
+     &                             REFINED(cr)%u(3,k,m,tnew)+           &
+     &                Ucontact(cr)%Lweight(4,m)*                        &
+     &                             REFINED(cr)%u(4,k,m,tnew))
 #  ifdef MASKING
             my_value=my_value*GRID(ng)%umask(i,j)
 #  endif
@@ -4242,22 +5920,24 @@
         IF (((IstrT.le.i).and.(i.le.IendT)).and.                        &
      &      ((JstrP.le.j).and.(j.le.JendT))) THEN
           DO k=1,N(ng)
-            my_value=fac1*(Vcontact(cr)%Hweight(1,m)*                   &
-     &                                  REFINED(cr)%v(1,k,m,t1)+        &
-     &                     Vcontact(cr)%Hweight(2,m)*                   &
-     &                                  REFINED(cr)%v(2,k,m,t1)+        &
-     &                     Vcontact(cr)%Hweight(3,m)*                   &
-     &                                  REFINED(cr)%v(3,k,m,t1)+        &
-     &                     Vcontact(cr)%Hweight(4,m)*                   &
-     &                                  REFINED(cr)%v(4,k,m,t1))+       &
-     &               fac2*(Vcontact(cr)%Hweight(1,m)*                   &
-     &                                  REFINED(cr)%v(1,k,m,t2)+        &
-     &                     Vcontact(cr)%Hweight(2,m)*                   &
-     &                                  REFINED(cr)%v(2,k,m,t2)+        &
-     &                     Vcontact(cr)%Hweight(3,m)*                   &
-     &                                  REFINED(cr)%v(3,k,m,t2)+        &
-     &                     Vcontact(cr)%Hweight(4,m)*                   &
-     &                                  REFINED(cr)%v(4,k,m,t2))
+            my_value=Wold*                                              &
+     &               (Vcontact(cr)%Lweight(1,m)*                        &
+     &                             REFINED(cr)%v(1,k,m,told)+           &
+     &                Vcontact(cr)%Lweight(2,m)*                        &
+     &                             REFINED(cr)%v(2,k,m,told)+           &
+     &                Vcontact(cr)%Lweight(3,m)*                        &
+     &                             REFINED(cr)%v(3,k,m,told)+           &
+     &                Vcontact(cr)%Lweight(4,m)*                        &
+     &                             REFINED(cr)%v(4,k,m,told))+          &
+     &               Wnew*                                              &
+     &               (Vcontact(cr)%Lweight(1,m)*                        &
+     &                             REFINED(cr)%v(1,k,m,tnew)+           &
+     &                Vcontact(cr)%Lweight(2,m)*                        &
+     &                             REFINED(cr)%v(2,k,m,tnew)+           &
+     &                Vcontact(cr)%Lweight(3,m)*                        &
+     &                             REFINED(cr)%v(3,k,m,tnew)+           &
+     &                Vcontact(cr)%Lweight(4,m)*                        &
+     &                             REFINED(cr)%v(4,k,m,tnew))
 #  ifdef MASKING
             my_value=my_value*GRID(ng)%vmask(i,j)
 #  endif
@@ -4290,6 +5970,21 @@
      &                    OCEAN(ng)%v(:,:,:,1),                         &
      &                    OCEAN(ng)%v(:,:,:,2))
 #  endif
+!
+  10  FORMAT (/,' PUT_REFINE3D - unbounded contact points temporal: ',  &
+     &          ' interpolation:',                                      &
+     &        /,2x,  'cr       = ',i2.2,                                &
+     &          8x,'dg         = ',i2.2,                                &
+     &          8x,'ng         = ',i2.2,                                &
+     &        /,2x,  'iic(dg)  = ',i7.7,                                &
+     &          3x,'told       = ',i1,                                  &
+     &          9x,'tnew       = ',i1,                                  &
+     &        /,2x,  'iic(ng)  = ',i7.7,                                &
+     &          3x,'Wold       = ',f8.5,                                &
+     &          2x,'Wnew       = ',f8.5,                                &
+     &        /,2x,  'time(ng) = ',i7.7,                                &
+     &          3x,'time(told) = ',i7.7,                                &
+     &          3x,'time(tnew) = ',i7.7)
 
       RETURN
       END SUBROUTINE put_refine3d
@@ -4321,10 +6016,11 @@
       USE mod_param
       USE mod_grid
       USE mod_nesting
+      USE mod_scalars
 
 #  ifdef DISTRIBUTE
 !
-      USE distribute_mod, ONLY : mp_collect
+      USE distribute_mod, ONLY : mp_assemble
 #  endif
 !
 !  Imported variable declarations.
@@ -4347,12 +6043,6 @@
 
       real(r8) :: Zbot, Zr, Ztop, dz, r1, r2
 
-#  ifdef DISTRIBUTE
-      integer,  allocatable :: Kwrk(:)
-
-      real(r8), allocatable :: Wwrk(:)
-      real(r8), allocatable :: Zwrk(:)
-#  endif
       real(r8), allocatable :: Zd(:,:,:)
 !
 !=======================================================================
@@ -4394,12 +6084,15 @@
 #  ifdef DISTRIBUTE
 !
 !  If distributed-memory, initialize with special value (zero) to
-!  facilitate the global communitcations between all nodes.  The
-!  routine "mp_collect" performs a global sum reduction.
+!  facilitate the global reduction when collecting data between all
+!  nodes.
 !
+          Nkpts=N(rg)*Npoints
+          Nwpts=2*Nkpts
+          Nzpts=4*Nkpts
+
           Rcontact(cr)%Kdg(1:N(rg),1:Npoints)=ispv
-          Rcontact(cr)%Vweight(1,1:N(rg),1:Npoints)=spv
-          Rcontact(cr)%Vweight(2,1:N(rg),1:Npoints)=spv
+          Rcontact(cr)%Vweight(1:2,1:N(rg),1:Npoints)=spv
 #  endif
 !
 !  If coincident grids and requested, avoid vertical interpolation.
@@ -4427,14 +6120,14 @@
 !  Allocate and initialize local working arrays.
 !
             IF (.not.allocated(Zd)) THEN
-              allocate (Zd(4,N(dg),Npoints))
+              allocate ( Zd(4,N(dg),Npoints) )
             END IF
             Zd=spv
 !
 !  Extract donor grid depths for each cell containing the receiver grid
 !  contact point.  Notice that indices i+1 and j+1 are bounded to the
 !  maximum possible values in contact points at the edge of the contact
-!  region.  In such cases, Hweight(1,m)=1 and Hweight(2:3,m)=0.  This is
+!  region.  In such cases, Lweight(1,m)=1 and Lweight(2:3,m)=0.  This is
 !  done to avoid out of range errors. We need to take care of this in
 !  the adjoint code.
 !
@@ -4458,14 +6151,8 @@
 !
 !  Exchange data between all parallel nodes.
 !
-            Nzpts=4*N(dg)*Npoints
-            IF (.not.allocated(Zwrk)) THEN
-              allocate (Zwrk(Nzpts))
-            END IF
-
-            Zwrk=RESHAPE(Zd,(/Nzpts/))
-            CALL mp_collect (dg, model, Nzpts, spv, Zwrk)
-            Zd=RESHAPE(Zwrk, (/4,N(dg),Npoints/))
+            CALL mp_assemble (dg, model, Nzpts, spv, Zd)
+            IF (exit_flag.ne.NoError) RETURN
 #  endif
 !
 !  Determine donor grid vertical indices (Kdg) and weights (Vweight)
@@ -4478,14 +6165,14 @@
                 Jrg=Rcontact(cr)%Jrg(m)
                 IF (((IminR.le.Irg).and.(Irg.le.ImaxR)).and.            &
      &              ((JminR.le.Jrg).and.(Jrg.le.JmaxR))) THEN
-                  Ztop=Rcontact(cr)%Hweight(1,m)*Zd(1,N(dg),m)+         &
-     &                 Rcontact(cr)%Hweight(2,m)*Zd(2,N(dg),m)+         &
-     &                 Rcontact(cr)%Hweight(3,m)*Zd(3,N(dg),m)+         &
-     &                 Rcontact(cr)%Hweight(4,m)*Zd(4,N(dg),m)
-                  Zbot=Rcontact(cr)%Hweight(1,m)*Zd(1,1    ,m)+         &
-     &                 Rcontact(cr)%Hweight(2,m)*Zd(2,1    ,m)+         &
-     &                 Rcontact(cr)%Hweight(3,m)*Zd(3,1    ,m)+         &
-     &                 Rcontact(cr)%Hweight(4,m)*Zd(4,1    ,m)
+                  Ztop=Rcontact(cr)%Lweight(1,m)*Zd(1,N(dg),m)+         &
+     &                 Rcontact(cr)%Lweight(2,m)*Zd(2,N(dg),m)+         &
+     &                 Rcontact(cr)%Lweight(3,m)*Zd(3,N(dg),m)+         &
+     &                 Rcontact(cr)%Lweight(4,m)*Zd(4,N(dg),m)
+                  Zbot=Rcontact(cr)%Lweight(1,m)*Zd(1,1    ,m)+         &
+     &                 Rcontact(cr)%Lweight(2,m)*Zd(2,1    ,m)+         &
+     &                 Rcontact(cr)%Lweight(3,m)*Zd(3,1    ,m)+         &
+     &                 Rcontact(cr)%Lweight(4,m)*Zd(4,1    ,m)
                   Zr=GRID(rg)%z_r(Irg,Jrg,Krg)
                   IF (Zr.ge.Ztop) THEN           ! If shallower, use top
                     Rcontact(cr)%Kdg(Krg,m)=N(dg)! donor grid cell value
@@ -4497,14 +6184,14 @@
                     Rcontact(cr)%Vweight(2,Krg,m)=1.0_r8
                   ELSE                           ! bounded, interpolate
                     DO Kdg=N(dg),2,-1
-                      Ztop=Rcontact(cr)%Hweight(1,m)*Zd(1,Kdg  ,m)+     &
-     &                     Rcontact(cr)%Hweight(2,m)*Zd(2,Kdg  ,m)+     &
-     &                     Rcontact(cr)%Hweight(3,m)*Zd(3,Kdg  ,m)+     &
-     &                     Rcontact(cr)%Hweight(4,m)*Zd(4,Kdg  ,m)
-                      Zbot=Rcontact(cr)%Hweight(1,m)*Zd(1,Kdg-1,m)+     &
-     &                     Rcontact(cr)%Hweight(2,m)*Zd(2,Kdg-1,m)+     &
-     &                     Rcontact(cr)%Hweight(3,m)*Zd(3,Kdg-1,m)+     &
-     &                     Rcontact(cr)%Hweight(4,m)*Zd(4,Kdg-1,m)
+                      Ztop=Rcontact(cr)%Lweight(1,m)*Zd(1,Kdg  ,m)+     &
+     &                     Rcontact(cr)%Lweight(2,m)*Zd(2,Kdg  ,m)+     &
+     &                     Rcontact(cr)%Lweight(3,m)*Zd(3,Kdg  ,m)+     &
+     &                     Rcontact(cr)%Lweight(4,m)*Zd(4,Kdg  ,m)
+                      Zbot=Rcontact(cr)%Lweight(1,m)*Zd(1,Kdg-1,m)+     &
+     &                     Rcontact(cr)%Lweight(2,m)*Zd(2,Kdg-1,m)+     &
+     &                     Rcontact(cr)%Lweight(3,m)*Zd(3,Kdg-1,m)+     &
+     &                     Rcontact(cr)%Lweight(4,m)*Zd(4,Kdg-1,m)
                       IF ((Ztop.gt.Zr).and.(Zr.ge.Zbot)) THEN
                         dz=Ztop-Zbot
                         r2=(Zr-Zbot)/dz
@@ -4524,23 +6211,11 @@
 !
 !  Exchange data between all parallel nodes.
 !
-          Nkpts=N(rg)*Npoints
-          Nwpts=2*N(rg)*Npoints
+          CALL mp_assemble (rg, model, Nkpts, ispv, Rcontact(cr)%Kdg)
+          IF (exit_flag.ne.NoError) RETURN
 
-          IF (.not.allocated(Kwrk)) THEN
-            allocate (Kwrk(Nkpts))
-          END IF
-          IF (.not.allocated(Wwrk)) THEN
-            allocate (Wwrk(Nwpts))
-          END IF
-
-          Kwrk=RESHAPE(Rcontact(cr)%Kdg,(/Nkpts/))
-          CALL mp_collect (rg, model, Nkpts, ispv, Kwrk)
-          Rcontact(cr)%Kdg=RESHAPE(Kwrk, (/N(rg),Npoints/))
-
-          Wwrk=RESHAPE(Rcontact(cr)%Vweight,(/Nwpts/))
-          CALL mp_collect (rg, model, Nwpts, spv,  Wwrk)
-          Rcontact(cr)%Vweight=RESHAPE(Wwrk, (/2,N(rg),Npoints/))
+          CALL mp_assemble (rg, model, Nwpts, spv, Rcontact(cr)%Vweight)
+          IF (exit_flag.ne.NoError) RETURN
 #  endif
 !
 !  Deallocate local work arrays.
@@ -4548,17 +6223,6 @@
           IF (allocated(Zd)) THEN
             deallocate (Zd)
           END IF
-#  ifdef DISTRIBUTE
-          IF (allocated(Kwrk)) THEN
-            deallocate (Kwrk)
-          END IF
-          IF (allocated(Wwrk)) THEN
-            deallocate (Wwrk)
-          END IF
-          IF (allocated(Zwrk)) THEN
-            deallocate (Zwrk)
-          END IF
-#  endif
 !
 !-----------------------------------------------------------------------
 !  Process variables in structure Ucontact(cr).
@@ -4584,12 +6248,15 @@
 #  ifdef DISTRIBUTE
 !
 !  If distributed-memory, initialize with special value (zero) to
-!  facilitate the global communitcations between all nodes.  The
-!  routine "mp_collect" performs a global sum reduction.
+!  facilitate the global reduction when collecting data between all
+!  nodes.
 !
+          Nkpts=N(rg)*Npoints
+          Nwpts=2*Nkpts
+          Nzpts=4*Nkpts
+
           Ucontact(cr)%Kdg(1:N(rg),1:Npoints)=ispv
-          Ucontact(cr)%Vweight(1,1:N(rg),1:Npoints)=spv
-          Ucontact(cr)%Vweight(2,1:N(rg),1:Npoints)=spv
+          Ucontact(cr)%Vweight(1:2,1:N(rg),1:Npoints)=spv
 #  endif
 !
 !  If coincident grids and requested, avoid vertical interpolation.
@@ -4625,7 +6292,7 @@
 !  contact point.  Notice that indices i-1, i+1 and j-1, j+1 are bounded
 !  the minimum/maximum possible values in contact points at the edge of
 !  the contact region.  In such cases, the interpolation weights
-!  Hweight(1,m)=1 and Hweight(2:3,m)=0.  This is done to avoid out of
+!  Lweight(1,m)=1 and Lweight(2:3,m)=0.  This is done to avoid out of
 !  range errors. We need to take care of this in the adjoint code.
 !
             DO Kdg=1,N(dg)
@@ -4653,14 +6320,8 @@
 !
 !  Exchange data between all parallel nodes.
 !
-            Nzpts=4*N(dg)*Npoints
-            IF (.not.allocated(Zwrk)) THEN
-              allocate (Zwrk(Nzpts))
-            END IF
-
-            Zwrk=RESHAPE(Zd,(/Nzpts/))
-            CALL mp_collect (dg, model, Nzpts, spv, Zwrk)
-            Zd=RESHAPE(Zwrk, (/4,N(dg),Npoints/))
+            CALL mp_assemble (dg, model, Nzpts, spv, Zd)
+            IF (exit_flag.ne.NoError) RETURN
 #  endif
 !
 !  Determine donor grid vertical indices (Kdg) and weights (Vweight)
@@ -4673,14 +6334,14 @@
                 Jrg=Ucontact(cr)%Jrg(m)
                 IF (((IminR.le.Irg).and.(Irg.le.ImaxR)).and.            &
      &              ((JminR.le.Jrg).and.(Jrg.le.JmaxR))) THEN
-                  Ztop=Ucontact(cr)%Hweight(1,m)*Zd(1,N(dg),m)+         &
-     &                 Ucontact(cr)%Hweight(2,m)*Zd(2,N(dg),m)+         &
-     &                 Ucontact(cr)%Hweight(3,m)*Zd(3,N(dg),m)+         &
-     &                 Ucontact(cr)%Hweight(4,m)*Zd(4,N(dg),m)
-                  Zbot=Ucontact(cr)%Hweight(1,m)*Zd(1,1    ,m)+         &
-     &                 Ucontact(cr)%Hweight(2,m)*Zd(2,1    ,m)+         &
-     &                 Ucontact(cr)%Hweight(3,m)*Zd(3,1    ,m)+         &
-     &                 Ucontact(cr)%Hweight(4,m)*Zd(4,1    ,m)
+                  Ztop=Ucontact(cr)%Lweight(1,m)*Zd(1,N(dg),m)+         &
+     &                 Ucontact(cr)%Lweight(2,m)*Zd(2,N(dg),m)+         &
+     &                 Ucontact(cr)%Lweight(3,m)*Zd(3,N(dg),m)+         &
+     &                 Ucontact(cr)%Lweight(4,m)*Zd(4,N(dg),m)
+                  Zbot=Ucontact(cr)%Lweight(1,m)*Zd(1,1    ,m)+         &
+     &                 Ucontact(cr)%Lweight(2,m)*Zd(2,1    ,m)+         &
+     &                 Ucontact(cr)%Lweight(3,m)*Zd(3,1    ,m)+         &
+     &                 Ucontact(cr)%Lweight(4,m)*Zd(4,1    ,m)
                   Zr=0.5_r8*(GRID(rg)%z_r(Irg  ,Jrg,Krg)+               &
      &                       GRID(rg)%z_r(Irg-1,Jrg,Krg))
                   IF (Zr.ge.Ztop) THEN           ! If shallower, use top
@@ -4693,14 +6354,14 @@
                     Ucontact(cr)%Vweight(2,Krg,m)=1.0_r8
                   ELSE                           ! bounded, interpolate
                     DO Kdg=N(dg),2,-1
-                      Ztop=Ucontact(cr)%Hweight(1,m)*Zd(1,Kdg  ,m)+     &
-     &                     Ucontact(cr)%Hweight(2,m)*Zd(2,Kdg  ,m)+     &
-     &                     Ucontact(cr)%Hweight(3,m)*Zd(3,Kdg  ,m)+     &
-     &                     Ucontact(cr)%Hweight(4,m)*Zd(4,Kdg  ,m)
-                      Zbot=Ucontact(cr)%Hweight(1,m)*Zd(1,Kdg-1,m)+     &
-     &                     Ucontact(cr)%Hweight(2,m)*Zd(2,Kdg-1,m)+     &
-     &                     Ucontact(cr)%Hweight(3,m)*Zd(3,Kdg-1,m)+     &
-     &                     Ucontact(cr)%Hweight(4,m)*Zd(4,Kdg-1,m)
+                      Ztop=Ucontact(cr)%Lweight(1,m)*Zd(1,Kdg  ,m)+     &
+     &                     Ucontact(cr)%Lweight(2,m)*Zd(2,Kdg  ,m)+     &
+     &                     Ucontact(cr)%Lweight(3,m)*Zd(3,Kdg  ,m)+     &
+     &                     Ucontact(cr)%Lweight(4,m)*Zd(4,Kdg  ,m)
+                      Zbot=Ucontact(cr)%Lweight(1,m)*Zd(1,Kdg-1,m)+     &
+     &                     Ucontact(cr)%Lweight(2,m)*Zd(2,Kdg-1,m)+     &
+     &                     Ucontact(cr)%Lweight(3,m)*Zd(3,Kdg-1,m)+     &
+     &                     Ucontact(cr)%Lweight(4,m)*Zd(4,Kdg-1,m)
                       IF ((Ztop.gt.Zr).and.(Zr.ge.Zbot)) THEN
                         dz=Ztop-Zbot
                         r2=(Zr-Zbot)/dz
@@ -4720,23 +6381,11 @@
 !
 !  Exchange data between all parallel nodes.
 !
-          Nkpts=N(rg)*Npoints
-          Nwpts=2*N(rg)*Npoints
+          CALL mp_assemble (rg, model, Nkpts, ispv, Ucontact(cr)%Kdg)
+          IF (exit_flag.ne.NoError) RETURN
 
-          IF (.not.allocated(Kwrk)) THEN
-            allocate (Kwrk(Nkpts))
-          END IF
-          IF (.not.allocated(Wwrk)) THEN
-            allocate (Wwrk(Nwpts))
-          END IF
-
-          Kwrk=RESHAPE(Ucontact(cr)%Kdg,(/Nkpts/))
-          CALL mp_collect (rg, model, Nkpts, ispv, Kwrk)
-          Ucontact(cr)%Kdg=RESHAPE(Kwrk, (/N(rg),Npoints/))
-
-          Wwrk=RESHAPE(Ucontact(cr)%Vweight,(/Nwpts/))
-          CALL mp_collect (rg, model, Nwpts, spv,  Wwrk)
-          Ucontact(cr)%Vweight=RESHAPE(Wwrk, (/2,N(rg),Npoints/))
+          CALL mp_assemble (rg, model, Nwpts, spv, Ucontact(cr)%Vweight)
+          IF (exit_flag.ne.NoError) RETURN
 #  endif
 !
 !  Deallocate local work arrays.
@@ -4744,17 +6393,6 @@
           IF (allocated(Zd)) THEN
             deallocate (Zd)
           END IF
-#  ifdef DISTRIBUTE
-          IF (allocated(Kwrk)) THEN
-            deallocate (Kwrk)
-          END IF
-          IF (allocated(Wwrk)) THEN
-            deallocate (Wwrk)
-          END IF
-          IF (allocated(Zwrk)) THEN
-            deallocate (Zwrk)
-          END IF
-#  endif
 !
 !-----------------------------------------------------------------------
 !  Process variables in structure Vcontact(cr).
@@ -4780,12 +6418,15 @@
 #  ifdef DISTRIBUTE
 !
 !  If distributed-memory, initialize with special value (zero) to
-!  facilitate the global communitcations between all nodes.  The
-!  routine "mp_collect" performs a global sum reduction.
+!  facilitate the global reduction when collecting data between all
+!  nodes.
 !
+          Nkpts=N(rg)*Npoints
+          Nwpts=2*Nkpts
+          Nzpts=4*Nkpts
+
           Vcontact(cr)%Kdg(1:N(rg),1:Npoints)=ispv
-          Vcontact(cr)%Vweight(1,1:N(rg),1:Npoints)=spv
-          Vcontact(cr)%Vweight(2,1:N(rg),1:Npoints)=spv
+          Vcontact(cr)%Vweight(1:2,1:N(rg),1:Npoints)=spv
 #  endif
 !
 !  If coincident grids and requested, avoid vertical interpolation.
@@ -4845,14 +6486,8 @@
 !
 !  Exchange data between all parallel nodes.
 !
-            Nzpts=4*N(dg)*Npoints
-            IF (.not.allocated(Zwrk)) THEN
-              allocate (Zwrk(Nzpts))
-            END IF
-
-            Zwrk=RESHAPE(Zd,(/Nzpts/))
-            CALL mp_collect (dg, model, Nzpts, spv, Zwrk)
-            Zd=RESHAPE(Zwrk, (/4,N(dg),Npoints/))
+            CALL mp_assemble (dg, model, Nzpts, spv, Zd)
+            IF (exit_flag.ne.NoError) RETURN
 #  endif
 !
 !  Determine donor grid vertical indices (Kdg) and weights (Vweight)
@@ -4865,14 +6500,14 @@
                 Jrg=Vcontact(cr)%Jrg(m)
                 IF (((IminR.le.Irg).and.(Irg.le.ImaxR)).and.            &
      &              ((JminR.le.Jrg).and.(Jrg.le.JmaxR))) THEN
-                  Ztop=Vcontact(cr)%Hweight(1,m)*Zd(1,N(dg),m)+         &
-     &                 Vcontact(cr)%Hweight(2,m)*Zd(2,N(dg),m)+         &
-     &                 Vcontact(cr)%Hweight(3,m)*Zd(3,N(dg),m)+         &
-     &                 Vcontact(cr)%Hweight(4,m)*Zd(4,N(dg),m)
-                  Zbot=Vcontact(cr)%Hweight(1,m)*Zd(1,1    ,m)+         &
-     &                 Vcontact(cr)%Hweight(2,m)*Zd(2,1    ,m)+         &
-     &                 Vcontact(cr)%Hweight(3,m)*Zd(3,1    ,m)+         &
-     &                 Vcontact(cr)%Hweight(4,m)*Zd(4,1    ,m)
+                  Ztop=Vcontact(cr)%Lweight(1,m)*Zd(1,N(dg),m)+         &
+     &                 Vcontact(cr)%Lweight(2,m)*Zd(2,N(dg),m)+         &
+     &                 Vcontact(cr)%Lweight(3,m)*Zd(3,N(dg),m)+         &
+     &                 Vcontact(cr)%Lweight(4,m)*Zd(4,N(dg),m)
+                  Zbot=Vcontact(cr)%Lweight(1,m)*Zd(1,1    ,m)+         &
+     &                 Vcontact(cr)%Lweight(2,m)*Zd(2,1    ,m)+         &
+     &                 Vcontact(cr)%Lweight(3,m)*Zd(3,1    ,m)+         &
+     &                 Vcontact(cr)%Lweight(4,m)*Zd(4,1    ,m)
                   Zr=0.5_r8*(GRID(rg)%z_r(Irg,Jrg  ,Krg)+               &
      &                       GRID(rg)%z_r(Irg,Jrg-1,Krg))
                   IF (Zr.ge.Ztop) THEN           ! If shallower, use top
@@ -4885,14 +6520,14 @@
                     Vcontact(cr)%Vweight(2,Krg,m)=1.0_r8
                   ELSE                           ! bounded, interpolate
                     DO Kdg=N(dg),2,-1
-                      Ztop=Vcontact(cr)%Hweight(1,m)*Zd(1,Kdg  ,m)+     &
-     &                     Vcontact(cr)%Hweight(2,m)*Zd(2,Kdg  ,m)+     &
-     &                     Vcontact(cr)%Hweight(3,m)*Zd(3,Kdg  ,m)+     &
-     &                     Vcontact(cr)%Hweight(4,m)*Zd(4,Kdg  ,m)
-                      Zbot=Vcontact(cr)%Hweight(1,m)*Zd(1,Kdg-1,m)+     &
-     &                     Vcontact(cr)%Hweight(2,m)*Zd(2,Kdg-1,m)+     &
-     &                     Vcontact(cr)%Hweight(3,m)*Zd(3,Kdg-1,m)+     &
-     &                     Vcontact(cr)%Hweight(4,m)*Zd(4,Kdg-1,m)
+                      Ztop=Vcontact(cr)%Lweight(1,m)*Zd(1,Kdg  ,m)+     &
+     &                     Vcontact(cr)%Lweight(2,m)*Zd(2,Kdg  ,m)+     &
+     &                     Vcontact(cr)%Lweight(3,m)*Zd(3,Kdg  ,m)+     &
+     &                     Vcontact(cr)%Lweight(4,m)*Zd(4,Kdg  ,m)
+                      Zbot=Vcontact(cr)%Lweight(1,m)*Zd(1,Kdg-1,m)+     &
+     &                     Vcontact(cr)%Lweight(2,m)*Zd(2,Kdg-1,m)+     &
+     &                     Vcontact(cr)%Lweight(3,m)*Zd(3,Kdg-1,m)+     &
+     &                     Vcontact(cr)%Lweight(4,m)*Zd(4,Kdg-1,m)
                       IF ((Ztop.gt.Zr).and.(Zr.ge.Zbot)) THEN
                         dz=Ztop-Zbot
                         r2=(Zr-Zbot)/dz
@@ -4912,23 +6547,11 @@
 !
 !  Exchange data between all parallel nodes.
 !
-          Nkpts=N(rg)*Npoints
-          Nwpts=2*N(rg)*Npoints
+          CALL mp_assemble (rg, model, Nkpts, ispv, Vcontact(cr)%Kdg)
+          IF (exit_flag.ne.NoError) RETURN
 
-          IF (.not.allocated(Kwrk)) THEN
-            allocate (Kwrk(Nkpts))
-          END IF
-          IF (.not.allocated(Wwrk)) THEN
-            allocate (Wwrk(Nwpts))
-          END IF
-
-          Kwrk=RESHAPE(Vcontact(cr)%Kdg,(/Nkpts/))
-          CALL mp_collect (rg, model, Nkpts, ispv, Kwrk)
-          Vcontact(cr)%Kdg=RESHAPE(Kwrk, (/N(rg),Npoints/))
-
-          Wwrk=RESHAPE(Vcontact(cr)%Vweight,(/Nwpts/))
-          CALL mp_collect (rg, model, Nwpts, spv,  Wwrk)
-          Vcontact(cr)%Vweight=RESHAPE(Wwrk, (/2,N(rg),Npoints/))
+          CALL mp_assemble (rg, model, Nwpts, spv, Vcontact(cr)%Vweight)
+          IF (exit_flag.ne.NoError) RETURN
 #  endif
 !
 !  Deallocate local work arrays.
@@ -4936,17 +6559,6 @@
           IF (allocated(Zd)) THEN
             deallocate (Zd)
           END IF
-#  ifdef DISTRIBUTE
-          IF (allocated(Kwrk)) THEN
-            deallocate (Kwrk)
-          END IF
-          IF (allocated(Wwrk)) THEN
-            deallocate (Wwrk)
-          END IF
-          IF (allocated(Zwrk)) THEN
-            deallocate (Zwrk)
-          END IF
-#  endif
 
         END IF
       END DO

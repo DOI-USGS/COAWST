@@ -108,7 +108,7 @@
 
        PhyIP == 1.5d0
 
-! Phytoplankton, initial slope of P-I curve [mg_C/(mg_Chl Watts m-2 day)],
+! Phytoplankton, initial slope of P-I curve [1/(Watts m-2 day)],
 ! {0.025d0}.
 
        PhyIS == 0.025d0
@@ -416,7 +416,7 @@ Dout(iNO3u) == T        ! NO3_uptake         NO3 uptake
 !  PhyIP          Phytoplankton, NH4 inhibition parameter [1/(millimole_N)].
 !
 !  PhyIS          Phytoplankton, initial slope of P-I curve
-!                   [(mg_C)/(mg_Chl Watts m-2 day)].
+!                   [1/(Watts m-2 day)].
 !
 !  PhyMin         Phytoplankton minimum threshold value [millimole_N/m3].
 !                   Set to zero to avoid limiting.

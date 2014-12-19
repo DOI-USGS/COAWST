@@ -2254,25 +2254,27 @@
       IF (exit_flag.ne.NoError) RETURN
 # endif
 
-# ifdef WEAK_CONSTRAINT
-      Vinfo( 1)='HdecayM'
-      Vinfo( 2)='model error covariance horizontal decorrelation scale'
-      Vinfo( 3)='meter'
-      status=def_var(ng, model, ncid, varid, NF_TYPE,                   &
-     &               1, (/statedim/), Aval, Vinfo, ncname,              &
-     &               SetParAccess = .FALSE.)
-      IF (exit_flag.ne.NoError) RETURN
+      IF (NSA.eq.2) THEN
+        Vinfo( 1)='HdecayM'
+        Vinfo( 2)='model error covariance ' //                          &
+     &            'horizontal decorrelation scale'
+        Vinfo( 3)='meter'
+        status=def_var(ng, model, ncid, varid, NF_TYPE,                 &
+     &                 1, (/statedim/), Aval, Vinfo, ncname,            &
+     &                 SetParAccess = .FALSE.)
+        IF (exit_flag.ne.NoError) RETURN
 
-#  ifdef SOLVE3D
-      Vinfo( 1)='VdecayM'
-      Vinfo( 2)='model error covariance vertical decorrelation scale'
-      Vinfo( 3)='meter'
-      status=def_var(ng, model, ncid, varid, NF_TYPE,                   &
-     &               1, (/statedim/), Aval, Vinfo, ncname,              &
-     &               SetParAccess = .FALSE.)
-      IF (exit_flag.ne.NoError) RETURN
-#  endif
+# ifdef SOLVE3D
+        Vinfo( 1)='VdecayM'
+        Vinfo( 2)='model error covariance '//                           &
+     &            'vertical decorrelation scale'
+        Vinfo( 3)='meter'
+        status=def_var(ng, model, ncid, varid, NF_TYPE,                 &
+     &                 1, (/statedim/), Aval, Vinfo, ncname,              &
+     &                 SetParAccess = .FALSE.)
+        IF (exit_flag.ne.NoError) RETURN
 # endif
+      END IF
 
 # ifdef ADJUST_BOUNDARY
       Vinfo( 1)='HdecayB'

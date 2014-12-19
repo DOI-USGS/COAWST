@@ -1259,8 +1259,8 @@
      &                   HIS2(ng)%Vid(idChuiw), NF_FOUT,                &
      &                   nvd3, t2dgrd, Aval, Vinfo, ncname)
           IF (exit_flag.ne.NoError) RETURN
-        END IF           
-!       
+        END IF
+!
 !  Define temperature of molecular sublayer under ice.
 !  
         IF (Hout2(idT0mk,ng)) THEN
@@ -1297,7 +1297,7 @@
      &                   HIS2(ng)%Vid(idS0mk), NF_FOUT,                 &
      &                   nvd3, t2dgrd, Aval, Vinfo, ncname)
           IF (exit_flag.ne.NoError) RETURN
-        END IF           
+        END IF
 !
 !  Define frazil ice growth rate.
 !

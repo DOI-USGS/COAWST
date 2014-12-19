@@ -21,6 +21,10 @@
 !     model           Calling model identifier.                        !
 !     INPncname       Input adjoint solution NetCDF file name.         !
 !                                                                      !
+!  Notice that only momentum is affected by the full time-averaged     !
+!  masks.  If applicable, these mask contains information about        !
+!  river runoff and time-dependent wetting and drying variations.      !
+!                                                                      !
 !=======================================================================
 !
       USE mod_param
@@ -149,7 +153,7 @@
      &                      LBi, UBi, LBj, UBj,                         &
      &                      scale, Fmin, Fmax,                          &
 # ifdef MASKING
-     &                      GRID(ng) % rmask_io,                        &
+     &                      GRID(ng) % rmask,                           &
 # endif
      &                      OCEAN(ng) % ad_zeta(:,:,Iinp))
           IF (status.ne.nf90_noerr) THEN
@@ -168,7 +172,7 @@
      &                       Iout, MyType,                              &
      &                       LBi, UBi, LBj, UBj, scale,                 &
 # ifdef MASKING
-     &                       GRID(ng) % rmask_io,                       &
+     &                       GRID(ng) % rmask,                          &
 # endif
      &                       OCEAN(ng) % ad_zeta(:,:,Iinp))
           IF (status.ne.nf90_noerr) THEN
@@ -200,7 +204,7 @@
      &                      LBi, UBi, LBj, UBj,                         &
      &                      scale, Fmin, Fmax,                          &
 #  ifdef MASKING
-     &                      GRID(ng) % umask_io,                        &
+     &                      GRID(ng) % umask_full,                      &
 #  endif
      &                      OCEAN(ng) % ad_ubar(:,:,Iinp))
           IF (status.ne.nf90_noerr) THEN
@@ -219,7 +223,7 @@
      &                       Iout, MyType,                              &
      &                       LBi, UBi, LBj, UBj, scale,                 &
 #  ifdef MASKING
-     &                       GRID(ng) % umask_io,                       &
+     &                       GRID(ng) % umask_full,                     &
 #  endif
      &                       OCEAN(ng) % ad_ubar(:,:,Iinp))
           IF (status.ne.nf90_noerr) THEN
@@ -249,7 +253,7 @@
      &                      LBi, UBi, LBj, UBj,                         &
      &                      scale, Fmin, Fmax,                          &
 #  ifdef MASKING
-     &                      GRID(ng) % vmask_io,                        &
+     &                      GRID(ng) % vmask_full,                      &
 #  endif
      &                      OCEAN(ng) % ad_vbar(:,:,Iinp))
           IF (status.ne.nf90_noerr) THEN
@@ -268,7 +272,7 @@
      &                       Iout, MyType,                              &
      &                       LBi, UBi, LBj, UBj, scale,                 &
 #  ifdef MASKING
-     &                       GRID(ng) % vmask_io,                       &
+     &                       GRID(ng) % vmask_full,                     &
 #  endif
      &                       OCEAN(ng) % ad_vbar(:,:,Iinp))
           IF (status.ne.nf90_noerr) THEN
@@ -300,7 +304,7 @@
      &                      LBi, UBi, LBj, UBj, 1, N(ng),               &
      &                      scale, Fmin, Fmax,                          &
 #  ifdef MASKING
-     &                      GRID(ng) % umask_io,                        &
+     &                      GRID(ng) % umask_full,                      &
 #  endif
      &                      OCEAN(ng) % ad_u(:,:,:,Iinp))
           IF (status.ne.nf90_noerr) THEN
@@ -318,7 +322,7 @@
      &                       Iout, MyType,                              &
      &                       LBi, UBi, LBj, UBj, 1, N(ng), scale,       &
 #  ifdef MASKING
-     &                       GRID(ng) % umask_io,                       &
+     &                       GRID(ng) % umask_full,                     &
 #  endif
      &                       OCEAN(ng) % ad_u(:,:,:,Iinp))
           IF (status.ne.nf90_noerr) THEN
@@ -348,7 +352,7 @@
      &                      LBi, UBi, LBj, UBj, 1, N(ng),               &
      &                      scale, Fmin, Fmax,                          &
 #  ifdef MASKING
-     &                      GRID(ng) % vmask_io,                        &
+     &                      GRID(ng) % vmask_full,                      &
 #  endif
      &                      OCEAN(ng) % ad_v(:,:,:,Iinp))
           IF (status.ne.nf90_noerr) THEN
@@ -366,7 +370,7 @@
      &                       Iout, MyType,                              &
      &                       LBi, UBi, LBj, UBj, 1, N(ng), scale,       &
 #  ifdef MASKING
-     &                       GRID(ng) % vmask_io,                       &
+     &                       GRID(ng) % vmask_full,                     &
 #  endif
      &                       OCEAN(ng) % ad_v(:,:,:,Iinp))
           IF (status.ne.nf90_noerr) THEN
@@ -398,7 +402,7 @@
      &                        LBi, UBi, LBj, UBj, 1, N(ng),             &
      &                        scale, Fmin, Fmax,                        &
 #  ifdef MASKING
-     &                        GRID(ng) % rmask_io,                      &
+     &                        GRID(ng) % rmask,                         &
 #  endif
      &                        OCEAN(ng) % ad_t(:,:,:,Iinp,i))
             IF (status.ne.nf90_noerr) THEN
@@ -415,7 +419,7 @@
      &                         Iout, MyType,                            &
      &                         LBi, UBi, LBj, UBj, 1, N(ng), scale,     &
 #  ifdef MASKING
-     &                         GRID(ng) % rmask_io,                     &
+     &                         GRID(ng) % rmask,                        &
 #  endif
      &                         OCEAN(ng) % ad_t(:,:,:,Iinp,i))
             IF (status.ne.nf90_noerr) THEN

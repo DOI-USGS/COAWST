@@ -187,6 +187,15 @@
   'w3dvar'
   1.0d0
 
+'omega'                                            ! Output
+  'S-coordinate vertical momentum component'
+  'meter3 second-1'                                ! [m3/s]
+  'omega, scalar, series'
+  'ocean_time'
+  'idOclm'
+  'w3dvar'
+  1.0d0
+
 'rho'                                              ! Output
   'density anomaly'
   'kilogram meter-3'                               ! [kg/m3]
@@ -219,6 +228,15 @@
 !  Wet/dry masks.
 !------------------------------------------------------------------------------
 !
+
+'wetdry_mask_psi'                                  ! Input/Output
+  'wet/dry mask on PSI-points'
+  'nondimensional'
+  'wetdry_mask_psi, scalar, series'
+  'ocean_time'
+  'idPwet'
+  'p2dvar'
+  1.0d0
 
 'wetdry_mask_rho'                                  ! Input/Output
   'wet/dry mask on RHO-points'
@@ -1872,6 +1890,15 @@
   'r2dvar'
   1.0d0                                            ! 1/rhow (0.001 m3/kg) if m/s
 
+'snow'                                             ! Input
+  'snow fall rate'
+  'kilogram meter-2 second-1'                      ! [kg m2/s]
+  'snow, scalar, series'
+  'snow_time'
+  'idsnow'
+  'r2dvar'
+  1.0d0                                            ! 1/rhow (0.001 m3/kg) if m/s
+
 'evaporation'                                      ! Input
   'evaporation rate'
   'kilogram meter-2 second-1'                      ! [kg m2/s]
@@ -2049,6 +2076,24 @@
   'Wave_break, scalar, series'
   'wave_time'
   'idWbrk'
+  'r2dvar'
+  1.0d0
+
+'Wave_ds'                                          ! Input
+  'wave directional spread'
+  'degree'                                         ! [degree]
+  'Wave_ds, scalar, series'
+  'wave_time'
+  'idWvds'
+  'r2dvar'
+  1.0d0
+
+'Wave_qp'                                          ! Input
+  'wave spectrum peakedness'
+  'nondimensionsal'                                ! []
+  'Wave_qp, scalar, series'
+  'wave_time'
+  'idWvqp'
   'r2dvar'
   1.0d0
 
@@ -3839,6 +3884,15 @@
   'Db_zphi, scalar, series'
   'ocean_time'
   'idBott(idbzp)'
+  'r2dvar'
+  1.0d0
+
+'wet_dry_masking'                                  ! Input/Output
+  'wet_dry mask'
+  '1'                                              ! []
+  'wet masking, scalar, series'
+  'ocean_time'
+  'idWmsk'
   'r2dvar'
   1.0d0
 
@@ -6934,7 +6988,7 @@
   'nulvar'
   1.0d0
 
-  'SiOH_east'                                       ! Input
+'SiOH_east'                                        ! Input
   'silicate eastern boundary condition'
   'millimole_silica meter-3'                       ! [millimole/m3]
   'SiOH_east, scalar, series'

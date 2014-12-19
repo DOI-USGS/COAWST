@@ -479,6 +479,16 @@
       write(wostring(cid:cid+cad-1),'(a)') to_add(1:cad)
       cid=cid+cad
 !
+      to_add=':WDSPR'
+      cad=LEN_TRIM(to_add)
+      write(wostring(cid:cid+cad-1),'(a)') to_add(1:cad)
+      cid=cid+cad
+!
+      to_add=':WQP'
+      cad=LEN_TRIM(to_add)
+      write(wostring(cid:cid+cad-1),'(a)') to_add(1:cad)
+      cid=cid+cad
+!
 !  Finalize and remove trailing spaces from the wostring
 !  for the rlist.
 !
@@ -780,6 +790,12 @@
       ELSE IF (IVTYPE.eq.8) THEN
         CALL AttrVect_importRAttr (AttrVect_G(ng)%wav2ocn_AV,           &
      &                             "QB",avdata)
+      ELSE IF (IVTYPE.eq.16) THEN
+        CALL AttrVect_importRAttr (AttrVect_G(ng)%wav2ocn_AV,           &
+     &                             "WDSPR",avdata)
+      ELSE IF (IVTYPE.eq.58) THEN
+        CALL AttrVect_importRAttr (AttrVect_G(ng)%wav2ocn_AV,           &
+     &                             "WQP",avdata)
       END IF
 !
       IF (IRQ.eq.Numcouple) THEN

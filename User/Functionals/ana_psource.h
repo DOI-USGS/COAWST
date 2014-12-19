@@ -262,12 +262,17 @@
 !
 # if defined MY_APPLICATION
         IF (DOMAIN(ng)%NorthWest_Test(tile)) THEN
+#  ifdef ONE_TRACER_SOURCE
+          SOURCES(ng)%Tsrc(itemp)=???
+          SOURCES(ng)%Tsrc(isalt)=???
+#  else
           DO k=1,N(ng)
             DO is=1,Nsrc(ng)
               SOURCES(ng)%Tsrc(is,k,itemp)=???
               SOURCES(ng)%Tsrc(is,k,isalt)=???
             END DO
           END DO
+#  endif
         END IF
 # else
         ana_psource.h: No values provided for Tsrc.

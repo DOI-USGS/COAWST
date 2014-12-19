@@ -1321,46 +1321,47 @@
      &                   AVG2(ng)%Vid(idChuiw), NF_FOUT,                &
      &                   nvd3, t2dgrd, Aval, Vinfo, ncname)
           IF (exit_flag.ne.NoError) RETURN
-        END IF           
-!       
+        END IF
+!
 !  Define temperature of molecular sublayer under ice.
-!  
+!
         IF (Aout2(idT0mk,ng)) THEN
           Vinfo( 1)=Vname(1,idT0mk)
           WRITE (Vinfo( 2),'(a,1x,a)') Prefix, TRIM(Vname(2,idT0mk))
           Vinfo( 3)=Vname(3,idT0mk)
-          Vinfo(14)=Vname(4,idT0mk) 
-          Vinfo(16)=Vname(1,idtime)  
+          Vinfo(14)=Vname(4,idT0mk)
+          Vinfo(16)=Vname(1,idtime)
 #  if defined WRITE_WATER && defined MASKING
           Vinfo(20)='mask_rho'
-#  endif   
+#  endif
           Vinfo(22)='coordinates'
           Aval(5)=REAL(Iinfo(1,idT0mk,ng),r8)
           status=def_var(ng, model, AVG2(ng)%ncid,                      &
      &                   AVG2(ng)%Vid(idT0mk), NF_FOUT,                 &
      &                   nvd3, t2dgrd, Aval, Vinfo, ncname)
           IF (exit_flag.ne.NoError) RETURN
-        END IF           
-!       
+        END IF
+!
 !  Define salinity of molecular sublayer under ice.
-!  
+!
         IF (Aout2(idS0mk,ng)) THEN
           Vinfo( 1)=Vname(1,idS0mk)
           WRITE (Vinfo( 2),'(a,1x,a)') Prefix, TRIM(Vname(2,idS0mk))
           Vinfo( 3)=Vname(3,idS0mk)
-          Vinfo(14)=Vname(4,idS0mk) 
-          Vinfo(16)=Vname(1,idtime)  
+          Vinfo(14)=Vname(4,idS0mk)
+          Vinfo(16)=Vname(1,idtime)
 #  if defined WRITE_WATER && defined MASKING
           Vinfo(20)='mask_rho'
-#  endif   
+#  endif
           Vinfo(22)='coordinates'
           Aval(5)=REAL(Iinfo(1,idS0mk,ng),r8)
           status=def_var(ng, model, AVG2(ng)%ncid,                      &
      &                   AVG2(ng)%Vid(idS0mk), NF_FOUT,                 &
      &                   nvd3, t2dgrd, Aval, Vinfo, ncname)
           IF (exit_flag.ne.NoError) RETURN
-        END IF           
+        END IF
 !
+>>>>>>> b24cda5... Put back output of t0mk, s0mk.
 !  Define frazil ice growth rate.
 !
         IF (Aout2(idWfr,ng)) THEN 

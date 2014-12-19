@@ -46,8 +46,8 @@
      &                   GRID(ng) % vmask,                              &
 #endif
 #ifdef WET_DRY
-     &                   GRID(ng) % umask_wet,                          &
-     &                   GRID(ng) % vmask_wet,                          &
+     &                   GRID(ng) % umask_diff,                         &
+     &                   GRID(ng) % vmask_diff,                         &
 #endif
      &                   GRID(ng) % Hz,                                 &
      &                   GRID(ng) % pmon_u,                             &
@@ -87,7 +87,7 @@
      &                         umask, vmask,                            &
 #endif
 #ifdef WET_DRY
-     &                         umask_wet, vmask_wet,                    &
+     &                         umask_diff, vmask_diff,                  &
 #endif
      &                         Hz, pmon_u, pnom_v, pm, pn,              &
 #ifdef DIFF_3DCOEF
@@ -128,8 +128,8 @@
       real(r8), intent(in) :: vmask(LBi:,LBj:)
 # endif
 # ifdef WET_DRY
-      real(r8), intent(in) :: umask_wet(LBi:,LBj:)
-      real(r8), intent(in) :: vmask_wet(LBi:,LBj:)
+      real(r8), intent(in) :: umask_diff(LBi:,LBj:)
+      real(r8), intent(in) :: vmask_diff(LBi:,LBj:)
 # endif
 # ifdef DIFF_3DCOEF
 #  ifdef TS_U3ADV_SPLIT
@@ -159,8 +159,8 @@
       real(r8), intent(in) :: vmask(LBi:UBi,LBj:UBj)
 # endif
 # ifdef WET_DRY
-      real(r8), intent(in) :: umask_wet(LBi:UBi,LBj:UBj)
-      real(r8), intent(in) :: vmask_wet(LBi:UBi,LBj:UBj)
+      real(r8), intent(in) :: umask_diff(LBi:UBi,LBj:UBj)
+      real(r8), intent(in) :: vmask_diff(LBi:UBi,LBj:UBj)
 # endif
 # ifdef DIFF_3DCOEF
 #  ifdef TS_U3ADV_SPLIT
@@ -249,10 +249,11 @@
               cff=0.25_r8*(diff4(i,j,itrc)+diff4(i-1,j,itrc))*          &
      &            pmon_u(i,j)
 #endif
-# ifdef WET_DRY
-              cff=cff*umask_wet(i,j)
-# elif defined MASKING
+#ifdef MASKING
               cff=cff*umask(i,j)
+#endif
+#ifdef WET_DRY
+              cff=cff*umask_diff(i,j)
 #endif
               FX(i,j)=cff*(Hz(i,j,k)+Hz(i-1,j,k))*                      &
 #ifdef MIX_STABILITY
@@ -282,10 +283,11 @@
               cff=0.25_r8*(diff4(i,j,itrc)+diff4(i,j-1,itrc))*          &
      &            pnom_v(i,j)
 #endif
-# ifdef WET_DRY
-              cff=cff*vmask_wet(i,j)
-# elif defined MASKING
+#ifdef MASKING
               cff=cff*vmask(i,j)
+#endif
+#ifdef WET_DRY
+              cff=cff*vmask_diff(i,j)
 #endif
               FE(i,j)=cff*(Hz(i,j,k)+Hz(i,j-1,k))*                      &
 #ifdef MIX_STABILITY
@@ -392,10 +394,11 @@
               FX(i,j)=cff*                                              &
      &                (Hz(i,j,k)+Hz(i-1,j,k))*                          &
      &                (LapT(i,j)-LapT(i-1,j))
-# ifdef WET_DRY
-              FX(i,j)=FX(i,j)*umask_wet(i,j)
-# elif defined MASKING
+#ifdef MASKING
               FX(i,j)=FX(i,j)*umask(i,j)
+#endif
+#ifdef WET_DRY
+              FX(i,j)=FX(i,j)*umask_diff(i,j)
 #endif
             END DO
           END DO
@@ -415,10 +418,11 @@
               FE(i,j)=cff*                                              &
      &                (Hz(i,j,k)+Hz(i,j-1,k))*                          &
      &                (LapT(i,j)-LapT(i,j-1))
-# ifdef WET_DRY
-              FE(i,j)=FE(i,j)*vmask_wet(i,j)
-# elif defined MASKING
+#ifdef MASKING
               FE(i,j)=FE(i,j)*vmask(i,j)
+#endif
+#ifdef WET_DRY
+              FE(i,j)=FE(i,j)*vmask_diff(i,j)
 #endif
             END DO
           END DO

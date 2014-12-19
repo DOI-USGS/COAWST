@@ -646,27 +646,6 @@ Hout2(idEmPf) == F                          ! E-P flux
 Hout2(idevap) == T                          ! evaporation rate
 Hout2(idrain) == T                          ! precipitation rate
 
-! Logical switches (TRUE/FALSE) to activate writing of ice prognostic
-! variables into HISTORY output file.
-Hout2(idUice) == T
-Hout2(idVice) == T
-Hout2(idUiceE) == T
-Hout2(idViceN) == T
-Hout2(idAice) == T
-Hout2(idHice) == T
-Hout2(idTice) == T
-Hout2(idHsno) == T
-Hout2(idTimid) == T
-Hout2(idSfwat) == T
-Hout2(idTauiw) == F
-Hout2(idChuiw) == F
-Hout2(idAgeice) == T
-Hout2(idSig11) == F
-Hout2(idSig12) == F
-Hout2(idSig22) == F
-Hout2(idS0mk) == F
-Hout2(idT0mk) == F
-
 ! Logical switches (TRUE/FALSE) to activate writing of extra inert passive
 ! tracers other than biological and sediment tracers. An inert passive tracer
 ! is one that it is only advected and diffused. Other processes are ignored.

@@ -129,6 +129,7 @@
       real(r8) :: z1
       real(r8) :: gamma_k
       real(r8) :: t_fr
+      real(r8) :: delta_wfr
 
 # ifdef DISTRIBUTE
       real(r8), allocatable           :: buffer(:)
@@ -140,7 +141,9 @@
 !     t_freeze(s1,z1) = -0.0575*s1 + 1.710523d-3*sqrt(s1)**3
 !    &       - 2.154996d-4*s1*s1 + 0.000753*z1
 !  Freezing temperature (Steele et al. 1989)
-      t_freeze(s1,z1) = -0.0543*s1 + 0.000759*z1
+!      t_freeze(s1,z1) = -0.0543*s1 + 0.000759*z1
+! Temperature or potential temperature??
+      t_freeze(s1,z1) = -0.0543*s1
 
 # include "set_bounds.h"
 
@@ -156,11 +159,10 @@
       DO j=Jstr,Jend
         DO i=Istr,Iend
           DO k=1,N(ng)
-# ifdef MASKING
-            IF (rmask(i,j) .ne. 0.0_r8) THEN
-# endif
 # ifdef WET_DRY
             IF (rmask_wet(i,j) .ne. 0.0_r8) THEN
+# elif defined MASKING
+            IF (rmask(i,j) .ne. 0.0_r8) THEN
 # endif
               t_fr = t_freeze(t(i,j,k,nnew,isalt),z_r(i,j,k))
               IF (t(i,j,k,nnew,itemp) .lt. t_fr) THEN
@@ -179,11 +181,32 @@
      &                 (Lhat + t(i,j,k,nnew,itemp)*(1.0_r8 - r))
                 t(i,j,k,nnew,isalt) = t(i,j,k,nnew,isalt) *             &
      &                                  (1.0_r8 + gamma_k)
+              ELSE IF (wfr(i,j) > 0 .and.                               &
+     &                 t(i,j,k,nnew,itemp) .gt. t_fr) THEN
+! Use heat at this level to melt some ice from below.
+! gamma_k becomes negative here.
+                gamma_k = (t_fr - t(i,j,k,nnew,itemp)) /                &
+     &                     (Lhat + t(i,j,k,nnew,itemp)*(1.0_r8 - r)     &
+     &                         + 0.0543_r8 * t(i,j,k,nnew,isalt))
+                delta_wfr = gamma_k * Hz(i,j,k) *                       &
+     &                    (rho0 + rho(i,j,k) ) / rhoice(ng)
+!                print *, 'ICE_FRAZIL before', t_fr, t(i,j,k,nnew,itemp),&
+!     &               t(i,j,k,nnew,isalt)
+                IF ((wfr(i,j) + delta_wfr) > 0) THEN
+                  wfr(i,j) = wfr(i,j) + delta_wfr
+                ELSE
+                  gamma_k = -wfr(i,j) * rhoice(ng) /                    &
+     &                     (Hz(i,j,k)*(rho0+rho(i,j,k)))
+                  wfr(i,j) = 0.0_r8
+                ENDIF
+                t(i,j,k,nnew,itemp) = t(i,j,k,nnew,itemp) + gamma_k *   &
+     &                 (Lhat + t(i,j,k,nnew,itemp)*(1.0_r8 - r))
+                t(i,j,k,nnew,isalt) = t(i,j,k,nnew,isalt) *             &
+     &                                  (1.0_r8 + gamma_k)
+!                print *, 'ICE_FRAZIL after', gamma_k,                   &
+!     &               t(i,j,k,nnew,itemp), t(i,j,k,nnew,isalt)
               END IF
-# ifdef WET_DRY
-            END IF
-# endif
-# ifdef MASKING
+# if defined WET_DRY || defined MASKING
             END IF
 # endif
           END DO
@@ -196,6 +219,9 @@
           END IF
         END DO
       END DO
+# ifdef CICE
+! Now compute heat flux from ocean and subtract from wfr
+# endif
       CALL bc_r2d_tile (ng, tile,                                       &
      &                          LBi, UBi, LBj, UBj,                     &
      &                          wfr)

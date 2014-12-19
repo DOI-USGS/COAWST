@@ -69,6 +69,9 @@
 #  ifdef MASKING
      &                   GRID(ng) % rmask,                              &
 #  endif
+#  ifdef WET_DRY
+     &                   GRID(ng) % rmask_wet,                          &
+#  endif
 #  ifdef ICESHELF
      &                   GRID(ng) % zice,                               &
 #   ifdef ICESHELF_3EQ
@@ -143,6 +146,9 @@
 #  endif
 #  if defined MASKING
      &                         rmask,                                   &
+#  endif
+#  ifdef WET_DRY
+     &                         rmask_wet,                               &
 #  endif
 #  ifdef ICESHELF
      &                         zice,                                    &
@@ -221,6 +227,9 @@
 #   if defined MASKING
       real(r8), intent(in) :: rmask(LBi:,LBj:)
 #   endif
+#   ifdef WET_DRY
+      real(r8), intent(in) :: rmask_wet(LBi:,LBj:)
+#   endif
 #   ifdef ICESHELF
       real(r8), intent(in) :: zice(LBi:,LBj:)
 #    ifdef ICESHELF_3EQ
@@ -282,6 +291,9 @@
 #   endif
 #   if defined MASKING
       real(r8), intent(in) :: rmask(LBi:UBi,LBj:UBj)
+#   endif
+#   ifdef WET_DRY
+      real(r8), intent(in) :: rmask_wet(LBi:UBi,LBj:UBj)
 #   endif
 #   ifdef ICESHELF
       real(r8), intent(in) :: zice(LBi:UBi,LBj:UBj)
@@ -447,7 +459,9 @@
      &                     (t(i,j,N(ng),nrhs,isalt)-sss(i,j))
 #       endif
 #     endif
-#     ifdef MASKING
+#     ifdef WET_DRY
+          stflx(i,j,isalt) = rmask_wet(i,j)*stflx(i,j,isalt)
+#     elif defined MASKING
           stflx(i,j,isalt) = rmask(i,j)*stflx(i,j,isalt)
 #     endif
 #   elif defined SRELAXATION
@@ -466,7 +480,9 @@
 #     else
      &                     (t(i,j,N(ng),nrhs,isalt)-sss(i,j))
 #     endif
-#     ifdef MASKING
+#     ifdef WET_DRY
+          stflx(i,j,isalt) = rmask_wet(i,j)*stflx(i,j,isalt)
+#     elif defined MASKING
           stflx(i,j,isalt) = rmask(i,j)*stflx(i,j,isalt)
 #     endif
 #   else
@@ -475,13 +491,17 @@
 #     else
           stflx(i,j,isalt)=stflx(i,j,isalt)*t(i,j,N(ng),nrhs,isalt)
 #     endif
-#     ifdef MASKING
+#     ifdef WET_DRY
+          stflx(i,j,isalt) = rmask_wet(i,j)*stflx(i,j,isalt)
+#     elif defined MASKING
           stflx(i,j,isalt) = rmask(i,j)*stflx(i,j,isalt)
 #     endif
 #   endif
 #   ifdef SSSFLX
           stflx(i,j,isalt)=stflx(i,j,isalt)+sssflx(i,j)
-#     ifdef MASKING
+#     ifdef WET_DRY
+          stflx(i,j,isalt) = rmask_wet(i,j)*stflx(i,j,isalt)
+#     elif defined MASKING
           stflx(i,j,isalt) = rmask(i,j)*stflx(i,j,isalt)
 #     endif
 
@@ -490,7 +510,9 @@
         defined SSSFLX
           sssflx(i,j) = -Tnudg(isalt,ng)*Hz(i,j,N(ng))*                 &
      &                     (t(i,j,N(ng),nrhs,isalt)-sss(i,j))
-#     ifdef MASKING
+#     ifdef WET_DRY
+          sssflx(i,j) = rmask_wet(i,j)*sssflx(i,j)
+#     elif defined MASKING
           sssflx(i,j) = rmask(i,j)*sssflx(i,j)
 #     endif
 #   endif

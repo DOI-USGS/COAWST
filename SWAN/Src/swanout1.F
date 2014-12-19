@@ -921,7 +921,7 @@
       DATA IENT /0/
       CALL STRACE (IENT, 'SWOUTP')
 
-      Numcouple=11
+      Numcouple=13
       ALLOCATE (Cpltype(Numcouple))
       Cpltype(1)=54                      ! DISBOT  SWOEXD
       Cpltype(2)=55                      ! DISSURF SWOEXD
@@ -934,6 +934,8 @@
       Cpltype(9)=13                      ! DIR     SWOEXA
       Cpltype(10)=17                     ! WLEN    SWOEXA
       Cpltype(11)=71                     ! WLENP   SWOEXA
+      Cpltype(12)=16                     ! WDSPR   SWOEXA
+      Cpltype(13)=58                     ! WQP     SWOEXA
 !
       ALLOCATE (OQI(4))
       OQI(1) = 0

@@ -18,7 +18,7 @@
 !                                                                      !
 !  In the following,  M represents the preconditioner.  Specifically,  !
 !                                                                      !
-!    M = I + SUM_i [ (mu_i-1) h_i (h_i)'],                             !
+!    M = I + SUM_i [ (mu_i-1) h_i transpose(h_i)],                     !
 !                                                                      !
 !  where mu_i can take the following values:                           !
 !                                                                      !
@@ -64,7 +64,7 @@
 !  since the gradient and Lanczos vectors  are mutually orthogonal the !
 !  recurrence maybe written in matrix form as:                         !
 !                                                                      !
-!    H Q(k) = Q(k) T(k) + Gamma(k) q(k+1) e'(k)                        !
+!    H Q(k) = Q(k) T(k) + Gamma(k) q(k+1) transpose[e(k)]              !
 !                                                                      !
 !  with                                                                !
 !                                                                      !
@@ -81,7 +81,7 @@
 !            {              Gamma(k-2)   Delta(k-1)   Gamma(k-1) }     !
 !            {                           Gamma(k-1)   Delta(k)   }     !
 !                                                                      !
-!    e'(k) = { 0, ...,0, 1 }                                           !
+!    transpose[e(k)] = { 0, ...,0, 1 }                                 !
 !                                                                      !
 !  The eigenvalues of  T(k)  and the vectors formed by  Q(k)*T(k)  are !
 !  approximations to the eigenvalues and eigenvectors of the  Hessian. !
@@ -92,7 +92,7 @@
 !                                                                      !
 !    X(k) = X(0) + Q(k) Z(k)                                           !
 !                                                                      !
-!    T(k) Z(k) = - transpose[Q(k0)] g(0)                               !
+!    T(k) Z(k) = - transpose[Q(k)] g(0)                                !
 !                                                                      !
 !  where                                                               !
 !                                                                      !
@@ -105,7 +105,7 @@
 !    Q(k)        Matrix of orthonormal Lanczos vectors                 !
 !    T(k)        Symmetric, tri-diagonal matrix                        !
 !    Z(k)        Eigenvectors of Q(k)*T(k)                             !
-!    e'(k)       Tansposed unit vector                                 !
+!    e(k)        Tansposed unit vector                                 !
 !    g(k)        Gradient vectors (adjoint solution: GRAD(J))          !
 !    q(k)        Lanczos vectors                                       !
 !    <...>       Dot product                                           !
@@ -117,8 +117,8 @@
 !      funtions, unpublish manuscript, 1-14.                           !
 !                                                                      !
 !    Fisher, M., 1998: Minimization algorithms for variational data    !
-!      data assimilation. 'In Recent Developments in Numerical         !
-!      Methods for Atmospheric Modelling', pp 364-385, ECMWF.          !
+!      data assimilation. In Recent Developments in Numerical          !
+!      Methods for Atmospheric Modelling, pp 364-385, ECMWF.           !
 !                                                                      !
 !    Tchimanga, J., S. Gratton, A.T. Weaver, and A. Sartenaer, 2008:   !
 !      Limited-memory preconditioners, with application to incremental !
@@ -808,7 +808,7 @@
      &                tl_zeta)
         IF (exit_flag.ne.NoError) RETURN
 !
-!  Check for positive Hessian, J''.
+!  Check for positive Hessian of J.
 !
         IF (cg_delta(innLoop,outLoop).le.0.0_r8) THEN
           PRINT *, ' CG_DELTA not positive.'
@@ -5543,8 +5543,9 @@
 !
 !    ad_var(Lold) = fac1 * ad_var(Lold) + fac2 * tl_var(Lwrk)
 !
-!  AMM: I don't think the second term in fac2 is needed now since we are
-!       always working in terms of the total gradient of J=Jb+Jo. CHECK:
+!  AMM: I do not think the second term in fac2 is needed now since we
+!       are always working in terms of the total gradient of J=Jb+Jo.
+!       CHECK:
 !
 !       fac2=-(cg_Tmatrix(rec,3)+cg_QG(rec,outLoop))
 !
@@ -6740,15 +6741,15 @@
 !  Compute the cost function based on the formula of Tshimanga
 !  (PhD thesis, p 154, eqn A.15):
 !
-!    J = J_initial + 0.5 * r' Q z
+!    J = J_initial + 0.5 * transpose(r) Q z
 !
 !  where J_initial is the value of the cost function when inner=0
 !  (i.e. Cost0), r is the initial cost function gradient when inner=0,
 !  Q is the matrix of Lanczos vectors, and z is the solution of
-!  Tz=-Q'r, T being the associated tridiagonal matrix of the Lanczos
-!  recursion. Note that even when r and x are in y-space, as in the
-!  preconditioned case, their dot-product is equal to that of the
-!  same variables transformed to v-space.
+!  Tz=-transpose(Q) r, T being the associated tridiagonal matrix of
+!  the Lanczos recursion. Note that even when r and x are in y-space,
+!  as in the preconditioned case, their dot-product is equal to that
+!  of the same variables transformed to v-space.
 !-----------------------------------------------------------------------
 !
 !  Compute the current increment and save in nl_var(L1).

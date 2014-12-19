@@ -346,6 +346,16 @@
       write(wostring(cid:cid+cad-1),'(a)') to_add(1:cad)
       cid=cid+cad
 !
+      to_add=':WDSPR'
+      cad=LEN_TRIM(to_add)
+      write(wostring(cid:cid+cad-1),'(a)') to_add(1:cad)
+      cid=cid+cad
+!
+      to_add=':WQP'
+      cad=LEN_TRIM(to_add)
+      write(wostring(cid:cid+cad-1),'(a)') to_add(1:cad)
+      cid=cid+cad
+!
 !  Finalize and remove trailing spaces from the wostring
 !  for the rlist.
 !
@@ -417,8 +427,8 @@
       DO iw=1,Nwav_grids
         WAVid=wavids(iw)
 !
-!  Initialize attribute vectors that are used for the sparse 
-!  interpolation. These vectors are _AV2 and are the same vales 
+!  Initialize attribute vectors that are used for the sparse
+!  interpolation. These vectors are _AV2 and are the same vales
 !  as _AV but different size grids.
 !
         Asize=GlobalSegMap_lsize(GSMapInterp_W(ng,iw)%GSMapSWAN,        &
@@ -623,7 +633,7 @@
      &                           A, Asize)
 !
 !  U-velocity at RHO-points.
-!            
+!
       DO j=JstrR,JendR
         DO i=Istr,Iend
 #ifdef SOLVE3D
@@ -677,8 +687,8 @@
              OCEAN(ng)%uwave(i,j)=ubar_rho(i,j)
           ENDDO
         ENDDO
-# endif  
-#endif 
+# endif
+#endif
 !
 !  V-velocity at RHO-points.
 !
@@ -791,10 +801,11 @@
         DO i=IstrR,IendR
           ij=ij+1
 #ifdef BBL_MODEL
-                A(ij)=MAX(0.0001_r8,                                    &
+!               Specify this to be Madsen 0.05 minimum.
+                A(ij)=MAX(0.05_r8,                                      &
      &                    SEDBED(ng)%bottom(i,j,izNik)*30.0_r8)
 #else
-!               This value will be replaced by the value entered in the 
+!               This value will be replaced by the value entered in the
 !               SWAN INPUT file. See SWAN/Src/waves_coupler.F.
                 A(ij)=0.05_r8
 #endif
@@ -1209,7 +1220,7 @@
 #ifdef ROLLER_SVENDSEN
 !
 !  Percent wave breaking.
-!  
+!
       CALL AttrVect_exportRAttr (AttrVect_G(ng)%wav2ocn_AV, "QB",       &
      &                           A, Asize)
       ij=0
@@ -1221,6 +1232,42 @@
           ELSE
             FORCES(ng)%Wave_break(i,j)=FORCES(ng)%Wave_break(i,j)+      &
      &                                 MAX(0.0_r8,A(ij))
+          END IF
+        END DO
+      END DO
+#endif
+#ifdef WAVES_DSPR
+!
+!  wave directional spreading
+!  
+      CALL AttrVect_exportRAttr (AttrVect_G(ng)%wav2ocn_AV, "WDSPR",    &
+     &                           A, Asize)
+      ij=0
+      DO j=JstrR,JendR
+        DO i=IstrR,IendR
+          ij=ij+1
+          IF (iw.eq.1) THEN
+            FORCES(ng)%Wave_ds(i,j)=MAX(0.0_r8,A(ij))
+          ELSE
+            FORCES(ng)%Wave_ds(i,j)=FORCES(ng)%Wave_ds(i,j)+            &
+     &                              MAX(0.0_r8,A(ij))
+          END IF
+        END DO
+      END DO
+!
+!  wave spectrum peakedness
+!  
+      CALL AttrVect_exportRAttr (AttrVect_G(ng)%wav2ocn_AV, "WQP",      &
+     &                           A, Asize)
+      ij=0
+      DO j=JstrR,JendR
+        DO i=IstrR,IendR
+          ij=ij+1
+          IF (iw.eq.1) THEN
+            FORCES(ng)%Wave_qp(i,j)=MAX(0.0_r8,A(ij))
+          ELSE
+            FORCES(ng)%Wave_qp(i,j)=FORCES(ng)%Wave_qp(i,j)+            &
+     &                              MAX(0.0_r8,A(ij))
           END IF
         END DO
       END DO
@@ -1270,6 +1317,14 @@
      &                        LBi, UBi, LBj, UBj,                       &
      &                        FORCES(ng)%Wave_break)
 # endif
+# ifdef WAVES_DSPR
+      CALL exchange_r2d_tile (ng, tile,                                 &
+     &                        LBi, UBi, LBj, UBj,                       &
+     &                        FORCES(ng)%Wave_ds)
+      CALL exchange_r2d_tile (ng, tile,                                 &
+     &                        LBi, UBi, LBj, UBj,                       &
+     &                        FORCES(ng)%Wave_qp)
+# endif
       END IF
 #ifdef DISTRIBUTE
 !
@@ -1315,6 +1370,13 @@
      &                    NghostPoints,                                 &
      &                    EWperiodic(ng), NSperiodic(ng),               &
      &                    FORCES(ng)%Wave_break)
+# endif
+# ifdef WAVES_DSPR
+      CALL mp_exchange2d (ng, tile, iNLM, 2,                            &
+     &                    LBi, UBi, LBj, UBj,                           &
+     &                    NghostPoints,                                 &
+     &                    EWperiodic(ng), NSperiodic(ng),               &
+     &                    FORCES(ng)%Wave_ds, FORCES(ng)%Wave_qp)
 # endif
 #endif
 !

@@ -51,10 +51,10 @@
      &                     GRID(ng) % umask,       GRID(ng) % vmask,    &
 # endif
 # ifdef WET_DRY_NOT_YET
-     &                     GRID(ng) % pmask_wet,   GRID(ng) % pmask_io, &
-     &                     GRID(ng) % rmask_wet,   GRID(ng) % rmask_io, &
-     &                     GRID(ng) % umask_wet,   GRID(ng) % umask_io, &
-     &                     GRID(ng) % vmask_wet,   GRID(ng) % vmask_io, &
+     &                     GRID(ng) % pmask_wet, GRID(ng) % pmask_full, &
+     &                     GRID(ng) % rmask_wet, GRID(ng) % rmask_full, &
+     &                     GRID(ng) % umask_wet, GRID(ng) % umask_full, &
+     &                     GRID(ng) % vmask_wet, GRID(ng) % vmask_full, &
 #  ifdef SOLVE3D
      &                     GRID(ng) % rmask_wet_avg,                    &
 #  endif
@@ -155,10 +155,10 @@
      &                           pmask, rmask, umask, vmask,            &
 # endif
 # ifdef WET_DRY_NOT_YET
-     &                           pmask_wet, pmask_io,                   &
-     &                           rmask_wet, rmask_io,                   &
-     &                           umask_wet, umask_io,                   &
-     &                           vmask_wet, vmask_io,                   &
+     &                           pmask_wet, pmask_full,                 &
+     &                           rmask_wet, rmask_full,                 &
+     &                           umask_wet, umask_full,                 &
+     &                           vmask_wet, vmask_full,                 &
 #  ifdef SOLVE3D
      &                           rmask_wet_avg,                         &
 #  endif
@@ -342,10 +342,10 @@
       real(r8), intent(inout) :: tl_vbar_stokes(LBi:,LBj:)
 #  endif
 #  ifdef WET_DRY_NOT_YET
-      real(r8), intent(inout) :: pmask_io(LBi:,LBj:)
-      real(r8), intent(inout) :: rmask_io(LBi:,LBj:)
-      real(r8), intent(inout) :: umask_io(LBi:,LBj:)
-      real(r8), intent(inout) :: vmask_io(LBi:,LBj:)
+      real(r8), intent(inout) :: pmask_full(LBi:,LBj:)
+      real(r8), intent(inout) :: rmask_full(LBi:,LBj:)
+      real(r8), intent(inout) :: umask_full(LBi:,LBj:)
+      real(r8), intent(inout) :: vmask_full(LBi:,LBj:)
 
       real(r8), intent(inout) :: pmask_wet(LBi:,LBj:)
       real(r8), intent(inout) :: rmask_wet(LBi:,LBj:)
@@ -468,10 +468,10 @@
       real(r8), intent(inout) :: tl_vbar_stokes(LBi:UBi,LBj:UBj)
 #  endif
 #  ifdef WET_DRY_NOT_YET
-      real(r8), intent(inout) :: pmask_io(LBi:UBi,LBj:UBj)
-      real(r8), intent(inout) :: rmask_io(LBi:UBi,LBj:UBj)
-      real(r8), intent(inout) :: umask_io(LBi:UBi,LBj:UBj)
-      real(r8), intent(inout) :: vmask_io(LBi:UBi,LBj:UBj)
+      real(r8), intent(inout) :: pmask_full(LBi:UBi,LBj:UBj)
+      real(r8), intent(inout) :: rmask_full(LBi:UBi,LBj:UBj)
+      real(r8), intent(inout) :: umask_full(LBi:UBi,LBj:UBj)
+      real(r8), intent(inout) :: vmask_full(LBi:UBi,LBj:UBj)
 
       real(r8), intent(inout) :: pmask_wet(LBi:UBi,LBj:UBj)
       real(r8), intent(inout) :: rmask_wet(LBi:UBi,LBj:UBj)
@@ -1012,10 +1012,10 @@
 !>   &                  DU_avg1, DV_avg1,                               &
 !>   &                  rmask_wet_avg,                                  &
 #  endif
-!>   &                  pmask_wet, pmask_io,                            &
-!>   &                  rmask_wet, rmask_io,                            &
-!>   &                  umask_wet, umask_io,                            &
-!>   &                  vmask_wet, vmask_io)
+!>   &                  pmask_wet, pmask_full,                          &
+!>   &                  rmask_wet, rmask_full,                          &
+!>   &                  umask_wet, umask_full,                          &
+!>   &                  vmask_wet, vmask_full)
 !>
 !>  HGA: Need the RPM code here.
 !>

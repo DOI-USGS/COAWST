@@ -3,7 +3,7 @@
 #ifdef FILTERED
 !
 !=======================================================================
-!  Copyright (c) 2002-2010 ROMS/TOMS Group                             !
+!  Copyright (c) 2002-2014 ROMS/TOMS Group                             !
 !================================================== Hernan G. Arango ===
 !                                                                      !
 !  2D Time-filtered fields for output purposes.                        !
@@ -100,6 +100,8 @@
 # endif
           real(r8), pointer :: filsus(:,:,:)
           real(r8), pointer :: filsvs(:,:,:)
+          real(r8), pointer :: filbus(:,:,:)
+          real(r8), pointer :: filbvs(:,:,:)
 
         END TYPE T_FILTER
 
@@ -261,6 +263,12 @@
       END IF
       IF (Aout(idVsms,ng)) THEN
         allocate ( FILTER(ng) % filsvs(LBi:UBi,LBj:UBj,FILN) )
+      END IF
+      IF (Aout(idUbms,ng)) THEN
+        allocate ( FILTER(ng) % filbus(LBi:UBi,LBj:UBj,FILN) )
+      END IF
+      IF (Aout(idVbms,ng)) THEN
+        allocate ( FILTER(ng) % filbvs(LBi:UBi,LBj:UBj,FILN) )
       END IF
 # ifdef SOLVE3D
       IF (Aout(idTsur(itemp),ng)) THEN
@@ -596,6 +604,24 @@
           DO j=Jmin,Jmax
             DO i=Imin,Imax
               FILTER(ng) % filsvs(i,j,if) = IniVal
+            END DO
+          END DO
+        END DO
+      END IF
+      IF (Aout(idUbms,ng)) THEN
+        DO if=1,FILN
+          DO j=Jmin,Jmax
+            DO i=Imin,Imax
+              FILTER(ng) % filbus(i,j,if) = IniVal
+            END DO
+          END DO
+        END DO
+      END IF
+      IF (Aout(idVbms,ng)) THEN
+        DO if=1,FILN
+          DO j=Jmin,Jmax
+            DO i=Imin,Imax
+              FILTER(ng) % filbvs(i,j,if) = IniVal
             END DO
           END DO
         END DO

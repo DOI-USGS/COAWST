@@ -12,6 +12,10 @@
 !  This routine writes requested adjoint model fields into adjoint     !
 !  history NetCDF file.                                                !
 !                                                                      !
+!  Notice that only momentum is affected by the full time-averaged     !
+!  masks.  If applicable, these mask contains information about        !
+!  river runoff and time-dependent wetting and drying variations.      !
+!                                                                      !
 !=======================================================================
 !
       USE mod_param
@@ -164,7 +168,7 @@
      &                   ADM(ng)%Rindex, gtype,                         &
      &                   LBi, UBi, LBj, UBj, 1, Nfrec(ng), scale,       &
 #  ifdef MASKING
-     &                   GRID(ng) % umask_io,                           &
+     &                   GRID(ng) % umask,                              &
 #  endif
      &                   FORCES(ng) % ad_ustr(:,:,:,Lfout(ng)))
       IF (status.ne.nf90_noerr) THEN
@@ -184,7 +188,7 @@
      &                   ADM(ng)%Rindex, gtype,                         &
      &                   LBi, UBi, LBj, UBj, 1, Nfrec(ng), scale,       &
 #  ifdef MASKING
-     &                   GRID(ng) % vmask_io,                           &
+     &                   GRID(ng) % vmask,                              &
 #  endif
      &                   FORCES(ng) % ad_vstr(:,:,:,Lfout(ng)))
       IF (status.ne.nf90_noerr) THEN
@@ -211,7 +215,7 @@
      &                       ADM(ng)%Rindex, gtype,                     &
      &                       LBi, UBi, LBj, UBj, 1, Nfrec(ng), scale,   &
 #  ifdef MASKING
-     &                       GRID(ng) % rmask_io,                       &
+     &                       GRID(ng) % rmask,                          &
 #  endif
      &                       FORCES(ng)% ad_tflux(:,:,:,Lfout(ng),itrc))
           IF (status.ne.nf90_noerr) THEN
@@ -235,7 +239,7 @@
      &                     ADM(ng)%Rindex, gtype,                       &
      &                     LBi, UBi, LBj, UBj, scale,                   &
 # ifdef MASKING
-     &                     GRID(ng) % rmask_io,                         &
+     &                     GRID(ng) % rmask,                            &
 # endif
      &                     GRID(ng)% ad_h,                              &
      &                     SetFillVal = .FALSE.)
@@ -261,7 +265,7 @@
      &                       ADM(ng)%Rindex, gtype,                     &
      &                       LBi, UBi, LBj, UBj, scale,                 &
 #  ifdef MASKING
-     &                       GRID(ng) % rmask_io,                       &
+     &                       GRID(ng) % rmask,                          &
 #  endif
      &                       OCEAN(ng)% f_zetaG(:,:,kfout))
           IF (status.ne.nf90_noerr) THEN
@@ -282,7 +286,7 @@
      &                         ADM(ng)%Rindex, gtype,                   &
      &                         LBi, UBi, LBj, UBj, scale,               &
 # ifdef MASKING
-     &                         GRID(ng) % rmask_io,                     &
+     &                         GRID(ng) % rmask,                        &
 # endif
 # ifdef WET_DRY
      &                         OCEAN(ng)% ad_zeta(:,:,kout),            &
@@ -296,7 +300,7 @@
      &                         ADM(ng)%Rindex, gtype,                   &
      &                         LBi, UBi, LBj, UBj, scale,               &
 # ifdef MASKING
-     &                         GRID(ng) % rmask_io,                     &
+     &                         GRID(ng) % rmask,                        &
 # endif
 # ifdef WET_DRY
      &                         OCEAN(ng)% ad_zeta_sol,                  &
@@ -356,7 +360,7 @@
      &                       ADM(ng)%Rindex, gtype,                     &
      &                       LBi, UBi, LBj, UBj, scale,                 &
 #   ifdef MASKING
-     &                       GRID(ng) % umask_io,                       &
+     &                       GRID(ng) % umask_full,                     &
 #   endif
      &                       OCEAN(ng) % f_ubarG(:,:,kfout))
           IF (status.ne.nf90_noerr) THEN
@@ -378,7 +382,7 @@
      &                         ADM(ng)%Rindex, gtype,                   &
      &                         LBi, UBi, LBj, UBj, scale,               &
 # ifdef MASKING
-     &                         GRID(ng) % umask_io,                     &
+     &                         GRID(ng) % umask_full,                   &
 # endif
      &                         OCEAN(ng) % ad_ubar(:,:,kout))
           ELSE
@@ -387,7 +391,7 @@
      &                         ADM(ng)%Rindex, gtype,                   &
      &                         LBi, UBi, LBj, UBj, scale,               &
 # ifdef MASKING
-     &                         GRID(ng) % umask_io,                     &
+     &                         GRID(ng) % umask_full,                   &
 # endif
      &                         OCEAN(ng) % ad_ubar_sol)
           END IF
@@ -444,7 +448,7 @@
      &                       ADM(ng)%Rindex, gtype,                     &
      &                       LBi, UBi, LBj, UBj, scale,                 &
 #   ifdef MASKING
-     &                       GRID(ng) % vmask_io,                       &
+     &                       GRID(ng) % vmask_full,                     &
 #   endif
      &                       OCEAN(ng) % f_vbarG(:,:,kfout))
           IF (status.ne.nf90_noerr) THEN
@@ -466,7 +470,7 @@
      &                         ADM(ng)%Rindex, gtype,                   &
      &                         LBi, UBi, LBj, UBj, scale,               &
 # ifdef MASKING
-     &                         GRID(ng) % vmask_io,                     &
+     &                         GRID(ng) % vmask_full,                   &
 # endif
      &                         OCEAN(ng) % ad_vbar(:,:,kout))
           ELSE
@@ -475,7 +479,7 @@
      &                         ADM(ng)%Rindex, gtype,                   &
      &                         LBi, UBi, LBj, UBj, scale,               &
 # ifdef MASKING
-     &                         GRID(ng) % vmask_io,                     &
+     &                         GRID(ng) % vmask_full,                   &
 # endif
      &                         OCEAN(ng) % ad_vbar_sol)
           END IF
@@ -533,7 +537,7 @@
      &                       ADM(ng)%Rindex, gtype,                     &
      &                       LBi, UBi, LBj, UBj, 1, N(ng), scale,       &
 #   ifdef MASKING
-     &                       GRID(ng) % umask_io,                       &
+     &                       GRID(ng) % umask_full,                     &
 #   endif
      &                       OCEAN(ng) % f_uG(:,:,:,kfout))
           IF (status.ne.nf90_noerr) THEN
@@ -556,7 +560,7 @@
      &                       ADM(ng)%Rindex, gtype,                     &
      &                       LBi, UBi, LBj, UBj, 1, N(ng), scale,       &
 #    ifdef MASKING
-     &                       GRID(ng) % umask_io,                       &
+     &                       GRID(ng) % umask_full,                     &
 #    endif
      &                       OCEAN(ng) % ad_u(:,:,:,nout))
 #  if defined STOCHASTIC_OPT && !defined STOCH_OPT_WHITE
@@ -566,7 +570,7 @@
      &                       ADM(ng)%Rindex, gtype,                     &
      &                       LBi, UBi, LBj, UBj, 1, N(ng), scale,       &
 #    ifdef MASKING
-     &                       GRID(ng) % umask_io,                       &
+     &                       GRID(ng) % umask_full,                     &
 #    endif
      &                       OCEAN(ng) % ad_u_sol(:,:,:))
           ENDIF
@@ -621,7 +625,7 @@
      &                       ADM(ng)%Rindex, gtype,                     &
      &                       LBi, UBi, LBj, UBj, 1, N(ng), scale,       &
 #   ifdef MASKING
-     &                       GRID(ng) % vmask_io,                       &
+     &                       GRID(ng) % vmask_full,                     &
 #   endif
      &                       OCEAN(ng) % f_vG(:,:,:,kfout))
           IF (status.ne.nf90_noerr) THEN
@@ -644,7 +648,7 @@
      &                       ADM(ng)%Rindex, gtype,                     &
      &                       LBi, UBi, LBj, UBj, 1, N(ng), scale,       &
 #   ifdef MASKING
-     &                       GRID(ng) % vmask_io,                       &
+     &                       GRID(ng) % vmask_full,                     &
 #   endif
      &                       OCEAN(ng) % ad_v(:,:,:,nout))
 #  if defined STOCHASTIC_OPT && !defined STOCH_OPT_WHITE
@@ -654,7 +658,7 @@
      &                       ADM(ng)%Rindex, gtype,                     &
      &                       LBi, UBi, LBj, UBj, 1, N(ng), scale,       &
 #   ifdef MASKING
-     &                       GRID(ng) % vmask_io,                       &
+     &                       GRID(ng) % vmask_full,                     &
 #   endif
      &                       OCEAN(ng) % ad_v_sol(:,:,:))
           END IF
@@ -710,7 +714,7 @@
      &                         ADM(ng)%Rindex, gtype,                   &
      &                         LBi, UBi, LBj, UBj, 1, N(ng), scale,     &
 #   ifdef MASKING
-     &                         GRID(ng) % rmask_io,                     &
+     &                         GRID(ng) % rmask,                        &
 #   endif
      &                         OCEAN(ng) % f_tG(:,:,:,kfout,itrc))
             IF (status.ne.nf90_noerr) THEN
@@ -734,7 +738,7 @@
      &                         ADM(ng)%Rindex, gtype,                   &
      &                         LBi, UBi, LBj, UBj, 1, N(ng), scale,     &
 #   ifdef MASKING
-     &                         GRID(ng) % rmask_io,                     &
+     &                         GRID(ng) % rmask,                        &
 #   endif
      &                         OCEAN(ng) % ad_t(:,:,:,nout,itrc))
 #  if defined STOCHASTIC_OPT && !defined STOCH_OPT_WHITE
@@ -744,7 +748,7 @@
      &                         ADM(ng)%Rindex, gtype,                   &
      &                         LBi, UBi, LBj, UBj, 1, N(ng), scale,     &
 #   ifdef MASKING
-     &                         GRID(ng) % rmask_io,                     &
+     &                         GRID(ng) % rmask,                        &
 #   endif
      &                         OCEAN(ng) % ad_t_sol(:,:,:,itrc))
             END IF
@@ -801,7 +805,7 @@
      &                     ADM(ng)%Rindex, gtype,                       &
      &                     LBi, UBi, LBj, UBj, 1, N(ng), scale,         &
 #  ifdef MASKING
-     &                     GRID(ng) % rmask_io,                         &
+     &                     GRID(ng) % rmask,                            &
 #  endif
      &                     OCEAN(ng) % ad_rho)
         IF (status.ne.nf90_noerr) THEN
@@ -823,7 +827,7 @@
      &                     ADM(ng)%Rindex, gtype,                       &
      &                     LBi, UBi, LBj, UBj, 0, N(ng), scale,         &
 #  ifdef MASKING
-     &                     GRID(ng) % rmask_io,                         &
+     &                     GRID(ng) % rmask,                            &
 #  endif
      &                     MIXING(ng) % ad_Akv,                         &
      &                     SetFillVal = .FALSE.)
@@ -846,7 +850,7 @@
      &                     ADM(ng)%Rindex, gtype,                       &
      &                     LBi, UBi, LBj, UBj, 0, N(ng), scale,         &
 #  ifdef MASKING
-     &                     GRID(ng) % rmask_io,                         &
+     &                     GRID(ng) % rmask,                            &
 #  endif
      &                     MIXING(ng) % ad_Akt(:,:,:,itemp),            &
      &                     SetFillVal = .FALSE.)
@@ -870,7 +874,7 @@
      &                     ADM(ng)%Rindex, gtype,                       &
      &                     LBi, UBi, LBj, UBj, 0, N(ng), scale,         &
 #   ifdef MASKING
-     &                     GRID(ng) % rmask_io,                         &
+     &                     GRID(ng) % rmask,                            &
 #   endif
      &                     MIXING(ng) % ad_Akt(:,:,:,isalt),            &
      &                     SetFillVal = .FALSE.)
@@ -907,7 +911,7 @@
      &                       ADM(ng)%Rindex, gtype,                     &
      &                       LBi, UBi, LBj, UBj, scale,                 &
 #   ifdef MASKING
-     &                       GRID(ng) % rmask_io,                       &
+     &                       GRID(ng) % rmask,                          &
 #   endif
      &                       FORCES(ng) % ad_stflx(:,:,itrc))
           IF (status.ne.nf90_noerr) THEN
@@ -940,7 +944,7 @@
      &                     ADM(ng)%Rindex, gtype,                       &
      &                     LBi, UBi, LBj, UBj, scale,                   &
 #  ifdef MASKING
-     &                     GRID(ng) % umask_io,                         &
+     &                     GRID(ng) % umask,                            &
 #  endif
      &                     FORCES(ng) % ad_sustr)
         IF (status.ne.nf90_noerr) THEN
@@ -968,7 +972,7 @@
      &                     ADM(ng)%Rindex, gtype,                       &
      &                     LBi, UBi, LBj, UBj, scale,                   &
 #  ifdef MASKING
-     &                     GRID(ng) % vmask_io,                         &
+     &                     GRID(ng) % vmask,                            &
 #  endif
      &                     FORCES(ng) % ad_svstr)
         IF (status.ne.nf90_noerr) THEN
@@ -992,7 +996,7 @@
      &                     ADM(ng)%Rindex, gtype,                       &
      &                     LBi, UBi, LBj, UBj, scale,                   &
 # ifdef MASKING
-     &                     GRID(ng) % umask_io,                         &
+     &                     GRID(ng) % umask,                            &
 # endif
      &                     FORCES(ng) % ad_bustr_sol)
         IF (status.ne.nf90_noerr) THEN
@@ -1015,7 +1019,7 @@
      &                     ADM(ng)%Rindex, gtype,                       &
      &                     LBi, UBi, LBj, UBj, scale,                   &
 # ifdef MASKING
-     &                     GRID(ng) % vmask_io,                         &
+     &                     GRID(ng) % vmask,                            &
 # endif
      &                     FORCES(ng) % ad_bvstr_sol)
         IF (status.ne.nf90_noerr) THEN

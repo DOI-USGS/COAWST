@@ -380,7 +380,7 @@
 #  if !defined ANA_TAIR && \
      ((defined BULK_FLUXES && !defined NL_BULK_FLUXES) || \
       defined ECOSIM       || \
-      (defined SHORTWAVE   && defined ANA_SRFLUX && defined ALBEDO))
+      (defined SHORTWAVE && defined ANA_SRFLUX && defined ALBEDO_CLOUD))
 !
 !-----------------------------------------------------------------------
 !  Surface air temperature.

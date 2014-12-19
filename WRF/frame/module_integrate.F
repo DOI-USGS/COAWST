@@ -332,13 +332,14 @@ RECURSIVE SUBROUTINE integrate ( grid )
 !           After all nests are opened, and initialized into MCT,
 !           call to init routers and do initial data exchange.
             num_steps=head_grid%itimestep
-!           IF (num_steps.eq.0) THEN
-            IF (last_step.eq.-1) THEN
-!             init the routers between all atm, ocn, and wav grids. 
+            IF ((last_step.eq.-1).and.(grid%id.eq.Natm_grids)) THEN
+!             init the routers between all atm, ocn, and wav grids.
               CALL initialize_atm_routers
+              CALL atm_coupling (head_grid, 0)
+              last_step=num_steps
             END IF
 !           Perform data exchange between all grids.
-            IF ((num_steps.gt.last_step).and.(grid%id.eq.1)) THEN
+            IF ((num_steps.gt.last_step).and.(last_step.ne.-1).and.(grid%id.eq.1)) THEN
               CALL atm_coupling (grid, num_steps)
               last_step=num_steps
             END IF
@@ -353,7 +354,7 @@ RECURSIVE SUBROUTINE integrate ( grid )
             CALL med_before_solve_io ( grid , config_flags )
 #ifdef ROMS_COUPLING
 !           Overwrite the SST update with the coupled SST.
-            IF ((grid%id.eq.1).and.                                     &
+            IF ((grid%id.eq.1).and.(last_step.ne.-1).and.                                     &
      &               (config_flags%io_form_auxinput4 .GT. 0)) THEN
                    CALL atm_coupling_aux4(grid, num_steps)
             END IF

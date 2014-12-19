@@ -164,9 +164,15 @@
 #endif
 #if defined ALBEDO
       IF (Master) WRITE (stdout,20) 'ALBEDO',                           &
-     &   'Shortwave radiation from albedo equation.'
+     &   'Shortwave radiation with albedo correction.'
       is=LEN_TRIM(Coptions)+1
       Coptions(is:is+8)=' ALBEDO,'
+#endif
+#if defined ALBEDO_CLOUD
+      IF (Master) WRITE (stdout,20) 'ALBEDO_CLOUD',                     &
+     &   'Albedo as a function of cloudiness.'
+      is=LEN_TRIM(Coptions)+1
+      Coptions(is:is+14)=' ALBEDO_CLOUD,'
 #endif
 #if defined ALBEDO_CSIM
       IF (Master) WRITE (stdout,20) 'ALBEDO_CSIM',                      &
@@ -616,13 +622,13 @@
 #endif
 #ifdef CCSM_FLUXES
       IF (Master) WRITE (stdout,20) 'CCSM_FLUXES',                      &
-     &   'Surface bulk fluxes parametererization.'
+     &   'Surface bulk fluxes parameterization.'
       is=LEN_TRIM(Coptions)+1
       Coptions(is:is+13)=' CCSM_FLUXES,'
 #endif
 #ifdef CCSM_FLUXES2D
       IF (Master) WRITE (stdout,20) 'CCSM_FLUXES2D',                    &
-     &   'Surface bulk fluxes parametererization.'
+     &   'Surface bulk fluxes parameterization.'
       is=LEN_TRIM(Coptions)+1
       Coptions(is:is+15)=' CCSM_FLUXES2D,'
 #endif
@@ -1124,12 +1130,6 @@
       is=LEN_TRIM(Coptions)+1
       Coptions(is:is+12)=' ICE_SMOLAR,'
 #endif
-#ifdef ICE_SMOOTH
-      IF (Master) WRITE (stdout,20) 'ICE_SMOOTH',                       &
-     &   'Include smoothing of ice.'
-      is=LEN_TRIM(Coptions)+1
-      Coptions(is:is+12)=' ICE_SMOOTH,'
-#endif
 #ifdef ICE_STRENGTH_QUAD
       IF (Master) WRITE (stdout,20) 'ICE_STRENGTH_QUAD',                &
      &   'Ice strength a quadratic function of thickness.'
@@ -1439,7 +1439,7 @@
 #endif
 #ifdef WEC_VF
       IF (Master) WRITE (stdout,20) 'WEC_VF',                           &
-     &   'Vortex Force wave current interaction- UNDER DEVELOPMENT!!!!.'
+     &   'Vortex Force wave current interaction.'
       is=LEN_TRIM(Coptions)+1
       Coptions(is:is+8)=' WEC_VF,'
       nearshore=nearshore+1
@@ -1593,7 +1593,7 @@
 #endif
 #ifdef NPZD_IRON
       IF (Master) WRITE (stdout,20) 'NPZD_IRON',                        &
-     &   'NPZD Biological Model (Powell et al.) with iron limitation.'
+     &   'NPZD Biological Model (Powell et al.) with iron limitation'
       is=LEN_TRIM(Coptions)+1
       Coptions(is:is+11)=' NPZD_IRON,'
       ibiology=ibiology+1
@@ -1647,11 +1647,24 @@
       is=LEN_TRIM(Coptions)+1
       Coptions(is:is+17)=' OFFLINE_BIOLOGY,'
 #endif
-#if defined ONE_WAY && defined NESTING
+#if defined ONE_TRACER_SOURCE
+      IF (Master) WRITE (stdout,20) 'ONE_TRACER_SOURCE',                &
+     &   'One value per tracer for all sources.'
+      is=LEN_TRIM(Coptions)+1
+      Coptions(is:is+19)=' ONE_TRACER_SOURCE,'
+#endif
+#ifdef NESTING
+# ifdef ONE_WAY
       IF (Master) WRITE (stdout,20) 'ONE_WAY',                          &
      &   'One-way nesting in refinement grids.'
       is=LEN_TRIM(Coptions)+1
       Coptions(is:is+9)=' ONE_WAY,'
+# else
+      IF (Master) WRITE (stdout,20) '!ONE_WAY',                         &
+     &   'Two-way nesting in refinement grids.'
+      is=LEN_TRIM(Coptions)+1
+      Coptions(is:is+10)=' !ONE_WAY,'
+# endif
 #endif
 #ifdef OUT_DOUBLE
       IF (Master) WRITE (stdout,20) 'OUT_DOUBLE',                       &
@@ -2075,12 +2088,6 @@
       Coptions(is:is+11)=' SG_LOGINT,'
 # endif
 #endif
-#ifdef SRELAXATION
-      IF (Master) WRITE (stdout,20) 'SRELAXATION',                      &
-     &   'Surface salinity relaxation as surface flux.'
-      is=LEN_TRIM(Coptions)+1
-      Coptions(is:is+13)=' SRELAXATION,'
-#endif
 #ifdef SOLAR_SOURCE
       IF (Master) WRITE (stdout,20) 'SOLAR_SOURCE',                     &
      &   'Solar Radiation Source Term.'
@@ -2137,6 +2144,12 @@
      &   'Spherical grid configuration.'
       is=LEN_TRIM(Coptions)+1
       Coptions(is:is+11)=' SPHERICAL,'
+#endif
+#ifdef SRELAXATION
+      IF (Master) WRITE (stdout,20) 'SRELAXATION',                      &
+     &   'Surface salinity relaxation as surface flux.'
+      is=LEN_TRIM(Coptions)+1
+      Coptions(is:is+13)=' SRELAXATION,'
 #endif
 #if defined SSH_TIDES
       IF (Master) WRITE (stdout,20) 'SSH_TIDES',                        &
@@ -2305,6 +2318,12 @@
       Coptions(is:is+11)=' TS_MPDATA,'
       itrcHadv=itrcHadv+1
       itrcVadv=itrcVadv+1
+#  ifdef TS_MPDATA_LIMIT
+      IF (Master) WRITE (stdout,20) 'TS_MPDATA_LIMIT',                  &
+     &   'Further limiter in upwind corrector fluxes for stability.'
+      is=LEN_TRIM(Coptions)+1
+      Coptions(is:is+17)=' TS_MPDATA_LIMIT,'
+#  endif
 # endif
 # ifdef TS_A4HADVECTION
       IF (Master) WRITE (stdout,20) 'TS_A4HADVECTION',                  &
@@ -2795,6 +2814,7 @@
   70    FORMAT (/,' CHECKDEFS - only one model example is allowed.')
         exit_flag=5
       END IF
+
 #ifndef SOLVE3D
 !
 !  Stop it explicit time-step splitting on shallow water set-up.
@@ -3075,6 +3095,25 @@
      &          /,13x,'Use instead standard input switch: ',a,          &
      &          /,13x,'Edit header file or build script!')
         exit_flag=5
+      END IF
+#endif
+#if !defined DISTRIBUTE && defined NESTING
+!
+!  Stop if activating nesting in serial with partitions or shared-
+!  memory.
+!
+      IF (Master) THEN
+        DO ng=1,Ngrids
+          IF (NtileX(ng)*NtileE(ng).gt.1) THEN
+            WRITE (stdout,250) uppercase('nesting')
+            exit_flag=5
+            EXIT
+          END IF
+        END DO
+ 250    FORMAT (/,' CHECKDEFS - cannot activate option: ',a,           &
+     &          /,13x,'in serial with partitions or shared-memory...', &
+     &          /,13x,'There bugs in shared-memory that need fixing.', &
+     &          /,13x,'Use distributed-memory (MPI) in parallel runs.')
       END IF
 #endif
 

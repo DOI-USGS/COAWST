@@ -50,7 +50,11 @@ for mw=1:Ngrids_swan
     fprintf(fid,'/\n');
     fclose(fid);
    % call scrip
-     eval(['!"',scrip_exe,'"'])
+     try
+       eval(['!"',scrip_exe,'"'])
+     catch
+       scrip
+     end
   end
 end
 %
@@ -97,7 +101,11 @@ for mo=1:Ngrids_roms
     fprintf(fid,'/\n');
     fclose(fid);
    % call scrip
-     eval(['!"',scrip_exe,'"'])
+     try
+       eval(['!"',scrip_exe,'"'])
+     catch
+       scrip
+     end
   end
 end
 %
@@ -140,7 +148,11 @@ for mo=1:Ngrids_roms
     fprintf(fid,'/\n');
     fclose(fid);
    % call scrip
-     eval(['!"',scrip_exe,'"'])
+     try
+       eval(['!"',scrip_exe,'"'])
+     catch
+       scrip
+     end
   end
 end
 %
@@ -183,7 +195,11 @@ for ma=1:Ngrids_wrf
     fprintf(fid,'/\n');
     fclose(fid);
    % call scrip
-     eval(['!"',scrip_exe,'"'])
+     try
+       eval(['!"',scrip_exe,'"'])
+     catch
+       scrip
+     end
   end
 end
 %
@@ -230,7 +246,11 @@ for mw=1:Ngrids_swan
     fprintf(fid,'/\n');
     fclose(fid);
    % call scrip
-     eval(['!"',scrip_exe,'"'])
+     try
+       eval(['!"',scrip_exe,'"'])
+     catch
+       scrip
+     end
   end
 end
 %
@@ -277,7 +297,11 @@ for ma=1:Ngrids_wrf
     fprintf(fid,'/\n');
     fclose(fid);
    % call scrip
-     eval(['!"',scrip_exe,'"'])
+     try
+       eval(['!"',scrip_exe,'"'])
+     catch
+       scrip
+     end
   end
 end
 %

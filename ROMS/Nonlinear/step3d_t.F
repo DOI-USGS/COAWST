@@ -594,7 +594,11 @@
 # endif
                   IF (LtracerSrc(itrc,ng)) THEN
                     FX(i,j)=Huon(i,j,k)*                                &
+# ifdef ONE_TRACER_SOURCE
+     &                      SOURCES(ng)%Tsrc(itrc)
+# else
      &                      SOURCES(ng)%Tsrc(is,k,itrc)
+# endif
 # ifdef MASKING
                   ELSE
                     IF ((rmask(i  ,j).eq.0.0_r8).and.                   &
@@ -617,7 +621,11 @@
 # endif
                   IF (LtracerSrc(itrc,ng)) THEN
                     FE(i,j)=Hvom(i,j,k)*                                &
+# ifdef ONE_TRACER_SOURCE
+     &                      SOURCES(ng)%Tsrc(itrc)
+# else
      &                      SOURCES(ng)%Tsrc(is,k,itrc)
+# endif
 # ifdef MASKING
                   ELSE
                     IF ((rmask(i,j  ).eq.0.0_r8).and.                   &
@@ -1064,11 +1072,19 @@
 #  endif
                 IF (j.eq.SOURCES(ng)%Jsrc(is)) THEN
                   DO k=1,N(ng)-1
+#  ifdef ONE_TRACER_SOURCE
                     FC(i,k)=FC(i,k)+0.5_r8*                             &
      &                      (SOURCES(ng)%Qsrc(is,k  )*                  &
-                             SOURCES(ng)%Tsrc(is,k  ,itrc)+             &
+     &                       SOURCES(ng)%Tsrc(itrc)+                    &
+     &                       SOURCES(ng)%Qsrc(is,k+1)*                  &
+     &                       SOURCES(ng)%Tsrc(itrc) )
+#  else
+                    FC(i,k)=FC(i,k)+0.5_r8*                             &
+     &                      (SOURCES(ng)%Qsrc(is,k  )*                  &
+     &                       SOURCES(ng)%Tsrc(is,k  ,itrc)+             &
      &                       SOURCES(ng)%Qsrc(is,k+1)*                  &
      &                       SOURCES(ng)%Tsrc(is,k+1,itrc))
+#  endif
                   END DO
                 END IF
               END IF
@@ -1385,7 +1401,8 @@
 !
 !  Apply tracers point sources to the horizontal advection terms.
 !
-        DO itrc=1,NT(ng)
+        DO it=1,NPT
+          itrc=inert(it)
           DO is=1,Nsrcpt
             i=Isrcpt(is)
             j=Jsrcpt(is)

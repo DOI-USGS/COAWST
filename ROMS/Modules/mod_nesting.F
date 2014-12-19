@@ -65,8 +65,10 @@
 !  each sub-timestep section.  Negative indices are used in grid
 !  refinement whereas positive indices are used in composite grids.
 !
-      integer, parameter :: ndxdy = -4    ! extract on_u and om_v
-      integer, parameter :: ngetD = -3    ! extract donor grid data
+      integer, parameter :: nmflx = -6    ! check mass flux conservation
+      integer, parameter :: ndxdy = -5    ! extract on_u and om_v
+      integer, parameter :: ngetD = -4    ! extract donor grid data
+      integer, parameter :: nmask = -3    ! scale interpolation weights
       integer, parameter :: nputD = -2    ! fill contact points
       integer, parameter :: n2way = -1    ! fine to course coupling
 !
@@ -95,17 +97,82 @@
 !
       logical, allocatable :: ContactRegion(:,:)    ! [4,Ngrids]
 !
-!  Data donor REFINED structure index associated with refinement grid.
-!  Recall that both refinement and composite grids are allow and this
-!  mapping is for efficient memory usage.
+!  Logical switch indicating which coarser grid is a donor to a
+!  finer receiver grid (RefineScale(rg) > 0) external contact points.
+!  This switch is in terms of the donor coarser grid.
 !
-      integer, allocatable :: RefineDonor(:)        ! [Ngrids]
+      logical, allocatable :: DonorToFiner(:)       ! {Ngrids]
+!$OMP THREADPRIVATE (DonorToFiner)
+!
+!  Switch indicating which refined grid(s), with RefineScale(ng) > 0,
+!  include finer refined grids inside: telescoping refinement.
+!
+      logical, allocatable :: Telescoping(:)        ! [Ngrids]
+!$OMP THREADPRIVATE (Telescoping)
+!
+!  If refinement, it contains the coarser donor grid number to finer
+!  receiver grid external contact points.  The donor grid is always
+!  coarser that receiver grid.  This variable is in terms of the
+!  finer receiver grid.
+!
+      integer, allocatable :: CoarserDonor(:)       ! [Ngrids]
+!$OMP THREADPRIVATE (CoarserDonor)
+!
+!  If refinement and two-way exchange, it contains the donor finer
+!  grid number to a coarser receiver grid.  This variable is in
+!  terms of the coarser donor grid.
+!
+      integer, allocatable :: FinerDonor(:)        ! [Ngrids]
+!$OMP THREADPRIVATE (FinerDonor)
+!
+!  Number of refined time-steps. In most cases, the number of refined
+!  time-step is the same as the refinement scale ratio for numerical
+!  stability. However, the user is allowed to take larger divisible
+!  time-step with respect to the donor grid. The variable below is
+!  computed donor and receiver time-step ratio from standard input.
+!  It is up to the user to determine the appropiate time-step for
+!  stability.
+!
+      integer, allocatable :: RefineSteps(:)        ! [Ngrids]
+!$OMP THREADPRIVATE (RefineSteps)
+!
+!  Refined time-steps counter with respect the coarse grid (ng=1)
+!  single time-step.
+!
+      integer, allocatable :: RefineStepsCounter(:) ! [Ngrids]
+!
+!  Counter for two-way exchange between fine and coarse grids.
+!
+      integer, allocatable :: TwoWayCounter(:)      ! [Ngrids]
 !
 !  Donor and reciver grids for each contact region. These paremeters
-!  are aslo duplicated in the T_NGC structure.
+!  are also duplicated in the T_NGC structure.
 !
       integer, allocatable :: donor_grid(:)         ! [Ncontact]
       integer, allocatable :: receiver_grid(:)      ! [Ncontact]
+!
+!  Rolling index and time (seconds) used in the temporal interpolation
+!  of contact point data.
+!
+      integer,  allocatable :: RollingIndex(:)      ! [Ncontact]
+      real(r8), allocatable :: RollingTime(:,:)     ! [Ncontact]
+!$OMP THREADPRIVATE (RollingIndex, RollingTime)
+!
+!  If refinement, donor grid (I,J) indices at PSI points used to extract
+!  refined grid. Values are set to -999 if not applicable.
+!
+!          +---------+    J_top
+!          |         |
+!          | Refined |
+!          |    grid |
+!          |         |
+!          +---------+    J_bottom
+!       I_left   I_right
+!
+      integer, allocatable :: I_left(:)             ! [Ngrids]
+      integer, allocatable :: I_right(:)            ! [Ngrids]
+      integer, allocatable :: J_bottom(:)           ! [Ngrids]
+      integer, allocatable :: J_top(:)              ! [Ngrids]
 !
 !  Compact arrays used to unpack data from nested grids contact points
 !  NetCDF file. They are allocated to the size "datum" dimension in
@@ -160,6 +227,11 @@
 !  Therefore, the above formula is generic for any nested grid
 !  configuration.
 !
+!  If Land/Sea masking, the interpolation weights are rescaled in
+!  "mask_weights" during initialization to account masked points in
+!  the contact regions. If wetting and drying, the rescaling is done
+!  at every time step since the land/sea masking is time dependent.
+!
       integer :: Ncontact          ! total number of contact regions
 !
       TYPE T_NGC
@@ -175,9 +247,18 @@
 # ifdef SOLVE3D
         integer, pointer :: Kdg(:,:)         ! donor grid, cell K-index
 # endif
-        real(r8), pointer :: Hweight(:,:)          ! horizontal weights
+        real(r8), pointer :: Lweight(:,:)          ! linear weights
+# ifdef WET_DRY
+        real(r8), pointer :: LweightUnmasked(:,:)  ! Unmasked Lweight
+# endif
+# ifdef QUADRATIC_WEIGHTS
+        real(r8), pointer :: Qweight(:,:)          ! quadratic weights
+#  ifdef WET_DRY
+        real(r8), pointer :: QweightUnmasked(:,:)  ! Unmasked Qweight
+#  endif
+# endif
 # ifdef SOLVE3D
-        real(r8), pointer :: Vweight(:,:,:)        ! vertical   weights
+        real(r8), pointer :: Vweight(:,:,:)        ! vertical weights
 # endif
       END TYPE T_NGC
 
@@ -222,8 +303,9 @@
 
         integer, pointer :: C2Bindex(:)    ! contact to boundary index
 
+        real(r8), pointer :: Mflux(:)      ! perimeter mass flux
 # ifdef SOLVE3D
-        real(r8), pointer :: Tflux(:,:,:)  ! Perimeter tracer flux
+        real(r8), pointer :: Tflux(:,:,:)  ! perimeter tracer flux
 # endif
       END TYPE T_BCP
 
@@ -380,6 +462,7 @@
               allocate ( BRY_CONTACT(ibry,cr) % Ib(LBj:UBj) )
               allocate ( BRY_CONTACT(ibry,cr) % Jb(LBj:UBj) )
               allocate ( BRY_CONTACT(ibry,cr) % C2Bindex(LBj:UBj) )
+              allocate ( BRY_CONTACT(ibry,cr) % Mflux(LBj:UBj) )
 # ifdef SOLVE3D
               allocate ( BRY_CONTACT(ibry,cr) % Tflux(LBj:UBj,          &
      &                                                N(rg),NT(rg)) )
@@ -388,6 +471,7 @@
               allocate ( BRY_CONTACT(ibry,cr) % Ib(LBi:UBi) )
               allocate ( BRY_CONTACT(ibry,cr) % Jb(LBi:UBi) )
               allocate ( BRY_CONTACT(ibry,cr) % C2Bindex(LBi:UBi) )
+              allocate ( BRY_CONTACT(ibry,cr) % Mflux(LBi:UBi) )
 # ifdef SOLVE3D
               allocate ( BRY_CONTACT(ibry,cr) % Tflux(LBi:UBi,          &
      &                                                N(rg),NT(rg)) )
@@ -424,6 +508,7 @@
           BRY_CONTACT(ibry,cr) % Ib = ispval
           BRY_CONTACT(ibry,cr) % Jb = ispval
           BRY_CONTACT(ibry,cr) % C2Bindex = ispval
+          BRY_CONTACT(ibry,cr) % Mflux = 0.0_r8
 # ifdef SOLVE3D
           BRY_CONTACT(ibry,cr) % Tflux = 0.0_r8
 # endif

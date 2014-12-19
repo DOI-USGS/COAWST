@@ -307,7 +307,7 @@
 #endif
 
 #if defined BENTHIC
-      integer, allocatable :: idBvar(:)
+      integer, allocatable :: idBeTvar(:)
       integer, allocatable :: hisBid(:,:)
       integer, allocatable :: avgBid(:,:)
       integer, allocatable :: rstBid(:,:)
@@ -439,7 +439,7 @@
       allocate ( avgPT3id(NBPT3,Ngrids) )
 #endif
 #if defined BENTHIC
-      allocate ( idBvar(NBEN) )
+      allocate ( idBeTvar(NBEN) )
       allocate ( hisBid(NBEN,Ngrids) )
       allocate ( avgBid(NBEN,Ngrids) )
       allocate ( rstBid(NBEN,Ngrids) )

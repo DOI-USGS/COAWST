@@ -114,14 +114,14 @@ contains
      &                     FORCES(ng) % shflx,                          &
      &                     FORCES(ng) % srflx,                          &
      &                     FORCES(ng) % stflx,                          &
-# if defined ALBEDO_FILE && defined SHORTWAVE
+# if defined ALBEDO && defined SHORTWAVE
      &                     FORCES(ng) % albedo,                         &
+#  ifdef ICE_MODEL
+     &                     FORCES(ng) % albedo_ice,                     &
+#  endif
 # endif
-# if defined SHORTWAVE && defined ALBEDO
+# if defined SHORTWAVE && defined ALBEDO_CLOUD
      &                     FORCES(ng) % cawdir,                         &
-# endif
-# if defined SHORTWAVE && defined ALBEDO_CURVE
-     &                     GRID(ng) % latr,                             &
 # endif
 # ifdef ICE_MODEL
      &                     ICE(ng) % ai,                                &
@@ -204,14 +204,14 @@ contains
 # endif
      &                           rain, lhflx, lrflx, shflx,             &
      &                           srflx, stflx,                          &
-# if defined ALBEDO_FILE && defined SHORTWAVE
+# if defined ALBEDO && defined SHORTWAVE
      &                           albedo,                                &
+#  ifdef ICE_MODEL
+     &                           albedo_ice,                            &
+#  endif
 # endif
-# if defined SHORTWAVE && defined ALBEDO
+# if defined SHORTWAVE && defined ALBEDO_CLOUD
      &                           cawdir,                                &
-# endif
-# if defined SHORTWAVE && defined ALBEDO_CURVE
-     &                           latr,                                  &
 # endif
 # ifdef ICE_MODEL
      &                           ai, hi,                                &
@@ -318,14 +318,14 @@ contains
       real(r8), intent(inout) :: shflx(LBi:,LBj:)
       real(r8), intent(inout) :: srflx(LBi:,LBj:)
       real(r8), intent(inout) :: stflx(LBi:,LBj:,:)
-# if defined ALBEDO_FILE && defined SHORTWAVE
+# if defined ALBEDO && defined SHORTWAVE
       real(r8), intent(inout) :: albedo(LBi:,LBj:)
-# endif
-#  if defined SHORTWAVE && defined ALBEDO
-      real(r8), intent(inout) :: cawdir(LBi:,LBj:)
+#  ifdef ICE_MODEL
+      real(r8), intent(inout) :: albedo_ice(LBi:,LBj:)
 #  endif
-#  if defined SHORTWAVE && defined ALBEDO_CURVE
-      real(r8), intent(inout) :: latr(LBi:,LBj:)
+# endif
+#  if defined SHORTWAVE && defined ALBEDO_CLOUD
+      real(r8), intent(inout) :: cawdir(LBi:,LBj:)
 #  endif
 
 #  ifdef ICE_MODEL
@@ -411,14 +411,14 @@ contains
       real(r8), intent(inout) :: shflx(LBi:UBi,LBj:UBj)
       real(r8), intent(inout) :: srflx(LBi:UBi,LBj:UBj)
       real(r8), intent(inout) :: stflx(LBi:UBi,LBj:UBj,NT(ng))
-# if defined ALBEDO_FILE && defined SHORTWAVE
+# if defined ALBEDO && defined SHORTWAVE
       real(r8), intent(inout) :: albedo(LBi:UBi,LBj:UBj)
-# endif
-# if defined SHORTWAVE && defined ALBEDO
-      real(r8), intent(inout) :: cawdir(LBi:UBi,LBj:UBj)
+#  ifdef ICE_MODEL
+      real(r8), intent(inout) :: albedo_ice(LBi:UBi,LBj:UBj)
 #  endif
-# if defined SHORTWAVE && defined ALBEDO_CURVE
-      real(r8), intent(inout) :: latr(LBi:UBi,LBj:UBj)
+# endif
+# if defined SHORTWAVE && defined ALBEDO_CLOUD
+      real(r8), intent(inout) :: cawdir(LBi:UBi,LBj:UBj)
 #  endif
 
 #  ifdef ICE_MODEL
@@ -471,32 +471,13 @@ contains
       real(r8) :: RH, cff1, cff2
       real(r8) :: cff
 # ifdef ICE_BULK_FLUXES
-#  ifdef ALBEDO_CSIM
-      real(r8), parameter :: alb_i_thick=0.54_r8
-      real(r8) :: alb_i_dry
-      real(r8) :: alb_ice, alb_snow, fh, fsn
-      real(r8), parameter :: alb_s_dry=0.83_r8
-      real(r8), parameter :: alb_s_wet=0.70_r8
-#  else
-      real(r8), parameter :: alb_i_dry=0.65_r8
-      real(r8), parameter :: alb_i_wet=0.60_r8
-      real(r8), parameter :: alb_s_dry=0.85_r8
-      real(r8), parameter :: alb_s_wet=0.72_r8
-#  endif
-      real(r8), parameter :: alb_w=0.1_r8
-      real(r8) :: albs, qswi, qlwi, qlh_i, qsh_i
+      real(r8) :: qswi, qlwi, qlh_i, qsh_i
       real(r8) :: le_i, dq_i,fqlat1, sfc_temp, slp, Qsati
       real(r8) :: vap_p_i
-#  ifdef ICE_ALB_EC92
-      real(r8) :: albi, albsn, thki_n, thksn_n
-#  endif
 # endif
-# if defined SHORTWAVE && defined ALBEDO
+# if defined SHORTWAVE && defined ALBEDO_CLOUD
       real(r8) :: cawdif
       real(r8), parameter :: albw_d=0.065_r8
-# endif
-# if defined SHORTWAVE && defined ALBEDO_CURVE
-      real(r8) :: caw_curve
 # endif
 # if defined ICE_MODEL
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: ice_thick
@@ -857,84 +838,8 @@ contains
           qlh_i = fqlat1*le_i*dq_i
           RHS_Ice(i,j) = RHS_Ice(i,j) + qlh_i
 !
-! Calculate the ice/snow albedo
-#   ifdef ICE_ALB_EC92
-! Ice and snow albedo is calculated from Ebert and Curry,1992b
-          albi=0._r8
-          albsn=0._r8
-          IF (ai(i,j,listp) .gt. min_a(ng)) THEN
-            thki_n = ice_thick(i,j)
-            thki_n = MAX(thki_n,0.00001_r8)
-            thksn_n = snow_thick(i,j)
-            albi=0.082409_r8*LOG(thki_n)+0.485472_r8
-            IF (thki_n.GE.1._r8) albi=0.07616_r8*thki_n+0.414492_r8
-            IF (thki_n.GE.2._r8) albi=0.561632_r8
-!approximated values for albsn(depends on COSZ, but small variation)
-            albsn=0.83_r8
-            IF (sfwat(i,j,listp).GT.0._r8) THEN
-              IF (thksn_n.GE.0.1_r8) THEN
-                albsn=0.701009_r8
-              ELSE
-                albsn=albi+(0.701009_r8-albi)*thksn_n/0.1
-              ENDIF
-            ENDIF
-            albs=albi
-            IF (hsn(i,j,listp).GT.0._r8) albs=albsn
-!            IF (sfwat(i,j,listp).GT.0._r8) albs=0.10737_r8              &
-!     &         +0.518_r8*EXP(-8.1_r8 *sfwat(i,j,listp)-0.47_r8)         &
-!     &         +0.341_r8*EXP(-31.8_r8*sfwat(i,j,listp)-0.94_r8)         &
-!     &         +0.131_r8*EXP(-2.6_r8 *sfwat(i,j,listp)-3.82_r8)
-!            ENDIF
-          ELSE
-            albs=alb_w
-          ENDIF
-#   elif defined ALBEDO_CSIM
-          fh = min(atan(4.0*ice_thick(i,j))/atan(2.0), 1.0)
-          fsn = snow_thick(i,j) / (snow_thick(i,j) + 0.02)
-          alb_i_dry = alb_w*(1-fh) + alb_i_thick*fh
-          cff1 = alb_s_wet - alb_s_dry
-          cff2 = -0.075      ! alb_i_wet - alb_i_dry
-          IF (ai(i,j,listp) .gt. min_a(ng)) THEN
-            IF (sfc_temp-273.16_r8.gt. -1._r8) THEN
-              alb_snow = cff1*(sfc_temp-272.16_r8)+alb_s_dry
-            ELSE
-              alb_snow = alb_s_dry
-            ENDIF
-            IF (sfc_temp-273.16_r8.gt. -1._r8) THEN
-              alb_ice = cff2*(sfc_temp-272.16_r8)+alb_i_dry
-            ELSE
-              alb_ice = alb_i_dry
-            ENDIF
-            albs = fsn*alb_snow + (1-fsn)*alb_ice
-          ELSE
-            albs=alb_w
-          ENDIF
-#   elif defined ALBEDO_FILE
-          albs = albedo(i,j)
-#   else
-          cff1 = alb_s_wet - alb_s_dry
-          cff2 = alb_i_wet - alb_i_dry
-          IF (ai(i,j,listp) .gt. min_a(ng)) THEN
-            IF (hsn(i,j,listp).gt.0._r8) THEN
-              IF (sfc_temp-273.16_r8.gt. -1._r8) THEN
-                albs = cff1*(sfc_temp-272.16_r8)+alb_s_dry
-              ELSE
-                albs = alb_s_dry
-              ENDIF
-            ELSE
-              IF (sfc_temp-273.16_r8.gt. -1._r8) THEN
-                albs = cff2*(sfc_temp-272.16_r8)+alb_i_dry
-              ELSE
-                albs = alb_i_dry
-              ENDIF
-            ENDIF
-          ELSE
-            albs=alb_w
-          ENDIF
-#   endif
-!
 ! Short-wave radiation to ice
-          qswi = (1._r8-albs)*qswi_n(i,j)
+          qswi = (1._r8-albedo_ice(i,j))*qswi_n(i,j)
 ! Already in W/m**2
           RHS_Ice(i,j) = RHS_Ice(i,j) + qswi
 
@@ -984,22 +889,13 @@ contains
           tsk = t(i,j,N(ng),nrhs,itemp) + 273.16_r8
           lwup = -shr_const_stebol * tsk**4
 
-# if defined ALBEDO_FILE && defined SHORTWAVE
-          srflx(i,j) = srflx(i,j)*(1.0-albedo(i,j))
-# elif defined SHORTWAVE && defined ALBEDO
+# if defined ALBEDO && defined SHORTWAVE
+#  ifdef ALBEDO_CLOUD
           cawdif = 1._r8-albw_d
           srflx(i,j) = srflx(i,j)*(cawdir(i,j)*                         &
      &                 (1._r8-cloud(i,j))+cawdif*cloud(i,j))
-# elif defined SHORTWAVE && defined ALBEDO_CURVE
-#  ifdef BIO_1D
-!using lat for M2 for whole domain
-          caw_curve = 1._r8-(0.069_r8 - 0.011_r8*                       &
-     &                        cos(2*deg2rad*56.877))
-          srflx(i,j) = srflx(i,j)*caw_curve
 #  else
-          caw_curve = 1._r8-(0.069_r8 - 0.011_r8*                       &
-     &                        cos(2*deg2rad*latr(i,j)))
-          srflx(i,j) = srflx(i,j)*caw_curve
+          srflx(i,j) = srflx(i,j)*(1.0-albedo(i,j))
 #  endif
 # endif
 # if defined LONGWAVE_OUT || defined LONGWAVE

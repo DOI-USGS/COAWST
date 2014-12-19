@@ -428,17 +428,10 @@
       IF (MOD(num_steps+offset, nATM2OCN(1,1)).eq.0) THEN
         DO io=1,Nocn_grids
           ia=1
-          CALL atm2ocn_coupling (grid,ia,io)
-          grid_ptr => grid
-          DO WHILE ( ASSOCIATED( grid_ptr ) )
-            DO kid = 1, max_nests
-              IF ( ASSOCIATED( grid_ptr%nests(kid)%ptr ) ) THEN
-                ia=ia+1
-                num_ksteps=grid_ptr%itimestep
-                CALL atm2ocn_coupling (grid_ptr%nests(kid)%ptr,ia,io)
-              END IF
-            END DO
-            grid_ptr => grid_ptr%sibling
+          CALL atm2ocn_coupling(grid,ia,io)
+          DO ia=2,Natm_grids
+            CALL find_grid_by_id(ia, grid, grid_ptr)
+            CALL atm2ocn_coupling(grid_ptr,ia,io)
           END DO
         END DO
       END IF
@@ -446,17 +439,10 @@
       IF (MOD(num_steps+offset, nATMFOCN(1,1)).eq.0) THEN
         DO io=1,Nocn_grids
           ia=1
-          CALL atmfocn_coupling (grid,ia,io,0)
-          grid_ptr => grid
-          DO WHILE ( ASSOCIATED( grid_ptr ) )
-            DO kid = 1, max_nests
-              IF ( ASSOCIATED( grid_ptr%nests(kid)%ptr ) ) THEN
-                ia=ia+1
-                num_ksteps=grid_ptr%itimestep
-                CALL atmfocn_coupling (grid_ptr%nests(kid)%ptr,ia,io,0)
-              END IF
-            END DO
-            grid_ptr => grid_ptr%sibling
+          CALL atmfocn_coupling(grid,ia,io,0)
+          DO ia=2,Natm_grids
+            CALL find_grid_by_id(ia, grid, grid_ptr)
+            CALL atmfocn_coupling(grid_ptr,ia,io,0)
           END DO
         END DO
       END IF
@@ -465,17 +451,12 @@
       IF (MOD(num_steps+offset, nATM2WAV(1,1)).eq.0) THEN
         DO iw=1,Nwav_grids
           ia=1
-          CALL atm2wav_coupling (grid,ia,iw)
-          grid_ptr => grid
-          DO WHILE ( ASSOCIATED( grid_ptr ) )
-            DO kid = 1, max_nests
-              IF ( ASSOCIATED( grid_ptr%nests(kid)%ptr ) ) THEN
-                ia=ia+1
-                num_ksteps=grid_ptr%itimestep
-                CALL atm2wav_coupling (grid_ptr%nests(kid)%ptr,ia,iw)
-              END IF
-            END DO
-            grid_ptr => grid_ptr%sibling
+          CALL atm2wav_coupling(grid,ia,iw)
+!         Now do the find grid by id thingy
+          DO ia=2,Natm_grids
+            CALL find_grid_by_id(ia, grid, grid_ptr)
+!           num_ksteps=grid_ptr%itimestep
+            CALL atm2wav_coupling(grid_ptr,ia,iw)
           END DO
         END DO
       END IF
@@ -483,17 +464,10 @@
       IF (MOD(num_steps+offset, nATMFWAV(1,1)).eq.0) THEN
         DO iw=1,Nwav_grids
           ia=1
-          CALL atmfwav_coupling (grid,ia,iw)
-          grid_ptr => grid
-          DO WHILE ( ASSOCIATED( grid_ptr ) )
-            DO kid = 1, max_nests
-              IF ( ASSOCIATED( grid_ptr%nests(kid)%ptr ) ) THEN
-                ia=ia+1
-                num_ksteps=grid_ptr%itimestep
-                CALL atmfwav_coupling (grid_ptr%nests(kid)%ptr,ia,iw)
-              END IF
-            END DO
-            grid_ptr => grid_ptr%sibling
+          CALL atmfwav_coupling(grid,ia,iw)
+          DO ia=2,Natm_grids
+            CALL find_grid_by_id(ia, grid, grid_ptr)
+            CALL atmfwav_coupling(grid_ptr,ia,iw)
           END DO
         END DO
       END IF
@@ -529,15 +503,9 @@
       DO io=1,Nocn_grids
         ia=1
         CALL atmfocn_coupling (grid,ia,io,1)
-        grid_ptr => grid
-        DO WHILE ( ASSOCIATED( grid_ptr ) )
-          DO kid = 1, max_nests
-            IF ( ASSOCIATED( grid_ptr%nests(kid)%ptr ) ) THEN
-              ia=ia+1
-              CALL atmfocn_coupling (grid_ptr%nests(kid)%ptr,ia,io,1)
-            END IF
-          END DO
-          grid_ptr => grid_ptr%sibling
+        DO ia=2,Natm_grids
+          CALL find_grid_by_id(ia, grid, grid_ptr)
+          CALL atmfocn_coupling(grid_ptr,ia,io,1)
         END DO
       END DO
 

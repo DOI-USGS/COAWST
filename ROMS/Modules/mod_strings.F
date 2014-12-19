@@ -89,6 +89,7 @@
         character (len=2048) :: Coptions
 
         integer, parameter :: Mregion = 40
+        integer, parameter :: Iceregion = 51
         integer, parameter :: Nregion = 56
 
         character (len=55), dimension(12) :: StateMsg =                 &

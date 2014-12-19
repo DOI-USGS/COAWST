@@ -245,6 +245,14 @@
               Npts=load_l(Nval, Cval, Ngrids, Sout(idMtke,:))
             CASE ('Sout(idMtls)')
               Npts=load_l(Nval, Cval, Ngrids, Sout(idMtls,:))
+#  ifdef WET_DRY
+            CASE ('Sout(idRwet)')
+              Npts=load_l(Nval, Cval, Ngrids, Sout(idRwet,:))
+            CASE ('Sout(idUwet)')
+              Npts=load_l(Nval, Cval, Ngrids, Sout(idUwet,:))
+            CASE ('Sout(idVwet)')
+              Npts=load_l(Nval, Cval, Ngrids, Sout(idVwet,:))
+#  endif
 #  ifdef ICE_MODEL
             CASE ('Sout(idUice)')
               Npts=load_l(Nval, Cval, Ngrids, Sout(idUice,:))
@@ -651,6 +659,17 @@
             IF (Sout(idMtls,ng)) WRITE (out,80) Sout(idMtls,ng),        &
      &          'Sout(idMtls)',                                         &
      &          'Write out turbulent generic length-scale.'
+#  endif
+#  ifdef WET_DRY
+            IF (Sout(idRwet,ng)) WRITE (out,80) Sout(idRwet,ng),        &
+     &          'Sout(idRwet)',                                         &
+     &          'Write out rho point wet-dry mask.'
+            IF (Sout(idUwet,ng)) WRITE (out,80) Sout(idUwet,ng),        &
+     &          'Sout(idUwet)',                                         &
+     &          'Write out u point wet-dry mask.'
+            IF (Sout(idVwet,ng)) WRITE (out,80) Sout(idVwet,ng),        &
+     &          'Sout(idVwet)',                                         &
+     &          'Write out v point wet-dry mask.'
 #  endif
 #  ifdef ICE_MODEL
           IF (Sout(idUice,ng)) WRITE (out,80) Sout(idUice,ng),          &

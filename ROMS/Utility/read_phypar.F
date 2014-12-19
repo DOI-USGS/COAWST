@@ -549,16 +549,6 @@
               Npts=load_i(Nval, Rval, Ngrids, ntimes)
             CASE ('DT')
               Npts=load_r(Nval, Rval, Ngrids, dt)
-!#ifdef AIR_OCEAN
-!            DO ng=1,Ngrids
-!              nOCN_ATM(ng)=MAX(1,INT(TI_ATM_OCN/dt(ng)))
-!            END DO
-!#endif
-!#ifdef WAVES_OCEAN
-!            DO ng=1,Ngrids
-!              nOCN_WAV(ng)=MAX(1,INT(TI_WAV_OCN/dt(ng)))
-!            END DO
-!#endif
 #ifdef MODEL_COUPLING
               IF (.not.allocated(CoupleSteps)) THEN
                 allocate (CoupleSteps(Nmodels,Ngrids))
@@ -1767,6 +1757,22 @@
               END IF
               Npts=load_l(Nval, Cval, Ngrids, Hout(idWrol,:))
 #endif
+#if defined WAVES_DSPR
+            CASE ('Hout(idWvds)')
+              IF (idWvds.eq.0) THEN
+                IF (Master) WRITE (out,280) 'idWvds'
+                exit_flag=5
+                RETURN
+              END IF
+              Npts=load_l(Nval, Cval, Ngrids, Hout(idWvds,:))
+            CASE ('Hout(idWvqp)')
+              IF (idWvqp.eq.0) THEN
+                IF (Master) WRITE (out,280) 'idWvqp'
+                exit_flag=5
+                RETURN
+              END IF
+              Npts=load_l(Nval, Cval, Ngrids, Hout(idWvqp,:))
+#endif
 #ifdef SOLVE3D
 # if defined RUNOFF
             CASE ('Hout(idRunoff)')
@@ -2466,6 +2472,12 @@
 # ifdef ROLLER_RENIERS
             CASE ('Aout(idWrol)')
               Npts=load_l(Nval, Cval, Ngrids, Aout(idWrol,:))
+# endif
+# ifdef WAVES_DSPR
+            CASE ('Aout(idWvds)')
+              Npts=load_l(Nval, Cval, Ngrids, Aout(idWvds,:))
+            CASE ('Aout(idWvqp)')
+              Npts=load_l(Nval, Cval, Ngrids, Aout(idWvqp,:))
 # endif
 # ifdef UV_KIRBY
             CASE ('Aout(idUwav)')
@@ -5487,6 +5499,14 @@
           IF (Hout(idWrol,ng)) WRITE (out,170) Hout(idWrol,ng),         &
      &       'Hout(idWrol)',                                            &
      &       'Write out wave roller action density.'
+#endif
+#ifdef WAVES_DSPR
+          IF (Hout(idWvds,ng)) WRITE (out,170) Hout(idWvds,ng),         &
+     &       'Hout(idWvds)',                                            &
+     &       'Write out wave directional spread.'
+          IF (Hout(idWvqp,ng)) WRITE (out,170) Hout(idWvqp,ng),         &
+     &       'Hout(idWvqp)',                                            &
+     &       'Write out wave spectrum peakedness.'
 #endif
 #ifdef UV_KIRBY
           IF (Hout(idUwav,ng)) WRITE (out,170) Hout(idUwav,ng),         &

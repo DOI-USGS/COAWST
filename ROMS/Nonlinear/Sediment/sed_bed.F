@@ -331,7 +331,7 @@
 !  Set new top layer parameters.
 !
               DO ised=1,NST
-                bed_mass(i,j,2,nnew,ised)=MAX(bed_mass(i,j,2,nnew,ised)- &
+                bed_mass(i,j,2,nnew,ised)=MAX(bed_mass(i,j,2,nnew,ised)-&
      &                                    dep_mass(i,ised),0.0_r8)
                 bed_mass(i,j,1,nnew,ised)=dep_mass(i,ised)
               END DO

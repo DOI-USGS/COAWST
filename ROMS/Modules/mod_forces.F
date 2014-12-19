@@ -59,6 +59,8 @@
 !  Wave_break   Percent of wave breaking for use with roller model.    !
 !  Wave_breakG  Latest two-time snapshots of input "wave_break"        !
 !                 gridded data used for interpolation.                 !
+!  Wave_ds      Wave directional spreading.                            !
+!  Wave_qp      Wave spectrum peakedness.                              !
 !                                                                      !
 !  Solar shortwave radiation flux.                                     !
 !                                                                      !
@@ -320,6 +322,15 @@
 # endif
 #endif
 
+#if defined WAVES_DSPR
+          real(r8), pointer :: Wave_ds(:,:)
+          real(r8), pointer :: Wave_qp(:,:)
+# ifndef ANA_WWAVE
+          real(r8), pointer :: Wave_dsG(:,:,:)
+          real(r8), pointer :: Wave_qpG(:,:,:)
+# endif
+#endif
+
 #if defined BULK_FLUXES || defined BULK_FLUXES2D || defined ECOSIM || \
     defined CCSM_FLUXES2D || defined ATM2OCN_FLUXES || \
     defined SPECTRAL_LIGHT
@@ -362,12 +373,17 @@
 #  ifndef ANA_SRFLUX
           real(r8), pointer :: srflxG(:,:,:)
 #  endif
-#  if defined ALBEDO
-          real(r8), pointer :: cawdir(:,:)
+#  ifdef ALBEDO
+          real(r8), pointer :: albedo(:,:)
+#   ifdef ICE_MODEL
+          real(r8), pointer :: albedo_ice(:,:)
+#   endif
 #  endif
 #  ifdef ALBEDO_FILE
-          real(r8), pointer :: albedo(:,:)
           real(r8), pointer :: albedoG(:,:,:)
+#  endif
+#  if defined ALBEDO_CLOUD
+          real(r8), pointer :: cawdir(:,:)
 #  endif
 # endif
 
@@ -758,6 +774,15 @@
 # endif
 #endif
 
+#if defined WAVES_DSPR
+      allocate ( FORCES(ng) % Wave_ds(LBi:UBi,LBj:UBj) )
+      allocate ( FORCES(ng) % Wave_qp(LBi:UBi,LBj:UBj) )
+# ifndef ANA_WWAVE
+      allocate ( FORCES(ng) % Wave_dsG(LBi:UBi,LBj:UBj,2) )
+      allocate ( FORCES(ng) % Wave_qpG(LBi:UBi,LBj:UBj,2) )
+# endif
+#endif
+
 #if defined WEC_ROLLER
       allocate ( FORCES(ng) % rollA(LBi:UBi,LBj:UBj) )
 #endif
@@ -802,12 +827,17 @@
 #  ifndef ANA_SRFLUX
       allocate ( FORCES(ng) % srflxG(LBi:UBi,LBj:UBj,2) )
 #  endif
-#  if defined ALBEDO
-      allocate ( FORCES(ng) % cawdir(LBi:UBi,LBj:UBj) )
+#  ifdef ALBEDO
+      allocate ( FORCES(ng) % albedo(LBi:UBi,LBj:UBj) )
+#   ifdef ICE_MODEL
+      allocate ( FORCES(ng) % albedo_ice(LBi:UBi,LBj:UBj) )
+#   endif
 #  endif
 #  ifdef ALBEDO_FILE
-      allocate ( FORCES(ng) % albedo(LBi:UBi,LBj:UBj) )
       allocate ( FORCES(ng) % albedoG(LBi:UBi,LBj:UBj,2) )
+#  endif
+#  if defined ALBEDO_CLOUD
+      allocate ( FORCES(ng) % cawdir(LBi:UBi,LBj:UBj) )
 #  endif
 # endif
 
@@ -1293,6 +1323,17 @@
 # endif
 #endif
 
+#if defined WAVES_DSPR
+            FORCES(ng) % Wave_ds(i,j) = IniVal
+            FORCES(ng) % Wave_qp(i,j) = IniVal
+# ifndef ANA_WWAVE
+            FORCES(ng) % Wave_dsG(i,j,1) = IniVal
+            FORCES(ng) % Wave_dsG(i,j,2) = IniVal
+            FORCES(ng) % Wave_qpG(i,j,1) = IniVal
+            FORCES(ng) % Wave_qpG(i,j,2) = IniVal
+# endif
+#endif
+
 #if defined WEC_ROLLER
             FORCES(ng) % rollA(i,j) = IniVal
 #endif
@@ -1336,13 +1377,18 @@
             FORCES(ng) % srflxG(i,j,1) = IniVal
             FORCES(ng) % srflxG(i,j,2) = IniVal
 #  endif
-#  if defined ALBEDO
-            FORCES(ng) % cawdir(i,j) = IniVal
+#  ifdef ALBEDO
+            FORCES(ng) % albedo(i,j) = IniVal
+#   ifdef ICE_MODEL
+            FORCES(ng) % albedo_ice(i,j) = IniVal
+#   endif
 #  endif
 #  ifdef ALBEDO_FILE
-            FORCES(ng) % albedo(i,j) = IniVal
             FORCES(ng) % albedoG(i,j,1) = IniVal
             FORCES(ng) % albedoG(i,j,2) = IniVal
+#  endif
+#  if defined ALBEDO_CLOUD
+            FORCES(ng) % cawdir(i,j) = IniVal
 #  endif
 # endif
 # if defined ICE_BULK_FLUXES && !defined NCEP_FLUXES

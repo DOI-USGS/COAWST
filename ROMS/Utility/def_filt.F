@@ -780,6 +780,44 @@
      &                 NF_FOUT, nvd3, v2dgrd, Aval, Vinfo, ncname)
           IF (exit_flag.ne.NoError) RETURN
         END IF
+!
+!  Define bottom u-momentum stress.
+!
+        IF (Aout(idUbms,ng)) THEN
+          Vinfo( 1)=Vname(1,idUbms)
+          Vinfo( 2)=Vname(2,idUbms)
+          Vinfo( 3)=Vname(3,idUbms)
+          Vinfo(14)=Vname(4,idUbms)
+          Vinfo(16)=Vname(1,idtime)
+# if defined WRITE_WATER && defined MASKING
+          Vinfo(20)='mask_u'
+# endif
+          Vinfo(22)='coordinates'
+          Aval(5)=REAL(Iinfo(1,idUbms,ng),r8)
+          status=def_var(ng, iNLM, FIL(1,ng)%ncid,                      &
+     &                 FIL(1,ng)%Vid(idUbms),                           &
+     &                 NF_FOUT, nvd3, u2dgrd, Aval, Vinfo, ncname)
+          IF (exit_flag.ne.NoError) RETURN
+        END IF
+!
+!  Define bottom v-momentum stress.
+!
+        IF (Aout(idVbms,ng)) THEN
+          Vinfo( 1)=Vname(1,idVbms)
+          Vinfo( 2)=Vname(2,idVbms)
+          Vinfo( 3)=Vname(3,idVbms)
+          Vinfo(14)=Vname(4,idVbms)
+          Vinfo(16)=Vname(1,idtime)
+# if defined WRITE_WATER && defined MASKING
+          Vinfo(20)='mask_v'
+# endif
+          Vinfo(22)='coordinates'
+          Aval(5)=REAL(Iinfo(1,idVbms,ng),r8)
+          status=def_var(ng, iNLM, FIL(1,ng)%ncid,                      &
+     &                 FIL(1,ng)%Vid(idVbms),                           &
+     &                 NF_FOUT, nvd3, v2dgrd, Aval, Vinfo, ncname)
+          IF (exit_flag.ne.NoError) RETURN
+        END IF
 # ifdef ICE_MODEL
 !
 !  Define 2D ice momentum in the XI-direction.
@@ -935,6 +973,25 @@
           IF (exit_flag.ne.NoError) RETURN
         END IF
 !
+!  Define age of ice
+!
+        IF (Aout(idAgeice,ng)) THEN
+          Vinfo( 1)=Vname(1,idAgeice)
+          Vinfo( 2)=Vname(2,idAgeice)
+          Vinfo( 3)=Vname(3,idAgeice)
+          Vinfo(14)=Vname(4,idAgeice)
+          Vinfo(16)='filter level'
+#  if defined WRITE_WATER && defined MASKING
+          Vinfo(20)='mask_rho'
+#  endif
+          Vinfo(22)='coordinates'
+          Aval(5)=REAL(Iinfo(1,idAgeice,ng),r8)
+          status=def_var(ng, iNLM, FIL(10,ng)%ncid,                     &
+     &                 FIL(10,ng)%Vid(idAgeice),                        &
+     &                 NF_FOUT, nvd3, t2dgrd, Aval, Vinfo, ncname)
+          IF (exit_flag.ne.NoError) RETURN
+        END IF
+!
 !  Define under-ice salinity
 !
         IF (Aout(idS0mk,ng)) THEN
@@ -969,25 +1026,6 @@
           Aval(5)=REAL(Iinfo(1,idT0mk,ng),r8)
           status=def_var(ng, iNLM, FIL(10,ng)%ncid,                     &
      &                 FIL(10,ng)%Vid(idT0mk),                          &
-     &                 NF_FOUT, nvd3, t2dgrd, Aval, Vinfo, ncname)
-          IF (exit_flag.ne.NoError) RETURN
-        END IF
-!
-!  Define age of ice
-!
-        IF (Aout(idAgeice,ng)) THEN
-          Vinfo( 1)=Vname(1,idAgeice)
-          Vinfo( 2)=Vname(2,idAgeice)
-          Vinfo( 3)=Vname(3,idAgeice)
-          Vinfo(14)=Vname(4,idAgeice)
-          Vinfo(16)='filter level'
-#  if defined WRITE_WATER && defined MASKING
-          Vinfo(20)='mask_rho'
-#  endif
-          Vinfo(22)='coordinates'
-          Aval(5)=REAL(Iinfo(1,idAgeice,ng),r8)
-          status=def_var(ng, iNLM, FIL(10,ng)%ncid,                     &
-     &                 FIL(10,ng)%Vid(idAgeice),                        &
      &                 NF_FOUT, nvd3, t2dgrd, Aval, Vinfo, ncname)
           IF (exit_flag.ne.NoError) RETURN
         END IF
@@ -1413,6 +1451,12 @@
             ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idVsms))) THEN
               got_var(idVsms)=.TRUE.
               FIL(1,ng)%Vid(idVsms)=var_id(i)
+            ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idUbms))) THEN
+              got_var(idUbms)=.TRUE.
+              FIL(1,ng)%Vid(idUbms)=var_id(i)
+            ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idVbms))) THEN
+              got_var(idVbms)=.TRUE.
+              FIL(1,ng)%Vid(idVbms)=var_id(i)
             END IF
 # ifdef SOLVE3D
             DO itrc=1,NAT
@@ -1694,6 +1738,18 @@
         END IF
         IF (.not.got_var(idVsms).and.Aout(idVsms,ng)) THEN
           IF (Master) WRITE (stdout,40) TRIM(Vname(1,idVsms)),          &
+     &                                  TRIM(ncname)
+          exit_flag=3
+          RETURN
+        END IF
+        IF (.not.got_var(idUbms).and.Aout(idUbms,ng)) THEN
+          IF (Master) WRITE (stdout,40) TRIM(Vname(1,idUbms)),          &
+     &                                  TRIM(ncname)
+          exit_flag=3
+          RETURN
+        END IF
+        IF (.not.got_var(idVbms).and.Aout(idVbms,ng)) THEN
+          IF (Master) WRITE (stdout,40) TRIM(Vname(1,idVbms)),          &
      &                                  TRIM(ncname)
           exit_flag=3
           RETURN

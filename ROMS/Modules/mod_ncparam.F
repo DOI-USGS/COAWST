@@ -238,6 +238,7 @@
         integer  :: idPbar        ! streamfunction
         integer  :: idPONbur      ! buried PON in sediment
         integer  :: idPONsed      ! PON in sediment
+        integer  :: idPwet        ! wet/dry mask on PSI-points
         integer  :: idRdir        ! river runoff direction
         integer  :: idRepo        ! river runoff ETA-positions
         integer  :: idRflg        ! river runoff flag
@@ -382,6 +383,8 @@
         integer  :: idWqsp        ! WEC quasi-static pressure
         integer  :: idWrol        ! wave roller action density
         integer  :: idWvel        ! true vertical velocity
+        integer  :: idWvds        ! wave directional spread
+        integer  :: idWvqp        ! wave spectrum peakedness
         integer  :: idWztw        ! WEC quasi-static sea level adjustment
         integer  :: idZoBL        ! bottom roughness length
         integer  :: idZads        ! Free-surface adjoint sensitivity
@@ -1115,6 +1118,10 @@
               idRv3d=varid
             CASE ('idWvel')
               idWvel=varid
+            CASE ('idWvds')
+              idWvds=varid
+            CASE ('idWvqp')
+              idWvqp=varid
             CASE ('idOvel')
               idOvel=varid
             CASE ('idDano')
@@ -1233,6 +1240,8 @@
               idTbry(inorth,isalt)=varid
             CASE ('idAlbe')
               idAlbe=varid
+            CASE ('idPwet')
+              idPwet=varid
             CASE ('idRwet')
               idRwet=varid
             CASE ('idUwet')
@@ -2871,7 +2880,6 @@
       idBvar(isSig22)=idSig22
 # endif
 #endif
-! This ic counter is useless. 
 #ifdef WEC
       ic=ic+2
       idBvar(isU2Sd)=idU2Sd

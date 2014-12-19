@@ -199,118 +199,118 @@
 #ifdef ICE_BASIN
       DO j=JstrT,JendT
         DO i=Istr,IendT
-           ui(i,j,1) = 0._r8
-           uie(i,j,1) = 0._r8
-           ui(i,j,2) = ui(i,j,1)
-           uie(i,j,2) = uie(i,j,1)
+          ui(i,j,1) = 0._r8
+          uie(i,j,1) = 0._r8
+          ui(i,j,2) = ui(i,j,1)
+          uie(i,j,2) = uie(i,j,1)
         ENDDO
       ENDDO
       DO j=Jstr,JendT
         DO i=IstrT,IendT
-           vi(i,j,1) = 0._r8
-           vie(i,j,1) = 0._r8
-           vi(i,j,2) = vi(i,j,1)
-           vie(i,j,2) = vie(i,j,1)
+          vi(i,j,1) = 0._r8
+          vie(i,j,1) = 0._r8
+          vi(i,j,2) = vi(i,j,1)
+          vie(i,j,2) = vie(i,j,1)
         ENDDO
       ENDDO
       DO j=JstrT,JendT
         DO i=IstrT,IendT
-           ai(i,j,1) = 1._r8
-           hi(i,j,1) = 2._r8
-           hsn(i,j,1) = 0.2_r8
-           ti(i,j,1) = -5._r8
-           sfwat(i,j,1) = 0._r8
-           ageice(i,j,1) = 0._r8
-           sig11(i,j,1) = 0._r8
-           sig22(i,j,1) = 0._r8
-           sig12(i,j,1) = 0._r8
-           ai(i,j,2) = ai(i,j,1)
-           hi(i,j,2) = hi(i,j,1)
-           hsn(i,j,2) = hsn(i,j,1)
-           ti(i,j,2) = ti(i,j,1)
-           sfwat(i,j,2) = sfwat(i,j,1)
-           ageice(i,j,2) = ageice(i,j,1)
-           sig11(i,j,2) = sig11(i,j,1)
-           sig22(i,j,2) = sig22(i,j,1)
-           sig12(i,j,2) = sig12(i,j,1)
+          ai(i,j,1) = 1._r8
+          hi(i,j,1) = 2._r8
+          hsn(i,j,1) = 0.2_r8
+          ti(i,j,1) = -5._r8
+          sfwat(i,j,1) = 0._r8
+          ageice(i,j,1) = 0._r8
+          sig11(i,j,1) = 0._r8
+          sig22(i,j,1) = 0._r8
+          sig12(i,j,1) = 0._r8
+          ai(i,j,2) = ai(i,j,1)
+          hi(i,j,2) = hi(i,j,1)
+          hsn(i,j,2) = hsn(i,j,1)
+          ti(i,j,2) = ti(i,j,1)
+          sfwat(i,j,2) = sfwat(i,j,1)
+          ageice(i,j,2) = ageice(i,j,1)
+          sig11(i,j,2) = sig11(i,j,1)
+          sig22(i,j,2) = sig22(i,j,1)
+          sig12(i,j,2) = sig12(i,j,1)
 # ifdef NCEP_FLUXES
-           wg2_d(i,j) = 1._r8
-           cd_d(i,j) = 0.00319_r8
-           ch_d(i,j) = 1.0E-4_r8
-           ce_d(i,j) = 1.0E-4_r8
-           wg2_m(i,j) = 1._r8
-           cd_m(i,j) = 0.00319_r8
-           ch_m(i,j) = 1.0E-4_r8
-           ce_m(i,j) = 1.0E-4_r8
-           rhoa_n(i,j) = 1.4_r8
+          wg2_d(i,j) = 1._r8
+          cd_d(i,j) = 0.00319_r8
+          ch_d(i,j) = 1.0E-4_r8
+          ce_d(i,j) = 1.0E-4_r8
+          wg2_m(i,j) = 1._r8
+          cd_m(i,j) = 0.00319_r8
+          ch_m(i,j) = 1.0E-4_r8
+          ce_m(i,j) = 1.0E-4_r8
+          rhoa_n(i,j) = 1.4_r8
 # endif
-           tis(i,j) = -10._r8
-           s0mk(i,j) = t(i,j,N(ng),1,isalt)
-           t0mk(i,j) = t(i,j,N(ng),1,itemp)
-           utau_iw(i,j) = 0.001_r8
-           chu_iw(i,j) = 0.001125_r8
+          tis(i,j) = -10._r8
+          s0mk(i,j) = t(i,j,N(ng),1,isalt)
+          t0mk(i,j) = t(i,j,N(ng),1,itemp)
+          utau_iw(i,j) = 0.001_r8
+          chu_iw(i,j) = 0.001125_r8
 #elif defined ICE_OCEAN_1D
       DO j=JstrT,JendT
         DO i=Istr,IendT
-           ui(i,j,1) = 0.0_r8
-           uie(i,j,1) = 0.0_r8
-           ui(i,j,2) = ui(i,j,1)
-           uie(i,j,2) = uie(i,j,1)
+          ui(i,j,1) = 0.0_r8
+          uie(i,j,1) = 0.0_r8
+          ui(i,j,2) = ui(i,j,1)
+          uie(i,j,2) = uie(i,j,1)
         ENDDO
       ENDDO
       DO j=Jstr,JendT
         DO i=IstrT,IendT
-           vi(i,j,1) = 0.0_r8
-           vie(i,j,1) = 0.0_r8
-           vi(i,j,2) = vi(i,j,1)
-           vie(i,j,2) = vie(i,j,1)
+          vi(i,j,1) = 0.0_r8
+          vie(i,j,1) = 0.0_r8
+          vi(i,j,2) = vi(i,j,1)
+          vie(i,j,2) = vie(i,j,1)
         ENDDO
       ENDDO
       DO j=JstrT,JendT
         DO i=IstrT,IendT
-           ai(i,j,1) = 0._r8
-           hi(i,j,1) = 0._r8
-           hsn(i,j,1) = 0.2_r8
-           ti(i,j,1) = -5._r8
-           sfwat(i,j,1) = 0._r8
-           ageice(i,j,1) = 0._r8
-           sig11(i,j,1) = 0._r8
-           sig22(i,j,1) = 0._r8
-           sig12(i,j,1) = 0._r8
-           ai(i,j,2) = ai(i,j,1)
-           hi(i,j,2) = hi(i,j,1)
-           hsn(i,j,2) = hsn(i,j,1)
-           ti(i,j,2) = ti(i,j,1)
-           sfwat(i,j,2) = sfwat(i,j,1)
-           ageice(i,j,2) = ageice(i,j,1)
-           sig11(i,j,2) = sig11(i,j,1)
-           sig22(i,j,2) = sig22(i,j,1)
-           sig12(i,j,2) = sig12(i,j,1)
+          ai(i,j,1) = 0._r8
+          hi(i,j,1) = 0._r8
+          hsn(i,j,1) = 0.2_r8
+          ti(i,j,1) = -5._r8
+          sfwat(i,j,1) = 0._r8
+          ageice(i,j,1) = 0._r8
+          sig11(i,j,1) = 0._r8
+          sig22(i,j,1) = 0._r8
+          sig12(i,j,1) = 0._r8
+          ai(i,j,2) = ai(i,j,1)
+          hi(i,j,2) = hi(i,j,1)
+          hsn(i,j,2) = hsn(i,j,1)
+          ti(i,j,2) = ti(i,j,1)
+          sfwat(i,j,2) = sfwat(i,j,1)
+          ageice(i,j,2) = ageice(i,j,1)
+          sig11(i,j,2) = sig11(i,j,1)
+          sig22(i,j,2) = sig22(i,j,1)
+          sig12(i,j,2) = sig12(i,j,1)
 # ifdef NCEP_FLUXES
-           wg2_d(i,j) = 1._r8
-           cd_d(i,j) = 0.00319_r8
-           ch_d(i,j) = 1.0E-4_r8
-           ce_d(i,j) = 1.0E-4_r8
-           wg2_m(i,j) = 1._r8
-           cd_m(i,j) = 0.00319_r8
-           ch_m(i,j) = 1.0E-4_r8
-           ce_m(i,j) = 1.0E-4_r8
-           rhoa_n(i,j) = 1.4_r8
+          wg2_d(i,j) = 1._r8
+          cd_d(i,j) = 0.00319_r8
+          ch_d(i,j) = 1.0E-4_r8
+          ce_d(i,j) = 1.0E-4_r8
+          wg2_m(i,j) = 1._r8
+          cd_m(i,j) = 0.00319_r8
+          ch_m(i,j) = 1.0E-4_r8
+          ce_m(i,j) = 1.0E-4_r8
+          rhoa_n(i,j) = 1.4_r8
 # endif
-           tis(i,j) = -10._r8
-           s0mk(i,j) = t(i,j,N(ng),1,isalt)
-           t0mk(i,j) = t(i,j,N(ng),1,itemp)
-           utau_iw(i,j) = 0.001_r8
-           chu_iw(i,j) = 0.001125_r8
+          tis(i,j) = -10._r8
+          s0mk(i,j) = t(i,j,N(ng),1,isalt)
+          t0mk(i,j) = t(i,j,N(ng),1,itemp)
+          utau_iw(i,j) = 0.001_r8
+          chu_iw(i,j) = 0.001125_r8
 #elif defined BERING_10K && defined ICE_BIO
-           IcePhL(i,j,1) = 0._r8
-           IceNO3(i,j,1) = 0._r8
-           IceNH4(i,j,1) = 0._r8
-           IceLog(i,j,1) = -1
-           IcePhL(i,j,2) = IcePhL(i,j,1)
-           IceNO3(i,j,2) = IceNO3(i,j,1)
-           IceNH4(i,j,2) = IceNH4(i,j,1)
-           IceLog(i,j,2) = IceLog(i,j,1)
+          IcePhL(i,j,1) = 0._r8
+          IceNO3(i,j,1) = 0._r8
+          IceNH4(i,j,1) = 0._r8
+          IceLog(i,j,1) = -1
+          IcePhL(i,j,2) = IcePhL(i,j,1)
+          IceNO3(i,j,2) = IceNO3(i,j,1)
+          IceNH4(i,j,2) = IceNH4(i,j,1)
+          IceLog(i,j,2) = IceLog(i,j,1)
 #else
         Must define a case for ice initialization.
 #endif
@@ -411,11 +411,11 @@
      &                          LBi, UBi, LBj, UBj,                     &
      &                          t0mk)
         CALL exchange_r2d_tile (ng, tile,                               &
-     &                          LBi, UBi, LBj, UBj,                     &
-     &                          utau_iw)
+     &                        LBi, UBi, LBj, UBj,                       &
+     &                        utau_iw)
         CALL exchange_r2d_tile (ng, tile,                               &
-     &                          LBi, UBi, LBj, UBj,                     &
-     &                          chu_iw)
+     &                        LBi, UBi, LBj, UBj,                       &
+     &                        chu_iw)
       END IF
 
 #ifdef DISTRIBUTE

@@ -62,6 +62,9 @@
       USE mod_forces
       USE mod_grid
       USE mod_ncparam
+#ifdef NESTING
+      USE mod_nesting
+#endif
       USE mod_scalars
 !
 !  Imported variable declarations.
@@ -87,6 +90,9 @@
 !
       integer :: Jmin, Jmax
       integer :: i, j, know
+#ifdef NESTING
+      integer :: Idg, Jdg, cr, dg, m, rg, tnew, told
+#endif
 
       real(r8), parameter :: eps = 1.0E-20_r8
 
@@ -440,6 +446,38 @@
               vbar(i,Jstr,kout)=0.0_r8
             END IF
           END DO
+
+#ifdef NESTING
+!
+!  If refinement grid and southern edge, impose mass flux from donor
+!  coaser grid for volume and mass conservation.
+!
+        ELSE IF (LBC(isouth,isVbar,ng)%nested) THEN
+          DO cr=1,Ncontact
+            dg=Vcontact(cr)%donor_grid
+            rg=Vcontact(cr)%receiver_grid
+            IF (RefinedGrid(ng).and.                                    &
+     &          (rg.eq.ng).and.(DXmax(dg).gt.DXmax(rg))) THEN
+              told=3-RollingIndex(cr)
+              tnew=RollingIndex(cr)
+              DO i=Istr,Iend
+                m=BRY_CONTACT(isouth,cr)%C2Bindex(i)
+                Idg=Vcontact(cr)%Idg(m)             ! for debugging
+                Jdg=Vcontact(cr)%Jdg(m)             ! purposes
+                cff=0.5_r8*GRID(ng)%om_v(i,Jstr)*                       &
+     &              (GRID(ng)%h(i,Jstr-1)+zeta(i,Jstr-1,kout)+          &
+     &               GRID(ng)%h(i,Jstr  )+zeta(i,Jstr  ,kout))
+                cff1=GRID(ng)%om_v(i,Jstr)/REFINED(cr)%om_v(m)
+                bry_val=cff1*REFINED(cr)%DV_avg2(1,m,tnew)/cff
+# ifdef MASKING
+                bry_val=bry_val*GRID(ng)%vmask(i,Jstr)
+# endif
+                BRY_CONTACT(isouth,cr)%Mflux(i)=cff*bry_val
+                vbar(i,Jstr,kout)=bry_val
+              END DO
+            END IF
+          END DO
+#endif
         END IF
       END IF
 !
@@ -769,6 +807,38 @@
               vbar(i,Jend+1,kout)=0.0_r8
             END IF
           END DO
+
+#ifdef NESTING
+!
+!  If refinement grid and northern edge, impose mass flux from donor
+!  coaser grid for volume and mass conservation.
+!
+        ELSE IF (LBC(inorth,isVbar,ng)%nested) THEN
+          DO cr=1,Ncontact
+            dg=Vcontact(cr)%donor_grid
+            rg=Vcontact(cr)%receiver_grid
+            IF (RefinedGrid(ng).and.                                    &
+     &          (rg.eq.ng).and.(DXmax(dg).gt.DXmax(rg))) THEN
+              told=3-RollingIndex(cr)
+              tnew=RollingIndex(cr)
+              DO i=Istr,Iend
+                m=BRY_CONTACT(inorth,cr)%C2Bindex(i)
+                Idg=Vcontact(cr)%Idg(m)             ! for debugging
+                Jdg=Vcontact(cr)%Jdg(m)             ! purposes
+                cff=0.5_r8*GRID(ng)%om_v(i,Jend+1)*                     &
+     &              (GRID(ng)%h(i,Jend+1)+zeta(i,Jend+1,kout)+          &
+     &               GRID(ng)%h(i,Jend  )+zeta(i,Jend  ,kout))
+                cff1=GRID(ng)%om_v(i,Jend+1)/REFINED(cr)%om_v(m)
+                bry_val=cff1*REFINED(cr)%DV_avg2(1,m,tnew)/cff
+# ifdef MASKING
+                bry_val=bry_val*GRID(ng)%vmask(i,Jend+1)
+# endif
+                BRY_CONTACT(inorth,cr)%Mflux(i)=cff*bry_val
+                vbar(i,Jend+1,kout)=bry_val
+              END DO
+            END IF
+          END DO
+#endif
         END IF
       END IF
 !

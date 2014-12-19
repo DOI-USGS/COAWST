@@ -61,12 +61,15 @@
       USE tl_rho_eos_mod, ONLY : tl_rho_eos
       USE tl_set_massflux_mod, ONLY : tl_set_massflux
 # endif
+# ifdef MASKING
+      USE set_masks_mod, ONLY : set_masks
+# endif
       USE stiffness_mod, ONLY : stiffness
 # ifdef WAVES_OCEAN
       USE ocean_coupler_mod, ONLY : waves_coupling
 # endif
-# ifdef MASKING
-      USE set_masks_mod, ONLY : set_masks
+# ifdef WET_DRY
+      USE wetdry_mod, ONLY : wetdry
 # endif
 # if defined PROPAGATOR || \
     (defined MASKING    && (defined READ_WATER || defined WRITE_WATER))
@@ -569,6 +572,31 @@
         time(ng)=io_time                     ! needed for shared-memory
       END IF
 #  endif
+# endif
+
+# ifdef WET_DRY
+!
+!-----------------------------------------------------------------------
+!  Process initial wet/dry masks.
+!-----------------------------------------------------------------------
+!
+!  If restart, read in wet/dry masks.
+!
+      IF (nrrec(ng).ne.0) THEN
+!$OMP MASTER
+        CALL get_wetdry (ng, iTLM, IniRec(ng))
+!$OMP END MASTER
+#  ifdef DISTRIBUTE
+        CALL mp_bcasti (ng, iTLM, exit_flag)
+#  endif
+!$OMP BARRIER
+        IF (exit_flag.ne.NoError) RETURN
+      ELSE
+        DO tile=first_tile(ng),last_tile(ng),+1
+          CALL wetdry (ng, tile, Tindex(ng), .TRUE.)
+        END DO
+!$OMP BARRIER
+      END IF
 # endif
 
 # if defined ANA_PERTURB && defined SANITY_CHECK

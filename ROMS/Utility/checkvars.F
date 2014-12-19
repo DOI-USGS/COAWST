@@ -116,7 +116,7 @@
 # endif
 # if defined ICE_BIO && defined BERING_10K
           DO itrc=1,NBeT(ng)
-           get_var(idBvar(itrc))=.TRUE.
+           get_var(idBeTvar(itrc))=.TRUE.
           END DO
 # endif
         END IF
@@ -217,6 +217,10 @@
         get_var(idSig12)=.true.
         get_var(idS0mk)=.true.
         get_var(idT0mk)=.true.
+#  ifndef ICE_MOM_BULK
+        get_var(idChuiw)=.true.
+        get_var(idTauiw)=.true.
+#  endif
 #  ifdef PERFECT_RESTART
         get_var(idUsms)=.true.
         get_var(idVsms)=.true.
@@ -506,6 +510,10 @@
           have_var(idS0mk)=.true.
         ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idT0mk))) THEN
           have_var(idT0mk)=.true.
+        ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idTauiw))) THEN
+          have_var(idTauiw)=.true.
+        ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idChuiw))) THEN
+          have_var(idChuiw)=.true.
         END IF
 #  if defined PERFECT_RESTART
         IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idUsms))) THEN
@@ -941,6 +949,22 @@
         exit_flag=2
         RETURN
       END IF
+#  ifndef ICE_MOM_BULK
+      IF (.not.have_var(idChuiw)) THEN
+        IF (Master) WRITE (stdout,10) string,                           &
+     &                                TRIM(Vname(1,idChuiw)),           &
+     &                                TRIM(ncname)
+        exit_flag=2
+        RETURN
+      END IF
+      IF (.not.have_var(idTauiw)) THEN
+        IF (Master) WRITE (stdout,10) string,                           &
+     &                                TRIM(Vname(1,idTauiw)),           &
+     &                                TRIM(ncname)
+        exit_flag=2
+        RETURN
+      END IF
+#  endif
 # endif
 #endif
 !

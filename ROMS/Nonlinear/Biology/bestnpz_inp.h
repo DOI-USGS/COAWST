@@ -461,11 +461,11 @@
 !Benthic Parameters
 !-------------------
 #ifdef BENTHIC
-          ELSE IF (TRIM(KeyWord).eq.'Hout(idBvar)') THEN
+          ELSE IF (TRIM(KeyWord).eq.'Hout(idBeTvar)') THEN
             Npts=load_l(Nval, Cval,NBEN*Ngrids, Ltrc)
             DO ng=1,Ngrids
               DO itrc=1,NBEN
-                i=idBvar(idben(itrc))
+                i=idBeTvar(idben(itrc))
                 Hout(i,ng)=Ltrc(itrc,ng)
               END DO
             END DO
@@ -662,11 +662,11 @@
               END DO
             END DO
 # ifdef BENTHIC
-          ELSE IF (TRIM(KeyWord).eq.'Aout(idBvar)') THEN
+          ELSE IF (TRIM(KeyWord).eq.'Aout(idBeTvar)') THEN
             Npts=load_l(Nval, Cval,NBEN*Ngrids, Ltrc)
             DO ng=1,Ngrids
               DO itrc=1,NBEN
-                i=idBvar(idben(itrc))
+                i=idBeTvar(idben(itrc))
                 Aout(i,ng)=Ltrc(itrc,ng)
               END DO
             END DO

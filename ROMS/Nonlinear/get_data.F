@@ -100,8 +100,13 @@
         IF (LtracerSrc(i,ng)) THEN
           CALL get_ngfld (ng, iNLM, idRtrc(i), SSF(ng)%ncid,            &
      &                    1, SSF(ng), update(1),                        &
+#  ifdef ONE_TRACER_SOURCE
+     &                    1, 1, 1, 2, 1, 1, 1,                          &
+     &                    SOURCES(ng) % TsrcG(:,i))
+#  else
      &                    1, Nsrc(ng), N(ng), 2, 1, Nsrc(ng), N(ng),    &
      &                    SOURCES(ng) % TsrcG(:,:,:,i))
+#  endif
           IF (exit_flag.ne.NoError) RETURN
         END IF
       END DO
@@ -484,7 +489,7 @@
 
 # if (!defined ANA_TAIR && !defined AIR_OCEAN) && \
     ( defined BULK_FLUXES || defined ECOSIM || defined CCSM_FLUXES2D || \
-     (defined SHORTWAVE && defined ANA_SRFLUX && defined ALBEDO) \
+     (defined SHORTWAVE && defined ANA_SRFLUX && defined ALBEDO_CLOUD) \
      || defined SPECTRAL_LIGHT)
 !
 !-----------------------------------------------------------------------
@@ -503,7 +508,7 @@
 
 # if (!defined ANA_HUMIDITY && !defined AIR_OCEAN) && \
     ( defined BULK_FLUXES || defined ECOSIM || defined CCSM_FLUXES2D || \
-     (defined SHORTWAVE && defined ANA_SRFLUX && defined ALBEDO) \
+     (defined SHORTWAVE && defined ANA_SRFLUX && defined ALBEDO_CLOUD) \
     || defined SPECTRAL_LIGHT)
 !
 !-----------------------------------------------------------------------

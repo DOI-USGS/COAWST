@@ -778,8 +778,16 @@ Dout(iTvdif) == 2*T     ! temp_vdiff, ...    vertical diffusion
 
      NGCNAME =  dogbone_ngc.nc
 
-! Input lateral boundary conditions and climatology file names.  The
-! USER has the option to split input data time records into several
+! Input lateral boundary and climatology file names.  The USER has the
+! option to enter several files names per each nested grid.  For example,
+! the USER may have a different files for velocity, ice, etc.
+! The model will scan the file list and will read the needed data
+! from the first file in the list containing the boundary field. Therefore,
+! the order of the file names is very important.  If multiple boundary
+! files per grid, enter first all the file names for grid 1, then grid 2,
+! and so on.  Use a single line per entry with a continuation (\) symbol
+! at the each entry, except the last one.
+! The USER has the option to split input data time records into several
 ! NetCDF files (see prologue instructions above). If so, use a single
 ! line per entry with a vertical bar (|) symbol after each entry,
 ! except the last one.

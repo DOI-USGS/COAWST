@@ -60,13 +60,21 @@
           real(r8), pointer :: Qbar(:)
           real(r8), pointer :: Qshape(:,:)
           real(r8), pointer :: Qsrc(:,:)
+#ifdef ONE_TRACER_SOURCE
+          real(r8), pointer :: Tsrc(:)
+#else
           real(r8), pointer :: Tsrc(:,:,:)
+#endif
           real(r8), pointer :: Xsrc(:)
           real(r8), pointer :: Ysrc(:)
 
 #ifndef ANA_PSOURCE
           real(r8), pointer :: QbarG(:,:)
+# ifdef ONE_TRACER_SOURCE
+          real(r8), pointer :: TsrcG(:,:)
+# else
           real(r8), pointer :: TsrcG(:,:,:,:)
+# endif
 #endif
 
         END TYPE T_SOURCES
@@ -169,7 +177,11 @@
 
       allocate ( SOURCES(ng) % Qsrc(Nsrc(ng),N(ng)) )
 
+#ifdef ONE_TRACER_SOURCE
+      allocate ( SOURCES(ng) % Tsrc(NT(ng)) )
+#else
       allocate ( SOURCES(ng) % Tsrc(Nsrc(ng),N(ng),NT(ng)) )
+#endif
 
       allocate ( SOURCES(ng) % Xsrc(Nsrc(ng)) )
 
@@ -178,7 +190,11 @@
 #ifndef ANA_PSOURCE
       allocate ( SOURCES(ng) % QbarG(Nsrc(ng),2) )
 
+# ifdef ONE_TRACER_SOURCE
+      allocate ( SOURCES(ng) % TsrcG(2,NT(ng)) )
+# else
       allocate ( SOURCES(ng) % TsrcG(Nsrc(ng),N(ng),2,NT(ng)) )
+# endif
 #endif
 !
 !-----------------------------------------------------------------------
@@ -205,15 +221,23 @@
         END DO
       END DO
       DO itrc=1,NT(ng)
+#ifdef ONE_TRACER_SOURCE
+        SOURCES(ng) % Tsrc(itrc) = IniVal
+# ifndef ANA_PSOURCE
+        SOURCES(ng) % TsrcG(1,itrc) = IniVal
+        SOURCES(ng) % TsrcG(2,itrc) = IniVal
+# endif
+#else
         DO k=1,N(ng)
           DO is=1,Nsrc(ng)
             SOURCES(ng) % Tsrc(is,k,itrc) = IniVal
-#ifndef ANA_PSOURCE
+# ifndef ANA_PSOURCE
             SOURCES(ng) % TsrcG(is,k,1,itrc) = IniVal
             SOURCES(ng) % TsrcG(is,k,2,itrc) = IniVal
-#endif
+# endif
           END DO
         END DO
+#endif
       END DO
 
       RETURN

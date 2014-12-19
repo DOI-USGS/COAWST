@@ -29,7 +29,7 @@
      &                        LBi, UBi, LBj, UBj,                       &
      &                        CosAngler, SinAngler,                     &
 #ifdef MASKING
-     &                        rmask_io,                                 &
+     &                        rmask_full,                               &
 #endif
      &                        Uinp, Vinp, Uout, Vout)
 !***********************************************************************
@@ -53,7 +53,7 @@
       real(r8), intent(in) :: CosAngler(LBi:,LBj:)
       real(r8), intent(in) :: SinAngler(LBi:,LBj:)
 # ifdef MASKING
-      real(r8), intent(in) :: rmask_io(LBi:,LBj:)
+      real(r8), intent(in) :: rmask_full(LBi:,LBj:)
 # endif
       real(r8), intent(in) :: Uinp(LBi:,LBj:)
       real(r8), intent(in) :: Vinp(LBi:,LBj:)
@@ -64,7 +64,7 @@
       real(r8), intent(in) :: CosAngler(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: SinAngler(LBi:UBi,LBj:UBj)
 # ifdef MASKING
-      real(r8), intent(in) :: rmask_io(LBi:UBi,LBj:UBj)
+      real(r8), intent(in) :: rmask_full(LBi:UBi,LBj:UBj)
 # endif
       real(r8), intent(in) :: Uinp(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: Vinp(LBi:UBi,LBj:UBj)
@@ -97,8 +97,8 @@
      &                Vrho*CosAngler(i,j)+                              &
      &                Urho*SinAngler(i,j)
 #ifdef MASKING
-            Uout(i,j)=Uout(i,j)*rmask_io(i,j)
-            Vout(i,j)=Vout(i,j)*rmask_io(i,j)
+            Uout(i,j)=Uout(i,j)*rmask_full(i,j)
+            Vout(i,j)=Vout(i,j)*rmask_full(i,j)
 #endif
           END DO
         END DO
@@ -112,8 +112,8 @@
             Vout(i,j)=Vrho*CosAngler(i,j)+                              &
      &                Urho*SinAngler(i,j)
 #ifdef MASKING
-            Uout(i,j)=Uout(i,j)*rmask_io(i,j)
-            Vout(i,j)=Vout(i,j)*rmask_io(i,j)
+            Uout(i,j)=Uout(i,j)*rmask_full(i,j)
+            Vout(i,j)=Vout(i,j)*rmask_full(i,j)
 #endif
           END DO
         END DO
@@ -149,7 +149,7 @@
      &                        LBi, UBi, LBj, UBj, LBk, UBk,             &
      &                        CosAngler, SinAngler,                     &
 # ifdef MASKING
-     &                        rmask_io,                                 &
+     &                        rmask_full,                                 &
 # endif
      &                        Uinp, Vinp, Uout, Vout)
 !***********************************************************************
@@ -173,7 +173,7 @@
       real(r8), intent(in) :: CosAngler(LBi:,LBj:)
       real(r8), intent(in) :: SinAngler(LBi:,LBj:)
 #  ifdef MASKING
-      real(r8), intent(in) :: rmask_io(LBi:,LBj:)
+      real(r8), intent(in) :: rmask_full(LBi:,LBj:)
 #  endif
       real(r8), intent(in) :: Uinp(LBi:,LBj:,LBk:)
       real(r8), intent(in) :: Vinp(LBi:,LBj:,LBk:)
@@ -184,7 +184,7 @@
       real(r8), intent(in) :: CosAngler(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: SinAngler(LBi:UBi,LBj:UBj)
 #  ifdef MASKING
-      real(r8), intent(in) :: rmask_io(LBi:UBi,LBj:UBj)
+      real(r8), intent(in) :: rmask_full(LBi:UBi,LBj:UBj)
 #  endif
       real(r8), intent(in) :: Uinp(LBi:UBi,LBj:UBj,LBk:UBk)
       real(r8), intent(in) :: Vinp(LBi:UBi,LBj:UBj,LBk:UBk)
@@ -218,8 +218,8 @@
      &                    Vrho*CosAngler(i,j)+                          &
      &                    Urho*SinAngler(i,j)
 # ifdef MASKING
-              Uout(i,j,k)=Uout(i,j,k)*rmask_io(i,j)
-              Vout(i,j,k)=Vout(i,j,k)*rmask_io(i,j)
+              Uout(i,j,k)=Uout(i,j,k)*rmask_full(i,j)
+              Vout(i,j,k)=Vout(i,j,k)*rmask_full(i,j)
 # endif
             END DO
           END DO
@@ -235,8 +235,8 @@
               Vout(i,j,k)=Vrho*CosAngler(i,j)+                          &
      &                    Urho*SinAngler(i,j)
 # ifdef MASKING
-              Uout(i,j,k)=Uout(i,j,k)*rmask_io(i,j)
-              Vout(i,j,k)=Vout(i,j,k)*rmask_io(i,j)
+              Uout(i,j,k)=Uout(i,j,k)*rmask_full(i,j)
+              Vout(i,j,k)=Vout(i,j,k)*rmask_full(i,j)
 # endif
             END DO
           END DO

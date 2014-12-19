@@ -50,6 +50,7 @@
 # define DJ_GRADPS
 # define TS_DIF2
 # define MIX_GEO_TS
+# define CURVGRID
 
 # define SALINITY
 # define SOLVE3D
@@ -75,6 +76,7 @@
 # define ANA_BTFLUX
 # define ANA_BSFLUX
 # define EMINUSP
+# define SOLAR_SOURCE
 
 /* Turbulence closure */
 # define GLS_MIXING

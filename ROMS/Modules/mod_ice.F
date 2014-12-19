@@ -50,10 +50,10 @@
           real(r8), pointer :: sig12(:,:,:)
 
 # if defined ICE_BIO  
-         real(r8), pointer ::IcePhL(:,:,:)
-         real(r8), pointer ::IceNO3(:,:,:)
-         real(r8), pointer ::IceNH4(:,:,:)
-         integer, pointer ::IceLog(:,:,:)
+          real(r8), pointer ::IcePhL(:,:,:)
+          real(r8), pointer ::IceNO3(:,:,:)
+          real(r8), pointer ::IceNH4(:,:,:)
+          integer, pointer ::IceLog(:,:,:)
 # endif
 
         END TYPE T_ICE
@@ -65,7 +65,7 @@
       SUBROUTINE allocate_ice (ng, LBi, UBi, LBj, UBj)
 !
 !=======================================================================
-!  Copyright (c) 2002 ROMS/TOMS Group                                  !
+!  Copyright (c) 2002-2014 ROMS/TOMS Group                             !
 !================================================== Hernan G. Arango ===
 !                                                                      !
 !  This routine allocates all variables in the module for all nested   !
@@ -140,8 +140,6 @@
       SUBROUTINE initialize_ice (ng, tile)
 !
 !=======================================================================
-!  Copyright (c) 2002 ROMS/TOMS Group                                  !
-!================================================== Hernan G. Arango ===
 !                                                                      !
 !  This routine initialize all variables in the module using first     !
 !  touch distribution policy. In shared-memory configuration, this     !
@@ -195,13 +193,11 @@
       Jmin=LBj
       Jmax=UBj
 #endif
-
 !
 !-----------------------------------------------------------------------
 !  Initialize module variables.
 !-----------------------------------------------------------------------
 !
-
       DO j=Jmin,Jmax
         DO i=Imin,Imax
           ICE(ng) % ui(i,j,1) = IniVal

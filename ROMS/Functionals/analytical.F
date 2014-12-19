@@ -27,8 +27,6 @@
 !! ana_fsobc.h         Analytical free-surface boundary conditions.    !
 !! ana_grid.h          Analytical model grid set-up.                   !
 !! ana_humid.h         Analytical surface air humidity.                !
-!! ana_hmixcoef.h      Analytical horizontal mixing coefficients for   !
-!!                       sponge areas at the open boundary.            !
 !! ana_initial.h       Analytical initial conditions for momentum,     !
 !!                       free surface and tracers.                     !
 !! ana_m2clima.h       Analytical 2D momentum climatology.             !
@@ -145,7 +143,7 @@
 # ifdef SOLVE3D
 #  if defined ANA_HUMIDITY && \
     (defined BULK_FLUXES || defined ECOSIM || defined SPECTRAL_LIGHT \
-    || (defined ANA_SRFLUX  && defined ALBEDO) )
+    || (defined ANA_SRFLUX  && defined ALBEDO_CLOUD) )
 #   include <ana_humid.h>
 #  endif
 # endif
@@ -272,7 +270,7 @@
 # ifdef SOLVE3D
 #  if defined ANA_TAIR && \
     (defined BULK_FLUXES || defined ECOSIM ||  \
-     defined SPECTRAL_LIGHT ||(defined ANA_SRFLUX && defined ALBEDO) )
+     defined SPECTRAL_LIGHT ||(defined ANA_SRFLUX && defined ALBEDO_CLOUD) )
 #   include <ana_tair.h>
 #  endif
 # endif

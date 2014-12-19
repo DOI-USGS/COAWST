@@ -74,7 +74,7 @@
 
 #define ANA_GRID
 #define ANA_INITIAL
-#define ALBEDO
+#define ALBEDO_CLOUD
 #define ANA_SRFLUX
 #define ANA_SSFLUX
 #define ANA_BSFLUX

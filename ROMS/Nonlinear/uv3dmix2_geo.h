@@ -62,6 +62,12 @@
      &                    GRID(ng) % umask,                             &
      &                    GRID(ng) % vmask,                             &
 #endif
+#ifdef WET_DRY
+     &                    GRID(ng) % pmask_wet,                         &
+     &                    GRID(ng) % rmask_wet,                         &
+     &                    GRID(ng) % umask_wet,                         &
+     &                    GRID(ng) % vmask_wet,                         &
+#endif
      &                    GRID(ng) % om_p,                              &
      &                    GRID(ng) % om_r,                              &
      &                    GRID(ng) % om_u,                              &
@@ -104,6 +110,10 @@
 #ifdef MASKING
      &                          pmask, rmask, umask, vmask,             &
 #endif
+#ifdef WET_DRY
+     &                          pmask_wet, rmask_wet,                   &
+     &                          umask_wet, vmask_wet,                   &
+#endif
      &                          om_p, om_r, om_u, om_v,                 &
      &                          on_p, on_r, on_u, on_v,                 &
      &                          pm, pn,                                 &
@@ -137,6 +147,12 @@
       real(r8), intent(in) :: rmask(LBi:,LBj:)
       real(r8), intent(in) :: umask(LBi:,LBj:)
       real(r8), intent(in) :: vmask(LBi:,LBj:)
+# endif
+# ifdef WET_DRY
+      real(r8), intent(in) :: pmask_wet(LBi:,LBj:)
+      real(r8), intent(in) :: rmask_wet(LBi:,LBj:)
+      real(r8), intent(in) :: umask_wet(LBi:,LBj:)
+      real(r8), intent(in) :: vmask_wet(LBi:,LBj:)
 # endif
       real(r8), intent(in) :: om_p(LBi:,LBj:)
       real(r8), intent(in) :: om_r(LBi:,LBj:)
@@ -172,6 +188,12 @@
       real(r8), intent(in) :: rmask(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: umask(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: vmask(LBi:UBi,LBj:UBj)
+# endif
+# ifdef WET_DRY
+      real(r8), intent(in) :: pmask_wet(LBi:UBi,LBj:UBj)
+      real(r8), intent(in) :: rmask_wet(LBi:UBi,LBj:UBj)
+      real(r8), intent(in) :: umask_wet(LBi:UBi,LBj:UBj)
+      real(r8), intent(in) :: vmask_wet(LBi:UBi,LBj:UBj)
 # endif
       real(r8), intent(in) :: om_p(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: om_r(LBi:UBi,LBj:UBj)
@@ -266,6 +288,9 @@
 #ifdef MASKING
               cff=cff*umask(i,j)
 #endif
+#ifdef WET_DRY
+              cff=cff*umask_wet(i,j)
+#endif
               UFx(i,j)=cff*(z_r(i  ,j,k+1)-                             &
      &                      z_r(i-1,j,k+1))
             END DO
@@ -275,6 +300,9 @@
               cff=0.5_r8*(pn(i,j-1)+pn(i,j))
 #ifdef MASKING
               cff=cff*vmask(i,j)
+#endif
+#ifdef WET_DRY
+              cff=cff*vmask_wet(i,j)
 #endif
               VFe(i,j)=cff*(z_r(i,j  ,k+1)-                             &
      &                      z_r(i,j-1,k+1))
@@ -306,6 +334,9 @@
 #ifdef MASKING
               cff=cff*rmask(i,j)
 #endif
+#ifdef WET_DRY
+              cff=cff*rmask_wet(i,j)
+#endif
               dnUdx(i,j,k2)=cff*((pn(i  ,j)+pn(i+1,j))*                 &
      &                           u(i+1,j,k+1,nrhs)-                     &
      &                           (pn(i-1,j)+pn(i  ,j))*                 &
@@ -319,6 +350,9 @@
      &                      pn(i-1,j-1)+pn(i,j-1))
 #ifdef MASKING
               cff=cff*pmask(i,j)
+#endif
+#ifdef WET_DRY
+              cff=cff*pmask_wet(i,j)
 #endif
               dmUde(i,j,k2)=cff*((pm(i-1,j  )+pm(i,j  ))*               &
      &                           u(i,j  ,k+1,nrhs)-                     &
@@ -334,6 +368,9 @@
 #ifdef MASKING
               cff=cff*pmask(i,j)
 #endif
+#ifdef WET_DRY
+              cff=cff*pmask_wet(i,j)
+#endif
               dnVdx(i,j,k2)=cff*((pn(i  ,j-1)+pn(i  ,j))*               &
      &                           v(i  ,j,k+1,nrhs)-                     &
      &                           (pn(i-1,j-1)+pn(i-1,j))*               &
@@ -346,6 +383,9 @@
               cff=0.5_r8*pn(i,j)
 #ifdef MASKING
               cff=cff*rmask(i,j)
+#endif
+#ifdef WET_DRY
+              cff=cff*rmask_wet(i,j)
 #endif
               dmVde(i,j,k2)=cff*((pm(i,j  )+pm(i,j+1))*                 &
      &                           v(i,j+1,k+1,nrhs)-                     &
@@ -425,6 +465,9 @@
 #ifdef MASKING
               cff=cff*rmask(i,j)
 #endif
+#ifdef WET_DRY
+              cff=cff*rmask_wet(i,j)
+#endif
 #ifdef VISC_3DCOEF
               UFx(i,j)=on_r(i,j)*on_r(i,j)*visc3d_r(i,j,k)*cff
               VFe(i,j)=om_r(i,j)*om_r(i,j)*visc3d_r(i,j,k)*cff
@@ -462,6 +505,9 @@
      &                               dUdz(i,j  ,k1)))))
 #ifdef MASKING
               cff=cff*pmask(i,j)
+#endif
+#ifdef WET_DRY
+              cff=cff*pmask_wet(i,j)
 #endif
 #ifdef VISC_3DCOEF
               visc_p=0.25_r8*                                           &

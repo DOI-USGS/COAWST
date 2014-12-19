@@ -69,6 +69,9 @@
      &                      GRID(ng) % umask,                           &
      &                      GRID(ng) % vmask,                           &
 # endif
+# ifdef WET_DRY
+     &                      GRID(ng) % rmask_wet,                       &
+# endif
      &                      GRID(ng) % pm,                              &
      &                      GRID(ng) % pn,                              &
      &                      GRID(ng) % Hz,                              &
@@ -122,6 +125,9 @@
      &                            nrhs, nstp, nnew,                     &
 # ifdef MASKING
      &                            rmask, umask, vmask,                  &
+# endif
+# ifdef WET_DRY
+     &                            rmask_wet,                            &
 # endif
      &                            pm, pn,                               &
      &                            Hz, Huon, Hvom,                       &
@@ -179,6 +185,9 @@
       real(r8), intent(in) :: umask(LBi:,LBj:)
       real(r8), intent(in) :: vmask(LBi:,LBj:)
 #  endif
+#  ifdef WET_DRY
+      real(r8), intent(in) :: rmask_wet(LBi:,LBj:)
+#  endif
       real(r8), intent(in) :: pm(LBi:,LBj:)
       real(r8), intent(in) :: pn(LBi:,LBj:)
       real(r8), intent(in) :: Hz(LBi:,LBj:,:)
@@ -233,6 +242,9 @@
       real(r8), intent(in) :: rmask(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: umask(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: vmask(LBi:UBi,LBj:UBj)
+#  endif
+#  ifdef WET_DRY
+      real(r8), intent(in) :: rmask_wet(LBi:UBi,LBj:UBj)
 #  endif
       real(r8), intent(in) :: pm(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: pn(LBi:UBi,LBj:UBj)
@@ -539,10 +551,18 @@
      &            ((Jstr.le.j).and.(j.le.Jend+1))) THEN
                 IF (INT(SOURCES(ng)%Dsrc(is)).eq.0) THEN
                   FX(i,j)=Huon(i,j,k)*                                  &
+#  ifdef ONE_TRACER_SOURCE
+     &                    SOURCES(ng)%Tsrc(itrc)
+#  else
      &                    SOURCES(ng)%Tsrc(is,k,itrc)
+#  endif
                 ELSE
                   FE(i,j)=Hvom(i,j,k)*                                  &
+#  ifdef ONE_TRACER_SOURCE
+     &                    SOURCES(ng)%Tsrc(itrc)
+#  else
      &                    SOURCES(ng)%Tsrc(is,k,itrc)
+#  endif
                 END IF
               END IF
             END DO
@@ -591,10 +611,10 @@
             t(i,j,k,3,iactrc)=t(i,j,k,3,iactrc)+                        &
      &                           cff*Hz(i,j,k)*t(i,j,k,nstp,iwctrc)
 !  Age in years, as in Spall, 2007, JGR, doi:10.1029/2005JC003364.
-            t(i,j,k,3,inert(3))=t(i,j,k,3,inert(3))+              &
-     &                           cff*3.168808781402895e-08
-            t(i,j,k,3,inert(4))=t(i,j,k,3,inert(4))+              &
-     &                           cff*3.168808781402895e-08
+!            t(i,j,k,3,inert(3))=t(i,j,k,3,inert(3))+              &
+!     &                           cff*3.168808781402895e-08
+!            t(i,j,k,3,inert(4))=t(i,j,k,3,inert(4))+              &
+!     &                           cff*3.168808781402895e-08
           END DO
         END DO
       END DO
@@ -1070,7 +1090,11 @@
           IF (itrc.eq.itemp) THEN
             DO k=1,N(ng)-1
               DO i=Istr,Iend
-                FC(i,k)=FC(i,k)+dt(ng)*srflx(i,j)*swdk(i,j,k)
+                FC(i,k)=FC(i,k)+dt(ng)*srflx(i,j)                       &
+#   ifdef WET_DRY
+     &                *rmask_wet(i,j)                                   &
+#   endif
+     &               *swdk(i,j,k)
               END DO
             END DO
           END IF
@@ -1344,13 +1368,13 @@
 #  ifdef T_PASSIVE
 !       else condition added by Weifeng Zhang for passive tracer
 !       boundary condition
-        IF (itrc .ge. inert(1) .and. itrc .le. inert(NPT)) THEN
-          CALL pt3dbc_tile (ng, tile, itrc,                             &
-     &                      LBi, UBi, LBj, UBj, N(ng), NT(ng),          &
-     &                      IminS, ImaxS, JminS, JmaxS,                 &
-     &                      nstp, 3,                                    &
-     &                      t)
-        END IF
+!        IF (itrc .ge. inert(1) .and. itrc .le. inert(NPT)) THEN
+!          CALL pt3dbc_tile (ng, tile, itrc,                             &
+!     &                      LBi, UBi, LBj, UBj, N(ng), NT(ng),          &
+!     &                      IminS, ImaxS, JminS, JmaxS,                 &
+!     &                      nstp, 3,                                    &
+!     &                      t)
+!        END IF
 !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 #  endif
       END DO

@@ -137,7 +137,7 @@
 ! Maximum melt pond fraction
 ! (nondimensional)
 
-     sfwat_max == 0.1d0
+     sfwat_max == 0.0d0
 
 ! Ice-water turning angle [degrees]
 
@@ -184,6 +184,8 @@ Hout(idAgeice) == T
 Hout(idSig11) == T
 Hout(idSig12) == T
 Hout(idSig22) == T
+Hout(idS0mk) == T
+Hout(idT0mk) == T
 Hout(idWfr) == T
 Hout(idWai) == T
 Hout(idWao) == T
@@ -210,6 +212,8 @@ Aout(idAgeice) == T
 Aout(idSig11) == T
 Aout(idSig12) == T
 Aout(idSig22) == T
+Aout(idS0mk) == T
+Aout(idT0mk) == T
 Aout(idWfr) == T
 Aout(idWai) == T
 Aout(idWao) == T
@@ -236,6 +240,8 @@ Aout2(idAgeice) == T
 Aout2(idSig11) == F
 Aout2(idSig12) == F
 Aout2(idSig22) == F
+Aout2(idS0mk) == F
+Aout2(idT0mk) == F
 
 ! Logical switches (TRUE/FALSE) to activate writing of ice prognostic
 ! variables into HISTORY output file.
@@ -255,3 +261,5 @@ Hout2(idAgeice) == T
 Hout2(idSig11) == F
 Hout2(idSig12) == F
 Hout2(idSig22) == F
+Hout2(idS0mk) == F
+Hout2(idT0mk) == F

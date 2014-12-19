@@ -81,6 +81,11 @@
      &                        GRID(ng) % umask,                         &
      &                        GRID(ng) % vmask,                         &
 # endif
+# ifdef WET_DRY
+     &                        GRID(ng) % rmask_wet,                     &
+     &                        GRID(ng) % umask_wet,                     &
+     &                        GRID(ng) % vmask_wet,                     &
+# endif
      &                        MIXING(ng) % alpha,                       &
      &                        MIXING(ng) % tl_alpha,                    &
      &                        MIXING(ng) % beta,                        &
@@ -134,6 +139,9 @@
 # ifdef MASKING
      &                              rmask, umask, vmask,                &
 # endif
+# ifdef WET_DRY
+     &                              rmask_wet, umask_wet, vmask_wet,    &
+# endif
      &                              alpha, tl_alpha,                    &
      &                              beta, tl_beta,                      &
      &                              rho, tl_rho, t, tl_t,               &
@@ -181,6 +189,11 @@
       real(r8), intent(in) :: umask(LBi:,LBj:)
       real(r8), intent(in) :: vmask(LBi:,LBj:)
 #  endif
+#  ifdef WET_DRY
+      real(r8), intent(in) :: rmask_wet(LBi:,LBj:)
+      real(r8), intent(in) :: umask_wet(LBi:,LBj:)
+      real(r8), intent(in) :: vmask_wet(LBi:,LBj:)
+#  endif
       real(r8), intent(in) :: alpha(LBi:,LBj:)
       real(r8), intent(in) :: beta(LBi:,LBj:)
       real(r8), intent(in) :: rho(LBi:,LBj:,:)
@@ -226,6 +239,11 @@
       real(r8), intent(in) :: rmask(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: umask(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: vmask(LBi:UBi,LBj:UBj)
+#  endif
+#  ifdef WET_DRY
+      real(r8), intent(in) :: rmask_wet(LBi:UBi,LBj:UBj)
+      real(r8), intent(in) :: umask_wet(LBi:UBi,LBj:UBj)
+      real(r8), intent(in) :: vmask_wet(LBi:UBi,LBj:UBj)
 #  endif
       real(r8), intent(in) :: alpha(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: beta(LBi:UBi,LBj:UBj)
@@ -510,6 +528,10 @@
 # ifdef MASKING
           LRad(i,j)=LRad(i,j)*rmask(i,j)
           tl_LRad(i,j)=tl_LRad(i,j)*rmask(i,j)
+# endif
+# ifdef WET_DRY
+          LRad(i,j)=LRad(i,j)*rmask_wet(i,j)
+          tl_LRad(i,j)=tl_LRad(i,j)*rmask_wet(i,j)
 # endif
 !
 !-----------------------------------------------------------------------
@@ -1346,6 +1368,10 @@
 # ifdef MASKING
             SHeat(i,j)=SHeat(i,j)*rmask(i,j)
             tl_SHeat(i,j)=tl_SHeat(i,j)*rmask(i,j)
+# endif
+# ifdef WET_DRY
+            SHeat(i,j)=SHeat(i,j)*rmask_wet(i,j)
+            tl_SHeat(i,j)=tl_SHeat(i,j)*rmask_wet(i,j)
 # endif
 !
 !  Compute turbulent latent heat flux (W/m2), Hl.

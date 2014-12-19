@@ -58,6 +58,10 @@
      &                  GRID(ng) % umask,                               &
      &                  GRID(ng) % vmask,                               &
 # endif
+# ifdef WET_DRY
+     &                  GRID(ng)%umask_wet,                             &
+     &                  GRID(ng)%vmask_wet,                             &
+# endif
      &                  GRID(ng) % Hz,                                  &
      &                  GRID(ng) % om_v,                                &
      &                  GRID(ng) % on_u,                                &
@@ -89,6 +93,9 @@
 # ifdef MASKING
      &                        umask, vmask,                             &
 # endif
+# ifdef WET_DRY
+     &                        umask_wet, vmask_wet,                     &
+# endif
      &                        Hz, om_v, on_u, z_w,                      &
      &                        rho,                                      &
 #ifdef WEC_VF
@@ -118,6 +125,10 @@
       real(r8), intent(in) :: umask(LBi:,LBj:)
       real(r8), intent(in) :: vmask(LBi:,LBj:)
 #  endif
+#  ifdef WET_DRY
+      real(r8), intent(in) :: umask_wet(LBi:,LBj:)
+      real(r8), intent(in) :: vmask_wet(LBi:,LBj:)
+#  endif
       real(r8), intent(in) :: Hz(LBi:,LBj:,:)
       real(r8), intent(in) :: om_v(LBi:,LBj:)
       real(r8), intent(in) :: on_u(LBi:,LBj:)
@@ -139,6 +150,10 @@
 #  ifdef MASKING
       real(r8), intent(in) :: umask(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: vmask(LBi:UBi,LBj:UBj)
+#  endif
+#  ifdef WET_DRY
+      real(r8), intent(in) :: umask_wet(LBi:UBi,LBj:UBj)
+      real(r8), intent(in) :: vmask_wet(LBi:UBi,LBj:UBj)
 #  endif
       real(r8), intent(in) :: Hz(LBi:UBi,LBj:UBj,N(ng))
       real(r8), intent(in) :: om_v(LBi:UBi,LBj:UBj)
@@ -319,6 +334,9 @@
 # ifdef MASKING
               ru(i,j,k,nrhs)=ru(i,j,k,nrhs)*umask(i,j)
 # endif
+# ifdef WET_DRY
+              ru(i,j,k,nrhs)=ru(i,j,k,nrhs)*umask_wet(i,j)
+# endif
             END DO
           END DO
         END IF
@@ -351,6 +369,9 @@
      &                       (Hz(i,j-1,k)+Hz(i,j,k))
 # ifdef MASKING
               rv(i,j,k,nrhs)=rv(i,j,k,nrhs)*vmask(i,j)
+# endif
+# ifdef WET_DRY
+              rv(i,j,k,nrhs)=rv(i,j,k,nrhs)*vmask_wet(i,j)
 # endif
             END DO
           END DO

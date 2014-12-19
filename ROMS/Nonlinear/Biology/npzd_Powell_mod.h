@@ -31,9 +31,9 @@
 !  wDet      Detrital sinking rate, [m/day].                           !
 !  wPhy      Phytoplankton sinking rate, [m/day].                      !
 !  ZooEED    Zooplankton excretion efficiency to Detritus pool,        !
-!              {nondimensional].                                       !
+!              [nondimensional].                                       !
 !  ZooEEN    Zooplankton excretion efficiency to Nitrogen pool,        !
-!              {nondimensional].                                       !
+!              [nondimensional].                                       !
 !  ZooGR     Zooplankton grazing rate, [1/day].                        !
 !  ZooMRD    Zooplankton mortality rate to Detritus pool, [1/day].     !
 !  ZooMRN    Zooplankton mortality rate to Nitrogen pool, [1/day].     !

@@ -284,7 +284,7 @@
 !
         integer, allocatable :: ntimes(:)
 !
-!  Step counter for current execution time-window.
+!  Time-step counter for current execution time-window.
 !
         integer, allocatable :: step_counter(:)
 
@@ -489,7 +489,7 @@
         integer, parameter :: linear = 0        ! linear interpolation
         integer, parameter :: cubic  = 1        ! cubic  interpolation
 !
-        integer :: InterpFlag = linear          ! interpolation flag
+        integer :: InterpFlag = cubic          ! interpolation flag
 !
 !  Shallowest and Deepest levels to apply bottom momentum stresses as
 !  a bodyforce
@@ -585,8 +585,14 @@
         real(r8), allocatable :: DXmax(:)
         real(r8), allocatable :: DYmin(:)
         real(r8), allocatable :: DYmax(:)
+#ifdef SOLVE3D
         real(r8), allocatable :: DZmin(:)
         real(r8), allocatable :: DZmax(:)
+#endif
+!$OMP THREADPRIVATE (DXmin, DXmax, DYmin, DYmax)
+#ifdef SOLVE3D
+!$OMP THREADPRIVATE (DZmin, DZmax)
+#endif
 !
 !  Maximum size of a grid node (m) over the whole curvilinear grid
 !  application. Used for scaling horizontal mixing by the grid size.
@@ -1775,6 +1781,15 @@
       allocate ( iic(Ngrids) )
       allocate ( iif(Ngrids) )
 
+      allocate ( DXmin(Ngrids) )
+      allocate ( DXmax(Ngrids) )
+      allocate ( DYmin(Ngrids) )
+      allocate ( DYmax(Ngrids) )
+#ifdef SOLVE3D
+      allocate ( DZmin(Ngrids) )
+      allocate ( DZmax(Ngrids) )
+#endif
+
       allocate ( FrcRec(Ngrids) )
       allocate ( SOrec(Ngrids) )
 !$OMP END PARALLEL
@@ -1910,13 +1925,6 @@
 #ifdef SOLVE3D
       allocate ( Kdigits(Ngrids) )
 #endif
-
-      allocate ( DXmin(Ngrids) )
-      allocate ( DXmax(Ngrids) )
-      allocate ( DYmin(Ngrids) )
-      allocate ( DYmax(Ngrids) )
-      allocate ( DZmin(Ngrids) )
-      allocate ( DZmax(Ngrids) )
 
       allocate ( grdmax(Ngrids) )
 

@@ -22,6 +22,8 @@
       USE mod_netcdf
       USE mod_scalars
 !
+      USE strings_mod, ONLY : find_string
+!
       implicit none
 !
 !  Imported variable declarations.
@@ -37,8 +39,8 @@
 
       logical, dimension((Ngrids-1)*2) :: Linterpolate
 !
-      integer :: cr, dg, ibry, ig, ip,  m, rg
-      integer :: my_Ncontact, my_Ngrids, my_Nweights
+      integer :: cr, dg, ibry, ic, ig, ip,  m, rg, vindex
+      integer :: my_Ncontact, my_Ngrids, my_nLweights, my_nQweights
 
       integer, dimension(Ngrids) :: my_Lm, my_Mm
       integer, dimension(Ngrids) :: refine_factor
@@ -47,7 +49,10 @@
       integer, dimension((Ngrids-1)*2) :: NpointsU
       integer, dimension((Ngrids-1)*2) :: NpointsV
 !
-      real(r8), allocatable :: Hweight(:,:)
+      real(r8), allocatable :: Lweight(:,:)
+# ifdef QUADRATIC_WEIGHTS
+      real(r8), allocatable :: Qweight(:,:)
+# endif
       real(r8), allocatable :: Xrg(:), Yrg(:)
       real(r8), allocatable :: angle(:)
       real(r8), allocatable :: dmde(:), dndx(:)
@@ -60,6 +65,11 @@
 !  Read in nesting grids contact point packed information into local
 !  arrays.
 !-----------------------------------------------------------------------
+!
+!  Inquire about the variables.
+!
+      CALL netcdf_inq_var (ng, model, NGCname)
+      IF (exit_flag.ne.NoError) RETURN
 !
 !  Check if the number of nested grids is correct.
 !
@@ -94,21 +104,38 @@
       END IF
       Ncontact=(Ngrids-1)*2
 !
-!  Check number of contact points interpolation weights. Currently,
-!  only linear interpolation is allowed and four weights are needed.
+!  Check number of contact points for bilinear interpolation weights.
 !
-      CALL netcdf_get_dim (ng, model, NGCname, 'Nweights',              &
-     &                     my_Nweights)
+      CALL netcdf_get_dim (ng, model, NGCname, 'nLweights',             &
+     &                     my_nLweights)
       IF (exit_flag.ne.NoError) RETURN
 
-      IF (my_Nweights.ne.4) THEN
+      IF (my_nLweights.ne.4) THEN
         IF (Master) THEN
-          WRITE (stdout,10) 'inconsistent parameter, Nweights = ',      &
-     &                      4, my_Nweights
+          WRITE (stdout,10) 'inconsistent parameter, nLweights = ',     &
+     &                      4, my_nLweights
         END IF
         exit_flag=5
         RETURN
       END IF
+
+# ifdef QUADRATIC_WEIGHTS
+!
+!  Check number of contact points for quadratic interpolation weights.
+!
+      CALL netcdf_get_dim (ng, model, NGCname, 'nQweights',             &
+     &                     my_nQweights)
+      IF (exit_flag.ne.NoError) RETURN
+
+      IF (my_nQweights.ne.9) THEN
+        IF (Master) THEN
+          WRITE (stdout,10) 'inconsistent parameter, nQweights = ',     &
+     &                      9, my_nQweights
+        END IF
+        exit_flag=5
+        RETURN
+      END IF
+# endif
 !
 !  Get number of contact points in input NetCDF file.  It may include
 !  or not contact point over land when land/sea masking is activated.
@@ -189,6 +216,37 @@
       END IF
       CALL netcdf_get_ivar (ng, model, NGCname, 'receiver_grid',        &
      &                      receiver_grid)
+      IF (exit_flag.ne.NoError) RETURN
+!
+!  Read in donor grid (I,J) indices at PSI points used to extract
+!  refined grid. Values have a fill value of -999 if not applicable.
+!
+      IF (.not.allocated(I_left)) THEN
+        allocate ( I_left(Ngrids) )
+      END IF
+      CALL netcdf_get_ivar (ng, model, NGCname, 'I_left',               &
+     &                      I_left)
+      IF (exit_flag.ne.NoError) RETURN
+!
+      IF (.not.allocated(I_right)) THEN
+        allocate ( I_right(Ngrids) )
+      END IF
+      CALL netcdf_get_ivar (ng, model, NGCname, 'I_right',              &
+     &                      I_right)
+      IF (exit_flag.ne.NoError) RETURN
+!
+      IF (.not.allocated(J_bottom)) THEN
+        allocate ( J_bottom(Ngrids) )
+      END IF
+      CALL netcdf_get_ivar (ng, model, NGCname, 'J_bottom',             &
+     &                      J_bottom)
+      IF (exit_flag.ne.NoError) RETURN
+!
+      IF (.not.allocated(J_top)) THEN
+        allocate ( J_top(Ngrids) )
+      END IF
+      CALL netcdf_get_ivar (ng, model, NGCname, 'J_top',                &
+     &                      J_top)
       IF (exit_flag.ne.NoError) RETURN
 !
 !  Read in starting and ending contact points (RHO-, U-, V-) index in
@@ -293,13 +351,26 @@
       CALL netcdf_get_fvar (ng, model, NGCname, 'Yrg', Yrg)
       IF (exit_flag.ne.NoError) RETURN
 !
-!  Read in contact point horizontal interpolation weights, 1:NCdatum.
+!  Read in contact point horizontal linear interpolation weights,
+!  1:NCdatum.
 !
-      IF (.not.allocated(Hweight)) THEN
-        allocate ( Hweight(my_Nweights,NCdatum) )
+      IF (.not.allocated(Lweight)) THEN
+        allocate ( Lweight(my_nLweights,NCdatum) )
       END IF
-      CALL netcdf_get_fvar (ng, model, NGCname, 'Hweight', Hweight)
+      CALL netcdf_get_fvar (ng, model, NGCname, 'Lweight', Lweight)
       IF (exit_flag.ne.NoError) RETURN
+
+# ifdef QUADRATIC_WEIGHTS
+!
+!  Read in contact point horizontal quadratic interpolation weights,
+!  1:NCdatum.
+!
+      IF (.not.allocated(Qweight)) THEN
+        allocate ( Qweight(my_nQweights,NCdatum) )
+      END IF
+      CALL netcdf_get_fvar (ng, model, NGCname, 'Qweight', Qweight)
+      IF (exit_flag.ne.NoError) RETURN
+# endif
 !
 !  Read in contact point bathymetry at RHO-points, 1:NCdatum.
 !
@@ -413,9 +484,25 @@
         allocate ( Vcontact(cr) % Kdg(N(dg),NpointsV(cr)) )
 # endif
 
-        allocate ( Rcontact(cr) % Hweight(4,NpointsR(cr)) )
-        allocate ( Ucontact(cr) % Hweight(4,NpointsU(cr)) )
-        allocate ( Vcontact(cr) % Hweight(4,NpointsV(cr)) )
+        allocate ( Rcontact(cr) % Lweight(4,NpointsR(cr)) )
+        allocate ( Ucontact(cr) % Lweight(4,NpointsU(cr)) )
+        allocate ( Vcontact(cr) % Lweight(4,NpointsV(cr)) )
+# ifdef WET_DRY
+        allocate ( Rcontact(cr) % LweightUnmasked(4,NpointsR(cr)) )
+        allocate ( Ucontact(cr) % LweightUnmasked(4,NpointsU(cr)) )
+        allocate ( Vcontact(cr) % LweightUnmasked(4,NpointsV(cr)) )
+# endif
+
+# ifdef QUADRATIC_WEIGHTS
+        allocate ( Rcontact(cr) % Qweight(9,NpointsR(cr)) )
+        allocate ( Ucontact(cr) % Qweight(9,NpointsU(cr)) )
+        allocate ( Vcontact(cr) % Qweight(9,NpointsV(cr)) )
+#  ifdef WET_DRY
+        allocate ( Rcontact(cr) % QweightUnmasked(9,NpointsR(cr)) )
+        allocate ( Ucontact(cr) % QweightUnmasked(9,NpointsU(cr)) )
+        allocate ( Vcontact(cr) % QweightUnmasked(9,NpointsV(cr)) )
+#  endif
+# endif
 
 # ifdef SOLVE3D
         allocate ( Rcontact(cr) % Vweight(2,N(dg),NpointsR(cr)) )
@@ -456,10 +543,40 @@
           Rcontact(cr) % Jrg(m) = Jrg_cp(ip)
           Rcontact(cr) % Idg(m) = Idg_cp(ip)
           Rcontact(cr) % Jdg(m) = Jdg_cp(ip)
-          Rcontact(cr) % Hweight(1,m) = Hweight(1,ip)
-          Rcontact(cr) % Hweight(2,m) = Hweight(2,ip)
-          Rcontact(cr) % Hweight(3,m) = Hweight(3,ip)
-          Rcontact(cr) % Hweight(4,m) = Hweight(4,ip)
+# ifdef WET_DRY
+          Rcontact(cr) % LweightUnmasked(1,m) = Lweight(1,ip)
+          Rcontact(cr) % LweightUnmasked(2,m) = Lweight(2,ip)
+          Rcontact(cr) % LweightUnmasked(3,m) = Lweight(3,ip)
+          Rcontact(cr) % LweightUnmasked(4,m) = Lweight(4,ip)
+# else
+          Rcontact(cr) % Lweight(1,m) = Lweight(1,ip)
+          Rcontact(cr) % Lweight(2,m) = Lweight(2,ip)
+          Rcontact(cr) % Lweight(3,m) = Lweight(3,ip)
+          Rcontact(cr) % Lweight(4,m) = Lweight(4,ip)
+# endif
+# ifdef QUADRATIC_WEIGHTS
+#  ifdef WET_DRY
+          Rcontact(cr) % QweightUnmasked(1,m) = Qweight(1,ip)
+          Rcontact(cr) % QweightUnmasked(2,m) = Qweight(2,ip)
+          Rcontact(cr) % QweightUnmasked(3,m) = Qweight(3,ip)
+          Rcontact(cr) % QweightUnmasked(4,m) = Qweight(4,ip)
+          Rcontact(cr) % QweightUnmasked(5,m) = Qweight(5,ip)
+          Rcontact(cr) % QweightUnmasked(6,m) = Qweight(6,ip)
+          Rcontact(cr) % QweightUnmasked(7,m) = Qweight(7,ip)
+          Rcontact(cr) % QweightUnmasked(8,m) = Qweight(8,ip)
+          Rcontact(cr) % QweightUnmasked(9,m) = Qweight(9,ip)
+#  else
+          Rcontact(cr) % Qweight(1,m) = Qweight(1,ip)
+          Rcontact(cr) % Qweight(2,m) = Qweight(2,ip)
+          Rcontact(cr) % Qweight(3,m) = Qweight(3,ip)
+          Rcontact(cr) % Qweight(4,m) = Qweight(4,ip)
+          Rcontact(cr) % Qweight(5,m) = Qweight(5,ip)
+          Rcontact(cr) % Qweight(6,m) = Qweight(6,ip)
+          Rcontact(cr) % Qweight(7,m) = Qweight(7,ip)
+          Rcontact(cr) % Qweight(8,m) = Qweight(8,ip)
+          Rcontact(cr) % Qweight(9,m) = Qweight(9,ip)
+#  endif
+# endif
         END DO
 
         DO m=1,NpointsU(cr)
@@ -468,10 +585,40 @@
           Ucontact(cr) % Jrg(m) = Jrg_cp(ip)
           Ucontact(cr) % Idg(m) = Idg_cp(ip)
           Ucontact(cr) % Jdg(m) = Jdg_cp(ip)
-          Ucontact(cr) % Hweight(1,m) = Hweight(1,ip)
-          Ucontact(cr) % Hweight(2,m) = Hweight(2,ip)
-          Ucontact(cr) % Hweight(3,m) = Hweight(3,ip)
-          Ucontact(cr) % Hweight(4,m) = Hweight(4,ip)
+# ifdef WET_DRY
+          Ucontact(cr) % LweightUnmasked(1,m) = Lweight(1,ip)
+          Ucontact(cr) % LweightUnmasked(2,m) = Lweight(2,ip)
+          Ucontact(cr) % LweightUnmasked(3,m) = Lweight(3,ip)
+          Ucontact(cr) % LweightUnmasked(4,m) = Lweight(4,ip)
+# else
+          Ucontact(cr) % Lweight(1,m) = Lweight(1,ip)
+          Ucontact(cr) % Lweight(2,m) = Lweight(2,ip)
+          Ucontact(cr) % Lweight(3,m) = Lweight(3,ip)
+          Ucontact(cr) % Lweight(4,m) = Lweight(4,ip)
+# endif
+# ifdef QUADRATIC_WEIGHTS
+#  ifdef WET_DRY
+          Ucontact(cr) % QweightUnmasked(1,m) = Qweight(1,ip)
+          Ucontact(cr) % QweightUnmasked(2,m) = Qweight(2,ip)
+          Ucontact(cr) % QweightUnmasked(3,m) = Qweight(3,ip)
+          Ucontact(cr) % QweightUnmasked(4,m) = Qweight(4,ip)
+          Ucontact(cr) % QweightUnmasked(5,m) = Qweight(5,ip)
+          Ucontact(cr) % QweightUnmasked(6,m) = Qweight(6,ip)
+          Ucontact(cr) % QweightUnmasked(7,m) = Qweight(7,ip)
+          Ucontact(cr) % QweightUnmasked(8,m) = Qweight(8,ip)
+          Ucontact(cr) % QweightUnmasked(9,m) = Qweight(9,ip)
+#  else
+          Ucontact(cr) % Qweight(1,m) = Qweight(1,ip)
+          Ucontact(cr) % Qweight(2,m) = Qweight(2,ip)
+          Ucontact(cr) % Qweight(3,m) = Qweight(3,ip)
+          Ucontact(cr) % Qweight(4,m) = Qweight(4,ip)
+          Ucontact(cr) % Qweight(5,m) = Qweight(5,ip)
+          Ucontact(cr) % Qweight(6,m) = Qweight(6,ip)
+          Ucontact(cr) % Qweight(7,m) = Qweight(7,ip)
+          Ucontact(cr) % Qweight(8,m) = Qweight(8,ip)
+          Ucontact(cr) % Qweight(9,m) = Qweight(9,ip)
+#  endif
+# endif
         END DO
 
         DO m=1,NpointsV(cr)
@@ -480,10 +627,40 @@
           Vcontact(cr) % Jrg(m) = Jrg_cp(ip)
           Vcontact(cr) % Idg(m) = Idg_cp(ip)
           Vcontact(cr) % Jdg(m) = Jdg_cp(ip)
-          Vcontact(cr) % Hweight(1,m) = Hweight(1,ip)
-          Vcontact(cr) % Hweight(2,m) = Hweight(2,ip)
-          Vcontact(cr) % Hweight(3,m) = Hweight(3,ip)
-          Vcontact(cr) % Hweight(4,m) = Hweight(4,ip)
+# ifdef WET_DRY
+          Vcontact(cr) % LweightUnmasked(1,m) = Lweight(1,ip)
+          Vcontact(cr) % LweightUnmasked(2,m) = Lweight(2,ip)
+          Vcontact(cr) % LweightUnmasked(3,m) = Lweight(3,ip)
+          Vcontact(cr) % LweightUnmasked(4,m) = Lweight(4,ip)
+# else
+          Vcontact(cr) % Lweight(1,m) = Lweight(1,ip)
+          Vcontact(cr) % Lweight(2,m) = Lweight(2,ip)
+          Vcontact(cr) % Lweight(3,m) = Lweight(3,ip)
+          Vcontact(cr) % Lweight(4,m) = Lweight(4,ip)
+# endif
+# ifdef QUADRATIC_WEIGHTS
+#  ifdef WET_DRY
+          Vcontact(cr) % QweightUnmasked(1,m) = Qweight(1,ip)
+          Vcontact(cr) % QweightUnmasked(2,m) = Qweight(2,ip)
+          Vcontact(cr) % QweightUnmasked(3,m) = Qweight(3,ip)
+          Vcontact(cr) % QweightUnmasked(4,m) = Qweight(4,ip)
+          Vcontact(cr) % QweightUnmasked(5,m) = Qweight(5,ip)
+          Vcontact(cr) % QweightUnmasked(6,m) = Qweight(6,ip)
+          Vcontact(cr) % QweightUnmasked(7,m) = Qweight(7,ip)
+          Vcontact(cr) % QweightUnmasked(8,m) = Qweight(8,ip)
+          Vcontact(cr) % QweightUnmasked(9,m) = Qweight(9,ip)
+#  else
+          Vcontact(cr) % Qweight(1,m) = Qweight(1,ip)
+          Vcontact(cr) % Qweight(2,m) = Qweight(2,ip)
+          Vcontact(cr) % Qweight(3,m) = Qweight(3,ip)
+          Vcontact(cr) % Qweight(4,m) = Qweight(4,ip)
+          Vcontact(cr) % Qweight(5,m) = Qweight(5,ip)
+          Vcontact(cr) % Qweight(6,m) = Qweight(6,ip)
+          Vcontact(cr) % Qweight(7,m) = Qweight(7,ip)
+          Vcontact(cr) % Qweight(8,m) = Qweight(8,ip)
+          Vcontact(cr) % Qweight(9,m) = Qweight(9,ip)
+#  endif
+# endif
         END DO
 
       END DO
@@ -593,20 +770,96 @@
         RefineScale(ig)=Refine_factor(ig)
       END DO
 !
-!  Data donor for refined grid.
+!  Coarser donor grid number to finer grid contact points.  Their
+!  values are computed in "metrics.F" when the maximum grid spacing
+!  is computed. The maximum grid spacing is used to distinguish
+!  contact areas for more than two layers of nesting.
 !
-      IF (.not.allocated(RefineDonor)) THEN
-        allocate ( RefineDonor(Ngrids) )
-        RefineDonor = 0
+!$OMP PARALLEL
+      IF (.not.allocated(CoarserDonor)) THEN
+        allocate ( CoarserDonor(Ngrids) )
+        CoarserDonor = 0
+      END IF
+!$OMP END PARALLEL
+!
+!  Finer donor grid to coarser receiver grid for two-way feedback.
+!  Their values are computed in "metrics.F" when the maximum grid
+!  spacing is computed.
+!
+!$OMP PARALLEL
+      IF (.not.allocated(FinerDonor)) THEN
+        allocate ( FinerDonor(Ngrids) )
+        FinerDonor = 0
+      END IF
+!$OMP END PARALLEL
+!
+!  Logical switch indicating which coarser grid is a donor to a finer
+!  grid external contact points. Their values are computed in
+!  "metrics.F" after "CoarserDonor" is computed.
+!
+!$OMP PARALLEL
+      IF (.not.allocated(DonorToFiner)) THEN
+        allocate ( DonorToFiner(Ngrids) )
+        DonorToFiner = .FALSE.
+      END IF
+!$OMP END PARALLEL
+!
+!  Number of refined grid time-steps. Their values are initialized to
+!  the optimal values based on the spatial refinement ratio.  These
+!  values are over-written in "metrics.F" to use the time-step
+!  size ration between donor and receiver grid.  The user is allowed
+!  to take larger divisible time-step with respect to the donor grid.
+!  The user is responsible to set the appropriate refined grid time-step
+!  for stability.
+!
+!$OMP PARALLEL
+      IF (.not.allocated(RefineSteps)) THEN
+        allocate ( RefineSteps(Ngrids) )
+        DO ig=1,Ngrids
+          RefineSteps(ig)=Refine_factor(ig)
+        END DO
+      END IF
+!$OMP END PARALLEL
+!
+!  Refine grid time-steps counter with respect the coarse grid (ng=1)
+!  single time-step.
+!
+      IF (.not.allocated(RefineStepsCounter)) THEN
+        allocate ( RefineStepsCounter(Ngrids) )
+        RefineStepsCounter = 0
+      END IF
+!
+!  Counter for two-way exchange between fine and coarse grids.
+!
+      IF (.not.allocated(TwoWayCounter)) THEN
+        allocate ( TwoWayCounter(Ngrids) )
+        TwoWayCounter = 0
+      END IF
+!
+!  Switch indicating which refined grid(s) include finer refined grids:
+!  telescoping refinement.
+!
+!$OMP PARALLEL
+      IF (.not.allocated(Telescoping)) THEN
+        allocate ( Telescoping(Ngrids) )
+        Telescoping = .FALSE.
+      END IF
+!$OMP END PARALLEL
+!
+!  Rolling index and time (seconds) used in the temporal interpolation
+!  of contact point data.
+!
+!$OMP PARALLEL
+      IF (.not.allocated(RollingIndex)) THEN
+        allocate ( RollingIndex(Ncontact) )
+        RollingIndex = 0
       END IF
 
-      DO cr=1,Ncontact
-        dg=donor_grid(cr)
-        rg=receiver_grid(cr)
-        IF (RefinedGrid(rg).and.(RefineScale(rg).gt.0) ) THEN
-          RefineDonor(rg)=dg
-        END IF
-      END DO
+      IF (.not.allocated(RollingTime)) THEN
+        allocate ( RollingTime(2,Ncontact) )
+        RollingTime = 0
+      END IF
+!$OMP END PARALLEL
 !
 !-----------------------------------------------------------------------
 !  Allocate composite grids contact regions structure and arrays.

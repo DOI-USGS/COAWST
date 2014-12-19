@@ -677,7 +677,7 @@
      &                       DAV(ng)%Vid(idFsur), 0, r2dvar,            &
      &                       LBi, UBi, LBj, UBj, 1.0_r8,                &
 #  ifdef MASKING
-     &                       GRID(ng) % rmask_io,                       &
+     &                       GRID(ng) % rmask,                          &
 #  endif
      &                       FOURDVAR(ng) % zeta_ref)
           IF (exit_flag.ne.NoError) RETURN

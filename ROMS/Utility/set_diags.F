@@ -132,28 +132,28 @@
         DO j=Jstr,JendR
           DO i=Istr,IendR
             GRID(ng)%pmask_dia(i,j)=MAX(0.0_r8,                         &
-     &                                  MIN(GRID(ng)%pmask_io(i,j),     &
+     &                                  MIN(GRID(ng)%pmask_full(i,j),   &
      &                                      1.0_r8))
           END DO
         END DO
         DO j=JstrR,JendR
           DO i=IstrR,IendR
             GRID(ng)%rmask_dia(i,j)=MAX(0.0_r8,                         &
-     &                                  MIN(GRID(ng)%rmask_io(i,j),     &
+     &                                  MIN(GRID(ng)%rmask_full(i,j),   &
      &                                      1.0_r8))
           END DO
         END DO
         DO j=JstrR,JendR
           DO i=Istr,IendR
             GRID(ng)%umask_dia(i,j)=MAX(0.0_r8,                         &
-     &                                  MIN(GRID(ng)%umask_io(i,j),     &
+     &                                  MIN(GRID(ng)%umask_full(i,j),   &
      &                                      1.0_r8))
           END DO
         END DO
         DO j=Jstr,JendR
           DO i=IstrR,IendR
             GRID(ng)%vmask_dia(i,j)=MAX(0.0_r8,                         &
-     &                                  MIN(GRID(ng)%vmask_io(i,j),     &
+     &                                  MIN(GRID(ng)%vmask_full(i,j),   &
      &                                      1.0_r8))
           END DO
         END DO
@@ -169,7 +169,7 @@
                 DO i=IstrR,IendR
                   DIAGS(ng)%DiaTrc(i,j,k,it,idiag)=                     &
 #   ifdef WET_DRY
-     &                      GRID(ng)%rmask_io(i,j)*                     &
+     &                      GRID(ng)%rmask_full(i,j)*                   &
 #   endif
      &                      DIAGS(ng)%DiaTwrk(i,j,k,it,idiag)
                 END DO
@@ -184,18 +184,18 @@
             DO i=Istr,IendR
               DIAGS(ng)%DiaU2d(i,j,idiag)=                              &
 #   ifdef WET_DRY
-     &                                    GRID(ng)%umask_io(i,j)*       &
+     &                  GRID(ng)%umask_full(i,j)*                       &
 #   endif
-     &                                    DIAGS(ng)%DiaU2wrk(i,j,idiag)
+     &                  DIAGS(ng)%DiaU2wrk(i,j,idiag)
             END DO
           END DO
           DO j=Jstr,JendR
             DO i=IstrR,IendR
               DIAGS(ng)%DiaV2d(i,j,idiag)=                              &
 #   ifdef WET_DRY
-     &                                    GRID(ng)%vmask_io(i,j)*       &
+     &                  GRID(ng)%vmask_full(i,j)*                       &
 #   endif
-     &                                    DIAGS(ng)%DiaV2wrk(i,j,idiag)
+     &                  DIAGS(ng)%DiaV2wrk(i,j,idiag)
             END DO
           END DO
         END DO
@@ -206,7 +206,7 @@
               DO i=Istr,IendR
                 DIAGS(ng)%DiaU3d(i,j,k,idiag)=                          &
 #    ifdef WET_DRY
-     &                    GRID(ng)%umask_io(i,j)*                       &
+     &                    GRID(ng)%umask_full(i,j)*                     &
 #    endif
      &                    DIAGS(ng)%DiaU3wrk(i,j,k,idiag)
               END DO
@@ -215,7 +215,7 @@
               DO i=IstrR,IendR
                 DIAGS(ng)%DiaV3d(i,j,k,idiag)=                          &
 #    ifdef WET_DRY
-     &                    GRID(ng)%vmask_io(i,j)*                       &
+     &                    GRID(ng)%vmask_full(i,j)*                     &
 #    endif
      &                    DIAGS(ng)%DiaV3wrk(i,j,k,idiag)
               END DO
@@ -241,7 +241,7 @@
           DO i=Istr,IendR
             GRID(ng)%pmask_dia(i,j)=GRID(ng)%pmask_dia(i,j)+            &
      &                              MAX(0.0_r8,                         &
-     &                                  MIN(GRID(ng)%pmask_io(i,j),     &
+     &                                  MIN(GRID(ng)%pmask_full(i,j),   &
      &                                      1.0_r8))
           END DO
         END DO
@@ -249,7 +249,7 @@
           DO i=IstrR,IendR
             GRID(ng)%rmask_dia(i,j)=GRID(ng)%rmask_dia(i,j)+            &
      &                              MAX(0.0_r8,                         &
-     &                                  MIN(GRID(ng)%rmask_io(i,j),     &
+     &                                  MIN(GRID(ng)%rmask_full(i,j),   &
      &                                      1.0_r8))
           END DO
         END DO
@@ -257,7 +257,7 @@
           DO i=Istr,IendR
             GRID(ng)%umask_dia(i,j)=GRID(ng)%umask_dia(i,j)+            &
      &                              MAX(0.0_r8,                         &
-     &                                  MIN(GRID(ng)%umask_io(i,j),     &
+     &                                  MIN(GRID(ng)%umask_full(i,j),   &
      &                                      1.0_r8))
           END DO
         END DO
@@ -265,7 +265,7 @@
           DO i=IstrR,IendR
             GRID(ng)%vmask_dia(i,j)=GRID(ng)%vmask_dia(i,j)+            &
      &                              MAX(0.0_r8,                         &
-     &                                  MIN(GRID(ng)%vmask_io(i,j),     &
+     &                                  MIN(GRID(ng)%vmask_full(i,j),   &
      &                                      1.0_r8))
           END DO
         END DO
@@ -282,7 +282,7 @@
                   DIAGS(ng)%DiaTrc(i,j,k,it,idiag)=                     &
      &                      DIAGS(ng)%DiaTrc(i,j,k,it,idiag)+           &
 #   ifdef WET_DRY
-     &                      GRID(ng)%rmask_io(i,j)*                     &
+     &                      GRID(ng)%rmask_full(i,j)*                   &
 #   endif
      &                      DIAGS(ng)%DiaTwrk(i,j,k,it,idiag)
                 END DO
@@ -297,7 +297,7 @@
             DO i=Istr,IendR
               DIAGS(ng)%DiaU2d(i,j,idiag)=DIAGS(ng)%DiaU2d(i,j,idiag)+  &
 #   ifdef WET_DRY
-     &                                    GRID(ng)%umask_io(i,j)*       &
+     &                                    GRID(ng)%umask_full(i,j)*     &
 #   endif
      &                                    DIAGS(ng)%DiaU2wrk(i,j,idiag)
             END DO
@@ -306,7 +306,7 @@
             DO i=IstrR,IendR
               DIAGS(ng)%DiaV2d(i,j,idiag)=DIAGS(ng)%DiaV2d(i,j,idiag)+  &
 #   ifdef WET_DRY
-     &                                    GRID(ng)%vmask_io(i,j)*       &
+     &                                    GRID(ng)%vmask_full(i,j)*     &
 #   endif
      &                                    DIAGS(ng)%DiaV2wrk(i,j,idiag)
             END DO
@@ -320,7 +320,7 @@
                 DIAGS(ng)%DiaU3d(i,j,k,idiag)=                          &
      &                    DIAGS(ng)%DiaU3d(i,j,k,idiag)+                &
 #    ifdef WET_DRY
-     &                    GRID(ng)%umask_io(i,j)*                       &
+     &                    GRID(ng)%umask_full(i,j)*                     &
 #    endif
      &                    DIAGS(ng)%DiaU3wrk(i,j,k,idiag)
               END DO
@@ -330,7 +330,7 @@
                 DIAGS(ng)%DiaV3d(i,j,k,idiag)=                          &
      &                    DIAGS(ng)%DiaV3d(i,j,k,idiag)+                &
 #    ifdef WET_DRY
-     &                    GRID(ng)%vmask_io(i,j)*                       &
+     &                    GRID(ng)%vmask_full(i,j)*                     &
 #    endif
      &                    DIAGS(ng)%DiaV3wrk(i,j,k,idiag)
               END DO

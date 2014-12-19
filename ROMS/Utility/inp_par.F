@@ -1820,9 +1820,9 @@
       END IF
       load_lbc=ic
 
- 10   FORMAT (/,' INP_PAR - illegal lateral boundary condition ',       &
+ 10   FORMAT (/,' LOAD_LBC - illegal lateral boundary condition ',      &
      &        'keyword: ',a,/,11x,a)
- 20   FORMAT (/,' INP_PAR - incorrect continuation symbol in line:',/,  &
+ 20   FORMAT (/,' LOAD_LBC - incorrect continuation symbol in line:',/, &
      &        11x,a,/,11x,'number of nested grid values exceeded.')
 
       RETURN
@@ -2009,11 +2009,7 @@
           allocate ( S(ng)%time_min(Nfiles(ng)) )
           allocate ( S(ng)%time_max(Nfiles(ng)) )
           IF (label(1:3).eq.'FLT') THEN
-#ifdef FLOAT_BIOLOGY
             allocate ( S(ng)%Vid(-10:NV) )
-#else
-            allocate ( S(ng)%Vid(-6:NV) )
-#endif
           ELSE
             allocate ( S(ng)%Vid(NV) )
           END IF
@@ -2095,7 +2091,7 @@
       END IF
       load_s1d=Nval
 
- 10   FORMAT (/,' INP_PAR - incorrect continuation symbol in line:',/,  &
+ 10   FORMAT (/,' LOAD_S1D - incorrect continuation symbol in line:',/, &
      &        11x,a,/,11x,'number of nested grid values exceeded.')
 
       RETURN
@@ -2187,7 +2183,7 @@
 !  symbol in the input "line" is used to advance the counters.
 !
       IF (.not.load) THEN
-        IF ((ifile.lt.nFfiles(igrid)).or.(Ipipe.ne.0)) THEN
+        IF ((ifile.lt.Nfiles(igrid)).or.(Ipipe.ne.0)) THEN
           ifile=ifile+MIN(1,Icont)
         ELSE
           ifile=1
@@ -2329,9 +2325,9 @@
       END IF
       load_s2d=Nval
 
- 10   FORMAT (/,' INP_PAR - incorrect continuation symbol in line:',/,  &
+ 10   FORMAT (/,' LOAD_S2D - incorrect continuation symbol in line:',/, &
      &        11x,a,/,11x,'inner dimension of structure exceeded.')
- 20   FORMAT (/,' INP_PAR - incorrect continuation symbol in line:',/,  &
+ 20   FORMAT (/,' LOAD_S2D - incorrect continuation symbol in line:',/, &
      &        11x,a,/,11x,'number of nested grid values exceeded.')
 
       RETURN

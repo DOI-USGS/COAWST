@@ -199,11 +199,13 @@
      &                  SOURCES(ng) % Dsrc)
         IF (exit_flag.ne.NoError) RETURN
 
+#  ifdef SOLVE3D
         CALL get_ngfld (ng, iRPM, idRvsh, SSF(ng)%ncid,                 &
      &                  1, SSF(ng), update(1),                          &
      &                  1, Nsrc(ng), N(ng), 1, 1, Nsrc(ng), N(ng),      &
      &                  SOURCES(ng) % Qshape)
         IF (exit_flag.ne.NoError) RETURN
+#  endif
 
         DO is=1,Nsrc(ng)
           SOURCES(ng)%Isrc(is)=                                         &

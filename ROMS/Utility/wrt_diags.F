@@ -98,9 +98,10 @@
      &                       DIA(ng)%Rindex, gtype,                     &
      &                       LBi, UBi, LBj, UBj, scale,                 &
 #  ifdef MASKING
-     &                       GRID(ng) % umask_dia,                      &
+     &                       GRID(ng) % umask,                          &
 #  endif
-     &                       DIAGS(ng) % DiaU2d(:,:,ivar))
+     &                       DIAGS(ng) % DiaU2d(:,:,ivar),              &
+     &                       SetFillVal = .FALSE.)
           IF (status.ne.nf90_noerr) THEN
             IF (Master) THEN
               WRITE (stdout,10) TRIM(Vname(1,ifield)), DIA(ng)%Rindex
@@ -120,9 +121,10 @@
      &                       DIA(ng)%Rindex, gtype,                     &
      &                       LBi, UBi, LBj, UBj, scale,                 &
 #  ifdef MASKING
-     &                       GRID(ng) % vmask_dia,                      &
+     &                       GRID(ng) % vmask,                          &
 #  endif
-     &                       DIAGS(ng) % DiaV2d(:,:,ivar))
+     &                       DIAGS(ng) % DiaV2d(:,:,ivar),              &
+     &                       SetFillVal = .FALSE.)
           IF (status.ne.nf90_noerr) THEN
             IF (Master) THEN
               WRITE (stdout,10) TRIM(Vname(1,ifield)), DIA(ng)%Rindex
@@ -150,7 +152,8 @@
 #   ifdef MASKING
      &                       GRID(ng) % umask_dia,                      &
 #   endif
-     &                       DIAGS(ng) % DiaU3d(:,:,:,ivar))
+     &                       DIAGS(ng) % DiaU3d(:,:,:,ivar),            &
+     &                       SetFillVal = .FALSE.)
           IF (status.ne.nf90_noerr) THEN
             IF (Master) THEN
               WRITE (stdout,10) TRIM(Vname(1,ifield)), DIA(ng)%Rindex
@@ -172,7 +175,8 @@
 #   ifdef MASKING
      &                       GRID(ng) % vmask_dia,                      &
 #   endif
-     &                       DIAGS(ng) % DiaV3d(:,:,:,ivar))
+     &                       DIAGS(ng) % DiaV3d(:,:,:,ivar),            &
+     &                       SetFillVal = .FALSE.)
           IF (status.ne.nf90_noerr) THEN
             IF (Master) THEN
               WRITE (stdout,10) TRIM(Vname(1,ifield)), DIA(ng)%Rindex
@@ -200,9 +204,10 @@
      &                         DIA(ng)%Rindex, gtype,                   &
      &                         LBi, UBi, LBj, UBj, 1, N(ng), scale,     &
 #  ifdef MASKING
-     &                         GRID(ng) % rmask_dia,                    &
+     &                         GRID(ng) % rmask,                        &
 #  endif
-     &                         DIAGS(ng) % DiaTrc(:,:,:,itrc,ivar))
+     &                         DIAGS(ng) % DiaTrc(:,:,:,itrc,ivar),     &
+     &                         SetFillVal = .FALSE.)
             IF (status.ne.nf90_noerr) THEN
               IF (Master) THEN
                 WRITE (stdout,10) TRIM(Vname(1,ifield)), DIA(ng)%Rindex
@@ -235,9 +240,10 @@
      &                       DIA(ng)%Rindex, gtype,                     &
      &                       LBi, UBi, LBj, UBj, scale,                 &
 #  ifdef MASKING
-     &                       GRID(ng) % rmask_dia,                      &
+     &                       GRID(ng) % rmask,                          &
 #  endif
-     &                       DIAGS(ng) % DiaBio2d(:,:,ivar))
+     &                       DIAGS(ng) % DiaBio2d(:,:,ivar),            &
+     &                       SetFillVal = .FALSE.)
           IF (status.ne.nf90_noerr) THEN
             IF (Master) THEN
               WRITE (stdout,10) TRIM(Vname(1,ifield)), DIA(ng)%Rindex
@@ -261,9 +267,10 @@
      &                       DIA(ng)%Rindex, gtype,                     &
      &                       LBi, UBi, LBj, UBj, 1, N(ng), scale,       &
 #  ifdef MASKING
-     &                       GRID(ng) % rmask_dia,                      &
+     &                       GRID(ng) % rmask,                          &
 #  endif
-     &                       DIAGS(ng) % DiaBio3d(:,:,:,ivar))
+     &                       DIAGS(ng) % DiaBio3d(:,:,:,ivar),          &
+     &                       SetFillVal = .FALSE.)
           IF (status.ne.nf90_noerr) THEN
             IF (Master) THEN
               WRITE (stdout,10) TRIM(Vname(1,ifield)), DIA(ng)%Rindex

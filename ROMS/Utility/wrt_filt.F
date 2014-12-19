@@ -634,6 +634,55 @@
           RETURN
         END IF
       END IF
+!
+!  Write out bottom u-momentum stress.
+!
+      IF (Aout(idUbms,ng)) THEN
+        scale=1.0_r8
+        gtype=gfactor*u2dvar
+        status=nf_fwrite2d(ng, iNLM, FIL(1,ng)%ncid, &
+     &                 FIL(1,ng)%Vid(idUbms), &
+     &                 FIL(1,ng)%Rindex, gtype, &
+     &                 LBi, UBi, LBj, UBj, scale, &
+# ifdef MASKING
+     &                 GRID(ng) % umask, &
+# endif
+     &                 FILTER(ng) % filbus(:,:,FIL(1,ng)%Rindex))
+        IF (status.ne.nf90_noerr) THEN
+          IF (Master) THEN
+            WRITE (stdout,10) TRIM(Vname(1,idUbms)), FIL(1,ng)%Rindex
+            PRINT *, trim(nf90_strerror(status))
+          END IF
+          exit_flag=3
+          ioerror=status
+          RETURN
+        END IF
+      END IF
+!
+!  Write out bottom v-momentum stress.
+!
+      IF (Aout(idVbms,ng)) THEN
+        scale=1.0_r8
+        gtype=gfactor*v2dvar
+        status=nf_fwrite2d(ng, iNLM, FIL(1,ng)%ncid, &
+     &                 FIL(1,ng)%Vid(idVbms), &
+     &                 FIL(1,ng)%Rindex, gtype, &
+     &                 LBi, UBi, LBj, UBj, scale, &
+# ifdef MASKING
+     &                 GRID(ng) % vmask, &
+# endif
+     &                 FILTER(ng) % filbvs(:,:,FIL(1,ng)%Rindex))
+        IF (status.ne.nf90_noerr) THEN
+          IF (Master) THEN
+            WRITE (stdout,10) TRIM(Vname(1,idVbms)), FIL(1,ng)%Rindex
+            PRINT *, trim(nf90_strerror(status))
+          END IF
+          exit_flag=3
+          ioerror=status
+          RETURN
+        END IF
+      END IF
+
 # ifdef ICE_MODEL
 !
 !  Write out ice u-velocity
@@ -828,22 +877,22 @@
         END IF
       END IF
 !
-!  Write out ice age
+!  Write out under-ice temperature
 !
-      IF (Aout(idAgeice,ng)) THEN
+      IF (Aout(idT0mk,ng)) THEN
         scale=1.0_r8
         gtype=gfactor*r2dvar
         status=nf_fwrite2d(ng, iNLM, FIL(10,ng)%ncid,                   &
-     &                 FIL(10,ng)%Vid(idAgeice),                        &
+     &                 FIL(10,ng)%Vid(idT0mk),                          &
      &                 FIL(10,ng)%Rindex, gtype,                        &
      &                 LBi, UBi, LBj, UBj, scale,                       &
 #  ifdef MASKING
      &                 GRID(ng) % rmask,                                &
 #  endif
-     &                 FILTER(ng) % filAgeice(:,:,FIL(10,ng)%Rindex))
+     &                 FILTER(ng) % filt0mk(:,:,FIL(10,ng)%Rindex))
         IF (status.ne.nf90_noerr) THEN
           IF (Master) THEN
-            WRITE (stdout,10) TRIM(Vname(1,idAgeice)), FIL(10,ng)%Rindex
+            WRITE (stdout,10) TRIM(Vname(1,idT0mk)), FIL(10,ng)%Rindex
             PRINT *, trim(nf90_strerror(status))
           END IF
           exit_flag=3
@@ -852,7 +901,7 @@
         END IF
       END IF
 !
-!  Write out under-ice salinity
+!  Write out ice age
 !
       IF (Aout(idS0mk,ng)) THEN
         scale=1.0_r8
@@ -876,22 +925,22 @@
         END IF
       END IF
 !
-!  Write out under-ice temperature
+!  Write out ice age
 !
-      IF (Aout(idT0mk,ng)) THEN
+      IF (Aout(idAgeice,ng)) THEN
         scale=1.0_r8
         gtype=gfactor*r2dvar
         status=nf_fwrite2d(ng, iNLM, FIL(10,ng)%ncid,                   &
-     &                 FIL(10,ng)%Vid(idT0mk),                          &
+     &                 FIL(10,ng)%Vid(idAgeice),                        &
      &                 FIL(10,ng)%Rindex, gtype,                        &
      &                 LBi, UBi, LBj, UBj, scale,                       &
 #  ifdef MASKING
      &                 GRID(ng) % rmask,                                &
 #  endif
-     &                 FILTER(ng) % filt0mk(:,:,FIL(10,ng)%Rindex))
+     &                 FILTER(ng) % filAgeice(:,:,FIL(10,ng)%Rindex))
         IF (status.ne.nf90_noerr) THEN
           IF (Master) THEN
-            WRITE (stdout,10) TRIM(Vname(1,idT0mk)), FIL(10,ng)%Rindex
+            WRITE (stdout,10) TRIM(Vname(1,idAgeice)), FIL(10,ng)%Rindex
             PRINT *, trim(nf90_strerror(status))
           END IF
           exit_flag=3
@@ -1172,7 +1221,7 @@
      &                   FIL(ifile,ng)%ncid)
         IF (exit_flag.ne.NoError) RETURN
       END DO
-      IF (Master) WRITE (stdout,20) FIL(10,ng)%Rindex
+      IF (Master) WRITE (stdout,20) FIL(nfile,ng)%Rindex
 !
   10  FORMAT (/,' WRT_FILT  - error while writing variable: ',a,/,11x,  &
      &        'into filter NetCDF file for time record: ',i4)

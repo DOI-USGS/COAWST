@@ -50,6 +50,10 @@
      &                  LBi, UBi, LBj, UBj,                             &
      &                  IminS, ImaxS, JminS, JmaxS,                     &
      &                  nrhs(ng),                                       &
+#ifdef WET_DRY
+     &                  GRID(ng)%umask_wet,                             &
+     &                  GRID(ng)%vmask_wet,                             &
+#endif
      &                  GRID(ng) % Hz,                                  &
      &                  GRID(ng) % om_v,                                &
      &                  GRID(ng) % on_u,                                &
@@ -79,6 +83,9 @@
      &                        LBi, UBi, LBj, UBj,                       &
      &                        IminS, ImaxS, JminS, JmaxS,               &
      &                        nrhs,                                     &
+#ifdef WET_DRY
+     &                        umask_wet, vmask_wet,                     &
+#endif
      &                        Hz, om_v, on_u, z_r, z_w,                 &
      &                        rho,                                      &
 #ifdef WEC_VF
@@ -104,6 +111,10 @@
       integer, intent(in) :: nrhs
 
 #ifdef ASSUMED_SHAPE
+# ifdef WET_DRY
+      real(r8), intent(in) :: umask_wet(LBi:,LBj:)
+      real(r8), intent(in) :: vmask_wet(LBi:,LBj:)
+# endif
       real(r8), intent(in) :: Hz(LBi:,LBj:,:)
       real(r8), intent(in) :: om_v(LBi:,LBj:)
       real(r8), intent(in) :: on_u(LBi:,LBj:)
@@ -123,6 +134,10 @@
       real(r8), intent(inout) :: ru(LBi:,LBj:,0:,:)
       real(r8), intent(inout) :: rv(LBi:,LBj:,0:,:)
 #else
+# ifdef WET_DRY
+      real(r8), intent(in) :: umask_wet(LBi:UBi,LBj:UBj)
+      real(r8), intent(in) :: vmask_wet(LBi:UBi,LBj:UBj)
+# endif
       real(r8), intent(in) :: Hz(LBi:UBi,LBj:UBj,N(ng))
       real(r8), intent(in) :: om_v(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: on_u(LBi:UBi,LBj:UBj)
@@ -188,6 +203,9 @@
 #endif
           ru(i,j,N(ng),nrhs)=-0.5_r8*(Hz(i,j,N(ng))+Hz(i-1,j,N(ng)))*   &
      &                       phix(i)*on_u(i,j)
+#ifdef WET_DRY
+          ru(i,j,N(ng),nrhs)=ru(i,j,N(ng),nrhs)*umask_wet(i,j)
+#endif
 #ifdef DIAGNOSTICS_UV
           DiaRU(i,j,N(ng),nrhs,M3pgrd)=ru(i,j,N(ng),nrhs)
 #endif
@@ -231,6 +249,9 @@
 #endif
             ru(i,j,k,nrhs)=-0.5_r8*(Hz(i,j,k)+Hz(i-1,j,k))*             &
      &                     phix(i)*on_u(i,j)
+#ifdef WET_DRY
+            ru(i,j,k,nrhs)=ru(i,j,k,nrhs)*umask_wet(i,j)
+#endif
 #ifdef DIAGNOSTICS_UV
             DiaRU(i,j,k,nrhs,M3pgrd)=ru(i,j,k,nrhs)
 #endif
@@ -261,6 +282,9 @@
 #endif
             rv(i,j,N(ng),nrhs)=-0.5_r8*(Hz(i,j,N(ng))+Hz(i,j-1,N(ng)))* &
      &                         phie(i)*om_v(i,j)
+#ifdef WET_DRY
+            rv(i,j,N(ng),nrhs)=rv(i,j,N(ng),nrhs)*vmask_wet(i,j)
+#endif
 #ifdef DIAGNOSTICS_UV
             DiaRV(i,j,N(ng),nrhs,M3pgrd)=rv(i,j,N(ng),nrhs)
 #endif
@@ -304,6 +328,9 @@
 #endif
               rv(i,j,k,nrhs)=-0.5_r8*(Hz(i,j,k)+Hz(i,j-1,k))*           &
      &                       phie(i)*om_v(i,j)
+#ifdef WET_DRY
+              rv(i,j,k,nrhs)=rv(i,j,k,nrhs)*vmask_wet(i,j)
+#endif
 #ifdef DIAGNOSTICS_UV
               DiaRV(i,j,k,nrhs,M3pgrd)=rv(i,j,k,nrhs)
 #endif

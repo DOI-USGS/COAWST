@@ -42,7 +42,7 @@
       USE bulk_flux_mod, ONLY : bulk_flux
 #  endif
 # endif
-# if defined ALBEDO || defined NCEP_FLUXES
+# if defined ALBEDO_CLOUD || defined NCEP_FLUXES
       USE cawdir_eval_mod, ONLY : cawdir_eval
 # endif
 # if defined NCEP_FLUXES
@@ -233,7 +233,7 @@
 !
         DO ng=1,Ngrids
           DO tile=first_tile(ng),last_tile(ng),+1
-# if defined NCEP_FLUXES || defined ALBEDO
+# if defined NCEP_FLUXES || defined ALBEDO_CLOUD
             CALL cawdir_eval(ng, tile)
 # endif
 # ifdef BULK_FLUXES

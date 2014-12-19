@@ -621,8 +621,9 @@
           IF (ai(i,j,linew) .gt. min_a(ng)) THEN
 ! Melt ice or freeze surface water in the fall if there is no snow
             IF (hsn(i,j,linew) .le. 0.0_r8) THEN
-              IF (tis(i,j) .gt. tfrz .or. sfwat(i,j,linew) .gt. 0._r8)   &
-     &                                                            THEN
+!              IF (tis(i,j) .gt. tfrz .or. sfwat(i,j,linew) .gt. 0._r8)   &
+!     &                                                            THEN
+              IF (tis(i,j) .gt. tfrz) THEN
 !   ice warmer than freezing point
                 tis(i,j) = tfrz
                 hfus1(i,j) = hfus*(1._r8-brnfr(i,j))+tis(i,j)*cpw        &
@@ -824,10 +825,10 @@
         DO i = Istr,Iend
           phi = 4._r8
           if (wao(i,j) .lt. 0.0_r8 ) phi = 0.5_r8
-          xmelt = min((wio(i,j)-wai(i,j)),0.0_r8)
+          xmelt = min((wio(i,j)+wai(i,j)),0.0_r8)
           hi(i,j,linew) = hi(i,j,linew)+dtice(ng)                       &
      &             *(ai(i,j,linew)                                      &
-     &             *(wio(i,j)-wai(i,j))                                 &
+     &             *(wio(i,j)+wai(i,j))                                 &
      &        +(1.0_r8-ai(i,j,linew))*wao(i,j) + wfr(i,j))
 
           ai_tmp = ai(i,j,linew)

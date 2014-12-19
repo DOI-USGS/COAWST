@@ -72,7 +72,7 @@
 #endif
 
 #undef ANA_SRFLUX
-#undef ALBEDO
+#undef ALBEDO_CLOUD
 #define DIURNAL_SRFLUX
 #define ANA_SSFLUX
 #define ANA_BSFLUX

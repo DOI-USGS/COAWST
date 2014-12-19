@@ -33,7 +33,7 @@
 !   PhyCN    Phytoplankton Carbon:Nitrogen ratio [mol_C/mol_N].        !
 !   PhyIP    Phytoplankton NH4 inhibition parameter [1/(mmol_N)].      !
 !   PhyIS    Phytoplankton, initial slope of the P-I curve             !
-!              [mg_C/(mg_Chl W m-2 day)].                              !
+!              [1/(W m-2 day)].                                        !
 !   ZooMin   Phytoplankton minimum threshold value [mmol_N/m3].        !
 !   PhyMR    Phytoplankton mortality rate [1/day] to small detritus.   !
 !   SDeAR    Small detritus aggregation rate into Large detritus       !

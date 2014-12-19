@@ -200,7 +200,7 @@
       real(r8), intent(in) :: vmask(LBi:,LBj:)
 #  endif
 #  ifdef WET_DRY
-      real(r8), intent(in) :: rmask_wet(LBi:,LBj:)
+      real(r8), intent(in)    :: rmask_wet(LBi:,LBj:)
       real(r8), intent(inout) :: umask_wet(LBi:,LBj:)
       real(r8), intent(inout) :: vmask_wet(LBi:,LBj:)
 #  endif
@@ -253,7 +253,7 @@
       real(r8), intent(in) :: vmask(LBi:UBi,LBj:UBj)
 #  endif
 #  ifdef WET_DRY
-      real(r8), intent(in) :: rmask_wet(LBi:UBi,LBj:UBj)
+      real(r8), intent(in)    :: rmask_wet(LBi:UBi,LBj:UBj)
       real(r8), intent(inout) :: umask_wet(LBi:UBi,LBj:UBj)
       real(r8), intent(inout) :: vmask_wet(LBi:UBi,LBj:UBj)
 #  endif
@@ -311,51 +311,8 @@
       real(r8), dimension(IminS:ImaxS,0:N(ng)) :: CF
       real(r8), dimension(IminS:ImaxS,0:N(ng)) :: DC
 # endif
-# ifdef WET_DRY
-      real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: wetdry
-# endif
 
 # include "set_bounds.h"
-
-# ifdef WET_DRY
-      DO j=JstrT,JendT
-        DO i=Istr,IendT
-          cff1=rmask_wet(i-1,j)+rmask_wet(i,j)
-          IF (cff1.eq.1.0_r8) THEN
-            cff1=rmask_wet(i-1,j)-rmask_wet(i,j)
-          END IF
-          cff5=ABS(ABS(cff1)-1.0_r8)
-          cff6=0.5_r8+DSIGN(0.5_r8,ubar(i,j,kstp))*cff1
-          umask_wet(i,j)=0.5_r8*cff1*cff5+cff6*(1.0_r8-cff5)
-        END DO
-      END DO
-      DO j=Jstr,JendT
-        DO i=IstrT,IendT
-          cff1=rmask_wet(i,j-1)+rmask_wet(i,j)
-          IF (cff1.eq.1.0_r8) THEN
-            cff1=rmask_wet(i,j-1)-rmask_wet(i,j)
-          END IF
-          cff5=ABS(ABS(cff1)-1.0_r8)
-          cff6=0.5_r8+DSIGN(0.5_r8,vbar(i,j,kstp))*cff1
-          vmask_wet(i,j)=0.5_r8*cff1*cff5+cff6*(1.0_r8-cff5)
-        END DO
-      END DO
-      IF (EWperiodic(ng).or.NSperiodic(ng)) THEN
-        CALL exchange_u2d_tile (ng, tile,                               &
-     &                          LBi, UBi, LBj, UBj,                     &
-     &                          umask_wet)
-        CALL exchange_v2d_tile (ng, tile,                               &
-     &                          LBi, UBi, LBj, UBj,                     &
-     &                          vmask_wet)
-      END IF
-#  ifdef DISTRIBUTE
-      CALL mp_exchange2d (ng, tile, model, 2,                           &
-     &                    LBi, UBi, LBj, UBj,                           &
-     &                    NghostPoints,                                 &
-     &                    EWperiodic(ng), NSperiodic(ng),               &
-     &                    umask_wet, vmask_wet)
-#  endif
-# endif
 
 # ifdef SOLVE3D
 !
@@ -368,10 +325,11 @@
           DO k=1,N(ng)
             DO i=IstrM,IendB
               cff1=u(i,j,k,nstp)
-# ifdef WET_DRY
-              cff1=cff1*umask_wet(i,j)
-# elif defined MASKING
+#  ifdef MASKING
               cff1=cff1*umask(i,j)
+#  endif
+#  ifdef WET_DRY
+              cff1=cff1*umask_wet(i,j)
 #  endif
               u(i,j,k,nstp)=cff1
               u(i,j,k,nnew)=cff1
@@ -382,10 +340,11 @@
             DO k=1,N(ng)
               DO i=IstrB,IendB
                 cff2=v(i,j,k,nstp)
-# ifdef WET_DRY
-                cff2=cff2*vmask_wet(i,j)
-# elif defined MASKING
+#  ifdef MASKING
                 cff2=cff2*vmask(i,j)
+#  endif
+#  ifdef WET_DRY
+                cff2=cff2*vmask_wet(i,j)
 #  endif
                 v(i,j,k,nstp)=cff2
                 v(i,j,k,nnew)=cff2
@@ -445,6 +404,7 @@
      &                    u(:,:,:,nnew), v(:,:,:,nnew))
 #  endif
 # endif
+
 # ifdef SOLVE3D
 !
 !-----------------------------------------------------------------------
@@ -471,10 +431,11 @@
           DO i=IstrM,IendB
             cff1=1.0_r8/DC(i,0)
             cff2=CF(i,0)*cff1
-# ifdef WET_DRY
-            cff2=cff2*umask_wet(i,j)
-# elif defined MASKING
+#  ifdef MASKING
             cff2=cff2*umask(i,j)
+#  endif
+#  ifdef WET_DRY
+            cff2=cff2*umask_wet(i,j)
 #  endif
             ubar(i,j,kstp)=cff2
             ubar(i,j,knew)=cff2
@@ -495,10 +456,11 @@
             DO i=IstrB,IendB
               cff1=1.0_r8/DC(i,0)
               cff2=CF(i,0)*cff1
-# ifdef WET_DRY
-              cff2=cff2*vmask_wet(i,j)
-# elif defined MASKING
+#  ifdef MASKING
               cff2=cff2*vmask(i,j)
+#  endif
+#  ifdef WET_DRY
+              cff2=cff2*vmask_wet(i,j)
 #  endif
               vbar(i,j,kstp)=cff2
               vbar(i,j,knew)=cff2
@@ -572,10 +534,11 @@
         DO j=JstrB,JendB
           DO i=IstrM,IendB
             cff1=ubar(i,j,kstp)
-# ifdef WET_DRY
-            cff1=cff1*umask_wet(i,j)
-# elif defined MASKING
+#  ifdef MASKING
             cff1=cff1*umask(i,j)
+#  endif
+#  ifdef WET_DRY
+            cff1=cff1*umask_wet(i,j)
 #  endif
             ubar(i,j,kstp)=cff1
             ubar(i,j,krhs)=cff1
@@ -583,10 +546,11 @@
           IF (j.ge.JstrM) THEN
             DO i=IstrB,IendB
               cff2=vbar(i,j,kstp)
-# ifdef WET_DRY
-              cff2=cff2*vmask_wet(i,j)
-# elif defined MASKING
+#  ifdef MASKING
               cff2=cff2*vmask(i,j)
+#  endif
+#  ifdef WET_DRY
+              cff2=cff2*vmask_wet(i,j)
 #  endif
               vbar(i,j,kstp)=cff2
               vbar(i,j,krhs)=cff2
@@ -1139,9 +1103,9 @@
 # ifdef WET_DRY
             IF (cff1.le.(Dcrit(ng)-h(i,j))) THEN
               cff1=Dcrit(ng)-h(i,j)
-              rmask_wet(i,j)=0.0_r8
-            ELSE
-              rmask_wet(i,j)=1.0_r8*rmask(i,j)
+!!            rmask_wet(i,j)=0.0_r8
+!!          ELSE
+!!            rmask_wet(i,j)=1.0_r8*rmask(i,j)
             END IF
 # endif
             zeta(i,j,kstp)=cff1

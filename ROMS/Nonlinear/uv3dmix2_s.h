@@ -259,6 +259,9 @@
 # elif defined MASKING
             cff=cff*pmask(i,j)
 #endif
+#ifdef WET_DRY
+            cff=cff*pmask_wet(i,j)
+#endif
 #ifdef VISC_3DCOEF
             visc_p=0.25_r8*(visc3d_r(i-1,j-1,k)+visc3d_r(i-1,j,k)+      &
      &                      visc3d_r(i  ,j-1,k)+visc3d_r(i  ,j,k))

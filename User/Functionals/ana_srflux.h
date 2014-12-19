@@ -28,7 +28,7 @@
      &                      IminS, ImaxS, JminS, JmaxS,                 &
      &                      GRID(ng) % lonr,                            &
      &                      GRID(ng) % latr,                            &
-#ifdef ALBEDO
+#ifdef ALBEDO_CLOUD
      &                      FORCES(ng) % cloud,                         &
      &                      FORCES(ng) % Hair,                          &
      &                      FORCES(ng) % Tair,                          &
@@ -54,7 +54,7 @@
      &                            LBi, UBi, LBj, UBj,                   &
      &                            IminS, ImaxS, JminS, JmaxS,           &
      &                            lonr, latr,                           &
-#ifdef ALBEDO
+#ifdef ALBEDO_CLOUD
      &                            cloud, Hair, Tair, Pair,              &
 #endif
      &                            srflx)
@@ -77,7 +77,7 @@
 #ifdef ASSUMED_SHAPE
       real(r8), intent(in) :: lonr(LBi:,LBj:)
       real(r8), intent(in) :: latr(LBi:,LBj:)
-# ifdef ALBEDO
+# ifdef ALBEDO_CLOUD
       real(r8), intent(in) :: cloud(LBi:,LBj:)
       real(r8), intent(in) :: Hair(LBi:,LBj:)
       real(r8), intent(in) :: Tair(LBi:,LBj:)
@@ -87,7 +87,7 @@
 #else
       real(r8), intent(in) :: lonr(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: latr(LBi:UBi,LBj:UBj)
-# ifdef ALBEDO
+# ifdef ALBEDO_CLOUD
       real(r8), intent(in) :: cloud(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: Hair(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: Tair(LBi:UBi,LBj:UBj)
@@ -99,11 +99,11 @@
 !  Local variable declarations.
 !
       integer :: i, j
-#if defined ALBEDO || defined DIURNAL_SRFLUX
+#if defined ALBEDO_CLOUD || defined DIURNAL_SRFLUX
       integer :: iday, month, year
       real(r8) :: Dangle, Hangle, LatRad
       real(r8) :: cff1, cff2, hour, yday
-# ifdef ALBEDO
+# ifdef ALBEDO_CLOUD
       real(r8) :: Rsolar, e_sat, vap_p, zenith
 # endif
 #endif
@@ -111,12 +111,12 @@
 
 #include "set_bounds.h"
 
-#if defined ALBEDO || defined DIURNAL_SRFLUX
+#if defined ALBEDO_CLOUD || defined DIURNAL_SRFLUX
 !
 !-----------------------------------------------------------------------
 !  Compute shortwave radiation (degC m/s):
 !
-!  ALBEDO option: Compute shortwave radiation flux using the Laevastu
+!  ALBEDO_CLOUD option: Compute shortwave radiation flux using the Laevastu
 !                 cloud correction to the Zillman equation for cloudless
 !  radiation (Parkinson and Washington 1979, JGR, 84, 311-337).  Notice
 !  that flux is scaled from W/m2 to degC m/s by dividing by (rho0*Cp).
@@ -151,7 +151,7 @@
 !
       Hangle=(12.0_r8-hour)*pi/12.0_r8
 !
-# ifdef ALBEDO
+# ifdef ALBEDO_CLOUD
       Rsolar=Csolar/(rho0*Cp)
 # endif
       DO j=JstrT,JendT
@@ -164,7 +164,7 @@
           LatRad=latr(i,j)*deg2rad
           cff1=SIN(LatRad)*SIN(Dangle)
           cff2=COS(LatRad)*COS(Dangle)
-# if defined ALBEDO
+# if defined ALBEDO_CLOUD
 !
 !  Estimate variation in optical thickness of the atmosphere over
 !  the course of a day under cloudless skies (Zillman, 1972). To

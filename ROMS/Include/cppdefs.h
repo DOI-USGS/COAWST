@@ -28,7 +28,7 @@
 **   "hmixing.F".                                                            **
 **                                                                           **
 **   WARNING:  Use the splines vertical advection option (UV_SADVECTION)     **
-**             only in shallow, high vertical resolution applications.       **
+**             only in idealized, high vertical resolution applications.     **
 **                                                                           **
 ** UV_ADV              use to turn ON or OFF advection terms                 **
 ** UV_COR              use to turn ON or OFF Coriolis term                   **
@@ -66,7 +66,7 @@
 **   tensor along geopotentials (MIX_GEO_TS) for the biharmonic operator.    **
 **                                                                           **
 **   WARNING:  Use the splines vertical advection option (TS_SVADVECTION)    **
-**             only in shallow, high vertical resolution applications.       **
+**             only in idealized, high vertical resolution applications.     **
 **                                                                           **
 ** TS_U3ADV_SPLIT      use if 3rd-order upstream split tracer advection      **
 ** TS_A4HADVECTION     use if 4th-order Akima horizontal advection           **
@@ -90,9 +90,14 @@
 ** SOLAR_SOURCE        use if solar radiation source term                    **
 ** SRELAXATION         use if salinity relaxation as a freshwater flux       **
 ** TRC_PSOURCE         use if source of inert passive tracers (dyes, etc)    **
+** ONE_TRACER_SOURCE   use if one value per tracer for all sources           **
 ** AGE_PASSIVE         use if aging of inert passive tracers                 **
 ** AGE_DISTRIBUTION    use if aging of inert passive tracers                 **
 ** WTYPE_GRID          use to turn ON spatially varying Jerlov water type    **
+**                                                                           **
+** OPTIONS for MPDATA 3D Advection:                                          **
+**                                                                           **
+** TS_MPDATA_LIMIT     use to limit upwind corrector fluxes for stability    **
 **                                                                           **
 ** Tracer advection OPTIONS for adjoint-based algorithms:                    **
 **                                                                           **
@@ -176,8 +181,10 @@
 **   or equal than 24 hours) can be modulated by the local diurnal cycle     **
 **   which is a function longitude, latitude and day-of-year.                **
 **                                                                           **
-** ALBEDO              use if albedo equation for shortwave radiation        **
+** ALBEDO_CLOUD        use if albedo equation for shortwave radiation        **
+** ALBEDO_CSIM         use if albedo function from CSIM for ice              **
 ** ALBEDO_CURVE        use if albedo function of lat from Large and Yeager   **
+** ALBEDO_FILE         use if albedo read from a file                        **
 ** DIURNAL_SRFLUX      use to impose shortwave radiation local diurnal cycle **
 **                                                                           **
 ** Model configuration OPTIONS:                                              **
@@ -226,7 +233,6 @@
 **    Any of the analytical expressions are coded in "analytical.F".         **
 **                                                                           **
 ** ANA_BIOLOGY         use if analytical biology initial conditions          **
-** ANA_BMFLUX          use if analytical spatially varying bottom roughness  **
 ** ANA_BPFLUX          use if analytical bottom passive tracers fluxes       **
 ** ANA_BSFLUX          use if analytical bottom salinity flux                **
 ** ANA_BTFLUX          use if analytical bottom temperature flux             **
@@ -435,6 +441,7 @@
 ** OPTIONS associated with tangent linear, representer and adjoint models:   **
 **                                                                           **
 ** AD_IMPULSE          use to force adjoint model with intermittent impulses **
+** ADJUST_BOUNDARY     use if including boundary conditions in 4DVar state   **
 ** ADJUST_STFLUX       use if including surface tracer flux in 4DVar state   **
 ** ADJUST_WSTRESS      use if including wind-stress in 4DVar state           **
 ** ARRAY_MODES_SPLIT   use to separate analysis due to IC, forcing, and OBC  **
@@ -609,7 +616,6 @@
 ** ICE_MODEL           use for sea-ice model
 ** ICE_THERMO          use for thermodynamic component
 ** ICE_MK              use for Mellor-Kantha thermodynamics (no other choice)
-** ICE_SMOOTH          use for smoothing some ice fields
 ** ICE_ALB_EC92        use for albedo computation from Ebert and Curry
 ** ICE_MOMENTUM        use for momentum component
 ** ICE_MOM_BULK        hmmm, some option for ice-water stress computation

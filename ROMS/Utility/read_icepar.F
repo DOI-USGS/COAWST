@@ -34,8 +34,8 @@
       real(r8), dimension(200) :: Rval
 
       character (len=40) :: KeyWord
-      character (len=80) :: line
-      character (len=80), dimension(200) :: Cval
+      character (len=256) :: line
+      character (len=256), dimension(200) :: Cval
 
 !
 !-----------------------------------------------------------------------
@@ -287,7 +287,7 @@
                 RETURN
               END IF
               Npts=load_l(Nval, Cval, Ngrids, Hout(idWdiv,:))
-# ifdef AVERAGES
+#ifdef AVERAGES
             CASE ('Aout(idUice)')
               IF (idUice.eq.0) THEN
                 IF (Master) WRITE (out,80) 'idUice'
@@ -463,8 +463,8 @@
                 RETURN
               END IF
               Npts=load_l(Nval, Cval, Ngrids, Aout(idWdiv,:))
-# endif
-# ifdef AVERAGES2
+#endif
+#ifdef AVERAGES2
             CASE ('Aout2(idUice)')
               Npts=load_l(Nval, Cval, Ngrids, Aout2(idUice,:))
             CASE ('Aout2(idVice)')
@@ -503,8 +503,8 @@
               Npts=load_l(Nval, Cval, Ngrids, Aout2(idT0mk,:))
             CASE ('Aout2(idS0mk)')
               Npts=load_l(Nval, Cval, Ngrids, Aout2(idS0mk,:))
-# endif
-# ifdef HISTORY2
+#endif
+#ifdef HISTORY2
             CASE ('Hout2(idUice)')
               Npts=load_l(Nval, Cval, Ngrids, Hout2(idUice,:))
             CASE ('Hout2(idVice)')
@@ -539,7 +539,11 @@
               Npts=load_l(Nval, Cval, Ngrids, Hout2(idSig12,:))
             CASE ('Hout2(idSig22)')
               Npts=load_l(Nval, Cval, Ngrids, Hout2(idSig22,:))
-# endif
+            CASE ('Hout2(idT0mk)')
+              Npts=load_l(Nval, Cval, Ngrids, Hout2(idT0mk,:))
+            CASE ('Hout2(idS0mk)')
+              Npts=load_l(Nval, Cval, Ngrids, Hout2(idS0mk,:))
+#endif
           END SELECT
         END IF
       END DO
@@ -591,8 +595,9 @@
      &          'Minimum ice concentration (nondimensional).'
           WRITE (out,60) max_a(ng), 'max_a',                            &
      &          'Maximum ice concentration (nondimensional).'
-          WRITE (out,60) sfwat_max(ng)*rad2deg, 'sfwat_max',            &
-     &          'Maximum surface fresh water (nondimensional).'
+          sfwat_max = 0.0_r8
+          WRITE (out,60) sfwat_max(ng), 'sfwat_max',                    &
+     &          'SETTING sfwat_max to ZERO.'
           WRITE (out,60) stressang(ng)*rad2deg, 'stressang',            &
      &          'Turning angle for ice-water drag (degrees).'
           WRITE (out,60) tol, 'tol',                                    &
@@ -682,7 +687,7 @@
           IF (Hout(idWdiv,ng)) WRITE (out,70) Hout(idWdiv,ng),          &
      &       'Hout(idWdiv)',                                            &
      &       'Write out ice divergence rate.'
-# ifdef AVERAGES
+#ifdef AVERAGES
           IF (Aout(idUice,ng)) WRITE (out,70) Aout(idUice,ng),          &
      &       'Aout(idUice)',                                            &
      &       'Write out time-averaged U-component ice velocity.'
@@ -758,8 +763,8 @@
           IF (Aout(idWdiv,ng)) WRITE (out,70) Aout(idWdiv,ng),          &
      &       'Aout(idWdiv)',                                            &
      &       'Write out time-averaged ice divergence rate.'
-# endif
-# ifdef AVERAGES2
+#endif
+#ifdef AVERAGES2
           IF (Aout2(idUice,ng)) WRITE (out,70) Aout2(idUice,ng),        &
      &       'Aout2(idUice)',                                           &
      &       'Write out U-component ice velocity.'
@@ -817,8 +822,8 @@
           IF (Aout2(idS0mk,ng)) WRITE (out,70) Aout2(idS0mk,ng),        &
      &       'Aout2(idS0mk)',                                           &
      &       'Write out salinity of molecular sublayer under ice.'
-# endif
-# ifdef HISTORY2
+#endif
+#ifdef HISTORY2
           IF (Hout2(idUice,ng)) WRITE (out,70) Hout2(idUice,ng),        &
      &       'Hout2(idUice)',                                           &
      &       'Write out U-component ice velocity.'
@@ -870,8 +875,13 @@
           IF (Hout2(idChuiw,ng)) WRITE (out,70) Hout2(idChuiw,ng),      &
      &       'Hout2(idChuiw)',                                          &
      &       'Write out ice-water momentum transfer coefficient.'
-
-# endif
+          IF (Hout2(idT0mk,ng)) WRITE (out,70) Hout2(idT0mk,ng),        &
+     &       'Hout2(idT0mk)',                                           &
+     &       'Write out temperature of molecular sublayer under ice.'
+          IF (Hout2(idS0mk,ng)) WRITE (out,70) Hout2(idS0mk,ng),        &
+     &       'Hout2(idS0mk)',                                           &
+     &       'Write out salinity of molecular sublayer under ice.'
+#endif
         END DO
       END IF
 
@@ -884,7 +894,4 @@
   80  FORMAT (/,' READ_IcePar - variable info not yet loaded, ', a)
       RETURN
       END SUBROUTINE read_IcePar
-#else
-      SUBROUTINE read_icepar
-      END SUBROUTINE read_icepar
 #endif

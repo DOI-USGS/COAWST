@@ -142,6 +142,9 @@
 #endif
       USE mod_iounits
       USE mod_ncparam
+#ifdef NESTING
+      USE mod_nesting
+#endif
       USE mod_scalars
       USE mod_iounits
 !
@@ -277,7 +280,9 @@
 !  Local variable declarations.
 !
       integer :: NSUB, i, ibry, is, j, k, rec
-
+#ifdef NESTING
+      integer :: cr, dg, ig, rg
+#endif
       real(r8), parameter :: Large = 1.0E+20_r8
 #if defined DIFF_3DCOEF || defined VISC_3DCOEF
       real(r8), parameter :: PecletCoef = 1.0_r8 / 12.0_r8
@@ -993,7 +998,139 @@
       END IF
 !$OMP END CRITICAL (REDUCTIONS)
 
-#if defined FOUR_DVAR
+#ifdef NESTING
+!
+!-----------------------------------------------------------------------
+!  If grid refinement, set various important parameters.
+!-----------------------------------------------------------------------
+!
+      IF (ng.eq.Ngrids) THEN
+!
+!  Set coarser donor grid number to finer grid external contact points.
+!  The reciver grid is always finer than the donor grid, DXmax(dg) >
+!  DXmax(rg). It is done in terms of the reciver grid.
+!
+        DO cr=1,Ncontact
+          dg=donor_grid(cr)
+          rg=receiver_grid(cr)
+          IF (RefinedGrid(rg).and.                                        &
+     &        (RefineScale(rg).gt.0).and.                                 &
+     &         DXmax(dg).gt.DXmax(rg)) THEN
+            CoarserDonor(rg)=dg
+          END IF
+        END DO
+!
+!  Set donor finer grid number to receiver coarser grid. This is use for
+!  two-way feeback between grids. The donor grid is always finer than the
+!  receiver grid, DXmax(dg) < DXmax(rg). It is done in terms of the donor
+!  grid.
+!
+        DO cr=1,Ncontact
+          dg=donor_grid(cr)
+          rg=receiver_grid(cr)
+          IF (RefinedGrid(dg).and.                                        &
+     &        (RefineScale(dg).gt.0).and.                                 &
+     &        DXmax(dg).gt.DXmax(rg)) THEN
+            FinerDonor(dg)=rg
+          END IF
+        END DO
+!
+!  Set logical indicating which coarser grid is a donor to a finer
+!  grid external contact points.
+!
+        DO dg=1,Ngrids
+          DO ig=1,Ngrids
+            IF (CoarserDonor(ig).eq.dg) THEN
+              DonorToFiner(dg)=.TRUE.
+            END IF
+          END DO
+        END DO
+!
+!  Set switch indicating which refined grid(s), with RefineScale(dg) > 0,
+!  include finer refined grids inside (telescoping refinement).
+!
+        DO cr=1,Ncontact
+          dg=donor_grid(cr)
+          rg=receiver_grid(cr)
+          IF ((RefineScale(dg).gt.0).and.(CoarserDonor(rg).eq.dg)) THEN
+            Telescoping(dg)=.TRUE.
+          END IF
+        END DO
+!
+!  Set Number of refined grid time-steps using the ratio between donor
+!  and receiver grids.  Optimally, thes values should be based on the
+!  spatial refinement ratio for stability. However, the user is allowed
+!  to take larger divisible time-step with respect to the donor grid.
+!  The user is responsible to set the appropriate refined grid time-step
+!  for stability.
+!
+        DO cr=1,Ncontact
+          dg=donor_grid(cr)
+          rg=receiver_grid(cr)
+          IF (RefinedGrid(rg).and.(CoarserDonor(rg).eq.dg)) THEN
+            RefineSteps(rg)=NINT(dt(dg)/dt(rg))
+          END IF
+        END DO
+!
+!  Report information.
+!
+        IF (DOMAIN(ng)%NorthEast_Test(tile)) THEN
+          IF (Master.and.ANY(RefinedGrid)) THEN
+            WRITE (stdout,70)
+  70        FORMAT (/,' Refined Nested Grid(s) Information: ',          &
+     &              /,' ==================================',/,/,        &
+     &              ' Refined    Donor   Refined   Timestep   Refined', &
+     &              /,'  Grid      Grid    Scale      Ratio   ',        &
+     &              'Timesteps',/)
+            DO ig=1,Ngrids
+              IF (RefineScale(ig).gt.0) THEN
+                dg=CoarserDonor(ig)
+                WRITE (stdout,80) ig, dg, RefineScale(ig),              &
+     &                            dt(dg)/dt(ig), RefineSteps(ig)
+  80            FORMAT(4x,i2.2,8x,i2.2,7x,i2.2,4x,f9.5,6x,i2.2)
+              END IF
+            END DO
+            WRITE (stdout,90)
+  90        FORMAT (/,' WARNING: Usually the number of Refined ',       &
+     &              'Timesteps must be the same',/,10x,                 &
+     &              'as the Refined Scale for numerical stability.',/)
+          END IF
+        END IF
+!
+!  Check refined grid time-step.  The time-step size for refined grids
+!  needs to be an exact mode multiple of its coarser donor grid.  In
+!  principle, it can be a "RefineScale" factor smaller.  However, other
+!  integer smaller or larger factor are allowed such that:
+!
+!          MOD(dt(dg), dt(rg)) = 0        dg:  donor  coarse grid
+!                                         rg:  receiver fine grid
+!
+        DO ig=1,Ngrids
+          IF (RefinedGrid(ig).and.(RefineScale(ig).gt.0)) THEN
+            dg=CoarserDonor(ig)
+            IF (MOD(dt(dg),dt(ig)).ne.0.0d0) THEN
+              IF (DOMAIN(ng)%SouthWest_Test(tile)) THEN
+                IF (Master) THEN
+                  WRITE (stdout,100) ig, dt(ig), dg, dt(dg),            &
+     &                               MOD(dt(dg),dt(ig))
+  100             FORMAT (/,' METRICS - illegal timestep size for ',    &
+     &                    ' finer reciever grid (rg),',/,11x,           &
+     &                    'It must be an exact divisible factor from ', &
+     &                    'donor grid (dg).',/,/,11x,'rg = ',i2.2,      &
+     &                    ', dt(rg) = ',f12.4,/,11x,'dg = ',i2.2,       &
+     &                    ', dt(dg) = ',f12.4,4x,                       &
+     &                    'MOD[dt(dg), dt(rg)] = ',f10.4,/)
+                END IF
+              END IF
+              exit_flag=5
+              RETURN
+            END IF
+          END IF
+        END DO
+      END IF
+#endif
+
+#ifdef FOUR_DVAR
 !
 !-----------------------------------------------------------------------
 !  Spatial convolution parameters.
@@ -1144,12 +1281,12 @@
               Text='Horizontal convolution, NHstepsF, DTsizeH  ='
             END IF
             IF (Hdecay(rec,is,ng).gt.0.0_r8) THEN
-              WRITE (stdout,70) TRIM(Text), NHsteps(rec,is),            &
-     &                          DTsizeH(rec,is),                        &
-     &                          TRIM(Vname(1,idSvar(is)))
+              WRITE (stdout,110) TRIM(Text), NHsteps(rec,is),           &
+     &                           DTsizeH(rec,is),                       &
+     &                           TRIM(Vname(1,idSvar(is)))
             END IF
           END DO
-          WRITE (stdout,80)
+          WRITE (stdout,120)
         END DO
 # if defined SOLVE3D && defined VCONVOLUTION
         DO rec=1,NSA
@@ -1166,12 +1303,12 @@
               Text='Vertical   convolution, NVstepsF, DTsizeV  ='
             END IF
             IF (Vdecay(rec,is,ng).gt.0.0_r8) THEN
-              WRITE (stdout,70) TRIM(Text), NVsteps(rec,is),            &
-     &                          DTsizeV(rec,is),                        &
-     &                          TRIM(Vname(1,idSvar(is)))
+              WRITE (stdout,110) TRIM(Text), NVsteps(rec,is),           &
+     &                           DTsizeV(rec,is),                       &
+     &                           TRIM(Vname(1,idSvar(is)))
              END IF
           END DO
-          WRITE (stdout,80)
+          WRITE (stdout,120)
         END DO
 # endif
 # ifdef ADJUST_BOUNDARY
@@ -1188,14 +1325,14 @@
                 Text='North bry Hconvolution, NHstepsB, DTsizeHB ='
               END IF
               IF (HdecayB(is,ibry,ng).gt.0.0_r8) THEN
-                WRITE (stdout,70) TRIM(Text), NHstepsB(ibry,is),        &
-     &                            DTsizeHB(ibry,is),                    &
-     &                            TRIM(Vname(1,idSbry(is)))
+                WRITE (stdout,110) TRIM(Text), NHstepsB(ibry,is),       &
+     &                             DTsizeHB(ibry,is),                   &
+     &                             TRIM(Vname(1,idSbry(is)))
               END IF
             END IF
           END DO
         END DO
-        WRITE (stdout,80)
+        WRITE (stdout,120)
 #  if defined SOLVE3D && defined VCONVOLUTION
         DO is=1,NstateVar(ng)
           DO ibry=1,4
@@ -1210,9 +1347,9 @@
                 Text='North bry Vconvolution, NVstepsB, DTsizeVB ='
               END IF
               IF (VdecayB(is,ibry,ng).gt.0.0_r8) THEN
-                WRITE (stdout,70) TRIM(Text), NVstepsB(ibry,is),        &
-     &                            DTsizeVB(ibry,is),                    &
-     &                            TRIM(Vname(1,idSbry(is)))
+                WRITE (stdout,110) TRIM(Text), NVstepsB(ibry,is),       &
+     &                             DTsizeVB(ibry,is),                   &
+     &                             TRIM(Vname(1,idSbry(is)))
               END IF
             END IF
           END DO
@@ -1221,8 +1358,8 @@
 # endif
       END IF
 
-  70  FORMAT (1X,a,i5,1x,1pe15.8,' s',2x,a)
-  80  FORMAT (1x)
+ 110  FORMAT (1X,a,i5,1x,1pe15.8,' s',2x,a)
+ 120  FORMAT (1x)
 #endif
 
       RETURN

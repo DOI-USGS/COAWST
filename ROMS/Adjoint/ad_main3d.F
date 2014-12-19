@@ -561,7 +561,7 @@
 # ifdef BBL_MODEL_NOT_YET
             CALL ad_bblm (ng, tile)
 # endif
-# ifdef BULK_FLUXES_NOT_YET && !defined NL_BULK_FLUXES
+# if defined BULK_FLUXES_NOT_YET && !defined NL_BULK_FLUXES
             CALL ad_bulk_flux (ng, tile)
 # endif
           END DO

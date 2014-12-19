@@ -105,7 +105,7 @@
 #endif
 
 #define ANA_SRFLUX
-#define ALBEDO
+#define ALBEDO_CLOUD
 #define ANA_SMFLUX
 #define ANA_SSFLUX
 #define ANA_BSFLUX
