@@ -3,7 +3,8 @@ function F=plot_nesting(Gnames, Hnames, Vname, Tindex, Level, varargin)
 %
 % PLOT_NESTING:  Plots requested ROMS variable from nesting NetCDF files
 %
-% F=plot_nesting(Gnames, Hnames, Vname, Tindex, Level, iplot, Caxis)
+% F=plot_nesting(Gnames, Hnames, Vname, Tindex, Level, ...
+%                perimeter, iplot, Caxis)
 %
 % This function plots requested ROMS nesting variable from input
 % history NetCDF files. This function is very useful when debugging
@@ -37,6 +38,9 @@ function F=plot_nesting(Gnames, Hnames, Vname, Tindex, Level, varargin)
 %                     iplot = 0,    use PCOLOR
 %                     iplot = 1,    use modified PCOLORJW (default)
 %
+%    perimeter     Switch to draw nested grids domain perimeter.
+%                    (OPTIONAL, default = false)
+%
 %    Caxis         A two element vector [cmin cmax] to set manual
 %                    scaling of pseudocolor for plotting objects
 %                    (array, OPTIONAL)
@@ -58,7 +62,7 @@ function F=plot_nesting(Gnames, Hnames, Vname, Tindex, Level, varargin)
 %                    F(n).ht           figure title handler
 %                    F(n).hc           figure coastlines handler
   
-% svn $Id: plot_nesting.m 735 2014-04-28 23:15:37Z arango $
+% svn $Id: plot_nesting.m 746 2014-12-15 23:24:27Z arango $
 %=========================================================================%
 %  Copyright (c) 2002-2014 The ROMS/TOMS Group                            %
 %    Licensed under a MIT/X style license                                 %
@@ -80,6 +84,8 @@ isvec = false;
 
 iplot = 1;             % use PCOLORJW to locate correctly C-grid variables
 
+perimeter = false;
+
 Tname = [];
 Tsize = 0;
 recordless = true;
@@ -89,7 +95,11 @@ switch numel(varargin)
     iplot = varargin{1};
   case 2
     iplot = varargin{1};
-    Caxis = varargin{2};
+    perimeter = varargin{2};
+  case 3
+    iplot = varargin{1};
+    perimeter = varargin{2};
+    Caxis = varargin{3};
     got.Caxis = true;
 end
 
@@ -107,24 +117,10 @@ Nfiles = length(Hnames);
 %--------------------------------------------------------------------------
 
 if (~isstruct(Gnames)),
-  parent = {'parent_grid',                                              ...
-            'parent_Imin', 'parent_Imax',                               ...
-            'parent_Jmin', 'parent_Jmax'};
-  for n=1:Nfiles,
-    g = get_roms_grid(char(Gnames(n)), char(Hnames(n)));
-    if (isfield(g, 'parent_grid')),
-      G(n) = rmfield(g, parent);
-    else
-      G(n) = g;
-    end
-  end
+  G = grids_structure(Gnames, Hnames);
 else
   G = Gnames;
 end
-
-% Set ROMS Grid structure. If the grid structure have the parent fields,
-% remove them to have an array of similar structures.
-  
 
 % Get variable information.
 
@@ -294,6 +290,34 @@ for n=1:Nfiles,
     got.coast = true;
   end
 
+% Get domain perimeter at PSI-points.
+
+  if (perimeter),
+    if (G(1).spherical),
+      [Im,Jm]=size(G(n).lon_psi);
+      Xper = [squeeze(G(n).lon_psi(:,1));                               ...
+              squeeze(G(n).lon_psi(Im,2:Jm))';                          ...
+              squeeze(flipud(G(n).lon_psi(1:Im-1,Jm)));                 ...
+              squeeze(fliplr(G(n).lon_psi(1,1:Jm-1)))'];
+
+      Yper = [squeeze(G(n).lat_psi(:,1));                               ...
+              squeeze(G(n).lat_psi(Im,2:Jm))';                          ...
+              squeeze(flipud(G(n).lat_psi(1:Im-1,Jm)));                 ...
+              squeeze(fliplr(G(n).lat_psi(1,1:Jm-1)))'];
+    else
+      [Im,Jm]=size(G(n).x_psi);
+      Xper = [squeeze(G(n).x_psi(:,1));                                 ...
+              squeeze(G(n).x_psi(Im,2:Jm))';                            ...
+              squeeze(flipud(G(n).x_psi(1:Im-1,Jm)));                   ...
+              squeeze(fliplr(G(n).x_psi(1,1:Jm-1)))'];
+
+      Yper = [squeeze(G(n).y_psi(:,1));                                 ...
+              squeeze(G(n).y_psi(Im,2:Jm))';                            ...
+              squeeze(flipud(G(n).y_psi(1:Im-1,Jm)));                   ...
+              squeeze(fliplr(G(n).y_psi(1,1:Jm-1)))'];
+    end
+  end
+
 % Read in requested variable (V) from history NetCDF file.
 
   if (~recordless && Tindex > Tsize),
@@ -346,9 +370,9 @@ for n=1:Nfiles,
 % Plot requested field.
 
   if (iplot == 0),
-    hp = pcolor  (X,Y,nanland(V,G(n))); shading faceted; colorbar
+    hp = pcolor  (X,Y,nanland(V,G(n))); colorbar
   elseif (iplot == 1),
-    hp = pcolorjw(X,Y,nanland(V,G(n))); shading faceted; colorbar
+    hp = pcolorjw(X,Y,nanland(V,G(n))); colorbar
   end
 
   F(n).ncname = char(Hnames(n));
@@ -364,32 +388,36 @@ for n=1:Nfiles,
   
   caxis(Caxis);
   
+  if (perimeter),
+    shading flat;
+  else
+    shading faceted;
+  end
+  
   if (n == 1),
     if (is3d),
       if (~isempty(Tname)),
-        ht = title([Vname, ':', blanks(4),                              ...
+        my_title = [Vname, ':', blanks(4),                              ...
                     'Level = ', num2str(Level), ',', blanks(4),         ...
                     'Record = ', num2str(Tindex), ',', blanks(4),       ...
-                    'time = ', num2str(Tvalue)],                        ...
-                    'FontSize', 14, 'FontWeight', 'bold' );
+                    'time = ', num2str(Tvalue)];
       else
-        ht = title([Vname, ':', blanks(4),                              ...
+        my_title = [Vname, ':', blanks(4),                              ...
                     'Level = ', num2str(Level), ',', blanks(4),         ...
-                    'Record = ', num2str(Tindex)],                      ...
-                    'FontSize', 14, 'FontWeight', 'bold' );
-      end
+                    'Record = ', num2str(Tindex)];
+      end  
     else
       if (~isempty(Tname)),
-        ht = title([Vname, ':', blanks(4),                              ... 
-                   'Record = ', num2str(Tindex), ',', blanks(4),        ...
-                   'time = ', num2str(Tvalue)],                         ...
-                   'FontSize', 14, 'FontWeight', 'bold' );
+        my_title = [Vname, ':', blanks(4),                              ... 
+                    'Record = ', num2str(Tindex), ',', blanks(4),       ...
+                    'time = ', num2str(Tvalue)];
       else
-        ht = title([Vname, ':', blanks(4),                              ... 
-                   'Record = ', num2str(Tindex)],                       ...
-                   'FontSize', 14, 'FontWeight', 'bold' );
+        my_title = [Vname, ':', blanks(4),                              ... 
+                    'Record = ', num2str(Tindex)];
       end
     end
+    ht = title(texlabel(my_title,'literal'),                            ...
+               'FontSize',14,'FontWeight','bold' );
 
     F(n).ht = ht;                           % figure title handdler
 
@@ -405,6 +433,14 @@ for n=1:Nfiles,
       F(n).hc = [];
     end
   end
+
+  if (perimeter && n > 1)
+    hp = plot(Xper,Yper,'k-');
+    F(n).hp = hp;                            % figure perimeter handler
+  else
+    F(n).hp = [];
+  end
+
 end
 
 hold off;

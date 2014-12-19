@@ -27,7 +27,7 @@ function [x,y,dhdx,dhde,slope,r]=hslope(fname,iprint,iplot);
 %    r           R-value (2D array)
 %
 
-% svn $Id: hslope.m 711 2014-01-23 20:36:13Z arango $
+% svn $Id: hslope.m 738 2014-10-14 21:49:14Z arango $
 %===========================================================================%
 %  Copyright (c) 2002-2014 The ROMS/TOMS Group                              %
 %    Licensed under a MIT/X style license                                   %
@@ -39,10 +39,10 @@ function [x,y,dhdx,dhde,slope,r]=hslope(fname,iprint,iplot);
 
 if (nargin < 3),
   iplot=1;
-end,
+end
 if (nargin < 2),
   iprint=1;
-end,
+end
 
 %  Incquire about variables in NetCDF file. Read in bathymetry.
 
@@ -115,31 +115,33 @@ for n=1:nvars,
       got.rmask=true;
     case 'mask_psi'
       got.pmask=true;
-  end,
-end,
+  end
+end
 
 if (got.rmask),
  rmask=nc_read(fname,'mask_rho');
-else,
+else
  rmask=ones([Lp Mp]);
-end,
+end
 
 if (got.pmask),
  pmask=nc_read(fname,'mask_psi');
-else,
+else
  pmask=ones([L M]);
-end,
+end
 
 %----------------------------------------------------------------------------
 %  Read in positions.
 %----------------------------------------------------------------------------
 
-spherical=nc_read(fname,'spherical',0);
+spherical=nc_read(fname,'spherical');
 if (ischar(spherical)),
   if (spherical == 'T' | spherical == 't'),
     spherical=true;
-  end,
-end,
+  else
+    spherical=false;
+  end
+end
 
 if (spherical),
   xr=nc_read(fname,'lon_rho',0);
@@ -199,7 +201,7 @@ dt=0.5.*1000.0.*sqrt(dx.*dx + dy.*dy)./sqrt(9.807.*h);
 ind=find(rmask < 0.5);
 if (~isempty(ind)),
   dt(ind)=NaN;
-end,
+end
 
 dtmin=min(min(dt));
 dtmax=max(max(dt));
@@ -254,33 +256,33 @@ curvilinear=0;
 if (got.angle),
   if (min(min(angle)) < 0 | max(max(angle)) > 0),
     curvilinear=1;
-  end,
-end,
+  end
+end
 
 if (got.dndx),
   if (min(min(dndx)) < 0 | max(max(dndx)) > 0),
     curvilinear=1;
-  end,
-end,
+  end
+end
 
 if (got.dmde),
   if (min(min(dmde)) < 0 | max(max(dmde)) > 0),
     curvilinear=1;
-  end,
-end,
+  end
+end
 
 if (iprint),
   if (curvilinear),
     disp('  ');
     disp(['You need to activate the CURVGRID flag in your header file!!!']);
     disp('  ');
-  else,
+  else
     disp('  ');
     disp(['There is not need to activate the CURVGRID flag in your ',...
           'header file...']);
     disp('  ');
-  end,
-end,  
+  end
+end  
 
 %----------------------------------------------------------------------------
 %  Plot data.
@@ -314,7 +316,7 @@ if (iplot),
  title('Barotropic Timestep Limit (seconds)');
  xlabel(['Min  = ', num2str(dtmin),'   Max  = ', num2str(dtmax)]);
  grid;
-end,
+end
 
 return
 

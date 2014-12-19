@@ -30,7 +30,7 @@ function [Istr,Iend,Jstr,Jend] = sample_grid(XD,YD,XR,YR,varargin)
 %    Jend          Donor grid ending   J-index for sampling
 %
 
-% svn $Id: sample_grid.m 711 2014-01-23 20:36:13Z arango $
+% svn $Id: sample_grid.m 738 2014-10-14 21:49:14Z arango $
 %=========================================================================%
 %  Copyright (c) 2002-2014 The ROMS/TOMS Group                            %
 %    Licensed under a MIT/X style license                                 %
@@ -117,7 +117,7 @@ end
 
 Jstr = min(J(:))-offset;
 if (isnan(Jstr) || Jstr < 1),
-  Jstr = JmD;
+  Jstr = 1;
 end
 
 Jend = max(J(:))+offset;
