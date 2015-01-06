@@ -273,6 +273,9 @@ F.Mr = 0;
 disp(' ');
 disp('Interpolating from coarse to fine ...');
 
+Rutgers=0; COAWST=1;
+if (Rutgers)
+
 % Grid locations at RHO-points.
 
 if (got.x_rho && got.y_rho),
@@ -416,6 +419,92 @@ else
   error(' COARSE2FINE: unable to find coordinates at V-points')
   
 end
+
+
+else %COAWST
+
+% Grid locations at RHO-points.
+
+if (got.x_rho && got.y_rho),
+  F.x_rho=interp2(XrC',YrC',C.x_rho',XrF',YrF','spline')';
+  F.y_rho=interp2(XrC',YrC',C.y_rho',XrF',YrF','spline')';
+  if (got.lon_rho && got.lat_rho),
+    F.lon_rho=interp2(XrC',YrC',C.lon_rho',XrF',YrF','spline')';
+    F.lat_rho=interp2(XrC',YrC',C.lat_rho',XrF',YrF','spline')';
+  end
+elseif (got.lon_rho && got.lat_rho),
+  F.lon_rho=interp2(XrC',YrC',C.lon_rho',XrF',YrF','spline')';
+  F.lat_rho=interp2(XrC',YrC',C.lat_rho',XrF',YrF','spline')';
+  if (got.x_rho && got.y_rho),
+    F.x_rho=interp2(XrC',YrC',C.x_rho',XrF',YrF','spline')';
+    F.y_rho=interp2(XrC',YrC',C.y_rho',XrF',YrF','spline')';
+  end
+else
+  error(' COARSE2FINE: unable to find coordinates at RHO-points')
+end
+
+% Grid locations at PSI-points.
+
+if (got.x_psi && got.y_psi),
+  F.x_psi=interp2(XpC',YpC',C.x_psi',XpF',YpF','spline')';
+  F.y_psi=interp2(XpC',YpC',C.y_psi',XpF',YpF','spline')';
+  if (got.lon_psi && got.lat_psi),
+    F.lon_psi=interp2(XpC',YpC',C.lon_psi',XpF',YpF','spline')';
+    F.lat_psi=interp2(XpC',YpC',C.lat_psi',XpF',YpF','spline')';
+  end
+elseif (got.lon_psi && got.lat_psi),
+  F.lon_psi=interp2(XpC',YpC',C.lon_psi',XpF',YpF','spline')';
+  F.lat_psi=interp2(XpC',YpC',C.lat_psi',XpF',YpF','spline')';
+  if (got.x_psi && got.y_psi),
+    F.x_psi=interp2(XpC',YpC',C.x_psi',XpF',YpF','spline')';
+    F.y_psi=interp2(XpC',YpC',C.y_psi',XpF',YpF','spline')';
+  end
+else
+  error(' COARSE2FINE: unable to find coordinates at PSI-points')
+end
+
+% Grid locations at U-points.
+
+if (got.x_u && got.y_u),
+  F.x_u=interp2(XuC',YuC',C.x_u',XuF',YuF','spline')';
+  F.y_u=interp2(XuC',YuC',C.y_u',XuF',YuF','spline')';
+  if (got.lon_u && got.lat_u),
+    F.lon_u=interp2(XuC',YuC',C.lon_u',XuF',YuF','spline')';
+    F.lat_u=interp2(XuC',YuC',C.lat_u',XuF',YuF','spline')';
+  end
+elseif (got.lon_u && got.lat_u),
+  F.lon_u=interp2(XuC',YuC',C.lon_u',XuF',YuF','spline')';
+  F.lat_u=interp2(XuC',YuC',C.lat_u',XuF',YuF','spline')';
+  if (got.x_u && got.y_u),
+    F.x_u=interp2(XuC',YuC',C.x_u',XuF',YuF','spline')';
+    F.y_u=interp2(XuC',YuC',C.y_u',XuF',YuF','spline')';
+  end
+else
+  error(' COARSE2FINE: unable to find coordinates at U-points')
+end
+
+% Grid locations at V-points.
+
+if (got.x_v && got.y_v),
+  F.x_v=interp2(XvC',YvC',C.x_v',XvF',YvF','spline')';
+  F.y_v=interp2(XvC',YvC',C.y_v',XvF',YvF','spline')';
+  if (got.lon_v && got.lat_v),
+    F.lon_v=interp2(XvC',YvC',C.lon_v',XvF',YvF','spline')';
+    F.lat_v=interp2(XvC',YvC',C.lat_v',XvF',YvF','spline')';
+  end
+elseif (got.lon_v && got.lat_v),
+  F.lon_v=interp2(XvC',YvC',C.lon_v',XvF',YvF','spline')';
+  F.lat_v=interp2(XvC',YvC',C.lat_v',XvF',YvF','spline')';
+  if (got.x_v && got.y_v),
+    F.x_v=interp2(XvC',YvC',C.x_v',XvF',YvF','spline')';
+    F.y_v=interp2(XvC',YvC',C.y_v',XvF',YvF','spline')';
+  end
+else
+  error(' COARSE2FINE: unable to find coordinates at V-points')
+end
+
+end
+
 
 % Get grid lengths.
 
