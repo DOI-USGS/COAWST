@@ -49,12 +49,12 @@ for mw=1:Ngrids_swan
     fprintf(fid,'luse_grid2_area = .false.\n');
     fprintf(fid,'/\n');
     fclose(fid);
-   % call scrip
-     try
-       eval(['!"',scrip_exe,'"'])
-     catch
-       scrip
-     end
+    % call scrip
+    if (use_scrip_exe)
+      eval(['!"',scrip_exe,'"'])
+    else
+     scrip
+    end
   end
 end
 %
@@ -100,12 +100,12 @@ for mo=1:Ngrids_roms
     fprintf(fid,'luse_grid2_area = .false.\n');
     fprintf(fid,'/\n');
     fclose(fid);
-   % call scrip
-     try
-       eval(['!"',scrip_exe,'"'])
-     catch
-       scrip
-     end
+    % call scrip
+    if (use_scrip_exe)
+      eval(['!"',scrip_exe,'"'])
+    else
+     scrip
+    end
   end
 end
 %
@@ -147,12 +147,12 @@ for mo=1:Ngrids_roms
     fprintf(fid,'luse_grid2_area = .false.\n');
     fprintf(fid,'/\n');
     fclose(fid);
-   % call scrip
-     try
-       eval(['!"',scrip_exe,'"'])
-     catch
-       scrip
-     end
+    % call scrip
+    if (use_scrip_exe)
+      eval(['!"',scrip_exe,'"'])
+    else
+     scrip
+    end
   end
 end
 %
@@ -194,12 +194,12 @@ for ma=1:Ngrids_wrf
     fprintf(fid,'luse_grid2_area = .false.\n');
     fprintf(fid,'/\n');
     fclose(fid);
-   % call scrip
-     try
-       eval(['!"',scrip_exe,'"'])
-     catch
-       scrip
-     end
+    % call scrip
+    if (use_scrip_exe)
+      eval(['!"',scrip_exe,'"'])
+    else
+     scrip
+    end
   end
 end
 %
@@ -245,12 +245,12 @@ for mw=1:Ngrids_swan
     fprintf(fid,'luse_grid2_area = .false.\n');
     fprintf(fid,'/\n');
     fclose(fid);
-   % call scrip
-     try
-       eval(['!"',scrip_exe,'"'])
-     catch
-       scrip
-     end
+    % call scrip
+    if (use_scrip_exe)
+      eval(['!"',scrip_exe,'"'])
+    else
+     scrip
+    end
   end
 end
 %
@@ -296,12 +296,12 @@ for ma=1:Ngrids_wrf
     fprintf(fid,'luse_grid2_area = .false.\n');
     fprintf(fid,'/\n');
     fclose(fid);
-   % call scrip
-     try
-       eval(['!"',scrip_exe,'"'])
-     catch
-       scrip
-     end
+    % call scrip
+    if (use_scrip_exe)
+      eval(['!"',scrip_exe,'"'])
+    else
+     scrip
+    end
   end
 end
 %

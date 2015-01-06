@@ -35,9 +35,12 @@ roms_grids{2}='inlet_test_grid_ref3.nc';
 %step 2c: Enter the grids for the WRF model:
 wrf_grids{1}='wrfinput_d01';
 
-%step 3: enter location of scrip.exe or leave a blank location to use scrip m files.
-scrip_exe='c:/work/models/COAWST/Lib/SCRIP/scrip.exe';
-%scrip_exe='c:/work/models/noscrip.exe';   ! uncomment this to use scrip m files
+%step 3: Select to use scrip as a compiled executable or as matlab m files.
+use_scrip_exe=1;      % put this = 1 to use scrip exe 
+use_scrip_matlab=0;   % put this = 1 to use scrip m files
+if (use_scrip_exe)
+  scrip_exe='e:/data/models/COAWST/Lib/SCRIP/scrip.exe';
+end
 
 %step 4: enter working dir
 wdir='c:\work\models\COAWST\Projects\Inlet_test\Refined';
