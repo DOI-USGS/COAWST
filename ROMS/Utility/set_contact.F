@@ -4,7 +4,7 @@
 !
 !svn $Id$
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2014 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2015 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -548,12 +548,11 @@
           Rcontact(cr) % LweightUnmasked(2,m) = Lweight(2,ip)
           Rcontact(cr) % LweightUnmasked(3,m) = Lweight(3,ip)
           Rcontact(cr) % LweightUnmasked(4,m) = Lweight(4,ip)
-# else
+# endif
           Rcontact(cr) % Lweight(1,m) = Lweight(1,ip)
           Rcontact(cr) % Lweight(2,m) = Lweight(2,ip)
           Rcontact(cr) % Lweight(3,m) = Lweight(3,ip)
           Rcontact(cr) % Lweight(4,m) = Lweight(4,ip)
-# endif
 # ifdef QUADRATIC_WEIGHTS
 #  ifdef WET_DRY
           Rcontact(cr) % QweightUnmasked(1,m) = Qweight(1,ip)
@@ -565,7 +564,7 @@
           Rcontact(cr) % QweightUnmasked(7,m) = Qweight(7,ip)
           Rcontact(cr) % QweightUnmasked(8,m) = Qweight(8,ip)
           Rcontact(cr) % QweightUnmasked(9,m) = Qweight(9,ip)
-#  else
+#  endif
           Rcontact(cr) % Qweight(1,m) = Qweight(1,ip)
           Rcontact(cr) % Qweight(2,m) = Qweight(2,ip)
           Rcontact(cr) % Qweight(3,m) = Qweight(3,ip)
@@ -575,7 +574,6 @@
           Rcontact(cr) % Qweight(7,m) = Qweight(7,ip)
           Rcontact(cr) % Qweight(8,m) = Qweight(8,ip)
           Rcontact(cr) % Qweight(9,m) = Qweight(9,ip)
-#  endif
 # endif
         END DO
 
@@ -590,12 +588,11 @@
           Ucontact(cr) % LweightUnmasked(2,m) = Lweight(2,ip)
           Ucontact(cr) % LweightUnmasked(3,m) = Lweight(3,ip)
           Ucontact(cr) % LweightUnmasked(4,m) = Lweight(4,ip)
-# else
+# endif
           Ucontact(cr) % Lweight(1,m) = Lweight(1,ip)
           Ucontact(cr) % Lweight(2,m) = Lweight(2,ip)
           Ucontact(cr) % Lweight(3,m) = Lweight(3,ip)
           Ucontact(cr) % Lweight(4,m) = Lweight(4,ip)
-# endif
 # ifdef QUADRATIC_WEIGHTS
 #  ifdef WET_DRY
           Ucontact(cr) % QweightUnmasked(1,m) = Qweight(1,ip)
@@ -607,7 +604,7 @@
           Ucontact(cr) % QweightUnmasked(7,m) = Qweight(7,ip)
           Ucontact(cr) % QweightUnmasked(8,m) = Qweight(8,ip)
           Ucontact(cr) % QweightUnmasked(9,m) = Qweight(9,ip)
-#  else
+#  endif
           Ucontact(cr) % Qweight(1,m) = Qweight(1,ip)
           Ucontact(cr) % Qweight(2,m) = Qweight(2,ip)
           Ucontact(cr) % Qweight(3,m) = Qweight(3,ip)
@@ -617,7 +614,6 @@
           Ucontact(cr) % Qweight(7,m) = Qweight(7,ip)
           Ucontact(cr) % Qweight(8,m) = Qweight(8,ip)
           Ucontact(cr) % Qweight(9,m) = Qweight(9,ip)
-#  endif
 # endif
         END DO
 
@@ -632,12 +628,11 @@
           Vcontact(cr) % LweightUnmasked(2,m) = Lweight(2,ip)
           Vcontact(cr) % LweightUnmasked(3,m) = Lweight(3,ip)
           Vcontact(cr) % LweightUnmasked(4,m) = Lweight(4,ip)
-# else
+# endif
           Vcontact(cr) % Lweight(1,m) = Lweight(1,ip)
           Vcontact(cr) % Lweight(2,m) = Lweight(2,ip)
           Vcontact(cr) % Lweight(3,m) = Lweight(3,ip)
           Vcontact(cr) % Lweight(4,m) = Lweight(4,ip)
-# endif
 # ifdef QUADRATIC_WEIGHTS
 #  ifdef WET_DRY
           Vcontact(cr) % QweightUnmasked(1,m) = Qweight(1,ip)
@@ -649,7 +644,7 @@
           Vcontact(cr) % QweightUnmasked(7,m) = Qweight(7,ip)
           Vcontact(cr) % QweightUnmasked(8,m) = Qweight(8,ip)
           Vcontact(cr) % QweightUnmasked(9,m) = Qweight(9,ip)
-#  else
+#  endif
           Vcontact(cr) % Qweight(1,m) = Qweight(1,ip)
           Vcontact(cr) % Qweight(2,m) = Qweight(2,ip)
           Vcontact(cr) % Qweight(3,m) = Qweight(3,ip)
@@ -659,7 +654,6 @@
           Vcontact(cr) % Qweight(7,m) = Qweight(7,ip)
           Vcontact(cr) % Qweight(8,m) = Qweight(8,ip)
           Vcontact(cr) % Qweight(9,m) = Qweight(9,ip)
-#  endif
 # endif
         END DO
 

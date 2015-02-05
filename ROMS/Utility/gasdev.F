@@ -3,7 +3,7 @@
 !
 !svn $Id$
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2014 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2015 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -101,7 +101,7 @@
       logical, dimension(SIZE(harvest)) :: mask
 
       integer(i4b), save :: last_allocated = 0
-      integer(i4b) :: m, mc, n, ng, nn
+      integer(i4b) :: i, ii, m, mc, n, ng, nn
 
       real(r8), dimension(SIZE(harvest)) :: rsq, v1, v2, v3
       real(r8), allocatable, dimension(:), save :: g
@@ -136,18 +136,29 @@
           v2(ng:n)=2.0_r8*v2(ng:n)-1.0_r8
 !
 !  See if they are in the unit circle, and if they are not, try again.
-!  The original "array_copy" below is problematic in old compilers.
-!  This is obviously a compiler bug.
+!  The original code was modified for portability with old F90 compilers
+!  when using the PACK function (HGA/AMM).
 !
           rsq(ng:n)=v1(ng:n)**2+v2(ng:n)**2
           mask(ng:n)=((rsq(ng:n).gt.0.0_r8).and.(rsq(ng:n).lt.1.0_r8))
-          mc=COUNT(mask(ng:n))                       ! HGA: Changed for
-          v3(1:mc)=PACK(v1(ng:n), mask(ng:n))        ! portability with
-          CALL array_copy (v3(1:mc), v1(ng:), nn, m) ! old F90 compilers
-!!        CALL array_copy (PACK(v1(ng:n), mask(ng:n)),                  &
-!!   &                     v1(ng:), nn, m)
-          v2(ng:ng+nn-1)=PACK(v2(ng:n), mask(ng:n))
-          rsq(ng:ng+nn-1)=PACK(rsq(ng:n), mask(ng:n))
+          mc=COUNT(mask(ng:n))
+
+          ii=0
+          DO i=ng,n
+            IF (mask(i)) THEN
+              ii=ii+1
+              v3(ii)=v1(i)
+            END IF
+          END DO
+          CALL array_copy (v3(1:mc), v1(ng:), nn, m)
+          ii=ng-1
+          DO i=ng,n
+            IF (mask(i)) THEN
+              ii=ii+1
+              v2(ii)=v2(i)
+              rsq(ii)=rsq(i)
+            END IF
+          END DO
           ng=ng+nn
         END DO
 !
