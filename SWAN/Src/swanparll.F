@@ -1895,7 +1895,7 @@
       NACTP = 0
       DO IX = 1, MXC
          DO IY = 1, MYC
-#ifdef COAWST_COUPLING
+#ifdef SWAN_MODEL
 !           dont allow entire columns or rows to be removed.
 !           IF ( KGRPGL(IX,IY).NE.1 ) THEN
                IPOWN(IX,IY) = 1

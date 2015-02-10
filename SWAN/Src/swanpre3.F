@@ -180,7 +180,8 @@
 !
       IJspv=9999.
       rectangular=.false.
-      allocate(Ipos(MXCGL,MYCGL),Jpos(MXCGL,MYCGL),angler(MXCGL,MYCGL))
+      allocate(Ipos(MXCGL,MYCGL),Jpos(MXCGL,MYCGL))
+      allocate(angler(MXCGL_G(ngp),MYCGL_G(ngp)))
       angler=0.
 !
       CALL shindices(ng, 1, MXCGL_G(ngp), 1, MYCGL_G(ngp),              &
