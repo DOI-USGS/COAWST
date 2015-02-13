@@ -397,7 +397,7 @@ for mm=1:num_loops
   var = ncread(ncv,varname,[1 1 narr_start_idx],[numx numy ntimes]);
   var=var*scale+offset;
   if (vector)  %Winds
-    var2=ncread(ncv2,varname,[1 1 narr_start_idx],[numx numy ntimes]);
+    var2=ncread(ncv2,varname2,[1 1 narr_start_idx],[numx numy ntimes]);
     var2=var2*scale+offset;
   end
 
@@ -423,8 +423,8 @@ for mm=1:num_loops
         F  = TriScatteredInterp(double(nlon(:)),double(nlat(:)),un(:));
         var2_roms(:,:,count) = F(lon_rho,lat_rho);
         if (interpto_roms_grid)
-          cffx= var_roms(:,:,count).*cos(angle)+var2_roms(:,:,count).*sin(angle);
-          cffy=var2_roms(:,:,count).*cos(angle)-var_roms(:,:,count).*sin(angle);
+          cffx= var_roms(:,:,count).*cos(angle_rho)+var2_roms(:,:,count).*sin(angle_rho);
+          cffy=var2_roms(:,:,count).*cos(angle_rho)-var_roms(:,:,count).*sin(angle_rho);
           var_roms(:,:,count)=cffx;
           var2_roms(:,:,count)=cffy;
         end
