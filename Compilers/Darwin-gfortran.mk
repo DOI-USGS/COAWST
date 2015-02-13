@@ -57,7 +57,7 @@ ifdef USE_NETCDF4
 else
     NETCDF_INCDIR ?= /usr/local/include
     NETCDF_LIBDIR ?= /usr/local/lib
-             LIBS := -L$(NETCDF_LIBDIR) -lnetcdf
+             LIBS := -L$(NETCDF_LIBDIR) -lnetcdf -lnetcdff
 endif
 
 ifdef USE_ARPACK
@@ -181,14 +181,16 @@ $(SCRATCH_DIR)/swanmain.o: FFLAGS += -ffixed-form
 $(SCRATCH_DIR)/swanout1.o: FFLAGS += -ffixed-form
 $(SCRATCH_DIR)/swanout2.o: FFLAGS += -ffixed-form
 $(SCRATCH_DIR)/swanparll.o: FFLAGS += -ffixed-form
-$(SCRATCH_DIR)/swanpre1.o: FFLAGS += -ffixed-form
-$(SCRATCH_DIR)/swanpre2.o: FFLAGS += -ffixed-form
-$(SCRATCH_DIR)/swanser.o: FFLAGS += -ffixed-form
-$(SCRATCH_DIR)/swmod1.o: FFLAGS += -ffixed-form
-$(SCRATCH_DIR)/swmod2.o: FFLAGS += -ffixed-form
+$(SCRATCH_DIR)/swanpre1.o:  FFLAGS += -ffixed-form
+$(SCRATCH_DIR)/swanpre2.o:  FFLAGS += -ffixed-form
+$(SCRATCH_DIR)/swanser.o:   FFLAGS += -ffixed-form
+$(SCRATCH_DIR)/swmod1.o:    FFLAGS += -ffixed-form
+$(SCRATCH_DIR)/swmod2.o:    FFLAGS += -ffixed-form
 $(SCRATCH_DIR)/m_constants.o: FFLAGS += -ffree-form -ffree-line-length-none
-$(SCRATCH_DIR)/m_fileio.o: FFLAGS += -ffree-form -ffree-line-length-none
-$(SCRATCH_DIR)/mod_xnl4v5.o: FFLAGS += -ffree-form -ffree-line-length-none
+$(SCRATCH_DIR)/m_fileio.o:    FFLAGS += -ffree-form -ffree-line-length-none
+$(SCRATCH_DIR)/mod_xnl4v5.o:  FFLAGS += -ffree-form -ffree-line-length-none
 $(SCRATCH_DIR)/serv_xnl4v5.o: FFLAGS += -ffree-form -ffree-line-length-none
-
+$(SCRATCH_DIR)/nctablemd.o:   FFLAGS += -ffree-form -ffree-line-length-none
+$(SCRATCH_DIR)/agioncmd.o:    FFLAGS += -ffree-form -ffree-line-length-none
+$(SCRATCH_DIR)/swn_outnc.o:   FFLAGS += -ffree-form -ffree-line-length-none
 endif
