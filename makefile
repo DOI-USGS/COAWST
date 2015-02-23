@@ -28,7 +28,7 @@
 #                                                                       :::
 #::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 
-NEED_VERSION := 3.80 3.81 3.82 3.82.90 4.0
+NEED_VERSION := 3.80 3.81 3.82 3.82.90 4.0 4.1
 $(if $(filter $(MAKE_VERSION),$(NEED_VERSION)),,        \
  $(error This makefile requires one of GNU make version $(NEED_VERSION).))
 
