@@ -3,11 +3,12 @@ function create_roms_forcings(lon,lat,time,fn,varargin)
 % Create NetCDF file using native netcdf builtins for bulk fluxes from NAM 3-hourly output  
 % 
 % Usage:
-% create_roms_native_netcdf_blk(lon,lat,time,fn,varargin)
+% create_roms_forcings(lon,lat,time,fn,varargin)
 % 
 % lon: longitude array
 % lat: latitiude array
 % time: time array
+% fn:   file name
 %
 % Accepts any combinations of desired parameter(s):
 % (You must use these specific names on the input line)
@@ -21,13 +22,13 @@ function create_roms_forcings(lon,lat,time,fn,varargin)
 % lwrad: solar longwave radiation (W/m2)
 % 
 % e.g. 
-% create_roms_netcdf_blk_mw(lon_rho,lat_rho,ocean_time, 'frc_bulk.nc', 'Uwind', 'Vwind')
-%                          use 'Uwind' to identify that the var Uwind in
-%                          your workspace will be filled into a var Uwind
-%                          in the new netcdf file.
+% create_roms_forcings(lon_rho,lat_rho,ocean_time, 'frc_bulk.nc', 'Uwind', 'Vwind')
+%                      use 'Uwind' to identify that the var Uwind in
+%                      your workspace will be filled into a var Uwind
+%                      in the new netcdf file.
 % 
 % Zafer Defne   04/30/2012
-% jcwarner  0618/2012 modified to use the variabels, not the indices
+% jcwarner      06/2012 modified to use the variables, not the indices
 %
 
 nc=netcdf.create(fn,'clobber');
