@@ -5544,6 +5544,9 @@
 #  else
             my_value=cff1*REFINED(cr)%DU_avg2(1,m,tnew)/cff
 #  endif
+#  ifdef WEC 
+            my_value=my_value-OCEAN(ng)%ubar_stokes(Istr,j) 
+#  endif 
 #  ifdef MASKING
             my_value=my_value*GRID(ng)%umask(Istr,j)
 #  endif
@@ -5574,6 +5577,9 @@
 #  else
             my_value=cff1*REFINED(cr)%DU_avg2(1,m,tnew)/cff
 #  endif
+#  ifdef WEC 
+            my_value=my_value-OCEAN(ng)%ubar_stokes(Iend+1,j) 
+#  endif 
 #  ifdef MASKING
             my_value=my_value*GRID(ng)%umask(Iend+1,j)
 #  endif
@@ -5604,6 +5610,9 @@
 #  else
             my_value=cff1*REFINED(cr)%DV_avg2(1,m,tnew)/cff
 #  endif
+#  ifdef WEC 
+            my_value=my_value-OCEAN(ng)%vbar_stokes(i,Jstr) 
+#  endif 
 #  ifdef MASKING
             my_value=my_value*GRID(ng)%vmask(i,Jstr)
 #  endif
@@ -5634,6 +5643,9 @@
 #  else
             my_value=cff1*REFINED(cr)%DV_avg2(1,m,tnew)/cff
 #  endif
+#  ifdef WEC 
+            my_value=my_value-OCEAN(ng)%vbar_stokes(i,Jend+1) 
+#  endif 
 #  ifdef MASKING
             my_value=my_value*GRID(ng)%vmask(i,Jend+1)
 #  endif

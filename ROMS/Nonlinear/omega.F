@@ -153,8 +153,8 @@
 # if defined SEDIMENT && defined SED_MORPH
       cff1=1.0_r8/dt(ng)
 # endif
-      DO j=Jstr,Jend
-        DO i=Istr,Iend
+      DO j=JstrP,Jendp1
+        DO i=IstrP,Iendp1
 # if defined SEDIMENT && defined SED_MORPH
           W(i,j,0)=-cff1*(bed_thick(i,j,nstp)-                          &
      &                    bed_thick(i,j,nnew))*omn(i,j)
@@ -163,7 +163,7 @@
 # endif
         END DO
         DO k=1,N(ng)
-          DO i=Istr,Iend
+          DO i=IstrP,Iendp1
             W(i,j,k)=W(i,j,k-1)-                                        &
      &               (Huon(i+1,j,k)-Huon(i,j,k)+                        &
      &                Hvom(i,j+1,k)-Hvom(i,j,k))
@@ -186,7 +186,7 @@
           END DO
         END IF
 !
-        DO i=Istr,Iend
+        DO i=IstrP,Iendp1
           wrk(i)=W(i,j,N(ng))/(z_w(i,j,N(ng))-z_w(i,j,0))
         END DO
 !
@@ -198,7 +198,7 @@
 !  the free-surface (k=N).
 !
         DO k=N(ng)-1,1,-1
-          DO i=Istr,Iend
+          DO i=IstrP,Iendp1
             W(i,j,k)=W(i,j,k)-                                          &
 # if defined WEC_VF
      &               W_stokes(i,j,k)-                                   &
@@ -206,7 +206,7 @@
      &               wrk(i)*(z_w(i,j,k)-z_w(i,j,0))
           END DO
         END DO
-        DO i=Istr,Iend
+        DO i=IstrP,Iendp1
           W(i,j,N(ng))=0.0_r8
         END DO
       END DO

@@ -347,7 +347,7 @@
               ubar_stokes(i,Jstr-1)=ubar_stokes(i,Jstr)
 # ifdef MASKING
               ubar_stokes(i,Jstr-1)=ubar_stokes(i,Jstr-1)*              &
-     &                                   GRID(ng)%umask(i,Jstr-1)
+     &                              GRID(ng)%umask(i,Jstr-1)
 # endif
             END IF
           END DO
@@ -452,7 +452,7 @@
               ubar_stokes(i,Jend+1)=ubar_stokes(i,Jend)
 # ifdef MASKING
               ubar_stokes(i,Jend+1)=ubar_stokes(i,Jend+1)*              &
-     &                                   GRID(ng)%umask(i,Jend+1)
+     &                              GRID(ng)%umask(i,Jend+1)
 # endif
             END IF
           END DO

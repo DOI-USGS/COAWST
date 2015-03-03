@@ -223,8 +223,8 @@
 # include "set_bounds.h"
       fac1=1.0_r8/dt(ng)
       fac2=1.0_r8/g
-      DO j=Jstr-1,Jend+1
-        DO i=Istr-1,Iend+1
+      DO j=JstrB,JendB
+        DO i=IstrB,IendB
 !
 !  Compute total depth
 !
@@ -253,8 +253,8 @@
 !
 !  Compute u-stokes velocities, Eqn. 2.
 !
-      DO j=Jstr,Jend
-        DO i=IstrU,Iend
+      DO j=JstrB,JendB
+        DO i=IstrM,IendB
 # ifdef WEC_MELLOR
           cff=fac1*om_u(i,j)*on_u(i,j)
 # endif
@@ -305,8 +305,8 @@
 !
 !  Compute v-stokes velocity, Eqn. 2.
 !
-      DO j=JstrV,Jend
-        DO i=Istr,Iend
+      DO j=JstrM,JendB
+        DO i=IstrB,IendB
 # ifdef WEC_MELLOR
           cff=fac1*om_v(i,j)*on_v(i,j)
 # endif
@@ -387,37 +387,37 @@
 !  Compute vertical stokes velocity, Eqn. 31.
 !
       DO k=1,N(ng)
-        DO j=Jstr,Jend
-          DO i=Istr,Iend+1
+        DO j=JstrT,JendT
+          DO i=IstrP,IendT
              Huons(i,j)=0.5_r8*(Hz(i,j,k)+Hz(i-1,j,k))*                 &
      &                  u_stokes(i,j,k)*on_u(i,j)
           END DO
         END DO
-        DO j=Jstr,Jend+1
-          DO i=Istr,Iend
+        DO j=JstrP,JendT
+          DO i=IstrT,IendT
              Hvoms(i,j)=0.5_r8*(Hz(i,j,k)+Hz(i,j-1,k))*                 &
      &                  v_stokes(i,j,k)*om_v(i,j)
           END DO
         END DO
-        DO j=Jstr,Jend
-          DO i=Istr,Iend
+        DO j=JstrP,Jendp1
+          DO i=IstrP,Iendp1
              W_stokes(i,j,k)=W_stokes(i,j,k-1)-                         &
      &                      (Huons(i+1,j)-Huons(i,j)+                   &
      &                       Hvoms(i,j+1)-Hvoms(i,j))
           END DO
         END DO
       END DO
-      DO j=Jstr,Jend
-        DO i=Istr,Iend
+      DO j=JstrP,Jendp1
+        DO i=IstrP,Iendp1
           wrk(i)=W_stokes(i,j,N(ng))/(z_w(i,j,N(ng))-z_w(i,j,0))
         END DO
         DO k=N(ng)-1,1,-1
-         DO i=Istr,Iend
+         DO i=IstrP,Iendp1
             W_stokes(i,j,k)=W_stokes(i,j,k)-                            &
      &                      wrk(i)*(z_w(i,j,k)-z_w(i,j,0))
           END DO
         END DO
-        DO i=Istr,Iend
+        DO i=IstrP,Iendp1
           W_stokes(i,j,N(ng))=0.0_r8
         END DO
       END DO
@@ -425,8 +425,8 @@
 !  For a 3D application, compute associated 2D fields by taking the
 !  vertical integral of 3D fields.
 !
-      DO j=Jstr,Jend
-        DO i=IstrU,Iend
+      DO j=JstrB,JendB
+        DO i=IstrM,IendB
           cff5=0.5_r8*(Hz(i-1,j,1)+Hz(i,j,1))
           ubar_stokes(i,j)=cff5*u_stokes(i,j,1)
 # ifdef WEC_MELLOR
@@ -446,8 +446,8 @@
 # endif
         END DO
       END DO
-      DO i=Istr,Iend
-        DO j=JstrV,Jend
+      DO i=IstrB,IendB
+        DO j=JstrM,JendB
           cff5=0.5_r8*(Hz(i,j-1,1)+Hz(i,j,1))
           vbar_stokes(i,j)=cff5*v_stokes(i,j,1)
 # ifdef WEC_MELLOR
@@ -479,12 +479,12 @@
      &                    IminS, ImaxS, JminS, JmaxS,                   &
      &                    vbar_stokes)
       IF (EWperiodic(ng).or.NSperiodic(ng)) THEN
-      CALL exchange_u2d_tile (ng, tile,                                 &
-     &                        LBi, UBi, LBj, UBj,                       &
-     &                        ubar_stokes(:,:))
-      CALL exchange_v2d_tile (ng, tile,                                 &
-     &                        LBi, UBi, LBj, UBj,                       &
-     &                        vbar_stokes(:,:))
+        CALL exchange_u2d_tile (ng, tile,                               &
+     &                          LBi, UBi, LBj, UBj,                     &
+     &                          ubar_stokes(:,:))
+        CALL exchange_v2d_tile (ng, tile,                               &
+     &                          LBi, UBi, LBj, UBj,                     &
+     &                          vbar_stokes(:,:))
       END IF
       CALL bc_w3d_tile (ng, tile,                                       &
      &                  LBi, UBi, LBj, UBj, 0, N(ng),                   &

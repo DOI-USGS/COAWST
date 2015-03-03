@@ -65,6 +65,9 @@
 #ifdef NESTING
       USE mod_nesting
 #endif
+#ifdef WEC
+      USE mod_ocean
+#endif
       USE mod_scalars
 !
 !  Imported variable declarations.
@@ -469,6 +472,9 @@
      &               GRID(ng)%h(i,Jstr  )+zeta(i,Jstr  ,kout))
                 cff1=GRID(ng)%om_v(i,Jstr)/REFINED(cr)%om_v(m)
                 bry_val=cff1*REFINED(cr)%DV_avg2(1,m,tnew)/cff
+# ifdef WEC
+                bry_val=bry_val-OCEAN(ng)%vbar_stokes(i,Jstr) 
+# endif 
 # ifdef MASKING
                 bry_val=bry_val*GRID(ng)%vmask(i,Jstr)
 # endif
@@ -830,6 +836,9 @@
      &               GRID(ng)%h(i,Jend  )+zeta(i,Jend  ,kout))
                 cff1=GRID(ng)%om_v(i,Jend+1)/REFINED(cr)%om_v(m)
                 bry_val=cff1*REFINED(cr)%DV_avg2(1,m,tnew)/cff
+# ifdef WEC
+                bry_val=bry_val-OCEAN(ng)%vbar_stokes(i,Jend+1) 
+# endif 
 # ifdef MASKING
                 bry_val=bry_val*GRID(ng)%vmask(i,Jend+1)
 # endif

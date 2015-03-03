@@ -841,15 +841,15 @@
 !
 !  Set logarithmic bottom stress.
 !
-      DO j=JstrV-1,Jend
-        DO i=IstrU-1,Iend
+      DO j=JstrM-1,JendB
+        DO i=IstrM-1,IendB
           cff1=1.0_r8/LOG((z_r(i,j,1)-z_w(i,j,0))/ZoBot(i,j))
           cff2=vonKar*vonKar*cff1*cff1
           wrk(i,j)=MIN(Cdb_max,MAX(Cdb_min,cff2))
         END DO
       END DO
-      DO j=Jstr,Jend
-        DO i=IstrU,Iend
+      DO j=JstrP,Jendp1
+        DO i=IstrM,IendB
           cff1=0.25_r8*(v(i  ,j  ,1,nrhs)+                              &
      &                  v(i  ,j+1,1,nrhs)+                              &
      &                  v(i-1,j  ,1,nrhs)+                              &
@@ -865,8 +865,8 @@
 #    endif
         END DO
       END DO
-      DO j=JstrV,Jend
-        DO i=Istr,Iend
+      DO j=JstrM,JendB
+        DO i=IstrP,Iendp1
           cff1=0.25_r8*(u(i  ,j  ,1,nrhs)+                              &
      &                  u(i+1,j  ,1,nrhs)+                              &
      &                  u(i  ,j-1,1,nrhs)+                              &
@@ -886,8 +886,8 @@
 !
 !  Set quadratic bottom stress.
 !
-      DO j=Jstr,Jend
-        DO i=IstrU,Iend
+      DO j=JstrP,Jendp1
+        DO i=IstrM,IendB
           cff1=0.25_r8*(v(i  ,j  ,1,nrhs)+                              &
      &                  v(i  ,j+1,1,nrhs)+                              &
      &                  v(i-1,j  ,1,nrhs)+                              &
@@ -903,8 +903,8 @@
 #    endif
         END DO
       END DO
-      DO j=JstrV,Jend
-        DO i=Istr,Iend
+      DO j=JstrM,JendB
+        DO i=IstrP,Iendp1
           cff1=0.25_r8*(u(i  ,j  ,1,nrhs)+                              &
      &                  u(i+1,j  ,1,nrhs)+                              &
      &                  u(i  ,j-1,1,nrhs)+                              &
@@ -924,8 +924,8 @@
 !
 !  Set linear bottom stress.
 !
-      DO j=Jstr,Jend
-        DO i=IstrU,Iend
+      DO j=JstrP,Jendp1
+        DO i=IstrM,IendB
           bustr(i,j)=0.5_r8*(rdrag(i-1,j)+rdrag(i,j))*                  &
      &               u(i,j,1,nrhs)
 #    ifdef WET_DRY
@@ -936,8 +936,8 @@
 #    endif
         END DO
       END DO
-      DO j=JstrV,Jend
-        DO i=Istr,Iend
+      DO j=JstrM,JendB
+        DO i=IstrP,Iendp1
           bvstr(i,j)=0.5_r8*(rdrag(i,j-1)+rdrag(i,j))*                  &
      &               v(i,j,1,nrhs)
 #    ifdef WET_DRY
@@ -1082,14 +1082,14 @@
 !
 !  Set linear bottom stress.
 !
-      DO j=Jstr,Jend
-        DO i=IstrU,Iend
+      DO j=JstrB,JendB
+        DO i=IstrM,IendB
           bustr(i,j)=0.5_r8*(rdrag(i-1,j)+rdrag(i,j))*                  &
      &               ubar(i,j,krhs)
         END DO
       END DO
-      DO j=JstrV,Jend
-        DO i=Istr,Iend
+      DO j=JstrM,JendB
+        DO i=IstrB,IendB
           bvstr(i,j)=0.5_r8*(rdrag(i,j-1)+rdrag(i,j))*                  &
      &               vbar(i,j,krhs)
         END DO
@@ -1098,8 +1098,8 @@
 !
 !  Set quadratic bottom stress.
 !
-      DO j=Jstr,Jend
-        DO i=IstrU,Iend
+      DO j=JstrB,JendB
+        DO i=IstrM,IendB
           cff1=0.25_r8*(vbar(i  ,j  ,krhs)+                             &
      &                  vbar(i  ,j+1,krhs)+                             &
      &                  vbar(i-1,j  ,krhs)+                             &
@@ -1109,8 +1109,8 @@
      &               ubar(i,j,krhs)*cff2
         END DO
       END DO
-      DO j=JstrV,Jend
-        DO i=Istr,Iend
+      DO j=JstrM,JendB
+        DO i=IstrB,IendB
           cff1=0.25_r8*(ubar(i  ,j  ,krhs)+                             &
      &                  ubar(i+1,j  ,krhs)+                             &
      &                  ubar(i  ,j-1,krhs)+                             &

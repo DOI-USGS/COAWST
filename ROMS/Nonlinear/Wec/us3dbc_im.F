@@ -108,24 +108,24 @@
                 END IF
                 cff=MAX(dUdx*dUdx+dUde*dUde,eps)
                 Cx=dUdt*dUdx
-#   ifdef RADIATION_2D
+# ifdef RADIATION_2D
                 Ce=MIN(cff,MAX(dUdt*dUde,-cff))
-#   else
+# else
                 Ce=0.0_r8
-#   endif
+# endif
                 u_stokes(Istr,j,k)=(cff*u_stokes(Istr  ,j,k)+           &
      &                             Cx *u_stokes(Istr+1,j,k)-            &
      &                             MAX(Ce,0.0_r8)*grad(Istr,j  )-       &
      &                             MIN(Ce,0.0_r8)*grad(Istr,j+1))/      &
      &                            (cff+Cx)
-#   ifdef MASKING
+# ifdef MASKING
                 u_stokes(Istr,j,k)=u_stokes(Istr,j,k)*                  &
      &                             GRID(ng)%umask(Istr,j)
-#   endif
-#   ifdef WET_DRY
+# endif
+# ifdef WET_DRY
                 u_stokes(Istr,j,k)=u_stokes(Istr,j,k)*                  &
      &                             GRID(ng)%umask_wet(Istr,j)
-#   endif
+# endif
               END IF
             END DO
           END DO
@@ -137,14 +137,14 @@
             DO j=Jstr,Jend
               IF (LBC_apply(ng)%west(j)) THEN
                 u_stokes(Istr,j,k)=BOUNDARY(ng)%ustokes_west(j,k)
-#   ifdef MASKING
+# ifdef MASKING
                 u_stokes(Istr,j,k)=u_stokes(Istr,j,k)*                  &
      &                             GRID(ng)%umask(Istr,j)
-#   endif
-#   ifdef WET_DRY
+# endif
+# ifdef WET_DRY
                 u_stokes(Istr,j,k)=u_stokes(Istr,j,k)*                  &
      &                             GRID(ng)%umask_wet(Istr,j)
-#   endif
+# endif
               END IF
             END DO
           END DO
@@ -156,14 +156,14 @@
             DO j=Jstr,Jend
               IF (LBC_apply(ng)%west(j)) THEN
                 u_stokes(Istr,j,k)=u_stokes(Istr+1,j,k)
-#   ifdef MASKING
+# ifdef MASKING
                 u_stokes(Istr,j,k)=u_stokes(Istr,j,k)*                  &
      &                             GRID(ng)%umask(Istr,j)
-#   endif
-#   ifdef WET_DRY
+# endif
+# ifdef WET_DRY
                 u_stokes(Istr,j,k)=u_stokes(Istr,j,k)*                  &
      &                             GRID(ng)%umask_wet(Istr,j)
-#   endif
+# endif
               END IF
             END DO
           END DO
@@ -210,24 +210,24 @@
                 END IF
                 cff=MAX(dUdx*dUdx+dUde*dUde,eps)
                 Cx=dUdt*dUdx
-#   ifdef RADIATION_2D
+# ifdef RADIATION_2D
                 Ce=MIN(cff,MAX(dUdt*dUde,-cff))
-#   else
+# else
                 Ce=0.0_r8
-#   endif
+# endif
                 u_stokes(Iend+1,j,k)=(cff*u_stokes(Iend+1,j,k)+         &
      &                               Cx *u_stokes(Iend  ,j,k)-          &
      &                               MAX(Ce,0.0_r8)*grad(Iend+1,j  )-   &
      &                               MIN(Ce,0.0_r8)*grad(Iend+1,j+1))/  &
      &                              (cff+Cx)
-#   ifdef MASKING
+# ifdef MASKING
                 u_stokes(Iend+1,j,k)=u_stokes(Iend+1,j,k)*              &
      &                               GRID(ng)%umask(Iend+1,j)
-#   endif
-#   ifdef WET_DRY
+# endif
+# ifdef WET_DRY
                 u_stokes(Iend+1,j,k)=u_stokes(Iend+1,j,k)*              &
      &                               GRID(ng)%umask_wet(Iend+1,j)
-#   endif
+# endif
               END IF
             END DO
           END DO
@@ -239,14 +239,14 @@
             DO j=Jstr,Jend
               IF (LBC_apply(ng)%east(j)) THEN
                 u_stokes(Iend+1,j,k)=BOUNDARY(ng)%ustokes_east(j,k)
-#   ifdef MASKING
+# ifdef MASKING
                 u_stokes(Iend+1,j,k)=u_stokes(Iend+1,j,k)*              &
      &                               GRID(ng)%umask(Iend+1,j)
-#   endif
-#   ifdef WET_DRY
+# endif
+# ifdef WET_DRY
                 u_stokes(Iend+1,j,k)=u_stokes(Iend+1,j,k)*              &
      &                               GRID(ng)%umask_wet(Iend+1,j)
-#   endif
+# endif
               END IF
             END DO
           END DO
@@ -258,14 +258,14 @@
             DO j=Jstr,Jend
               IF (LBC_apply(ng)%east(j)) THEN
                 u_stokes(Iend+1,j,k)=u_stokes(Iend,j,k)
-#   ifdef MASKING
+# ifdef MASKING
                 u_stokes(Iend+1,j,k)=u_stokes(Iend+1,j,k)*              &
      &                               GRID(ng)%umask(Iend+1,j)
-#   endif
-#   ifdef WET_DRY
+# endif
+# ifdef WET_DRY
                 u_stokes(Iend+1,j,k)=u_stokes(Iend+1,j,k)*              &
      &                               GRID(ng)%umask_wet(Iend+1,j)
-#   endif
+# endif
             END IF
           END DO
         END DO
@@ -310,25 +310,25 @@
                   dUdx=grad(i  ,Jstr)
                 END IF
                 cff=MAX(dUdx*dUdx+dUde*dUde,eps)
-#   ifdef RADIATION_2D
+# ifdef RADIATION_2D
                 Cx=MIN(cff,MAX(dUdt*dUdx,-cff))
-#   else
+# else
                 Cx=0.0_r8
-#   endif
+# endif
                 Ce=dUdt*dUde
                 u_stokes(i,Jstr-1,k)=(cff*u_stokes(i,Jstr-1,k)+         &
      &                               Ce*u_stokes(i,Jstr  ,k)-           &
      &                               MAX(Cx,0.0_r8)*grad(i-1,Jstr-1)-   &
      &                               MIN(Cx,0.0_r8)*grad(i  ,Jstr-1))/  &
      &                              (cff+Ce)
-#   ifdef MASKING
+# ifdef MASKING
                 u_stokes(i,Jstr-1,k)=u_stokes(i,Jstr-1,k)*              &
      &                               GRID(ng)%umask(i,Jstr-1)
-#   endif
-#   ifdef WET_DRY
+# endif
+# ifdef WET_DRY
                 u_stokes(i,Jstr-1,k)=u_stokes(i,Jstr-1,k)*              &
      &                               GRID(ng)%umask_wet(i,Jstr-1)
-#   endif
+# endif
               END IF
             END DO
           END DO
@@ -340,14 +340,14 @@
             DO i=IstrU,Iend
               IF (LBC_apply(ng)%south(i)) THEN
                 u_stokes(i,Jstr-1,k)=BOUNDARY(ng)%ustokes_south(i,k)
-#   ifdef MASKING
+# ifdef MASKING
                 u_stokes(i,Jstr-1,k)=u_stokes(i,Jstr-1,k)*              &
      &                               GRID(ng)%umask(i,Jstr-1)
-#   endif
-#   ifdef WET_DRY
+# endif
+# ifdef WET_DRY
                 u_stokes(i,Jstr-1,k)=u_stokes(i,Jstr-1,k)*              &
      &                               GRID(ng)%umask_wet(i,Jstr-1)
-#   endif
+# endif
               END IF
             END DO
           END DO
@@ -363,7 +363,7 @@
                 u_stokes(i,Jstr-1,k)=u_stokes(i,Jstr-1,k)*              &
      &                             GRID(ng)%umask(i,Jstr-1)
 # endif
-# ifdef WET_MASK
+# ifdef WET_DRY
                 u_stokes(i,Jstr-1,k)=u_stokes(i,Jstr-1,k)*              &
      &                             GRID(ng)%umask_wet(i,Jstr-1)
 # endif
@@ -386,14 +386,14 @@
             DO i=Imin,Imax
               IF (LBC_apply(ng)%south(i)) THEN
                 u_stokes(i,Jstr-1,k)=gamma2(ng)*u_stokes(i,Jstr,k)
-#   ifdef MASKING
+# ifdef MASKING
                 u_stokes(i,Jstr-1,k)=u_stokes(i,Jstr-1,k)*              &
      &                               GRID(ng)%umask(i,Jstr-1)
-#   endif
-#   ifdef WET_DRY
+# endif
+# ifdef WET_DRY
                 u_stokes(i,Jstr-1,k)=u_stokes(i,Jstr-1,k)*              &
      &                               GRID(ng)%umask_wet(i,Jstr-1)
-#   endif
+# endif
               END IF
             END DO
           END DO
@@ -427,25 +427,25 @@
                   dUdx=grad(i  ,Jend)
                 END IF
                 cff=MAX(dUdx*dUdx+dUde*dUde,eps)
-#   ifdef RADIATION_2D
+# ifdef RADIATION_2D
                 Cx=MIN(cff,MAX(dUdt*dUdx,-cff))
-#   else
+# else
                 Cx=0.0_r8
-#   endif
+# endif
                 Ce=dUdt*dUde
                 u_stokes(i,Jend+1,k)=(cff*u_stokes(i,Jend+1,k)+         &
      &                               Ce *u_stokes(i,Jend  ,k)-          &
      &                               MAX(Cx,0.0_r8)*grad(i-1,Jend+1)-   &
      &                               MIN(Cx,0.0_r8)*grad(i  ,Jend+1))/  &
      &                              (cff+Ce)
-#   ifdef MASKING
+# ifdef MASKING
                 u_stokes(i,Jend+1,k)=u_stokes(i,Jend+1,k)*              &
      &                               GRID(ng)%umask(i,Jend+1)
-#   endif
-#   ifdef WET_DRY
+# endif
+# ifdef WET_DRY
                 u_stokes(i,Jend+1,k)=u_stokes(i,Jend+1,k)*              &
      &                               GRID(ng)%umask_wet(i,Jend+1)
-#   endif
+# endif
             END IF
           END DO
         END DO
@@ -457,14 +457,14 @@
             DO i=IstrU,Iend
               IF (LBC_apply(ng)%north(i)) THEN
                 u_stokes(i,Jend+1,k)=BOUNDARY(ng)%ustokes_north(i,k)
-#   ifdef MASKING
+# ifdef MASKING
                 u_stokes(i,Jend+1,k)=u_stokes(i,Jend+1,k)*              &
      &                               GRID(ng)%umask(i,Jend+1)
-#   endif
-#   ifdef WET_DRY
+# endif
+# ifdef WET_DRY
                 u_stokes(i,Jend+1,k)=u_stokes(i,Jend+1,k)*              &
      &                               GRID(ng)%umask_wet(i,Jend+1)
-#   endif
+# endif
             END IF
           END DO
         END DO
@@ -503,14 +503,14 @@
             DO i=Imin,Imax
               IF (LBC_apply(ng)%north(i)) THEN
                 u_stokes(i,Jend+1,k)=gamma2(ng)*u_stokes(i,Jend,k)
-#   ifdef MASKING
+# ifdef MASKING
                 u_stokes(i,Jend+1,k)=u_stokes(i,Jend+1,k)*              &
      &                               GRID(ng)%umask(i,Jend+1)
-#   endif
-#   ifdef WET_DRY
+# endif
+# ifdef WET_DRY
                 u_stokes(i,Jend+1,k)=u_stokes(i,Jend+1,k)*              &
      &                               GRID(ng)%umask_wet(i,Jend+1)
-#   endif
+# endif
               END IF
             END DO
           END DO
