@@ -50,6 +50,7 @@ for mw=1:Ngrids_swan
     fprintf(fid,'/\n');
     fclose(fid);
     % call scrip
+    check_scrip_src_dst
     if (use_scrip_exe)
       eval(['!"',scrip_exe,'"'])
     else
@@ -101,6 +102,7 @@ for mo=1:Ngrids_roms
     fprintf(fid,'/\n');
     fclose(fid);
     % call scrip
+    check_scrip_src_dst
     if (use_scrip_exe)
       eval(['!"',scrip_exe,'"'])
     else
@@ -148,6 +150,7 @@ for mo=1:Ngrids_roms
     fprintf(fid,'/\n');
     fclose(fid);
     % call scrip
+    check_scrip_src_dst
     if (use_scrip_exe)
       eval(['!"',scrip_exe,'"'])
     else
@@ -195,6 +198,7 @@ for ma=1:Ngrids_wrf
     fprintf(fid,'/\n');
     fclose(fid);
     % call scrip
+    check_scrip_src_dst
     if (use_scrip_exe)
       eval(['!"',scrip_exe,'"'])
     else
@@ -246,6 +250,7 @@ for mw=1:Ngrids_swan
     fprintf(fid,'/\n');
     fclose(fid);
     % call scrip
+    check_scrip_src_dst
     if (use_scrip_exe)
       eval(['!"',scrip_exe,'"'])
     else
@@ -297,6 +302,7 @@ for ma=1:Ngrids_wrf
     fprintf(fid,'/\n');
     fclose(fid);
     % call scrip
+    check_scrip_src_dst
     if (use_scrip_exe)
       eval(['!"',scrip_exe,'"'])
     else
