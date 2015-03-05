@@ -1303,6 +1303,20 @@
 !         number of plants per square meter                               40.55
           IGRD = 11                                                       40.55
           PSNAME = 'NPLAGRID'                                             40.55
+#ifdef COAWST_COUPLING
+          CALL SINPGR (IGRD, IGR2, PSNAME, ng)
+          VARNPL = .TRUE.                                                   40.55
+          IF (JNPLA2.LE.1) THEN                                             40.55
+            MCMVAR = MCMVAR + 2                                             40.55
+            JNPLA2 = MCMVAR - 1                                             40.55
+            JNPLA3 = MCMVAR                                                 40.55
+            ALOCMP = .TRUE.                                                 40.97
+          ENDIF                                                             40.55
+          DEALLOCATE(M_GENARR_MOD(ng)%NPLAF_G)
+          ALLOCATE (M_GENARR_MOD(ng)%NPLAF_G(MXG(IGR1)*MYG(IGR1)))
+          NPLAF=>M_GENARR_MOD(ng)%NPLAF_G
+          NPLAF=0.
+#endif
         ELSE
           IGRD = 1
           PSNAME = 'BOTTGRID'

@@ -2456,7 +2456,9 @@
       JDSXB = 30
       JDSXS = 31
       JDSXW = 32
-      MCMVAR = 32
+      JNPLA2= 33                                                          40.55
+      JNPLA3= 34                                                          40.55
+      MCMVAR = 34
       LADDS = .TRUE.
 #else
       MCMVAR = 28                                                         41.38 40.65 40.61 40.51 40.13
@@ -2471,9 +2473,11 @@
 !     added for air-sea temp. diff.:
       JASTD2= 1                                                           40.03
       JASTD3= 1                                                           40.03
+#if !defined SWAN_MODEL
 !     added for number of plants per square meter                         40.55
       JNPLA2= 1                                                           40.55
       JNPLA3= 1                                                           40.55
+#endif
       JGAMMA = 1                                                          41.38
       JRESPL = 1                                                          41.38
 !
