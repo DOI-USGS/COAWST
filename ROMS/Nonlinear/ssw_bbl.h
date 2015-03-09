@@ -287,8 +287,8 @@
 !
       twopi=2.0_r8*pi
 
-      DO j=Jstrm1,Jendp2
-        DO i=Istrm1,Iendp2
+      DO j=JstrV-1,Jend+1
+        DO i=IstrU-1,Iend+1
           Zr(i,j)=z_r(i,j,1)-z_w(i,j,0)
           Ur_sg(i,j)=u(i,j,1,nrhs)
           Vr_sg(i,j)=v(i,j,1,nrhs)
@@ -319,8 +319,8 @@
 !  Compute bottom stresses.
 !-----------------------------------------------------------------------
 !
-      DO j=Jstrm1,Jendp1
-        DO i=Istrm1,Iendp1
+      DO j=JstrV-1,Jend
+        DO i=IstrU-1,Iend
 !
 !  Set bed wave orbital velocity and excursion amplitude.  Use data
 !  from wave models (SWAN) or use Dean and Dalrymple (1991) 6th-degree
@@ -359,8 +359,8 @@
 !
 !  Loop over RHO points.
 !
-      DO j=Jstrm1,Jendp1
-        DO i=Istrm1,Iendp1
+      DO j=JstrV-1,Jend
+        DO i=IstrU-1,Iend
 !
 !  Load sediment properties, stresses, and roughness from previous time
 !  step (stresses are in m2 s-2).
@@ -635,8 +635,8 @@
 !  induced waves.
 !-----------------------------------------------------------------------
 !
-      DO j=Jstrm1,Jendp1
-        DO i=IstrUm1,Iendp1
+      DO j=Jstr,Jend
+        DO i=IstrU,Iend
           anglec=Ur_sg(i,j)/(0.5*(Umag(i-1,j)+Umag(i,j)))
           bustr(i,j)=0.5_r8*(Tauc(i-1,j)+Tauc(i,j))*anglec
 #  ifdef WET_DRY
@@ -647,8 +647,8 @@
 #  endif
         END DO
       END DO
-      DO j=JstrVm1,Jendp1
-        DO i=Istrm1,Iendp1
+      DO j=JstrV,Jend
+        DO i=Istr,Iend
           anglec=Vr_sg(i,j)/(0.5_r8*(Umag(i,j-1)+Umag(i,j)))
           bvstr(i,j)=0.5_r8*(Tauc(i,j-1)+Tauc(i,j))*anglec
 #  ifdef WET_DRY
@@ -659,8 +659,8 @@
 #  endif
         END DO
       END DO
-      DO j=Jstrm1,Jendp1
-        DO i=Istrm1,Iendp1
+      DO j=Jstr,Jend
+        DO i=Istr,Iend
           anglec=Ucur(i,j)/Umag(i,j)
           anglew=COS(1.5_r8*pi-Dwave(i,j)-angler(i,j))
           bustrc(i,j)=Tauc(i,j)*anglec
