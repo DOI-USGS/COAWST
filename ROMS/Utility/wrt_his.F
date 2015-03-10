@@ -2630,7 +2630,7 @@
 # endif
 #endif
 !
-#ifdef BIO_FENNEL && SPECTRAL_LIGHT
+#if defined BIO_FENNEL && defined SPECTRAL_LIGHT
 !  Write out Photosynthetically Available Radiation (PAR)
 !
       IF (Hout(idPARo,ng)) THEN
@@ -2709,7 +2709,7 @@
       END IF
 #endif
 !
-#ifdef SAV && SEAGRASS_SINK
+#if defined SAV && defined SEAGRASS_SINK  && defined SPECTRAL_LIGHT
 !  Write out Seagrass
 !
       IF (Hout(idsgrn,ng)) THEN

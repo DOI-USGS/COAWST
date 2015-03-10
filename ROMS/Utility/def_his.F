@@ -1804,7 +1804,7 @@
         END IF
 # endif
 !
-# if defined SAV && defined SEAGRASS_SINK
+# if defined SAV && defined SEAGRASS_SINK && defined SPECTRAL_LIGHT
 !
 !  Define Seagrass
 !
