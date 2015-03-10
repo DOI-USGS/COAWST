@@ -72,7 +72,7 @@
 
       Vinfo( 1)='Wsed'
       Vinfo( 2)='sediment particle settling velocity'
-      Vinfo( 3)='millimeter second-1'
+      Vinfo( 3)='meter second-1'
       status=def_var(ng, model, ncid, varid, NF_TYPE,                   &
      &               1, (/seddim/), Aval, Vinfo, ncname,                &
      &               SetParAccess = .FALSE.)
