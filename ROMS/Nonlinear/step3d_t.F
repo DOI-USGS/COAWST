@@ -87,6 +87,20 @@
      &                    GRID(ng) % on_u,                              &
      &                    GRID(ng) % on_v,                              &
 # endif
+# ifdef TS_HSIMT
+#  ifdef WET_DRY
+     &                    GRID(ng) % rmask_wet,                         &
+     &                    GRID(ng) % umask_wet,                         &
+     &                    GRID(ng) % vmask_wet,                         &
+#  endif
+     &                    GRID(ng) % omn,                               &
+     &                    GRID(ng) % om_u,                              &
+     &                    GRID(ng) % om_v,                              &
+     &                    GRID(ng) % on_u,                              &
+     &                    GRID(ng) % on_v,                              &
+     &                    OCEAN(ng) % u,                                &
+     &                    OCEAN(ng) % v,                                &
+# endif
      &                    GRID(ng) % pm,                                &
      &                    GRID(ng) % pn,                                &
      &                    GRID(ng) % Hz,                                &
@@ -129,6 +143,12 @@
 #  endif
      &                          omn, om_u, om_v, on_u, on_v,            &
 # endif
+# ifdef TS_HSIMT
+#  ifdef WET_DRY
+     &                          rmask_wet, umask_wet, vmask_wet,        &
+#  endif
+     &                          omn, om_u, om_v, on_u, on_v, u, v,      &
+# endif
      &                          pm, pn,                                 &
      &                          Hz, Huon, Hvom,                         &
      &                          z_r,                                    &
@@ -167,6 +187,9 @@
 # endif
 # ifdef TS_MPDATA
       USE mpdata_adiff_mod
+# endif
+# ifdef TS_HSIMT
+      USE hsimt_tvd_mod
 # endif
 # ifdef NESTING
       USE nesting_mod, ONLY : bry_fluxes
@@ -209,6 +232,20 @@
       real(r8), intent(in) :: om_v(LBi:,LBj:)
       real(r8), intent(in) :: on_u(LBi:,LBj:)
       real(r8), intent(in) :: on_v(LBi:,LBj:)
+#  endif
+#  ifdef TS_HSIMT
+#   ifdef WET_DRY
+        real(r8), intent(in) :: rmask_wet(LBi:,LBj:)
+        real(r8), intent(in) :: umask_wet(LBi:,LBj:)
+        real(r8), intent(in) :: vmask_wet(LBi:,LBj:)
+#   endif
+        real(r8), intent(in) :: omn(LBi:,LBj:)
+        real(r8), intent(in) :: om_u(LBi:,LBj:)
+        real(r8), intent(in) :: om_v(LBi:,LBj:)
+        real(r8), intent(in) :: on_u(LBi:,LBj:)
+        real(r8), intent(in) :: on_v(LBi:,LBj:)
+        real(r8), intent(in) :: u(LBi:UBi,LBj:UBj,N(ng),2)
+        real(r8), intent(in) :: v(LBi:UBi,LBj:UBj,N(ng),2)
 #  endif
       real(r8), intent(in) :: pm(LBi:,LBj:)
       real(r8), intent(in) :: pn(LBi:,LBj:)
@@ -261,6 +298,18 @@
       real(r8), intent(in) :: om_v(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: on_u(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: on_v(LBi:UBi,LBj:UBj)
+#  endif
+#  ifdef TS_HSIMT
+#   ifdef WET_DRY
+        real(r8), intent(in) :: rmask_wet(LBi:UBi,LBj:UBj)
+        real(r8), intent(in) :: umask_wet(LBi:UBi,LBj:UBj)
+        real(r8), intent(in) :: vmask_wet(LBi:UBi,LBj:UBj)
+#   endif
+        real(r8), intent(in) :: omn(LBi:UBi,LBj:UBj)
+        real(r8), intent(in) :: om_u(LBi:UBi,LBj:UBj)
+        real(r8), intent(in) :: om_v(LBi:UBi,LBj:UBj)
+        real(r8), intent(in) :: on_u(LBi:UBi,LBj:UBj)
+        real(r8), intent(in) :: on_v(LBi:UBi,LBj:UBj)
 #  endif
       real(r8), intent(in) :: pm(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: pn(LBi:UBi,LBj:UBj)
@@ -321,6 +370,13 @@
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS,N(ng)) :: Va
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS,0:N(ng)) :: Wa
 # endif
+# ifdef TS_HSIMT
+       real(r8), dimension(IminS:ImaxS,JminS:JmaxS,0:N(ng)) :: kaz, kaz_inverse
+       real(r8):: rd, rkad, a1, b1, betad, sw, ru, rkau, betau
+       real(r8):: epson, cc1, cc2, cc3
+       real(r8):: u_k(LBi:UBi,LBj:UBj)
+       real(r8):: v_k(LBi:UBi,LBj:UBj)
+# endif
       real(r8) :: my_maxbio(15)
 # if defined AGE_PASSIVE || defined AGE_DISTRIBUTION
       integer :: iactrc, iwctrc
@@ -351,6 +407,9 @@
 # ifdef TS_MPDATA
 #  define I_RANGE Istrm2,Iendp2
 #  define J_RANGE Jstrm2,Jendp2
+# elif defined TS_HSIMT
+#  define I_RANGE Istrm2,Iendp2
+#  define J_RANGE Jstrm2,Jendp2
 # else
 #  define I_RANGE Istr,Iend
 #  define J_RANGE Jstr,Jend
@@ -372,12 +431,12 @@
 !  (horizontal diffusion, biology, or sediment) are accounted.
 !
       IF (EWperiodic(ng).or.NSperiodic(ng)) THEN
-#ifdef OFFLINE_BIOLOGY
+# ifdef OFFLINE_BIOLOGY
         DO ibt=1,NBT
           itrc=idbio(ibt)
-#else
+# else
         DO itrc=1,NT(ng)
-#endif
+# endif
           CALL exchange_r3d_tile (ng, tile,                             &
      &                            LBi, UBi, LBj, UBj, 1, N(ng),         &
      &                            t(:,:,:,nnew,itrc))
@@ -392,16 +451,42 @@
      &                    t(:,:,:,nnew,:))
 #  endif
 # endif
+# ifdef TS_HSIMT
+!
+!  The HSIMT algorithm requires a three-point footprint, so exchange
+!  boundary data on t(:,:,:,nnew,:) so other processes computed earlier
+!  (horizontal diffusion, biology, or sediment) are accounted.
+!
+       IF (EWperiodic(ng).or.NSperiodic(ng)) THEN
+#  ifdef OFFLINE_BIOLOGY
+         DO ibt=1,NBT
+           itrc=idbio(ibt)
+#  else
+         DO itrc=1,NT(ng)
+#  endif
+           CALL exchange_r3d_tile (ng, tile,                            &
+     &                             LBi,UBi, LBj, UBj, 1, N(ng),         &
+     &                             t(:,:,:,nnew,itrc))
+         END DO
+       END IF
+#  ifdef DISTRIBUTE
+       CALL mp_exchange4d(ng,tile,iNLM,1,                               &
+     &                    LBi,UBi,LBj,UBj,1,N(ng),1,NT(ng),             &
+     &                    NghostPoints,                                 &
+     &                    EWperiodic(ng),NSperiodic(ng),                &
+     &                    t(:,:,:,nnew,:))
 
-#ifdef OFFLINE_BIOLOGY
+#  endif
+# endif
+# ifdef OFFLINE_BIOLOGY
       T_LOOP : DO ibt=1,NBT
         itrc=idbio(ibt)
-#else
+# else
 !
 !  Compute horizontal tracer advection fluxes.
 !
       T_LOOP : DO itrc=1,NT(ng)
-#endif
+# endif
         K_LOOP : DO k=1,N(ng)
 
 # if defined TS_C2HADVECTION
@@ -422,7 +507,28 @@
      &                        t(i,j  ,k,3,itrc))
             END DO
           END DO
-
+# elif defined TS_HSIMT
+!   Third-order HSIMT-TVD horizontal advective fluxes.
+          DO j=LBj,UBj
+            DO i=LBi,UBi
+              u_k(i,j)=0.5_r8*(u(i,j,k,1)+u(i,j,k,2))
+              v_k(i,j)=0.5_r8*(v(i,j,k,1)+v(i,j,k,2))
+            END DO
+          END DO 
+          CALL hsimt_tvd_tile (ng, tile,                                &
+     &                          LBi, UBi, LBj, UBj,                     &
+     &                          IminS, ImaxS, JminS, JmaxS,             &
+#  ifdef MASKING
+     &                          rmask, umask, vmask,                    &
+#  endif
+#  ifdef WET_DRY
+     &                          rmask_wet, umask_wet, vmask_wet,        &
+#  endif
+!    &                          pm, pn, omn, om_u, on_v, u_k,          &
+     &                          pm, pn, omn, u_k, v_k, z_r,             &
+     &                          Huon(:,:,k), Hvom(:,:,k),               &
+     &                          t(:,:,k,3,itrc),                        &
+     &                          FX,FE)
 # elif defined TS_MPDATA
 !
 !  First-order, upstream differences horizontal advective fluxes.
@@ -588,6 +694,9 @@
 # ifdef TS_MPDATA
                 IF (((IstrUm2.le.i).and.(i.le.Iendp3)).and.             &
      &              ((JstrVm2.le.j).and.(j.le.Jendp2i))) THEN
+# elif defined TS_HSIMT
+                IF (((IstrUm2.le.i).and.(i.le.Iendp3)).and.             &
+     &              ((JstrVm2.le.j).and.(j.le.Jendp2i))) THEN
 # else
                 IF (((Istr.le.i).and.(i.le.Iend+1)).and.                &
      &              ((Jstr.le.j).and.(j.le.Jend))) THEN
@@ -613,6 +722,9 @@
                 END IF
               ELSE IF (INT(SOURCES(ng)%Dsrc(is)).eq.1) THEN
 # ifdef TS_MPDATA
+                IF (((IstrUm2.le.i).and.(i.le.Iendp2i)).and.            &
+     &              ((JstrVm2.le.j).and.(j.le.Jendp3))) THEN
+# elif defined TS_HSIMT
                 IF (((IstrUm2.le.i).and.(i.le.Iendp2i)).and.            &
      &              ((JstrVm2.le.j).and.(j.le.Jendp3))) THEN
 # else
@@ -721,7 +833,21 @@
 !-----------------------------------------------------------------------
 !  Time-step vertical advection term.
 !-----------------------------------------------------------------------
-!
+# ifdef TS_HSIMT
+          cc1=0.25_r8
+          cc2=0.5_r8
+          cc3=1.0_r8/12.0_r8
+          epson=1.0E-10_r8
+          DO k=1,N(ng)-1
+            DO j=J_RANGE
+              DO i=I_RANGE
+                kaz(i,j,k)=1.0_r8-abs(w(i,j,k)*pm(i,j)*pn(i,j)*dt(ng)/  &
+     &                     (z_r(i,j,k+1)-z_r(i,j,k)))
+                kaz_inverse(i,j,k)=1.0_r8/(kaz(i,j,k)+epson)
+              END DO
+            END DO
+          END DO
+# endif
       DO j=J_RANGE
 #ifdef OFFLINE_BIOLOGY
         DO ibt=1,NBT
@@ -752,7 +878,7 @@
               CF(i,k+1)=cff*Hz(i,j,k)
               FC(i,k)=cff*(3.0_r8*(Hz(i,j,k  )*t(i,j,k+1,3,itrc)+       &
      &                             Hz(i,j,k+1)*t(i,j,k  ,3,itrc))-      &
-     &                     Hz(i,j,k+1)*FC(i,k-1))
+     &                             Hz(i,j,k+1)*FC(i,k-1))
             END DO
           END DO
           DO i=Istr,Iend
@@ -855,6 +981,59 @@
             FC(i,N(ng))=0.0_r8
           END DO
 #  endif
+# elif defined TS_HSIMT
+          DO i=I_RANGE
+            DO k=1,N(ng)-1
+              IF (k.eq.1.and.W(i,j,k).ge.0.0_r8) THEN
+                FC(i,k)=W(i,j,k)*t(i,j,k,3,itrc)
+              ELSE IF (k.eq.N(ng)-1.and.W(i,j,k).lt.0.0_r8) THEN
+                FC(i,k)=W(i,j,k)*t(i,j,k+1,3,itrc)
+              ELSE
+                IF (W(i,j,k).ge.0) THEN
+                  IF (abs(t(i,j,k+1,3,itrc)-t(i,j,k,3,itrc)).le.epson)  &
+     &              THEN
+                    rd=0.0_r8
+                    rkad=0.0_r8
+                  ELSE
+                    rd=(t(i,j,k,3,itrc)-t(i,j,k-1,3,itrc))/             &
+     &                 (t(i,j,k+1,3,itrc)-t(i,j,k,3,itrc))
+                    rkad=kaz(i,j,k-1)*kaz_inverse(i,j,k)
+                  END IF
+                  a1=cc1*kaz(i,j,k)+cc2-cc3*kaz_inverse(i,j,k)
+                  b1=-cc1*kaz(i,j,k)+cc2+cc3*kaz_inverse(i,j,k)
+                  betad=a1+b1*rd
+                  sw=t(i,j,k,3,itrc)+                                   &
+     &               0.5_r8*MAX(0.0_r8,                                 &
+     &                          MIN(2.0_r8,2.0_r8*rd*rkad,betad))*      &
+     &                (t(i,j,k+1,3,itrc)-t(i,j,k,3,itrc))*kaz(i,j,k)
+                ELSE
+                  IF (abs(t(i,j,k+1,3,itrc)-t(i,j,k,3,itrc)).le.epson)  &
+     &              THEN
+                    ru=0.0_r8
+                    rkau=0.0_r8
+                  ELSE
+                    ru=(t(i,j,k+2,3,itrc)-t(i,j,k+1,3,itrc))/           &
+     &                 (t(i,j,k+1,3,itrc)-t(i,j,k,3,itrc))
+                    rkau=kaz(i,j,k+1)*kaz_inverse(i,j,k)
+                  END IF
+                  a1=cc1*kaz(i,j,k)+cc2-cc3*kaz_inverse(i,j,k)
+                  b1=-cc1*kaz(i,j,k)+cc2+cc3*kaz_inverse(i,j,k)
+                  betau=a1+b1*ru
+                  sw=t(i,j,k+1,3,itrc)-                                 &
+     &               0.5_r8*MAX(0.0_r8,                                 &
+     &                          MIN(2.0_r8,2.0_r8*ru*rkau,betau))*      &
+     &               (t(i,j,k+1,3,itrc)-t(i,j,k,3,itrc))*kaz(i,j,k)
+                END IF 
+                FC(i,k)=W(i,j,k)*sw
+              END IF
+            END DO
+#   ifdef SED_MORPH
+            FC(i,0)=W(i,j,0)*t(i,j,1,3,itrc)
+#   else
+            FC(i,0)=0.0_r8
+#   endif
+            FC(i,N(ng))=0.0_r8
+          END DO
 # else
 !
 !  Fourth-order, central differences vertical advective flux.
@@ -1063,7 +1242,7 @@
           IF (LwSrc(ng)) THEN
             DO is=1,Nsrc(ng)
               i=SOURCES(ng)%Isrc(is)
-#  ifdef TS_MPDATA
+#  ifdef TS_MPDATA || defined TS_HSIMT
               IF (((IstrUm2.le.i).and.(i.le.Iendp2i)).and.              &
      &            ((JstrVm2.le.j).and.(j.le.Jendp2i))) THEN
 #  else

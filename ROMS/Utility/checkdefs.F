@@ -2311,6 +2311,14 @@
       is=LEN_TRIM(Coptions)+1
       Coptions(is:is+11)=' T_PASSIVE,'
 # endif
+# ifdef TS_HSIMT
+      IF (Master) WRITE (stdout,20) 'TS_HSIMT',                        &
+     &   'the 3rd HSIMT-TVD scheme for tracers (Wu and Zhu, 2010).'
+      is=LEN_TRIM(Coptions)+1
+      Coptions(is:is+10)=' TS_HSIMT,'
+      itrcHadv=itrcHadv+1
+      itrcVadv=itrcVadv+1
+# endif
 # ifdef TS_MPDATA
       IF (Master) WRITE (stdout,20) 'TS_MPDATA',                        &
      &   'Recursive flux corrected MPDATA 3D advection of tracers.'
@@ -2387,7 +2395,7 @@
 # endif
 # if !(defined TS_MPDATA       || defined TS_A4HADVECTION || \
        defined TS_C2HADVECTION || defined TS_C4HADVECTION || \
-       defined TS_U3HADVECTION)
+       defined TS_U3HADVECTION || defined TS_HSIMT) 
       IF (Master) WRITE (stdout,20) 'TS_C4HADVECTION',                  &
      &   'Fourth-order centered horizontal advection of tracers.'
       is=LEN_TRIM(Coptions)+1
@@ -2456,7 +2464,7 @@
 # endif
 # if !(defined TS_MPDATA       || defined TS_A4VADVECTION || \
        defined TS_C2VADVECTION || defined TS_C4VADVECTION || \
-       defined TS_SVADVECTION)
+       defined TS_SVADVECTION  || defined TS_HSIMT)
       IF (Master) WRITE (stdout,20) 'TS_C4VADVECTION',                  &
      &   'Fourth-order centered vertical advection of tracers.'
       is=LEN_TRIM(Coptions)+1
