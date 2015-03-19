@@ -543,6 +543,7 @@
 # ifdef NESTING
       USE M_SREFINED
 # endif
+      USE swan_iounits
 !
       IMPLICIT NONE
 !
@@ -550,14 +551,13 @@
       INTEGER,  intent(in) :: IT_in, ng, ngc, ngp, first, Ngrids
       INTEGER   IUNIT, io, ia
       INTEGER   IOSTAT, IT0, IT, SAVITE, ILEN
-      INTEGER   INERR
-      INTEGER   IERR
+      INTEGER   INERR, IERR
       INTEGER   ISTAT, IF1, IL1
+      INTEGER nWAV_steps, do_output, nsrst
       CHARACTER PTYPE, PNAME *8, COMPUT *4, DTTIWR*18
       CHARACTER*20 NUMSTR, CHARS(1)
       CHARACTER*80 MSGSTR
       LOGICAL   LOPEN
-      INTEGER nWAV_steps, do_output
       LOGICAL STPNOW
 !
       INTEGER IX, IY, IC
@@ -788,8 +788,19 @@
 !
             IF (ERRPTS.GT.0) REWIND(ERRPTS)                               30.50
             ITEST = SAVITE                                                30.21
-
+!
+! Call to write restart file
+!
+            nsrst=INT(dtswanrst(ng)/DT)
+            IF (nsrst.gt.0) THEN
+              IF (MOD(IT_in, nsrst).eq.0) THEN
+                CALL RESTART_SWAN (AC2, SPCSIG, SPCDIR, KGRPNT,         &
+     &                             XCGRID, YCGRID, ng)
+              END IF
+            END IF
+!
 !           --- update time
+!
             IF (NSTATC.EQ.1) THEN                                         40.00
               IF (IT.LT.MTC) THEN
                  TIMCO = TIMCO + DT                                       40.00
@@ -798,6 +809,7 @@
               ENDIF
  222          FORMAT(' Time of computation ->  ',A,' in sec:', F12.0)     40.00
             ENDIF                                                         40.00
+!
       RETURN
       END SUBROUTINE SWAN_RUN
 
@@ -817,7 +829,7 @@
 #  ifdef WRF_COUPLING
       USE WAVES_COUPLER_MOD, ONLY: WAVFATM_COUPLING
 #  endif
-       USE M_GENARR
+      USE M_GENARR
       USE M_PARALL2
       USE SWPOINT_MOD, ONLY: INIT_POINTERS
       USE SWPOINT_MOD, ONLY: INIT_COUPLING_POINTERS

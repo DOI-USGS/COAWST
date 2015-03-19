@@ -16,15 +16,17 @@
 
       implicit none
 
+      real, dimension(:), pointer :: dtswanrst
+
       integer, parameter :: IOnamesize = 160
-
-!     integer, parameter :: Ngridss = NUM_SGRIDS
-
 #ifdef NESTING
       integer, dimension(:), pointer :: mysparent
       integer, dimension(:), pointer :: myschild
 #endif
+      integer, dimension(:), pointer :: SwanRstFnum
+
       character (len=IOnamesize), allocatable :: Wname(:)
+      character (len=IOnamesize), allocatable :: SwanRstName(:)
 
       CONTAINS
 
@@ -37,18 +39,23 @@
       integer :: i,j
       character (len=1), parameter :: blank = ' '
 
-      allocate ( Wname(NUM_SGRIDS) )
-
-      DO j=1,NUM_SGRIDS
-        DO i=1,IOnamesize
-          Wname(j)(i:i)=blank
-        END DO
-      END DO
-
 #ifdef NESTING
       allocate (mysparent(NUM_SGRIDS))
       allocate (myschild(NUM_SGRIDS))
 #endif
+
+      allocate (dtswanrst(NUM_SGRIDS))
+      allocate (SwanRstFnum(NUM_SGRIDS))
+
+      allocate ( Wname(NUM_SGRIDS) )
+      allocate ( SwanRstName(NUM_SGRIDS) )
+
+      DO j=1,NUM_SGRIDS
+        DO i=1,IOnamesize
+          Wname(j)(i:i)=blank
+          SwanRstName(j)(i:i)=blank
+        END DO
+      END DO
 
       RETURN
       END SUBROUTINE allocate_swan_iounits

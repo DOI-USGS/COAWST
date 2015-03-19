@@ -6194,6 +6194,9 @@
       USE SWCOMM4                                                         40.41
       USE M_PARALL                                                        40.31
       USE SwanGriddata                                                    40.80
+#ifdef SWAN_MODEL
+      USE swan_iounits
+#endif
 !PUN      USE SIZES                                                           40.95
 !ADC      USE Couple2Swan, ONLY: SwanHotStartUnit                             41.20
 !
@@ -6284,6 +6287,9 @@
 ! 13. Source text
 !
       REAL     AC2(MDC,MSC,MCGRD)
+#ifdef SWAN_MODEL
+      REAL     rstdt
+#endif
       INTEGER  KGRPNT(MXC,MYC)
       CHARACTER (LEN=8) :: CRFORM = '(2F14.4)'                            40.41
       LOGICAL  EQREAL                                                     40.41
@@ -6455,6 +6461,219 @@
  220   FORMAT (A6)                                                        40.08
       ENDIF                                                               41.42
       CLOSE (NREF)
+#ifdef SWAN_MODEL
+! Read in the restart dt.
+      CALL ININTV ('DELT', rstdt, 'STA', 0.)
+! Need to save 3 things: rst file name, rst dt, and rst file unit number.
+      SwanRstName(ng)(1:LENFNM)=FILENM
+      SwanRstFnum(ng)=NREF
+      dtswanrst(ng)=rstdt
+#endif
       RETURN
 !     end of subr BACKUP
       END
+!*******************************************************************
+!                                                                  *
+#ifdef SWAN_MODEL
+      SUBROUTINE RESTART_SWAN (AC2, SPCSIG, SPCDIR, KGRPNT,
+     &                         XCGRID, YCGRID, ng)
+!                                                                  *
+!*******************************************************************
+!
+      USE OCPCOMM1                                                        40.41
+      USE OCPCOMM2                                                        40.41
+      USE OCPCOMM3                                                        40.41
+      USE OCPCOMM4                                                        40.41
+      USE SWCOMM1                                                         40.41
+      USE SWCOMM2                                                         40.41
+      USE SWCOMM3                                                         40.41
+      USE SWCOMM4                                                         40.41
+      USE M_PARALL                                                        40.31
+      USE SwanGriddata                                                    40.80
+      USE swan_iounits
+!
+!
+!   --|-----------------------------------------------------------|--
+!     | Delft University of Technology                            |
+!     | Faculty of Civil Engineering                              |
+!     | Environmental Fluid Mechanics Section                     |
+!     | P.O. Box 5048, 2600 GA  Delft, The Netherlands            |
+!     |                                                           |
+!     | Programmers: The SWAN team                                |
+!   --|-----------------------------------------------------------|--
+!
+!
+!     SWAN (Simulating WAves Nearshore); a third generation wave model
+!     Copyright (C) 1993-2013  Delft University of Technology
+!
+!     This program is free software; you can redistribute it and/or
+!     modify it under the terms of the GNU General Public License as
+!     published by the Free Software Foundation; either version 2 of
+!     the License, or (at your option) any later version.
+!
+!     This program is distributed in the hope that it will be useful,
+!     but WITHOUT ANY WARRANTY; without even the implied warranty of
+!     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+!     GNU General Public License for more details.
+!
+!     A copy of the GNU General Public License is available at
+!     http://www.gnu.org/copyleft/gpl.html#SEC3
+!     or by writing to the Free Software Foundation, Inc.,
+!     59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+!
+!
+!     ver 40.00, Apr 1998 by N.Booij: new subroutine
+!
+!   Purpose
+!
+!  0. Authors
+!
+!     30.82: IJsbrand Haagsma
+!     40.00, 40.13: Nico Booij
+!     34.01: Jeroen Adema
+!     40.31: Marcel Zijlema
+!     40.41: Marcel Zijlema
+!     40.80: Marcel Zijlema
+!     41.20: Casey Dietrich
+!     COAWST:  jcwarner, copied this primarily from BACKUP
+!
+!  1. Updates
+!
+!     Mar 2015: New subroutine
+!
+!  2. Purpose
+!
+!     backup current state of the wave field to a file at each restart
+!     interval
+!
+!  4. Argument variables
+!
+! i   SPCDIR: (*,1); spectral directions (radians)                        30.82
+!             (*,2); cosine of spectral directions                        30.82
+!             (*,3); sine of spectral directions                          30.82
+!             (*,4); cosine^2 of spectral directions                      30.82
+!             (*,5); cosine*sine of spectral directions                   30.82
+!             (*,6); sine^2 of spectral directions                        30.82
+! i   SPCSIG: Relative frequencies in computational domain in sigma-space 30.82
+! i   XCGRID: Coordinates of computational grid in x-direction            30.82
+! i   YCGRID: Coordinates of computational grid in y-direction            30.82
+!
+      REAL    SPCDIR(MDC,6)                                               30.82
+      REAL    SPCSIG(MSC)                                                 30.82
+      REAL    XCGRID(MXC,MYC),    YCGRID(MXC,MYC)                         30.82
+      INTEGER, INTENT(IN) :: ng
+
+      CHARACTER RSTFN*(LENFNM)   ! to be moved to module
+!
+!  8. Subroutines used
+!
+      LOGICAL STPNOW                                                      34.01
+!
+! 13. Source text
+!
+      REAL     AC2(MDC,MSC,MCGRD)
+      INTEGER  KGRPNT(MXC,MYC)
+      CHARACTER (LEN=8) :: CRFORM = '(2F14.4)'                            40.41
+      LOGICAL  EQREAL                                                     40.41
+      LOGICAL  KEYWIS                                                     41.42
+      SAVE     IENT
+      DATA     IENT /0/
+      CALL STRACE (IENT, 'RESTART')
+!
+!     ==================================================================
+!
+!                       | -> FREE                                         41.42
+!     RESTART  'fname' <                                                  41.42 40.00
+!                       | UNFormatted                                     41.42
+!
+!     ==================================================================
+!
+      NREF   = SwanRstFnum(ng)
+      IOSTAT = 0
+      CALL FOR (NREF,  SwanRstName(ng), 'UF', IOSTAT)
+      IF (STPNOW()) RETURN                                               34.01
+      WRITE (NREF, 102) 'SWAN   1', 'Swan standard file, version'
+      IF (NSTATM.EQ.1) THEN
+        WRITE (NREF, 102) 'TIME', 'time-dependent data'
+ 102    FORMAT (A, T41, A)                                               40.00
+        WRITE (NREF, 103) ITMOPT, 'time coding option'                   40.03
+ 103    FORMAT (I6, T41, A)                                              40.00
+      ENDIF
+      IF (KSPHER.EQ.0) THEN                                              40.13
+        WRITE (NREF, 102) 'LOCATIONS', 'locations in x-y-space'
+        CRFORM = '(2F14.4)'                                              40.41
+      ELSE                                                               40.13
+        WRITE (NREF, 102) 'LONLAT', 'locations on the globe'             40.13
+        CRFORM = '(2F12.6)'                                              40.41
+      ENDIF                                                              40.13
+      IF (OPTG.NE.5) THEN                                                40.80
+        WRITE (NREF, 104) MXC*MYC, MXC, MYC, 'number of locations'
+ 104    FORMAT (I8, 2I6, T41, A)
+        DO IX = 1, MXC
+          DO IY = 1, MYC
+            IF ( EQREAL(XCGRID(IX,IY), EXCFLD(8)) .AND.                  40.41
+     &           EQREAL(YCGRID(IX,IY), EXCFLD(9)) ) THEN                 40.41
+              WRITE (NREF, FMT=CRFORM) DBLE(EXCFLD(8)) + DBLE(XOFFS),
+     &                                 DBLE(EXCFLD(9)) + DBLE(YOFFS)
+            ELSE
+            WRITE (NREF, FMT=CRFORM) DBLE(XCGRID(IX,IY)) + DBLE(XOFFS),
+     &                               DBLE(YCGRID(IX,IY)) + DBLE(YOFFS)   40.00
+            ENDIF                                                        40.41
+          ENDDO
+        ENDDO
+      ELSE                                                               40.80
+        WRITE (NREF, 105) nverts, 'number of locations'                  40.80
+ 105    FORMAT (I8, T41, A)
+        DO K = 1, nverts                                                 40.80
+           WRITE (NREF, FMT=CRFORM) DBLE(xcugrd(K)) + DBLE(XOFFS),       40.80
+     &                              DBLE(ycugrd(K)) + DBLE(YOFFS)        40.80
+        ENDDO                                                            40.80
+      ENDIF                                                              40.80
+      WRITE (NREF, 102) 'RFREQ', 'relative frequencies in Hz'            40.00
+      WRITE (NREF, 103) MSC, 'number of frequencies'                     40.00
+      DO 120 IS = 1, MSC
+        WRITE (NREF, 114) SPCSIG(IS)/PI2
+ 114    FORMAT (F10.4)
+ 120  CONTINUE
+      WRITE (NREF, 102) 'CDIR', 'spectral Cartesian directions in degr'  40.00
+      WRITE (NREF, 103) MDC, 'number of directions'
+      DO 130 ID = 1, MDC
+        WRITE (NREF, 124) SPCDIR(ID,1)*180./PI                           30.82
+ 124    FORMAT (F10.4)
+ 130  CONTINUE
+      WRITE (NREF, 132) 1
+ 132  FORMAT ('QUANT', /, I6, T41, 'number of quantities in table')      40.00
+      WRITE (NREF, 102) 'AcDens', 'action densities'
+      WRITE (NREF, 102) 'm2s/Hz/deg', 'unit'                             40.31 40.00
+      WRITE (NREF, 102) '0.',     'exception value'                      40.00
+!
+!      writing of heading is completed, write time if nonstationary
+!
+      IF (NSTATM.EQ.1) THEN
+        WRITE (NREF, 202) CHTIME                                         40.00
+ 202    FORMAT (A18, T41, 'date and time')
+      ENDIF
+!
+      IF (OPTG.NE.5) THEN                                                40.80
+        DO 290 IX = 1, MXC
+          DO 280 IY = 1, MYC
+            INDX = KGRPNT(IX,IY)
+            IF (INDX.EQ.1) THEN
+              WRITE (NREF,220) 'NODATA'                                  40.08
+            ELSE
+              CALL WRSPEC (NREF, AC2(1,1,INDX))                          40.00
+            ENDIF
+ 280      CONTINUE
+ 290    CONTINUE
+      ELSE                                                               40.80
+        DO K = 1, nverts                                                 40.80
+           CALL WRSPEC (NREF, AC2(1,1,K))                                40.80
+        ENDDO                                                            40.80
+      ENDIF                                                              40.80
+ 220  FORMAT (A6)                                                        40.08
+
+      CLOSE (NREF)
+      RETURN
+!     end of subr RESTART
+      END
+#endif

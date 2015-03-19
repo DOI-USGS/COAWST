@@ -121,6 +121,13 @@
         iics(iw)=0
       END DO
 !
+!  Initialize restart counters.
+!
+      DO iw=1,NUM_SGRIDS
+        dtswanrst(iw)=0.
+        SwanRstFnum(iw)=0
+      END DO
+!
 !  Initialize the grids.
 !
       DO ng=1,NUM_SGRIDS

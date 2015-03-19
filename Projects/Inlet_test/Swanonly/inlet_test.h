@@ -12,4 +12,4 @@
 */
 
 #define SWAN_MODEL
-#undef  NESTING
+#define NESTING

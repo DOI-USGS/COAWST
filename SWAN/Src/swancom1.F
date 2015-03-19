@@ -1491,6 +1491,18 @@
      &                  ,I4, '; sweep ',I1)                               40.23 40.00
 #endif
               ELSE
+#ifdef SWAN_MODEL
+                WRITE(PRINTF,314) ITER, SWPDIR, GRIDNUM
+                IF (IAMMASTER) THEN                                       40.95 40.30
+                   IF (SWPDIR.EQ.1) THEN                                  40.30
+                      WRITE(SCREEN,314) ITER, SWPDIR, GRIDNUM             40.30
+                   ELSE                                                   40.30
+                      WRITE(SCREEN,315) ITER, SWPDIR, GRIDNUM             40.30
+                   END IF                                                 40.30
+                END IF                                                    40.30
+ 314            FORMAT (' iteration ', I4, '; sweep ', I1,' grid  ',I2)   40.23 30.50
+ 315            FORMAT ('+iteration ', I4, '; sweep ', I1,' grid  ',I2)   40.23 30.50
+#else
                 WRITE(PRINTF,314) ITER, SWPDIR
                 IF (IAMMASTER) THEN                                       40.95 40.30
                    IF (SWPDIR.EQ.1) THEN                                  40.30
@@ -1501,6 +1513,7 @@
                 END IF                                                    40.30
  314            FORMAT (' iteration ', I4, '; sweep ', I1)                40.23 30.50
  315            FORMAT ('+iteration ', I4, '; sweep ', I1)                40.23 30.50
+#endif
               ENDIF
             ENDIF
 !
