@@ -427,13 +427,11 @@
 !  Compute Coriolis parameter (1/s) at RHO-points.
 !-----------------------------------------------------------------------
 !
-      val1=0.5_r8*Esize
       DO j=JstrT,JendT
         DO i=IstrT,IendT
-          f(i,j)=f0+beta*(yr(i,j)-val1)
+          f(i,j)=0.0_r8
         END DO
       END DO
-#endif
 !
 !  Exchange boundary data.
 !
