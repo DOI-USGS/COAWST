@@ -165,6 +165,27 @@
 #endif
 #ifdef WET_DRY
 !
+!  Write out wet/dry mask at PSI-points.
+!
+      scale=1.0_r8
+      gtype=gfactor*p2dvar
+      status=nf_fwrite2d(ng, iNLM, HIS(ng)%ncid, HIS(ng)%Vid(idPwet),   &
+     &                   HIS(ng)%Rindex, gtype,                         &
+     &                   LBi, UBi, LBj, UBj, scale,                     &
+# ifdef MASKING
+     &                   GRID(ng) % pmask,                              &
+# endif
+     &                   GRID(ng) % pmask_wet,                          &
+     &                   SetFillVal = .FALSE.)
+      IF (status.ne.nf90_noerr) THEN
+        IF (Master) THEN
+          WRITE (stdout,10) TRIM(Vname(1,idPwet)), HIS(ng)%Rindex
+        END IF
+        exit_flag=3
+        ioerror=status
+        RETURN
+      END IF
+!
 !  Write out wet/dry mask at RHO-points.
 !
       scale=1.0_r8

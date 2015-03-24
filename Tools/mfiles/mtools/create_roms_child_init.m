@@ -53,16 +53,15 @@ function create_roms_child_init(parent_grid,child_grid,parent_ini,child_ini)
 %2) Enter start time of initial file, in seconds.
 %   This time needs to be consistent with model time (ie dstart and time_ref).
 %   See *.in files for more detail. 
-init_time=ncread(parent_ini,'ocean_time');
-init_time=init_time(1);
-var_time=init_time;
+   init_time=ncread(parent_ini,'ocean_time');
+   init_time=init_time(1);
 
 %3) Enter number of vertical sigma levels in model.
     Cs_r=ncread(parent_ini,'Cs_r');
     Cs_w=ncread(parent_ini,'Cs_w');
-    sc_r=ncread(parent_ini,'sc_r');
-    sc_w=ncread(parent_ini,'sc_w');
-    N=length(Cs_r); gn.N=N;
+    s_rho=ncread(parent_ini,'s_rho');
+    s_w=ncread(parent_ini,'s_w');
+    N=length(Cs_r);
 
 %4) Enter the values of theta_s, theta_b, and Tcline from your *.in file.
     theta_s=ncread(parent_ini,'theta_s');
@@ -72,31 +71,33 @@ var_time=init_time;
     Vstretching=ncread(parent_ini,'Vstretching');
 
 %5) Enter value of h, Lm, and Mm.
-      h=ncread(child_grid,'h');
-      hmin=min(min(h(:)));
-      hc=min([hmin,Tcline]);
-      lon_rho=ncread(child_grid,'lon_rho');gn.lon_rho=lon_rho;
-      lat_rho=ncread(child_grid,'lat_rho');gn.lat_rho=lat_rho;
-      lon_u=ncread(child_grid,'lon_u');
-      lat_u=ncread(child_grid,'lat_u');
-      lon_v=ncread(child_grid,'lon_v');
-      lat_v=ncread(child_grid,'lat_v');
-      [LP,MP]=size(h);
-      L  = LP-1;
-      M  = MP-1;
+    h=ncread(child_grid,'h');
+    hmin=min(min(h(:)));
+    hc=min([hmin,Tcline]);
+    [LP,MP]=size(h);
+    L  = LP-1;
+    M  = MP-1;
+    xi_psi  = L;
+    xi_rho  = LP;
+    xi_u    = L;
+    xi_v    = LP;
+    eta_psi = M;
+    eta_rho = MP;
+    eta_u   = MP;
+    eta_v   = M;
 %
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% calc some grid stuff here - do not change this.
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-   xi_psi  = L;
-   xi_rho  = LP;
-   xi_u    = L;
-   xi_v    = LP;
-   eta_psi = M;
-   eta_rho = MP;
-   eta_u   = MP;
-   eta_v   = M;
-
+% These are just copied from above, and then we call get_roms_grid.
+%
+   Sinp.N           =N;            %number of vertical levels
+   Sinp.Vtransform  =Vtransform;   %vertical transformation equation
+   Sinp.Vstretching =Vstretching;  %vertical stretching function
+   Sinp.theta_s     =theta_s;      %surface control parameter
+   Sinp.theta_b     =theta_b;      %bottom  control parameter
+   Sinp.Tcline      =Tcline;       %surface/bottom stretching width
+   Sinp.hc          =hc;           %stretching width used in ROMS
+%
+   Gout=get_roms_grid(child_grid,Sinp);
+%
 %6) Initialize zeta, salt, temp, u, v, ubar, vbar.
 %
 % Init values for zeta.
@@ -118,7 +119,7 @@ end
 zt=double(zt);
 zt(zt<-9999)=nan;
 zt(zt>9999)=nan;
-zeta=griddata(lor,lar,zt,lon_rho,lat_rho);
+zeta=griddata(lor,lar,zt,Gout.lon_rho,Gout.lat_rho);
 zeta=maplev(squeeze(zeta(:,:)));
 clear zt
 
@@ -130,7 +131,7 @@ end
 ub=double(ub);
 ub(ub<-9999)=nan;
 ub(ub>9999)=nan;
-ubar=griddata(lou,lau,ub,lon_u,lat_u);
+ubar=griddata(lou,lau,ub,Gout.lon_u,Gout.lat_u);
 ubar=maplev(ubar);
 clear ub
 
@@ -141,7 +142,7 @@ end
 vb=double(vb);
 vb(vb<-9999)=nan;
 vb(vb>9999)=nan;
-vbar=griddata(lov,lav,vb,lon_v,lat_v);
+vbar=griddata(lov,lav,vb,Gout.lon_v,Gout.lat_v);
 vbar=maplev(vbar);
 clear vb
 
@@ -155,7 +156,7 @@ for k=1:N
     ub2=squeeze(ub(:,:,k));
     ub2(ub2<-9999)=nan;
     ub2(ub2>9999)=nan;
-    u(:,:,k)=griddata(lou,lau,ub2,lon_u,lat_u);
+    u(:,:,k)=griddata(lou,lau,ub2,Gout.lon_u,Gout.lat_u);
 end
 for k=1:N
   u(:,:,k)=maplev(squeeze(u(:,:,k)));
@@ -172,7 +173,7 @@ for k=1:N
     vb2=squeeze(vb(:,:,k));
     vb2(vb2<-9999)=nan;
     vb2(vb2>9999)=nan;
-    v(:,:,k)=griddata(lov,lav,vb2,lon_v,lat_v);
+    v(:,:,k)=griddata(lov,lav,vb2,Gout.lon_v,Gout.lat_v);
 end
 for k=1:N
   v(:,:,k)=maplev(squeeze(v(:,:,k)));
@@ -189,7 +190,7 @@ for k=1:N
     sa2=squeeze(sa(:,:,k));
     sa2(sa2<0)=nan;
     sa2(sa2>9999)=nan;
-    salt(:,:,k)=griddata(lor,lar,sa2,lon_rho,lat_rho);
+    salt(:,:,k)=griddata(lor,lar,sa2,Gout.lon_rho,Gout.lat_rho);
 end
 for k=1:N
   salt(:,:,k)=maplev(squeeze(salt(:,:,k)));
@@ -207,7 +208,7 @@ for k=1:N
     te2=squeeze(te(:,:,k));
     te2(te2<0)=nan;
     te2(te2>9999)=nan;
-    temp(:,:,k)=griddata(lor,lar,te2,lon_rho,lat_rho);
+    temp(:,:,k)=griddata(lor,lar,te2,Gout.lon_rho,Gout.lat_rho);
 end
 for k=1:N
   temp(:,:,k)=maplev(squeeze(temp(:,:,k)));
@@ -258,9 +259,9 @@ end
 %
 % mud.
 %
-for idmud=1:NCS
+for idsed=1:NCS
   display('Initializing Mud')
-  count=['0',num2str(idmud)];
+  count=['0',num2str(idsed)];
   count=count(end-1:end);
   sa=ncread(parent_ini,['mud_',count]);
   if (size(sa)>3)
@@ -271,7 +272,7 @@ for idmud=1:NCS
     sa2=squeeze(sa(:,:,k));
     sa2(sa2<0)=nan;
     sa2(sa2>9999)=nan;
-    eval(['mud_',count,'(:,:,k)=griddata(lor,lar,sa2,lon_rho,lat_rho);'])
+    eval(['mud_',count,'(:,:,k)=griddata(lor,lar,sa2,Gout.lon_rho,Gout.lat_rho);'])
   end
   for k=1:N
     eval(['mud_',count,'(:,:,k)=maplev(squeeze(mud_',count,'(:,:,k)));'])
@@ -281,9 +282,9 @@ end
 %
 % sand.
 %
-for isand=1:NNS
+for idsed=1:NNS
   display('Initializing Sand')
-  count=['0',num2str(isand)];
+  count=['0',num2str(idsed)];
   count=count(end-1:end);
   sa=ncread(parent_ini,['sand_',count]);
   if (size(sa)>3)
@@ -294,7 +295,7 @@ for isand=1:NNS
     sa2=squeeze(sa(:,:,k));
     sa2(sa2<0)=nan;
     sa2(sa2>9999)=nan;
-    eval(['sand_',count,'(:,:,k)=griddata(lor,lar,sa2,lon_rho,lat_rho);'])
+    eval(['sand_',count,'(:,:,k)=griddata(lor,lar,sa2,Gout.lon_rho,Gout.lat_rho);'])
   end
   for k=1:N
     eval(['sand_',count,'(:,:,k)=maplev(squeeze(sand_',count,'(:,:,k)));'])
@@ -315,7 +316,7 @@ if (NST>0)
     zt2=squeeze(zt(:,:,k));
     zt2(zt2<0)=nan;
     zt2(zt2>9999)=nan;
-    bed_thickness=griddata(lor,lar,zt2,lon_rho,lat_rho);
+    bed_thickness=griddata(lor,lar,zt2,Gout.lon_rho,Gout.lat_rho);
   end
   for k=1:Nbed
     bed_thickness(:,:,k)=maplev(squeeze(bed_thickness(:,:,k)));
@@ -332,7 +333,7 @@ if (NST>0)
     zt2=squeeze(zt(:,:,k));
     zt2(zt2<0)=nan;
     zt2(zt2>9999)=nan;
-    bed_age=griddata(lor,lar,zt2,lon_rho,lat_rho);
+    bed_age=griddata(lor,lar,zt2,Gout.lon_rho,Gout.lat_rho);
   end
   for k=1:Nbed
     bed_age(:,:,k)=maplev(squeeze(bed_age(:,:,k)));
@@ -349,7 +350,7 @@ if (NST>0)
     zt2=squeeze(zt(:,:,k));
     zt2(zt2<0)=nan;
     zt2(zt2>9999)=nan;
-    bed_porosity=griddata(lor,lar,zt2,lon_rho,lat_rho);
+    bed_porosity=griddata(lor,lar,zt2,Gout.lon_rho,Gout.lat_rho);
   end
   for k=1:Nbed
     bed_porosity(:,:,k)=maplev(squeeze(bed_porosity(:,:,k)));
@@ -366,7 +367,7 @@ if (NST>0)
     zt2=squeeze(zt(:,:,k));
     zt2(zt2<0)=nan;
     zt2(zt2>9999)=nan;
-    bed_biodiff=griddata(lor,lar,zt2,lon_rho,lat_rho);
+    bed_biodiff=griddata(lor,lar,zt2,Gout.lon_rho,Gout.lat_rho);
   end
   for k=1:Nbed
     bed_biodiff(:,:,k)=maplev(squeeze(bed_biodiff(:,:,k)));
@@ -376,9 +377,9 @@ end
 %
 % for mud
 %
-for idmud=1:NCS
+for idsed=1:NCS
   display('Initializing Mudmass and Mudfrac')
-  count=['0',num2str(idmud)];
+  count=['0',num2str(idsed)];
   count=count(end-1:end);
   sa=ncread(parent_ini,['mudfrac_',count]);
   if (size(sa)>3)
@@ -389,20 +390,20 @@ for idmud=1:NCS
     sa2=squeeze(sa(:,:,k));
     sa2(sa2<0)=nan;
     sa2(sa2>9999)=nan;
-    eval(['mudfrac_',count,'(:,:,k)=griddata(lor,lar,sa2,lon_rho,lat_rho);'])
+    eval(['mudfrac_',count,'(:,:,k)=griddata(lor,lar,sa2,Gout.lon_rho,Gout.lat_rho);'])
   end
   for k=1:Nbed
     eval(['mudfrac_',count,'(:,:,k)=maplev(squeeze(mudfrac_',count,'(:,:,k)));'])
-    eval(['mudmass_',count,'(:,:,k)=squeeze(mudfrac_',count,'(:,:,k)).*bed_thickness(i,j,k)*2650*(1.0-bed_porosity(i,j,k);'])
+    eval(['mudmass_',count,'(:,:,k)=squeeze(mudfrac_',count,'(:,:,k)).*bed_thickness(:,:,k)*2650.*(1.0-bed_porosity(:,:,k);'])
   end
   clear sa; clear sa2;
 end
 %
 % for sand
 %
-for idmud=1:NNS
+for idsed=1:NNS
   display('Initializing Sandmass and Sandfrac')
-  count=['0',num2str(idmud)];
+  count=['0',num2str(idsed)];
   count=count(end-1:end);
   sa=ncread(parent_ini,['sandfrac_',count]);
   if (size(sa)>3)
@@ -413,13 +414,16 @@ for idmud=1:NNS
     sa2=squeeze(sa(:,:,k));
     sa2(sa2<0)=nan;
     sa2(sa2>9999)=nan;
-    eval(['sandfrac_',count,'(:,:,k)=griddata(lor,lar,sa2,lon_rho,lat_rho);'])
+    eval(['sandfrac_',count,'(:,:,k)=griddata(lor,lar,sa2,Gout.lon_rho,Gout.lat_rho);'])
   end
   for k=1:Nbed
     eval(['sandfrac_',count,'(:,:,k)=maplev(squeeze(sandfrac_',count,'(:,:,k)));'])
-    eval(['sandmass_',count,'(:,:,k)=squeeze(sandfrac_',count,'(:,:,k)).*bed_thickness(i,j,k)*2650*(1.0-bed_porosity(i,j,k));'])
+    eval(['sandmass_',count,'(:,:,k)=squeeze(sandfrac_',count,'(:,:,k)).*bed_thickness(:,:,k)*2650.*(1.0-bed_porosity(:,:,k));'])
   end
   clear sa; clear sa2;
+%
+  eval(['bedload_Usand_',count,'(1:xi_u,1:eta_u,1:length(init_time)) = 0;'])              %bed load
+  eval(['bedload_Vsand_',count,'(1:xi_v,1:eta_v,1:length(init_time)) = 0;'])              %bed load
 end
 
 %11)
@@ -434,7 +438,7 @@ if (NST>0)
   zt=double(zt);
   zt(zt<-9999)=nan;
   zt(zt>9999)=nan;
-  grain_diameter=griddata(lor,lar,zt,lon_rho,lat_rho);
+  grain_diameter=griddata(lor,lar,zt,Gout.lon_rho,Gout.lat_rho);
   grain_diameter=maplev(squeeze(grain_diameter(:,:)));
   clear zt
 %
@@ -445,7 +449,7 @@ if (NST>0)
   zt=double(zt);
   zt(zt<-9999)=nan;
   zt(zt>9999)=nan;
-  grain_density=griddata(lor,lar,zt,lon_rho,lat_rho);
+  grain_density=griddata(lor,lar,zt,Gout.lon_rho,Gout.lat_rho);
   grain_density=maplev(squeeze(grain_density(:,:)));
   clear zt
 %
@@ -456,7 +460,7 @@ if (NST>0)
   zt=double(zt);
   zt(zt<-9999)=nan;
   zt(zt>9999)=nan;
-  settling_vel=griddata(lor,lar,zt,lon_rho,lat_rho);
+  settling_vel=griddata(lor,lar,zt,Gout.lon_rho,Gout.lat_rho);
   settling_vel=maplev(squeeze(settling_vel(:,:)));
   clear zt
 %
@@ -467,7 +471,7 @@ if (NST>0)
   zt=double(zt);
   zt(zt<-9999)=nan;
   zt(zt>9999)=nan;
-  erosion_stress=griddata(lor,lar,zt,lon_rho,lat_rho);
+  erosion_stress=griddata(lor,lar,zt,Gout.lon_rho,Gout.lat_rho);
   erosion_stress=maplev(squeeze(erosion_stress(:,:)));
   clear zt
 %
@@ -478,7 +482,7 @@ if (NST>0)
   zt=double(zt);
   zt(zt<-9999)=nan;
   zt(zt>9999)=nan;
-  ripple_length=griddata(lor,lar,zt,lon_rho,lat_rho);
+  ripple_length=griddata(lor,lar,zt,Gout.lon_rho,Gout.lat_rho);
   ripple_length=maplev(squeeze(ripple_length(:,:)));
   clear zt
 %
@@ -489,7 +493,7 @@ if (NST>0)
   zt=double(zt);
   zt(zt<-9999)=nan;
   zt(zt>9999)=nan;
-  ripple_height=griddata(lor,lar,zt,lon_rho,lat_rho);
+  ripple_height=griddata(lor,lar,zt,Gout.lon_rho,Gout.lat_rho);
   ripple_height=maplev(squeeze(ripple_height(:,:)));
   clear zt
 %
@@ -500,7 +504,7 @@ if (NST>0)
   zt=double(zt);
   zt(zt<-9999)=nan;
   zt(zt>9999)=nan;
-  dmix_offset=griddata(lor,lar,zt,lon_rho,lat_rho);
+  dmix_offset=griddata(lor,lar,zt,Gout.lon_rho,Gout.lat_rho);
   dmix_offset=maplev(squeeze(dmix_offset(:,:)));
   clear zt
 %
@@ -511,7 +515,7 @@ if (NST>0)
   zt=double(zt);
   zt(zt<-9999)=nan;
   zt(zt>9999)=nan;
-  dmix_slope=griddata(lor,lar,zt,lon_rho,lat_rho);
+  dmix_slope=griddata(lor,lar,zt,Gout.lon_rho,Gout.lat_rho);
   dmix_slope=maplev(squeeze(dmix_slope(:,:)));
   clear zt
 %
@@ -522,24 +526,25 @@ if (NST>0)
   zt=double(zt);
   zt(zt<-9999)=nan;
   zt(zt>9999)=nan;
-  dmix_time=griddata(lor,lar,zt,lon_rho,lat_rho);
+  dmix_time=griddata(lor,lar,zt,Gout.lon_rho,Gout.lat_rho);
   dmix_time=maplev(squeeze(dmix_time(:,:)));
   clear zt
 end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %create init file
-create_roms_netcdf_init_mw(init_file,gn,Nbed,NNS,NCS)
+create_roms_netcdf_init_mw(init_file,Gout,Nbed,NNS,NCS)
 
-ncwrite(init_file,'theta_s',theta_s);
-ncwrite(init_file,'theta_b',theta_b);
-ncwrite(init_file,'Tcline',Tcline);
-ncwrite(init_file,'Cs_r',Cs_r);
-ncwrite(init_file,'Cs_w',Cs_w);
-ncwrite(init_file,'sc_w',sc_w);
-ncwrite(init_file,'sc_r',sc_r);
-ncwrite(init_file,'hc',hc);
-ncwrite(init_file,'Vtransform',Vtransform);
-ncwrite(init_file,'Vstretching',Vstretching);
+ncwrite(init_file,'theta_s',Gout.theta_s);
+ncwrite(init_file,'theta_b',Gout.theta_b);
+ncwrite(init_file,'Tcline',Gout.Tcline);
+ncwrite(init_file,'Cs_r',Gout.Cs_r);
+ncwrite(init_file,'Cs_w',Gout.Cs_w);
+ncwrite(init_file,'s_w',Gout.s_w);
+ncwrite(init_file,'s_rho',Gout.s_rho);
+ncwrite(init_file,'hc',Gout.hc);
+ncwrite(init_file,'Vtransform',Gout.Vtransform);
+ncwrite(init_file,'Vstretching',Gout.Vstretching);
+ncwrite(init_file,'spherical',Gout.spherical);
 
 ncwrite(init_file,'ocean_time',init_time);
 
@@ -565,6 +570,9 @@ if (NST>0)
     eval(['ncwrite(init_file,''sand_',count,''',sand_',count,');'])           %sed conc in water column
     eval(['ncwrite(init_file,''sandfrac_',count,''',sandfrac_',count,');'])           %sed conc in water column
     eval(['ncwrite(init_file,''sandmass_',count,''',sandmass_',count,');'])           %sed conc in water column
+%
+    eval(['ncwrite(init_file,''bedload_Usand_',count,''',bedload_Usand_',count,');'])   %bedload
+    eval(['ncwrite(init_file,''bedload_Vsand_',count,''',bedload_Vsand_',count,');'])   %bedload
   end
 
   ncwrite(init_file,'bed_thickness',bed_thickness);

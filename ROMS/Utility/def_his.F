@@ -87,7 +87,9 @@
       integer :: t3dobc(5)
 # endif
 #endif
-
+#ifdef WET_DRY
+      integer :: sp2dgrd(3)
+#endif
       real(r8) :: Aval(6)
 
       character (len=120) :: Vinfo(Natt)
@@ -334,6 +336,14 @@
         t3dobc(5)=DimIDs(12)
 # endif
 #endif
+#ifdef WET_DRY
+!
+!  Define dimension vectors for staggered type variables at PSI-points.
+!
+        sp2dgrd(1)=DimIDs( 4)
+        sp2dgrd(2)=DimIDs( 8)
+        sp2dgrd(3)=DimIDs(12)
+#endif
 !
 !  Define dimension vectors for staggered u-momentum type variables.
 !
@@ -524,6 +534,22 @@
         END IF
 #endif
 #ifdef WET_DRY
+!
+!  Define wet/dry mask on PSI-points.
+!
+        Vinfo( 1)=Vname(1,idPwet)
+        Vinfo( 2)=Vname(2,idPwet)
+        Vinfo( 3)=Vname(3,idPwet)
+        Vinfo( 9)='land'
+        Vinfo(10)='water'
+        Vinfo(14)=Vname(4,idPwet)
+        Vinfo(16)=Vname(1,idtime)
+        Vinfo(22)='coordinates'
+        Aval(5)=REAL(Iinfo(1,idPwet,ng),r8)
+        status=def_var(ng, iNLM, HIS(ng)%ncid, HIS(ng)%Vid(idPwet),     &
+     &                 NF_FOUT, nvd3, sp2dgrd, Aval, Vinfo, ncname,     &
+     &                 SetFillVal = .FALSE.)
+        IF (exit_flag.ne.NoError) RETURN
 !
 !  Define wet/dry mask on RHO-points.
 !

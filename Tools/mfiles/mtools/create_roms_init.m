@@ -12,6 +12,7 @@
 %
 % jcw 7-8-2008
 % jcw 07Feb2012 updated for netcdf mathworks interface
+% jcw 19March2015 update to use get_roms_grid
 %
 
 %!         W-level  RHO-level                                           !
@@ -52,55 +53,50 @@
 %    init_file='joe_tc_ocean_init.nc';
      init_file='joe_tc_coarse_ocean_init.nc';
 
-%2) Enter start time of initial file, in seconds.
+%2) If you want to read the initial data from another netcdf file, then 
+%   enter read_int=1 and provide a name of history or rst file to read data from.
+%   Otherwise set read_int=0.
+    read_init=0;
+    data_file='coawst_us_20121024_13.nc';
+
+%3) Enter start time of initial file, in seconds.
 %   This time needs to be consistent with model time (ie dstart and time_ref).
 %   See *.in files for more detail. 
-    init_time=0*24*3600;
-
-%3) Enter number of vertical sigma levels in model.
-%   This will be same value as entered in mod_param.F
-    N=21;
-
-%4) Enter the values of theta_s, theta_b, and Tcline from your *.in file.
-    theta_s = 3.0;  
-    theta_b = 0.4;  
-    Tcline =  50.0;
-    Vtransform = 1;
-    Vstretching = 1;
-
-%5) Enter value of h, Lm, and Mm.
-%   This info can come from a grid file or user supplied here.
-%   
-%   Are you entering a grid file name (1 = yes, 0 = no)? 
-    get_grid = 1;    %<--- put a 1 or 0 here
-  
-    if (get_grid)
-%      grid_file='joe_tc_grd.nc'    %<-enter name of grid here
-       grid_file='D:\data\models\COAWST\Projects\JOE_TCd\joe_tc_coarse_grd.nc'    %<-enter name of grid here
-
-%
-% Get some grid info, do not change this.
-% 
-      h=ncread(grid_file,'h');
-      [LP,MP]=size(h);
-%
+    if (read_init)
+      init_time=ncread(data_file,'ocean_time');
+      tidx=length(init_time);
+      init_time=init_time(tidx)/3600/24;
     else
-      Lm=100;       %<--- else put size of grid here, from mod_param.F
-      Mm=20;        %<--- else put size of grid here, from mod_param.F
-      LP = Lm+2;    %don't change this.
-      MP = Mm+2;    %don't change this.
-
-      % enter depth, same as in ana_grid
-      for j=1:MP
-        for i=1:LP
-          h(j,i)=18-16*(Mm-j)/(Mm-1);
-        end
-      end
+      init_time=0;
     end
+
+%4) Set values of theta_s, theta_b, Tcline, and N from your *.in file.
+    if (read_init)
+      theta_s=ncread(data_file,'theta_s');
+      theta_b=ncread(data_file,'theta_b');
+      Tcline=ncread(data_file,'Tcline');
+      Vtransform=ncread(data_file,'Vtransform');
+      Vstretching=ncread(data_file,'Vstretching');
+      N=length(ncread(data_file,'Cs_r'));
+    else
+      theta_s = 3.0;
+      theta_b = 0.4;
+      Tcline =  50.0;
+      Vtransform = 1;
+      Vstretching = 1;
+      N = 21;
+    end
+
+%5) Obtain grid information.
+   grid_file='E:\data\models\COAWST\Projects\JOE_TC\DiffGrid\joe_tc_coarse_grd.nc'    %<-enter name of grid here
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % calc some grid stuff here - do not change this.
 % You go on to step 6.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+   h=ncread(grid_file,'h');
+   hmin=min(h(:));
+   hc=min([hmin,Tcline]);
+   [LP,MP]=size(h);
    L  = LP-1;
    M  = MP-1;
    xi_psi  = L;
@@ -112,86 +108,59 @@
    eta_u   = MP;
    eta_v   = M;
 %
-% Don't change this either.  This is from set_scoord.F
-% Go to step 6 now.
+% These are just copied from above, and then we call get_roms_grid.
 %
-   hmin=min(h(:));
-   hc=min([hmin,Tcline]);
-   if (theta_s~=0.0)
-     cff1=1.0/sinh(theta_s);
-     cff2=0.5/tanh(0.5*theta_s);
-   end
-   sc_w(1)=-1.0;
-   Cs_w(1)=-1.0;
-   cff=1.0/N;
-   for k=1:N
-     sc_w(k+1)=cff*(k-N);
-     sc_r(k)=cff*((k-N)-0.5);
-     if (theta_s~=0)
-       Cs_w(k+1)=(1.0-theta_b)*cff1*sinh(theta_s*sc_w(k+1))+   ...
-                      theta_b*(cff2*tanh(theta_s*(sc_w(k+1)+0.5))-0.5);
-       Cs_r(k)  =(1.0-theta_b)*cff1*sinh(theta_s*sc_r(k))+   ...
-                      theta_b*(cff2*tanh(theta_s*(sc_r(k)+0.5))-0.5);
-     else
-       Cs_w(k+1)=sc_w(k+1);
-       Cs_r(k)=sc_r(k);
-      end
-    end
-
+   Sinp.N           =N;            %number of vertical levels
+   Sinp.Vtransform  =Vtransform;   %vertical transformation equation
+   Sinp.Vstretching =Vstretching;  %vertical stretching function
+   Sinp.theta_s     =theta_s;      %surface control parameter
+   Sinp.theta_b     =theta_b;      %bottom  control parameter
+   Sinp.Tcline      =Tcline;       %surface/bottom stretching width
+   Sinp.hc          =hc;           %stretching width used in ROMS
+%
+   Gout=get_roms_grid(grid_file,Sinp);
+%
 %6) Initialize zeta, salt, temp, u, v, ubar, vbar.
 %
 % Init values for zeta.
   display('Initializing zeta')
-%
-    for j=1:eta_rho
-      for i=1:xi_rho
-        for time=1:length(init_time)
-          zeta(i,j,time) = 0;
-        end
-      end
-    end
+  if (read_init)
+    zeta=ncread(data_file,'zeta',[1 1 tidx],[Inf Inf 1]);
+  else
+    zeta(1:xi_rho,1:eta_rho,1:length(init_time)) = 0;
+  end
 %
 % Init values for u, ubar, v, and vbar.
   display('Initializing u, v, ubar, and vbar')
 %
-  for j=1:eta_u
-    for i=1:xi_u
-      for time=1:length(init_time)
-        for k=1:N 
-          u(i,j,k,time) = 0;
-        end
-        ubar(i,j,time) = 0;
-      end
-    end
-  end
+  if (read_init)
+    u=ncread(data_file,'u',[1 1 1 tidx],[Inf Inf Inf 1]);
+    ubar=ncread(data_file,'ubar',[1 1 tidx],[Inf Inf 1]);
+    u(isnan(u))=0;  ubar(isnan(ubar))=0;
 %
-  for j=1:eta_v
-    for i=1:xi_v
-      for time=1:length(init_time)
-        for k=1:N
-          v(i,j,k,time)  = 0;
-        end
-        vbar(i,j,time) = 0;
-      end
-    end
+    v=ncread(data_file,'v',[1 1 1 tidx],[Inf Inf Inf 1]);
+    vbar=ncread(data_file,'vbar',[1 1 tidx],[Inf Inf 1]);
+    v(isnan(u))=0;  vbar(isnan(ubar))=0;
+  else
+    u(1:xi_u,1:eta_u,1:N,1:length(init_time)) = 0;
+    ubar(1:xi_u,1:eta_u,1:length(init_time)) = 0;
+%
+    v(1:xi_v,1:eta_v,1:N,1:length(init_time)) = 0;
+    vbar(1:xi_v,1:eta_v,1:length(init_time)) = 0;
   end
 %
 % Init values for temp and salt.
   display('Initializing temp and salt')
 %
-    NAT=2;                            % Number of active tracers. Usually 2 (temp + salt).
-    for j=1:eta_rho
-      for i=1:xi_rho
-        for time=1:length(init_time)
-          for k=1:N
-            salt(i,j,k,time) = 35;
-            temp(i,j,k,time) = 18;
-          end
-        end
-      end
-    end
-
-
+  NAT=2;                            % Number of active tracers. Usually 2 (temp + salt).
+  if (read_init)
+    salt=ncread(data_file,'salt',[1 1 1 tidx],[Inf Inf Inf 1]);
+    temp=ncread(data_file,'temp',[1 1 1 tidx],[Inf Inf Inf 1]);
+    salt(isnan(salt))=0;  temp(isnan(temp))=0;
+  else
+    salt(1:xi_rho,1:eta_rho,1:N,1:length(init_time)) = 35;
+    temp(1:xi_rho,1:eta_rho,1:N,1:length(init_time)) = 18;
+  end
 %7) Enter number of mud sediments (NCS) and number of sand sediments (NNS).
 %   These values should be the same as in mod_param.F
     NCS = 0;   %number of cohesive sed classes
@@ -227,7 +196,6 @@
   tau_ce=[mud_tau_ce,sand_tau_ce];
   Erate= [mud_Erate,sand_Erate];
 
-
 %9) Provide initial sediment properties in water column.
   display('Initializing suspended sediments.')
 %
@@ -236,7 +204,13 @@
 for idmud=1:NCS
   count=['0',num2str(idmud)];
   count=count(end-1:end);
-  eval(['mud_',count,'(1:xi_rho,1:eta_rho,1:N,1:length(init_time)) = 0;'])               %mud conc in water column
+  if (read_init)
+    zz=ncread(data_file,['mud_',count],[1 1 1 tidx],[Inf Inf Inf 1]);
+    zz(isnan(zz))=0;
+  else
+    zz=zeros(xi_rho,eta_rho,N);
+  end
+  eval(['mud_',count,'(1:xi_rho,1:eta_rho,1:N,1:length(init_time)) = zz;'])               %mud conc in water column
 end
 %
 % sand.
@@ -244,42 +218,48 @@ end
 for isand=1:NNS
   count=['0',num2str(isand)];
   count=count(end-1:end);
-  eval(['sand_',count,'(1:xi_rho,1:eta_rho,1:N,1:length(init_time)) = 0;'])               %mud conc in water column
+  if (read_init)
+    zz=ncread(data_file,['sand_',count],[1 1 1 tidx],[Inf Inf Inf 1]);
+    zz(isnan(zz))=0;
+  else
+    zz=zeros(xi_rho,eta_rho,N);
+  end
+  eval(['sand_',count,'(1:xi_rho,1:eta_rho,1:N,1:length(init_time)) = zz;'])               %sand conc in water column
 end
-   
 
 %10) Provide initial sediment properties in bed.
 %
 % bed properties
   display('Initializing sediment bed.')
-%
-for k=1:Nbed
-  for j=1:eta_rho
-    for i=1:xi_rho
-      for time=1:length(init_time)
-        bed_thickness(i,j,k,time) = 1.0;
-        bed_age(i,j,k,time)       = init_time(1);
-        bed_porosity(i,j,k,time)  = 0.5;
-        bed_biodiff(i,j,k,time)   = 0.0;
-      end
-    end
+  if (read_init)
+    bed_thickness=ncread(data_file,'bed_thickness',[1 1 1 tidx],[Inf Inf Inf 1]);
+    bed_age=ncread(data_file,'bed_age',[1 1 1 tidx],[Inf Inf Inf 1]);
+    bed_porosity=ncread(data_file,'bed_porosity',[1 1 1 tidx],[Inf Inf Inf 1]);
+    bed_thickness(isnan(bed_thickness))=0;
+    bed_age(isnan(bed_age))=0;
+    bed_porosity(isnan(bed_porosity))=0;
+%   bed_biodiff=ncread(data_file,'bed_biodiff',[1 1 1 tidx],[Inf Inf Inf 1]);
+    bed_biodiff(1:xi_rho,1:eta_rho,1:Nbed,1:length(init_time))   = 0.0;
+  else
+    bed_thickness(1:xi_rho,1:eta_rho,1:Nbed,1:length(init_time)) = 1.0;
+    bed_age(1:xi_rho,1:eta_rho,1:Nbed,1:length(init_time))       = init_time(1);
+    bed_porosity(1:xi_rho,1:eta_rho,1:Nbed,1:length(init_time))  = 0.5;
+    bed_biodiff(1:xi_rho,1:eta_rho,1:Nbed,1:length(init_time))   = 0.0;
   end
-end
 %
 % for mud
 %
 for idsed=1:NCS
   count=['0',num2str(idsed)];
   count=count(end-1:end);
-  for k=1:Nbed
-    for j=1:eta_rho
-      for i=1:xi_rho
-        for time=1:length(init_time)
-          eval(['mudfrac_',count,'(i,j,k,time) = 1/NST;'])      %fraction of each sed class in each bed cell
-          eval(['mudmass_',count,'(i,j,k,time) = bed_thickness(i,j,k,time)*Srho(idsed)*(1.0-bed_porosity(i,j,k,time))*mudfrac_',count,'(i,j,k,time);'])          %mass of each sed class in each bed cell
-        end
-      end
-    end
+  if (read_init)
+    eval(['mudfrac_',count,'=ncread(data_file,[''mudfrac_',count,'''],[1 1 1 tidx],[Inf Inf Inf 1]);']);
+    eval(['mudmass_',count,'=ncread(data_file,[''mudmass_',count,'''],[1 1 1 tidx],[Inf Inf Inf 1]);']);
+    eval(['mudfrac_',count,'(isnan(mudfrac_',count,'))=0;']);
+    eval(['mudmass_',count,'(isnan(mudmass_',count,'))=0;']);
+  else
+    eval(['mudfrac_',count,'(1:xi_rho,1:eta_rho,1:Nbed,1:length(init_time)) = 1/NST;'])      %fraction of each sed class in each bed cell
+    eval(['mudmass_',count,'(1:xi_rho,1:eta_rho,1:Nbed,1:length(init_time)) = bed_thickness(1:xi_rho,1:eta_rho,1:Nbed,1:length(init_time)).*Srho(idsed).*(1.0-bed_porosity(1:xi_rho,1:eta_rho,1:Nbed,1:length(init_time))).*mudfrac_',count,'(1:xi_rho,1:eta_rho,1:Nbed,1:length(init_time));'])          %mass of each sed class in each bed cell
   end
 end
 %
@@ -288,15 +268,20 @@ end
 for idsed=1:NNS
  count=['0',num2str(idsed)];
  count=count(end-1:end);
-  for k=1:Nbed
-    for j=1:eta_rho
-      for i=1:xi_rho
-        for time=1:length(init_time)
-          eval(['sandfrac_',count,'(i,j,k,time) = 1/NST;'])      %fraction of each sed class in each bed cell
-          eval(['sandmass_',count,'(i,j,k,time) = bed_thickness(i,j,k,time)*Srho(idsed)*(1.0-bed_porosity(i,j,k,time))*sandfrac_',count,'(i,j,k,time);'])          %mass of each sed class in each bed cell
-        end
-      end
-    end
+  if (read_init)
+    eval(['sandfrac_',count,'=ncread(data_file,[''sandfrac_',count,'''],[1 1 1 tidx],[Inf Inf Inf 1]);']);
+    eval(['sandmass_',count,'=ncread(data_file,[''sandmass_',count,'''],[1 1 1 tidx],[Inf Inf Inf 1]);']);
+    eval(['sandfrac_',count,'(isnan(sandfrac_',count,'))=0;']);
+    eval(['sandmass_',count,'(isnan(sandmass_',count,'))=0;']);
+    eval(['bedload_Usand_',count,'=ncread(data_file,[''bedload_Usand_',count,'''],[1 1 tidx],[Inf Inf 1]);']);
+    eval(['bedload_Vsand_',count,'=ncread(data_file,[''bedload_Vsand_',count,'''],[1 1 tidx],[Inf Inf 1]);']);
+%   eval(['bedload_Usand_',count,'(1:xi_u,1:eta_u,1:length(init_time)) = 0;'])              %bed load
+%   eval(['bedload_Vsand_',count,'(1:xi_v,1:eta_v,1:length(init_time)) = 0;'])              %bed load
+  else
+    eval(['sandfrac_',count,'(1:xi_rho,1:eta_rho,1:Nbed,1:length(init_time)) = 1/NST;'])      %fraction of each sed class in each bed cell
+    eval(['sandmass_',count,'(1:xi_rho,1:eta_rho,1:Nbed,1:length(init_time)) = bed_thickness(1:xi_rho,1:eta_rho,1:Nbed,1:length(init_time)).*Srho(idsed).*(1.0-bed_porosity(1:xi_rho,1:eta_rho,1:Nbed,1:length(init_time))).*sandfrac_',count,'(1:xi_rho,1:eta_rho,1:Nbed,1:length(init_time));'])          %mass of each sed class in each bed cell
+    eval(['bedload_Usand_',count,'(1:xi_u,1:eta_u,1:length(init_time)) = 0;'])              %bed load
+    eval(['bedload_Vsand_',count,'(1:xi_v,1:eta_v,1:length(init_time)) = 0;'])              %bed load
   end
 end
 
@@ -305,39 +290,35 @@ end
 % set some surface properties
   display('Initializing sediment surface properties.')
 %
-for j=1:eta_rho
-  for i=1:xi_rho
-    cff1=1.0;
-    cff2=1.0;
-    cff3=1.0;
-    cff4=1.0;
-    for ised=1:NCS
-      count=['0',num2str(ised)];
-      count=count(end-1:end);
-      eval(['cff1=cff1*mud_Sd50(ised)^squeeze(mudfrac_',count,'(i,j,1,1));'])
-      eval(['cff2=cff2*mud_Srho(ised)^squeeze(mudfrac_',count,'(i,j,1,1));'])
-      eval(['cff3=cff3*mud_Wsed(ised)^squeeze(mudfrac_',count,'(i,j,1,1));'])
-      eval(['cff4=cff4*mud_tau_ce(ised)^squeeze(mudfrac_',count,'(i,j,1,1));'])
-    end
-    for ised=1:NNS
-      count=['0',num2str(ised)];
-      count=count(end-1:end);
-      eval(['cff1=cff1*sand_Sd50(ised)^squeeze(sandfrac_',count,'(i,j,1,1));'])
-      eval(['cff2=cff2*sand_Srho(ised)^squeeze(sandfrac_',count,'(i,j,1,1));'])
-      eval(['cff3=cff3*sand_Wsed(ised)^squeeze(sandfrac_',count,'(i,j,1,1));'])
-      eval(['cff4=cff4*sand_tau_ce(ised)^squeeze(sandfrac_',count,'(i,j,1,1));'])
-    end
-    grain_diameter(i,j,time)=cff1;
-    grain_density(i,j,time)=cff2;
-    settling_vel(i,j,time)=cff3;
-    erosion_stress(i,j,time)=cff4;
-    ripple_length(i,j,time)=0.10;
-    ripple_height(i,j,time)=0.01;
-    dmix_offset(i,j,time)=0.0;
-    dmix_slope(i,j,time)=0.0;
-    dmix_time(i,j,time)=0.0;
-  end
+cff1=1.0;
+cff2=1.0;
+cff3=1.0;
+cff4=1.0;
+for ised=1:NCS
+  count=['0',num2str(ised)];
+  count=count(end-1:end);
+  eval(['cff1=cff1.*mud_Sd50(ised).^squeeze(mudfrac_',count,'(1:xi_rho,1:eta_rho,1,1));'])
+  eval(['cff2=cff2.*mud_Srho(ised).^squeeze(mudfrac_',count,'(1:xi_rho,1:eta_rho,1,1));'])
+  eval(['cff3=cff3.*mud_Wsed(ised).^squeeze(mudfrac_',count,'(1:xi_rho,1:eta_rho,1,1));'])
+  eval(['cff4=cff4.*mud_tau_ce(ised).^squeeze(mudfrac_',count,'(1:xi_rho,1:eta_rho,1,1));'])
 end
+for ised=1:NNS
+  count=['0',num2str(ised)];
+  count=count(end-1:end);
+  eval(['cff1=cff1.*sand_Sd50(ised).^squeeze(sandfrac_',count,'(1:xi_rho,1:eta_rho,1,1));'])
+  eval(['cff2=cff2.*sand_Srho(ised).^squeeze(sandfrac_',count,'(1:xi_rho,1:eta_rho,1,1));'])
+  eval(['cff3=cff3.*sand_Wsed(ised).^squeeze(sandfrac_',count,'(1:xi_rho,1:eta_rho,1,1));'])
+  eval(['cff4=cff4.*sand_tau_ce(ised).^squeeze(sandfrac_',count,'(1:xi_rho,1:eta_rho,1,1));'])
+end
+grain_diameter=cff1;
+grain_density=cff2;
+settling_vel=cff3;
+erosion_stress=cff4;
+ripple_length=0.10;
+ripple_height=0.01;
+dmix_offset=0.0;
+dmix_slope=0.0;
+dmix_time=0.0;
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -345,23 +326,22 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %create init file
-gn.lon_rho=h;   %only used to get size
-gn.N=N;
-create_roms_netcdf_init_mw(init_file,gn,Nbed,NNS,NCS)
+create_roms_netcdf_init_mw(init_file,Gout,Nbed,NNS,NCS)
 
 %now write the data from the arrays to the netcdf file
 disp(' ## Filling Variables in netcdf file with data...')
 
-ncwrite(init_file,'theta_s',theta_s);
-ncwrite(init_file,'theta_b',theta_b);
-ncwrite(init_file,'Tcline',Tcline);
-ncwrite(init_file,'Cs_r',Cs_r);
-ncwrite(init_file,'Cs_w',Cs_w);
-ncwrite(init_file,'sc_w',sc_w);
-ncwrite(init_file,'sc_r',sc_r);
-ncwrite(init_file,'hc',hc);
-ncwrite(init_file,'Vtransform',Vtransform);
-ncwrite(init_file,'Vstretching',Vstretching);
+ncwrite(init_file,'theta_s',Gout.theta_s);
+ncwrite(init_file,'theta_b',Gout.theta_b);
+ncwrite(init_file,'Tcline',Gout.Tcline);
+ncwrite(init_file,'Cs_r',Gout.Cs_r);
+ncwrite(init_file,'Cs_w',Gout.Cs_w);
+ncwrite(init_file,'s_w',Gout.s_w);
+ncwrite(init_file,'s_rho',Gout.s_rho);
+ncwrite(init_file,'hc',Gout.hc);
+ncwrite(init_file,'Vtransform',Gout.Vtransform);
+ncwrite(init_file,'Vstretching',Gout.Vstretching);
+ncwrite(init_file,'spherical',Gout.spherical);
 
 ncwrite(init_file,'ocean_time',init_time);
 
@@ -373,20 +353,22 @@ ncwrite(init_file,'v',v);
 ncwrite(init_file,'temp',temp);
 ncwrite(init_file,'salt',salt);
 
-
 for mm=1:NCS
   count=['00',num2str(mm)];
   count=count(end-1:end);
-  eval(['ncwrite(init_file,''mud_',count,''',mud_',count,');'])           %sed conc in water column
-  eval(['ncwrite(init_file,''mudfrac_',count,''',mudfrac_',count,');'])           %sed conc in water column
-  eval(['ncwrite(init_file,''mudmass_',count,''',mudmass_',count,');'])           %sed conc in water column
+  eval(['ncwrite(init_file,''mud_',count,''',mud_',count,');'])            %sed conc in water column
+  eval(['ncwrite(init_file,''mudfrac_',count,''',mudfrac_',count,');'])    %sed frac on bed
+  eval(['ncwrite(init_file,''mudmass_',count,''',mudmass_',count,');'])    %sed mass on bed
 end
 for mm=1:NNS
   count=['00',num2str(mm)];
   count=count(end-1:end);
   eval(['ncwrite(init_file,''sand_',count,''',sand_',count,');'])           %sed conc in water column
-  eval(['ncwrite(init_file,''sandfrac_',count,''',sandfrac_',count,');'])           %sed conc in water column
-  eval(['ncwrite(init_file,''sandmass_',count,''',sandmass_',count,');'])           %sed conc in water column
+  eval(['ncwrite(init_file,''sandfrac_',count,''',sandfrac_',count,');'])   %sed frac on bed
+  eval(['ncwrite(init_file,''sandmass_',count,''',sandmass_',count,');'])   %sed mass on bed
+%
+  eval(['ncwrite(init_file,''bedload_Usand_',count,''',bedload_Usand_',count,');'])   %bedload
+  eval(['ncwrite(init_file,''bedload_Vsand_',count,''',bedload_Vsand_',count,');'])   %bedload
 end
 
 ncwrite(init_file,'bed_thickness',bed_thickness);

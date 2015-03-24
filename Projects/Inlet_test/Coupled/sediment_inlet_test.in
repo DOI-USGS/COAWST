@@ -59,6 +59,54 @@
     BEDLOAD_COEFF == 0.15d0
 
 !------------------------------------------------------------------------------
+!  Lateral boundary condition flags for all sediment tracers.
+!------------------------------------------------------------------------------
+!
+! Set lateral boundary conditions keyword. Notice that a value is expected
+! for each boundary segment per nested grid for each state variable.
+!
+! The sediment tracer variables (cohesive and noncohesive) require
+! [1:4,1:NCS+NNS,Ngrids] values. If specifying every tracer, enter first
+! 1:NCS cohesive sediment entries followed by 1:NNS noncohesive sediment
+! entries. The boundary order is: 1=west, 2=south, 3=east, and 4=north.
+! That is, anticlockwise starting at the western boundary.
+!
+! The keyword is case insensitive and usually has three characters. However,
+! it is possible to have compound keywords, if applicable. For example, the
+! keyword "RadNud" implies radiation boundary condition with nudging. This
+! combination is usually used in active/passive radiation conditions.
+!
+! NOTICE: It is possible to specify the lateral boundary conditions for
+! ======  all sediment tracers (cohesive and noncohesive) in a compact
+! form with a single entry. If so, all the sediment tracers are assumed to
+! have the same boundary condition as in the single entry.
+!
+!   Keyword    Lateral Boundary Condition Type
+!
+!   Cla        Clamped                                _____N_____     j=Mm
+!   Clo        Closed                                |     4     |
+!   Gra        Gradient                              |           |
+!   Nes        Nested                              1 W           E 3
+!   Nud        Nudging                               |           |
+!   Per        Periodic                              |_____S_____|
+!   Rad        Radiation                                   2          j=1
+!                                                   i=1         i=Lm
+!                   W       S       E       N
+!                   e       o       a       o
+!                   s       u       s       r
+!                   t       t       t       t
+!                           h               h
+!
+!                   1       2       3       4
+
+   LBC(isTvar) ==   Gra     Clo     Gra     Gra      ! idsed(:), compact
+
+! Adjoint-based algorithms can have different lateral boundary
+! conditions keywords.
+
+ad_LBC(isTvar) ==   Gra     Per     Clo     Per      ! idsed(:), compact
+
+!------------------------------------------------------------------------------
 ! Suspended Cohesive Sediment Parameters, [1:NCS,1:Ngrids] values expected.
 !------------------------------------------------------------------------------
 
@@ -199,7 +247,7 @@ Hout(iSVbld) == T                               ! bed load at V-points
  Hout(ithck) == T                               ! sediment layer thickness
  Hout(iaged) == T                               ! sediment layer age
  Hout(iporo) == T                               ! sediment layer porosity
- Hout(idiff) == F                               ! biodiffusivity
+ Hout(idiff) == T                               ! biodiffusivity
 
 !
 !  GLOSSARY:

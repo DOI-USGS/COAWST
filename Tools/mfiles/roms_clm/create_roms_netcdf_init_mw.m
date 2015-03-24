@@ -50,10 +50,10 @@ timedimID = netcdf.defDim(nc_init,'time',1);
 %% Variables and attributes:
 disp(' ## Defining Dimensions, Variables, and Attributes...')
 
-sphericalID = netcdf.defVar(nc_init,'spherical','char',timedimID);
+sphericalID = netcdf.defVar(nc_init,'spherical','short',timedimID);
 netcdf.putAtt(nc_init,sphericalID,'long_name','grid type logical switch');
 netcdf.putAtt(nc_init,sphericalID,'flag_meanings','spherical Cartesian');
-netcdf.putAtt(nc_init,sphericalID,'flag_values','T, F');
+netcdf.putAtt(nc_init,sphericalID,'flag_values','1, 0');
 
 VtransformID = netcdf.defVar(nc_init,'Vtransform','long',timedimID);
 netcdf.putAtt(nc_init,VtransformID,'long_name','vertical terrain-following transformation equation');
@@ -91,19 +91,19 @@ netcdf.putAtt(nc_init,Cs_wID,'valid_min',-1);
 netcdf.putAtt(nc_init,Cs_wID,'valid_max',0);
 netcdf.putAtt(nc_init,Cs_wID,'field','Cs_w, scalar');
 
-sc_rID = netcdf.defVar(nc_init,'sc_r','double',s_rhodimID);
+sc_rID = netcdf.defVar(nc_init,'s_rho','double',s_rhodimID);
 netcdf.putAtt(nc_init,sc_rID,'long_name','S-coordinate at RHO-points');
 netcdf.putAtt(nc_init,sc_rID,'units','1');
 netcdf.putAtt(nc_init,sc_rID,'valid_min',-1);
 netcdf.putAtt(nc_init,sc_rID,'valid_max',0);
-netcdf.putAtt(nc_init,sc_rID,'field','sc_r, scalar');
+netcdf.putAtt(nc_init,sc_rID,'field','s_rho, scalar');
 
-sc_wID = netcdf.defVar(nc_init,'sc_w','double',s_wdimID);
+sc_wID = netcdf.defVar(nc_init,'s_w','double',s_wdimID);
 netcdf.putAtt(nc_init,sc_wID,'long_name','S-coordinate at W-points');
 netcdf.putAtt(nc_init,sc_wID,'units','1');
 netcdf.putAtt(nc_init,sc_wID,'valid_min',-1);
 netcdf.putAtt(nc_init,sc_wID,'valid_max',0);
-netcdf.putAtt(nc_init,sc_wID,'field','sc_w, scalar');
+netcdf.putAtt(nc_init,sc_wID,'field','s_w, scalar');
 
 ocean_timeID = netcdf.defVar(nc_init,'ocean_time','double',timedimID);
 netcdf.putAtt(nc_init,ocean_timeID,'long_name','time since initialization');
@@ -190,6 +190,17 @@ for mm=1:NNS
     eval(['netcdf.putAtt(nc_init,sandmass_',count,'ID,''time'',''ocean_time'');'])
     eval(['netcdf.putAtt(nc_init,sandmass_',count,'ID,''field'',''sandmass_',count,', scalar, series'');'])
 
+    eval(['bedload_Usand_',count,'ID = netcdf.defVar(nc_init,''bedload_Usand_',count,''',''double'',[xudimID eudimID timedimID]);'])
+    eval(['netcdf.putAtt(nc_init,bedload_Usand_',count,'ID,''long_name'',''bed load flux of sand in U-direction, size class ',count,''');'])
+    eval(['netcdf.putAtt(nc_init,bedload_Usand_',count,'ID,''units'',''kilogram meter-1 s-1'');'])
+    eval(['netcdf.putAtt(nc_init,bedload_Usand_',count,'ID,''time'',''ocean_time'');'])
+    eval(['netcdf.putAtt(nc_init,bedload_Usand_',count,'ID,''field'',''bedload_Usand_',count,', scalar, series'');'])
+
+    eval(['bedload_Vsand_',count,'ID = netcdf.defVar(nc_init,''bedload_Vsand_',count,''',''double'',[xvdimID evdimID timedimID]);'])
+    eval(['netcdf.putAtt(nc_init,bedload_Vsand_',count,'ID,''long_name'',''bed load flux of sand in V-direction, size class ',count,''');'])
+    eval(['netcdf.putAtt(nc_init,bedload_Vsand_',count,'ID,''units'',''kilogram meter-1 s-1'');'])
+    eval(['netcdf.putAtt(nc_init,bedload_Vsand_',count,'ID,''time'',''ocean_time'');'])
+    eval(['netcdf.putAtt(nc_init,bedload_Vsand_',count,'ID,''field'',''bedload_Vsand_',count,', scalar, series'');'])
 end
 
 bed_thicknessID = netcdf.defVar(nc_init,'bed_thickness','double',[xrhodimID erhodimID NbeddimID timedimID]);

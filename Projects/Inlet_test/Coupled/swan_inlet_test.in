@@ -37,7 +37,7 @@ BOUNDPAR1 SHAPESPEC JONSWAP 3.3 PEAK DSPR DEGREES
 BOUNDPAR2 SEGMENT IJ 0 71 76 71 CONSTANT PAR 1.0 10.0 0. 20.
  
 & Restart name **********************************
-&INIT HOTSTART 'swan_restart.dat'
+&INIT HOTSTART 'swan_inlet_rst.dat'
 
 & PHYSICS  **************************************
 GEN3
@@ -68,7 +68,7 @@ SPECOUT 'point1' SPEC2D 'point1.spc2d' OUTPUT 20000101.000000 1 HR
 TABLE   'point1' HEADER 'point1.table' HSIGN DIR DIRBOT WLEN OUTPUT 20000101.000000 1 HR
 
 PROP BSBT
-RESTART 'swan_intest_rst.dat' FREE 1 HR
+RESTART 'swan_inlet_rst.dat' FREE 1 HR
 
 COMPUTE NONSTATIONARY 20000101.000000 60 SEC 20000101.120000
 
