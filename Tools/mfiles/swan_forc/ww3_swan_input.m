@@ -23,7 +23,7 @@
 % generically (numbered). Any existing TPAR files will be overwritten !!!!
 %
 working_drive='c:';
-working_dir='work\models\COAWST\Projects\Sandy2\';
+working_dir='work\models\COAWST\Projects\Sandy\';
 eval(['cd ',working_drive,'\',working_dir,';']);
 
 %2) Enter dates of data requested.
@@ -36,7 +36,7 @@ ww3_area='multi_1.at_10m';    %western north atlantic
 
 %4) Enter path\name of SWAN netcdf grid. This is typically the same
 % as the roms grid.
-modelgrid='c:/work/models/COAWST/Projects/Sandy2/Sandy_roms_grid.nc';
+modelgrid='c:/work/models/COAWST/Projects/Sandy/Sandy_roms_grid.nc';
 
 %5) Enter the spacings of TPAR file locations around the perimeter
 % of the grid. One TPAR file every 'specres' point.

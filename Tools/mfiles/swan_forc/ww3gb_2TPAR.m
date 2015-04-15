@@ -6,6 +6,8 @@ eval(['dpname=''',ww3_area,'.dp.',yearww3,mmww3,'.grb2'';']);
 eval(['hsname=''',ww3_area,'.hs.',yearww3,mmww3,'.grb2'';']);
 eval(['tpname=''',ww3_area,'.tp.',yearww3,mmww3,'.grb2'';']);
 
+hsnc=ncgeodataset(hsname);
+tpnc=ncgeodataset(tpname);
 dpnc=ncgeodataset(dpname);
 xg=dpnc{'lon'}(:);%lat of ww3 data
 xg(xg>0)=xg(xg>0)-360;
@@ -18,7 +20,6 @@ time=time2;
 %  for user to set this in ww3_swan_input file.
 tstart=1; tend=length(time);
 time=time(tstart:tend);
-close(dpnc)
 
 %determine spec pts from grid
 % specpoints assumes a masking of 0 for land and NaN for water
@@ -40,38 +41,35 @@ for i=1:length(specpts)
     clear ii jj;
     
     %Interpolate the data to each point and create/write TPAR file
-    hsnc=ncgeodataset(hsname);
     for wavet=1:length(time)
-        eval(['hst=squeeze(hsnc{''Significant_height_of_combined_wind_waves_and_swell''}(wavet,',irg,',',jrg,'));']);
+%       eval(['hst=squeeze(hsnc{''Significant_height_of_combined_wind_waves_and_swell''}(wavet,',irg,',',jrg,'));']);
+        eval(['hst=squeeze(hsnc{''Significant_height_of_combined_wind_waves_and_swell_surface''}(wavet,',irg,',',jrg,'));']); 
         zz=hst>1000;
         hst(zz)=0; %make bad data 0, swan not like NaNs
         Z1=interp2(daplon,daplat,hst,gx,gy);
         Z1(isnan(Z1))=0;
         TPAR(wavet,2)=Z1;
     end
-    close(hsnc);
 %
-    tpnc=ncgeodataset(tpname);
     for wavet=1:length(time)
-        eval(['tpt=squeeze(tpnc{''Primary_wave_mean_period''}(wavet,',irg,',',jrg,'));']);
+%       eval(['tpt=squeeze(tpnc{''Primary_wave_mean_period''}(wavet,',irg,',',jrg,'));']);
+        eval(['tpt=squeeze(tpnc{''Primary_wave_mean_period_surface''}(wavet,',irg,',',jrg,'));']); 
         zz=tpt>1000;
         tpt(zz)=0; %make bad data 0, swan not like NaNs
         Z1=interp2(daplon,daplat,tpt,gx,gy);
         Z1(isnan(Z1))=0;
         TPAR(wavet,3)=Z1;
     end
-    close(tpnc);
 %
-    dpnc=ncgeodataset(dpname);
     for wavet=1:length(time)
-        eval(['dpt=squeeze(dpnc{''Primary_wave_direction''}(wavet,',irg,',',jrg,'));']);
+%       eval(['dpt=squeeze(dpnc{''Primary_wave_direction''}(wavet,',irg,',',jrg,'));']);
+        eval(['dpt=squeeze(dpnc{''Primary_wave_direction_degree_true_surface''}(wavet,',irg,',',jrg,'));']); 
         zz=dpt>1000;
         dpt(zz)=0; %make bad data 0, swan not like NaNs
         Z1=interp2(daplon,daplat,dpt,gx,gy);
         Z1(isnan(Z1))=0;
         TPAR(wavet,4)=Z1;
     end
-    close(dpnc);
 %
     TPAR(1:length(time),5)=20;
     TPAR_time(1:length(time),1)=str2num(datestr(time,'yyyymmdd.HHMM'));
@@ -86,4 +84,7 @@ for i=1:length(specpts)
     end
     fclose(fid);
 end
+close(dpnc)
+close(hsnc);
+close(tpnc);
 
