@@ -65,7 +65,7 @@
     if (read_init)
       init_time=ncread(data_file,'ocean_time');
       tidx=length(init_time);
-      init_time=init_time(tidx)/3600/24;
+      init_time=init_time(tidx);
     else
       init_time=0;
     end
@@ -140,7 +140,7 @@
 %
     v=ncread(data_file,'v',[1 1 1 tidx],[Inf Inf Inf 1]);
     vbar=ncread(data_file,'vbar',[1 1 tidx],[Inf Inf 1]);
-    v(isnan(u))=0;  vbar(isnan(ubar))=0;
+    v(isnan(v))=0;  vbar(isnan(vbar))=0;
   else
     u(1:xi_u,1:eta_u,1:N,1:length(init_time)) = 0;
     ubar(1:xi_u,1:eta_u,1:length(init_time)) = 0;
