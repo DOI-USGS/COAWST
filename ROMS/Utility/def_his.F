@@ -3568,6 +3568,9 @@
             HIS(ng)%Vid(idbath)=var_id(i)
 #endif
 #if defined WET_DRY
+          ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idPwet))) THEN
+            got_var(idPwet)=.TRUE.
+            HIS(ng)%Vid(idPwet)=var_id(i)
           ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idRwet))) THEN
             got_var(idRwet)=.TRUE.
             HIS(ng)%Vid(idRwet)=var_id(i)
@@ -4178,6 +4181,12 @@
         END IF
 #endif
 #if defined WET_DRY
+        IF (.not.got_var(idPwet)) THEN
+          IF (Master) WRITE (stdout,60) TRIM(Vname(1,idPwet)),          &
+     &                                  TRIM(ncname)
+          exit_flag=3
+          RETURN
+        END IF
         IF (.not.got_var(idRwet)) THEN
           IF (Master) WRITE (stdout,60) TRIM(Vname(1,idRwet)),          &
      &                                  TRIM(ncname)
