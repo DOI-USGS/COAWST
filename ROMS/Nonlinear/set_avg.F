@@ -7234,7 +7234,7 @@
       USE mod_average
       USE mod_ocean
       USE mod_scalars
-      USE mod_tides
+      USE mod_tides, ONLY: TIDES
 #  ifdef WET_DRY
       USE mod_grid
 #  endif

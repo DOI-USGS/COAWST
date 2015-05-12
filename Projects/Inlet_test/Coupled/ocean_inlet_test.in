@@ -243,7 +243,7 @@ ad_VolCons(north) ==  F                            ! northern boundary
         NAVG == 60
      NDEFAVG == 0
       NTSDIA == 1
-        NDIA == 3600
+        NDIA == 60
      NDEFDIA == 0
 
 ! Output tangent linear and adjoint models parameters.
@@ -781,29 +781,29 @@ Aout(iHVTav) == F F     ! Hvom_temp, ...     tracer volume flux, <Hvom*t>
 ! Logical switches (TRUE/FALSE) to activate writing of time-averaged,
 ! 2D momentum (ubar,vbar) diagnostic terms into DIAGNOSTIC output file.
 
-Dout(M2rate) == F       ! ubar_accel, ...    acceleration
-Dout(M2pgrd) == F       ! ubar_prsgrd, ...   pressure gradient
-Dout(M2fcor) == F       ! ubar_cor, ...      Coriolis force
-Dout(M2hadv) == F       ! ubar_hadv, ...     horizontal total advection
-Dout(M2xadv) == F       ! ubar_xadv, ...     horizontal XI-advection
-Dout(M2yadv) == F       ! ubar_yadv, ...     horizontal ETA-advection
-Dout(M2hrad) == F       ! ubar_hrad, ...     horizontal total wec_mellor radiation stress
-Dout(M2hvis) == F       ! ubar_hvisc, ...    horizontal total viscosity
-Dout(M2xvis) == F       ! ubar_xvisc, ...    horizontal XI-viscosity
-Dout(M2yvis) == F       ! ubar_yvisc, ...    horizontal ETA-viscosity
-Dout(M2sstr) == F       ! ubar_sstr, ...     surface stress
-Dout(M2bstr) == F       ! ubar_bstr, ...     bottom stress
-Dout(M2hjvf) == F       ! 2D wec_vf horizontal J vortex force
-Dout(M2kvrf) == F       ! 2D wec_vf K vortex force
-Dout(M2fsco) == F       ! 2D wec_vf coriolis-stokes
-Dout(M2bstm) == F       ! 2D wec_vf bottom streaming
-Dout(M2sstm) == F       ! 2D wec_vf surface streaming
-Dout(M2wrol) == F       ! 2D wec_vf wave roller accel
-Dout(M2wbrk) == F       ! 2D wec_vf wave breaking
-Dout(M2zeta) == F       ! 2D wec_vf Eulerian sea level adjustment
-Dout(M2zetw) == F       ! 2D wec_vf quasi-static sea level adjustment
-Dout(M2zqsp) == F       ! 2D wec_vf quasi-static pressure
-Dout(M2zbeh) == F       ! 2D wec_vf Bernoulli head
+Dout(M2rate) == T       ! ubar_accel, ...    acceleration
+Dout(M2pgrd) == T       ! ubar_prsgrd, ...   pressure gradient
+Dout(M2fcor) == T       ! ubar_cor, ...      Coriolis force
+Dout(M2hadv) == T       ! ubar_hadv, ...     horizontal total advection
+Dout(M2xadv) == T       ! ubar_xadv, ...     horizontal XI-advection
+Dout(M2yadv) == T       ! ubar_yadv, ...     horizontal ETA-advection
+Dout(M2hrad) == T       ! ubar_hrad, ...     horizontal total wec_mellor radiation stress
+Dout(M2hvis) == T       ! ubar_hvisc, ...    horizontal total viscosity
+Dout(M2xvis) == T       ! ubar_xvisc, ...    horizontal XI-viscosity
+Dout(M2yvis) == t       ! ubar_yvisc, ...    horizontal ETA-viscosity
+Dout(M2sstr) == T       ! ubar_sstr, ...     surface stress
+Dout(M2bstr) == T       ! ubar_bstr, ...     bottom stress
+Dout(M2hjvf) == T       ! 2D wec_vf horizontal J vortex force
+Dout(M2kvrf) == T       ! 2D wec_vf K vortex force
+Dout(M2fsco) == T       ! 2D wec_vf coriolis-stokes
+Dout(M2bstm) == T       ! 2D wec_vf bottom streaming
+Dout(M2sstm) == T       ! 2D wec_vf surface streaming
+Dout(M2wrol) == T       ! 2D wec_vf wave roller accel
+Dout(M2wbrk) == T       ! 2D wec_vf wave breaking
+Dout(M2zeta) == T       ! 2D wec_vf Eulerian sea level adjustment
+Dout(M2zetw) == T       ! 2D wec_vf quasi-static sea level adjustment
+Dout(M2zqsp) == T       ! 2D wec_vf quasi-static pressure
+Dout(M2zbeh) == T       ! 2D wec_vf Bernoulli head
 
 ! Logical switches (TRUE/FALSE) to activate writing of time-averaged,
 ! 3D momentum (u,v) diagnostic terms into DIAGNOSTIC output file.

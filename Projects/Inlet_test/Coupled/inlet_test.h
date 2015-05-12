@@ -74,3 +74,4 @@
 
 #define AVERAGES
 #define STATIONS
+#define DIAGNOSTICS_UV
