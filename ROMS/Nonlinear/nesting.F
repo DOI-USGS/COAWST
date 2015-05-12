@@ -750,7 +750,7 @@
               Jedge=Jo+(Jbc-Jbc_min)*RefineScale(ngf)
               DO jsum=-half,half
                 Jbf=Jedge+jsum
-                EastSum=WestSum+BRY_CONTACT(ieast,cr)%Mflux(Jbf)
+                EastSum=EastSum+BRY_CONTACT(ieast,cr)%Mflux(Jbf)
               END DO
               m=BRY_CONTACT(ieast,cr)%C2Bindex(Jbf)     ! pick last one
 !
@@ -763,7 +763,7 @@
 
 # ifdef NESTING_DEBUG
               IF (EastSum.ne.0) THEN
-                MFratio=REFINED(cr)%DU_avg2(1,m,tnew)/WestSum
+                MFratio=REFINED(cr)%DU_avg2(1,m,tnew)/EastSum
               ELSE
                 MFratio=1.0_r8
               END IF
@@ -866,8 +866,8 @@
               BRY_CONTACT(inorth,cjcr)%Mflux(Ibc)=NorthSum
 
 # ifdef NESTING_DEBUG
-              IF (EastSum.ne.0) THEN
-                MFratio=REFINED(cr)%DV_avg2(1,m,tnew)/SouthSum
+              IF (NorthSum.ne.0) THEN
+                MFratio=REFINED(cr)%DV_avg2(1,m,tnew)/NorthSum
               ELSE
                 MFratio=1.0_r8
               END IF
