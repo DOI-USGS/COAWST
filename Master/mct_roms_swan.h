@@ -822,7 +822,7 @@
         DO i=IstrR,IendR
           ij=ij+1
           A(ij)=0.0_r8
-	! A(ij)=MAX(ICE(ng)%sfw(i,j,1) ! NEED TO PROVIDE CORRECT VAR
+        ! A(ij)=MAX(ICE(ng)%sfw(i,j,1) ! NEED TO PROVIDE CORRECT VAR
         END DO
       END DO
       CALL AttrVect_importRAttr (AttrVect_G(ng)%ocn2wav_AV, "SEAICE",   &

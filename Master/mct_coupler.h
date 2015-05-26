@@ -103,7 +103,7 @@
 !  Read coupled model sparse matrix file names from standard input.
 !
         CALL allocate_coupler_iounits
-	CALL read_coawst_par(2)
+        CALL read_coawst_par(2)
 #endif
 !
 !  Compute the mct send and recv instances.

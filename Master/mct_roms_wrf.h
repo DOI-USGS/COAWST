@@ -322,7 +322,7 @@
 ! Create Ocean sparse matrix plus for interpolation.
 ! Specify matrix decomposition to be by row.
 !
-	call SparseMatrixPlus_init(SMPlus_A(ng,ia)%O2AMatPlus, sMatO,   &
+        call SparseMatrixPlus_init(SMPlus_A(ng,ia)%O2AMatPlus, sMatO,   &
      &                             GlobalSegMap_G(ng)%GSMapROMS,        &
      &                             GSMapInterp_A(ng,ia)%GSMapWRF, Xonly,&
      &                             MyMaster, OCN_COMM_WORLD, OCNid)
@@ -483,7 +483,7 @@
 !  the atm model. The Asize is the number of grid point on this
 !  processor.
 !
-	Asize=GlobalSegMap_lsize(GSMapInterp_A(ng,ia)%GSMapWRF,         &
+        Asize=GlobalSegMap_lsize(GSMapInterp_A(ng,ia)%GSMapWRF,         &
      &                           OCN_COMM_WORLD)
         CALL AttrVect_init (AV2_A(ng,ia)%atm2ocn_AV2,                   &
      &                      rList=TRIM(aostring),lsize=Asize)
@@ -1381,7 +1381,7 @@
 !
 !  Local variable declarations.
 !
-	integer :: ng, ia, MyError
+      integer :: ng, ia, MyError
 !
 !-----------------------------------------------------------------------
 !  Deallocate MCT environment.
