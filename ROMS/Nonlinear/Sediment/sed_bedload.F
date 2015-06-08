@@ -448,13 +448,13 @@
 ! Motion initiation factor.
 !
             cff3=0.5_r8*(1.0_r8+SIGN(1.0_r8,                            &
-     &                               theta_max/tau_ce(ised,ng)-1.0_r8))
+     &                   theta_max/(tau_ce(ised,ng)*osmgd)-1.0_r8))
 !
 ! Calculate bed loads in direction of current and perpendicular
 ! direction.
 !
             phi_x1=12.0_r8*SQRT(theta_mean)*                            &
-     &             MAX((theta_mean-tau_ce(ised,ng)),0.0_r8)
+     &             MAX((theta_mean-tau_ce(ised,ng)*osmgd),0.0_r8)
             phi_x2=12.0_r8*(0.9534_r8+0.1907*COS(2.0_r8*phicw(i,j)))*   &
      &             SQRT(theta_wav)*theta_mean+                          &
      &             12.0_r8*(0.229_r8*w_asym*theta_wav**1.5_r8*          &
