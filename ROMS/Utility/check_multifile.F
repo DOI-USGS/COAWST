@@ -3,7 +3,7 @@
 !
 !svn $Id$
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2014 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2015 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -71,7 +71,9 @@
           END DO
 !
 !  Set the appropriate file counter to use during initialization or
-!  restart.
+!  restart. The EXIT below is removed because when restarting there is
+!  a possibility that the restart time is not included in the first
+!  boundary file in the list to avoid getting an IO error.
 !
           Fcount=0
           IF (Lcheck) THEN
@@ -79,7 +81,7 @@
               Tmin=Tscale*BRY(i,ng)%time_min(ifile)
               IF (time(ng).ge.Tmin) THEN
                 Fcount=ifile
-                EXIT
+!!              EXIT
               END IF
             END DO
           ELSE
@@ -144,7 +146,9 @@
         END DO
 !
 !  Set the appropriate file counter to use during initialization or
-!  restart.
+!  restart. The EXIT below is removed because when restarting there is
+!  a possibility that the restart time is not included in the first
+!  forcing file in the list to avoid getting an IO error.
 !
         Fcount=0
         IF (Lcheck) THEN
@@ -152,7 +156,7 @@
             Tmin=Tscale*FRC(i,ng)%time_min(ifile)
             IF (time(ng).ge.Tmin) THEN
               Fcount=ifile
-              EXIT
+!!            EXIT
             END IF
           END DO
         ELSE

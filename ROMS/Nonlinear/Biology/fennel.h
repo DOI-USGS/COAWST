@@ -2,7 +2,7 @@
 !
 !svn $Id$
 !***********************************************************************
-!  Copyright (c) 2002-2014 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2015 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license           Hernan G. Arango   !
 !    See License_ROMS.txt                               Katja Fennel   !
 !****************************************** Alexander F. Shchepetkin ***
@@ -11,7 +11,7 @@
 !  Fennel et at. (2006) ecosystem model. Then, it adds those terms     !
 !  to the global biological fields.                                    !
 !                                                                      !
-!  This model is loosly based on the model by Fasham et al. (1990)     !
+!  This model is loosely based on the model by Fasham et al. (1990)    !
 !  but it differs in many respects.  The detailed equations of the     !
 !  nitrogen cycling component  are given in  Fennel et al. (2006).     !
 !  Nitrogen is the  fundamental elemental  currency in this model.     !
@@ -78,6 +78,8 @@
       USE mod_ncparam
       USE mod_ocean
       USE mod_stepping
+!
+      implicit none
 !
 !  Imported variable declarations.
 !
@@ -242,12 +244,8 @@
 !
 #ifdef CARBON
       integer, parameter :: Nsink = 6
-      real(r8) :: u10squ
 #else
       integer, parameter :: Nsink = 4
-# ifdef OXYGEN
-      real(r8) :: u10squ
-# endif
 #endif
 
       integer :: Iter, i, ibio, isink, itrc, ivar, j, k, ks
@@ -256,6 +254,9 @@
 
       real(r8), parameter :: eps = 1.0e-20_r8
 
+#if defined CARBON || defined OXYGEN
+      real(r8) :: u10squ
+#endif
 #ifdef OXYGEN
       real(r8), parameter :: OA0 = 2.00907_r8       ! Oxygen
       real(r8), parameter :: OA1 = 3.22014_r8       ! saturation
@@ -314,6 +315,10 @@
       real(r8) :: cffL, cffR, cu, dltL, dltR
 
       real(r8) :: total_N
+
+#ifdef DIAGNOSTICS_BIO
+      real(r8) :: fiter
+#endif
 
 #ifdef OXYGEN
       real(r8) :: SchmidtN_Ox, O2satu, O2_Flux
@@ -398,6 +403,13 @@
 !  Set time-stepping according to the number of iterations.
 !
       dtdays=dt(ng)*sec2day/REAL(BioIter(ng),r8)
+#ifdef DIAGNOSTICS_BIO
+!
+!  A factor to account for the number of iterations in accumulating
+!  diagnostic rate variables.
+!
+      fiter=1.0_r8/REAL(BioIter(ng),r8)
+#endif
 !
 !  Set vertical sinking indentification vector.
 !
@@ -619,12 +631,13 @@
 # ifdef WET_DRY
      &                                rmask_full(i,j)*                  &
 # endif
-     &                                (N_Flux_NewProd+N_Flux_RegProd)
+     &                                (N_Flux_NewProd+N_Flux_RegProd)*  &
+     &                                fiter
                 DiaBio3d(i,j,k,iNO3u)=DiaBio3d(i,j,k,iNO3u)+            &
 # ifdef WET_DRY
      &                                rmask_full(i,j)*                  &
 # endif
-     &                                N_Flux_NewProd
+     &                                N_Flux_NewProd*fiter
 #endif
 #ifdef OXYGEN
                 Bio(i,k,iOxyg)=Bio(i,k,iOxyg)+                          &
@@ -922,7 +935,7 @@
 #  ifdef WET_DRY
      &                          rmask_full(i,j)*                        &
 #  endif
-     &                          O2_Flux
+     &                          O2_Flux*fiter
 # endif
 
           END DO
@@ -1023,7 +1036,7 @@
 #  ifdef WET_DRY
      &                          rmask_full(i,j)*                        &
 #  endif
-     &                          CO2_Flux
+     &                          CO2_Flux*fiter
             DiaBio2d(i,j,ipCO2)=pCO2(i)
 #  ifdef WET_DRY
             DiaBio2d(i,j,ipCO2)=DiaBio2d(i,j,ipCO2)*rmask_full(i,j)
@@ -1236,7 +1249,7 @@
 #   ifdef WET_DRY
      &                              rmask_full(i,j)*                    &
 #   endif
-     &                              (1.0_r8-cff2)*cff1*Hz(i,j,1)
+     &                              (1.0_r8-cff2)*cff1*Hz(i,j,1)*fiter
 #  endif
 #  ifdef OXYGEN
                 Bio(i,1,iOxyg)=Bio(i,1,iOxyg)-cff1*cff3

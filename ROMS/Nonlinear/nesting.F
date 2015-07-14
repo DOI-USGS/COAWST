@@ -5,7 +5,7 @@
 !
 !svn $Id$
 !=======================================================================
-!  Copyright (c) 2002-2014 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2015 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license           Hernan G. Arango   !
 !    See License_ROMS.txt                             John C. Warner   !
 !=======================================================================
@@ -606,7 +606,7 @@
 # endif
 !
 !-----------------------------------------------------------------------
-!  Check mass and volume conservation durin refinement between coarse
+!  Check mass and volume conservation during refinement between coarse
 !  and fine grids.
 !-----------------------------------------------------------------------
 !
@@ -814,7 +814,7 @@
               BRY_CONTACT(isouth,cjcr)%Mflux(Ibc)=SouthSum
 
 # ifdef NESTING_DEBUG
-              IF (EastSum.ne.0) THEN
+              IF (SouthSum.ne.0) THEN
                 MFratio=REFINED(cr)%DV_avg2(1,m,tnew)/SouthSum
               ELSE
                 MFratio=1.0_r8
@@ -856,7 +856,7 @@
                 Ibf=Iedge+isum
                 NorthSum=NorthSum+BRY_CONTACT(inorth,cr)%Mflux(Ibf)
               END DO
-              m=BRY_CONTACT(isouth,cr)%C2Bindex(Ibf)    ! pick last one
+              m=BRY_CONTACT(inorth,cr)%C2Bindex(Ibf)    ! pick last one
 !
 !  Load coarser grid northern boundary mass flux that have been averaged
 !  from finer grid. These values can be compared with the coarser grid
