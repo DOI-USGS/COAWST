@@ -92,6 +92,7 @@ v34 = netcdf.inqVarID(nc,'angle');
 disp(' ## Filling Variables...')
 
 projection = s.projection;
+m_proj(s.projection);
 switch lower(projection)
 case 'mercator'
 	theProjection = 'ME';
@@ -99,6 +100,7 @@ case 'stereographic'
 	theProjection = 'ST';
 case 'lambert conformal conic'
 	theProjection = 'LC';
+    m_proj('Lambert Conformal Conic','clo',mean(s.rho.lon(:)))
 otherwise
 	theProjection = '??';
 end
@@ -106,7 +108,6 @@ netcdf.putVar(nc,v3,theProjection)
 netcdf.putVar(nc,v4,s.spherical)
 
 % Determine coordinates.
-m_proj(s.projection);
 if ((s.spherical=='T') || (s.spherical=='t'))
   geogrid_lon = interp2(s.rho.lon, 'bilinear');
   geogrid_lat = interp2(s.rho.lat, 'bilinear');
