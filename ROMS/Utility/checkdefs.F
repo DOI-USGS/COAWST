@@ -3,7 +3,7 @@
 !
 !svn $Id: checkdefs.F 365 2007-07-08 16:15:48Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2014 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2015 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -138,17 +138,12 @@
       Coptions(is:is+16)=' AFT_EIGENMODES,'
       idriver=idriver+1
 #endif
-#ifdef AGE_DISTRIBUTION
-      IF (Master) WRITE (stdout,20) 'AGE_DISTRIBUTION',                 &
-     &   'Water/tracer age passive tracers distribution simulation.'
+#if defined AGE_MEAN && defined T_PASSIVE && defined SOLVE3D
+      IF (Master) WRITE (stdout,20) 'AGE_MEAN',                         &
+     &   'Computing Mean Age of inert passive tracer.'
       is=LEN_TRIM(Coptions)+1
-      Coptions(is:is+18)=' AGE_DISTRIBUTION,'
-#endif
-#ifdef AGE_PASSIVE
-      IF (Master) WRITE (stdout,20) 'AGE_PASSIVE',                      &
-     &   'Mean water/tracer age passive tracers simulation.'
-      is=LEN_TRIM(Coptions)+1
-      Coptions(is:is+13)=' AGE_PASSIVE,'
+      Coptions(is:is+10)=' AGE_MEAN,'
+      idriver=idriver+1
 #endif
 #ifdef AICLIMATOLOGY
       IF (Master) WRITE (stdout,20) 'AICLIMATOLOGY',                    &
@@ -1891,12 +1886,6 @@
       is=LEN_TRIM(Coptions)+1
       Coptions(is:is+12)=' REP_MATRIX,'
       idriver=idriver+1
-#endif
-#ifdef RESIDENCE_TIME
-      IF (Master) WRITE (stdout,20) 'RESIDENCE_TIME',                   &
-     &   'Water/tracer residence time passive tracers simulation.'
-      is=LEN_TRIM(Coptions)+1
-      Coptions(is:is+16)=' RESIDENCE_TIME,'
 #endif
 #if defined LMD_MIXING
 # ifdef RI_HORAVG

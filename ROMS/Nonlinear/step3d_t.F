@@ -4,7 +4,7 @@
 !
 !svn $Id: step3d_t.F 732 2008-09-07 01:55:51Z jcwarner $
 !=======================================================================
-!  Copyright (c) 2002-2014 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2015 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                           Hernan G. Arango   !
 !========================================== Alexander F. Shchepetkin ===
@@ -340,6 +340,9 @@
       integer :: dg, cr, rg
 # endif
       integer :: i, ibt, ic, is, itrc, j, k, ltrc
+# if defined AGE_MEAN && defined T_PASSIVE
+      integer :: iage
+# endif
 # ifdef DIAGNOSTICS_TS
       integer :: idiag
 # endif
@@ -378,12 +381,6 @@
        real(r8):: v_k(LBi:UBi,LBj:UBj)
 # endif
       real(r8) :: my_maxbio(15)
-# if defined AGE_PASSIVE || defined AGE_DISTRIBUTION
-      integer :: iactrc, iwctrc
-# endif
-# ifdef AGE_DISTRIBUTION
-      real(r8) :: fac
-# endif
 !
 # include "set_bounds.h"
 
@@ -1604,66 +1601,40 @@
           END DO
         END DO
 # endif
-# if defined AGE_PASSIVE || defined AGE_DISTRIBUTION
-!+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-!  Add water concentration to the right-hand-side of age concentration
-!  equation.
-!------Added by W.G.Zhang
-!+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-      iactrc=inert(2)
-      iwctrc=inert(1)
-      DO k=1,N(ng)
-        DO j=Jstr,Jend
-          DO i=Istr,Iend
-            t(i,j,k,nnew,iactrc)=t(i,j,k,nnew,iactrc)+                  &
-     &                           dt(ng)*t(i,j,k,nnew,iwctrc)
-!  Age in years, as in Spall, 2007, JGR, doi:10.1029/2005JC003364.
-            t(i,j,k,nnew,inert(3))=t(i,j,k,nnew,inert(3))+              &
-     &                           dt(ng)*3.168808781402895e-08
-            t(i,j,k,nnew,inert(4))=t(i,j,k,nnew,inert(4))+              &
-     &                           dt(ng)*3.168808781402895e-08
-          END DO
-        END DO
-      END DO
-!      iactrc=inert(4)
-!      iwctrc=inert(2)
-!      DO k=1,N(ng)
-!        DO j=Jstr,Jend
-!          DO i=Istr,Iend
-!            t(i,j,k,nnew,iactrc)=t(i,j,k,nnew,iactrc)+                  &
-!     &                           dt(ng)*t(i,j,k,nnew,iwctrc)
-!          END DO
-!        END DO
-!      END DO
-# endif
-# ifdef AGE_DISTRIBUTION
-!+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-! The aging term (dc/dtau) in the equation of age concentration
-! distribution function.
-! ------Added by W.G.Zhang to compute the age concentration distribution
-!+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+# if defined AGE_MEAN && defined T_PASSIVE
 !
-      fac=dt(ng)/dtau(ng)
-      itrc=inert(3)
-      DO k=1,N(ng)
-        DO j=Jstr,Jend
-          DO i=Istr,Iend
-              t(i,j,k,nnew,itrc)=t(i,j,k,nnew,itrc)-fac*                &
-     &                           t(i,j,k,nnew,itrc)
-          END DO
-        END DO
-      END DO
+!-----------------------------------------------------------------------
+!  If inert passive tracer and Mean Age, compute age concentration (even
+!  inert index) forced by the right-hand-side term that is concentration
+!  of an associated conservative passive tracer (odd inert index). Mean
+!  Age is age concentration divided by conservative passive tracer
+!  concentration. Code implements NPT/2 mean age tracer pairs.
 !
-      itrc=inert(4)
-      DO k=1,N(ng)
-        DO j=Jstr,Jend
-          DO i=Istr,Iend
-            t(i,j,k,nnew,itrc)=t(i,j,k,nnew,itrc)-fac*                &
-     &                         (t(i,j,k,nnew,itrc)-t(i,j,k,nnew,itrc-1))
+!  Implemented and tested by W.G. Zhang and J. Wilkin. See following
+!  reference for details.
+!
+!   Zhang et al. (2010): Simulation of water age and residence time in
+!      the New York Bight, JPO, 40,965-982, doi:10.1175/2009JPO4249.1
+!-----------------------------------------------------------------------
+!
+      DO itrc=1,NPT,2
+        iage=inert(itrc+1)                     ! even inert tracer index
+        DO k=1,N(ng)
+          DO j=Jstr,Jend
+            DO i=Istr,Iend
+              t(i,j,k,nnew,iage)=t(i,j,k,nnew,iage)+                    &
+     &                           dt(ng)*                                &
+#  ifdef TS_MPDATA
+     &                           t(i,j,k,nnew,inert(itrc))
+#  else
+     &                           t(i,j,k,3,inert(itrc))
+#  endif
+            END DO
           END DO
         END DO
       END DO
 # endif
+!
 !-----------------------------------------------------------------------
 !  Apply lateral boundary conditions and, if appropriate, nudge
 !  to tracer data and apply Land/Sea mask.

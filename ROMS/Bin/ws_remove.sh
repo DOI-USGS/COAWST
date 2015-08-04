@@ -2,7 +2,7 @@
 #
 # svn $Id: ws_remove.sh 429 2009-12-20 17:30:26Z arango $
 #::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
-# Copyright (c) 2002-2014 The ROMS/TOMS Group                           :::
+# Copyright (c) 2002-2015 The ROMS/TOMS Group                           :::
 #   Licensed under a MIT/X style license                                :::
 #   See License_ROMS.txt                                                :::
 #:::::::::::::::::::::::::::::::::::::::::::::::::::::: David Robertson :::
@@ -146,8 +146,7 @@ if ( $all == 1 ) then
     # Double check that we're not changing a file in a .svn folder
     if ( `/bin/echo $FILE | grep -vc '.svn/'` ) then
       # Grep for trailing white space including tabs
-#      set s_count = `grep -cP '[ \t]+$' $FILE`
-      set s_count = `grep -c '[ \t]+$' $FILE`
+      set s_count = `/bin/grep -cP '[ \t]+$' $FILE`
       if ( $s_count >= 1 ) then
         # Increment spaces file counter
         @ s++
@@ -161,13 +160,11 @@ if ( $all == 1 ) then
         if ( $verb == 1 ) then
           /bin/echo -en "$FILE ... "
           # Actual replacement command
-          perl -ei 's|[ \t]*$||g' $FILE
-#          sed -i 's|[ \t]*$||g' $FILE
+          sed -i 's|[ \t]*$||g' $FILE
           /bin/echo -en "${s_count} replacement(s) made\n"
         else
           # Actual replacement command
-          perl -ei 's|[ \t]*$||g' $FILE
-#          sed -i 's|[ \t]*$||g' $FILE
+          sed -i 's|[ \t]*$||g' $FILE
         endif
 
         # Report in spaces log that FILE has been processed if --log set
@@ -177,8 +174,7 @@ if ( $all == 1 ) then
       endif
 
       # make list of files with tabs to edit by hand
-      set t_count = `grep -c "\t" $FILE`
-#      set t_count = `grep -cP "\t" $FILE`
+      set t_count = `grep -cP "\t" $FILE`
       if ( $t_count >= 1 ) then
         # Increment tabs file counter and add FILE to tabs log
         @ t++
@@ -202,8 +198,7 @@ foreach FILE ( $special_files )
   set s_count = 0
   set t_count = 0
   # Grep for trailing white space including tabs
-  set s_count = `grep -c '[ \t]+$' $FILE`
-#  set s_count = `grep -cP '[ \t]+$' $FILE`
+  set s_count = `grep -cP '[ \t]+$' $FILE`
   if ( $s_count >= 1 ) then
     # Increment spaces file counter
     @ s++
@@ -217,13 +212,11 @@ foreach FILE ( $special_files )
     if ( $verb == 1 ) then
       /bin/echo -en "${FILE} ... "
       # Actual replacement command
-      perl -ei 's|[ \t]*$||g' $FILE
-#      sed -i 's|[ \t]*$||g' $FILE
+      sed -i 's|[ \t]*$||g' $FILE
       /bin/echo -en "${s_count} replacement(s) made\n"
     else
       # Actual replacement command
-      perl -ei 's|[ \t]*$||g' $FILE
-#      sed -i 's|[ \t]*$||g' $FILE
+      sed -i 's|[ \t]*$||g' $FILE
     endif
 
     # Report in spaces log that FILE has been processed if --log set
@@ -234,8 +227,7 @@ foreach FILE ( $special_files )
 
   # Finish tabs file list. We need to leave the tabs in the
   # makefile though.
-  set t_count = `grep -c '\t' $FILE`
-#  set t_count = `grep -cP '\t' $FILE`
+  set t_count = `grep -cP '\t' $FILE`
   if ( $t_count >= 1 && $FILE != "makefile" ) then
     # Increment tabs file counter and add FILE to tabs log
     @ t++

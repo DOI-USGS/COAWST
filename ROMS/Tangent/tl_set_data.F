@@ -2,9 +2,9 @@
 #ifdef TANGENT
       SUBROUTINE tl_set_data (ng, tile)
 !
-!svn $Id$
+!svn $Id: tl_set_data.F 751 2015-01-07 22:56:36Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2014 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2015 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -131,7 +131,7 @@
 
 #  if (defined BULK_FLUXES && !defined NL_BULK_FLUXES) || \
       defined ECOSIM || \
-      (defined SHORTWAVE && defined ANA_SRFLUX && defined ALBEDO_CLOUD)
+      (defined SHORTWAVE && defined ANA_SRFLUX && defined ALBEDO)
 !
 !-----------------------------------------------------------------------
 !  Set surface air temperature (degC).
@@ -151,7 +151,7 @@
 
 #  if (defined BULK_FLUXES && !defined NL_BULK_FLUXES) || \
       defined ECOSIM || \
-      (defined SHORTWAVE && defined ANA_SRFLUX && defined ALBEDO_CLOUD)
+      (defined SHORTWAVE && defined ANA_SRFLUX && defined ALBEDO)
 !
 !-----------------------------------------------------------------------
 !  Set surface air relative or specific humidity.

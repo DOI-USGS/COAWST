@@ -3,7 +3,7 @@
 **
 ** svn $Id: globaldefs.h 838 2008-11-17 04:22:18Z jcwarner $
 ********************************************************** Hernan G. Arango ***
-** Copyright (c) 2002-2014 The ROMS/TOMS Group     Alexander F. Shchepetkin  **
+** Copyright (c) 2002-2015 The ROMS/TOMS Group     Alexander F. Shchepetkin  **
 **   Licensed under a MIT/X style license                                    **
 **   See License_ROMS.txt                                                    **
 *******************************************************************************
@@ -731,7 +731,8 @@
     ( defined BULK_FLUXES  && (!defined ANA_WINDS    && !defined AIR_OCEAN)) || \
     ( defined BULK_FLUXES  && (!defined ANA_SRFLUX   && !defined AIR_OCEAN)) || \
     ( defined LMD_SKPP     && (!defined ANA_SRFLUX   && !defined AIR_OCEAN)) || \
-    ( defined SALINITY     && !defined ANA_SSFLUX)   || \
+    ( defined SALINITY     && !defined ANA_SSFLUX    && \
+     (defined BULK_FLUXES  && !defined EMINUSP))     || \
     ( defined SOLAR_SOURCE && (!defined ANA_SRFLUX   && !defined AIR_OCEAN)) || \
     ( defined  SSH_TIDES   || defined UV_TIDES)      || \
     ( defined BBL_MODEL    && (!defined ANA_WWAVE  && !defined WAVES_OCEAN)) || \

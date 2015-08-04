@@ -783,7 +783,8 @@ Dout(iTvdif) == 2*T 2*T ! temp_vdiff, ...    vertical diffusion
 ! NetCDF file is special and complex. It is currently generated using
 ! the script "matlab/grid/contact.m" from the Matlab repository.
 
-     NGCNAME =  Data/ROMS/Grid/dogbone_ngc_refined.nc
+!    NGCNAME =  Data/ROMS/Grid/dogbone_ngc_refined.nc
+     NGCNAME =  Data/ROMS/Grid/dogbone_contact_refined.nc
 
 ! Input lateral boundary conditions and climatology file names.  The
 ! USER has the option to split input data time records into several

@@ -4071,7 +4071,7 @@
         END IF
       END IF
 #  ifdef MASKING
-      IF (allocated(F)) THEN
+      IF (allocated(Fmsk)) THEN
         deallocate (Fmsk)
       END IF
 #  endif
@@ -4426,7 +4426,7 @@
         END IF
       END IF
 #   ifdef MASKING
-      IF (allocated(F)) THEN
+      IF (allocated(Fmsk)) THEN
         deallocate (Fmsk)
       END IF
 #   endif

@@ -7,9 +7,9 @@
      (defined TS_DIF2  || defined TS_DIF4)
 
 !
-!svn $Id$
+!svn $Id: ad_t3dmix.F 751 2015-01-07 22:56:36Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2014 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2015 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================

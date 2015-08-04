@@ -1,8 +1,8 @@
       SUBROUTINE tl_uv3dmix2 (ng, tile)
 !
-!svn $Id$
+!svn $Id: tl_uv3dmix2_s.h 751 2015-01-07 22:56:36Z arango $
 !************************************************** Hernan G. Arango ***
-!  Copyright (c) 2002-2014 The ROMS/TOMS Group       Andrew M. Moore   !
+!  Copyright (c) 2002-2015 The ROMS/TOMS Group       Andrew M. Moore   !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !***********************************************************************
@@ -20,8 +20,8 @@
 !                                                                      !
 !      Sadourny, R. and K. Maynard, 1997: Formulations of              !
 !         lateral diffusion in geophysical fluid dynamics              !
-!         models, In "Numerical Methods of Atmospheric and             !
-!         Oceanic Modelling". Lin, Laprise, and Ritchie,               !
+!         models, In Numerical Methods of Atmospheric and              !
+!         Oceanic Modelling. Lin, Laprise, and Ritchie,                !
 !         Eds., NRC Research Press, 547-556.                           !
 !                                                                      !
 !      Griffies, S.M. and R.W. Hallberg, 2000: Biharmonic              !

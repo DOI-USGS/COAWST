@@ -18,7 +18,7 @@
       integer :: MyComm
       integer :: ATM_COMM_WORLD
 
-      CONTAINS
+!     CONTAINS
 
       END MODULE module_parallel
 

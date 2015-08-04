@@ -2,7 +2,7 @@
 !
 !! svn $Id$
 !!======================================================================
-!! Copyright (c) 2002-2014 The ROMS/TOMS Group                         !
+!! Copyright (c) 2002-2015 The ROMS/TOMS Group                         !
 !!   Licensed under a MIT/X style license                              !
 !!   See License_ROMS.txt                                              !
 !=======================================================================
@@ -64,7 +64,7 @@
 !
 !  Local variable declarations.
 !
-      integer :: i, itrc, j, k
+      integer :: i, iage, ip, itrc, j, k
 
 #include "set_bounds.h"
 !
@@ -73,6 +73,22 @@
 !-----------------------------------------------------------------------
 !
 #if defined MY_APPLICATION
+# ifdef AGE_MEAN
+      DO ip=1,NPT,2
+        itrc=inert(ip)
+        iage=inert(ip+1)
+        DO k=1,N(ng)
+          DO j=JstrT,JendT
+            DO i=IstrT,IendT
+              t(i,j,k,1,itrc)=???
+              t(i,j,k,2,itrc)=t(i,j,k,1,itrc)
+              t(i,j,k,1,iage)=0.0_r8
+              t(i,j,k,2,iage)=t(i,j,k,1,iage)
+            END DO
+          END DO
+        END DO
+      END DO
+# else
       DO ip=1,NPT
         itrc=inert(ip)
         DO k=1,N(ng)
@@ -84,8 +100,9 @@
           END DO
         END DO
       END DO
+# endif
 #else
-      ana_passive.h: No values provided for passive tracers.
+      ana_passive.h: no values provided for t(:,:,:,1,inert(itrc))
 #endif
 
       RETURN

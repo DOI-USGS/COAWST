@@ -2,9 +2,9 @@
       MODULE ad_step3d_t_mod
 #if !defined TS_FIXED && (defined ADJOINT && defined SOLVE3D)
 !
-!svn $Id$
+!svn $Id: ad_step3d_t.F 769 2015-07-16 03:17:49Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2014 The ROMS/TOMS Group       Andrew M. Moore   !
+!  Copyright (c) 2002-2015 The ROMS/TOMS Group       Andrew M. Moore   !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -66,7 +66,7 @@
      &                       GRID(ng) % umask,                          &
      &                       GRID(ng) % vmask,                          &
 # endif
-# ifdef TS_MPDATA
+# ifdef TS_MPDATA_NOT_YET
 #  ifdef WET_DRY
      &                       GRID(ng) % rmask_wet,                      &
      &                       GRID(ng) % umask_wet,                      &
@@ -114,7 +114,7 @@
 # ifdef MASKING
      &                             rmask, umask, vmask,                 &
 # endif
-# ifdef TS_MPDATA
+# ifdef TS_MPDATA_NOT_YET
 #  ifdef WET_DRY
      &                             rmask_wet, umask_wet, vmask_wet,     &
 #  endif
@@ -150,7 +150,7 @@
 #  endif
       USE mp_exchange_mod, ONLY : ad_mp_exchange4d
 # endif
-# ifdef TS_MPDATA
+# ifdef TS_MPDATA_NOT_YET
 !!    USE ad_mpdata_adiff_mod
 # endif
       USE ad_t3dbc_mod, ONLY : ad_t3dbc_tile
@@ -168,7 +168,7 @@
       real(r8), intent(in) :: umask(LBi:,LBj:)
       real(r8), intent(in) :: vmask(LBi:,LBj:)
 #  endif
-#  ifdef TS_MPDATA
+#  ifdef TS_MPDATA_NOT_YET
 #   ifdef WET_DRY
       real(r8), intent(in) :: rmask_wet(LBi:,LBj:)
       real(r8), intent(in) :: umask_wet(LBi:,LBj:)
@@ -224,7 +224,7 @@
       real(r8), intent(in) :: umask(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: vmask(LBi:UBi,LBj:UBj)
 #  endif
-#  ifdef TS_MPDATA
+#  ifdef TS_MPDATA_NOT_YET
 #   ifdef WET_DRY
       real(r8), intent(in) :: rmask_wet(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: umask_wet(LBi:UBi,LBj:UBj)
@@ -265,7 +265,12 @@
 !  Local variable declarations.
 !
       integer :: i, ic, is, itrc, j, k, ltrc
+# if defined AGE_MEAN && defined T_PASSIVE
+      integer :: iage
+# endif
+# ifdef DIAGNOSTICS_TS
       integer :: idiag
+# endif
 
       real(r8), parameter :: eps = 1.0E-16_r8
 
@@ -298,7 +303,7 @@
 
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS,N(ng)) :: oHz
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS,N(ng)) :: ad_oHz
-# ifdef TS_MPDATA
+# ifdef TS_MPDATA_NOT_YET
 #  ifdef DIAGNOSTICS_TS
 !!    real(r8), dimension(IminS:ImaxS,JminS:JmaxS,3) :: Dhadv
 !!    real(r8), dimension(IminS:ImaxS,JminS:JmaxS,N(ng),NT(ng)) :: Dvadv
@@ -340,7 +345,7 @@
             ad_oHz(i,j,k)=0.0_r8
           END DO
         END DO
-# ifdef TS_MPDATA
+# ifdef TS_MPDATA_NOT_YET
         DO k=1,N(ng)
           DO i=IminS,ImaxS
             ad_Ua(i,j,k)=0.0_r8
@@ -514,6 +519,48 @@
      &                      nstp, nnew,                                 &
      &                      ad_t)
       END DO
+
+# if defined AGE_MEAN && defined T_PASSIVE
+!
+!-----------------------------------------------------------------------
+!  If inert passive tracer and Mean Age, compute age concentration (even
+!  inert index) forced by the right-hand-side term that is concentration
+!  of an associated conservative passive tracer (odd inert index). Mean
+!  Age is age concentration divided by conservative passive tracer
+!  concentration. Code implements NPT/2 mean age tracer pairs.
+!
+!  Implemented and tested by W.G. Zhang and J. Wilkin. See following
+!  reference for details.
+!
+!   Zhang et al. (2010): Simulation of water age and residence time in
+!      the New York Bight, JPO, 40,965-982, doi:10.1175/2009JPO4249.1
+!-----------------------------------------------------------------------
+!
+      DO itrc=1,NPT,2
+        iage=inert(itrc+1)                     ! even inert tracer index
+        DO k=1,N(ng)
+          DO j=Jstr,Jend
+            DO i=Istr,Iend
+!>            tl_t(i,j,k,nnew,iage)=tl_t(i,j,k,nnew,iage)+              &
+!>   &                              dt(ng)*                             &
+#  ifdef TS_MPDATA
+!>   &                              tl_t(i,j,k,nnew,inert(itrc))
+#  else
+!>   &                              tl_t(i,j,k,3,inert(itrc))
+#  endif
+!>
+#  ifdef TS_MPDATA
+              ad_t(i,j,k,nnew,inert(itrc))=ad_t(i,j,k,nnew,inert(itrc))+&
+     &                                     dt(ng)*ad_t(i,j,k,nnew,iage)
+#  else
+              ad_t(i,j,k,3,inert(itrc))=ad_t(i,j,k,3,inert(itrc))+      &
+     &                                  dt(ng)*ad_t(i,j,k,nnew,iage)
+#  endif
+            END DO
+          END DO
+        END DO
+      END DO
+# endif
 !
 !-----------------------------------------------------------------------
 !  Time-step adjoint vertical diffusion term.
@@ -521,7 +568,7 @@
 !
 !  Compute BASIC STATE inverse thickness.
 !
-# ifdef TS_MPDATA
+# ifdef TS_MPDATA_NOT_YET
 #  define I_RANGE Istrm2,Iendp2
 #  define J_RANGE Jstrm2,Jendp2
 # else
@@ -545,7 +592,7 @@
         DO itrc=1,NT(ng)
           ltrc=MIN(NAT,itrc)
 
-# if defined SPLINES && !defined TS_MPDATA
+# if defined SPLINES && !defined TS_MPDATA_NOT_YET
 !
 !  Use conservative, parabolic spline reconstruction of BASIC STATE
 !  vertical diffusion derivatives.  Solve BASIC STATE tridiagonal
@@ -917,7 +964,7 @@
         END DO
       END DO
 
-# ifdef TS_MPDATA
+# ifdef TS_MPDATA_NOT_YET
 !
 !-----------------------------------------------------------------------
 !  Compute adjoint anti-diffusive velocities and correct advected
@@ -977,7 +1024,7 @@
               i=SOURCES(ng)%Isrc(is)
               j=SOURCES(ng)%Jsrc(is)
               IF (INT(SOURCES(ng)%Dsrc(is)).eq.0) THEN
-#  ifdef TS_MPDATA
+#  ifdef TS_MPDATA_NOT_YET
                 IF (((IstrUm2.le.i).and.(i.le.Iendp3)).and.             &
      &              ((JstrVm2.le.j).and.(j.le.Jendp2i))) THEN
 #  else
@@ -999,8 +1046,8 @@
 #  endif
                   END IF
                 END IF
-              ELSE IF (INT(Dsrc(is)).eq.1) THEN
-#  ifdef TS_MPDATA
+              ELSE IF (INT(SOURCES(ng)%Dsrc(is)).eq.1) THEN
+#  ifdef TS_MPDATA_NOT_YET
                 IF (((IstrUm2.le.i).and.(i.le.Iendp2i)).and.            &
      &              ((JstrVm2.le.j).and.(j.le.Jendp3))) THEN
 #  else
@@ -1071,7 +1118,7 @@
           IF (LwSrc(ng)) THEN
             DO is=1,Nsrc(ng)
               i=SOURCES(ng)%Isrc(is)
-#  ifdef TS_MPDATA
+#  ifdef TS_MPDATA_NOT_YET
               IF (((IstrUm2.le.i).and.(i.le.Iendp2i)).and.              &
      &            ((JstrVm2.le.j).and.(j.le.Jendp2i))) THEN
 #  else
@@ -1388,13 +1435,13 @@
      &                             Va, ad_Va,                           &
      &                             Wa, ad_Wa)
       END DO
-# endif /* TS_MPDATA */
+# endif /* TS_MPDATA_NOT_YET */
 !
 !-----------------------------------------------------------------------
 !  Time-step adjoint vertical advection term.
 !-----------------------------------------------------------------------
 
-# ifdef TS_MPDATA
+# ifdef TS_MPDATA_NOT_YET
 !
 !  Compute BASIC STATE Ta due to horizontal advection only.
 !
@@ -1484,7 +1531,7 @@
 !  Time-step adjoint vertical advection term. Compute first BASIC
 !  STATE vertical advection flux, FC.
 !
-# ifdef TS_MPDATA
+# ifdef TS_MPDATA_NOT_YET
 #  define I_RANGE IstrUm2,Iendp2i
 #  define J_RANGE JstrVm2,Jendp2i
 # else
@@ -1602,7 +1649,7 @@
             FC(i,N(ng))=0.0_r8
           END DO
 
-# elif defined TS_MPDATA
+# elif defined TS_MPDATA_NOT_YET
 !
 !  First_order, BASIC STATE upstream differences vertical advective
 !  flux.
@@ -1671,7 +1718,7 @@
           DO k=1,N(ng)
             DO i=I_RANGE
 !!            cff1=CF(i,0)*(FC(i,k)-FC(i,k-1))    ! not needed HGA
-# ifdef TS_MPDATA
+# ifdef TS_MPDATA_NOT_YET
 #  ifdef DIAGNOSTICS_TS
 !!            Dvadv(i,j,k,itrc)=-cff1
 #  endif
@@ -1722,7 +1769,7 @@
           IF (LwSrc(ng)) THEN
             DO is=1,Nsrc(ng)
               i=SOURCES(ng)%Isrc(is)
-# ifdef TS_MPDATA
+# ifdef TS_MPDATA_NOT_YET
               IF (((IstrUm2.le.i).and.(i.le.Iendp2i)).and.              &
      &            ((JstrVm2.le.j).and.(j.le.Jendp2i))) THEN
 # else
@@ -2034,7 +2081,7 @@
             END DO
           END DO
 
-# elif defined TS_MPDATA
+# elif defined TS_MPDATA_NOT_YET
 !
 !  First_order, upstream differences vertical advective flux.
 !
@@ -2194,7 +2241,7 @@
 !
 !  Time-step adjoint horizontal advection term.
 !
-# ifdef TS_MPDATA
+# ifdef TS_MPDATA_NOT_YET
 #  define I_RANGE IstrUm2,Iendp2i
 #  define J_RANGE JstrVm2,Jendp2i
 # else
@@ -2202,7 +2249,7 @@
 #  define J_RANGE Jstr,Jend
 # endif
 
-# if defined DIAGNOSTICS_TS && defined TS_MPDATA
+# if defined DIAGNOSTICS_TS && defined TS_MPDATA_NOT_YET
 !!        DO j=Jstr,Jend
 !!          DO i=Istr,Iend
 !!            DiaTwrk(i,j,k,itrc,iThadv)=Dhadv(i,j,iThadv)
@@ -2215,7 +2262,7 @@
             DO i=I_RANGE
               cff=dt(ng)*pm(i,j)*pn(i,j)
 # ifdef DIAGNOSTICS_TS
-#  ifdef TS_MPDATA
+#  ifdef TS_MPDATA_NOT_YET
 !!            Dhadv(i,j,iThadv)=-cff3
 !!            Dhadv(i,j,iTyadv)=-cff2
 !!            Dhadv(i,j,iTxadv)=-cff1
@@ -2225,7 +2272,7 @@
 !!            DiaTwrk(i,j,k,itrc,iTxadv)=-cff1
 #  endif
 # endif
-# ifdef TS_MPDATA
+# ifdef TS_MPDATA_NOT_YET
 !>            tl_Ta(i,j,k,itrc)=tl_t(i,j,k,nnew,itrc)-tl_cff3
 !>
               ad_cff3=ad_cff3-ad_Ta(i,j,k,itrc)
@@ -2267,7 +2314,7 @@
               i=SOURCES(ng)%Isrc(is)
               j=SOURCES(ng)%Jsrc(is)
               IF (INT(SOURCES(ng)%Dsrc(is)).eq.0) THEN
-# ifdef TS_MPDATA
+# ifdef TS_MPDATA_NOT_YET
                 IF (((IstrUm2.le.i).and.(i.le.Iendp3)).and.             &
      &              ((JstrVm2.le.j).and.(j.le.Jendp2i))) THEN
 # else
@@ -2309,7 +2356,7 @@
                   END IF
                 END IF
               ELSE IF (INT(SOURCES(ng)%Dsrc(is)).eq.1) THEN
-# ifdef TS_MPDATA
+# ifdef TS_MPDATA_NOT_YET
                 IF (((IstrUm2.le.i).and.(i.le.Iendp2i)).and.            &
      &              ((JstrVm2.le.j).and.(j.le.Jendp3))) THEN
 # else
@@ -2395,7 +2442,7 @@
             END DO
           END DO
 
-# elif defined TS_MPDATA
+# elif defined TS_MPDATA_NOT_YET
 !
 !  First-order, upstream differences adjoint horizontal advective
 !  fluxes.
@@ -2855,7 +2902,7 @@
         END DO K_LOOP
       END DO T_LOOP
 
-# ifdef TS_MPDATA
+# ifdef TS_MPDATA_NOT_YET
 !
 !  The MPDATA algorithm requires a three-point footprint, so exchange
 !  boundary data on t(:,:,:,nnew,:) so other processes computed earlier
@@ -2889,7 +2936,7 @@
 !
 !  Compute adjoint inverse thickness.
 !
-# ifdef TS_MPDATA
+# ifdef TS_MPDATA_NOT_YET
 #  define I_RANGE Istrm2,Iendp2
 #  define J_RANGE Jstrm2,Jendp2
 # else

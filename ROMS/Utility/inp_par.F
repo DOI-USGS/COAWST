@@ -3,7 +3,7 @@
 !
 !svn $Id: inp_par.F 838 2008-11-17 04:22:18Z jcwarner $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2014 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2015 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -1891,7 +1891,8 @@
       RETURN
       END FUNCTION load_r
 
-      FUNCTION load_s1d (Nval, Fname, line, label, igrid, Nfiles, S)
+      FUNCTION load_s1d (Nval, Fname, Fdim, line, label, igrid, Nfiles, &
+     &                   S)
 !
 !=======================================================================
 !                                                                      !
@@ -1902,6 +1903,7 @@
 !                                                                      !
 !     Nval       Number of values processed (integer)                  !
 !     Fname      File name(s) processed (string array)                 !
+!     Fdim       File name(s) dimension in calling program (integer)   !
 !     line       Current input line (string)                           !
 !     label      I/O structure label (string)                          !
 !     igrid      Nested grid counter (integer)                         !
@@ -1926,12 +1928,12 @@
 !
 !  Imported variable declarations.
 !
-      integer, intent(in)    :: Nval
+      integer, intent(in)    :: Nval, Fdim
       integer, intent(inout) :: igrid
       integer, intent(inout) :: Nfiles(Ngrids)
 
       character (len=*),   intent(in) :: line
-      character (len=256), intent(in) :: Fname(100)
+      character (len=256), intent(in) :: Fname(Fdim)
       character (len=*),   intent(inout) :: label
 
       TYPE(T_IO), intent(inout) :: S(Ngrids)
@@ -2009,7 +2011,11 @@
           allocate ( S(ng)%time_min(Nfiles(ng)) )
           allocate ( S(ng)%time_max(Nfiles(ng)) )
           IF (label(1:3).eq.'FLT') THEN
+#ifdef FLOAT_BIOLOGY
             allocate ( S(ng)%Vid(-10:NV) )
+#else
+            allocate ( S(ng)%Vid(-6:NV) )
+#endif
           ELSE
             allocate ( S(ng)%Vid(NV) )
           END IF
@@ -2097,7 +2103,7 @@
       RETURN
       END FUNCTION load_s1d
 
-      FUNCTION load_s2d (Nval, Fname, line, label, ifile, igrid,        &
+      FUNCTION load_s2d (Nval, Fname, Fdim, line, label, ifile, igrid,  &
      &                   Nfiles, Ncount, idim, S)
 !
 !=======================================================================
@@ -2109,6 +2115,7 @@
 !                                                                      !
 !     Nval       Number of values processed (integer)                  !
 !     Fname      File name(s) processed (string array)                 !
+!     Fdim       File name(s) dimension in calling program (integer)   !
 !     line       Current input line (string)                           !
 !     label      I/O structure label (string)                          !
 !     ifile      File structure counter (integer)                      !
@@ -2137,13 +2144,13 @@
 !
 !  Imported variable declarations.
 !
-      integer, intent(in)    :: Nval, idim
+      integer, intent(in)    :: Nval, Fdim, idim
       integer, intent(in)    :: Nfiles(Ngrids)
       integer, intent(inout) :: ifile, igrid
       integer, intent(inout) :: Ncount(idim,Ngrids)
 
       character (len=*),   intent(in) :: line
-      character (len=256), intent(in) :: Fname(100)
+      character (len=256), intent(in) :: Fname(Fdim)
       character (len=*),   intent(inout) :: label
 
       TYPE(T_IO), intent(inout) :: S(idim,Ngrids)

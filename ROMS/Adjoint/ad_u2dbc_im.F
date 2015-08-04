@@ -2,9 +2,9 @@
       MODULE ad_u2dbc_mod
 #ifdef ADJOINT
 !
-!svn $Id$
+!svn $Id: ad_u2dbc_im.F 751 2015-01-07 22:56:36Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2014 The ROMS/TOMS Group       Andrew M. Moore   !
+!  Copyright (c) 2002-2015 The ROMS/TOMS Group       Andrew M. Moore   !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -1173,8 +1173,8 @@
 !>   &                       GRID(ng)%tl_h(Iend+1,j))
 !>
               adfac=0.5_r8*ad_cff
-              GRID(ng)%ad_h(Iend  ,j)=GRID(ng)%tl_h(Iend  ,j)+adfac
-              GRID(ng)%tl_h(Iend+1,j)=GRID(ng)%tl_h(Iend+1,j)+adfac
+              GRID(ng)%ad_h(Iend  ,j)=GRID(ng)%ad_h(Iend  ,j)+adfac
+              GRID(ng)%ad_h(Iend+1,j)=GRID(ng)%ad_h(Iend+1,j)+adfac
               ad_cff=0.0_r8
 
 # if defined SSH_TIDES_NOT_YET && !defined UV_TIDES_NOT_YET

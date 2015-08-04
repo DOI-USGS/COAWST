@@ -1,8 +1,8 @@
       SUBROUTINE tl_t3dmix4 (ng, tile)
 !
-!svn $Id$
+!svn $Id: tl_t3dmix4_iso.h 760 2015-03-27 20:31:35Z arango $
 !************************************************** Hernan G. Arango ***
-!  Copyright (c) 2002-2014 The ROMS/TOMS Group       Andrew M. Moore   !
+!  Copyright (c) 2002-2015 The ROMS/TOMS Group       Andrew M. Moore   !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !***********************************************************************
@@ -23,7 +23,6 @@
 #endif
       USE mod_grid
       USE mod_mixing
-      USE mod_ncparam
       USE mod_ocean
       USE mod_stepping
 !
@@ -95,6 +94,7 @@
 !***********************************************************************
 !
       USE mod_param
+      USE mod_ncparam
       USE mod_scalars
 !
 !  Imported variable declarations.

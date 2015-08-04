@@ -3,7 +3,7 @@
 **
 ** svn $Id: cppdefs.h 818 2008-11-02 14:56:47Z jcwarner $
 ********************************************************** Hernan G. Arango ***
-** Copyright (c) 2002-2014 The ROMS/TOMS Group                               **
+** Copyright (c) 2002-2015 The ROMS/TOMS Group                               **
 **   Licensed under a MIT/X style license                                    **
 **   See License_ROMS.txt                                                    **
 *******************************************************************************
@@ -83,6 +83,7 @@
 ** TS_SMAGORINSKY      use to turn ON or OFF Smagorinsky-like diffusion      **
 ** TS_FIXED            use if diagnostic run, no evolution of tracers        **
 ** T_PASSIVE           use if inert passive tracers (dyes, etc)              **
+** AGE_MEAN            use if computing Mean Age of inert passive tracers    **
 ** SALINITY            use if having salinity                                **
 ** NONLIN_EOS          use if using nonlinear equation of state              **
 ** QCORRECTION         use if net heat flux correction                       **
@@ -91,9 +92,12 @@
 ** SRELAXATION         use if salinity relaxation as a freshwater flux       **
 ** TRC_PSOURCE         use if source of inert passive tracers (dyes, etc)    **
 ** ONE_TRACER_SOURCE   use if one value per tracer for all sources           **
-** AGE_PASSIVE         use if aging of inert passive tracers                 **
-** AGE_DISTRIBUTION    use if aging of inert passive tracers                 **
 ** WTYPE_GRID          use to turn ON spatially varying Jerlov water type    **
+**                                                                           **
+** OPTION to suppress further surface cooling if the SST is at freezing      **
+** point or below and the net surface heat flux is cooling:                  **
+**                                                                           **
+** LIMIT_STFLX_COOLING use to suppress SST cooling below freezing point      **
 **                                                                           **
 ** OPTIONS for MPDATA 3D Advection:                                          **
 **                                                                           **

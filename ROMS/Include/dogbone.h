@@ -24,8 +24,8 @@
 
 #ifdef SOLVE3D
 # define DJ_GRADPS
-# define TS_U3HADVECTION"
-# define TS_C4VADVECTION"
+# define TS_U3HADVECTION
+# define TS_C4VADVECTION
 # define SPLINES
 # define SALINITY
 # define ANA_STFLUX
