@@ -25,6 +25,7 @@
       USE mod_inwave_bound
       USE mod_inwave_params
       USE mod_inwave_vars
+      USE inwave_iounits
 !
       implicit none
 !
@@ -39,30 +40,29 @@
 
 !      real(r8), pointer :: ACG_bnd(:,:,:)
 
+      integer :: ILB, IUB, JLB, JUB
       integer :: LBi, UBi, LBj, UBj
       integer :: Imin, Imax, Jmin, Jmax
-      integer :: i, j, d, d_bnd
+      integer :: i, j, d, d_bnd, my_tile
       integer :: ND_BND
-
-# ifdef AC_OBC
-      integer :: ILB, IUB, JLB, JUB
-# endif
-
-# ifdef AC_OBC
 !
-!  Lower and upper bounds for nontiled boundary arrays.
+!  Lower and upper bounds for nontiled (global values) boundary arrays.
 !
-      ILB=LOWER_BOUND_I
-      IUB=UPPER_BOUND_I
-      JLB=LOWER_BOUND_J
-      JUB=UPPER_BOUND_J
+      my_tile=-1                           ! for global values
+      ILB=BOUNDS(ng)%LBi(my_tile)
+      IUB=BOUNDS(ng)%UBi(my_tile)
+      JLB=BOUNDS(ng)%LBj(my_tile)
+      JUB=BOUNDS(ng)%UBj(my_tile)
 !
-# endif
-
+!  Lower and upper bounds for tiled arrays.
+!
+      LBi=LBOUND(GRID(ng)%h,DIM=1)
+      UBi=UBOUND(GRID(ng)%h,DIM=1)
+      LBj=LBOUND(GRID(ng)%h,DIM=2)
+      UBj=UBOUND(GRID(ng)%h,DIM=2)
 !
 !  Get the number of wave directional bins for the boundary.
 !
-
       ND_BND=WAVEB(ng)%ND_BND
 
 # ifdef PROFILE
@@ -74,30 +74,34 @@
       CALL wclock_on (ng, iNLM, 3)
 # endif
 
-# ifdef WEST_AC_OBC
-      CALL get_ngfld (ng, iNLM, idACbc(iwest), ncIWBRYid(ng), 1,        &
-     &                IWBNDname(ng), update(1),                         &
-     &                JLB, JUB, ND_BND, 2, 0, Mm(ng)+1, ND_BND,         &
-     &                WAVEB(ng)%ACG_west(JLB,1,1))
-# endif
-# ifdef EAST_AC_OBC
-      CALL get_ngfld (ng, iNLM, idACbc(ieast), ncIWBRYid(ng), 1,        &
-     &                IWBNDname(ng), update(1),                         &
-     &                JLB, JUB, ND_BND, 2, 0, Mm(ng)+1, ND_BND,         &
-     &                WAVEB(ng)%ACG_east(JLB,1,1))
-# endif
-# ifdef NORTH_AC_OBC
-      CALL get_ngfld (ng, iNLM, idACbc(inorth), ncIWBRYid(ng), 1,       &
-     &                IWBNDname(ng), update(1),                         &
-     &                ILB, IUB, ND_BND, 2, 0, Lm(ng)+1, ND_BND,         &
-     &                WAVEB(ng)%ACG_north(ILB,1,1))
-# endif
-# ifdef SOUTH_AC_OBC
-      CALL get_ngfld (ng, iNLM, idACbc(isouth), ncIWBRYid(ng), 1,       &
-     &                IWBNDname(ng), update(1),                         &
-     &                ILB, IUB, ND_BND, 2, 0, Lm(ng)+1, ND_BND,         &
-     &                WAVEB(ng)%ACG_south(ILB,1,1))
-# endif
+      IF (LBC(iwest,isAC3d,ng)%acquire) THEN
+        CALL get_ngfld (ng, iNLM, idACbc(iwest),                        &
+     &                  ncBRYid(idACbc(iwest),ng),                      &
+     &                  nBCfiles(ng), BRY(1,ng), update(1),             &
+     &                  JLB, JUB, ND_BND, 2, 0, Mm(ng)+1, ND_BND,       &
+     &                  WAVEB(ng)%ACG_west(JLB,1,1))
+      END IF
+      IF (LBC(ieast,isAC3d,ng)%acquire) THEN
+        CALL get_ngfld (ng, iNLM, idACbc(ieast),                        &
+     &                  ncBRYid(idACbc(ieast),ng),                      &
+     &                  nBCfiles(ng), BRY(1,ng), update(1),             &
+     &                  JLB, JUB, ND_BND, 2, 0, Mm(ng)+1, ND_BND,       &
+     &                  WAVEB(ng)%ACG_east(JLB,1,1))
+      END IF
+      IF (LBC(inorth,isAC3d,ng)%acquire) THEN
+        CALL get_ngfld (ng, iNLM, idACbc(inorth),                       &
+     &                  ncBRYid(idACbc(inorth),ng),                     &
+     &                  nBCfiles(ng), BRY(1,ng), update(1),             &
+     &                  ILB, IUB, ND_BND, 2, 0, Lm(ng)+1, ND_BND,       &
+     &                  WAVEB(ng)%ACG_north(ILB,1,1))
+      END IF
+      IF (LBC(isouth,isAC3d,ng)%acquire) THEN
+        CALL get_ngfld (ng, iNLM, idACbc(isouth),                       &
+     &                  ncBRYid(idACbc(isouth),ng),                     &
+     &                  nBCfiles(ng), BRY(1,ng), update(1),             &
+     &                  ILB, IUB, ND_BND, 2, 0, Lm(ng)+1, ND_BND,       &
+     &                  WAVEB(ng)%ACG_south(ILB,1,1))
+      END IF
 
 # ifdef PROFILE
 !

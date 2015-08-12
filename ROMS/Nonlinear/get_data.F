@@ -377,7 +377,7 @@
      &                FORCES(ng) % PairG)
       IF (exit_flag.ne.NoError) RETURN
 #endif
-#if !defined ANA_WWAVE && defined WAVE_DATA && !defined INWAVE_COUPLING
+#if !defined ANA_WWAVE && defined WAVE_DATA && !defined INWAVE_MODEL
 !
 !-----------------------------------------------------------------------
 !  Surface wind induced wave amplitude, direction and period.

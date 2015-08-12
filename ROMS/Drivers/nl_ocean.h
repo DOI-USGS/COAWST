@@ -183,7 +183,7 @@
 #endif
 #ifdef INWAVE_MODEL
         DO ng=1,Ngrids
-          CALL inwave_init (ng, TILE)
+          CALL inwave_init (ng, MyRank)
         END DO
 #endif
 !
@@ -270,7 +270,7 @@
       CALL main2d (RunInterval)
 #endif
 #ifdef INWAVE_MODEL
-      CALL inwave_run
+!     CALL inwave_run
 #endif
 !$OMP END PARALLEL
 

@@ -785,7 +785,7 @@
       IF (exit_flag.ne.NoError) RETURN
 #  endif
 # endif
-# if defined WAVE_DATA && !defined INWAVE_COUPLING
+# if defined WAVE_DATA && !defined INWAVE_MODEL
 !
 !-----------------------------------------------------------------------
 !  Set surface wind-induced wave amplitude, direction and period.

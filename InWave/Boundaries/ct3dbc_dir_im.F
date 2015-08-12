@@ -79,11 +79,6 @@
 
 # include "set_bounds.h"
 
-#ifdef REFINED_GRID
-!set this for Parent Grid ONLY
-      IF (ng.eq.1) THEN
-#endif
-
         DO j=Jstr,Jend
           DO i=Istr,Iend
 #  if defined UP_CT_GRADIENT
@@ -98,11 +93,6 @@
 #  endif
           ENDDO
         ENDDO
-
-# ifdef REFINED_GRID
-!set this for Parent Grid ONLY
-      END IF
-# endif
 
       RETURN
       END SUBROUTINE ct3dbc_dir_tile

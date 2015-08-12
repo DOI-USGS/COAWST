@@ -25,6 +25,7 @@
 #endif
 #ifdef INWAVE_MODEL
       USE mod_inwave_params
+      USE inwave_iounits
 #endif
 #if defined FOUR_DVAR || defined VERIFICATION
       USE mod_fourdvar
@@ -166,6 +167,10 @@
               CALL allocate_parallel    ! modules that solely depend on
               CALL allocate_iounits     ! the number of nested grids
               CALL allocate_stepping
+#if defined INWAVE_MODEL
+              CALL allocate_inwave_params
+              CALL allocate_inwave_iounits
+#endif
 #if defined FOUR_DVAR || defined VERIFICATION
               CALL allocate_fourdvar
 #endif
@@ -445,6 +450,20 @@
             CASE ('LBC(isV3Sd)')
               Npts=load_lbc(Nval, Cval, line, nline, isV3Sd, igrid,     &
      &                      0, 0, Vname(1,idV3Sd), LBC)
+# endif
+# ifdef INWAVE_MODEL
+            CASE ('LBC(isAC3d)')
+              Npts=load_lbc(Nval, Cval, line, nline, isAC3d, igrid,     &
+     &                      0, 0, Vname(1,idACen), LBC)
+            CASE ('LBC(isCT3d)')
+              Npts=load_lbc(Nval, Cval, line, nline, isCT3d, igrid,     &
+     &                      0, 0, Vname(1,idACct), LBC)
+            CASE ('LBC(isCX3d)')
+              Npts=load_lbc(Nval, Cval, line, nline, isCX3d, igrid,     &
+     &                      0, 0, Vname(1,idACcx), LBC)
+            CASE ('LBC(isCY3d)')
+              Npts=load_lbc(Nval, Cval, line, nline, isCY3d, igrid,     &
+     &                      0, 0, Vname(1,idACcy), LBC)
 # endif
 # if defined GLS_MIXING || defined MY25_MIXING
             CASE ('LBC(isMtke)')
@@ -1793,6 +1812,43 @@
                 RETURN
               END IF
               Npts=load_l(Nval, Cval, Ngrids, Hout(idWvqp,:))
+#endif
+#if defined INWAVE_MODEL
+            CASE ('Hout(idACen)')
+              IF (idACen.eq.0) THEN
+                IF (Master) WRITE (out,280) 'idACen'
+                exit_flag=5
+                RETURN
+              END IF
+              Npts=load_l(Nval, Cval, Ngrids, Hout(idACen,:))
+            CASE ('Hout(idACct)')
+              IF (idACct.eq.0) THEN
+                IF (Master) WRITE (out,280) 'idACct'
+                exit_flag=5
+                RETURN
+              END IF
+              Npts=load_l(Nval, Cval, Ngrids, Hout(idACct,:))
+            CASE ('Hout(idACcx)')
+              IF (idACcx.eq.0) THEN
+                IF (Master) WRITE (out,280) 'idACcx'
+                exit_flag=5
+                RETURN
+              END IF
+              Npts=load_l(Nval, Cval, Ngrids, Hout(idACcx,:))
+            CASE ('Hout(idACcy)')
+              IF (idACcy.eq.0) THEN
+                IF (Master) WRITE (out,280) 'idACcy'
+                exit_flag=5
+                RETURN
+              END IF
+              Npts=load_l(Nval, Cval, Ngrids, Hout(idACcy,:))
+            CASE ('Hout(idACtp)')
+              IF (idACtp.eq.0) THEN
+                IF (Master) WRITE (out,280) 'idACtp'
+                exit_flag=5
+                RETURN
+              END IF
+              Npts=load_l(Nval, Cval, Ngrids, Hout(idACtp,:))
 #endif
 #ifdef SOLVE3D
 # if defined RUNOFF
@@ -4039,6 +4095,18 @@
                 USRname(i:i)=blank
               END DO
               USRname=TRIM(ADJUSTL(Cval(Nval)))
+#ifdef INWAVE_MODEL
+            CASE ('IWININAME')
+              DO i=1,LEN(IWININAME(1))
+                IWININAME(1)(i:i)=blank
+              END DO
+              IWININAME(1)=TRIM(ADJUSTL(Cval(Nval)))
+            CASE ('IWBNDNAME')
+              DO i=1,LEN(IWBNDNAME(1))
+                IWBNDNAME(1)(i:i)=blank
+              END DO
+              IWBNDNAME(1)=TRIM(ADJUSTL(Cval(Nval)))
+#endif
           END SELECT
           IF (exit_flag.ne.NoError) RETURN
         END IF
@@ -5556,6 +5624,23 @@
           IF (Hout(idVwav,ng)) WRITE (out,170) Hout(idVwav,ng),         &
      &       'Hout(idVwav)',                                            &
      &       'Wave-avg surface v-velocity.'
+#endif
+#ifdef INWAVE_MODEL
+          IF (Hout(idACen,ng)) WRITE (out,170) Hout(idACen,ng),         &
+     &       'Hout(idACen)',                                            &
+     &       'Write out 3D wave action'
+          IF (Hout(idACCt,ng)) WRITE (out,170) Hout(idACct,ng),         &
+     &       'Hout(idACct)',                                            &
+     &       'Wave group celerity in the theta coordinate.'
+          IF (Hout(idACcx,ng)) WRITE (out,170) Hout(idACcx,ng),         &
+     &       'Hout(idACcx)',                                            &
+     &       'Wave group celerity in the xi coordinate.'
+          IF (Hout(idACcy,ng)) WRITE (out,170) Hout(idACcy,ng),         &
+     &       'Hout(idACcy)',                                            &
+     &       'Wave group celerity in the eta space.'
+          IF (Hout(idACtp,ng)) WRITE (out,170) Hout(idACtp,ng),         &
+     &       'Hout(idACtp)',                                            &
+     &       'Wave group peak period.'
 #endif
 #if defined SOLVE3D && defined T_PASSIVE
           DO itrc=1,NPT

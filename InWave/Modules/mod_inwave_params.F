@@ -13,6 +13,42 @@
 
       implicit none
 
-      integer, dimension(Ngrids) :: ND
+!     These indices are for the boundaries.
+      integer  :: isAC3d                    ! 3D Action density
+      integer  :: isCT3d                    ! 3D wave theta celerity
+      integer  :: isCX3d                    ! 3D wave x-dir celerity
+      integer  :: isCY3d                    ! 3D wave y-dir celerity
+
+!     These indices are for the I/O.
+      integer  :: idACen                    ! wave action 
+      integer  :: idACcx                    ! wave action celerity in xi  
+      integer  :: idACcy                    ! wave action celerity in eta
+      integer  :: idACct                    ! wave action celerity in theta dir
+      integer  :: idACtp                    ! absolute peak period
+
+!  These integers are assigned values in mod_ncparam.F
+
+      integer, allocatable :: ND(:)
+
+      CONTAINS
+
+      SUBROUTINE allocate_inwave_params
+!
+!=======================================================================
+!                                                                      !
+!  This routine allocates several variables in the module that depend  !
+!  on the number of nested grids.                                      !
+!                                                                      !
+!=======================================================================
+!
+!-----------------------------------------------------------------------
+!  Allocate dimension parameters.
+!-----------------------------------------------------------------------
+!
+      allocate ( ND(Ngrids) )
+
+      RETURN
+      END SUBROUTINE allocate_inwave_params
+
 
       END MODULE mod_inwave_params

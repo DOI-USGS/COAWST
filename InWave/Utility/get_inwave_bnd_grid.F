@@ -21,6 +21,7 @@
       USE mod_ncparam
       USE mod_inwave_params
       USE mod_inwave_bound
+      USE inwave_iounits
 !
       implicit none
 !
@@ -47,9 +48,9 @@
 
 !  Hard code this for now, since swan does not init it.
 
-      ncSPSid(ng)=-1
-      IF (ncSPSid(ng).eq.-1) THEN
-        status=nf90_open(TRIM(nc_name), nf90_nowrite, ncSPSid(ng))
+      ncSPSid=-1
+      IF (ncSPSid.eq.-1) THEN
+        status=nf90_open(TRIM(nc_name), nf90_nowrite, ncSPSid)
         IF (status.ne.nf90_noerr) THEN
           WRITE (stdout,5) TRIM(nc_name)
           exit_flag=2
@@ -57,15 +58,15 @@
           RETURN
         END IF
       END IF
-      ncid=ncSPSid(ng)
+      ncid=ncSPSid
 
 !
 !-----------------------------------------------------------------------
 ! Determine number of directions.
 !-----------------------------------------------------------------------
 !
-      status=nf90_inq_varid(ncSPSid(ng),'energy_angle_c', varid)
-      status=nf90_inquire_variable(ncSPSid(ng),varid,dimids = dimIDs)
+      status=nf90_inq_varid(ncSPSid,'energy_angle_c', varid)
+      status=nf90_inquire_variable(ncSPSid,varid,dimids = dimIDs)
       IF (status.ne.nf90_noerr) THEN
         WRITE (stdout,30) TRIM('num energy bins at the boundary')
         exit_flag=4
@@ -97,8 +98,8 @@
 ! Close BND NetCDF file.
 !-----------------------------------------------------------------------
 !
-      status=nf90_close(ncSPSid(ng))
-      ncSPSid(ng)=-1
+      status=nf90_close(ncSPSid)
+      ncSPSid=-1
 !
 
   5   FORMAT (/,' GET_INWAVE_BND - error while opening file: ', a)

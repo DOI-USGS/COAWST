@@ -25,6 +25,7 @@
       USE mod_inwave_params
       USE mod_inwave_vars
       USE nf_fread3d_mod
+      USE inwave_iounits
 
 !
       implicit none
@@ -81,15 +82,16 @@
 !  Read the absolute period
 !-----------------------------------------------------------------------
 !
-      status=nf90_inq_varid(ncIWINIid(ng),TRIM(Vname(1,idTA)),varid)
+      status=nf90_inq_varid(ncIWINIid(ng),TRIM(Vname(1,idACtp)),varid)
       IF (status.ne.nf90_noerr) THEN
-        WRITE (stdout,20)TRIM(Vname(1,idTA))
+        WRITE (stdout,20)TRIM(Vname(1,idACtp))
         exit_flag=2
          ioerror=status
       ENDIF
-      status=nf90_get_var(ncIWINIid(ng),varid,Ta)
+
+     status=nf90_get_var(ncIWINIid(ng),varid,Ta)
       IF (status.ne.nf90_noerr) THEN
-        WRITE (stdout,30)TRIM(Vname(1,idTA))
+        WRITE (stdout,30)TRIM(Vname(1,idACtp))
         exit_flag=2
          ioerror=status
       ENDIF
@@ -121,7 +123,8 @@
         exit_flag=2
          ioerror=status
       ENDIF
-      gtype=var_flag(varid)*r3dvar
+!     gtype=var_flag(varid)*r3dvar
+      gtype=r3dvar
 
       status= nf_fread3d (ng, iNLM, TRIM(ncname), ncIWINIid(ng),        &
      &            TRIM(Vname(1,idACen)),varid, tindex, gtype,           &
@@ -158,7 +161,7 @@
 !# endif
   10  FORMAT (/,a,'GET_STATE - unable to open input NetCDF file: ',a)
   20  FORMAT (/,a,'GET_ARRAY - unable to find the array: ',a)
-  30  FORMAT (/,a,'GET_ARRAY - unable to read the array: ',a)
+  30  FORMAT (/'GET_ARRAY - unable to read the array: ',a)
 
 
       RETURN

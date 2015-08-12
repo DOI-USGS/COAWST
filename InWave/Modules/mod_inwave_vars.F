@@ -111,7 +111,7 @@
       USE mod_scalars
       USE mod_inwave_params
       USE mod_inwave_bound
-      USE mod_iounits
+      USE inwave_iounits
 !
 !  Imported variable declarations.
 !

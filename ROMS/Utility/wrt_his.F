@@ -3259,15 +3259,14 @@
 # endif
 #endif
 #ifdef INWAVE_MODEL
-
 !
 !  Write out AC wave energy density.
 !
       IF (Hout(idACen,ng)) THEN
         scale=1.0_r8
         gtype=gfactor*r3dvar
-        status=nf_fwrite3d(ng, iNLM, ncHISid(ng), hisVid(idACen,ng),    &
-     &                     tHISindx(ng), gtype,                         &
+        status=nf_fwrite3d(ng, iNLM, HIS(ng)%ncid, HIS(ng)%Vid(idACen), &
+     &                     HIS(ng)%Rindex, gtype,                       &
      &                     LBi, UBi, LBj, UBj, 1, ND(ng), scale,        &
 # ifdef MASKING
 #  ifdef WET_DRY
@@ -3279,7 +3278,7 @@
      &                     WAVEP(ng) % AC(:,:,:,NOUT))
         IF (status.ne.nf90_noerr) THEN
           IF (Master) THEN
-            WRITE (stdout,10) TRIM(Vname(1,idACen)), tHISindx(ng)
+            WRITE (stdout,10) TRIM(Vname(1,idACen)), HIS(ng)%Rindex
           END IF
           exit_flag=3
           ioerror=status
@@ -3292,8 +3291,8 @@
       IF (Hout(idACcx,ng)) THEN
         scale=1.0_r8
         gtype=gfactor*u3dvar
-        status=nf_fwrite3d(ng, iNLM, ncHISid(ng), hisVid(idACcx,ng),    &
-     &                     tHISindx(ng), gtype,                         &
+        status=nf_fwrite3d(ng, iNLM, HIS(ng)%ncid, HIS(ng)%Vid(idACcx), &
+     &                     HIS(ng)%Rindex, gtype,                       &
      &                     LBi, UBi, LBj, UBj, 1, ND(ng), scale,        &
 # ifdef MASKING
 #  ifdef WET_DRY
@@ -3305,7 +3304,7 @@
      &                     WAVEP(ng) % cx)
         IF (status.ne.nf90_noerr) THEN
           IF (Master) THEN
-            WRITE (stdout,10) TRIM(Vname(1,idACcx)), tHISindx(ng)
+            WRITE (stdout,10) TRIM(Vname(1,idACcx)), HIS(ng)%Rindex
           END IF
           exit_flag=3
           ioerror=status
@@ -3319,8 +3318,8 @@
       IF (Hout(idACcy,ng)) THEN
         scale=1.0_r8
         gtype=gfactor*v3dvar
-        status=nf_fwrite3d(ng, iNLM, ncHISid(ng), hisVid(idACcy,ng),    &
-     &                     tHISindx(ng), gtype,                         &
+        status=nf_fwrite3d(ng, iNLM, HIS(ng)%ncid, HIS(ng)%Vid(idACcy), &
+     &                     HIS(ng)%Rindex, gtype,                       &
      &                     LBi, UBi, LBj, UBj, 1, ND(ng), scale,        &
 # ifdef MASKING
 #  ifdef WET_DRY
@@ -3332,22 +3331,21 @@
      &                     WAVEP(ng) % cy)
         IF (status.ne.nf90_noerr) THEN
           IF (Master) THEN
-            WRITE (stdout,10) TRIM(Vname(1,idACcy)), tHISindx(ng)
+            WRITE (stdout,10) TRIM(Vname(1,idACcy)), HIS(ng)%Rindex
           END IF
           exit_flag=3
           ioerror=status
           RETURN
         END IF
       END IF
-
 !
 !  Write out energy celerity xi-direction.
 !
       IF (Hout(idACct,ng)) THEN
         scale=1.0_r8
         gtype=gfactor*r3dvar
-        status=nf_fwrite3d(ng, iNLM, ncHISid(ng), hisVid(idACct,ng),    &
-     &                     tHISindx(ng), gtype,                         &
+        status=nf_fwrite3d(ng, iNLM, HIS(ng)%ncid, HIS(ng)%Vid(idACct), &
+     &                     HIS(ng)%Rindex, gtype,                       &
      &                     LBi, UBi, LBj, UBj, 1, ND(ng), scale,        &
 # ifdef MASKING
 #  ifdef WET_DRY
@@ -3359,14 +3357,39 @@
      &                     WAVEP(ng) % ct)
         IF (status.ne.nf90_noerr) THEN
           IF (Master) THEN
-            WRITE (stdout,10) TRIM(Vname(1,idACct)), tHISindx(ng)
+            WRITE (stdout,10) TRIM(Vname(1,idACct)), HIS(ng)%Rindex
           END IF
           exit_flag=3
           ioerror=status
           RETURN
         END IF
       END IF
-
+!
+!  Write out energy peak period.
+!
+      IF (Hout(idACtp,ng)) THEN
+        scale=1.0_r8
+        gtype=gfactor*r3dvar
+        status=nf_fwrite3d(ng, iNLM, HIS(ng)%ncid, HIS(ng)%Vid(idACtp), &
+     &                     HIS(ng)%Rindex, gtype,                       &
+     &                     LBi, UBi, LBj, UBj, 1, ND(ng), scale,        &
+# ifdef MASKING
+#  ifdef WET_DRY
+     &                     GRID(ng) % rmask_full,                       &
+#  else
+     &                     GRID(ng) % rmask,                            &
+#  endif
+# endif
+     &                     WAVEP(ng) % Ta)
+        IF (status.ne.nf90_noerr) THEN
+          IF (Master) THEN
+            WRITE (stdout,10) TRIM(Vname(1,idACtp)), HIS(ng)%Rindex
+          END IF
+          exit_flag=3
+          ioerror=status
+          RETURN
+        END IF
+      END IF
 #endif
 #ifdef WEC_MELLOR
 !

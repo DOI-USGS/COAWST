@@ -1989,6 +1989,23 @@
           Vinfo(22)='coordinates'
           Aval(5)=REAL(r3dvar,r8)
           status=def_var(ng, iNLM, HIS(ng)%ncid, HIS(ng)%Vid(idACct),   &
+     &                   NF_FOUT, nvd4, r3degrd, Aval, Vinfo, ncname)
+        END IF
+!
+!  Define Peak period.
+!
+        IF (Hout(idACtp,ng)) THEN
+          Vinfo( 1)=Vname(1,idACtp)
+          Vinfo( 2)=Vname(2,idACtp)
+          Vinfo( 3)=Vname(3,idACtp)
+          Vinfo(14)=Vname(4,idACtp)
+          Vinfo(16)=Vname(1,idtime)
+# if defined WRITE_WATER && defined MASKING
+          Vinfo(20)='mask_rho'
+# endif
+          Vinfo(22)='coordinates'
+          Aval(5)=REAL(r3dvar,r8)
+          status=def_var(ng, iNLM, HIS(ng)%ncid, HIS(ng)%Vid(idACtp),   &
      &                   NF_FOUT, nvd4, t3degrd, Aval, Vinfo, ncname)
         END IF
 #endif

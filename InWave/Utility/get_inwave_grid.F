@@ -14,6 +14,7 @@
 !                                                                      !
 !=======================================================================
 !
+      USE inwave_iounits
       USE mod_iounits
       USE mod_netcdf
       USE mod_scalars
@@ -44,10 +45,10 @@
 !
 
 !  Hard code this for now, since swan does not init it.
-      ncSPSid(ng)=-1
+      ncSPSid=-1
 
-      IF (ncSPSid(ng).eq.-1) THEN
-        status=nf90_open(TRIM(nc_name), nf90_nowrite, ncSPSid(ng))
+      IF (ncSPSid.eq.-1) THEN
+        status=nf90_open(TRIM(nc_name), nf90_nowrite, ncSPSid)
         IF (status.ne.nf90_noerr) THEN
           WRITE (stdout,5) TRIM(nc_name)
           exit_flag=2
@@ -55,14 +56,15 @@
           RETURN
         END IF
       END IF
-      ncid=ncSPSid(ng)
+      ncid=ncSPSid
 !
 !-----------------------------------------------------------------------
 ! Determine number of directions.
 !-----------------------------------------------------------------------
 !
-      status=nf90_inq_varid(ncSPSid(ng),'energy_angle_c', varid)
-      status=nf90_inquire_variable(ncSPSid(ng),varid,dimids = dimIDs)
+!!      status=nf90_inq_varid(ncSPSid,'energy_angle_c', varid)
+      status=nf90_inq_varid(ncSPSid,'energy_angle', varid)
+      status=nf90_inquire_variable(ncSPSid,varid,dimids = dimIDs)
       IF (status.ne.nf90_noerr) THEN
         WRITE (stdout,30) TRIM('num energy bins')
         exit_flag=4
@@ -87,8 +89,8 @@
 ! Close GRID NetCDF file.
 !-----------------------------------------------------------------------
 !
-      status=nf90_close(ncSPSid(ng))
-      ncSPSid(ng)=-1
+      status=nf90_close(ncSPSid)
+      ncSPSid=-1
 !
 
   5   FORMAT (/,' GET_INWAVE_GRID - error while opening file: ', a)

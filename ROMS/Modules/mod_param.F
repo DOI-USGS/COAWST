@@ -1010,6 +1010,9 @@
 # ifdef WEC
       nLBCvar=nLBCvar+4
 # endif
+# ifdef INWAVE_MODEL
+      nLBCvar=nLBCvar+4
+# endif
 #else
       nLBCvar=3
 #endif

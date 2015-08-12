@@ -81,6 +81,9 @@
       USE hmixing_mod, ONLY : hmixing
 # endif
       USE ini_fields_mod, ONLY : ini_fields, ini_zeta
+#ifdef INWAVE_MODEL
+      USE driver_inwave_mod, ONLY : inwave_run
+#endif
 # ifdef LMD_MIXING
       USE lmd_vmix_mod, ONLY : lmd_vmix
 # endif
@@ -337,6 +340,15 @@
             IF (iic(ng).ne.ntstart(ng)) THEN
               CALL ocean_coupling (nl)
             END IF
+# endif
+# if defined INWAVE_MODEL
+!
+!-----------------------------------------------------------------------
+!  Couple ocean to atmosphere and wave model grids.
+!-----------------------------------------------------------------------
+!            IF (iic(ng).ne.ntstart(ng)) THEN
+              CALL inwave_run
+!            END IF
 # endif
 
 # ifdef WEC_VF

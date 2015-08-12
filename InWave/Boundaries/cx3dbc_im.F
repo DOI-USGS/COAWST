@@ -46,7 +46,10 @@
 !***********************************************************************
 !
       USE mod_param
+      USE mod_inwave_params
       USE mod_grid
+      USE mod_boundary
+      USE mod_scalars
 !
 !  Imported variable declarations.
 !
@@ -64,186 +67,185 @@
       integer :: i, j, d
 
 # include "set_bounds.h"
-
-#ifdef REFINED_GRID
-!set this for Parent Grid ONLY
-      IF (ng.eq.1) THEN
-#endif
-
-# if !defined EW_C_PERIODIC && !defined COMPOSED_GRID
 !
 !-----------------------------------------------------------------------
 !  Lateral boundary conditions at the western edge.
 !-----------------------------------------------------------------------
 !
-       IF (WESTERN_EDGE) THEN
-
-#  if defined WEST_CX_GRADIENT
+      IF (DOMAIN(ng)%Western_Edge(tile)) THEN
 !
 !  Western edge, gradient boundary condition.
 !
-        DO d=1,ND
-         DO j=Jstr,Jend
-          cx(Istr,j,d)=cx(Istr+1,j,d)
+        IF (LBC(iwest,isCX3d,ng)%gradient) THEN
+          DO d=1,ND
+            DO j=Jstr,Jend
+              IF (LBC_apply(ng)%west(j)) THEN
+                cx(Istr,j,d)=cx(Istr+1,j,d)
 #   ifdef MASKING
-          cx(Istr,j,d)=cx(Istr,j,d)*                                    &
-     &                 GRID(ng)%umask(Istr,j)
+                cx(Istr,j,d)=cx(Istr,j,d)*                              &
+     &                       GRID(ng)%umask(Istr,j)
 #   endif
-         END DO
-        END DO
-
-#  elif defined WEST_CX_WALL
+              END IF
+            END DO
+          END DO
 !
 !  Western edge, closed boundary condition.
 !
-        DO d=1,ND
-         DO j=Jstr,Jend
-          cx(Istr,j,d)=0.0_r8
-         END DO
-        END DO
-#  endif
-
-       END IF
+        ELSE IF (LBC(iwest,isCX3d,ng)%closed) THEN
+          DO d=1,ND
+            DO j=Jstr,Jend
+              IF (LBC_apply(ng)%west(j)) THEN
+                cx(Istr,j,d)=0.0_r8
+              END IF
+            END DO
+          END DO
+        END IF
+      END IF
 !
 !-----------------------------------------------------------------------
 !  Lateral boundary conditions at the eastern edge.
 !-----------------------------------------------------------------------
 !
-       IF (EASTERN_EDGE) THEN
-
-#  if defined EAST_CX_GRADIENT
+      IF (DOMAIN(ng)%Eastern_Edge(tile)) THEN
 !
 !  Eastern edge, gradient boundary condition.
 !
-        DO d=1,ND
-         DO j=Jstr,Jend
-          cx(Iend+1,j,d)=cx(Iend,j,d)
+        IF (LBC(ieast,isCX3d,ng)%gradient) THEN
+          DO d=1,ND
+            DO j=Jstr,Jend
+              IF (LBC_apply(ng)%east(j)) THEN
+                cx(Iend+1,j,d)=cx(Iend,j,d)
 #   ifdef MASKING
-          cx(Iend+1,j,d)=cx(Iend+1,j,d)*                                &
-     &                   GRID(ng)%umask(Iend+1,j)
+                cx(Iend+1,j,d)=cx(Iend+1,j,d)*                          &
+     &                         GRID(ng)%umask(Iend+1,j)
 #   endif
-         END DO
-        END DO
-
-#  elif defined EAST_CX_WALL
+              END IF
+            END DO
+          END DO
 !
 !  Eastern edge, closed boundary condition.
 !
-        DO d=1,ND
-         DO j=Jstr,Jend
-          cx(Iend+1,j,d)=0.0_r8
-         END DO
-        END DO
-#  endif
-       END IF
-# endif
-
-# if !defined NS_C_PERIODIC && !defined COMPOSED_GRID
+        ELSE IF (LBC(ieast,isCX3d,ng)%closed) THEN
+          DO d=1,ND
+            DO j=Jstr,Jend
+              IF (LBC_apply(ng)%east(j)) THEN
+                cx(Iend+1,j,d)=0.0_r8
+              END IF
+            END DO
+          END DO
+        END IF
+      END IF
 !
 !-----------------------------------------------------------------------
 !  Lateral boundary conditions at the southern edge.
 !-----------------------------------------------------------------------
 !
-       IF (SOUTHERN_EDGE) THEN
-
-
-#  if defined SOUTH_CX_GRADIENT
+      IF (DOMAIN(ng)%Southern_Edge(tile)) THEN
 !
 !  Southern edge, gradient boundary condition.
 !
-        DO d=1,ND
-         DO i=IstrU,Iend
-          cx(i,Jstr-1,d)=cx(i,Jstr,d)
+        IF (LBC(isouth,isCX3d,ng)%gradient) THEN
+          DO d=1,ND
+            DO i=IstrU,Iend
+              IF (LBC_apply(ng)%south(i)) THEN
+                cx(i,Jstr-1,d)=cx(i,Jstr,d)
 #   ifdef MASKING
-          cx(i,Jstr-1,d)=cx(i,Jstr-1,d)*                                &
-     &                   GRID(ng)%umask(i,Jstr-1)
+                cx(i,Jstr-1,d)=cx(i,Jstr-1,d)*                          &
+     &                         GRID(ng)%umask(i,Jstr-1)
 #   endif
-         END DO
-        END DO
-
-#  elif defined SOUTH_CX_WALL
+              END IF
+            END DO
+          END DO
 !
 !  Southern edge, closed boundary condition.
 !
-        DO d=1,ND
-         DO i=IstrU,Iend
-          cx(i,Jstr-1,d)=0.0_r8
-         END DO
-        END DO
-#  endif
-       END IF
-
+        ELSE IF (LBC(isouth,isCX3d,ng)%closed) THEN
+          DO d=1,ND
+            DO i=IstrU,Iend
+              IF (LBC_apply(ng)%south(i)) THEN
+                cx(i,Jstr-1,d)=0.0_r8
+              END IF
+            END DO
+          END DO
+        END IF
+      END IF
 !
 !-----------------------------------------------------------------------
 !  Lateral boundary conditions at the northern edge.
 !-----------------------------------------------------------------------
 !
-       IF (NORTHERN_EDGE) THEN
-
-#  if defined NORTH_CX_GRADIENT
+      IF (DOMAIN(ng)%Northern_Edge(tile)) THEN
 !
 !  Northern edge, gradient boundary condition.
 !
-        DO d=1,ND
-         DO i=IstrU,Iend
-          cx(i,Jend+1,d)=cx(i,Jend,d)
+        IF (LBC(inorth,isCX3d,ng)%gradient) THEN
+          DO d=1,ND
+            DO i=IstrU,Iend
+              IF (LBC_apply(ng)%north(i)) THEN
+                cx(i,Jend+1,d)=cx(i,Jend,d)
 #   ifdef MASKING
-          cx(i,Jend+1,d)=cx(i,Jend+1,d)*                                &
-     &                   GRID(ng)%umask(i,Jend+1)
+                cx(i,Jend+1,d)=cx(i,Jend+1,d)*                          &
+     &                         GRID(ng)%umask(i,Jend+1)
 #   endif
-         END DO
-        END DO
-
-#  elif defined NORTH_CX_WALL
+              END IF
+            END DO
+          END DO
 !
 !  Northern edge, closed boundary condition.
 !
-        DO d=1,ND
-         DO i=IstrU,Iend
-          cx(i,Jend+1,d)=0.0_r8
-         END DO
-        END DO
-#  endif
-       END IF
-
-# endif
-
-# if !defined EW_C_PERIODIC && !defined NS_C_PERIODIC && !defined COMPOSED_GRID
+        ELSE IF (LBC(inorth,isCX3d,ng)%closed) THEN
+          DO d=1,ND
+            DO i=IstrU,Iend
+              IF (LBC_apply(ng)%north(i)) THEN
+                cx(i,Jend+1,d)=0.0_r8
+              END IF
+            END DO
+          END DO
+        END IF
+      END IF
 !
 !-----------------------------------------------------------------------
 !  Boundary corners.
 !-----------------------------------------------------------------------
 !
-       IF ((SOUTHERN_EDGE).and.(WESTERN_EDGE)) THEN
-        DO d=1,ND
-         cx(Istr,Jstr-1,d)=0.5_r8*(cx(Istr+1,Jstr-1,d)+                 &
-     &                             cx(Istr  ,Jstr  ,d))
-        END DO
-       END IF
-       IF ((SOUTHERN_EDGE).and.(EASTERN_EDGE)) THEN
-        DO d=1,ND
-         cx(Iend+1,Jstr-1,d)=0.5_r8*(cx(Iend  ,Jstr-1,d)+               &
-     &                               cx(Iend+1,Jstr  ,d))
-        END DO
-       END IF
-       IF ((NORTHERN_EDGE).and.(WESTERN_EDGE)) THEN
-        DO d=1,ND
-         cx(Istr,Jend+1,d)=0.5_r8*(cx(Istr  ,Jend  ,d)+                 &
-     &                             cx(Istr+1,Jend+1,d))
-        END DO
-       END IF
-       IF ((NORTHERN_EDGE).and.(EASTERN_EDGE)) THEN
-        DO d=1,ND
-         cx(Iend+1,Jend+1,d)=0.5_r8*(cx(Iend+1,Jend  ,d)+               &
-     &                               cx(Iend  ,Jend+1,d))
-        END DO
-       END IF
-# endif
-
-#ifdef REFINED_GRID
-!set this for Parent Grid ONLY
+      IF (.not.(EWperiodic(ng).or.NSperiodic(ng))) THEN
+        IF (DOMAIN(ng)%SouthWest_Corner(tile)) THEN
+          IF (LBC_apply(ng)%south(Istr-1).and.                          &
+     &        LBC_apply(ng)%west (Jstr-1)) THEN
+            DO d=1,ND
+              cx(Istr,Jstr-1,d)=0.5_r8*(cx(Istr+1,Jstr-1,d)+            &
+     &                                  cx(Istr  ,Jstr  ,d))
+            END DO
+          END IF
+        END IF
+        IF (DOMAIN(ng)%SouthEast_Corner(tile)) THEN
+          IF (LBC_apply(ng)%south(Iend+1).and.                          &
+     &        LBC_apply(ng)%east (Jstr-1)) THEN
+            DO d=1,ND
+              cx(Iend+1,Jstr-1,d)=0.5_r8*(cx(Iend  ,Jstr-1,d)+          &
+     &                                    cx(Iend+1,Jstr  ,d))
+            END DO
+          END IF
+        END IF
+        IF (DOMAIN(ng)%NorthWest_Corner(tile)) THEN
+          IF (LBC_apply(ng)%north(Istr-1).and.                          &
+     &        LBC_apply(ng)%west (Jend+1)) THEN
+            DO d=1,ND
+              cx(Istr,Jend+1,d)=0.5_r8*(cx(Istr  ,Jend  ,d)+            &
+     &                                  cx(Istr+1,Jend+1,d))
+            END DO
+          END IF
+        END IF
+        IF (DOMAIN(ng)%NorthEast_Corner(tile)) THEN
+          IF (LBC_apply(ng)%north(Iend+1).and.                          &
+     &        LBC_apply(ng)%east (Jend+1)) THEN
+            DO d=1,ND
+              cx(Iend+1,Jend+1,d)=0.5_r8*(cx(Iend+1,Jend  ,d)+          &
+     &                                    cx(Iend  ,Jend+1,d))
+            END DO
+          END IF
+        END IF
       END IF
-#endif
 
       RETURN
       END SUBROUTINE cx3dbc_tile

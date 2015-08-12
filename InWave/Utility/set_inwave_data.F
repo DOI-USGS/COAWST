@@ -67,68 +67,54 @@
 # ifdef AC_OBC
       integer :: ILB, IUB, JLB, JUB
 # endif
-      integer :: ND_BND
+      integer :: ND_BND, my_tile
 
 !
 !  Local variable declarations.
 !
-# ifdef DISTRIBUTE
-#  ifdef EW_PERIODIC
-      logical :: EWperiodic=.TRUE.
-#  else
-      logical :: EWperiodic=.FALSE.
-#  endif
-#  ifdef NS_PERIODIC
-      logical :: NSperiodic=.TRUE.
-#  else
-      logical :: NSperiodic=.FALSE.
-#  endif
-# endif
       logical :: update = .FALSE.
 
-# include "set_bounds.h"
-
-# ifdef AC_OBC
+!# include "set_bounds.h"
 !
-!  Lower and upper bounds for nontiled boundary arrays.
+!  Lower and upper bounds for nontiled (global values) boundary arrays.
 !
-      ILB=LOWER_BOUND_I
-      IUB=UPPER_BOUND_I
-      JLB=LOWER_BOUND_J
-      JUB=UPPER_BOUND_J
-# endif
+      my_tile=-1                           ! for global values
+      ILB=BOUNDS(ng)%LBi(my_tile)
+      IUB=BOUNDS(ng)%UBi(my_tile)
+      JLB=BOUNDS(ng)%LBj(my_tile)
+      JUB=BOUNDS(ng)%UBj(my_tile)
 
       ND_BND=WAVEB(ng)%ND_BND
 
-
-# if defined WEST_AC_OBC
+      IF (LBC(iwest,isAC3d,ng)%acquire) THEN
         CALL set_ngfld (ng, iNLM, idACbc(iwest), JLB, JUB, ND_BND,      &
      &                  0, Mm(ng)+1, ND_BND,                            &
      &                  WAVEB(ng) % ACG_west(JLB,1,1),                  &
      &                  WAVEB(ng) % AC_west(JLB,1),                     &
      &                  update)
-# endif
-# if defined EAST_AC_OBC
+      END IF
+      IF (LBC(ieast,isAC3d,ng)%acquire) THEN
         CALL set_ngfld (ng, iNLM, idACbc(ieast), JLB, JUB, ND_BND,      &
      &                  0, Mm(ng)+1, ND_BND,                            &
      &                  WAVEB(ng) % ACG_east(JLB,1,1),                  &
      &                  WAVEB(ng) % AC_east(JLB,1),                     &
      &                  update)
-# endif
-# if defined NORTH_AC_OBC
+      END IF
+      IF (LBC(inorth,isAC3d,ng)%acquire) THEN
         CALL set_ngfld (ng, iNLM, idACbc(inorth), ILB, IUB, ND_BND,     &
      &                  0, Lm(ng)+1, ND_BND,                            &
      &                  WAVEB(ng) % ACG_north(ILB,1,1),                 &
      &                  WAVEB(ng) % AC_north(ILB,1),                    &
      &                  update)
-# endif
-# if defined SOUTH_AC_OBC
+      END IF
+      IF (LBC(isouth,isAC3d,ng)%acquire) THEN
         CALL set_ngfld (ng, iNLM, idACbc(isouth), ILB, IUB, ND_BND,     &
      &                  0, Lm(ng)+1, ND_BND,                            &
      &                  WAVEB(ng) % ACG_south(ILB,1,1),                 &
      &                  WAVEB(ng) % AC_south(ILB,1),                    &
      &                  update)
-# endif
+      END IF
+
       RETURN
       END SUBROUTINE set_inwave_data_tile
 #else

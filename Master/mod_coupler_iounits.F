@@ -48,10 +48,8 @@
       character (len=80) :: Aname
 # endif
 # ifdef INWAVE_MODEL
-      character (len=80), dimension(Ngridss) :: IWINIname
-      character (len=80), dimension(Ngridss) :: IWBNDname
-      character (len=80), dimension(Ngridss) :: IWINIname
-      character (len=80), dimension(Ngridss) :: IWBNDname
+!     character (len=80), dimension(Ngridss) :: IWINIname
+!     character (len=80), dimension(Ngridss) :: IWBNDname
       character (len=80), dimension(Ngridss) :: IWSWNname
 # endif
 

@@ -22,8 +22,8 @@
 !***********************************************************************
 !
       USE mod_param
-      USE mod_inwave_params
       USE mod_inwave_vars
+      USE mod_inwave_params
       USE mod_ocean
       USE mod_stepping
 !
@@ -48,19 +48,16 @@
      &                       ct)
 !***********************************************************************
 !
+      USE mod_inwave_params
       USE mod_param
       USE mod_boundary
       USE mod_grid
       USE mod_scalars
-# ifdef REFINED_GRID
-      USE mod_stepping
-# endif
 !
 !  Imported variable declarations.
 !
       integer, intent(in) :: ng, tile
       integer, intent(in) :: LBi, UBi, LBj, UBj, ND
-
 !
 # ifdef ASSUMED_SHAPE
       real(r8), intent(inout) :: ct(LBi:,LBj:,:)
@@ -72,204 +69,206 @@
 !
       integer :: i, j, d
 
-
 # include "set_bounds.h"
-
-#ifdef REFINED_GRID
-!set this for Parent Grid ONLY
-      IF (ng.eq.1) THEN
-#endif
-
-# if !defined EW_C_PERIODIC && !defined COMPOSED_GRID
 !
 !-----------------------------------------------------------------------
 !  Lateral boundary conditions at the western edge.
 !-----------------------------------------------------------------------
 !
-       IF (WESTERN_EDGE) THEN
-
-#  if defined WEST_CT_GRADIENT
+      IF (DOMAIN(ng)%Western_Edge(tile)) THEN
 !
 !  Western edge, gradient boundary condition.
 !
-        DO d=1,ND
-         DO j=Jstr,Jend
-          ct(Istr-1,j,d)=ct(Istr,j,d)
+        IF (LBC(iwest,isCT3d,ng)%gradient) THEN
+          DO d=1,ND
+            DO j=Jstr,Jend
+              IF (LBC_apply(ng)%west(j)) THEN
+                ct(Istr-1,j,d)=ct(Istr,j,d)
 #   ifdef MASKING
-          ct(Istr-1,j,d)=ct(Istr-1,j,d)*                                &
-     &                   GRID(ng)%rmask(Istr-1,j)
+                ct(Istr-1,j,d)=ct(Istr-1,j,d)*                          &
+     &                         GRID(ng)%rmask(Istr-1,j)
 #   endif
-         END DO
-        END DO
-
-#  elif defined WEST_CT_WALL
+              END IF
+            END DO
+          END DO
 !
 !  Western edge, closed boundary condition.
 !
-        DO d=1,ND
-         DO j=Jstr,Jend
-          ct(Istr-1,j,d)=0.0_r8
+        ELSE IF (LBC(iwest,isCT3d,ng)%closed) THEN
+          DO d=1,ND
+            DO j=Jstr,Jend
+              IF (LBC_apply(ng)%west(j)) THEN
+                ct(Istr-1,j,d)=0.0_r8
 #   ifdef MASKING
-          ct(Istr-1,j,d)=ct(Istr-1,j,d)*                                &
-     &                   GRID(ng)%rmask(Istr-1,j)
+                ct(Istr-1,j,d)=ct(Istr-1,j,d)*                          &
+     &                         GRID(ng)%rmask(Istr-1,j)
 #   endif
-         END DO
-        END DO
-#  endif
-       END IF
+              END IF
+            END DO
+          END DO
+        END IF
+      END IF
 !
 !-----------------------------------------------------------------------
 !  Lateral boundary conditions at the eastern edge.
 !-----------------------------------------------------------------------
 !
-       IF (EASTERN_EDGE) THEN
-
-#  if defined EAST_CT_GRADIENT
+      IF (DOMAIN(ng)%Eastern_Edge(tile)) THEN
 !
 !  Eastern edge, gradient boundary condition.
 !
-        DO d=1,ND
-         DO j=Jstr,Jend
-          ct(Iend+1,j,d)=ct(Iend,j,d)
+        IF (LBC(ieast,isCT3d,ng)%gradient) THEN
+          DO d=1,ND
+            DO j=Jstr,Jend
+              IF (LBC_apply(ng)%east(j)) THEN
+                ct(Iend+1,j,d)=ct(Iend,j,d)
 #   ifdef MASKING
-          ct(Iend+1,j,d)=ct(Iend+1,j,d)*                                &
-     &                   GRID(ng)%rmask(Iend+1,j)
+                ct(Iend+1,j,d)=ct(Iend+1,j,d)*                          &
+     &                         GRID(ng)%rmask(Iend+1,j)
 #   endif
-         END DO
-        END DO
-
-#  elif defined EAST_CT_WALL
+              END IF
+            END DO
+          END DO
 !
 !  Eastern edge, closed boundary condition.
 !
-        DO d=1,ND
-         DO j=Jstr,Jend
-          ct(Iend+1,j,d)=0.0_r8
+        ELSE IF (LBC(ieast,isCT3d,ng)%closed) THEN
+          DO d=1,ND
+            DO j=Jstr,Jend
+              IF (LBC_apply(ng)%east(j)) THEN
+                ct(Iend+1,j,d)=0.0_r8
 #   ifdef MASKING
-          ct(Iend+1,j,d)=ct(Iend+1,j,d)*                                &
-     &                   GRID(ng)%rmask(Iend+1,j)
+                ct(Iend+1,j,d)=ct(Iend+1,j,d)*                          &
+     &                         GRID(ng)%rmask(Iend+1,j)
 #   endif
-         END DO
-        END DO
-#  endif
-       END IF
-# endif
-
-# if !defined NS_C_PERIODIC && !defined COMPOSED_GRID
+              END IF
+            END DO
+          END DO
+        END IF
+      END IF
 !
 !-----------------------------------------------------------------------
 !  Lateral boundary conditions at the southern edge.
 !-----------------------------------------------------------------------
 !
-       IF (SOUTHERN_EDGE) THEN
-
-#  if defined SOUTH_CT_GRADIENT
+      IF (DOMAIN(ng)%Southern_Edge(tile)) THEN
 !
 !  Southern edge, gradient boundary condition.
 !
-        DO d=1,ND
-         DO i=Istr,Iend
-          ct(i,Jstr-1,d)=ct(i,Jstr,d)
+        IF (LBC(isouth,isCT3d,ng)%gradient) THEN
+          DO d=1,ND
+            DO i=Istr,Iend
+              IF (LBC_apply(ng)%south(i)) THEN
+                ct(i,Jstr-1,d)=ct(i,Jstr,d)
 #   ifdef MASKING
-          ct(i,Jstr-1,d)=ct(i,Jstr-1,d)*                                &
-     &                   GRID(ng)%rmask(i,Jstr-1)
+                ct(i,Jstr-1,d)=ct(i,Jstr-1,d)*                          &
+     &                         GRID(ng)%rmask(i,Jstr-1)
 #   endif
-         END DO
-        END DO
-
-#  elif defined SOUTH_CT_WALL
+              END IF
+            END DO
+          END DO
 !
 !  Southern edge, closed boundary condition.
 !
-        DO d=1,ND
-         DO i=Istr,Iend
-          ct(i,Jstr-1,d)=0.0_r8
+        ELSE IF (LBC(isouth,isCT3d,ng)%closed) THEN
+          DO d=1,ND
+            DO i=Istr,Iend
+              IF (LBC_apply(ng)%south(i)) THEN
+                ct(i,Jstr-1,d)=0.0_r8
 #   ifdef MASKING
-          ct(i,Jstr-1,d)=ct(i,Jstr-1,d)*                                &
-     &                   GRID(ng)%rmask(i,Jstr-1)
+                ct(i,Jstr-1,d)=ct(i,Jstr-1,d)*                          &
+     &                         GRID(ng)%rmask(i,Jstr-1)
 #   endif
-         END DO
-        END DO
-#  endif
-       END IF
+              END IF
+            END DO
+          END DO
+        END IF
+      END IF
 !
 !-----------------------------------------------------------------------
 !  Lateral boundary conditions at the northern edge.
 !-----------------------------------------------------------------------
 !
-       IF (NORTHERN_EDGE) THEN
-
-#  if defined NORTH_CT_GRADIENT
+      IF (DOMAIN(ng)%Northern_Edge(tile)) THEN
 !
 !  Northern edge, gradient boundary condition.
 !
-        DO d=1,ND
-         DO i=Istr,Iend
-          ct(i,Jend+1,d)=ct(i,Jend,d)
+        IF (LBC(inorth,isCT3d,ng)%gradient) THEN
+          DO d=1,ND
+            DO i=Istr,Iend
+              IF (LBC_apply(ng)%north(i)) THEN
+                ct(i,Jend+1,d)=ct(i,Jend,d)
 #   ifdef MASKING
-          ct(i,Jend+1,d)=ct(i,Jend+1,d)*                                &
-     &                   GRID(ng)%rmask(i,Jend+1)
+                ct(i,Jend+1,d)=ct(i,Jend+1,d)*                          &
+     &                         GRID(ng)%rmask(i,Jend+1)
 #   endif
-         END DO
-        END DO
-
-#  elif defined NORTH_CT_WALL
+              END IF
+            END DO
+          END DO
 !
 !  Northern edge, closed boundary condition.
 !
-        DO d=1,ND
-         DO i=Istr,Iend
-          ct(i,Jend+1,d)=0.0_r8
+        ELSE IF (LBC(inorth,isCT3d,ng)%closed) THEN
+          DO d=1,ND
+            DO i=Istr,Iend
+              IF (LBC_apply(ng)%north(i)) THEN
+                ct(i,Jend+1,d)=0.0_r8
 #   ifdef MASKING
-          ct(i,Jend+1,d)=ct(i,Jend+1,d)*                                &
-     &                   GRID(ng)%rmask(i,Jend+1)
+                ct(i,Jend+1,d)=ct(i,Jend+1,d)*                          &
+     &                         GRID(ng)%rmask(i,Jend+1)
 #   endif
-         END DO
-        END DO
-#  endif
-       END IF
-# endif
-
-# if !defined EW_PERIODIC && !defined NS_PERIODIC && !defined COMPOSED_GRID
+              END IF
+            END DO
+          END DO
+        END IF
+      END IF
 !
 !-----------------------------------------------------------------------
 !  Boundary corners.
 !-----------------------------------------------------------------------
 !
-       IF ((SOUTHERN_EDGE).and.(WESTERN_EDGE)) THEN
-        DO d=1,ND
-         ct(Istr-1,Jstr-1,d)=0.5_r8*                                    &
-     &                       (ct(Istr  ,Jstr-1,d)+                      &
-     &                        ct(Istr-1,Jstr  ,d))
-        END DO
-       END IF
-       IF ((SOUTHERN_EDGE).and.(EASTERN_EDGE)) THEN
-        DO d=1,ND
-         ct(Iend+1,Jstr-1,d)=0.5_r8*                                    &
-     &                       (ct(Iend  ,Jstr-1,d)+                      &
-     &                        ct(Iend+1,Jstr  ,d))
-        END DO
-       END IF
-       IF ((NORTHERN_EDGE).and.(WESTERN_EDGE)) THEN
-        DO d=1,ND
-         ct(Istr-1,Jend+1,d)=0.5_r8*                                    &
-     &                       (ct(Istr-1,Jend  ,d)+                      &
-     &                        ct(Istr  ,Jend+1,d))
-        END DO
-       END IF
-       IF ((NORTHERN_EDGE).and.(EASTERN_EDGE)) THEN
-        DO d=1,ND
-         ct(Iend+1,Jend+1,d)=0.5_r8*                                    &
-     &                       (ct(Iend+1,Jend  ,d)+                      &
-     &                        ct(Iend  ,Jend+1,d))
-        END DO
-       END IF
-# endif
-
-# ifdef REFINED_GRID
-!set this for Parent Grid ONLY
+      IF (.not.(EWperiodic(ng).or.NSperiodic(ng))) THEN
+        IF (DOMAIN(ng)%SouthWest_Corner(tile)) THEN
+          IF (LBC_apply(ng)%south(Istr-1).and.                          &
+     &        LBC_apply(ng)%west (Jstr-1)) THEN
+            DO d=1,ND
+              ct(Istr-1,Jstr-1,d)=0.5_r8*                               &
+     &                            (ct(Istr  ,Jstr-1,d)+                 &
+     &                             ct(Istr-1,Jstr  ,d))
+            END DO
+          END IF
+        END IF
+        IF (DOMAIN(ng)%SouthEast_Corner(tile)) THEN
+          IF (LBC_apply(ng)%south(Iend+1).and.                          &
+     &        LBC_apply(ng)%east (Jstr-1)) THEN
+            DO d=1,ND
+              ct(Iend+1,Jstr-1,d)=0.5_r8*                               &
+     &                           (ct(Iend  ,Jstr-1,d)+                  &
+     &                            ct(Iend+1,Jstr  ,d))
+            END DO
+          END IF
+        END IF
+        IF (DOMAIN(ng)%NorthWest_Corner(tile)) THEN
+          IF (LBC_apply(ng)%north(Istr-1).and.                          &
+     &        LBC_apply(ng)%west (Jend+1)) THEN
+            DO d=1,ND
+              ct(Istr-1,Jend+1,d)=0.5_r8*                               &
+     &                            (ct(Istr-1,Jend  ,d)+                 &
+     &                             ct(Istr  ,Jend+1,d))
+            END DO
+          END IF
+        END IF
+        IF (DOMAIN(ng)%NorthEast_Corner(tile)) THEN
+          IF (LBC_apply(ng)%north(Iend+1).and.                          &
+     &        LBC_apply(ng)%east (Jend+1)) THEN
+            DO d=1,ND
+              ct(Iend+1,Jend+1,d)=0.5_r8*                               &
+     &                            (ct(Iend+1,Jend  ,d)+                 &
+     &                             ct(Iend  ,Jend+1,d))
+            END DO
+          END IF
+        END IF
       END IF
-# endif
 
       RETURN
       END SUBROUTINE ct3dbc_tile

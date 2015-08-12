@@ -50,7 +50,7 @@
 
       CALL initialize_inwave_vars (ng, LBi, UBi, LBj, UBj, tile)
 
-      CALL allocate_inwave_bound (ng, LBi, UBi, LBj, UBj)
+      CALL allocate_inwave_bound (ng)
 
 # if defined INWAVE_SWAN_COUPLING
       CALL allocate_inwave_spectra (ng)
@@ -69,7 +69,7 @@
 
 !
 !***********************************************************************
-      SUBROUTINE inwave_run (ng)
+      SUBROUTINE inwave_run
 !***********************************************************************
 !
       USE mod_scalars
@@ -99,12 +99,16 @@
 !
 !  Imported variable declarations.
 !
-      integer, intent(in) :: ng
+!     integer, intent(in) :: ng
 !
 !  Local variable declarations.
 !
-
       integer :: subs, thread, tile
+      integer :: ng
+
+!  For now just set ng =1 
+
+      ng=1
 
 !
 !-----------------------------------------------------------------------

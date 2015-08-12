@@ -167,15 +167,15 @@
 
       real(r8) :: cff, cff1, cff2, cff3, cff4
 
-      real(r8), dimension(PRIVATE_1D_SCRATCH_ARRAY,0:N(ng)) :: CF
-      real(r8), dimension(PRIVATE_1D_SCRATCH_ARRAY,0:N(ng)) :: DC
-      real(r8), dimension(PRIVATE_1D_SCRATCH_ARRAY,0:N(ng)) :: FC
-      real(r8), dimension(PRIVATE_1D_SCRATCH_ARRAY,0:ND(ng)+2) :: FD
+      real(r8), dimension(IminS:ImaxS,0:N(ng)) :: CF
+      real(r8), dimension(IminS:ImaxS,0:N(ng)) :: DC
+      real(r8), dimension(IminS:ImaxS,0:N(ng)) :: FC
+      real(r8), dimension(IminS:ImaxS,0:ND(ng)+2) :: FD
 
-      real(r8), dimension(PRIVATE_2D_SCRATCH_ARRAY) :: FE
-      real(r8), dimension(PRIVATE_2D_SCRATCH_ARRAY) :: FX
-      real(r8), dimension(PRIVATE_2D_SCRATCH_ARRAY) :: curv
-      real(r8), dimension(PRIVATE_2D_SCRATCH_ARRAY_THETA) :: curvd
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: FE
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: FX
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: curv
+      real(r8), dimension(IminS:ImaxS,0:ND(ng)+1) :: curvd
 
 
 # include "set_bounds.h"
@@ -189,23 +189,8 @@
 !
       D_LOOP: DO d=1,ND(ng)
 !  Third-order, uptream-biased horizontal advective fluxes.
-!# if defined EW_AC_PERIODIC || defined COMPOSED_GRID
-# if defined COMPOSED_GRID
-#  define I_RANGE Istr-1,Iend+2
-# elif defined REFINED_GRID
-#  define I_RANGE IstrC,IendC
-        IF (ng.eq.1) THEN
-          IstrC=MAX(1,Istr-1)
-          IendC=MIN(Iend+2,Lm(ng)+1)
-        ELSE
-          IstrC=Istr-1
-          IendC=Iend+2
-        END IF
-# else
-#     define I_RANGE MAX(Istr-1,1),MIN(Iend+2,Lm(ng)+1)
-# endif
         DO j=Jstr,Jend
-          DO i=I_RANGE
+          DO i=Istrm1,Iendp2
             FX(i,j)=AC(i  ,j,d,nstp)-                                   &
      &              AC(i-1,j,d,nstp)
 # ifdef MASKING
@@ -213,19 +198,20 @@
 # endif
           END DO
         END DO
-# undef I_RANGE
-# if !defined EW_AC_PERIODIC && !defined COMPOSED_GRID
-        IF (WESTERN_EDGE_REF) THEN
-          DO j=Jstr,Jend
-            FX(Istr-1,j)=FX(Istr,j)
-          END DO
+        IF (.not.(CompositeGrid(iwest,ng).or.EWperiodic(ng))) THEN
+          IF (DOMAIN(ng)%Western_Edge(tile)) THEN
+            DO j=Jstr,Jend
+              FX(Istr-1,j)=FX(Istr,j)
+            END DO
+          END IF
         END IF
-        IF (EASTERN_EDGE_REF) THEN
-          DO j=Jstr,Jend
-            FX(Iend+2,j)=FX(Iend+1,j)
-          END DO
+        IF (.not.(CompositeGrid(ieast,ng).or.EWperiodic(ng))) THEN
+          IF (DOMAIN(ng)%Eastern_Edge(tile)) THEN
+            DO j=Jstr,Jend
+              FX(Iend+2,j)=FX(Iend+1,j)
+            END DO
+          END IF
         END IF
-# endif
 !
         DO j=Jstr,Jend
           DO i=Istr-1,Iend+1
@@ -246,21 +232,7 @@
           END DO
         END DO
 !
-# if defined NS_AC_PERIODIC || defined COMPOSED_GRID
-#  define J_RANGE Jstr-1,Jend+2
-# elif defined REFINED_GRID
-#  define J_RANGE JstrC,JendC
-        IF (ng.eq.1) THEN
-          JstrC=MAX(1,Jstr-1)
-          JendC=MIN(Jend+2,Mm(ng)+1)
-        ELSE
-          JstrC=Jstr-1
-          JendC=Jend+2
-        END IF
-# else
-#  define J_RANGE MAX(Jstr-1,1),MIN(Jend+2,Mm(ng)+1)
-# endif
-        DO j=J_RANGE
+        DO j=Jstrm1,Jendp2
           DO i=Istr,Iend
             FE(i,j)=AC(i,j  ,d,nstp)-                                   &
      &              AC(i,j-1,d,nstp)
@@ -269,19 +241,20 @@
 # endif
           END DO
         END DO
-# undef J_RANGE
-# if !defined NS_AC_PERIODIC && !defined COMPOSED_GRID
-        IF (SOUTHERN_EDGE_REF) THEN
-          DO i=Istr,Iend
-            FE(i,Jstr-1)=FE(i,Jstr)
-          END DO
+        IF (.not.(CompositeGrid(isouth,ng).or.NSperiodic(ng))) THEN
+          IF (DOMAIN(ng)%Southern_Edge(tile)) THEN
+            DO i=Istr,Iend
+              FE(i,Jstr-1)=FE(i,Jstr)
+            END DO
+          END IF
         END IF
-        IF (NORTHERN_EDGE_REF) THEN
-          DO i=Istr,Iend
-            FE(i,Jend+2)=FE(i,Jend+1)
-          END DO
+        IF (.not.(CompositeGrid(inorth,ng).or.NSperiodic(ng))) THEN
+          IF (DOMAIN(ng)%Northern_Edge(tile)) THEN
+            DO i=Istr,Iend
+              FE(i,Jend+2)=FE(i,Jend+1)
+            END DO
+          END IF
         END IF
-# endif
 !
         DO j=Jstr-1,Jend+1
           DO i=Istr,Iend
@@ -323,7 +296,6 @@
           END DO
         END DO
       END DO D_LOOP
-
 !
 ! Advection in theta space.
 ! Need to wrap around in theta dir. NOt always

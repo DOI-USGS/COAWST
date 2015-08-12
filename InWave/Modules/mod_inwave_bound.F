@@ -24,23 +24,23 @@
 
         TYPE T_INWAVE_BOUND
 
-#ifdef EAST_AC_OBC
           real(r8), pointer :: AC_east(:,:)
+#ifndef ANA_ACOBC
           real(r8), pointer :: ACG_east(:,:,:)
 #endif
 
-#ifdef WEST_AC_OBC
           real(r8), pointer :: AC_west(:,:)
+#ifndef ANA_ACOBC
           real(r8), pointer :: ACG_west(:,:,:)
 #endif
 
-#ifdef NORTH_AC_OBC
           real(r8), pointer :: AC_north(:,:)
+#ifndef ANA_ACOBC
           real(r8), pointer :: ACG_north(:,:,:)
 #endif
 
-#ifdef SOUTH_AC_OBC
           real(r8), pointer :: AC_south(:,:)
+#ifndef ANA_ACOBC
           real(r8), pointer :: ACG_south(:,:,:)
 #endif
 
@@ -56,7 +56,7 @@
 
 !
 !***********************************************************************
-      SUBROUTINE allocate_inwave_bound (ng, LBi, UBi, LBj, UBj)
+      SUBROUTINE allocate_inwave_bound (ng)
 !***********************************************************************
 !
 !
@@ -68,26 +68,31 @@
 !=======================================================================
 !
       USE mod_param
-      USE mod_iounits
+      USE mod_ncparam
+      USE mod_scalars
+      USE inwave_iounits
+!
+!  Imported variable declarations.
+!
+      integer, intent(in) :: ng
 !
 !  Local variable declarations.
 !
       integer :: ND_BND
-      integer, intent(in) :: ng, LBi, UBi, LBj, UBj
+      integer :: LBi, UBi, LBj, UBj
+      integer :: my_tile
       character (len=80) :: ncbnd_name
-# ifdef AC_OBC
+#ifdef AC_OBC
       integer :: ILB, IUB, JLB, JUB
-# endif
-
-# ifdef AC_OBC
 !
 !  Lower and upper bounds for nontiled boundary arrays.
 !
-      ILB=LOWER_BOUND_I
-      IUB=UPPER_BOUND_I
-      JLB=LOWER_BOUND_J
-      JUB=UPPER_BOUND_J
-# endif
+      my_tile=-1                           ! for global values
+      LBi=BOUNDS(ng)%LBi(my_tile)
+      UBi=BOUNDS(ng)%UBi(my_tile)
+      LBj=BOUNDS(ng)%LBj(my_tile)
+      UBj=BOUNDS(ng)%UBj(my_tile)
+#endif
 
 !-----------------------------------------------------------------------
 !  Allocate and initialize module variables.
@@ -99,37 +104,45 @@
 !  Read the boundary grid
 !-----------------------------------------------------------------------
 
-# if !defined INWAVE_SWAN_COUPLING
+#if !defined INWAVE_SWAN_COUPLING
       ncbnd_name=IWBNDname(ng)
       call get_inwave_bnd_grid(ng, ncbnd_name)
       ND_BND=WAVEB(ng) % ND_BND
-# else
+#else
       ND_BND=ND(ng)
+#endif
+
+#ifdef AC_OBC
+
+      IF (LBC(ieast,isAC3d,ng)%acquire) THEN
+        allocate ( WAVEB(ng) % AC_east(LBj:UBj,ND_BND) )
+# ifndef ANA_ACOBC
+        allocate ( WAVEB(ng) % ACG_east(LBj:UBj,ND_BND,2) )
 # endif
+      END IF
 
-# ifdef AC_OBC
-
-#  ifdef EAST_AC_OBC
-      allocate ( WAVEB(ng) % AC_east(JLB:JUB,ND_BND) )
-      allocate ( WAVEB(ng) % ACG_east(JLB:JUB,ND_BND,2) )
-#  endif
-
-#  ifdef WEST_AC_OBC
-      allocate ( WAVEB(ng) % AC_west(JLB:JUB,ND_BND) )
-      allocate ( WAVEB(ng) % ACG_west(JLB:JUB,ND_BND,2) )
-#  endif
-
-#  ifdef NORTH_AC_OBC
-      allocate ( WAVEB(ng) % AC_north(ILB:IUB,ND_BND) )
-      allocate ( WAVEB(ng) % ACG_north(ILB:IUB,ND_BND,2) )
-#  endif
-
-#  ifdef SOUTH_AC_OBC
-      allocate ( WAVEB(ng) % AC_south(ILB:IUB,ND_BND) )
-      allocate ( WAVEB(ng) % ACG_south(ILB:IUB,ND_BND,2) )
-#  endif
-
+      IF (LBC(iwest,isAC3d,ng)%acquire) THEN
+        allocate ( WAVEB(ng) % AC_west(LBj:UBj,ND_BND) )
+# ifndef ANA_ACOBC
+        allocate ( WAVEB(ng) % ACG_west(LBj:UBj,ND_BND,2) )
 # endif
+      END IF
+
+      IF (LBC(inorth,isAC3d,ng)%acquire) THEN
+        allocate ( WAVEB(ng) % AC_north(LBi:UBi,ND_BND) )
+# ifndef ANA_ACOBC
+        allocate ( WAVEB(ng) % ACG_north(LBi:UBi,ND_BND,2) )
+# endif
+      END IF
+
+      IF (LBC(isouth,isAC3d,ng)%acquire) THEN
+        allocate ( WAVEB(ng) % AC_south(LBi:UBi,ND_BND) )
+# ifndef ANA_ACOBC
+        allocate ( WAVEB(ng) % ACG_south(LBi:UBi,ND_BND,2) )
+# endif
+      END IF
+
+#endif
 
       RETURN
       END SUBROUTINE allocate_inwave_bound
@@ -150,6 +163,8 @@
 !=======================================================================
 !
       USE mod_param
+      USE mod_ncparam
+      USE mod_scalars
 !
 !  Imported variable declarations.
 !
@@ -157,91 +172,47 @@
 !
 !  Local variable declarations.
 !
-      integer :: Imin, Imax, Jmin, Jmax
-      integer :: i, j, d
-
-# ifdef AC_OBC
-      integer :: ILB, IUB, JLB, JUB
-# endif
-
       real(r8), parameter :: IniVal = 0.0_r8
 !
-#include "tile.h"
-
-#ifdef AC_OBC
-!
-!-----------------------------------------------------------------------
-!  Set array initialization range.
-!-----------------------------------------------------------------------
-!
-# ifdef _OPENMP
-      IF (WESTERN_EDGE) THEN
-        Imin=LBi
-      ELSE
-        Imin=Istr
-      END IF
-      IF (EASTERN_EDGE) THEN
-        Imax=UBi
-      ELSE
-        Imax=Iend
-      END IF
-      IF (SOUTHERN_EDGE) THEN
-        Jmin=LBj
-      ELSE
-        Jmin=Jstr
-      END IF
-      IF (NORTHERN_EDGE) THEN
-        Jmax=UBj
-      ELSE
-        Jmax=Jend
-      END IF
-# else
-      Imin=LBi
-      Imax=UBi
-      Jmin=LBj
-      Jmax=UBj
-# endif
+#ifndef DISTRIBUTE
+# include "set_bounds.h"
 #endif
-
 !
 !-----------------------------------------------------------------------
 !  Initialize module variables.
 !-----------------------------------------------------------------------
 !
-
-# ifdef AC_OBC
-      DO i=Imin,Imax
-        DO d=1,WAVEB(ng) % ND_BND
-#  ifdef NORTH_AC_OBC
-          WAVEB(ng) % AC_north(i,d)    = IniVal
-          WAVEB(ng) % ACG_north(i,d,1) = IniVal
-          WAVEB(ng) % ACG_north(i,d,2) = IniVal
-#  endif
-#  ifdef SOUTH_AC_OBC
-          WAVEB(ng) % AC_south(i,d)    = IniVal
-          WAVEB(ng) % ACG_south(i,d,1) = IniVal
-          WAVEB(ng) % ACG_south(i,d,2) = IniVal
-#  endif
-        END DO
-      END DO
+#ifdef AC_OBC
+        IF (DOMAIN(ng)%NorthWest_Test(tile).and.                        &
+     &      LBC(iwest,isAC3d,ng)%acquire) THEN
+          WAVEB(ng) % AC_west  = IniVal
+# ifndef ANA_ACOBC
+          WAVEB(ng) % ACG_west = IniVal
 # endif
-
-# ifdef AC_OBC
-      DO j=Jmin,Jmax
-        DO d=1,WAVEB(ng) % ND_BND
-#  ifdef EAST_AC_OBC
-          WAVEB(ng) % AC_east(j,d)    = IniVal
-          WAVEB(ng) % ACG_east(j,d,1) = IniVal
-          WAVEB(ng) % ACG_east(j,d,2) = IniVal
-#  endif
-#  ifdef WEST_AC_OBC
-          WAVEB(ng) % AC_west(j,d)    = IniVal
-          WAVEB(ng) % ACG_west(j,d,1) = IniVal
-          WAVEB(ng) % ACG_west(j,d,2) = IniVal
-#  endif
-        END DO
-      END DO
+        END IF
+        IF (DOMAIN(ng)%SouthEast_Test(tile).and.                        &
+     &      LBC(ieast,isAC3d,ng)%acquire) THEN
+          WAVEB(ng) % AC_east  = IniVal
+# ifndef ANA_ACOBC
+          WAVEB(ng) % ACG_east = IniVal
 # endif
+        END IF
+
+        IF (DOMAIN(ng)%SouthWest_Test(tile).and.                        &
+     &      LBC(isouth,isAC3d,ng)%acquire) THEN
+          WAVEB(ng) % AC_south  = IniVal
+# ifndef ANA_ACOBC
+          WAVEB(ng) % ACG_south = IniVal
+# endif
+        END IF
+        IF (DOMAIN(ng)%NorthEast_Test(tile).and.                        &
+     &      LBC(inorth,isAC3d,ng)%acquire) THEN
+          WAVEB(ng) % AC_north  = IniVal
+# ifndef ANA_ACOBC
+          WAVEB(ng) % ACG_north = IniVal
+# endif
+        END IF
+#endif
 
       RETURN
       END SUBROUTINE initialize_inwave_bound

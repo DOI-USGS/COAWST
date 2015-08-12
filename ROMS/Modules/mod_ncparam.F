@@ -65,6 +65,9 @@
 !=======================================================================
 !
         USE mod_param
+#ifdef INWAVE_MODEL
+        USE mod_inwave_params
+#endif
 !
         implicit none
 !
@@ -453,10 +456,9 @@
         integer  :: idV2bc(4)      ! 2D V-velocity boundary conditions
         integer  :: idV3bc(4)      ! 3D V-velocity boundary conditions
         integer  :: idZbry(4)      ! free-surface boundary conditions
+#ifdef INWAVE_MODEL
         integer  :: idACbc(4)      ! wave energy boundary condition
-
-
-
+#endif
 !
 !  Time-averaged quadratic terms IDs.
 !
@@ -561,10 +563,10 @@
 !
         integer, allocatable :: ncFRCid(:,:)
 !
-#ifdef INWAVE_MODEL
-        integer  :: ncIWBRYid(Ngrids)     ! input boundary conditions for Ac
-        integer  :: ncIWINIid(Ngrids)     ! input initial conditions for Ac,cx,cy,ct
-#endif
+!#ifdef INWAVE_MODEL
+!        integer, allocatable :: ncIWBRYid(:)     ! input boundary conditions for Ac
+!        integer, allocatable :: ncIWINIid(:)     ! input initial conditions for Ac,cx,cy,ct
+!#endif
 !
 !  Flags to create output files.
 !
@@ -902,6 +904,13 @@
       isV3Sd=ic+2
       ic=ic+2
 # endif
+#endif
+#ifdef INWAVE_MODEL
+      isAC3d=ic+1
+      isCT3d=ic+2
+      isCX3d=ic+3
+      isCY3d=ic+4
+      ic=ic+4
 #endif
 #ifdef ICE_MODEL
 !# if defined SOLVE3D && (defined GLS_MIXING || defined MY25_MIXING)
@@ -1394,6 +1403,26 @@
               idHsbl=varid
             CASE ('idHbbl')
               idHbbl=varid
+#ifdef INWAVE_MODEL
+              CASE ('idACen')
+                idACen=varid
+              CASE ('idACct')
+                idACct=varid
+              CASE ('idACcx')
+                idACcx=varid
+              CASE ('idACcy')
+                idACcy=varid
+              CASE ('idACtp')
+                idACtp=varid
+              CASE ('idACbc(iwest)')
+                idACbc(iwest)=varid
+              CASE ('idACbc(ieast)')
+                idACbc(ieast)=varid
+              CASE ('idACbc(isouth)')
+                idACbc(isouth)=varid
+              CASE ('idACbc(inorth)')
+                idACbc(inorth)=varid
+#endif
 #ifdef ICE_MODEL
             CASE ('idAibc(iwest)')
               idAibc(iwest)=varid
@@ -2782,6 +2811,13 @@
       idBvar(isU3Sd)=idU3Sd
       idBvar(isV3Sd)=idV3Sd
 # endif
+#endif
+#ifdef INWAVE_MODEL
+      ic=ic+4
+      idBvar(isAC3d)=idACen
+      idBvar(isCT3d)=idACct
+      idBvar(isCX3d)=idACcx
+      idBvar(isCY3d)=idACcy
 #endif
 !
 !-----------------------------------------------------------------------
