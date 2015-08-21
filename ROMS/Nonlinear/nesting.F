@@ -119,7 +119,9 @@
       PRIVATE :: get_metrics
       PRIVATE :: get_persisted2d
       PRIVATE :: get_refine
+# if defined MASKING || defined WET_DRY
       PRIVATE :: mask_hweights
+# endif
       PRIVATE :: put_composite
       PRIVATE :: put_refine
       PRIVATE :: put_refine2d

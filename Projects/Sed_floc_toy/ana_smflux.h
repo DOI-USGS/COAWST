@@ -73,9 +73,7 @@
       USE mod_param
       USE mod_scalars
 !
-#if defined EW_PERIODIC || defined NS_PERIODIC
       USE exchange_2d_mod
-#endif
 #ifdef DISTRIBUTE
       USE mp_exchange_mod, ONLY : mp_exchange2d
 #endif
@@ -120,18 +118,6 @@
 !
 !  Local variable declarations.
 !
-#ifdef DISTRIBUTE
-# ifdef EW_PERIODIC
-      logical :: EWperiodic=.TRUE.
-# else
-      logical :: EWperiodic=.FALSE.
-# endif
-# ifdef NS_PERIODIC
-      logical :: NSperiodic=.TRUE.
-# else
-      logical :: NSperiodic=.FALSE.
-# endif
-#endif
       integer :: i, j
       real(r8) :: Ewind, Nwind, cff, val1, val2, windamp, winddir
 #if defined LAKE_SIGNELL
@@ -146,16 +132,19 @@
 !-----------------------------------------------------------------------
 !
 #if defined SED_FLOC_TOY
-      DO j=JstrR,JendR
-         DO i=Istr,IendR
+      DO j=JstrT,JendT
+         DO i=IstrP,IendT
            cff=0.0_r8
            sustr(i,j)=cff
          END DO
       END DO
 #else
-      DO j=JstrR,JendR
-        DO i=Istr,IendR
+      DO j=JstrT,JendT
+        DO i=IstrP,IendT
           sustr(i,j)=0.0_r8
+# ifdef TL_IOMS
+          tl_sustr(i,j)=0.0_r8
+# endif
         END DO
       END DO
 #endif
@@ -166,45 +155,57 @@
 !-----------------------------------------------------------------------
 !
 #if defined SED_FLOC_TOY
-      DO j=Jstr,JendR
-        DO i=IstrR,IendR
+      DO j=JstrP,JendT
+        DO i=IstrT,IendT
           svstr(i,j)=0.0_r8
         END DO
       END DO
 #else
-      DO j=Jstr,JendR
-        DO i=IstrR,IendR
+      DO j=JstrP,JendT
+        DO i=IstrT,IendT
           svstr(i,j)=0.0_r8
+# ifdef TL_IOMS
+          tl_svstr(i,j)=0.0_r8
+# endif
         END DO
       END DO
 #endif
-#if defined EW_PERIODIC || defined NS_PERIODIC
-      CALL exchange_u2d_tile (ng, tile,                                 &
-     &                        LBi, UBi, LBj, UBj,                       &
-     &                        sustr)
-      CALL exchange_v2d_tile (ng, tile,                                 &
-     &                        LBi, UBi, LBj, UBj,                       &
-     &                        svstr)
-# ifdef TL_IOMS
-      CALL exchange_u2d_tile (ng, tile,                                 &
-     &                        LBi, UBi, LBj, UBj,                       &
-     &                        tl_sustr)
-      CALL exchange_v2d_tile (ng, tile,                                 &
-     &                        LBi, UBi, LBj, UBj,                       &
-     &                        tl_svstr)
-# endif
+!
+!  Exchange boundary data.
+!
+      IF (EWperiodic(ng).or.NSperiodic(ng)) THEN
+        CALL exchange_u2d_tile (ng, tile,                               &
+     &                          LBi, UBi, LBj, UBj,                     &
+     &                          sustr)
+#ifdef TL_IOMS
+        CALL exchange_u2d_tile (ng, tile,                               &
+     &                          LBi, UBi, LBj, UBj,                     &
+     &                          tl_sustr)
 #endif
+        CALL exchange_v2d_tile (ng, tile,                               &
+     &                          LBi, UBi, LBj, UBj,                     &
+     &                          svstr)
+#ifdef TL_IOMS
+        CALL exchange_v2d_tile (ng, tile,                               &
+     &                          LBi, UBi, LBj, UBj,                     &
+     &                          tl_svstr)
+#endif
+      END IF
+
 #ifdef DISTRIBUTE
       CALL mp_exchange2d (ng, tile, model, 2,                           &
      &                    LBi, UBi, LBj, UBj,                           &
-     &                    NghostPoints, EWperiodic, NSperiodic,         &
+     &                    NghostPoints,                                 &
+     &                    EWperiodic(ng), NSperiodic(ng),               &
      &                    sustr, svstr)
-#  ifdef TL_IOMS
+# ifdef TL_IOMS
       CALL mp_exchange2d (ng, tile, model, 2,                           &
      &                    LBi, UBi, LBj, UBj,                           &
-     &                    NghostPoints, EWperiodic, NSperiodic,         &
+     &                    NghostPoints,                                 &
+     &                    EWperiodic(ng), NSperiodic(ng),               &
      &                    tl_sustr, tl_svstr)
-#  endif
+# endif
 #endif
+
       RETURN
       END SUBROUTINE ana_smflux_tile

@@ -3,7 +3,7 @@
 !
 !svn $Id$
 !=======================================================================
-!  Copyright (c) 2002-2014 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2015 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !================================================== Hernan G. Arango ===
@@ -48,7 +48,7 @@
 !
 !  Local variable declarations.
 !
-      integer :: ig, il, ng, ngm1
+      integer :: gn, ig, il, ng, ngm1
       integer, dimension(Ngrids) :: WindowSteps, my_Nsteps
 !
 !=======================================================================
@@ -136,6 +136,12 @@
                   my_Nsteps(ig)=1
                   step_counter(ng)=step_counter(ng)+1
                   RefineStepsCounter(ng)=RefineStepsCounter(ng)+1
+                  DO il=nl+1,NestLayers         ! When a parent steps,
+                    gn=GridNumber(ig,il)        ! set all its telescoped
+                    IF (Telescoping(gn)) THEN   ! children counters to
+                      RefineStepsCounter(gn)=0  ! zero
+                    END IF
+                  END DO
                 ELSE
                   my_Nsteps(ig)=RefineSteps(ng)
                   step_counter(ng)=step_counter(ng)+RefineSteps(ng)

@@ -2,7 +2,7 @@
 !
 !svn $Id$
 !************************************************** Hernan G. Arango ***
-!  Copyright (c) 2002-2014 The ROMS/TOMS Group        Craig V. Lewis   !
+!  Copyright (c) 2002-2015 The ROMS/TOMS Group        Craig V. Lewis   !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !***********************************************************************
@@ -353,25 +353,15 @@
 !  initial slope of the P-I curve and K_NO3 is the half saturation of
 !  phytoplankton nitrate uptake.
 !
-#ifdef SPITZ
           cff1=dtdays*Vm_NO3(ng)*PhyIS(ng)
           cff2=Vm_NO3(ng)*Vm_NO3(ng)
           cff3=PhyIS(ng)*PhyIS(ng)
-#else
-          cff1=dtdays*Vm_NO3(ng)
-#endif
           DO k=1,N(ng)
             DO i=Istr,Iend
-#ifdef SPITZ
               cff4=1.0_r8/SQRT(cff2+cff3*Light(i,k)*Light(i,k))
               cff=Bio(i,k,iPhyt)*                                       &
      &            cff1*cff4*Light(i,k)/                                 &
      &            (K_NO3(ng)+Bio(i,k,iNO3_))
-#else
-              cff=Bio(i,k,iPhyt)*                                       &
-     &            cff1*Light(i,k)/                                      &
-     &            (K_NO3(ng)+Bio(i,k,iNO3_))
-#endif
               Bio(i,k,iNO3_)=Bio(i,k,iNO3_)/(1.0_r8+cff)
               Bio(i,k,iPhyt)=Bio(i,k,iPhyt)+                            &
      &                       Bio(i,k,iNO3_)*cff

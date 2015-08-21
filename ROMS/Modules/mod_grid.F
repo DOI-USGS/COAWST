@@ -3,7 +3,7 @@
 !
 !svn $Id: mod_grid.F 790 2008-10-14 19:32:07Z jcwarner $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2014 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2015 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -238,6 +238,7 @@
           real(r8), pointer :: rmask(:,:)
           real(r8), pointer :: umask(:,:)
           real(r8), pointer :: vmask(:,:)
+
 # if defined AVERAGES    || \
     (defined AD_AVERAGES && defined ADJOINT) || \
     (defined RP_AVERAGES && defined TL_IOMS) || \
@@ -595,7 +596,6 @@
 !
 #ifdef NESTING
       IniMetricVal=spval                   ! very large value
-      IniMetricVal=IniVal
 #else
       IniMetricVal=IniVal
 #endif
