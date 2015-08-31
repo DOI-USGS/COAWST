@@ -28,21 +28,35 @@ bath_file{1}='joe_tc_coarse_roms_bathy.bot';
 %step 2c: Enter the grids for the WRF model:
 wrf_grids{1}='wrfinput_d01';
 
-%step 3: enter location of scrip.exe
-scrip_exe='e:/data/models/COAWST/Lib/SCRIP/scrip.exe';
+%step 3: Select to use scrip as a compiled executable or as matlab m files.
+use_scrip_exe=1;      % put this = 1 to use scrip exe 
+use_scrip_matlab=0;   % put this = 1 to use scrip m files
+if (use_scrip_exe)
+  scrip_exe='e:/data/models/COAWST/Lib/SCRIP/scrip.exe';
+end
 
 %step 4: enter working dir
 wdir='e:\data\models\COAWST\Projects\JOE_TCd';
 
-%step 5: Select the process steps to create the SCRIP files.
+%step 5: Select the process steps to create the SCRIP files. If you are not
+% sure, then just leave these 3 options to =1 so that they all run.
 
-% step5a) The "create_scrip_files" converts roms, swan, and wrf grids to 
-% a format that SCRIP likes.
+% step5a) Setting this flag to =1 calls "create_scrip_masks" that computes 
+%  roms, swan, and wrf masks used by SCRIP. For refinement, these masks
+%  allow multple grids to act as a single source to provide a 
+%  combined data set. This also prevents land areas from participating as 
+%  a source to the ocean or wave.
 create_scrip_masks=1;
 
-% step5b) The "create_scrip_weights" calls scrip to compute the weights 
-% and produces the netcdf weights files.
+% step5b) Setting this flag to =1 calls "create_scrip_files" that calls 
+%  scrip to compute the weights.
 create_scrip_files=1;
+
+% step5c) Setting this flag to =1 calls "check_scrip_weights" that calls 
+%  an mfile to check that all the destination cells are getting information
+%  from a source grid. This is currently only used for
+% atm2ocn and atm2wav weights.
+check_scrip_weights=1;
 
 %%%%%%%  END USER Input Section  %%%%%%%%%%%%%
 
@@ -54,6 +68,10 @@ end
 
 if (create_scrip_files)
   create_scrip_files_driver
+end
+
+if (check_scrip_weights)
+  check_scrip_weights_driver
 end
 
 display('finished creating scrip weights')

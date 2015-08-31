@@ -275,9 +275,9 @@
         END IF
         IF(aline(1:10).eq.'sst_update') THEN
           indx=INDEX(aline,'=')
-          aline=aline(indx+1:LEN(aline))
+          aline=ADJUSTL(aline(indx+1:LEN(aline)))
           indx=MAX(INDEX(aline,','),LEN(aline))
-          read(aline(1:indx-1),'(i5)') sstupdate
+          read(aline(1:indx-1),'(i1)') sstupdate
         END IF
       END DO
 !
