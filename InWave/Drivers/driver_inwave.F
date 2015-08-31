@@ -53,7 +53,7 @@
       CALL allocate_inwave_bound (ng)
 
 # if defined INWAVE_SWAN_COUPLING
-      CALL allocate_inwave_spectra (ng)
+      CALL allocate_inwave_swan (ng)
 # endif
 
       CALL initialize_inwave_bound (ng, tile)
@@ -69,7 +69,7 @@
 
 !
 !***********************************************************************
-      SUBROUTINE inwave_run
+      SUBROUTINE inwave_run (ng, tile)
 !***********************************************************************
 !
       USE mod_scalars
@@ -99,16 +99,11 @@
 !
 !  Imported variable declarations.
 !
-!     integer, intent(in) :: ng
+     integer, intent(in) :: ng, tile
 !
 !  Local variable declarations.
 !
-      integer :: subs, thread, tile
-      integer :: ng
-
-!  For now just set ng =1 
-
-      ng=1
+!      integer :: subs, thread
 
 !
 !-----------------------------------------------------------------------
@@ -139,42 +134,42 @@
 !-----------------------------------------------------------------------
 !
 
-!$OMP PARALLEL DO PRIVATE(thread,subs,tile) SHARED(ng,numthreads)
-        DO thread=0,numthreads-1
-          subs=NtileX(ng)*NtileE(ng)/numthreads
-          DO tile=subs*thread,subs*(thread+1)-1,+1
+!!$OMP PARALLEL DO PRIVATE(thread,subs,tile) SHARED(ng,numthreads)
+!        DO thread=0,numthreads-1
+!          subs=NtileX(ng)*NtileE(ng)/numthreads
+!          DO tile=subs*thread,subs*(thread+1)-1,+1
 # if !defined INWAVE_SWAN_COUPLING
-            CALL set_inwave_data (ng, TILE)
+            CALL set_inwave_data (ng, tile)
 # else
-            CALL set_inwave_swan_data (ng, TILE)
+            CALL set_inwave_swan_data (ng, tile)
 # endif
-          END DO
-        END DO
+!          END DO
+!        END DO
 
-!$OMP END PARALLEL DO
+!!$OMP END PARALLEL DO
 !
 !-----------------------------------------------------------------------
 ! Compute the wave number from the dispersion relation
 !-----------------------------------------------------------------------
 !
         IF(iic(ng).eq.1)then
-!$OMP PARALLEL DO PRIVATE(thread,subs,tile) SHARED(ng,numthreads)
-          DO thread=0,numthreads-1
-            subs=NtileX(ng)*NtileE(ng)/numthreads
-            DO tile=subs*(thread+1)-1,subs*thread,-1
-              CALL dispersion_inw (ng, TILE)
-            END DO
-          END DO
-!$OMP END PARALLEL DO
+!!$OMP PARALLEL DO PRIVATE(thread,subs,tile) SHARED(ng,numthreads)
+!          DO thread=0,numthreads-1
+!            subs=NtileX(ng)*NtileE(ng)/numthreads
+!            DO tile=subs*(thread+1)-1,subs*thread,-1
+              CALL dispersion_inw (ng, tile)
+!            END DO
+!          END DO
+!!$OMP END PARALLEL DO
         ELSE
-!$OMP PARALLEL DO PRIVATE(thread,subs,tile) SHARED(ng,numthreads)
-          DO thread=0,numthreads-1
-            subs=NtileX(ng)*NtileE(ng)/numthreads
-            DO tile=subs*(thread+1)-1,subs*thread,-1
-              CALL dispersion_wr_inw (ng, TILE)
-            END DO
-          END DO
-!$OMP END PARALLEL DO
+!!$OMP PARALLEL DO PRIVATE(thread,subs,tile) SHARED(ng,numthreads)
+!          DO thread=0,numthreads-1
+!            subs=NtileX(ng)*NtileE(ng)/numthreads
+!            DO tile=subs*(thread+1)-1,subs*thread,-1
+              CALL dispersion_wr_inw (ng, tile)
+!            END DO
+!          END DO
+!!$OMP END PARALLEL DO
         ENDIF
 
 # if defined DOPPLER
@@ -183,42 +178,42 @@
 ! Compute the currents affecting the wave field
 !-----------------------------------------------------------------------
 !
-!$OMP PARALLEL DO PRIVATE(thread,subs,tile) SHARED(ng,numthreads)
-          DO thread=0,numthreads-1
-            subs=NtileX(ng)*NtileE(ng)/numthreads
-            DO tile=subs*(thread+1)-1,subs*thread,-1
-              CALL curr_inw (ng, TILE)
-            END DO
-          END DO
-!$OMP END PARALLEL DO
+!!$OMP PARALLEL DO PRIVATE(thread,subs,tile) SHARED(ng,numthreads)
+!          DO thread=0,numthreads-1
+!            subs=NtileX(ng)*NtileE(ng)/numthreads
+!            DO tile=subs*(thread+1)-1,subs*thread,-1
+              CALL curr_inw (ng, tile)
+!            END DO
+!          END DO
+!!$OMP END PARALLEL DO
 # endif
 !
 !-----------------------------------------------------------------------
 ! Compute the group celerities
 !-----------------------------------------------------------------------
 !
-!$OMP PARALLEL DO PRIVATE(thread,subs,tile) SHARED(ng,numthreads)
-        DO thread=0,numthreads-1
-          subs=NtileX(ng)*NtileE(ng)/numthreads
-          DO tile=subs*(thread+1)-1,subs*thread,-1
-            CALL celer_inw (ng, TILE)
-          END DO
-        END DO
-!$OMP END PARALLEL DO
+!!$OMP PARALLEL DO PRIVATE(thread,subs,tile) SHARED(ng,numthreads)
+!        DO thread=0,numthreads-1
+!          subs=NtileX(ng)*NtileE(ng)/numthreads
+!          DO tile=subs*(thread+1)-1,subs*thread,-1
+            CALL celer_inw (ng, tile)
+!          END DO
+!        END DO
+!!$OMP END PARALLEL DO
 !
 !-----------------------------------------------------------------------
 ! Compute the predictior step for the wave action balance equation
 !-----------------------------------------------------------------------
 !
-!$OMP PARALLEL DO PRIVATE(thread,subs,tile) SHARED(ng,numthreads)
-        DO thread=0,numthreads-1
-          subs=NtileX(ng)*NtileE(ng)/numthreads
-          DO tile=subs*(thread+1)-1,subs*thread,-1
-            CALL prestep_inw (ng, TILE)
-          END DO
-        END DO
+!!$OMP PARALLEL DO PRIVATE(thread,subs,tile) SHARED(ng,numthreads)
+!        DO thread=0,numthreads-1
+!          subs=NtileX(ng)*NtileE(ng)/numthreads
+!          DO tile=subs*(thread+1)-1,subs*thread,-1
+            CALL prestep_inw (ng, tile)
+!          END DO
+!        END DO
 
-!$OMP END PARALLEL DO
+!!$OMP END PARALLEL DO
 !
 !-----------------------------------------------------------------------
 !  If appropriate, write out fields into output NetCDF files.  Notice
@@ -233,28 +228,28 @@
 ! Compute the corrector step for the wave action balance equation
 !-----------------------------------------------------------------------
 !
-!$OMP PARALLEL DO PRIVATE(thread,subs,tile)                             &
-!$OMP&            SHARED(ng,nnew,numthreads)
-        DO thread=0,numthreads-1
-          subs=NtileX(ng)*NtileE(ng)/numthreads
-          DO tile=subs*thread,subs*(thread+1)-1,+1
-            CALL corstep_inw (ng, TILE)
-          END DO
-        END DO
+!!$OMP PARALLEL DO PRIVATE(thread,subs,tile)                             &
+!!$OMP&            SHARED(ng,nnew,numthreads)
+!        DO thread=0,numthreads-1
+!          subs=NtileX(ng)*NtileE(ng)/numthreads
+!          DO tile=subs*thread,subs*(thread+1)-1,+1
+            CALL corstep_inw (ng, tile)
+!          END DO
+!        END DO
 !
 !-----------------------------------------------------------------------
 ! Compute the wave parameters from the wave envelope
 !-----------------------------------------------------------------------
 !
 # if defined WEC_MELLOR || defined WEC_VF
-!$OMP PARALLEL DO PRIVATE(thread,subs,tile)                             &
-!$OMP&            SHARED(ng,nnew,numthreads)
-        DO thread=0,numthreads-1
-          subs=NtileX(ng)*NtileE(ng)/numthreads
-          DO tile=subs*thread,subs*(thread+1)-1,+1
-            CALL frc_inw (ng, TILE)
-          END DO
-        END DO
+!!$OMP PARALLEL DO PRIVATE(thread,subs,tile)                             &
+!!$OMP&            SHARED(ng,nnew,numthreads)
+!        DO thread=0,numthreads-1
+!          subs=NtileX(ng)*NtileE(ng)/numthreads
+!          DO tile=subs*thread,subs*(thread+1)-1,+1
+            CALL frc_inw (ng, tile)
+!          END DO
+!        END DO
 # endif
 
 !-----------------------------------------------------------------------
@@ -266,7 +261,7 @@
 !        DO thread=0,numthreads-1
 !          subs=NtileX(ng)*NtileE(ng)/numthreads
 !          DO tile=subs*thread,subs*(thread+1)-1,+1
-!            CALL eikonal_inw (ng, TILE)
+!            CALL eikonal_inw (ng, tile)
 !          END DO
 !        END DO
 

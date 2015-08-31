@@ -82,7 +82,6 @@
       integer :: LBi, UBi, LBj, UBj
       integer :: my_tile
       character (len=80) :: ncbnd_name
-#ifdef AC_OBC
       integer :: ILB, IUB, JLB, JUB
 !
 !  Lower and upper bounds for nontiled boundary arrays.
@@ -92,7 +91,6 @@
       UBi=BOUNDS(ng)%UBi(my_tile)
       LBj=BOUNDS(ng)%LBj(my_tile)
       UBj=BOUNDS(ng)%UBj(my_tile)
-#endif
 
 !-----------------------------------------------------------------------
 !  Allocate and initialize module variables.
@@ -112,7 +110,6 @@
       ND_BND=ND(ng)
 #endif
 
-#ifdef AC_OBC
 
       IF (LBC(ieast,isAC3d,ng)%acquire) THEN
         allocate ( WAVEB(ng) % AC_east(LBj:UBj,ND_BND) )
@@ -141,8 +138,6 @@
         allocate ( WAVEB(ng) % ACG_south(LBi:UBi,ND_BND,2) )
 # endif
       END IF
-
-#endif
 
       RETURN
       END SUBROUTINE allocate_inwave_bound
@@ -182,7 +177,6 @@
 !  Initialize module variables.
 !-----------------------------------------------------------------------
 !
-#ifdef AC_OBC
         IF (DOMAIN(ng)%NorthWest_Test(tile).and.                        &
      &      LBC(iwest,isAC3d,ng)%acquire) THEN
           WAVEB(ng) % AC_west  = IniVal
@@ -212,7 +206,6 @@
           WAVEB(ng) % ACG_north = IniVal
 # endif
         END IF
-#endif
 
       RETURN
       END SUBROUTINE initialize_inwave_bound

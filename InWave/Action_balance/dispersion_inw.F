@@ -29,7 +29,6 @@
       USE mod_inwave_vars
       USE mod_inwave_params
       USE mod_inwave_bound
-
 !
 !  Imported variable declarations.
 !
@@ -77,11 +76,9 @@
       USE mod_param
       USE mod_scalars
       USE mod_inwave_params
-
-# if defined EW_PERIODIC || defined NS_PERIODIC
       USE exchange_3d_mod
       USE exchange_2d_mod
-# endif
+
 # ifdef DISTRIBUTE
       USE mp_exchange_mod
 # endif
@@ -117,19 +114,6 @@
 # endif
 !
 !  Local variable declarations.
-
-# ifdef DISTRIBUTE
-#  ifdef EW_PERIODIC
-      logical :: EWperiodic=.TRUE.
-#  else
-      logical :: EWperiodic=.FALSE.
-#  endif
-#  ifdef NS_PERIODIC
-      logical :: NSperiodic=.TRUE.
-#  else
-      logical :: NSperiodic=.FALSE.
-#  endif
-# endif
 !
       integer :: i, is, itrc, j, k, d
       integer :: Isup, Iinf, Jsup, Jinf
@@ -211,11 +195,13 @@
 !
       CALL mp_exchange2d (ng, tile, iNLM, 1,                            &
      &                    LBi, UBi, LBj, UBj,                           &
-     &                    NghostPoints, EWperiodic, NSperiodic,         &
+     &                    NghostPoints,                                 &
+     &                    EWperiodic(ng), NSperiodic(ng),               &
      &                    h_tot)
       CALL mp_exchange3d (ng, tile, iNLM, 2,                            &
      &                    LBi, UBi, LBj, UBj, 1, ND(ng),                &
-     &                    NghostPoints, EWperiodic, NSperiodic,         &
+     &                    NghostPoints,                                 &
+     &                    EWperiodic(ng), NSperiodic(ng),               &
      &                    kwc, cwc)
 # endif
 

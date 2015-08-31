@@ -91,10 +91,8 @@
       USE ct3dbc_mod
       USE ct3dbc_dir_mod
       USE Tr3dbc_mod
-
-# if defined EW_PERIODIC || defined NS_PERIODIC
       USE exchange_3d_mod
-# endif
+
 # ifdef DISTRIBUTE
       USE mp_exchange_mod, ONLY : mp_exchange3d
 # endif
@@ -152,19 +150,6 @@
 !
 !  Local variable declarations.
 
-# ifdef DISTRIBUTE
-#  ifdef EW_PERIODIC
-      logical :: EWperiodic=.TRUE.
-#  else
-      logical :: EWperiodic=.FALSE.
-#  endif
-#  ifdef NS_PERIODIC
-      logical :: NSperiodic=.TRUE.
-#  else
-      logical :: NSperiodic=.FALSE.
-#  endif
-# endif
-!
       integer :: i, j, k, d
       real(r8) :: twopi, otwopi, halfpi
       real(r8) :: alfa_wave, kx, ky, kh, wa, wr
@@ -179,13 +164,11 @@
       real(r8), dimension(LBi:UBi,LBj:UBj,ND(ng)) :: ct_r
       real(r8), parameter:: minTa=2.0_r8
 
-
 # include "set_bounds.h"
 !
       twopi=2.0_r8*pi
       halfpi=0.5_r8*pi
       otwopi=1.0_r8/twopi
-
 
       DO d=1,ND(ng)
         DO j=Jstr-1,Jend+1
@@ -334,15 +317,13 @@
       DO d=1,ND(ng)
         DO j=Jstr,Jend
           DO i=Istr,Iend
-#  ifdef DOPPLER
-           wa=wr+kwc(i,j,d)*u_dir
-           Ta(i,j,d)=twopi/wa
-           if (Ta(i,j,d).lt.minTa) Ta(i,j,d)=minTa
-#  else
+           wr=twopi/Tr(i,j,d)
            wa=wr
+#  ifdef DOPPLER
+           wa=wa+kwc(i,j,d)*u_dir
+#  endif
            Ta(i,j,d)=twopi/wa
            if (Ta(i,j,d).lt.minTa) Ta(i,j,d)=minTa
-#  endif
           ENDDO
         ENDDO
       ENDDO
@@ -358,11 +339,13 @@
 # ifdef DISTRIBUTE
       CALL mp_exchange3d (ng, tile, iNLM, 1,                            &
      &                    LBi, UBi, LBj, UBj, 1, ND(ng),                &
-     &                    NghostPoints, EWperiodic, NSperiodic,         &
+     &                    NghostPoints,                                 &
+     &                    EWperiodic(ng), NSperiodic(ng),               &
      &                    Tr(:,:,:))
       CALL mp_exchange3d (ng, tile, iNLM, 1,                            &
      &                    LBi, UBi, LBj, UBj, 1, ND(ng),                &
-     &                    NghostPoints, EWperiodic, NSperiodic,         &
+     &                    NghostPoints,                                 &
+     &                    EWperiodic(ng), NSperiodic(ng),               &
      &                    Ta(:,:,:))
 # endif
 
@@ -454,12 +437,10 @@
      &                      LBi, UBi, LBj, UBj, ND(ng)+1,               &
      &                      ct)
 #  endif
-
-
-# if defined EW_C_PERIODIC || defined NS_C_PERIODIC
-
+!
 !  Apply periodic boundary conditions.
-
+!
+        IF (EWperiodic(ng).or.NSperiodic(ng)) THEN
 #  ifdef ACX_ADVECTION
       CALL exchange_r3d_tile (ng, tile,                                 &
      &                        LBi, UBi, LBj, UBj, 1, ND(ng),            &
@@ -475,7 +456,7 @@
      &                        LBi, UBi, LBj, UBj, 1, ND(ng)+1,          &
      &                        ct)
 #  endif
-# endif
+        END IF
 
 # ifdef DISTRIBUTE
 !
@@ -484,19 +465,22 @@
 #  ifdef ACX_ADVECTION
       CALL mp_exchange3d (ng, tile, iNLM, 1,                            &
      &                    LBi, UBi, LBj, UBj, 1, ND(ng),                &
-     &                    NghostPoints, EWperiodic, NSperiodic,         &
+     &                    NghostPoints,                                 &
+     &                    EWperiodic(ng), NSperiodic(ng),               &
      &                    cx(:,:,:))
 #  endif
 #  ifdef ACY_ADVECTION
       CALL mp_exchange3d (ng, tile, iNLM, 1,                            &
      &                    LBi, UBi, LBj, UBj, 1, ND(ng),                &
-     &                    NghostPoints, EWperiodic, NSperiodic,         &
+     &                    NghostPoints,                                 &
+     &                    EWperiodic(ng), NSperiodic(ng),               &
      &                    cy(:,:,:))
 #  endif
 #  ifdef ACT_ADVECTION
       CALL mp_exchange3d (ng, tile, iNLM, 1,                            &
      &                    LBi, UBi, LBj, UBj, 1, ND(ng)+1,              &
-     &                    NghostPoints, EWperiodic, NSperiodic,         &
+     &                    NghostPoints,                                 &
+     &                    EWperiodic(ng), NSperiodic(ng),               &
      &                    ct(:,:,:))
 #  endif
 # endif

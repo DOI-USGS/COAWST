@@ -28,8 +28,9 @@ BICRO=0;
 DIR_TRANSPORT=0;
 DUCK85=0;
 EDGE=0;
-INWAVE_SHOREFACE=1;
+INWAVE_SHOREFACE=0;
 INWAVE_SHORE=0;
+INLET_TEST=1;
 MY_APP=0;
 
 %2) Provide the name of the mfile containing configuration parameters of
@@ -57,6 +58,8 @@ elseif (INWAVE_SHOREFACE)
     inwave_gen_file='InWave_shoreface_param';
 elseif (INWAVE_SHORE)
     inwave_gen_file='InWave_shore_param';
+elseif (INLET_TEST)
+    inwave_gen_file='InWave_inlet_test_param';
 elseif (MY_APP)
     inwave_gen_file='InWave_myapp_param';
 end
@@ -68,16 +71,19 @@ end
 eval([inwave_gen_file])
 
 %3) CREATE InWave GRID FILE
-
-create_inwave_grid(x,y,dx,dy,depth,roms_angle,mask_rho,f,grd_file)
+if (make_InWave_grd)
+  create_InWave_grid(x,y,dx,dy,depth,roms_angle,mask_rho,f,grd_file)
+end
 
 %4) CREATE InWave INI FILE
-
-create_inwave_ini(Lm,Mm,Nbins,Bindirs,Bindirs_c,pd,Ac,Cx,Cy,Ct,TA,ini_file)
+if (make_InWave_ini)
+  create_InWave_ini(LP,MP,Nbins,Bindirs,Bindirs_c,pd,Ac,Cx,Cy,Ct,TA,ini_file)
+end
 
 %5) CREATE InWave BND FILE
+if (make_InWave_bnd)
 
-if (bin_error==1)
+  if (bin_error==1)
 
     disp([' ERROR WHEN CREATING INWAVE BOUNDARY FILE:'])
     disp([' You need to change the direction of the bins containing the energy'])
@@ -85,7 +91,7 @@ if (bin_error==1)
     disp([' Select one of the following:'])
     disp([Bindirs])
 
-else
+  else
 
 %     if obc(1)==1
 %         create_inwave_bnd(Lm, Mm, Nbins_bnd, dir_bnd, obc, ...
@@ -101,7 +107,7 @@ else
 %             Ac_west,TA,time, bnd_file)
 %     end
 
-create_inwave_bnd(Lm, Mm, Nbins_bnd, dir_bnd, obc, ...
+  create_inwave_bnd(Lm, Mm, Nbins_bnd, dir_bnd, obc, ...
     Ac_north,Ac_east,Ac_south,Ac_west,TA,time, bnd_file)
 
     %6) END OF INWAVE FILE GENERATION
@@ -127,6 +133,7 @@ create_inwave_bnd(Lm, Mm, Nbins_bnd, dir_bnd, obc, ...
             create_bryfile(bryname,grdname,time,zeta,ubar)
         end
     end
+  end
 
     %7) END OF INWAVE FILE GENERATION
 

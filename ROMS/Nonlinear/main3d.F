@@ -346,9 +346,12 @@
 !-----------------------------------------------------------------------
 !  Couple ocean to atmosphere and wave model grids.
 !-----------------------------------------------------------------------
-!            IF (iic(ng).ne.ntstart(ng)) THEN
-              CALL inwave_run
-!            END IF
+            DO ig=1,GridsInLayer(nl)
+              ng=GridNumber(ig,nl)
+              DO tile=first_tile(ng),last_tile(ng),+1
+                CALL inwave_run (ng, tile)
+              END DO
+            END DO
 # endif
 
 # ifdef WEC_VF

@@ -73,7 +73,7 @@
 
       status=nf90_open(TRIM(ncname), nf90_nowrite, ncIWINIid(ng))
       IF (status.ne.nf90_noerr) THEN
-        WRITE (stdout,20)TRIM(ncname)
+        WRITE (stdout,10)TRIM(ncname)
         exit_flag=2
          ioerror=status
       ENDIF
@@ -89,13 +89,12 @@
          ioerror=status
       ENDIF
 
-     status=nf90_get_var(ncIWINIid(ng),varid,Ta)
+      status=nf90_get_var(ncIWINIid(ng),varid,Ta)
       IF (status.ne.nf90_noerr) THEN
         WRITE (stdout,30)TRIM(Vname(1,idACtp))
         exit_flag=2
          ioerror=status
       ENDIF
-     
 !
 !-----------------------------------------------------------------------
 !  Read dimensions
@@ -140,7 +139,6 @@
         exit_flag=2
          ioerror=status
       ENDIF
-
 !
 !
 !-----------------------------------------------------------------------
@@ -150,7 +148,6 @@
       status=nf90_close(ncIWINIid(ng))
       ncIWINIid(ng)=-1
 
-
 !# ifdef PROFILE
 !
 !-----------------------------------------------------------------------
@@ -159,9 +156,9 @@
 !
 !      CALL wclock_off (ng, iNLM, 3)
 !# endif
-  10  FORMAT (/,a,'GET_STATE - unable to open input NetCDF file: ',a)
-  20  FORMAT (/,a,'GET_ARRAY - unable to find the array: ',a)
-  30  FORMAT (/'GET_ARRAY - unable to read the array: ',a)
+  10  FORMAT (/'GET_INWAVE_INI - unable to open input NetCDF file: ',a)
+  20  FORMAT (/'GET_INWAVE_INI - unable to find the array: ',a)
+  30  FORMAT (/'GET_INWAVE_INI - unable to read the array: ',a)
 
 
       RETURN

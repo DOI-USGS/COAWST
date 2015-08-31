@@ -64,9 +64,7 @@
       integer, intent(in) :: ng, tile
       integer, intent(in) :: LBi, UBi, LBj, UBj
 
-# ifdef AC_OBC
       integer :: ILB, IUB, JLB, JUB
-# endif
       integer :: ND_BND, my_tile
 
 !

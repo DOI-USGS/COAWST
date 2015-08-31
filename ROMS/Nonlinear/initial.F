@@ -73,6 +73,9 @@
       USE ocean_coupler_mod, ONLY : ocn2atm_coupling
       USE ocean_coupler_mod, ONLY : ocnfatm_coupling
 #endif
+#ifdef INWAVE_MODEL
+      USE driver_inwave_mod, ONLY : inwave_init
+#endif
 !
       implicit none
 !
@@ -1012,6 +1015,11 @@
           IF (Master) WRITE (stdout,'(/)')
         END DO
       END DO
+#endif
+#ifdef INWAVE_MODEL
+        DO ng=1,Ngrids
+          CALL inwave_init (ng, MyRank)
+        END DO
 #endif
 !
 !-----------------------------------------------------------------------

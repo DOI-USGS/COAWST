@@ -50,7 +50,7 @@
 # ifdef INWAVE_MODEL
 !     character (len=80), dimension(Ngridss) :: IWINIname
 !     character (len=80), dimension(Ngridss) :: IWBNDname
-      character (len=80), dimension(Ngridss) :: IWSWNname
+!     character (len=80), dimension(Ngridss) :: IWSWNname
 # endif
 
       CONTAINS

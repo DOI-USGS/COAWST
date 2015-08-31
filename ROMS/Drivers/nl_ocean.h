@@ -183,7 +183,7 @@
 #endif
 #ifdef INWAVE_MODEL
         DO ng=1,Ngrids
-          CALL inwave_init (ng, MyRank)
+!         CALL inwave_init (ng, MyRank)
         END DO
 #endif
 !

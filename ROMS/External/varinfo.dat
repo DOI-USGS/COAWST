@@ -3977,7 +3977,7 @@
   'seconds'                                          ! [s]
   'TA, scalar'
   'TA_dim'
-  'idTa'
+  'idACtp'
   'nulvar'
   1.0d0
 

@@ -65,42 +65,18 @@
 !
       integer, intent(in) :: ng, tile
       integer, intent(in) :: LBi, UBi, LBj, UBj
-# ifdef OBC
-      integer :: ILB, IUB, JLB, JUB
-# endif
-      integer :: Imin, Imax, Jmin, Jmax
-      integer :: i, j, d
 !
 !  Local variable declarations.
 !
+      integer :: ILB, IUB, JLB, JUB
+      integer :: Imin, Imax, Jmin, Jmax
+      integer :: i, j, d, my_tile
 
       real(r8)::twopi
 
-# ifdef DISTRIBUTE
-#  ifdef EW_PERIODIC
-      logical :: EWperiodic=.TRUE.
-#  else
-      logical :: EWperiodic=.FALSE.
-#  endif
-#  ifdef NS_PERIODIC
-      logical :: NSperiodic=.TRUE.
-#  else
-      logical :: NSperiodic=.FALSE.
-#  endif
-# endif
       logical :: update = .FALSE.
 
 # include "set_bounds.h"
-
-# ifdef OBC
-!
-!  Lower and upper bounds for nontiled boundary arrays.
-!
-      ILB=LOWER_BOUND_I
-      IUB=UPPER_BOUND_I
-      JLB=LOWER_BOUND_J
-      JUB=UPPER_BOUND_J
-# endif
 
 #ifdef _OPENMP
       IF (WESTERN_EDGE) THEN
@@ -132,38 +108,42 @@
 
       twopi=2.0_r8*pi
 
-# if defined WEST_AC_OBC
-      DO d=1,ND(ng)
-        DO j=Jmin,Jmax
-          WAVEB(ng)%AC_west(j,d)=WAVES(ng)%Ampzeta(iic(ng),d)/          &
-     &    WAVEP(ng)% Tr(LBi,j,ND(ng))*twopi
+      IF (LBC(iwest,isAC3d,ng)%acquire) THEN
+        DO d=1,ND(ng)
+          DO j=Jmin,Jmax
+            WAVEB(ng)%AC_west(j,d)=WAVES(ng)%Ampzeta(iic(ng),d)/        &
+     &      WAVEP(ng)% Tr(LBi,j,ND(ng))*twopi
+          END DO
         END DO
-      END DO
-# endif
-# if defined EAST_AC_OBC
-      DO d=1,ND(ng)
-        DO j=Jmin,Jmax
-          WAVEB(ng)%AC_east(j,d)=WAVES(ng)%Ampzeta(iic(ng),d)/          &
-     &    WAVEP(ng)% Tr(UBi,j,ND(ng))*twopi
+      END IF
+
+      IF (LBC(ieast,isAC3d,ng)%acquire) THEN
+        DO d=1,ND(ng)
+          DO j=Jmin,Jmax
+            WAVEB(ng)%AC_east(j,d)=WAVES(ng)%Ampzeta(iic(ng),d)/        &
+     &      WAVEP(ng)% Tr(UBi,j,ND(ng))*twopi
+          END DO
         END DO
-      END DO
-# endif
-# if defined NORTH_AC_OBC
-      DO d=1,ND(ng)
-        DO i=Imin,Imax
-          WAVEB(ng)%AC_north(i,d)=WAVES(ng)%Ampzeta(iic(ng),d)/         &
-     &    WAVEP(ng)% Tr(i,UBj,ND(ng))*twopi
+      END IF
+
+      IF (LBC(inorth,isAC3d,ng)%acquire) THEN
+        DO d=1,ND(ng)
+          DO i=Imin,Imax
+            WAVEB(ng)%AC_north(i,d)=WAVES(ng)%Ampzeta(iic(ng),d)/       &
+     &      WAVEP(ng)% Tr(i,UBj,ND(ng))*twopi
+          END DO
         END DO
-      END DO
-# endif
-# if defined SOUTH_AC_OBC
-      DO d=1,ND(ng)
-        DO j=Imin,Imax
-          WAVEB(ng)%AC_south(j,d)=WAVES(ng)%Ampzeta(iic(ng),d)/         &
-     &    WAVEP(ng)% Tr(i,LBj,ND(ng))*twopi
+      END IF
+
+      IF (LBC(isouth,isAC3d,ng)%acquire) THEN
+        DO d=1,ND(ng)
+          DO j=Imin,Imax
+            WAVEB(ng)%AC_south(j,d)=WAVES(ng)%Ampzeta(iic(ng),d)/       &
+     &      WAVEP(ng)% Tr(i,LBj,ND(ng))*twopi
+          END DO
         END DO
-      END DO
-# endif
+      END IF
+
       RETURN
       END SUBROUTINE set_inwave_swan_data_tile
 #else

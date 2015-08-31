@@ -28,7 +28,6 @@
       USE mod_coupling
       USE mod_stepping
       USE mod_forces
-
 !
 !  Imported variable declarations.
 !
@@ -92,10 +91,8 @@
       USE mod_boundary
       USE mod_grid
       USE mod_scalars
-
-#  if defined EW_PERIODIC || defined NS_PERIODIC
       USE exchange_2d_mod
-#  endif
+
 #  ifdef DISTRIBUTE
       USE mp_exchange_mod, ONLY : mp_exchange2d
 #  endif
@@ -157,18 +154,6 @@
       real(r8), parameter :: Lmin = 10.0_r8
       real(r8), parameter :: Pmin = 2.0_r8
 !
-#  ifdef DISTRIBUTE
-#   ifdef EW_PERIODIC
-      logical :: EWperiodic=.TRUE.
-#   else
-      logical :: EWperiodic=.FALSE.
-#   endif
-#   ifdef NS_PERIODIC
-      logical :: NSperiodic=.TRUE.
-#   else
-      logical :: NSperiodic=.FALSE.
-#   endif
-#  endif
 
 # include "set_bounds.h"
 
@@ -273,24 +258,28 @@
 !
       CALL mp_exchange2d (ng, tile, iNLM, 3,                            &
      &                    LBi, UBi, LBj, UBj,                           &
-     &                    NghostPoints, EWperiodic, NSperiodic,         &
+     &                    NghostPoints,                                 &
+     &                    EWperiodic(ng), NSperiodic(ng),               &
      &                    Hwave, Dwave, Lwave)
 #  if defined WAVES_UB
       CALL mp_exchange2d (ng, tile, iNLM, 1,                            &
      &                    LBi, UBi, LBj, UBj,                           &
-     &                    NghostPoints, EWperiodic, NSperiodic,         &
+     &                    NghostPoints,                                 &
+     &                    EWperiodic(ng), NSperiodic(ng),               &
      &                    Uwave_rms)
 #  endif
 #  if defined WAVES_TOP_PERIOD
       CALL mp_exchange2d (ng, tile, iNLM, 1,                            &
      &                    LBi, UBi, LBj, UBj,                           &
-     &                    NghostPoints, EWperiodic, NSperiodic,         &
+     &                    NghostPoints,                                 &
+     &                    EWperiodic(ng), NSperiodic(ng),               &
      &                    Pwave_top)
 #  endif
 #  if defined WAVES_BOT_PERIOD
       CALL mp_exchange2d (ng, tile, iNLM, 1,                            &
      &                    LBi, UBi, LBj, UBj,                           &
-     &                    NghostPoints, EWperiodic, NSperiodic,         &
+     &                    NghostPoints,                                 &
+     &                    EWperiodic(ng), NSperiodic(ng),               &
      &                    Pwave_bot)
 #  endif
 !

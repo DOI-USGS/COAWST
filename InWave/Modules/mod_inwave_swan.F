@@ -149,7 +149,7 @@
       IF (ng.eq.1) allocate ( WAVES(Ngrids) )
 
       RETURN
-      END SUBROUTINE allocate_inwave_spectra
+      END SUBROUTINE allocate_inwave_swan
 
 !
 !***********************************************************************
@@ -174,7 +174,7 @@
       USE mod_iounits
       USE mod_scalars
       USE mod_inwave_params
-      USE mod_inwave_spectra
+!      USE mod_inwave_spectra
 
 !  Imported variable declarations.
 !
@@ -259,7 +259,7 @@
       USE mod_scalars
       USE mod_inwave_vars
       USE mod_inwave_params
-      USE mod_inwave_spectra
+!      USE mod_inwave_spectra
 
       implicit none
 
@@ -269,7 +269,7 @@
 
 !  Local variable declarations.
 
-      integer :: i,p,n_pos_f
+      integer :: i,j,p,n_pos_f
       real    :: N_ini
 
       real(r8), pointer     :: temp(:)   ! scratch array
@@ -299,7 +299,7 @@
       WAVES(ng)%df=(WAVES(ng)%fmax-WAVES(ng)%fmin)/(WAVES(ng)%nfreq-1)
 
       DO i=1,WAVES(ng)%nfreq
-        WAVES(ng)%f=(i+1)*WAVES(ng)%df+WAVES(ng)%fmin
+        WAVES(ng)%f(i)=REAL(i+1,r8)*WAVES(ng)%df+WAVES(ng)%fmin
       END DO
 !
 !-----------------------------------------------------------------------
@@ -359,7 +359,7 @@
 !***********************************************************************
 !
       USE mod_scalars
-      USE mod_inwave_spectra
+!      USE mod_inwave_spectra
 
       implicit none
 
@@ -369,6 +369,7 @@
       
 !  Local variable declarations.
 
+      integer               :: i,j
       real(r8)              :: twopi
 
       call random_number(WAVES(ng)%phase)
@@ -419,7 +420,7 @@
 
       use mod_scalars
       use mod_inwave_params
-      USE mod_inwave_spectra
+!      USE mod_inwave_spectra
 
       implicit none
 
@@ -429,18 +430,21 @@
 
 !  Local variable declarations.
 !
-      integer                         :: i
+      integer                         :: i, j
       integer                         :: dir_index
+      real(r8)                        :: cff1, cff2
+
 !
 !-----------------------------------------------------------------------
 ! Compute the amplitude for the Fourier components
 ! For each frequency in the spectra there is one amplitude
 !-----------------------------------------------------------------------
 !
+      cff1=WAVES(ng)%df
+      cff2=WAVES(ng)%dang
       DO j=1,WAVES(ng)%ndir
-        DO i=1,WAVES(ng)%nfreq      
-          WAVES(ng)%amp(i,j)= sqrt(2.0_r8*WAVES(ng)%SD*WAVES(ng)%df*    &
-     &                        WAVES(ng)%dang)
+        DO i=1,WAVES(ng)%nfreq
+          WAVES(ng)%amp(i,j)= sqrt(2.0_r8*WAVES(ng)%SD(i,j)*cff1*cff2)
         END DO
       END DO
 
@@ -461,7 +465,7 @@
 !
 
       USE mod_scalars
-      USE mod_inwave_spectra
+!      USE mod_inwave_spectra
 
       implicit none
 
@@ -484,7 +488,8 @@
 
 ! COMPUTES THE FOURIER COMPONENTS
 
-      DO i=1,WAVES(ng)%nfreq
+!     DO i=1,WAVES(ng)%nfreq
+      DO i=1,WAVES(ng)%N
         WAVES(ng)%CompFn(i)=0.5_r8*WAVES(ng)%amp(i,dir_index)*          &
      &                      exp(compi*WAVES(ng)%phase(i,dir_index))
       END DO

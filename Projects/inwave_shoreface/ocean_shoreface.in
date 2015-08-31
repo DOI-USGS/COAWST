@@ -165,10 +165,10 @@ GridsInLayer =  1
 
 ! InWave boundary conditions
 
-   LBC(isAC3d) ==   Cla     Gra     Gra     Gra         ! 3D wave action density
-   LBC(isCT3d) ==   Gra     Gra     Gra     Gra         ! 3D wave theta celerity
-   LBC(isCX3d) ==   Gra     Gra     Gra     Gra         ! 3D wave x-dir celerity
-   LBC(isCY3d) ==   Gra     Gra     Gra     Gra         ! 3D wave y-dir celerity
+   LBC(isAC3d) ==   Cla     Gra     Clo     Gra         ! 3D wave action density
+   LBC(isCT3d) ==   Gra     Gra     Clo     Gra         ! 3D wave theta celerity
+   LBC(isCX3d) ==   Gra     Gra     Clo     Gra         ! 3D wave x-dir celerity
+   LBC(isCY3d) ==   Gra     Gra     Clo     Gra         ! 3D wave y-dir celerity
 
 ! Ice boundary conditions
 
@@ -877,15 +877,15 @@ Dout(iTvdif) == T T     ! temp_vdiff, ...    vertical diffusion
 
 ! Input NetCDF file names, [1:Ngrids].
 
-     GRDNAME == Projects/Inwave_tests/shoreface/InWave_grd.nc
+     GRDNAME == Projects/inwave_shoreface/InWave_grd.nc
      ININAME == ocean_ini.nc
      ITLNAME == ocean_itl.nc
      IRPNAME == ocean_irp.nc
      IADNAME == ocean_iad.nc
      FWDNAME == ocean_fwd.nc
      ADSNAME == ocean_ads.nc
-     IWININAME == Projects/Inwave_tests/shoreface/InWave_ini.nc
-     IWBNDNAME == Projects/Inwave_tests/shoreface/InWave_bnd.nc
+     IWININAME == Projects/inwave_shoreface/InWave_ini.nc
+     IWBNDNAME == Projects/inwave_shoreface/InWave_bnd.nc
 
 ! Nesting grids connectivity data: contact points information. This
 ! NetCDF file is special and complex. It is currently generated using
@@ -903,7 +903,7 @@ Dout(iTvdif) == T T     ! temp_vdiff, ...    vertical diffusion
      CLMNAME == ocean_clm.nc
 
      NBCFILES == 1                          ! number of boundary files
-     BRYNAME == Projects/Inwave_tests/shoreface/InWave_bnd.nc
+     BRYNAME == Projects/inwave_shoreface/InWave_bnd.nc
 
 ! Input climatology nudging coefficients file name.
 
@@ -928,7 +928,8 @@ Dout(iTvdif) == T T     ! temp_vdiff, ...    vertical diffusion
      NFFILES == 1                          ! number of unique forcing files
 
 !    FRCNAME == Data/ROMS/Forcing/swan_shoreface_angle_forc.nc
-     FRCNAME == InWave_grd.nc       ! swan_shoreface_angle_forc.nc
+!    FRCNAME == InWave_grd.nc       ! swan_shoreface_angle_forc.nc
+     FRCNAME == ocean_forc.nc       ! swan_shoreface_angle_forc.nc
 
 ! Output NetCDF file names, [1:Ngrids].
 

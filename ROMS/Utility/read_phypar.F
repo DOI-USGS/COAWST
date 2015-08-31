@@ -4106,6 +4106,11 @@
                 IWBNDNAME(1)(i:i)=blank
               END DO
               IWBNDNAME(1)=TRIM(ADJUSTL(Cval(Nval)))
+            CASE ('IWSWNNAME')
+              DO i=1,LEN(IWSWNNAME(1))
+                IWSWNNAME(1)(i:i)=blank
+              END DO
+              IWSWNNAME(1)=TRIM(ADJUSTL(Cval(Nval)))
 #endif
           END SELECT
           IF (exit_flag.ne.NoError) RETURN

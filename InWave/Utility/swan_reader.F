@@ -16,7 +16,7 @@
 !                                                                      !
 !======================================================================!
 !
-      USE mod_iounits
+      USE inwave_iounits
       USE mod_scalars
       USE mod_inwave_swan
 
@@ -100,7 +100,7 @@
         switch = 1
       ELSEIF (rtext == 'CDIR  ') THEN
         switch = 2
-      ELSEIF
+      ELSE
         stop
       ENDIF
 !
