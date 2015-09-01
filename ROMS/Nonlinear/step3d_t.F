@@ -374,11 +374,11 @@
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS,0:N(ng)) :: Wa
 # endif
 # ifdef TS_HSIMT
-       real(r8), dimension(IminS:ImaxS,JminS:JmaxS,0:N(ng)) :: kaz, kaz_inverse
-       real(r8):: rd, rkad, a1, b1, betad, sw, ru, rkau, betau
-       real(r8):: epson, cc1, cc2, cc3
-       real(r8):: u_k(LBi:UBi,LBj:UBj)
-       real(r8):: v_k(LBi:UBi,LBj:UBj)
+      real(r8):: rd, rkad, a1, b1, betad, sw, ru, rkau
+      real(r8):: betau, epson, cc1, cc2, cc3
+      real(r8), dimension(0:N(ng)) :: kaz,kaz_inverse
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: u_k
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: v_k
 # endif
       real(r8) :: my_maxbio(15)
 !
@@ -401,17 +401,13 @@
 !
 !  Compute inverse thickness.
 !
-# ifdef TS_MPDATA
-#  define I_RANGE Istrm2,Iendp2
-#  define J_RANGE Jstrm2,Jendp2
-# elif defined TS_HSIMT
+# if defined TS_MPDATA || defined TS_HSIMT
 #  define I_RANGE Istrm2,Iendp2
 #  define J_RANGE Jstrm2,Jendp2
 # else
 #  define I_RANGE Istr,Iend
 #  define J_RANGE Jstr,Jend
 # endif
-
       DO k=1,N(ng)
         DO j=J_RANGE
           DO i=I_RANGE
@@ -421,7 +417,7 @@
       END DO
 # undef I_RANGE
 # undef J_RANGE
-# ifdef TS_MPDATA
+# if defined TS_MPDATA || defined TS_HSIMT
 !
 !  The MPDATA algorithm requires a three-point footprint, so exchange
 !  boundary data on t(:,:,:,nnew,:) so other processes computed earlier
@@ -448,33 +444,7 @@
      &                    t(:,:,:,nnew,:))
 #  endif
 # endif
-# ifdef TS_HSIMT
-!
-!  The HSIMT algorithm requires a three-point footprint, so exchange
-!  boundary data on t(:,:,:,nnew,:) so other processes computed earlier
-!  (horizontal diffusion, biology, or sediment) are accounted.
-!
-       IF (EWperiodic(ng).or.NSperiodic(ng)) THEN
-#  ifdef OFFLINE_BIOLOGY
-         DO ibt=1,NBT
-           itrc=idbio(ibt)
-#  else
-         DO itrc=1,NT(ng)
-#  endif
-           CALL exchange_r3d_tile (ng, tile,                            &
-     &                             LBi,UBi, LBj, UBj, 1, N(ng),         &
-     &                             t(:,:,:,nnew,itrc))
-         END DO
-       END IF
-#  ifdef DISTRIBUTE
-       CALL mp_exchange4d(ng,tile,iNLM,1,                               &
-     &                    LBi,UBi,LBj,UBj,1,N(ng),1,NT(ng),             &
-     &                    NghostPoints,                                 &
-     &                    EWperiodic(ng),NSperiodic(ng),                &
-     &                    t(:,:,:,nnew,:))
 
-#  endif
-# endif
 # ifdef OFFLINE_BIOLOGY
       T_LOOP : DO ibt=1,NBT
         itrc=idbio(ibt)
@@ -506,8 +476,8 @@
           END DO
 # elif defined TS_HSIMT
 !   Third-order HSIMT-TVD horizontal advective fluxes.
-          DO j=LBj,UBj
-            DO i=LBi,UBi
+          DO j=JstrV-1,Jend+1
+            DO i=IstrU-1,Iend+1
               u_k(i,j)=0.5_r8*(u(i,j,k,1)+u(i,j,k,2))
               v_k(i,j)=0.5_r8*(v(i,j,k,1)+v(i,j,k,2))
             END DO
@@ -521,11 +491,11 @@
 #  ifdef WET_DRY
      &                          rmask_wet, umask_wet, vmask_wet,        &
 #  endif
-!    &                          pm, pn, omn, om_u, on_v, u_k,          &
-     &                          pm, pn, omn, u_k, v_k, z_r,             &
+     &                          pm, pn, omn, z_r,                       &
      &                          Huon(:,:,k), Hvom(:,:,k),               &
-     &                          t(:,:,k,3,itrc),                        &
-     &                          FX,FE)
+     &                          u_k, v_k, t(:,:,k,3,itrc),              &
+     &                          FX, FE)
+
 # elif defined TS_MPDATA
 !
 !  First-order, upstream differences horizontal advective fluxes.
@@ -688,10 +658,7 @@
               i=SOURCES(ng)%Isrc(is)
               j=SOURCES(ng)%Jsrc(is)
               IF (INT(SOURCES(ng)%Dsrc(is)).eq.0) THEN
-# ifdef TS_MPDATA
-                IF (((IstrUm2.le.i).and.(i.le.Iendp3)).and.             &
-     &              ((JstrVm2.le.j).and.(j.le.Jendp2i))) THEN
-# elif defined TS_HSIMT
+# if defined TS_MPDATA || defined TS_HSIMT
                 IF (((IstrUm2.le.i).and.(i.le.Iendp3)).and.             &
      &              ((JstrVm2.le.j).and.(j.le.Jendp2i))) THEN
 # else
@@ -718,10 +685,7 @@
                   END IF
                 END IF
               ELSE IF (INT(SOURCES(ng)%Dsrc(is)).eq.1) THEN
-# ifdef TS_MPDATA
-                IF (((IstrUm2.le.i).and.(i.le.Iendp2i)).and.            &
-     &              ((JstrVm2.le.j).and.(j.le.Jendp3))) THEN
-# elif defined TS_HSIMT
+# if defined TS_MPDATA || defined TS_HSIMT
                 IF (((IstrUm2.le.i).and.(i.le.Iendp2i)).and.            &
      &              ((JstrVm2.le.j).and.(j.le.Jendp3))) THEN
 # else
@@ -835,15 +799,6 @@
           cc2=0.5_r8
           cc3=1.0_r8/12.0_r8
           epson=1.0E-10_r8
-          DO k=1,N(ng)-1
-            DO j=J_RANGE
-              DO i=I_RANGE
-                kaz(i,j,k)=1.0_r8-abs(w(i,j,k)*pm(i,j)*pn(i,j)*dt(ng)/  &
-     &                     (z_r(i,j,k+1)-z_r(i,j,k)))
-                kaz_inverse(i,j,k)=1.0_r8/(kaz(i,j,k)+epson)
-              END DO
-            END DO
-          END DO
 # endif
       DO j=J_RANGE
 #ifdef OFFLINE_BIOLOGY
@@ -981,6 +936,10 @@
 # elif defined TS_HSIMT
           DO i=I_RANGE
             DO k=1,N(ng)-1
+              kaz(k)=1.0_r8-abs(w(i,j,k)*pm(i,j)*pn(i,j)*dt(ng)/  &
+     &                         (z_r(i,j,k+1)-z_r(i,j,k)))
+              kaz_inverse(k)=1.0_r8/(kaz(k)+epson)
+                
               IF (k.eq.1.and.W(i,j,k).ge.0.0_r8) THEN
                 FC(i,k)=W(i,j,k)*t(i,j,k,3,itrc)
               ELSE IF (k.eq.N(ng)-1.and.W(i,j,k).lt.0.0_r8) THEN
@@ -994,15 +953,15 @@
                   ELSE
                     rd=(t(i,j,k,3,itrc)-t(i,j,k-1,3,itrc))/             &
      &                 (t(i,j,k+1,3,itrc)-t(i,j,k,3,itrc))
-                    rkad=kaz(i,j,k-1)*kaz_inverse(i,j,k)
+                    rkad=kaz(k-1)*kaz_inverse(k)
                   END IF
-                  a1=cc1*kaz(i,j,k)+cc2-cc3*kaz_inverse(i,j,k)
-                  b1=-cc1*kaz(i,j,k)+cc2+cc3*kaz_inverse(i,j,k)
+                  a1=cc1*kaz(k)+cc2-cc3*kaz_inverse(k)
+                  b1=-cc1*kaz(k)+cc2+cc3*kaz_inverse(k)
                   betad=a1+b1*rd
                   sw=t(i,j,k,3,itrc)+                                   &
      &               0.5_r8*MAX(0.0_r8,                                 &
      &                          MIN(2.0_r8,2.0_r8*rd*rkad,betad))*      &
-     &                (t(i,j,k+1,3,itrc)-t(i,j,k,3,itrc))*kaz(i,j,k)
+     &                (t(i,j,k+1,3,itrc)-t(i,j,k,3,itrc))*kaz(k)
                 ELSE
                   IF (abs(t(i,j,k+1,3,itrc)-t(i,j,k,3,itrc)).le.epson)  &
      &              THEN
@@ -1011,15 +970,15 @@
                   ELSE
                     ru=(t(i,j,k+2,3,itrc)-t(i,j,k+1,3,itrc))/           &
      &                 (t(i,j,k+1,3,itrc)-t(i,j,k,3,itrc))
-                    rkau=kaz(i,j,k+1)*kaz_inverse(i,j,k)
+                    rkau=kaz(k+1)*kaz_inverse(k)
                   END IF
-                  a1=cc1*kaz(i,j,k)+cc2-cc3*kaz_inverse(i,j,k)
-                  b1=-cc1*kaz(i,j,k)+cc2+cc3*kaz_inverse(i,j,k)
+                  a1=cc1*kaz(k)+cc2-cc3*kaz_inverse(k)
+                  b1=-cc1*kaz(k)+cc2+cc3*kaz_inverse(k)
                   betau=a1+b1*ru
                   sw=t(i,j,k+1,3,itrc)-                                 &
      &               0.5_r8*MAX(0.0_r8,                                 &
      &                          MIN(2.0_r8,2.0_r8*ru*rkau,betau))*      &
-     &               (t(i,j,k+1,3,itrc)-t(i,j,k,3,itrc))*kaz(i,j,k)
+     &               (t(i,j,k+1,3,itrc)-t(i,j,k,3,itrc))*kaz(k)
                 END IF 
                 FC(i,k)=W(i,j,k)*sw
               END IF
@@ -1239,7 +1198,7 @@
           IF (LwSrc(ng)) THEN
             DO is=1,Nsrc(ng)
               i=SOURCES(ng)%Isrc(is)
-#  ifdef TS_MPDATA || defined TS_HSIMT
+#  if defined TS_MPDATA || defined TS_HSIMT
               IF (((IstrUm2.le.i).and.(i.le.Iendp2i)).and.              &
      &            ((JstrVm2.le.j).and.(j.le.Jendp2i))) THEN
 #  else
@@ -1437,6 +1396,8 @@
 #ifdef OFFLINE_BIOLOGY
         DO ibt=1,NBT
           itrc=idbio(ibt)
+#elif defined TS_VAR
+        DO itrc=1,NAT
 #else
         DO itrc=1,NT(ng)
 #endif
@@ -1726,6 +1687,25 @@
      &                            t(:,:,:,nnew,itrc))
         END IF
       END DO
+# ifdef TS_VAR
+!
+!  Compute tracer variance.
+!
+      itrc=inert(1)
+      DO k=1,N(ng)
+        DO j=JstrR,JendR
+          DO i=IstrR,IendR
+#  if !defined SPLINES || defined TS_MPDATA
+            t(i,j,k,nnew,itrc)=t(i,j,k,nnew,itrc)*oHz(i,j,k)
+            t(i,j,k,nnew,itrc+1)=t(i,j,k,nnew,itrc+1)*oHz(i,j,k)
+#  endif
+            t(i,j,k,nnew,itrc+2)=(t(i,j,k,nnew,itrc+1)-                 &
+     &                           t(i,j,k,nnew,itrc)*t(i,j,k,nnew,itrc))/&
+     &                           dt(ng)
+          END DO
+        END DO
+      END DO
+# endif
 # ifdef DISTRIBUTE
 !
 !  Exchange boundary data.

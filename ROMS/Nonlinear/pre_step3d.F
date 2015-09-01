@@ -389,6 +389,19 @@
 !  Compute time rate of change of intermediate tracer due to
 !  horizontal advection.
 !
+#  ifdef TS_VAR
+      itrc=inert(1)
+      DO k=1,N(ng)
+        DO j=JstrR,JendR
+          DO i=IstrR,IendR
+            t(i,j,k,nstp,itrc)=t(i,j,k,nstp,2)  ! set it to use salt
+            t(i,j,k,nrhs,itrc)=t(i,j,k,nstp,2)
+            t(i,j,k,nstp,itrc+1)=t(i,j,k,nstp,2)*t(i,j,k,nstp,2)
+            t(i,j,k,nrhs,itrc+1)=t(i,j,k,nstp,2)*t(i,j,k,nstp,2)
+          END DO
+        END DO
+      END DO
+#  endif
 #  ifdef OFFLINE_BIOLOGY
       T_LOOP1 :DO ibt=1,NBT
         itrc=idbio(ibt)
