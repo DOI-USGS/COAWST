@@ -1,181 +1,163 @@
-function create_inwave_bnd(Lp, Mp, Nangle_bnd, Dir_bnd, obc, ...
-    AcN, AcE, AcS, AcW, TA, time, bndfile)
+function create_inwave_bnd(LP, MP, Nangle_bnd, Dir_bnd, obc, ...
+                           AcN, AcE, AcS, AcW, TA, time, bndfile)
 
 disp(' ')
 disp(['## Creating the file : ',bndfile])
 
-L=Lp-1;
-M=Mp-1;
+L=LP-1;
+M=MP-1;
 
 %  Create the boundary file
 %
 
 type = 'BOUNDARY file for the InWave model' ; 
-nc = netcdf(bndfile,'clobber');
-result = redef(nc);
+nc_bndry=netcdf.create(bndfile,'clobber');
+if isempty(nc_bndry), return, end
 
 nbin=[1:1:Nangle_bnd];
 dir=Dir_bnd;
+
+%% Global attributes:
+disp(' ## Defining Global Attributes...')
+netcdf.putAtt(nc_bndry,netcdf.getConstant('NC_GLOBAL'),'history', ['Created by create_InWave_ini on ' datestr(now)]);
 
 %
 %  Create dimensions
 %
 
-nc('xi_u') = L;
-nc('xi_rho') = Lp;
-nc('eta_v') = M;
-nc('eta_rho') = Mp;
-nc('energy_time') = length(time);
-nc('energy_angle_c') = Nangle_bnd;
-nc('TA_dim') = 1;
+psidimID = netcdf.defDim(nc_bndry,'xpsi',L);
+xrhodimID = netcdf.defDim(nc_bndry,'xrho',LP);
+xudimID = netcdf.defDim(nc_bndry,'xu',L);
+xvdimID = netcdf.defDim(nc_bndry,'xv',LP);
+
+epsidimID = netcdf.defDim(nc_bndry,'epsi',M);
+erhodimID = netcdf.defDim(nc_bndry,'erho',MP);
+eudimID = netcdf.defDim(nc_bndry,'eu',MP);
+evdimID = netcdf.defDim(nc_bndry,'ev',M);
+
+etime_dimID = netcdf.defDim(nc_bndry,'energy_time',length(time));
+%eangle_dimID = netcdf.defDim(nc_bndry,'energy_angle',Nbins+1);
+eanglec_dimID = netcdf.defDim(nc_bndry,'energy_angle_c',length(nbin));
+TA_dimID = netcdf.defDim(nc_bndry,'TA_dim',1);
 
 NT=length(time);
 
 %
 %  Create variables and attributes
 %
+%% Variables and attributes:
+disp(' ## Defining Variables and Attributes...')
 
-nc{'energy_time'} = ncdouble('energy_time') ;
-nc{'energy_time'}.long_name = ncchar('time for energy envelope');
-nc{'energy_time'}.long_name = 'time for energy envelope';
-nc{'energy_time'}.units = ncchar('seconds');
-nc{'energy_time'}.units = 'seconds';
+etID = netcdf.defVar(nc_bndry,'energy_time','double',etime_dimID);
+netcdf.putAtt(nc_bndry,etID,'long_name','time for energy envelope');
+netcdf.putAtt(nc_bndry,etID,'units','seconds');
+netcdf.putAtt(nc_bndry,etID,'field','energy_time, scalar, series');
 
-nc{'energy_angle_c'} = ncdouble('energy_angle_c') ;
-nc{'energy_angle_c'}.long_name = ncchar('direction respect to the north of the bin');
-nc{'energy_angle_c'}.long_name = 'direction respect to the north of the bin';
-nc{'energy_angle_c'}.units = ncchar('degrees');
-nc{'energy_angle_c'}.units = 'degrees';
+ecID = netcdf.defVar(nc_bndry,'energy_angle_c','double',eanglec_dimID);
+netcdf.putAtt(nc_bndry,ecID,'long_name','direction respect to the north of the bin');
+netcdf.putAtt(nc_bndry,ecID,'units','degrees');
+netcdf.putAtt(nc_bndry,ecID,'field','energy_angle_c, scalar, series');
 
-nc{'TA_dim'} = ncdouble('TA_dim') ;
-nc{'TA_dim'}.long_name = ncchar('representative absolute peak period');
-nc{'TA_dim'}.long_name = 'representative absolute peak period';
-nc{'TA_dim'}.units = ncchar('Seconds');
-nc{'TA_dim'}.units = 'Seconds';
+TAID = netcdf.defVar(nc_bndry,'TA_dim','double',TA_dimID);
+netcdf.putAtt(nc_bndry,TAID,'long_name','representative absolute peak period');
+netcdf.putAtt(nc_bndry,TAID,'units','seconds');
+netcdf.putAtt(nc_bndry,TAID,'field','TA_dim, scalar, series');
 
 %
 
 if obc(3)==1
-
+%
 %   Southern boundary
+%
+  ACID = netcdf.defVar(nc_bndry,'AC_south','double',[xrhodimID eanglec_dimID etime_dimID]);
+  netcdf.putAtt(nc_bndry,ACID,'long_name','southern boundary wave action envelope');
+  netcdf.putAtt(nc_bndry,ACID,'units','Joules');
+  netcdf.putAtt(nc_bndry,ACID,'field','AC, scalar, series');
 
-  nc{'AC_south'} = ncdouble('energy_time','energy_angle_c','xi_rho') ;
-  nc{'AC_south'}.long_name = ncchar('southern boundary wave action envelope');
-  nc{'AC_south'}.long_name = 'southern boundary wave action envelope';
-  nc{'AC_south'}.units = ncchar('Joules');
-  nc{'AC_south'}.units = 'Joules';
-  
-  nc{'TA_south'} = ncdouble('TA_dim') ;
-  nc{'TA_south'}.long_name = ncchar('southern boundary representative absolute peak period');
-  nc{'TA_south'}.long_name = 'southern boundary representative absolute peak period';
-  nc{'TA_south'}.units = ncchar('Seconds');
-  nc{'TA_south'}.units = 'Seconds';
-  
+  TaID = netcdf.defVar(nc_bndry,'Ta_south','double',TA_dimID);
+  netcdf.putAtt(nc_bndry,TaID,'long_name','southern boundary representative absolute peak period');
+  netcdf.putAtt(nc_bndry,TaID,'units','seconds');
+  netcdf.putAtt(nc_bndry,TaID,'field','Ta, scalar, series');
 end
 
 if obc(2)==1
-
+%
 %   Eastern boundary
+%
+  ACID = netcdf.defVar(nc_bndry,'AC_east','double',[erhodimID eanglec_dimID etime_dimID]);
+  netcdf.putAtt(nc_bndry,ACID,'long_name','eastern boundary wave action envelope');
+  netcdf.putAtt(nc_bndry,ACID,'units','Joules');
+  netcdf.putAtt(nc_bndry,ACID,'field','AC, scalar, series');
 
-  nc{'AC_east'} = ncdouble('energy_time','energy_angle_c','eta_rho') ;
-  nc{'AC_east'}.long_name = ncchar('eastern boundary wave action envelope');
-  nc{'AC_east'}.long_name = 'eastern boundary wave action envelope';
-  nc{'AC_east'}.units = ncchar('Joules');
-  nc{'AC_east'}.units = 'Joules';
-    
-  nc{'TA_east'} = ncdouble('TA_dim') ;
-  nc{'TA_east'}.long_name = ncchar('eastern boundary representative absolute peak period');
-  nc{'TA_east'}.long_name = 'eastern boundary representative absolute peak period';
-  nc{'TA_east'}.units = ncchar('Seconds');
-  nc{'TA_east'}.units = 'Seconds';
-
+  TaID = netcdf.defVar(nc_bndry,'Ta_east','double',TA_dimID);
+  netcdf.putAtt(nc_bndry,TaID,'long_name','eastern boundary representative absolute peak period');
+  netcdf.putAtt(nc_bndry,TaID,'units','seconds');
+  netcdf.putAtt(nc_bndry,TaID,'field','Ta, scalar, series');
 end
 
 if obc(1)==1
 %
 %   Northern boundary
 %
-  nc{'AC_north'} = ncdouble('energy_time','energy_angle_c','xi_rho') ;
-  nc{'AC_north'}.long_name = ncchar('northern boundary wave action envelope');
-  nc{'AC_north'}.long_name = 'northern boundary wave action envelope';
-  nc{'AC_north'}.units = ncchar('Joules');
-  nc{'AC_north'}.units = 'Joules';
-  
-  nc{'TA_north'} = ncdouble('TA_dim') ;
-  nc{'TA_north'}.long_name = ncchar('northern boundary representative absolute peak period');
-  nc{'TA_north'}.long_name = 'northern boundary representative absolute peak period';
-  nc{'TA_north'}.units = ncchar('Seconds');
-  nc{'TA_north'}.units = 'Seconds';
-%
+  ACID = netcdf.defVar(nc_bndry,'AC_north','double',[xrhodimID eanglec_dimID etime_dimID]);
+  netcdf.putAtt(nc_bndry,ACID,'long_name','northern boundary wave action envelope');
+  netcdf.putAtt(nc_bndry,ACID,'units','Joules');
+  netcdf.putAtt(nc_bndry,ACID,'field','AC, scalar, series');
+
+  TaID = netcdf.defVar(nc_bndry,'Ta_north','double',TA_dimID);
+  netcdf.putAtt(nc_bndry,TaID,'long_name','northern boundary representative absolute peak period');
+  netcdf.putAtt(nc_bndry,TaID,'units','seconds');
+  netcdf.putAtt(nc_bndry,TaID,'field','Ta, scalar, series');
 end
 %
 if obc(4)==1
 %
 %   Western boundary
 %
-  nc{'AC_west'} = ncdouble('energy_time','energy_angle_c','eta_rho') ;
-  nc{'AC_west'}.long_name = ncchar('western boundary wave action envelope');
-  nc{'AC_west'}.long_name = 'western boundary wave action envelope';
-  nc{'AC_west'}.units = ncchar('Joules');
-  nc{'AC_west'}.units = 'Joules';
-  
-  nc{'TA_west'} = ncdouble('TA_dim') ;
-  nc{'TA_west'}.long_name = ncchar('westhern boundary representative absolute peak period');
-  nc{'TA_west'}.long_name = 'westhern boundary representative absolute peak period';
-  nc{'TA_west'}.units = ncchar('Seconds');
-  nc{'TA_west'}.units = 'Seconds';
-  
+  ACID = netcdf.defVar(nc_bndry,'AC_west','double',[erhodimID eanglec_dimID etime_dimID]);
+  netcdf.putAtt(nc_bndry,ACID,'long_name','western boundary wave action envelope');
+  netcdf.putAtt(nc_bndry,ACID,'units','Joules');
+  netcdf.putAtt(nc_bndry,ACID,'field','AC, scalar, series');
 
+  TaID = netcdf.defVar(nc_bndry,'Ta_west','double',TA_dimID);
+  netcdf.putAtt(nc_bndry,TaID,'long_name','western boundary representative absolute peak period');
+  netcdf.putAtt(nc_bndry,TaID,'units','seconds');
+  netcdf.putAtt(nc_bndry,TaID,'field','Ta, scalar, series');
 end
-%
+
+netcdf.close(nc_bndry)
+
 %
 % Create global attributes
 %
-
-nc.date = ncchar(date);
-nc.date = date;
-nc.clim_file = ncchar(bndfile);
-nc.clim_file = bndfile;
-nc.type = ncchar(type);
-nc.type = type;
-
-%
-% Leave define mode
-%
-
-result = endef(nc);
 
 %
 % Write variables
 %
 
-nc{'energy_time'}(1:NT) =  time(1,1:NT); 
-nc{'energy_angle_c'}(:) =  dir; 
-nc{'TA_dim'}(:) = 1; 
+ncwrite(bndfile,'energy_time',time(1,1:NT));
+ncwrite(bndfile,'energy_angle_c',dir);
+ncwrite(bndfile,'TA_dim',1);
 
 if obc(3)==1
-   nc{'AC_south'}(:,:,:) =AcS(:,:,:);
-   nc{'TA_south'}(:)=TA;
+  ncwrite(bndfile,'AC_south',AcS);
+  ncwrite(bndfile,'Ta_south',TA);
 end
 
 if obc(2)==1
-   nc{'AC_east'}(:,:,:) =AcE(:,:,:); 
-   nc{'TA_east'}(:)=TA;
+  ncwrite(bndfile,'AC_east',AcE);
+  ncwrite(bndfile,'Ta_east',TA);
 end
 
 if obc(1)==1
-   nc{'AC_north'}(:,:,:) =AcN(:,:,:); 
-   nc{'TA_north'}(:)=TA;
+  ncwrite(bndfile,'AC_north',AcN);
+  ncwrite(bndfile,'Ta_north',TA);
 end
-
-clear AcN AcE AcS Ac_east Ac Ac1
 
 if obc(4)==1
-   nc{'AC_west'}(:,:,:) =AcW(:,:,:); 
-   nc{'TA_west'}(:)=TA;
+  ncwrite(bndfile,'AC_west',AcW);
+  ncwrite(bndfile,'Ta_west',TA);
 end
-
-close(nc)
 
 disp(['Created boundary file -->   ',bndfile])
 disp(' ')

@@ -9,7 +9,7 @@ initime=0;
 %  Create the initial file
 %
 
-type = 'INITIAL file' ; 
+type = 'INITIAL file for the InWave model' ; 
 history = 'InWave' ;
 nc_bndry=netcdf.create(inifile,'clobber');
 if isempty(nc_bndry), return, end

@@ -30,7 +30,8 @@ DUCK85=0;
 EDGE=0;
 INWAVE_SHOREFACE=0;
 INWAVE_SHORE=0;
-INLET_TEST=1;
+INLET_TEST=0;
+INWAVE_SANDY=1;
 MY_APP=0;
 
 %2) Provide the name of the mfile containing configuration parameters of
@@ -58,6 +59,8 @@ elseif (INWAVE_SHOREFACE)
     inwave_gen_file='InWave_shoreface_param';
 elseif (INWAVE_SHORE)
     inwave_gen_file='InWave_shore_param';
+elseif (INWAVE_SANDY)
+    inwave_gen_file='InWave_Sandy_param';
 elseif (INLET_TEST)
     inwave_gen_file='InWave_inlet_test_param';
 elseif (MY_APP)
@@ -107,7 +110,7 @@ if (make_InWave_bnd)
 %             Ac_west,TA,time, bnd_file)
 %     end
 
-  create_inwave_bnd(Lm, Mm, Nbins_bnd, dir_bnd, obc, ...
+  create_InWave_bnd(LP, MP, Nbins_bnd, dir_bnd, obc, ...
     Ac_north,Ac_east,Ac_south,Ac_west,TA,time, bnd_file)
 
     %6) END OF INWAVE FILE GENERATION

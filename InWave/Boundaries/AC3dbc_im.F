@@ -82,11 +82,16 @@
 
       real(r8), parameter :: eps =1.0E-20_r8
 
-      real(r8) :: Ce, Cx, cff, dTde, dTdt, dTdx, tau
+      real(r8) :: Ce, Cx, cff, dTde, dTdt, dTdx, tau, ramp
 
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: grad
 
 # include "set_bounds.h"
+# ifdef RAMP_INWAVE
+        ramp=TANH((tdays(ng)-dstart)/0.07_r8)
+# else
+        ramp=1.0_r8
+# endif
 !
 !-----------------------------------------------------------------------
 !  Lateral boundary conditions at the western edge.
@@ -358,7 +363,7 @@
               IF(WAVEB(ng)%WD_BND(d_bnd).EQ.WAVEG(ng)%wd(k))then
                 DO i=Istr,Iend
                   IF (LBC_apply(ng)%south(i)) THEN
-                    AC(i,Jstr-1,k,nout)=WAVEB(ng)%AC_south(i,d_bnd)
+                    AC(i,Jstr-1,k,nout)=WAVEB(ng)%AC_south(i,d_bnd)*ramp
 # ifdef MASKING
                     AC(i,Jstr-1,k,nout)=AC(i,Jstr-1,k,nout)*            &
      &                                  GRID(ng)%rmask(i,Jstr-1)
