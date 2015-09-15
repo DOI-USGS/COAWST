@@ -110,13 +110,19 @@ lou=ncread(parent_grid,'lon_u');
 lau=ncread(parent_grid,'lat_u');
 lov=ncread(parent_grid,'lon_v');
 lav=ncread(parent_grid,'lat_v');
+mar=double(ncread(parent_grid,'mask_rho'));
+mau=double(ncread(parent_grid,'mask_u'));
+mav=double(ncread(parent_grid,'mask_v'));
+mar(mar==0)=nan;
+mau(mau==0)=nan;
+mav(mav==0)=nan;
 
 display('Initializing zeta')
 zt=ncread(parent_ini,'zeta');
 if (size(zt)>2)
   zt=squeeze(zt(:,:,1));
 end
-zt=double(zt);
+zt=double(zt.*mar);
 zt(zt<-9999)=nan;
 zt(zt>9999)=nan;
 zeta=griddata(lor,lar,zt,Gout.lon_rho,Gout.lat_rho);
@@ -128,7 +134,7 @@ ub=ncread(parent_ini,'ubar');
 if (size(ub)>2)
   ub=squeeze(ub(:,:,1));
 end
-ub=double(ub);
+ub=double(ub.*mau);
 ub(ub<-9999)=nan;
 ub(ub>9999)=nan;
 ubar=griddata(lou,lau,ub,Gout.lon_u,Gout.lat_u);
@@ -139,7 +145,7 @@ vb=ncread(parent_ini,'vbar');
 if (size(vb)>2)
   vb=squeeze(vb(:,:,1));
 end
-vb=double(vb);
+vb=double(vb.*mav);
 vb(vb<-9999)=nan;
 vb(vb>9999)=nan;
 vbar=griddata(lov,lav,vb,Gout.lon_v,Gout.lat_v);
@@ -153,7 +159,7 @@ if (size(ub)>3)
 end
 ub=double(ub);
 for k=1:N
-    ub2=squeeze(ub(:,:,k));
+    ub2=squeeze(ub(:,:,k).*mau);
     ub2(ub2<-9999)=nan;
     ub2(ub2>9999)=nan;
     u(:,:,k)=griddata(lou,lau,ub2,Gout.lon_u,Gout.lat_u);
@@ -170,7 +176,7 @@ if (size(vb)>3)
 end
 vb=double(vb);
 for k=1:N
-    vb2=squeeze(vb(:,:,k));
+    vb2=squeeze(vb(:,:,k).*mav);
     vb2(vb2<-9999)=nan;
     vb2(vb2>9999)=nan;
     v(:,:,k)=griddata(lov,lav,vb2,Gout.lon_v,Gout.lat_v);
@@ -187,7 +193,7 @@ if (size(sa)>3)
 end
 sa=double(sa);
 for k=1:N
-    sa2=squeeze(sa(:,:,k));
+    sa2=squeeze(sa(:,:,k).*mar);
     sa2(sa2<0)=nan;
     sa2(sa2>9999)=nan;
     salt(:,:,k)=griddata(lor,lar,sa2,Gout.lon_rho,Gout.lat_rho);
@@ -205,7 +211,7 @@ end
 te=double(te);
 te(te<=0)=nan;
 for k=1:N
-    te2=squeeze(te(:,:,k));
+    te2=squeeze(te(:,:,k).*mar);
     te2(te2<0)=nan;
     te2(te2>9999)=nan;
     temp(:,:,k)=griddata(lor,lar,te2,Gout.lon_rho,Gout.lat_rho);
@@ -268,13 +274,13 @@ for idsed=1:NCS
     sa=squeeze(sa(:,:,:,1));
   end
   sa=double(sa);
-  for k=1:N
-    sa2=squeeze(sa(:,:,k));
+  for k=1:Nbed
+    sa2=squeeze(sa(:,:,k).*mar);
     sa2(sa2<0)=nan;
     sa2(sa2>9999)=nan;
     eval(['mud_',count,'(:,:,k)=griddata(lor,lar,sa2,Gout.lon_rho,Gout.lat_rho);'])
   end
-  for k=1:N
+  for k=1:Nbed
     eval(['mud_',count,'(:,:,k)=maplev(squeeze(mud_',count,'(:,:,k)));'])
   end
   clear sa; clear sa2;
@@ -291,13 +297,13 @@ for idsed=1:NNS
     sa=squeeze(sa(:,:,:,1));
   end
   sa=double(sa);
-  for k=1:N
-    sa2=squeeze(sa(:,:,k));
+  for k=1:Nbed
+    sa2=squeeze(sa(:,:,k).*mar);
     sa2(sa2<0)=nan;
     sa2(sa2>9999)=nan;
     eval(['sand_',count,'(:,:,k)=griddata(lor,lar,sa2,Gout.lon_rho,Gout.lat_rho);'])
   end
-  for k=1:N
+  for k=1:Nbed
     eval(['sand_',count,'(:,:,k)=maplev(squeeze(sand_',count,'(:,:,k)));'])
   end
   clear sa; clear sa2;
@@ -313,10 +319,10 @@ if (NST>0)
   end
   zt=double(zt);
   for k=1:Nbed
-    zt2=squeeze(zt(:,:,k));
+    zt2=squeeze(zt(:,:,k).*mar);
     zt2(zt2<0)=nan;
     zt2(zt2>9999)=nan;
-    bed_thickness=griddata(lor,lar,zt2,Gout.lon_rho,Gout.lat_rho);
+    bed_thickness(:,:,k)=griddata(lor,lar,zt2,Gout.lon_rho,Gout.lat_rho);
   end
   for k=1:Nbed
     bed_thickness(:,:,k)=maplev(squeeze(bed_thickness(:,:,k)));
@@ -330,10 +336,10 @@ if (NST>0)
   end
   zt=double(zt);
   for k=1:Nbed
-    zt2=squeeze(zt(:,:,k));
+    zt2=squeeze(zt(:,:,k).*mar);
     zt2(zt2<0)=nan;
-    zt2(zt2>9999)=nan;
-    bed_age=griddata(lor,lar,zt2,Gout.lon_rho,Gout.lat_rho);
+    zt2(zt2>9999999)=nan;
+    bed_age(:,:,k)=griddata(lor,lar,zt2,Gout.lon_rho,Gout.lat_rho);
   end
   for k=1:Nbed
     bed_age(:,:,k)=maplev(squeeze(bed_age(:,:,k)));
@@ -347,10 +353,10 @@ if (NST>0)
   end
   zt=double(zt);
   for k=1:Nbed
-    zt2=squeeze(zt(:,:,k));
+    zt2=squeeze(zt(:,:,k).*mar);
     zt2(zt2<0)=nan;
     zt2(zt2>9999)=nan;
-    bed_porosity=griddata(lor,lar,zt2,Gout.lon_rho,Gout.lat_rho);
+    bed_porosity(:,:,k)=griddata(lor,lar,zt2,Gout.lon_rho,Gout.lat_rho);
   end
   for k=1:Nbed
     bed_porosity(:,:,k)=maplev(squeeze(bed_porosity(:,:,k)));
@@ -364,10 +370,10 @@ if (NST>0)
   end
   zt=double(zt);
   for k=1:Nbed
-    zt2=squeeze(zt(:,:,k));
+    zt2=squeeze(zt(:,:,k).*mar);
     zt2(zt2<0)=nan;
     zt2(zt2>9999)=nan;
-    bed_biodiff=griddata(lor,lar,zt2,Gout.lon_rho,Gout.lat_rho);
+    bed_biodiff(:,:,k)=griddata(lor,lar,zt2,Gout.lon_rho,Gout.lat_rho);
   end
   for k=1:Nbed
     bed_biodiff(:,:,k)=maplev(squeeze(bed_biodiff(:,:,k)));
@@ -387,7 +393,7 @@ for idsed=1:NCS
   end
   sa=double(sa);
   for k=1:Nbed
-    sa2=squeeze(sa(:,:,k));
+    sa2=squeeze(sa(:,:,k).*mar);
     sa2(sa2<0)=nan;
     sa2(sa2>9999)=nan;
     eval(['mudfrac_',count,'(:,:,k)=griddata(lor,lar,sa2,Gout.lon_rho,Gout.lat_rho);'])
@@ -411,7 +417,7 @@ for idsed=1:NNS
   end
   sa=double(sa);
   for k=1:Nbed
-    sa2=squeeze(sa(:,:,k));
+    sa2=squeeze(sa(:,:,k).*mar);
     sa2(sa2<0)=nan;
     sa2(sa2>9999)=nan;
     eval(['sandfrac_',count,'(:,:,k)=griddata(lor,lar,sa2,Gout.lon_rho,Gout.lat_rho);'])
@@ -435,7 +441,7 @@ if (NST>0)
   if (size(zt)>2)
     zt=squeeze(zt(:,:,1));
   end
-  zt=double(zt);
+  zt=double(zt.*mar);
   zt(zt<-9999)=nan;
   zt(zt>9999)=nan;
   grain_diameter=griddata(lor,lar,zt,Gout.lon_rho,Gout.lat_rho);
@@ -446,7 +452,7 @@ if (NST>0)
   if (size(zt)>2)
     zt=squeeze(zt(:,:,1));
   end
-  zt=double(zt);
+  zt=double(zt.*mar);
   zt(zt<-9999)=nan;
   zt(zt>9999)=nan;
   grain_density=griddata(lor,lar,zt,Gout.lon_rho,Gout.lat_rho);
@@ -457,7 +463,7 @@ if (NST>0)
   if (size(zt)>2)
     zt=squeeze(zt(:,:,1));
   end
-  zt=double(zt);
+  zt=double(zt.*mar);
   zt(zt<-9999)=nan;
   zt(zt>9999)=nan;
   settling_vel=griddata(lor,lar,zt,Gout.lon_rho,Gout.lat_rho);
@@ -468,7 +474,7 @@ if (NST>0)
   if (size(zt)>2)
     zt=squeeze(zt(:,:,1));
   end
-  zt=double(zt);
+  zt=double(zt.*mar);
   zt(zt<-9999)=nan;
   zt(zt>9999)=nan;
   erosion_stress=griddata(lor,lar,zt,Gout.lon_rho,Gout.lat_rho);
@@ -479,7 +485,7 @@ if (NST>0)
   if (size(zt)>2)
     zt=squeeze(zt(:,:,1));
   end
-  zt=double(zt);
+  zt=double(zt.*mar);
   zt(zt<-9999)=nan;
   zt(zt>9999)=nan;
   ripple_length=griddata(lor,lar,zt,Gout.lon_rho,Gout.lat_rho);
@@ -490,7 +496,7 @@ if (NST>0)
   if (size(zt)>2)
     zt=squeeze(zt(:,:,1));
   end
-  zt=double(zt);
+  zt=double(zt.*mar);
   zt(zt<-9999)=nan;
   zt(zt>9999)=nan;
   ripple_height=griddata(lor,lar,zt,Gout.lon_rho,Gout.lat_rho);
@@ -501,7 +507,7 @@ if (NST>0)
   if (size(zt)>2)
     zt=squeeze(zt(:,:,1));
   end
-  zt=double(zt);
+  zt=double(zt.*mar);
   zt(zt<-9999)=nan;
   zt(zt>9999)=nan;
   dmix_offset=griddata(lor,lar,zt,Gout.lon_rho,Gout.lat_rho);
@@ -512,7 +518,7 @@ if (NST>0)
   if (size(zt)>2)
     zt=squeeze(zt(:,:,1));
   end
-  zt=double(zt);
+  zt=double(zt.*mar);
   zt(zt<-9999)=nan;
   zt(zt>9999)=nan;
   dmix_slope=griddata(lor,lar,zt,Gout.lon_rho,Gout.lat_rho);
@@ -523,7 +529,7 @@ if (NST>0)
   if (size(zt)>2)
     zt=squeeze(zt(:,:,1));
   end
-  zt=double(zt);
+  zt=double(zt.*mar);
   zt(zt<-9999)=nan;
   zt(zt>9999)=nan;
   dmix_time=griddata(lor,lar,zt,Gout.lon_rho,Gout.lat_rho);
