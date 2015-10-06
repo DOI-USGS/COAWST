@@ -93,13 +93,6 @@
      &                    GRID(ng) % umask_wet,                         &
      &                    GRID(ng) % vmask_wet,                         &
 #  endif
-     &                    GRID(ng) % omn,                               &
-     &                    GRID(ng) % om_u,                              &
-     &                    GRID(ng) % om_v,                              &
-     &                    GRID(ng) % on_u,                              &
-     &                    GRID(ng) % on_v,                              &
-     &                    OCEAN(ng) % u,                                &
-     &                    OCEAN(ng) % v,                                &
 # endif
      &                    GRID(ng) % pm,                                &
      &                    GRID(ng) % pn,                                &
@@ -147,7 +140,6 @@
 #  ifdef WET_DRY
      &                          rmask_wet, umask_wet, vmask_wet,        &
 #  endif
-     &                          omn, om_u, om_v, on_u, on_v, u, v,      &
 # endif
      &                          pm, pn,                                 &
      &                          Hz, Huon, Hvom,                         &
@@ -239,13 +231,6 @@
         real(r8), intent(in) :: umask_wet(LBi:,LBj:)
         real(r8), intent(in) :: vmask_wet(LBi:,LBj:)
 #   endif
-        real(r8), intent(in) :: omn(LBi:,LBj:)
-        real(r8), intent(in) :: om_u(LBi:,LBj:)
-        real(r8), intent(in) :: om_v(LBi:,LBj:)
-        real(r8), intent(in) :: on_u(LBi:,LBj:)
-        real(r8), intent(in) :: on_v(LBi:,LBj:)
-        real(r8), intent(in) :: u(LBi:UBi,LBj:UBj,N(ng),2)
-        real(r8), intent(in) :: v(LBi:UBi,LBj:UBj,N(ng),2)
 #  endif
       real(r8), intent(in) :: pm(LBi:,LBj:)
       real(r8), intent(in) :: pn(LBi:,LBj:)
@@ -305,11 +290,6 @@
         real(r8), intent(in) :: umask_wet(LBi:UBi,LBj:UBj)
         real(r8), intent(in) :: vmask_wet(LBi:UBi,LBj:UBj)
 #   endif
-        real(r8), intent(in) :: omn(LBi:UBi,LBj:UBj)
-        real(r8), intent(in) :: om_u(LBi:UBi,LBj:UBj)
-        real(r8), intent(in) :: om_v(LBi:UBi,LBj:UBj)
-        real(r8), intent(in) :: on_u(LBi:UBi,LBj:UBj)
-        real(r8), intent(in) :: on_v(LBi:UBi,LBj:UBj)
 #  endif
       real(r8), intent(in) :: pm(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: pn(LBi:UBi,LBj:UBj)
@@ -376,9 +356,7 @@
 # ifdef TS_HSIMT
       real(r8):: rd, rkad, a1, b1, betad, sw, ru, rkau
       real(r8):: betau, epson, cc1, cc2, cc3
-      real(r8), dimension(0:N(ng)) :: kaz,kaz_inverse
-      real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: u_k
-      real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: v_k
+      real(r8), dimension(0:N(ng)) :: kaz, kaz_inverse, grad_k
 # endif
       real(r8) :: my_maxbio(15)
 !
@@ -476,12 +454,6 @@
           END DO
 # elif defined TS_HSIMT
 !   Third-order HSIMT-TVD horizontal advective fluxes.
-          DO j=JstrV-1,Jend+1
-            DO i=IstrU-1,Iend+1
-              u_k(i,j)=0.5_r8*(u(i,j,k,1)+u(i,j,k,2))
-              v_k(i,j)=0.5_r8*(v(i,j,k,1)+v(i,j,k,2))
-            END DO
-          END DO 
           CALL hsimt_tvd_tile (ng, tile,                                &
      &                          LBi, UBi, LBj, UBj,                     &
      &                          IminS, ImaxS, JminS, JmaxS,             &
@@ -491,9 +463,9 @@
 #  ifdef WET_DRY
      &                          rmask_wet, umask_wet, vmask_wet,        &
 #  endif
-     &                          pm, pn, omn, z_r,                       &
+     &                          pm, pn,                                 &
      &                          Huon(:,:,k), Hvom(:,:,k),               &
-     &                          u_k, v_k, t(:,:,k,3,itrc),              &
+     &                          oHz(:,:,k), t(:,:,k,3,itrc),            &
      &                          FX, FE)
 
 # elif defined TS_MPDATA
@@ -795,10 +767,10 @@
 !  Time-step vertical advection term.
 !-----------------------------------------------------------------------
 # ifdef TS_HSIMT
-          cc1=0.25_r8
-          cc2=0.5_r8
-          cc3=1.0_r8/12.0_r8
-          epson=1.0E-10_r8
+      cc1=0.25_r8
+      cc2=0.5_r8
+      cc3=1.0_r8/12.0_r8
+      epson=1.0E-12_r8
 # endif
       DO j=J_RANGE
 #ifdef OFFLINE_BIOLOGY
@@ -934,51 +906,57 @@
           END DO
 #  endif
 # elif defined TS_HSIMT
+          kaz(0)=0.0_r8
+          kaz(N(ng))=0.0_r8
+          kaz_inverse(0)=0.0_r8
+          kaz_inverse(N(ng))=0.0_r8
+          grad_k(0)=0.0_r8
+          grad_k(N(ng))=0.0_r8
           DO i=I_RANGE
             DO k=1,N(ng)-1
-              kaz(k)=1.0_r8-abs(w(i,j,k)*pm(i,j)*pn(i,j)*dt(ng)/  &
+              kaz(k)=1.0_r8-abs(w(i,j,k)*pm(i,j)*pn(i,j)*dt(ng)/        &
      &                         (z_r(i,j,k+1)-z_r(i,j,k)))
-              kaz_inverse(k)=1.0_r8/(kaz(k)+epson)
-                
+              kaz_inverse(k)=1.0_r8/(kaz(k))
+              grad_k(k)=t(i,j,k+1,3,itrc)-t(i,j,k,3,itrc)
+            END DO
+            DO k=1,N(ng)-1
               IF (k.eq.1.and.W(i,j,k).ge.0.0_r8) THEN
                 FC(i,k)=W(i,j,k)*t(i,j,k,3,itrc)
               ELSE IF (k.eq.N(ng)-1.and.W(i,j,k).lt.0.0_r8) THEN
                 FC(i,k)=W(i,j,k)*t(i,j,k+1,3,itrc)
               ELSE
                 IF (W(i,j,k).ge.0) THEN
-                  IF (abs(t(i,j,k+1,3,itrc)-t(i,j,k,3,itrc)).le.epson)  &
-     &              THEN
+                  IF (abs(grad_k(k)).le.epson) THEN
                     rd=0.0_r8
                     rkad=0.0_r8
                   ELSE
-                    rd=(t(i,j,k,3,itrc)-t(i,j,k-1,3,itrc))/             &
-     &                 (t(i,j,k+1,3,itrc)-t(i,j,k,3,itrc))
-                    rkad=kaz(k-1)*kaz_inverse(k)
+                    rd=grad_k(k-1)/grad_k(k)
+!                   rkad=kaz(k-1)*kaz_inverse(k)
+                    rkad=kaz(k-1)*kaz_inverse(k)*W(i,j,k-1)/W(i,j,k)
                   END IF
-                  a1=cc1*kaz(k)+cc2-cc3*kaz_inverse(k)
+                  a1= cc1*kaz(k)+cc2-cc3*kaz_inverse(k)
                   b1=-cc1*kaz(k)+cc2+cc3*kaz_inverse(k)
                   betad=a1+b1*rd
                   sw=t(i,j,k,3,itrc)+                                   &
      &               0.5_r8*MAX(0.0_r8,                                 &
      &                          MIN(2.0_r8,2.0_r8*rd*rkad,betad))*      &
-     &                (t(i,j,k+1,3,itrc)-t(i,j,k,3,itrc))*kaz(k)
+     &                grad_k(k)*kaz(k)
                 ELSE
-                  IF (abs(t(i,j,k+1,3,itrc)-t(i,j,k,3,itrc)).le.epson)  &
-     &              THEN
+                  IF (abs(grad_k(k)).le.epson) THEN
                     ru=0.0_r8
                     rkau=0.0_r8
                   ELSE
-                    ru=(t(i,j,k+2,3,itrc)-t(i,j,k+1,3,itrc))/           &
-     &                 (t(i,j,k+1,3,itrc)-t(i,j,k,3,itrc))
-                    rkau=kaz(k+1)*kaz_inverse(k)
+                    ru=grad_k(k+1)/grad_k(k)
+!                   rkau=kaz(k+1)*kaz_inverse(k)
+                    rkau=kaz(k+1)*kaz_inverse(k)*W(i,j,k+1)/W(i,j,k)
                   END IF
-                  a1=cc1*kaz(k)+cc2-cc3*kaz_inverse(k)
+                  a1= cc1*kaz(k)+cc2-cc3*kaz_inverse(k)
                   b1=-cc1*kaz(k)+cc2+cc3*kaz_inverse(k)
                   betau=a1+b1*ru
                   sw=t(i,j,k+1,3,itrc)-                                 &
      &               0.5_r8*MAX(0.0_r8,                                 &
      &                          MIN(2.0_r8,2.0_r8*ru*rkau,betau))*      &
-     &               (t(i,j,k+1,3,itrc)-t(i,j,k,3,itrc))*kaz(k)
+     &               grad_k(k)*kaz(k)
                 END IF 
                 FC(i,k)=W(i,j,k)*sw
               END IF

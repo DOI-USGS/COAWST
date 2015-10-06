@@ -79,13 +79,6 @@
      &                      GRID(ng) % Hvom,                            &
      &                      GRID(ng) % z_r,                             &
      &                      GRID(ng) % z_w,                             &
-# ifdef TS_HSIMT
-     &                      GRID(ng) % omn,                             &
-     &                      GRID(ng) % om_u,                            &
-     &                      GRID(ng) % om_v,                            &
-     &                      GRID(ng) % on_u,                            &
-     &                      GRID(ng) % on_v,                            &
-# endif
      &                      FORCES(ng) % btflx,                         &
      &                      FORCES(ng) % bustr,                         &
      &                      FORCES(ng) % bvstr,                         &
@@ -139,9 +132,6 @@
      &                            pm, pn,                               &
      &                            Hz, Huon, Hvom,                       &
      &                            z_r, z_w,                             &
-# ifdef TS_HSIMT
-     &                            omn, om_u, om_v, on_u, on_v,          &
-# endif
      &                            btflx, bustr, bvstr,                  &
      &                            stflx, sustr, svstr,                  &
 # ifdef SOLAR_SOURCE
@@ -205,13 +195,6 @@
       real(r8), intent(in) :: Hvom(LBi:,LBj:,:)
       real(r8), intent(in) :: z_r(LBi:,LBj:,:)
       real(r8), intent(in) :: z_w(LBi:,LBj:,0:)
-# ifdef TS_HSIMT
-      real(r8), intent(in) :: omn(LBi:,LBj:)
-      real(r8), intent(in) :: om_u(LBi:,LBj:)
-      real(r8), intent(in) :: om_v(LBi:,LBj:)
-      real(r8), intent(in) :: on_u(LBi:,LBj:)
-      real(r8), intent(in) :: on_v(LBi:,LBj:)
-# endif
       real(r8), intent(in) :: btflx(LBi:,LBj:,:)
       real(r8), intent(in) :: bustr(LBi:,LBj:)
       real(r8), intent(in) :: bvstr(LBi:,LBj:)
@@ -270,13 +253,6 @@
       real(r8), intent(in) :: Hvom(LBi:UBi,LBj:UBj,N(ng))
       real(r8), intent(in) :: z_r(LBi:UBi,LBj:UBj,N(ng))
       real(r8), intent(in) :: z_w(LBi:UBi,LBj:UBj,0:N(ng))
-# ifdef TS_HSIMT
-      real(r8), intent(in) :: omn(LBi:UBi,LBj:UBj)
-      real(r8), intent(in) :: om_u(LBi:UBi,LBj:UBj)
-      real(r8), intent(in) :: om_v(LBi:UBi,LBj:UBj)
-      real(r8), intent(in) :: on_u(LBi:UBi,LBj:UBj)
-      real(r8), intent(in) :: on_v(LBi:UBi,LBj:UBj)
-# endif 
       real(r8), intent(in) :: btflx(LBi:UBi,LBj:UBj,NT(ng))
       real(r8), intent(in) :: bustr(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: bvstr(LBi:UBi,LBj:UBj)
@@ -345,11 +321,6 @@
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: curv
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: grad
 
-# ifdef TS_HSIMT
-      real(r8), dimension(IminS:ImaxS,JminS:JmaxS,0:N(ng)) :: kaz
-      real(r8):: rd, rkad, a1, b1, betad, sw, rru, rkau, betau
-      real(r8):: epson, cc1, cc2, cc3
-# endif
 
 # include "set_bounds.h"
 
