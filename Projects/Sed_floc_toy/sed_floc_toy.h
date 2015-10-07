@@ -23,8 +23,6 @@
 #undef  SALINITY
 #undef  SPLINES
 #define OUT_DOUBLE
-#define EW_PERIODIC
-#define NS_PERIODIC
 #define ANA_GRID
 #undef  ANA_INITIAL
 #define ANA_SMFLUX
@@ -93,8 +91,8 @@
 # define  MIXED_BED
 # undef  SED_MORPH
 # define SED_FLOCS
-# define FLOC_TURB_DISS	      
-# undef  FLOC_BBL_DISS	      
+# define FLOC_TURB_DISS
+# undef  FLOC_BBL_DISS
 # undef  SED_DEFLOC
 # define  SED_TAU_CD_CONST
 # undef  SED_TAU_CD_LIN
