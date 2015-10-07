@@ -73,8 +73,7 @@
 ! Input variable information file name.  This file needs to be processed
 ! first so all information arrays can be initialized properly.
 
-!     VARNAME = ROMS/External/varinfo.dat
-     VARNAME = varinfo.dat
+     VARNAME = ROMS/External/varinfo.dat
 
 ! Number of nested grids.
 
