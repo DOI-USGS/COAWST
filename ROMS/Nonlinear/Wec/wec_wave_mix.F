@@ -154,9 +154,9 @@
 !
       DO k=1,N(ng)
         fac1=0.5_r8*SQRT(2.0_r8)
-        fac2=(z_r(i,j,k)-z_w(i,j,0))*oDstp(i,j)
         DO j=Jstr,Jend
           DO i=Istr,Iend
+            fac2=(z_r(i,j,k)-z_w(i,j,0))*oDstp(i,j)
             cff2=fac2*gamr(i,j)
             cff3=COSH(2.0_r8*pi*cff2)
             cff1=Dissip_wcap(i,j)+Dissip_break(i,j)
