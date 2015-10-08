@@ -4,7 +4,7 @@
 !
 !svn $Id: main3d.F 838 2008-11-17 04:22:18Z jcwarner $
 !=======================================================================
-!  Copyright (c) 2002-2014 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2015 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                           Hernan G. Arango   !
 !========================================== Alexander F. Shchepetkin ===
@@ -868,7 +868,6 @@
                 CALL step3d_t (ng, tile)
               END DO
 !$OMP BARRIER
-              IF (exit_flag.ne.NoError) RETURN
             END DO
 
 #  ifdef NESTING
@@ -900,9 +899,12 @@
 !-----------------------------------------------------------------------
 !
             DO il=NestLayers,1,-1
-              IF (do_twoway(nl,il,istep,ng)) THEN
-                CALL nesting (ng, iNLM, n2way)
-              END IF
+              DO ig=1,GridsInLayer(il)
+                ng=GridNumber(ig,il)
+                IF (do_twoway(nl,il,ng,istep)) THEN
+                  CALL nesting (ng, iNLM, n2way)
+                END IF
+              END DO
             END DO
 #  endif
 !

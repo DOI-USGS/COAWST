@@ -683,7 +683,7 @@
           Jbc_max=J_top(ngf)-1            ! interior points, no top
 !                                           left corner
 # ifdef NESTING_DEBUG
-          IF (DOMAIN(ng)%SouthWest_Test(tile)) THEN
+          IF (DOMAIN(ngf)%SouthWest_Test(tile)) THEN
             IF (Master) THEN
               WRITE (300,10) 'Western Boundary Mass Fluxes: ',          &
      &                       cr, dg, rg, iif(rg), iic(rg), INT(time(rg))
@@ -734,7 +734,7 @@
           Jbc_max=J_top(ngf)-1            ! interior points, no top
 !                                           right corner
 # ifdef NESTING_DEBUG
-          IF (DOMAIN(ng)%SouthWest_Test(tile)) THEN
+          IF (DOMAIN(ngf)%SouthWest_Test(tile)) THEN
             IF (Master) THEN
               WRITE (300,10) 'Eastern Boundary Mass Fluxes: ',          &
      &                       cr, dg, rg, iif(rg), iic(rg), INT(time(rg))
@@ -785,7 +785,7 @@
           Ibc_max=I_right(ngf)-1          ! interior points, no bottom
 !                                           right corner
 # ifdef NESTING_DEBUG
-          IF (DOMAIN(ng)%SouthWest_Test(tile)) THEN
+          IF (DOMAIN(ngf)%SouthWest_Test(tile)) THEN
             IF (Master) THEN
               WRITE (300,20) 'Southern Boundary Mass Fluxes: ',         &
      &                       cr, dg, rg, iif(rg), iic(rg), INT(time(rg))
@@ -837,7 +837,7 @@
           Ibc_max=I_right(ngf)-1          ! interior points, no top
 !                                           right corner
 # ifdef NESTING_DEBUG
-          IF (DOMAIN(ng)%SouthWest_Test(tile)) THEN
+          IF (DOMAIN(ngf)%SouthWest_Test(tile)) THEN
             IF (Master) THEN
               WRITE (300,20) 'Northern Boundary Mass Fluxes: ',         &
      &                       cr, dg, rg, iif(rg), iic(rg), INT(time(rg))
@@ -917,7 +917,7 @@
 
 # ifndef ONE_WAY
 !
-      FUNCTION do_twoway (nl, il, istep, ng) RESULT (doit)
+      FUNCTION do_twoway (nl, il, ng, istep) RESULT (doit)
 !
 !=======================================================================
 !                                                                      !
@@ -934,13 +934,13 @@
 !     nl         Latest time-stepped nested layer index (integer)      !
 !     il         Current nested layer index in the two-way DO loop     !
 !                  call from main2d or main3d (integer)                !
+!     ng         Finer grid number to process in the fine to coarse    !
+!                  feedback (integer)                                  !
 !     istep      Current rime-step counter from STEP_LOOP in main2d    !
 !                  or main3d (integer)                                 !
 !                                                                      !
 !  On Output:                                                          !
 !                                                                      !
-!     ng         Finer grid number to process in the fine to coarse    !
-!                  feedback (integer)                                  !
 !     doit       The value of the result is TRUE/FALSE if the exchage  !
 !                  is required or not (logical)                        !
 !                                                                      !
@@ -952,15 +952,13 @@
 !
 !  Imported variable declarations.
 !
-      integer, intent(in) :: nl, il, istep
-
-      integer, intent(out) :: ng
+      integer, intent(in) :: nl, il, ng, istep
 !
 !  Local variable declarations.
 !
       logical :: doit
 
-      integer :: dgc, dgf, ig
+      integer :: dgc, dgf
 !
 !-----------------------------------------------------------------------
 !  Determine if two-way exchage is required at the corrent time-step.
@@ -968,36 +966,30 @@
 !
       doit=.FALSE.
 !
-      DO ig=1,GridsInLayer(il)
-        ng=GridNumber(ig,il)
-!
 !  Chech if ng is a refined grid, RefineScale(ng) > 0.
 !
-        IF (RefinedGrid(ng).and.(RefineScale(ng).gt.0)) THEN
+      IF (RefinedGrid(ng).and.(RefineScale(ng).gt.0)) THEN
 !
 !  If telescoping grid, the sequence of exchanges when all the nested
 !  grid reach the coarser grid (ng=1) time needs to be done in the
 !  correct sequence: finest grid exchage first.
 !
-          IF (Telescoping(ng)) THEN
-            dgc=coarserDonor(ng)                      ! for debbuging
-            dgf=FinerDonor(ng)
-            IF (TwoWayCounter(dgf).eq.RefineSteps(dgf)) THEN
-              doit=.TRUE.
-              EXIT
-            END IF
+        IF (Telescoping(ng)) THEN
+          dgc=coarserDonor(ng)                        ! for debbuging
+          dgf=FinerDonor(ng)
+          IF (TwoWayCounter(dgf).eq.RefineSteps(dgf)) THEN
+            doit=.TRUE.
+          END IF
 !
 !  If not telescoping, the exchange is in terms of the "istep" counter
 !  but also at the right sequence.
 !
-          ELSE
-            IF ((istep.eq.RefineSteps(ng)).and.(il.eq.nl)) THEN
-              doit=.TRUE.
-              EXIT
-            END IF
+        ELSE
+          IF ((istep.eq.RefineSteps(ng)).and.(il.eq.nl)) THEN
+            doit=.TRUE.
           END IF
         END IF
-      END DO
+      END IF
 !
 !  Update two-way exchange counter between fine and coarse grids.
 !
