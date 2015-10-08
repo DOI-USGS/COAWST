@@ -764,8 +764,7 @@ Dout(iTvdif) == T T     ! temp_vdiff, ...    vertical diffusion
 ! Input NetCDF file names, [1:Ngrids].
 
      GRDNAME == ocean_grd.nc
-!     ININAME == Projects/Sedbed_toy/restrat_mix_ini.nc
-     ININAME == restrat_mix_ini.nc
+     ININAME == Projects/Sedbed_toy/restrat_mix_ini.nc
      ITLNAME == ocean_itl.nc
      IRPNAME == ocean_irp.nc
      IADNAME == ocean_iad.nc
@@ -834,8 +833,7 @@ Dout(iTvdif) == T T     ! temp_vdiff, ...    vertical diffusion
      SPOSNAM =  ROMS/External/stations.in
      FPOSNAM =  ROMS/External/floats.in
      BPARNAM =  ROMS/External/bio_Fennel.in
-!     SPARNAM =  Projects/Sedbed_toy/sediment_sedbed_toy.in
-     SPARNAM =  sediment_sedbed_toy.in
+     SPARNAM =  Projects/Sedbed_toy/sediment_sedbed_toy.in
      USRNAME =  ROMS/External/MyFile.dat
 
 !
