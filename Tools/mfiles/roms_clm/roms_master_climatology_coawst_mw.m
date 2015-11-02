@@ -28,7 +28,7 @@ numdays=15;
 dayFrequency=7;
 
 % (2) Enter URL of the HYCOM catalog for the requested time, T1; see http://tds.hycom.org/thredds/catalog.html
- url='http://tds.hycom.org/thredds/dodsC/GLBa0.08/expt_90.9';      % Jan 2011 - Present
+ url='http://tds.hycom.org/thredds/dodsC/GLBa0.08/expt_90.9';      % 2011-01 to 2013-08
 
 
 % (3) Enter working directory (wdr)
