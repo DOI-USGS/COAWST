@@ -811,8 +811,7 @@ Dout(iTvdif) == T T     ! temp_vdiff, ...    vertical diffusion
 
      NFFILES == 1                          ! number of unique forcing files
 
-!     FRCNAME == Projects/Sedbed_toy/wind_restrat_2events.nc               ! forcing file 1, grid 1
-     FRCNAME == wind_restrat_2events.nc               ! forcing file 1, grid 1
+     FRCNAME == Projects/Sedbed_toy/wind_restrat_2events.nc
 
 ! Output NetCDF file names, [1:Ngrids].
 
