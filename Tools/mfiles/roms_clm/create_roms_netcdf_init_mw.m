@@ -42,8 +42,8 @@ erhodimID = netcdf.defDim(nc_init,'erho',MP);
 eudimID = netcdf.defDim(nc_init,'eu',MP);
 evdimID = netcdf.defDim(nc_init,'ev',M);
 
-s_rhodimID = netcdf.defDim(nc_init,'s_rho',N);
-s_wdimID = netcdf.defDim(nc_init,'s_w',N+1);
+s_rhodimID = netcdf.defDim(nc_init,'sc_r',N);
+s_wdimID = netcdf.defDim(nc_init,'sc_w',N+1);
 NbeddimID = netcdf.defDim(nc_init,'Nbed',Nbed);
 timedimID = netcdf.defDim(nc_init,'time',1);
 
@@ -91,19 +91,19 @@ netcdf.putAtt(nc_init,Cs_wID,'valid_min',-1);
 netcdf.putAtt(nc_init,Cs_wID,'valid_max',0);
 netcdf.putAtt(nc_init,Cs_wID,'field','Cs_w, scalar');
 
-sc_rID = netcdf.defVar(nc_init,'s_rho','double',s_rhodimID);
+sc_rID = netcdf.defVar(nc_init,'sc_r','double',s_rhodimID);
 netcdf.putAtt(nc_init,sc_rID,'long_name','S-coordinate at RHO-points');
 netcdf.putAtt(nc_init,sc_rID,'units','1');
 netcdf.putAtt(nc_init,sc_rID,'valid_min',-1);
 netcdf.putAtt(nc_init,sc_rID,'valid_max',0);
-netcdf.putAtt(nc_init,sc_rID,'field','s_rho, scalar');
+netcdf.putAtt(nc_init,sc_rID,'field','sc_r, scalar');
 
-sc_wID = netcdf.defVar(nc_init,'s_w','double',s_wdimID);
+sc_wID = netcdf.defVar(nc_init,'sc_w','double',s_wdimID);
 netcdf.putAtt(nc_init,sc_wID,'long_name','S-coordinate at W-points');
 netcdf.putAtt(nc_init,sc_wID,'units','1');
 netcdf.putAtt(nc_init,sc_wID,'valid_min',-1);
 netcdf.putAtt(nc_init,sc_wID,'valid_max',0);
-netcdf.putAtt(nc_init,sc_wID,'field','s_w, scalar');
+netcdf.putAtt(nc_init,sc_wID,'field','sc_w, scalar');
 
 ocean_timeID = netcdf.defVar(nc_init,'ocean_time','double',timedimID);
 netcdf.putAtt(nc_init,ocean_timeID,'long_name','time since initialization');

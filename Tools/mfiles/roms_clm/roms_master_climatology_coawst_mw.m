@@ -33,10 +33,11 @@ dayFrequency=7;
 
 % (3) Enter working directory (wdr)
 wdr='/home/isafak-pr/Models/COAWST/Tools/mfiles/roms_clm';
+wdr='E:\data\models\COAWST'
 eval(['cd ',wdr])
 
 % (4) Enter path and name of the ROMS grid (modelgrid)
-modelgrid='D:\data\Carolinas\modeling\Grids\USeast_grd17.nc'
+modelgrid='e:\data\Carolinas\modeling\Grids\USeast_grd17.nc'
 eval(['gridname=''',modelgrid,''';']);
 
 % (5) Enter grid vertical coordinate parameters --These need to be consistent with the ROMS setup. 
