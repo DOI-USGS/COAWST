@@ -29,7 +29,8 @@ eudimID = netcdf.defDim(nc,'eu',MP);
 evdimID = netcdf.defDim(nc,'ev',M);
 s_rhodimID = netcdf.defDim(nc,'s_rho',gn.N);
 
-octdimID = netcdf.defDim(nc,'ocean_time',netcdf.getConstant('NC_UNLIMITED'));
+%octdimID = netcdf.defDim(nc,'ocean_time',netcdf.getConstant('NC_UNLIMITED'));
+octdimID = netcdf.defDim(nc,'ocean_time',t_clim);
 zttdimID = netcdf.defDim(nc,'zeta_time',t_clim);
 v2tdimID = netcdf.defDim(nc,'v2d_time',t_clim);
 v3tdimID = netcdf.defDim(nc,'v3d_time',t_clim);

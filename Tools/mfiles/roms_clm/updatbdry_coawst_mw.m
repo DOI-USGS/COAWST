@@ -17,7 +17,7 @@ ocean_time=netcdf.getVar(nc_clm,timeid);
 bndry_file=[bdy];
 
 %call to create this bndry file.
-create_roms_netcdf_bndry_mw(bndry_file,gn,ocean_time)
+create_roms_netcdf_bndry_mwUL(bndry_file,gn,length(ocean_time))
 nc_bndry=netcdf.open(bndry_file,'NC_WRITE');
 
 %now write the data from the arrays to the netcdf file

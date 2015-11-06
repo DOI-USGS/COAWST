@@ -46,7 +46,7 @@ tag=datestr(tg(tid1),'yyyymmdd');
 disp([datestr(tg(tid1)) ' at ' datestr(now)]);
 fn=[clmname];
 disp(['creating netcdf file ',fn]);
-create_roms_netcdf_clm_mw(fn,gn);% converted to BI functions
+create_roms_netcdf_clm_mwUL(fn,gn,1);% converted to BI functions
 
 %fill grid dims using builtin (BI) functions
 RN=netcdf.open(fn,'NC_WRITE');
@@ -70,7 +70,7 @@ while ttu==1;
                 tmpt=nc.geovariable('uogrddsl');
             for k=1:2:tz_levs%had to many levels, ran out of MEMORY
                 eval(['tmp=tmpt.data(',num2str(tid1),',',num2str(k),',',irg2,',',jrg2,');']);
-                disp(['doing griddata u for level ' num2str(k) ' at ' datestr(now)]);
+                disp(['doing griddata u for level ' num2str(k)]);
                 clm.u(level,:,:)=griddata(clm.lon,clm.lat,double(squeeze(tmp)),gn.lon_rho,gn.lat_rho);%,'spline');
                 clear tmp;
                 clm.u(level,:,:)=maplev(squeeze(clm.u(level,:,:)));
@@ -78,7 +78,7 @@ while ttu==1;
             end
             %make sure to get the last level so it has top and bottom
             eval(['tmp=tmpt.data(',num2str(tid1),',',num2str(length(clm.z)),',',irg2,',',jrg2,');']);
-            disp(['doing griddata u for level ' num2str(tz_levs) ' at ' datestr(now)]);
+            disp(['doing griddata u for level ' num2str(tz_levs)]);
             clm.u(level,:,:)=griddata(clm.lon,clm.lat,double(squeeze(tmp)),gn.lon_rho,gn.lat_rho);%,'spline');
             clm.u(level,:,:)=maplev(squeeze(clm.u(level,:,:)));
             clm.z=[clm.z(1:2:end);clm.z(end)];
@@ -88,7 +88,7 @@ while ttu==1;
                 tmpt=nc.geovariable('u');
             for k=1:tz_levs
                 eval(['tmp=tmpt.data(',num2str(tid1),',',num2str(k),',',irg2,',',jrg2,');']);
-                disp(['doing griddata u for level ' num2str(k) ' at ' datestr(now)]);
+                disp(['doing griddata u for HYCOM level ' num2str(k)]);
                 clm.u(k,:,:)=griddata(clm.lon,clm.lat,double(squeeze(tmp)),gn.lon_rho,gn.lat_rho);%,'spline');
                 clear tmp;
                 clm.u(k,:,:)=maplev(squeeze(clm.u(k,:,:)));
@@ -119,7 +119,7 @@ while ttv==1;
                 tmpt=nc.geovariable('vogrddsl');
             for k=1:2:tz_levs%had to many levels, ran out of MEMORY
                 eval(['tmp=tmpt.data(',num2str(tid1),',',num2str(k),',',irg2,',',jrg2,');']);
-                disp(['doing griddata v for level ' num2str(k) ' at ' datestr(now)]);
+                disp(['doing griddata v for level ' num2str(k)]);
                 clm.v(level,:,:)=griddata(clm.lon,clm.lat,double(squeeze(tmp)),gn.lon_rho,gn.lat_rho);%,'spline');
                 clear tmp;
                 clm.v(level,:,:)=maplev(squeeze(clm.v(level,:,:)));
@@ -127,7 +127,7 @@ while ttv==1;
             end
             %make sure to get the last level so it has top and bottom
             eval(['tmp=tmpt.data(',num2str(tid1),',',num2str(length(clm.z)),',',irg2,',',jrg2,');']);
-            disp(['doing griddata v for level ' num2str(tz_levs) ' at ' datestr(now)]);
+            disp(['doing griddata v for level ' num2str(tz_levs)]);
             clm.v(level,:,:)=griddata(clm.lon,clm.lat,double(squeeze(tmp)),gn.lon_rho,gn.lat_rho);%,'spline');
             clm.v(level,:,:)=maplev(squeeze(clm.v(level,:,:)));
         end
@@ -135,7 +135,7 @@ while ttv==1;
                tmpt=nc.geovariable('v');
             for k=1:tz_levs
                 eval(['tmp=tmpt.data(',num2str(tid1),',',num2str(k),',',irg2,',',jrg2,');']);
-                disp(['doing griddata v for level ' num2str(k) ' at ' datestr(now)]);
+                disp(['doing griddata v for HYCOM level ' num2str(k)]);
                 clm.v(k,:,:)=griddata(clm.lon,clm.lat,double(squeeze(tmp)),gn.lon_rho,gn.lat_rho);%,'spline');
                 clear tmp;
                 clm.v(k,:,:)=maplev(squeeze(clm.v(k,:,:)));
@@ -255,7 +255,7 @@ if lever==0;
     level=1;
         tmpt=nc.geovariable('wtmpcdsl');
     for k=1:2:tz_levs
-        disp(['doing griddata temp for level ' num2str(k) ' at ' datestr(now)]);
+        disp(['doing griddata temp for level ' num2str(k)]);
         eval(['tmp=tmpt.data(',num2str(tid1),',',num2str(k),',',irg2,',',jrg2,');']);
         clm.temp(clm.temp<0)=nan;
         clm.temp(level,:,:)=griddata(clm.lon,clm.lat,double(squeeze(tmp)),gn.lon_rho,gn.lat_rho);%,'spline');
@@ -273,7 +273,7 @@ end
 if lever==1;
         tmpt=nc.geovariable('temperature');
     for k=1:tz_levs
-        disp(['doing griddata temp for level ' num2str(k) ' at ' datestr(now)]);
+        disp(['doing griddata temp for HYCOM level ' num2str(k)]);
         eval(['tmp=tmpt.data(',num2str(tid1),',',num2str(k),',',irg2,',',jrg2,');']);
         clm.temp(clm.temp<0)=nan;
         clm.temp(k,:,:)=griddata(clm.lon,clm.lat,double(squeeze(tmp)),gn.lon_rho,gn.lat_rho);%,'spline');
@@ -303,7 +303,7 @@ if lever==0;
     level=1;
         tmpt=nc.geovariable('salindsl');
     for k=1:2:tz_levs
-        disp(['doing griddata salt for level ' num2str(k) ' at ' datestr(now)]);
+        disp(['doing griddata salt for level ' num2str(k)]);
         eval(['tmp=tmpt.data(',num2str(tid1),',',num2str(k),',',irg2,',',jrg2,');']);
         clm.salt(level,:,:)=griddata(clm.lon,clm.lat,double(squeeze(tmp)),gn.lon_rho,gn.lat_rho);
         clear tmp;
@@ -318,7 +318,7 @@ end
 if lever==1;
         tmpt=nc.geovariable('salinity');
     for k=1:tz_levs
-        disp(['doing griddata salt for level ' num2str(k) ' at ' datestr(now)]);
+        disp(['doing griddata salt for HYCOM level ' num2str(k)]);
         eval(['tmp=tmpt.data(',num2str(tid1),',',num2str(k),',',irg2,',',jrg2,');']);
         clm.salt(k,:,:)=griddata(clm.lon,clm.lat,double(squeeze(tmp)),gn.lon_rho,gn.lat_rho);
         clear tmp;

@@ -1,4 +1,4 @@
-function create_roms_netcdf_bndry_mw(fn,gn,t_clim)
+function create_roms_netcdf_bndry_mwUL(fn,gn,t_clim)
 %
 % jcw April 18, 2009
 % updated 01Sep2015 to have all 4 sides

@@ -30,14 +30,12 @@ dayFrequency=7;
 % (2) Enter URL of the HYCOM catalog for the requested time, T1; see http://tds.hycom.org/thredds/catalog.html
  url='http://tds.hycom.org/thredds/dodsC/GLBa0.08/expt_90.9';      % 2011-01 to 2013-08
 
-
 % (3) Enter working directory (wdr)
-wdr='/home/isafak-pr/Models/COAWST/Tools/mfiles/roms_clm';
-wdr='E:\data\models\COAWST'
+wdr='c:\work\models\COAWST'
 eval(['cd ',wdr])
 
 % (4) Enter path and name of the ROMS grid (modelgrid)
-modelgrid='e:\data\Carolinas\modeling\Grids\USeast_grd17.nc'
+modelgrid='USeast_grd19.nc'
 eval(['gridname=''',modelgrid,''';']);
 
 % (5) Enter grid vertical coordinate parameters --These need to be consistent with the ROMS setup. 
