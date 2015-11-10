@@ -931,8 +931,8 @@
                     rkad=0.0_r8
                   ELSE
                     rd=grad_k(k-1)/grad_k(k)
-!                   rkad=kaz(k-1)*kaz_inverse(k)
-                    rkad=kaz(k-1)*kaz_inverse(k)*W(i,j,k-1)/W(i,j,k)
+                    rkad=kaz(k-1)*kaz_inverse(k)
+!                   rkad=kaz(k-1)*kaz_inverse(k)*W(i,j,k-1)/W(i,j,k)
                   END IF
                   a1= cc1*kaz(k)+cc2-cc3*kaz_inverse(k)
                   b1=-cc1*kaz(k)+cc2+cc3*kaz_inverse(k)
@@ -947,8 +947,8 @@
                     rkau=0.0_r8
                   ELSE
                     ru=grad_k(k+1)/grad_k(k)
-!                   rkau=kaz(k+1)*kaz_inverse(k)
-                    rkau=kaz(k+1)*kaz_inverse(k)*W(i,j,k+1)/W(i,j,k)
+                    rkau=kaz(k+1)*kaz_inverse(k)
+!                   rkau=kaz(k+1)*kaz_inverse(k)*W(i,j,k+1)/W(i,j,k)
                   END IF
                   a1= cc1*kaz(k)+cc2-cc3*kaz_inverse(k)
                   b1=-cc1*kaz(k)+cc2+cc3*kaz_inverse(k)

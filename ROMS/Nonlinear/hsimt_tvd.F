@@ -152,10 +152,10 @@
               rkal=0.0_r8
             ELSE
               rl=grad_x(i-1)/(grad_x(i))
-!             rkal=kax(i-1)*kax_inverse(i)
-              cff1=Huon_k(i-1,j)*0.25_r8*(oHz_k(i-2,j)+oHz_k(i-1,j))*(pn(i-2,j)+pn(i-1,j))
-              cff2=Huon_k(i,j)*0.25_r8*(oHz_k(i-1,j)+oHz_k(i,j))*(pn(i-1,j)+pn(i,j))
-              rkal=kax(i-1)*kax_inverse(i)*cff1/cff2
+              rkal=kax(i-1)*kax_inverse(i)
+!             cff1=Huon_k(i-1,j)*0.25_r8*(oHz_k(i-2,j)+oHz_k(i-1,j))*(pn(i-2,j)+pn(i-1,j))
+!             cff2=Huon_k(i,j)*0.25_r8*(oHz_k(i-1,j)+oHz_k(i,j))*(pn(i-1,j)+pn(i,j))
+!             rkal=kax(i-1)*kax_inverse(i)*cff1/cff2
             END IF
             a1= cc1*kax(i)+cc2-cc3*kax_inverse(i)
             b1=-cc1*kax(i)+cc2+cc3*kax_inverse(i)
@@ -172,10 +172,10 @@
               rkar=0.0_r8
             ELSE
               rt=grad_x(i+1)/(grad_x(i))
-!             rkar=kax(i+1)*kax_inverse(i)
-              cff1=Huon_k(i+1,j)*0.25_r8*(oHz_k(i,j)+oHz_k(i+1,j))*(pn(i,j)+pn(i+1,j))
-              cff2=Huon_k(i,j)*0.25_r8*(oHz_k(i-1,j)+oHz_k(i,j))*(pn(i-1,j)+pn(i,j))
-              rkar=kax(i+1)*kax_inverse(i)*cff1/cff2
+              rkar=kax(i+1)*kax_inverse(i)
+!             cff1=Huon_k(i+1,j)*0.25_r8*(oHz_k(i,j)+oHz_k(i+1,j))*(pn(i,j)+pn(i+1,j))
+!             cff2=Huon_k(i,j)*0.25_r8*(oHz_k(i-1,j)+oHz_k(i,j))*(pn(i-1,j)+pn(i,j))
+!             rkar=kax(i+1)*kax_inverse(i)*cff1/cff2
             END IF
             a1= cc1*kax(i)+cc2-cc3*kax_inverse(i)
             b1=-cc1*kax(i)+cc2+cc3*kax_inverse(i)
@@ -228,10 +228,10 @@
               rkad=0.0_r8
             ELSE
               rd=grad_y(j-1)/grad_y(j)
-!             rkad=kay(j-1)*kay_inverse(j)
-              cff1=Hvom_k(i,j-1)*0.25_r8*(oHz_k(i,j-2)+oHz_k(i,j-1))*(pm(i,j-2)+pm(i,j-1))
-              cff2=Hvom_k(i,j)*0.25_r8*(oHz_k(i,j-1)+oHz_k(i,j))*(pm(i,j-1)+pm(i,j))
-              rkad=kay(j-1)*kay_inverse(j)*cff1/cff2
+              rkad=kay(j-1)*kay_inverse(j)
+!             cff1=Hvom_k(i,j-1)*0.25_r8*(oHz_k(i,j-2)+oHz_k(i,j-1))*(pm(i,j-2)+pm(i,j-1))
+!             cff2=Hvom_k(i,j)*0.25_r8*(oHz_k(i,j-1)+oHz_k(i,j))*(pm(i,j-1)+pm(i,j))
+!             rkad=kay(j-1)*kay_inverse(j)*cff1/cff2
             END IF
             a1= cc1*kay(j)+cc2-cc3*kay_inverse(j)
             b1=-cc1*kay(j)+cc2+cc3*kay_inverse(j)
@@ -248,10 +248,10 @@
               rkau=0.0_r8
             ELSE
               ru=grad_y(j+1)/(grad_y(j))
-!             rkau=kay(j+1)*kay_inverse(j)
-              cff1=Hvom_k(i,j+1)*0.25_r8*(oHz_k(i,j+1)+oHz_k(i,j))*(pm(i,j+1)+pm(i,j))
-              cff2=Hvom_k(i,j)*0.25_r8*(oHz_k(i,j-1)+oHz_k(i,j))*(pm(i,j-1)+pm(i,j))
-              rkau=kay(j+1)*kay_inverse(j)*cff1/cff2
+              rkau=kay(j+1)*kay_inverse(j)
+!             cff1=Hvom_k(i,j+1)*0.25_r8*(oHz_k(i,j+1)+oHz_k(i,j))*(pm(i,j+1)+pm(i,j))
+!             cff2=Hvom_k(i,j)*0.25_r8*(oHz_k(i,j-1)+oHz_k(i,j))*(pm(i,j-1)+pm(i,j))
+!             rkau=kay(j+1)*kay_inverse(j)*cff1/cff2
             END IF
             a1= cc1*kay(j)+cc2-cc3*kay_inverse(j)
             b1=-cc1*kay(j)+cc2+cc3*kay_inverse(j)
