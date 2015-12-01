@@ -8303,7 +8303,7 @@
               WY  = COMPDA(INX,JWY2)
 !
 !             *** Local wind speed and direction ***
-              WSLOC = SQRT(WX*WX + WY*WY)
+              WSLOC = SQRT(WX*WX + WY*WY + 1.E-10)
               IF (WX .NE. 0. .OR. WY .NE. 0.) THEN
                 WDLOC = ATAN2(WY,WX)
               ELSE
@@ -8362,7 +8362,7 @@
               WY = COMPDA(INX,JWY2)
 !
 !             *** Local wind speed and direction ***
-              WSLOC = SQRT(WX*WX + WY*WY)
+              WSLOC = SQRT(WX*WX + WY*WY + 1.E-10)
               IF (WX .NE. 0. .OR. WY .NE. 0.) THEN
                 WDLOC = ATAN2(WY,WX)
               ELSE

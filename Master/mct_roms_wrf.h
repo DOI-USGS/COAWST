@@ -649,6 +649,7 @@
       real(r8), pointer :: A(:)
 #ifdef MCT_INTERP_OC2AT
       integer, pointer :: points(:)
+      integer, pointer :: indices(:)
       real(r8), pointer :: Amask(:)
 #endif
       real(r8) :: BBR, cff1, cff2
@@ -740,7 +741,10 @@
 !
       deallocate (A)
 #ifdef MCT_INTERP_OC2AT
-      deallocate (Amask, points)
+      deallocate (points, Amask)
+      if (associated (indices)) then
+        deallocate (indices)
+      endif
 #endif
 !
  10   FORMAT (' OCN2ATM_COUPLING - error while receiving fields from ', &
@@ -853,6 +857,7 @@
       real(r8), pointer :: A(:)
 #ifdef MCT_INTERP_OC2AT
       integer, pointer :: points(:)
+      integer, pointer :: indices(:)
 #endif
       real(r8) :: BBR, cff1, cff2
       character (len=3 ), dimension(2) :: op_handle
@@ -1358,8 +1363,10 @@
       deallocate (A)
 #ifdef MCT_INTERP_OC2AT
       deallocate (points)
+      if (associated (indices)) then
+        deallocate (indices)
+      endif
 #endif
-
 !
  10   FORMAT (' OCNFATM_COUPLING - error while receiving fields from ', &
      &        a, i4)

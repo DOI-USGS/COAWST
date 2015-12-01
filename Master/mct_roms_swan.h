@@ -586,6 +586,9 @@
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: vbar_rho
 
       real(r8), pointer :: A(:)
+#ifdef MCT_INTERP_OC2WV
+      integer, pointer :: indices(:)
+#endif
 !
 #include "set_bounds.h"
 !
@@ -860,6 +863,11 @@
 !  Deallocate communication arrays.
 !
       deallocate (A)
+#ifdef MCT_INTERP_OC2WV
+      if (associated (indices)) then
+        deallocate (indices)
+      endif
+#endif
 !
  10   FORMAT (' OCN2WAV_COUPLING - error while receiving fields from ', &
      &        a, i4)
@@ -968,6 +976,9 @@
 
       real(r8), pointer :: A(:)
       real(r8), pointer :: A1(:)
+#ifdef MCT_INTERP_OC2WV
+      integer, pointer :: indices(:)
+#endif
 !
 !-----------------------------------------------------------------------
 !  Compute lower and upper bounds over a particular domain partition or
@@ -1384,6 +1395,11 @@
 !
       deallocate (A)
       deallocate (A1)
+#ifdef MCT_INTERP_OC2WV
+      if (associated (indices)) then
+        deallocate (indices)
+      endif
+#endif
 !
  10   FORMAT (' OCN2WAV_COUPLING - error while receiving fields from ', &
      &        a, i4)

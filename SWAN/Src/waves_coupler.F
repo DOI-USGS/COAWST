@@ -882,13 +882,13 @@
       integer :: i, id, j, gsmsize, ierr, indx, Tag
       integer :: Istr, Iend, Jstr, Jend, Asize
       integer :: Isize, Jsize, INDXG, NPROCS, OFFSET
-      integer, pointer :: points(:)
 
+      integer, pointer :: points(:)
       real(m8), pointer :: avdata(:)
       character (len=40) :: code
 #ifdef MCT_INTERP_WV2AT
+      integer, pointer :: indices(:)
       real(m8), pointer :: Amask(:)
-      integer, pointer :: pointw(:)
 #endif
 !
 !-----------------------------------------------------------------------
@@ -921,6 +921,7 @@
       DO IP=1,gsmsize
         avdata(IP)=REAL( VOQ(points(IP),VOQR(IVTYPE)),m8 )
       END DO
+      deallocate (points)
 !
       IF (IVTYPE.eq.10) THEN
         CALL AttrVect_importRAttr (AttrVect_G(ng)%wav2atm_AV,           &
@@ -959,20 +960,21 @@
 !  Get the number of grid points on this processor.
 !
         Asize=GlobalSegMap_lsize (GSMapInterp_A(ng,ia)%GSMapWRF,        &
-     &                          WAV_COMM_WORLD)
+     &                            WAV_COMM_WORLD)
         allocate (Amask(Asize))
         Amask=0.0
 !
 !  Ask for points in this tile.
 !
         CALL GlobalSegMap_Ordpnts (GSMapInterp_A(ng,ia)%GSMapWRF,       &
-     &                             MyRank, pointw)
+     &                             MyRank, points)
 !
 !  Load the dst grid cpl mask into the attr vect.
 !
         DO i=1,Asize
-          Amask(i)=REAL(W2A_CPLMASK(ng,ia)%dst_mask(pointw(i)),m8)
+          Amask(i)=REAL(W2A_CPLMASK(ng,ia)%dst_mask(points(i)),m8)
         END DO
+        deallocate (points)
         CALL AttrVect_importRAttr (AV2_A(ng,ia)%wav2atm_AV2, "CPL_MASK",&
      &                             Amask, Asize)
         CALL MCT_isend (AV2_A(ng,ia)%wav2atm_AV2,                       &
@@ -990,11 +992,14 @@
           WRITE (*,*) 'coupl fail swancplr, MyStatus= ', MyError
           CALL FINALIZE_WAV_COUPLING(ng)
         END IF
-      END IF
-      deallocate (avdata, points)
 #ifdef MCT_INTERP_WV2AT
-!      deallocate (Amask, pointw)
+        deallocate (Amask)
+        if (associated (indices)) then
+          deallocate (indices)
+        endif
 #endif
+      END IF
+      deallocate (avdata)
 !
       RETURN
       END SUBROUTINE WAV2ATM_COUPLING
@@ -1062,7 +1067,6 @@
       integer :: iddep, idwlv, idvlx, idvly
       integer :: idruf, idice, idu10, idv10
       integer, dimension(MPI_STATUS_SIZE,4) :: status
-!     integer, pointer :: points(:)
 
       real :: cff
 # if !defined BBL_MODEL
@@ -1093,35 +1097,30 @@
       allocate ( avdata(gsmsize),stat=ierr )
       avdata=0.0_m8
 !
-!  Ask for points in this tile.
-!
-!      CALL GlobalSegMap_Ordpnts (GlobalSegMap_G(ng)%GSMapSWAN,          &
-!     &                           MyRank, points)
-!
 !-----------------------------------------------------------------------
 !  Receive from ROMS: Depth, Water Level, VELX, and VELY.
 !-----------------------------------------------------------------------
 !
 !  Schedule receiving field from ocean model.
 !
-          Tag=io*100+0*10+ng
-          CALL MCT_irecv (AttrVect_G(ng)%ocn2wav_AV,                     &
-     &                    Router_O(ng,io)%SWANtoROMS, Tag)
+      Tag=io*100+0*10+ng
+      CALL MCT_irecv (AttrVect_G(ng)%ocn2wav_AV,                        &
+     &                Router_O(ng,io)%SWANtoROMS, Tag)
 !
 !     Wait to make sure the OCN data has arrived.
 !
       CALL MCT_waitr (AttrVect_G(ng)%ocn2wav_AV,                        &
      &                 Router_O(ng,io)%SWANtoROMS)
 !
-          IF (MYRANK.EQ.0) THEN
-            WRITE (SCREEN,35) ' == SWAN grid ',ng,                      &
-     &                        ' recv data from ROMS grid ', io
-          END IF
-          IF (MyError.ne.0) THEN
-            WRITE (*,*) 'coupling fail swancplr, MyStatus= ', MyError
-            CALL FINALIZE_WAV_COUPLING(ng)
-          END IF
- 35       FORMAT (a14,i2,a26,i2)
+      IF (MYRANK.EQ.0) THEN
+        WRITE (SCREEN,35) ' == SWAN grid ',ng,                          &
+     &                    ' recv data from ROMS grid ', io
+      END IF
+      IF (MyError.ne.0) THEN
+       WRITE (*,*) 'coupling fail swancplr, MyStatus= ', MyError
+        CALL FINALIZE_WAV_COUPLING(ng)
+      END IF
+ 35   FORMAT (a14,i2,a26,i2)
 !
 ! Pass the non-halo data from MCT into tempmct array.
 !
@@ -1607,7 +1606,6 @@
       integer :: iddep, idwlv, idvlx, idvly
       integer :: idruf, idice, idu10, idv10
       integer, dimension(MPI_STATUS_SIZE,4) :: status
-!     integer, pointer :: points(:)
 
       real :: cff
 # if !defined BBL_MODEL
@@ -1618,6 +1616,9 @@
       real, pointer :: TEMPMCT(:,:)
       real, pointer :: GRECVT(:), GRECVB(:), GRECVR(:), GRECVL(:)
       real, pointer :: GSENDT(:), GSENDB(:), GSENDR(:), GSENDL(:)
+# ifdef MCT_INTERP_WV2AT
+      integer, pointer :: indices(:)
+# endif
 
       character (len=40) :: code
 !
@@ -1643,7 +1644,7 @@
 !  Send wave fields bundle to ocean model, ROMS.
 !-----------------------------------------------------------------------
 !
- 35       FORMAT (a14,i2,a26,i2)
+ 35   FORMAT (a14,i2,a26,i2)
 !
 !  Receive fields from atmosphere model.
 !
@@ -1974,11 +1975,15 @@
 !
       deallocate (TEMPMCT)
       deallocate (avdata)
+# ifdef MCT_INTERP_WV2AT
+      if (associated (indices)) then
+        deallocate (indices)
+      endif
+# endif
 !
       RETURN
       END SUBROUTINE WAVFATM_COUPLING
 # endif
-
 
       SUBROUTINE FINALIZE_WAV_COUPLING(ng)
 !
