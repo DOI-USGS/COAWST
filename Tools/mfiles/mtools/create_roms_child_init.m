@@ -400,7 +400,7 @@ for idsed=1:NCS
   end
   for k=1:Nbed
     eval(['mudfrac_',count,'(:,:,k)=maplev(squeeze(mudfrac_',count,'(:,:,k)));'])
-    eval(['mudmass_',count,'(:,:,k)=squeeze(mudfrac_',count,'(:,:,k)).*bed_thickness(:,:,k)*2650.*(1.0-bed_porosity(:,:,k);'])
+    eval(['mudmass_',count,'(:,:,k)=squeeze(mudfrac_',count,'(:,:,k)).*bed_thickness(:,:,k)*2650.*(1.0-bed_porosity(:,:,k));'])
   end
   clear sa; clear sa2;
 end
