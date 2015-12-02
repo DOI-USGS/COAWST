@@ -592,6 +592,25 @@
 !
 #include "set_bounds.h"
 !
+!  Modify ranges to allow full exchange of fields for periodic applications.
+!
+      IF (EWperiodic(ng)) THEN
+        IF (DOMAIN(ng)%Western_Edge(tile)) THEN
+          IstrR=Istr-1
+        END IF
+        IF (DOMAIN(ng)%Eastern_Edge(tile)) THEN
+          IendR=Iend+1
+        END IF
+      END IF
+      IF (NSperiodic(ng)) THEN
+        IF (DOMAIN(ng)%Southern_Edge(tile)) THEN
+          JstrR=Jstr-1
+        END IF
+        IF (DOMAIN(ng)%Northern_Edge(tile)) THEN
+          JendR=Jend+1
+        END IF
+      END IF
+!
 !-----------------------------------------------------------------------
 !  Allocate communications array.
 !-----------------------------------------------------------------------
@@ -988,6 +1007,25 @@
 !-----------------------------------------------------------------------
 !
 #include "set_bounds.h"
+!
+!  Modify ranges to allow full exchange of fields for periodic applications.
+!
+      IF (EWperiodic(ng)) THEN
+        IF (DOMAIN(ng)%Western_Edge(tile)) THEN
+          IstrR=Istr-1
+        END IF
+        IF (DOMAIN(ng)%Eastern_Edge(tile)) THEN
+          IendR=Iend+1
+        END IF
+      END IF
+      IF (NSperiodic(ng)) THEN
+        IF (DOMAIN(ng)%Southern_Edge(tile)) THEN
+          JstrR=Jstr-1
+        END IF
+        IF (DOMAIN(ng)%Northern_Edge(tile)) THEN
+          JendR=Jend+1
+        END IF
+      END IF
 !
 !-----------------------------------------------------------------------
 !  Allocate communications array.
