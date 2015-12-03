@@ -222,7 +222,7 @@ else
   y_v=diff(y_v); 
   x_v=dx(2:end-1,2:end);
   ang=angle(x_v+y_v*sqrt(-1));
-  ang=[ang(end,:); ang; ang(1,:)];
+  ang=[ang(1,:); ang; ang(end,:)];
   ang=[ang ang(:,end)];
 end
 
