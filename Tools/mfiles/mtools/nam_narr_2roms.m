@@ -342,7 +342,9 @@ if (get_NARR)
       rain(:,:,mm)=cff;
     end
     if (get_Tair)
-      var=squeeze(ncread(url,'Temperature_surface'));
+%     var=squeeze(ncread(url,'Temperature_surface'));
+      var=squeeze(ncread(url,'Temperature_height_above_ground'));
+      var=squeeze(var(:,:,1));
       var=var.';
       var=var-273.15; % Kelvin to Centigrades
       F=TriScatteredInterp(nlon(:),nlat(:),double(var(:)));
@@ -479,7 +481,9 @@ if (get_NAM)
       %    rain(:,:,mm)=cff;
         end
         if (get_Tair)
-          var=squeeze(ncread(url,'Temperature_surface'));
+%         var=squeeze(ncread(url,'Temperature_surface'));
+          var=squeeze(ncread(url,'Temperature_height_above_ground'));
+          var=squeeze(var(:,:,1));
           var=var.';
           var=var-273.15; % Kelvin to Centigrades
           F=TriScatteredInterp(nlon(:),nlat(:),double(var(:)));
