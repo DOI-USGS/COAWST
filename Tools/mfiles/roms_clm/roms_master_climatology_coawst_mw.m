@@ -43,14 +43,34 @@ theta_s=5;
 theta_b=0.4;
 Tcline=50;
 N=16;
+Vtransform  =1;        %vertical transformation equation
+Vstretching =1;        %vertical stretching function
 
 %%%%%%%%%%%%%%%%%%%%%   END OF USER INPUT  %%%%%%%%%%%%%%%%%%%%%%%%%%
 
 disp('getting roms grid dimensions ...');
-gn=roms_get_grid_mw(gridname,[theta_s theta_b Tcline N]);
+%gn=roms_get_grid_mw(gridname,[theta_s theta_b Tcline N]);
+Sinp.N           =N;            %number of vertical levels
+Sinp.Vtransform  =Vtransform;   %vertical transformation equation
+Sinp.Vstretching =Vstretching;  %vertical stretching function
+Sinp.theta_s     =theta_s;      %surface control parameter
+Sinp.theta_b     =theta_b;      %bottom  control parameter
+Sinp.Tcline      =Tcline;       %surface/bottom stretching width
+if (Vtransform==1)
+  h=ncread(gridname,'h');
+  hmin=min(h(:));
+  hc=min(max(hmin,0),Tcline);
+elseif (Vtransform==2)
+  hc=Tcline;
+end
+Sinp.hc          =hc;           %stretching width used in ROMS
+gn=get_roms_grid(gridname,Sinp);
+gn.z_r=shiftdim(gn.z_r,2);
+gn.z_u=shiftdim(gn.z_u,2);
+gn.z_v=shiftdim(gn.z_v,2);
+gn.z_w=shiftdim(gn.z_w,2);
 
 tic
-
 % Call to get HYCOM indices for the defined ROMS grid
 disp('getting hycom indices')
 get_ijrg(gn,url)

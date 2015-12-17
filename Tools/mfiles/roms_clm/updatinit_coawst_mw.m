@@ -59,30 +59,13 @@ t_clim=netcdf.getVar(nc_clm,timeid);
   eta_v   = M;
   s       = gn.N;
 
-%5)
+%5) Vertical metrics.
    hmin=0;
    hc=gn.hc;
-   if (theta_s~=0.0)
-     cff1=1.0/sinh(theta_s);
-     cff2=0.5/tanh(0.5*theta_s);
-   end
-   sc_w(1)=-1.0;
-   Cs_w(1)=-1.0;
-   cff=1.0/N;
-   for k=1:N
-     sc_w(k+1)=cff*(k-N);
-     sc_r(k)=cff*((k-N)-0.5);
-     if (theta_s~=0)
-       Cs_w(k+1)=(1.0-theta_b)*cff1*sinh(theta_s*sc_w(k+1))+   ...
-                      theta_b*(cff2*tanh(theta_s*(sc_w(k+1)+0.5))-0.5);
-       Cs_r(k)  =(1.0-theta_b)*cff1*sinh(theta_s*sc_r(k))+   ...
-                      theta_b*(cff2*tanh(theta_s*(sc_r(k)+0.5))-0.5);
-     else
-       Cs_w(k+1)=sc_w(k+1);
-       Cs_r(k)=sc_r(k)
-      end
-    end
- 
+   Cs_r=gn.Cs_r;
+   Cs_w=gn.Cs_w;
+   sc_r=gn.s_rho;
+   sc_w=gn.s_w;
     
 %6) Initialize zeta, salt, temp, u, v, ubar, vbar.
 %moved this to fill part below

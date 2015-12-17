@@ -59,8 +59,8 @@ function create_roms_child_init(parent_grid,child_grid,parent_ini,child_ini)
 %3) Enter number of vertical sigma levels in model.
     Cs_r=ncread(parent_ini,'Cs_r');
     Cs_w=ncread(parent_ini,'Cs_w');
-    s_rho=ncread(parent_ini,'s_rho');
-    s_w=ncread(parent_ini,'s_w');
+%   s_rho=ncread(parent_ini,'s_rho');
+%   s_w=ncread(parent_ini,'s_w');
     N=length(Cs_r);
 
 %4) Enter the values of theta_s, theta_b, and Tcline from your *.in file.
@@ -545,8 +545,8 @@ ncwrite(init_file,'theta_b',Gout.theta_b);
 ncwrite(init_file,'Tcline',Gout.Tcline);
 ncwrite(init_file,'Cs_r',Gout.Cs_r);
 ncwrite(init_file,'Cs_w',Gout.Cs_w);
-ncwrite(init_file,'s_w',Gout.s_w);
-ncwrite(init_file,'s_rho',Gout.s_rho);
+ncwrite(init_file,'sc_w',Gout.s_w);
+ncwrite(init_file,'sc_r',Gout.s_rho);
 ncwrite(init_file,'hc',Gout.hc);
 ncwrite(init_file,'Vtransform',Gout.Vtransform);
 ncwrite(init_file,'Vstretching',Gout.Vstretching);
