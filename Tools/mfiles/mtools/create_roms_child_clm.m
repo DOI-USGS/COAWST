@@ -56,14 +56,8 @@ function create_roms_child_clm(parent_grid,child_grid,parent_clm,child_clm)
     clm_time=ncread(parent_clm,'ocean_time');
 
 %3) Enter number of vertical sigma levels in model.
-%    Cs_r=ncread(parent_clm,'Cs_r');
-%    Cs_w=ncread(parent_clm,'Cs_w');
-%    sc_r=ncread(parent_clm,'sc_r');
-%    sc_w=ncread(parent_clm,'sc_w');
-%    N=length(Cs_r); gn.N=N;
-     N=size(ncread('Sandy_clm.nc','temp'));
-     N=N(3); gn.N=N;
-
+     N=ncread(parent_clm,'temp',[1 1 1 1],[1 1 inf 1]);
+     N=max(size(N)); gn.N=N;
 
 %4) Enter the values of theta_s, theta_b, and Tcline from your *.in file.
 %    theta_s=ncread(parent_clm,'theta_s');
@@ -224,4 +218,11 @@ for mm=1:length(clm_time)
   clear te
 end
 ncwrite(clm_file,'temp',temp);
+
+ncwrite(clm_file,'ocean_time',ot)
+ncwrite(clm_file,'zeta_time',ot)
+ncwrite(clm_file,'v2d_time',ot)
+ncwrite(clm_file,'v3d_time',ot)
+ncwrite(clm_file,'salt_time',ot)
+ncwrite(clm_file,'temp_time',ot)
 
