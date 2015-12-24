@@ -219,10 +219,10 @@ for mm=1:length(clm_time)
 end
 ncwrite(clm_file,'temp',temp);
 
-ncwrite(clm_file,'ocean_time',ot)
-ncwrite(clm_file,'zeta_time',ot)
-ncwrite(clm_file,'v2d_time',ot)
-ncwrite(clm_file,'v3d_time',ot)
-ncwrite(clm_file,'salt_time',ot)
-ncwrite(clm_file,'temp_time',ot)
+ncwrite(clm_file,'ocean_time',clm_time)
+ncwrite(clm_file,'zeta_time',clm_time)
+ncwrite(clm_file,'v2d_time',clm_time)
+ncwrite(clm_file,'v3d_time',clm_time)
+ncwrite(clm_file,'salt_time',clm_time)
+ncwrite(clm_file,'temp_time',clm_time)
 
