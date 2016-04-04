@@ -117,7 +117,7 @@ if (hc > min(min(h)) && Vtransform == 1),
   disp(['                        hc         = ', num2str(hc)]);
   disp(['                        hmax       = ', num2str(min(min(h)))]);
   disp(' ');
-  return
+%  return
 end
 
 if (nargin < 9),
