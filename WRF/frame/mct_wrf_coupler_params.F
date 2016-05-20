@@ -21,6 +21,7 @@
       integer, dimension(:), pointer :: sparse_rows
       integer, dimension(:), pointer :: sparse_cols
       integer, dimension(:), pointer :: dst_grid_imask
+      integer, dimension(2) :: src_grid_dims, dst_grid_dims
       real(m8), dimension(:), pointer :: sparse_weights
 
       TYPE T_DST_GRID
@@ -105,14 +106,21 @@
 !
 !  Coupled model components IDs.
 !
-!# ifdef REFINED_GRID
       integer, dimension(:), pointer :: ocnids
       integer, dimension(:), pointer :: wavids
       integer, dimension(:), pointer :: atmids
-!# endif
       integer :: OCNid
       integer :: WAVid
       integer :: ATMid
+
+# ifdef MOVE_NESTS
+!  If WRF has a moving nest then we need to keep some information.
+      integer, dimension(:), pointer :: par_grid_ratio
+      integer, dimension(:), pointer :: full_Isize
+      integer, dimension(:), pointer :: full_Jsize
+      integer, dimension(:), pointer :: parent_id
+      integer, dimension(:), pointer :: moving_nest
+# endif
 
       CONTAINS
 
@@ -122,6 +130,8 @@
 !  This routine initialize all the coupler vars.                       !
 !                                                                      !
 !=======================================================================
+
+      integer :: i
 
 # ifdef WAVES_OCEAN
       allocate (nOCN2WAV(Nocn_grids,Nwav_grids))
@@ -151,6 +161,19 @@
 #  ifdef AIR_WAVES
       allocate(W2A_CPLMASK(Nwav_grids,Natm_grids))
 #  endif
+# endif
+# ifdef MOVE_NESTS
+! If WRF has a moving nest, for now, it has to be the last grid.
+      allocate (par_grid_ratio(Natm_grids))
+      allocate (full_Isize(Natm_grids))
+      allocate (full_Jsize(Natm_grids))
+      allocate (parent_id(Natm_grids))
+      allocate (moving_nest(Natm_grids))
+      DO i=1,Natm_grids-1
+       moving_nest(i)=0
+      END DO
+      moving_nest(Natm_grids)=1
+
 # endif
 
       RETURN

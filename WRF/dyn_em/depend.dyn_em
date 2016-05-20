@@ -21,7 +21,9 @@ module_advect_em.o: ../share/module_bc.o \
 		../share/module_model_constants.o \
 		../frame/module_wrf_error.o
 
-module_bc_em.o: ../share/module_bc.o ../frame/module_configure.o \
+module_bc_em.o: ../share/module_bc.o \
+		../share/module_model_constants.o \
+		../frame/module_configure.o \
 		../frame/module_wrf_error.o
 
 module_big_step_utilities_em.o: \
@@ -153,6 +155,17 @@ module_initialize_seabreeze2d_x.o : \
 		../share/module_bc.o \
 		module_init_utilities.o
 
+module_initialize_convrad.o : \
+		../frame/module_domain.o \
+		../frame/module_configure.o  \
+		../frame/module_state_description.o \
+		../frame/module_timing.o \
+		../frame/module_dm.o \
+		../share/module_io_domain.o \
+		../share/module_model_constants.o \
+		../share/module_bc.o \
+		module_init_utilities.o
+
 module_initialize_tropical_cyclone.o : \
 		../frame/module_domain.o \
 		../frame/module_configure.o  \
@@ -231,6 +244,7 @@ start_em.o:     module_bc_em.o \
 		../share/module_date_time.o \
 		../phys/module_physics_init.o \
 		../phys/module_diag_pld.o \
+		../phys/module_diag_zld.o \
                 ../phys/module_fr_fire_driver_wrf.o \
 		$(CF)
 

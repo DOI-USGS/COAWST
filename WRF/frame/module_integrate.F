@@ -328,22 +328,7 @@ RECURSIVE SUBROUTINE integrate ( grid )
                CALL initialize_atm_coupling (new_nest, nestid)
 #endif
             END DO
-#ifdef WRF_COUPLING
-!           After all nests are opened, and initialized into MCT,
-!           call to init routers and do initial data exchange.
-            num_steps=head_grid%itimestep
-            IF ((last_step.eq.-1).and.(grid%id.eq.Natm_grids)) THEN
-!             init the routers between all atm, ocn, and wav grids.
-              CALL initialize_atm_routers
-              CALL atm_coupling (head_grid, 0)
-              last_step=num_steps
-            END IF
-!           Perform data exchange between all grids.
-            IF ((num_steps.gt.last_step).and.(last_step.ne.-1).and.(grid%id.eq.1)) THEN
-              CALL atm_coupling (grid, num_steps)
-              last_step=num_steps
-            END IF
-#endif
+
             IF ( a_nest_was_opened ) THEN
                CALL set_overlaps ( grid )   ! find overlapping and set pointers
             END IF
@@ -354,9 +339,9 @@ RECURSIVE SUBROUTINE integrate ( grid )
             CALL med_before_solve_io ( grid , config_flags )
 #ifdef ROMS_COUPLING
 !           Overwrite the SST update with the coupled SST.
-            IF ((grid%id.eq.1).and.(last_step.ne.-1).and.                                     &
-     &               (config_flags%io_form_auxinput4 .GT. 0)) THEN
-                   CALL atm_coupling_aux4(grid, num_steps)
+            IF ((grid%id.eq.1).and.(last_step.ne.-1).and.               &
+     &          (config_flags%io_form_auxinput4 .GT. 0)) THEN
+              CALL atm_coupling_aux4(grid, num_steps)
             END IF
 #endif
             grid_ptr => grid
@@ -408,6 +393,22 @@ RECURSIVE SUBROUTINE integrate ( grid )
                  END IF
                END DO
                IF (coupler_on) CALL cpl_snd( grid_ptr ) 
+#ifdef WRF_COUPLING
+!              After all nests are opened, and initialized into MCT,
+!              call to init routers and do initial data exchange.
+               num_steps=head_grid%itimestep
+               IF ((last_step.eq.-1).and.(grid%id.eq.Natm_grids)) THEN
+!                init the routers between all atm, ocn, and wav grids.
+                 CALL initialize_atm_routers
+                 CALL atm_coupling (head_grid, 0)
+                 last_step=num_steps
+               END IF
+!              Perform data exchange between all grids.
+               IF ((num_steps.gt.last_step).and.(last_step.ne.-1).and.(grid%id.eq.1)) THEN
+                CALL atm_coupling (grid, num_steps)
+                last_step=num_steps
+               END IF
+#endif
                grid_ptr => grid_ptr%sibling
             END DO
             CALL set_current_grid_ptr( grid )
@@ -430,15 +431,6 @@ RECURSIVE SUBROUTINE integrate ( grid )
 
          ! Accumulation calculation for DFI
          CALL dfi_accumulate ( grid )
-#ifdef WRF_COUPLING
-!           Call last final coupling.
-!           Perform data exchange between all grids.
-            num_steps=head_grid%itimestep
-            IF (grid%id.eq.1) THEN
-              CALL atm_coupling (grid, num_steps)
-              last_step=num_steps
-            END IF
-#endif
          ! Avoid double writes on nests if this is not really the last time;
          ! Do check for write if the parent domain is ending.
          IF ( grid%id .EQ. 1 ) THEN               ! head_grid
