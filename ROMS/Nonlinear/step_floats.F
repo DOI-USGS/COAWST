@@ -4,7 +4,7 @@
 !
 !svn $Id: step_floats.F 1597 2008-07-25 02:31:35Z jcwarner $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2014 The ROMS/TOMS Group        John M. Klinck   !
+!  Copyright (c) 2002-2016 The ROMS/TOMS Group        John M. Klinck   !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -807,34 +807,10 @@
 !-----------------------------------------------------------------------
 !
       HalfDT=0.5_r8*dt(ng)
-#if defined NEP5 || defined NEP6 || defined BERING || defined CHUKCHI \
-       || defined ARCTIC
-! Check for start of run. Make sure the start time for all floats is
-! in the future.
-      IF (iic(ng).eq.ntstart(ng)) THEN
-        DO l=Lstr,Lend
-          DO WHILE (time(ng) .gt. Tinfo(itstr,l))
-            Tinfo(itstr,l) = Tinfo(itstr,l)+day2sec*365.25_r8
-          END DO
-        END DO
-      END IF
-! Check for old floats about to be restarted.
-      DO l=Lstr,Lend
-        IF (time(ng) .gt. Tinfo(itstr,l)-day2sec) THEN
-          bounded(l) = .FALSE.
-        END IF
-      END DO
-#endif
-
       DO l=Lstr,Lend
         IF (.not.bounded(l).and.                                        &
      &      (time(ng)-HalfDT.le.Tinfo(itstr,l).and.                     &
      &       time(ng)+HalfDT.gt.Tinfo(itstr,l))) THEN
-#if defined NEP5 || defined NEP6 || defined BERING || defined CHUKCHI \
-       || defined ARCTIC
-          IF (Master) print *,'Starting float ', l
-          Tinfo(itstr,l) = Tinfo(itstr,l) + day2sec*365.25_r8
-#endif
           bounded(l)=.TRUE.
           IF ((Tinfo(ixgrd,l).lt.0.5_r8).or.                            &
      &        (Tinfo(iygrd,l).lt.0.5_r8).or.                            &

@@ -7,7 +7,7 @@
 !
 !svn $Id: lmd_skpp.F 732 2008-09-07 01:55:51Z jcwarner $
 !=======================================================================
-!  Copyright (c) 2002-2015 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2016 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                           Hernan G. Arango   !
 !========================================== Alexander F. Shchepetkin ===
@@ -349,7 +349,7 @@
 !=======================================================================
 !
       DO j=Jstr,Jend
-# ifdef SPLINES
+# ifdef RI_SPLINES
 !
 ! Construct parabolic splines for vertical derivatives of potential
 ! density and velocity components at W-points.  FC is a scratch array.

@@ -4,7 +4,7 @@
 !
 !svn $Id: rhs3d.F 732 2008-09-07 01:55:51Z jcwarner $
 !=======================================================================
-!  Copyright (c) 2002-2014 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2016 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                           Hernan G. Arango   !
 !========================================== Alexander F. Shchepetkin ===
@@ -37,6 +37,9 @@
 # endif
       USE mod_ocean
       USE mod_stepping
+# ifdef VEGETATION
+      USE mod_vegarr
+# endif
 !
       USE pre_step3d_mod, ONLY : pre_step3d
       USE prsgrd_mod, ONLY : prsgrd
@@ -60,9 +63,9 @@
 # ifdef UV_VIS4
       USE uv3dmix_mod, ONLY : uv3dmix4
 # endif
-# ifdef SGR_FLOW
-      USE mod_sedbed
-# endif	  
+# if defined VEGETATION && defined VEG_DRAG
+     USE vegetation_drag_mod, ONLY : vegetation_drag_cal
+# endif
 !
 !  Imported variable declarations.
 !
@@ -115,6 +118,16 @@
       CALL t3dmix4 (ng, tile)
 #  endif
 # endif
+
+# if defined VEGETATION && defined VEG_DRAG
+
+!-----------------------------------------------------------------------
+!  Add the effect of vegetation on the momentum terms.
+!-----------------------------------------------------------------------
+!
+      CALL vegetation_drag_cal (ng, tile)
+# endif
+
 # if !defined OFFLINE_BIOLOGY
 !
 !-----------------------------------------------------------------------
@@ -142,7 +155,7 @@
      &                 GRID(ng) % on_v,                                 &
      &                 GRID(ng) % pm,                                   &
      &                 GRID(ng) % pn,                                   &
-# ifdef WET_DRY_LIMIT
+# ifdef WET_DRY
      &                 GRID(ng)%umask_wet,                              &
      &                 GRID(ng)%vmask_wet,                              &
 # endif
@@ -150,13 +163,13 @@
      &                 FORCES(ng) % bvstr,                              &
      &                 FORCES(ng) % sustr,                              &
      &                 FORCES(ng) % svstr,                              &
-# if defined SGR_FLOW
-     &                 OCEAN(ng) % rusgr,                               &
-     &                 OCEAN(ng) % rvsgr,                               &
-# endif	 
      &                 OCEAN(ng) % u,                                   &
      &                 OCEAN(ng) % v,                                   &
      &                 OCEAN(ng) % W,                                   &
+# if defined VEGETATION && defined VEG_DRAG
+     &                 VEG(ng) % ru_veg,                                &
+     &                 VEG(ng) % rv_veg,                                &
+# endif	 
 # ifdef WEC
      &                 OCEAN(ng) % u_stokes,                            &
      &                 OCEAN(ng) % v_stokes,                            &
@@ -212,15 +225,15 @@
 # endif
      &                       fomn,                                      &
      &                       om_u, om_v, on_u, on_v, pm, pn,            &
-# ifdef WET_DRY_LIMIT
+# ifdef WET_DRY
      &                       umask_wet, vmask_wet,                      &
 # endif
      &                       bustr, bvstr,                              &
      &                       sustr, svstr,                              &
-# if defined SGR_FLOW
-     &                       rusgr, rvsgr,                              &
-# endif	 
      &                       u, v, W,                                   &
+# if defined VEGETATION && defined VEG_DRAG
+     &                       ru_veg, rv_veg,                            &
+# endif	 
 # ifdef WEC
      &                       u_stokes, v_stokes, W_stokes,              &
 #  ifdef WEC_MELLOR
@@ -262,7 +275,7 @@
       real(r8), intent(in) :: on_v(LBi:,LBj:)
       real(r8), intent(in) :: pm(LBi:,LBj:)
       real(r8), intent(in) :: pn(LBi:,LBj:)
-#  ifdef WET_DRY_LIMIT
+#  ifdef WET_DRY
       real(r8), intent(in) :: umask_wet(LBi:,LBj:)
       real(r8), intent(in) :: vmask_wet(LBi:,LBj:)
 #  endif
@@ -270,13 +283,13 @@
       real(r8), intent(in) :: bvstr(LBi:,LBj:)
       real(r8), intent(in) :: sustr(LBi:,LBj:)
       real(r8), intent(in) :: svstr(LBi:,LBj:)
-# if defined SGR_FLOW
-      real(r8), intent(in) :: rusgr(LBi:,LBj:,:)
-      real(r8), intent(in) :: rvsgr(LBi:,LBj:,:)
-# endif	 
       real(r8), intent(in) :: u(LBi:,LBj:,:,:)
       real(r8), intent(in) :: v(LBi:,LBj:,:,:)
       real(r8), intent(in) :: W(LBi:,LBj:,0:)
+#  if defined VEGETATION && defined VEG_DRAG
+      real(r8), intent(in) :: ru_veg(LBi:,LBj:,:)
+      real(r8), intent(in) :: rv_veg(LBi:,LBj:,:)
+#  endif	 
 #  ifdef WEC
       real(r8), intent(in) :: u_stokes(LBi:,LBj:,:)
       real(r8), intent(in) :: v_stokes(LBi:,LBj:,:)
@@ -314,7 +327,7 @@
       real(r8), intent(in) :: on_v(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: pm(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: pn(LBi:UBi,LBj:UBj)
-#  ifdef WET_DRY_LIMIT
+#  ifdef WET_DRY
       real(r8), intent(in) :: umask_wet(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: vmask_wet(LBi:UBi,LBj:UBj)
 #  endif
@@ -322,13 +335,13 @@
       real(r8), intent(in) :: bvstr(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: sustr(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: svstr(LBi:UBi,LBj:UBj)
-# if defined SGR_FLOW
-      real(r8), intent(in) :: rusgr(LBi:UBi,LBj:UBj,:)
-      real(r8), intent(in) :: rvsgr(LBi:UBi,LBj:UBj,:)
-# endif	 
       real(r8), intent(in) :: u(LBi:UBi,LBj:UBj,N(ng),2)
       real(r8), intent(in) :: v(LBi:UBi,LBj:UBj,N(ng),2)
       real(r8), intent(in) :: W(LBi:UBi,LBj:UBj,0:N(ng))
+# if defined VEGETATION && defined VEG_DRAG
+      real(r8), intent(in) :: ru_veg(LBi:UBi,LBj:UBj,N(ng))
+      real(r8), intent(in) :: rv_veg(LBi:UBi,LBj:UBj,N(ng))
+# endif	 
 #  ifdef WEC
       real(r8), intent(in) :: u_stokes(LBi:UBi,LBj:UBj,N(ng))
       real(r8), intent(in) :: v_stokes(LBi:UBi,LBj:UBj,N(ng))
@@ -527,9 +540,10 @@
       END DO
 # endif
 !
-#  ifdef SGR_FLOW
+#  if defined VEGETATION && defined VEG_DRAG
+!
 !-----------------------------------------------------------------------
-!  Resistance imposed on the flow by the submerged (seagrass: sgr) 
+!  Resistance imposed on the flow by the submerged (seagrass) 
 !  or emergent (marsh) vegetation.
 !-----------------------------------------------------------------------
 !
@@ -537,24 +551,23 @@
 ! Interpolate at cell face	
         DO j=Jstr,Jend
           DO i=IstrU,Iend
-            cff=rusgr(i,j,k)
+            cff=ru_veg(i,j,k)*om_u(i,j)*on_u(i,j)
             ru(i,j,k,nrhs)=ru(i,j,k,nrhs)-cff
 #  ifdef DIAGNOSTICS_UV
-            DiaRU(i,j,k,nrhs,M3fsgr)=cff
+            DiaRU(i,j,k,nrhs,M3fveg)=-cff
 #  endif
           END DO
         END DO
         DO j=JstrV,Jend
           DO i=Istr,Iend
-            cff=rvsgr(i,j,k)
+            cff=rv_veg(i,j,k)*om_v(i,j)*on_v(i,j)
             rv(i,j,k,nrhs)=rv(i,j,k,nrhs)-cff
 #  ifdef DIAGNOSTICS_UV
-            DiaRV(i,j,k,nrhs,M3fsgr)=cff
+            DiaRV(i,j,k,nrhs,M3fveg)=-cff
 #  endif
           END DO
         END DO
       END DO  
-	  
 #  endif
 !
       K_LOOP : DO k=1,N(ng)
@@ -2051,7 +2064,7 @@
 !  bottom stresses.
 !
         DO i=IstrU,Iend
-# ifdef WET_DRY_LIMIT
+# ifdef WET_DRY
           ru(i,j,1,nrhs)=ru(i,j,1,nrhs)*umask_wet(i,j)
 # endif
           rufrc(i,j)=ru(i,j,1,nrhs)
@@ -2088,6 +2101,9 @@
           DiaRUfrc(i,j,3,M2yvis)=0.0_r8
           DiaRUfrc(i,j,3,M2hvis)=0.0_r8
 #  endif
+#  if defined VEGETATION && defined VEG_DRAG
+          DiaRUfrc(i,j,3,M2fveg)=DiaRU(i,j,1,nrhs,M3fveg)
+#  endif
 #  ifdef BODYFORCE
 !!        DiaRUfrc(i,j,3,M2strs)=DiaRU(i,j,1,nrhs,M3vvis)
 #  endif
@@ -2095,7 +2111,7 @@
         END DO
         DO k=2,N(ng)
           DO i=IstrU,Iend
-# ifdef WET_DRY_LIMIT
+# ifdef WET_DRY
             ru(i,j,k,nrhs)=ru(i,j,k,nrhs)*umask_wet(i,j)
 # endif
             rufrc(i,j)=rufrc(i,j)+ru(i,j,k,nrhs)
@@ -2140,6 +2156,10 @@
             DiaRUfrc(i,j,3,M2wbrk)=DiaRUfrc(i,j,3,M2wbrk)+              &
      &                             DiaRU(i,j,k,nrhs,M3wbrk)
 #  endif
+#  if defined VEGETATION && defined VEG_DRAG
+            DiaRUfrc(i,j,3,M2fveg)=DiaRUfrc(i,j,3,M2fveg)+              &
+     &                             DiaRU(i,j,k,nrhs,M3fveg)
+#  endif
 #  ifdef BODYFORCE
 !!          DiaRUfrc(i,j,3,M2strs)=DiaRUfrc(i,j,3,M2strs)+              &
 !!   &                             DiaRU(i,j,k,nrhs,M3vvis)
@@ -2153,7 +2173,7 @@
           cff1= sustr(i,j)*cff
           cff2=-bustr(i,j)*cff
           rufrc(i,j)=rufrc(i,j)+cff1+cff2
-#  ifdef WET_DRY_LIMIT
+#  ifdef WET_DRY
           rufrc(i,j)=rufrc(i,j)*umask_wet(i,j)
 #  endif
 #  ifdef DIAGNOSTICS_UV
@@ -2164,7 +2184,7 @@
 # endif
         IF (j.ge.JstrV) THEN
           DO i=Istr,Iend
-# ifdef WET_DRY_LIMIT
+# ifdef WET_DRY
             rv(i,j,1,nrhs)=rv(i,j,1,nrhs)*vmask_wet(i,j)
 # endif
             rvfrc(i,j)=rv(i,j,1,nrhs)
@@ -2201,6 +2221,9 @@
             DiaRVfrc(i,j,3,M2xvis)=0.0_r8
             DiaRVfrc(i,j,3,M2yvis)=0.0_r8
 #  endif
+#  if defined VEGETATION && defined VEG_DRAG
+            DiaRVfrc(i,j,3,M2fveg)=DiaRV(i,j,1,nrhs,M3fveg)
+#  endif
 #  ifdef BODYFORCE
 !           DiaRVfrc(i,j,3,M2strs)=DiaRV(i,j,1,nrhs,M3vvis)
 #  endif
@@ -2208,7 +2231,7 @@
           END DO
           DO k=2,N(ng)
             DO i=Istr,Iend
-# ifdef WET_DRY_LIMIT
+# ifdef WET_DRY
               rv(i,j,k,nrhs)=rv(i,j,k,nrhs)*vmask_wet(i,j)
 # endif
               rvfrc(i,j)=rvfrc(i,j)+rv(i,j,k,nrhs)
@@ -2253,6 +2276,10 @@
               DiaRVfrc(i,j,3,M2wbrk)=DiaRVfrc(i,j,3,M2wbrk)+            &
      &                               DiaRV(i,j,k,nrhs,M3wbrk)
 #  endif
+#  if defined VEGETATION && defined VEG_DRAG
+              DiaRVfrc(i,j,3,M2fveg)=DiaRVfrc(i,j,3,M2fveg)+            &
+     &                               DiaRV(i,j,k,nrhs,M3fveg)
+#  endif
 #  ifdef BODYFORCE
 !!            DiaRVfrc(i,j,3,M2strs)=DiaRVfrc(i,j,3,M2strs)+            &
 !!   &                               DiaRV(i,j,k,nrhs,M3vvis)
@@ -2266,7 +2293,7 @@
             cff1= svstr(i,j)*cff
             cff2=-bvstr(i,j)*cff
             rvfrc(i,j)=rvfrc(i,j)+cff1+cff2
-#  ifdef WET_DRY_LIMIT
+#  ifdef WET_DRY
             rvfrc(i,j)=rvfrc(i,j)*vmask_wet(i,j)
 #  endif
 #  ifdef DIAGNOSTICS_UV
@@ -2277,6 +2304,7 @@
 # endif
         END IF
       END DO J_LOOP
+
       RETURN
       END SUBROUTINE rhs3d_tile
 #endif

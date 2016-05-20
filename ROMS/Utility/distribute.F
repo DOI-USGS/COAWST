@@ -10,7 +10,7 @@
 !
 !svn $Id: distribute.F 733 2008-09-07 01:56:45Z jcwarner $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2014 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2016 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -5416,6 +5416,12 @@
       DO i=Mstr,Mend
         Awrk(i)=A(i)
       END DO
+!
+!  Deallocate receive buffer.
+!
+      IF (allocated(Arecv).and.(MyRank.eq.MyMaster)) THEN
+        deallocate (Arecv)
+      END IF
 
 # ifdef PROFILE
 !

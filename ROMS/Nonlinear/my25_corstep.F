@@ -4,7 +4,7 @@
 !
 !svn $Id: my25_corstep.F 732 2008-09-07 01:55:51Z jcwarner $
 !=======================================================================
-!  Copyright (c) 2002-2014 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2016 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                           Hernan G. Arango   !
 !========================================== Alexander F. Shchepetkin ===
@@ -212,7 +212,7 @@
 !  Compute vertical velocity shear at W-points.
 !-----------------------------------------------------------------------
 !
-# ifdef SPLINES
+# ifdef RI_SPLINES
       DO j=Jstrm1,Jendp1
         DO i=Istrm1,Iendp1
           CF(i,0)=0.0_r8

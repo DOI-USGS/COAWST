@@ -4,7 +4,7 @@
 !
 !svn $Id: lmd_vmix.F 732 2008-09-07 01:55:51Z jcwarner $
 !=======================================================================
-!  Copyright (c) 2002-2015 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2016 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                           Hernan G. Arango   !
 !========================================== Alexander F. Shchepetkin ===
@@ -64,7 +64,7 @@
      &                      IminS, ImaxS, JminS, JmaxS,                 &
      &                      nstp(ng),                                   &
      &                      GRID(ng) % Hz,                              &
-# ifndef SPLINES
+# ifndef RI_SPLINES
      &                      GRID(ng) % z_r,                             &
 # endif
      &                      OCEAN(ng) % rho,                            &
@@ -97,7 +97,7 @@
      &                          IminS, ImaxS, JminS, JmaxS,             &
      &                          nstp,                                   &
      &                          Hz,                                     &
-# ifndef SPLINES
+# ifndef RI_SPLINES
      &                          z_r,                                    &
 # endif
      &                          rho, u, v,                              &
@@ -119,7 +119,7 @@
 !
 # ifdef ASSUMED_SHAPE
       real(r8), intent(in) :: Hz(LBi:,LBj:,:)
-#  ifndef SPLINES
+#  ifndef RI_SPLINES
       real(r8), intent(in) :: z_r(LBi:,LBj:,:)
 #  endif
       real(r8), intent(in) :: rho(LBi:,LBj:,:)
@@ -135,7 +135,7 @@
       real(r8), intent(inout) :: Akv(LBi:,LBj:,0:)
 # else
       real(r8), intent(in) :: Hz(LBi:UBi,LBj:UBj,N(ng))
-#  ifndef SPLINES
+#  ifndef RI_SPLINES
       real(r8), intent(in) :: z_r(LBi:UBi,LBj:UBj,N(ng))
 #  endif
       real(r8), intent(in) :: rho(LBi:UBi,LBj:UBj,N(ng))
@@ -157,7 +157,7 @@
 
       real(r8), parameter :: eps = 1.0E-14_r8
 
-      real(r8) :: cff, lmd_iwm, lmd_iws, nu_sx, nu_sxc, shear2
+      real(r8) :: cff, lmd_iwm, lmd_iws, nu_sx, shear2
 # ifdef LMD_DDMIX
       real(r8) :: Rrho, ddDS, ddDT, nu_dds, nu_ddt
 # endif
@@ -181,7 +181,7 @@
 !  vertical W-points.  If zero or very small velocity shear, bound
 !  computation by a large negative value.
 !
-#  ifdef SPLINES
+#  ifdef RI_SPLINES
       DO j=MAX(1,Jstr-1),MIN(Jend+1,Mm(ng))
         DO i=MAX(1,Istr-1),MIN(Iend+1,Lm(ng))
           FC(i,0)=0.0_r8
@@ -219,7 +219,7 @@
         DO k=1,N(ng)-1
           DO i=MAX(1,Istr-1),MIN(Iend+1,Lm(ng))
             shear2=dU(i,k)*dU(i,k)+dV(i,k)*dV(i,k)
-            Rig(i,j,k)=bvf(i,j,k)/(shear2+eps)
+            Rig(i,j,k)=bvf(i,j,k)/max(shear2,eps)
 !!          Rig(i,j,k)=-gorho0*dR(i,k)/(shear2+eps)
           END DO
         END DO
@@ -233,7 +233,7 @@
      &                   u(i+1,j,k+1,nstp)-u(i+1,j,k,nstp)))**2+        &
      &             (cff*(v(i,j  ,k+1,nstp)-v(i,j  ,k,nstp)+             &
      &                   v(i,j+1,k+1,nstp)-v(i,j+1,k,nstp)))**2
-            Rig(i,j,k)=bvf(i,j,k)/(shear2+eps)
+            Rig(i,j,k)=bvf(i,j,k)/max(shear2,eps)
           END DO
         END DO
       END DO
@@ -465,9 +465,6 @@
      &                      LBi, UBi, LBj, UBj,                         &
      &                      nstp(ng),                                   &
      &                      GRID(ng) % Hz,                              &
-# ifndef SPLINES
-     &                      GRID(ng) % z_r,                             &
-# endif
 # ifdef M2TIDE_DIFF
      &                      GRID(ng) % z_w,                             &
      &                      MIXING(ng) % m2_amp,                        &
@@ -483,9 +480,6 @@
      &                            LBi, UBi, LBj, UBj,                   &
      &                            nstp,                                 &
      &                            Hz,                                   &
-# ifndef SPLINES
-     &                            z_r,                                  &
-# endif
 # ifdef M2TIDE_DIFF
      &                            z_w,                                  &
      &                            m2_amp,                               &
@@ -509,9 +503,6 @@
 !
 # ifdef ASSUMED_SHAPE
       real(r8), intent(in) :: Hz(LBi:,LBj:,:)
-#  ifndef SPLINES
-      real(r8), intent(in) :: z_r(LBi:,LBj:,:)
-#  endif
 # ifdef M2TIDE_DIFF
       real(r8), intent(in) :: z_w(LBi:,LBj:,0:)
       real(r8), intent(in) :: m2_amp(LBi:,LBj:)
@@ -522,9 +513,6 @@
       real(r8), intent(inout) :: Akv(LBi:,LBj:,0:)
 # else
       real(r8), intent(in) :: Hz(LBi:UBi,LBj:UBj,N(ng))
-#  ifndef SPLINES
-      real(r8), intent(in) :: z_r(LBi:UBi,LBj:UBj,N(ng))
-#  endif
 # ifdef M2TIDE_DIFF
       real(r8), intent(in) :: z_w(LBi:UBi,LBj:UBj,0:N(ng))
       real(r8), intent(in) :: m2_amp(LBi:UBi,LBj:UBj)
@@ -541,7 +529,7 @@
 
       real(r8), parameter :: eps = 1.0E-14_r8
 
-      real(r8) :: cff, lmd_iwm, lmd_iws, nu_sx, nu_sxc, shear2
+      real(r8) :: cff, nu_sx, nu_sxc, shear2
 # ifdef M2TIDE_DIFF
       real(r8), parameter :: lmd_k0 = 5.0e-3_r8  ! m2 s-1
       real(r8), parameter :: lmd_sigma = 3.0_r8

@@ -30,7 +30,7 @@
       integer :: decode_line, load_i, load_l, load_lbc, load_r
 
       logical, dimension(Ngrids) :: Lbed
-      logical, dimension(MBOTP,Ngrids) :: Lbottom
+      logical, dimension(Ngrids) :: Lbottom
       logical, dimension(NCS,Ngrids) :: Lmud
       logical, dimension(NNS,Ngrids) :: Lsand
 
@@ -967,6 +967,172 @@
                 Hout(i,ng)=Lbed(ng)
               END DO
 #endif
+            CASE ('Hout(isd50)')
+              Npts=load_l(Nval, Cval, Ngrids, Lbottom)
+              i=idBott(isd50)
+              DO ng=1,Ngrids
+                Hout(i,ng)=Lbottom(ng)
+              END DO
+            CASE ('Hout(idens)')
+              Npts=load_l(Nval, Cval, Ngrids, Lbottom)
+              i=idBott(idens)
+              DO ng=1,Ngrids
+                Hout(i,ng)=Lbottom(ng)
+             END DO
+            CASE ('Hout(iwsed)')
+              Npts=load_l(Nval, Cval, Ngrids, Lbottom)
+              i=idBott(iwsed)
+              DO ng=1,Ngrids
+                Hout(i,ng)=Lbottom(ng)
+              END DO
+            CASE ('Hout(itauc)')
+              Npts=load_l(Nval, Cval, Ngrids, Lbottom)
+              i=idBott(itauc)
+              DO ng=1,Ngrids
+                Hout(i,ng)=Lbottom(ng)
+              END DO
+            CASE ('Hout(irlen)')
+              Npts=load_l(Nval, Cval, Ngrids, Lbottom)
+              i=idBott(irlen)
+              DO ng=1,Ngrids
+                Hout(i,ng)=Lbottom(ng)
+              END DO
+            CASE ('Hout(irhgt)')
+              Npts=load_l(Nval, Cval, Ngrids, Lbottom)
+              i=idBott(irhgt)
+              DO ng=1,Ngrids
+                Hout(i,ng)=Lbottom(ng)
+              END DO
+            CASE ('Hout(ibwav)')
+              Npts=load_l(Nval, Cval, Ngrids, Lbottom)
+              i=idBott(ibwav)
+              DO ng=1,Ngrids
+                Hout(i,ng)=Lbottom(ng)
+              END DO
+            CASE ('Hout(izdef)')
+              Npts=load_l(Nval, Cval, Ngrids, Lbottom)
+              i=idBott(izdef)
+              DO ng=1,Ngrids
+                Hout(i,ng)=Lbottom(ng)
+              END DO
+            CASE ('Hout(izapp)')
+              Npts=load_l(Nval, Cval, Ngrids, Lbottom)
+              i=idBott(izapp)
+              DO ng=1,Ngrids
+                Hout(i,ng)=Lbottom(ng)
+              END DO
+            CASE ('Hout(izNik)')
+              Npts=load_l(Nval, Cval, Ngrids, Lbottom)
+              i=idBott(izNik)
+             DO ng=1,Ngrids
+                Hout(i,ng)=Lbottom(ng)
+              END DO
+            CASE ('Hout(izbio)')
+              Npts=load_l(Nval, Cval, Ngrids, Lbottom)
+              i=idBott(izbio)
+              DO ng=1,Ngrids
+                Hout(i,ng)=Lbottom(ng)
+              END DO
+            CASE ('Hout(izbfm)')
+              Npts=load_l(Nval, Cval, Ngrids, Lbottom)
+              i=idBott(izbfm)
+              DO ng=1,Ngrids
+               Hout(i,ng)=Lbottom(ng)
+              END DO
+            CASE ('Hout(izbld)')
+              Npts=load_l(Nval, Cval, Ngrids, Lbottom)
+              i=idBott(izbld)
+              DO ng=1,Ngrids
+                Hout(i,ng)=Lbottom(ng)
+              END DO
+            CASE ('Hout(izwbl)')
+              Npts=load_l(Nval, Cval, Ngrids, Lbottom)
+              i=idBott(izwbl)
+              DO ng=1,Ngrids
+                Hout(i,ng)=Lbottom(ng)
+              END DO
+            CASE ('Hout(iactv)')
+              Npts=load_l(Nval, Cval, Ngrids, Lbottom)
+              i=idBott(iactv)
+              DO ng=1,Ngrids
+                Hout(i,ng)=Lbottom(ng)
+              END DO
+            CASE ('Hout(ishgt)')
+              Npts=load_l(Nval, Cval, Ngrids, Lbottom)
+              i=idBott(ishgt)
+              DO ng=1,Ngrids
+                Hout(i,ng)=Lbottom(ng)
+              END DO
+            CASE ('Hout(imaxD)')
+              Npts=load_l(Nval, Cval, Ngrids, Lbottom)
+              i=idBott(imaxD)
+              DO ng=1,Ngrids
+                Hout(i,ng)=Lbottom(ng)
+              END DO
+            CASE ('Hout(idnet)')
+              Npts=load_l(Nval, Cval, Ngrids, Lbottom)
+              i=idBott(idnet)
+              DO ng=1,Ngrids
+                Hout(i,ng)=Lbottom(ng)
+              END DO
+#if defined COHESIVE_BED || defined SED_BIODIFF || defined MIXED_BED
+            CASE ('Hout(idoff)')
+              Npts=load_l(Nval, Cval, Ngrids, Lbottom)
+              i=idBott(idoff)
+              DO ng=1,Ngrids
+                Hout(i,ng)=Lbottom(ng)
+              END DO
+            CASE ('Hout(idslp)')
+              Npts=load_l(Nval, Cval, Ngrids, Lbottom)
+              i=idBott(idslp)
+              DO ng=1,Ngrids
+                Hout(i,ng)=Lbottom(ng)
+              END DO
+            CASE ('Hout(idtim)')
+              Npts=load_l(Nval, Cval, Ngrids, Lbottom)
+              i=idBott(idtim)
+              DO ng=1,Ngrids
+                Hout(i,ng)=Lbottom(ng)
+              END DO
+            CASE ('Hout(idbmx)')
+              Npts=load_l(Nval, Cval, Ngrids, Lbottom)
+              i=idBott(idbmx)
+              DO ng=1,Ngrids
+                Hout(i,ng)=Lbottom(ng)
+              END DO
+            CASE ('Hout(idbmm)')
+              Npts=load_l(Nval, Cval, Ngrids, Lbottom)
+              i=idBott(idbmm)
+              DO ng=1,Ngrids
+                Hout(i,ng)=Lbottom(ng)
+              END DO
+            CASE ('Hout(idbzs)')
+              Npts=load_l(Nval, Cval, Ngrids, Lbottom)
+              i=idBott(idbzs)
+              DO ng=1,Ngrids
+                Hout(i,ng)=Lbottom(ng)
+              END DO
+            CASE ('Hout(idbzm)')
+              Npts=load_l(Nval, Cval, Ngrids, Lbottom)
+              i=idBott(idbzm)
+              DO ng=1,Ngrids
+                Hout(i,ng)=Lbottom(ng)
+              END DO
+            CASE ('Hout(idbzp)')
+              Npts=load_l(Nval, Cval, Ngrids, Lbottom)
+              i=idBott(idbzp)
+              DO ng=1,Ngrids
+                Hout(i,ng)=Lbottom(ng)
+              END DO
+#endif 
+#if defined MIXED_BED
+            CASE ('Hout(idprp)')
+              Npts=load_l(Nval, Cval, Ngrids, Lbottom)
+              i=idBott(idprp)
+              DO ng=1,Ngrids
+                Hout(i,ng)=Lbottom(ng)
+              END DO
+#endif
 #if defined SED_FLOCS
             CASE ('l_ADS')
               Npts=load_l(Nval, Cval, Ngrids, l_ADS)
@@ -1004,7 +1170,7 @@
 #if defined SED_FLOCS && defined SED_DEFLOC
             CASE ('MUD_FRAC_EQ')
               IF (.not.allocated(mud_frac_eq)) THEN 
-                allocate (mud_frac_eq(NST,Ngrids))
+                allocate (mud_frac_eq(NCS,Ngrids))
               ENDIF
               Npts=load_r(Nval, Rval, NCS*Ngrids, Rmud)
               DO ng=1,Ngrids
@@ -1012,7 +1178,8 @@
                   mud_frac_eq(itrc,ng)=Rmud(itrc,ng)
                 END DO
               END DO
-	        CASE ('t_dfloc')
+	    CASE ('MUD_T_DFLOC')
+!              Npts=load_r(Nval, Rval, Ngrids, t_dfloc)
               Npts=load_r(Nval, Rval, Ngrids, Rbed)
                 DO ng=1,Ngrids
                   t_dfloc(ng)=Rbed(ng)
@@ -1024,25 +1191,6 @@
               DO ng=1,Ngrids
                 Hout(i,ng)=Lbed(ng)
               END DO
-#if defined SED_BIOMASS
-            CASE ('nTbiom')
-              Npts=load_l(Nval, Cval, Ngrids, nTbiom)
-            CASE ('SGR_DIAM')
-              Npts=load_r(Nval, Rval, Ngrids, Rbed)
-              DO ng=1,Ngrids
-                sgr_diam(ng)=Rbed(ng)
-              END DO
-            CASE ('SGR_DENS')
-              Npts=load_r(Nval, Rval, Ngrids, Rbed)
-              DO ng=1,Ngrids
-                sgr_density(ng)=Rbed(ng)
-              END DO
-            CASE ('SGR_HTHRES')
-              Npts=load_r(Nval, Rval, Ngrids, Rbed)
-              DO ng=1,Ngrids
-                sgr_Hthres(ng)=Rbed(ng)
-              END DO
-#endif
           END SELECT
         END IF
       END DO
@@ -1171,6 +1319,13 @@
      &            'Hout(idSbed)',                                       &
      &            'Write out BED property ', itrc, TRIM(Vname(1,i))
             END DO
+            DO itrc=1,MBOTP
+              i=idBott(itrc)
+              IF (Hout(i,ng)) WRITE (out,160) Hout(i,ng),               &
+     &           'Hout(idBott)',                                        &
+     &           'Write out BOTTOM property', itrc, TRIM(Vname(1,i))
+            END DO
+!
 #if defined AVERAGES    || \
    (defined AD_AVERAGES && defined ADJOINT) || \
    (defined RP_AVERAGES && defined TL_IOMS) || \

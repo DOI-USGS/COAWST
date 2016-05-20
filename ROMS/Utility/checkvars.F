@@ -4,7 +4,7 @@
 !
 !svn $Id: checkvars.F 733 2008-09-07 01:56:45Z jcwarner $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2014 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2016 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -43,6 +43,10 @@
 #if defined SEDIMENT || defined BBL_MODEL
       USE mod_sediment
 #endif
+#if defined VEGETATION 
+      USE mod_vegetation 
+      USE mod_vegarr
+#endif 
       USE mod_scalars
 !
 !  Imported variable declarations.
@@ -60,7 +64,7 @@
 !
 !  Local variable declarations.
 !
-      integer :: IDmod, i, itrc
+      integer :: IDmod, i, itrc, ivpr 
 !
       SourceFile='checkvars.F'
 !
@@ -159,6 +163,19 @@
         END DO
 #  endif
 # endif
+# ifdef VEGETATION 
+#  ifdef ANA_VEGETATION 
+        IF (nrrec(ng).ne.0) THEN
+          DO ivpr=1,NVEGP
+            get_var(idvprp(ivpr))=.TRUE.
+          END DO
+        END IF
+#  else
+        DO ivpr=1,NVEGP
+          get_var(idvprp(ivpr))=.TRUE.
+        END DO
+#  endif 
+# endif
 # ifdef SEDIMENT
 #  ifdef ANA_SEDIMENT
         IF (nrrec(ng).ne.0) THEN
@@ -209,7 +226,10 @@
         get_var(idHice)=.true.
         get_var(idTice)=.true.
         get_var(idHsno)=.true.
-        get_var(idSfwat)=.true.
+#  ifdef MELT_PONDS
+        get_var(idApond)=.true.
+        get_var(idHpond)=.true.
+#  endif
         get_var(idAgeice)=.true.
         get_var(idTimid)=.true.
         get_var(idSig11)=.true.
@@ -451,6 +471,17 @@
 # endif
           END IF
         END DO
+
+# ifdef VEGETATION 
+#  if defined VEG_DRAG || defined VEG_BIOMASS 
+        DO ivpr=1,NVEGP 
+          IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idvprp(ivpr)))) THEN
+            have_var(idvprp(ivpr))=.TRUE.
+          END IF 
+        END DO 
+#  endif  
+# endif 
+
 # ifdef SEDIMENT
         DO itrc=1,NST
           IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idfrac(itrc)))) THEN
@@ -494,8 +525,12 @@
           have_var(idTice)=.true.
         ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idHsno))) THEN
           have_var(idHsno)=.true.
-        ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idSfwat))) THEN
-          have_var(idSfwat)=.true.
+#  ifdef MELT_PONDS
+        ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idApond))) THEN
+          have_var(idApond)=.true.
+        ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idHpond))) THEN
+          have_var(idHpond)=.true.
+#  endif
         ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idAgeice))) THEN
           have_var(idAgeice)=.true.
         ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idTimid))) THEN
@@ -786,6 +821,22 @@
       END IF
 #  endif
 # endif
+
+# ifdef VEGETATION 
+#  if defined VEG_DRAG || defined VEG_BIOMASS 
+      DO ivpr=1,NVEGP 
+        IF (.not.have_var(idvprp(ivpr)).and.                            &
+     &      get_var(idvprp(ivpr))) THEN
+          IF (Master) WRITE (stdout,10) string,                         &
+     &                                  TRIM(Vname(1,idvprp(ivpr))),    &
+     &                                  TRIM(ncname)
+          exit_flag=2
+          RETURN
+        END IF
+      END DO
+#  endif
+# endif
+
 # ifdef SEDIMENT
       DO itrc=1,NST
         IF (.not.have_var(idfrac(itrc)).and.                            &
@@ -893,13 +944,22 @@
         exit_flag=2
         RETURN
       END IF
-      IF (.not.have_var(idSfwat)) THEN
+#  ifdef MELT_PONDS
+      IF (.not.have_var(idApond)) THEN
         IF (Master) WRITE (stdout,10) string,                           &
-     &                                TRIM(Vname(1,idSfwat)),           &
+     &                                TRIM(Vname(1,idApond)),           &
      &                                TRIM(ncname)
         exit_flag=2
         RETURN
       END IF
+      IF (.not.have_var(idHpond)) THEN
+        IF (Master) WRITE (stdout,10) string,                           &
+     &                                TRIM(Vname(1,idHpond)),           &
+     &                                TRIM(ncname)
+        exit_flag=2
+        RETURN
+      END IF
+#  endif
       IF (.not.have_var(idAgeice)) THEN
         IF (Master) WRITE (stdout,10) string,                           &
      &                                TRIM(Vname(1,idAgeice)),          &

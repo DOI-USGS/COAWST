@@ -1,10 +1,11 @@
 #include "cppdefs.h"
+#define LONG_NUMS
 #ifdef NONLINEAR
       SUBROUTINE output (ng)
 !
 !svn $Id: output.F 1597 2008-07-25 02:31:35Z jcwarner $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2014 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2016 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -110,7 +111,11 @@
             ifile=(iic(ng)-1)/ndefHIS(ng)+1
             IF (Master) THEN
               WRITE (HIS(ng)%name,10) TRIM(HIS(ng)%base), ifile
+#ifdef LONG_NUMS
+  10          FORMAT (a,'_',i5.5,'.nc')
+#else
   10          FORMAT (a,'_',i4.4,'.nc')
+#endif
             END IF
 # ifdef DISTRIBUTE
             CALL mp_bcasts (ng, iNLM, HIS(ng)%name)
@@ -204,8 +209,13 @@
               ifile=(iic(ng)-1)/ndefHIS2(ng)+1
             END IF
             IF (Master) THEN
-              WRITE (HIS2(ng)%name,20) TRIM(HIS2(ng)%base), ifile
+              WRITE (HIS2(ng)%name,12) TRIM(HIS2(ng)%base), ifile
             END IF
+#ifdef LONG_NUMS
+  12          FORMAT (a,'_',i5.5,'.nc')
+#else
+  12          FORMAT (a,'_',i4.4,'.nc')
+#endif
 # ifdef DISTRIBUTE
             CALL mp_bcasts (ng, iNLM, HIS2(ng)%name)
 # endif
@@ -285,7 +295,11 @@
             END IF
             IF (Master) THEN
               WRITE (AVG(ng)%name,20) TRIM(AVG(ng)%base), ifile
+#ifdef LONG_NUMS
+  20          FORMAT (a,'_',i5.5,'.nc')
+#else
   20          FORMAT (a,'_',i4.4,'.nc')
+#endif
             END IF
 #  ifdef DISTRIBUTE
             CALL mp_bcasts (ng, iNLM, AVG(ng)%name)
@@ -370,8 +384,13 @@
               ifile=(iic(ng)-1)/ndefAVG2(ng)+1
             END IF
             IF (Master) THEN
-              WRITE (AVG2(ng)%name,20) TRIM(AVG2(ng)%base), ifile
+              WRITE (AVG2(ng)%name,22) TRIM(AVG2(ng)%base), ifile
             END IF
+#ifdef LONG_NUMS
+  22          FORMAT (a,'_',i5.5,'.nc')
+#else
+  22          FORMAT (a,'_',i4.4,'.nc')
+#endif
 # ifdef DISTRIBUTE
             CALL mp_bcasts (ng, iNLM, AVG2(ng)%name)
 # endif
@@ -451,7 +470,11 @@
             END IF
             IF (Master) THEN
               WRITE (DIA(ng)%name,30) TRIM(DIA(ng)%base), ifile
+#ifdef LONG_NUMS
+  30          FORMAT (a,'_',i5.5,'.nc')
+#else
   30          FORMAT (a,'_',i4.4,'.nc')
+#endif
             END IF
 #  ifdef DISTRIBUTE
             CALL mp_bcasts (ng, iNLM, DIA(ng)%name)
@@ -498,7 +521,13 @@
 !  append new data to it.
 !
         IF (LdefSTA(ng).and.(iic(ng).eq.ntstart(ng))) THEN
+#if defined NEP5 || defined NEP6 || defined CASPIAN || defined CHUKCHI \
+           || defined CORAL || defined NWA || defined ARC_NATL \
+           || defined ARCTIC || defined NWGOA
+          CALL def_station (ng, .true.)
+#else
           CALL def_station (ng, ldefout(ng))
+#endif
           IF (exit_flag.ne.NoError) RETURN
           LdefSTA(ng)=.FALSE.
         END IF

@@ -1,8 +1,8 @@
 #!/bin/csh -f
 #
-# svn $Id: copyright.sh 429 2009-12-20 17:30:26Z arango $
+# svn $Id: copyright.sh 795 2016-05-11 01:42:43Z arango $
 #::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
-# Copyright (c) 2002-2015 The ROMS/TOMS Group                           :::
+# Copyright (c) 2002-2016 The ROMS/TOMS Group                           :::
 #   Licensed under a MIT/X style license                                :::
 #   See License_ROMS.txt                                                :::
 #:::::::::::::::::::::::::::::::::::::::::::::::::::::: David Robertson :::
@@ -27,16 +27,16 @@
 #                                                                       :::
 #::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 
-set search = "2002-2014 The ROMS/TOMS"
-set replace = "2002-2015 The ROMS/TOMS"
+set search = "2002-2015 The ROMS/TOMS"
+set replace = "2002-2016 The ROMS/TOMS"
 
 # Directories to search for replacements.
 
-set c_dirs = "Compilers Master ROMS User"
+set c_dirs = "Apps Compilers Master ROMS User"
 
 # Specific files not in the "c_dirs".
 
-set special_files = "makefile Waves/SWAN/Src/Module.mk Waves/SWAN/Src/waves_coupler.F"
+set special_files = "makefile Waves/SWAN/Src/Module.mk Waves/SWAN/Src/waves_coupler.F Waves/SWAN/Src/swancpp.h"
 
 set setsvn = 1
 
@@ -89,8 +89,10 @@ foreach FILE ( `find ${c_dirs} ! -path '*/.svn/*' ! -name 'copyright.*' -type f 
 
   if ( `echo $FILE | grep -vc '.svn/'` ) then
     if ( $verb == 1 ) then
+#      grep -l "${search}" $FILE && perl -i -pe "s|${search}|${replace}|g" $FILE
       grep -l "${search}" $FILE && sed -i -e "s|${search}|${replace}|g" $FILE
     else
+#      grep -l "${search}" $FILE > /dev/null && perl -i -pe "s|${search}|${replace}|g" $FILE
       grep -l "${search}" $FILE > /dev/null && sed -i -e "s|${search}|${replace}|g" $FILE
     endif
   else
@@ -103,8 +105,10 @@ end
 
 foreach FILE ( $special_files )
   if ( $verb == 1 ) then
+#    grep -l "${search}" $FILE && perl -i -pe "s|${search}|${replace}|g" $FILE
     grep -l "${search}" $FILE && sed -i -e "s|${search}|${replace}|g" $FILE
   else
+#    grep -l "${search}" $FILE > /dev/null && perl -i -pe "s|${search}|${replace}|g" $FILE
     grep -l "${search}" $FILE > /dev/null && sed -i -e "s|${search}|${replace}|g" $FILE
   endif
 end
@@ -114,14 +118,14 @@ echo "Done."
 echo ""
 
 if ( $setsvn == 1 ) then
-  svn propset -R copyright '(c) 2002-2015 The ROMS/TOMS Group' Compilers
-  svn propset -R copyright '(c) 2002-2015 The ROMS/TOMS Group' Data
-  svn propset -R copyright '(c) 2002-2015 The ROMS/TOMS Group' Master
-  svn propset -R copyright '(c) 2002-2015 The ROMS/TOMS Group' ROMS
-  svn propset -R copyright '(c) 2002-2015 The ROMS/TOMS Group' User
-  svn propset copyright '(c) 2002-2015 The ROMS/TOMS Group' . makefile
-  svn propset copyright '(c) 2002-2015 The ROMS/TOMS Group' Waves/SWAN/Src/Module.mk
-  svn propset copyright '(c) 2002-2015 The ROMS/TOMS Group' Waves/SWAN/Src/waves_coupler.F
+  svn propset -R copyright '(c) 2002-2016 The ROMS/TOMS Group' Compilers
+  svn propset -R copyright '(c) 2002-2016 The ROMS/TOMS Group' Data
+  svn propset -R copyright '(c) 2002-2016 The ROMS/TOMS Group' Master
+  svn propset -R copyright '(c) 2002-2016 The ROMS/TOMS Group' ROMS
+  svn propset -R copyright '(c) 2002-2016 The ROMS/TOMS Group' User
+  svn propset copyright '(c) 2002-2016 The ROMS/TOMS Group' . makefile
+  svn propset copyright '(c) 2002-2016 The ROMS/TOMS Group' Waves/SWAN/Src/Module.mk
+  svn propset copyright '(c) 2002-2016 The ROMS/TOMS Group' Waves/SWAN/Src/waves_coupler.F
 else
   echo ""
   echo "Not updating svn properties."

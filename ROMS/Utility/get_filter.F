@@ -962,34 +962,64 @@
           END IF
         END IF
       END IF
+#ifdef MELT_PONDS
 !
 !  Read in surface water
 !
-      IF (Aout(idSfwat,ng)) THEN
-        CALL netcdf_inq_varid (ng, iNLM, ncname, Vname(1,idSfwat),      &
+      IF (Aout(idApond,ng)) THEN
+        CALL netcdf_inq_varid (ng, iNLM, ncname, Vname(1,idApond),      &
      &                       FIL(10,ng)%ncid, varid)
         gtype=r2dvar
         status=nf_fread2d(ng, iNLM, ncname, FIL(10,ng)%ncid,            &
-     &                Vname(1,idSfwat), varid, tindx, gtype,            &
+     &                Vname(1,idApond), varid, tindx, gtype,            &
      &                Vsize, LBi, UBi, LBj, UBj,                        &
      &                Fscl, Fmin, Fmax,                                 &
 #   ifdef MASKING
      &                GRID(ng) % rmask,                                 &
 #   endif
-     &                FILTER(ng) % filsfwat(:,:,tindx))
+     &                FILTER(ng) % filapond(:,:,tindx))
         IF (status.ne.nf90_noerr) THEN
           IF (Master) THEN
-            WRITE (stdout,30) TRIM(Vname(1,idSfwat)), tindx, TRIM(ncname)
+            WRITE (stdout,30) TRIM(Vname(1,idApond)), tindx, TRIM(ncname)
           END IF
           exit_flag=2
           ioerror=status
           RETURN
         ELSE
           IF (Master) THEN
-            WRITE (stdout,40) TRIM(Vname(2,idSfwat)), Fmin, Fmax
+            WRITE (stdout,40) TRIM(Vname(2,idApond)), Fmin, Fmax
           END IF
         END IF
       END IF
+!
+!  Read in surface water
+!
+      IF (Aout(idHpond,ng)) THEN
+        CALL netcdf_inq_varid (ng, iNLM, ncname, Vname(1,idHpond),      &
+     &                       FIL(10,ng)%ncid, varid)
+        gtype=r2dvar
+        status=nf_fread2d(ng, iNLM, ncname, FIL(10,ng)%ncid,            &
+     &                Vname(1,idHpond), varid, tindx, gtype,            &
+     &                Vsize, LBi, UBi, LBj, UBj,                        &
+     &                Fscl, Fmin, Fmax,                                 &
+#   ifdef MASKING
+     &                GRID(ng) % rmask,                                 &
+#   endif
+     &                FILTER(ng) % filhpond(:,:,tindx))
+        IF (status.ne.nf90_noerr) THEN
+          IF (Master) THEN
+            WRITE (stdout,30) TRIM(Vname(1,idHpond)), tindx, TRIM(ncname)
+          END IF
+          exit_flag=2
+          ioerror=status
+          RETURN
+        ELSE
+          IF (Master) THEN
+            WRITE (stdout,40) TRIM(Vname(2,idHpond)), Fmin, Fmax
+          END IF
+        END IF
+      END IF
+#endif
 !
 !  Read in surface ice temperature
 !

@@ -2,7 +2,7 @@
 !
 !svn $Id: nl_ocean.h 814 2008-10-29 01:42:17Z jcwarner $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2015 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2016 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -295,6 +295,9 @@
       USE mod_iounits
       USE mod_ncparam
       USE mod_scalars
+#ifdef CICE_MODEL
+      USE CICE_FinalMod
+#endif
 !
 !  Local variable declarations.
 !
@@ -319,7 +322,7 @@
 !
 !  If cycling restart records, write solution into the next record.
 !
-      IF (exit_flag.eq.1) THEN
+      IF (exit_flag==1 .or. exit_flag==9) THEN
         DO ng=1,Ngrids
           IF (LwrtRST(ng)) THEN
             IF (Master) WRITE (stdout,10)
@@ -359,6 +362,10 @@
 !  Close IO files.
 !
       CALL close_out
+
+#ifdef CICE_MODEL
+      CALL CICE_Finalize
+#endif
 
       RETURN
       END SUBROUTINE ROMS_finalize

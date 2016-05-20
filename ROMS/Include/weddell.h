@@ -1,7 +1,7 @@
 /*
 ** svn $Id: weddell.h 429 2009-12-20 17:30:26Z arango $
 *******************************************************************************
-** Copyright (c) 2002-2014 The ROMS/TOMS Group                               **
+** Copyright (c) 2002-2016 The ROMS/TOMS Group                               **
 **   Licensed under a MIT/X style license                                    **
 **   See License_ROMS.txt                                                    **
 *******************************************************************************
@@ -19,6 +19,8 @@
 #define UV_QDRAG
 #undef  UV_VIS4
 #undef  MIX_S_UV
+#define SPLINES_VDIFF
+#define SPLINES_VVISC
 #define TS_A4HADVECTION
 #define TS_A4VADVECTION
 #undef  TS_DIF4
@@ -27,7 +29,6 @@
 #define SALINITY
 #define NONLIN_EOS
 #define CURVGRID
-#define SPLINES
 #define ICESHELF
 #define AVERAGES
 #define RADIATION_2D

@@ -3,7 +3,7 @@
 #ifdef ICE_MODEL
 !
 !=======================================================================
-!  Copyright (c) 2002-2014 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2016 The ROMS/TOMS Group                         !
 !================================================== Hernan G. Arango ===
 !                                                                      !
 !  This module computes the magnitude of the shear between the ice
@@ -109,9 +109,9 @@
       real(r8), intent(in) :: z_w(LBi:,LBj:,0:)
       real(r8), intent(in) :: u(LBi:,LBj:,:,:)
       real(r8), intent(in) :: v(LBi:,LBj:,:,:)
-#ifdef LMD_SKPP
+#  ifdef LMD_SKPP
       real(r8), intent(in) :: hsbl(LBi:,LBj:)
-#endif
+#  endif
       real(r8), intent(in) :: ui(LBi:,LBj:,:)
       real(r8), intent(in) :: vi(LBi:,LBj:,:)
       real(r8), intent(out) :: uwater(LBi:,LBj:)
@@ -122,7 +122,9 @@
       real(r8), intent(in) :: z_w(LBi:UBi,LBj:UBj,0:N(ng))
       real(r8), intent(in) :: u(LBi:UBi,LBj:UBj,N(ng),2)
       real(r8), intent(in) :: v(LBi:UBi,LBj:UBj,N(ng),2)
+#  ifdef LMD_SKPP
       real(r8), intent(in) :: hsbl(LBi:UBi,LBj:UBj)
+#  endif
       real(r8), intent(in) :: ui(LBi:UBi,LBj:UBj,2)
       real(r8), intent(in) :: vi(LBi:UBi,LBj:UBj,2)
       real(r8), intent(out) :: uwater(LBi:UBi,LBj:UBj)
@@ -149,10 +151,10 @@
 #  define J_RANGE MAX(Jstr-2,0),MIN(Jend+2,Mm(ng)+1)
       do j=J_RANGE
         do i=I_RANGE
-!         sl_dpth = lmd_epsilon*(z_w(i,j,N(ng))-Hsbl(i,j))
+!         sl_dpth = lmd_epsilon*(z_w(i,j,N(ng))-hsbl(i,j))
 #  ifdef LMD_SKPP
-! Hsbl is now a positive quantity
-          mlio = min(-Hsbl(i,j),-10._r8)
+! hsbl is now a positive quantity
+          mlio = min(-hsbl(i,j),-10._r8)
 #  else
           mlio = -10._r8
 #  endif

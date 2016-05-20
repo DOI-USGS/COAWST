@@ -3,7 +3,7 @@
 !
 !svn $Id: mod_param.F 838 2008-11-17 04:22:18Z jcwarner $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2014 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2016 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -453,7 +453,7 @@
 !  Number of biological tracers.
 !
       integer :: NBT = 0
-#if defined BIO_FENNEL && defined SPECTRAL_LIGHT
+#if defined ESTUARYBGC && defined SPECTRAL_LIGHT
       integer :: NBAND = 0
 #endif
 !
@@ -889,8 +889,8 @@
       NDM2d=NDM2d+8  ! zeta, zetaw, zqsp, zbeh (all 4 = prsgrd),
                        ! K- and Horiz- VF, roller, break
 #   endif
-#   ifdef SGR_FLOW
-      NDM2d=NDM2d+1  ! Resistance imposed on the flow by seagrass
+#   if defined VEGETATION && defined VEG_DRAG 
+      NDM2d=NDM2d+1  ! Resistance imposed on the flow by vegetation
 #   endif
 #   ifdef UV_COR
       NDM2d=NDM2d+1  ! Coriolis
@@ -928,8 +928,8 @@
       NDM3d=NDM3d+5  ! wave break, roller, K- Horiz and Jvert- VF
       NDrhs=NDrhs+5
 #   endif
-#   ifdef SGR_FLOW
-      NDM3d=NDM3d+1  ! Resistance imposed on the flow by seagrass
+#   if defined VEGETATION && defined VEG_DRAG
+      NDM3d=NDM3d+1  ! Resistance imposed on the flow by vegetation
       NDrhs=NDrhs+1
 #   endif
 #   ifdef UV_COR

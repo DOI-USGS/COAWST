@@ -1,7 +1,7 @@
 /*
 ** svn $Id: test_chan.h 429 2009-12-20 17:30:26Z arango $
 *******************************************************************************
-** Copyright (c) 2002-2014 The ROMS/TOMS Group                               **
+** Copyright (c) 2002-2016 The ROMS/TOMS Group                               **
 **   Licensed under a MIT/X style license                                    **
 **   See License_ROMS.txt                                                    **
 *******************************************************************************
@@ -20,7 +20,8 @@
 #define UV_ADV
 #undef  SALINITY
 #define SOLVE3D
-#define SPLINES
+#define SPLINES_VDIFF
+#define SPLINES_VVISC
 #define ANA_INITIAL
 #define ANA_SMFLUX
 #define ANA_STFLUX
@@ -39,5 +40,6 @@
 #define GLS_MIXING
 #define KANTHA_CLAYSON
 #define N2S2_HORAVG
+#define RI_SPLINES
 #define UV_LOGDRAG
 #undef  PERFECT_RESTART

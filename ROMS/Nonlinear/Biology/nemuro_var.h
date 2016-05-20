@@ -1,7 +1,7 @@
 /*
 ** svn $Id$
 *************************************************** Hernan G. Arango ***
-** Copyright (c) 2002-2014 The ROMS/TOMS Group                        **
+** Copyright (c) 2002-2016 The ROMS/TOMS Group                        **
 **   Licensed under a MIT/X style license                             **
 **   See License_ROMS.txt                                             **
 ************************************************************************
@@ -195,11 +195,9 @@
                 idTbry(inorth,iFeD_)=varid
 # endif
 
-
 !
 ! Biological tracers point Source/Sinks (river runoff).
 !
-
               CASE ('idRtrc(iNO3_)')
                 idRtrc(iNO3_)=varid
               CASE ('idRtrc(iNH4_)')

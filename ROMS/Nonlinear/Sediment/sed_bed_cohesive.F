@@ -889,9 +889,13 @@ minlayer_thick(ng) = newlayer_thick(ng)
           END DO I_LOOP3 
 
 #if defined SED_FLOCS && defined SED_DEFLOC
-          alpha = MIN(dt(ng)/t_dfloc(ng),1.0_r8)
           I_LOOP_DFL: DO i=Istr,Iend
-            DO k=2,Nbed
+!        Activate defloc in all layers but the top one
+!            DO k=2,Nbed 
+!        Activate defloc in all layers
+            DO k=1,Nbed
+              alpha = MIN((time(ng)-bed(i,j,k,iaged))/t_dfloc(ng),      &
+     &                  1.0_r8)
               cff3=0.0_r8
               DO ised=1,NST
                 cff3=cff3+bed_mass(i,j,k,nnew,ised)

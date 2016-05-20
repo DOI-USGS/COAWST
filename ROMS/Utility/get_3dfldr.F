@@ -10,7 +10,7 @@
 !
 !svn $Id: get_3dfldr.F 1598 2008-07-25 03:29:09Z jcwarner $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2015 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2016 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================

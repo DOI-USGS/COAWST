@@ -223,7 +223,22 @@
 !   colorFR1  Color fraction for labile DOC [nondimensional].          !
 !                                                                      !
 !   colorFR2  Color fraction for semi-labile DOC [nondimensional].     !
-!=======================================================================
+!           							       !	
+!   T_Fe      Iron uptake timescale [day]                              !
+!								       !
+!   A_Fe      Empirical FE:C power [nondimensional]                    !
+!  								       !
+!   B_Fe      Empirical FE:C coefficient [meter-1 C]                   !
+!        							       !
+!   S1_FeC    Small phytoplankton Fe:C at F=0.5 [muM-Fe/M-C]           !
+!                                                                      !
+!   S2_FeC    Diatom Fe:C at F=0.5 [muM-Fe/M-C]                        !
+! 								       !
+!   S3_FeC    Coccolithophores Fe:C at F=0.5 [muM-Fe/M-C]              !
+! 								       !	
+!   FeRR      Fe remineralization rate [day-1]                         !
+!								       !
+!======================================================================!
 !
       USE mod_param
 
@@ -267,6 +282,37 @@
       integer :: iTIC_                 ! Total inorganic carbon
       integer :: iTAlk                 ! Total alkalinity
 #endif
+# ifdef IRON_LIMIT
+      integer :: iS1_Fe                 ! Small phytoplankton iron
+      integer :: iS2_Fe                 ! Diatom concentration iron
+      integer :: iS3_Fe                 ! coccolithophores concentration iron
+      integer :: iFeD_                  ! Available dissolved iron
+# endif
+
+#if defined DIAGNOSTICS_BIO
+!
+!  Biological 2D diagnostic variable IDs.
+!
+      integer, allocatable :: iDbio2(:)       ! 2D biological terms
+
+#ifdef CARBON
+      integer  :: iCOfx                       ! air-sea CO2 flux
+      integer  :: ipCO2                       ! partial pressure of CO2
+#endif
+#ifdef OXYGEN
+      integer  :: iO2fx                       ! air-sea O2 flux
+#endif
+!
+!  Biological 3D diagnostic variable IDs.
+!
+      integer, allocatable :: iDbio3(:)       ! 3D biological terms
+
+      integer  :: iPPro1                      ! primary productivity
+      integer  :: iPPro2                      ! primary productivity
+      integer  :: iPPro3                      ! primary productivity
+      integer  :: iNO3u                       ! NO3 uptake
+#endif
+
 
       integer, allocatable :: BioIter(:)
 
@@ -365,6 +411,15 @@
       real(r8), allocatable :: RtUVSDIC(:)        ! mmol_C/m2/d
       real(r8), allocatable :: colorFR1(:)        ! nondimensional
       real(r8), allocatable :: colorFR2(:)        ! nondimensional
+#ifdef IRON_LIMIT
+      real(r8), allocatable :: T_Fe(:)               ! day
+      real(r8), allocatable :: A_Fe(:)               ! nondimensional
+      real(r8), allocatable :: B_Fe(:)               ! 1/M-C
+      real(r8), allocatable :: S1_FeC(:)             ! muM-Fe/M-C
+      real(r8), allocatable :: S2_FeC(:)             ! muM-Fe/M-C
+      real(r8), allocatable :: S3_FeC(:)             ! muM-Fe/M-C
+      real(r8), allocatable :: FeRR(:)               ! 1/day
+#endif
 
       CONTAINS
 
@@ -398,6 +453,28 @@
       NBT=28
 # endif
 #endif
+#ifdef IRON_LIMIT
+      NBT = NBT + 4
+#endif
+
+#if defined DIAGNOSTICS_BIO
+!
+!-----------------------------------------------------------------------
+!  Set sources and sinks biology diagnostic parameters.
+!-----------------------------------------------------------------------
+!
+!  Set number of diagnostics terms.
+!
+      NDbio3d=4
+      NDbio2d=0
+# ifdef CARBON
+      NDbio2d=NDbio2d+2
+# endif
+# ifdef OXYGEN
+      NDbio2d=NDbio2d+1
+# endif
+#endif
+
 !-----------------------------------------------------------------------
 !  Allocate various module variables.
 !-----------------------------------------------------------------------
@@ -689,6 +766,42 @@
       IF (.not.allocated(colorFR2)) THEN
         allocate ( colorFR2(Ngrids) )
       END IF
+#ifdef IRON_LIMIT
+      IF (.not.allocated(T_Fe)) THEN
+        allocate ( T_Fe(Ngrids) )
+      END IF
+      IF (.not.allocated(A_Fe)) THEN
+        allocate ( A_Fe(Ngrids) )
+      END IF
+      IF (.not.allocated(B_Fe)) THEN
+        allocate ( B_Fe(Ngrids) )
+      END IF
+      IF (.not.allocated(S1_FeC)) THEN
+        allocate ( S1_FeC(Ngrids) )
+      END IF
+      IF (.not.allocated(S2_FeC)) THEN
+        allocate ( S2_FeC(Ngrids) )
+      END IF
+      IF (.not.allocated(S3_FeC)) THEN
+        allocate ( S3_FeC(Ngrids) )
+      END IF
+      IF (.not.allocated(FeRR)) THEN
+        allocate ( FeRR(Ngrids) )
+      END IF
+#endif
+
+#if defined DIAGNOSTICS_BIO
+!
+!  Allocate biological diagnostics vectors
+!
+      IF (.not.allocated(iDbio2)) THEN
+        allocate ( iDbio2(NDbio2d) )
+      END IF
+      IF (.not.allocated(iDbio3)) THEN
+        allocate ( iDbio3(NDbio3d) )
+      END IF
+#endif
+
 !
 !-----------------------------------------------------------------------
 !  Initialize tracer identification indices.
@@ -744,6 +857,40 @@
       iTAlk=ic+2
       ic=ic+2
 # endif
+# ifdef IRON_LIMIT
+      iS1_Fe=ic+1
+      iS2_Fe=ic+2
+      iS3_Fe=ic+3
+      iFeD_=ic+4
+      ic=ic+4
+# endif
+
+#if defined DIAGNOSTICS_BIO
+      ! 2D Diagnostic variables
+      DO i=1,NDbio2d
+        iDbio2(i)=i
+      END DO
+      ic=0
+# ifdef CARBON
+      iCOfx=ic+1
+      ipCO2=ic+2
+      ic=ic+2
+# endif
+# ifdef OXYGEN
+      iO2fx=ic+1
+      ic=ic+1
+# endif
+      ! 3D Diagnostic variables
+      DO i=1,NDbio3d
+        iDbio3(i)=i
+      END DO
+      ic=0
+      iPPro1=ic+1
+      iPPro2=ic+2
+      iPPro3=ic+3
+      iNO3u=ic+4
+      ic=ic+4
+#endif
 
       RETURN
       END SUBROUTINE initialize_biology

@@ -3,7 +3,7 @@
 !
 !svn $Id$
 !========================================================= Hernan G. Arango ===
-!  Copyright (c) 2002-2015 The ROMS/TOMS Group                                !
+!  Copyright (c) 2002-2016 The ROMS/TOMS Group                                !
 !    Licensed under a MIT/X style license                                     !
 !    See License_ROMS.txt                                                     !
 !==============================================================================
@@ -388,6 +388,16 @@ ZOS_HSIG_ALPHA == 2*0.5d0                  ! roughness from wave amplitude
        ZNUDG == 2*0.0d0                    ! days
       M2NUDG == 2*0.0d0                    ! days
       M3NUDG == 2*0.0d0                    ! days
+
+! Nudging/relaxation time scale for surface salinity nudging, inverse
+! scales will be computed internally, [1:Ngrids].
+
+       TNUDG_SSS == 90.0d0                 ! days
+
+! Threshold to trigger SSS correction toward climatolgy,
+! needs SCORRECTION and SSSC_THRESHOLD defined
+
+       SSS_MISMATCH_THRESHOLD = 0.2d0
 
 ! Factor between passive (outflow) and active (inflow) open boundary
 ! conditions, [1:Ngrids]. If OBCFAC > 1, nudging on inflow is stronger
@@ -1799,6 +1809,10 @@ Dout(iTvdif) == 2*T 2*T ! temp_vdiff, ...    vertical diffusion
 ! M2NUDG       Nudging time scale (days) for 2D momentum.
 !
 ! M3NUDG       Nudging time scale (days) for 3D momentum.
+!
+! TNUDG_SSS    Nudging time scale (days) for surface salinity.
+!
+! SSS_MISMATCH_THRESHOLD   Threshold to trigger SSS correction.
 !
 ! OBCFAC       Factor between passive (outflow) and active (inflow) open
 !                boundary conditions.  The nudging time scales for the

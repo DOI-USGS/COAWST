@@ -8,7 +8,7 @@
 !
 !svn $Id: get_2dfld.F 1598 2008-07-25 03:29:09Z jcwarner $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2014 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2016 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -77,8 +77,8 @@
       integer :: gtype, job, lend, lstr, lvar, status
       integer :: Vsize(4)
 
-      real(r8) :: Clength, Fmax, Fmin, Tdelta, Tend
-      real(r8) :: Tmax, Tmin, Tmono, Tscale, Tstr
+      real(r8) :: Clength, Fmax, Fmin, Tdelta
+      real(r8) :: Tmax, Tmin, Tmono, Tscale
       real(r8) :: Fval, Tval
 
       character (len=14) :: t_code
@@ -265,12 +265,6 @@
       END IF
 !
 
-  10  FORMAT (/,' GET_2DFLD   - unable to find dimension ',a,           &
-     &        /,15x,'for variable: ',a,/,15x,'in file: ',a,             &
-     &        /,15x,'file is not CF compliant...')
-  20  FORMAT (/,' GET_2DFLD   - unable to find requested variable: ',a, &
-     &        /,15x,'in ',a)
-  30  FORMAT (/,' GET_2DFLD   - unable to open input NetCDF file: ',a)
   40  FORMAT (/,' GET_2DFLD   - error while reading variable: ',a,2x,   &
      &        ' at TIME index = ',i7)
   50  FORMAT (3x,' GET_2DFLD   - ',a,/,19x,'(Min = ',1p,e15.8,0p,       &

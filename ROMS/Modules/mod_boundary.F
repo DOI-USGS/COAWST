@@ -3,7 +3,7 @@
 !
 !svn $Id: mod_boundary.F 793 2008-10-15 13:57:18Z jcwarner $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2015 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2016 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -668,16 +668,26 @@
           real(r8), pointer :: tiG_north(:,:)
 # endif
 
-          real(r8), pointer :: sfwat_west(:)
-          real(r8), pointer :: sfwat_east(:)
-          real(r8), pointer :: sfwat_south(:)
-          real(r8), pointer :: sfwat_north(:)
+# ifdef MELT_PONDS
+          real(r8), pointer :: apond_west(:)
+          real(r8), pointer :: apond_east(:)
+          real(r8), pointer :: apond_south(:)
+          real(r8), pointer :: apond_north(:)
+          real(r8), pointer :: hpond_west(:)
+          real(r8), pointer :: hpond_east(:)
+          real(r8), pointer :: hpond_south(:)
+          real(r8), pointer :: hpond_north(:)
 
-# ifndef ANA_SFWATOBC
-          real(r8), pointer :: sfwatG_west(:,:)
-          real(r8), pointer :: sfwatG_east(:,:)
-          real(r8), pointer :: sfwatG_south(:,:)
-          real(r8), pointer :: sfwatG_north(:,:)
+#  ifndef ANA_SFWATOBC
+          real(r8), pointer :: apondG_west(:,:)
+          real(r8), pointer :: apondG_east(:,:)
+          real(r8), pointer :: apondG_south(:,:)
+          real(r8), pointer :: apondG_north(:,:)
+          real(r8), pointer :: hpondG_west(:,:)
+          real(r8), pointer :: hpondG_east(:,:)
+          real(r8), pointer :: hpondG_south(:,:)
+          real(r8), pointer :: hpondG_north(:,:)
+#  endif
 # endif
 
           real(r8), pointer :: sig11_west(:)
@@ -1585,24 +1595,42 @@
       END IF
 # endif
 
-      allocate ( BOUNDARY(ng) % sfwat_west(LBj:UBj) )
-      allocate ( BOUNDARY(ng) % sfwat_east(LBj:UBj) )
-      allocate ( BOUNDARY(ng) % sfwat_south(LBi:UBi) )
-      allocate ( BOUNDARY(ng) % sfwat_north(LBi:UBi) )
+# ifdef MELT_PONDS
+      allocate ( BOUNDARY(ng) % apond_west(LBj:UBj) )
+      allocate ( BOUNDARY(ng) % apond_east(LBj:UBj) )
+      allocate ( BOUNDARY(ng) % apond_south(LBi:UBi) )
+      allocate ( BOUNDARY(ng) % apond_north(LBi:UBi) )
+      allocate ( BOUNDARY(ng) % hpond_west(LBj:UBj) )
+      allocate ( BOUNDARY(ng) % hpond_east(LBj:UBj) )
+      allocate ( BOUNDARY(ng) % hpond_south(LBi:UBi) )
+      allocate ( BOUNDARY(ng) % hpond_north(LBi:UBi) )
 
-# ifndef ANA_SFWATOBC
-      IF (LBC(iwest,isSfwat,ng)%acquire) THEN
-        allocate ( BOUNDARY(ng) % sfwatG_west(LBj:UBj,2) )
+#  ifndef ANA_SFWATOBC
+      IF (LBC(iwest,isApond,ng)%acquire) THEN
+        allocate ( BOUNDARY(ng) % apondG_west(LBj:UBj,2) )
       END IF
-      IF (LBC(ieast,isSfwat,ng)%acquire) THEN
-        allocate ( BOUNDARY(ng) % sfwatG_east(LBj:UBj,2) )
+      IF (LBC(ieast,isApond,ng)%acquire) THEN
+        allocate ( BOUNDARY(ng) % apondG_east(LBj:UBj,2) )
       END IF
-      IF (LBC(isouth,isSfwat,ng)%acquire) THEN
-        allocate ( BOUNDARY(ng) % sfwatG_south(LBi:UBi,2) )
+      IF (LBC(isouth,isApond,ng)%acquire) THEN
+        allocate ( BOUNDARY(ng) % apondG_south(LBi:UBi,2) )
       END IF
-      IF (LBC(inorth,isSfwat,ng)%acquire) THEN
-        allocate ( BOUNDARY(ng) % sfwatG_north(LBi:UBi,2) )
+      IF (LBC(inorth,isApond,ng)%acquire) THEN
+        allocate ( BOUNDARY(ng) % apondG_north(LBi:UBi,2) )
       END IF
+      IF (LBC(iwest,isHpond,ng)%acquire) THEN
+        allocate ( BOUNDARY(ng) % hpondG_west(LBj:UBj,2) )
+      END IF
+      IF (LBC(ieast,isHpond,ng)%acquire) THEN
+        allocate ( BOUNDARY(ng) % hpondG_east(LBj:UBj,2) )
+      END IF
+      IF (LBC(isouth,isHpond,ng)%acquire) THEN
+        allocate ( BOUNDARY(ng) % hpondG_south(LBi:UBi,2) )
+      END IF
+      IF (LBC(inorth,isHpond,ng)%acquire) THEN
+        allocate ( BOUNDARY(ng) % hpondG_north(LBi:UBi,2) )
+      END IF
+#  endif
 # endif
 
       allocate ( BOUNDARY(ng) % sig11_west(LBj:UBj) )
@@ -2119,15 +2147,25 @@
           BOUNDARY(ng) % tiG_west = IniVal
         END IF
 #  endif
+#  ifdef MELT_PONDS
         IF (DOMAIN(ng)%NorthWest_Test(tile).and.                        &
-     &      LBC(iwest,isSfwat,ng)%acquire) THEN
-          BOUNDARY(ng) % sfwat_west = IniVal
+     &      LBC(iwest,isApond,ng)%acquire) THEN
+          BOUNDARY(ng) % apond_west = IniVal
         END IF
-#  ifndef ANA_SFWATOBC
         IF (DOMAIN(ng)%NorthWest_Test(tile).and.                        &
-     &      LBC(iwest,isSfwat,ng)%acquire) THEN
-          BOUNDARY(ng) % sfwatG_west = IniVal
+     &      LBC(iwest,isHpond,ng)%acquire) THEN
+          BOUNDARY(ng) % hpond_west = IniVal
         END IF
+#   ifndef ANA_SFWATOBC
+        IF (DOMAIN(ng)%NorthWest_Test(tile).and.                        &
+     &      LBC(iwest,isApond,ng)%acquire) THEN
+          BOUNDARY(ng) % apondG_west = IniVal
+        END IF
+        IF (DOMAIN(ng)%NorthWest_Test(tile).and.                        &
+     &      LBC(iwest,isHpond,ng)%acquire) THEN
+          BOUNDARY(ng) % hpondG_west = IniVal
+        END IF
+#   endif
 #  endif
         IF (DOMAIN(ng)%NorthWest_Test(tile).and.                        &
      &      LBC(iwest,isSig11,ng)%acquire) THEN
@@ -2220,15 +2258,25 @@
           BOUNDARY(ng) % tiG_east = IniVal
         END IF
 #  endif
+#  ifdef MELT_PONDS
         IF (DOMAIN(ng)%SouthEast_Test(tile).and.                        &
-     &      LBC(ieast,isSfwat,ng)%acquire) THEN
-          BOUNDARY(ng) % sfwat_east = IniVal
+     &      LBC(ieast,isApond,ng)%acquire) THEN
+          BOUNDARY(ng) % apond_east = IniVal
         END IF
-#  ifndef ANA_SFWATOBC
         IF (DOMAIN(ng)%SouthEast_Test(tile).and.                        &
-     &      LBC(ieast,isSfwat,ng)%acquire) THEN
-          BOUNDARY(ng) % sfwatG_east = IniVal
+     &      LBC(ieast,isHpond,ng)%acquire) THEN
+          BOUNDARY(ng) % hpond_east = IniVal
         END IF
+#   ifndef ANA_SFWATOBC
+        IF (DOMAIN(ng)%SouthEast_Test(tile).and.                        &
+     &      LBC(ieast,isApond,ng)%acquire) THEN
+          BOUNDARY(ng) % apondG_east = IniVal
+        END IF
+        IF (DOMAIN(ng)%SouthEast_Test(tile).and.                        &
+     &      LBC(ieast,isHpond,ng)%acquire) THEN
+          BOUNDARY(ng) % hpondG_east = IniVal
+        END IF
+#   endif
 #  endif
         IF (DOMAIN(ng)%SouthEast_Test(tile).and.                        &
      &      LBC(ieast,isSig11,ng)%acquire) THEN
@@ -2320,15 +2368,25 @@
           BOUNDARY(ng) % tiG_south = IniVal
         END IF
 #  endif
+#  ifdef MELT_PONDS
         IF (DOMAIN(ng)%SouthWest_Test(tile).and.                        &
-     &      LBC(isouth,isSfwat,ng)%acquire) THEN
-          BOUNDARY(ng) % sfwat_south = IniVal
+     &      LBC(isouth,isApond,ng)%acquire) THEN
+          BOUNDARY(ng) % apond_south = IniVal
         END IF
-#  ifndef ANA_SFWATOBC
         IF (DOMAIN(ng)%SouthWest_Test(tile).and.                        &
-     &      LBC(isouth,isSfwat,ng)%acquire) THEN
-          BOUNDARY(ng) % sfwatG_south = IniVal
+     &      LBC(isouth,isHpond,ng)%acquire) THEN
+          BOUNDARY(ng) % hpond_south = IniVal
         END IF
+#   ifndef ANA_SFWATOBC
+        IF (DOMAIN(ng)%SouthWest_Test(tile).and.                        &
+     &      LBC(isouth,isApond,ng)%acquire) THEN
+          BOUNDARY(ng) % apondG_south = IniVal
+        END IF
+        IF (DOMAIN(ng)%SouthWest_Test(tile).and.                        &
+     &      LBC(isouth,isHpond,ng)%acquire) THEN
+          BOUNDARY(ng) % hpondG_south = IniVal
+        END IF
+#   endif
 #  endif
         IF (DOMAIN(ng)%SouthWest_Test(tile).and.                        &
      &      LBC(isouth,isSig11,ng)%acquire) THEN
@@ -2420,15 +2478,25 @@
           BOUNDARY(ng) % tiG_north = IniVal
         END IF
 #  endif
+#  ifdef MELT_PONDS
         IF (DOMAIN(ng)%NorthEast_Test(tile).and.                        &
-     &      LBC(inorth,isSfwat,ng)%acquire) THEN
-          BOUNDARY(ng) % sfwat_north = IniVal
+     &      LBC(inorth,isApond,ng)%acquire) THEN
+          BOUNDARY(ng) % apond_north = IniVal
         END IF
-#  ifndef ANA_SFWATOBC
         IF (DOMAIN(ng)%NorthEast_Test(tile).and.                        &
-     &      LBC(inorth,isSfwat,ng)%acquire) THEN
-          BOUNDARY(ng) % sfwatG_north = IniVal
+     &      LBC(inorth,isHpond,ng)%acquire) THEN
+          BOUNDARY(ng) % hpond_north = IniVal
         END IF
+#   ifndef ANA_SFWATOBC
+        IF (DOMAIN(ng)%NorthEast_Test(tile).and.                        &
+     &      LBC(inorth,isApond,ng)%acquire) THEN
+          BOUNDARY(ng) % apondG_north = IniVal
+        END IF
+        IF (DOMAIN(ng)%NorthEast_Test(tile).and.                        &
+     &      LBC(inorth,isHpond,ng)%acquire) THEN
+          BOUNDARY(ng) % hpondG_north = IniVal
+        END IF
+#   endif
 #  endif
         IF (DOMAIN(ng)%NorthEast_Test(tile).and.                        &
      &      LBC(inorth,isSig11,ng)%acquire) THEN

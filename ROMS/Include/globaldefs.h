@@ -3,7 +3,7 @@
 **
 ** svn $Id: globaldefs.h 838 2008-11-17 04:22:18Z jcwarner $
 ********************************************************** Hernan G. Arango ***
-** Copyright (c) 2002-2015 The ROMS/TOMS Group     Alexander F. Shchepetkin  **
+** Copyright (c) 2002-2016 The ROMS/TOMS Group     Alexander F. Shchepetkin  **
 **   Licensed under a MIT/X style license                                    **
 **   See License_ROMS.txt                                                    **
 *******************************************************************************
@@ -492,7 +492,7 @@
 ** Richardson number horizontally and/or vertically.
 */
 
-#ifdef SPLINES
+#ifdef RI_SPLINES
 # if defined LMD_MIXING
 #  undef RI_HORAVG
 #  undef RI_VERAVG
@@ -538,9 +538,11 @@
 */
 
 #if defined BIO_FENNEL  || defined ECOSIM      || \
-    defined NEMURO      || defined NPZD_FRANKS || \
+    defined ESTUARYBGC  || defined NEMURO      || \
+    defined NPZD_FRANKS ||                        \
     defined NPZD_IRON   || defined NPZD_POWELL || \
-    defined BIO_UMAINE  || defined BEST_NPZ
+    defined BIO_UMAINE  || defined BEST_NPZ    || \
+    defined RED_TIDE
 # define BIOLOGY
 #endif
 
@@ -609,7 +611,6 @@
 #  define MCT_INTERP_WV2AT
 # endif
 #endif
-
 
 /*
 ** Define internal option to process wave data.
@@ -722,7 +723,8 @@
     (!defined AIR_OCEAN    && !defined BULK_FLUXES  && !defined ANA_STFLUX)  || \
     ( defined BIOLOGY      && !defined ANA_SPFLUX)   || \
     ( defined BIOLOGY      && !defined ANA_BPFLUX)   || \
-    ( defined BULK_FLUXES  && !defined LONGWAVE  && !defined AIR_OCEAN)      || \
+    ( defined BULK_FLUXES  && !defined LONGWAVE  && !defined ANA_LRFLUX      && \
+     !defined AIR_OCEAN)      || \
     ( defined BULK_FLUXES  && (!defined ANA_PAIR && !defined AIR_OCEAN))     || \
     ( defined BULK_FLUXES  && (!defined ANA_TAIR && !defined AIR_OCEAN))     || \
     ( defined BULK_FLUXES  && (!defined ANA_HUMIDITY && !defined AIR_OCEAN)) || \
@@ -731,11 +733,13 @@
     ( defined BULK_FLUXES  && (!defined ANA_WINDS    && !defined AIR_OCEAN)) || \
     ( defined BULK_FLUXES  && (!defined ANA_SRFLUX   && !defined AIR_OCEAN)) || \
     ( defined LMD_SKPP     && (!defined ANA_SRFLUX   && !defined AIR_OCEAN)) || \
+      defined RED_TIDE     || \
     ( defined SALINITY     && !defined ANA_SSFLUX    && \
      (defined BULK_FLUXES  && !defined EMINUSP))     || \
     ( defined SOLAR_SOURCE && (!defined ANA_SRFLUX   && !defined AIR_OCEAN)) || \
     ( defined  SSH_TIDES   || defined UV_TIDES)      || \
-    ( defined BBL_MODEL    && (!defined ANA_WWAVE  && !defined WAVES_OCEAN)) || \
+    ( defined BBL_MODEL    && (!defined ANA_WWAVE  && !defined WAVES_OCEAN && \
+                               !defined INWAVE_MODEL)) || \
     ( defined SEDIMENT     && !defined ANA_SPFLUX)   || \
     ( defined SEDIMENT     && !defined ANA_BPFLUX)   || \
     ( defined WAVE_DATA    && (!defined ANA_WWAVE    && \
@@ -769,7 +773,8 @@
     ( defined BIOLOGY     && !defined ANA_BIOLOGY)  || \
     ( defined T_PASSIVE   && !defined ANA_PASSIVE)  || \
     ( defined SEDIMENT    && !defined ANA_SEDIMENT) || \
-    ( defined BBL_MODEL   && !defined ANA_SEDIMENT)
+    ( defined BBL_MODEL   && !defined ANA_SEDIMENT) || \
+    ( defined VEGETATION  && !defined ANA_VEGETATION)
 # define INI_FILE
 #endif
 
@@ -777,6 +782,10 @@
 ** Define internal shortwave radiation option.  Undefine analytical
 ** shortwave option if not needed.
 */
+
+#ifdef CICE_MODEL
+# define BULK_FLUXES
+#endif
 
 #if defined LMD_SKPP     || defined SOLAR_SOURCE   || \
     defined BULK_FLUXES  || defined BIOLOGY        || \
@@ -810,8 +819,8 @@
 ** Check for calling albedo function
 */
 
-#if defined ALBEDO_CLOUD || defined ALBEDO_CCSM3 || defined ALBEDO_CSIM \
-  || defined ALBEDO_CURVE  || defined ALBEDO_FILE
+#if defined ALBEDO_CLOUD   || defined ALBEDO_CSIM \
+  || defined ALBEDO_CURVE  || defined ALBEDO_FILE || defined ANA_ALBEDO
 # define ALBEDO
 #endif
 
@@ -824,9 +833,6 @@
 # if defined DIAGNOSTICS_TS
 #   undef DIAGNOSTICS_TS
 # endif
-#endif
-#if !defined BIO_FENNEL && defined DIAGNOSTICS_BIO
-#  undef DIAGNOSTICS_BIO
 #endif
 #if defined DIAGNOSTICS_BIO || defined DIAGNOSTICS_TS || \
     defined DIAGNOSTICS_UV
@@ -917,5 +923,12 @@
 # define DIFF_3DCOEF
 #endif
 #if !defined VISC_3DCOEF && defined UV_SMAGORINSKY
+# define VISC_3DCOEF
+#endif
+
+/*
+** Define internal switch for vegetation horizontal mixing 
+*/
+#if defined VEG_HMIXING  
 # define VISC_3DCOEF
 #endif

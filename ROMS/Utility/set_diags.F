@@ -4,7 +4,7 @@
 !
 !svn $Id: set_diags.F 1598 2008-07-25 03:29:09Z jcwarner $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2014 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2016 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -56,7 +56,7 @@
 !***********************************************************************
 !
       USE mod_param
-# if defined DIAGNOSTICS_BIO && defined BIO_FENNEL
+# if defined DIAGNOSTICS_BIO
       USE mod_biology
 # endif
       USE mod_diags
@@ -72,8 +72,7 @@
       USE exchange_2d_mod
 # endif
 # ifdef DISTRIBUTE
-#  if defined WET_DRY         || \
-     (defined DIAGNOSTICS_BIO && defined BIO_FENNEL)
+#  if defined WET_DRY || defined DIAGNOSTICS_BIO
       USE mp_exchange_mod, ONLY : mp_exchange2d
 #  endif
       USE mp_exchange_mod, ONLY : mp_exchange3d
@@ -458,7 +457,7 @@
           END DO
         END DO
 # endif
-# if defined DIAGNOSTICS_BIO && defined BIO_FENNEL
+# if defined DIAGNOSTICS_BIO
         DO idiag=1,NDbio2d
           IF (idiag.ne.ipCO2) THEN
             DO j=JstrR,JendR
@@ -516,7 +515,7 @@
 # endif
 
 # if defined DIAGNOSTICS_TS  || defined DIAGNOSTICS_UV || \
-    (defined DIAGNOSTICS_BIO && defined BIO_FENNEL)
+     defined DIAGNOSTICS_BIO
 !
 !-----------------------------------------------------------------------
 !  Apply periodic or gradient boundary conditions for output purposes.
@@ -583,7 +582,7 @@
 #    endif
 #   endif
 #  endif
-#  if defined DIAGNOSTICS_BIO && defined BIO_FENNEL
+#  if defined DIAGNOSTICS_BIO
 !
 !  Biological terms 2D diagnostics.
 !

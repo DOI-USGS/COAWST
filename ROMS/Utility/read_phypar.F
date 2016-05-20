@@ -1,9 +1,9 @@
 #include "cppdefs.h"
       SUBROUTINE read_PhyPar (model, inp, out, Lwrite)
 !
-!svn $Id$
+!svn $Id: read_phypar.F 793 2016-05-10 00:08:25Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2015 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2016 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -39,6 +39,9 @@
       USE mod_scalars
 #if defined SEDIMENT || defined BBL_MODEL
       USE mod_sediment
+#endif
+#if defined VEGETATION
+      USE mod_vegetation
 #endif
       USE mod_stepping
 #ifdef PROPAGATOR
@@ -81,8 +84,8 @@
 
       integer :: Lstr, Npts, Nval, i, itrc, ivar, k, ng, nl, status
       integer :: ifield, ifile, igrid, itracer, nline, max_Ffiles
-      integer :: Cdim, Clen, Rdim
       integer :: ibcfile, iclmfile
+      integer :: Cdim, Clen, Rdim
       integer :: Ivalue(1)
 
       integer :: decode_line, load_i, load_l, load_lbc, load_r
@@ -279,7 +282,7 @@
                 END IF
               END DO
 #endif
-#if defined BIO_FENNEL && defined SPECTRAL_LIGHT
+#if defined ESTUARYBGC && defined SPECTRAL_LIGHT
             CASE ('NBAND') 
               Npts=load_i(Nval, Rval, 1, Ivalue)
               NBAND=Ivalue(1)
@@ -387,6 +390,9 @@
 #if defined SEDIMENT || defined BBL_MODEL
               CALL initialize_sediment
 #endif
+#ifdef VEGETATION
+              CALL initialize_vegetation
+#endif
               CALL initialize_param    ! Continue allocating/initalizing
               CALL allocate_scalars    ! variables since the application
               CALL initialize_scalars  ! number of nested grids and
@@ -489,9 +495,12 @@
             CASE ('LBC(isHsno)')
               Npts=load_lbc(Nval, Cval, line, nline, isHsno, igrid,     &
      &                      0, 0, Vname(1,idHsno), LBC)
-            CASE ('LBC(isSfwat)')
-              Npts=load_lbc(Nval, Cval, line, nline, isSfwat, igrid,    &
-     &                      0, 0, Vname(1,idSfwat), LBC)
+            CASE ('LBC(isApond)')
+              Npts=load_lbc(Nval, Cval, line, nline, isApond, igrid,    &
+     &                      0, 0, Vname(1,idApond), LBC)
+            CASE ('LBC(isHpond)')
+              Npts=load_lbc(Nval, Cval, line, nline, isHpond, igrid,    &
+     &                      0, 0, Vname(1,idHpond), LBC)
             CASE ('LBC(isSig11)')
               Npts=load_lbc(Nval, Cval, line, nline, isSig11, igrid,    &
      &                      0, 0, Vname(1,idSig11), LBC)
@@ -995,6 +1004,10 @@
               Npts=load_r(Nval, Rval, Ngrids, M2nudg)
             CASE ('M3NUDG')
               Npts=load_r(Nval, Rval, Ngrids, M3nudg)
+            CASE ('TNUDG_SSS')
+              Npts=load_r(Nval, Rval, Ngrids, Tnudg_SSS)
+            CASE ('SSS_MISMATCH_THRESHOLD')
+              Npts=load_r(Nval, Rval, Ngrids, sss_mismatch_threshold)
             CASE ('OBCFAC')
               Npts=load_r(Nval, Rval, Ngrids, obcfac)
             CASE ('R0')
@@ -1870,7 +1883,7 @@
               END IF
               Npts=load_l(Nval, Cval, Ngrids, Hout(idPair,:))
 # endif
-# if defined BULK_FLUXES || defined ECOSIM
+# if defined BULK_FLUXES || defined ECOSIM || defined ATM2OCN_FLUXES
             CASE ('Hout(idUair)')
               IF (idUair.eq.0) THEN
                 IF (Master) WRITE (out,280) 'idUair'
@@ -2026,21 +2039,6 @@
                 DO i=1,NPT
                   itrc=idTvar(inert(i))
                   Hout(itrc,ng)=Linert(i,ng)
-                END DO
-              END DO
-#endif
-#if defined SOLVE3D && (defined BBL_MODEL || defined SEDIMENT)
-            CASE ('Hout(idBott)')
-              IF (MAXVAL(idBott).eq.0) THEN
-                WRITE (out,280) 'idBott'
-                exit_flag=5
-                RETURN
-              END IF
-              Npts=load_l(Nval, Cval, MBOTP*Ngrids, Lbottom)
-              DO ng=1,Ngrids
-                DO itrc=1,MBOTP
-                  i=idBott(itrc)
-                  Hout(i,ng)=Lbottom(itrc,ng)
                 END DO
               END DO
 #endif
@@ -3684,28 +3682,28 @@
                 Dout(idDu3d(M3vvis),ng)=Ldiag(ng)
                 Dout(idDv3d(M3vvis),ng)=Ldiag(ng)
               END DO
-#  ifdef SGR_FLOW
-            CASE ('Dout(M3fsgr)')
-              IF (M3fsgr.le.0) THEN
-                IF (Master) WRITE (out,280) 'M3fsgr'
+#  if defined VEGETATION && defined VEG_DRAG
+            CASE ('Dout(M3fveg)')
+              IF (M3fveg.le.0) THEN
+                IF (Master) WRITE (out,280) 'M3fveg'
                 exit_flag=5
                 RETURN
               END IF
               Npts=load_l(Nval, Cval, Ngrids, Ldiag)
               DO ng=1,Ngrids
-                Dout(idDu3d(M3fsgr),ng)=Ldiag(ng)
-                Dout(idDv3d(M3fsgr),ng)=Ldiag(ng)
+                Dout(idDu3d(M3fveg),ng)=Ldiag(ng)
+                Dout(idDv3d(M3fveg),ng)=Ldiag(ng)
               END DO
-            CASE ('Dout(M2fsgr)')
-              IF (M2fsgr.le.0) THEN
-                IF (Master) WRITE (out,280) 'M2fsgr'
+            CASE ('Dout(M2fveg)')
+              IF (M2fveg.le.0) THEN
+                IF (Master) WRITE (out,280) 'M2fveg'
                 exit_flag=5
                 RETURN
               END IF
               Npts=load_l(Nval, Cval, Ngrids, Ldiag)
               DO ng=1,Ngrids
-                Dout(idDu2d(M2fsgr),ng)=Ldiag(ng)
-                Dout(idDv2d(M2fsgr),ng)=Ldiag(ng)
+                Dout(idDu2d(M2fveg),ng)=Ldiag(ng)
+                Dout(idDv2d(M2fveg),ng)=Ldiag(ng)
               END DO
 #  endif
 # endif
@@ -4090,6 +4088,11 @@
                 sparnam(i:i)=blank
               END DO
               sparnam=TRIM(ADJUSTL(Cval(Nval)))
+            CASE ('VEGNAM')
+              DO i=1,LEN(vegnam)
+                vegnam(i:i)=blank
+              END DO
+              vegnam=TRIM(ADJUSTL(Cval(Nval)))
             CASE ('USRNAME')
               DO i=1,LEN(USRname)
                 USRname(i:i)=blank
@@ -4159,6 +4162,23 @@
         END IF
       END IF
 #endif
+!
+!  Check if both point sources methodologies are activated.  Only one
+!  method is allowed for a particular grid.  Otherwise, the point
+!  source will be applies twice.
+!
+      DO ng=1,Ngrids
+       IF (LuvSrc(ng).and.LwSrc(ng)) THEN
+         IF (Master) THEN
+           WRITE (out,260) 'LuvSrc', LuvSrc(ng),                        &
+     &           'Because LwSrc  is also ON; only one method is legal.'
+           WRITE (out,260) 'LwSrc', LwSrc(ng),                          &
+     &           'Because LuvSrc is also ON; only one method is legal.'
+           exit_flag=4
+           RETURN
+         END IF
+       END IF
+     END DO
 
 #if defined BULK_FLUXES && defined NL_BULK_FLUXES
 !
@@ -4447,6 +4467,9 @@
 #  if defined ADJOINT || defined TANGENT || defined TL_IOMS
         ObcData(ng)=ObcData(ng).or.ANY(ad_LBC(:,isTvar(:),ng)%acquire)
 #  endif
+# endif
+# ifdef INWAVE_MODEL
+        ObcData(ng)=ObcData(ng).or.ANY(LBC(:,isAC3d,ng)%acquire)
 # endif
 #endif
       END DO
@@ -4996,13 +5019,22 @@
      &            'Nudging/relaxation time scale (days)',               &
      &            'for tracer ', itrc, TRIM(Vname(1,idTvar(itrc)))
           END DO
+          WRITE (out,210) Tnudg_SSS(ng), 'Tnudg_SSS',                   &
+     &          'Nudging/relaxation time scale (days)',                 &
+     &          'for sea surface salinity.'
 # ifdef SCORRECTION
-          IF (Tnudg(isalt,ng).le.0.0_r8) THEN
-            WRITE (out,265) 'Tnudg(isalt) = ', Tnudg(isalt,ng),         &
+          IF (Tnudg_SSS(ng).le.0.0_r8) THEN
+            WRITE (out,265) 'Tnudg_SSS = ', Tnudg_SSS(ng),              &
      &            'Must be greater than zero for salt flux correction.'
             exit_flag=5
             RETURN
           END IF
+#  ifdef SSSC_THRESHOLD
+          WRITE (out,210) sss_mismatch_threshold(ng),                   &
+     &          'sss_mismatch_threshold',                               &
+     &          'difference in SSS that triggers correction',           &
+     &          'for sea surface salinity.'
+#  endif
 # endif
 #endif
           WRITE (out,210) Znudg(ng), 'Znudg',                           &
@@ -5653,14 +5685,6 @@
      &          Hout(idTvar(inert(itrc)),ng), 'Hout(inert)',            &
      &          'Write out inert passive tracer ', itrc,                &
      &          TRIM(Vname(1,idTvar(inert(itrc))))
-          END DO
-#endif
-#if defined SOLVE3D && (defined BBL_MODEL || defined SEDIMENT)
-          DO itrc=1,MBOTP
-            IF (Hout(idBott(itrc),ng)) WRITE (out,180)                  &
-     &          Hout(idBott(itrc),ng), 'Hout(idBott)',                  &
-     &          'Write out bottom property ', itrc,                     &
-     &          TRIM(Vname(1,idBott(itrc)))
           END DO
 #endif
 #ifdef SOLVE3D
@@ -7132,6 +7156,12 @@
           WRITE (out,230) '       Biology Parameters File:  ',          &
      &                    TRIM(fname)
 #endif
+#ifdef VEGETATION
+          fname=vegnam
+          IF (.not.find_file(ng, fname, 'VEGNAM')) GO TO 30
+          WRITE (out,230) '       Vegetation Parameters File:  ',       &
+     &                    TRIM(fname)
+#endif
 #ifdef ICE_MODEL
           fname=iparnam
           IF (.not.find_file(ng, fname, 'IPARNAM')) GO TO 30
@@ -7215,6 +7245,9 @@
             Tnudg(itrc,ng)=0.0_r8
           END IF
         END DO
+        IF (Tnudg_SSS(ng).gt.0.0_r8) THEN
+          Tnudg_SSS(ng)=1.0_r8/(Tnudg_SSS(ng)*86400.0_r8)
+        END IF
       END DO
 #endif
 

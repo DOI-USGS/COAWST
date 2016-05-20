@@ -766,3 +766,61 @@
      &               1, (/0/), Aval, Vinfo, ncname,                     &
      &               SetParAccess = .FALSE.)
       IF (exit_flag.ne.NoError) RETURN
+
+#ifdef IRON_LIMIT
+      Vinfo( 1)='T_Fe'
+      Vinfo( 2)='Iron updake timescale'
+      Vinfo( 3)='day'
+      status=def_var(ng, model, ncid, varid, NF_TYPE,                   &
+     &               1, (/0/), Aval, Vinfo, ncname,                     &
+     &               SetParAccess = .FALSE.)
+      IF (exit_flag.ne.NoError) RETURN
+
+      Vinfo( 1)='A_Fe'
+      Vinfo( 2)='Empirical FE:C power'
+      Vinfo( 3)='nondimensional'
+      status=def_var(ng, model, ncid, varid, NF_TYPE,                   &
+     &               1, (/0/), Aval, Vinfo, ncname,                     &
+     &               SetParAccess = .FALSE.)
+      IF (exit_flag.ne.NoError) RETURN
+
+      Vinfo( 1)='B_Fe'
+      Vinfo( 2)='Empirical FE:C coefficient'
+      Vinfo( 3)='meter-1 C'
+      status=def_var(ng, model, ncid, varid, NF_TYPE,                   &
+     &               1, (/0/), Aval, Vinfo, ncname,                     &
+     &               SetParAccess = .FALSE.)
+      IF (exit_flag.ne.NoError) RETURN
+
+      Vinfo( 1)='S1_FeC'
+      Vinfo( 2)='Small phytoplankton Fe:C at F=0.5'
+      Vinfo( 3)='muM-Fe/M-C'
+      status=def_var(ng, model, ncid, varid, NF_TYPE,                   &
+     &               1, (/0/), Aval, Vinfo, ncname,                     &
+     &               SetParAccess = .FALSE.)
+      IF (exit_flag.ne.NoError) RETURN
+
+      Vinfo( 1)='S2_FeC'
+      Vinfo( 2)='Large phytoplankton Fe:C at F=0.5'
+      Vinfo( 3)='muM-Fe/M-C'
+      status=def_var(ng, model, ncid, varid, NF_TYPE,                   &
+     &               1, (/0/), Aval, Vinfo, ncname,                     &
+     &               SetParAccess = .FALSE.)
+      IF (exit_flag.ne.NoError) RETURN
+
+      Vinfo( 1)='S3_FeC'
+      Vinfo( 2)='Coccolithophores Fe:C at F=0.5'
+      Vinfo( 3)='muM-Fe/M-C'
+      status=def_var(ng, model, ncid, varid, NF_TYPE,                   &
+     &               1, (/0/), Aval, Vinfo, ncname,                     &
+     &               SetParAccess = .FALSE.)
+      IF (exit_flag.ne.NoError) RETURN
+
+      Vinfo( 1)='FeRR'
+      Vinfo( 2)='Fe remineralization rate'
+      Vinfo( 3)='day-1'
+      status=def_var(ng, model, ncid, varid, NF_TYPE,                   &
+     &               1, (/0/), Aval, Vinfo, ncname,                     &
+     &               SetParAccess = .FALSE.)
+      IF (exit_flag.ne.NoError) RETURN
+#endif

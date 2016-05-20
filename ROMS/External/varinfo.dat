@@ -3,7 +3,7 @@
 !
 !svn $Id: varinfo.dat 734 2008-09-07 01:58:06Z jcwarner $
 !========================================================= Hernan G. Arango ===
-!  Copyright (c) 2002-2014 The ROMS/TOMS Group                                !
+!  Copyright (c) 2002-2016 The ROMS/TOMS Group                                !
 !    Licensed under a MIT/X style license                                     !
 !    See License_ROMS.txt                                                     !
 !==============================================================================
@@ -662,8 +662,8 @@
 
 'fastice'                                          ! Input/Output
   'landfast ice extent'
-  '1'                                              ! 
-  'FastIce, scalar, series'                        ! 
+  '1'                                              !
+  'FastIce, scalar, series'                        !
   'ocean_time'                                     !
   'idFastIce'                                      !
   'r2dvar'
@@ -927,12 +927,21 @@
   'r2dvar'
   1.0d0
 
-'sfwat'
+'apond'
+  'surface melt water fraction on ice'
+  'meter'
+  'melt water fraction, scalar, series'
+  'ocean_time'
+  'idApond'
+  'r2dvar'
+  1.0d0
+
+'hpond'
   'surface melt water thickness on ice'
   'meter'
   'melt water thickness, scalar, series'
   'ocean_time'
-  'idSfwat'
+  'idHpond'
   'r2dvar'
   1.0d0
 
@@ -1569,39 +1578,75 @@
   'nulvar'
   1.0d0
 
-'sfwat_west'
+'apond_west'
+  'surface meltwater fraction western boundary condition'
+  ' '
+  'apond_west, scalar, series'
+  'bry_time'
+  'idApdbc(iwest)'
+  'nulvar'
+  1.0d0
+
+'apond_east'
+  'surface meltwater fraction eastern boundary condition'
+  ' '
+  'apond_east, scalar, series'
+  'bry_time'
+  'idApdbc(ieast)'
+  'nulvar'
+  1.0d0
+
+'apond_north'
+  'surface meltwater fraction northern boundary condition'
+  ' '
+  'apond_north, scalar, series'
+  'bry_time'
+  'idApdbc(inorth)'
+  'nulvar'
+  1.0d0
+
+'apond_south'
+  'surface meltwater fraction southern boundary condition'
+  ' '
+  'apond_south, scalar, series'
+  'bry_time'
+  'idApdbc(isouth)'
+  'nulvar'
+  1.0d0
+
+'hpond_west'
   'surface meltwater thickness western boundary condition'
   'meter'
-  'sfwat_west, scalar, series'
+  'hpond_west, scalar, series'
   'bry_time'
-  'idSfwbc(iwest)'
+  'idHpdbc(iwest)'
   'nulvar'
   1.0d0
 
-'sfwat_east'
+'hpond_east'
   'surface meltwater thickness eastern boundary condition'
   'meter'
-  'sfwat_east, scalar, series'
+  'hpond_east, scalar, series'
   'bry_time'
-  'idSfwbc(ieast)'
+  'idHpdbc(ieast)'
   'nulvar'
   1.0d0
 
-'sfwat_north'
+'hpond_north'
   'surface meltwater thickness northern boundary condition'
   'meter'
-  'sfwat_north, scalar, series'
+  'hpond_north, scalar, series'
   'bry_time'
-  'idSfwbc(inorth)'
+  'idHpdbc(inorth)'
   'nulvar'
   1.0d0
 
-'sfwat_south'
+'hpond_south'
   'surface meltwater thickness southern boundary condition'
   'meter'
-  'sfwat_south, scalar, series'
+  'hpond_south, scalar, series'
   'bry_time'
-  'idSfwbc(isouth)'
+  'idHpdbc(isouth)'
   'nulvar'
   1.0d0
 
@@ -2650,23 +2695,23 @@
   1.0d0
 
 !--------------------------UMAINE variables
-'river_NO3_'                                        ! Input
-  'river runoff NO3'
-  'millimole_nitrogen meter-3'                     ! [millimole/m3]
-  'river_NO3, scalar, series'
-  'river_time'
-  'idRtrc(iNO3_)'
-  'nulvar'
-  1.0d0
+!'river_NO3_'                                        ! Input
+!  'river runoff NO3'
+!  'millimole_nitrogen meter-3'                     ! [millimole/m3]
+!  'river_NO3, scalar, series'
+!  'river_time'
+!  'idRtrc(iNO3_)'
+!  'nulvar'
+!  1.0d0
 
-'river_Nh4_'                                        ! Input
-  'river runoff NH4'
-  'millimole_nitrogen meter-3'                     ! [millimole/m3]
-  'river_NH4, scalar, series'
-  'river_time'
-  'idRtrc(iNH4_)'
-  'nulvar'
-  1.0d0
+!'river_Nh4_'                                        ! Input
+!  'river runoff NH4'
+!  'millimole_nitrogen meter-3'                     ! [millimole/m3]
+!  'river_NH4, scalar, series'
+!  'river_time'
+!  'idRtrc(iNH4_)'
+!  'nulvar'
+!  1.0d0
 
 'river_SiOH'                                        ! Input
   'river runoff SiOH'
@@ -3509,24 +3554,6 @@
   'r2dvar'
   1.0d0
 
-'seagrass_height'                                  ! Input/Output
-  'seagrass height'
-  'meter'                                          ! [m]
-  'seagrass_height, scalar, series'
-  'ocean_time'
-  'idBott(isgrH)'
-  'r2dvar'
-  1.0d0
-
-'seagrass_density'                                  ! Input/Output
-  'seagrass shoot density'
-  'shoots meter-2'                                  ! [shoots/m2]
-  'seagrass_density, scalar, series'
-  'ocean_time'
-  'idBott(isgrD)'
-  'r2dvar'
-  1.0d0
-
 'dep_net'                                          ! Output
   'erosion or deposition'
   'meter'                                          ! [m]
@@ -4166,15 +4193,6 @@
   'ocean_time'
   'idSpKd'
   's3dvar'
-  1.0d0
-
-'SgrN'                                             ! Input/Output
-  'Seagrass concentration'
-  'millimole_nitrogen meter-3'                     ! [millimole/m3]
-  'SgrN, scalar, series'
-  'ocean_time'
-  'idsgrn'
-  'r2dvar'
   1.0d0
 
 'phytoplankton'                                    ! Input/Output
@@ -7027,6 +7045,88 @@
 
 !
 !-----------------------------------------------------------------------
+!  Define names of variables associated with Red Tide module.
+!-----------------------------------------------------------------------
+!
+
+'dinoflagellate'                                   ! Input/Output
+  'red tide dinoflagellate concentration'
+  'cell meter-3'                                   ! [cell/m3]
+  'dinoflagellate, scalar, series'
+  'ocean_time'
+  'idTvar(iDino)'
+  'r3dvar'
+  1.0d0
+
+'cyst_bottom'                                      ! Input
+  'red tide dinoflagellate bottom cyst concentration'
+  'cell meter-2'                                   ! [cell/m2]
+  'cyst_bottom, scalar, series'
+  'cyst_time'
+  'idCyst'
+  'r2dvar'
+  1.0d0
+
+'swrad_avg'                                        ! Input/Output
+  'averaged solar shortwave radiation flux'
+  'watt meter-2'                                   ! Input:  [Watt/m2]
+  'averaged shortwave radiation, scalar, series'   ! [Celsius m/s]
+  'srf_time'                                       ! Output: [Watt/m2]
+  'idAsrf'
+  'r2dvar'
+  1.0d0
+
+'DIN_obs'                                          ! Input
+  'observed dissolved inorganic nutrient'
+  'millimole meter-3'                              ! [millimole/m3]
+  'DIN_obs, scalar, series'
+  'DIN_time'
+  'idODIN'
+  'r3dvar'
+  1.0d0
+
+!
+!  Boundary variables.
+!
+
+'dinoflagellate_east'                              ! Input
+  'red tide dinoflagellate eastern boundary condition'
+  'cells meter-3'                                  ! [cell/m3]
+  'dinoflagellate_east, scalar, series'
+  'dinoflagellate_time'
+  'idTbry(ieast,iDino)'
+  'nulvar'
+  1.0d0
+
+'dinoflagellate_west'                              ! Input
+  'red tide dinoflagellate western boundary condition'
+  'cells meter-3'                                  ! [cell/m3]
+  'dinoflagellate_west, scalar, series'
+  'dinoflagellate_time'
+  'idTbry(iwest,iDino)'
+  'nulvar'
+  1.0d0
+
+'dinoflagellate_south'                             ! Input
+  'red tide dinoflagellate southern boundary condition'
+  'cells meter-3'                                  ! [cell/m3]
+  'dinoflagellate_south, scalar, series'
+  'dinoflagellate_time'
+  'idTbry(isouth,iDino)'
+  'nulvar'
+  1.0d0
+
+'dinoflagellate_north'                             ! Input
+  'red tide dinoflagellate northern boundary condition'
+  'cells meter-3'                                  ! [cell/m3]
+  'dinoflagellate_north, scalar, series'
+  'dinoflagellate_time'
+  'idTbry(inorth,iDino)'
+  'nulvar'
+  1.0d0
+
+!
+!-----------------------------------------------------------------------
 !  Define names of variables associated with EcoSim bio-optical module.
 !-----------------------------------------------------------------------
 !
@@ -8641,4 +8741,291 @@
   'datum'
   'idMOMf'
   'nulvar'
+  1.0d0
+!
+!------------------------------------------------------------------------------
+!  SAV_BIOMASS properties (Module in Biology folder).
+!------------------------------------------------------------------------------
+!
+'Dinwcr'                                           ! Input/Output
+  'Dissolved inorganic N in water column'
+  'millimole'                                      ! [millimole]
+  'Dinwcr, scalar, series'
+  'ocean_time'
+  'iddinw'
+  'r3dvar'
+  1.0d0
+
+'Dinsed'                                           ! Input/Output
+  'Dissolved inorganic N in sediment column'
+  'millimole'                                      ! [millimole]
+  'Dinsed, scalar, series'
+  'ocean_time'
+  'iddins'
+  'r3dvar'
+  1.0d0
+
+'DOwcr'                                            ! Input/Output
+  'Dissolved Oxygen in water column'
+  'millimole'                                      ! [millimole]
+  'DOwcr, scalar, series'
+  'ocean_time'
+  'iddowc'
+  'r3dvar'
+  1.0d0
+
+'DINwcr_sav'                                       ! Input/Output
+  'Dissolved inorganic N in water column in SAV'
+  'millimole'                                      ! [millimole]
+  'DINwcr_sav, scalar, series'
+  'ocean_time'
+  'idwsvl'
+  'r3dvar'
+  1.0d0
+
+'AGB'                                              ! Input/Output
+  'Above ground biomass'
+  'millimole_nitrogen meter-2'                     ! [millimole-N/m2]
+  'AGB, scalar, series'
+  'ocean_time'
+  'idsagb'
+  'r2dvar'
+  1.0d0
+
+'BGB'                                              ! Input/Output
+  'Below ground biomass'
+  'millimole_nitrogen meter-2'                     ! [millimole-N/m2]
+  'BGB, scalar, series'
+  'ocean_time'
+  'idsbgb'
+  'r2dvar'
+  1.0d0
+
+'PP'                                               ! Input/Output
+  'New var'
+  'units'                                          ! [millimole]
+  'PP, scalar, series'
+  'ocean_time'
+  'idsvpp'
+  'r3dvar'
+  1.0d0
+
+'AGM'                                              ! Input/Output
+  'New var'
+  'millimole'                                      ! [millimole]
+  'AGM, scalar, series'
+  'ocean_time'
+  'idsvam'
+  'r3dvar'
+  1.0d0
+
+'AGAR'                                             ! Input/Output
+  'New var' 
+  'units'                                          ! [millimole]
+  'AGAR, scalar, series'
+  'ocean_time'
+  'idsgar'
+  'r3dvar'
+  1.0d0
+
+'AGBR'                                                ! Input/Output
+  'New var'    
+  'units'                                             ! [millimole]
+  'AGBR, scalar, series'
+  'ocean_time'
+  'idsvbr'
+  'r3dvar'
+  1.0d0
+
+'SEARS'                                              ! Input/Output
+  'New var'  
+  'units'                                            ! [millimole]
+  'SEARS, scalar, series'
+  'ocean_time'
+  'idsvrs'
+  'r3dvar'
+  1.0d0
+
+'AGBG'                                               ! Input/Output
+  'New var'     
+  'units'                                            ! [millimole]
+  'AGBG, scalar, series'
+  'ocean_time'
+  'idsvbg'
+  'r3dvar'
+  1.0d0
+
+'BGAG'                                               ! Input/Output
+  'New var'  
+  'units'                                            ! [millimole]
+  'BGAG, scalar, series'
+  'ocean_time'
+  'idsvag'
+  'r3dvar'
+  1.0d0
+
+'BGR'                                                ! Input/Output
+  'New var'  
+  'units'                                            ! [millimole]
+  'BGR, scalar, series'
+  'ocean_time'
+  'idsbgr'
+  'r3dvar'
+  1.0d0
+
+'BGM'                                                ! Input/Output
+  'New var'  
+  'units'                                            ! [millimole]
+  'BGM, scalar, series'
+  'ocean_time'
+  'idsbgm'
+  'r3dvar'
+  1.0d0
+!
+!------------------------------------------------------------------------------
+!  Vegetation - Plant array declaration.
+!------------------------------------------------------------------------------
+!
+'plant_density'                                    ! Input/Output
+  'plant density'
+  'plant-meter2'                                   ! [plant-m2]
+  'plant_density, scalar, series'
+  'ocean_time'
+  'idvprp(pdens)'
+  'v3pgrd'
+   1.0d0
+
+'plant_height'                                     ! Input/Output
+  'plant height'
+  'meter'                                          ! [m]
+  'plant_height, scalar, series'
+  'ocean_time'
+  'idvprp(phght)'
+  'v3pgrd'
+   1.0d0
+
+'plant_diameter'                                  ! Input/Output
+  'plant diameter'
+  'meter'                                         ! [m]
+  'plant_diameter, scalar, series'
+  'ocean_time'
+  'idvprp(pdiam)'
+  'v3pgrd'
+   1.0d0
+
+'plant_thickness'                                 ! Input/Output
+  'plant thickness' 
+  'meter'                                         ! [m]
+  'plant_thickness, scalar, series'
+  'ocean_time'
+  'idvprp(pthck)'
+  'v3pgrd'
+   1.0d0
+
+'plant_agb'                                       ! Input/Output
+  'plant above ground biomass' 
+  'millimole_nitrogen meter-2'                    ! [millimole-N/m2]
+  'plant_agb, scalar, series'
+  'ocean_time'
+  'idvprp(pagbm)'
+  'v3pgrd'
+   1.0d0
+
+'plant_bgb'                                       ! Input/Output
+  'plant below ground biomass' 
+  'millimole_nitrogen meter-2'                    ! [millimole-N/m2]
+  'plant_bgb, scalar, series'
+  'ocean_time'
+  'idvprp(pbgbm)'
+  'v3pgrd'
+   1.0d0
+
+'Dissip_veg'                                       ! Input/Output
+  'Wave dissipation due to vegetation' 
+  'W meter-2'                                      ! [W/m2]
+  'dissip_veg, scalar, series'
+  'ocean_time'
+  'idWdvg'
+  'r2dvar' 
+   1.0d0
+!
+!
+!------------------------------------------------------------------------------
+!  Diaganostics for momentum terms.
+!------------------------------------------------------------------------------
+!
+'u_fveg'                                          ! Input/Output
+  '3D u-momentum, vegetation drag force term'
+  'meter second-2'                                 ! [m/s2]
+  'u_fveg, scalar, series'
+  'ocean_time'
+  'idDu3d(M3fveg)'
+  'u3dvar'
+  1.0d0
+
+'v_fveg'                                          ! Input/Output
+  '3D v-momentum, vegetation drag force term'
+  'meter second-2'                                 ! [m/s2]
+  'v_fveg, scalar, series'
+  'ocean_time'
+  'idDv3d(M3fveg)'
+  'v3dvar'
+  1.0d0
+
+'ubar_fveg'                                        ! Input/Output
+  '2D u-momentum, vegetation drag force term'
+  'meter second-2'                                 ! [m/s2]
+  'ubar_fveg, scalar, series'
+  'ocean_time'
+  'idDu2d(M2fveg)'
+  'u2dvar'
+  1.0d0
+
+'vbar_fveg'                                          ! Input/Output
+  '2D v-momentum, vegetation drag force term'
+  'meter second-2'                                 ! [m/s2]
+  'vbar_fveg, scalar, series'
+  'ocean_time'
+  'idDv2d(M2fveg)'
+  'v2dvar'
+  1.0d0
+!
+!------------------------------------------------------------------------------
+!  WAVE Thrust model for marshes variables.
+!------------------------------------------------------------------------------
+!
+'marsh_mask'                                      ! Input/Output
+  'Input masking for getting thrust due to waves at rho pts.'
+  'nondimensional'     
+  'marsh_mask, scalar, series'
+  'ocean_time'
+  'idTims'
+  'r2dvar' 
+  1.0d0
+
+'mask_thrust'                                      ! Output
+  'Masking for getting thrust due to waves at rho pts.'
+  'nondimensional'     
+  'mask_thrust, scalar, series'
+  'ocean_time'
+  'idTmsk'
+  'r2dvar' 
+  1.0d0
+
+'Thrust_max'                                       ! Output
+  'Maximum thrust due to waves'
+  'kilonewtons/m '                                 ! [kN/m]
+  'Thrust_w_wet, scalar, series'
+  'ocean_time'
+  'idTmax'
+  'r2dvar'
+  1.0d0
+
+'Thrust_tonelli'                                   ! Output
+  'Tonelli masking based thrust due to waves'
+  'kilonewtons/m'                                  ! [kN/m]
+  'Thrust_tonelli, scalar, series'
+  'ocean_time'
+  'idTton'
+  'r2dvar'
   1.0d0

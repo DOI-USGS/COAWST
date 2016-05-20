@@ -1,7 +1,7 @@
 !  Ice model parameters
 !
 !==============================================================================
-!  Copyright (c) 2002-2014 The ROMS/TOMS Group                                !
+!  Copyright (c) 2002-2016 The ROMS/TOMS Group                                !
 !========================================================= Hernan G. Arango ===
 !                                                                             !
 ! Input parameters can be entered in ANY order, provided that the parameter   !
@@ -36,16 +36,6 @@
 ! connected grids.
 
     Lice == T
-
-!
-!   Time step for sea ice model [s]
-
-     DTICE == 600.d0
-
-!
-!   Time step for updating (equilibrium) ice drift in sea ice model [s]
-
-     DTICE_EQ == 10800.d0
 
 ! Maximum number of iterations to achieve convergence of the nonlinear
 ! ice dynamics solution
@@ -127,17 +117,12 @@
 ! Minimum ice concentration
 ! (nondimensional)
 
-     min_a = 0.00d0
+     min_a == 1.00d-30
 
 ! Maximum ice concentration
 ! (nondimensional)
 
      max_a == 1.0d0
-
-! Maximum melt pond fraction
-! (nondimensional)
-
-     sfwat_max == 0.0d0
 
 ! Ice-water turning angle [degrees]
 
@@ -166,6 +151,12 @@
 
      t0deg = 273.15d0
 
+! tunable parameters for Lemieux landfast ice
+
+     lf_k1 = 8.0d0
+     lf_k2 = 15.0d0
+     lf_u0 = 5.0e-5
+
 ! Logical switches (TRUE/FALSE) to activate writing of ice prognostic
 ! variables into HISTORY output file.
 Hout(idUice) == T
@@ -177,7 +168,8 @@ Hout(idHice) == T
 Hout(idTice) == T
 Hout(idHsno) == T
 Hout(idTimid) == T
-Hout(idSfwat) == T
+Hout(idApond) == T
+Hout(idHpond) == T
 Hout(idTauiw) == F
 Hout(idChuiw) == F
 Hout(idAgeice) == T
@@ -205,7 +197,8 @@ Aout(idHice) == T
 Aout(idTice) == T
 Aout(idHsno) == T
 Aout(idTimid) == T
-Aout(idSfwat) == T
+Aout(idApond) == T
+Aout(idHpond) == T
 Aout(idTauiw) == F
 Aout(idChuiw) == F
 Aout(idAgeice) == T
@@ -233,7 +226,8 @@ Aout2(idHice) == T
 Aout2(idTice) == T
 Aout2(idHsno) == T
 Aout2(idTimid) == T
-Aout2(idSfwat) == T
+Aout2(idApond) == T
+Aout2(idHpond) == T
 Aout2(idTauiw) == F
 Aout2(idChuiw) == F
 Aout2(idAgeice) == T
@@ -254,7 +248,8 @@ Hout2(idHice) == T
 Hout2(idTice) == T
 Hout2(idHsno) == T
 Hout2(idTimid) == T
-Hout2(idSfwat) == T
+Hout2(idApond) == T
+Hout2(idHpond) == T
 Hout2(idTauiw) == F
 Hout2(idChuiw) == F
 Hout2(idAgeice) == T

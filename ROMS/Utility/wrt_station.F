@@ -4,7 +4,7 @@
 !
 !svn $Id: wrt_station.F 733 2008-09-07 01:56:45Z jcwarner $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2014 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2016 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -56,7 +56,7 @@
       logical :: Cgrid
 
       integer :: NposB, NposR, NposW, LBi, UBi, LBj, UBj
-      integer :: Fcount, i, ifield, k, np, status, tile
+      integer :: Fcount, i, ifield, k, np, tile
 
       real(r8) :: scale
 
@@ -2070,22 +2070,40 @@
      &                        varid = STA(ng)%Vid(idHsno))
         IF (exit_flag.ne.NoError) RETURN
       END IF
+#ifdef MELT_PONDS
+!
+!  Write out surface water fraction (on ice)
+!
+      IF (Sout(idApond,ng)) THEN
+        scale=1.0_r8
+        CALL extract_sta2d (ng, iNLM, Cgrid, idApond, r2dvar,           &
+     &                      LBi, UBi, LBj, UBj,                         &
+     &                      scale, ICE(ng)%apond(:,:,IOUT),             &
+     &                      Nstation(ng), Xpos, Ypos, psta)
+        CALL netcdf_put_fvar (ng, iNLM, STA(ng)%name,                   &
+     &                        TRIM(Vname(1,idApond)), psta,             &
+     &                        (/1,STA(ng)%Rindex/), (/Nstation(ng),1/), &
+     &                        ncid = STA(ng)%ncid,                      &
+     &                        varid = STA(ng)%Vid(idApond))
+        IF (exit_flag.ne.NoError) RETURN
+      END IF
 !
 !  Write out surface water thickness (on ice)
 !
-      IF (Sout(idSfwat,ng)) THEN
+      IF (Sout(idHpond,ng)) THEN
         scale=1.0_r8
-        CALL extract_sta2d (ng, iNLM, Cgrid, idSfwat, r2dvar,           &
+        CALL extract_sta2d (ng, iNLM, Cgrid, idHpond, r2dvar,           &
      &                      LBi, UBi, LBj, UBj,                         &
-     &                      scale, ICE(ng)%sfwat(:,:,IOUT),             &
+     &                      scale, ICE(ng)%hpond(:,:,IOUT),             &
      &                      Nstation(ng), Xpos, Ypos, psta)
         CALL netcdf_put_fvar (ng, iNLM, STA(ng)%name,                   &
-     &                        TRIM(Vname(1,idSfwat)), psta,             &
+     &                        TRIM(Vname(1,idHpond)), psta,             &
      &                        (/1,STA(ng)%Rindex/), (/Nstation(ng),1/), &
      &                        ncid = STA(ng)%ncid,                      &
-     &                        varid = STA(ng)%Vid(idSfwat))
+     &                        varid = STA(ng)%Vid(idHpond))
         IF (exit_flag.ne.NoError) RETURN
       END IF
+#endif
 !
 !  Write out ice age.
 !

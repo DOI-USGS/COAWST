@@ -1,7 +1,7 @@
 /*
 ** svn $Id: channel_neck.h 429 2009-12-20 17:30:26Z arango $
 *******************************************************************************
-** Copyright (c) 2002-2014 The ROMS/TOMS Group                               **
+** Copyright (c) 2002-2016 The ROMS/TOMS Group                               **
 **   Licensed under a MIT/X style license                                    **
 **   See License_ROMS.txt                                                    **
 *******************************************************************************
@@ -33,7 +33,6 @@
 #undef  MIX_GEO_TS
 #define SOLVE3D
 #define MASKING
-#undef  SPLINES
 #undef  ANA_INITIAL
 #define ANA_SMFLUX
 #define ANA_STFLUX

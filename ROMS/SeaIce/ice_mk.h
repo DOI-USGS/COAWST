@@ -1,7 +1,7 @@
      SUBROUTINE ice_thermo (ng, tile)
 !
 !*************************************************** W. Paul Budgell ***
-!  Copyright (c) 2002-2014 ROMS/TOMS Group                             !
+!  Copyright (c) 2002-2015 ROMS/TOMS Group                             !
 !************************************************** Hernan G. Arango ***
 !                                                                      !
 !  This subroutine evaluates the ice thermodynamic growth and decay    !
@@ -67,8 +67,11 @@
      &                      ICE(ng) % ai,                               &
      &                      ICE(ng) % hi,                               &
      &                      ICE(ng) % hsn,                              &
-     &                      ICE(ng) % sfwat,                            &
      &                      ICE(ng) % ageice,                           &
+#ifdef MELT_PONDS
+     &                      ICE(ng) % apond,                            &
+     &                      ICE(ng) % hpond,                            &
+#endif
      &                      ICE(ng) % tis,                              &
      &                      ICE(ng) % ti,                               &
      &                      ICE(ng) % enthalpi,                         &
@@ -88,6 +91,7 @@
      &                      FORCES(ng) % sustr,                         &
      &                      FORCES(ng) % svstr,                         &
      &                      FORCES(ng) % qai_n,                         &
+     &                      FORCES(ng) % qi_o_n,                        &
      &                      FORCES(ng) % qao_n,                         &
      &                      FORCES(ng) % snow_n,                        &
      &                      FORCES(ng) % rain,                          &
@@ -120,15 +124,18 @@
 #endif
      &                        z_r, z_w, t,                              &
      &                        wfr, wai, wao, wio, wro,                  &
-     &                        ai, hi, hsn, sfwat, ageice, tis, ti,      &
-     &                        enthalpi, hage,                           &
+     &                        ai, hi, hsn, ageice,                      &
+#ifdef MELT_PONDS
+     &                        apond, hpond,                             &
+#endif
+     &                        tis, ti, enthalpi, hage,                  &
      &                        ui, vi, coef_ice_heat, rhs_ice_heat,      &
      &                        s0mk, t0mk, io_mflux,                     &
 #if defined ICE_BIO && defined BERING_10K
      &                        IcePhL, IceNO3, IceNH4,                   &
 #endif
      &                        sustr, svstr,                             &
-     &                        qai_n, qao_n,                             &
+     &                        qai_n, qi_o_n, qao_n,                     &
      &                        snow_n,                                   &
      &                        rain,                                     &
      &                        stflx)
@@ -149,7 +156,8 @@
 !        the following global arrays are calculated:
 !        (description is given below)
 !
-!        sfwat
+!        apond
+!        hpond
 !        ageice
 !        qai
 !        qio
@@ -202,8 +210,9 @@
 !                               (t3 in Mellor..)
 !            brnfr(i,j)      -  brine fraction
 !            wsm(i,j)        -  snow melting rate
-!            wai(i,j)        -  production rate at atmos./ice
-!            sfwat(i,j,linew)-  melt water
+!            wai(i,j)        -  melt rate at atmos./ice
+!            apond(i,j,linew)-  melt water fraction
+!            hpond(i,j,linew)-  melt water depth
 !            ageice(i,j,linew)- ice age
 !
 !
@@ -215,8 +224,6 @@
 !            hfus1(i,j)      -  heat of fusion (L_o or L_3)
 !            wro(i,j)        -  production rate of surface runoff
 !            t2(i,j)         -  temperature at ice/snow interface
-!            hsn(i,j,linew)  -  snow avg. thickness next time step
-!
 !
 !***********************************************************************
 
@@ -272,8 +279,11 @@
       real(r8), intent(inout) :: ai(LBi:,LBj:,:)
       real(r8), intent(inout) :: hi(LBi:,LBj:,:)
       real(r8), intent(inout) :: hsn(LBi:,LBj:,:)
-      real(r8), intent(inout) :: sfwat(LBi:,LBj:,:)
       real(r8), intent(inout) :: ageice(LBi:,LBj:,:)
+#ifdef MELT_PONDS
+      real(r8), intent(inout) :: apond(LBi:,LBj:,:)
+      real(r8), intent(inout) :: hpond(LBi:,LBj:,:)
+#endif
       real(r8), intent(inout) :: tis(LBi:,LBj:)
       real(r8), intent(inout) :: ti(LBi:,LBj:,:)
       real(r8), intent(inout) :: enthalpi(LBi:,LBj:,:)
@@ -293,6 +303,7 @@
       real(r8), intent(in) :: sustr(LBi:,LBj:)
       real(r8), intent(in) :: svstr(LBi:,LBj:)
       real(r8), intent(in) :: qai_n(LBi:,LBj:)
+      real(r8), intent(in) :: qi_o_n(LBi:,LBj:)
       real(r8), intent(in) :: qao_n(LBi:,LBj:)
       real(r8), intent(in) :: snow_n(LBi:,LBj:)
       real(r8), intent(in) :: rain(LBi:,LBj:)
@@ -327,8 +338,11 @@
       real(r8), intent(inout) :: ai(LBi:UBi,LBj:UBj,2)
       real(r8), intent(inout) :: hi(LBi:UBi,LBj:UBj,2)
       real(r8), intent(inout) :: hsn(LBi:UBi,LBj:UBj,2)
-      real(r8), intent(inout) :: sfwat(LBi:UBi,LBj:UBj,2)
       real(r8), intent(inout) :: ageice(LBi:UBi,LBj:UBj,2)
+#ifdef MELT_PONDS
+      real(r8), intent(inout) :: apond(LBi:UBi,LBj:UBj,2)
+      real(r8), intent(inout) :: hpond(LBi:UBi,LBj:UBj,2)
+#endif
       real(r8), intent(inout) :: tis(LBi:UBi,LBj:UBj)
       real(r8), intent(inout) :: ti(LBi:UBi,LBj:UBj,2)
       real(r8), intent(inout) :: enthalpi(LBi:UBi,LBj:UBj,2)
@@ -348,6 +362,7 @@
       real(r8), intent(in) :: sustr(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: svstr(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: qai_n(LBi:UBi,LBj:UBj)
+      real(r8), intent(in) :: qi_o_n(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: qao_n(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: snow_n(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: rain(LBi:UBi,LBj:UBj)
@@ -358,6 +373,8 @@
 !
 
       integer :: i, j
+      integer :: iday, month, year
+      real(r8) :: hour, yday
 
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: b2d
 
@@ -382,14 +399,21 @@
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: t2
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: cht
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: chs
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: ai_old
+!      real(r8), dimension(IminS:ImaxS,JminS:JmaxS,2) :: enthal
 
 #ifdef AICLM_NUDGING
       real(r8) :: cff
 #endif
       real(r8) :: tfrz
       real(r8) :: cot
-      real(r8) :: xmelt
       real(r8) :: ai_tmp
+#ifdef MELT_PONDS
+      real(r8) :: vpond
+      real(r8) :: vpond_new
+      real(r8) :: pond_r, apond_old
+#endif
+      real(r8) :: pmelt
 
       real(r8), parameter :: eps = 1.E-4_r8
       real(r8), parameter :: prt = 13._r8
@@ -407,7 +431,13 @@
       real(r8), parameter :: cpi = 2093.0_r8            ! [J kg-1 K-1]
       real(r8), parameter :: cpw = 3990.0_r8            ! [J kg-1 K-1]
       real(r8), parameter :: rhocpr = 0.2442754E-6_r8   ! [m s2 K kg-1]
-      real(r8), parameter :: ykf = 3.14
+      real(r8), parameter :: ykf = 3.14_r8
+#ifdef MELT_PONDS
+      real(r8), parameter :: pond_Tp = -2.0_r8          ! [C]
+      real(r8), parameter :: pond_delta = 0.8_r8
+      real(r8), parameter :: pond_rmin = 0.15_r8
+      real(r8), parameter :: pond_rmax = 0.7_r8
+#endif
 
       real(r8) :: corfac
       real(r8) :: hicehinv  ! 1./(0.5*ice_thick)
@@ -417,7 +447,6 @@
       real(r8) :: termt
       real(r8) :: terms
       real(r8) :: tfz
-      real(r8) :: xwai
       real(r8) :: xtot
       real(r8) :: phi
       real(r8) :: d1
@@ -437,6 +466,7 @@
 
 #include "set_bounds.h"
 
+      CALL caldate(r_date, tdays(ng), year, yday, month, iday, hour)
       DO j=Jstr,Jend
         DO i=Istr,Iend
           temp_top(i,j)=t(i,j,N(ng),nrhs,itemp)
@@ -477,8 +507,6 @@
 !  calculate those parts of the energy balance which do not depend
 !  on the surface temperature.
 !-----------------------------------------------------------------
-! *** all rho's 0n 1026 kg m-3. cp's on 4.186e+6 j m-3 c-1.
-! *** sigma=5.67e-8 w m-2 k-4 : sigma=sigma*epsilon. m&u used 5.78e-8
 ! *** ignore snow effects except change albi to albsn value
 
 !      beregner sno- og is-tykkelse
@@ -486,16 +514,19 @@
       DO j = Jstr,Jend
         DO i = Istr,Iend
           sice(i,j) = MIN(sice_ref,salt_top(i,j))
-          ice_thick(i,j) = 0.05_r8+hi(i,j,linew)/                       &
-     &                    (ai(i,j,linew)+eps)
-          snow_thick(i,j) = hsn(i,j,linew)/(ai(i,j,linew)+eps)
-          brnfr(i,j) = frln*sice(i,j)/(ti(i,j,linew)-eps)
-          brnfr(i,j) = min(brnfr(i,j),0.2_r8)
-          brnfr(i,j) = max(brnfr(i,j),0.0_r8)
+          ice_thick(i,j) = MAX(0.05_r8,                                 &
+     &                hi(i,j,linew)/MAX(ai(i,j,linew),eps))
+          snow_thick(i,j) = hsn(i,j,linew)/MAX(ai(i,j,linew),eps)
+          ai_old(i,j) = ai(i,j,linew)
+          brnfr(i,j) = frln*sice(i,j)/MIN(ti(i,j,linew),-eps)
+          brnfr(i,j) = MIN(brnfr(i,j),0.2_r8)
+          brnfr(i,j) = MAX(brnfr(i,j),0.0_r8)
 !      alph - thermal conductivity of ice
-          alph(i,j) = alphic*MAX(1._r8-1.2_r8*brnfr(i,j),0.25_r8)
+          alph(i,j) = alphic*(1._r8-1.2_r8*brnfr(i,j))
+#ifndef ICE_BOX
           corfac = 1._r8/(0.5_r8*(1._r8+EXP(-(hi(i,j,linew)/1._r8)**2)))
           alph(i,j) = alph(i,j)*corfac
+#endif
           coa(i,j) = 2.0_r8*alph(i,j)*snow_thick(i,j)/                  &
      &                   (alphsn*ice_thick(i,j))
         END DO
@@ -516,8 +547,7 @@
         DO i = Istr,Iend
 ! gradient coefficient for heat conductivity part
           b2d(i,j) = 2.0_r8*alph(i,j)/(ice_thick(i,j)*(1._r8+coa(i,j)))
-          coef_ice_heat(i,j) = coef_ice_heat(i,j) +                     &
-     &          b2d(i,j)
+          coef_ice_heat(i,j) = coef_ice_heat(i,j) + b2d(i,j)
 
           IF (ai(i,j,linew) .gt. min_a(ng)) THEN
 
@@ -526,8 +556,10 @@
      &              b2d(i,j)*ti(i,j,linew)
             tis(i,j) = rhs_ice_heat(i,j)/coef_ice_heat(i,j)
             tis(i,j) = MAX(tis(i,j),-45._r8)
+            qai(i,j) = qai_n(i,j)
           ELSE
             tis(i,j) = temp_top(i,j)
+            qai(i,j) = qai_n(i,j)
           END IF
         END DO
       END DO
@@ -537,13 +569,26 @@
 !**** calculate interior ice temp and heat fluxes
 !       new temperature in ice
           IF (ai(i,j,linew) .gt. min_a(ng)) THEN
-            cot = -frln*sice(i,j)*hfus/(ti(i,j,linew)-eps)**2 + cpi
+            cot = cpi - frln*sice(i,j)*hfus/(ti(i,j,linew)-eps)**2
+!            enthal(i,j,1) = brnfr(i,j) * (hfus + cpw*ti(i,j,linew)) +  &
+!     &                (1 - brnfr(i,j)) * cpi * ti(i,j,linew)
+#ifdef ICE_I_O
+            ti(i,j,linew) = ti(i,j,linew) +                             &
+     &               dtice(ng)/(rhoice(ng)*ice_thick(i,j)*cot)*         &
+     &        (2._r8*alph(i,j)/ice_thick(i,j)*                          &
+     &         (t0mk(i,j) + (tis(i,j) - (2._r8+coa(i,j))*ti(i,j,linew)) &
+     &                      /(1._r8+coa(i,j))) + qi_o_n(i,j))
+#else
             ti(i,j,linew) = ti(i,j,linew) + dtice(ng)*(                 &
-     &      2._r8*alph(i,j)/(rhoice(ng)*ice_thick(i,j)**2*cot)          &
-     &         *(t0mk(i,j) + (tis(i,j) - (2._r8+coa(i,j))*ti(i,j,linew))&
+     &        2._r8*alph(i,j)/(rhoice(ng)*ice_thick(i,j)**2*cot)        &
+     &        *(t0mk(i,j) + (tis(i,j) - (2._r8+coa(i,j))*ti(i,j,linew)) &
      &                                        /(1._r8+coa(i,j))))
+#endif
             ti(i,j,linew) = max(ti(i,j,linew),-35._r8)
             ti(i,j,linew) = min(ti(i,j,linew),-eps)
+!            brnfr(i,j) = frln*sice(i,j)/MIN(ti(i,j,linew),-eps)
+!            enthal(i,j,2) = brnfr(i,j) * (hfus + cpw*ti(i,j,linew)) +  &
+!     &                (1 - brnfr(i,j)) * cpi * ti(i,j,linew)
           ELSE
             ti(i,j,linew) = temp_top(i,j)
           END IF
@@ -554,13 +599,12 @@
         DO i = Istr,Iend
           IF (ai(i,j,linew) .gt. min_a(ng)) THEN
             t2(i,j) = (tis(i,j)+coa(i,j)*ti(i,j,linew))/(1._r8+coa(i,j))
-            hicehinv = 1._r8/(0.5_r8*ice_thick(i,j))
+            hicehinv = 2._r8/ice_thick(i,j)
             qi2(i,j) = alph(i,j)*(ti(i,j,linew)-t2(i,j))*hicehinv
             qio(i,j) = alph(i,j)*(t0mk(i,j)-ti(i,j,linew))*hicehinv
           END IF
 
 !  Compute net heat flux from ice to atmosphere - Mellor and Kantha (7)
-          qai(i,j) = qai_n(i,j)
         END DO
       END DO
 
@@ -598,7 +642,10 @@
             qai(i,j) = 0._r8
             qio(i,j) = 0._r8
             hsn(i,j,linew) = 0._r8
-            sfwat(i,j,linew) = 0._r8
+#ifdef MELT_PONDS
+            apond(i,j,linew) = 0._r8
+            hpond(i,j,linew) = 0._r8
+#endif
           END IF
         END DO
       END DO
@@ -621,17 +668,23 @@
           IF (ai(i,j,linew) .gt. min_a(ng)) THEN
 ! Melt ice or freeze surface water in the fall if there is no snow
             IF (hsn(i,j,linew) .le. 0.0_r8) THEN
-!              IF (tis(i,j) .gt. tfrz .or. sfwat(i,j,linew) .gt. 0._r8)   &
-!     &                                                            THEN
+#ifdef MELT_PONDS
+              IF (tis(i,j) .gt. tfrz .or. hpond(i,j,linew) .gt. 0._r8)  &
+     &                                                            THEN
+#else
               IF (tis(i,j) .gt. tfrz) THEN
+#endif
 !   ice warmer than freezing point
                 tis(i,j) = tfrz
-                hfus1(i,j) = hfus*(1._r8-brnfr(i,j))+tis(i,j)*cpw        &
+		t2(i,j) = tfrz
+!   ice warmer than freezing point
+                hfus1(i,j) = hfus*(1._r8-brnfr(i,j))+tis(i,j)*cpw       &
      &         -((1._r8-brnfr(i,j))*cpi+brnfr(i,j)*cpw)*ti(i,j,linew)
                 qai(i,j) = qai_n(i,j)
                 qi2(i,j) = b2d(i,j)*(ti(i,j,linew)-tis(i,j))
 !    compute ice production rate (negative here) from atmosphere-ice exchange
-                wai(i,j) = -(qai(i,j) -qi2(i,j)) /(hfus1(i,j)*rhosw)
+!    Means wai is positive for melt
+                wai(i,j) = -(qai(i,j)-qi2(i,j)) /(hfus1(i,j)*rhosw)
 !    compute production rate for melt water (melting rate)
                 wsm(i,j) = ws(i,j)
               END IF
@@ -644,36 +697,75 @@
                 tis(i,j) = 0._r8
                 qai(i,j) = qai_n(i,j)
                 qi2(i,j) = b2d(i,j)*(ti(i,j,linew)-tis(i,j))
+                t2(i,j) = (tis(i,j)+coa(i,j)*ti(i,j,linew))/            &
+     &                (1._r8+coa(i,j))
 !          snow melting
+! When does snow get denser???
                 wsm(i,j) = max(0.0_r8,-(qai(i,j)-qi2(i,j))/             &
-     &                    (rhosnow_wet(ng)*hfus)) + ws(i,j)
+     &                    (rhosnow_dry(ng)*hfus)) + ws(i,j)
+!     &                    (rhosnow_wet(ng)*hfus)) + ws(i,j)
               END IF
 
-              IF (tis(i,j) .lt. 0.0_r8 .and.                            &
-     &            sfwat(i,j,linew) .gt. 0.0_r8) THEN
+#ifdef MELT_PONDS
+              IF (tis(i,j) < 0.0_r8 .and.                               &
+     &            hpond(i,j,linew) > 0.0_r8) THEN
 !          colder than the freezing point
                 tis(i,j) = 0._r8
                 qai(i,j) = qai_n(i,j)
                 qi2(i,j) = b2d(i,j)*(ti(i,j,linew)-tis(i,j))
                 wai(i,j) = -(qai(i,j)-qi2(i,j))/(hfus*rhosw)
               END IF
+#endif
             END IF
 !
-!***** compute snow thickness and surface melt water
+!***** compute snow thickness
 !       hsn - snow thickness
-!       sfwat - surface meltwater
+#ifdef NO_SNOW
+            hsn(i,j,linew) = 0.0_r8
+#else
             hsn(i,j,linew) = hsn(i,j,linew)+(ai(i,j,linew)              &
      &                             *(-wsm(i,j)+ws(i,j)))*dtice(ng)
             hsn(i,j,linew) = max(0.0_r8,hsn(i,j,linew))
-            sfwat(i,j,linew) = sfwat(i,j,linew)+                        &
-     &                        (wai(i,j)+wsm(i,j))*dtice(ng)
-            sfwat(i,j,linew) = max(0.0_r8,sfwat(i,j,linew))
-!
-            IF (sfwat(i,j,linew) .gt. sfwat_max(ng)) THEN
-              wro(i,j) = (sfwat(i,j,linew)-sfwat_max(ng))/dtice(ng)
-              sfwat(i,j,linew) = sfwat_max(ng)
-            END IF
+#endif
           END IF
+#ifdef MELT_PONDS
+!
+!  Update melt ponds
+!  This all comes from CICE's cesm pond scheme.
+!
+          IF (ai(i,j,linew) > min_a(ng)) THEN
+            vpond = apond(i,j,linew)*hpond(i,j,linew)*ai(i,j,linew)
+!  pond growth (should have rain...)
+            pmelt = MAX(0._r8,wai(i,j)+wsm(i,j))
+            pond_r = pond_rmin+(pond_rmax-pond_rmin)*ai(i,j,linew)
+            vpond = vpond + pmelt*pond_r*dtice(ng)
+            wro(i,j) = (1.0_r8-pond_r)*pmelt
+!  pond contraction
+            vpond = vpond*exp(0.01_r8*MAX((pond_Tp-tis(i,j)),0._r8)/    &
+     &                         pond_Tp)
+!  New pond shape
+            apond(i,j,linew) = MIN(1.0_r8,                              &
+     &                   sqrt(vpond/(pond_delta*ai(i,j,linew))))
+            hpond(i,j,linew) = pond_delta*apond(i,j,linew)
+            IF (hi(i,j,linew) < 0.01_r8) THEN
+              hpond(i,j,linew) = 0.0_r8
+              apond(i,j,linew) = 0.0_r8
+            ELSE IF (hpond(i,j,linew) .gt. 0.9_r8*hi(i,j,linew)) THEN
+              hpond(i,j,linew) = 0.9_r8*hi(i,j,linew)
+              apond(i,j,linew) = hi(i,j,linew)/pond_delta
+            END IF
+            vpond_new = apond(i,j,linew)*hpond(i,j,linew)*ai(i,j,linew)
+            wro(i,j) = wro(i,j) + (vpond-vpond_new)/dtice(ng)
+          ELSE
+            vpond = apond(i,j,linew)*hpond(i,j,linew)*ai(i,j,linew)
+            wro(i,j) = vpond/dtice(ng)
+            apond(i,j,linew) = 0.0_r8
+            hpond(i,j,linew) = 0.0_r8
+          END IF
+#else
+          pmelt = MAX(0._r8,wai(i,j)+wsm(i,j))
+          wro(i,j) = pmelt
+#endif
         END DO
       END DO
 
@@ -690,8 +782,8 @@
           rno = utau(i,j)*0.09_r8/nu
           termt = ykf*sqrt(rno)*prt**0.666667_r8
           terms = ykf*sqrt(rno)*prs**0.666667_r8
-          cht(i,j) = utau(i,j)/(tpr*(log(zdz0)/kappa+termt))
-          chs(i,j) = utau(i,j)/(tpr*(log(zdz0)/kappa+terms))
+          cht(i,j) = utau(i,j)/(tpr*log(zdz0)/kappa+termt)
+          chs(i,j) = utau(i,j)/(tpr*log(zdz0)/kappa+terms)
         END DO
       END DO
 
@@ -701,7 +793,6 @@
           wao(i,j) = 0._r8
           wio(i,j) = 0._r8
 
-          xwai = max(0._r8,wai(i,j))
           hfus1(i,j) = hfus*(1.0_r8-brnfr(i,j))+t0mk(i,j)*cpw           &
      &         -((1.0_r8-brnfr(i,j))*cpi+brnfr(i,j)*cpw)*ti(i,j,linew)
           IF (temp_top(i,j) .le. tfz)                                   &
@@ -715,6 +806,12 @@
           ELSE
 
 ! MK89 version
+#ifdef ICE_BOX
+!  F_t set to 2 W/m^2
+            wio(i,j) = (qio(i,j) - 2.0_r8)/(rhosw*hfus1(i,j))
+            xtot = ai(i,j,linew)*wio(i,j)                               &
+     &              +(1._r8-ai(i,j,linew))*wao(i,j)
+#else
             wio(i,j) = (qio(i,j)/rhosw +                                &
      &               cpw*cht(i,j)*(t0mk(i,j)-temp_top(i,j)))/hfus1(i,j)
 
@@ -722,12 +819,13 @@
      &              +(1._r8-ai(i,j,linew))*wao(i,j)
 
             s0mk(i,j) =                                                 &
-     &             (chs(i,j)*salt_top(i,j)+(xwai-wio(i,j))*sice(i,j))   &
-     &                /(chs(i,j)+xwai+wro(i,j)-wio(i,j))
+     &            (chs(i,j)*salt_top(i,j)+(wro(i,j)-wio(i,j))*sice(i,j))&
+     &                /(chs(i,j)+wro(i,j)-wio(i,j))
             s0mk(i,j) = max(s0mk(i,j),0._r8)
             s0mk(i,j) = min(s0mk(i,j),40._r8)
 
             t0mk(i,j) = frln*s0mk(i,j)
+#endif
 
           END IF
 
@@ -782,15 +880,12 @@
 #endif
 #ifdef ICE_SHOREFAST
             stflx(i,j,isalt) = stflx(i,j,isalt) +                       &
-     &        (- (xtot-ai(i,j,linew)*xwai)*                             &
-     &          (sice(i,j)-MIN(MAX(s0mk(i,j),0.0_r8),60.0_r8))          &
-     &        - ai(i,j,linew)*wro(i,j)*                                 &
-     &          MIN(MAX(s0mk(i,j),0.0_r8),60.0_r8))*fac_sf
+     &        (- (xtot-ai(i,j,linew)*wro(i,j))*                         &
+     &          (sice(i,j)-MIN(MAX(s0mk(i,j),0.0_r8),60.0_r8)) )        &
+     &                     *fac_sf
 #else
             stflx(i,j,isalt) = stflx(i,j,isalt)                         &
-     &          - (xtot-ai(i,j,linew)*xwai)*(sice(i,j)-s0mk(i,j))       &
-     &          - ai(i,j,linew)*wro(i,j)*                               &
-     &          MIN(MAX(s0mk(i,j),0.0_r8),60.0_r8)
+     &          - (xtot-ai(i,j,linew)*wro(i,j))*(sice(i,j)-s0mk(i,j))
 #endif
 
 ! Test for case of rainfall on snow/ice and assume 100% drainage
@@ -801,8 +896,7 @@
             END IF
 #endif
 !  io_mflux is ice production rate (+ve for growth)
-            io_mflux(i,j) = xtot -ai(i,j,linew)*xwai -                    &
-     &                            ai(i,j,linew)*wro(i,j) + wfr(i,j)
+            io_mflux(i,j) = xtot - ai(i,j,linew)*wro(i,j) + wfr(i,j)
 #ifdef MASKING
             stflx(i,j,isalt) = stflx(i,j,isalt)*rmask(i,j)
             io_mflux(i,j) = io_mflux(i,j)*rmask(i,j)
@@ -825,10 +919,9 @@
         DO i = Istr,Iend
           phi = 4._r8
           if (wao(i,j) .lt. 0.0_r8 ) phi = 0.5_r8
-          xmelt = min((wio(i,j)+wai(i,j)),0.0_r8)
           hi(i,j,linew) = hi(i,j,linew)+dtice(ng)                       &
      &             *(ai(i,j,linew)                                      &
-     &             *(wio(i,j)+wai(i,j))                                 &
+     &             *(wio(i,j)-wai(i,j))                                 &
      &        +(1.0_r8-ai(i,j,linew))*wao(i,j) + wfr(i,j))
 
           ai_tmp = ai(i,j,linew)
@@ -837,12 +930,13 @@
      &                      *(phi*wao(i,j)+wfr(i,j))
           ai(i,j,linew) = min(ai(i,j,linew),max_a(ng))
 
+#ifndef NO_SNOW
 ! adjust snow volume when ice melting out from under it
           IF (ai(i,j,linew) .lt. ai_tmp)                                &
      &        hsn(i,j,linew) =                                          &
      &           hsn(i,j,linew)*ai(i,j,linew)/max(ai_tmp,eps)
 
-#ifdef ICE_CONVSNOW
+# ifdef ICE_CONVSNOW
 !
 ! If snow base is below sea level, then raise the snow base to sea level
 !  by converting some snow to ice (N.B. hstar is also weighted by ai
@@ -854,6 +948,7 @@
             hsn(i,j,linew) = hsn(i,j,linew) - rhoice(ng)*hstar/rhosw
             hi(i,j,linew) = hi(i,j,linew) + rhosnow_dry(ng)*hstar/rhosw
           ENDIF
+# endif
 #endif
 #ifdef AICLM_NUDGING
           cff = AInudgcof(i,j)
@@ -861,6 +956,33 @@
      &                  dtice(ng)*cff*(aiclm(i,j)-ai(i,j,linew))
           hi(i,j,linew)=hi(i,j,linew)+                                  &
      &                  dtice(ng)*cff*(hiclm(i,j)-hi(i,j,linew))
+#endif
+#ifdef MASKING
+          ai(i,j,linew) = ai(i,j,linew)*rmask(i,j)
+          hi(i,j,linew) = hi(i,j,linew)*rmask(i,j)
+#endif
+#ifdef WET_DRY
+!          ai(i,j,linew) = ai(i,j,linew)*rmask_wet(i,j)
+!          hi(i,j,linew) = hi(i,j,linew)*rmask_wet(i,j)
+#endif
+#ifdef ICESHELF
+          IF (zice(i,j).ne.0.0_r8) THEN
+            ai(i,j,linew) = 0.0_r8
+            hi(i,j,linew) = 0.0_r8
+          END IF
+#endif
+#ifdef MELT_PONDS
+!
+! Adjust ponds for changes in ai
+!
+          IF (ai(i,j,linew) > min_a(ng) .and.                           &
+     &                       apond(i,j,linew) > 0._r8) THEN
+            apond_old = apond(i,j,linew)
+            apond(i,j,linew) = apond(i,j,linew)*ai_old(i,j)/            &
+     &                      ai(i,j,linew)
+            hpond(i,j,linew) = hpond(i,j,linew)*apond_old*ai_old(i,j)   &
+     &                 /(ai(i,j,linew)*apond(i,j,linew))
+          END IF
 #endif
 
 ! determine age of the sea ice
@@ -877,31 +999,41 @@
             ageice(i,j,linew) = 0.0_r8
           ENDIF
 
-#ifdef MASKING
-          ai(i,j,linew) = ai(i,j,linew)*rmask(i,j)
-          hi(i,j,linew) = hi(i,j,linew)*rmask(i,j)
-#endif
-#ifdef WET_DRY
-!          ai(i,j,linew) = ai(i,j,linew)*rmask_wet(i,j)
-!          hi(i,j,linew) = hi(i,j,linew)*rmask_wet(i,j)
-#endif
-#ifdef ICESHELF
-          IF (zice(i,j).ne.0.0_r8) THEN
-            ai(i,j,linew) = 0.0_r8
-            hi(i,j,linew) = 0.0_r8
-          END IF
-#endif
-
 #undef DIAG_WPB
 #ifdef DIAG_WPB
-      IF (i.eq.156.and.j.eq.481) THEN
+      IF (i.eq.1.and.j.eq.1) THEN
          write(*,*) tdays,wio(i,j),wai(i,j),wao(i,j),wfr(i,j),          &
-     &              xmelt,ai(i,j,linew),tis(i,j),                       &
-     &                                     sfwat(i,j,linew),            &
+     &              ai(i,j,linew),hi(i,j,linew),tis(i,j),               &
+#ifdef MELT_PONDS
+     &              apond(i,j,linew), hpond(i,j,linew),                 &
+#endif
      &              temp_top(i,j),t0mk(i,j),stflx(i,j,itemp),           &
      &              salt_top(i,j),s0mk(i,j),stflx(i,j,isalt),           &
      &              qio(i,j), ti(i,j,linew), brnfr(i,j),                &
-     &              t2(i,j)
+     &              t2(i,j), qao_n(i,j), qi2(i,j), qai_n(i,j)
+        print *
+      END IF
+#endif
+#ifdef ICE_BOX
+!      IF (i.eq.1.and.j.eq.1) THEN
+!         write(*,*) tdays,enthal(i,j,1),enthal(i,j,2),                  &
+!     &              hi(i,j,linew),hsn(i,j,linew),tis(i,j),              &
+!     &              ti(i,j,linew), t2(i,j),                             &
+!     &              qio(i,j), qi2(i,j), qi_o_n(i,j),                    &
+!     &              (qio(i,j) - qi2(i,j) + qi_o_n(i,j))*dtice(ng)/      &
+!     &              (ice_thick(i,j)*rhoice(ng))
+!        print *
+!      END IF
+      IF (i.eq.1.and.j.eq.1.and.iday==15.and.int(hour)==0) THEN
+         write(*,*) tdays,wio(i,j),wai(i,j),wro(i,j),                   &
+     &              hi(i,j,linew),hsn(i,j,linew),tis(i,j),              &
+#ifdef MELT_PONDS
+     &              apond(i,j,linew), hpond(i,j,linew),                 &
+#endif
+     &              ti(i,j,linew), t2(i,j),                             &
+     &              qio(i,j), qi2(i,j), qai_n(i,j),                     &
+     &              alph(i,j), coa(i,j), qi_o_n(i,j), cot, t0mk(i,j)
+        print *
       END IF
 #endif
 
@@ -915,7 +1047,6 @@
           ai(i,j,linew) = MAX(ai(i,j,linew),0.0_r8)
           hi(i,j,linew) = MAX(hi(i,j,linew),0.0_r8)
           hsn(i,j,linew) = MAX(hsn(i,j,linew),0.0_r8)
-          sfwat(i,j,linew) = MAX(sfwat(i,j,linew),0.0_r8)
           ti(i,j,linew) = MAX(ti(i,j,linew),-70.0_r8)
           if (hi(i,j,linew) .le. 0.0_r8) ai(i,j,linew) = 0.0_r8
           if (ai(i,j,linew) .le. 0.0_r8) hi(i,j,linew) = 0.0_r8
@@ -968,15 +1099,26 @@
       CALL tibc_tile (ng, tile, iNLM,                                   &
      &                          LBi, UBi, LBj, UBj, liold, linew,       &
      &                          ui, vi, hi, ti, enthalpi)
+#ifdef MELT_PONDS
       CALL i2d_bc_tile (ng, tile, iNLM,                                 &
      &                  LBi, UBi, LBj, UBj,                             &
      &                  IminS, ImaxS, JminS, JmaxS,                     &
      &                  liold, linew,                                   &
-     &                  BOUNDARY(ng)%sfwat_west(LBj:UBj),               &
-     &                  BOUNDARY(ng)%sfwat_east(LBj:UBj),               &
-     &                  BOUNDARY(ng)%sfwat_north(LBi:UBi),              &
-     &                  BOUNDARY(ng)%sfwat_south(LBi:UBi),              &
-     &                  ui, vi, sfwat, LBC(:,isSfwat,ng))
+     &                  BOUNDARY(ng)%apond_west(LBj:UBj),               &
+     &                  BOUNDARY(ng)%apond_east(LBj:UBj),               &
+     &                  BOUNDARY(ng)%apond_north(LBi:UBi),              &
+     &                  BOUNDARY(ng)%apond_south(LBi:UBi),              &
+     &                  ui, vi, apond, LBC(:,isApond,ng))
+      CALL i2d_bc_tile (ng, tile, iNLM,                                 &
+     &                  LBi, UBi, LBj, UBj,                             &
+     &                  IminS, ImaxS, JminS, JmaxS,                     &
+     &                  liold, linew,                                   &
+     &                  BOUNDARY(ng)%hpond_west(LBj:UBj),               &
+     &                  BOUNDARY(ng)%hpond_east(LBj:UBj),               &
+     &                  BOUNDARY(ng)%hpond_north(LBi:UBi),              &
+     &                  BOUNDARY(ng)%hpond_south(LBi:UBi),              &
+     &                  ui, vi, hpond, LBC(:,isHpond,ng))
+#endif
 !      CALL i2d_bc_tile (ng, tile, iNLM,                                 &
 !     &                  LBi, UBi, LBj, UBj,                             &
 !     &                  IminS, ImaxS, JminS, JmaxS,                     &
@@ -1022,9 +1164,14 @@ FOOO
         CALL exchange_r2d_tile (ng, tile,                               &
      &                          LBi, UBi, LBj, UBj,                     &
      &                          enthalpi(:,:,linew))
+#ifdef MELT_PONDS
         CALL exchange_r2d_tile (ng, tile,                               &
      &                          LBi, UBi, LBj, UBj,                     &
-     &                          sfwat(:,:,linew))
+     &                          apond(:,:,linew))
+        CALL exchange_r2d_tile (ng, tile,                               &
+     &                          LBi, UBi, LBj, UBj,                     &
+     &                          hpond(:,:,linew))
+#endif
         CALL exchange_r2d_tile (ng, tile,                               &
      &                          LBi, UBi, LBj, UBj,                     &
      &                          ageice(:,:,linew))
@@ -1049,11 +1196,17 @@ FOOO
      &                    NghostPoints, EWperiodic(ng), NSperiodic(ng), &
      &                    ai(:,:,linew), hi(:,:,linew),                 &
      &                    hsn(:,:,linew), ti(:,:,linew))
-      CALL mp_exchange2d (ng, tile, iNLM, 4,                            &
+      CALL mp_exchange2d (ng, tile, iNLM, 3,                            &
      &                    LBi, UBi, LBj, UBj,                           &
      &                    NghostPoints, EWperiodic(ng), NSperiodic(ng), &
-     &                    enthalpi(:,:,linew), sfwat(:,:,linew),        &
+     &                    enthalpi(:,:,linew),                          &
      &                    ageice(:,:,linew), hage(:,:,linew))
+# ifdef MELT_PONDS
+      CALL mp_exchange2d (ng, tile, iNLM, 2,                            &
+     &                    LBi, UBi, LBj, UBj,                           &
+     &                    NghostPoints, EWperiodic(ng), NSperiodic(ng), &
+     &                    apond(:,:,linew), hpond(:,:,linew))
+# endif
 # if defined ICE_BIO && defined BERING_10K
       CALL mp_exchange2d (ng, tile, iNLM, 3,                            &
      &                    LBi, UBi, LBj, UBj,                           &

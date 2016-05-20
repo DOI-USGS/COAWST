@@ -5,7 +5,7 @@
 !
 !svn $Id: set_tides.F 1382 2011-02-19 01:44:37Z kate $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2014 The ROMS/TOMS Group        Robert Hetland   !
+!  Copyright (c) 2002-2016 The ROMS/TOMS Group        Robert Hetland   !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -364,8 +364,8 @@
 !  This averaging is less important for that type ob boundary
 !  conditions.
 !
-        IF (LBC(iwest,isFsur,ng)%acquire.or.                              &
-     &      LBC(iwest,isUbar,ng)%acquire.or.                              &
+        IF (LBC(iwest,isFsur,ng)%acquire.or.                            &
+     &      LBC(iwest,isUbar,ng)%acquire.or.                            &
      &      LBC(iwest,isVbar,ng)%acquire) THEN
           update=.FALSE.
           cff=2.0_r8*pi*(time(ng)-tide_start*day2sec)

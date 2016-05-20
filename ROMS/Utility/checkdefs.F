@@ -1,9 +1,9 @@
 #include "cppdefs.h"
       SUBROUTINE checkdefs
 !
-!svn $Id: checkdefs.F 365 2007-07-08 16:15:48Z arango $
+!svn $Id: checkdefs.F 791 2016-05-05 22:39:42Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2015 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2016 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -157,7 +157,7 @@
       is=LEN_TRIM(Coptions)+1
       Coptions(is:is+15)=' AICLM_NUDGING,'
 #endif
-#if defined ALBEDO
+#if defined ALBEDO && defined ANA_SRFLUX
       IF (Master) WRITE (stdout,20) 'ALBEDO',                           &
      &   'Shortwave radiation with albedo correction.'
       is=LEN_TRIM(Coptions)+1
@@ -186,6 +186,12 @@
      &   'Albedo read from a forcing file.'
       is=LEN_TRIM(Coptions)+1
       Coptions(is:is+13)=' ALBEDO_FILE,'
+#endif
+#ifdef ANA_ALBEDO
+      IF (Master) WRITE (stdout,20) 'ANA_ALBEDO',                       &
+     &   'Analytical surface albedo.'
+      is=LEN_TRIM(Coptions)+1
+      Coptions(is:is+12)=' ANA_ALBEDO,'
 #endif
 #if defined BIOLOGY && defined ANA_BIOLOGY
       IF (Master) WRITE (stdout,20) 'ANA_BIOLOGY',                      &
@@ -273,6 +279,12 @@
       is=LEN_TRIM(Coptions)+1
       Coptions(is:is+13)=' ANA_INITIAL,'
 #endif
+#ifdef ANA_LRFLUX
+      IF (Master) WRITE (stdout,20) 'ANA_LRFLUX',                       &
+     &   'Analytical incoming longwave radiation flux.'
+      is=LEN_TRIM(Coptions)+1
+      Coptions(is:is+12)=' ANA_LRFLUX,'
+#endif
 #ifdef ANA_M2CLIMA
       IF (Master) WRITE (stdout,20) 'ANA_M2CLIMA',                      &
      &   'Analytical 2D momentum climatology.'
@@ -335,6 +347,12 @@
       is=LEN_TRIM(Coptions)+1
       Coptions(is:is+13)=' ANA_PSOURCE,'
 #endif
+#if defined ANA_PTOBC && defined SOLVE3D
+      IF (Master) WRITE (stdout,20) 'ANA_PTOBC',                        &
+     &   'Analytical passive tracers boundary conditions.'
+      is=LEN_TRIM(Coptions)+1
+      Coptions(is:is+11)=' ANA_PTOBC,'
+#endif
 #if defined ANA_RAIN && defined BULK_FLUXES
       IF (Master) WRITE (stdout,20) 'ANA_RAIN',                         &
      &   'Analytical rain fall rate.'
@@ -356,11 +374,23 @@
       is=LEN_TRIM(Coptions)+1
       Coptions(is:is+14)=' ANA_SEDIMENT,'
 #endif
+#if defined VEGETATION && defined ANA_VEGETATION 
+      IF (Master) WRITE (stdout,20) 'ANA_VEGETATION',                   &
+     &   'Analytical vegetation initial conditions.'
+      is=LEN_TRIM(Coptions)+1
+      Coptions(is:is+16)=' ANA_VEGETATION,'
+#endif
 #ifdef ANA_SMFLUX
       IF (Master) WRITE (stdout,20) 'ANA_SMFLUX',                       &
      &   'Analytical kinematic surface momentum flux.'
       is=LEN_TRIM(Coptions)+1
       Coptions(is:is+12)=' ANA_SMFLUX,'
+#endif
+#if defined ANA_SNOW
+      IF (Master) WRITE (stdout,20) 'ANA_SNOW',                         &
+     &   'Analytical snowfall rate.'
+      is=LEN_TRIM(Coptions)+1
+      Coptions(is:is+10)=' ANA_SNOW,'
 #endif
 #if defined BIOLOGY || defined SEDIMENT || defined T_PASSIVE
 # ifdef ANA_SPFLUX
@@ -431,12 +461,6 @@
      &   'Analytical tracers boundary conditions.'
       is=LEN_TRIM(Coptions)+1
       Coptions(is:is+10)=' ANA_TOBC,'
-#endif
-#if defined ANA_PTOBC && defined SOLVE3D
-      IF (Master) WRITE (stdout,20) 'ANA_PTOBC',                        &
-     &   'Analytical passive tracers boundary conditions.'
-      is=LEN_TRIM(Coptions)+1
-      Coptions(is:is+11)=' ANA_PTOBC,'
 #endif
 #if defined ANA_VMIX && defined SOLVE3D
       IF (Master) WRITE (stdout,20) 'ANA_VMIX',                         &
@@ -558,6 +582,13 @@
       Coptions(is:is+12)=' BIO_FENNEL,'
       ibiology=ibiology+1
 #endif
+#ifdef ESTUARYBGC 
+      IF (Master) WRITE (stdout,20) 'ESTUARYBGC',                       &
+     &   'Estuary bio-geo-chemical model (Testa et. al).'
+      is=LEN_TRIM(Coptions)+1
+      Coptions(is:is+11)=' ESTUARYBGC,'
+      ibiology=ibiology+1
+#endif
 #if defined BIO_SEDIMENT && \
    (defined BIO_FENNEL   || defined NEMURO || defined ECOSIM)
       IF (Master) WRITE (stdout,20) 'BIO_SEDIMENT',                     &
@@ -615,6 +646,12 @@
       is=LEN_TRIM(Coptions)+1
       Coptions(is:is+8)=' CARBON,'
 #endif
+#if defined CARBON && defined ESTUARYBGC
+      IF (Master) WRITE (stdout,20) 'CARBON',                           &
+     &   'Add Carbon constituents.'
+      is=LEN_TRIM(Coptions)+1
+      Coptions(is:is+8)=' CARBON,'
+#endif
 #ifdef CCSM_FLUXES
       IF (Master) WRITE (stdout,20) 'CCSM_FLUXES',                      &
      &   'Surface bulk fluxes parameterization.'
@@ -638,6 +675,12 @@
      &   'Write out radiation celerity in forward file.'
       is=LEN_TRIM(Coptions)+1
       Coptions(is:is+16)=' CELERITY_WRITE,'
+#endif
+#ifdef CICE_MODEL
+      IF (Master) WRITE (stdout,20) 'CICE_MODEL',                       &
+     &   'Include CICE Ice Model.'
+      is=LEN_TRIM(Coptions)+1
+      Coptions(is:is+12)=' CICE_MODEL,'
 #endif
 #ifdef CLIPPING
       IF (Master) WRITE (stdout,20) 'CLIPPING',                         &
@@ -726,6 +769,12 @@
       is=LEN_TRIM(Coptions)+1
       Coptions(is:is+10)=' CURVGRID,'
 #endif
+#if defined DAILY_SHORTWAVE && defined RED_TIDE
+      IF (Master) WRITE (stdout,20) 'DAILY_SHORTWAVE',                  &
+     &   'Daily-averaged surface solar shortwave radiation flux.'
+      is=LEN_TRIM(Coptions)+1
+      Coptions(is:is+17)=' DAILY_SHORTWAVE,'
+#endif
 #ifdef DEBUGGING
       IF (Master) WRITE (stdout,20) 'DEBUGGING',                        &
      &   'Internal debugging switch activated.'
@@ -750,13 +799,31 @@
       is=LEN_TRIM(Coptions)+1
       Coptions(is:is+17)=' DENITRIFICATION,'
 #endif
+#if defined DENITRIFICATION && defined ESTUARYBGC 
+      IF (Master) WRITE (stdout,20) 'DENITRIFICATION',                  &
+     &   'Add denitrification processes.'
+      is=LEN_TRIM(Coptions)+1
+      Coptions(is:is+17)=' DENITRIFICATION,'
+#endif
 #if defined DIAGNOSTICS_BIO && defined BIO_FENNEL
       IF (Master) WRITE (stdout,20) 'DIAGNOSTICS_BIO',                  &
      &   'Computing and writing biological diagnostic terms.'
       is=LEN_TRIM(Coptions)+1
       Coptions(is:is+17)=' DIAGNOSTICS_BIO,'
 #endif
+#if defined DIAGNOSTICS_BIO && defined ESTUARYBGC
+      IF (Master) WRITE (stdout,20) 'DIAGNOSTICS_BIO',                  &
+     &   'Computing and writing biological diagnostic terms.'
+      is=LEN_TRIM(Coptions)+1
+      Coptions(is:is+17)=' DIAGNOSTICS_BIO,'
+#endif
 #if defined SPECTRAL_LIGHT && defined BIO_FENNEL
+      IF (Master) WRITE (stdout,20) 'SPECTRAL_LIGHT',                   &
+     &   'Computing and writing spectral light terms.'
+      is=LEN_TRIM(Coptions)+1
+      Coptions(is:is+16)=' SPECTRAL_LIGHT,'
+#endif
+#if defined SPECTRAL_LIGHT && defined ESTUARYBGC
       IF (Master) WRITE (stdout,20) 'SPECTRAL_LIGHT',                   &
      &   'Computing and writing spectral light terms.'
       is=LEN_TRIM(Coptions)+1
@@ -794,39 +861,15 @@
 #endif
 #if defined VEGETATION 
       IF (Master) WRITE (stdout,20) 'VEGETATION',                       &
-     &   'active submerged/emergent vegetation effects.'
+     &   'Active submerged/emergent vegetation effects.'
       is=LEN_TRIM(Coptions)+1
       Coptions(is:is+12)=' VEGETATION,'
 #endif
-#if defined SAV 
-      IF (Master) WRITE (stdout,20) 'SAV',                              &
-     &   'submerged aquatic vegetation (e.g., seagrass).'
+#if defined VEGETATION && defined MARSH_WAVE_THRUST 
+      IF (Master) WRITE (stdout,20) 'MARSH_WAVE_THRUST',                &
+     &   'Vegetation module containing wave thrust effect on marshes .'
       is=LEN_TRIM(Coptions)+1
-      Coptions(is:is+5)=' SAV,'
-#endif
-#if defined EMERGENT_VEG 
-      IF (Master) WRITE (stdout,20) 'EMERGENT_VEG',                     &
-     &   'emergent vegetation (e.g., marsh).'
-      is=LEN_TRIM(Coptions)+1
-      Coptions(is:is+14)=' EMERGENT_VEG,'
-#endif
-#if defined SAV && defined SEAGRASS_SINK
-      IF (Master) WRITE (stdout,20) 'SEAGRASS_SINK',                    &
-     &   'bottom sink of N due to benthic seagrass proxy.'
-      is=LEN_TRIM(Coptions)+1
-      Coptions(is:is+15)=' SEAGRASS_SINK,'
-#endif
-#if defined SEAGRASS_SINK && defined SEAGRASS_LIGHT_CONST
-      IF (Master) WRITE (stdout,20) 'SEAGRASS_LIGHT_CONST',             &
-     &   'N sink (seagrass proxy) constant % if light more than limit.'
-      is=LEN_TRIM(Coptions)+1
-      Coptions(is:is+22)=' SEAGRASS_LIGHT_CONST,'
-#endif
-#if defined SEAGRASS_SINK && defined SEAGRASS_LIGHT
-      IF (Master) WRITE (stdout,20) 'SEAGRASS_LIGHT',                   &
-     &   'N sink (seagrass proxy) as a function of light.'
-      is=LEN_TRIM(Coptions)+1
-      Coptions(is:is+16)=' SEAGRASS_LIGHT,'
+      Coptions(is:is+19)=' MARSH_WAVE_THRUST,'
 #endif
 #ifdef DIAGNOSTICS_TS
       IF (Master) WRITE (stdout,20) 'DIAGNOSTICS_TS',                   &
@@ -1095,6 +1138,18 @@
       is=LEN_TRIM(Coptions)+1
       Coptions(is:is+9)=' ICE_EVP,'
 #endif
+#ifdef ICE_I_O
+      IF (Master) WRITE (stdout,20) 'ICE_I_O',                          &
+     &   'Put shortwave heat into ice interior.'
+      is=LEN_TRIM(Coptions)+1
+      Coptions(is:is+9)=' ICE_I_O,'
+#endif
+#ifdef ICE_LANDFAST
+      IF (Master) WRITE (stdout,20) 'ICE_LANDFAST',                    &
+     &   'Lemieux shorefast ice.'
+      is=LEN_TRIM(Coptions)+1
+      Coptions(is:is+14)=' ICE_LANDFAST,'
+#endif
 #ifdef ICE_MK
       IF (Master) WRITE (stdout,20) 'ICE_MK',                           &
      &   'Mellor-Kantha ice thermodynamics.'
@@ -1155,24 +1210,6 @@
       is=LEN_TRIM(Coptions)+1
       Coptions(is:is+16)=' IMPLICIT_VCONV,'
 #endif
-#if defined LIMIT_BSTRESS && defined SOLVE3D  && !defined BBL_MODEL
-      IF (Master) WRITE (stdout,20) 'LIMIT_BSTRESS',                    &
-     &   'Limit bottom stress to maintain bottom velocity direction.'
-      is=LEN_TRIM(Coptions)+1
-      Coptions(is:is+15)=' LIMIT_BSTRESS,'
-#endif
-#if defined NPZD_IRON && defined IRON_LIMIT
-      IF (Master) WRITE (stdout,20) 'IRON_LIMIT',                       &
-     &   'Include dissolved iron limitation on phytoplankton growth.'
-      is=LEN_TRIM(Coptions)+1
-      Coptions(is:is+12)=' IRON_LIMIT,'
-#endif
-#if defined NPZD_IRON && defined IRON_LIMIT && defined IRON_RELAX
-      IF (Master) WRITE (stdout,20) 'IRON_RELAX',                       &
-     &   'Nudge dissolved iron over the shelf, h <= FeHmin.'
-      is=LEN_TRIM(Coptions)+1
-      Coptions(is:is+12)=' IRON_RELAX,'
-#endif
 #ifdef IMPULSE
       IF (Master) WRITE (stdout,20) 'IMPULSE',                          &
      &   'Processing Adjoint Impulse forcing.'
@@ -1186,11 +1223,25 @@
       Coptions(is:is+15)=' INNER_PRODUCT,'
       idriver=idriver+1
 #endif
-#if defined IRON_LIMIT && (defined NEMURO || defined BIO_GOANPZ)
+#if defined IRON_LIMIT && (NPZD_IRON || defined NEMURO || \
+             defined BIO_GOANPZ || defined BIO_UMAINE)
       IF (Master) WRITE (stdout,20) 'IRON LIMITATION',                  &
      &   'Iron limitation on phytoplankton growth.'
       is=LEN_TRIM(Coptions)+1
       Coptions(is:is+12)=' IRON_LIMIT,'
+#endif
+#if defined IRON_RELAX && (defined NPZD_IRON || defined NEMURO || \
+          defined BIO_UMAINE)
+      IF (Master) WRITE (stdout,20) 'IRON_RELAX',                       &
+     &   'Nudge dissolved iron to climatology'
+      is=LEN_TRIM(Coptions)+1
+      Coptions(is:is+12)=' IRON_RELAX,'
+#endif
+#if defined IRON_RSIN && (defined NEMURO || defined BIO_UMAINE)
+      IF (Master) WRITE (stdout,20) 'IRON_RSIN',                       &
+     &   'Variable Si:N ratio based on iron'
+      is=LEN_TRIM(Coptions)+1
+      Coptions(is:is+11)=' IRON_RSIN,'
 #endif
 #ifdef IS4DVAR
       IF (Master) WRITE (stdout,20) 'IS4DVAR',                          &
@@ -1353,6 +1404,12 @@
      &   'Using Model Coupling Toolkit library.'
       is=LEN_TRIM(Coptions)+1
       Coptions(is:is+9)=' MCT_LIB,'
+#endif
+#ifdef MELT_PONDS
+      IF (Master) WRITE (stdout,20) 'MELT_PONDS',                       &
+     &   'Melt ponds on ice.'
+      is=LEN_TRIM(Coptions)+1
+      Coptions(is:is+11)=' MELT_PONDS,'
 #endif
 #ifdef MICLIMATOLOGY
       IF (Master) WRITE (stdout,20) 'MICLIMATOLOGY',                    &
@@ -1573,6 +1630,12 @@
       is=LEN_TRIM(Coptions)+1
       Coptions(is:is+20)=' NO_SCORRECTION_ICE,'
 #endif
+#ifdef NO_SNOW
+      IF (Master) WRITE (stdout,20) 'NO_SNOW',                           &
+     &   'Turn off snow in sea-ice model.'
+      is=LEN_TRIM(Coptions)+1
+      Coptions(is:is+9)=' NO_SNOW,'
+#endif
 #ifdef NO_WRITE_GRID
       IF (Master) WRITE (stdout,20) 'NO_WRITE_GRID',                    &
      &   'Not Writing grid arrays into NetCDF ouput files.'
@@ -1588,7 +1651,7 @@
 #endif
 #ifdef NPZD_IRON
       IF (Master) WRITE (stdout,20) 'NPZD_IRON',                        &
-     &   'NPZD Biological Model (Powell et al.) with iron limitation'
+     &   'NPZD Biological Model (Powell et al.) with iron limitation.'
       is=LEN_TRIM(Coptions)+1
       Coptions(is:is+11)=' NPZD_IRON,'
       ibiology=ibiology+1
@@ -1709,6 +1772,35 @@
      &   'Add oxygen dynamics.'
       is=LEN_TRIM(Coptions)+1
       Coptions(is:is+8)=' OXYGEN,'
+#endif
+#if defined OXYGEN && defined ESTUARYBGC 
+# ifdef OCMIP_OXYGEN_SC
+      IF (Master) WRITE (stdout,20) 'OCMIP_OXYGEN_SC',                  &
+     &   'Schmidt number from Keeling et al. (1998).'
+      is=LEN_TRIM(Coptions)+1
+      Coptions(is:is+17)=' OCMIP_OXYGEN_SC,'
+# else
+      IF (Master) WRITE (stdout,20) '!OCMIP_OXYGEN_SC',                 &
+     &   'Schmidt number from Wanninkhof (1992).'
+      is=LEN_TRIM(Coptions)+1
+      Coptions(is:is+18)=' !OCMIP_OXYGEN_SC,'
+# endif
+      IF (Master) WRITE (stdout,20) 'OXYGEN',                           &
+     &   'Add oxygen dynamics.'
+      is=LEN_TRIM(Coptions)+1
+      Coptions(is:is+8)=' OXYGEN,'
+#endif
+#if defined PARALLEL_IN && defined DISTRIBUTE
+      IF (Master) WRITE (stdout,20) 'PARALLEL_IN',                      &
+     &   'Parallel I/O processing.'
+      is=LEN_TRIM(Coptions)+1
+      Coptions(is:is+13)=' PARALLEL_IN,'
+#endif
+#if defined PARALLEL_OUT && defined DISTRIBUTE
+      IF (Master) WRITE (stdout,20) 'PARALLEL_OUT',                      &
+     &   'Parallel I/O processing.'
+      is=LEN_TRIM(Coptions)+1
+      Coptions(is:is+14)=' PARALLEL_OUT,'
 #endif
 #if defined PARALLEL_IO && defined DISTRIBUTE
       IF (Master) WRITE (stdout,20) 'PARALLEL_IO',                      &
@@ -1880,6 +1972,13 @@
       is=LEN_TRIM(Coptions)+1
       Coptions(is:is+17)=' RECOMPUTE_4DVAR,'
 #endif
+#ifdef RED_TIDE
+      IF (Master) WRITE (stdout,20) 'RED_TIDE',                         &
+     &   'Red tide biological model.'
+      is=LEN_TRIM(Coptions)+1
+      Coptions(is:is+10)=' RED_TIDE,'
+      ibiology=ibiology+1
+#endif
 #ifdef R_SYMMETRY
       IF (Master) WRITE (stdout,20) 'REP_MATRIX',                       &
      &   'Representers Matrix Symmetry Test.'
@@ -1899,6 +1998,15 @@
      &   'Smooth Richardson number vertically.'
       is=LEN_TRIM(Coptions)+1
       Coptions(is:is+11)=' RI_VERAVG,'
+# endif
+#endif
+#if defined SOLVE3D    && \
+   (defined GLS_MIXING || defined LMD_MIXING || defined MY25_MIXING)
+# ifdef RI_SPLINES
+      IF (Master) WRITE (stdout,20) 'RI_SPLINES',                       &
+     &   'Parabolic Spline Reconstruction for Richardson Number.'
+      is=LEN_TRIM(Coptions)+1
+      Coptions(is:is+12)=' RI_SPLINES,'
 # endif
 #endif
 #if !(defined PJ_GRADPQ4 || defined PJ_GRADPQ2 || defined PJ_GRADP || \
@@ -2077,6 +2185,18 @@
       Coptions(is:is+11)=' SG_LOGINT,'
 # endif
 #endif
+#ifdef SNOWFALL
+      IF (Master) WRITE (stdout,20) 'SNOWFALL',                         &
+     &   'Surface snow accumulation on ice.'
+      is=LEN_TRIM(Coptions)+1
+      Coptions(is:is+10)=' SNOWFALL,'
+#endif
+#ifdef SNOW_FROM_RAIN
+      IF (Master) WRITE (stdout,20) 'SNOW_FROM_RAIN',                   &
+     &   'Subtract snow from total precip (rain).'
+      is=LEN_TRIM(Coptions)+1
+      Coptions(is:is+16)=' SNOW_FROM_RAIN,'
+#endif
 #ifdef SOLAR_SOURCE
       IF (Master) WRITE (stdout,20) 'SOLAR_SOURCE',                     &
      &   'Solar Radiation Source Term.'
@@ -2116,17 +2236,23 @@
       Coptions(is:is+16)=' !SO_SEMI_WHITE,'
 # endif
 #endif
-#ifdef SPLINES
-      IF (Master) WRITE (stdout,20) 'SPLINES',                          &
-     &   'Conservative parabolic spline reconstruction.'
-      is=LEN_TRIM(Coptions)+1
-      Coptions(is:is+9)=' SPLINES,'
-#endif
 #if defined SPLINES_VCONV && defined FOUR_DVAR && defined VCONVOLUTION
       IF (Master) WRITE (stdout,20) 'IMPLICIT_VCONV',                   &
      &   'Implicit, Parabolic Splines Vertical Convolution Algorithm.'
       is=LEN_TRIM(Coptions)+1
       Coptions(is:is+16)=' SPLINES_VCONV,'
+#endif
+#if defined SPLINES_VDIFF && defined SOLVE3D
+      IF (Master) WRITE (stdout,20) 'SPLINES_VDIFF',                    &
+     &   'Parabolic Spline Reconstruction for Vertical Diffusion.'
+      is=LEN_TRIM(Coptions)+1
+      Coptions(is:is+15)=' SPLINES_VDIFF,'
+#endif
+#if defined SPLINES_VVISC && defined SOLVE3D
+      IF (Master) WRITE (stdout,20) 'SPLINES_VVISC',                    &
+     &   'Parabolic Spline Reconstruction for Vertical Viscosity.'
+      is=LEN_TRIM(Coptions)+1
+      Coptions(is:is+15)=' SPLINES_VVISC,'
 #endif
 #ifdef SPHERICAL
       IF (Master) WRITE (stdout,20) 'SPHERICAL',                        &
@@ -2145,6 +2271,12 @@
      &   'Add tidal elevation to SSH climatology.'
       is=LEN_TRIM(Coptions)+1
       Coptions(is:is+11)=' SSH_TIDES,'
+#endif
+#if defined SSSC_THRESHOLD
+      IF (Master) WRITE (stdout,20) 'SSSC_THRESHOLD',                   &
+     &   'Limit to SCORRECTION nudging.'
+      is=LEN_TRIM(Coptions)+1
+      Coptions(is:is+16)=' SSSC_THRESHOLD,'
 #endif
 #ifdef SSW_BBL
        IF (Master) WRITE (stdout,20) 'SSW_BBL',                         &
@@ -2232,6 +2364,19 @@
       Coptions(is:is+15)=' SWAN_COUPLING,'
 #endif
 #if defined CARBON && defined BIO_FENNEL
+# ifdef TALK_NONCONSERV
+      IF (Master) WRITE (stdout,20) 'TALK_NONCONSERV',                  &
+     &   'Alkalinity is affected by changes in nitrate or ammonium.'
+      is=LEN_TRIM(Coptions)+1
+      Coptions(is:is+17)=' TALK_NONCONSERV,'
+# else
+      IF (Master) WRITE (stdout,20) '!TALK_NONCONSERV',                 &
+     &   'Alkalinity is passive and unaffected by nitrate or ammonium.'
+      is=LEN_TRIM(Coptions)+1
+      Coptions(is:is+18)=' !TALK_NONCONSERV,'
+# endif
+#endif
+#if defined CARBON && defined ESTUARYBGC
 # ifdef TALK_NONCONSERV
       IF (Master) WRITE (stdout,20) 'TALK_NONCONSERV',                  &
      &   'Alkalinity is affected by changes in nitrate or ammonium.'
@@ -2490,6 +2635,12 @@
      &   'Smagorinksy-like time-dependent diffusion coefficients.'
       is=LEN_TRIM(Coptions)+1
       Coptions(is:is+16)=' TS_SMAGORINSKY,'
+#endif
+#if defined TWO_D_TRACER_SOURCE
+      IF (Master) WRITE (stdout,20) 'TWO_D_TRACER_SOURCE',              &
+     &   'One value per tracer per source.'
+      is=LEN_TRIM(Coptions)+1
+      Coptions(is:is+19)=' TWO_D_TRACER_SOURCE,'
 #endif
 #ifdef UV_ADV
       IF (Master) WRITE (stdout,20) 'UV_ADV',                           &
@@ -2755,7 +2906,7 @@
       IF (Master) WRITE (stdout,20) 'ZOS_HSIG',                         &
      &   'Wave amplitude used for Zos calculation.'
       is=LEN_TRIM(Coptions)+1
-      Coptions(is:is+14)=' ZOS_HSIG,'
+      Coptions(is:is+10)=' ZOS_HSIG,'
 #endif
 !
 !-----------------------------------------------------------------------
@@ -2980,7 +3131,7 @@
         exit_flag=5
       END IF
 #endif
-#ifdef PARALLEL_IO
+#if defined PARALLEL_IO || defined PARALLEL_OUT
 # if !(defined HDF5 || defined PNETCDF)
       IF (Master) THEN
         WRITE (stdout,170) uppercase('hdf5'),                           &
@@ -3094,6 +3245,21 @@
         exit_flag=5
       END IF
 #endif
+#if defined SPLINES && defined SOLVE3D
+!
+!  Stop if activating parabolic splines reconstruction with deprecated
+!  option. See https://www.myroms.org/projects/src/ticket/681 for more
+!  details.
+!
+      IF (Master) THEN
+        WRITE (stdout,250) uppercase('splines'),                        &
+     &        'https://www.myroms.org/projects/src/ticket/681'
+ 250    FORMAT (/,' CHECKDEFS - cannot use obsolete option: ',a,        &
+     &          /,13x,'See following trac ticket for details: ',        &
+     &          /,13x,a,/,13x,'please change header file accordingly.')
+        exit_flag=5
+      END IF
+#endif
 #if !defined DISTRIBUTE && defined NESTING
 !
 !  Stop if activating nesting in serial with partitions or shared-
@@ -3102,17 +3268,30 @@
       IF (Master) THEN
         DO ng=1,Ngrids
           IF (NtileX(ng)*NtileE(ng).gt.1) THEN
-            WRITE (stdout,250) uppercase('nesting')
+            WRITE (stdout,260) uppercase('nesting')
             exit_flag=5
             EXIT
           END IF
         END DO
- 250    FORMAT (/,' CHECKDEFS - cannot activate option: ',a,           &
+ 260    FORMAT (/,' CHECKDEFS - cannot activate option: ',a,           &
      &          /,13x,'in serial with partitions or shared-memory...', &
      &          /,13x,'There bugs in shared-memory that need fixing.', &
      &          /,13x,'Use distributed-memory (MPI) in parallel runs.')
       END IF
 #endif
+#if defined CICE_MODEL && defined ICE_MODEL
+!
+!  Stop if activating two sea ice models.
+!
+      IF (Master) THEN
+        WRITE (stdout,260) uppercase('cice_model'),                     &
+     &                     uppercase('ice_model')
+ 260    FORMAT (/,' CHECKDEFS - cannot activate ',a,'                   &
+     &            ' and',a,/,13x,'at the same time. Choose one!')
+        exit_flag=5
+      END IF
+#endif
+
 
       RETURN
       END SUBROUTINE checkdefs

@@ -1,9 +1,9 @@
 #include "cppdefs.h"
       SUBROUTINE def_info (ng, model, ncid, ncname, DimIDs)
 !
-!svn $Id: def_info.F 733 2008-09-07 01:56:45Z jcwarner $
+!svn $Id: def_info.F 791 2016-05-05 22:39:42Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2014 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2016 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -50,6 +50,7 @@
 !                DimIDs(31) => Number of 2D variables time levels (3). !
 !                DimIDs(32) => Number of sediment tracers.             !
 !                DimIDs(33) => Number of wave directions.              !
+!                DimIDs(35) => Number of vegetation properties.        !
 !                                                                      !
 !  On Output:                                                          !
 !                                                                      !
@@ -71,7 +72,7 @@
       USE mod_strings
 !
       USE def_var_mod, ONLY : def_var
-#if !defined PARALLEL_IO  && defined DISTRIBUTE
+#if !defined PARALLEL_OUT  && defined DISTRIBUTE
       USE distribute_mod, ONLY : mp_bcasti
 #endif
       USE strings_mod, ONLY : join_string
@@ -108,7 +109,7 @@
 # if defined VARIABLE_CDOM && defined SPECTRAL_LIGHT
       integer :: domdim
 #endif
-#if !defined PARALLEL_IO  && defined DISTRIBUTE
+#if !defined PARALLEL_OUT  && defined DISTRIBUTE
       integer :: ibuffer(2)
 #endif
       integer :: p2dgrd(2), tbrydim(2)
@@ -333,6 +334,16 @@
      &                        TRIM(title))
           IF (status.ne.nf90_noerr) THEN
             IF (Master) WRITE (stdout,20) 'title', TRIM(ncname)
+            exit_flag=3
+            ioerror=status
+          END IF
+        END IF
+
+        IF (exit_flag.eq.NoError) THEN
+          status=nf90_put_att(ncid, nf90_global, 'var_info',            &
+     &                        TRIM(varname))
+          IF (status.ne.nf90_noerr) THEN
+            IF (Master) WRITE (stdout,20) 'var_info', TRIM(ncname)
             exit_flag=3
             ioerror=status
           END IF
@@ -963,7 +974,7 @@
 #endif
       END IF
 
-#if !defined PARALLEL_IO  && defined DISTRIBUTE
+#if !defined PARALLEL_OUT  && defined DISTRIBUTE
       ibuffer(1)=exit_flag
       ibuffer(2)=ioerror
       CALL mp_bcasti (ng, model, ibuffer)
@@ -1786,6 +1797,23 @@
      &               1, (/trcdim/), Aval, Vinfo, ncname,                &
      &               SetParAccess = .FALSE.)
       IF (exit_flag.ne.NoError) RETURN
+
+      Vinfo( 1)='Tnudg_SSS'
+      Vinfo( 2)='SSS nudging/relaxation inverse time scale'
+      Vinfo( 3)='day-1'
+      status=def_var(ng, model, ncid, varid, NF_TYPE,                   &
+     &               1, (/0/), Aval, Vinfo, ncname,                     &
+     &               SetParAccess = .FALSE.)
+      IF (exit_flag.ne.NoError) RETURN
+# ifdef SSSC_THRESHOLD
+      Vinfo( 1)='sss_mismatch_threshold'
+      Vinfo( 2)='difference in SSS that triggers SSS correction'
+      Vinfo( 3)='PSU'
+      status=def_var(ng, model, ncid, varid, NF_TYPE,                   &
+     &               1, (/0/), Aval, Vinfo, ncname,                     &
+     &               SetParAccess = .FALSE.)
+      IF (exit_flag.ne.NoError) RETURN
+# endif
 #endif
 
 #ifndef DEBUGGING
@@ -2678,10 +2706,10 @@
 #endif
 
 #if defined BIOLOGY && defined SOLVE3D
-# if defined BIO_FENNEL && !defined SPECTRAL_LIGHT
+# if defined BIO_FENNEL
 #  include <fennel_def.h>
-# elif defined BIO_FENNEL && defined SPECTRAL_LIGHT
-#  include <spect_fennel_def.h>
+# elif defined ESTUARYBGC 
+#  include <estuarybgc_def.h>
 # elif defined ECOSIM
 #  include <ecosim_def.h>
 # elif defined NEMURO
@@ -2694,6 +2722,8 @@
 #  include <npzd_iron_def.h>
 # elif defined NPZD_POWELL
 #  include <npzd_Powell_def.h>
+# elif defined RED_TIDE
+#  include <red_tide_def.h>
 # endif
 #endif
 

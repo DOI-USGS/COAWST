@@ -53,25 +53,28 @@
 # ifdef PROFILE
       CALL wclock_on (ng, iNLM, 16)
 # endif
-      CALL sed_flocmod_tile (ng, tile,                                  &
-     &                        LBi, UBi, LBj, UBj, N(ng), NT(ng),        &
-     &                        IminS, ImaxS, JminS, JmaxS,               &
-     &                        nstp(ng), nnew(ng),                       &
-     &                        GRID(ng) % Hz,                            &
+      CALL sed_flocmod_tile (ng, tile,                                 &
+     &                       LBi, UBi, LBj, UBj, N(ng), NT(ng),        &
+     &                       IminS, ImaxS, JminS, JmaxS,               &
+     &                       nstp(ng), nnew(ng),                       &
+     &                       GRID(ng) % z_r,                           &
+     &                       GRID(ng) % z_w,                           &
+     &                       GRID(ng) % Hz,                            &
 # ifdef BBL_MODEL
-     &                      BBL(ng) % bustrcwmax,                       &
-     &                      BBL(ng) % bvstrcwmax,                       &
+     &                       BBL(ng) % bustrcwmax,                     &
+     &                       BBL(ng) % bvstrcwmax,                     &
+     &                       FORCES(ng) % Pwave_bot,                   &
 # endif
-     &                      FORCES(ng) % bustr,                         &
-     &                      FORCES(ng) % bvstr,                         &
-     &                       MIXING(ng) % Akt,                          &
-     &                       MIXING(ng) % Akv,                          &
-     &                       MIXING(ng) % Lscale,                       &
-     &                       MIXING(ng) % gls,                          &
-     &                       MIXING(ng) % tke,                          &
-     &                        OCEAN(ng) % t,                            &
-     &                     SEDFLOCS(ng) % f_mass,                       &
-     &                     SEDFLOCS(ng) % f_diam)
+     &                       FORCES(ng) % bustr,                       &
+     &                       FORCES(ng) % bvstr,                       &
+     &                       MIXING(ng) % Akt,                         &
+     &                       MIXING(ng) % Akv,                         &
+     &                       MIXING(ng) % Lscale,                      &
+     &                       MIXING(ng) % gls,                         &
+     &                       MIXING(ng) % tke,                         &
+     &                       OCEAN(ng) % t,                            &
+     &                       SEDFLOCS(ng) % f_mass,                    &
+     &                       SEDFLOCS(ng) % f_diam)
 # ifdef PROFILE
       CALL wclock_off (ng, iNLM, 16)
 # endif
@@ -80,18 +83,19 @@
 !
 !***********************************************************************
       SUBROUTINE sed_flocmod_tile (ng, tile,                            &
-     &                              LBi, UBi, LBj, UBj, UBk, UBt,       &
-     &                              IminS, ImaxS, JminS, JmaxS,         &
-     &                              nstp, nnew, Hz,                     &
+     &                             LBi, UBi, LBj, UBj, UBk, UBt,        &
+     &                             IminS, ImaxS, JminS, JmaxS,          &
+     &                             nstp, nnew, z_r, z_w, Hz,            &
 # ifdef BBL_MODEL
-     &                              bustrcwmax,                         &
-     &                              bvstrcwmax,                         &
+     &                             bustrcwmax,                          &
+     &                             bvstrcwmax,                          &
+     &                             Pwave_bot,                           &
 # endif
-     &                              bustr,                              &
-     &                              bvstr,                              &
-     &                              Akt,Akv,Lscale,gls,tke,             &
-     &                              t,                                  &
-     &                              f_mass,f_diam)
+     &                             bustr,                               &
+     &                             bvstr,                               &
+     &                             Akt,Akv,Lscale,gls,tke,              &
+     &                             t,                                   &
+     &                             f_mass,f_diam)
 !***********************************************************************
 !
       USE mod_param
@@ -109,10 +113,13 @@
       integer, intent(in) :: nstp, nnew
 !
 # ifdef ASSUMED_SHAPE
+      real(r8), intent(in) :: z_r(LBi:,LBj:,:)
+      real(r8), intent(in) :: z_w(LBi:,LBj:,0:)
       real(r8), intent(in) :: Hz(LBi:,LBj:,:)
 #  ifdef BBL_MODEL
       real(r8), intent(in) :: bustrcwmax(LBi:,LBj:)
       real(r8), intent(in) :: bvstrcwmax(LBi:,LBj:)
+      real(r8), intent(in) :: Pwave_bot(LBi:,LBj:)
 #  endif
       real(r8), intent(in) :: bustr(LBi:,LBj:)
       real(r8), intent(in) :: bvstr(LBi:,LBj:)
@@ -123,10 +130,13 @@
       real(r8), intent(in) :: gls(LBi:,LBj:,0:,:)
       real(r8), intent(inout) :: t(LBi:,LBj:,:,:,:) 
 # else
+      real(r8), intent(in) :: z_r(LBi:UBi,LBj:UBj,N(ng))
+      real(r8), intent(in) :: z_w(LBi:UBi,LBj:UBj,0:N(ng))
       real(r8), intent(in) :: Hz(LBi:UBi,LBj:UBj,N(ng))
 #  ifdef BBL_MODEL
       real(r8), intent(in) :: bustrcwmax(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: bvstrcwmax(LBi:UBi,LBj:UBj)
+      real(r8), intent(in) :: Pwave_bot(LBi:UBi,LBj:UBj)
 #  endif
       real(r8), intent(in) :: bustr(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: bvstr(LBi:UBi,LBj:UBj)
@@ -141,19 +151,7 @@
       real(r8), intent(in) :: f_diam(NCS)
 !
 !  Local variable declarations.
-!
-# ifdef DISTRIBUTE
-#  ifdef EW_PERIODIC
-      logical :: EWperiodic=.TRUE.
-#  else
-      logical :: EWperiodic=.FALSE.
-#  endif
-#  ifdef NS_PERIODIC
-      logical :: NSperiodic=.TRUE.
-#  else
-      logical :: NSperiodic=.FALSE.
-#  endif
-# endif
+! 
       integer :: i, indx, ised, j, k, ks
 !
 !  Variable declarations for floc model
@@ -162,7 +160,7 @@
       real(r8), dimension(IminS:ImaxS,N(ng)) :: Hz_inv
       real(r8) :: Gval,diss,mneg,dttemp,f_dt
       real(r8) :: dt1,f_csum,epsilon8
-      real(r8) :: cvtotmud,tke_av, gls_av, exp1, exp2, exp3, ustr2
+      real(r8) :: cvtotmud,tke_av, gls_av, exp1, exp2, exp3, ustr2,effecz
       real(r8), dimension(IminS:ImaxS,N(ng),NT(ng)) :: susmud
       real(r8), dimension(N(ng),IminS:ImaxS,JminS:JmaxS) :: f_davg
       real(r8), dimension(N(ng),IminS:ImaxS,JminS:JmaxS) :: f_d50
@@ -192,7 +190,7 @@
          indx = idsed(ised)
          DO k=1,N(ng)
             DO i=Istr,Iend
-!                susmud(i,k,ised)=MAX(t(i,j,k,nstp,indx),0.0_r8)
+!               susmud(i,k,ised)=MAX(t(i,j,k,nstp,indx),0.0_r8)
                 susmud(i,k,ised)=t(i,j,k,nnew,indx)*Hz_inv(i,k)
             ENDDO
 	 ENDDO
@@ -241,8 +239,8 @@
                     tke_av = tke(i,j,k,nnew)
                     gls_av = gls(i,j,k,nnew)
 		 ELSE 
-                    tke_av = tke(i,j,k-1,nnew)+tke(i,j,k,nnew)
-                    gls_av = gls(i,j,k-1,nnew)+gls(i,j,k,nnew)
+                    tke_av = 0.5_r8*(tke(i,j,k-1,nnew)+tke(i,j,k,nnew))
+                    gls_av = 0.5_r8*(gls(i,j,k-1,nnew)+gls(i,j,k,nnew))
                 ENDIF
 !               exp1 = 3.0_r8+gls_p(ng)/gls_n(ng)
 !               exp2 = 1.5_r8+gls_m(ng)/gls_n(ng)
@@ -253,17 +251,36 @@
 !ALA dissipation from wavecurrent bottom stress
 ! NOT READY FOR PRIME TIME
 ! NEEDS VERTICAL DISTRIBUTION
+! As first cut, use turbulence closure
 !
+		 IF (k.eq.1) THEN
+                    tke_av = tke(i,j,k-1,nnew)
+                    gls_av = gls(i,j,k-1,nnew)
+		 ELSEIF (k.eq.N(ng)) THEN
+                    tke_av = tke(i,j,k,nnew)
+                    gls_av = gls(i,j,k,nnew)
+		 ELSE 
+                    tke_av = 0.5_r8*tke(i,j,k-1,nnew)+                  &
+     &                       0.5_r8*tke(i,j,k,nnew)
+                    gls_av = 0.5_r8*gls(i,j,k-1,nnew)+                  &
+     &                       0.5_r8*gls(i,j,k,nnew)
+                ENDIF
+                diss = gls_cmu0(ng)**exp1*tke_av**exp2*gls_av**exp3
+!
+!  MODIFY THE BOTTOM LAYER TO INCLUDE WAVECURRENT STRESS
+!
+		IF (k.eq.1) THEN       
 #  ifdef BBL_MODEL
-                ustr2 =sqrt((bustrcwmax(i,j)**2.0_r8+                   &
+                 ustr2 =sqrt((bustrcwmax(i,j)**2.0_r8+                  &
      &                       bvstrcwmax(i,j)**2.0_r8 ))
+                 effecz = (ustr2**0.5_r8)*Pwave_bot(i,j)*0.5_r8/pi
+                 diss = MAX((ustr2**(1.5_r8))/(vonKar*effecz),diss)
 #  else
-!
-!ALA dissipation from bottom stress
-!
-                ustr2 =sqrt((bustr(i,j)**2.0_r8+bvstr(i,j)**2.0_r8 ))
+                 ustr2 =sqrt((bustr(i,j)**2.0_r8+bvstr(i,j)**2.0_r8 ))
+                 diss = MAX((ustr2**(1.5_r8))/(vonKar*                  &
+     &                       (z_r(i,j,1)-zw(i,j,0))),diss)
 #  endif
-                diss = (ustr2**(1.5_r8))/(vonKar*0.9_r8)
+               ENDIF
 # else 
                 diss = epsilon8
                 IF (l_testcase) THEN

@@ -1,9 +1,9 @@
 #include "cppdefs.h"
       SUBROUTINE checkadj
 !
-!svn $Id$
+!svn $Id: checkadj.F 791 2016-05-05 22:39:42Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2014 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2016 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -307,14 +307,6 @@
       END IF
 # endif
 
-      string=uppercase('limit_bstress')
-      ifound=INDEX(TRIM(Coptions), TRIM(string))
-      IF (ifound.ne.0) THEN
-        ic=ic+1
-        IF (Master) WRITE(stdout,20) TRIM(string),                      &
-     &                               'not coded, FATAL ERROR'
-      END IF
-
 # ifndef FORWARD_MIXING
       string=uppercase('lmd_mixing')
       ifound=INDEX(TRIM(Coptions), TRIM(string))
@@ -384,6 +376,14 @@
       END IF
 
       string=uppercase('pj_gradpq4')
+      ifound=INDEX(TRIM(Coptions), TRIM(string))
+      IF (ifound.ne.0) THEN
+        ic=ic+1
+        IF (Master) WRITE(stdout,20) TRIM(string),                      &
+     &                               'not coded, FATAL ERROR'
+      END IF
+
+      string=uppercase('red_tide')
       ifound=INDEX(TRIM(Coptions), TRIM(string))
       IF (ifound.ne.0) THEN
         ic=ic+1

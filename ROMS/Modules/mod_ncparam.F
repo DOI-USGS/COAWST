@@ -1,9 +1,9 @@
 #include "cppdefs.h"
       MODULE mod_ncparam
 !
-!svn $Id: mod_ncparam.F 746 2008-09-10 04:09:44Z jcwarner $
+!svn $Id: mod_ncparam.F 791 2016-05-05 22:39:42Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2015 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2016 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -257,6 +257,7 @@
         integer  :: idRwet        ! wet/dry mask on RHO-points
         integer  :: idRzet        ! RHS of free-surface
         integer  :: idrain        ! rainfall rate
+        integer  :: idsnow        ! snowfall rate
         integer  :: idragL        ! bottom linear drag coefficient
         integer  :: idragQ        ! bottom quadratic drag coefficient
         integer  :: idragW        ! bottom drag coefficient for internal tide
@@ -420,7 +421,8 @@
         integer  :: idWio          ! ice growth/melt rate
         integer  :: idWro          ! ice pond runoff
         integer  :: idWdiv         ! ice advective change
-        integer  :: idSfwat        ! surface melt water thickness on ice
+        integer  :: idApond        ! surface melt water fraction on ice
+        integer  :: idHpond        ! surface melt water thickness on ice
         integer  :: idAgeice       ! age of sea ice (time since formation)
         integer  :: idIomflx       ! ice-ocean mass flux
         integer  :: idWg2d         ! wind gustiness from NCEP
@@ -479,20 +481,21 @@
         integer, allocatable :: idVTav(:)     ! <v*t> for active tracers
 
 #ifdef ICE_MODEL
- !
- !  Ice variable IDs.
- !
-         integer  :: idUibc(4)      ! ice U-velocity boundary conditions
-         integer  :: idVibc(4)      ! ice V-velocity boundary conditions
-         integer  :: idAibc(4)      ! ice concentration boundary conditions
-         integer  :: idHibc(4)      ! ice thickness boundary conditions
-         integer  :: idHsnbc(4)     ! snow thickness boundary conditions
-         integer  :: idTibc(4)      ! ice interior temp. boundary conditions
-         integer  :: idSfwbc(4)     ! surface melt water boundary conditions
-         integer  :: idAgeicebc(4)  ! ice age boundary conditions
-         integer  :: idS11bc(4)     ! ice stress Sig11 boundary conditions
-         integer  :: idS22bc(4)     ! ice stress Sig22 boundary conditions
-         integer  :: idS12bc(4)     ! ice stress Sig12 boundary conditions
+!
+!  Ice variable IDs.
+!
+        integer  :: idUibc(4)      ! ice U-velocity boundary conditions
+        integer  :: idVibc(4)      ! ice V-velocity boundary conditions
+        integer  :: idAibc(4)      ! ice concentration boundary conditions
+        integer  :: idHibc(4)      ! ice thickness boundary conditions
+        integer  :: idHsnbc(4)     ! snow thickness boundary conditions
+        integer  :: idTibc(4)      ! ice interior temp. boundary conditions
+        integer  :: idApdbc(4)     ! surface melt water boundary conditions
+        integer  :: idHpdbc(4)     ! surface melt water boundary conditions
+        integer  :: idAgeicebc(4)  ! ice age boundary conditions
+        integer  :: idS11bc(4)     ! ice stress Sig11 boundary conditions
+        integer  :: idS22bc(4)     ! ice stress Sig22 boundary conditions
+        integer  :: idS12bc(4)     ! ice stress Sig12 boundary conditions
 #endif
 #ifdef DIAGNOSTICS
 !
@@ -526,14 +529,15 @@
         integer  :: isU3Sd                    ! 3D U-stokes velocity
         integer  :: isV3Sd                    ! 3D V-stokes velocity
 #endif
-#ifdef ICE_MODEL
+#if defined ICE_MODEL || defined CICE_MODEL
         integer  :: isUice                    ! ice U-velocity
         integer  :: isVice                    ! ice V-velocity
         integer  :: isAice                    ! ice concentration
         integer  :: isHice                    ! ice thickness
         integer  :: isHsno                    ! snow thickness
         integer  :: isTice                    ! ice temperature
-        integer  :: isSfwat                   ! melt pond fraction
+        integer  :: isApond                   ! melt pond fraction
+        integer  :: isHpond                   ! melt pond depth
         integer  :: isSig11                   ! ice 11-stress
         integer  :: isSig12                   ! ice 12-stress
         integer  :: isSig22                   ! ice 22-stress
@@ -562,11 +566,6 @@
 !  Input forcing NetCDF files IDs.
 !
         integer, allocatable :: ncFRCid(:,:)
-!
-!#ifdef INWAVE_MODEL
-!        integer, allocatable :: ncIWBRYid(:)     ! input boundary conditions for Ac
-!        integer, allocatable :: ncIWINIid(:)     ! input initial conditions for Ac,cx,cy,ct
-!#endif
 !
 !  Flags to create output files.
 !
@@ -778,6 +777,9 @@
 #if defined SEDIMENT || defined BBL_MODEL
       USE mod_sediment
 #endif
+#if defined VEGETATION
+      USE mod_vegetation 
+#endif 
 !
 !  Local variable declarations.
 !
@@ -892,7 +894,7 @@
 #endif
 ! This ic counter logic is messy - need to acount for isMtke
 #if defined SOLVE3D && (defined GLS_MIXING || defined MY25_MIXING) && \
-    (defined WEC || defined ICE_MODEL)
+    (defined WEC || defined ICE_MODEL || defined CICE_MODEL)
       ic=ic+1
 #endif
 #ifdef WEC
@@ -912,7 +914,7 @@
       isCY3d=ic+4
       ic=ic+4
 #endif
-#ifdef ICE_MODEL
+#if defined ICE_MODEL || defined CICE_MODEL
 !# if defined SOLVE3D && (defined GLS_MIXING || defined MY25_MIXING)
 !      ic=ic+1
 !# endif
@@ -922,11 +924,12 @@
       isHice=ic+4
       isTice=ic+5
       isHsno=ic+6
-      isSfwat=ic+7
-      isSig11=ic+8
-      isSig12=ic+9
-      isSig22=ic+10
-      ic=ic+10
+      isApond=ic+7
+      isHpond=ic+8
+      isSig11=ic+9
+      isSig12=ic+10
+      isSig22=ic+11
+      ic=ic+11
 #endif
 !
 !  Set generic lateral boundary indices for LBC structure.  Use the same
@@ -1283,6 +1286,8 @@
               idShea=varid
             CASE ('idrain')
               idrain=varid
+            CASE ('idsnow')
+              idsnow=varid
             CASE ('idEmPf')
               idEmPf=varid
             CASE ('idevap')
@@ -1456,14 +1461,22 @@
               idTibc(isouth)=varid
             CASE ('idTibc(inorth)')
               idTibc(inorth)=varid
-            CASE ('idSfwbc(iwest)')
-              idSfwbc(iwest)=varid
-            CASE ('idSfwbc(ieast)')
-              idSfwbc(ieast)=varid
-            CASE ('idSfwbc(isouth)')
-              idSfwbc(isouth)=varid
-            CASE ('idSfwbc(inorth)')
-              idSfwbc(inorth)=varid
+            CASE ('idApdbc(iwest)')
+              idApdbc(iwest)=varid
+            CASE ('idApdbc(ieast)')
+              idApdbc(ieast)=varid
+            CASE ('idApdbc(isouth)')
+              idApdbc(isouth)=varid
+            CASE ('idApdbc(inorth)')
+              idApdbc(inorth)=varid
+            CASE ('idHpdbc(iwest)')
+              idHpdbc(iwest)=varid
+            CASE ('idHpdbc(ieast)')
+              idHpdbc(ieast)=varid
+            CASE ('idHpdbc(isouth)')
+              idHpdbc(isouth)=varid
+            CASE ('idHpdbc(inorth)')
+              idHpdbc(inorth)=varid
             CASE ('idAgeicebc(iwest)')
               idAgeicebc(iwest)=varid
             CASE ('idAgeicebc(ieast)')
@@ -1521,10 +1534,10 @@
             CASE ('idZoBL')
               idZoBL=varid
 #endif
-# ifdef UV_WAVEDRAG
+#ifdef UV_WAVEDRAG
             CASE ('idragW')
               idragW=varid
-# endif
+#endif
             CASE ('idUbot')
               idUbot=varid
             CASE ('idVbot')
@@ -1803,15 +1816,15 @@
               idDu3d(M3vvis)=varid
             CASE ('idDv3d(M3vvis)')
               idDv3d(M3vvis)=varid
-#  ifdef SGR_FLOW
-            CASE ('idDu3d(M3fsgr)')
-              idDu3d(M3fsgr)=varid
-            CASE ('idDv3d(M3fsgr)')
-              idDv3d(M3fsgr)=varid
-            CASE ('idDu2d(M2fsgr)')
-              idDu2d(M2fsgr)=varid
-            CASE ('idDv2d(M2fsgr)')
-              idDv2d(M2fsgr)=varid
+#  if defined VEGETATION && defined VEG_DRAG
+            CASE ('idDu3d(M3fveg)')
+              idDu3d(M3fveg)=varid
+            CASE ('idDv3d(M3fveg)')
+              idDv3d(M3fveg)=varid
+            CASE ('idDu2d(M2fveg)')
+              idDu2d(M2fveg)=varid
+            CASE ('idDv2d(M2fveg)')
+              idDv2d(M2fveg)=varid
 #  endif
             CASE ('idDu3d(M3rate)')
               idDu3d(M3rate)=varid
@@ -2015,7 +2028,7 @@
               CASE ('idVnms')
                 idVnms=varid
 #endif
-#ifdef ICE_MODEL
+#if defined ICE_MODEL || defined CICE_MODEL
               CASE ('idUice')
                 idUice=varid
               CASE ('idVice')
@@ -2054,8 +2067,10 @@
                 idWro=varid
               CASE ('idWdiv')
                 idWdiv=varid
-              CASE ('idSfwat')
-                idSfwat=varid
+              CASE ('idApond')
+                idApond=varid
+              CASE ('idHpond')
+                idHpond=varid
               CASE ('idAgeice')
                 idAgeice=varid
               CASE ('idIomflx')
@@ -2077,10 +2092,10 @@
 #endif
 
 #ifdef BIOLOGY
-# if defined BIO_FENNEL && !defined SPECTRAL_LIGHT
+# if defined BIO_FENNEL
 #  include <fennel_var.h>
-# elif defined BIO_FENNEL && defined SPECTRAL_LIGHT
-#  include <spect_fennel_var.h>
+# elif defined ESTUARYBGC
+#  include <estuarybgc_var.h>
 # elif defined BIO_UMAINE
 #  include <umaine_var.h>
 # elif defined ECOSIM
@@ -2093,11 +2108,16 @@
 #  include <npzd_Powell_var.h>
 # elif defined NPZD_IRON
 #  include <npzd_iron_var.h>
+# elif defined RED_TIDE
+#  include <red_tide_var.h>
 # endif
 #endif
 
 #if defined SEDIMENT || defined BBL_MODEL
 #  include <sediment_var.h>
+#endif
+#if defined VEGETATION 
+#  include <vegetation_var.h>
 #endif
 
             CASE DEFAULT
@@ -2161,10 +2181,10 @@
                     END DO
                     WRITE (Vname(1,varid),'(a,i2.2,a)')                 &
      &                    TRIM(ADJUSTL(Vinfo(1))), ic, '_age'
-                    WRITE (Vname(2,varid),'(a,a,i2.2)')                 &
-     &                    TRIM(ADJUSTL(Vinfo(2))), ' mean age, type ',  &
-     &                    ic
-                    WRITE (Vname(3,varid),'(a)') 'second'
+                    WRITE (Vname(2,varid),'(a,i2.2)')                   &
+     &                    'age concentraction, type ', ic
+                    WRITE (Vname(3,varid),'(a)')                        &
+     &                    'second kilogram meter-3'
                     WRITE (Vname(4,varid),'(a,a)')                      &
      &                    TRIM(Vname(1,varid)), ', scalar, series'
                     WRITE (Vname(5,varid),'(a)')                        &
@@ -2293,6 +2313,122 @@
      &                    TRIM(ADJUSTL(Vinfo(1))), i
                     WRITE (Vname(2,varid),'(a,a,i2.2)')                 &
      &                    TRIM(ADJUSTL(Vinfo(2))), ', type ', i
+                    WRITE (Vname(3,varid),'(a)')                        &
+     &                    TRIM(ADJUSTL(Vinfo(3)))
+                    WRITE (Vname(4,varid),'(a,a)')                      &
+     &                    TRIM(Vname(1,varid)), ', scalar, series'
+                    WRITE (Vname(5,varid),'(a)')                        &
+     &                    TRIM(ADJUSTL(Vinfo(5)))
+                  END DO
+                END IF
+              CASE ('age_west_')
+                IF (NPT.gt.0) THEN
+                  varid=varid-1
+                  DO i=1,NPT
+                    varid=varid+1
+                    idTbry(iwest,inert(i))=varid
+                    DO ng=1,Ngrids
+                      Fscale(varid,ng)=scale
+                      Iinfo(1,varid,ng)=gtype
+                    END DO
+                    IF (i.lt.100) THEN
+                      WRITE (Vname(1,varid),'(a,i2.2)')                 &
+     &                     TRIM(ADJUSTL(Vinfo(1))), i
+                      WRITE (Vname(2,varid),'(a,a,i2.2)')               &
+     &                     TRIM(ADJUSTL(Vinfo(2))), ', type ', i
+                    ELSE
+                      WRITE (Vname(1,varid),'(a,i3.3)')                 &
+     &                     TRIM(ADJUSTL(Vinfo(1))), i
+                      WRITE (Vname(2,varid),'(a,a,i3.3)')               &
+     &                     TRIM(ADJUSTL(Vinfo(2))), ', type ', i
+                    END IF
+                    WRITE (Vname(3,varid),'(a)')                        &
+     &                    TRIM(ADJUSTL(Vinfo(3)))
+                    WRITE (Vname(4,varid),'(a,a)')                      &
+     &                    TRIM(Vname(1,varid)), ', scalar, series'
+                    WRITE (Vname(5,varid),'(a)')                        &
+     &                    TRIM(ADJUSTL(Vinfo(5)))
+                  END DO
+                END IF
+              CASE ('age_east_')
+                IF (NPT.gt.0) THEN
+                  varid=varid-1
+                  DO i=1,NPT
+                    varid=varid+1
+                    idTbry(ieast,inert(i))=varid
+                    DO ng=1,Ngrids
+                      Fscale(varid,ng)=scale
+                      Iinfo(1,varid,ng)=gtype
+                    END DO
+                    IF (i.lt.100) THEN
+                      WRITE (Vname(1,varid),'(a,i2.2)')                 &
+     &                     TRIM(ADJUSTL(Vinfo(1))), i
+                      WRITE (Vname(2,varid),'(a,a,i2.2)')               &
+     &                     TRIM(ADJUSTL(Vinfo(2))), ', type ', i
+                    ELSE
+                      WRITE (Vname(1,varid),'(a,i3.3)')                 &
+     &                     TRIM(ADJUSTL(Vinfo(1))), i
+                      WRITE (Vname(2,varid),'(a,a,i3.3)')               &
+     &                     TRIM(ADJUSTL(Vinfo(2))), ', type ', i
+                    END IF
+                    WRITE (Vname(3,varid),'(a)')                        &
+     &                    TRIM(ADJUSTL(Vinfo(3)))
+                    WRITE (Vname(4,varid),'(a,a)')                      &
+     &                    TRIM(Vname(1,varid)), ', scalar, series'
+                    WRITE (Vname(5,varid),'(a)')                        &
+     &                    TRIM(ADJUSTL(Vinfo(5)))
+                  END DO
+                END IF
+              CASE ('age_south_')
+                IF (NPT.gt.0) THEN
+                  varid=varid-1
+                  DO i=1,NPT
+                    varid=varid+1
+                    idTbry(isouth,inert(i))=varid
+                    DO ng=1,Ngrids
+                      Fscale(varid,ng)=scale
+                      Iinfo(1,varid,ng)=gtype
+                    END DO
+                    IF (i.lt.100) THEN
+                      WRITE (Vname(1,varid),'(a,i2.2)')                 &
+     &                     TRIM(ADJUSTL(Vinfo(1))), i
+                      WRITE (Vname(2,varid),'(a,a,i2.2)')               &
+     &                     TRIM(ADJUSTL(Vinfo(2))), ', type ', i
+                    ELSE
+                      WRITE (Vname(1,varid),'(a,i3.3)')                 &
+     &                     TRIM(ADJUSTL(Vinfo(1))), i
+                      WRITE (Vname(2,varid),'(a,a,i3.3)')               &
+     &                     TRIM(ADJUSTL(Vinfo(2))), ', type ', i
+                    END IF
+                    WRITE (Vname(3,varid),'(a)')                        &
+     &                    TRIM(ADJUSTL(Vinfo(3)))
+                    WRITE (Vname(4,varid),'(a,a)')                      &
+     &                    TRIM(Vname(1,varid)), ', scalar, series'
+                    WRITE (Vname(5,varid),'(a)')                        &
+     &                    TRIM(ADJUSTL(Vinfo(5)))
+                  END DO
+                END IF
+              CASE ('age_north_')
+                IF (NPT.gt.0) THEN
+                  varid=varid-1
+                  DO i=1,NPT
+                    varid=varid+1
+                    idTbry(iwest,inert(i))=varid
+                    DO ng=1,Ngrids
+                      Fscale(varid,ng)=scale
+                      Iinfo(1,varid,ng)=gtype
+                    END DO
+                    IF (i.lt.100) THEN
+                      WRITE (Vname(1,varid),'(a,i2.2)')                 &
+     &                     TRIM(ADJUSTL(Vinfo(1))), i
+                      WRITE (Vname(2,varid),'(a,a,i2.2)')               &
+     &                     TRIM(ADJUSTL(Vinfo(2))), ', type ', i
+                    ELSE
+                      WRITE (Vname(1,varid),'(a,i3.3)')                 &
+     &                     TRIM(ADJUSTL(Vinfo(1))), i
+                      WRITE (Vname(2,varid),'(a,a,i3.3)')               &
+     &                     TRIM(ADJUSTL(Vinfo(2))), ', type ', i
+                    END IF
                     WRITE (Vname(3,varid),'(a)')                        &
      &                    TRIM(ADJUSTL(Vinfo(3)))
                     WRITE (Vname(4,varid),'(a,a)')                      &
@@ -2788,15 +2924,16 @@
       ic=ic+1
       idBvar(ic)=idMtke
 # endif
-# ifdef ICE_MODEL
-      ic=ic+10
+# if defined ICE_MODEL
+      ic=ic+11
       idBvar(isUice)=idUice
       idBvar(isVice)=idVice
       idBvar(isAice)=idAice
       idBvar(isHice)=idHice
       idBvar(isTice)=idTice
       idBvar(isHsno)=idHsno
-      idBvar(isSfwat)=idSfwat
+      idBvar(isApond)=idApond
+      idBvar(isHpond)=idHpond
       idBvar(isSig11)=idSig11
       idBvar(isSig12)=idSig12
       idBvar(isSig22)=idSig22
@@ -2891,10 +3028,6 @@
      &        'variable: ',a,/,15x,'Need CASE construct for: ',a)
   80  FORMAT (/,' MOD_NCPARM - Error while reading information ',       &
      &        'for variable: ',a)
-  90  FORMAT (a,i2.2)
- 100  FORMAT (a,a,i2.2)
- 110  FORMAT (a)
- 120  FORMAT (a,a)
 
       RETURN
       END SUBROUTINE initialize_ncparam

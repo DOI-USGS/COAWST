@@ -3,7 +3,7 @@
 !
 !svn $Id: mod_iounits.F 755 2008-09-14 19:07:08Z jcwarner $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2014 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2016 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -14,6 +14,7 @@
 !    ADM       Output adjoint model history data                       !
 !    ADS       Input adjoint sensitivity functional                    !
 !    AVG       Output time-averaged data                               !
+!    AVG2      Secondary time-averaged data                            !
 !    BLK       Input bulk fluxes data in adjoint-based applications    !
 !    BRY       Input open boundary conditions data                     !
 !    CLM       Input climatology data                                  !
@@ -63,6 +64,7 @@
 !  fposnam     Input initial floats positions file name.               !
 !  iparnam     Input ice parameters file name.                         !
 !  sparnam     Input sediment transport parameters file name.          !
+!  vegnam      Input vegetation input parameters file name.             !
 !  sposnam     Input station positions file name.                      !
 !  varname     Input IO variables information file name.               !
 !                                                                      !
@@ -174,6 +176,7 @@
       character (len=256) :: fposnam        ! floats positions
       character (len=256) :: iparnam        ! ice model parameters
       character (len=256) :: sparnam        ! sediment model parameters
+      character (len=256) :: vegnam         ! vegetation model parameters
       character (len=256) :: sposnam        ! station positions
       character (len=256) :: varname        ! I/O metadata
 !
@@ -265,6 +268,7 @@
         fposnam(i:i)=blank
         iparnam(i:i)=blank
         sparnam(i:i)=blank
+        vegnam(i:i)=blank
         sposnam(i:i)=blank
       END DO
 

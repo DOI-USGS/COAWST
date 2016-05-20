@@ -4,7 +4,7 @@
 !
 !svn $Id: gls_corstep.F 732 2008-09-07 01:55:51Z jcwarner $
 !=======================================================================
-!  Copyright (c) 2002-2014 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2016 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license           Hernan G. Arango   !
 !    See License_ROMS.txt                   Alexander F. Shchepetkin   !
 !==================================================== John C. Warner ===
@@ -43,6 +43,11 @@
       USE mod_mixing
       USE mod_ocean
       USE mod_stepping
+# if defined VEGETATION && defined VEG_TURB
+      USE mod_vegarr
+      USE vegetation_turb_mod, ONLY : vegetation_turb_cal
+# endif
+
 !
 !  Imported variable declarations.
 !
@@ -52,6 +57,15 @@
 !
 # include "tile.h"
 !
+# if defined VEGETATION && defined VEG_TURB
+! 
+!-----------------------------------------------------------------------
+!  Add the effect of vegetation on the turbulence model.
+!-----------------------------------------------------------------------
+!
+      CALL vegetation_turb_cal (ng, tile)
+# endif
+
 # ifdef PROFILE
       CALL wclock_on (ng, iNLM, 19)
 # endif
@@ -76,6 +90,10 @@
      &                       OCEAN(ng) % W,                             &
 # ifdef WEC_VF
      &                       OCEAN(ng) % W_stokes,                      &
+# endif
+# if defined VEGETATION && defined VEG_TURB 
+     &                       VEG(ng) % tke_veg,                         &
+     &                       VEG(ng) % gls_veg,                         &
 # endif
      &                       FORCES(ng) % bustr,                        &
      &                       FORCES(ng) % bvstr,                        &
@@ -115,6 +133,9 @@
      &                             u, v, W,                             &
 # ifdef WEC_VF
      &                             W_stokes,                            &
+# endif
+# if defined VEGETATION && defined VEG_TURB
+     &                             tke_veg, gls_veg,                    &
 # endif
      &                             bustr, bvstr, sustr, svstr,          &
 # ifdef ZOS_HSIG
@@ -162,6 +183,10 @@
 # ifdef WEC_VF
       real(r8), intent(in) :: W_stokes(LBi:,LBj:,0:)
 # endif
+# if defined VEGETATION && defined VEG_TURB
+      real(r8), intent(in) :: tke_veg(LBi:,LBj:,0:)
+      real(r8), intent(in) :: gls_veg(LBi:,LBj:,0:)
+# endif
       real(r8), intent(in) :: bustr(LBi:,LBj:)
       real(r8), intent(in) :: bvstr(LBi:,LBj:)
       real(r8), intent(in) :: sustr(LBi:,LBj:)
@@ -200,6 +225,10 @@
       real(r8), intent(in) :: W(LBi:UBi,LBj:UBj,0:N(ng))
 # ifdef WEC_VF
       real(r8), intent(in) :: W_stokes(LBi:UBi,LBj:UBj,0:N(ng))
+# endif
+# if defined VEGETATION && defined VEG_TURB
+      real(r8), intent(in) :: tke_veg(LBi:UBi,LBj:UBj,0:N(ng))
+      real(r8), intent(in) :: gls_veg(LBi:UBi,LBj:UBj,0:N(ng))
 # endif
       real(r8), intent(in) :: bustr(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: bvstr(LBi:UBi,LBj:UBj)
@@ -337,7 +366,7 @@
 !  Compute vertical velocity shear at W-points.
 !-----------------------------------------------------------------------
 !
-# ifdef SPLINES
+# ifdef RI_SPLINES
       DO j=Jstrm1,Jendp1
         DO i=Istrm1,Iendp1
           CF(i,0)=0.0_r8
@@ -736,21 +765,6 @@
 !  Compute production and dissipation terms.
 !
         DO i=Istr,Iend
-# if defined CRAIG_BANNER && defined GERBI_TKE_FLUX
-!
-!  Compute metrics for Gerbi vertical surface tke flux option.
-!
-          oroller(i)=0.0_r8
-          gamw(i)=1.0_r8/(Hwave(i,j)+eps)
-          DO k=1,N(ng)-1
-            cff3=SCALARS(ng)%Cs_w(k)
-            cff=0.5_r8*(Hz(i,j,k)+Hz(i,j,k+1))
-!! tanh s^4 functional
-            oroller(i)=oroller(i)+cff*                                  &
-     &                   (1.0_r8-TANH((2.0_r8*cff3*gamw(i))**4))
-          END DO
-          oroller(i)=1.0_r8/(oroller(i)+eps)
-# endif
           DO k=1,N(ng)-1
 !
 !  Compute shear and bouyant production of turbulent energy (m3/s3)
@@ -790,32 +804,14 @@
             gls(i,j,k,nnew)=gls(i,j,k,nnew)+                            &
      &                      dt(ng)*cff*Pprod*gls(i,j,k,nstp)/           &
      &                      MAX(tke(i,j,k,nstp),gls_Kmin(ng))
-# if defined CRAIG_BANNER && defined GERBI_TKE_FLUX
+
+# if defined VEGETATION && defined VEG_TURB
 !
-!  Compute metrics for Gerbi vertical surface tke flux option.
-!
-            cff3=SCALARS(ng)%Cs_w(k)
-!! tanh s^4 functional
-            cff4=(1.0_r8-TANH((2.0_r8*cff3*gamw(i))**4))
-            tke_fluxt(i)=dt(ng)*crgban_cw(ng)*                          &
-     &                 (0.50_r8*                                        &
-     &                  SQRT((sustr(i,j)+sustr(i+1,j))**2+              &
-     &                       (svstr(i,j)+svstr(i,j+1))**2))**1.5_r8
-            tke(i,j,k,nnew)=tke(i,j,k,nnew)+                            &
-     &                      dt(ng)*cff*tke_fluxt(i)*cff4*oroller(i)
-!
-            gls_fluxt(i)=gls_fluxt(i)-dt(ng)*                           &
-     &                 gls_m(ng)*(gls_cmu0(ng)**gls_p(ng))*             &
-     &                 cff**(gls_m(ng)-1.0_r8)*                         &
-     &                 ((Zos_eff(i)+0.5_r8*Hz(i,j,N(ng)))*L_sft)**      &
-     &                 gls_n(ng)*                                       &
-     &                 gls_sigk(ng)*ogls_sigp*crgban_cw(ng)*            &
-     &                 (0.5_r8*                                         &
-     &                  SQRT((sustr(i,j)+sustr(i+1,j))**2+              &
-     &                       (svstr(i,j)+svstr(i,j+1))**2))**1.5_r8
-            gls(i,j,k,nnew)=gls(i,j,k,nnew)+                            &
-     &                      dt(ng)*cff*gls_fluxt(i)*cff4*oroller(i)
-# endif
+!  Add the effect of vegetation on tke and gls 
+!          
+            tke(i,j,k,nnew)=tke(i,j,k,nnew)+dt(ng)*tke_veg(i,j,k)
+            gls(i,j,k,nnew)=gls(i,j,k,nnew)+dt(ng)*gls_veg(i,j,k)
+# endif 
 !
 !  Compute dissipation of turbulent energy (m3/s3).
 !
@@ -926,14 +922,10 @@
 !
         DO i=Istr,Iend
 # if defined CRAIG_BANNER
-#  if defined GERBI_TKE_FLUX
-          tke_fluxt(i)=0.0_r8
-#  else
           tke_fluxt(i)=dt(ng)*crgban_cw(ng)*                            &
      &                 (0.50_r8*                                        &
      &                  SQRT((sustr(i,j)+sustr(i+1,j))**2+              &
      &                       (svstr(i,j)+svstr(i,j+1))**2))**1.5_r8
-#  endif
 # elif defined TKE_WAVEDISS
           tke_fluxt(i)=dt(ng)*sz_alpha(ng)*(Dissip_break(i,j)+          &
      &                                      Dissip_wcap(i,j))
@@ -971,7 +963,6 @@
      &                 (gls_n(ng)-1.0_r8)*                              &
      &                 0.5_r8*(Akp(i,j,N(ng))+Akp(i,j,N(ng)-1))
 # ifdef CRAIG_BANNER
-#  if !defined GERBI_TKE_FLUX
           gls_fluxt(i)=gls_fluxt(i)-dt(ng)*                             &
      &                 gls_m(ng)*(gls_cmu0(ng)**gls_p(ng))*             &
      &                 cff**(gls_m(ng)-1.0_r8)*                         &
@@ -981,7 +972,6 @@
      &                 (0.5_r8*                                         &
      &                  SQRT((sustr(i,j)+sustr(i+1,j))**2+              &
      &                       (svstr(i,j)+svstr(i,j+1))**2))**1.5_r8
-#  endif
 # elif defined TKE_WAVEDISS
           gls_fluxt(i)=gls_fluxt(i)-dt(ng)*                             &
      &                 gls_m(ng)*(gls_cmu0(ng)**gls_p(ng))*             &
@@ -1179,6 +1169,7 @@
      &                 IminS, ImaxS, JminS, JmaxS,                      &
      &                 nnew, nstp,                                      &
      &                 gls, tke)
+
       IF (EWperiodic(ng).or.NSperiodic(ng)) THEN
         CALL exchange_w3d_tile (ng, tile,                               &
      &                          LBi, UBi, LBj, UBj, 0, N(ng),           &

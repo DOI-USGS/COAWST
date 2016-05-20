@@ -6,7 +6,7 @@
 !
 !svn $Id: hmixing.F 732 2008-09-07 01:55:51Z jcwarner $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2014 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2016 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -58,6 +58,10 @@
       USE mod_mixing
       USE mod_ocean
       USE mod_stepping
+# if defined VEGETATION && defined VEG_HMIXING
+      USE mod_vegarr
+      USE vegetation_hmixing_mod, ONLY:vegetation_hmixing_cal
+# endif
 !
 !  Imported variable declarations.
 !
@@ -66,6 +70,16 @@
 !  Local variable declarations.
 !
 # include "tile.h"
+!
+!
+# if defined VEGETATION && defined VEG_HMIXING
+!
+!-----------------------------------------------------------------------
+!  Add the effect of vegetation on horizontal viscosity.
+!-----------------------------------------------------------------------
+!
+      CALL vegetation_hmixing_cal (ng, tile)
+# endif
 !
 # ifdef PROFILE
       CALL wclock_on (ng, iNLM, 28)
@@ -104,6 +118,9 @@
      &                   MIXING(ng) % visc3d_r,                         &
 #  endif
 # endif
+# if defined VEGETATION && defined VEG_HMIXING
+     &                   VEG(ng) % visc3d_r_veg,                        &
+# endif
      &                   OCEAN(ng) % u,                                 &
      &                   OCEAN(ng) % v)
 # ifdef PROFILE
@@ -137,6 +154,9 @@
 #  else
      &                         visc3d_r,                                &
 #  endif
+# endif
+# if defined VEGETATION && defined VEG_HMIXING
+     &                         visc3d_r_veg,                            &
 # endif
      &                         u, v)
 !***********************************************************************
@@ -194,7 +214,9 @@
       real(r8), intent(out) :: visc3d_r(LBi:,LBj:,:)
 #   endif
 #  endif
-
+#  if defined VEGETATION && defined VEG_HMIXING 
+      real(r8), intent(in) :: visc3d_r_veg(LBi:,LBj:,:)
+#  endif
 # else
 
 #  ifdef MASKING
@@ -232,6 +254,9 @@
 #   else
       real(r8), intent(out) :: visc3d_r(LBi:UBi,LBj:UBj,N(ng))
 #   endif
+#  endif
+#  if defined VEGETATION && defined VEG_HMIXING 
+      real(r8), intent(in) :: visc3d_r_veg(LBi:UBi,LBj:UBj,N(ng))
 #  endif
 # endif
 !
@@ -373,6 +398,31 @@
 #   ifdef MASKING
             diff3d_r(i,j,k)=diff3d_r(i,j,k)*rmask(i,j)
 #   endif
+#  endif
+          END DO
+        END DO
+      END DO
+# endif
+
+# if defined VEGETATION && defined VEG_HMIXING 
+
+      clip_scale=0.01_r8*grdmax(ng)**3
+
+      DO k=1,N(ng)
+        DO j=JstrV-1,Jend
+          DO i=IstrU-1,Iend
+!
+#  if defined UV_VIS2
+            visc3d_r(i,j,k)=visc3d_r(i,j,k)+visc3d_r_veg(i,j,k)  
+#  elif defined UV_VIS4
+            visc3d_r(i,j,k)=visc3d_r(i,j,k)+visc3d_r_veg(i,j,k)
+#   ifdef MIX_GEO_UV
+            visc3d_r(i,j,k)=MIN(clip_scale, visc3d_r(i,j,k))
+#   endif
+            visc3d_r(i,j,k)=SQRT(visc3d_r(i,j,k))
+#  endif
+#  ifdef MASKING
+            visc3d_r(i,j,k)=visc3d_r(i,j,k)*rmask(i,j)
 #  endif
           END DO
         END DO

@@ -3,7 +3,7 @@
 #if defined ICE_ADVECT || defined ICE_THERMO
 !
 !============================================== W. Paul Budgell =======!
-!  Copyright (c) 2002-2014 ROMS/TOMS Group                                  !
+!  Copyright (c) 2002-2014 ROMS/TOMS Group                             !
 !============================================== Hernan G. Arango ======!
 !                                                                      !
 !  Limit ice tracer variables, for instance to not allow negative      !
@@ -44,8 +44,7 @@
      &                     ICE(ng) % hi,                                &
      &                     ICE(ng) % hsn,                               &
      &                     ICE(ng) % ti,                                &
-     &                     ICE(ng) % enthalpi,                          &
-     &                     ICE(ng) % sfwat                              &
+     &                     ICE(ng) % enthalpi                           &
      &                     )
 !
       RETURN
@@ -60,7 +59,7 @@
      &                        IcePhL,IceNO3,IceNH4,IceLog,              &
 # endif
 
-     &                        ui, vi, ai, hi, hsn, ti, enthalpi, sfwat)
+     &                        ui, vi, ai, hi, hsn, ti, enthalpi)
 !***********************************************************************
 !
       USE mod_param
@@ -104,7 +103,6 @@
       real(r8), intent(inout) :: hsn(LBi:,LBj:,:)
       real(r8), intent(inout) :: ti(LBi:,LBj:,:)
       real(r8), intent(inout) :: enthalpi(LBi:,LBj:,:)
-      real(r8), intent(inout) :: sfwat(LBi:,LBj:,:)
 # else
 # if defined ICE_BIO && defined BERING_10K
       real(r8), intent(inout) :: IcePhL(LBi:UBi,LBj:UBj,2)
@@ -119,7 +117,6 @@
       real(r8), intent(inout) :: hsn(LBi:UBi,LBj:UBj,2)
       real(r8), intent(inout) :: ti(LBi:UBi,LBj:UBj,2)
       real(r8), intent(inout) :: enthalpi(LBi:UBi,LBj:UBj,2)
-      real(r8), intent(inout) :: sfwat(LBi:UBi,LBj:UBj,2)
 # endif
 
 ! Local variable definitions
@@ -134,17 +131,13 @@
           ai(i,j,linew) = MAX(ai(i,j,linew),0.0_r8)
           hi(i,j,linew) = MAX(hi(i,j,linew),0.0_r8)
           hsn(i,j,linew) = MAX(hsn(i,j,linew),0.0_r8)
-          sfwat(i,j,linew) = MAX(sfwat(i,j,linew),0.0_r8)
           ti(i,j,linew) = MAX(ti(i,j,linew),-70.0_r8)
-          IF (ai(i,j,linew) .le. 0.0_r8 .or. hi(i,j,linew) .le. 0.0_r8) &
-     &       THEN
+          IF (ai(i,j,linew) .le. min_a(ng) .or. hi(i,j,linew) .le.      &
+     &       0.0_r8) THEN
             ai(i,j,linew) = 0.0_r8
             hi(i,j,linew) = 0.0_r8
-            sfwat(i,j,linew) = 0.0_r8
             hsn(i,j,linew) = 0.0_r8
           END IF
-!         if (i==428 .and. j==60) print *, 'in ice_limit',              &
-!    &                 sfwat(i,j,:), ai(i,j,:)
         END DO
       END DO
 
@@ -195,15 +188,24 @@
      &                LBi, UBi, LBj, UBj,                               &
      &                liold, linew,                                     &
      &                ui, vi, hi, ti, enthalpi)
-      CALL i2d_bc_tile (ng, tile, iNLM,                                 &
-     &                  LBi, UBi, LBj, UBj,                             &
-     &                  IminS, ImaxS, JminS, JmaxS,                     &
-     &                  liold, linew,                                   &
-     &                  BOUNDARY(ng)%sfwat_west(LBj:UBj),               &
-     &                  BOUNDARY(ng)%sfwat_east(LBj:UBj),               &
-     &                  BOUNDARY(ng)%sfwat_north(LBi:UBi),              &
-     &                  BOUNDARY(ng)%sfwat_south(LBi:UBi),              &
-     &                  ui, vi, sfwat, LBC(:,isSfwat,ng))
+!      CALL i2d_bc_tile (ng, tile, iNLM,                                 &
+!     &                  LBi, UBi, LBj, UBj,                             &
+!     &                  IminS, ImaxS, JminS, JmaxS,                     &
+!     &                  liold, linew,                                   &
+!     &                  BOUNDARY(ng)%apond_west(LBj:UBj),               &
+!     &                  BOUNDARY(ng)%apond_east(LBj:UBj),               &
+!     &                  BOUNDARY(ng)%apond_north(LBi:UBi),              &
+!     &                  BOUNDARY(ng)%apond_south(LBi:UBi),              &
+!     &                  ui, vi, apond, LBC(:,isApond,ng))
+!      CALL i2d_bc_tile (ng, tile, iNLM,                                 &
+!     &                  LBi, UBi, LBj, UBj,                             &
+!     &                  IminS, ImaxS, JminS, JmaxS,                     &
+!     &                  liold, linew,                                   &
+!     &                  BOUNDARY(ng)%hpond_west(LBj:UBj),               &
+!     &                  BOUNDARY(ng)%hpond_east(LBj:UBj),               &
+!     &                  BOUNDARY(ng)%hpond_north(LBi:UBi),              &
+!     &                  BOUNDARY(ng)%hpond_south(LBi:UBi),              &
+!     &                  ui, vi, hpond, LBC(:,isHpond,ng))
 # if defined ICE_BIO && defined BERING_10K
 FOOO
 ! Need to change these over to i2d_bc_tile calls
@@ -234,9 +236,6 @@ FOOO
         CALL exchange_r2d_tile (ng, tile,                                 &
      &                            LBi, UBi, LBj, UBj,                     &
      &                            ti(:,:,linew))
-        CALL exchange_r2d_tile (ng, tile,                                 &
-     &                            LBi, UBi, LBj, UBj,                     &
-     &                            sfwat(:,:,linew))
 # if defined ICE_BIO && defined BERING_10K
         CALL exchange_r2d_tile (ng, tile,                                 &
      &                            LBi, UBi, LBj, UBj,                     &
@@ -258,10 +257,6 @@ FOOO
      &                    NghostPoints, EWperiodic(ng), NSperiodic(ng), &
      &                    ai(:,:,linew), hi(:,:,linew),                 &
      &                    hsn(:,:,linew),ti(:,:,linew))
-      CALL mp_exchange2d (ng, tile, iNLM, 1,                            &
-     &                    LBi, UBi, LBj, UBj,                           &
-     &                    NghostPoints, EWperiodic(ng), NSperiodic(ng), &
-     &                    sfwat(:,:,linew))
 #  if defined ICE_BIO && defined BERING_10K
       CALL mp_exchange2d (ng, tile, iNLM, 3,                            &
      &                    LBi, UBi, LBj, UBj,                           &

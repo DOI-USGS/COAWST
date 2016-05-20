@@ -1,7 +1,7 @@
 /*
 ** svn $Id: benchmark.h 429 2009-12-20 17:30:26Z arango $
 *******************************************************************************
-** Copyright (c) 2002-2014 The ROMS/TOMS Group                               **
+** Copyright (c) 2002-2016 The ROMS/TOMS Group                               **
 **   Licensed under a MIT/X style license                                    **
 **   See License_ROMS.txt                                                    **
 *******************************************************************************
@@ -16,8 +16,8 @@
 
 #define ROMS_MODEL
 #undef PARALLEL_IO
-#undef NETCDF4
-#undef AVERAGES
+#define NETCDF4
+#define AVERAGES
 
 #define UV_ADV
 #define UV_COR
@@ -25,6 +25,8 @@
 #define UV_VIS2
 #define MIX_S_UV
 #define DJ_GRADPS
+#define SPLINES_VDIFF
+#define SPLINES_VVISC
 #define TS_U3HADVECTION
 #define TS_C4VADVECTION
 #define TS_DIF2
@@ -34,13 +36,13 @@
 #define SALINITY
 #define CURVGRID
 #define SOLVE3D
-#define SPLINES
 #define LMD_MIXING
 #ifdef LMD_MIXING
 # define LMD_RIMIX
 # define LMD_CONVEC
 # define LMD_SKPP
 # define LMD_NONLOCAL
+# define RI_SPLINES
 #endif
 #define BULK_FLUXES
 #ifdef BULK_FLUXES

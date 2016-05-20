@@ -3,7 +3,7 @@
 !
 !svn $Id: def_his.F 733 2008-09-07 01:56:45Z jcwarner $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2014 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2016 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -17,6 +17,10 @@
       USE mod_parallel
 #ifdef BIOLOGY
       USE mod_biology
+#endif
+#ifdef VEGETATION
+      USE mod_vegetation
+      USE mod_vegarr
 #endif
 #ifdef FOUR_DVAR
       USE mod_fourdvar
@@ -58,7 +62,9 @@
       integer :: t2dobc(4)
 #endif
 
-#if defined BIO_FENNEL && defined SPECTRAL_LIGHT
+#if defined VEGETATION && (defined VEG_DRAG || defined VEG_BIOMASS)
+      integer :: DimIDs(35)
+#elif defined ESTUARYBGC 
       integer :: DimIDs(34)
 #elif defined INWAVE_MODEL 
       integer :: DimIDs(33)
@@ -79,9 +85,14 @@
 # ifdef SEDIMENT
       integer :: b3dgrd(4)
 # endif
-# if defined BIO_FENNEL && defined SPECTRAL_LIGHT
+# if defined ESTUARYBGC
       integer :: s3dgrd(4)
 # endif
+#if defined VEGETATION 
+# if defined VEG_DRAG || defined VEG_BIOMASS
+      integer :: v3pgrd(4)
+# endif
+#endif
       integer :: t3dgrd(4), u3dgrd(4), v3dgrd(4), w3dgrd(4)
 # ifdef ADJUST_BOUNDARY
       integer :: t3dobc(5)
@@ -236,7 +247,7 @@
 #  endif
 # endif
 
-# if defined BIO_FENNEL && defined SPECTRAL_LIGHT
+# if defined ESTUARYBGC && defined SPECTRAL_LIGHT
         status=def_dim(ng, iNLM, HIS(ng)%ncid, ncname, 'NBAND',         &
      &                 NBAND, DimIDs(34))
         IF (exit_flag.ne.NoError) RETURN
@@ -275,6 +286,14 @@
         status=def_dim(ng, iNLM, HIS(ng)%ncid, ncname, 'Nstate',        &
      &                 NstateVar(ng), DimIDs(29))
         IF (exit_flag.ne.NoError) RETURN
+#endif
+
+#if defined VEGETATION
+# if defined VEG_DRAG || defined VEG_BIOMASS
+        status=def_dim(ng, iNLM, HIS(ng)%ncid, ncname, 'NVEG',          &
+     &                 NVEG, DimIDs(35))
+        IF (exit_flag.ne.NoError) RETURN
+# endif 
 #endif
 
 #ifdef ADJUST_BOUNDARY
@@ -366,6 +385,17 @@
 # endif
 #endif
 !
+!  Define dimensions for the plant array variables
+!
+#ifdef VEGETATION 
+# if defined VEG_DRAG || defined VEG_BIOMASS
+        v3pgrd(1)=DimIDs( 1)
+        v3pgrd(2)=DimIDs( 5)
+        v3pgrd(3)=DimIDs(35)
+        v3pgrd(4)=DimIDs(12)
+# endif 
+#endif 
+!
 !  Define dimension vectors for staggered v-momentum type variables.
 !
 #if defined WRITE_WATER && defined MASKING
@@ -437,7 +467,7 @@
         b3dgrd(4)=DimIDs(12)
 #  endif
 # endif
-# if defined BIO_FENNEL && defined SPECTRAL_LIGHT 
+# if defined ESTUARYBGC 
 !
 !  Define dimension vector for spectral light type variables.
 !
@@ -1778,7 +1808,7 @@
 # endif
 #endif
 !
-# if defined BIO_FENNEL && defined SPECTRAL_LIGHT
+# if defined ESTUARYBGC && defined SPECTRAL_LIGHT
 !  Define Photosynthetically Available Radiation (PAR)
 !
         IF (Hout(idPARo,ng)) THEN
@@ -1830,25 +1860,269 @@
         END IF
 # endif
 !
-# if defined SAV && defined SEAGRASS_SINK && defined SPECTRAL_LIGHT
+# if defined ESTUARYBGC && defined SAV_BIOMASS
 !
-!  Define Seagrass
+!  Define Dissolved Inorganic Nitrogen in water column
 !
-        IF (Hout(idsgrn,ng)) THEN
-          Vinfo( 1)=Vname(1,idsgrn)
-          Vinfo( 2)=Vname(2,idsgrn)
-          Vinfo( 3)=Vname(3,idsgrn)
-          Vinfo(14)=Vname(4,idsgrn)
+        IF (Hout(iddinw,ng)) THEN 
+          Vinfo( 1)=Vname(1,iddinw)
+          Vinfo( 2)=Vname(2,iddinw)
+          Vinfo( 3)=Vname(3,iddinw)
+          Vinfo(14)=Vname(4,iddinw)
           Vinfo(16)=Vname(1,idtime)
 #  if defined WRITE_WATER && defined MASKING
           Vinfo(20)='mask_rho'
 #  endif
           Vinfo(22)='coordinates'
-          Aval(5)=REAL(Iinfo(1,idsgrn,ng),r8)
-          status=def_var(ng, iNLM, HIS(ng)%ncid, HIS(ng)%Vid(idsgrn),   &
+          Aval(5)=REAL(Iinfo(1,iddinw,ng),r8)
+          status=def_var(ng, iNLM, HIS(ng)%ncid, HIS(ng)%Vid(iddinw),   &
+     &                   NF_FOUT, nvd4, t3dgrd, Aval, Vinfo, ncname)
+        END IF
+!
+!  Define Dissolved Inorganic Nitrogen in sediment column
+!
+        IF (Hout(iddins,ng)) THEN 
+          Vinfo( 1)=Vname(1,iddins)
+          Vinfo( 2)=Vname(2,iddins)
+          Vinfo( 3)=Vname(3,iddins)
+          Vinfo(14)=Vname(4,iddins)
+          Vinfo(16)=Vname(1,idtime)
+#  if defined WRITE_WATER && defined MASKING
+          Vinfo(20)='mask_rho'
+#  endif
+          Vinfo(22)='coordinates'
+          Aval(5)=REAL(Iinfo(1,iddins,ng),r8)
+          status=def_var(ng, iNLM, HIS(ng)%ncid, HIS(ng)%Vid(iddins),   &
+     &                   NF_FOUT, nvd4, t3dgrd, Aval, Vinfo, ncname)
+        END IF
+!
+!  Define Dissolved Oxygen in water column
+!
+        IF (Hout(iddowc,ng)) THEN 
+          Vinfo( 1)=Vname(1,iddowc)
+          Vinfo( 2)=Vname(2,iddowc)
+          Vinfo( 3)=Vname(3,iddowc)
+          Vinfo(14)=Vname(4,iddowc)
+          Vinfo(16)=Vname(1,idtime)
+#  if defined WRITE_WATER && defined MASKING
+          Vinfo(20)='mask_rho'
+#  endif
+          Vinfo(22)='coordinates'
+          Aval(5)=REAL(Iinfo(1,iddowc,ng),r8)
+          status=def_var(ng, iNLM, HIS(ng)%ncid, HIS(ng)%Vid(iddowc),   &
+     &                   NF_FOUT, nvd4, t3dgrd, Aval, Vinfo, ncname)
+        END IF
+!
+!  Define Dissolved Inorganic Nitrogen in water column due to SAV 
+!
+        IF (Hout(idwsvl,ng)) THEN 
+          Vinfo( 1)=Vname(1,idwsvl)
+          Vinfo( 2)=Vname(2,idwsvl)
+          Vinfo( 3)=Vname(3,idwsvl)
+          Vinfo(14)=Vname(4,idwsvl)
+          Vinfo(16)=Vname(1,idtime)
+#  if defined WRITE_WATER && defined MASKING
+          Vinfo(20)='mask_rho'
+#  endif
+          Vinfo(22)='coordinates'
+          Aval(5)=REAL(Iinfo(1,idwsvl,ng),r8)
+          status=def_var(ng, iNLM, HIS(ng)%ncid, HIS(ng)%Vid(idwsvl),   &
+     &                   NF_FOUT, nvd4, t3dgrd, Aval, Vinfo, ncname)
+        END IF
+!
+!
+!  Above ground biomass
+!
+        IF (Hout(idsagb,ng)) THEN
+          Vinfo( 1)=Vname(1,idsagb)
+          Vinfo( 2)=Vname(2,idsagb)
+          Vinfo( 3)=Vname(3,idsagb)
+          Vinfo(14)=Vname(4,idsagb)
+          Vinfo(16)=Vname(1,idsagb)
+#  if defined WRITE_WATER && defined MASKING
+          Vinfo(20)='mask_rho'
+#  endif
+          Vinfo(22)='coordinates'
+          Aval(5)=REAL(Iinfo(1,idsagb,ng),r8)
+          status=def_var(ng, iNLM, HIS(ng)%ncid, HIS(ng)%Vid(idsagb),   &
      &                   NF_FOUT, nvd3, t2dgrd, Aval, Vinfo, ncname)
         END IF
+!
+!  Above ground biomass
+!
+        IF (Hout(idsbgb,ng)) THEN
+          Vinfo( 1)=Vname(1,idsbgb)
+          Vinfo( 2)=Vname(2,idsbgb)
+          Vinfo( 3)=Vname(3,idsbgb)
+          Vinfo(14)=Vname(4,idsbgb)
+          Vinfo(16)=Vname(1,idsbgb)
+#  if defined WRITE_WATER && defined MASKING
+          Vinfo(20)='mask_rho'
+#  endif
+          Vinfo(22)='coordinates'
+          Aval(5)=REAL(Iinfo(1,idsbgb,ng),r8)
+          status=def_var(ng, iNLM, HIS(ng)%ncid, HIS(ng)%Vid(idsbgb),   &
+     &                   NF_FOUT, nvd3, t2dgrd, Aval, Vinfo, ncname)
+        END IF
+!
+!  PP
+!
+        IF (Hout(idsvpp,ng)) THEN
+          Vinfo( 1)=Vname(1,idsvpp)
+          Vinfo( 2)=Vname(2,idsvpp)
+          Vinfo( 3)=Vname(3,idsvpp)
+          Vinfo(14)=Vname(4,idsvpp)
+          Vinfo(16)=Vname(1,idsvpp)
+#  if defined WRITE_WATER && defined MASKING
+          Vinfo(20)='mask_rho'
+#  endif
+          Vinfo(22)='coordinates'
+          Aval(5)=REAL(Iinfo(1,idsvpp,ng),r8)
+          status=def_var(ng, iNLM, HIS(ng)%ncid, HIS(ng)%Vid(idsvpp),   &
+     &                   NF_FOUT, nvd4, t3dgrd, Aval, Vinfo, ncname)
+        END IF
+!
+!  AGM
+!
+        IF (Hout(idsvam,ng)) THEN
+          Vinfo( 1)=Vname(1,idsvam)
+          Vinfo( 2)=Vname(2,idsvam)
+          Vinfo( 3)=Vname(3,idsvam)
+          Vinfo(14)=Vname(4,idsvam)
+          Vinfo(16)=Vname(1,idsvam)
+#  if defined WRITE_WATER && defined MASKING
+          Vinfo(20)='mask_rho'
+#  endif
+          Vinfo(22)='coordinates'
+          Aval(5)=REAL(Iinfo(1,idsvam,ng),r8)
+          status=def_var(ng, iNLM, HIS(ng)%ncid, HIS(ng)%Vid(idsvam),   &
+     &                   NF_FOUT, nvd4, t3dgrd, Aval, Vinfo, ncname)
+        END IF
+!
+!  AGAR
+!
+        IF (Hout(idsgar,ng)) THEN
+          Vinfo( 1)=Vname(1,idsgar)
+          Vinfo( 2)=Vname(2,idsgar)
+          Vinfo( 3)=Vname(3,idsgar)
+          Vinfo(14)=Vname(4,idsgar)
+          Vinfo(16)=Vname(1,idsgar)
+#  if defined WRITE_WATER && defined MASKING
+          Vinfo(20)='mask_rho'
+#  endif
+          Vinfo(22)='coordinates'
+          Aval(5)=REAL(Iinfo(1,idsgar,ng),r8)
+          status=def_var(ng, iNLM, HIS(ng)%ncid, HIS(ng)%Vid(idsgar),   &
+     &                   NF_FOUT, nvd4, t3dgrd, Aval, Vinfo, ncname)
+        END IF
+!
+!  AGBR
+!
+        IF (Hout(idsvbr,ng)) THEN
+          Vinfo( 1)=Vname(1,idsvbr)
+          Vinfo( 2)=Vname(2,idsvbr)
+          Vinfo( 3)=Vname(3,idsvbr)
+          Vinfo(14)=Vname(4,idsvbr)
+          Vinfo(16)=Vname(1,idsvbr)
+#  if defined WRITE_WATER && defined MASKING
+          Vinfo(20)='mask_rho'
+#  endif
+          Vinfo(22)='coordinates'
+          Aval(5)=REAL(Iinfo(1,idsvbr,ng),r8)
+          status=def_var(ng, iNLM, HIS(ng)%ncid, HIS(ng)%Vid(idsvbr),   &
+     &                   NF_FOUT, nvd4, t3dgrd, Aval, Vinfo, ncname)
+        END IF
+!
+!  SEARS
+!
+        IF (Hout(idsvrs,ng)) THEN
+          Vinfo( 1)=Vname(1,idsvrs)
+          Vinfo( 2)=Vname(2,idsvrs)
+          Vinfo( 3)=Vname(3,idsvrs)
+          Vinfo(14)=Vname(4,idsvrs)
+          Vinfo(16)=Vname(1,idsvrs)
+#  if defined WRITE_WATER && defined MASKING
+          Vinfo(20)='mask_rho'
+#  endif
+          Vinfo(22)='coordinates'
+          Aval(5)=REAL(Iinfo(1,idsvrs,ng),r8)
+          status=def_var(ng, iNLM, HIS(ng)%ncid, HIS(ng)%Vid(idsvrs),   &
+     &                   NF_FOUT, nvd4, t3dgrd, Aval, Vinfo, ncname)
+        END IF
+!
+! AGBG
+! 
+        IF (Hout(idsvbg,ng)) THEN
+          Vinfo( 1)=Vname(1,idsvbg)
+          Vinfo( 2)=Vname(2,idsvbg)
+          Vinfo( 3)=Vname(3,idsvbg)
+          Vinfo(14)=Vname(4,idsvbg)
+          Vinfo(16)=Vname(1,idsvbg)
+#  if defined WRITE_WATER && defined MASKING
+          Vinfo(20)='mask_rho'
+#  endif
+          Vinfo(22)='coordinates'
+          Aval(5)=REAL(Iinfo(1,idsvbg,ng),r8)
+          status=def_var(ng, iNLM, HIS(ng)%ncid, HIS(ng)%Vid(idsvbg),   &
+     &                   NF_FOUT, nvd4, t3dgrd, Aval, Vinfo, ncname)
+        END IF
+!
+! BGAG
+! 
+        IF (Hout(idsvag,ng)) THEN
+          Vinfo( 1)=Vname(1,idsvag)
+          Vinfo( 2)=Vname(2,idsvag)
+          Vinfo( 3)=Vname(3,idsvag)
+          Vinfo(14)=Vname(4,idsvag)
+          Vinfo(16)=Vname(1,idsvag)
+#  if defined WRITE_WATER && defined MASKING
+          Vinfo(20)='mask_rho'
+#  endif
+          Vinfo(22)='coordinates'
+          Aval(5)=REAL(Iinfo(1,idsvag,ng),r8)
+          status=def_var(ng, iNLM, HIS(ng)%ncid, HIS(ng)%Vid(idsvag),   &
+     &                   NF_FOUT, nvd4, t3dgrd, Aval, Vinfo, ncname)
+        END IF
+!
+! BGR 
+! 
+        IF (Hout(idsbgr,ng)) THEN
+          Vinfo( 1)=Vname(1,idsbgr)
+          Vinfo( 2)=Vname(2,idsbgr)
+          Vinfo( 3)=Vname(3,idsbgr)
+          Vinfo(14)=Vname(4,idsbgr)
+          Vinfo(16)=Vname(1,idsbgr)
+#  if defined WRITE_WATER && defined MASKING
+          Vinfo(20)='mask_rho'
+#  endif
+          Vinfo(22)='coordinates'
+          Aval(5)=REAL(Iinfo(1,idsbgr,ng),r8)
+          status=def_var(ng, iNLM, HIS(ng)%ncid, HIS(ng)%Vid(idsbgr),   &
+     &                   NF_FOUT, nvd4, t3dgrd, Aval, Vinfo, ncname)
+        END IF
+!
+! BGM
+! 
+        IF (Hout(idsbgm,ng)) THEN
+          Vinfo( 1)=Vname(1,idsbgm)
+          Vinfo( 2)=Vname(2,idsbgm)
+          Vinfo( 3)=Vname(3,idsbgm)
+          Vinfo(14)=Vname(4,idsbgm)
+          Vinfo(16)=Vname(1,idsbgm)
+#  if defined WRITE_WATER && defined MASKING
+          Vinfo(20)='mask_rho'
+#  endif
+          Vinfo(22)='coordinates'
+          Aval(5)=REAL(Iinfo(1,idsbgm,ng),r8)
+          status=def_var(ng, iNLM, HIS(ng)%ncid, HIS(ng)%Vid(idsbgm),   &
+     &                   NF_FOUT, nvd4, t3dgrd, Aval, Vinfo, ncname)
+        END IF
+!
 # endif
+!
+#if defined VEGETATION 
+#include "vegetation_def_his.h"
+#endif
 !
 !  Define surface U-momentum stress.
 !
@@ -2526,24 +2800,44 @@
      &                     NF_FOUT, nvd3, t2dgrd, Aval, Vinfo, ncname)
           IF (exit_flag.ne.NoError) RETURN
         END IF
+#ifdef MELT_PONDS
 !
-!  Define surface water thickness (on ice).
+!  Define surface water fraction (on ice).
 !
-        IF (Hout(idSfwat,ng)) THEN
-          Vinfo( 1)=Vname(1,idSfwat)
-          Vinfo( 2)=Vname(2,idSfwat)
-          Vinfo( 3)=Vname(3,idSfwat)
-          Vinfo(14)=Vname(4,idSfwat)
+        IF (Hout(idHpond,ng)) THEN
+          Vinfo( 1)=Vname(1,idApond)
+          Vinfo( 2)=Vname(2,idApond)
+          Vinfo( 3)=Vname(3,idApond)
+          Vinfo(14)=Vname(4,idApond)
           Vinfo(16)=Vname(1,idtime)
 #if defined WRITE_WATER && defined MASKING
           Vinfo(20)='mask_rho'
 #endif
           Vinfo(22)='coordinates'
-          Aval(5)=REAL(Iinfo(1,idSfwat,ng),r8)
-          status=def_var(ng, iNLM, HIS(ng)%ncid, HIS(ng)%Vid(idSfwat),  &
+          Aval(5)=REAL(Iinfo(1,idApond,ng),r8)
+          status=def_var(ng, iNLM, HIS(ng)%ncid, HIS(ng)%Vid(idApond),  &
      &                     NF_FOUT, nvd3, t2dgrd, Aval, Vinfo, ncname)
           IF (exit_flag.ne.NoError) RETURN
         END IF
+!
+!  Define surface water thickness (on ice).
+!
+        IF (Hout(idHpond,ng)) THEN
+          Vinfo( 1)=Vname(1,idHpond)
+          Vinfo( 2)=Vname(2,idHpond)
+          Vinfo( 3)=Vname(3,idHpond)
+          Vinfo(14)=Vname(4,idHpond)
+          Vinfo(16)=Vname(1,idtime)
+#if defined WRITE_WATER && defined MASKING
+          Vinfo(20)='mask_rho'
+#endif
+          Vinfo(22)='coordinates'
+          Aval(5)=REAL(Iinfo(1,idHpond,ng),r8)
+          status=def_var(ng, iNLM, HIS(ng)%ncid, HIS(ng)%Vid(idHpond),  &
+     &                     NF_FOUT, nvd3, t2dgrd, Aval, Vinfo, ncname)
+          IF (exit_flag.ne.NoError) RETURN
+        END IF
+#endif
 !
 !  Define ice age.
 !
@@ -3906,9 +4200,14 @@
             got_var(idIceLog)=.true.
             HIS(ng)%Vid(idIceLog)=var_id(i)
 # endif
-          ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idSfwat))) THEN
-            got_var(idSfwat)=.true.
-            HIS(ng)%Vid(idSfwat)=var_id(i)
+# ifdef MELT_PONDS
+          ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idApond))) THEN
+            got_var(idApond)=.true.
+            HIS(ng)%Vid(idApond)=var_id(i)
+          ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idHpond))) THEN
+            got_var(idHpond)=.true.
+            HIS(ng)%Vid(idHpond)=var_id(i)
+# endif
           ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idAgeice))) THEN
             got_var(idAgeice)=.true.
             HIS(ng)%Vid(idAgeice)=var_id(i)
@@ -4115,7 +4414,44 @@
             got_var(idWbeh)=.TRUE.
             HIS(ng)%Vid(idWbeh)=var_id(i)
 #endif
+
+#ifdef INWAVE_MODEL
+          ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idACen))) THEN
+            got_var(idACen)=.TRUE.
+            HIS(ng)%Vid(idACen)=var_id(i)
+          ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idACcx))) THEN
+            got_var(idACcx)=.TRUE.
+            HIS(ng)%Vid(idACcx)=var_id(i)
+          ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idACcy))) THEN
+            got_var(idACcy)=.TRUE.
+            HIS(ng)%Vid(idACcy)=var_id(i)
+          ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idACct))) THEN
+            got_var(idACct)=.TRUE.
+            HIS(ng)%Vid(idACct)=var_id(i)
+          ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idACtp))) THEN
+            got_var(idACtp)=.TRUE.
+            HIS(ng)%Vid(idACtp)=var_id(i)
+          ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idWdib))) THEN
+            got_var(idWdib)=.TRUE.
+            HIS(ng)%Vid(idWdib)=var_id(i)
+          ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idWdiw))) THEN
+            got_var(idWdiw)=.TRUE.
+            HIS(ng)%Vid(idWdiw)=var_id(i)
+#endif
+
           END IF
+!
+#if defined VEGETATION 
+# if defined VEG_DRAG || defined VEG_BIOMASS
+          DO itrc=1,NVEGP
+            IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idvprp(itrc)))) THEN
+              got_var(idvprp(itrc))=.TRUE.
+              HIS(ng)%Vid(itrc)=var_id(i)
+            END IF
+          END DO
+# endif 
+#endif
+! 
 #ifdef SOLVE3D
           DO itrc=1,NT(ng)
             IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idTvar(itrc)))) THEN
@@ -4689,12 +5025,20 @@
           RETURN
         END IF            
 # endif
-        IF (.not.got_var(idSfwat).and.Hout(idSfwat,ng)) THEN
-          IF (Master) WRITE (stdout,60) TRIM(Vname(1,idSfwat)),         &
+# ifdef MELT_PONDS
+        IF (.not.got_var(idApond).and.Hout(idApond,ng)) THEN
+          IF (Master) WRITE (stdout,60) TRIM(Vname(1,idApond)),         &
      &                                  TRIM(ncname)
           exit_flag=3
           RETURN
         END IF
+        IF (.not.got_var(idHpond).and.Hout(idHpond,ng)) THEN
+          IF (Master) WRITE (stdout,60) TRIM(Vname(1,idHpond)),         &
+     &                                  TRIM(ncname)
+          exit_flag=3
+          RETURN
+        END IF
+# endif
         IF (.not.got_var(idAgeice).and.Hout(idAgeice,ng)) THEN
           IF (Master) WRITE (stdout,60) TRIM(Vname(1,idAgeice)),        &
      &                                  TRIM(ncname)
@@ -5078,6 +5422,18 @@
           END IF
 # endif
         END DO
+# ifdef VEGETATION 
+#  if defined VEG_DRAG || defined VEG_BIOMASS 
+        DO i=1,NVEGP 
+          IF (.not.got_var(idvprp(i)).and.Hout(idvprp(i),ng)) THEN
+            IF (Master) WRITE (stdout,60) TRIM(Vname(1,idvprp(i))),     &
+     &                                    TRIM(ncname)
+            exit_flag=3
+            RETURN
+          END IF
+        END DO 
+#  endif
+# endif 
 # ifdef SEDIMENT
         DO i=1,NST
           IF (.not.got_var(idfrac(i)).and.Hout(idfrac(i),ng)) THEN

@@ -3,7 +3,7 @@
       SUBROUTINE def_filt (ng)
 !
 !=======================================================================
-!  Copyright (c) 2002-2014 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2016 The ROMS/TOMS Group                         !
 !================================================== Hernan G. Arango ===
 !                                                                      !
 !  This routine creates filter NetCDF file, it defines its             !
@@ -915,25 +915,46 @@
      &                 NF_FOUT, nvd3, t2dgrd, Aval, Vinfo, ncname)
           IF (exit_flag.ne.NoError) RETURN
         END IF
+#ifdef MELT_PONDS
 !
 !  Define surface melt ponds
 !
-        IF (Aout(idSfwat,ng)) THEN
-          Vinfo( 1)=Vname(1,idSfwat)
-          Vinfo( 2)=Vname(2,idSfwat)
-          Vinfo( 3)=Vname(3,idSfwat)
-          Vinfo(14)=Vname(4,idSfwat)
+        IF (Aout(idApond,ng)) THEN
+          Vinfo( 1)=Vname(1,idApond)
+          Vinfo( 2)=Vname(2,idApond)
+          Vinfo( 3)=Vname(3,idApond)
+          Vinfo(14)=Vname(4,idApond)
           Vinfo(16)='filter level'
 #  if defined WRITE_WATER && defined MASKING
           Vinfo(20)='mask_rho'
 #  endif
           Vinfo(22)='coordinates'
-          Aval(5)=REAL(Iinfo(1,idSfwat,ng),r8)
+          Aval(5)=REAL(Iinfo(1,idApond,ng),r8)
           status=def_var(ng, iNLM, FIL(10,ng)%ncid,                     &
-     &                 FIL(10,ng)%Vid(idSfwat),                         &
+     &                 FIL(10,ng)%Vid(idApond),                         &
      &                 NF_FOUT, nvd3, t2dgrd, Aval, Vinfo, ncname)
           IF (exit_flag.ne.NoError) RETURN
         END IF
+!
+!  Define surface melt ponds
+!
+        IF (Aout(idHpond,ng)) THEN
+          Vinfo( 1)=Vname(1,idHpond)
+          Vinfo( 2)=Vname(2,idHpond)
+          Vinfo( 3)=Vname(3,idHpond)
+          Vinfo(14)=Vname(4,idHpond)
+          Vinfo(16)='filter level'
+#  if defined WRITE_WATER && defined MASKING
+          Vinfo(20)='mask_rho'
+#  endif
+          Vinfo(22)='coordinates'
+          Aval(5)=REAL(Iinfo(1,idHpond,ng),r8)
+          status=def_var(ng, iNLM, FIL(10,ng)%ncid,                     &
+     &                 FIL(10,ng)%Vid(idHpond),                         &
+     &                 NF_FOUT, nvd3, t2dgrd, Aval, Vinfo, ncname)
+          IF (exit_flag.ne.NoError) RETURN
+        END IF
+#endif
 !
 !  Define ice surface temperature
 !
@@ -1354,9 +1375,14 @@
             ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idHsno))) THEN
               got_var(idHsno)=.true.
               FIL(10,ng)%Vid(idHsno)=var_id(i)
-            ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idSfwat))) THEN
-              got_var(idSfwat)=.true.
-              FIL(10,ng)%Vid(idSfwat)=var_id(i)
+#ifdef MELT_PONDS
+            ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idApond))) THEN
+              got_var(idApond)=.true.
+              FIL(10,ng)%Vid(idApond)=var_id(i)
+            ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idHpond))) THEN
+              got_var(idHpond)=.true.
+              FIL(10,ng)%Vid(idHpond)=var_id(i)
+#endif
             ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idAgeice))) THEN
               got_var(idAgeice)=.true.
               FIL(10,ng)%Vid(idAgeice)=var_id(i)
@@ -1560,12 +1586,20 @@
           exit_flag=3
           RETURN
         END IF
-        IF (.not.got_var(idSfwat).and.Aout(idSfwat,ng)) THEN
-          IF (Master) WRITE (stdout,40) TRIM(Vname(1,idSfwat)),         &
+#ifdef MELT_PONDS
+        IF (.not.got_var(idApond).and.Aout(idApond,ng)) THEN
+          IF (Master) WRITE (stdout,40) TRIM(Vname(1,idApond)),         &
      &                                  TRIM(ncname)
           exit_flag=3
           RETURN
         END IF
+        IF (.not.got_var(idHpond).and.Aout(idHpond,ng)) THEN
+          IF (Master) WRITE (stdout,40) TRIM(Vname(1,idHpond)),         &
+     &                                  TRIM(ncname)
+          exit_flag=3
+          RETURN
+        END IF
+#endif
         IF (.not.got_var(idAgeice).and.Aout(idAgeice,ng)) THEN
           IF (Master) WRITE (stdout,40) TRIM(Vname(1,idAgeice)),        &
      &                                  TRIM(ncname)

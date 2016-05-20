@@ -3,7 +3,7 @@
 !
 !svn $Id: wrt_rst.F 733 2008-09-07 01:56:45Z jcwarner $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2014 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2016 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -31,6 +31,10 @@
 #if defined SEDIMENT || defined BBL_MODEL
       USE mod_sedbed
       USE mod_sediment
+#endif
+#if defined VEGETATION 
+      USE mod_vegetation
+      USE mod_vegarr
 #endif
 #if (defined PERFECT_RESTART && defined ICE_MODEL) || defined NCEP_FLUXES
       USE mod_forces
@@ -1075,35 +1079,66 @@
         ioerror=status
         RETURN
       END IF
+#ifdef MELT_PONDS
+!
+!  Write out surface water fraction (on ice)
+!
+      scale=1.0_r8
+#  ifdef PERFECT_RESTART
+      gtype=gfactor*r3dvar
+      status=nf_fwrite3d(ng, iNLM, RST(ng)%ncid, RST(ng)%Vid(idApond),  &
+     &                   RST(ng)%Rindex, gtype,                         &
+     &                   LBi, UBi, LBj, UBj, 1, 2, scale,               &
+#   ifdef MASKING
+     &                   GRID(ng) % rmask,                              &
+#   endif
+     &                   ICE (ng) % apond)
+#  else
+      gtype=gfactor*r2dvar
+      status=nf_fwrite2d(ng, iNLM, RST(ng)%ncid, RST(ng)%Vid(idApond),  &
+     &                 RST(ng)%Rindex, gtype,                           &
+     &                 LBi, UBi, LBj, UBj, scale,                       &
+#   ifdef MASKING
+     &                 GRID(ng) % rmask,                                &
+#   endif
+     &                 ICE (ng) % apond(:,:,IOUT))
+#  endif
+      IF (OutThread.and.(status.ne.nf90_noerr)) THEN
+        WRITE (stdout,10) TRIM(Vname(1,idApond)), RST(ng)%Rindex
+        exit_flag=3
+        ioerror=status
+        RETURN
+      END IF
 !
 !  Write out surface water thickness (on ice)
 !
       scale=1.0_r8
 #  ifdef PERFECT_RESTART
       gtype=gfactor*r3dvar
-      status=nf_fwrite3d(ng, iNLM, RST(ng)%ncid, RST(ng)%Vid(idSfwat),  &
+      status=nf_fwrite3d(ng, iNLM, RST(ng)%ncid, RST(ng)%Vid(idHpond),  &
      &                   RST(ng)%Rindex, gtype,                         &
      &                   LBi, UBi, LBj, UBj, 1, 2, scale,               &
 #   ifdef MASKING
      &                   GRID(ng) % rmask,                              &
 #   endif
-     &                   ICE (ng) % sfwat)
+     &                   ICE (ng) % hpond)
 #  else
       gtype=gfactor*r2dvar
-      status=nf_fwrite2d(ng, iNLM, RST(ng)%ncid, RST(ng)%Vid(idSfwat),  &
+      status=nf_fwrite2d(ng, iNLM, RST(ng)%ncid, RST(ng)%Vid(idHpond),  &
      &                 RST(ng)%Rindex, gtype,                           &
      &                 LBi, UBi, LBj, UBj, scale,                       &
 #   ifdef MASKING
      &                 GRID(ng) % rmask,                                &
 #   endif
-     &                 ICE (ng) % sfwat(:,:,IOUT))
+     &                 ICE (ng) % hpond(:,:,IOUT))
 #  endif
       IF (OutThread.and.(status.ne.nf90_noerr)) THEN
-        WRITE (stdout,10) TRIM(Vname(1,idSfwat)), RST(ng)%Rindex
+        WRITE (stdout,10) TRIM(Vname(1,idHpond)), RST(ng)%Rindex
         exit_flag=3
         ioerror=status
         RETURN
       END IF
+#endif
 !
 !  Write out ice age
 !
@@ -1539,7 +1574,7 @@
      &                   RST(ng)%Rindex, gtype,                         &
      &                   LBi, UBi, LBj, UBj, scale,                     &
 #  ifdef MASKING
-     &                   GRID(ng) % rmask_io,                           &
+     &                   GRID(ng) % rmask_full,                         &
 #  endif
      &                   FORCES(ng) % wg2_m)
       IF (status.ne.nf90_noerr) THEN
@@ -1631,6 +1666,11 @@
         RETURN
       END IF
 # endif
+
+#ifdef VEGETATION
+#include "vegetation_wrt_rst.h"
+#endif 
+
 # ifdef SEDIMENT
 #  ifdef BEDLOAD
 !

@@ -1,9 +1,9 @@
 #include "cppdefs.h"
       SUBROUTINE wrt_info (ng, model, ncid, ncname)
 !
-!svn $Id: wrt_info.F 733 2008-09-07 01:56:45Z jcwarner $
+!svn $Id: wrt_info.F 791 2016-05-05 22:39:42Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2014 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2016 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -44,12 +44,15 @@
 #ifdef SEDIMENT
       USE mod_sediment
 #endif
+#ifdef VEGETATION 
+      USE mod_vegetation
+#endif
 #ifdef PROPAGATOR
       USE mod_storage
 #endif
       USE mod_sources
 
-#if !defined PARALLEL_IO  && defined DISTRIBUTE
+#if !defined PARALLEL_OUT  && defined DISTRIBUTE
       USE distribute_mod, ONLY : mp_bcasti
 #endif
 #ifdef STATIONS
@@ -87,7 +90,7 @@
       real(r8), dimension(NT(ng),4) :: Tobc
 #endif
 #ifdef STATIONS
-      real(r8), dimension(Nstation(ng)) :: Zpos, wrk
+      real(r8), dimension(Nstation(ng)) :: wrk
 #endif
 !
       SourceFile='wrt_info.F'
@@ -670,6 +673,17 @@
      &                      nudg, (/1/), (/NT(ng)/),                    &
      &                      ncid = ncid)
       IF (exit_flag.ne.NoError) RETURN
+
+      CALL netcdf_put_fvar (ng, model, ncname, 'Tnudg_SSS',             &
+     &                      Tnudg_SSS(ng)/sec2day, (/0/), (/0/),        &
+     &                      ncid = ncid)
+      IF (exit_flag.ne.NoError) RETURN
+# ifdef SSSC_THRESHOLD
+      CALL netcdf_put_fvar (ng, model, ncname, 'sss_mismatch_threshold',&
+     &                      sss_mismatch_threshold(ng)/sec2day, (/0/),  &
+     &                      (/0/), ncid = ncid)
+      IF (exit_flag.ne.NoError) RETURN
+# endif
 #endif
 
 #ifndef DEBUGGING
@@ -1268,10 +1282,10 @@
 #endif
 
 #if defined BIOLOGY && defined SOLVE3D
-# if defined BIO_FENNEL && !defined SPECTRAL_LIGHT
+# if defined BIO_FENNEL
 #  include <fennel_wrt.h>
-# elif defined BIO_FENNEL && defined SPECTRAL_LIGHT
-#  include <spect_fennel_wrt.h>
+# elif defined ESTUARYBGC
+#  include <estuarybgc_wrt.h>
 # elif defined ECOSIM
 #  include <ecosim_wrt.h>
 # elif defined NEMURO
@@ -1284,6 +1298,8 @@
 #  include <npzd_iron_wrt.h>
 # elif defined NPZD_POWELL
 #  include <npzd_Powell_wrt.h>
+# elif defined RED_TIDE
+#  include <red_tide_wrt.h>
 # endif
 #endif
 
@@ -1296,6 +1312,10 @@
 #ifdef SEDIMENT
 # include <sediment_wrt.h>
 #endif
+
+!#ifdef VEGETATION 
+!# include <vegetation_wrt_info.h>
+!#endif
 !
 !-----------------------------------------------------------------------
 !  Write out grid variables.
@@ -2314,7 +2334,7 @@
       CALL netcdf_sync (ng, model, ncname, ncid)
       IF (exit_flag.ne.NoError) RETURN
 
-#if !defined PARALLEL_IO  && defined DISTRIBUTE
+#if !defined PARALLEL_OUT  && defined DISTRIBUTE
 !
 !  Broadcast error flags to all processors in the group.
 !
@@ -2329,6 +2349,8 @@
      &        12x,'into file: ',a)
   20  FORMAT (/,' WRT_INFO - error while inquiring ID for variable: ',  &
      &        a,/,12x,'in file: ',a)
+  30  FORMAT (/,' WRT_INFO - unable to synchronize to disk file: ',     &
+     &        /,12x,a)
 
       RETURN
       END SUBROUTINE wrt_info

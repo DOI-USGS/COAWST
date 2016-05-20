@@ -1,7 +1,7 @@
 !
 !svn $Id: sediment_mod.h 429 2009-12-20 17:30:26Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2014 The ROMS/TOMS Group        John C. Warner   !
+!  Copyright (c) 2002-2016 The ROMS/TOMS Group        John C. Warner   !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -82,6 +82,9 @@
       USE mod_param
 !
       implicit none
+
+      integer, allocatable  :: idSbed(:)  ! bed    properties IDs
+      integer, allocatable  :: idBott(:)  ! bottom properties IDs
 !
 !-----------------------------------------------------------------------
 !  Tracer identification indices.
@@ -92,78 +95,31 @@
       integer, allocatable :: isand(:)    ! Non-cohesive sediment
 !
 !-----------------------------------------------------------------------
-!  Bed and bottom properties indices.
+!  Set bed property variables 
 !-----------------------------------------------------------------------
 !
-!  Set size of properties arrays.
-!
+      integer :: MBEDP                     ! Number of bed properties  
+      integer :: ithck, iaged, iporo, idiff 
 #if defined COHESIVE_BED || defined SED_BIODIFF || defined MIXED_BED
-      integer, parameter :: MBEDP = 5      ! Bed properties
-#else
-      integer, parameter :: MBEDP = 4      ! Bed properties
+      integer :: ibtcr 
 #endif
-      integer  :: idSbed(MBEDP)            ! bed properties IDs
 !
+!-----------------------------------------------------------------------
+!  Set bottom property variables 
+!-----------------------------------------------------------------------
+!
+      integer :: MBOTP                     ! Number of bottom properties
+      integer :: isd50, idens, iwsed, itauc
+      integer :: irlen, irhgt, ibwav, izdef
+      integer :: izapp, izNik, izbio, izbfm
+      integer :: izbld, izwbl, iactv, ishgt
+      integer :: imaxD, idnet  
+#if defined COHESIVE_BED || defined SED_BIODIFF || defined MIXED_BED
+      integer :: idoff, idslp, idtim, idbmx
+      integer :: idbmm, idbzs, idbzm, idbzp 
+#endif 
 #if defined MIXED_BED
-      integer, parameter :: MBOTP = 27     ! Bottom properties
-#elif defined SEAGRASS_BOTTOM && defined MIXED_BED
-      integer, parameter :: MBOTP = 29     ! Bottom properties
-#elif defined SEAGRASS_BOTTOM && !defined MIXED_BED
-      integer, parameter :: MBOTP = 20     ! Bottom properties
-#elif defined COHESIVE_BED || defined SED_BIODIFF
-      integer, parameter :: MBOTP = 26     ! Bottom properties
-#else
-      integer, parameter :: MBOTP = 18     ! Bottom properties
-#endif
-      integer  :: idBott(MBOTP)            ! bottom properties IDs
-!
-!  Set properties indices.
-!
-      integer, parameter :: ithck = 1      ! layer thickness
-      integer, parameter :: iaged = 2      ! layer age
-      integer, parameter :: iporo = 3      ! layer porosity
-      integer, parameter :: idiff = 4      ! layer bio-diffusivity
-#if defined COHESIVE_BED || defined SED_BIODIFF || defined MIXED_BED
-      integer, parameter :: ibtcr = 5      ! layer critical stress
-#endif
-!
-      integer, parameter :: isd50 = 1      ! mean grain diameter
-      integer, parameter :: idens = 2      ! mean grain density
-      integer, parameter :: iwsed = 3      ! mean settle velocity
-      integer, parameter :: itauc = 4      ! critical erosion stress
-      integer, parameter :: irlen = 5      ! ripple length
-      integer, parameter :: irhgt = 6      ! ripple height
-      integer, parameter :: ibwav = 7      ! wave excursion amplitude
-      integer, parameter :: izdef = 8      ! default bottom roughness
-      integer, parameter :: izapp = 9      ! apparent bottom roughness
-      integer, parameter :: izNik = 10     ! Nikuradse bottom roughness
-      integer, parameter :: izbio = 11     ! biological bottom roughness
-      integer, parameter :: izbfm = 12     ! bed form bottom roughness
-      integer, parameter :: izbld = 13     ! bed load bottom roughness
-      integer, parameter :: izwbl = 14     ! wave bottom roughness
-      integer, parameter :: iactv = 15     ! active layer thickness
-      integer, parameter :: ishgt = 16     ! saltation height
-      integer, parameter :: imaxD = 17     ! maximum inundation depth
-      integer, parameter :: idnet = 18     ! erosion or deposition
-#if defined COHESIVE_BED || defined SED_BIODIFF || defined MIXED_BED
-      integer, parameter :: idoff = 19     ! tau critical offset
-      integer, parameter :: idslp = 20     ! tau critical slope
-      integer, parameter :: idtim = 21     ! erodibility time scale
-      integer, parameter :: idbmx = 22     ! diffusivity db_max
-      integer, parameter :: idbmm = 23     ! diffusivity db_m
-      integer, parameter :: idbzs = 24     ! diffusivity db_zs
-      integer, parameter :: idbzm = 25     ! diffusivity db_zm
-      integer, parameter :: idbzp = 26     ! diffusivity db_zphi
-#endif
-#if defined MIXED_BED
-      integer, parameter :: idprp = 27     ! cohesive behavior
-#endif
-#if defined SED_BIOMASS && defined SEAGRASS_BOTTOM && defined MIXED_BED
-      integer, parameter :: isgrD = 28     ! seagrass shoot density
-      integer, parameter :: isgrH = 29     ! seagrass height
-#elif defined SED_BIOMASS && defined SEAGRASS_BOTTOM && !defined MIXED_BED 
-      integer, parameter :: isgrD = 19     ! seagrass shoot density
-      integer, parameter :: isgrH = 20     ! seagrass height
+      integer :: idprp 
 #endif
 !
 !  Sediment metadata indices vectors.
@@ -214,12 +170,6 @@
       real(r8), allocatable :: mud_frac_eq(:,:) ! Equilibrium fractional class distribution
       real(r8), allocatable :: t_dfloc(:)       ! Time scale of bed deflocculation
 #endif
-#if defined SED_BIOMASS
-      integer :: nTbiom        ! Number of hours for depth integration
-      real(r8), allocatable :: sgr_diam(:)     ! Seagrass diameter
-      real(r8), allocatable :: sgr_density(:)  ! Seagrass density (no shoot density)
-      real(r8), allocatable :: sgr_Hthres(:)   ! Seagrass height threshold 
-#endif
 
       CONTAINS
 
@@ -235,8 +185,100 @@
 !  Local variable declarations
 !
       integer :: i, ic
-
+      integer :: counter1, counter2 
       real(r8), parameter :: IniVal = 0.0_r8
+!
+!-----------------------------------------------------------------------
+!  Set bed properties indices.
+!-----------------------------------------------------------------------
+!
+      counter1 = 1           ! Initializing counter 
+      ithck    = counter1    ! layer thickness
+      counter1 = counter1+1
+      iaged    = counter1    ! layer age 
+      counter1 = counter1+1 
+      iporo    = counter1    ! layer porosity 
+      counter1 = counter1+1
+      idiff    = counter1    ! layer bio-diffusivity 
+#if defined COHESIVE_BED || defined SED_BIODIFF || defined MIXED_BED
+      counter1 = counter1+1 
+      ibtcr    = counter1    ! layer critical stress 
+#endif 
+!
+!-----------------------------------------------------------------------
+!  Set bottom properties indices.
+!-----------------------------------------------------------------------
+! 
+      counter2 = 1           ! Initializing counter 
+      isd50    = counter2    ! Median sediment grain diameter (m).
+      counter2 = counter2+1
+      idens    = counter2    ! Median sediment grain density (kg/m3).
+      counter2 = counter2+1
+      iwsed    = counter2    ! Mean settling velocity (m/s).  
+      counter2 = counter2+1
+      itauc    = counter2    ! Mean critical erosion stress (m2/s2).
+      counter2 = counter2+1
+      irlen    = counter2    ! Sediment ripple length (m).
+      counter2 = counter2+1
+      irhgt    = counter2    ! Sediment ripple height (m).
+      counter2 = counter2+1
+      ibwav    = counter2    ! Bed wave excursion amplitude (m).
+      counter2 = counter2+1
+      izdef    = counter2    ! Default bottom roughness (m).
+      counter2 = counter2+1
+      izapp    = counter2    ! Apparent bottom roughness (m).
+      counter2 = counter2+1
+      izNik    = counter2    ! Nikuradse bottom roughness (m).
+      counter2 = counter2+1  
+      izbio    = counter2    ! Biological bottom roughness (m).
+      counter2 = counter2+1  
+      izbfm    = counter2    ! Bed form bottom roughness (m).
+      counter2 = counter2+1
+      izbld    = counter2    ! Bed load bottom roughness (m).
+      counter2 = counter2+1
+      izwbl    = counter2    ! Bottom roughness used wave BBL (m).
+      counter2 = counter2+1  
+      iactv    = counter2    ! Active layer thickness for erosive potential (m).
+      counter2 = counter2+1  
+      ishgt    = counter2    ! Sediment saltation height (m).
+      counter2 = counter2+1   
+      imaxD    = counter2    ! Maximum inundation depth.
+      counter2 = counter2+1
+      idnet    = counter2    ! Erosion/deposition
+#if defined COHESIVE_BED || defined SED_BIODIFF || defined MIXED_BED
+      counter2 = counter2+1
+      idoff    = counter2    ! Offset for calculation of dmix erodibility profile (m). 
+      counter2 = counter2+1                                 
+      idslp    = counter2    ! Slope  for calculation of dmix or erodibility profile.  
+      counter2 = counter2+1                                       
+      idtim    = counter2    ! Time scale for restoring erodibility profile (s).
+      counter2 = counter2+1
+      idbmx    = counter2    ! Bed biodifusivity maximum.
+      counter2 = counter2+1    
+      idbmm    = counter2    ! Bed biodifusivity minimum.
+      counter2 = counter2+1
+      idbzs    = counter2    ! Bed biodifusivity zs.
+      counter2 = counter2+1     
+      idbzm    = counter2    ! Bed biodifusivity zm.
+      counter2 = counter2+1
+      idbzp    = counter2    ! Bed biodifusivity phi.
+#endif 
+#if defined MIXED_BED
+      counter2 = counter2+1
+      idprp    = counter2    ! Cohesive behavior. 
+#endif 
+!
+!  Allocate bed & bottom properties 
+!
+      MBEDP   = counter1
+      IF (.not.allocated(idSbed)) THEN
+        allocate ( idSbed(MBEDP) )
+      END IF
+!
+      MBOTP   = counter2 
+      IF (.not.allocated(idBott)) THEN
+        allocate ( idBott(MBOTP) )
+      END IF
 !
 !-----------------------------------------------------------------------
 !  Initialize tracer identification indices.
@@ -280,6 +322,13 @@
       END IF
 #endif
 
+#if defined SED_FLOCS && defined SED_DEFLOC
+      IF (.not.allocated(t_dfloc)) THEN
+        allocate ( t_dfloc(Ngrids) )
+        t_dfloc = IniVal
+      END IF
+#endif
+
 #if defined MIXED_BED
       IF (.not.allocated(transC)) THEN
         allocate ( transC(Ngrids) )
@@ -288,20 +337,6 @@
       IF (.not.allocated(transN)) THEN
         allocate ( transN(Ngrids) )
         transN = IniVal
-      END IF
-#endif
-#if defined SED_BIOMASS
-      IF (.not.allocated(sgr_diam)) THEN
-        allocate ( sgr_diam(Ngrids) )
-        sgr_diam = IniVal
-      END IF
-      IF (.not.allocated(sgr_density)) THEN
-        allocate ( sgr_density(Ngrids) )
-        sgr_density = IniVal
-      END IF
-      IF (.not.allocated(sgr_Hthres)) THEN
-        allocate ( sgr_Hthres(Ngrids) )
-        sgr_Hthres = IniVal
       END IF
 #endif
 !

@@ -12,7 +12,7 @@
 !
 !svn $Id: sed_bedload.F 429 2009-12-20 17:30:26Z arango $
 !==================================================== John C. Warner ===
-!  Copyright (c) 2002-2014 The ROMS/TOMS Group      Hernan G. Arango   !
+!  Copyright (c) 2002-2016 The ROMS/TOMS Group      Hernan G. Arango   !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -729,6 +729,25 @@
 #  endif
           END DO
         END DO
+#  ifdef SED_SLUMP
+        sed_angle=DTAN(10.0_r8*pi/180.0_r8)
+        DO j=Jstr,Jend
+          DO i=Istr,Iend+1
+             dzdx=(h(i,j)-h(i-1,j))/om_u(i,j)
+             cff=MAX(ABS(dzdx-sed_angle),0.0_r8)
+!            FX(i,j)=FX(i,j)+cff*(dzdx-sed_angle)
+             FX(i,j)=cff*(dzdx-sed_angle)
+          END DO
+        END DO
+        DO j=Jstr,Jend+1
+          DO i=Istr,Iend
+             dzdy=(h(i,j)-h(i,j-1))/on_v(i,j)
+             cff=MAX(ABS(dzdy-sed_angle),0.0_r8)
+!            FE(i,j)=FE(i,j)+cff*(dzdy-sed_angle)
+             FE(i,j)=cff*(dzdy-sed_angle)
+          END DO
+        END DO
+#  endif
 !
 ! Limit fluxes to prevent bottom from breaking thru water surface.
 !

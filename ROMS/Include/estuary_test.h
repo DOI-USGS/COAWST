@@ -1,7 +1,7 @@
 /*
 ** svn $Id: estuary_test.h 429 2009-12-20 17:30:26Z arango $
 *******************************************************************************
-** Copyright (c) 2002-2014 The ROMS/TOMS Group                               **
+** Copyright (c) 2002-2016 The ROMS/TOMS Group                               **
 **   Licensed under a MIT/X style license                                    **
 **   See License_ROMS.txt                                                    **
 *******************************************************************************
@@ -16,10 +16,11 @@
 #define ROMS_MODEL
 #define UV_ADV
 #define UV_LOGDRAG
+#define SPLINES_VDIFF
+#define SPLINES_VVISC
 #define TS_U3HADVECTION
 #define SALINITY
 #define SOLVE3D
-#define SPLINES
 #define SEDIMENT
 #ifdef SEDIMENT
 # define SUSPLOAD
@@ -31,6 +32,7 @@
 # define KANTHA_CLAYSON
 # undef  CANUTO_A
 # define N2S2_HORAVG
+# define RI_SPLINES
 #endif
 #define ANA_GRID
 #define ANA_INITIAL

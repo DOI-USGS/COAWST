@@ -3,7 +3,7 @@
 !
 !svn $Id: get_state.F 1607 2008-07-27 03:03:34Z jcwarner $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2014 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2016 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -46,11 +46,18 @@
       USE mod_netcdf
       USE mod_ocean
       USE mod_scalars
+#if defined ESTUARYBGC && defined SAV_BIOMASS
+      USE mod_biology
+#endif 
 #if defined SEDIMENT || defined BBL_MODEL
       USE mod_sedbed
       USE mod_sediment
 #endif
-#ifdef ICE_MODEL
+#if defined VEGETATION 
+      USE mod_vegarr
+      USE mod_vegetation
+#endif 
+#if defined ICE_MODEL || defined CICE_MODEL
       USE mod_ice
 #endif
 #ifdef NCEP_FLUXES
@@ -1692,7 +1699,159 @@
         END DO
 #   endif
 #  endif
-
+!
+#if defined ESTUARYBGC && defined SAV_BIOMASS
+!
+!  Read in AGB and BGB values
+!
+        foundit=find_string(var_name, n_var, TRIM(Vname(1,idsagb)),     & 
+     &                        varid)
+        gtype=var_flag(varid)*r2dvar
+        status=nf_fread2d(ng, IDmod, ncname, ncINPid,                   &
+     &                Vname(1,idsagb), varid, InpRec, gtype,            &
+     &                Vsize, LBi, UBi, LBj, UBj,                        &
+     &                Fscl, Fmin, Fmax,                                 &
+#   ifdef MASKING
+     &                GRID(ng) % rmask,                                 &
+#   endif
+     &                 OCEAN(ng)%AGB)
+        IF (status.ne.nf90_noerr) THEN 
+          IF (Master) THEN 
+            WRITE (stdout,60) string, TRIM(Vname(1,idsagb )),           &
+     &                        InpRec, TRIM(ncname)
+          END IF
+          exit_flag=2
+          ioerror=status
+          RETURN
+        ELSE
+          IF (Master) THEN 
+            WRITE (stdout,70) TRIM(Vname(2,idsagb)), Fmin, Fmax 
+          END IF
+        END IF
+!
+! BGB 
+!  
+        foundit=find_string(var_name, n_var, TRIM(Vname(1,idsbgb)),     & 
+     &                        varid)
+        gtype=var_flag(varid)*r2dvar
+        status=nf_fread2d(ng, IDmod, ncname, ncINPid,                   &
+     &                Vname(1,idsbgb), varid, InpRec, gtype,            &
+     &                Vsize, LBi, UBi, LBj, UBj,                        &
+     &                Fscl, Fmin, Fmax,                                 &
+#   ifdef MASKING
+     &                GRID(ng) % rmask,                                 &
+#   endif
+     &               OCEAN(ng)%BGB)
+        IF (status.ne.nf90_noerr) THEN 
+          IF (Master) THEN 
+            WRITE (stdout,60) string, TRIM(Vname(1,idsbgb )),           &
+     &                        InpRec, TRIM(ncname)
+          END IF
+          exit_flag=2
+          ioerror=status
+          RETURN
+        ELSE
+          IF (Master) THEN 
+            WRITE (stdout,70) TRIM(Vname(2,idsbgb)), Fmin, Fmax 
+          END IF
+        END IF
+!
+! DINsed
+!  
+        foundit=find_string(var_name, n_var, TRIM(Vname(1,iddins)),     & 
+     &                        varid)
+        gtype=var_flag(varid)*r3dvar
+        status=nf_fread3d(ng, IDmod, ncname, ncINPid,                   &
+     &                Vname(1,iddins), varid, InpRec, gtype,            &
+     &                Vsize, LBi, UBi, LBj, UBj,  1, N(ng),             &
+     &                Fscl, Fmin, Fmax,                                 &
+#   ifdef MASKING
+     &                GRID(ng) % rmask,                                 &
+#   endif
+     &               OCEAN(ng)%DINsed)
+        IF (status.ne.nf90_noerr) THEN 
+          IF (Master) THEN 
+            WRITE (stdout,60) string, TRIM(Vname(1,iddins )),           &
+     &                        InpRec, TRIM(ncname)
+          END IF
+          exit_flag=2
+          ioerror=status
+          RETURN
+        ELSE
+          IF (Master) THEN 
+            WRITE (stdout,70) TRIM(Vname(2,iddins)), Fmin, Fmax 
+          END IF
+        END IF
+!
+#  endif 
+!
+#  ifdef VEGETATION 
+#   if defined VEG_DRAG || defined VEG_BIOMASS
+!
+!  Read in plant properties for each vegetation type 
+!
+        DO i=1,NVEGP
+          IF (get_var(idvprp(i))) THEN
+            foundit=find_string(var_name, n_var,                        &
+     &                          TRIM(Vname(1,idvprp(i))), varid)
+            gtype=var_flag(varid)*r3dvar
+            status=nf_fread3d(ng, IDmod, ncname, ncINPid,               &
+     &                        Vname(1,idvprp(i)), varid,                &
+     &                        InpRec, gtype, Vsize,                     &
+     &                        LBi, UBi, LBj, UBj, 1, NVEG,              &
+     &                        Fscl, Fmin, Fmax,                         &
+#   ifdef MASKING
+     &                        GRID(ng) % rmask,                         &
+#   endif
+     &                        VEG(ng) % plant(:,:,:,i))
+            IF (status.ne.nf90_noerr) THEN
+              IF (Master) THEN
+                WRITE (stdout,60) string, TRIM(Vname(1,idvprp(i))),     &
+     &                            InpRec, TRIM(ncname)
+              END IF
+              exit_flag=2
+              ioerror=status
+              RETURN
+            ELSE
+              IF (Master) THEN
+                WRITE (stdout,70) TRIM(Vname(2,idvprp(i))), Fmin, Fmax
+              END IF
+            END IF
+          END IF
+        END DO 
+#   endif 
+#   ifdef MARSH_WAVE_THRUST
+!
+!  Read in masking for determining marsh interface 
+!
+        foundit=find_string(var_name, n_var, TRIM(Vname(1,idTims)),     & 
+     &                        varid)
+        gtype=var_flag(varid)*r2dvar
+        status=nf_fread2d(ng, IDmod, ncname, ncINPid,                   &
+     &                Vname(1,idTims), varid, InpRec, gtype,            &
+     &                Vsize, LBi, UBi, LBj, UBj,                        &
+     &                Fscl, Fmin, Fmax,                                 &
+#   ifdef MASKING
+     &                GRID(ng) % rmask,                                 &
+#   endif
+     &                 VEG(ng) % marsh_mask)
+        IF (status.ne.nf90_noerr) THEN 
+          IF (Master) THEN 
+            WRITE (stdout,60) string, TRIM(Vname(1,idTims )),           &
+     &                        InpRec, TRIM(ncname)
+          END IF
+          exit_flag=2
+          ioerror=status
+          RETURN
+        ELSE
+          IF (Master) THEN 
+            WRITE (stdout,70) TRIM(Vname(2,idTims)), Fmin, Fmax 
+          END IF
+        END IF
+!
+#   endif 
+#  endif 
+!
 #  if defined SEDIMENT || defined BBL_MODEL
 !
 !  Read in nonlinear sediment properties in exposed bed layer.
@@ -2024,10 +2183,11 @@
             WRITE (stdout,70) TRIM(Vname(2,idTice)), Fmin, Fmax
           END IF
         END IF
+#ifdef MELT_PONDS
 !
-!  Read in surface water thickness (on ice).
+!  Read in surface water fraction (on ice).
 !
-        foundit=find_string(var_name, n_var, TRIM(Vname(1,idSfwat)),    &
+        foundit=find_string(var_name, n_var, TRIM(Vname(1,idApond)),    &
      &                        varid)
           IF (Perfect2D) THEN
             gtype=var_flag(varid)*r3dvar
@@ -2036,27 +2196,27 @@
           END IF
           IF (Perfect2D) THEN
             status=nf_fread3d(ng, IDmod, ncname, ncINPid,               &
-     &                        Vname(1,idSfwat), varid,                  &
+     &                        Vname(1,idApond), varid,                  &
      &                        InpRec, gtype, Vsize,                     &
      &                        LBi, UBi, LBj, UBj, 1, 2,                 &
      &                        Fscl, Fmin, Fmax,                         &
 # ifdef MASKING
      &                        GRID(ng) % rmask,                         &
 # endif
-     &                        ICE(ng) % sfwat)
+     &                        ICE(ng) % apond)
           ELSE
         status=nf_fread2d(ng, IDmod, ncname, ncINPid,                   &
-     &                Vname(1,idSfwat), varid, InpRec, gtype,           &
+     &                Vname(1,idApond), varid, InpRec, gtype,           &
      &                Vsize, LBi, UBi, LBj, UBj,                        &
      &                Fscl, Fmin, Fmax,                                 &
 #   ifdef MASKING
      &                GRID(ng) % rmask,                                 &
 #   endif
-     &                ICE(ng) % sfwat(:,:,Tindex))
+     &                ICE(ng) % apond(:,:,Tindex))
           END IF
         IF (status.ne.nf90_noerr) THEN
           IF (Master) THEN
-            WRITE (stdout,60) string, TRIM(Vname(1,idSfwat)),           &
+            WRITE (stdout,60) string, TRIM(Vname(1,idApond)),           &
      &                        InpRec, TRIM(ncname)
           END IF
           exit_flag=2
@@ -2064,9 +2224,53 @@
           RETURN
         ELSE
           IF (Master) THEN
-            WRITE (stdout,70) TRIM(Vname(2,idSfwat)), Fmin, Fmax
+            WRITE (stdout,70) TRIM(Vname(2,idApond)), Fmin, Fmax
           END IF
         END IF
+!
+!  Read in surface water thickness (on ice).
+!
+        foundit=find_string(var_name, n_var, TRIM(Vname(1,idHpond)),    &
+     &                        varid)
+          IF (Perfect2D) THEN
+            gtype=var_flag(varid)*r3dvar
+          ELSE
+            gtype=var_flag(varid)*r2dvar
+          END IF
+          IF (Perfect2D) THEN
+            status=nf_fread3d(ng, IDmod, ncname, ncINPid,               &
+     &                        Vname(1,idHpond), varid,                  &
+     &                        InpRec, gtype, Vsize,                     &
+     &                        LBi, UBi, LBj, UBj, 1, 2,                 &
+     &                        Fscl, Fmin, Fmax,                         &
+# ifdef MASKING
+     &                        GRID(ng) % rmask,                         &
+# endif
+     &                        ICE(ng) % hpond)
+          ELSE
+        status=nf_fread2d(ng, IDmod, ncname, ncINPid,                   &
+     &                Vname(1,idHpond), varid, InpRec, gtype,           &
+     &                Vsize, LBi, UBi, LBj, UBj,                        &
+     &                Fscl, Fmin, Fmax,                                 &
+#   ifdef MASKING
+     &                GRID(ng) % rmask,                                 &
+#   endif
+     &                ICE(ng) % hpond(:,:,Tindex))
+          END IF
+        IF (status.ne.nf90_noerr) THEN
+          IF (Master) THEN
+            WRITE (stdout,60) string, TRIM(Vname(1,idHpond)),           &
+     &                        InpRec, TRIM(ncname)
+          END IF
+          exit_flag=2
+          ioerror=status
+          RETURN
+        ELSE
+          IF (Master) THEN
+            WRITE (stdout,70) TRIM(Vname(2,idHpond)), Fmin, Fmax
+          END IF
+        END IF
+#endif
 !
 !  Read in ice age.
 !

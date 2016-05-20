@@ -1,9 +1,9 @@
 #include "cppdefs.h"
       MODULE mod_biology
 /*
-** svn $Id: mod_biology.F 429 2009-12-20 17:30:26Z arango $
+** svn $Id: mod_biology.F 791 2016-05-05 22:39:42Z arango $
 *************************************************** Hernan G. Arango ***
-** Copyright (c) 2002-2014 The ROMS/TOMS Group                        **
+** Copyright (c) 2002-2016 The ROMS/TOMS Group                        **
 **   Licensed under a MIT/X style license                             **
 **   See License_ROMS.txt                                             **
 ************************************************************************
@@ -25,6 +25,8 @@
 **         npzd_iron.h        NPZD_IRON                               **
 **         npzd_Powell.h      NPZD_POWELL                             **
 **         umaine.h           BIO_UMAINE                              **
+**         estuarybgc.h       ESTUARINE BIOGEOCHEMISTRY               **
+**         red_tide.h         RED_TIDE                                **
 **                                                                    **
 **   (2) Internal model parameters declaration:                       **
 **                                                                    **
@@ -35,6 +37,8 @@
 **         npzd_iron_mod.h                                            **
 **         npzd_Powell_mod.h                                          **
 **         umaine_mod.h                                               **
+**         estuarybgc_mod.h                                           **
+**         red_tide_mod.h                                             **
 **                                                                    **
 **   (3) Model parameters standard input script:                      **
 **                                                                    **
@@ -44,6 +48,7 @@
 **         npzd_Franks.in                                             **
 **         npzd_iron.in                                               **
 **         npzd_Powell.in                                             **
+**         red_tide.in                                                **
 **                                                                    **
 **   (4) Code to read input model parameters:                         **
 **                                                                    **
@@ -54,6 +59,8 @@
 **         npzd_iron_inp.h                                            **
 **         npzd_Powell_inp.h                                          **
 **         umaine_inp.h                                               **
+**         estuarybgc_inp.h                                           **
+**         red_tide_inp.h                                             **
 **                                                                    **
 **   (5) Code to assign indices to model variables during the         **
 **       reading of metadata information from "varinfo.dat":          **
@@ -65,6 +72,8 @@
 **         npzd_iron_var.h                                            **
 **         npzd_Powell_var.h                                          **
 **         umaine_var.h                                               **
+**         estuarybgc_var.h                                           **
+**         red_tide_var.h                                             **
 **                                                                    **
 **   (6) Code to define input model parameters in all output          **
 **       NetCDF files:                                                **
@@ -76,6 +85,8 @@
 **         npzd_iron_def.h                                            **
 **         npzd_Powell_def.h                                          **
 **         umaine_def.h                                               **
+**         estuarybgc_def.h                                           **
+**         red_tide_def.h                                             **
 **                                                                    **
 **   (7) Code to write out input model parameters in all output       **
 **       NetCDF files:                                                **
@@ -87,6 +98,8 @@
 **         npzd_iron_wrt.h                                            **
 **         npzd_Powell_wrt.h                                          **
 **         umaine_wrt.h                                               **
+**         estuarybgc_wrt.h                                           **
+**         red_tide_wrt.h                                             **
 **                                                                    **
 **                                                                    **
 ** Note that all the *.h files are located in ROMS/Nonlinear/Biology  **
@@ -98,10 +111,10 @@
 */
 
 #ifdef BIOLOGY
-# if defined BIO_FENNEL && !defined SPECTRAL_LIGHT
+# if defined BIO_FENNEL
 #  include <fennel_mod.h>
-# elif defined BIO_FENNEL && defined SPECTRAL_LIGHT
-#  include <spect_fennel_mod.h>
+# elif defined ESTUARYBGC
+#  include <estuarybgc_mod.h>
 # elif defined ECOSIM
 #  include <ecosim_mod.h>
 # elif defined NEMURO
@@ -114,6 +127,8 @@
 #  include <npzd_Powell_mod.h>
 # elif defined BIO_UMAINE
 #  include <umaine_mod.h>
+# elif defined RED_TIDE
+#  include <red_tide_mod.h>
 # endif
 #endif
 

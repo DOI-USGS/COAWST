@@ -4,7 +4,7 @@
 !
 !svn $Id: step3d_uv.F 732 2008-09-07 01:55:51Z jcwarner $
 !=======================================================================
-!  Copyright (c) 2002-2014 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2016 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license           Hernan G. Arango   !
 !    See License_ROMS.txt                   Alexander F. Shchepetkin   !
 !==================================================== John C. Warner ===
@@ -67,6 +67,9 @@
      &                     GRID(ng) % Hz,                               &
      &                     GRID(ng) % z_r,                              &
      &                     GRID(ng) % z_w,                              &
+# ifdef UV_WAVEDRAG
+     &                     GRID(ng) % wavedrag,                         &
+# endif
      &                     MIXING(ng) % Akv,                            &
      &                     COUPLING(ng) % DU_avg1,                      &
      &                     COUPLING(ng) % DV_avg1,                      &
@@ -116,6 +119,9 @@
 # endif
      &                           om_v, on_u, pm, pn,                    &
      &                           Hz, z_r, z_w,                          &
+# ifdef UV_WAVEDRAG
+     &                           wavedrag,                              &
+# endif
      &                           Akv,                                   &
      &                           DU_avg1, DV_avg1,                      &
      &                           DU_avg2, DV_avg2,                      &
@@ -147,6 +153,9 @@
 # endif
       USE u3dbc_mod, ONLY : u3dbc_tile
       USE v3dbc_mod, ONLY : v3dbc_tile
+# ifdef UV_WAVEDRAG
+      USE mod_tides, only : TIDES, drag_scale
+# endif
 !
 !  Imported variable declarations.
 !
@@ -171,6 +180,9 @@
       real(r8), intent(in) :: Hz(LBi:,LBj:,:)
       real(r8), intent(in) :: z_r(LBi:,LBj:,:)
       real(r8), intent(in) :: z_w(LBi:,LBj:,0:)
+#  ifdef UV_WAVEDRAG
+      real(r8), intent(in) :: wavedrag(LBi:,LBj:)
+#  endif
       real(r8), intent(in) :: Akv(LBi:,LBj:,0:)
       real(r8), intent(in) :: DU_avg1(LBi:,LBj:)
       real(r8), intent(in) :: DV_avg1(LBi:,LBj:)
@@ -220,6 +232,9 @@
       real(r8), intent(in) :: Hz(LBi:UBi,LBj:UBj,N(ng))
       real(r8), intent(in) :: z_r(LBi:UBi,LBj:UBj,N(ng))
       real(r8), intent(in) :: z_w(LBi:UBi,LBj:UBj,0:N(ng))
+#  ifdef UV_WAVEDRAG
+      real(r8), intent(in) :: wavedrag(LBi:UBi,LBj:UBj)
+#  endif
       real(r8), intent(in) :: Akv(LBi:UBi,LBj:UBj,0:N(ng))
       real(r8), intent(in) :: DU_avg1(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: DV_avg1(LBi:UBi,LBj:UBj)
@@ -290,7 +305,7 @@
      &                      Akv(i  ,j,k))
             Hzk(i,k)=0.5_r8*(Hz(i-1,j,k)+                               &
      &                       Hz(i  ,j,k))
-# if defined SPLINES || defined DIAGNOSTICS_UV
+# if defined SPLINES_VVISC || defined DIAGNOSTICS_UV
             oHz(i,k)=1.0_r8/Hzk(i,k)
 # endif
           END DO
@@ -312,7 +327,7 @@
           DO i=IstrU,Iend
             u(i,j,k,nnew)=u(i,j,k,nnew)+                                &
      &                    DC(i,0)*ru(i,j,k,nrhs)
-# ifdef SPLINES
+# ifdef SPLINES_VVISC
             u(i,j,k,nnew)=u(i,j,k,nnew)*oHz(i,k)
 # endif
 # ifdef DIAGNOSTICS_UV
@@ -337,7 +352,7 @@
           END DO
         END DO
 
-# ifdef SPLINES
+# ifdef SPLINES_VVISC
 !
 !  Use conservative, parabolic spline reconstruction of vertical
 !  viscosity derivatives.  Then, time step vertical viscosity term
@@ -682,7 +697,7 @@
      &                        Akv(i,j  ,k))
               Hzk(i,k)=0.5_r8*(Hz(i,j-1,k)+                             &
      &                         Hz(i,j  ,k))
-# if defined SPLINES || defined DIAGNOSTICS_UV
+# if defined SPLINES_VVISC || defined DIAGNOSTICS_UV
               oHz(i,k)=1.0_r8/Hzk(i,k)
 # endif
             END DO
@@ -703,7 +718,7 @@
           DO k=1,N(ng)
             DO i=Istr,Iend
               v(i,j,k,nnew)=v(i,j,k,nnew)+DC(i,0)*rv(i,j,k,nrhs)
-# ifdef SPLINES
+# ifdef SPLINES_VVISC
               v(i,j,k,nnew)=v(i,j,k,nnew)*oHz(i,k)
 # endif
 # ifdef DIAGNOSTICS_UV
@@ -729,7 +744,7 @@
             END DO
           END DO
 
-# ifdef SPLINES
+# ifdef SPLINES_VVISC
 !
 !  Use conservative, parabolic spline reconstruction of vertical
 !  viscosity derivatives.  Then, time step vertical viscosity term
@@ -1050,11 +1065,10 @@
 # endif
             END DO
           END DO
-
 # if defined DIAGNOSTICS_UV && defined MASKING
           DO k=1,N(ng)
-            DO i=Istr,Iend
-              DO idiag=1,NDM3d
+            DO idiag=1,NDM3d
+              DO i=Istr,Iend
                 DiaV3wrk(i,j,k,idiag)=DiaV3wrk(i,j,k,idiag)*vmask(i,j)
               END DO
             END DO
@@ -1062,6 +1076,41 @@
 # endif
         END IF
       END DO
+# ifdef UV_WAVEDRAG
+! Apply wave drag on tidal velocities only. filt_ubot is an estimate of
+! the detided velocity. Apply only in the bottom 500 m. See Arbic et
+! al., 2010.
+      IF (iic(ng)-ntstart(ng) >= 86400) THEN
+        DO j=Jstr,Jend
+          DO i=IstrU,Iend
+            cff = 0.5*drag_scale*(wavedrag(i,j)+wavedrag(i-1,j))
+            IF (cff > 0.0) THEN
+              DO k=1,N(ng)
+                IF (0.5*(z_r(i,j,k)+z_r(i-1,j,k)) <=                    &
+     &             (0.5*(z_w(i,j,0)+z_w(i-1,j,0))+500.)) THEN
+                  u(i,j,k,nnew)=u(i,j,k,nstp)-dt(ng)*cff*               &
+     &                (u(i,j,k,nnew)-TIDES(ng)%filt_ubot(i,j))
+                END IF
+              END DO
+            END IF
+          END DO
+        END DO
+        DO j=JstrV,Jend
+          DO i=Istr,Iend
+            cff = 0.5*drag_scale*(wavedrag(i,j)+wavedrag(i,j-1))
+            IF (cff > 0.0) THEN
+              DO k=1,N(ng)
+                IF (0.5*(z_r(i,j,k)+z_r(i,j-1,k)) <=                    &
+     &             (0.5*(z_w(i,j,0)+z_w(i,j-1,0))+500.)) THEN
+                  v(i,j,k,nnew)=v(i,j,k,nstp)-dt(ng)*cff*               &
+     &                  (v(i,j,k,nnew)-TIDES(ng)%filt_vbot(i,j))
+                END IF
+              END DO
+            END IF
+          END DO
+        END DO
+      END IF
+# endif
 !
 !-----------------------------------------------------------------------
 !  Set lateral boundary conditions.

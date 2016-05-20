@@ -3,9 +3,9 @@
 #if defined NONLINEAR && defined SOLVE3D
 # define NEUMANN
 !
-!svn $Id: pre_step3d.F 732 2008-09-07 01:55:51Z jcwarner $
+!svn $Id: pre_step3d.F 787 2016-05-04 22:29:40Z arango $
 !=======================================================================
-!  Copyright (c) 2002-2015 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2016 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                           Hernan G. Arango   !
 !========================================== Alexander F. Shchepetkin ===
@@ -290,6 +290,7 @@
 !
 !  Local variable declarations.
 !
+      integer :: Isrc, Jsrc
       integer :: i, ibt, ic, indx, is, itrc, j, k, ltrc
 # if defined AGE_MEAN && defined T_PASSIVE
       integer :: iage
@@ -320,7 +321,6 @@
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: FX
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: curv
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: grad
-
 
 # include "set_bounds.h"
 
@@ -556,17 +556,19 @@
 !  Apply tracers point sources to the horizontal advection terms,
 !  if any.
 !
-          IF (.not.LwSrc(ng).and.ANY(LtracerSrc(:,ng))) THEN
+          IF (LuvSrc(ng).and.ANY(LtracerSrc(:,ng))) THEN
             DO is=1,Nsrc(ng)
-              i=SOURCES(ng)%Isrc(is)
-              j=SOURCES(ng)%Jsrc(is)
+              Isrc=SOURCES(ng)%Isrc(is)
+              Jsrc=SOURCES(ng)%Jsrc(is)
               IF (LtracerSrc(itrc,ng).and.                              &
-     &            ((Istr.le.i).and.(i.le.Iend+1)).and.                  &
-     &            ((Jstr.le.j).and.(j.le.Jend+1))) THEN
+     &            ((Istr.le.Isrc).and.(Isrc.le.Iend+1)).and.            &
+     &            ((Jstr.le.Jsrc).and.(Jsrc.le.Jend+1))) THEN
                 IF (INT(SOURCES(ng)%Dsrc(is)).eq.0) THEN
                   FX(i,j)=Huon(i,j,k)*                                  &
 #  ifdef ONE_TRACER_SOURCE
      &                    SOURCES(ng)%Tsrc(itrc)
+#  elif defined TWO_D_TRACER_SOURCE
+     &                    SOURCES(ng)%Tsrc(is,itrc)
 #  else
      &                    SOURCES(ng)%Tsrc(is,k,itrc)
 #  endif
@@ -574,6 +576,8 @@
                   FE(i,j)=Hvom(i,j,k)*                                  &
 #  ifdef ONE_TRACER_SOURCE
      &                    SOURCES(ng)%Tsrc(itrc)
+#  elif defined TWO_D_TRACER_SOURCE
+     &                    SOURCES(ng)%Tsrc(is,itrc)
 #  else
      &                    SOURCES(ng)%Tsrc(is,k,itrc)
 #  endif
@@ -983,6 +987,27 @@
           END DO
 #    endif
 #   endif
+!
+!  Apply mass point sources (volume vertical influx), if any.
+!  (Notice the j-loop is pipelined above).
+!
+          IF (LwSrc(ng).and.ANY(LtracerSrc(:,ng))) THEN
+            DO is=1,Nsrc(ng)
+              Isrc=SOURCES(ng)%Isrc(is)
+              Jsrc=SOURCES(ng)%Jsrc(is)
+              IF (LtracerSrc(itrc,ng).and.                              &
+     &            ((Istr.le.Isrc).and.(Isrc.le.Iend+1)).and.            &
+     &            (j.eq.Jsrc)) THEN
+                DO k=1,N(ng)-1
+                  FC(Isrc,k)=FC(Isrc,k)+0.5_r8*                         &
+     &                       (SOURCES(ng)%Qsrc(is,k  )*                 &
+     &                        SOURCES(ng)%Tsrc(is,k  ,itrc)+            &
+     &                        SOURCES(ng)%Qsrc(is,k+1)*                 &
+     &                        SOURCES(ng)%Tsrc(is,k+1,itrc))
+                END DO
+              END IF
+            END DO
+          END IF
 !
 ! Time-step vertical advection of tracers (Tunits).
 !

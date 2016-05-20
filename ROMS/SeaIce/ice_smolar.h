@@ -1,7 +1,7 @@
        SUBROUTINE ice_advect (ng, tile)
 !
 !*************************************************** W. Paul Budgell ***
-!  Copyright (c) 2002-2014 The ROMS/TOMS Group                        **
+!  Copyright (c) 2002-2016 The ROMS/TOMS Group                        **
 !************************************************** Hernan G. Arango ***
 !                                                                      !
 !  This subroutine performs advection of ice scalars using the         !
@@ -66,6 +66,7 @@
 !  Local variables
 !
       integer :: i, j
+      real(r8) :: wrk(LBi:UBi, LBj:UBj, 2)
 
 #include "set_bounds.h"
 
@@ -224,8 +225,7 @@
      &                      ICE(ng) % vi,                               &
      &                      ICE(ng) % IcePhL                            &
      &                      )
-!
-FOOOO 
+!  FOOOO 
 ! Need to change this to i2d_bc_tile calls
       CALL IcePhLbc_tile (ng, tile,                                   &
      &                          LBi, UBi, LBj, UBj,                      &
@@ -310,9 +310,63 @@ FOOOO
 !
 # endif
 !
+# ifdef MELT_PONDS
 ! ---------------------------------------------------------------------
 !  Advect the surface melt water.
 ! ---------------------------------------------------------------------
+      DO j=LBj,UBj
+        DO i=LBi,UBi
+          wrk(i,j,liold(ng)) = ICE(ng)%ai(i,j,liold(ng))*                         &
+       &                       ICE(ng)%apond(i,j,liold(ng))
+        ENDDO
+      ENDDO
+
+      CALL ice_advect_tile (ng, tile,                                   &
+     &                      LBi, UBi, LBj, UBj,                         &
+     &                      IminS, ImaxS, JminS, JmaxS,                 &
+     &                      nrhs(ng), linew(ng), liold(ng), liunw(ng),  &
+#  ifdef MASKING
+     &                      GRID(ng) % rmask,                           &
+#  endif
+#  ifdef WET_DRY
+     &                      GRID(ng) % rmask_wet,                       &
+#  endif
+#  ifdef ICESHELF
+     &                      GRID(ng) % zice,                            &
+#  endif
+#  ifndef ICE_UPWIND
+     &                      GRID(ng) % pm,                              &
+     &                      GRID(ng) % pn,                              &
+#  endif
+     &                      GRID(ng) % on_u,                            &
+     &                      GRID(ng) % om_v,                            &
+     &                      GRID(ng) % omn,                             &
+     &                      ICE(ng) % ui,                               &
+     &                      ICE(ng) % vi,                               &
+     &                      wrk                                         &
+     &                      )
+
+      DO j=LBj,UBj
+        DO i=LBi,UBi
+          IF (ICE(ng)%ai(i,j,linew(ng)) > 0.0_r8) THEN
+            ICE(ng)%apond(i,j,linew) = wrk(i,j,linew(ng))/              &
+       &             ICE(ng)%ai(i,j,linew(ng))
+            ICE(ng)%apond(i,j,linew) =                                  &
+       &             MAX(0.0_r8,ICE(ng)%apond(i,j,linew))
+          ELSE
+            ICE(ng)%apond(i,j,linew) = 0.0_r8
+          END IF
+        ENDDO
+      ENDDO
+!
+      DO j=LBj,UBj
+        DO i=LBi,UBi
+          wrk(i,j,liold(ng)) = ICE(ng)%ai(i,j,liold(ng))*               &
+       &                       ICE(ng)%apond(i,j,liold(ng))*            &
+       &                       ICE(ng)%hpond(i,j,liold(ng))
+        ENDDO
+      ENDDO
+
       CALL ice_advect_tile (ng, tile,                                   &
      &                      LBi, UBi, LBj, UBj,                         &
      &                      IminS, ImaxS, JminS, JmaxS,                 &
@@ -335,20 +389,46 @@ FOOOO
      &                      GRID(ng) % omn,                             &
      &                      ICE(ng) % ui,                               &
      &                      ICE(ng) % vi,                               &
-     &                      ICE(ng) % sfwat                             &
+     &                      wrk                                         &
      &                      )
+
+      DO j=LBj,UBj
+        DO i=LBi,UBi
+          IF (ICE(ng)%ai(i,j,linew(ng))*ICE(ng)%apond(i,j,linew(ng))    &
+     &                    > 0.0_r8) THEN
+            ICE(ng)%hpond(i,j,linew) = wrk(i,j,linew(ng))/              &
+     &          (ICE(ng)%ai(i,j,linew(ng))*ICE(ng)%apond(i,j,linew(ng)))
+            ICE(ng)%hpond(i,j,linew) =                                  &
+       &             MAX(0.0_r8,ICE(ng)%hpond(i,j,linew))
+          ELSE
+            ICE(ng)%hpond(i,j,linew) = 0.0_r8
+          END IF
+        ENDDO
+      ENDDO
 !
       CALL i2d_bc_tile (ng, tile, iNLM,                                 &
      &                  LBi, UBi, LBj, UBj,                             &
      &                  IminS, ImaxS, JminS, JmaxS,                     &
      &                  liold(ng), linew(ng),                           &
-     &                  BOUNDARY(ng)%sfwat_west(LBj:UBj),               &
-     &                  BOUNDARY(ng)%sfwat_east(LBj:UBj),               &
-     &                  BOUNDARY(ng)%sfwat_north(LBi:UBi),              &
-     &                  BOUNDARY(ng)%sfwat_south(LBi:UBi),              &
+     &                  BOUNDARY(ng)%apond_west(LBj:UBj),               &
+     &                  BOUNDARY(ng)%apond_east(LBj:UBj),               &
+     &                  BOUNDARY(ng)%apond_north(LBi:UBi),              &
+     &                  BOUNDARY(ng)%apond_south(LBi:UBi),              &
      &                  ICE(ng)%ui,                                     &
      &                  ICE(ng)%vi,                                     &
-     &                  ICE(ng)%sfwat, LBC(:,isSfwat,ng))
+     &                  ICE(ng)%apond, LBC(:,isApond,ng))
+      CALL i2d_bc_tile (ng, tile, iNLM,                                 &
+     &                  LBi, UBi, LBj, UBj,                             &
+     &                  IminS, ImaxS, JminS, JmaxS,                     &
+     &                  liold(ng), linew(ng),                           &
+     &                  BOUNDARY(ng)%hpond_west(LBj:UBj),               &
+     &                  BOUNDARY(ng)%hpond_east(LBj:UBj),               &
+     &                  BOUNDARY(ng)%hpond_north(LBi:UBi),              &
+     &                  BOUNDARY(ng)%hpond_south(LBi:UBi),              &
+     &                  ICE(ng)%ui,                                     &
+     &                  ICE(ng)%vi,                                     &
+     &                  ICE(ng)%hpond, LBC(:,isHpond,ng))
+# endif
 !
 ! ---------------------------------------------------------------------
 !  Advect the interior ice temperature.
@@ -481,9 +561,14 @@ FOOOO
         CALL exchange_r2d_tile (ng, tile,                               &
      &                          LBi, UBi, LBj, UBj,                     &
      &                          ICE(ng)%hsn(:,:,linew(ng)))
+# ifdef MELT_PONDS
         CALL exchange_r2d_tile (ng, tile,                               &
      &                          LBi, UBi, LBj, UBj,                     &
-     &                          ICE(ng)%sfwat(:,:,linew(ng)))
+     &                          ICE(ng)%apond(:,:,linew(ng)))
+        CALL exchange_r2d_tile (ng, tile,                               &
+     &                          LBi, UBi, LBj, UBj,                     &
+     &                          ICE(ng)%hpond(:,:,linew(ng)))
+# endif
         CALL exchange_r2d_tile (ng, tile,                               &
      &                          LBi, UBi, LBj, UBj,                     &
      &                          ICE(ng)%ti(:,:,linew(ng)))
@@ -496,7 +581,7 @@ FOOOO
         CALL exchange_r2d_tile (ng, tile,                               &
      &                          LBi, UBi, LBj, UBj,                     &
      &                          ICE(ng)%hage(:,:,linew(ng)))
-#  if defined ICE_BIO && defined BERING_10K
+# if defined ICE_BIO && defined BERING_10K
         CALL exchange_r2d_tile (ng, tile,                               &
      &                          LBi, UBi, LBj, UBj,                     &
      &                          ICE(ng)%IcePhL(:,:,linew(ng)))
@@ -506,16 +591,15 @@ FOOOO
         CALL exchange_r2d_tile (ng, tile,                               &
      &                          LBi, UBi, LBj, UBj,                     &
      &                          ICE(ng)%IceNH4(:,:,linew(ng)))
-#  endif
+# endif
       END IF
 # ifdef DISTRIBUTE
-      CALL mp_exchange2d (ng, tile, iNLM, 4,                            &
+      CALL mp_exchange2d (ng, tile, iNLM, 3,                            &
      &                    LBi, UBi, LBj, UBj,                           &
      &                    NghostPoints, EWperiodic(ng), NSperiodic(ng), &
      &                    ICE(ng)%ai(:,:,linew(ng)),                    &
      &                    ICE(ng)%hi(:,:,linew(ng)),                    &
-     &                    ICE(ng)%hsn(:,:,linew(ng)),                   &
-     &                    ICE(ng)%sfwat(:,:,linew(ng)))
+     &                    ICE(ng)%hsn(:,:,linew(ng)))
       CALL mp_exchange2d (ng, tile, iNLM, 4,                            &
      &                    LBi, UBi, LBj, UBj,                           &
      &                    NghostPoints, EWperiodic(ng), NSperiodic(ng), &
@@ -523,6 +607,13 @@ FOOOO
      &                    ICE(ng)%enthalpi(:,:,linew(ng)),              &
      &                    ICE(ng)%ageice(:,:,linew(ng)),                &
      &                    ICE(ng)%hage(:,:,linew(ng)))
+#  ifdef MELT_PONDS
+      CALL mp_exchange2d (ng, tile, iNLM, 2,                            &
+     &                    LBi, UBi, LBj, UBj,                           &
+     &                    NghostPoints, EWperiodic(ng), NSperiodic(ng), &
+     &                    ICE(ng)%apond(:,:,linew(ng)),                 &
+     &                    ICE(ng)%hpond(:,:,linew(ng)))
+#  endif
 #  if defined ICE_BIO && defined BERING_10K
       CALL mp_exchange2d (ng, tile, iNLM, 3,                            &
      &                    LBi, UBi, LBj, UBj,                           &
@@ -741,22 +832,22 @@ FOOOO
 ! mask ???
 !
 #ifdef MASKING
-  DO j=Jmin,Jmax
-  DO i=Imin,Imax
+      DO j=Jmin,Jmax
+        DO i=Imin,Imax
           aif(i,j)=aif(i,j)*rmask(i,j)
         END DO
       END DO
 #endif
 #ifdef WET_DRY
-  DO j=Jmin,Jmax
-  DO i=Imin,Imax
+      DO j=Jmin,Jmax
+        DO i=Imin,Imax
           aif(i,j)=aif(i,j)*rmask_wet(i,j)
         END DO
       END DO
 #endif
 #ifdef ICESHELF
-  DO j=Jmin,Jmax
-  DO i=Imin,Jmax
+      DO j=Jmin,Jmax
+        DO i=Imin,Imax
           IF (zice(i,j).ne.0.0_r8) THEN
             aif(i,j) = 0.0_r8
           END IF
@@ -804,9 +895,9 @@ FOOOO
      &                       +aif(i-1,j)+FE(i-1,j+1)-FE(i-1,j)          &
      &                                                      ))
 
-          Cu=0.5*dtice*(pm(i,j)+pm(i-1,j))*ui(i,j,liunw)
+          Cu=0.5*dtice(ng)*(pm(i,j)+pm(i-1,j))*ui(i,j,liunw)
 
-          Cu_crss=0.5*dtice * 0.0625*( pn(i-1,j+1)+pn(i,j+1)            &
+          Cu_crss=0.5*dtice(ng) * 0.0625*( pn(i-1,j+1)+pn(i,j+1)        &
      &                                 +pn(i-1,j-1)+pn(i,j-1)           &
      &                  )*( vi(i-1,j+1,liunw)+vi(i,j+1,liunw)           &
      &                       +vi(i-1,j,liunw)  +vi(i,j,liunw)           &
@@ -829,9 +920,9 @@ FOOOO
      &                       +aif(i,j-1)+FX(i+1,j-1)-FX(i,j-1)          &
      &                                                      ))
 
-          Cu=0.5*dtice*(pn(i,j)+pn(i,j-1))*vi(i,j,liunw)
+          Cu=0.5*dtice(ng)*(pn(i,j)+pn(i,j-1))*vi(i,j,liunw)
 
-          Cu_crss=0.5*dtice * 0.0625*( pm(i+1,j)+pm(i+1,j-1)            &
+          Cu_crss=0.5*dtice(ng) * 0.0625*( pm(i+1,j)+pm(i+1,j-1)        &
      &                                 +pm(i-1,j)+pm(i-1,j-1)           &
      &                 )*(  ui(i,j,liunw)    +ui(i+1,j,liunw)           &
      &                     +ui(i,j-1,liunw)+ui(i+1,j-1,liunw)           &
@@ -847,7 +938,7 @@ FOOOO
 
       DO j=Jstr,Jend
         DO i=Istr,Iend
-          aif(i,j)=aif(i,j) -dtice*pm(i,j)*pn(i,j)*                     &
+          aif(i,j)=aif(i,j) -dtice(ng)*pm(i,j)*pn(i,j)*                 &
      &             (aflxu(i+1,j)-aflxu(i,j) + aflxv(i,j+1)-aflxv(i,j))
 #  ifdef MASKING
           aif(i,j)=aif(i,j)*rmask(i,j)

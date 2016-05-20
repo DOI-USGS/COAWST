@@ -4,7 +4,7 @@
 !
 !svn $Id: set_vbc.F 732 2008-09-07 01:55:51Z jcwarner $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2015 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2016 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -31,9 +31,9 @@
       USE mod_grid
       USE mod_forces
       USE mod_ocean
-#  ifdef ICE_MODEL
+# if defined ICE_MODEL || defined CICE_MODEL
       USE mod_ice
-#  endif
+# endif
       USE mod_stepping
 !
 !  Imported variable declarations.
@@ -112,9 +112,11 @@
 #  endif
 #  ifdef ICE_MODEL
      &                   FORCES(ng) % qao_n,                            &
-#    ifdef NO_SCORRECTION_ICE
+#  endif
+#  if defined ICE_MODEL || defined CICE_MODEL
+#   ifdef NO_SCORRECTION_ICE
      &                   ICE(ng) % ai,                                  &
-#    endif
+#   endif
 #  endif
      &                   FORCES(ng) % stflx,                            &
      &                   FORCES(ng) % btflx)
@@ -186,9 +188,11 @@
 #  endif
 #  ifdef ICE_MODEL
      &                         qao_n,                                   &
-#    ifdef NO_SCORRECTION_ICE
+#  endif
+#  if defined ICE_MODEL || defined CICE_MODEL
+#   ifdef NO_SCORRECTION_ICE
      &                         ai,                                      &
-#    endif
+#   endif
 #  endif
      &                         stflx, btflx)
 !***********************************************************************
@@ -270,8 +274,12 @@
 #   endif
 #   ifdef ICE_MODEL
       real(r8), intent(inout) :: qao_n(LBi:,LBj:)
-#    ifdef NO_SCORRECTION_ICE
+#   endif
+#   ifdef NO_SCORRECTION_ICE
+#    ifdef ICE_MODEL
       real(r8), intent(in) :: ai(LBi:,LBj:,:)
+#    elif defined CICE_MODEL
+      real(r8), intent(in) :: ai(LBi:,LBj:)
 #    endif
 #   endif
       real(r8), intent(inout) :: stflx(LBi:,LBj:,:)
@@ -335,8 +343,12 @@
 #   endif
 #   ifdef ICE_MODEL
       real(r8), intent(inout) :: qao_n(LBi:UBi,LBj:UBj)
-#    ifdef NO_SCORRECTION_ICE
+#   endif
+#   ifdef NO_SCORRECTION_ICE
+#    if defined ICE_MODEL
       real(r8), intent(in) :: ai(LBi:UBi,LBj:UBj,2)
+#    elif defined CICE_MODEL
+      real(r8), intent(in) :: ai(LBi:UBi,LBj:UBj)
 #    endif
 #   endif
       real(r8), intent(inout) :: stflx(LBi:UBi,LBj:UBj,NT(ng))
@@ -347,12 +359,12 @@
 !
       integer :: i, j, itrc
 
-#  ifdef ICESHELF
+# ifdef ICESHELF
 
-#   ifdef ICESHELF_3EQ
+#  ifdef ICESHELF_3EQ
       real(r8) :: Hscale, Hlice, uStar, gturb, cff
       real(r8) :: salt_b, temp_b, melt_rate
-#   endif
+#  endif
 
 #   ifdef ISOMIP
       real(r8), parameter :: gamma = 0.0001_r8
@@ -365,7 +377,8 @@
 #   endif
 #  endif
 
-#  if !defined BBL_MODEL || defined ICESHELF
+#  if !defined BBL_MODEL || defined ICESHELF || \
+       defined LIMIT_STFLX_COOLING
       real(r8) :: cff, cff1, cff2, cff3
 #  endif
 
@@ -373,14 +386,7 @@
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: wrk
 #  endif
 
-#  if defined SCORRECTION || defined SRELAXATION
-#   if defined CORAL
-      real(r8), parameter :: sss_mismatch_threshold = 0.2_r8
-#   elif defined NEP6 || defined NWA || defined AA_10KM
-      real(r8), parameter :: sss_mismatch_threshold = 0.1_r8
-#   endif
-#  endif
-#  if defined ICE_MODEL && defined NO_SCORRECTION_ICE
+#  ifdef NO_SCORRECTION_ICE
       real(r8) :: fac_ice
 #  endif
       real(r8), parameter :: eps = 1.e-20_r8
@@ -444,27 +450,24 @@
       DO j=JstrR,JendR
         DO i=IstrR,IendR
 #   if defined SCORRECTION
-#     ifdef ICE_THERMO
+#     if defined ICE_MODEL || defined CICE_MODEL
 #      ifdef NO_SCORRECTION_ICE
           fac_ice = 1.0_r8
+#ifdef ICE_MODEL
           IF(ai(i,j,liold).GE.0.1_r8) fac_ice = 0.0_r8
+#else
+          IF(ai(i,j).GE.0.1_r8) fac_ice = 0.0_r8
+#endif
 #      endif
           stflx(i,j,isalt)=stflx(i,j,isalt) -                           &
 #     ifdef NO_SCORRECTION_ICE
      &                     fac_ice*                                     &
 #     endif
-     &                     Tnudg(isalt,ng)*Hz(i,j,N(ng))*               &
+     &                     Tnudg_SSS(ng)*Hz(i,j,N(ng))*                 &
 
-#       if defined NEP5 || defined BERING || defined CHUKCHI
-! 60 days from Tnudg of 360 days
-     &                     6.0_r8*                                      &
-#       elif defined CORAL || defined NEP6 || defined NWA || defined AA_10KM
-! 90 days from Tnudg of 360 days
-     &                     4.0_r8*                                      &
-#       endif
-#       if defined CORAL || defined NEP6 || defined NWA || defined AA_10KM
+#       if defined SSSC_THRESHOLD
 ! limit mismatch to avoid too strong relaxation fluxes
-     &                     MIN(sss_mismatch_threshold,                  &
+     &                     MIN(sss_mismatch_threshold(ng),              &
      &                         (t(i,j,N(ng),nrhs,isalt)-sss(i,j)))
 #       else
 
@@ -472,17 +475,10 @@
 #       endif
 #     else
           stflx(i,j,isalt)=stflx(i,j,isalt)*t(i,j,N(ng),nrhs,isalt)-    &
-     &                     Tnudg(isalt,ng)*Hz(i,j,N(ng))*               &
-#       if defined NEP5 || defined BERING || defined CHUKCHI
-! 60 days from Tnudg of 360 days
-     &                     6.0_r8*                                      &
-#       elif defined CORAL || defined NEP6 || defined NWA
-! 90 days from Tnudg of 360 days
-     &                     4.0_r8*                                      &
-#       endif
-#       if defined CORAL || defined NEP6 || defined NWA
+     &                     Tnudg_SSS(ng)*Hz(i,j,N(ng))*                 &
+#       if defined SSSC_THRESHOLD
 ! limit mismatch to avoid too strong relaxation fluxes
-     &                     MIN(sss_mismatch_threshold,                  &
+     &                     MIN(sss_mismatch_threshold(ng),              &
      &                         (t(i,j,N(ng),nrhs,isalt)-sss(i,j)))
 #       else
      &                     (t(i,j,N(ng),nrhs,isalt)-sss(i,j))
@@ -494,17 +490,10 @@
           stflx(i,j,isalt) = rmask(i,j)*stflx(i,j,isalt)
 #     endif
 #   elif defined SRELAXATION
-          stflx(i,j,isalt)=-Tnudg(isalt,ng)*Hz(i,j,N(ng))*              &
-#     if defined NEP5 || defined BERING || defined CHUKCHI
-! 60 days from Tnudg of 360 days
-     &                     6.0_r8*                                      &
-#     elif defined CORAL || defined NEP6 || defined NWA
-! 90 days from Tnudg of 360 days
-     &                     4.0_r8*                                      &
-#     endif
-#     if defined CORAL || defined NEP6 || defined NWA
+          stflx(i,j,isalt)=-Tnudg_SSS(ng)*Hz(i,j,N(ng))*                &
+#       if defined SSSC_THRESHOLD
 ! limit mismatch to avoid too strong relaxation fluxes
-     &                     MIN(sss_mismatch_threshold,                  &
+     &                     MIN(sss_mismatch_threshold(ng),              &
      &                         (t(i,j,N(ng),nrhs,isalt)-sss(i,j)))
 #     else
      &                     (t(i,j,N(ng),nrhs,isalt)-sss(i,j))
@@ -537,7 +526,7 @@
 #   endif
 #   if (defined SCORRECTION || defined SRELAXATION) && \
         defined SSSFLX
-          sssflx(i,j) = -Tnudg(isalt,ng)*Hz(i,j,N(ng))*                 &
+          sssflx(i,j) = -Tnudg_SSS(ng)*Hz(i,j,N(ng))*                   &
      &                     (t(i,j,N(ng),nrhs,isalt)-sss(i,j))
 #     ifdef WET_DRY
           sssflx(i,j) = rmask_wet(i,j)*sssflx(i,j)
@@ -803,11 +792,13 @@
 #    ifdef DISTRIBUTE
       CALL mp_exchange2d (ng, tile, iNLM, 1,                            &
      &                    LBi, UBi, LBj, UBj,                           &
-     &                    NghostPoints, EWperiodic, NSperiodic,         &
+     &                    NghostPoints,                                 &
+     &                    EWperiodic(ng), NSperiodic(ng),               &
      &                    stflx(:,:,itemp))
       CALL mp_exchange2d (ng, tile, iNLM, 1,                            &
      &                    LBi, UBi, LBj, UBj,                           &
-     &                    NghostPoints, EWperiodic, NSperiodic,         &
+     &                    NghostPoints,                                 &
+     &                    EWperiodic(ng), NSperiodic(ng),               &
      &                    stflx(:,:,isalt))
 #    endif
 #   elif defined ISOMIP

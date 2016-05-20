@@ -1,9 +1,9 @@
 #include "cppdefs.h"
       SUBROUTINE get_idata (ng)
 !
-!svn $Id: get_idata.F 1597 2008-07-25 02:31:35Z jcwarner $
+!svn $Id: get_idata.F 791 2016-05-05 22:39:42Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2014 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2016 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -16,11 +16,17 @@
 !=======================================================================
 !
       USE mod_param
+#ifdef RED_TIDE
+      USE mod_biology
+#endif
       USE mod_grid
       USE mod_iounits
       USE mod_ncparam
 #if defined AVERAGES_DETIDE && (defined SSH_TIDES || defined UV_TIDES)
       USE mod_netcdf
+#endif
+#ifdef RED_TIDE
+      USE mod_ocean
 #endif
       USE mod_parallel
       USE mod_scalars
@@ -469,7 +475,9 @@
           END IF
         END DO
 # endif
-# ifdef POT_TIDES
+      END IF
+#endif
+#ifdef POT_TIDES
 !
 !  Tidal potential amplitude and phase. In order to read data as a
 !  function of tidal period, we need to reset the model time variables
@@ -483,26 +491,24 @@
           CALL get_2dfld (ng, iNLM, idTpam, ncFRCid(idTpam,ng),         &
      &                    nFfiles(ng), FRC(1,ng), update(1),            &
      &                    LBi, UBi, LBj, UBj, MTC, NTC(ng),             &
-#  ifdef MASKING
+# ifdef MASKING
      &                    GRID(ng) % rmask,                             &
-#  endif
+# endif
      &                    TIDES(ng) % POT_Tamp)
           IF (exit_flag.ne.NoError) RETURN
 
           CALL get_2dfld (ng, iNLM, idTpph, ncFRCid(idTpph,ng),         &
      &                    nFfiles(ng), FRC(1,ng), update(1),            &
      &                    LBi, UBi, LBj, UBj, MTC, NTC(ng),             &
-#  ifdef MASKING
+# ifdef MASKING
      &                    GRID(ng) % rmask,                             &
-#  endif
+# endif
      &                    TIDES(ng) % POT_Tphase)
           IF (exit_flag.ne.NoError) RETURN
 
           time(ng)=time_save
           tdays(ng)=time(ng)*sec2day
         END IF
-      END IF
-# endif
       END IF
 #endif
 
@@ -548,6 +554,27 @@
           SOURCES(ng)%Jsrc(is)=                                         &
      &                MAX(1,MIN(NINT(SOURCES(ng)%Ysrc(is)),Mm(ng)+1))
         END DO
+      END IF
+#endif
+
+#ifdef RED_TIDE
+!
+!-----------------------------------------------------------------------
+!  Red tides.
+!-----------------------------------------------------------------------
+!
+!  Read initial dynoflagellate bottom cyst concentration.
+!
+      CALL get_2dfld (ng, iNLM, idCyst, ncFRCid(idCyst,ng),             &
+     &                nFfiles(ng), FRC(1,ng), update(1),                &
+     &                LBi, UBi, LBj, UBj, 1, 1,                         &
+# ifdef MASKING
+     &                GRID(ng) % rmask,                                 &
+# endif
+     &                OCEAN(ng) % CystIni)
+      IF (exit_flag.ne.NoError) RETURN
+      IF (.not.Linfo(1,idCyst,ng)) THEN             ! if not gridded,
+        OCEAN(ng) % CystIni = Fpoint(1,idCyst,ng)   ! load point data
       END IF
 #endif
 

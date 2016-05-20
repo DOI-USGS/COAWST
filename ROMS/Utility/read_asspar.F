@@ -4,7 +4,7 @@
 !
 !svn $Id$
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2014 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2016 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -36,6 +36,7 @@
 
       integer :: Npts, Nval
       integer :: i, ib, igrid, itrc, k, ng, status
+      integer :: Cdim, Clen, Rdim
       integer :: Ivalue(1)
 
       integer :: decode_line, load_i, load_l, load_r, load_s1d
@@ -77,6 +78,9 @@
       DO i=1,LEN(label)
         label(i:i)=blank
       END DO
+      Cdim=SIZE(Cval,1)
+      Clen=LEN(Cval(1))
+      Rdim=SIZE(Rval,1)
 
 # if defined FOUR_DVAR || defined VERIFICATION
 !
@@ -468,51 +472,56 @@
 #  endif
             CASE ('STDnameI')
               label='STD - initial conditions standard deviation'
-              Npts=load_s1d(Nval, Cval, line, label, igrid, Nfiles,     &
-     &                      STD(1,:))
+              Npts=load_s1d(Nval, Cval, Cdim, line, label, igrid,       &
+     &                      Nfiles, STD(1,:))
             CASE ('STDnameM')
               label='STD - model error standard deviation'
-              Npts=load_s1d(Nval, Cval, line, label, igrid, Nfiles,     &
-     &                      STD(2,:))
+              Npts=load_s1d(Nval, Cval, Cdim, line, label, igrid,       &
+     &                      Nfiles, STD(2,:))
             CASE ('STDnameB')
               label='STD - boundary conditions standard deviation'
-              Npts=load_s1d(Nval, Cval, line, label, igrid, Nfiles,     &
-     &                      STD(3,:))
+              Npts=load_s1d(Nval, Cval, Cdim, line, label, igrid,       &
+     &                      Nfiles, STD(3,:))
             CASE ('STDnameF')
               label='STD - surface forcing standard deviation'
-              Npts=load_s1d(Nval, Cval, line, label, igrid, Nfiles,     &
-     &                      STD(4,:))
+              Npts=load_s1d(Nval, Cval, Cdim, line, label, igrid,       &
+     &                      Nfiles, STD(4,:))
             CASE ('NRMnameI')
               label='NRM - initial conditions normalization'
-              Npts=load_s1d(Nval, Cval, line, label, igrid, Nfiles,     &
-     &                      NRM(1,:))
+              Npts=load_s1d(Nval, Cval, Cdim, line, label, igrid,       &
+     &                      Nfiles, NRM(1,:))
             CASE ('NRMnameM')
               label='NRM - model error normalization'
-              Npts=load_s1d(Nval, Cval, line, label, igrid, Nfiles,     &
-     &                      NRM(2,:))
+              Npts=load_s1d(Nval, Cval, Cdim, line, label, igrid,       &
+     &                      Nfiles, NRM(2,:))
             CASE ('NRMnameB')
               label='NRM - boundary conditions normalization'
-              Npts=load_s1d(Nval, Cval, line, label, igrid, Nfiles,     &
-     &                      NRM(3,:))
+              Npts=load_s1d(Nval, Cval, Cdim, line, label, igrid,       &
+     &                      Nfiles, NRM(3,:))
             CASE ('NRMnameF')
               label='NRM - surface forcing normalization'
-              Npts=load_s1d(Nval, Cval, line, label, igrid, Nfiles,     &
-     &                      NRM(4,:))
+              Npts=load_s1d(Nval, Cval, Cdim, line, label, igrid,       &
+     &                      Nfiles, NRM(4,:))
             CASE ('OBSname')
               label='OBS - data assimilation observations'
-              Npts=load_s1d(Nval, Cval, line, label, igrid, Nfiles, OBS)
+              Npts=load_s1d(Nval, Cval, Cdim, line, label, igrid,       &
+     &                      Nfiles, OBS)
             CASE ('HSSname')
               label='HSS - Hessian eigenvectors'
-              Npts=load_s1d(Nval, Cval, line, label, igrid, Nfiles, HSS)
+              Npts=load_s1d(Nval, Cval, Cdim, line, label, igrid,       &
+     &                      Nfiles, HSS)
             CASE ('LCZname')
               label='LCZ - Lanczos vectors'
-              Npts=load_s1d(Nval, Cval, line, label, igrid, Nfiles, LCZ)
+              Npts=load_s1d(Nval, Cval, Cdim, line, label, igrid,       &
+     &                      Nfiles, LCZ)
             CASE ('MODname')
               label='DAV - 4D-Var data assimilation variables'
-              Npts=load_s1d(Nval, Cval, line, label, igrid, Nfiles, DAV)
+              Npts=load_s1d(Nval, Cval, Cdim, line, label, igrid,       &
+     &                      Nfiles, DAV)
             CASE ('ERRname')
               label='ERR - 4D-Var posterior error covariance'
-              Npts=load_s1d(Nval, Cval, line, label, igrid, Nfiles, ERR)
+              Npts=load_s1d(Nval, Cval, Cdim, line, label, igrid,       &
+     &                      Nfiles, ERR)
           END SELECT
         END IF
       END DO

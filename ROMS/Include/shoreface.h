@@ -1,7 +1,7 @@
 /*
 ** svn $Id: shoreface.h 429 2009-12-20 17:30:26Z arango $
 *******************************************************************************
-** Copyright (c) 2002-2014 The ROMS/TOMS Group                               **
+** Copyright (c) 2002-2016 The ROMS/TOMS Group                               **
 **   Licensed under a MIT/X style license                                    **
 **   See License_ROMS.txt                                                    **
 *******************************************************************************
@@ -28,13 +28,14 @@
 #define WET_DRY
 #define OUT_DOUBLE
 #define UV_ADV
-#define UV_C2ADVECTION
-#undef  TS_MPDATA
+#undef  UV_C2ADVECTION
+#define TS_MPDATA
 #define TS_U3HADVECTION
 #define DJ_GRADPS
-#undef  SALINITY
+#define SALINITY
+#define SPLINES_VDIFF
+#define SPLINES_VVISC
 #define SOLVE3D
-#define SPLINES
 
 #define MASKING
 #ifdef MASKING
@@ -79,6 +80,7 @@
 # if defined GLS_MIXING
 #  define KANTHA_CLAYSON
 #  define N2S2_HORAVG
+#  define RI_SPLINES
 #  undef CRAIG_BANNER
 #  undef CHARNOK
 #  undef ZOS_HSIG

@@ -1,7 +1,7 @@
 /*
 ** svn $Id: sediment_var.h 439 2010-01-11 19:29:29Z arango $
 *************************************************** Hernan G. Arango ***
-** Copyright (c) 2002-2014 The ROMS/TOMS Group                        **
+** Copyright (c) 2002-2016 The ROMS/TOMS Group                        **
 **   Licensed under a MIT/X style license                             **
 **   See License_ROMS.txt                                             **
 ************************************************************************
@@ -64,16 +64,8 @@
                 idBott(iactv)=varid
               CASE ('idBott(ishgt)')
                 idBott(ishgt)=varid
-!#if defined SED_BIOMASS
               CASE ('idBott(imaxD)')
                 idBott(imaxD)=varid
-!#endif
-#if defined SED_BIOMASS && defined SEAGRASS_BOTTOM
-              CASE ('idBott(isgrH)')
-                idBott(isgrH)=varid
-              CASE ('idBott(isgrD)')
-                idBott(isgrD)=varid
-#endif
               CASE ('idBott(idnet)')
                 idBott(idnet)=varid
 #if defined COHESIVE_BED || defined SED_BIODIFF || defined MIXED_BED

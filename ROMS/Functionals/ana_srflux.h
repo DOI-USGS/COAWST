@@ -2,7 +2,7 @@
 !
 !! svn $Id$
 !!======================================================================
-!! Copyright (c) 2002-2014 The ROMS/TOMS Group                         !
+!! Copyright (c) 2002-2016 The ROMS/TOMS Group                         !
 !!   Licensed under a MIT/X style license                              !
 !!   See License_ROMS.txt                                              !
 !=======================================================================
@@ -54,7 +54,7 @@
      &                            LBi, UBi, LBj, UBj,                   &
      &                            IminS, ImaxS, JminS, JmaxS,           &
      &                            lonr, latr,                           &
-#ifdef ALBEDO_CLOUD 
+#ifdef ALBEDO_CLOUD
      &                            cloud, Hair, Tair, Pair,              &
 #endif
      &                            srflx)
@@ -158,8 +158,7 @@
         DO i=IstrT,IendT
 !
 !  Local daylight is a function of the declination (Dangle) and hour
-!  angle adjusted for the local meridian (Hangle-lonr(i,j)/15.0).
-!  The 15.0 factor is because the sun moves 15 degrees every hour.
+!  angle adjusted for the local meridian (Hangle-lonr(i,j)).
 !
           LatRad=latr(i,j)*deg2rad
           cff1=SIN(LatRad)*SIN(Dangle)
@@ -175,7 +174,7 @@
 !  Ocean Dynamics, pp 606).
 !
           srflx(i,j)=0.0_r8
-          zenith=cff1+cff2*COS(Hangle-lonr(i,j)*deg2rad/15.0_r8)
+          zenith=cff1+cff2*COS(Hangle-lonr(i,j)*deg2rad)
           IF (zenith.gt.0.0_r8) THEN
             cff=(0.7859_r8+0.03477_r8*Tair(i,j))/                       &
      &          (1.0_r8+0.00412_r8*Tair(i,j))
@@ -184,7 +183,7 @@
 !  With this directive specific humidity is input as kg/kg
             vap_p=Pair(i,j)*Hair(i,j)/(0.62197_r8+0.378_r8*Hair(i,j))
 #  else
-            vap_p=e_sat*Hair(i,j) ! water vapor pressure (hPa=mbar) 
+            vap_p=e_sat*Hair(i,j) ! water vapor pressure (hPa=mbar)
 #  endif
             srflx(i,j)=Rsolar*zenith*zenith*                            &
      &                 (1.0_r8-0.6_r8*cloud(i,j)**3)/                   &
@@ -203,7 +202,7 @@
 !
 !  Normalization = (1/2*pi)*INTEGRAL{ABS(a+b*COS(t)) dt}  from 0 to 2*pi
 !                = (a*ARCCOS(-a/b)+SQRT(b**2-a**2))/pi    for |a| < |b|
-!  
+!
           srflx(i,j)=MAX(0.0_r8, srflx(i,j))
           IF (ABS(cff1).gt.ABS(cff2)) THEN
             IF (cff1*cff2.gt.0.0_r8) THEN

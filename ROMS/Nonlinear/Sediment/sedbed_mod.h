@@ -1,7 +1,7 @@
 !
 !svn $Id: sedbed_mod.h 429 2009-12-20 17:30:26Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2014 The ROMS/TOMS Group        John C. Warner   !
+!  Copyright (c) 2002-2016 The ROMS/TOMS Group        John C. Warner   !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -296,8 +296,8 @@
 !                                                                      !
 !  This routine initialize structure variables in the module using     !
 !  first touch distribution policy. In shared-memory configuration,    !
-!  this operation actually performs the propagation of the "shared     !
-!  arrays" across the cluster,  unless another policy is specified     !
+!  this operation actually performs the propagation of the  shared     !
+!  arrays  across the cluster,  unless another policy is specified     !
 !  to  override the default.                                           !
 !                                                                      !
 !=======================================================================

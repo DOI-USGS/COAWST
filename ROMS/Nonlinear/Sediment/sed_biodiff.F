@@ -90,9 +90,6 @@
       USE mod_sediment
 !
       USE bc_3d_mod, ONLY : bc_r3d_tile
-# if defined EW_PERIODIC || defined NS_PERIODIC
-      USE exchange_2d_mod, ONLY : exchange_r2d_tile
-# endif
 # ifdef DISTRIBUTE
       USE mp_exchange_mod, ONLY : mp_exchange3d, mp_exchange4d
 # endif
@@ -132,18 +129,6 @@
 !
 !  Local variable declarations.
 !
-# ifdef DISTRIBUTE
-#  ifdef EW_PERIODIC
-      logical :: EWperiodic=.TRUE.
-#  else
-      logical :: EWperiodic=.FALSE.
-#  endif
-#  ifdef NS_PERIODIC
-      logical :: NSperiodic=.TRUE.
-#  else
-      logical :: NSperiodic=.FALSE.
-#  endif
-# endif
       integer :: i, j, k, ised
       real(r8), parameter :: eps = 1.0E-14_r8
       real(r8), parameter :: cmy2ms = 3.1688765E-12_r8 ! multiply cm2/yr by this to get m2/s

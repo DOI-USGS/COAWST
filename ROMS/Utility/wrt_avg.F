@@ -7,7 +7,7 @@
 !
 !svn $Id: wrt_avg.F 733 2008-09-07 01:56:45Z jcwarner $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2014 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2016 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -912,7 +912,7 @@
      &                     AVG(ng)%Rindex, gtype,                       &
      &                     LBi, UBi, LBj, UBj, 1, N(ng), scale,         &
 #  ifdef MASKING
-     &                     GRID(ng) % umask,                            &
+     &                     GRID(ng) % umask_avg,                        &
 #  endif
      &                     AVERAGE(ng) % avgu3d)
         IF (status.ne.nf90_noerr) THEN
@@ -936,7 +936,7 @@
      &                     AVG(ng)%Rindex, gtype,                       &
      &                     LBi, UBi, LBj, UBj, 1, N(ng), scale,         &
 #   ifdef MASKING
-     &                     GRID(ng) % umask,                            &
+     &                     GRID(ng) % umask_avg,                        &
 #   endif
      &                     TIDES(ng) % u_detided)
         IF (status.ne.nf90_noerr) THEN
@@ -959,7 +959,7 @@
      &                     AVG(ng)%Rindex, gtype,                       &
      &                     LBi, UBi, LBj, UBj, 1, N(ng), scale,         &
 #  ifdef MASKING
-     &                     GRID(ng) % vmask,                            &
+     &                     GRID(ng) % vmask_avg,                        &
 #  endif
      &                     AVERAGE(ng) % avgv3d)
         IF (status.ne.nf90_noerr) THEN
@@ -983,7 +983,7 @@
      &                     AVG(ng)%Rindex, gtype,                       &
      &                     LBi, UBi, LBj, UBj, 1, N(ng), scale,         &
 #   ifdef MASKING
-     &                     GRID(ng) % vmask,                            &
+     &                     GRID(ng) % vmask_avg,                        &
 #   endif
      &                     TIDES(ng) % v_detided)
         IF (status.ne.nf90_noerr) THEN
@@ -1006,7 +1006,7 @@
      &                     AVG(ng)%Rindex, gtype,                       &
      &                     LBi, UBi, LBj, UBj, 1, N(ng), scale,         &
 #  ifdef MASKING
-     &                     GRID(ng) % rmask,                            &
+     &                     GRID(ng) % rmask_avg,                        &
 #  endif
      &                     AVERAGE(ng) % avgu3dE)
         IF (status.ne.nf90_noerr) THEN
@@ -1028,7 +1028,7 @@
      &                     AVG(ng)%Rindex, gtype,                       &
      &                     LBi, UBi, LBj, UBj, 1, N(ng), scale,         &
 #  ifdef MASKING
-     &                     GRID(ng) % rmask,                            &
+     &                     GRID(ng) % rmask_avg,                        &
 #  endif
      &                     AVERAGE(ng) % avgv3dN)
         IF (status.ne.nf90_noerr) THEN
@@ -2209,27 +2209,50 @@
           RETURN
         END IF
       END IF
+#ifdef MELT_PONDS
 !
-! Write out surface water thickness (on ice).
+! Write out surface water fraction (on ice).
 !
-      IF (Aout(idSfwat,ng)) THEN
+      IF (Aout(idApond,ng)) THEN
         scale=1.0_r8
         gtype=gfactor*r2dvar
-        status=nf_fwrite2d(ng, iNLM, AVG(ng)%ncid, AVG(ng)%Vid(idSfwat),&
+        status=nf_fwrite2d(ng, iNLM, AVG(ng)%ncid, AVG(ng)%Vid(idApond),&
      &                   AVG(ng)%Rindex, gtype,                         &
      &                   LBi, UBi, LBj, UBj, scale,                     &
 #   ifdef MASKING
      &                   GRID(ng) % rmask,                              &
 #   endif
-     &                   AVERAGE(ng) % avgsfwat)
+     &                   AVERAGE(ng) % avgapond)
         IF (status.ne.nf90_noerr) THEN
           IF (Master) THEN
-            WRITE (stdout,10) TRIM(Vname(1,idSfwat)), AVG(ng)%Rindex
+            WRITE (stdout,10) TRIM(Vname(1,idApond)), AVG(ng)%Rindex
           END IF
           exit_flag=3
           RETURN
         END IF
       END IF
+!
+! Write out surface water thickness (on ice).
+!
+      IF (Aout(idHpond,ng)) THEN
+        scale=1.0_r8
+        gtype=gfactor*r2dvar
+        status=nf_fwrite2d(ng, iNLM, AVG(ng)%ncid, AVG(ng)%Vid(idHpond),&
+     &                   AVG(ng)%Rindex, gtype,                         &
+     &                   LBi, UBi, LBj, UBj, scale,                     &
+#   ifdef MASKING
+     &                   GRID(ng) % rmask,                              &
+#   endif
+     &                   AVERAGE(ng) % avghpond)
+        IF (status.ne.nf90_noerr) THEN
+          IF (Master) THEN
+            WRITE (stdout,10) TRIM(Vname(1,idHpond)), AVG(ng)%Rindex
+          END IF
+          exit_flag=3
+          RETURN
+        END IF
+      END IF
+#endif
 !
 ! Write out ice age.
 !

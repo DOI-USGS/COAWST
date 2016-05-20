@@ -3,7 +3,7 @@
 !
 !svn $Id: inp_par.F 838 2008-11-17 04:22:18Z jcwarner $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2015 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2016 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -784,6 +784,17 @@
 
       CALL read_StaPar (model, 55, out, Lwrite)
 #endif
+!
+#ifdef VEGETATION
+!
+!-----------------------------------------------------------------------
+!  Read in vegetation model input parameters.
+!-----------------------------------------------------------------------
+!
+      OPEN (65, FILE=TRIM(vegnam), FORM='formatted', STATUS='old')
+
+      CALL read_VegPar (model, 65, out, Lwrite)
+#endif 
 !
 !-----------------------------------------------------------------------
 !  Report lateral boundary conditions.

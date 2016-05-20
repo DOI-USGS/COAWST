@@ -1,7 +1,7 @@
 !
 !svn $Id$
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2014 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2016 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -65,7 +65,7 @@
       integer :: iSDet                  ! Small detritus concentration
 #ifdef IRON_LIMIT
       integer :: iFphy                  ! Phytoplankton-associated iron
-      integer :: iFdis                  ! Available disolved iron
+      integer :: iFdis                  ! Available dissolved iron
 #endif
 !
 !  Biological parameters.

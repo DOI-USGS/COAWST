@@ -1,7 +1,7 @@
 /*
 ** svn $Id: bl_test.h 429 2009-12-20 17:30:26Z arango $
 *******************************************************************************
-** Copyright (c) 2002-2014 The ROMS/TOMS Group                               **
+** Copyright (c) 2002-2016 The ROMS/TOMS Group                               **
 **   Licensed under a MIT/X style license                                    **
 **   See License_ROMS.txt                                                    **
 *******************************************************************************
@@ -20,12 +20,13 @@
 #define UV_VIS2
 #define MIX_S_UV
 #define DJ_GRADPS
+#define SPLINES_VDIFF
+#define SPLINES_VVISC
 #define TS_U3HADVECTION
 #define TS_C4VADVECTION
 #define SOLAR_SOURCE
 #define NONLIN_EOS
 #define SALINITY
-#define SPLINES
 #define AVERAGES
 #define STATIONS
 #define SOLVE3D
@@ -36,6 +37,7 @@
 #ifdef MY25_MIXING
 # define N2S2_HORAVG
 # define KANTHA_CLAYSON
+# define RI_SPLINES
 #endif
 
 #define LMD_MIXING
@@ -46,6 +48,7 @@
 # define LMD_BKPP
 # define LMD_NONLOCAL
 # define LMD_DDMIX
+# define RI_SPLINES
 #endif
 
 #define BULK_FLUXES

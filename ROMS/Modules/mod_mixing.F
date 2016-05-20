@@ -3,7 +3,7 @@
 !
 !svn $Id: mod_mixing.F 737 2008-09-07 02:06:44Z jcwarner $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2015 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2016 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -960,7 +960,7 @@
           END DO
 # endif
 # if defined MIX_ISO_TS || defined GENT_McWILLIAMS
-          DO k=1,N(ng)
+          DO k=0,N(ng)
             DO i=Imin,Imax
               MIXING(ng) % neutral(i,j,k) = IniVal
             END DO

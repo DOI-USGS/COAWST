@@ -4,7 +4,7 @@
 !
 !svn $Id$
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2015 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2016 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -31,10 +31,10 @@
 !
 !  Local variable declarations.
 !
-      integer :: Mstation, Npts, Nval
-      integer :: flag, i, igrid, ista, itrc, ng, status
+      integer :: Npts, Nval
+      integer :: flag, i, igrid, itrc, ng, status
 
-      integer :: decode_line, load_i, load_l, load_r
+      integer :: decode_line, load_i, load_l
 
       real(r8) :: Xpos, Ypos
 
@@ -45,7 +45,7 @@
 
       integer, dimension(Ngrids) :: is
 
-      real(r8), dimension(100) :: Rval
+      real(r8), dimension(200) :: Rval
 
       character (len=40 ) :: KeyWord
       character (len=256) :: line
@@ -266,12 +266,18 @@
               Npts=load_l(Nval, Cval, Ngrids, Sout(idAice,:))
             CASE ('Sout(idHice)')
               Npts=load_l(Nval, Cval, Ngrids, Sout(idHice,:))
+            CASE ('Sout(idHsno)')
+              Npts=load_l(Nval, Cval, Ngrids, Sout(idHsno,:))
             CASE ('Sout(idTice)')
               Npts=load_l(Nval, Cval, Ngrids, Sout(idTice,:))
             CASE ('Sout(idTimid)')
               Npts=load_l(Nval, Cval, Ngrids, Sout(idTimid,:))
-            CASE ('Sout(idSfwat)')
-              Npts=load_l(Nval, Cval, Ngrids, Sout(idSfwat,:))
+#ifdef MELT_PONDS
+            CASE ('Sout(idApond)')
+              Npts=load_l(Nval, Cval, Ngrids, Sout(idApond,:))
+            CASE ('Sout(idHpond)')
+              Npts=load_l(Nval, Cval, Ngrids, Sout(idHpond,:))
+#endif
             CASE ('Sout(idAgeice)')
               Npts=load_l(Nval, Cval, Ngrids, Sout(idAgeice,:))
             CASE ('Sout(idIomflx)')
@@ -406,7 +412,7 @@
             WRITE (out,80) Nstation(ng), 'Nstation',                    &
      &            'Number of stations to write out into stations file.'
 #if defined SEDIMENT && defined SED_MORPH
-            IF (Sout(idbath,ng)) WRITE (out,90) Sout(idbath,ng),        &
+            IF (Sout(idBath,ng)) WRITE (out,90) Sout(idBath,ng),        &
      &          'Sout(idbath)',                                         &
      &          'Write out free-surface.'
 #endif
@@ -716,9 +722,14 @@
           IF (Sout(idTimid,ng)) WRITE (out,90) Sout(idTimid,ng),        &
      &       'Sout(idTimid)',                                           &
      &       'Write out interior ice temperature.'
-          IF (Sout(idSfwat,ng)) WRITE (out,90) Sout(idSfwat,ng),        &
-     &       'Sout(idSfwat)',                                           &
+#ifdef MELT_PONDS
+          IF (Sout(idApond,ng)) WRITE (out,90) Sout(idApond,ng),        &
+     &       'Sout(idApond)',                                           &
+     &       'Write out surface water (on ice) fraction.'
+          IF (Sout(idHpond,ng)) WRITE (out,90) Sout(idHpond,ng),        &
+     &       'Sout(idHpond)',                                           &
      &       'Write out surface water (on ice) thickness.'
+#endif
           IF (Sout(idAgeice,ng)) WRITE (out,90) Sout(idAgeice,ng),      &
      &       'Sout(idAgeice)',                                          &
      &       'Write out surface water (on ice) thickness.'

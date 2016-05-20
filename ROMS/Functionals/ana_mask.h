@@ -2,7 +2,7 @@
 !
 !! svn $Id$
 !!======================================================================
-!! Copyright (c) 2002-2014 The ROMS/TOMS Group                         !
+!! Copyright (c) 2002-2016 The ROMS/TOMS Group                         !
 !!   Licensed under a MIT/X style license                              !
 !!   See License_ROMS.txt                                              !
 !=======================================================================
@@ -13,7 +13,7 @@
 !
       USE mod_param
       USE mod_grid
-      USE mod_ncparam
+      USE mod_ncparam                    
 !
 ! Imported variable declarations.
 !
@@ -23,7 +23,7 @@
 !
       CALL ana_mask_tile (ng, tile, model,                              &
      &                    LBi, UBi, LBj, UBj,                           &
-     &                    IminS, ImaxS, JminS, JmaxS,                   &
+     &                    IminS, ImaxS, JminS, JmaxS,                   &                      
      &                    GRID(ng) % pmask,                             &
      &                    GRID(ng) % rmask,                             &
      &                    GRID(ng) % umask,                             &
@@ -45,7 +45,7 @@
 !***********************************************************************
       SUBROUTINE ana_mask_tile (ng, tile, model,                        &
      &                          LBi, UBi, LBj, UBj,                     &
-     &                          IminS, ImaxS, JminS, JmaxS,             &
+     &                          IminS, ImaxS, JminS, JmaxS,             &    
      &                          pmask, rmask, umask, vmask)
 !***********************************************************************
 !
@@ -63,12 +63,12 @@
       integer, intent(in) :: LBi, UBi, LBj, UBj
       integer, intent(in) :: IminS, ImaxS, JminS, JmaxS
 !
-#ifdef ASSUMED_SHAPE
+#ifdef ASSUMED_SHAPE                       
       real(r8), intent(out) :: pmask(LBi:,LBj:)
       real(r8), intent(out) :: rmask(LBi:,LBj:)
       real(r8), intent(out) :: umask(LBi:,LBj:)
       real(r8), intent(out) :: vmask(LBi:,LBj:)
-#else
+#else                      
       real(r8), intent(out) :: pmask(LBi:UBi,LBj:UBj)
       real(r8), intent(out) :: rmask(LBi:UBi,LBj:UBj)
       real(r8), intent(out) :: umask(LBi:UBi,LBj:UBj)
@@ -184,7 +184,7 @@
         DO i=IstrT,IendT
           rmask(i,j)=mask(i,j)
         END DO
-      END DO
+      END DO                    
 !
 !-----------------------------------------------------------------------
 !  Compute Land/Sea mask of U- and V-points.

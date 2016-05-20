@@ -1,10 +1,8 @@
-#undef MIX_STABILITY
-
       SUBROUTINE t3dmix4 (ng, tile)
 !
 !svn $Id: t3dmix4_geo.h 732 2008-09-07 01:55:51Z jcwarner $
 !***********************************************************************
-!  Copyright (c) 2002-2014 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2016 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                           Hernan G. Arango   !
 !****************************************** Alexander F. Shchepetkin ***
@@ -15,7 +13,7 @@
 !***********************************************************************
 !
       USE mod_param
-#ifdef CLIMA_TS_MIX
+#ifdef TS_MIX_CLIMA
       USE mod_clima
 #endif
 #ifdef DIAGNOSTICS_TS
@@ -65,7 +63,7 @@
 #else
      &                   MIXING(ng) % diff4,                            &
 #endif
-#ifdef CLIMA_TS_MIX
+#ifdef TS_MIX_CLIMA
      &                   CLIMA(ng) % tclm,                              &
 #endif
 #ifdef DIAGNOSTICS_TS
@@ -101,7 +99,7 @@
 #else
      &                         diff4,                                   &
 #endif
-#ifdef CLIMA_TS_MIX
+#ifdef TS_MIX_CLIMA
      &                         tclm,                                    &
 #endif
 #ifdef DIAGNOSTICS_TS
@@ -149,7 +147,7 @@
       real(r8), intent(in) :: pn(LBi:,LBj:)
       real(r8), intent(in) :: Hz(LBi:,LBj:,:)
       real(r8), intent(in) :: z_r(LBi:,LBj:,:)
-# ifdef CLIMA_TS_MIX
+# ifdef TS_MIX_CLIMA
       real(r8), intent(in) :: tclm(LBi:,LBj:,:,:)
 # endif
 # ifdef DIAGNOSTICS_TS
@@ -181,7 +179,7 @@
       real(r8), intent(in) :: pn(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: Hz(LBi:UBi,LBj:UBj,N(ng))
       real(r8), intent(in) :: z_r(LBi:UBi,LBj:UBj,N(ng))
-# ifdef CLIMA_TS_MIX
+# ifdef TS_MIX_CLIMA
       real(r8), intent(in) :: tclm(LBi:UBi,LBj:UBj,N(ng),NT(ng))
 # endif
 # ifdef DIAGNOSTICS_TS
@@ -196,7 +194,7 @@
       integer :: Imin, Imax, Jmin, Jmax
       integer :: i, ibt, itrc, j, k, k1, k2
 
-      real(r8) :: cff, cff1, cff2, cff3, cff4
+      real(r8) :: cff, cff1, cff2, cff3, cff4, dife, difx
 
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS,N(ng)) :: LapT
 
@@ -244,15 +242,15 @@
 !          FS,dTdz(:,:,k1) k-1/2   W-points
 !          FS,dTdz(:,:,k2) k+1/2   W-points
 !
+#ifdef TS_MIX_STABILITY
+!  In order to increase stability, the rotated biharmonic is applied
+!  as: 3/4 t(:,:,:,nrhs,:) + 1/4 t(:,:,:,nstp,:).
+!
+#endif
 #ifdef OFFLINE_BIOLOGY
       T_LOOP : DO ibt=1,NBT
         itrc=idbio(ibt)
 #else
-# ifdef MIX_STABILITY
-!  In order to increase stability, the rotated biharmonic is applied
-!  as: 3/4 t(:,:,:,nrhs,:) + 1/4 t(:,:,:,nstp,:).
-!
-# endif
 
       T_LOOP : DO itrc=1,NT(ng)
 #endif
@@ -272,16 +270,21 @@
 #endif
                 dZdx(i,j,k2)=cff*(z_r(i  ,j,k+1)-                       &
      &                            z_r(i-1,j,k+1))
-#ifdef MIX_STABILITY
+#if defined TS_MIX_STABILITY
                 dTdx(i,j,k2)=cff*(0.75_r8*(t(i  ,j,k+1,nrhs,itrc)-      &
      &                                     t(i-1,j,k+1,nrhs,itrc))+     &
      &                            0.25_r8*(t(i  ,j,k+1,nstp,itrc)-      &
      &                                     t(i-1,j,k+1,nstp,itrc)))
-#elif defined CLIMA_TS_MIX
-                dTdx(i,j,k2)=cff*((t(i  ,j,k+1,nrhs,itrc)-              &
-     &                             tclm(i  ,j,k+1,itrc))-               &
-     &                            (t(i-1,j,k+1,nrhs,itrc)-              &
-     &                             tclm(i-1,j,k+1,itrc)))
+#elif defined TS_MIX_CLIMA
+                IF (LtracerCLM(itrc,ng)) THEN
+                  dTdx(i,j,k2)=cff*((t(i  ,j,k+1,nrhs,itrc)-            &
+     &                               tclm(i  ,j,k+1,itrc))-             &
+     &                              (t(i-1,j,k+1,nrhs,itrc)-            &
+     &                               tclm(i-1,j,k+1,itrc)))
+                ELSE
+                  dTdx(i,j,k2)=cff*(t(i  ,j,k+1,nrhs,itrc)-             &
+     &                              t(i-1,j,k+1,nrhs,itrc))
+                END IF
 #else
                 dTdx(i,j,k2)=cff*(t(i  ,j,k+1,nrhs,itrc)-               &
      &                            t(i-1,j,k+1,nrhs,itrc))
@@ -299,16 +302,21 @@
 #endif
                 dZde(i,j,k2)=cff*(z_r(i,j  ,k+1)-                       &
      &                            z_r(i,j-1,k+1))
-#ifdef MIX_STABILITY
+#if defined TS_MIX_STABILITY
                 dTde(i,j,k2)=cff*(0.75_r8*(t(i,j  ,k+1,nrhs,itrc)-      &
      &                                     t(i,j-1,k+1,nrhs,itrc))+     &
      &                            0.25_r8*(t(i,j  ,k+1,nstp,itrc)-      &
      &                                     t(i,j-1,k+1,nstp,itrc)))
-#elif defined CLIMA_TS_MIX
-                dTde(i,j,k2)=cff*((t(i,j  ,k+1,nrhs,itrc)-              &
-     &                             tclm(i,j  ,k+1,itrc))-               &
-     &                            (t(i,j-1,k+1,nrhs,itrc)-              &
-     &                             tclm(i,j-1,k+1,itrc)))
+#elif defined TS_MIX_CLIMA
+                IF (LtracerCLM(itrc,ng)) THEN
+                  dTde(i,j,k2)=cff*((t(i,j  ,k+1,nrhs,itrc)-            &
+     &                               tclm(i,j  ,k+1,itrc))-             &
+     &                              (t(i,j-1,k+1,nrhs,itrc)-            &
+     &                               tclm(i,j-1,k+1,itrc)))
+                ELSE
+                  dTde(i,j,k2)=cff*(t(i,j  ,k+1,nrhs,itrc)-             &
+     &                              t(i,j-1,k+1,nrhs,itrc))
+                END IF
 #else
                 dTde(i,j,k2)=cff*(t(i,j  ,k+1,nrhs,itrc)-               &
      &                            t(i,j-1,k+1,nrhs,itrc))
@@ -328,16 +336,21 @@
               DO i=Imin-1,Imax+1
                 cff=1.0_r8/(z_r(i,j,k+1)-                               &
      &                      z_r(i,j,k  ))
-#ifdef MIX_STABILITY
+#if defined TS_MIX_STABILITY
                 dTdz(i,j,k2)=cff*(0.75_r8*(t(i,j,k+1,nrhs,itrc)-        &
      &                                     t(i,j,k  ,nrhs,itrc))+       &
      &                            0.25_r8*(t(i,j,k+1,nstp,itrc)-        &
      &                                     t(i,j,k  ,nstp,itrc)))
-#elif defined CLIMA_TS_MIX
-                dTdz(i,j,k2)=cff*((t(i,j,k+1,nrhs,itrc)-                &
-     &                             tclm(i,j,k+1,itrc))-                 &
-     &                            (t(i,j,k  ,nrhs,itrc)-                &
-     &                             tclm(i,j,k  ,itrc)))
+#elif defined TS_MIX_CLIMA
+                IF (LtracerCLM(itrc,ng)) THEN
+                  dTdz(i,j,k2)=cff*((t(i,j,k+1,nrhs,itrc)-              &
+     &                               tclm(i,j,k+1,itrc))-               &
+     &                              (t(i,j,k  ,nrhs,itrc)-              &
+     &                               tclm(i,j,k  ,itrc)))
+                ELSE
+                  dTdz(i,j,k2)=cff*(t(i,j,k+1,nrhs,itrc)-               &
+     &                              t(i,j,k  ,nrhs,itrc))
+                END IF
 #else
                 dTdz(i,j,k2)=cff*(t(i,j,k+1,nrhs,itrc)-                 &
      &                            t(i,j,k  ,nrhs,itrc))
@@ -399,19 +412,23 @@
                 DO i=Imin,Imax
 #ifdef DIFF_3DCOEF
 # ifdef TS_U3ADV_SPLIT
-                  cff=0.125_r8*(diff3d_u(i,j,k  )+diff3d_u(i+1,j,k  )+  &
-     &                          diff3d_u(i,j,k+1)+diff3d_u(i+1,j,k+1))
+                  difx=0.125_r8*(diff3d_u(i,j,k  )+diff3d_u(i+1,j,k  )+ &
+     &                           diff3d_u(i,j,k+1)+diff3d_u(i+1,j,k+1))
+                  dife=0.125_r8*(diff3d_v(i,j,k  )+diff3d_v(i,j+1,k  )+ &
+     &                           diff3d_v(i,j,k+1)+diff3d_v(i,j+1,k+1))
 # else
-                  cff=0.5_r8*diff3d_r(i,j,k)
+                  difx=0.5_r8*diff3d_r(i,j,k)
+                  dife=difx
 # endif
 #else
-                  cff=0.5_r8*diff4(i,j,itrc)
+                  difx=0.5_r8*diff4(i,j,itrc)
+                  dife=difx
 #endif
                   cff1=MIN(dZdx(i  ,j,k1),0.0_r8)
                   cff2=MIN(dZdx(i+1,j,k2),0.0_r8)
                   cff3=MAX(dZdx(i  ,j,k2),0.0_r8)
                   cff4=MAX(dZdx(i+1,j,k1),0.0_r8)
-                  FS(i,j,k2)=cff*                                       &
+                  FS(i,j,k2)=difx*                                      &
      &                       (cff1*(cff1*dTdz(i,j,k2)-                  &
      &                              dTdx(i  ,j,k1))+                    &
      &                        cff2*(cff2*dTdz(i,j,k2)-                  &
@@ -420,22 +437,13 @@
      &                              dTdx(i  ,j,k2))+                    &
      &                        cff4*(cff4*dTdz(i,j,k2)-                  &
      &                              dTdx(i+1,j,k1)))
-#ifdef DIFF_3DCOEF
-# ifdef TS_U3ADV_SPLIT
-                  cff=0.125_r8*(diff3d_v(i,j,k  )+diff3d_v(i,j+1,k  )+  &
-     &                          diff3d_v(i,j,k+1)+diff3d_v(i,j+1,k+1))
-# else
-                  cff=0.5_r8*diff3d_r(i,j,k)
-# endif
-#else
-                  cff=0.5_r8*diff4(i,j,itrc)
-#endif
+!
                   cff1=MIN(dZde(i,j  ,k1),0.0_r8)
                   cff2=MIN(dZde(i,j+1,k2),0.0_r8)
                   cff3=MAX(dZde(i,j  ,k2),0.0_r8)
                   cff4=MAX(dZde(i,j+1,k1),0.0_r8)
                   FS(i,j,k2)=FS(i,j,k2)+                                &
-     &                       cff*                                       &
+     &                       dife*                                      &
      &                       (cff1*(cff1*dTdz(i,j,k2)-                  &
      &                              dTde(i,j  ,k1))+                    &
      &                        cff2*(cff2*dTdz(i,j,k2)-                  &
@@ -567,7 +575,7 @@
           IF (DOMAIN(ng)%NorthWest_Corner(tile)) THEN
             DO k=1,N(ng)
               LapT(Istr-1,Jend+1,k)=0.5_r8*                             &
-                                    (LapT(Istr  ,Jend+1,k)+             &
+     &                              (LapT(Istr  ,Jend+1,k)+             &
      &                               LapT(Istr-1,Jend  ,k))
             END DO
           END IF
@@ -698,19 +706,23 @@
                 DO i=Istr,Iend
 #ifdef DIFF_3DCOEF
 # ifdef TS_U3ADV_SPLIT
-                  cff=0.125_r8*(diff3d_u(i,j,k  )+diff3d_u(i+1,j,k  )+  &
-     &                          diff3d_u(i,j,k+1)+diff3d_u(i+1,j,k+1))
+                  difx=0.125_r8*(diff3d_u(i,j,k  )+diff3d_u(i+1,j,k  )+ &
+     &                           diff3d_u(i,j,k+1)+diff3d_u(i+1,j,k+1))
+                  dife=0.125_r8*(diff3d_v(i,j,k  )+diff3d_v(i,j+1,k  )+ &
+     &                           diff3d_v(i,j,k+1)+diff3d_v(i,j+1,k+1))
 # else
-                  cff=0.5_r8*diff3d_r(i,j,k)
+                  difx=0.5_r8*diff3d_r(i,j,k)
+                  dife=difx
 # endif
 #else
-                  cff=0.5_r8*diff4(i,j,itrc)
+                  difx=0.5_r8*diff4(i,j,itrc)
+                  dife=difx
 #endif
                   cff1=MIN(dZdx(i  ,j,k1),0.0_r8)
                   cff2=MIN(dZdx(i+1,j,k2),0.0_r8)
                   cff3=MAX(dZdx(i  ,j,k2),0.0_r8)
                   cff4=MAX(dZdx(i+1,j,k1),0.0_r8)
-                  FS(i,j,k2)=cff*                                       &
+                  FS(i,j,k2)=difx*                                      &
      &                       (cff1*(cff1*dTdz(i,j,k2)-                  &
      &                              dTdx(i  ,j,k1))+                    &
      &                        cff2*(cff2*dTdz(i,j,k2)-                  &
@@ -719,22 +731,13 @@
      &                              dTdx(i  ,j,k2))+                    &
      &                        cff4*(cff4*dTdz(i,j,k2)-                  &
      &                              dTdx(i+1,j,k1)))
-#ifdef DIFF_3DCOEF
-# ifdef TS_U3ADV_SPLIT
-                  cff=0.125_r8*(diff3d_v(i,j,k  )+diff3d_v(i,j+1,k  )+  &
-     &                          diff3d_v(i,j,k+1)+diff3d_v(i,j+1,k+1))
-# else
-                  cff=0.5_r8*diff3d_r(i,j,k)
-# endif
-#else
-                  cff=0.5_r8*diff4(i,j,itrc)
-#endif
+!
                   cff1=MIN(dZde(i,j  ,k1),0.0_r8)
                   cff2=MIN(dZde(i,j+1,k2),0.0_r8)
                   cff3=MAX(dZde(i,j  ,k2),0.0_r8)
                   cff4=MAX(dZde(i,j+1,k1),0.0_r8)
                   FS(i,j,k2)=FS(i,j,k2)+                                &
-     &                       cff*                                       &
+     &                       dife*                                      &
      &                       (cff1*(cff1*dTdz(i,j,k2)-                  &
      &                              dTde(i,j  ,k1))+                    &
      &                        cff2*(cff2*dTdz(i,j,k2)-                  &

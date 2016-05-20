@@ -1,16 +1,16 @@
 #include "cppdefs.h"
       MODULE mod_stepping
 !
-!svn $Id: mod_stepping.F 1404 2008-02-20 01:43:42Z jcwarner $
+!svn $Id: mod_stepping.F 789 2016-05-05 17:03:15Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2014 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2016 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
 !                                                                      !
 !  This MODULE contains time stepping indices.                         !
 !                                                                      !
-#ifdef BOUNDARY
+#ifdef ADJUST_BOUNDARY
 !  Lbinp     Open boundary adjustment input  fields index.             !
 !  Lbout     Open boundary adjustment output fields index.             !
 #endif

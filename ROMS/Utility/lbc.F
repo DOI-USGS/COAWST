@@ -2,7 +2,7 @@
 !
 !svn $Id$
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2015 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2016 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -55,7 +55,7 @@
       USE mod_netcdf
       USE mod_scalars
 !
-#if !defined PARALLEL_IO  && defined DISTRIBUTE
+#if !defined PARALLEL_IN  && defined DISTRIBUTE
       USE distribute_mod, ONLY : mp_bcasti, mp_bcasts
 #endif
 !
@@ -71,8 +71,8 @@
 !
 ! Local variable declarations
 !
-      integer :: i, ibry, ie, ifield, is, ne, lstr, lvar, status
-#if !defined PARALLEL_IO  && defined DISTRIBUTE
+      integer :: i, ibry, ie, ifield, is, ne, status
+#if !defined PARALLEL_IN  && defined DISTRIBUTE
       integer, dimension(2) :: ibuffer
 #endif
 
@@ -99,7 +99,7 @@
         END IF
       END IF
 
-#if !defined PARALLEL_IO  && defined DISTRIBUTE
+#if !defined PARALLEL_IN  && defined DISTRIBUTE
 !
 !  Broadcast error flags to all processors in the group.
 !

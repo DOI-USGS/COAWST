@@ -3,7 +3,7 @@
 !
 !svn $Id$
 !========================================================= Hernan G. Arango ===
-!  Copyright (c) 2002-2014 The ROMS/TOMS Group                                !
+!  Copyright (c) 2002-2016 The ROMS/TOMS Group                                !
 !    Licensed under a MIT/X style license                                     !
 !    See License_ROMS.txt                                                     !
 !==============================================================================
@@ -161,7 +161,8 @@ GridsInLayer =  1
    LBC(isHice) ==   Clo     Clo     Clo     Clo         ! ice thickness
    LBC(isHsno) ==   Clo     Clo     Clo     Clo         ! snow thickness
    LBC(isTice) ==   Clo     Clo     Clo     Clo         ! ice temperature
-   LBC(isSfwat)==   Clo     Clo     Clo     Clo         ! surface water
+   LBC(isApond)==   Clo     Clo     Clo     Clo         ! surface water
+   LBC(isHpond)==   Clo     Clo     Clo     Clo         ! surface water
    LBC(isSig11)==   Clo     Clo     Clo     Clo         ! sigma-11
    LBC(isSig12)==   Clo     Clo     Clo     Clo         ! sigma-12
    LBC(isSig22)==   Clo     Clo     Clo     Clo         ! sigma-22
@@ -385,6 +386,16 @@ LtracerSponge == F F                            ! temperature, salinity, inert
       M2NUDG == 0.000d0                    ! days
       M3NUDG == 0.000d0                    ! days
 
+! Nudging/relaxation time scale for surface salinity nudging, inverse
+! scales will be computed internally, [1:Ngrids].
+
+       TNUDG_SSS == 90.0d0                 ! days
+
+! Threshold to trigger SSS correction toward climatolgy,
+! needs SCORRECTION and SSSC_THRESHOLD defined
+
+       SSS_MISMATCH_THRESHOLD = 0.2d0
+
 ! Factor between passive (outflow) and active (inflow) open boundary
 ! conditions, [1:Ngrids]. If OBCFAC > 1, nudging on inflow is stronger
 ! than on outflow (recommended).
@@ -583,32 +594,6 @@ Hout(idMtls) == F       ! gls                turbulent length scale
 ! compact parameter specification.
 
  Hout(inert) == T       ! dye_01, ...        inert passive tracers
-
-! Logical switches (TRUE/FALSE) to activate writing of exposed sediment
-! layer properties into HISTORY output file.  Currently, MBOTP properties
-! are expected for the bottom boundary layer and/or sediment models:
-!
-! idBott( 1=isd50)   grain_diameter          mean grain diameter
-! idBott( 2=idens)   grain_density           mean grain density
-! idBott( 3=iwsed)   settling_vel            mean settling velocity
-! idBott( 4=itauc)   erosion_stress          critical erosion stress
-! idBott( 5=irlen)   ripple_length           ripple length
-! idBott( 6=irhgt)   ripple_height           ripple height
-! idBott( 7=ibwav)   bed_wave_amp            wave excursion amplitude
-! idBott( 8=izdef)   Zo_def                  default bottom roughness
-! idBott( 9=izapp)   Zo_app                  apparent bottom roughness
-! idBott(10=izNik)   Zo_Nik                  Nikuradse bottom roughness
-! idBott(11=izbio)   Zo_bio                  biological bottom roughness
-! idBott(12=izbfm)   Zo_bedform              bed form bottom roughness
-! idBott(13=izbld)   Zo_bedload              bed load bottom roughness
-! idBott(14=izwbl)   Zo_wbl                  wave bottom roughness
-! idBott(15=iactv)   active_layer_thickness  active layer thickness
-! idBott(16=ishgt)   saltation               saltation height
-!
-!                                 1 1 1 1 1 1 1
-!               1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6
-
-Hout(idBott) == T T T T T T T T T F F F F F F F
 
 ! Logical switches (TRUE/FALSE) to activate writing of time-averaged
 ! fields into AVERAGE output file.
@@ -1059,7 +1044,8 @@ Dout(iTvdif) == T T     ! temp_vdiff, ...    vertical diffusion
 !  LBC(isHice) Ice thickness,     [1:4, Ngrids] values are expected.
 !  LBC(isHsno) Snow thickness,    [1:4, Ngrids] values are expected.
 !  LBC(isTice) Ice temperature,   [1:4, Ngrids] values are expected.
-!  LBC(isSfwat)Surface water,     [1:4, Ngrids] values are expected.
+!  LBC(isApond)Surface water,     [1:4, Ngrids] values are expected.
+!  LBC(isHpond)Surface water,     [1:4, Ngrids] values are expected.
 !  LBC(isSig11)Sigma-11,          [1:4, Ngrids] values are expected.
 !  LBC(isSig12)Sigma-12,          [1:4, Ngrids] values are expected.
 !  LBC(isSig22)Sigma-22,          [1:4, Ngrids] values are expected.
@@ -1799,6 +1785,10 @@ Dout(iTvdif) == T T     ! temp_vdiff, ...    vertical diffusion
 !
 ! M3NUDG       Nudging time scale (days) for 3D momentum.
 !
+! TNUDG_SSS    Nudging time scale (days) for surface salinity.
+!
+! SSS_MISMATCH_THRESHOLD   Threshold to trigger SSS correction.
+!
 ! OBCFAC       Factor between passive (outflow) and active (inflow) open
 !                boundary conditions.  The nudging time scales for the
 !                active (inflow) conditions are obtained by multiplying
@@ -2169,8 +2159,6 @@ Dout(iTvdif) == T T     ! temp_vdiff, ...    vertical diffusion
 ! Hout(idMtls)   Write out turbulent kinetic energy times length scale.
 !
 ! Hout(inert)    Write out extra inert passive tracers.
-!
-! Hout(idBott)   Write out exposed sediment layer properties, 1:MBOTP.
 !
 !------------------------------------------------------------------------------
 ! Logical switches (T/F) to activate writing of time-averaged fields into

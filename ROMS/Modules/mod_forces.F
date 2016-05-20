@@ -1,9 +1,9 @@
 #include "cppdefs.h"
       MODULE mod_forces
 !
-!svn $Id: mod_forces.F 737 2008-09-07 02:06:44Z jcwarner $
+!svn $Id: mod_forces.F 791 2016-05-05 22:39:42Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2014 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2016 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -99,6 +99,7 @@
 !  Tair         Surface air temperature (Celsius)                      !
 !  TairG        Latest two-time snapshots of input "Tair" grided       !
 !                 data used for interpolation.                         !
+!  PotT         Surface air potential temperature (Kelvin)             !
 !  Surface Winds.                                                      !
 !                                                                      !
 !  Uwind        Surface wind in the XI-direction (m/s) at              !
@@ -115,6 +116,12 @@
 !  evap         Evaporation rate (kg/m2/s).                            !
 !  rain         Rain fall rate (kg/m2/s).                              !
 !  rainG        Latest two-time snapshots of input "rain" grided       !
+!                 data used for interpolation.                         !
+!                                                                      !
+!  Snow fall rate.                                                     !
+!                                                                      !
+!  snow         Snow fall rate (kg/m2/s).                              !
+!  snowG        Latest two-time snapshots of input "snow" grided       !
 !                 data used for interpolation.                         !
 !                                                                      !
 !  Surface tracer fluxes.                                              !
@@ -357,9 +364,14 @@
 #if defined WEC_ROLLER
           real(r8), pointer :: rollA(:,:)
 #endif
-# if defined BULK_FLUXES || defined ECOSIM || defined ATM_PRESS || \
-     defined SPECTRAL_LIGHT  || defined ATM2OCN_FLUXES ||          \
-     defined CCSM_FLUXES2D
+#ifdef CICE_MODEL
+          real(r8), pointer :: PotT(:,:)
+          real(r8), pointer :: LW_down(:,:)
+          real(r8), pointer :: SW_down(:,:)
+#endif
+#if defined BULK_FLUXES || defined ECOSIM || defined ATM_PRESS || \
+    defined SPECTRAL_LIGHT  || defined ATM2OCN_FLUXES ||          \
+    defined CCSM_FLUXES2D
           real(r8), pointer :: Pair(:,:)
 # ifndef ANA_PAIR
           real(r8), pointer :: PairG(:,:,:)
@@ -387,12 +399,18 @@
 #  endif
 # endif
 
+# if defined RED_TIDE && defined DAILY_SHORTWAVE
+          real(r8), pointer :: srflx_avg(:,:)
+          real(r8), pointer :: srflxG_avg(:,:,:)
+# endif
+
 # if defined ICE_BULK_FLUXES && !defined NCEP_FLUXES
           real(r8), pointer :: sustr_aw(:,:)
           real(r8), pointer :: svstr_aw(:,:)
           real(r8), pointer :: tau_aix_n(:,:)
           real(r8), pointer :: tau_aiy_n(:,:)
           real(r8), pointer :: qai_n(:,:)
+          real(r8), pointer :: qi_o_n(:,:)
           real(r8), pointer :: qswi_n(:,:)
           real(r8), pointer :: qao_n(:,:)
           real(r8), pointer :: snow_n(:,:)
@@ -421,8 +439,14 @@
 
 # if defined BULK_FLUXES || defined ATM2OCN_FLUXES
           real(r8), pointer :: rain(:,:)
+#  ifdef SNOWFALL
+          real(r8), pointer :: snow(:,:)
+#  endif
 #  ifndef ANA_RAIN
           real(r8), pointer :: rainG(:,:,:)
+#  ifdef SNOWFALL
+          real(r8), pointer :: snowG(:,:,:)
+#  endif
 #  endif
 #  ifdef EMINUSP
           real(r8), pointer :: EminusP(:,:)
@@ -810,6 +834,11 @@
       allocate ( FORCES(ng) % TairG(LBi:UBi,LBj:UBj,2) )
 # endif
 #endif
+#ifdef CICE_MODEL
+      allocate ( FORCES(ng) % PotT(LBi:UBi,LBj:UBj) )
+      allocate ( FORCES(ng) % LW_down(LBi:UBi,LBj:UBj) )
+      allocate ( FORCES(ng) % SW_down(LBi:UBi,LBj:UBj) )
+#endif
 
 # if defined BULK_FLUXES || defined ECOSIM || defined ATM_PRESS || \
      defined SPECTRAL_LIGHT || defined ATM2OCN_FLUXES || defined CCSM_FLUXES2D
@@ -840,13 +869,17 @@
       allocate ( FORCES(ng) % cawdir(LBi:UBi,LBj:UBj) )
 #  endif
 # endif
-
+# if defined RED_TIDE && defined DAILY_SHORTWAVE
+      allocate ( FORCES(ng) % srflx_avg(LBi:UBi,LBj:UBj) )
+      allocate ( FORCES(ng) % srflxG_avg(LBi:UBi,LBj:UBj,2) )
+# endif
 # if defined ICE_BULK_FLUXES && !defined NCEP_FLUXES
       allocate ( FORCES(ng) % sustr_aw(LBi:UBi,LBj:UBj) )
       allocate ( FORCES(ng) % svstr_aw(LBi:UBi,LBj:UBj) )
       allocate ( FORCES(ng) % tau_aix_n(LBi:UBi,LBj:UBj) )
       allocate ( FORCES(ng) % tau_aiy_n(LBi:UBi,LBj:UBj) )
       allocate ( FORCES(ng) % qai_n(LBi:UBi,LBj:UBj) )
+      allocate ( FORCES(ng) % qi_o_n(LBi:UBi,LBj:UBj) )
       allocate ( FORCES(ng) % qswi_n(LBi:UBi,LBj:UBj) )
       allocate ( FORCES(ng) % qao_n(LBi:UBi,LBj:UBj) )
       allocate ( FORCES(ng) % snow_n(LBi:UBi,LBj:UBj) )
@@ -879,9 +912,14 @@
 
 # if defined BULK_FLUXES || defined ATM2OCN_FLUXES
       allocate ( FORCES(ng) % rain(LBi:UBi,LBj:UBj) )
-
+#  ifdef SNOWFALL
+      allocate ( FORCES(ng) % snow(LBi:UBi,LBj:UBj) )
+#  endif
 #  ifndef ANA_RAIN
       allocate ( FORCES(ng) % rainG(LBi:UBi,LBj:UBj,2) )
+#  ifdef SNOWFALL
+      allocate ( FORCES(ng) % snowG(LBi:UBi,LBj:UBj,2) )
+#  endif
 #  endif
 #  ifdef EMINUSP
       allocate ( FORCES(ng) % EminusP(LBi:UBi,LBj:UBj) )
@@ -1361,8 +1399,13 @@
             FORCES(ng) % TairG(i,j,2) = IniVal
 # endif
 #endif
-# if defined BULK_FLUXES || defined ECOSIM || defined ATM_PRESS || \
-     defined SPECTRAL_LIGHT || defined ATM2OCN_FLUXES || defined CCSM_FLUXES2D
+#ifdef CICE_MODEL
+            FORCES(ng) % PotT(i,j) = IniVal
+            FORCES(ng) % LW_down(i,j) = IniVal
+            FORCES(ng) % SW_down(i,j) = IniVal
+#endif
+#if defined BULK_FLUXES || defined ECOSIM || defined ATM_PRESS || \
+    defined SPECTRAL_LIGHT || defined ATM2OCN_FLUXES || defined CCSM_FLUXES2D
             FORCES(ng) % Pair(i,j) = IniVal
 # ifndef ANA_PAIR
             FORCES(ng) % PairG(i,j,1) = IniVal
@@ -1391,12 +1434,18 @@
             FORCES(ng) % cawdir(i,j) = IniVal
 #  endif
 # endif
+# if defined RED_TIDE && defined DAILY_SHORTWAVE
+            FORCES(ng) % srflx_avg(i,j) = IniVal
+            FORCES(ng) % srflxG_avg(i,j,1) = IniVal
+            FORCES(ng) % srflxG_avg(i,j,2) = IniVal
+# endif
 # if defined ICE_BULK_FLUXES && !defined NCEP_FLUXES
             FORCES(ng) % sustr_aw(i,j) = IniVal
             FORCES(ng) % svstr_aw(i,j) = IniVal
             FORCES(ng) % tau_aix_n(i,j) = IniVal
             FORCES(ng) % tau_aiy_n(i,j) = IniVal
             FORCES(ng) % qai_n(i,j) = IniVal
+            FORCES(ng) % qi_o_n(i,j) = IniVal
             FORCES(ng) % qswi_n(i,j) = IniVal
             FORCES(ng) % qao_n(i,j) = IniVal
             FORCES(ng) % snow_n(i,j) = IniVal
@@ -1416,9 +1465,16 @@
 # endif
 # if defined BULK_FLUXES || defined ATM2OCN_FLUXES
             FORCES(ng) % rain(i,j) = IniVal
+#  ifdef SNOWFALL
+            FORCES(ng) % snow(i,j) = IniVal
+#  endif
 #  ifndef ANA_RAIN
             FORCES(ng) % rainG(i,j,1) = IniVal
             FORCES(ng) % rainG(i,j,2) = IniVal
+#   ifdef SNOWFALL
+            FORCES(ng) % snowG(i,j,1) = IniVal
+            FORCES(ng) % snowG(i,j,2) = IniVal
+#   endif
 #  endif
 #  ifdef EMINUSP
             FORCES(ng) % EminusP(i,j) = IniVal
@@ -1437,6 +1493,10 @@
 # if !defined ANA_RAIN && defined BULK_FLUXES
             FORCES(ng) % rainG(i,j,1) = IniVal
             FORCES(ng) % rainG(i,j,2) = IniVal
+#  ifdef SNOWFALL
+            FORCES(ng) % snowG(i,j,1) = IniVal
+            FORCES(ng) % snowG(i,j,2) = IniVal
+#  endif
 # endif
 # ifdef QCORRECTION
             FORCES(ng) % dqdt(i,j) = IniVal

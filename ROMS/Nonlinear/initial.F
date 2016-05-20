@@ -3,7 +3,7 @@
 !
 !svn $Id: initial.F 790 2008-10-14 19:32:07Z jcwarner $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2014 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2016 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -21,6 +21,9 @@
       USE mod_fourdvar
 #endif
       USE mod_grid
+#ifdef CICE_MODEL
+      USE CICE_InitMod
+#endif
       USE mod_iounits
       USE mod_ncparam
 #ifdef NESTING
@@ -159,7 +162,29 @@
 !$OMP BARRIER
         step_counter(ng)=0
         CALL time_string (time(ng), time_code(ng))
+#ifdef CICE_MODEL
+! kca - calculate timesteps for restart output
+        tspy(ng) = 60*60*24*365/dt(ng)
+        tspd(ng) = 60*60*24/dt(ng)
+#endif
       END DO
+
+#ifdef CICE_MODEL
+! kca - calculate timesteps for restart output
+      dleftinSep = 273-dstart
+      Oct = dleftinSep
+      Nov = Oct + 31
+      Dec = Nov + 30
+      Jan = Dec + 31
+      Feb = Jan + 31
+      Mar = Feb + 28
+      Apr = Mar + 31
+      May = Apr + 30
+      Jun = May + 31
+      Jul = Jun + 30
+      Aug = Jul + 31
+      Sep = Aug + 31
+#endif
 
 #ifdef PROFILE
 !
@@ -490,6 +515,7 @@
           DO tile=first_tile(ng),last_tile(ng),+1
             CALL ana_initial (ng, tile, iNLM)
           END DO
+          io_time = time(ng)
 !$OMP BARRIER
         END IF
       END DO
@@ -532,6 +558,20 @@
         IF (nrrec(ng).eq.0) THEN
           DO tile=first_tile(ng),last_tile(ng),+1
             CALL ana_sediment (ng, tile, iNLM)
+          END DO
+!$OMP BARRIER
+        END IF
+      END DO
+#endif
+
+#if defined ANA_VEGETATION && defined SOLVE3D
+!
+!  Analytical initial conditions for vegetation types.
+!
+      DO ng=1,Ngrids
+        IF (nrrec(ng).eq.0) THEN
+          DO tile=first_tile(ng),last_tile(ng),+1
+            CALL ana_vegetation (ng, tile, iNLM)
           END DO
 !$OMP BARRIER
         END IF
@@ -1026,13 +1066,22 @@
 !  Initialize time-stepping counter and clock.
 !-----------------------------------------------------------------------
 !
-!  Subsract one time unit to avoid special case due to initialization
+!  Subtract one time unit to avoid special case due to initialization
 !  in the main time-stepping routine.
 !
       DO ng=1,Ngrids
         iic(ng)=ntstart(ng)-1
         time(ng)=time(ng)-dt(ng)
       END DO
+
+#ifdef CICE_MODEL
+!
+!-----------------------------------------------------------------------
+! Initialize the ice model
+!-----------------------------------------------------------------------
+!
+      CALL cice_init
+#endif
 
 #ifdef PROFILE
 !

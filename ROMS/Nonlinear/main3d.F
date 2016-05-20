@@ -4,7 +4,7 @@
 !
 !svn $Id: main3d.F 838 2008-11-17 04:22:18Z jcwarner $
 !=======================================================================
-!  Copyright (c) 2002-2015 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2016 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                           Hernan G. Arango   !
 !========================================== Alexander F. Shchepetkin ===
@@ -50,8 +50,12 @@
 # if (defined ALBEDO_CLOUD || defined NCEP_FLUXES) && !defined BENCHMARK
       USE cawdir_eval_mod, ONLY : cawdir_eval
 # endif
-# if defined ALBEDO && defined SHORTWAVE && !defined NCEP_FLUXES
+# if defined ALBEDO && defined SHORTWAVE
+#  if !defined NCEP_FLUXES && !defined ANA_ALBEDO
       USE albedo_mod
+#  elif defined ANA_ALBEDO
+      USE analytical_mod, only : ana_albedo
+#  endif
 # endif
 # if defined NCEP_FLUXES
       USE ncep_flux_mod, ONLY : ncep_flux
@@ -120,6 +124,11 @@
       USE wec_wave_mix_mod, ONLY : wec_wave_mix
 #  endif
 # endif
+# if defined VEGETATION && defined MARSH_WAVE_THRUST
+      USE mod_vegetation 
+      USE mod_vegarr
+      USE marsh_wave_thrust_mod, ONLY : marsh_wave_thrust
+# endif
 # ifndef TS_FIXED
       USE rho_eos_mod, ONLY : rho_eos
 # endif
@@ -132,6 +141,9 @@
 # endif
 # if defined AVERAGES2 && !defined ADJOINT
       USE set_avg2_mod, ONLY : set_avg2
+# endif
+# ifdef CICE_MODEL
+      USE ice_fakecpl, ONLY : cice_fakecpl
 # endif
       USE set_depth_mod, ONLY : set_depth
       USE set_massflux_mod, ONLY : set_massflux
@@ -402,9 +414,12 @@
 # if (defined ALBEDO_CLOUD || defined NCEP_FLUXES) && !defined BENCHMARK
                 CALL cawdir_eval(ng, tile)
 # endif
-# if defined ALBEDO && defined SHORTWAVE && !defined NCEP_FLUXES &&   \
-     !defined ALBEDO_FILE
+# if defined ALBEDO && defined SHORTWAVE
+#  ifdef ANA_ALBEDO
+                CALL ana_albedo(ng, tile, iNLM)
+#  elif !defined NCEP_FLUXES && !defined ALBEDO_FILE 
                 CALL albedo_eval(ng, tile)
+#  endif
 # endif
 # ifdef BULK_FLUXES
 #  if defined FOUR_DVAR && defined NL_BULK_FLUXES
@@ -419,7 +434,7 @@
             CALL ncep_flux(ng, tile)
 # endif
 # ifdef ATM2OCN_FLUXES
-            CALL atm2ocn_flux (ng, tile)
+                CALL atm2ocn_flux (ng, tile)
 # endif
 # ifdef BBL_MODEL
                 CALL bblm (ng, tile)
@@ -445,6 +460,16 @@
             END DO
 # endif
 
+# ifdef CICE_MODEL
+!
+!-----------------------------------------------------------------------
+! Call the CICE model
+!-----------------------------------------------------------------------
+!
+! KLUDGE here! hard-coding ng=1
+            call cice_fakecpl
+# endif
+
 # if defined ICE_MODEL
 !
 !-----------------------------------------------------------------------
@@ -462,6 +487,19 @@
               CALL seaice
             END IF
 # endif
+# if defined VEGETATION && defined MARSH_WAVE_THRUST
+!
+!-----------------------------------------------------------------------
+!  Run wave thrust marsh module for one step
+!-----------------------------------------------------------------------
+!
+               DO ig=1,GridsInLayer(nl)
+                 ng=GridNumber(ig,nl)
+                 DO tile=first_tile(ng),last_tile(ng),+1
+                   CALL marsh_wave_thrust (ng, tile)
+                 END DO
+               END DO
+# endif 
 # ifdef ADJUST_BOUNDARY
 !
 !-----------------------------------------------------------------------
@@ -868,6 +906,7 @@
                 CALL step3d_t (ng, tile)
               END DO
 !$OMP BARRIER
+              IF (exit_flag.ne.NoError) RETURN
             END DO
 
 #  ifdef NESTING

@@ -3,7 +3,7 @@
 #if defined ICE_MODEL && defined ICE_THERMO
 !
 !=======================================================================
-!  Copyright (c) 2002-2014 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2016 The ROMS/TOMS Group                         !
 !================================================== Hernan G. Arango ===
 !                                                                      !
 !  This routine computes the ice thermodynamic growth and decay        !

@@ -6,7 +6,7 @@
 !
 !svn $Id: mpdata_adiff.F 732 2008-09-07 01:55:51Z jcwarner $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2014 The ROMS/TOMS Group        John C. Warner   !
+!  Copyright (c) 2002-2016 The ROMS/TOMS Group        John C. Warner   !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -242,7 +242,6 @@
 !
       DO j=JstrV-1,Jendp1
         k=1
-!       DO i=IstrU-1,Iendp2
         DO i=IstrUm1,Iendp2
           C(i,k)=0.25_r8*                                               &
      &           ((Ta(i  ,j,k+1)-Ta(i  ,j,k  ))*odz(i  ,j,k  )+         &
@@ -437,7 +436,6 @@
 !  Compute nondimensional V-antidiffusive velocities, Va. If applicable,
 !  retain up to third-order terms of the power series.
 !
-!     DO j=JstrV-1,Jendp2
       DO j=JstrVm1,Jendp2
         k=1
         DO i=IstrU-1,Iendp1
@@ -638,14 +636,12 @@
         IF (DOMAIN(ng)%Western_Edge(tile)) THEN
           IF (LBC(iwest,isBu3d,ng)%closed) THEN
             DO k=1,N(ng)
-!             DO j=Jstr,Jend
               DO j=Jstrm1,Jendp1
                 Ua(Istr,j,k)=0.0_r8
               END DO
             END DO
           ELSE
             DO k=1,N(ng)
-!             DO j=Jstr,Jend
               DO j=Jstrm1,Jendp1
                 Ua(Istr,j,k)=Ua(Istr+1,j,k)
               END DO
@@ -656,14 +652,12 @@
         IF (DOMAIN(ng)%Eastern_Edge(tile)) THEN
           IF (LBC(ieast,isBu3d,ng)%closed) THEN
             DO k=1,N(ng)
-!             DO j=Jstr,Jend
               DO j=Jstrm1,Jendp1
                 Ua(Iend+1,j,k)=0.0_r8
               END DO
             END DO
           ELSE
             DO k=1,N(ng)
-!             DO j=Jstr,Jend
               DO j=Jstrm1,Jendp1
                 Ua(Iend+1,j,k)=Ua(Iend,j,k)
               END DO
@@ -676,14 +670,12 @@
         IF (DOMAIN(ng)%Southern_Edge(tile)) THEN
           IF (LBC(isouth,isBv3d,ng)%closed) THEN
             DO k=1,N(ng)
-!             DO i=Istr,Iend
               DO i=Istrm1,Iendp1
                 Va(i,Jstr,k)=0.0_r8
               END DO
             END DO
           ELSE
             DO k=1,N(ng)
-!             DO i=Istr,Iend
               DO i=Istrm1,Iendp1
                 Va(i,Jstr,k)=Va(i,Jstr+1,k)
               END DO
@@ -694,14 +686,12 @@
         IF (DOMAIN(ng)%Northern_Edge(tile)) THEN
           IF (LBC(inorth,isBv3d,ng)%closed) THEN
             DO k=1,N(ng)
-!             DO i=Istr,Iend
               DO i=Istrm1,Iendp1
                 Va(i,Jend+1,k)=0.0_r8
               END DO
             END DO
           ELSE
             DO k=1,N(ng)
-!             DO i=Istr,Iend
               DO i=Istrm1,Iendp1
                 Va(i,Jend+1,k)=Va(i,Jend,k)
               END DO
@@ -709,7 +699,6 @@
           END IF
         END IF
       END IF
-
 !
 !  Compute nondimensional W-antidiffusive velocities, Wa. If applicable,
 !  retain up to third-order terms of the power series.

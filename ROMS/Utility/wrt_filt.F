@@ -3,7 +3,7 @@
       SUBROUTINE wrt_filt (ng, filterLevel)
 !
 !=======================================================================
-!  Copyright (c) 2002-2014 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2016 The ROMS/TOMS Group                         !
 !================================================== Hernan G. Arango ===
 !                                                                      !
 !  This routine writes fields into filter restart NetCDF files.        !
@@ -804,23 +804,24 @@
           RETURN
         END IF
       END IF
+#ifdef MELT_PONDS
 !
 !  Write out surface water
 !
-      IF (Aout(idSfwat,ng)) THEN
+      IF (Aout(idApond,ng)) THEN
         scale=1.0_r8
         gtype=gfactor*r2dvar
         status=nf_fwrite2d(ng, iNLM, FIL(10,ng)%ncid,                   &
-     &                 FIL(10,ng)%Vid(idSfwat),                         &
+     &                 FIL(10,ng)%Vid(idApond),                         &
      &                 FIL(10,ng)%Rindex, gtype,                        &
      &                 LBi, UBi, LBj, UBj, scale,                       &
 #  ifdef MASKING
      &                 GRID(ng) % rmask,                                &
 #  endif
-     &                 FILTER(ng) % filsfwat(:,:,FIL(10,ng)%Rindex))
+     &                 FILTER(ng) % filapond(:,:,FIL(10,ng)%Rindex))
         IF (status.ne.nf90_noerr) THEN
           IF (Master) THEN
-            WRITE (stdout,10) TRIM(Vname(1,idSfwat)), FIL(10,ng)%Rindex
+            WRITE (stdout,10) TRIM(Vname(1,idApond)), FIL(10,ng)%Rindex
             PRINT *, trim(nf90_strerror(status))
           END IF
           exit_flag=3
@@ -828,6 +829,31 @@
           RETURN
         END IF
       END IF
+!
+!  Write out surface water
+!
+      IF (Aout(idHpond,ng)) THEN
+        scale=1.0_r8
+        gtype=gfactor*r2dvar
+        status=nf_fwrite2d(ng, iNLM, FIL(10,ng)%ncid,                   &
+     &                 FIL(10,ng)%Vid(idHpond),                         &
+     &                 FIL(10,ng)%Rindex, gtype,                        &
+     &                 LBi, UBi, LBj, UBj, scale,                       &
+#  ifdef MASKING
+     &                 GRID(ng) % rmask,                                &
+#  endif
+     &                 FILTER(ng) % filhpond(:,:,FIL(10,ng)%Rindex))
+        IF (status.ne.nf90_noerr) THEN
+          IF (Master) THEN
+            WRITE (stdout,10) TRIM(Vname(1,idHpond)), FIL(10,ng)%Rindex
+            PRINT *, trim(nf90_strerror(status))
+          END IF
+          exit_flag=3
+          ioerror=status
+          RETURN
+        END IF
+      END IF
+#endif
 !
 !  Write out surface ice temperature
 !

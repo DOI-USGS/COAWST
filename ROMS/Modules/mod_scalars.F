@@ -3,7 +3,7 @@
 !
 !svn $Id: mod_scalars.F 787 2008-10-14 00:37:50Z jcwarner $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2014 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2016 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -139,16 +139,16 @@
         integer :: M3wrol          ! 3D momentum, wave roller accel
         integer :: M3wbrk          ! 3D momentum, wave breaking
 #   endif
+#   if defined VEGETATION && defined VEG_DRAG
+        integer :: M3fveg          ! 3D momentum, vegetation drag force
+        integer :: M2fveg          ! 2D momentum, vegetation drag force
+#   endif
         integer :: M3pgrd          ! 3D momentum, pressure gradient
         integer :: M3vvis          ! 3D momentum, vertical viscosity
         integer :: M3hvis          ! 3D momentum, horizontal viscosity
         integer :: M3xvis          ! 3D momentum, horizontal X-viscosity
         integer :: M3yvis          ! 3D momentum, horizontal Y-viscosity
         integer :: M3rate          ! 3D momentum, time rate of change
-#   ifdef SGR_FLOW
-        integer :: M3fsgr          ! 3D momentum, seagrass drag force
-        integer :: M2fsgr          ! 2D momentum, seagrass drag force
-#   endif
 #  endif
 # endif
 #endif
@@ -194,6 +194,12 @@
 !    tide_start    Reference time for tidal forcing (days).
 !    time_ref      Reference time for "units" attribute (YYYYMMDD.dd).
 !    r_text        Model initialization reference text (string).
+#ifdef CICE_MODEL
+!    tspy          timesteps per year
+!    tspd          timesteps per day
+!    dleftinSep    days in September before Oct1 restart
+!    Jan,Feb,...,Nov,Dec  days after restart until first of each month
+#endif
 !
         logical, allocatable :: PerfectRST(:)
         logical, allocatable :: PREDICTOR_2D_STEP(:)
@@ -234,7 +240,26 @@
         real(r8) :: run_time = 0.0_r8                    ! seconds
         real(r8) :: tide_start = 0.0_r8                  ! days
         real(r8) :: time_ref = 0.0_r8                    ! YYYYMMDD.dd
-        real(r8) :: days_year = 365.25_r8                 ! days per year
+        real(r8) :: days_year = 365.25_r8                ! days per year
+#ifdef CICE_MODEL
+        real(r8), allocatable :: tspy(:)                 ! timesteps
+        real(r8), allocatable :: tspd(:)                 ! timesteps
+        real(r8) :: dleftinSep = 0.0_r8                  ! days
+        real(r8) :: Jan = 0.0_r8                         ! days
+        real(r8) :: Feb = 0.0_r8                         ! days
+        real(r8) :: Mar = 0.0_r8                         ! days
+        real(r8) :: Apr = 0.0_r8                         ! days
+        real(r8) :: May = 0.0_r8                         ! days
+        real(r8) :: Jun = 0.0_r8                         ! days
+        real(r8) :: Jul = 0.0_r8                         ! days
+        real(r8) :: Aug = 0.0_r8                         ! days
+        real(r8) :: Sep = 0.0_r8                         ! days
+        real(r8) :: Oct = 0.0_r8                         ! days
+        real(r8) :: Nov = 0.0_r8                         ! days
+        real(r8) :: Dec = 0.0_r8                         ! days
+        real(r8), allocatable :: rhoice(:)
+        real(r8), allocatable :: min_a(:)
+#endif
 
         character (len=14), allocatable :: time_code(:)  ! DD HH:MM:SS
 !$OMP THREADPRIVATE (time_code)
@@ -371,7 +396,11 @@
         real(r8) :: Csolar = 1353.0_r8          ! 1360-1380 W/m2
         real(r8) :: Infinity                    ! Infinity = 1.0/0.0
         real(r8) :: Eradius = 6371315.0_r8      ! m
+#ifdef ICE_BOX
+        real(r8) :: StefBo = 5.78E-8_r8         ! Watts/m2/K4 (Match MU)
+#else
         real(r8) :: StefBo = 5.67E-8_r8         ! Watts/m2/K4
+#endif
         real(r8) :: emmiss = 0.97_r8            ! non_dimensional
         real(r8) :: rhow = 1000.0_r8            ! kg/m3
 #ifdef SOLITON
@@ -466,6 +495,7 @@
 !    exit_flag = 6   Partition error
 !    exit_flag = 7   Illegal input parameter
 !    exit_flag = 8   Fatal algorithm result
+!    exit_flag = 9   Frazil ice error
 !
         integer :: exit_flag = 0
         integer :: blowup = 0
@@ -489,7 +519,7 @@
         integer, parameter :: linear = 0        ! linear interpolation
         integer, parameter :: cubic  = 1        ! cubic  interpolation
 !
-        integer :: InterpFlag = cubic          ! interpolation flag
+        integer :: InterpFlag = linear          ! interpolation flag
 !
 !  Shallowest and Deepest levels to apply bottom momentum stresses as
 !  a bodyforce
@@ -645,13 +675,14 @@
         real(r8), allocatable :: gamma2(:)
 !
 !  Weighting coefficient for the newest (implicit) time step derivatives
-!  in the Crack-Nicolson implicit scheme (usually, lambda=0.5).
+!  using either a Crack-Nicolson implicit scheme (lambda=0.5) or a
+!  backward implicit scheme (lambda=1.0).
 !
-#ifdef SPLINES
-        real(r8) :: lambda = 1.0_r8             ! backward implicit
+#if defined SPLINES_VDIFF || defined SPLINES_VVISC
+        real(r8) :: lambda = 1.0_r8
 #else
 !!      real(r8) :: lambda = 0.5_r8
-        real(r8) :: lambda = 1.0_r8             ! backward implicit
+        real(r8) :: lambda = 1.0_r8
 #endif
 !
 !  Jerlov water type to assign everywhere, range values: 1 - 5.
@@ -1217,6 +1248,8 @@
         real(r8), allocatable :: M2nudg(:)         ! 2D momentum
         real(r8), allocatable :: M3nudg(:)         ! 3D momentum
         real(r8), allocatable :: Tnudg(:,:)        ! Tracers
+        real(r8), allocatable :: Tnudg_SSS(:)      ! Sea surface salinity
+        real(r8), allocatable :: sss_mismatch_threshold(:)! Sea surface salinity
 !
 !  Variables used to impose mass flux conservation in open boundary
 !  configurations.
@@ -1692,7 +1725,6 @@
         real(r8) :: t0deg = 273.15_r8
 
         real(r8), allocatable :: dtice(:)
-        real(r8), allocatable :: dtice_eq(:)
         real(r8), allocatable :: dte(:)
         real(r8), allocatable :: rhoice(:)
         real(r8), allocatable :: cdiw(:)
@@ -1711,7 +1743,11 @@
         real(r8), allocatable :: min_a(:)
         real(r8), allocatable :: max_a(:)
         real(r8), allocatable :: stressang(:)
-        real(r8), allocatable :: sfwat_max(:)
+# ifdef ICE_LANDFAST
+        real(r8), allocatable :: lf_k1(:)
+        real(r8), allocatable :: lf_k2(:)
+        real(r8), allocatable :: lf_u0(:)
+# endif
 #endif
 
       CONTAINS
@@ -1831,6 +1867,12 @@
 #endif
 #ifdef AGE_DISTRIBUTION
       allocate ( dtau(Ngrids) )
+#endif
+#ifdef CICE_MODEL
+      allocate ( tspy(Ngrids) )
+      allocate ( tspd(Ngrids) )
+      allocate ( rhoice(Ngrids) )
+      allocate ( min_a(Ngrids) )
 #endif
 
       allocate ( ntimes(Ngrids) )
@@ -2157,6 +2199,8 @@
       allocate ( M2nudg(Ngrids) )
       allocate ( M3nudg(Ngrids) )
       allocate ( Tnudg(MT,Ngrids) )
+      allocate ( Tnudg_SSS(Ngrids) )
+      allocate ( sss_mismatch_threshold(Ngrids) )
 
 #if defined BULK_FLUXES || defined BULK_FLUXES2D
       allocate ( blk_ZQ(Ngrids) )
@@ -2194,7 +2238,6 @@
      allocate ( ievp(Ngrids) )
 
      allocate ( dtice(Ngrids) )
-     allocate ( dtice_eq(Ngrids) )
      allocate ( dte(Ngrids) )
      allocate ( rhoice(Ngrids) )
      allocate ( cdiw(Ngrids) )
@@ -2213,7 +2256,11 @@
      allocate ( min_a(Ngrids) )
      allocate ( max_a(Ngrids) )
      allocate ( stressang(Ngrids) )
-     allocate ( sfwat_max(Ngrids) )
+# ifdef ICE_LANDFAST
+     allocate ( lf_k1(Ngrids) )
+     allocate ( lf_k2(Ngrids) )
+     allocate ( lf_u0(Ngrids) )
+# endif
 #endif
 
       RETURN
@@ -2323,8 +2370,8 @@
       M2wbrk=ic+4
       ic=ic+4
 #  endif
-#  ifdef SGR_FLOW
-      M2fsgr=ic+1
+#  if defined VEGETATION && defined VEG_DRAG
+      M2fveg=ic+1
       ic=ic+1
 #  endif
 #  if defined UV_VIS2 || defined UV_VIS4
@@ -2388,8 +2435,8 @@
       M3wbrk=ic+5
       ic=ic+5
 #   endif
-#   ifdef SGR_FLOW
-      M3fsgr=ic+1
+#   if defined VEGETATION && defined VEG_DRAG
+      M3fveg=ic+1
       ic=ic+1
 #   endif
       M3pgrd=ic+1             ! needs to be here, indices below
@@ -2714,6 +2761,10 @@
       my_Sm3=my_A1*(1.0_r8-3.0_r8*my_C1-6.0_r8*my_A1/my_B1)
       my_Sm4=18.0_r8*my_A1*my_A1+9.0_r8*my_A1*my_A2
 # endif
+#endif
+#ifdef CICE_MODEL
+      rhoice = 900.0_r8
+      min_a = 1.0e-11_r8
 #endif
 
       RETURN

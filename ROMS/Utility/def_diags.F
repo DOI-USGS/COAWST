@@ -4,7 +4,7 @@
 !
 !svn $Id: def_diags.F 733 2008-09-07 01:56:45Z jcwarner $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2014 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2016 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -639,7 +639,7 @@
             END DO
           END DO
 # endif
-# ifdef BIO_FENNEL
+# ifdef DIAGNOSTICS_BIO
           DO ivar=1,NDbio2d
             ifield=iDbio2(ivar)
             IF (TRIM(var_name(i)).eq.TRIM(Vname(1,ifield))) THEN
@@ -714,7 +714,7 @@
           END DO
         END DO
 # endif
-# ifdef BIO_FENNEL
+# ifdef DIAGNOSTICS_BIO
         DO ivar=1,NDbio2d
           ifield=iDbio2(ivar)
           IF (.not.got_var(ifield).and.Dout(ifield,ng)) THEN

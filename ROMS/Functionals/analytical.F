@@ -3,7 +3,7 @@
 !
 !svn $Id: analytical.F 1372 2011-01-21 00:38:29Z kate $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2014 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2016 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -15,6 +15,7 @@
 !                                                                      !
 !! Include Files:                                                      !
 !!                                                                     !
+!! ana_albedo.h        Analytical albedo values                        !
 !! ana_biology.h       Analytical initial conditions for biological    !
 !!                       tracers.                                      !
 !! ana_btflux.h        Analytical kinematic bottom flux of tracer      !
@@ -29,6 +30,8 @@
 !! ana_humid.h         Analytical surface air humidity.                !
 !! ana_initial.h       Analytical initial conditions for momentum,     !
 !!                       free surface and tracers.                     !
+!! ana_lrflux.h        Analytical kinematic surface longwave           !
+!!                       radiation flux.                               !
 !! ana_m2clima.h       Analytical 2D momentum climatology.             !
 !! ana_m2obc.h         Analytical 2D momentum boundary conditions.     !
 !! ana_m3clima.h       Analytical 3D momentum climatology.             !
@@ -47,6 +50,8 @@
 !!                       mask.                                         !
 !! ana_sediment.h      Analytical initial conditions for sediment      !
 !!                       tracers and bottom/bed properties.            !
+!! ana_vegetation.h    Analytical initial conditions for vegetation    !
+!!                       properties.                                   !
 !! ana_smflux.h        Analytical kinematic surface momentum flux      !
 !!                       (wind stress).                                !
 !! ana_spinning.h      Analytical time variable rotation forces.       !
@@ -84,6 +89,10 @@
 #ifdef ANALYTICAL
 # if defined ANA_AIOBC && defined ICE_MODEL
 #  include <ana_aiobc.h>
+# endif
+
+# ifdef ANA_ALBEDO
+#  include <ana_albedo.h>
 # endif
 
 # ifdef SOLVE3D
@@ -156,6 +165,10 @@
 #  include <ana_initial.h>
 # endif
 
+# if defined ANA_LRFLUX && defined SOLVE3D
+#  include <ana_lrflux.h>
+# endif
+
 # ifdef ANA_M2CLIMA
 #  include <ana_m2clima.h>
 # endif
@@ -224,8 +237,18 @@
 #  endif
 # endif
 
+# ifdef SOLVE3D
+#  if defined ANA_VEGETATION && defined VEGETATION
+#   include <ana_vegetation.h>
+#  endif
+# endif
+
 # ifdef ANA_SMFLUX
 #  include <ana_smflux.h>
+# endif
+
+# if defined ANA_SNOW
+#  include <ana_snow.h>
 # endif
 
 # ifdef ANA_SPINNING

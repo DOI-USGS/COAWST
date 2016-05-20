@@ -1,9 +1,9 @@
 #include "cppdefs.h"
       MODULE mod_ocean
 !
-!svn $Id: mod_ocean.F 787 2008-10-14 00:37:50Z jcwarner $
+!svn $Id: mod_ocean.F 791 2016-05-05 22:39:42Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2014 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2016 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -34,17 +34,27 @@
 !                                                                      !
 !  pH           Surface concentration of hydrogen ions.                !
 !                                                                      !
-#ifdef SPECTRAL_LIGHT
-!  PARout       Photosynthetically Available Radiation (PAR)           !
-!  PARs         Spectral PAR                                           !
-!  SpKd         Spectral Attenuation                                   !
+#if defined ESTUARYBGC && defined SPECTRAL_LIGHT
+! PARout        Photosynthetically Available Radiation (PAR)           !
+! PARs          Spectral PAR                                           !
+! SpKd          Spectral Attenuation     
 #endif
-#ifdef SEAGRASS_SINK
-! SgrN          Seagrass in mols of N                                  !
-#endif
-#ifdef SGR_FLOW
-! rusgr         Vegetation effect on u velocity by Seagrass            !
-! rvsgr         Vegetation effect on u velocity by Seagrass            !
+#if defined ESTUARYBGC && defined SAV_BIOMASS                             
+! DINwcr        Dissolved Inorganic Nitrogen-water column(mu mols N)   !
+! DINsed        Dissolved Inorganic Nitrogen-sediment column(mu mols N)!
+! DOwcr         Dissolved Oxygen - water column                        ! 
+! DINwcr_sav    Dissolved Inorganic Nitrogen-water column in SAV(mu M) ! 
+! AGB           Above ground biomas                                    !
+! BGB           Below ground biomass                                   !
+! PP                                                                   !  
+! AGM                             
+! AGAR
+! AGBR
+! SEARS
+! AGBG
+! BGAG
+! BGR
+! BGM 
 #endif
 #ifdef WEC
 !  Wave effect on currents variables                                   !
@@ -135,20 +145,36 @@
           real(r8), pointer :: uwave(:,:)
           real(r8), pointer :: vwave(:,:)
 # endif
-# if (defined BIO_FENNEL || defined BIO_UMAINE) && defined CARBON
+# if (defined BIO_FENNEL || defined ESTUARYBGC ||      \
+      defined BIO_UMAINE) && defined CARBON
           real(r8), pointer :: pH(:,:)
 # endif
-# if defined BIO_FENNEL && defined SPECTRAL_LIGHT
+# if defined ESTUARYBGC && defined SPECTRAL_LIGHT 
           real(r8), pointer :: PARout(:,:,:)
           real(r8), pointer :: PARs(:,:,:)
           real(r8), pointer :: SpKd(:,:,:)
 # endif
-# if defined SEAGRASS_SINK
-          real(r8), pointer :: SgrN(:,:)
+# if defined ESTUARYBGC && defined SAV_BIOMASS
+          real(r8), pointer :: DINwcr(:,:,:)
+          real(r8), pointer :: DINsed(:,:,:)
+          real(r8), pointer :: DOwcr(:,:,:)
+          real(r8), pointer :: DINwcr_sav(:,:,:)
+          real(r8), pointer :: AGB(:,:)
+          real(r8), pointer :: BGB(:,:)
+          real(r8), pointer :: PP(:,:,:)
+          real(r8), pointer :: AGM(:,:,:)
+          real(r8), pointer :: AGAR(:,:,:)
+          real(r8), pointer :: AGBR(:,:,:)
+          real(r8), pointer :: SEARS(:,:,:)
+          real(r8), pointer :: AGBG(:,:,:)
+          real(r8), pointer :: BGAG(:,:,:)
+          real(r8), pointer :: BGR(:,:,:)
+          real(r8), pointer :: BGM(:,:,:)
 # endif
-# ifdef SGR_FLOW
-          real(r8), pointer :: rusgr(:,:,:)
-          real(r8), pointer :: rvsgr(:,:,:)
+# ifdef RED_TIDE
+          real(r8), pointer :: CystIni(:,:)
+          real(r8), pointer :: DIN_obs(:,:,:)
+          real(r8), pointer :: DIN_obsG(:,:,:,:)
 # endif
 #endif
 
@@ -404,20 +430,37 @@
       allocate ( OCEAN(ng) % vwave(LBi:UBi,LBj:UBj) )
 # endif
 
-# if (defined BIO_FENNEL || defined BIO_UMAINE) && defined CARBON
+# if (defined BIO_FENNEL || defined ESTUARYBGC ||           \
+      defined BIO_UMAINE) && defined CARBON
       allocate ( OCEAN(ng) % pH(LBi:UBi,LBj:UBj) )
 # endif
-# if defined BIO_FENNEL && defined SPECTRAL_LIGHT
+# if defined ESTUARYBGC && defined SPECTRAL_LIGHT
       allocate ( OCEAN(ng) % PARout(LBi:UBi,LBj:UBj,N(ng)) )
       allocate ( OCEAN(ng) % PARs(LBi:UBi,LBj:UBj,NBAND) )
       allocate ( OCEAN(ng) % SpKd(LBi:UBi,LBj:UBj,NBAND) )
 # endif
-# if defined BIO_FENNEL && defined SEAGRASS_SINK
-      allocate ( OCEAN(ng) % SgrN(LBi:UBi,LBj:UBj) )
+# if defined ESTUARYBGC && defined SAV_BIOMASS
+      allocate ( OCEAN(ng) % DINwcr(LBi:UBi,LBj:UBj,N(ng)) )
+      allocate ( OCEAN(ng) % DINsed(LBi:UBi,LBj:UBj,N(ng)) )
+      allocate ( OCEAN(ng) % DOwcr(LBi:UBi,LBj:UBj,N(ng)) )
+      allocate ( OCEAN(ng) % DINwcr_sav(LBi:UBi,LBj:UBj,N(ng)) )
+      allocate ( OCEAN(ng) % AGB(LBi:UBi,LBj:UBj) )
+      allocate ( OCEAN(ng) % BGB(LBi:UBi,LBj:UBj) )
+      allocate ( OCEAN(ng) % PP(LBi:UBi,LBj:UBj,N(ng)) )
+      allocate ( OCEAN(ng) % AGM(LBi:UBi,LBj:UBj,N(ng)) )
+      allocate ( OCEAN(ng) % AGAR(LBi:UBi,LBj:UBj,N(ng)) )
+      allocate ( OCEAN(ng) % AGBR(LBi:UBi,LBj:UBj,N(ng)) )
+      allocate ( OCEAN(ng) % SEARS(LBi:UBi,LBj:UBj,N(ng)) )
+      allocate ( OCEAN(ng) % AGBG(LBi:UBi,LBj:UBj,N(ng)) )
+      allocate ( OCEAN(ng) % BGAG(LBi:UBi,LBj:UBj,N(ng)) )
+      allocate ( OCEAN(ng) % BGR(LBi:UBi,LBj:UBj,N(ng)) )
+      allocate ( OCEAN(ng) % BGM(LBi:UBi,LBj:UBj,N(ng)) )
+
 # endif
-# ifdef SGR_FLOW
-      allocate ( OCEAN(ng) % rusgr(LBi:UBi,LBj:UBj,0:N(ng)) )
-      allocate ( OCEAN(ng) % rvsgr(LBi:UBi,LBj:UBj,0:N(ng)) )
+# ifdef RED_TIDE
+      allocate ( OCEAN(ng) % CystIni(LBi:UBi,LBj:UBj) )
+      allocate ( OCEAN(ng) % DIN_obs(LBi:UBi,LBj:UBj,N(ng)) )
+      allocate ( OCEAN(ng) % DIN_obsG(LBi:UBi,LBj:UBj,N(ng),2) )
 # endif
 #endif
 #if defined TANGENT || defined TL_IOMS
@@ -709,8 +752,8 @@
             OCEAN(ng) % ubar_stokes(i,j) = IniVal
             OCEAN(ng) % vbar_stokes(i,j) = IniVal
 #endif
-#if (defined BIO_FENNEL || defined BIO_UMAINE) && \
-      defined CARBON && defined SOLVED3D
+#if (defined BIO_FENNEL || defined ESTUARYBGC || defined BIO_UMAINE) \
+        && defined CARBON && defined SOLVED3D
             OCEAN(ng) % pH(i,j) = 8.0_r8
 #endif
 #if defined NEMURO_SED1
@@ -727,9 +770,9 @@
             OCEAN(ng) % uwave(i,j) = IniVal
             OCEAN(ng) % vwave(i,j) = IniVal
 #endif
-#if defined BIO_FENNEL && defined SEAGRASS_SINK 
-            OCEAN(ng) % SgrN(i,j) = IniVal
-#endif
+# ifdef RED_TIDE
+            OCEAN(ng) % CystIni(i,j) = IniVal
+# endif
           END DO
 #ifdef SOLVE3D
           DO k=1,N(ng)
@@ -741,8 +784,25 @@
               OCEAN(ng) % u(i,j,k,2) = IniVal
               OCEAN(ng) % v(i,j,k,1) = IniVal
               OCEAN(ng) % v(i,j,k,2) = IniVal
-# if defined BIO_FENNEL && defined SPECTRAL_LIGHT 
+# if defined ESTUARYBGC && defined SPECTRAL_LIGHT
               OCEAN(ng) % PARout(i,j,k) = IniVal
+# endif
+# if defined ESTUARYBGC && defined SAV_BIOMASS
+            OCEAN(ng) % DINwcr(i,j,k) = IniVal
+            OCEAN(ng) % DINsed(i,j,k) = IniVal
+            OCEAN(ng) % DOwcr(i,j,k) = IniVal
+            OCEAN(ng) % DINwcr_sav(i,j,k) = IniVal
+            OCEAN(ng) % AGB(i,j) = IniVal
+            OCEAN(ng) % BGB(i,j) = IniVal
+            OCEAN(ng) % PP(i,j,k)= IniVal
+            OCEAN(ng) % AGM(i,j,k) = IniVal
+            OCEAN(ng) % AGAR(i,j,k) = IniVal
+            OCEAN(ng) % AGBR(i,j,k) = IniVal
+            OCEAN(ng) % SEARS(i,j,k) = IniVal
+            OCEAN(ng) % AGBG(i,j,k) = IniVal
+            OCEAN(ng) % BGAG(i,j,k) = IniVal
+            OCEAN(ng) % BGR(i,j,k) = IniVal
+            OCEAN(ng) % BGM(i,j,k) = IniVal
 # endif
 # if defined WEC
 #  ifdef WEC_MELLOR
@@ -751,6 +811,11 @@
 #  endif
               OCEAN(ng) % u_stokes(i,j,k) = IniVal
               OCEAN(ng) % v_stokes(i,j,k) = IniVal
+# endif
+# ifdef RED_TIDE
+              OCEAN(ng) % DIN_obs(i,j,k) = IniVal
+              OCEAN(ng) % DIN_obsG(i,j,k,1) = IniVal
+              OCEAN(ng) % DIN_obsG(i,j,k,2) = IniVal
 # endif
             END DO
           END DO
@@ -775,10 +840,6 @@
               OCEAN(ng) % W_stokes(i,j,k) = IniVal
               OCEAN(ng) % wstvel(i,j,k) = IniVal
 # endif
-# if defined SGR_FLOW
-              OCEAN(ng) % rusgr(i,j,k) = IniVal
-              OCEAN(ng) % rvsgr(i,j,k) = IniVal
-# endif
             END DO
           END DO
           DO itrc=1,NT(ng)
@@ -789,7 +850,7 @@
                 OCEAN(ng) % t(i,j,k,3,itrc) = IniVal
               END DO
             END DO
-          END DO 
+          END DO
 #endif
         END DO
       END IF

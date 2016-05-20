@@ -3,7 +3,7 @@
 **
 ** svn $Id: cppdefs.h 818 2008-11-02 14:56:47Z jcwarner $
 ********************************************************** Hernan G. Arango ***
-** Copyright (c) 2002-2015 The ROMS/TOMS Group                               **
+** Copyright (c) 2002-2016 The ROMS/TOMS Group                               **
 **   Licensed under a MIT/X style license                                    **
 **   See License_ROMS.txt                                                    **
 *******************************************************************************
@@ -44,11 +44,7 @@
 ** UV_LDRAG            use to turn ON or OFF linear bottom friction          **
 ** UV_QDRAG            use to turn ON or OFF quadratic bottom friction       **
 ** UV_WAVEDRAG         use to turn ON or OFF extra linear bottom wave drag   **
-**                                                                           **
-** OPTION to not allow the bottom stress components to change the direction  **
-** of bottom momentum (change sign of velocity components.                   **
-**                                                                           **
-** LIMIT_BSTRESS       use to limit the magnitude of bottom stress           **
+** SPLINES_VVISC       use if splines reconstruction of vertical viscosity   **
 **                                                                           **
 ** OPTIONS associated with tracers equations:                                **
 **                                                                           **
@@ -84,14 +80,17 @@
 ** TS_FIXED            use if diagnostic run, no evolution of tracers        **
 ** T_PASSIVE           use if inert passive tracers (dyes, etc)              **
 ** AGE_MEAN            use if computing Mean Age of inert passive tracers    **
-** SALINITY            use if having salinity                                **
 ** NONLIN_EOS          use if using nonlinear equation of state              **
 ** QCORRECTION         use if net heat flux correction                       **
+** SALINITY            use if having salinity                                **
 ** SCORRECTION         use if freshwater flux correction                     **
+** SSSC_THRESHOLD      limit on freshwater flux correction                   **
 ** SOLAR_SOURCE        use if solar radiation source term                    **
+** SPLINES_VDIFF       use if splines reconstruction of vertical diffusion   **
 ** SRELAXATION         use if salinity relaxation as a freshwater flux       **
 ** TRC_PSOURCE         use if source of inert passive tracers (dyes, etc)    **
 ** ONE_TRACER_SOURCE   use if one value per tracer for all sources           **
+** TWO_D_TRACER_SOURCE use if one value per tracer per source                **
 ** WTYPE_GRID          use to turn ON spatially varying Jerlov water type    **
 **                                                                           **
 ** OPTION to suppress further surface cooling if the SST is at freezing      **
@@ -226,16 +225,11 @@
 ** VWALK_FORWARD       use if forward time stepping vertical random walk     **
 ** DIAPAUSE            use to simulate diapause                              **
 **                                                                           **
-** OPTION to activate conservative, parabolic spline reconstruction of       **
-** vertical derivatives. Notice that there also options (see above) for      **
-** vertical advection of momentum and tracers using splines.                 **
-**                                                                           **
-** SPLINES             use to activate parabolic splines reconstruction      **
-**                                                                           **
 ** OPTIONS for analytical fields configuration:                              **
 **                                                                           **
 **    Any of the analytical expressions are coded in "analytical.F".         **
 **                                                                           **
+** ANA_ALBEDO          use if analytical albedo values                       **
 ** ANA_BIOLOGY         use if analytical biology initial conditions          **
 ** ANA_BPFLUX          use if analytical bottom passive tracers fluxes       **
 ** ANA_BSFLUX          use if analytical bottom salinity flux                **
@@ -249,6 +243,7 @@
 ** ANA_HUMIDITY        use if analytical surface air humidity                **
 ** ANA_ICE             use for analytic ice initial conditions               **
 ** ANA_INITIAL         use if analytical initial conditions                  **
+** ANA_LRFLUX          use if analytical surface longwave radiation flux     **
 ** ANA_M2CLIMA         use if analytical 2D momentum climatology             **
 ** ANA_M2OBC           use if analytical 2D momentum boundary conditions     **
 ** ANA_M3CLIMA         use if analytical 3D momentum climatology             **
@@ -263,6 +258,7 @@
 ** ANA_RAIN            use if analytical rain fall rate                      **
 ** ANA_SEDIMENT        use if analytical sediment initial fields             **
 ** ANA_SMFLUX          use if analytical surface momentum stress             **
+** ANA_SNOW            use for analytic snowfall rate                        **
 ** ANA_SPFLUX          use if analytical surface passive tracers fluxes      **
 ** ANA_SPINNING        use if analytical time-varying rotation force         **
 ** ANA_SPONGE          use if analytical enhanced viscosity/diffusion sponge **
@@ -288,11 +284,14 @@
 **                                                                           **
 ** OPTIONS for horizontal mixing of tracers:                                 **
 **                                                                           **
-** CLIMA_TS_MIX        use if diffusion of tracer perturbation (t-tclm)      **
 ** DIFF_GRID           use to scale diffusion coefficients by grid size      **
 ** MIX_S_TS            use if mixing along constant S-surfaces               **
 ** MIX_GEO_TS          use if mixing on geopotential (constant Z) surfaces   **
 ** MIX_ISO_TS          use if mixing on epineutral (constant RHO) surfaces   **
+** TS_MIX_CLIMA        use if diffusion of tracer perturbation (t-tclm)      **
+** TS_MIX_MAX_SLOPE    use if maximum slope in epineutral diffusion          **
+** TS_MIX_MIN_STRAT    use if minimum stratification in epineutral diffusion **
+** TS_MIX_STABILITY    use if weighting diffusion between two time levels    **
 **                                                                           **
 ** OPTIONS for vertical turbulent mixing scheme of momentum and tracers      **
 ** (activate only one closure):                                              **
@@ -315,6 +314,7 @@
 ** K_C2ADVECTION       use if 2nd-order centered advection                   **
 ** K_C4ADVECTION       use if 4th-order centered advection                   **
 ** N2S2_HORAVG         use if horizontal smoothing of buoyancy/shear         **
+** RI_SPLINES          use if splines reconstruction for vertical sheer      **
 ** ZOS_HSIG            use if surface roughness from wave amplitude          **
 ** TKE_WAVEDISS        use if wave breaking surface flux from wave amplitude **
 **                                                                           **
@@ -327,6 +327,7 @@
 ** KANTHA_CLAYSON      use if Kantha and Clayson stability function          **
 ** K_C2ADVECTION       use if 2nd-order centered advection                   **
 ** K_C4ADVECTION       use if 4th-order centered advection                   **
+** RI_SPLINES          use if splines reconstruction for vertical sheer      **
 **                                                                           **
 ** OPTIONS for the Large et al. (1994) K-profile parameterization mixing:    **
 ** mixing:                                                                   **
@@ -339,9 +340,10 @@
 ** LMD_SHAPIRO         use if Shapiro filtering boundary layer depth         **
 ** LMD_SKPP            use if surface boundary layer KPP mixing              **
 ** M2TIDE_DIFF         use to add simulated tidal diffusion                  **
+** RI_SPLINES          use if splines reconstruction for Richardson Number   **
 **                                                                           **
-** OPTIONS to activate smoothing of Richardson number, if SPLINES is not     **
-** activated:                                                                **
+** OPTIONS in the K-profile parameterization to activate smoothing of        **
+** Richardson number, if RI_SPLINES is not activated:                        **
 **                                                                           **
 ** RI_HORAVG           use if horizontal Richardson number smoothing         **
 ** RI_VERAVG           use if vertical   Richardson number smoothing         **
@@ -545,6 +547,10 @@
 ** HOLLING_GRAZING     use Holling-type s-shaped curve grazing (implicit)    **
 ** IVLEV_EXPLICIT      use Ivlev explicit grazing algorithm                  **
 **                                                                           **
+** Red tide biological model OPTIONS:                                        **
+**                                                                           **
+** RED_TIDE            use if red tide biological model.                     **
+**                                                                           **
 ** Sediment transport model OPTIONS:                                         **
 **                                                                           **
 ** SEDIMENT            use to activate sediment transport model              **
@@ -595,7 +601,8 @@
 ** NO_LBC_ATT          use to not check NLM_LBC global attribute on restart  **
 ** NO_READ_GHOST       use to not include ghost points during read/scatter   **
 ** NO_WRITE_GRID       use if not writing grid arrays                        **
-** PARALLEL_IO         use if parallel I/O via HDF5 or pnetcdf libraries     **
+** PARALLEL_IN         use if parallel Input via HDF5 or pnetcdf libraries   **
+** PARALLEL_OUT        use if parallel Output via HDF5 or pnetcdf libraries  **
 ** PERFECT_RESTART     use to include perfect restart variables              **
 ** PNETCDF             use if parallel I/O with pnetcdf (classic format)     **
 ** POSITIVE_ZERO       use to impose positive zero in ouput data             **
@@ -624,12 +631,16 @@
 ** ICE_MOMENTUM        use for momentum component
 ** ICE_MOM_BULK        hmmm, some option for ice-water stress computation
 ** ICE_EVP             use for elastic-viscous-plastic rheology
+** ICE_I_O             use for shortwave going to heat ice
+** ICE_SHOREFAST       use for a simple shorefast-ice algorithm (Budgell)
+** ICE_LANDFAST        use for a different shorefast-ice algorithm (Lemieux et al)
 ** ICE_ADVECT          use for advection of ice tracers
 ** ICE_SMOLAR          use for MPDATA advection scheme
 ** ICE_UPWIND          use for upwind advection scheme
 ** ICE_BULK_FLUXES     use for ice part of bulk flux computation
 ** ICE_CONVSNOW        use for conversion of flooded snow to ice
 ** ICE_STRENGTH_QUAD   use for ice strength a quadratic function of thickness
+** INI_GLORYS_ICE      use for ice initial conditions from GLORYS
 ** NO_SCORRECTION_ICE  use for no scorrection under the ice
 ** OUTFLOW_MASK        use for Hibler style outflow cells
 **

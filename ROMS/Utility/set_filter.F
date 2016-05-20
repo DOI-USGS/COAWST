@@ -728,14 +728,24 @@
                 END DO
               END DO
             END IF
-            IF (Aout(idSfwat,ng)) THEN
+#ifdef MELT_PONDS
+            IF (Aout(idApond,ng)) THEN
               DO j=JstrR,JendR
                 DO i=IstrR,IendR
-                  FILTER(ng)%filsfwat(i,j,f) = ICE(ng)%sfwat(i,j,Iout)* &
+                  FILTER(ng)%filapond(i,j,f) = ICE(ng)%apond(i,j,Iout)* &
      &                            fw(iw)
                 END DO
               END DO
             END IF
+            IF (Aout(idHpond,ng)) THEN
+              DO j=JstrR,JendR
+                DO i=IstrR,IendR
+                  FILTER(ng)%filhpond(i,j,f) = ICE(ng)%hpond(i,j,Iout)* &
+     &                            fw(iw)
+                END DO
+              END DO
+            END IF
+#endif
             IF (Aout(idTice,ng)) THEN
               DO j=JstrR,JendR
                 DO i=IstrR,IendR
@@ -1149,15 +1159,26 @@
                   END DO
                 END DO
               END IF
-              IF (Aout(idSfwat,ng)) THEN
+#ifdef MELT_PONDS
+              IF (Aout(idApond,ng)) THEN
                 DO j=JstrR,JendR
                   DO i=IstrR,IendR
-                    FILTER(ng)%filsfwat(i,j,f)=                         &
-     &                               FILTER(ng)%filsfwat(i,j,f)+        &
-     &                               ICE(ng)%sfwat(i,j,Iout)*fw(iw)
+                    FILTER(ng)%filapond(i,j,f)=                         &
+     &                               FILTER(ng)%filapond(i,j,f)+        &
+     &                               ICE(ng)%apond(i,j,Iout)*fw(iw)
                   END DO
                 END DO
               END IF
+              IF (Aout(idHpond,ng)) THEN
+                DO j=JstrR,JendR
+                  DO i=IstrR,IendR
+                    FILTER(ng)%filhpond(i,j,f)=                         &
+     &                               FILTER(ng)%filhpond(i,j,f)+        &
+     &                               ICE(ng)%hpond(i,j,Iout)*fw(iw)
+                  END DO
+                END DO
+              END IF
+#endif
               IF (Aout(idTice,ng)) THEN
                 DO j=JstrR,JendR
                   DO i=IstrR,IendR
@@ -1599,13 +1620,22 @@
                 END DO
               END DO
             END IF
-            IF (Aout(idSfwat,ng)) THEN
+#ifdef MELT_PONDS
+            IF (Aout(idApond,ng)) THEN
               DO j=JstrR,JendR
                 DO i=IstrR,IendR
-                  AVERAGE(ng)%avgsfwat(i,j)=FILTER(ng)%filsfwat(i,j,f)
+                  AVERAGE(ng)%avgapond(i,j)=FILTER(ng)%filapond(i,j,f)
                 END DO
               END DO
             END IF
+            IF (Aout(idHpond,ng)) THEN
+              DO j=JstrR,JendR
+                DO i=IstrR,IendR
+                  AVERAGE(ng)%avghpond(i,j)=FILTER(ng)%filhpond(i,j,f)
+                END DO
+              END DO
+            END IF
+#endif
             IF (Aout(idTice,ng)) THEN
               DO j=JstrR,JendR
                 DO i=IstrR,IendR

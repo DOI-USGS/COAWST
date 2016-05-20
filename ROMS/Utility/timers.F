@@ -3,7 +3,7 @@
 !
 !svn $Id: timers.F 1598 2008-07-25 03:29:09Z jcwarner $
 !=======================================================================
-!  Copyright (c) 2002-2015 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2016 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                           Hernan G. Arango   !
 !========================================== Alexander F. Shchepetkin ===
@@ -53,7 +53,7 @@
       NSUB=numthreads
 #endif
 !
-!  Insure that MyModel is not zero.  Notice that zero value is used to
+!  Ensure that MyModel is not zero.  Notice that zero value is used to
 !  indicate restart of the nonlinear model.
 !
       MyModel=MAX(1,model)
@@ -229,7 +229,7 @@
           DO imodel=1,4
             IF (Master.and.(Csum(region,imodel,ng).gt.0.0_r8)) THEN
               WRITE (stdout,30) TRIM(label(imodel)),                    &
-     &                          'model elapsed time profile, Grid:',    &
+     &                    'ocean model elapsed time profile, Grid:',    &
      &                          ng
  30           FORMAT (/,1x,a,1x,a,1x,i2.2/)
             END IF
@@ -263,7 +263,7 @@
             END DO
             IF (Master.and.(total.gt.0.0_r8)) THEN
               WRITE (stdout,30) TRIM(label(imodel)),                    &
-     &                          ' sea-ice model elapsed time profile:'
+     &                'sea-ice model elapsed time profile, Grid:', ng
             END IF
             sumcpu=0.0_r8
             sumper=0.0_r8
@@ -291,7 +291,7 @@
 !
           DO imodel=1,4
             total=0.0_r8
-            DO iregion=Mregion,Nregion
+            DO iregion=Mregion,Iceregion-1
               total=total+Csum(iregion,imodel,ng)
             END DO
             IF (Master.and.(total.gt.0.0_r8)) THEN
@@ -302,7 +302,7 @@
             sumcpu=0.0_r8
             sumper=0.0_r8
             IF (total.gt.0.0_r8) THEN
-              DO iregion=Mregion,Nregion
+              DO iregion=Mregion,Iceregion-1
                 IF (Csum(iregion,imodel,ng).gt.0.0_r8) THEN
                   percent=100.0_r8*Csum(iregion, imodel,ng)/            &
      &                             Csum( region,Mymodel,ng)

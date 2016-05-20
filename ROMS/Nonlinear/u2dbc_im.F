@@ -3,7 +3,7 @@
 !
 !svn $Id: u2dbc_im.F 779 2008-10-04 23:15:47Z jcwarner $
 !=======================================================================
-!  Copyright (c) 2002-2014 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2016 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                           Hernan G. Arango   !
 !========================================== Alexander F. Shchepetkin ===
@@ -285,7 +285,7 @@
             END IF
           END DO
 !
-!  Western edge, Shchepetkin boundary condition (Maison et al., 2010).
+!  Western edge, Shchepetkin boundary condition (Mason et al., 2010).
 !
         ELSE IF (LBC(iwest,isUbar,ng)%Shchepetkin) THEN
           DO j=Jstr,Jend
@@ -649,7 +649,7 @@
             END IF
           END DO
 !
-!  Eastern edge, Shchepetkin boundary condition (Maison et al., 2010).
+!  Eastern edge, Shchepetkin boundary condition (Mason et al., 2010).
 !
         ELSE IF (LBC(ieast,isUbar,ng)%Shchepetkin) THEN
           DO j=Jstr,Jend

@@ -3,7 +3,7 @@
 !
 !svn $Id: def_var.F 733 2008-09-07 01:56:45Z jcwarner $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2014 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2016 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -83,7 +83,7 @@
       USE mod_netcdf
       USE mod_scalars
 
-#if !defined PARALLEL_IO  && defined DISTRIBUTE
+#if !defined PARALLEL_OUT  && defined DISTRIBUTE
 !
       USE distribute_mod, ONLY : mp_bcasti
 #endif
@@ -109,7 +109,7 @@
 #ifdef MASKING
       logical :: LandFill
 #endif
-#if defined PARALLEL_IO && defined DISTRIBUTE
+#if defined PARALLEL_OUT && defined DISTRIBUTE
       logical :: Ltiled
 #endif
       integer :: i, j, latt, status
@@ -144,7 +144,7 @@
           END IF
         END IF
 
-#if !defined PARALLEL_IO && (defined HDF5 && defined DEFLATE)
+#if !defined PARALLEL_OUT && (defined HDF5 && defined DEFLATE)
 !
 !  Define deflate (file compresion) parameters. Notice that deflation
 !  cannot be used in parallel I/O for writing data. This is because
@@ -740,7 +740,7 @@
           END IF
         END IF
 #endif
-#if defined PARALLEL_IO && defined DISTRIBUTE
+#if defined PARALLEL_OUT && defined DISTRIBUTE
 !
 !  Set parallel access for tiled and non-tiled variables. The optional
 !  argument "SetParAccess" is only available for non-tiled variables.
@@ -777,7 +777,7 @@
 !
 !  Set error flag
 !
-#if !defined PARALLEL_IO  && defined DISTRIBUTE
+#if !defined PARALLEL_OUT  && defined DISTRIBUTE
       CALL mp_bcasti (ng, model, exit_flag)
 #endif
       def_var=exit_flag
@@ -788,7 +788,7 @@
      &        ' for variable: ',a,/,11x,'in NetCDF file: ',a)
  30   FORMAT (/,'DEF_VAR - error while defining attribute: ',a,         &
      &        ' for variable: ',a,/,11x,'in NetCDF file: ',a)
-#if defined PARALLEL_IO && defined DISTRIBUTE
+#if defined PARALLEL_OUT && defined DISTRIBUTE
  40   FORMAT (/,'DEF_VAR - error while setting parallel access flag',   &
      &        ' for variable: ',a,/,11x,'in NetCDF file: ',a)
 #endif

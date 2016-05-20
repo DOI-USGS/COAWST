@@ -2,7 +2,7 @@
 !
 !svn $Id: optobs_ocean.h 751 2015-01-07 22:56:36Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2015 The ROMS/TOMS Group           W. G. Zhang   !
+!  Copyright (c) 2002-2016 The ROMS/TOMS Group           W. G. Zhang   !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================

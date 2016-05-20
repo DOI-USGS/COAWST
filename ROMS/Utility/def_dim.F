@@ -4,7 +4,7 @@
 !
 !svn $Id: def_dim.F 677 2008-08-05 20:17:30Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2014 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2016 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -33,7 +33,7 @@
       USE mod_netcdf
       USE mod_scalars
 
-#if !defined PARALLEL_IO  && defined DISTRIBUTE
+#if !defined PARALLEL_OUT  && defined DISTRIBUTE
 !
       USE distribute_mod, ONLY : mp_bcasti
 #endif
@@ -56,7 +56,7 @@
 
       integer :: def_dim
 
-#if !defined PARALLEL_IO  && defined DISTRIBUTE
+#if !defined PARALLEL_OUT  && defined DISTRIBUTE
       integer, dimension(3) :: buffer
 #endif
 !
@@ -75,7 +75,7 @@
         END IF
       END IF
 
-#if !defined PARALLEL_IO  && defined DISTRIBUTE
+#if !defined PARALLEL_OUT  && defined DISTRIBUTE
 !
 !  Broadcast information to all threads in the group.
 !

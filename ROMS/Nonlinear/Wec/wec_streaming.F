@@ -40,9 +40,18 @@
 # if defined DIAGNOSTICS_UV
       USE mod_diags
 # endif
+# if defined VEGETATION && defined VEG_STREAMING 
+      USE mod_vegarr
+      USE vegetation_stream_mod, ONLY : vegetation_stream_cal
+# endif 
 !
       integer, intent(in) :: ng, tile
 # include "tile.h"
+
+# if defined VEGETATION && defined VEG_STREAMING 
+      CALL vegetation_stream_cal (ng, tile)
+# endif 
+
 # ifdef PROFILE
       CALL wclock_on (ng, iNLM, 21)
 # endif
@@ -86,6 +95,10 @@
      &                         MIXING(ng) % russt2d,                    &
      &                         MIXING(ng) % rvsst2d,                    &
 # endif
+# if defined VEGETATION && defined VEG_STREAMING
+     &                         VEG(ng) % BWDXL_veg,                     &
+     &                         VEG(ng) % BWDYL_veg,                     &
+# endif
      &                         MIXING(ng) % rustr3d,                    &
      &                         MIXING(ng) % rvstr3d)
 # ifdef PROFILE
@@ -125,7 +138,10 @@
 # ifdef SURFACE_STREAMING
      &                               russt2d, rvsst2d,                  &
 # endif
-     &                               rustr3d,  rvstr3d)
+# if defined VEGETATION && defined VEG_STREAMING
+     &                               BWDXL_veg, BWDYL_veg,              &
+# endif
+     &                               rustr3d,  rvstr3d) 
 !***********************************************************************
 !
       USE mod_param
@@ -184,6 +200,10 @@
 #  endif
       real(r8), intent(inout) :: rustr3d(LBi:,LBj:,:)
       real(r8), intent(inout) :: rvstr3d(LBi:,LBj:,:)
+#  if defined VEGETATION && defined VEG_STREAMING 
+      real(r8), intent(inout) :: BWDXL_veg(LBi:,LBj:,:)
+      real(r8), intent(inout) :: BWDYL_veg(LBi:,LBj:,:)
+#  endif
 # else
       real(r8), intent(in) :: angler(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: om_u(LBi:UBi,LBj:UBj)
@@ -219,6 +239,10 @@
 #  ifdef SURFACE_STREAMING
       real(r8), intent(inout) :: russt2d(LBi:UBi,LBj:UBj)
       real(r8), intent(inout) :: rvsst2d(LBi:UBi,LBj:UBj)
+#  endif
+#  if defined VEGETATION && defined VEG_STREAMING 
+      real(r8), intent(inout) :: BWDXL_veg(LBi:UBi,LBj:UBj,N(ng))
+      real(r8), intent(inout) :: BWDYL_veg(LBi:UBi,LBj:UBj,N(ng))
 #  endif
       real(r8), intent(inout) :: rustr3d(LBi:UBi,LBj:UBj,N(ng))
       real(r8), intent(inout) :: rvstr3d(LBi:UBi,LBj:UBj,N(ng))
@@ -394,6 +418,14 @@
 !          END DO
 !        END DO
 
+# endif
+# if defined VEGETATION && defined VEG_STREAMING
+        DO j=Jstr-1,Jend+1
+          DO i=Istr-1,Iend+1
+            BWDXL(i,j)=BWDXL_veg(i,j,k)
+            BWDYL(i,j)=BWDYL_veg(i,j,k)
+          END DO
+        END DO
 # endif
 !
 ! Compute contribution to U-momentum

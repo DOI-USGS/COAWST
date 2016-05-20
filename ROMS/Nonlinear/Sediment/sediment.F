@@ -6,7 +6,7 @@
 !
 !svn $Id: sediment.F 429 2009-12-20 17:30:26Z arango $
 !==================================================== John C. Warner ===
-!  Copyright (c) 2002-2014 The ROMS/TOMS Group      Hernan G. Arango   !
+!  Copyright (c) 2002-2016 The ROMS/TOMS Group      Hernan G. Arango   !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -93,9 +93,6 @@
 # ifdef SUSPLOAD
       USE sed_fluxes_mod, ONLY : sed_fluxes
       USE sed_settling_mod, ONLY : sed_settling
-#  if defined SED_BIOMASS
-    USE sed_biomass_mod, ONLY : sed_biomass
-#  endif
 #  if defined SED_FLOCS
     USE sed_flocs_mod, ONLY : sed_flocmod
 #  endif
@@ -137,14 +134,6 @@
 !
       CALL sed_fluxes (ng, tile)
 !
-#  ifdef SED_BIOMASS
-!-----------------------------------------------------------------------
-!  Compute sediment due to biomass.
-!-----------------------------------------------------------------------
-!
-      CALL sed_biomass (ng, tile)
-!
-#  endif
 # endif
 !
 !-----------------------------------------------------------------------
