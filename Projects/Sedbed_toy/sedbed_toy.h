@@ -22,7 +22,8 @@
 #undef  TS_C2VADVECTION
 #define TS_MPDATA
 #undef  SALINITY
-#define SPLINES
+#define SPLINES_VVISC
+#define SPLINES_VDIFF
 #define OUT_DOUBLE
 
 #define ANA_GRID
@@ -70,6 +71,7 @@
 #ifdef GLS_MIXING
 # define KANTHA_CLAYSON
 # define N2S2_HORAVG
+# define RI_SPLINES
 # undef  CRAIG_BANNER
 # undef  CHARNOK
 # undef  ZOS_HSIG

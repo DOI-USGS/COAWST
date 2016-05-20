@@ -18,7 +18,8 @@
 #define TS_FIXED
 #define DJ_GRADPS
 #undef  SOLVE3D
-#define SPLINES
+#define SPLINES_VVISC
+#define SPLINES_VDIFF
 
 #define ANA_SMFLUX
 #define UV_QDRAG
@@ -37,5 +38,6 @@
 # if defined GLS_MIXING
 #  define KANTHA_CLAYSON
 #  define N2S2_HORAVG
+#  define RI_SPLINES
 # endif
 #endif

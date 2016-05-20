@@ -2,7 +2,7 @@
 !
 !! svn $Id$
 !!======================================================================
-!! Copyright (c) 2002-2014 The ROMS/TOMS Group                         !
+!! Copyright (c) 2002-2016 The ROMS/TOMS Group                         !
 !!   Licensed under a MIT/X style license                              !
 !!   See License_ROMS.txt                                              !
 !!                                                                     !
@@ -36,8 +36,11 @@
      &                       ICE(ng) % hi,                              &
      &                       ICE(ng) % hsn,                             &
      &                       ICE(ng) % ti,                              &
-     &                       ICE(ng) % sfwat,                           &
      &                       ICE(ng) % ageice,                          &
+#ifdef MELT_PONDS
+     &                       ICE(ng) % apond,                           &
+     &                       ICE(ng) % hpond,                           &
+#endif
      &                       ICE(ng) % sig11,                           &
      &                       ICE(ng) % sig22,                           &
      &                       ICE(ng) % sig12,                           &
@@ -57,7 +60,7 @@
      &                       ICE(ng) % t0mk,                            &
      &                       ICE(ng) % utau_iw,                         &
      &                       ICE(ng) % chu_iw,                          &
-#if defined BERING_10K && defined ICE_BIO
+#ifdef ICE_BIO
      &                       ICE(ng) % IcePhL,                          &
      &                       ICE(ng) % IceNO3,                          &
      &                       ICE(ng) % IceNH4,                          &
@@ -82,7 +85,10 @@
       SUBROUTINE ana_ice_tile (ng, tile, model,                         &
      &                             LBi, UBi, LBj, UBj,                  &
      &                             ui, vi, uie, vie, ai, hi, hsn,       &
-     &                             ti, sfwat, ageice,                   &
+     &                             ti, ageice,                          &
+#ifdef MELT_PONDS
+     &                             apond, hpond,                        &
+#endif
      &                             sig11, sig22, sig12,                 &
 #ifdef NCEP_FLUXES
      &                             wg2_d, cd_d, ch_d, ce_d,             &
@@ -90,7 +96,7 @@
      &                             rhoa_n,                              &
 #endif
      &                             tis, s0mk, t0mk, utau_iw, chu_iw,    &
-#if defined BERING_10K && defined ICE_BIO
+#ifdef ICE_BIO
      &                             IcePhL, IceNO3,                      &
      &                             IceNH4, IceLog,                      &
 #endif
@@ -121,8 +127,11 @@
       real(r8), intent(inout) :: hi(LBi:,LBj:,:)
       real(r8), intent(inout) :: hsn(LBi:,LBj:,:)
       real(r8), intent(inout) :: ti(LBi:,LBj:,:)
-      real(r8), intent(inout) :: sfwat(LBi:,LBj:,:)
       real(r8), intent(inout) :: ageice(LBi:,LBj:,:)
+# ifdef MELT_PONDS
+      real(r8), intent(inout) :: apond(LBi:,LBj:,:)
+      real(r8), intent(inout) :: hpond(LBi:,LBj:,:)
+# endif
       real(r8), intent(inout) :: sig11(LBi:,LBj:,:)
       real(r8), intent(inout) :: sig22(LBi:,LBj:,:)
       real(r8), intent(inout) :: sig12(LBi:,LBj:,:)
@@ -142,7 +151,7 @@
       real(r8), intent(inout) :: t0mk(LBi:,LBj:)
       real(r8), intent(inout) :: utau_iw(LBi:,LBj:)
       real(r8), intent(inout) :: chu_iw(LBi:,LBj:)
-# if defined BERING_10K && defined ICE_BIO
+# ifdef ICE_BIO
       real(r8), intent(inout) :: IcePhL(LBi:,LBj:,:)
       real(r8), intent(inout) :: IceNO3(LBi:,LBj:,:)
       real(r8), intent(inout) :: IceNH4(LBi:,LBj:,:)
@@ -158,8 +167,11 @@
       real(r8), intent(inout) :: hi(LBi:UBi,LBj:UBj,2)
       real(r8), intent(inout) :: hsn(LBi:UBi,LBj:UBj,2)
       real(r8), intent(inout) :: ti(LBi:UBi,LBj:UBj,2)
-      real(r8), intent(inout) :: sfwat(LBi:UBi,LBj:UBj,2)
       real(r8), intent(inout) :: ageice(LBi:UBi,LBj:UBj,2)
+# ifdef MELT_PONDS
+      real(r8), intent(inout) :: apond(LBi:UBi,LBj:UBj,2)
+      real(r8), intent(inout) :: hpond(LBi:UBi,LBj:UBj,2)
+# endif
       real(r8), intent(inout) :: sig11(LBi:UBi,LBj:UBj,2)
       real(r8), intent(inout) :: sig22(LBi:UBi,LBj:UBj,2)
       real(r8), intent(inout) :: sig12(LBi:UBi,LBj:UBj,2)
@@ -179,7 +191,7 @@
       real(r8), intent(inout) :: t0mk(LBi:UBi,LBj:UBj)
       real(r8), intent(inout) :: utau_iw(LBi:UBi,LBj:UBj)
       real(r8), intent(inout) :: chu_iw(LBi:UBi,LBj:UBj)
-# if defined BERING_10K && defined ICE_BIO
+# ifdef ICE_BIO
       real(r8), intent(inout) :: IcePhL(LBi:UBi,LBj:UBj,2)
       real(r8), intent(inout) :: IceNO3(LBi:UBi,LBj:UBj,2)
       real(r8), intent(inout) :: IceNH4(LBi:UBi,LBj:UBj,2)
@@ -217,9 +229,16 @@
         DO i=IstrR,IendR
           ai(i,j,1) = 1._r8
           hi(i,j,1) = 2._r8
+#ifdef NO_SNOW
+          hsn(i,j,1) = 0.0_r8
+#else
           hsn(i,j,1) = 0.2_r8
+#endif
           ti(i,j,1) = -5._r8
-          sfwat(i,j,1) = 0._r8
+# ifdef MELT_PONDS
+          apond(i,j,1) = 0._r8
+          hpond(i,j,1) = 0._r8
+# endif
           ageice(i,j,1) = 0._r8
           sig11(i,j,1) = 0._r8
           sig22(i,j,1) = 0._r8
@@ -228,7 +247,10 @@
           hi(i,j,2) = hi(i,j,1)
           hsn(i,j,2) = hsn(i,j,1)
           ti(i,j,2) = ti(i,j,1)
-          sfwat(i,j,2) = sfwat(i,j,1)
+# ifdef MELT_PONDS
+          apond(i,j,2) = apond(i,j,1)
+          hpond(i,j,2) = hpond(i,j,1)
+# endif
           ageice(i,j,2) = ageice(i,j,1)
           sig11(i,j,2) = sig11(i,j,1)
           sig22(i,j,2) = sig22(i,j,1)
@@ -272,7 +294,10 @@
           hi(i,j,1) = 0._r8
           hsn(i,j,1) = 0.2_r8
           ti(i,j,1) = -5._r8
-          sfwat(i,j,1) = 0._r8
+# ifdef MELT_PONDS
+          apond(i,j,1) = 0._r8
+          hpond(i,j,1) = 0._r8
+# endif
           ageice(i,j,1) = 0._r8
           sig11(i,j,1) = 0._r8
           sig22(i,j,1) = 0._r8
@@ -281,7 +306,10 @@
           hi(i,j,2) = hi(i,j,1)
           hsn(i,j,2) = hsn(i,j,1)
           ti(i,j,2) = ti(i,j,1)
-          sfwat(i,j,2) = sfwat(i,j,1)
+# ifdef MELT_PONDS
+          apond(i,j,2) = apond(i,j,1)
+          hpond(i,j,2) = hpond(i,j,1)
+# endif
           ageice(i,j,2) = ageice(i,j,1)
           sig11(i,j,2) = sig11(i,j,1)
           sig22(i,j,2) = sig22(i,j,1)
@@ -302,7 +330,7 @@
           t0mk(i,j) = t(i,j,N(ng),1,itemp)
           utau_iw(i,j) = 0.001_r8
           chu_iw(i,j) = 0.001125_r8
-#elif defined BERING_10K && defined ICE_BIO
+# ifdef ICE_BIO
           IcePhL(i,j,1) = 0._r8
           IceNO3(i,j,1) = 0._r8
           IceNH4(i,j,1) = 0._r8
@@ -311,6 +339,7 @@
           IceNO3(i,j,2) = IceNO3(i,j,1)
           IceNH4(i,j,2) = IceNH4(i,j,1)
           IceLog(i,j,2) = IceLog(i,j,1)
+# endif
 #else
         Must define a case for ice initialization.
 #endif
@@ -342,9 +371,14 @@
           CALL exchange_r2d_tile (ng, tile,                             &
      &                            LBi, UBi, LBj, UBj,                   &
      &                            ti(:,:,i))
+#ifdef MELT_PONDS
           CALL exchange_r2d_tile (ng, tile,                             &
      &                            LBi, UBi, LBj, UBj,                   &
-     &                            sfwat(:,:,i))
+     &                            apond(:,:,i))
+          CALL exchange_r2d_tile (ng, tile,                             &
+     &                            LBi, UBi, LBj, UBj,                   &
+     &                            hpond(:,:,i))
+#endif
           CALL exchange_r2d_tile (ng, tile,                             &
      &                            LBi, UBi, LBj, UBj,                   &
      &                            ageice(:,:,i))
@@ -357,7 +391,7 @@
           CALL exchange_r2d_tile (ng, tile,                             &
      &                            LBi, UBi, LBj, UBj,                   &
      &                            sig12(:,:,i))
-# if defined BERING_10K && defined ICE_BIO
+#ifdef ICE_BIO
           CALL exchange_r2d_tile (ng, tile,                             &
      &                            LBi, UBi, LBj, UBj,                   &
      &                            IcePhL(:,:,i))
@@ -370,7 +404,7 @@
           CALL exchange_r2d_tile (ng, tile,                             &
      &                            LBi, UBi, LBj, UBj,                   &
      &                            IceLog(:,:,i))
-# endif
+#endif
         END DO
 #ifdef NCEP_FLUXES
         CALL exchange_r2d_tile (ng, tile,                               &
@@ -411,11 +445,11 @@
      &                          LBi, UBi, LBj, UBj,                     &
      &                          t0mk)
         CALL exchange_r2d_tile (ng, tile,                               &
-     &                        LBi, UBi, LBj, UBj,                       &
-     &                        utau_iw)
+     &                          LBi, UBi, LBj, UBj,                     &
+     &                          utau_iw)
         CALL exchange_r2d_tile (ng, tile,                               &
-     &                        LBi, UBi, LBj, UBj,                       &
-     &                        chu_iw)
+     &                          LBi, UBi, LBj, UBj,                     &
+     &                          chu_iw)
       END IF
 
 #ifdef DISTRIBUTE
@@ -429,12 +463,19 @@
      &                    NghostPoints,                                 &
      &                    EWperiodic(ng), NSperiodic(ng),               &
      &                    ai, hi, hsn, ti)
-      CALL mp_exchange3d (ng, tile, model, 4,                           &
+      CALL mp_exchange3d (ng, tile, model, 3,                           &
      &                    LBi, UBi, LBj, UBj, 1, 2,                     &
      &                    NghostPoints,                                 &
      &                    EWperiodic(ng), NSperiodic(ng),               &
-     &                    sfwat, sig11, sig12, sig22)
-# if defined BERING_10K && defined ICE_BIO
+     &                    sig11, sig12, sig22)
+# ifdef MELT_PONDS
+      CALL mp_exchange3d (ng, tile, model, 2,                           &
+     &                    LBi, UBi, LBj, UBj, 1, 2,                     &
+     &                    NghostPoints,                                 &
+     &                    EWperiodic(ng), NSperiodic(ng),               &
+     &                    apond, hpond)
+# endif
+# ifdef ICE_BIO
       CALL mp_exchange3d (ng, tile, model, 3,                           &
      &                    LBi, UBi, LBj, UBj, 1, 2,                     &
      &                    NghostPoints,                                 &

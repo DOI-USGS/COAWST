@@ -54,7 +54,8 @@
 
 # define SALINITY
 # define SOLVE3D
-# define SPLINES
+# define SPLINES_VDIFF
+# define SPLINES_VVISC
 # define AVERAGES
 # define NONLIN_EOS
 
@@ -86,6 +87,7 @@
 # if defined GLS_MIXING || defined MY25_MIXING
 #  define KANTHA_CLAYSON
 #  define N2S2_HORAVG
+#  define RI_SPLINES
 # endif
 
 /* Output */

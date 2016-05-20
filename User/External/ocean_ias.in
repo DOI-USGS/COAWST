@@ -3,7 +3,7 @@
 !
 !svn $Id$
 !========================================================= Hernan G. Arango ===
-!  Copyright (c) 2002-2014 The ROMS/TOMS Group                                !
+!  Copyright (c) 2002-2016 The ROMS/TOMS Group                                !
 !    Licensed under a MIT/X style license                                     !
 !    See License_ROMS.txt                                                     !
 !==============================================================================
@@ -161,7 +161,8 @@ GridsInLayer =  1
    LBC(isHice) ==   Clo     Clo     Clo     Clo         ! ice thickness
    LBC(isHsno) ==   Clo     Clo     Clo     Clo         ! snow thickness
    LBC(isTice) ==   Clo     Clo     Clo     Clo         ! ice temperature
-   LBC(isSfwat)==   Clo     Clo     Clo     Clo         ! surface water
+   LBC(isApond)==   Clo     Clo     Clo     Clo         ! surface water
+   LBC(isHpond)==   Clo     Clo     Clo     Clo         ! surface water
    LBC(isSig11)==   Clo     Clo     Clo     Clo         ! sigma-11
    LBC(isSig12)==   Clo     Clo     Clo     Clo         ! sigma-12
    LBC(isSig22)==   Clo     Clo     Clo     Clo         ! sigma-22
@@ -384,6 +385,16 @@ LtracerSponge == F F                            ! temperature, salinity, inert
        ZNUDG == 50.0d0                     ! days
       M2NUDG == 50.0d0                     ! days
       M3NUDG == 50.0d0                     ! days
+
+! Nudging/relaxation time scale for surface salinity nudging, inverse
+! scales will be computed internally, [1:Ngrids].
+
+       TNUDG_SSS == 90.0d0                 ! days
+
+! Threshold to trigger SSS correction toward climatolgy,
+! needs SCORRECTION and SSSC_THRESHOLD defined
+
+       SSS_MISMATCH_THRESHOLD = 0.2d0
 
 ! Factor between passive (outflow) and active (inflow) open boundary
 ! conditions, [1:Ngrids]. If OBCFAC > 1, nudging on inflow is stronger
@@ -1059,7 +1070,8 @@ Dout(iTvdif) == T T     ! temp_vdiff, ...    vertical diffusion
 !  LBC(isHice) Ice thickness,     [1:4, Ngrids] values are expected.
 !  LBC(isHsno) Snow thickness,    [1:4, Ngrids] values are expected.
 !  LBC(isTice) Ice temperature,   [1:4, Ngrids] values are expected.
-!  LBC(isSfwat)Surface water,     [1:4, Ngrids] values are expected.
+!  LBC(isApond)Surface water,     [1:4, Ngrids] values are expected.
+!  LBC(isHpond)Surface water,     [1:4, Ngrids] values are expected.
 !  LBC(isSig11)Sigma-11,          [1:4, Ngrids] values are expected.
 !  LBC(isSig12)Sigma-12,          [1:4, Ngrids] values are expected.
 !  LBC(isSig22)Sigma-22,          [1:4, Ngrids] values are expected.
@@ -1798,6 +1810,10 @@ Dout(iTvdif) == T T     ! temp_vdiff, ...    vertical diffusion
 ! M2NUDG       Nudging time scale (days) for 2D momentum.
 !
 ! M3NUDG       Nudging time scale (days) for 3D momentum.
+!
+! TNUDG_SSS    Nudging time scale (days) for surface salinity.
+!
+! SSS_MISMATCH_THRESHOLD   Threshold to trigger SSS correction.
 !
 ! OBCFAC       Factor between passive (outflow) and active (inflow) open
 !                boundary conditions.  The nudging time scales for the

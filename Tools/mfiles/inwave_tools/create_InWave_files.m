@@ -110,7 +110,7 @@ if (make_InWave_bnd)
 %             Ac_west,TA,time, bnd_file)
 %     end
 
-  create_InWave_bnd(LP, MP, Nbins_bnd, dir_bnd, obc, ...
+  create_InWave_bnd(LP, MP, Nbins, Bindirs_c, obc, ...
     Ac_north,Ac_east,Ac_south,Ac_west,TA,time, bnd_file)
 
     %6) END OF INWAVE FILE GENERATION

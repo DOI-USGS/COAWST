@@ -1,6 +1,6 @@
 # svn $Id: Darwin-pgi.mk 655 2008-07-25 18:57:05Z arango $
 #::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
-# Copyright (c) 2002-2014 The ROMS/TOMS Group                           :::
+# Copyright (c) 2002-2016 The ROMS/TOMS Group                           :::
 #   Licensed under a MIT/X style license                                :::
 #   See License_ROMS.txt                                                :::
 #::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
@@ -121,7 +121,7 @@ ifdef USE_CXX
 endif
 
 ifdef USE_WRF
-           FFLAGS += -I../WRF/main -I../WRF/external/esmf_time_f90 -I../WRF/frame -I../WRF/share
+             FFLAGS += -I$(WRF_DIR)/main -I$(WRF_DIR)/external/esmf_time_f90 -I$(WRF_DIR)/frame -I$(WRF_DIR)/share
              LIBS += WRF/main/module_wrf_top.o
              LIBS += WRF/main/libwrflib.a
              LIBS += WRF/external/fftpack/fftpack5/libfftpack.a

@@ -194,7 +194,8 @@
 !=======================================================================
 !  Compute the wave height
 !=======================================================================
-              Hwave(i,j)=(8.0_r8*EW/(g*rho0))**0.5_r8
+!             Hwave(i,j)=(8.0_r8*EW/(g*rho0))**0.5_r8
+              Hwave(i,j)=(16.0_r8*EW/(g*rho0))**0.5_r8
 #  if defined WAVES_UB
               Uwave_rms(i,j)=0.0_r8   !!!!We need to define this
 #  endif

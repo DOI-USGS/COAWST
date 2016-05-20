@@ -25,9 +25,10 @@
 #undef  UV_COR
 #define TS_MPDATA
 #define DJ_GRADPS
+#define SPLINES_VDIFF
+#define SPLINES_VVISC
 
 #define SOLVE3D
-#define SPLINES
 #undef  WEC_MELLOR
 #define WEC_VF
 #define WDISS_WAVEMOD
@@ -50,6 +51,7 @@
 #ifdef SOLVE3D
 # define GLS_MIXING
 # ifdef GLS_MIXING
+#  define RI_SPLINES
 #  define KANTHA_CLAYSON
 #  define N2S2_HORAVG
 # endif

@@ -1,7 +1,7 @@
 /*
 ** svn $Id: mct_roms_swan.h 756 2008-09-14 20:18:28Z jcwarner $
 ***************************************************** John C. Warner ***
-** Copyright (c) 2002-2014 The ROMS/TOMS Group      Hernan G. Arango  **
+** Copyright (c) 2002-2016 The ROMS/TOMS Group      Hernan G. Arango  **
 **   Licensed under a MIT/X style license                             **
 **   See License_ROMS.txt                                             **
 ************************************************************************
@@ -30,6 +30,10 @@
 #ifdef MCT_INTERP_OC2WV
       USE mod_coupler_iounits
 #endif
+#if defined VEGETATION && defined VEG_SWAN_COUPLING
+      USE mod_vegetation
+      USE mod_vegarr 
+#endif
 !
 !  Imported variable definitions.
 !
@@ -46,7 +50,7 @@
       integer :: cid, cad
       integer, allocatable :: length(:)
       integer, allocatable :: start(:)
-      integer, dimension(2) :: src_grid_dims, dst_grid_dims
+!      integer, dimension(2) :: src_grid_dims, dst_grid_dims
       character (len=70)    :: nc_name
       character (len=20)    :: to_add
       character (len=120)   :: wostring
@@ -152,12 +156,17 @@
 !  If ocean grid and wave grids are different sizes, then
 !  develop sparse matrices for interpolation.
 !
+  35  FORMAT(a3,i1,a7,i1,a11)
       DO iw=1,Nwav_grids
 !
 !  Prepare sparse matrices. First work on waves to ocean.
 !
         IF (Myrank.eq.MyMaster) THEN
-          nc_name=W2Oname(iw,ng)
+          IF (scrip_opt.eq.1) THEN
+            write(nc_name,35) 'wav',iw,'_to_ocn',ng,'_weights.nc'
+          ELSE
+            nc_name=W2Oname(iw,ng)
+          END IF
           call get_sparse_matrix (ng, nc_name, num_sparse_elems,        &
      &                            src_grid_dims, dst_grid_dims)
 !
@@ -194,7 +203,11 @@
 !
 !  Prepare sparse matrices. Second work on ocean to waves.
 !
-          nc_name=O2Wname(ng,iw)
+          IF (scrip_opt.eq.1) THEN
+            write(nc_name,35) 'ocn',ng,'_to_wav',iw,'_weights.nc'
+          ELSE
+            nc_name=O2Wname(ng,iw)
+          END IF
           call get_sparse_matrix (ng, nc_name, num_sparse_elems,        &
      &                            src_grid_dims, dst_grid_dims)
 !
@@ -356,6 +369,16 @@
       write(wostring(cid:cid+cad-1),'(a)') to_add(1:cad)
       cid=cid+cad
 !
+#if defined WAVES_OCEAN && defined WEC_VF && \
+    defined BOTTOM_STREAMING && defined VEGETATION &&  \
+    defined VEG_SWAN_COUPLING && defined VEG_STREAMING
+      to_add=':DISVEG'
+      cad=LEN_TRIM(to_add)
+      write(wostring(cid:cid+cad-1),'(a)') to_add(1:cad)
+      cid=cid+cad
+#endif
+
+!
 !  Finalize and remove trailing spaces from the wostring
 !  for the rlist.
 !
@@ -405,6 +428,13 @@
       cad=LEN_TRIM(to_add)
       write(owstring(cid:cid+cad-1),'(a)') to_add(1:cad)
       cid=cid+cad
+#if defined VEGETATION && defined VEG_SWAN_COUPLING 
+!
+      to_add=':VEGDENS'
+      cad=LEN_TRIM(to_add)
+      write(owstring(cid:cid+cad-1),'(a)') to_add(1:cad)
+      cid=cid+cad
+#endif
 #ifdef ICE_MODEL
 !
       to_add=':SEAICE'
@@ -554,6 +584,10 @@
 #ifdef UV_KIRBY
       USE mod_coupling
 #endif
+#if defined VEGETATION && defined VEG_SWAN_COUPLING
+      USE mod_vegetation
+      USE mod_vegarr 
+#endif
 !
       USE exchange_2d_mod, ONLY : exchange_r2d_tile
       USE exchange_2d_mod, ONLY : exchange_u2d_tile
@@ -574,6 +608,9 @@
 !
       integer :: Asize, MyError, Tag
       integer :: gtype, i, id, ifield, ij, j, k, status
+#if defined VEGETATION && defined VEG_SWAN_COUPLING
+      integer :: iveg
+#endif	
 
       real(r8), parameter ::  Lwave_min = 1.0_r8
       real(r8), parameter ::  Lwave_max = 500.0_r8
@@ -823,9 +860,13 @@
         DO i=IstrR,IendR
           ij=ij+1
 #ifdef BBL_MODEL
-!               Specify this to be Madsen 0.05 minimum.
-                A(ij)=MAX(0.05_r8,                                      &
-     &                    SEDBED(ng)%bottom(i,j,izNik)*30.0_r8)
+# if defined VEGETATION && defined VEG_SWAN_COUPLING
+!         Specify 0.0015 to be consistent with Z0_min in ROMS.
+          A(ij)=MAX(0.0015_r8, SEDBED(ng)%bottom(i,j,izNik)*30.0_r8)
+# else
+!         Specify this to be Madsen 0.05 minimum.
+          A(ij)=MAX(0.05_r8, SEDBED(ng)%bottom(i,j,izNik)*30.0_r8)
+# endif 
 #else
 !               This value will be replaced by the value entered in the
 !               SWAN INPUT file. See SWAN/Src/waves_coupler.F.
@@ -835,6 +876,24 @@
       END DO
       CALL AttrVect_importRAttr (AttrVect_G(ng)%ocn2wav_AV, "ZO",       &
      &                           A, Asize)
+#if defined VEGETATION && defined VEG_SWAN_COUPLING 
+!
+!  Equivalent Plant density.
+!
+      ij=0
+      DO j=JstrR,JendR
+        DO i=IstrR,IendR
+          ij=ij+1
+          cff=0.0
+          DO iveg=1,NVEG
+            cff=VEG(ng)%plant(i,j,iveg,pdens)+cff
+          END DO
+          A(ij)=cff/NVEG
+        END DO
+      END DO
+      CALL AttrVect_importRAttr (AttrVect_G(ng)%ocn2wav_AV, "VEGDENS",  &
+     &                           A, Asize)
+#endif
 #ifdef ICE_MODEL
 !
 !  sea ice.
@@ -959,6 +1018,11 @@
       USE mod_iounits
       USE mod_sedbed
       USE mod_sediment
+#if defined VEGETATION && defined VEG_SWAN_COUPLING
+      USE mod_vegetation
+      USE mod_vegarr
+#endif
+
 #ifdef UV_KIRBY
       USE mod_coupling
 #endif
@@ -967,6 +1031,7 @@
       USE exchange_2d_mod, ONLY : exchange_u2d_tile
       USE exchange_2d_mod, ONLY : exchange_v2d_tile
 #ifdef DISTRIBUTE
+      USE distribute_mod,  ONLY : mp_reduce
       USE mp_exchange_mod, ONLY : mp_exchange2d
 #endif
 !
@@ -985,18 +1050,23 @@
 
       real(r8), parameter ::  Lwave_min = 1.0_r8
       real(r8), parameter ::  Lwave_max = 500.0_r8
+      real(r8), parameter ::  Large = 1.0E+20_r8
 
       real(r8) :: add_offset, scale
-      real(r8) :: cff, ramp
+      real(r8) :: cff, fac, ramp
       real(r8) :: cff1, cff2, cff3, cff4, kwn, prof, u_cff, v_cff
 
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: ubar_rho
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: vbar_rho
+      real(r8), dimension(2) :: range
 
       real(r8), pointer :: A(:)
       real(r8), pointer :: A1(:)
 #ifdef MCT_INTERP_OC2WV
       integer, pointer :: indices(:)
+#endif
+#ifdef DISTRIBUTE
+      character (len=3), dimension(2) :: op_handle
 #endif
 !
 !-----------------------------------------------------------------------
@@ -1007,6 +1077,10 @@
 !-----------------------------------------------------------------------
 !
 #include "set_bounds.h"
+#ifdef DISTRIBUTE
+      op_handle(1)='MIN'
+      op_handle(2)='MAX'
+#endif
 !
 !  Modify ranges to allow full exchange of fields for periodic applications.
 !
@@ -1080,25 +1154,38 @@
       ramp=1.0_r8
 !
 !  Receive fields from wave model.
+ 40         FORMAT (a36,1x,2(1pe14.6))
 #if defined WAVES_OCEAN || (defined WEC_VF && defined BOTTOM_STREAMING)
 !
 !  Wave dissipation due to bottom friction.
 !
       CALL AttrVect_exportRAttr (AttrVect_G(ng)%wav2ocn_AV, "DISBOT",   &
      &                           A, Asize)
+      range(1)= Large
+      range(2)=-Large
       ij=0
-      cff=1.0_r8/rho0
+      fac=1.0_r8/rho0
       DO j=JstrR,JendR
         DO i=IstrR,IendR
           ij=ij+1
+          cff=MAX(0.0_r8,A(ij)*ramp)*fac
           IF (iw.eq.1) THEN
-            FORCES(ng)%Dissip_fric(i,j)=MAX(0.0_r8,A(ij)*ramp)*cff
+            FORCES(ng)%Dissip_fric(i,j)=cff
           ELSE
             FORCES(ng)%Dissip_fric(i,j)=FORCES(ng)%Dissip_fric(i,j)+    &
-     &                                  MAX(0.0_r8,A(ij)*ramp)*cff
+     &                                  cff
           END IF
+          range(1)=MIN(range(1),cff)
+          range(2)=MAX(range(2),cff)
         END DO
       END DO
+# ifdef DISTRIBUTE
+      CALL mp_reduce (ng, iNLM, 2, range, op_handle)
+# endif
+      IF (Myrank.eq.MyMaster) THEN
+        write(stdout,40) 'SWANtoROMS Min/Max DISBOT  (Wm-2):  ',        &
+     &                    range(1),range(2)
+      END IF
 #endif
 #if defined TKE_WAVEDISS || defined WAVES_OCEAN || \
     defined WDISS_THORGUZA || defined WDISS_CHURTHOR
@@ -1107,107 +1194,179 @@
 !
       CALL AttrVect_exportRAttr (AttrVect_G(ng)%wav2ocn_AV, "DISSURF",  &
      &                           A, Asize)
+      range(1)= Large
+      range(2)=-Large
       ij=0
-      cff=1.0_r8/rho0
+      fac=1.0_r8/rho0
       DO j=JstrR,JendR
         DO i=IstrR,IendR
           ij=ij+1
+          cff=MAX(0.0_r8,A(ij)*ramp)*fac
           IF (iw.eq.1) THEN
-            FORCES(ng)%Dissip_break(i,j)=MAX(0.0_r8,A(ij)*ramp)*cff
+            FORCES(ng)%Dissip_break(i,j)=cff
           ELSE
             FORCES(ng)%Dissip_break(i,j)=FORCES(ng)%Dissip_break(i,j)+  &
-     &                                   MAX(0.0_r8,A(ij)*ramp)*cff
+     &                                   cff
           END IF
+          range(1)=MIN(range(1),cff)
+          range(2)=MAX(range(2),cff)
         END DO
       END DO
+# ifdef DISTRIBUTE
+      CALL mp_reduce (ng, iNLM, 2, range, op_handle)
+# endif
+      IF (Myrank.eq.MyMaster) THEN
+        write(stdout,40) 'SWANtoROMS Min/Max DISSURF (Wm-2):  ',        &
+     &                    range(1),range(2)
+      END IF
 !
 !  Wave dissipation due to white capping.
 !
       CALL AttrVect_exportRAttr (AttrVect_G(ng)%wav2ocn_AV, "DISWCAP",  &
      &                           A, Asize)
+      range(1)= Large
+      range(2)=-Large
       ij=0
-      cff=1.0_r8/rho0
+      fac=1.0_r8/rho0
       DO j=JstrR,JendR
         DO i=IstrR,IendR
           ij=ij+1
+          cff=MAX(0.0_r8,A(ij)*ramp)*fac
           IF (iw.eq.1) THEN
-            FORCES(ng)%Dissip_wcap(i,j)=MAX(0.0_r8,A(ij)*ramp)*cff
+            FORCES(ng)%Dissip_wcap(i,j)=cff
           ELSE
             FORCES(ng)%Dissip_wcap(i,j)=FORCES(ng)%Dissip_wcap(i,j)+    &
-     &                                  MAX(0.0_r8,A(ij)*ramp)*cff
+     &                                  cff
           END IF
+          range(1)=MIN(range(1),cff)
+          range(2)=MAX(range(2),cff)
         END DO
       END DO
+# ifdef DISTRIBUTE
+      CALL mp_reduce (ng, iNLM, 2, range, op_handle)
+# endif
+      IF (Myrank.eq.MyMaster) THEN
+        write(stdout,40) 'SWANtoROMS Min/Max DISWCAP (Wm-2):  ',        &
+     &                    range(1),range(2)
+      END IF
 #endif
 !
 !  Wave height.
 !
       CALL AttrVect_exportRAttr (AttrVect_G(ng)%wav2ocn_AV, "HSIGN",    &
      &                           A, Asize)
+      range(1)= Large
+      range(2)=-Large
       ij=0
       DO j=JstrR,JendR
         DO i=IstrR,IendR
           ij=ij+1
+          cff=MAX(0.0_r8,A(ij)*ramp)
           IF (iw.eq.1) THEN
-            FORCES(ng)%Hwave(i,j)=MAX(0.0_r8,A(ij)*ramp)
+            FORCES(ng)%Hwave(i,j)=cff
           ELSE
             FORCES(ng)%Hwave(i,j)=FORCES(ng)%Hwave(i,j)+                &
-     &                            MAX(0.0_r8,A(ij)*ramp)
+     &                            cff
           END IF
+          range(1)=MIN(range(1),cff)
+          range(2)=MAX(range(2),cff)
         END DO
       END DO
+# ifdef DISTRIBUTE
+      CALL mp_reduce (ng, iNLM, 2, range, op_handle)
+# endif
+      IF (Myrank.eq.MyMaster) THEN
+        write(stdout,40) 'SWANtoROMS Min/Max HSIGN   (m):     ',        &
+     &                    range(1),range(2)
+      END IF
 !
 !  Surface peak wave period.
 !
       CALL AttrVect_exportRAttr(AttrVect_G(ng)%wav2ocn_AV, "RTP",       &
      &                          A, Asize)
+      range(1)= Large
+      range(2)=-Large
       ij=0
       DO j=JstrR,JendR
         DO i=IstrR,IendR
           ij=ij+1
+          cff=MAX(0.0_r8,A(ij))
           IF (iw.eq.1) THEN
-            FORCES(ng)%Pwave_top(i,j)=MAX(0.0_r8,A(ij))
+            FORCES(ng)%Pwave_top(i,j)=cff
           ELSE
             FORCES(ng)%Pwave_top(i,j)=FORCES(ng)%Pwave_top(i,j)+        &
-     &                                MAX(0.0_r8,A(ij))
+     &                                cff
           END IF
+          range(1)=MIN(range(1),cff)
+          range(2)=MAX(range(2),cff)
         END DO
       END DO
+# ifdef DISTRIBUTE
+      CALL mp_reduce (ng, iNLM, 2, range, op_handle)
+# endif
+      IF (Myrank.eq.MyMaster) THEN
+        write(stdout,40) 'SWANtoROMS Min/Max RTP     (s):     ',        &
+     &                    range(1),range(2)
+      END IF
 !
 !  Bottom mean wave period.
 !
       CALL AttrVect_exportRAttr (AttrVect_G(ng)%wav2ocn_AV, "TMBOT",    &
      &                           A, Asize)
+      range(1)= Large
+      range(2)=-Large
       ij=0
       DO j=JstrR,JendR
         DO i=IstrR,IendR
           ij=ij+1
+          cff=MAX(0.0_r8,A(ij))
           IF (iw.eq.1) THEN
-            FORCES(ng)%Pwave_bot(i,j)=MAX(0.0_r8,A(ij))
+            FORCES(ng)%Pwave_bot(i,j)=cff
           ELSE
             FORCES(ng)%Pwave_bot(i,j)=FORCES(ng)%Pwave_bot(i,j)+        &
-     &                                MAX(0.0_r8,A(ij))
+     &                                cff
           END IF
+          range(1)=MIN(range(1),cff)
+          range(2)=MAX(range(2),cff)
         END DO
       END DO
+# ifdef DISTRIBUTE
+      CALL mp_reduce (ng, iNLM, 2, range, op_handle)
+# endif
+      IF (Myrank.eq.MyMaster) THEN
+        write(stdout,40) 'SWANtoROMS Min/Max TMBOT   (s):     ',        &
+     &                    range(1),range(2)
+      END IF
 #if defined BBL_MODEL
 !
 !  Bottom orbital velocity (m/s).
 !
       CALL AttrVect_exportRAttr(AttrVect_G(ng)%wav2ocn_AV, "UBOT",      &
      &                          A, Asize)
+      range(1)= Large
+      range(2)=-Large
       ij=0
       DO j=JstrR,JendR
         DO i=IstrR,IendR
           ij=ij+1
+          cff=MAX(0.0_r8,A(ij)*ramp)
           IF (iw.eq.1) THEN
-            FORCES(ng)%Uwave_rms(i,j)=MAX(0.0_r8,A(ij)*ramp)
+            FORCES(ng)%Uwave_rms(i,j)=cff
           ELSE
             FORCES(ng)%Uwave_rms(i,j)=FORCES(ng)%Uwave_rms(i,j)+        &
-     &                                MAX(0.0_r8,A(ij)*ramp)
+     &                                cff
           END IF
+          range(1)=MIN(range(1),cff)
+          range(2)=MAX(range(2),cff)
         END DO
       END DO
+# ifdef DISTRIBUTE
+      CALL mp_reduce (ng, iNLM, 2, range, op_handle)
+# endif
+      IF (Myrank.eq.MyMaster) THEN
+        write(stdout,40) 'SWANtoROMS Min/Max UBOT    (ms-1):  ',        &
+     &                    range(1),range(2)
+      END IF
 #endif
 !
 !  Wave direction (radians).
@@ -1216,6 +1375,8 @@
      &                           A, Asize)
       CALL AttrVect_exportRAttr (AttrVect_G(ng)%wav2ocn_AV, "DIRN",     &
      &                           A1, Asize)
+      range(1)= Large
+      range(2)=-Large
       ij=0
       DO j=JstrR,JendR
         DO i=IstrR,IendR
@@ -1227,43 +1388,76 @@
           ELSE
             FORCES(ng)%Dwave(i,j)=FORCES(ng)%Dwave(i,j)+cff
           END IF
+          range(1)=MIN(range(1),cff)
+          range(2)=MAX(range(2),cff)
         END DO
       END DO
+# ifdef DISTRIBUTE
+      CALL mp_reduce (ng, iNLM, 2, range, op_handle)
+# endif
+      IF (Myrank.eq.MyMaster) THEN
+        write(stdout,40) 'SWANtoROMS Min/Max DIR     (deg):   ',        &
+     &                    range(1),range(2)
+      END IF
 !
 !  Wave length (m).
 !
       CALL AttrVect_exportRAttr (AttrVect_G(ng)%wav2ocn_AV, "WLEN",     &
      &                           A, Asize)
+      range(1)= Large
+      range(2)=-Large
       ij=0
       DO j=JstrR,JendR
         DO i=IstrR,IendR
           ij=ij+1
+          cff=MIN(Lwave_max,MAX(1.0_r8,A(ij)))
           IF (iw.eq.1) THEN
-            FORCES(ng)%Lwave(i,j)=MIN(Lwave_max,MAX(1.0_r8,A(ij)))
+            FORCES(ng)%Lwave(i,j)=cff
           ELSE
             FORCES(ng)%Lwave(i,j)=FORCES(ng)%Lwave(i,j)+                &
-     &                            MIN(Lwave_max,MAX(1.0_r8,A(ij)))
+     &                            cff
           END IF
+          range(1)=MIN(range(1),cff)
+          range(2)=MAX(range(2),cff)
         END DO
       END DO
+# ifdef DISTRIBUTE
+      CALL mp_reduce (ng, iNLM, 2, range, op_handle)
+# endif
+      IF (Myrank.eq.MyMaster) THEN
+        write(stdout,40) 'SWANtoROMS Min/Max WLEN    (m):     ',        &
+     &                    range(1),range(2)
+      END IF
 #ifdef WAVES_LENGTHP
 !
 !  Wave length (m).
 !
       CALL AttrVect_exportRAttr (AttrVect_G(ng)%wav2ocn_AV, "WLENP",    &
      &                           A, Asize)
+      range(1)= Large
+      range(2)=-Large
       ij=0
       DO j=JstrR,JendR
         DO i=IstrR,IendR
           ij=ij+1
+          cff=MIN(Lwave_max,MAX(1.0_r8,A(ij)))
           IF (iw.eq.1) THEN
-            FORCES(ng)%Lwavep(i,j)=MIN(Lwave_max,MAX(1.0_r8,A(ij)))
+            FORCES(ng)%Lwavep(i,j)=cff
           ELSE
             FORCES(ng)%Lwavep(i,j)=FORCES(ng)%Lwavep(i,j)+              &
-     &                             MIN(Lwave_max,MAX(1.0_r8,A(ij)))
+     &                             cff
           END IF
+          range(1)=MIN(range(1),cff)
+          range(2)=MAX(range(2),cff)
         END DO
       END DO
+# ifdef DISTRIBUTE
+      CALL mp_reduce (ng, iNLM, 2, range, op_handle)
+# endif
+      IF (Myrank.eq.MyMaster) THEN
+        write(stdout,40) 'SWANtoROMS Min/Max WLENP   (m):     ',        &
+     &                    range(1),range(2)
+      END IF
 #endif
 !
 #ifdef ROLLER_SVENDSEN
@@ -1272,18 +1466,30 @@
 !
       CALL AttrVect_exportRAttr (AttrVect_G(ng)%wav2ocn_AV, "QB",       &
      &                           A, Asize)
+      range(1)= Large
+      range(2)=-Large
       ij=0
       DO j=JstrR,JendR
         DO i=IstrR,IendR
           ij=ij+1
+          cff=MAX(0.0_r8,A(ij))
           IF (iw.eq.1) THEN
-            FORCES(ng)%Wave_break(i,j)=MAX(0.0_r8,A(ij))
+            FORCES(ng)%Wave_break(i,j)=cff
           ELSE
             FORCES(ng)%Wave_break(i,j)=FORCES(ng)%Wave_break(i,j)+      &
-     &                                 MAX(0.0_r8,A(ij))
+     &                                 cff
           END IF
+          range(1)=MIN(range(1),cff)
+          range(2)=MAX(range(2),cff)
         END DO
       END DO
+# ifdef DISTRIBUTE
+      CALL mp_reduce (ng, iNLM, 2, range, op_handle)
+# endif
+      IF (Myrank.eq.MyMaster) THEN
+        write(stdout,40) 'SWANtoROMS Min/Max QB      (%):     ',        &
+     &                    range(1),range(2)
+      END IF
 #endif
 #ifdef WAVES_DSPR
 !
@@ -1291,36 +1497,96 @@
 !  
       CALL AttrVect_exportRAttr (AttrVect_G(ng)%wav2ocn_AV, "WDSPR",    &
      &                           A, Asize)
+      range(1)= Large
+      range(2)=-Large
       ij=0
       DO j=JstrR,JendR
         DO i=IstrR,IendR
           ij=ij+1
+          cff=MAX(0.0_r8,A(ij))
           IF (iw.eq.1) THEN
-            FORCES(ng)%Wave_ds(i,j)=MAX(0.0_r8,A(ij))
+            FORCES(ng)%Wave_ds(i,j)=cff
           ELSE
             FORCES(ng)%Wave_ds(i,j)=FORCES(ng)%Wave_ds(i,j)+            &
-     &                              MAX(0.0_r8,A(ij))
+     &                              cff
           END IF
+          range(1)=MIN(range(1),cff)
+          range(2)=MAX(range(2),cff)
         END DO
       END DO
+# ifdef DISTRIBUTE
+      CALL mp_reduce (ng, iNLM, 2, range, op_handle)
+# endif
+      IF (Myrank.eq.MyMaster) THEN
+        write(stdout,40) 'SWANtoROMS Min/Max WDSPR   (deg):   ',        &
+     &                    range(1),range(2)
+      END IF
 !
 !  wave spectrum peakedness
 !  
       CALL AttrVect_exportRAttr (AttrVect_G(ng)%wav2ocn_AV, "WQP",      &
      &                           A, Asize)
+      range(1)= Large
+      range(2)=-Large
       ij=0
       DO j=JstrR,JendR
         DO i=IstrR,IendR
           ij=ij+1
+          cff=MAX(0.0_r8,A(ij))
           IF (iw.eq.1) THEN
-            FORCES(ng)%Wave_qp(i,j)=MAX(0.0_r8,A(ij))
+            FORCES(ng)%Wave_qp(i,j)=cff
           ELSE
             FORCES(ng)%Wave_qp(i,j)=FORCES(ng)%Wave_qp(i,j)+            &
-     &                              MAX(0.0_r8,A(ij))
+     &                              cff
           END IF
+          range(1)=MIN(range(1),cff)
+          range(2)=MAX(range(2),cff)
         END DO
       END DO
+# ifdef DISTRIBUTE
+      CALL mp_reduce (ng, iNLM, 2, range, op_handle)
+# endif
+      IF (Myrank.eq.MyMaster) THEN
+        write(stdout,40) 'SWANtoROMS Min/Max WQP     (-):     ',        &
+     &                    range(1),range(2)
+      END IF
+#endif 
+!
+#if defined WAVES_OCEAN && defined WEC_VF && \
+    defined BOTTOM_STREAMING && defined VEGETATION &&  \
+    defined VEG_SWAN_COUPLING && defined VEG_STREAMING
+!
+!  Wave dissipation due to vegetation.
+!
+      CALL AttrVect_exportRAttr (AttrVect_G(ng)%wav2ocn_AV, "DISVEG",   &
+     &                           A, Asize)
+      range(1)= Large
+      range(2)=-Large
+      ij=0
+      fac=1.0_r8/rho0
+      DO j=JstrR,JendR
+        DO i=IstrR,IendR
+          ij=ij+1
+          cff=MAX(0.0_r8,A(ij)*ramp)*fac
+          IF (iw.eq.1) THEN 
+            VEG(ng)%Dissip_veg(i,j)=cff
+          ELSE
+            VEG(ng)%Dissip_veg(i,j)=VEG(ng)%Dissip_veg(i,j)+            &    
+     &                              cff
+          END IF
+          range(1)=MIN(range(1),cff)
+          range(2)=MAX(range(2),cff)
+        END DO
+      END DO
+# ifdef DISTRIBUTE
+      CALL mp_reduce (ng, iNLM, 2, range, op_handle)
+# endif
+      IF (Myrank.eq.MyMaster) THEN
+        write(stdout,40) 'SWANtoROMS Min/Max DISVEG  (Wm-2):  ',        &
+     &                    range(1),range(2)
+      END IF
 #endif
+!
       IF (EWperiodic(ng).or.NSperiodic(ng)) THEN
 !
 !-----------------------------------------------------------------------

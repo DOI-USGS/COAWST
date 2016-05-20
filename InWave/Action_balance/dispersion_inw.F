@@ -82,6 +82,7 @@
 # ifdef DISTRIBUTE
       USE mp_exchange_mod
 # endif
+      USE bc_2d_mod
       USE bc_3d_mod
 
 !
@@ -180,6 +181,10 @@
           END DO
         END DO
       END DO
+
+      CALL bc_r2d_tile (ng, tile,                                       &
+     &                  LBi, UBi, LBj, UBj,                             &
+     &                  h_tot)
 
       CALL bc_r3d_tile (ng, tile,                                       &
      &                  LBi, UBi, LBj, UBj, 1, ND(ng),                  &

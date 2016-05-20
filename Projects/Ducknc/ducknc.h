@@ -32,7 +32,8 @@
 #define DJ_GRADPS
 #undef  SALINITY
 #define SOLVE3D
-#define SPLINES
+#define SPLINES_VVISC
+#define SPLINES_VDIFF
 #define MASKING
 
 #define ANA_FSOBC
@@ -74,6 +75,7 @@
 # if defined GLS_MIXING
 #  define KANTHA_CLAYSON
 #  define N2S2_HORAVG
+#  define RI_SPLINES 
 #  undef CRAIG_BANNER
 #  undef CHARNOK
 #  undef ZOS_HSIG

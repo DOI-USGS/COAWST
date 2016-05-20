@@ -1,9 +1,0 @@
-
-%for inlet test refined
-% we had :  Istr=24; Iend=54; Jstr=40; Jend=56; 
-F=coarse2fine('inlet_test_grid.nc','inlet_test_grid_ref5.nc',5,24,54,40,56);
-Gnames={'inlet_test_grid.nc','inlet_test_grid_ref5.nc'}
-[S,G]=contact(Gnames,'inlet_test_contact_ref5.nc');
-
-i did this with mods to C:\work\matlab\rutgers_roms\grid\get_roms_grid
-

@@ -1,6 +1,6 @@
 # svn $Id$
 #::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
-# Copyright (c) 2002-2014 The ROMS/TOMS Group                           :::
+# Copyright (c) 2002-2016 The ROMS/TOMS Group                           :::
 #   Licensed under a MIT/X style license                                :::
 #   See License_ROMS.txt                                                :::
 #::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
@@ -136,7 +136,7 @@ $(SCRATCH_DIR)/def_var.o: FFLAGS += -fno-bounds-check
 # Gfortran versions >= 4.2.
 #
 
-FC_TEST := $(findstring $(shell ${FC} --version | head -1 | cut -d " " -f 5 | \
+FC_TEST := $(findstring $(shell ${FC} --version | head -1 | cut -d " " -f 4 | \
                               cut -d "." -f 1-2),4.0 4.1)
 
 ifeq "${FC_TEST}" ""

@@ -156,7 +156,9 @@
           DO i=Istr,Iend
             IF(h_tot(i,j).ge.Dcrit(ng))THEN
               wr=sqrt(g*kwc(i,j,d)*tanh(kwc(i,j,d)*h_tot(i,j)))
-              Tr(i,j,d)=twopi/wr
+!             Tr(i,j,d)=twopi/wr
+              Tr(i,j,d)=MAX(twopi/wr,Trmin)
+!             if (Tr(i,j,d).lt.Trmin) Tr(i,j,d)=Trmin
             ELSE
               Tr(i,j,d)=Trmin
             ENDIF

@@ -5,7 +5,7 @@
 !
 !svn $Id: ocean_coupler.F 755 2008-09-14 19:07:08Z jcwarner $
 !==================================================== John C. Warner ===
-!  Copyright (c) 2002-2014 The ROMS/TOMS Group      Hernan G. Arango   !
+!  Copyright (c) 2002-2016 The ROMS/TOMS Group      Hernan G. Arango   !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================

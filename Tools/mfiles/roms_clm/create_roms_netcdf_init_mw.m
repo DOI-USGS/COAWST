@@ -281,6 +281,36 @@ netcdf.putAtt(nc_init,dmix_timeID,'units','seconds');
 netcdf.putAtt(nc_init,dmix_timeID,'time','ocean_time');
 netcdf.putAtt(nc_init,dmix_timeID,'field','dmix_time, scalar, series');
 
+vegID = netcdf.defVar(nc_init,'plant_height','double',[xrhodimID erhodimID NvegdimID timedimID]);
+netcdf.putAtt(nc_init,vegID,'long_name','plant height');
+netcdf.putAtt(nc_init,vegID,'units','meter');
+netcdf.putAtt(nc_init,vegID,'time','ocean_time');
+netcdf.putAtt(nc_init,vegID,'field','plant_height, scalar, series');
+
+vegID = netcdf.defVar(nc_init,'plant_density','double',[xrhodimID erhodimID NvegdimID timedimID]);
+netcdf.putAtt(nc_init,vegID,'long_name','plant density');
+netcdf.putAtt(nc_init,vegID,'units','plant-meter2');
+netcdf.putAtt(nc_init,vegID,'time','ocean_time');
+netcdf.putAtt(nc_init,vegID,'field','plant_density, scalar, series');
+
+vegID = netcdf.defVar(nc_init,'plant_diameter','double',[xrhodimID erhodimID NvegdimID timedimID]);
+netcdf.putAtt(nc_init,vegID,'long_name','plant diameter');
+netcdf.putAtt(nc_init,vegID,'units','meter');
+netcdf.putAtt(nc_init,vegID,'time','ocean_time');
+netcdf.putAtt(nc_init,vegID,'field','plant_diameter, scalar, series');
+
+vegID = netcdf.defVar(nc_init,'plant_thickness','double',[xrhodimID erhodimID NvegdimID timedimID]);
+netcdf.putAtt(nc_init,vegID,'long_name','plant thickness');
+netcdf.putAtt(nc_init,vegID,'units','meter');
+netcdf.putAtt(nc_init,vegID,'time','ocean_time');
+netcdf.putAtt(nc_init,vegID,'field','plant_thickness, scalar, series');
+
+vegID = netcdf.defVar(nc_init,'marsh_mask','double',[xrhodimID erhodimID NvegdimID timedimID]);
+netcdf.putAtt(nc_init,vegID,'long_name','marsh mask');
+netcdf.putAtt(nc_init,vegID,'units','nondimensional');
+netcdf.putAtt(nc_init,vegID,'time','ocean_time');
+netcdf.putAtt(nc_init,vegID,'field','marsh_mask, scalar, series');
+
 netcdf.close(nc_init)
 
 

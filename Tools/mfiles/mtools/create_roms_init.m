@@ -320,6 +320,15 @@ dmix_offset=0.0;
 dmix_slope=0.0;
 dmix_time=0.0;
 
+%12)
+%
+% set vegetation properties 
+NVEG=1 ; 
+plant_density=zeros(xi_rho,eta_rho,NVEG);
+plant_height=zeros(xi_rho,eta_rho,NVEG);
+plant_diameter=zeros(xi_rho,eta_rho,NVEG);
+plant_thickness=zeros(xi_rho,eta_rho,NVEG);
+marsh_mask=zeros(xi_rho,eta_rho,NVEG);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %  END of USER INPUT                                                             %
@@ -385,6 +394,12 @@ ncwrite(init_file,'ripple_length',ripple_length);
 ncwrite(init_file,'dmix_offset',dmix_offset);
 ncwrite(init_file,'dmix_slope',dmix_slope);
 ncwrite(init_file,'dmix_time',dmix_time);
+
+ncwrite(init_file,'plant_height',plant_height);
+ncwrite(init_file,'plant_diameter',plant_diameter);
+ncwrite(init_file,'plant_density',plant_density);
+ncwrite(init_file,'plant_thickness',plant_thickness);
+ncwrite(init_file,'marsh_mask',marsh_mask);
 
 %close file
 disp(['created ', init_file])

@@ -1,7 +1,7 @@
 /*
 ** svn $Id$
 *******************************************************************************
-** Copyright (c) 2002-2015 The ROMS/TOMS Group                               **
+** Copyright (c) 2002-2016 The ROMS/TOMS Group                               **
 **   Licensed under a MIT/X style license                                    **
 **   See License_ROMS.txt                                                    **
 *******************************************************************************
@@ -28,7 +28,8 @@
 #define TS_U3HADVECTION
 #define TS_SVADVECTION
 #define DJ_GRADPS
-#define SPLINES
+#define SPLINES_VDIFF
+#define SPLINES_VVISC
 #define CURVGRID
 #define MASKING
 
@@ -58,12 +59,14 @@
 #ifdef MY25_MIXING
 # define N2S2_HORAVG
 # define KANTHA_CLAYSON
+# define RI_SPLINES
 #endif
 #ifdef  LMD_MIXING
 # define LMD_RIMIX
 # define LMD_CONVEC
 # define LMD_SKPP
 # define LMD_BKPP
+# define RI_SPLINES
 # define ANA_CLOUD
 #endif
 

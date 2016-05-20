@@ -1,7 +1,7 @@
 /*
 ** svn $Id$
 *******************************************************************************
-** Copyright (c) 2002-2015 The ROMS/TOMS Group                               **
+** Copyright (c) 2002-2016 The ROMS/TOMS Group                               **
 **   Licensed under a MIT/X style license                                    **
 **   See License_ROMS.txt                                                    **
 *******************************************************************************
@@ -18,8 +18,8 @@
 #define UV_ADV
 #define UV_COR
 #define DJ_GRADPS
-#undef  TS_U3HADVECTION
-#undef  TS_SVADVECTION
+#define SPLINES_VDIFF
+#define SPLINES_VVISC
 #define TS_MPDATA
 #define TS_DIF2
 #define MIX_GEO_TS
@@ -27,7 +27,6 @@
 #define SALINITY
 #define MASKING
 #define SOLVE3D
-#define SPLINES
 #define STATIONS
 #define CURVGRID
 #define FLOATS
@@ -69,6 +68,7 @@
 # define N2S2_HORAVG
 # define CRAIG_BANNER
 # define CHARNOK
+# define RI_SPLINES
 #endif
 
 #undef ANA_SRFLUX

@@ -186,7 +186,8 @@ if (osu)
   %  Interpolate elevation and velocity from TOPEX7.2 data.
   ua=ua/100;
   va=va/100;
-  rlon=rlon+360;
+ %rlon=rlon+360;
+  rlon(rlon<=0) = rlon(rlon<=0) + 360.00;
   for kk=1:Ntide,
     k=indx(kk);
     disp(['Interpolating ' names(:,k)']);

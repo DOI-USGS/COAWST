@@ -193,8 +193,8 @@
             ELSE
               theta_cur = ATAN2(v_rho(i,j),u_rho(i,j))
             ENDIF
-            u_dir = sqrt(u_rho(i,j)**2.0_r8+v_rho(i,j)**2.0_r8)         &
-     &              *cos(alfa_wave-theta_cur)
+            u_dir = sqrt(u_rho(i,j)**2+v_rho(i,j)**2)*                  &
+     &              cos(alfa_wave-theta_cur)
             u_block = -(twopi/Tr(i,j,d))/(kwc(i,j,d))
 # endif
 
@@ -288,11 +288,11 @@
             dhdx=(pm(i+1,j)+pm(i,j))*(h_tot(i+1,j)-h_tot(i-1,j))
             dhdy=(pn(i,j+1)+pn(i,j))*(h_tot(i,j+1)-h_tot(i,j-1))
 
-            if (i.eq.Iend)dhdx=(pm(i,j))*(h_tot(i,j)-h_tot(i-1,j))
-            if (j.eq.Jend)dhdy=(pn(i,j))*(h_tot(i,j)-h_tot(i,j-1))
-            if (i.eq.Istr)dhdx=(pm(i,j))*(h_tot(i+1,j)-h_tot(i,j))
-            if (j.eq.Jstr)dhdy=(pn(i,j))*(h_tot(i,j+1)-h_tot(i,j))
-
+!           if (i.eq.Iend)dhdx=(pm(i,j))*(h_tot(i,j)-h_tot(i-1,j))
+!           if (j.eq.Jend)dhdy=(pn(i,j))*(h_tot(i,j)-h_tot(i,j-1))
+!           if (i.eq.Istr)dhdx=(pm(i,j))*(h_tot(i+1,j)-h_tot(i,j))
+!           if (j.eq.Jstr)dhdy=(pn(i,j))*(h_tot(i,j+1)-h_tot(i,j))
+            kh=kwc(i,j,d)*h_tot(i,j)
             ct_r(i,j,d)=twopi/(Tr(i,j,d)*sinh(2.0_r8*kh))*              &
      &                 (sin(dir_edge)*dhdx-cos(dir_edge)*dhdy)
 
@@ -332,21 +332,21 @@
 
       CALL Tr3dbc_tile (ng, tile,                                       &
      &                  LBi, UBi, LBj, UBj, ND(ng),                     &
-     &                  Tr(:,:,:))
+     &                  Tr)
       CALL Tr3dbc_tile (ng, tile,                                       &
      &                  LBi, UBi, LBj, UBj, ND(ng),                     &
-     &                  Ta(:,:,:))
+     &                  Ta)
 # ifdef DISTRIBUTE
       CALL mp_exchange3d (ng, tile, iNLM, 1,                            &
      &                    LBi, UBi, LBj, UBj, 1, ND(ng),                &
      &                    NghostPoints,                                 &
      &                    EWperiodic(ng), NSperiodic(ng),               &
-     &                    Tr(:,:,:))
+     &                    Tr)
       CALL mp_exchange3d (ng, tile, iNLM, 1,                            &
      &                    LBi, UBi, LBj, UBj, 1, ND(ng),                &
      &                    NghostPoints,                                 &
      &                    EWperiodic(ng), NSperiodic(ng),               &
-     &                    Ta(:,:,:))
+     &                    Ta)
 # endif
 
 !
@@ -357,7 +357,8 @@
 # ifdef ACX_ADVECTION
       DO d=1,ND(ng)
         DO j=Jstr,Jend
-          DO i=Istr,Iend+1
+!         DO i=Istr,Iend+1
+          DO i=IstrU,Iend
             cx(i,j,d)=0.5_r8*(cx_rho(i-1,j,d)+cx_rho(i,j,d))
 #  ifdef MASKING
 !  Apply Land/Sea mask
@@ -370,7 +371,7 @@
 
 # ifdef ACY_ADVECTION
       DO d=1,ND(ng)
-        DO j=Jstr,Jend
+        DO j=JstrV,Jend
           DO i=Istr,Iend
             cy(i,j,d)=0.5_r8*(cy_rho(i,j-1,d)+cy_rho(i,j,d))
 #  ifdef MASKING
@@ -416,9 +417,9 @@
 !        END DO
 !      END DO
 # endif
-
+!
 !  Apply nonperiodic boundary conditions in xi and etai space.
-
+!
 #  ifdef ACX_ADVECTION
       CALL cx3dbc_tile (ng, tile,                                       &
      &                  LBi, UBi, LBj, UBj, ND(ng),                     &
@@ -467,21 +468,21 @@
      &                    LBi, UBi, LBj, UBj, 1, ND(ng),                &
      &                    NghostPoints,                                 &
      &                    EWperiodic(ng), NSperiodic(ng),               &
-     &                    cx(:,:,:))
+     &                    cx)
 #  endif
 #  ifdef ACY_ADVECTION
       CALL mp_exchange3d (ng, tile, iNLM, 1,                            &
      &                    LBi, UBi, LBj, UBj, 1, ND(ng),                &
      &                    NghostPoints,                                 &
      &                    EWperiodic(ng), NSperiodic(ng),               &
-     &                    cy(:,:,:))
+     &                    cy)
 #  endif
 #  ifdef ACT_ADVECTION
       CALL mp_exchange3d (ng, tile, iNLM, 1,                            &
      &                    LBi, UBi, LBj, UBj, 1, ND(ng)+1,              &
      &                    NghostPoints,                                 &
      &                    EWperiodic(ng), NSperiodic(ng),               &
-     &                    ct(:,:,:))
+     &                    ct)
 #  endif
 # endif
 

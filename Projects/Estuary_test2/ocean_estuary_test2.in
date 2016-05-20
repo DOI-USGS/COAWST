@@ -3,7 +3,7 @@
 !
 !svn $Id: ocean_inlet_test.in 838 2008-11-17 04:22:18Z jcwarner $
 !========================================================= Hernan G. Arango ===
-!  Copyright (c) 2002-2014 The ROMS/TOMS Group                                !
+!  Copyright (c) 2002-2016 The ROMS/TOMS Group                                !
 !    Licensed under a MIT/X style license                                     !
 !    See License_ROMS.txt                                                     !
 !==============================================================================
@@ -613,43 +613,6 @@ Hout(idMtls) == T       ! gls                turbulent length scale
 ! compact parameter specification.
 
  Hout(inert) == T       ! dye_01, ...        inert passive tracers
-
-! Logical switches (TRUE/FALSE) to activate writing of exposed sediment
-! layer properties into HISTORY output file.  Currently, MBOTP properties
-! are expected for the bottom boundary layer and/or sediment models:
-!
-! idBott( 1=isd50)   grain_diameter          mean grain diameter
-! idBott( 2=idens)   grain_density           mean grain density
-! idBott( 3=iwsed)   settling_vel            mean settling velocity
-! idBott( 4=itauc)   erosion_stress          critical erosion stress
-! idBott( 5=irlen)   ripple_length           ripple length
-! idBott( 6=irhgt)   ripple_height           ripple height
-! idBott( 7=ibwav)   bed_wave_amp            wave excursion amplitude
-! idBott( 8=izdef)   Zo_def                  default bottom roughness
-! idBott( 9=izapp)   Zo_app                  apparent bottom roughness
-! idBott(10=izNik)   Zo_Nik                  Nikuradse bottom roughness
-! idBott(11=izbio)   Zo_bio                  biological bottom roughness
-! idBott(12=izbfm)   Zo_bedform              bed form bottom roughness
-! idBott(13=izbld)   Zo_bedload              bed load bottom roughness
-! idBott(14=izwbl)   Zo_wbl                  wave bottom roughness
-! idBott(15=iactv)   active_layer_thickness  active layer thickness
-! idBott(16=ishgt)   saltation               saltation height
-! idBott(17=imaxD)   dep_net                 maximum inundation depth
-! idBott(18=idnet)   net erosion + dep       Erosion or deposition
-! idBott(19=idoff)   tau critical offset     dmix erodibility profile offset
-! idBott(20=idslp)   tau critical slope      dmix or erodibility slope
-! idBott(21=idtim)   erodibility time scale  erodibility profile restore time
-! idBott(22=idbmx)   diffusivity db_max      Bed biodifusivity maximum
-! idBott(23=idbmm)   diffusivity db_m        Bed biodifusivity minimum
-! idBott(24=idbzs)   diffusivity db_zs       Bed biodifusivity zs
-! idBott(25=idbzm)   diffusivity db_zm       Bed biodifusivity zm
-! idBott(26=idbzp)   diffusivity db_zphi     Bed biodifusivity phi
-! idBott(27=idprp)   cohesive behavior       cohesive behavior
-!
-!                                 1 1 1 1 1 1 1 1 1 1 2 2 2 2 2 2 2 2
-!               1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7
-!
-Hout(idBott) == T T T T T T T T T F F F F F T F T T F F F F F F F F F
 
 ! Logical switches (TRUE/FALSE) to activate writing of time-averaged
 ! fields into AVERAGE output file.
@@ -2282,8 +2245,6 @@ Dout(iTvdif) == F F     ! temp_vdiff, ...    vertical diffusion
 !  Hout(idMtls)  Write out turbulent kinetic energy times length scale.
 !
 !  Hout(inert)   Write out extra inert passive tracers.
-!
-!  Hout(idBott)  Write out exposed sediment layer properties, 1:MBOTP.
 !
 !------------------------------------------------------------------------------
 ! Generic User parameters.

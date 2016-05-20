@@ -58,8 +58,24 @@
               Projects/Sandy/swan_sandy_ref3.in         ! wave model
    OCN_name = Projects/Sandy/ocean_sandy.in             ! ocean model
 
-! Sparse matrix interpolation weights files. The file names
-! must be provided in a specific order. For example: 
+! Sparse matrix interpolation weights files. You have 2 options:
+! Enter "1" for option 1, or "2" for option 2, and then list the 
+! weight file(s) for that option.
+
+   SCRIP_WEIGHT_OPTION = 1
+!
+! Option 1: IF you set "SCRIP_WEIGHT_OPTION = 1", then enter name 
+!           of the single netcdf file containing all the exchange
+!           weights. This file is created using the code in
+!           Lib/SCRIP_COAWST/scrip_coawst[.exe]
+
+!  SCRIP_COAWST_NAME = Projects/Sandy/scrip_sandy_moving.nc
+   SCRIP_COAWST_NAME = Projects/Sandy/scrip_sandy_static.nc
+
+! Option 2: THIS OPTION WILL BE REMOVED IN FUTURE VERSIONS.
+!           IF you set "SCRIP_WEIGHT_OPTION = 2", then enter 
+!           the names of the separate files. The file names
+!           must be provided in a specific order. For example: 
 ! W2ONAME == wav1 to ocn1
 !            wav1 to ocn2
 !            wav1 to ocn3 ....for all the ocean models.

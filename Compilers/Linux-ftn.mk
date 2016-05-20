@@ -1,11 +1,11 @@
 # svn $Id: Linux-ftn.mk 655 2008-07-25 18:57:05Z arango $
 #::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
-# Copyright (c) 2002-2014 The ROMS/TOMS Group                           :::
+# Copyright (c) 2002-2016 The ROMS/TOMS Group                           :::
 #   Licensed under a MIT/X style license                                :::
 #   See License_ROMS.txt                                                :::
 #::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 #
-# Include file for CRAY FTN cross-compiler with Linux
+# Include file for PGI Fortran compiler on Linux (on Cray)
 # -------------------------------------------------------------------------
 #
 # ARPACK_LIBDIR  ARPACK libary directory
@@ -28,44 +28,58 @@
 # First the defaults
 #
                FC := ftn
-           FFLAGS := -e I -e m
+           FFLAGS :=
               CPP := /usr/bin/cpp
          CPPFLAGS := -P -traditional
-               CC := gcc
-              CXX := g++
+               CC := cc
+              CXX := CC
            CFLAGS :=
          CXXFLAGS :=
           LDFLAGS :=
                AR := ar
-          ARFLAGS := -r
+          ARFLAGS := r
             MKDIR := mkdir -p
                RM := rm -f
-           RANLIB := touch
+           RANLIB := ranlib
              PERL := perl
              TEST := test
 
         MDEPFLAGS := --cpp --fext=f90 --file=- --objdir=$(SCRATCH_DIR)
 
 #
+# Perform floating-point operations in strict conformance with the
+# IEEE standard. This may slow down computations because some
+# optimizations are disabled.  However, we noticed a speed-up.
+# The user may want to uncomment this option to allow similar,
+# if not identical solutions between different of the PGI compiler.
+
+#          FFLAGS += -Kieee
+
+#
 # Library locations, can be overridden by environment variables.
 #
 
+ifdef USE_CICE
+    LIBS  :=    $(SCRATCH_DIR)/libCICE.a
+else
+    LIBS  :=
+endif
 ifdef USE_NETCDF4
         NC_CONFIG ?= nc-config
     NETCDF_INCDIR ?= $(shell $(NC_CONFIG) --prefix)/include
-             LIBS := $(shell $(NC_CONFIG) --flibs)
+             LIBS += $(shell $(NC_CONFIG) --flibs)
 else
     NETCDF_INCDIR ?= /usr/local/include
     NETCDF_LIBDIR ?= /usr/local/lib
-             LIBS := -L$(NETCDF_LIBDIR) -lnetcdf
+             LIBS += -L$(NETCDF_LIBDIR) -lnetcdf
 endif
 
 ifdef USE_ARPACK
  ifdef USE_MPI
-   PARPACK_LIBDIR ?= /usr/local/lib
+   PARPACK_LIBDIR ?= /opt/pgisoft/PARPACK
              LIBS += -L$(PARPACK_LIBDIR) -lparpack
  endif
-    ARPACK_LIBDIR ?= /usr/local/lib
+    ARPACK_LIBDIR ?= /opt/pgisoft/PARPACK
              LIBS += -L$(ARPACK_LIBDIR) -larpack
 endif
 
@@ -75,17 +89,35 @@ endif
 
 ifdef USE_OpenMP
          CPPFLAGS += -D_OPENMP
+           FFLAGS += -mp
 endif
 
+# According to the PGI manual, the -u -Bstatic flags initializes
+# the symbol table with -Bstatic, which is undefined for the linker.
+# An undefined symbol triggers loading of the first member of an
+# archive library. The -u flag fails with version 7.x of the compiler
+# because it expects an argument.
+
 ifdef USE_DEBUG
-           FFLAGS += -G 0
+#          FFLAGS += -g -C -Mchkstk -Mchkfpstk
+           FFLAGS += -g -C
+#          FFLAGS += -gopt -C
+#          FFLAGS += -g
            CFLAGS += -g
          CXXFLAGS += -g
 else
-           FFLAGS += -O 3,aggress
+#          FFLAGS += -Bstatic -fastsse -Mipa=fast
+           FFLAGS += -O3
            CFLAGS += -O3
          CXXFLAGS += -O3
 endif
+
+# Save compiler flags without the MCT or ESMF libraries additions
+# to keep the string (MY_FFLAGS) in "mod_strings.o" short. Otherwise,
+# it will exceed the maximum number of characters allowed for
+# free-format compilation.
+
+        MY_FFLAGS := $(FFLAGS)
 
 ifdef USE_MCT
        MCT_INCDIR ?= /usr/local/mct/include
@@ -107,7 +139,7 @@ ifdef USE_CXX
 endif
 
 ifdef USE_WRF
-           FFLAGS += -I../WRF/main -I../WRF/external/esmf_time_f90 -I../WRF/frame -I../WRF/share
+             FFLAGS += -I$(WRF_DIR)/main -I$(WRF_DIR)/external/esmf_time_f90 -I$(WRF_DIR)/frame -I$(WRF_DIR)/share
              LIBS += WRF/main/module_wrf_top.o
              LIBS += WRF/main/libwrflib.a
              LIBS += WRF/external/fftpack/fftpack5/libfftpack.a
@@ -133,18 +165,18 @@ endif
 # local directory and compilation flags inside the code.
 #
 
-$(SCRATCH_DIR)/mod_ncparam.o: FFLAGS += -free-form
-$(SCRATCH_DIR)/mod_strings.o: FFLAGS += -free-form
-$(SCRATCH_DIR)/analytical.o: FFLAGS += -free-form
-$(SCRATCH_DIR)/biology.o: FFLAGS += -free-form
+$(SCRATCH_DIR)/mod_ncparam.o: FFLAGS += -Mfree
+$(SCRATCH_DIR)/mod_strings.o: FFLAGS := $(MY_FFLAGS) -Mfree
+$(SCRATCH_DIR)/analytical.o: FFLAGS += -Mfree
+$(SCRATCH_DIR)/biology.o: FFLAGS += -Mfree
 ifdef USE_ADJOINT
-$(SCRATCH_DIR)/ad_biology.o: FFLAGS += -free-form
+$(SCRATCH_DIR)/ad_biology.o: FFLAGS += -Mfree
 endif
 ifdef USE_REPRESENTER
-$(SCRATCH_DIR)/rp_biology.o: FFLAGS += -free-form
+$(SCRATCH_DIR)/rp_biology.o: FFLAGS += -Mfree
 endif
 ifdef USE_TANGENT
-$(SCRATCH_DIR)/tl_biology.o: FFLAGS += -free-form
+$(SCRATCH_DIR)/tl_biology.o: FFLAGS += -Mfree
 endif
 
 #

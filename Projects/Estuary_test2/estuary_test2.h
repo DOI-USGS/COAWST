@@ -18,7 +18,8 @@
 #define TS_U3HADVECTION
 #define SALINITY
 #define SOLVE3D
-#define SPLINES
+#define SPLINES_VVISC
+#define SPLINES_VDIFF
 #define DJ_GRADPS
 #define CURVGRID
 #define UV_ADV
@@ -30,6 +31,7 @@
 #if defined GLS_MIXING
 # define KANTHA_CLAYSON
 # define N2S2_HORAVG
+#define RI_SPLINES
 #endif
 
 #define MASKING

@@ -1,7 +1,7 @@
 /*
 ** svn $Id: mct_roms_wrf.h 756 2008-09-14 20:18:28Z jcwarner $
 ***************************************************** John C. Warner ***
-** Copyright (c) 2002-2014 The ROMS/TOMS Group      Hernan G. Arango  **
+** Copyright (c) 2002-2016 The ROMS/TOMS Group      Hernan G. Arango  **
 **   Licensed under a MIT/X style license                             **
 **   See License_ROMS.txt                                             **
 ************************************************************************
@@ -49,7 +49,6 @@
 
       integer, allocatable  :: length(:)
       integer, allocatable  :: start(:)
-      integer, dimension(2) :: src_grid_dims, dst_grid_dims
       character (len=70) :: nc_name
       character (len=20) :: to_add
       character (len=120) :: aostring
@@ -157,6 +156,7 @@
 !  If ocean grid and atm grids are different sizes, then
 !  develop sparse matrices for interpolation.
 !
+  35  FORMAT(a3,i1,a7,i1,a11)
       DO ia=1,Natm_grids
 !
 !!!!!!!!!!!!!!!!!!!!!!
@@ -164,7 +164,11 @@
 !!!!!!!!!!!!!!!!!!!!!!
 !
         IF (Myrank.eq.MyMaster) THEN
-          nc_name=A2Oname(ia,ng)
+          IF (scrip_opt.eq.1) THEN
+            write(nc_name,35) 'atm',ia,'_to_ocn',ng,'_weights.nc'
+          ELSE
+            nc_name=A2Oname(ia,ng)
+          END IF
           call get_sparse_matrix (ng, nc_name, num_sparse_elems,        &
      &                            src_grid_dims, dst_grid_dims)
 !
@@ -194,11 +198,11 @@
 
           call SparseMatrix_init(sMatA,nRows,nCols,num_sparse_elems)
           call SparseMatrix_importGRowInd(sMatA, sparse_rows,           &
-     &                                    size(sparse_rows))
+     &                                    num_sparse_elems)
           call SparseMatrix_importGColInd(sMatA, sparse_cols,           &
-     &                                    size(sparse_cols))
+     &                                    num_sparse_elems)
           call SparseMatrix_importMatrixElts(sMatA, sparse_weights,     &
-     &                                       size(sparse_weights))
+     &                                    num_sparse_elems)
 !
 ! Deallocate arrays.
 !
@@ -228,7 +232,11 @@
 !!!!!!!!!!!!!!!!!!!!!!
 !
         IF (Myrank.eq.MyMaster) THEN
-          nc_name=O2Aname(ng,ia)
+          IF (scrip_opt.eq.1) THEN
+            write(nc_name,35) 'ocn',ng,'_to_atm',ia,'_weights.nc'
+          ELSE
+            nc_name=O2Aname(ng,ia)
+          END IF
           call get_sparse_matrix (ng, nc_name, num_sparse_elems,        &
      &                            src_grid_dims, dst_grid_dims)
 !
@@ -254,11 +262,11 @@
 !
           call SparseMatrix_init(sMatO,nRows,nCols,num_sparse_elems)
           call SparseMatrix_importGRowInd(sMatO, sparse_rows,           &
-     &                                    size(sparse_rows))
+     &                                    num_sparse_elems)
           call SparseMatrix_importGColInd(sMatO, sparse_cols,           &
-     &                                    size(sparse_cols))
+     &                                    num_sparse_elems)
           call SparseMatrix_importMatrixElts(sMatO, sparse_weights,     &
-     &                                    size(sparse_weights))
+     &                                    num_sparse_elems)
 !
 ! Deallocate arrays.
 !
@@ -324,8 +332,8 @@
 !
         call SparseMatrixPlus_init(SMPlus_A(ng,ia)%O2AMatPlus, sMatO,   &
      &                             GlobalSegMap_G(ng)%GSMapROMS,        &
-     &                             GSMapInterp_A(ng,ia)%GSMapWRF, Xonly,&
-     &                             MyMaster, OCN_COMM_WORLD, OCNid)
+     &                             GSMapInterp_A(ng,ia)%GSMapWRF,       &
+     &                             Xonly,MyMaster,OCN_COMM_WORLD, OCNid)
         call SparseMatrix_clean(sMatO)
       END DO
 #endif
@@ -653,7 +661,6 @@
       real(r8), pointer :: Amask(:)
 #endif
       real(r8) :: BBR, cff1, cff2
-      character (len=3 ), dimension(2) :: op_handle
       character (len=40) :: code
 !
 #include "set_bounds.h"
@@ -719,8 +726,6 @@
 #else
       CALL MCT_isend (AttrVect_G(ng)%ocn2atm_AV,                        &
      &                Router_A(ng,ia)%ROMStoWRF, Tag)
-!      CALL MCT_send (AttrVect_G(ng)%ocn2atm_AV,                        &
-!     &                Router_A(ng,ia)%ROMStoWRF, MyError)
 #endif
       CALL MCT_waits (Router_A(ng,ia)%ROMStoWRF)
       IF (MyError.ne.0) THEN
@@ -835,6 +840,7 @@
       USE exchange_2d_mod, ONLY : exchange_u2d_tile
       USE exchange_2d_mod, ONLY : exchange_v2d_tile
 #ifdef DISTRIBUTE
+      USE distribute_mod,  ONLY : mp_reduce
       USE mp_exchange_mod, ONLY : mp_exchange2d
 #endif
 !
@@ -850,18 +856,22 @@
 !
       integer :: Asize, Iimport, Iexport, MyError, Tag
       integer :: gtype, i, id, ifield, j, ij,  status
-
-      real(r8) :: add_offset, cff, scale
-      real(r8) :: RecvTime, SendTime, buffer(2), wtime(2)
-
-      real(r8), pointer :: A(:)
 #ifdef MCT_INTERP_OC2AT
       integer, pointer :: points(:)
       integer, pointer :: indices(:)
 #endif
+
+      real(r8) :: add_offset, cff, fac, scale
+      real(r8) :: RecvTime, SendTime, buffer(2), wtime(2)
       real(r8) :: BBR, cff1, cff2
-      character (len=3 ), dimension(2) :: op_handle
+      real(r8), parameter ::  Large = 1.0E+20_r8
+      real(r8), pointer :: A(:)
+      real(r8), dimension(2) :: range
+
       character (len=40) :: code
+#ifdef DISTRIBUTE
+      character (len=3), dimension(2) :: op_handle
+#endif
 !
 !-----------------------------------------------------------------------
 !  Compute lower and upper bounds over a particular domain partition or
@@ -871,6 +881,10 @@
 !-----------------------------------------------------------------------
 !
 #include "set_bounds.h"
+#ifdef DISTRIBUTE
+      op_handle(1)='MIN'
+      op_handle(2)='MAX'
+#endif
 !
 !-----------------------------------------------------------------------
 !  Allocate communications array.
@@ -911,8 +925,6 @@
 #else
       CALL MCT_irecv (AttrVect_G(ng)%atm2ocn_AV,                        &
      &                Router_A(ng,ia)%ROMStoWRF, Tag)
-!      CALL MCT_recv (AttrVect_G(ng)%atm2ocn_AV,                        &
-!     &                Router_A(ng,ia)%ROMStoWRF, MyError)
 !     Wait to make sure the WRF data has arrived.
       CALL MCT_waitr (AttrVect_G(ng)%atm2ocn_AV,                        &
      &                Router_A(ng,ia)%ROMStoWRF)
@@ -931,29 +943,44 @@
       END IF
 !
 !  Receive fields from atmosphere model.
+ 40         FORMAT (a36,1x,2(1pe14.6))
 !
 !  Short wave radiation          (from W/m^2 to Celsius m/s)
 !
       CALL AttrVect_exportRAttr (AttrVect_G(ng)%atm2ocn_AV, "GSW",      &
      &                           A, Asize)
-      cff=1.0_r8/(rho0*Cp)
+      range(1)= Large
+      range(2)=-Large
+      fac=1.0_r8/(rho0*Cp)
       ij=0
       DO j=JstrR,JendR
         DO i=IstrR,IendR
           ij=ij+1
+          cff=A(ij)
           IF (ia.eq.1) THEN
-            FORCES(ng)%srflx(i,j)=A(ij)*cff
+            FORCES(ng)%srflx(i,j)=cff*fac
           ELSE
-            FORCES(ng)%srflx(i,j)=FORCES(ng)%srflx(i,j)+A(ij)*cff
+            FORCES(ng)%srflx(i,j)=FORCES(ng)%srflx(i,j)+cff*fac
           END IF
+          range(1)=MIN(range(1),cff)
+          range(2)=MAX(range(2),cff)
         END DO
       END DO
+# ifdef DISTRIBUTE
+      CALL mp_reduce (ng, iNLM, 2, range, op_handle)
+# endif
+      IF (Myrank.eq.MyMaster) THEN
+        write(stdout,40) 'WRFtoROMS Min/Max  GSW     (Wm-2):  ',        &
+     &                    range(1),range(2)
+      END IF
 !
 !  Long wave radiation          (from W/m^2 to Celsius m/s)
 !
       CALL AttrVect_exportRAttr (AttrVect_G(ng)%atm2ocn_AV, "GLW",      &
      &                           A, Asize)
-      cff=1.0_r8/(rho0*Cp)
+      range(1)= Large
+      range(2)=-Large
+      fac=1.0_r8/(rho0*Cp)
       ij=0
       DO j=JstrR,JendR
         DO i=IstrR,IendR
@@ -962,90 +989,144 @@
           BBR=BBR*BBR*BBR*BBR
           BBR=0.97_r8*5.67E-8_r8*BBR
           A(ij)=A(ij)-BBR
+#ifdef MCT_INTERP_OC2AT
+          cff=A(ij)*REAL(A2O_CPLMASK(ia,ng)%dst_mask(points(ij)))
+#else
+          cff=A(ij)
+#endif
           IF (ia.eq.1) THEN
-#ifdef MCT_INTERP_OC2AT
-            FORCES(ng)%lrflx(i,j)=A(ij)*cff*REAL(A2O_CPLMASK(ia,ng)%dst_mask(points(ij)))
-#else
-            FORCES(ng)%lrflx(i,j)=A(ij)*cff
-#endif
+            FORCES(ng)%lrflx(i,j)=cff*fac
           ELSE
-#ifdef MCT_INTERP_OC2AT
-            FORCES(ng)%lrflx(i,j)=FORCES(ng)%lrflx(i,j)+A(ij)*cff*REAL(A2O_CPLMASK(ia,ng)%dst_mask(points(ij)))
-#else
-            FORCES(ng)%lrflx(i,j)=FORCES(ng)%lrflx(i,j)+A(ij)*cff
-#endif
+            FORCES(ng)%lrflx(i,j)=FORCES(ng)%lrflx(i,j)+cff*fac
           END IF
+          range(1)=MIN(range(1),cff)
+          range(2)=MAX(range(2),cff)
         END DO
       END DO
+# ifdef DISTRIBUTE
+      CALL mp_reduce (ng, iNLM, 2, range, op_handle)
+# endif
+      IF (Myrank.eq.MyMaster) THEN
+        write(stdout,40) 'WRFtoROMS Min/Max  GLW     (Wm-2):  ',        &
+     &                    range(1),range(2)
+      END IF
 #ifdef ATM2OCN_FLUXES
 !
 !  Latent heat flux            (from W/m^2 to Celsius m/s)
 !
       CALL AttrVect_exportRAttr (AttrVect_G(ng)%atm2ocn_AV, "LH",       &
      &                           A, Asize)
-      cff=-1.0_r8/(rho0*Cp)
+      range(1)= Large
+      range(2)=-Large
+      fac=-1.0_r8/(rho0*Cp)
       ij=0
       DO j=JstrR,JendR
         DO i=IstrR,IendR
           ij=ij+1
+          cff=A(ij)
           IF (ia.eq.1) THEN
-            FORCES(ng)%lhflx(i,j)=A(ij)*cff
+            FORCES(ng)%lhflx(i,j)=cff*fac
           ELSE
-            FORCES(ng)%lhflx(i,j)=FORCES(ng)%lhflx(i,j)+A(ij)*cff
+            FORCES(ng)%lhflx(i,j)=FORCES(ng)%lhflx(i,j)+cff*fac
           END IF
+          range(1)=MIN(range(1),cff)
+          range(2)=MAX(range(2),cff)
         END DO
       END DO
+# ifdef DISTRIBUTE
+      CALL mp_reduce (ng, iNLM, 2, range, op_handle)
+# endif
+      IF (Myrank.eq.MyMaster) THEN
+        write(stdout,40) 'WRFtoROMS Min/Max  LH      (Wm-2):  ',        &
+     &                    range(1),range(2)
+      END IF
 !
 !  Sensible heat flux            (from W/m^2 to Celsius m/s)
 !
       CALL AttrVect_exportRAttr (AttrVect_G(ng)%atm2ocn_AV, "HFX",      &
      &                           A, Asize)
-      cff=-1.0_r8/(rho0*Cp)
+      range(1)= Large
+      range(2)=-Large
+      fac=-1.0_r8/(rho0*Cp)
       ij=0
       DO j=JstrR,JendR
         DO i=IstrR,IendR
           ij=ij+1
+          cff=A(ij)
           IF (ia.eq.1) THEN
-            FORCES(ng)%shflx(i,j)=A(ij)*cff
+            FORCES(ng)%shflx(i,j)=cff*fac
           ELSE
-            FORCES(ng)%shflx(i,j)=FORCES(ng)%shflx(i,j)+A(ij)*cff
+            FORCES(ng)%shflx(i,j)=FORCES(ng)%shflx(i,j)+cff*fac
           END IF
+          range(1)=MIN(range(1),cff)
+          range(2)=MAX(range(2),cff)
         END DO
       END DO
+# ifdef DISTRIBUTE
+      CALL mp_reduce (ng, iNLM, 2, range, op_handle)
+# endif
+      IF (Myrank.eq.MyMaster) THEN
+        write(stdout,40) 'WRFtoROMS Min/Max  HFX     (Wm-2):  ',        &
+     &                    range(1),range(2)
+      END IF
 !
 !  Surface u-stress              (m2/s2)
 !
-      CALL AttrVect_exportRAttr (AttrVect_G(ng)%atm2ocn_AV, "USTRESS", &
+      CALL AttrVect_exportRAttr (AttrVect_G(ng)%atm2ocn_AV, "USTRESS",  &
      &                           A, Asize)
-      cff=1.0_r8/rho0
+      range(1)= Large
+      range(2)=-Large
+      fac=1.0_r8/rho0
       ij=0
       DO j=JstrR,JendR
         DO i=IstrR,IendR
           ij=ij+1
+          cff=A(ij)
           IF (ia.eq.1) THEN
-            FORCES(ng)%Taux(i,j)=A(ij)*cff
+            FORCES(ng)%Taux(i,j)=cff*fac
           ELSE
-            FORCES(ng)%Taux(i,j)=FORCES(ng)%Taux(i,j)+A(ij)*cff
+            FORCES(ng)%Taux(i,j)=FORCES(ng)%Taux(i,j)+cff*fac
           END IF
+          range(1)=MIN(range(1),cff)
+          range(2)=MAX(range(2),cff)
         END DO
       END DO
+# ifdef DISTRIBUTE
+      CALL mp_reduce (ng, iNLM, 2, range, op_handle)
+# endif
+      IF (Myrank.eq.MyMaster) THEN
+        write(stdout,40) 'WRFtoROMS Min/Max  USTRESS (Nm-2):  ',        &
+     &                    range(1),range(2)
+      END IF
 !
 !  Surface v-stress              (m2/s2)
 !
       CALL AttrVect_exportRAttr (AttrVect_G(ng)%atm2ocn_AV, "VSTRESS",  &
      &                           A, Asize)
-      cff=1.0_r8/rho0
+      range(1)= Large
+      range(2)=-Large
+      fac=1.0_r8/rho0
       ij=0
       DO j=JstrR,JendR
         DO i=IstrR,IendR
           ij=ij+1
+          cff=A(ij)
           IF (ia.eq.1) THEN
-            FORCES(ng)%Tauy(i,j)=A(ij)*cff
+            FORCES(ng)%Tauy(i,j)=cff*fac
           ELSE
-            FORCES(ng)%Tauy(i,j)=FORCES(ng)%Tauy(i,j)+A(ij)*cff
+            FORCES(ng)%Tauy(i,j)=FORCES(ng)%Tauy(i,j)+cff*fac
           END IF
+          range(1)=MIN(range(1),cff)
+          range(2)=MAX(range(2),cff)
         END DO
       END DO
+# ifdef DISTRIBUTE
+      CALL mp_reduce (ng, iNLM, 2, range, op_handle)
+# endif
+      IF (Myrank.eq.MyMaster) THEN
+        write(stdout,40) 'WRFtoROMS Min/Max  VSTRESS (Nm-2):  ',        &
+     &                    range(1),range(2)
+      END IF
 # ifdef CURVGRID
 !
 !  Rotate to curvilinear grid.
@@ -1068,18 +1149,30 @@
 !
       CALL AttrVect_exportRAttr (AttrVect_G(ng)%atm2ocn_AV, "MSLP",     &
      &                           A, Asize)
+      range(1)= Large
+      range(2)=-Large
       ij=0
-      cff=0.01_r8
+      fac=0.01_r8
       DO j=JstrR,JendR
         DO i=IstrR,IendR
           ij=ij+1
+          cff=A(ij)*fac
           IF (ia.eq.1) THEN
-            FORCES(ng)%Pair(i,j)=A(ij)*cff
+            FORCES(ng)%Pair(i,j)=cff
           ELSE
-            FORCES(ng)%Pair(i,j)=FORCES(ng)%Pair(i,j)+A(ij)*cff
+            FORCES(ng)%Pair(i,j)=FORCES(ng)%Pair(i,j)+cff
           END IF
+          range(1)=MIN(range(1),cff)
+          range(2)=MAX(range(2),cff)
         END DO
       END DO
+# ifdef DISTRIBUTE
+      CALL mp_reduce (ng, iNLM, 2, range, op_handle)
+# endif
+      IF (Myrank.eq.MyMaster) THEN
+        write(stdout,40) 'WRFtoROMS Min/Max  MSLP    (mb):    ',        &
+     &                    range(1),range(2)
+      END IF
 #endif
 #if defined BULK_FLUXES || defined ECOSIM || \
    (defined SHORTWAVE && defined ANA_SRFLUX)
@@ -1089,34 +1182,58 @@
 !
       CALL AttrVect_exportRAttr (AttrVect_G(ng)%atm2ocn_AV, "RELH",     &
      &                           A, Asize)
+      range(1)= Large
+      range(2)=-Large
       ij=0
-      cff=0.01_r8
+      fac=0.01_r8
       DO j=JstrR,JendR
         DO i=IstrR,IendR
           ij=ij+1
+          cff=A(ij)*fac
           IF (ia.eq.1) THEN
-            FORCES(ng)%Hair(i,j)=A(ij)*cff
+            FORCES(ng)%Hair(i,j)=cff
           ELSE
-            FORCES(ng)%Hair(i,j)=FORCES(ng)%Hair(i,j)+A(ij)*cff
+            FORCES(ng)%Hair(i,j)=FORCES(ng)%Hair(i,j)+cff
           END IF
+          range(1)=MIN(range(1),cff)
+          range(2)=MAX(range(2),cff)
         END DO
       END DO
+# ifdef DISTRIBUTE
+      CALL mp_reduce (ng, iNLM, 2, range, op_handle)
+# endif
+      IF (Myrank.eq.MyMaster) THEN
+        write(stdout,40) 'WRFtoROMS Min/Max  RELH    (-):     ',        &
+     &                    range(1),range(2)
+      END IF
 !
 !  Surface 2m air temperature    (degC)
 !
       CALL AttrVect_exportRAttr (AttrVect_G(ng)%atm2ocn_AV, "T2",       &
      &                           A, Asize)
+      range(1)= Large
+      range(2)=-Large
       ij=0
       DO j=JstrR,JendR
         DO i=IstrR,IendR
           ij=ij+1
+          cff=A(ij)
           IF (ia.eq.1) THEN
-            FORCES(ng)%Tair(i,j)=A(ij)
+            FORCES(ng)%Tair(i,j)=cff
           ELSE
-            FORCES(ng)%Tair(i,j)=FORCES(ng)%Tair(i,j)+A(ij)
+            FORCES(ng)%Tair(i,j)=FORCES(ng)%Tair(i,j)+cff
           END IF
+          range(1)=MIN(range(1),cff)
+          range(2)=MAX(range(2),cff)
         END DO
       END DO
+# ifdef DISTRIBUTE
+      CALL mp_reduce (ng, iNLM, 2, range, op_handle)
+# endif
+      IF (Myrank.eq.MyMaster) THEN
+        write(stdout,40) 'WRFtoROMS Min/Max  T2      (C):     ',        &
+     &                    range(1),range(2)
+      END IF
 #endif
 #if defined BULK_FLUXES || defined ECOSIM
 !
@@ -1124,33 +1241,57 @@
 !
       CALL AttrVect_exportRAttr (AttrVect_G(ng)%atm2ocn_AV, "U10",      &
      &                           A, Asize)
+      range(1)= Large
+      range(2)=-Large
       ij=0
       DO j=JstrR,JendR
         DO i=IstrR,IendR
           ij=ij+1
+          cff=A(ij)
           IF (ia.eq.1) THEN
-            FORCES(ng)%Uwind(i,j)=A(ij)
+            FORCES(ng)%Uwind(i,j)=cff
           ELSE
-            FORCES(ng)%Uwind(i,j)=FORCES(ng)%Uwind(i,j)+A(ij)
+            FORCES(ng)%Uwind(i,j)=FORCES(ng)%Uwind(i,j)+cff
           END IF
+          range(1)=MIN(range(1),cff)
+          range(2)=MAX(range(2),cff)
         END DO
       END DO
+# ifdef DISTRIBUTE
+      CALL mp_reduce (ng, iNLM, 2, range, op_handle)
+# endif
+      IF (Myrank.eq.MyMaster) THEN
+        write(stdout,40) 'WRFtoROMS Min/Max  U10     (ms-1):  ',        &
+     &                    range(1),range(2)
+      END IF
 !
 !  V-Wind speed at 10 m          (m/s)
 !
       CALL AttrVect_exportRAttr (AttrVect_G(ng)%atm2ocn_AV, "V10",      &
      &                           A, Asize)
+      range(1)= Large
+      range(2)=-Large
       ij=0
       DO j=JstrR,JendR
         DO i=IstrR,IendR
           ij=ij+1
+          cff=A(ij)
           IF (ia.eq.1) THEN
-            FORCES(ng)%Vwind(i,j)=A(ij)
+            FORCES(ng)%Vwind(i,j)=cff
           ELSE
-            FORCES(ng)%Vwind(i,j)=FORCES(ng)%Vwind(i,j)+A(ij)
+            FORCES(ng)%Vwind(i,j)=FORCES(ng)%Vwind(i,j)+cff
           END IF
+          range(1)=MIN(range(1),cff)
+          range(2)=MAX(range(2),cff)
         END DO
       END DO
+# ifdef DISTRIBUTE
+      CALL mp_reduce (ng, iNLM, 2, range, op_handle)
+# endif
+      IF (Myrank.eq.MyMaster) THEN
+        write(stdout,40) 'WRFtoROMS Min/Max  V10     (ms-1):  ',        &
+     &                    range(1),range(2)
+      END IF
 # ifdef CURVGRID
 !
 !  Rotate to curvilinear grid.
@@ -1173,17 +1314,29 @@
 !
       CALL AttrVect_exportRAttr (AttrVect_G(ng)%atm2ocn_AV, "CLDFRA",   &
      &                           A, Asize)
+      range(1)= Large
+      range(2)=-Large
       ij=0
       DO j=JstrR,JendR
         DO i=IstrR,IendR
           ij=ij+1
+          cff=A(ij)
           IF (ia.eq.1) THEN
-            FORCES(ng)%cloud(i,j)=A(ij)
+            FORCES(ng)%cloud(i,j)=cff
           ELSE
-            FORCES(ng)%cloud(i,j)=FORCES(ng)%cloud(i,j)+A(ij)
+            FORCES(ng)%cloud(i,j)=FORCES(ng)%cloud(i,j)+cff
           END IF
+          range(1)=MIN(range(1),cff)
+          range(2)=MAX(range(2),cff)
         END DO
       END DO
+# ifdef DISTRIBUTE
+      CALL mp_reduce (ng, iNLM, 2, range, op_handle)
+# endif
+      IF (Myrank.eq.MyMaster) THEN
+        write(stdout,40) 'WRFtoROMS Min/Max  CLDFRA  (-):     ',        &
+     &                    range(1),range(2)
+      END IF
 #endif
 #if !defined ANA_RAIN && defined EMINUSP
 !
@@ -1191,18 +1344,30 @@
 !
       CALL AttrVect_exportRAttr (AttrVect_G(ng)%atm2ocn_AV, "RAIN",     &
      &                           A, Asize)
-      cff=rho0
+      range(1)= Large
+      range(2)=-Large
+      fac=rho0
       ij=0
       DO j=JstrR,JendR
         DO i=IstrR,IendR
           ij=ij+1
+          cff=A(ij)*fac
           IF (ia.eq.1) THEN
-            FORCES(ng)%rain(i,j)=A(ij)*cff
+            FORCES(ng)%rain(i,j)=cff
           ELSE
-            FORCES(ng)%rain(i,j)=FORCES(ng)%rain(i,j)+A(ij)*cff
+            FORCES(ng)%rain(i,j)=FORCES(ng)%rain(i,j)+cff
           END IF
+          range(1)=MIN(range(1),cff)
+          range(2)=MAX(range(2),cff)
         END DO
       END DO
+# ifdef DISTRIBUTE
+      CALL mp_reduce (ng, iNLM, 2, range, op_handle)
+# endif
+      IF (Myrank.eq.MyMaster) THEN
+        write(stdout,40) 'WRFtoROMS Min/Max  RAIN  (kgm-2s-1):',        &
+     &                    range(1),range(2)
+      END IF
 #endif
 #if defined EMINUSP
 !
@@ -1210,18 +1375,30 @@
 !
       CALL AttrVect_exportRAttr (AttrVect_G(ng)%atm2ocn_AV, "EVAP",     &
      &                           A, Asize)
-      cff=rho0
+      range(1)= Large
+      range(2)=-Large
+      fac=rho0
       ij=0
       DO j=JstrR,JendR
         DO i=IstrR,IendR
           ij=ij+1
+          cff=A(ij)*fac
           IF (ia.eq.1) THEN
-            FORCES(ng)%evap(i,j)=A(ij)*cff
+            FORCES(ng)%evap(i,j)=cff
           ELSE
-            FORCES(ng)%evap(i,j)=FORCES(ng)%evap(i,j)+A(ij)*cff
+            FORCES(ng)%evap(i,j)=FORCES(ng)%evap(i,j)+cff
           END IF
+          range(1)=MIN(range(1),cff)
+          range(2)=MAX(range(2),cff)
         END DO
       END DO
+# ifdef DISTRIBUTE
+      CALL mp_reduce (ng, iNLM, 2, range, op_handle)
+# endif
+      IF (Myrank.eq.MyMaster) THEN
+        write(stdout,40) 'WRFtoROMS Min/Max  EVAP  (kgm-2s-1):',        &
+     &                    range(1),range(2)
+      END IF
 #endif
 !
 !  Apply boundary conditions.

@@ -228,8 +228,9 @@ create_roms_tides
 % I got uwnd.10m.2012.nc and vwnd.10m.2012.nc
 % then run the m file:
 narr2romsnc
-% this also creates a SWAN wind forcing file.
-% I did this rwice: once for the parent and once for the child.
+%
+%  To create a surface wind forcing file for SWAN, we used
+%  nam_narr_2swan.m
 %
 % To create a forcing file that has winds and many other vars like
 % Uwind, Vwind, Pair, Tair, Qair, rain, swrad, lwrad you can use:
@@ -255,8 +256,11 @@ edit run_nemo
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %
 % Step 11: create SCRIP weights
-create_scrip_weights_master_sandy
+% cd to LIib/SCRIP_COAWST and run
+./scrip_coawst scrip_coawst_sandy.in
 % to create all the scrip interpolation weights
+%  You can use that .in file to create weights for a moving 
+% sandy nest or a static nest.
 %
 % Step 12: input files.
 %

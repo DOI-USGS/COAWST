@@ -1,6 +1,6 @@
 # svn $Id: CYGWIN-gfortran.mk 655 2008-07-25 18:57:05Z arango $
 #::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
-# Copyright (c) 2002-2014 The ROMS/TOMS Group                           :::
+# Copyright (c) 2002-2016 The ROMS/TOMS Group                           :::
 #   Licensed under a MIT/X style license                                :::
 #   See License_ROMS.txt                                                :::
 #::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
@@ -73,7 +73,7 @@ endif
 ifdef USE_MPI
        MPI_INCDIR ?= c:\\work\\models\\MPICH2\\include
        MPI_LIBDIR ?= c:\\work\\models\\MPICH2\\lib
-       LIBS       += $(MPI_LIBDIR)/fmpich2g.lib
+       LIBS       += $(MPI_LIBDIR)\\libfmpich2g.a
            FFLAGS += -I$(MPI_INCDIR)
          CPPFLAGS += -DMPI
  ifdef USE_MPIF90
@@ -114,7 +114,7 @@ ifdef USE_CXX
 endif
 
 ifdef USE_WRF
-           FFLAGS += -I../WRF/main -I../WRF/external/esmf_time_f90 -I../WRF/frame -I../WRF/share
+             FFLAGS += -I$(WRF_DIR)/main -I$(WRF_DIR)/external/esmf_time_f90 -I$(WRF_DIR)/frame -I$(WRF_DIR)/share
              LIBS += WRF/main/module_wrf_top.o
              LIBS += WRF/main/libwrflib.a
              LIBS += WRF/external/fftpack/fftpack5/libfftpack.a
@@ -148,7 +148,7 @@ $(SCRATCH_DIR)/def_var.o: FFLAGS += -fno-bounds-check
 # Gfortran versions >= 4.2.
 #
 
-FC_TEST := $(findstring $(shell ${FC} --version | head -1 | cut -d " " -f 5 | \
+FC_TEST := $(findstring $(shell ${FC} --version | head -1 | cut -d " " -f 4 | \
                               cut -d "." -f 1-2),4.0 4.1)
 
 ifeq "${FC_TEST}" ""

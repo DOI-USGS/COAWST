@@ -1,6 +1,6 @@
 # svn $Id$
 #::::::::::::::::::::::::::::::::::::::::::::::::::::: Hernan G. Arango :::
-# Copyright (c) 2002-2015 The ROMS/TOMS Group             Kate Hedstrom :::
+# Copyright (c) 2002-2016 The ROMS/TOMS Group             Kate Hedstrom :::
 #   Licensed under a MIT/X style license                                :::
 #   See License_ROMS.txt                                                :::
 #::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
@@ -76,6 +76,10 @@ MY_HEADER_DIR ?=
 #  biology model header file (like fennel.h, nemuro.h, ecosim.h, etc).
 
 MY_ANALYTICAL_DIR ?=
+
+# If applicable, where does CICE put its binary files?
+
+MY_CICE_DIR ?= /center/w/kate/CICE/NEP/compile
 
 #  Sometimes it is desirable to activate one or more CPP options to
 #  run different variants of the same application without modifying
@@ -228,19 +232,21 @@ endif
 MAKE_MACROS := $(shell echo ${HOME} | sed 's| |\\ |g')/make_macros.mk
 
 ifneq "$(MAKECMDGOALS)" "clean"
- MACROS := $(shell cpp -P $(ROMS_CPPFLAGS) Compilers/make_macros.h > \
+ ifneq "$(MAKECMDGOALS)" "tarfile"
+  MACROS := $(shell cpp -P $(ROMS_CPPFLAGS) Compilers/make_macros.h > \
 		$(MAKE_MACROS); $(CLEAN) $(MAKE_MACROS))
 
- GET_MACROS := $(wildcard $(SCRATCH_DIR)/make_macros.*)
+  GET_MACROS := $(wildcard $(SCRATCH_DIR)/make_macros.*)
 
- ifdef GET_MACROS
-  include $(SCRATCH_DIR)/make_macros.mk
-  $(if ,, $(warning INCLUDING FILE $(SCRATCH_DIR)/make_macros.mk \
+  ifdef GET_MACROS
+   include $(SCRATCH_DIR)/make_macros.mk
+   $(if ,, $(warning INCLUDING FILE $(SCRATCH_DIR)/make_macros.mk \
+                     WHICH CONTAINS APPLICATION-DEPENDENT MAKE DEFINITIONS))
+  else
+   include $(MAKE_MACROS)
+   $(if ,, $(warning INCLUDING FILE $(MAKE_MACROS) \
                     WHICH CONTAINS APPLICATION-DEPENDENT MAKE DEFINITIONS))
- else
-  include $(MAKE_MACROS)
-  $(if ,, $(warning INCLUDING FILE $(MAKE_MACROS) \
-                   WHICH CONTAINS APPLICATION-DEPENDENT MAKE DEFINITIONS))
+  endif
  endif
 endif
 
@@ -420,6 +426,10 @@ endif
 ifdef USE_ROMS
 .PHONY: all
 
+ifdef USE_CICE
+all: $(SCRATCH_DIR) $(SCRATCH_DIR)/libCICE.a
+endif
+
 all: $(SCRATCH_DIR) $(SCRATCH_DIR)/MakeDepend $(BIN) rm_macros
 endif
 
@@ -447,12 +457,17 @@ ifdef USE_ROMS
 		ROMS/Nonlinear/Biology \
 		ROMS/Nonlinear/Sediment \
 		ROMS/Nonlinear/Wec \
+		ROMS/Nonlinear/Vegetation \
 		ROMS/Functionals \
 		ROMS/Utility \
 		ROMS/Modules
 endif
 ifdef USE_SEAICE
  modules  +=	ROMS/SeaIce
+endif
+ifdef USE_CICE
+ modules  +=	SeaIce/Extra
+    LIBS  +=    $(SCRATCH_DIR)/libCICE.a
 endif
 
  includes :=	ROMS/Include
@@ -479,6 +494,7 @@ ifdef USE_ROMS
 		ROMS/Nonlinear/Biology \
 		ROMS/Nonlinear/Sediment \
 		ROMS/Nonlinear/Wec \
+		ROMS/Nonlinear/Vegetation \
 		ROMS/Utility \
 		ROMS/Drivers \
 		ROMS/Functionals
@@ -621,6 +637,34 @@ $(SCRATCH_DIR)/$(NETCDF_MODFILE): | $(SCRATCH_DIR)
 $(SCRATCH_DIR)/$(TYPESIZES_MODFILE): | $(SCRATCH_DIR)
 	cp -f $(NETCDF_INCDIR)/$(TYPESIZES_MODFILE) $(SCRATCH_DIR)
 
+$(SCRATCH_DIR)/libCICE.a: $(MY_CICE_DIR)/libCICE.a
+	cp -f $(MY_CICE_DIR)/libCICE.a $(MY_CICE_DIR)/*.mod $(SCRATCH_DIR)
+
+$(MY_CICE_DIR)/libCICE.a:
+	SeaIce/comp_ice
+ifdef USE_CICE
+$(SCRATCH_DIR)/initial.o: $(MY_CICE_DIR)/CICE_InitMod.o
+$(SCRATCH_DIR)/ice_fakecpl.o: $(MY_CICE_DIR)/CICE_RunMod.o
+$(SCRATCH_DIR)/ice_fakecpl.o: $(MY_CICE_DIR)/ice_blocks.o
+$(SCRATCH_DIR)/ice_fakecpl.o: $(MY_CICE_DIR)/ice_broadcast.o
+$(SCRATCH_DIR)/ice_fakecpl.o: $(MY_CICE_DIR)/ice_calendar.o
+$(SCRATCH_DIR)/ice_fakecpl.o: $(MY_CICE_DIR)/ice_communicate.o
+$(SCRATCH_DIR)/ice_fakecpl.o: $(MY_CICE_DIR)/ice_constants.o
+$(SCRATCH_DIR)/ice_fakecpl.o: $(MY_CICE_DIR)/ice_domain.o
+$(SCRATCH_DIR)/ice_fakecpl.o: $(MY_CICE_DIR)/ice_domain_size.o
+$(SCRATCH_DIR)/ice_fakecpl.o: $(MY_CICE_DIR)/ice_fileunits.o
+$(SCRATCH_DIR)/ice_fakecpl.o: $(MY_CICE_DIR)/ice_flux.o
+$(SCRATCH_DIR)/ice_fakecpl.o: $(MY_CICE_DIR)/ice_gather_scatter.o
+$(SCRATCH_DIR)/ice_fakecpl.o: $(MY_CICE_DIR)/ice_grid.o
+$(SCRATCH_DIR)/ice_fakecpl.o: $(MY_CICE_DIR)/ice_history.o
+$(SCRATCH_DIR)/ice_fakecpl.o: $(MY_CICE_DIR)/ice_init.o
+$(SCRATCH_DIR)/ice_fakecpl.o: $(MY_CICE_DIR)/ice_kinds_mod.o
+$(SCRATCH_DIR)/ice_fakecpl.o: $(MY_CICE_DIR)/ice_restart.o
+$(SCRATCH_DIR)/ice_fakecpl.o: $(MY_CICE_DIR)/ice_restart_shared.o
+$(SCRATCH_DIR)/ice_fakecpl.o: $(MY_CICE_DIR)/ice_state.o
+$(SCRATCH_DIR)/ice_fakecpl.o: $(MY_CICE_DIR)/ice_timers.o
+endif
+
 $(SCRATCH_DIR)/MakeDepend: makefile \
                            $(SCRATCH_DIR)/$(NETCDF_MODFILE) \
                            $(SCRATCH_DIR)/$(TYPESIZES_MODFILE) \
@@ -647,7 +691,7 @@ endif
 .PHONY: tarfile
 
 tarfile:
-		tar --exclude=".svn" --exclude Output -cvf coawst_v3.1.tar *
+		tar --exclude=".svn" --exclude Output -cvf coawst_v3.2.tar *
 
 .PHONY: zipfile
 

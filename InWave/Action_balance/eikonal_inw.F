@@ -105,8 +105,10 @@
       twopi=2.0_r8*pi
       otwopi=1.0_r8/twopi
 
-      DO j=Jstr+1,Jend-1
-        DO i=Istr+1,Iend-1
+!     DO j=Jstr+1,Jend-1
+!       DO i=Istr+1,Iend-1
+      DO j=Jstr,Jend
+        DO i=Istr,Iend
           DO d=1,ND(ng)
 
 !=======================================================================
@@ -116,33 +118,33 @@
             alfa_wave =(1.5_r8*pi-wd(d))-angler(i,j)
             kx= kwc(i,j,d)*cos(alfa_wave)
             ky= kwc(i,j,d)*sin(alfa_wave)
-
+!
 !=======================================================================
 ! Compute the time change of xi and etai components of the wave number
 !=======================================================================
+!
             kx=kx-pm(i,j)*dt(ng)*0.5_r8*                                &
      &         (twopi/Ta(i+1,j,d)-twopi/Ta(i-1,j,d))
             ky=ky-pn(i,j)*dt(ng)*0.5_r8*                                &
      &         (twopi/Ta(i,j+1,d)-twopi/Ta(i,j-1,d))
-            kwc(i,j,d)=max(((kx*kx+ky*ky)**0.5_r8),0.000001)
-
+            kwc(i,j,d)=max(((kx*kx+ky*ky)**0.5_r8),0.000001_r8)
           END DO
         END DO
       END DO
 
-      DO j=Jstr+1,Jend-1
-        DO d=1,ND(ng)
-            kwc(Istr,j,d)=kwc(Istr+1,j,d)
-            kwc(Iend,j,d)=kwc(Iend-1,j,d)
-        END DO
-      END DO
+!      DO j=Jstr+1,Jend-1
+!        DO d=1,ND(ng)
+!            kwc(Istr,j,d)=kwc(Istr+1,j,d)
+!            kwc(Iend,j,d)=kwc(Iend-1,j,d)
+!        END DO
+!      END DO
 
-      DO i=Istr+1,Iend-1
-        DO d=1,ND(ng)
-          kwc(i,Jstr,d)=kwc(i,Jstr+1,d)
-          kwc(i,Jend,d)=kwc(i,Jend-1,d)
-        END DO
-      END DO
+!      DO i=Istr+1,Iend-1
+!        DO d=1,ND(ng)
+!          kwc(i,Jstr,d)=kwc(i,Jstr+1,d)
+!          kwc(i,Jend,d)=kwc(i,Jend-1,d)
+!        END DO
+!      END DO
 
       CALL bc_r3d_tile (ng, tile,                                       &
      &                  LBi, UBi, LBj, UBj, 1, ND(ng),                  &
@@ -157,7 +159,7 @@
      &                    LBi, UBi, LBj, UBj, 1, ND(ng),                &
      &                    NghostPoints,                                 &
      &                    EWperiodic(ng), NSperiodic(ng),               &
-     &                    kwc(:,:,:))
+     &                    kwc)
 # endif
 
       RETURN

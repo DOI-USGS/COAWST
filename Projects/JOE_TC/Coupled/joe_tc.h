@@ -109,7 +109,8 @@
 
 # define SALINITY
 # define SOLVE3D
-# define SPLINES
+# define SPLINES_VVISC
+# define SPLINES_VDIFF
 # define AVERAGES
 # define NONLIN_EOS
 
@@ -137,6 +138,7 @@
 
 /* Turbulence closure */
 # define GLS_MIXING
+# define RI_SPLINES
 # undef  MY25_MIXING
 
 # if defined GLS_MIXING || defined MY25_MIXING

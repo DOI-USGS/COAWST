@@ -2,7 +2,7 @@
 #if defined MCT_INTERP_OC2AT || defined MCT_INTERP_OC2WV || \
     defined MCT_INTERP_WV2AT
       SUBROUTINE get_sparse_matrix (ng, nc_name, num_sparse_elems,      &
-     &                              src_grid_dims, dst_grid_dims)
+     &                              src_dims, dst_dims)
 !
 !svn $Id: get_sparse_matrix.F 1336 2008-01-24 02:45:56Z jcwarner $
 !================================================== Hernan G. Arango ===
@@ -20,9 +20,6 @@
 #ifdef ROMS_MODEL
       USE mod_iounits
 #endif
-!      USE mod_scalars
-!      USE mod_ncparam
-!      USE mct_coupler_params
 !
       implicit none
 !
@@ -31,15 +28,17 @@
       integer, intent(in) :: ng
       integer :: exit_flag
 
-      character (len=70), intent(in) :: nc_name
+      character (len=70), intent(inout) :: nc_name
+      character (len=70) :: grp_name
 
       integer, intent(out) :: num_sparse_elems
-      integer, dimension(2), intent(inout) :: src_grid_dims,            &
-     &                                        dst_grid_dims
+      integer, dimension(2), intent(inout) :: src_dims,                 &
+     &                                        dst_dims
 !
 !  Local variable declarations
 !
-      integer :: i, j, ndims, status, varid, ncid, numelem, ncSPSid
+      integer :: i, j, ndims, status, varid
+      integer :: ncid, numelem, ncSPSid, grpid
       integer, dimension(2) :: start, total
       integer, dimension(nf90_max_var_dims) :: dimIDs
 
@@ -59,6 +58,10 @@
       num_elems_add=0
 !  Open grid NetCDF file for reading.
 !
+      IF (scrip_opt.eq.1) THEN
+        grp_name=TRIM(ADJUSTL(nc_name))
+        nc_name=SCRIPname
+      END IF
       ncSPSid=-1
       IF (ncSPSid.eq.-1) THEN
         status=nf90_open(TRIM(nc_name), nf90_nowrite, ncSPSid)
@@ -69,11 +72,17 @@
           RETURN
         END IF
       END IF
-      ncid=ncSPSid
+!
+! Get the group id.
+!
+      IF (scrip_opt.eq.1) THEN
+        status=nf90_inq_ncid(ncSPSid,grp_name,grpid)
+        ncid=grpid
+      END IF
 !
 ! Get the src and dst grid dimensions.
 !
-      status=nf90_inq_varid(ncSPSid,'src_grid_dims', varid)
+      status=nf90_inq_varid(ncid,'src_grid_dims', varid)
       IF (status.ne.nf90_noerr) THEN
         WRITE (stdout,30) TRIM('src_grid_dims')
         exit_flag=4
@@ -81,9 +90,9 @@
       END IF
       start(1)=1
       total(1)=2
-      status=nf90_get_var(ncid, varid, src_grid_dims, start, total)
+      status=nf90_get_var(ncid, varid, src_dims, start, total)
 !
-      status=nf90_inq_varid(ncSPSid,'dst_grid_dims', varid)
+      status=nf90_inq_varid(ncid,'dst_grid_dims', varid)
       IF (status.ne.nf90_noerr) THEN
         WRITE (stdout,30) TRIM('dst_grid_dims')
         exit_flag=4
@@ -91,17 +100,17 @@
       END IF
       start(1)=1
       total(1)=2
-      status=nf90_get_var(ncid, varid, dst_grid_dims, start, total)
+      status=nf90_get_var(ncid, varid, dst_dims, start, total)
 !
-! Get the source grid mask
+! Get the destination grid mask
 !
-      status=nf90_inq_varid(ncSPSid,'dst_grid_imask', varid)
+      status=nf90_inq_varid(ncid,'dst_grid_imask', varid)
       IF (status.ne.nf90_noerr) THEN
         WRITE (stdout,30) TRIM('dst_grid_imask')
         exit_flag=4
         ioerror=status
       END IF
-      numelem=dst_grid_dims(1)*dst_grid_dims(2)
+      numelem=dst_dims(1)*dst_dims(2)
       allocate ( dst_grid_imask(numelem) )
       start(1)=1
       total(1)=numelem
@@ -109,8 +118,8 @@
 !
 ! Determine number of weights.
 !
-      status=nf90_inq_varid(ncSPSid,'src_address', varid)
-      status=nf90_inquire_variable(ncSPSid,varid,dimids = dimIDs)
+      status=nf90_inq_varid(ncid,'src_address', varid)
+      status=nf90_inquire_variable(ncid,varid,dimids = dimIDs)
       IF (status.ne.nf90_noerr) THEN
         WRITE (stdout,30) TRIM('num_links')
         exit_flag=4
@@ -127,7 +136,7 @@
 !
 ! Get the rows.
 !
-      status=nf90_inq_varid(ncSPSid,'dst_address', varid)
+      status=nf90_inq_varid(ncid,'dst_address', varid)
       IF (status.ne.nf90_noerr) THEN
         WRITE (stdout,30) TRIM('dst_address')
         exit_flag=4
@@ -139,7 +148,7 @@
 !
 ! Get the cols.
 !
-      status=nf90_inq_varid(ncSPSid,'src_address', varid)
+      status=nf90_inq_varid(ncid,'src_address', varid)
       IF (status.ne.nf90_noerr) THEN
         WRITE (stdout,30) TRIM('src_address')
         exit_flag=4
@@ -151,7 +160,7 @@
 !
 ! Get the weights.
 !
-      status=nf90_inq_varid(ncSPSid,'remap_matrix', varid)
+      status=nf90_inq_varid(ncid,'remap_matrix', varid)
       IF (status.ne.nf90_noerr) THEN
         WRITE (stdout,30) TRIM('remap_matrix')
         exit_flag=4
@@ -166,9 +175,9 @@
 ! Check to see if the user computed additional weights to account
 ! for land areas of the src model driving water pts in dst model.
 !
-      status=nf90_inq_varid(ncSPSid,'add_src_address', varid)
+      status=nf90_inq_varid(ncid,'add_src_address', varid)
       IF (status.eq.nf90_noerr) THEN
-        status=nf90_inquire_variable(ncSPSid,varid,dimids = dimIDs)
+        status=nf90_inquire_variable(ncid,varid,dimids = dimIDs)
         status=nf90_inquire_dimension(ncid, dimIDs(1), len=num_elems_add)
         num_sparse_elems=num_sparse_elems+num_elems_add
 !
@@ -180,7 +189,7 @@
 !
 ! Get the rows.
 !
-        status=nf90_inq_varid(ncSPSid,'add_dst_address', varid)
+        status=nf90_inq_varid(ncid,'add_dst_address', varid)
         IF (status.ne.nf90_noerr) THEN
           WRITE (stdout,30) TRIM('add_dst_address')
           exit_flag=4
@@ -192,7 +201,7 @@
 !
 ! Get the cols.
 !
-        status=nf90_inq_varid(ncSPSid,'add_src_address', varid)
+        status=nf90_inq_varid(ncid,'add_src_address', varid)
         IF (status.ne.nf90_noerr) THEN
           WRITE (stdout,30) TRIM('add_src_address')
           exit_flag=4
@@ -204,7 +213,7 @@
 !
 ! Get the weights.
 !
-        status=nf90_inq_varid(ncSPSid,'add_remap_matrix', varid)
+        status=nf90_inq_varid(ncid,'add_remap_matrix', varid)
         IF (status.ne.nf90_noerr) THEN
           WRITE (stdout,30) TRIM('add_remap_matrix')
           exit_flag=4

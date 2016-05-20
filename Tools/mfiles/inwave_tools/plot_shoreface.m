@@ -11,7 +11,8 @@ nt=length(time);
 count=0;
 for tt=1:1:nt
   count=count+1;
-  mask=squeeze(ncread(hisfile,'wetdry_mask_rho',[1 1 tt],[Inf Inf 1]));
+% mask=squeeze(ncread(hisfile,'wetdry_mask_rho',[1 1 tt],[Inf Inf 1]));
+  mask=squeeze(ncread(hisfile,'mask_rho',[1 1 tt],[Inf Inf 1]));
   zeta=squeeze(ncread(hisfile,'zeta',[1 1 tt],[Inf Inf 1]));
   Hwave=squeeze(ncread(hisfile,'Hwave',[1 1 tt],[Inf Inf 1]));
   dum=find(mask==0);

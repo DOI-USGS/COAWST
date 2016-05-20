@@ -329,11 +329,12 @@
         WAVES(ng)%N=WAVES(ng)%N+1
       ENDIF
 
-      allocate(WAVES(ng)%CompFn(WAVES(ng)%N))
+!     allocate(WAVES(ng)%CompFn(WAVES(ng)%N))
+      allocate(WAVES(ng)%CompFn(WAVES(ng)%nfreq))
       allocate(WAVES(ng)%zeta(WAVES(ng)%N,WAVES(ng)%ndir))
       allocate(WAVES(ng)%Ampzeta(WAVES(ng)%N,WAVES(ng)%ndir))
       allocate(WAVES(ng)%Ampzeta_tot(WAVES(ng)%N))
-      
+
       DO j=1,WAVES(ng)%ndir
         DO i=1,WAVES(ng)%N    
           WAVES(ng)%zeta(i,j)=0.0_r8
@@ -488,8 +489,8 @@
 
 ! COMPUTES THE FOURIER COMPONENTS
 
-!     DO i=1,WAVES(ng)%nfreq
-      DO i=1,WAVES(ng)%N
+      DO i=1,WAVES(ng)%nfreq
+!     DO i=1,WAVES(ng)%N
         WAVES(ng)%CompFn(i)=0.5_r8*WAVES(ng)%amp(i,dir_index)*          &
      &                      exp(compi*WAVES(ng)%phase(i,dir_index))
       END DO

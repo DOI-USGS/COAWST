@@ -38,7 +38,7 @@ filename='Projects/Sandy_InWave/offbreach_2012103100.spc2d';
 %    print('-dpng','-r200',figure1)
 
     DIR1(DIR1<0)=360+DIR1(DIR1<0);
-    DIR1=DIR1;
+%   DIR1=DIR1;
 
     swan_f=FA1(:,1);
     swan_dir=DIR1(1,:)*pi/180;
@@ -80,9 +80,9 @@ filename='Projects/Sandy_InWave/offbreach_2012103100.spc2d';
     % PLOT SPECTRA IN CARTESIAN SYSTEM
 
     figure(1)
-    plot(f,SW)
+    plot(f,SW,'linewidth',2)
     hold on
-    plot(swan_f,SF,'r')
+    plot(swan_f,SF,'r','linewidth',2)
 
     xlabel('Frequency (1/s)')
 %   print('-dpng','-r200','spectral_ver')
@@ -109,7 +109,7 @@ filename='Projects/Sandy_InWave/offbreach_2012103100.spc2d';
     for t=0:1:3600
         count=count+1;
         ind=ind+1;
-        for j=10:50   %length(comp1)
+        for j=1:length(comp1)
             eta1(ind,1)=eta1(ind,1)+aj1(comp1(j)).*cos(-w(comp1(j)).*t+eps(comp1(j)));
         end
     end
@@ -129,12 +129,12 @@ filename='Projects/Sandy_InWave/offbreach_2012103100.spc2d';
     xlabel('Time, sec')
     ylabel('\eta, m')
 
-    xx=[time; eta1'];
-    S=dat2spec2(xx',2000);
-    Sf = ttspec(S,'f');
+%    xx=[time; eta1'];
+%    S=dat2spec2(xx',2000);
+%    Sf = ttspec(S,'f');
 
-    Df=(Sf.f(2,1)-Sf.f(1,1));
-    Hs_p=4.004*sqrt(sum(Sf.S).*Df);
+%    Df=(Sf.f(2,1)-Sf.f(1,1));
+%    Hs_p=4.004*sqrt(sum(Sf.S).*Df);
 
     % OBTAINING THE ENVELOPE
 
@@ -168,16 +168,16 @@ filename='Projects/Sandy_InWave/offbreach_2012103100.spc2d';
 
 
 
-    xx2=[time', amp_hil-mean(amp_hil)];
-    S=dat2spec2(xx2,2000)
-    Sf_env = ttspec(S,'f');
+%    xx2=[time', amp_hil-mean(amp_hil)];
+%    S=dat2spec2(xx2,2000)
+%    Sf_env = ttspec(S,'f');
 
-    figure(5)
+%    figure(5)
 %    hold on
 %    ii1=ceil((ii-37)/2)
 %    subplot(4,4,ii1)
 %    if mod(ii-37,2)==0
-        plot(1./Sf_env.f,Sf_env.S,'LineWidth',2)
+%        plot(1./Sf_env.f,Sf_env.S,'LineWidth',2)
 %    else
 %        plot(1./Sf_env(ii-37).f,Sf_env(ii-37).S,'r','LineWidth',2)
 %    end
@@ -186,15 +186,15 @@ filename='Projects/Sandy_InWave/offbreach_2012103100.spc2d';
 %        legend(strcat('Case',num2str(ii-1-37)),strcat('Case',num2str(ii-37)))
 %    end
 
-    xlabel('Period, (s)')
-    ylabel('Spectral energy density')
-    hold on
+%    xlabel('Period, (s)')
+%    ylabel('Spectral energy density')
+%    hold on
 
 
 
-    figure(5)
-    title('ENVELOPE SPECTRA')
-    set(gcf,'PaperPosition',[0.1 0.1 20 20]);
+%    figure(5)
+%    title('ENVELOPE SPECTRA')
+%    set(gcf,'PaperPosition',[0.1 0.1 20 20]);
 %    print(gcf, '-djpeg', '-zbuffer', figure5);
 
 
@@ -223,7 +223,7 @@ eta_tot=eta;
 %
 %
 %save realizations amp_hil time Sf_env a1 f1 TA wave_dir Hs1
-save realizations amp_hil time Sf_env a1 f1 Hs1 eta_tot
+save realizations amp_hil time a1 f1 Hs1 eta_tot
 %
 %
 %

@@ -152,7 +152,8 @@
 ! Compute the wave number from the dispersion relation
 !-----------------------------------------------------------------------
 !
-        IF(iic(ng).eq.1)then
+!       IF(iic(ng).eq.1)then
+        IF(iic(ng).eq.ntstart(ng)) then
 !!$OMP PARALLEL DO PRIVATE(thread,subs,tile) SHARED(ng,numthreads)
 !          DO thread=0,numthreads-1
 !            subs=NtileX(ng)*NtileE(ng)/numthreads

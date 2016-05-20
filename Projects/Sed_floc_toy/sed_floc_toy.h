@@ -14,7 +14,7 @@
 */
 
 #define ROMS_MODEL
-#undef  BODYFORCE
+#define BODYFORCE
 #undef  LOG_PROFILE
 #define DJ_GRADPS
 #undef  TS_U3HADVECTION
@@ -27,7 +27,7 @@
 #undef  ANA_INITIAL
 #define ANA_SMFLUX
 #define ATM_PRESS
-#define ANA_PAIR
+#undef  ANA_PAIR
 #define SOLVE3D
 #ifdef SOLVE3D
 # undef  ANA_SEDIMENT
@@ -40,7 +40,7 @@
 # define ANA_STFLUX
 #endif
 #undef   ANA_VMIX
-#define  ANA_WWAVE
+#undef   ANA_WWAVE
 
 #undef  UV_LOGDRAG
 #undef  UV_LDRAG
@@ -63,9 +63,9 @@
 
 #define SSW_BBL
 #ifdef SSW_BBL
-# define SSW_CALC_UB
-# undef SSW_CALC_ZNOT
-# undef  SSW_LOGINT
+# undef  SSW_CALC_UB
+# define SSW_CALC_ZNOT
+# define SSW_LOGINT
 #endif
 
 #define GLS_MIXING
@@ -83,18 +83,18 @@
 # define SUSPLOAD
 # undef  BEDLOAD_SOULSBY
 # undef  BEDLOAD_MPM
-# undef  SED_DENS
+# define SED_DENS
 # undef  COHESIVE_BED
 # undef  BF_TCR
 # undef  LINEAR_TCR
 # undef  POWERLAW_TCR
-# define  MIXED_BED
+# define MIXED_BED
 # undef  SED_MORPH
 # define SED_FLOCS
-# define FLOC_TURB_DISS
-# undef  FLOC_BBL_DISS
-# undef  SED_DEFLOC
-# define  SED_TAU_CD_CONST
+# undef  FLOC_TURB_DISS
+# define FLOC_BBL_DISS
+# define SED_DEFLOC
+# define SED_TAU_CD_CONST
 # undef  SED_TAU_CD_LIN
 # undef  SED_BIODIFF
 #endif

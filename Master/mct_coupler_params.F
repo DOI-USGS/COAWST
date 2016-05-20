@@ -26,6 +26,7 @@
       integer, dimension(:), pointer :: sparse_rows
       integer, dimension(:), pointer :: sparse_cols
       integer, dimension(:), pointer :: dst_grid_imask
+      integer, dimension(2) :: src_grid_dims, dst_grid_dims
       real(m8), dimension(:), pointer :: sparse_weights
 
       TYPE T_DST_GRID

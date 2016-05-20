@@ -88,6 +88,7 @@
 !-----------------------------------------------------------------------
 !
       IF (flag.eq.1) THEN
+        scrip_opt=0
         DO WHILE (.TRUE.)
           READ (inp,'(a)',ERR=40,END=50) line
           status=cdecode_line(line, KeyWord, Nval, Cval, Rval)
@@ -139,6 +140,9 @@
               Aname=TRIM(ADJUSTL(Cval(Nval)))
 # endif
             END IF
+            IF (TRIM(KeyWord).eq.'SCRIP_WEIGHT_OPTION') THEN
+              Npts=cload_i(Nval, Rval, 1, scrip_opt)
+            END IF
           END IF
         END DO
       END IF
@@ -147,46 +151,54 @@
           READ (inp,'(a)',ERR=40,END=50) line
           status=cdecode_line(line, KeyWord, Nval, Cval, Rval)
           IF (status.gt.0) THEN
+            IF (scrip_opt.eq.1) THEN
+              IF (TRIM(KeyWord).eq.'SCRIP_COAWST_NAME') THEN
+                SCRIPname=TRIM(ADJUSTL(Cval(Nval)))
+              END IF
+            ELSE IF (scrip_opt.eq.2) THEN
 # ifdef ROMS_COUPLING
 #  ifdef MCT_INTERP_OC2AT
-            IF (TRIM(KeyWord).eq.'O2ANAME') THEN
-              io=CEILING(REAL(Nval)/REAL(Natm_grids))
-              ia=Nval-(Natm_grids*(io-1))
-              O2Aname(io,ia)=TRIM(ADJUSTL(Cval(Nval)))
-            END IF
-            IF (TRIM(KeyWord).eq.'A2ONAME') THEN
-              ia=CEILING(REAL(Nval)/REAL(Nocn_grids))
-              io=Nval-(Nocn_grids*(ia-1))
-              A2Oname(ia,io)=TRIM(ADJUSTL(Cval(Nval)))
-            END IF
+              IF (TRIM(KeyWord).eq.'O2ANAME') THEN
+                io=CEILING(REAL(Nval)/REAL(Natm_grids))
+                ia=Nval-(Natm_grids*(io-1))
+                O2Aname(io,ia)=TRIM(ADJUSTL(Cval(Nval)))
+              END IF
+              IF (TRIM(KeyWord).eq.'A2ONAME') THEN
+                ia=CEILING(REAL(Nval)/REAL(Nocn_grids))
+                io=Nval-(Nocn_grids*(ia-1))
+                A2Oname(ia,io)=TRIM(ADJUSTL(Cval(Nval)))
+              END IF
 #  endif
 #  ifdef MCT_INTERP_OC2WV
-            IF (TRIM(KeyWord).eq.'O2WNAME') THEN
-              io=CEILING(REAL(Nval)/REAL(Nwav_grids))
-              iw=Nval-(Nwav_grids*(io-1))
-              O2Wname(io,iw)=TRIM(ADJUSTL(Cval(Nval)))
-            END IF
-            IF (TRIM(KeyWord).eq.'W2ONAME') THEN
-              iw=CEILING(REAL(Nval)/REAL(Nocn_grids))
-              io=Nval-(Nocn_grids*(iw-1))
-              W2Oname(iw,io)=TRIM(ADJUSTL(Cval(Nval)))
-            END IF
+              IF (TRIM(KeyWord).eq.'O2WNAME') THEN
+                io=CEILING(REAL(Nval)/REAL(Nwav_grids))
+                iw=Nval-(Nwav_grids*(io-1))
+                O2Wname(io,iw)=TRIM(ADJUSTL(Cval(Nval)))
+              END IF
+              IF (TRIM(KeyWord).eq.'W2ONAME') THEN
+                iw=CEILING(REAL(Nval)/REAL(Nocn_grids))
+                io=Nval-(Nocn_grids*(iw-1))
+                W2Oname(iw,io)=TRIM(ADJUSTL(Cval(Nval)))
+              END IF
 #  endif
 # endif
 # ifdef SWAN_COUPLING
 #  ifdef MCT_INTERP_WV2AT
-            IF (TRIM(KeyWord).eq.'A2WNAME') THEN
-              ia=CEILING(REAL(Nval)/REAL(Nwav_grids))
-              iw=Nval-(Nwav_grids*(ia-1))
-              A2Wname(ia,iw)=TRIM(ADJUSTL(Cval(Nval)))
-            END IF
-            IF (TRIM(KeyWord).eq.'W2ANAME') THEN
-              iw=CEILING(REAL(Nval)/REAL(Natm_grids))
-              ia=Nval-(Natm_grids*(iw-1))
-              W2Aname(iw,ia)=TRIM(ADJUSTL(Cval(Nval)))
-            END IF
+              IF (TRIM(KeyWord).eq.'A2WNAME') THEN
+                ia=CEILING(REAL(Nval)/REAL(Nwav_grids))
+                iw=Nval-(Nwav_grids*(ia-1))
+                A2Wname(ia,iw)=TRIM(ADJUSTL(Cval(Nval)))
+              END IF
+              IF (TRIM(KeyWord).eq.'W2ANAME') THEN
+                iw=CEILING(REAL(Nval)/REAL(Natm_grids))
+                ia=Nval-(Natm_grids*(iw-1))
+                W2Aname(iw,ia)=TRIM(ADJUSTL(Cval(Nval)))
+              END IF
 #  endif
 # endif
+            ELSE
+              IF (MyRank.eq.MyMaster) WRITE (out,70)
+            END IF
           END IF
         END DO
       END IF
@@ -195,6 +207,7 @@
       RETURN
   50  CLOSE (inp)
   60  FORMAT (/,' read_coawst_par - Error while processing line: ',/,a)
+  70  FORMAT (/,' read_coawst_par - Invalid SCRIP_WEIGHT_OPTION ',/,a)
 
       RETURN
       END SUBROUTINE read_coawst_par

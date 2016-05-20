@@ -25,11 +25,11 @@
 get_Wind=1;       % surface u- and v- winds (m/s)
 
 %(2) Enter name of output SWAN forcing file
-SWAN_NAMNARR_name='swan_namnarr_1020Sep2012.dat';
+SWAN_NAMNARR_name='swan_narr_Oct2012.dat';
 
 %(3) Enter start and end dates - needed if using get_NARR or get_NAM
-namnarr_start = datenum('10-Sep-2012');
-namnarr_end   = datenum('20-Sep-2012');
+namnarr_start = datenum('28-Oct-2012');
+namnarr_end   = datenum('31-Oct-2012');
 
 %(4) Select to interpolate to a roms grid or a user defined grid.
 % Set one of these to a 1, the other to a 0.
@@ -41,8 +41,8 @@ if (interpto_swan_grid)
   nx=84;
   ny=24;
 elseif (interpto_user_grid)
-  lon_rho=[255:0.1:310]-360;
-  lat_rho=[ 10:0.1:50 ];  % Create a 0.1 degree lon-lat grid
+  lon_rho=[270:0.1:300]-360;
+  lat_rho=[ 25:0.1:45 ];  % Create a 0.1 degree lon-lat grid
 else
   disp('pick a grid')
 end

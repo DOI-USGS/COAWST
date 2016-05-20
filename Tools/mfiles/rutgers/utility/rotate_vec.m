@@ -123,8 +123,8 @@ if (irotate == 0),
       for i = [1,L],
         UatV(1,2:M,:)=0.5.*(Uinp(i,1:Mm,:)+Uinp(i,2:M,:));
         Vangle(1,2:M,:)=0.5*(angle(i,1:Mm,:)+angle(i,2:M,:));
-        Vout(i,1:Mm)=-UatV(1,2:M ).*sin(Vangle(1,1:Mm))-              ...
-                      Vinp(i,1:Mm).*cos(Vangle(1,1:Mm));
+        Vout(i,1:Mm,:)=-UatV(1,2:M,:).*sin(Vangle(1,1:Mm,:))-         ...
+                      Vinp(i,1:Mm,:).*cos(Vangle(1,1:Mm,:));
       end
     
     else

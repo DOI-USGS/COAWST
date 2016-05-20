@@ -1,7 +1,7 @@
 /*
 ** svn $Id$
 *******************************************************************************
-** Copyright (c) 2002-2015 The ROMS/TOMS Group                               **
+** Copyright (c) 2002-2016 The ROMS/TOMS Group                               **
 **   Licensed under a MIT/X style license                                    **
 **   See License_ROMS.txt                                                    **
 *******************************************************************************
@@ -41,6 +41,8 @@
 # define UV_LDRAG
 # define UV_VIS2
 # define MIX_S_UV
+# define SPLINES_VDIFF
+# define SPLINES_VVISC
 # define DJ_GRADPS
 # define TS_U3HADVECTION
 # define TS_C4VADVECTION
@@ -52,13 +54,11 @@
 # define CURVGRID
 # define MASKING
 # define SOLVE3D
-# define SPLINES
 # define AVERAGES
 # define AVERAGES_QUADRATIC
 # define DIAGNOSTICS_UV
 # define DIAGNOSTICS_TS
 
-# undef  MY25_MIXING
 # define LMD_MIXING
 # ifdef LMD_MIXING
 #  define SOLAR_SOURCE
@@ -66,6 +66,7 @@
 #  define LMD_CONVEC
 #  define LMD_NONLOCAL
 #  define LMD_SKPP
+#  define RI_SPLINES
 # endif
 
 # define ANA_BSFLUX
@@ -89,6 +90,8 @@
 # define UV_LDRAG
 # define UV_VIS2
 # define MIX_S_UV
+# define SPLINES_VDIFF
+# define SPLINES_VVISC
 # define DJ_GRADPS
 # define TS_U3HADVECTION
 # define TS_C4VADVECTION
@@ -100,9 +103,7 @@
 # define CURVGRID
 # define MASKING
 # define SOLVE3D
-# define SPLINES
 
-# undef  MY25_MIXING
 # define LMD_MIXING
 # ifdef LMD_MIXING
 #  define SOLAR_SOURCE
@@ -110,6 +111,7 @@
 #  define LMD_CONVEC
 #  define LMD_NONLOCAL
 #  define LMD_SKPP
+#  define RI_SPLINES
 # endif
 
 # define ANA_BSFLUX

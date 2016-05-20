@@ -1,7 +1,7 @@
 /*
 ** svn $Id: make_macros.h 630 2008-06-10 18:56:02Z arango $
 ********************************************************** Hernan G. Arango ***
-** Copyright (c) 2002-2014 The ROMS/TOMS Group                               **
+** Copyright (c) 2002-2016 The ROMS/TOMS Group                               **
 **   Licensed under a MIT/X style license                                    **
 **   See License_ROMS.txt                                                    **
 *******************************************************************************
@@ -53,6 +53,12 @@
   USE_SEAICE := on
 #else
   USE_SEAICE :=
+#endif
+
+#ifdef CICE_MODEL
+  USE_CICE := on
+#else
+  USE_CICE :=
 #endif
 
 /*

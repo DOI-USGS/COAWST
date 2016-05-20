@@ -28,6 +28,12 @@
       integer :: ioerror
 # endif
 
+!# if defined MCT_INTERP_OC2WV || defined MCT_INTERP_OC2AT || \
+!     defined MCT_INTERP_WV2AT
+! this flag is temporary for SCRIP option.
+      integer :: scrip_opt
+      character (len=80) :: SCRIPname
+!# endif
 # ifdef ROMS_COUPLING
 #  ifdef MCT_INTERP_OC2WV
       character (len=80), dimension(:,:), pointer :: O2Wname

@@ -27,6 +27,9 @@
       USE mod_stepping
       USE mod_inwave_vars
       USE mod_inwave_params
+#   ifdef UV_KIRBY
+      USE mod_grid
+#   endif
 !
 !  Imported variable declarations.
 !
@@ -44,6 +47,10 @@
      &                   LBi, UBi, LBj, UBj,                            &
      &                   nrhs(ng), nstp(ng), nnew(ng),                  &
 #  ifdef SOLVE3D
+#   ifdef UV_KIRBY
+     &                   GRID(ng) % Hz,                                 &
+     &                   GRID(ng) % z_r,                                &
+#   endif
      &                   OCEAN(ng) % u,                                 &
      &                   OCEAN(ng) % v,                                 &
 #  else
@@ -67,6 +74,9 @@
      &                         LBi, UBi, LBj, UBj,                      &
      &                         nrhs, nstp, nnew,                        &
 #  ifdef SOLVE3D
+#   ifdef UV_KIRBY
+     &                         Hz, z_r,                                 &
+#   endif
      &                         u, v,                                    &
 #  else
      &                         ubar, vbar,                              &
@@ -77,10 +87,11 @@
       USE mod_param
       USE mod_scalars
       USE mod_inwave_params
-
-#  ifdef DISTRIBUTE
+      USE bc_2d_mod
+# ifdef DISTRIBUTE
       USE mp_exchange_mod, ONLY : mp_exchange2d
-#  endif
+# endif
+      USE exchange_2d_mod
 !
 !  Imported variable declarations.
 !
@@ -90,6 +101,10 @@
 
 #  ifdef ASSUMED_SHAPE
 #   ifdef SOLVE3D
+#    ifdef UV_KIRBY
+      real(r8), intent(in) :: Hz(LBi:,LBj:,:)
+      real(r8), intent(in) :: z_r(LBi:,LBj:,:)
+#    endif
       real(r8), intent(in) :: u(LBi:,LBj:,:,:)
       real(r8), intent(in) :: v(LBi:,LBj:,:,:)
 #   else
@@ -102,6 +117,10 @@
       real(r8), intent(inout) :: v_rho(LBi:,LBj:)
 #  else
 #   ifdef SOLVE3D
+#    ifdef UV_KIRBY
+      real(r8), intent(in) :: Hz(LBi:UBi,LBj:UBj,N(ng))
+      real(r8), intent(in) :: z_r(LBi:UBi,LBj:UBj,N(ng))
+#    endif
       real(r8), intent(in) :: u(LBi:UBi,LBj:UBj,N(ng),2)
       real(r8), intent(in) :: v(LBi:UBi,LBj:UBj,N(ng),2)
 #   else
@@ -158,16 +177,15 @@
           ELSE
             cff1=700.0_r8/h_tot(i,j)
           ENDIF
-          cff2=0.0_r8
-          cff1_u=0.0_r8
+!         cff2=0.0_r8
+!         cff1_u=0.0_r8
           cff2_u=0.0_r8
           cff3_u=0.0_r8
-          cff1_v=0.0_r8
+!         cff1_v=0.0_r8
           cff2_v=0.0_r8
           cff3_v=0.0_r8
           DO k=1,N(ng)
-            cff2=COSH(cff1*(GRID(ng)%h_tot(i,j)+GRID(ng)%z_r(i,j,k)))*&
-     &           GRID(ng)%Hz(i,j,k)
+            cff2=COSH(cff1*(h_tot(i,j)+z_r(i,j,k)))*Hz(i,j,k)
             cff1_u=0.5_r8*(u(i,j,k,nnew)+u(i+1,j,k,nnew))
             cff2_u=cff2_u+cff2*cff1_u
             cff3_u=cff3_u+cff2
@@ -187,22 +205,34 @@
 #  endif
         END DO
       END DO
+!
+!  Apply nonperiodic boundary conditions in xi and eta space.
+!
+      CALL bc_r2d_tile (ng, tile,                                       &
+     &                  LBi, UBi, LBj, UBj, u_rho)
+      CALL bc_r2d_tile (ng, tile,                                       &
+     &                  LBi, UBi, LBj, UBj, v_rho)
+!
+!  Apply periodic boundary conditions.
+!
+      IF (EWperiodic(ng).or.NSperiodic(ng)) THEN
+        CALL exchange_r2d_tile (ng, tile,                               &
+     &                          LBi, UBi, LBj, UBj,                     &
+     &                          u_rho)
+        CALL exchange_r2d_tile (ng, tile,                               &
+     &                          LBi, UBi, LBj, UBj,                     &
+     &                          v_rho)
+      END IF
 
 #  ifdef DISTRIBUTE
 !
 !   Exchange boundary data.
 !
-      CALL mp_exchange2d (ng, tile, iNLM, 1,                            &
+      CALL mp_exchange2d (ng, tile, iNLM, 2,                            &
      &                    LBi, UBi, LBj, UBj,                           &
      &                    NghostPoints,                                 &
      &                    EWperiodic(ng), NSperiodic(ng),               &
-     &                    u_rho(:,:))
-
-      CALL mp_exchange2d (ng, tile, iNLM, 1,                            &
-     &                    LBi, UBi, LBj, UBj,                           &
-     &                    NghostPoints,                                 &
-     &                    EWperiodic(ng), NSperiodic(ng),               &
-     &                    v_rho(:,:))
+     &                    u_rho, v_rho)
 !
 #  endif
 

@@ -1,6 +1,6 @@
 # svn $Id: Linux-gfortran.mk 655 2008-07-25 18:57:05Z arango $
 #::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
-# Copyright (c) 2002-2014 The ROMS/TOMS Group                           :::
+# Copyright (c) 2002-2016 The ROMS/TOMS Group                           :::
 #   Licensed under a MIT/X style license                                :::
 #   See License_ROMS.txt                                                :::
 #::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
@@ -117,7 +117,7 @@ ifdef USE_CXX
 endif
 
 ifdef USE_WRF
-           FFLAGS += -I../WRF/main -I../WRF/external/esmf_time_f90 -I../WRF/frame -I../WRF/share
+             FFLAGS += -I$(WRF_DIR)/main -I$(WRF_DIR)/external/esmf_time_f90 -I$(WRF_DIR)/frame -I$(WRF_DIR)/share
              LIBS += WRF/main/module_wrf_top.o
              LIBS += WRF/main/libwrflib.a
              LIBS += WRF/external/fftpack/fftpack5/libfftpack.a
@@ -151,21 +151,24 @@ $(SCRATCH_DIR)/def_var.o: FFLAGS += -fno-bounds-check
 # Gfortran versions >= 4.2.
 #
 
-FC_TEST := $(findstring $(shell ${FC} --version | head -1 | cut -d " " -f 5 | \
+FC_TEST := $(findstring $(shell ${FC} --version | head -1 | cut -d " " -f 4 | \
                               cut -d "." -f 1-2),4.0 4.1)
 
-ifeq "${FC_TEST}" ""
-$(SCRATCH_DIR)/ran_state.o: FFLAGS += -fno-strict-overflow
-endif
+#ifeq "${FC_TEST}" ""
+#$(SCRATCH_DIR)/ran_state.o: FFLAGS += -fno-strict-overflow
+#endif
 
 #
 # Set free form format in source files to allow long string for
 # local directory and compilation flags inside the code.
 #
 
-$(SCRATCH_DIR)/mod_ncparam.o: FFLAGS += -ffree-form -ffree-line-length-none
-$(SCRATCH_DIR)/mod_strings.o: FFLAGS += -ffree-form -ffree-line-length-none
-$(SCRATCH_DIR)/analytical.o: FFLAGS += -ffree-form -ffree-line-length-none
+#$(SCRATCH_DIR)/mod_ncparam.o: FFLAGS += -ffree-form -ffree-line-length-none
+#$(SCRATCH_DIR)/mod_strings.o: FFLAGS += -ffree-form -ffree-line-length-none
+#$(SCRATCH_DIR)/analytical.o: FFLAGS += -ffree-form -ffree-line-length-none
+$(SCRATCH_DIR)/mod_ncparam.o: FFLAGS += -ffree-form
+$(SCRATCH_DIR)/mod_strings.o: FFLAGS += -ffree-form
+$(SCRATCH_DIR)/analytical.o: FFLAGS += -ffree-form
 $(SCRATCH_DIR)/biology.o: FFLAGS += -ffree-form -ffree-line-length-none
 ifdef USE_ADJOINT
 $(SCRATCH_DIR)/ad_biology.o: FFLAGS += -ffree-form -ffree-line-length-none
