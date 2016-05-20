@@ -240,12 +240,14 @@ C  SET ARGUMENTS
 
 
            if (icenter.eq.7) then
-             if (iprocess.eq.83 .or. iprocess.eq.84) then
-               map%source = 'NCEP MESO NAM Model'
-             elseif (iprocess.eq.81) then
+             if (iprocess.eq.81) then
                map%source = 'NCEP GFS Analysis'
              elseif (iprocess.eq.82) then
                map%source = 'NCEP GFS GDAS/FNL'
+             elseif (iprocess.eq.83) then
+               map%source = 'NCEP HRRR Model'
+             elseif (iprocess.eq.84) then
+               map%source = 'NCEP MESO NAM Model'
              elseif (iprocess.eq.89) then
                map%source = 'NCEP NMM '
              elseif (iprocess.eq.96) then
@@ -255,7 +257,11 @@ C  SET ARGUMENTS
              elseif (iprocess.eq.101) then
                map%source = 'NCEP RUC Model'    ! 40 km
              elseif (iprocess.eq.105) then
-               map%source = 'NCEP RUC Model'    ! 20 km
+               if (year .gt. 2011) then
+                 map%source = 'NCEP RAP Model'
+               else
+                 map%source = 'NCEP RUC Model'  ! 20 km
+               endif
              elseif (iprocess.eq.107) then
                map%source = 'NCEP GEFS'
              elseif (iprocess.eq.109) then
@@ -270,8 +276,12 @@ C  SET ARGUMENTS
                map%source = 'NCEP GFS Ensemble'
              elseif (iprocess.eq.107) then             ! renumbered as of 23 Feb 2010
                map%source = 'NCEP GFS Ensemble'
+             elseif (iprocess.eq.112) then
+               map%source = 'NCEP WRF-NMM Model'
              elseif (iprocess.eq.129) then
                map%source = 'NCEP GODAS'
+             elseif (iprocess.eq.197) then
+               map%source = 'NCEP CDAS CFSV2'
              elseif (iprocess.eq.25) then
                map%source = 'NCEP SNOW COVER ANALYSIS'
              else
@@ -450,6 +460,15 @@ C  SET ARGUMENTS
               endif
               if (map%dy.gt.10000) then 
                  map%dy = (map%dy/scale_factor)*(-1)
+              endif
+
+              ! Fix for zonal shift in CFSR data, following a similar fix 
+              ! for global lat-lon data in rd_grib1.F
+              if ( ABS(map%nx * map%dx - 360.0) < 1.0 ) then
+                 if (ABS(map%dx - (360./real(map%nx))) > 0.00001) then
+                    write(0,*) 'CFSR fix: recomputing delta-longitude'
+                    map%dx = 360./real(map%nx)
+                 endif
               endif
 
               ! Scale lat/lon values to 0-180, default range is 1e6.
