@@ -54,7 +54,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2013  Delft University of Technology
+!     Copyright (C) 1993-2015  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -572,7 +572,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2013  Delft University of Technology
+!     Copyright (C) 1993-2015  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -909,6 +909,14 @@
 !       *** determine U friction in case predictor is obtained ***
 !       *** with second genaration wave model                  ***
 !
+!       added the default option to use the ADCIRC drag formulation
+!ADC        IF ( IDRAG.EQ.0 ) THEN
+!ADC           IF ( WIND10 .GT. 7.5 ) THEN
+!ADC              CDRAG = WindDrag(DBLE(WIND10),NodeNumber)
+!ADC           ELSE
+!ADC              CDRAG = 0.0012873
+!ADC           ENDIF
+!ADC        ENDIF
         IF ( IDRAG.EQ.1 ) THEN
            IF ( WIND10 .GT. 7.5 ) THEN
              CDRAG = ( 0.8 + 0.065 * WIND10 ) * 0.001
@@ -965,7 +973,7 @@
            CDRAG = MAX ( 0.7  , CDRAG )
            CDRAG = CDRAG * 0.001
            CDRAG = MIN ( CDCAP, CDRAG )
-        END IF
+        ENDIF
 !
         UFRIC = SQRT ( CDRAG ) * WIND10
 !
@@ -982,6 +990,14 @@
 !       *** according to Wu (1982)                ***
 !       *** apply cd-cap if appropriate           ***
 !
+!       added the default option to use the ADCIRC drag formulation
+!ADC        IF ( IDRAG.EQ.0 ) THEN
+!ADC           IF ( WIND10 .GT. 7.5 ) THEN
+!ADC              CDRAG = WindDrag(DBLE(WIND10),NodeNumber)
+!ADC           ELSE
+!ADC              CDRAG = 0.0012873
+!ADC           ENDIF
+!ADC        ENDIF
         IF ( IDRAG.EQ.1 ) THEN
            IF ( WIND10 .GT. 7.5 ) THEN
              CDRAG = ( 0.8 + 0.065 * WIND10 ) * 0.001
@@ -989,7 +1005,8 @@
 #if defined DRAGLIM_DAVIS && defined SWAN_MODEL
              CDRAG = MIN ( 0.0024, CDRAG )    !Limitig used by Davis maitane
 #endif
-!ADC             CDRAG = WindDrag(DBLE(WIND10),NodeNumber)
+!            this call is deprecated
+!ADC!             CDRAG = WindDrag(DBLE(WIND10),NodeNumber)
            ELSE
              CDRAG = 0.0012873
            ENDIF
@@ -1106,7 +1123,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2013  Delft University of Technology
+!     Copyright (C) 1993-2015  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -1339,7 +1356,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2013  Delft University of Technology
+!     Copyright (C) 1993-2015  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -1504,6 +1521,8 @@
       USE SWCOMM4                                                         40.41
       USE OCPCOMM4                                                        40.41
 !
+      IMPLICIT NONE
+!
 !
 !   --|-----------------------------------------------------------|--
 !     | Delft University of Technology                            |
@@ -1516,7 +1535,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2013  Delft University of Technology
+!     Copyright (C) 1993-2015  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -1650,12 +1669,12 @@
 !
 !***********************************************************************
 !
-      INTEGER  IDDUM   ,ID      ,IS      ,ISSTOP
+      INTEGER  IENT, IDDUM   ,ID      ,IS      ,ISSTOP
 !
       REAL     FPM     ,UFRIC   ,THETA   ,THETAW  ,
      &         SWINEA  ,SIGMA   ,TEMP1   ,TEMP2   ,
      &         CTW     ,STW     ,COSDIF  ,                                40.41
-     &         TEMP3   ,FILTER
+     &         TEMP3   ,FILTER  ,ARGU
 !
       REAL    IMATRA(MDC,MSC)      ,
      &        PLWNDA(MDC,MSC,NPTST)                                       40.00
@@ -1743,6 +1762,8 @@
       USE SWCOMM4                                                         40.41
       USE OCPCOMM4                                                        40.41
 !
+      IMPLICIT NONE
+!
 !
 !   --|-----------------------------------------------------------|--
 !     | Delft University of Technology                            |
@@ -1755,7 +1776,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2013  Delft University of Technology
+!     Copyright (C) 1993-2015  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -1893,7 +1914,7 @@
 !
 !***********************************************************************
 !
-      INTEGER  IDDUM ,ID    ,IS    ,ISSTOP
+      INTEGER  IENT, IDDUM ,ID    ,IS    ,ISSTOP
 !
       REAL     FPM   ,UFRIC ,THETA ,THETAW,SIGMA ,SWINEB,TEMP1,
      &         CTW   ,STW   ,COSDIF,                                      40.41
@@ -1976,6 +1997,8 @@
       USE SWCOMM4                                                         40.41
       USE OCPCOMM4                                                        40.41
 !
+      IMPLICIT NONE
+!
 !
 !   --|-----------------------------------------------------------|--
 !     | Delft University of Technology                            |
@@ -1988,7 +2011,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2013  Delft University of Technology
+!     Copyright (C) 1993-2015  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -2159,6 +2182,12 @@
      &        IDCMAX(MSC)
 !
       LOGICAL ANYWND(MDC)                                                 40.41
+!
+      INTEGER IENT , ITER,  IT,   J,  II
+      REAL ZTEN,  RATIO,  BETAMX,  TXHFR,  TYHFR,  CW2,  X1,  X2,
+     & ZARG1,  ZARG2,  GAMHF,  SIGMAX,  SIGHF1,  SIGHF2,  ZCNHF1,
+     & ZCNHF2,  AUX,  COS3,  ZAHF1,  ZAHF2,  FACHFR, FA, FB, FC, FD, FE,
+     & FCEN, FF1, FF2, FF3, DCEN, TAUNEW, XFAC2, BETA, ZLOG
 !
       SAVE IENT
       DATA IENT/0/
@@ -2521,6 +2550,8 @@
       USE SWCOMM4                                                         40.41
       USE OCPCOMM4                                                        40.41
 !
+      IMPLICIT NONE
+!
 !
 !   --|-----------------------------------------------------------|--
 !     | Delft University of Technology                            |
@@ -2533,7 +2564,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2013  Delft University of Technology
+!     Copyright (C) 1993-2015  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -2657,9 +2688,9 @@
 !
 !***********************************************************************
 !
-      INTEGER  IDDUM  ,ID     ,IS     ,ISSTOP
+      INTEGER  IENT, IDDUM  ,ID     ,IS     ,ISSTOP
 !
-      REAL     UFRIC  ,THETA  ,THETAW ,SIGMA  ,SWINEB ,
+      REAL     UFRIC  ,THETA  ,THETAW ,SIGMA  ,SWINEB , TEMP3,
      &         CTW    ,STW    ,COSDIF ,                                   40.41
      &         USTAC1 ,USTAC2 ,COF1   ,COF2   ,COF3   ,COF4
 !

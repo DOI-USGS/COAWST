@@ -657,16 +657,20 @@
 !TIMG            CALL SWTSTA(7)                                                40.23
 !
 # ifdef NESTING
+
+
             CALL SNEXTI ( BSPECS, BGRIDP, COMPDA, AC1   , AC2   ,         40.31
      &                    SPCSIG, SPCDIR, XCGRID, YCGRID, KGRPNT,         40.31
      &                    XYTST , DEPTH , WLEVL , FRIC  , UXB   ,         40.31
-     &                    UYB   , NPLAF,  WXI   , WYI   , ng    ,
+     &                    UYB   , NPLAF , TURBF , MUDLF , WXI   ,         40.59 40.35 40.55 40.31
+     &                    WYI   , ng    ,
      &                    ngp, IT_in, PARALL2_MOD(ngp)%AC2_parent_G)
 # else
             CALL SNEXTI ( BSPECS, BGRIDP, COMPDA, AC1   , AC2   ,         40.31
      &                    SPCSIG, SPCDIR, XCGRID, YCGRID, KGRPNT,         40.31
      &                    XYTST , DEPTH , WLEVL , FRIC  , UXB   ,         40.31
-     &                    UYB   , NPLAF,  WXI   , WYI   , ng    ,
+     &                    UYB   , NPLAF , TURBF , MUDLF , WXI   ,         40.59 40.35 40.55 40.31
+     &                    WYI   , ng    ,
      &                    ngp, IT_in, 1.)
 # endif
 !TIMG            CALL SWTSTO(7)                                                40.23
@@ -730,7 +734,9 @@
      &                (COMPDA(KCGRD(1),JDP2).GT.DEPMIN)) THEN
                     CGO    = 0.
                     KWAVE  = 0.
-                    CALL SWAPAR ( COMPDA(1,JDP2), KWAVE, CGO, SPCSIG )
+!  Use jdp2 for dmud, and cgo for dmw.
+                    CALL SWAPAR ( COMPDA(1,JDP2), COMPDA(1,JDP2), KWAVE,&
+     &                            CGO, CGO, SPCSIG )
                     CALL SINTGRL_INIT  (SPCDIR,  KWAVE, AC2,
      &                                  COMPDA(1,JDP2), COMPDA(1,JUBOT),
      &                                  COMPDA(1,JPBOT),COMPDA(1,JDBOT))
@@ -1084,6 +1090,7 @@
 !***********************************************************************
 !                                                                      *
       PROGRAM SWAN
+!ADC      SUBROUTINE SWAN
 !                                                                      *
 !***********************************************************************
 !
@@ -1102,7 +1109,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2013  Delft University of Technology
+!     Copyright (C) 1993-2015  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -1175,6 +1182,7 @@
 
 !     --- start SWAN run
 
+!     the main SWAN routine is called from the ADCIRC driver
       CALL SWMAIN                                                         40.31 34.01
 
 999   CONTINUE
@@ -1228,7 +1236,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2013  Delft University of Technology
+!     Copyright (C) 1993-2015  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -1642,7 +1650,8 @@
             CALL SNEXTI ( BSPECS, BGRIDP, COMPDA, AC1   , AC2   ,         40.31
      &                    SPCSIG, SPCDIR, XCGRID, YCGRID, KGRPNT,         40.31
      &                    XYTST , DEPTH , WLEVL , FRIC  , UXB   ,         40.31
-     &                    UYB   , NPLAF , WXI   , WYI   )                 40.55 40.31
+     &                    UYB   , NPLAF , TURBF , MUDLF , WXI   ,         40.59 40.35 40.55 40.31
+     &                    WYI   )
 !TIMG            CALL SWTSTO(7)                                                40.23
             IF (STPNOW()) RETURN                                          34.01
 !
@@ -1848,7 +1857,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2013  Delft University of Technology
+!     Copyright (C) 1993-2015  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -1943,12 +1952,14 @@
 !     40.30, Mar. 03: introduction distributed-memory approach using MPI
 !     40.08, Mar. 03: Unneccessary variable deleted
 !     40.31, Nov. 03: removing POOL construction and HPGL functionality
+!     40.35, Jun. 04: output variables DISTUR and TURB added
 !     40.41, Sep. 04: output variables TMM10 and RTMM10 added
 !     40.41, Oct. 04: common blocks replaced by modules, include files removed
 !     40.51, Feb. 05: output variable TMBOT added
 !     40.51, Sep. 05: output variables WATLEV and BOTLEV added
 !     40.51, Feb. 06: output variable TPS added
 !     40.61, Sep. 06: output variables DISBOT, DISSRF and DISWCP added
+!     40.61, Sep. 06: output variable DISMUD added
 !     40.61, Sep. 06: output variable DISVEG added
 !     40.64, Apr. 07: output variables Qp and BFI added
 !     40.80, Jun. 07: extension to unstructured grids
@@ -2006,9 +2017,10 @@
       INTEGER, intent(in) :: ng
 #endif
       VERTXT = BLANK                                                      40.03
-      VERNUM = 40.91
+      VERNUM = 41.01
       WRITE (VERTXT, '(F5.2)') VERNUM                                     40.03
       CALL BUGFIX ('A')
+      CALL BUGFIX ('B')
 !
 #ifdef SWAN_MODEL
       CALL OCPINI (ng, .TRUE.,INERR)
@@ -2126,8 +2138,10 @@
       ALPC   = 0.
       FULCIR = .TRUE.
       SPDIR1 = 0.
+      asort  = -999.                                                      41.48
+      CCURV  = .FALSE.                                                    41.53
 !     number of points needed in computational stencil:
-      ICMAX  = 3
+      ICMAX  = 5
 !     ***** numerical scheme *****
       NCOR   = 1
       NSTATM = -1                                                         40.00
@@ -2150,19 +2164,25 @@
       IREFR  = 1                                                          40.02
       ITFRE  = 1
       IWIND  = 0
-      IDRAG  = 1                                                          41.33
+!     when coupled with ADCIRC, the default is to use ADCIRC drag formulation
+      IDRAG  = 2                                                          41.49 41.33
+!ADC      IDRAG  = 0
       IGEN   = 3                                                          32.06
       IQUAD  = 2                                                          30.72
       IWCAP  = 1                                                          21/MAY
       ISURF  = 1
       IBOT   = 0
       ITRIAD = 0
+      IMUD   = 0                                                          40.59
       IVEG   = 0                                                          40.55
+      ITURBV = 0                                                          40.35
       VARWI  = .FALSE.
       VARFR  = .FALSE.
       VARWLV = .FALSE.                                                    20.38
       VARAST = .FALSE.       ! True means spatially variable air-sea t.d. 40.03
+      VARMUD = .FALSE.                                                    40.59
       VARNPL = .FALSE.                                                    40.55
+      VARTUR = .FALSE.                                                    40.35
       U10    = 0.
       WDIP   = 0.
       INRHOG = 0                                                          30.20
@@ -2234,6 +2254,10 @@
 !
       IFRSRF = 0                                                          41.06
 !
+!     flag for wave directionality in surf breaking                       41.47
+!
+      IDISRF = 0                                                          41.47
+!
 !     PSETUP(1) is currently unused, but can be used as setup nesting flag
 !     PSETUP(2) is the user defined correction for the level of the setup
 !
@@ -2243,14 +2267,15 @@
 !     *** ACCURACY criterion ***
 !
 !     *** relative error in significant wave height and mean period ***
-      PNUMS(1)  = 0.02                                                    30.82
+      PNUMS(1)  = 0.01                                                    30.82
 !     *** absolute error in significant wave heigth (m) ***
-      PNUMS(2)  = 0.03
+      PNUMS(2)  = 0.005
 !     *** absolute error in mean wave period (s) ***
-      PNUMS(3)  = 0.3
+!      PNUMS(3)  = 0.3
+      PNUMS(3)  = 1000.
 !     *** total number of wet gridpoints were accuracy has ***
 !     *** been reached                                     ***
-      PNUMS(4)  = 98.00
+      PNUMS(4)  = 99.50
 !
 !     *** DIFFUSION schemes ***
 !
@@ -2312,8 +2337,11 @@
 !     The allowed global errors in the iteration procedure:               30.82
 !     PNUMS(15) for Hs and PNUMS(16) for Tm01                             30.82
 !
-      PNUMS(15) = 0.02                                                    30.82
-      PNUMS(16) = 0.02                                                    30.82
+!      PNUMS(15) = 0.02                                                    30.82
+!      PNUMS(16) = 0.02                                                    30.82
+!     The next two values are meant for STOPC command
+      PNUMS(15) = 0.005
+      PNUMS(16) = 1000.
 !
 !     coefficient for limitation of Ctheta                                30.80
 !     default no limitation on refraction                                 40.02
@@ -2331,7 +2359,7 @@
 !
 !     --- coefficient for type stopping criterion                         40.41
 !
-      PNUMS(21) = -9.                                                     40.80 40.41
+      PNUMS(21) = 1.                                                      40.80 40.41
 !
 !     --- under-relaxation factor
 !
@@ -2345,7 +2373,7 @@
 !
 !     --- computation of Ctheta based on wave number
 !
-      PNUMS(32) = 0.                                                      41.07
+      PNUMS(32) = 1.                                                      41.07
 !
 !     --- parameters for limiting Csigma and Ctheta
 !
@@ -2379,22 +2407,31 @@
       PWCAP(7) = 1.
       PWCAP(8) = 0.75
 !
-!     PBOT(1)   = 0.005          modified
       PBOT(1)   = 0.0                                                     20.68
       PBOT(2)   = 0.015                                                   20.68
-      PBOT(3)   = 0.067
+      PBOT(3)   = 0.038                                                   41.49
       PBOT(4)   = -0.08
       PBOT(5)   = 0.05
+      PBOT(6)   = 2.65                                                    41.51
+      PBOT(7)   = 0.0001                                                  41.51
 !
       PSURF(1)  = 1.0
       PSURF(2)  = 0.73                                                    20.67
 !
+      PMUD(1)   = 0.                                                      40.59
+      PMUD(2)   = 1300.                                                   40.59
+      PMUD(3)   = 0.0076                                                  40.59
+      PMUD(4)   = RHO                                                     40.59
+      PMUD(5)   = 1.3E-6                                                  40.59
+!
 !     triad interactions
-      PTRIAD(1)  = 0.05                                                   40.61 30.82
+      PTRIAD(1)  = 0.65                                                   41.44 40.61 30.82
       PTRIAD(2)  = 2.5                                                    40.61 40.56 30.82
       PTRIAD(3)  = 10.                                                    40.23
       PTRIAD(4)  = 0.2                                                    40.13
       PTRIAD(5)  = 0.01                                                   40.23
+      PTRIAD(6)  = 0.95                                                   41.46
+      PTRIAD(7)  = -0.75                                                  41.46
 !
 !     quadruplet interactions
       PQUAD(1) = 0.25                                                     34.00
@@ -2470,7 +2507,8 @@
       JDSXW = 32
       JNPLA2= 33                                                          40.55
       JNPLA3= 34                                                          40.55
-      MCMVAR = 34
+      JDSXV = 35                                                          40.65 40.61
+      MCMVAR = 35
       LADDS = .TRUE.
 #else
       MCMVAR = 28                                                         41.38 40.65 40.61 40.51 40.13
@@ -2485,11 +2523,18 @@
 !     added for air-sea temp. diff.:
       JASTD2= 1                                                           40.03
       JASTD3= 1                                                           40.03
+!     added for fluid mud layer                                           40.59
+      JMUDL1= 1                                                           40.59
+      JMUDL2= 1                                                           40.59
+      JMUDL3= 1                                                           40.59
 #if !defined SWAN_MODEL
 !     added for number of plants per square meter                         40.55
       JNPLA2= 1                                                           40.55
       JNPLA3= 1                                                           40.55
 #endif
+!     added for turbulent viscosity                                       40.35
+      JTURB2= 1                                                           40.35
+      JTURB3= 1                                                           40.35
       JGAMMA = 1                                                          41.38
       JRESPL = 1                                                          41.38
 !
@@ -2505,8 +2550,10 @@
       JDSXB  = 1                                                          40.65 40.61
       JDSXS  = 1                                                          40.65 40.61
       JDSXW  = 1                                                          40.65 40.61
-#endif
       JDSXV  = 1                                                          40.65 40.61
+#endif
+      JDSXM  = 1                                                          40.65 40.61
+      JDSXT  = 1                                                          40.35
       JGENR  = 1                                                          40.85
       JGSXW  = 1                                                          40.85
       JREDS  = 1                                                          40.85
@@ -2532,7 +2579,9 @@
       JP4D   = 7
       JPTRI  = 8
       JPVEGT = 9                                                          40.55
-      MTSVAR = 9
+      JPTURB = 10                                                         40.35
+      JPMUD  = 11                                                         40.59
+      MTSVAR = 11
 !
 !     ***** test output control *****
       ITEST  = 1                                                          40.41
@@ -3423,9 +3472,45 @@
       OVLEXP(IVTYPE) = 0.
       OVHEXP(IVTYPE) = 200.
       OVEXCV(IVTYPE) = -9.
+!
+      IVTYPE = 72
+      OVKEYW(IVTYPE) = 'DISTU'
+      OVSNAM(IVTYPE) = 'Stur'
+      OVLNAM(IVTYPE) = 'Turbulent dissipation'
+      OVUNIT(IVTYPE) = 'm2/s'
+      OVSVTY(IVTYPE) = 1
+      OVLLIM(IVTYPE) = 0.
+      OVULIM(IVTYPE) = 1000.
+      OVLEXP(IVTYPE) = 0.
+      OVHEXP(IVTYPE) = 0.1
+      OVEXCV(IVTYPE) = -9.
+!
+      IVTYPE = 73
+      OVKEYW(IVTYPE) = 'TURB'
+      OVSNAM(IVTYPE) = 'Turb'
+      OVLNAM(IVTYPE) = 'Turbulent viscosity'
+      OVUNIT(IVTYPE) = 'm2/s'
+      OVSVTY(IVTYPE) = 1
+      OVLLIM(IVTYPE) = 0.
+      OVULIM(IVTYPE) = 10.
+      OVLEXP(IVTYPE) = 0.
+      OVHEXP(IVTYPE) = 100.
+      OVEXCV(IVTYPE) = -99.
+!
+      IVTYPE = 74
+      OVKEYW(IVTYPE) = 'DISM'                                             40.61
+      OVSNAM(IVTYPE) = 'Smud'                                             40.85
+      OVLNAM(IVTYPE) = 'Fluid mud dissipation'
+      OVUNIT(IVTYPE) = 'm2/s'
+      OVSVTY(IVTYPE) = 1
+      OVLLIM(IVTYPE) = 0.
+      OVULIM(IVTYPE) = 1000.
+      OVLEXP(IVTYPE) = 0.
+      OVHEXP(IVTYPE) = 0.1
+      OVEXCV(IVTYPE) = -9.
 
 #if defined SWAN_MODEL
-      IVTYPE = 72                                                   
+      IVTYPE = 75                                                   
       OVKEYW(IVTYPE) = 'DIRBOT'                                           !PSD 09/21/2011
       OVSNAM(IVTYPE) = 'DirBot'
       OVLNAM(IVTYPE) = 'Average bottom wave direction'
@@ -3498,7 +3583,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2013  Delft University of Technology
+!     Copyright (C) 1993-2015  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -3645,6 +3730,12 @@
 !
       IF (LEDS(4).EQ.2) VARFR = .TRUE.
 !
+      IF (VARFR .AND. IBOT.EQ.5) THEN                                     41.51
+         CALL MSGERR (1,
+     &           'Ripples model active, space varying friction ignored')
+         VARFR = .FALSE.
+      ENDIF
+!
       IF (LEDS(5).EQ.2) THEN
         IF (LEDS(6).NE.2)
      &  CALL MSGERR (3, 'WY not read, while WX is read')
@@ -3660,6 +3751,8 @@
       IF (IFLDYN(1).EQ.1 .OR. IFLDYN(7).EQ.1) DYNDEP = .TRUE.             40.00
 !
       IF (OPTG.EQ.5) BNDCHK = .FALSE.                                     40.80
+!
+      IF (IBOT.EQ.5) IDRAG = 1                                            41.51
 !
 !     close input files containing stationary input fields                40.00
 !
@@ -3867,7 +3960,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2013  Delft University of Technology
+!     Copyright (C) 1993-2015  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -4257,7 +4350,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2013  Delft University of Technology
+!     Copyright (C) 1993-2015  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -4400,6 +4493,8 @@
       IF (VARFR) THEN
         COMPDA(1,JFRC2) = 0.                                              40.00
         COMPDA(1,JFRC3) = 0.                                              40.00
+      ELSEIF (JFRC2.GT.1) THEN                                            41.51
+        COMPDA(1,JFRC2) = 0.                                              41.51
       ENDIF
       IF (VARWI) THEN
         COMPDA(1,JWX2) = 0.                                               40.00
@@ -4411,9 +4506,18 @@
         COMPDA(1,JASTD2) = 0.                                             40.03
         COMPDA(1,JASTD3) = 0.                                             40.03
       ENDIF
+      IF (VARMUD) THEN                                                    40.59
+        COMPDA(1,JMUDL1) = 0.                                             40.59
+        COMPDA(1,JMUDL2) = 0.                                             40.59
+        COMPDA(1,JMUDL3) = 0.                                             40.59
+      ENDIF
       IF (VARNPL) THEN                                                    40.55
         COMPDA(1,JNPLA2) = 0.                                             40.55
         COMPDA(1,JNPLA3) = 0.                                             40.55
+      ENDIF
+      IF (VARTUR) THEN                                                    40.35
+        COMPDA(1,JTURB2) = 0.                                             40.35
+        COMPDA(1,JTURB3) = 0.                                             40.35
       ENDIF
       COMPDA(1,JBOTLV) = 0.                                               40.65
 !
@@ -4531,6 +4635,29 @@
              XNPL = SVALQI (XP, YP, 11, NPLAF, 1 ,IX ,IY)                 40.55
              COMPDA(INDX,JNPLA2) = XNPL                                   40.55
              COMPDA(INDX,JNPLA3) = XNPL                                   40.55
+          ENDIF
+!
+!     ***** compute turbulent viscosity *****                             40.35
+!
+          IF (VARTUR) THEN
+             IF (PTURBV(2).LT.0.) THEN
+                XTUR = SVALQI (XP, YP, 12, TURBF, 0 ,IX ,IY)              40.35
+             ELSE
+                UU = COMPDA(INDX,JVX2)
+                VV = COMPDA(INDX,JVY2)
+                XTUR = PTURBV(2) * SQRT(UU*UU+VV*VV) * COMPDA(INDX,JDP2)  40.35
+             ENDIF
+             COMPDA(INDX,JTURB2) = XTUR                                   40.35
+             COMPDA(INDX,JTURB3) = XTUR                                   40.35
+          ENDIF
+!
+!     ***** compute fluid mud layer *****                                 40.59
+!
+          IF (VARMUD) THEN
+             XMUD = SVALQI (XP, YP, 13, MUDLF, 1 ,IX ,IY)                 40.59
+             COMPDA(INDX,JMUDL1) = XMUD                                   40.59
+             COMPDA(INDX,JMUDL2) = XMUD                                   40.59
+             COMPDA(INDX,JMUDL3) = XMUD                                   40.59
           ENDIF
 !
    10   CONTINUE
@@ -4663,6 +4790,37 @@
              COMPDA(INDX,JNPLA3) = XNPL                                   40.80
           ENDIF
 !
+!     ***** compute turbulent viscosity *****                             40.35
+!
+          IF (VARTUR) THEN
+             IF (PTURBV(2).LT.0.) THEN
+                IF ( IGTYPE(12).EQ.3 ) THEN
+                   XTUR = TURBF(INDX)
+                ELSE
+                   XTUR = SVALQI (XP, YP, 12, TURBF, 0 ,0, 0)             40.35
+                ENDIF
+             ELSE
+                UU = COMPDA(INDX,JVX2)
+                VV = COMPDA(INDX,JVY2)
+                XTUR = PTURBV(2) * SQRT(UU*UU+VV*VV) * COMPDA(INDX,JDP2)  40.35
+             ENDIF
+             COMPDA(INDX,JTURB2) = XTUR                                   40.35
+             COMPDA(INDX,JTURB3) = XTUR                                   40.35
+          ENDIF
+!
+!     ***** compute fluid mud layer *****                                 40.80
+!
+          IF (VARMUD) THEN
+             IF ( IGTYPE(13).EQ.3 ) THEN
+                XMUD = MUDLF(INDX)
+             ELSE
+                XMUD = SVALQI (XP, YP, 13, MUDLF, 1 ,0, 0)                40.80
+             ENDIF
+             COMPDA(INDX,JMUDL1) = XMUD                                   40.80
+             COMPDA(INDX,JMUDL2) = XMUD                                   40.80
+             COMPDA(INDX,JMUDL3) = XMUD                                   40.80
+          ENDIF
+!
       ENDDO                                                               40.80
 !
 !     *** initialise setup and saved depth ***                            32.02
@@ -4722,7 +4880,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2013  Delft University of Technology
+!     Copyright (C) 1993-2015  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -4805,9 +4963,9 @@
 !
 !     IGRID    Grid indicator
 !     IXC      Counter for X-coordinate in computational grid (used
-!              in curvi-linear case)
+!              in curvilinear case)
 !     IYC      Counter for Y-coordinate in computational grid (used
-!              in curvi-linear case)
+!              in curvilinear case)
 !     ZERO     If ZERO=0, then value outside the grid is zero, otherwise
 !              the value is extrapolated
 !
@@ -5014,7 +5172,7 @@
       ELSE IF (ABS(STAGX(IGRID)) .LT. 0.01 .AND.                          32.03
      &         ABS(STAGY(IGRID)) .LT. 0.01) THEN                          32.03
 !
-!     Curvi-linear and non-staggered input grid:                          32.03
+!     Curvilinear and non-staggered input grid:                           32.03
 !
         IB1   = IXCGL
         JB1   = IYCGL
@@ -5022,7 +5180,7 @@
         SVALQI = ARRINP(II)
       ELSE
 !
-!     Curvi-linear and staggered input grid:                              32.03
+!     Curvilinear and staggered input grid:                               32.03
 !
         INGRD = .TRUE.
         IF (IXCGL .EQ. 1) THEN
@@ -5125,7 +5283,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2013  Delft University of Technology
+!     Copyright (C) 1993-2015  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -5254,7 +5412,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2013  Delft University of Technology
+!     Copyright (C) 1993-2015  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -5384,7 +5542,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2013  Delft University of Technology
+!     Copyright (C) 1993-2015  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -5559,7 +5717,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2013  Delft University of Technology
+!     Copyright (C) 1993-2015  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -5658,7 +5816,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2013  Delft University of Technology
+!     Copyright (C) 1993-2015  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -5769,20 +5927,6 @@
         PROPSC = PROPSS                                                   40.31
       ENDIF                                                               40.31
 !
-!     --- set default setting for stopping criterion                      40.80
-!
-      IF ( PNUMS(21).EQ.-9. ) THEN                                        40.80
-         IF (OPTG.NE.5) THEN                                              40.80
-            PNUMS(21) = 0.                                                40.80
-         ELSE                                                             40.80
-            PNUMS(21) = 1.                                                40.80
-            PNUMS( 1) = 0.01                                              40.80
-            PNUMS( 2) = 0.005                                             40.80
-            PNUMS( 4) = 99.5                                              40.80
-            PNUMS(15) = 0.005                                             40.80
-         ENDIF                                                            40.80
-      ENDIF                                                               40.80
-!
 !     --- reset PWIND(9) and PWIND(17) if RHO has a user value            40.96
 !
       PWIND( 9) = PWIND(16)/RHO                                           40.96
@@ -5796,7 +5940,7 @@
 !
 !     *** Check formulation for whitecapping ***
 !
-      IF ( IWCAP.GT.7 ) THEN
+      IF ( IWCAP.GT.8 ) THEN
          WRITE (MSGSTR, '(A,I2,A)')
      &               'Unknown method for whitecapping (IWCAP=',IWCAP,')'
          CALL MSGERR( 1, TRIM(MSGSTR) )
@@ -5889,7 +6033,15 @@
 !     used in the CGRID command. This error should be corrected
 !     in the future
 !
-      IF (IWIND.EQ.3 .OR. IWIND.EQ.4) THEN                                30.60
+      IF (ICUR.NE.0 .AND. (IQUAD.EQ.1 .OR. IQUAD.EQ.2)) THEN              41.55
+         CALL MSGERR(1,'Quadruplets will be updated per iteration')       41.55
+         CALL MSGERR(1,'instead of per sweep. This will increase')        41.55
+         CALL MSGERR(1,'amount of internal memory with a factor 2')       41.55
+         IQUAD = 3                                                        41.55
+      ENDIF                                                               41.55
+!
+      IF (IWIND.EQ.3 .OR. IWIND.EQ.4
+     &                              ) THEN                                30.60
         IF (IQUAD .EQ. 0) THEN
           CALL MSGERR(2,'Quadruplets should be activated when SWAN  ')    30.60
           CALL MSGERR(2,'is running in a third generation mode and  ')    30.60
@@ -5988,13 +6140,15 @@
       SUBROUTINE SNEXTI (BSPECS, BGRIDP, COMPDA, AC1   , AC2   ,          40.31
      &                   SPCSIG, SPCDIR, XCGRID, YCGRID, KGRPNT,          40.31
      &                   XYTST , DEPTH , WLEVL , FRIC  , UXB   ,          40.31
-     &                   UYB   , NPLAF,  WXI   , WYI   , ng    ,
+     &                   UYB   , NPLAF , TURBF , MUDLF , WXI   ,          40.59 40.35 40.55 40.31
+     &                   WYI   , ng    ,
      &                   ngp   , ITjcw,  AC2_parent)
 #else
       SUBROUTINE SNEXTI (BSPECS, BGRIDP, COMPDA, AC1   , AC2   ,          40.31
      &                   SPCSIG, SPCDIR, XCGRID, YCGRID, KGRPNT,          40.31
      &                   XYTST , DEPTH , WLEVL , FRIC  , UXB   ,          40.31
-     &                   UYB   , NPLAF , WXI   , WYI   )                  40.55 40.31
+     &                   UYB   , NPLAF , TURBF , MUDLF , WXI   ,          40.59 40.35 40.55 40.31
+     &                   WYI   )
 #endif
 !                                                                    *
 !*********************************************************************
@@ -6028,7 +6182,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2013  Delft University of Technology
+!     Copyright (C) 1993-2015  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -6133,7 +6287,8 @@
       REAL     SPCSIG(MSC)                                                30.01
       REAL     XCGRID(MXC,MYC), YCGRID(MXC,MYC)                           30.21
       REAL     DEPTH(*), WLEVL(*), FRIC(*), UXB(*), UYB(*),               40.31
-     &         NPLAF(*),                                                  40.55
+     &         NPLAF(*), TURBF(*),                                        40.35 40.55
+     &         MUDLF(*),                                                  40.59
      &         WXI(*), WYI(*)                                             40.31
 !
 !     TIMCO ..... Time (date) of computation
@@ -6471,10 +6626,11 @@
         ENDIF
       ENDIF
 #endif
+122      FORMAT (A, 10(1X,E11.4))
 !     field 4: friction coeff.
       IF (IFLDYN(4) .EQ. 1) THEN
 #ifndef SWAN_MODEL
-        CALL FLFILE ( 4, 0, FRIC, 0.,                                     40.31
+        CALL FLFILE ( 4, 0, FRIC, (/0./),                                 40.31
      &               0, JFRC2, JFRC3, 0, 0, 0,
      &               1., 0.,                                              40.31 30.90
      &               COMPDA, XCGRID, YCGRID,
@@ -6503,7 +6659,7 @@
 !     field 7: water level
       IF (IFLDYN(7) .EQ. 1) THEN
 #ifndef SWAN_MODEL
-        CALL FLFILE ( 7, 0, WLEVL, 0.,                                    40.31
+        CALL FLFILE ( 7, 0, WLEVL, (/0./),                                40.31
      &               JWLV1, JWLV2, JWLV3, 0, 0, 0,
      &               1., 0.,                                              40.31 30.90
      &               COMPDA, XCGRID, YCGRID,
@@ -6656,7 +6812,7 @@
 
 !     field 11: field containing number of plants per square meter
       IF (IFLDYN(11) .EQ. 1) THEN
-        CALL FLFILE (11, 0, NPLAF, 0.,
+        CALL FLFILE (11, 0, NPLAF, (/0./),
      &               0, JNPLA2, JNPLA3, 0, 0, 0,
      &               1., 0.,
      &               COMPDA, XCGRID, YCGRID,
@@ -6680,7 +6836,60 @@
      &          (TSTVAL(IPTST), IPTST=1,MIN(10,NPTST))
         ENDIF
       ENDIF
- 122  FORMAT (A, 10(1X,E11.4))
+
+!     field 12: field containing turbulent viscosity
+      IF (IFLDYN(12) .EQ. 1) THEN
+        CALL FLFILE (12, 0, TURBF, (/0./),
+     &               0, JTURB2, JTURB3, 0, 0, 0,
+     &               1., 0.,
+     &               COMPDA, XCGRID, YCGRID,
+     &               KGRPNT, IERR)
+        IF (STPNOW()) RETURN
+        IF (NPTST.GT.0) THEN
+          WRITE (PRTEST, '(A)') ' turb visc from file in test points'
+          IF (OPTG.NE.5) THEN                                             40.80
+             DO IPTST = 1, MIN(10,NPTST)
+               IXP = XYTST(2*IPTST-1)
+               IYP = XYTST(2*IPTST)
+               TSTVAL(IPTST) = COMPDA(KGRPNT(IXP,IYP),JTURB3)
+             ENDDO
+          ELSE                                                            40.80
+             DO IPTST = 1, MIN(10,NPTST)                                  40.80
+                IVP = XYTST(IPTST)                                        40.80
+                TSTVAL(IPTST) = COMPDA(IVP,JTURB3)                        40.80
+             ENDDO                                                        40.80
+          ENDIF                                                           40.80
+          WRITE (PRTEST, 122) ' turb visc: ',
+     &          (TSTVAL(IPTST), IPTST=1,MIN(10,NPTST))
+        ENDIF
+      ENDIF
+
+!     field 13: field containing fluid mud layer
+      IF (IFLDYN(13) .EQ. 1) THEN
+        CALL FLFILE (13, 0, MUDLF, (/0./),
+     &               JMUDL1, JMUDL2, JMUDL3, 0, 0, 0,
+     &               1., 0.,
+     &               COMPDA, XCGRID, YCGRID,
+     &               KGRPNT, IERR)
+        IF (STPNOW()) RETURN
+        IF (NPTST.GT.0) THEN
+          WRITE (PRTEST, '(A)') ' mud layer from file in test points'
+          IF (OPTG.NE.5) THEN                                             40.80
+             DO IPTST = 1, MIN(10,NPTST)
+               IXP = XYTST(2*IPTST-1)
+               IYP = XYTST(2*IPTST)
+               TSTVAL(IPTST) = COMPDA(KGRPNT(IXP,IYP),JMUDL3)
+             ENDDO
+          ELSE                                                            40.80
+             DO IPTST = 1, MIN(10,NPTST)                                  40.80
+                IVP = XYTST(IPTST)                                        40.80
+                TSTVAL(IPTST) = COMPDA(IVP,JMUDL3)                        40.80
+             ENDDO                                                        40.80
+          ENDIF                                                           40.80
+          WRITE (PRTEST, 122) ' mud layer: ',
+     &          (TSTVAL(IPTST), IPTST=1,MIN(10,NPTST))
+        ENDIF
+      ENDIF
 !
 !     End of subroutine SNEXTI
 !
@@ -6715,7 +6924,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2013  Delft University of Technology
+!     Copyright (C) 1993-2015  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -7317,7 +7526,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2013  Delft University of Technology
+!     Copyright (C) 1993-2015  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -7446,8 +7655,8 @@
 !
 !  8. Subroutines used
 !
-!       GAMMA (in SWANSER)
-      REAL :: GAMMA                                                       40.03
+!       GAMMAF (in SWANSER)
+      REAL :: GAMMAF                                                      40.03
       LOGICAL EQREAL                                                      40.41
 !
 !  9. Subroutines calling
@@ -7558,7 +7767,7 @@
           IF (MS.GT.10.) THEN
             CTOT = SQRT(MS/(2.*PI)) * (1. + 0.25/MS)                      30.81 40.00
           ELSE
-            CTOT = 2.**MS * (GAMMA(1.+0.5*MS))**2 / (PI * GAMMA(1.+MS))   40.00
+            CTOT = 2.**MS * (GAMMAF(1.+0.5*MS))**2 / (PI*GAMMAF(1.+MS))   40.00
           ENDIF
           DSUM = 0.
           DO ID = 1, MDC
@@ -7749,7 +7958,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2013  Delft University of Technology
+!     Copyright (C) 1993-2015  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -8138,7 +8347,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2013  Delft University of Technology
+!     Copyright (C) 1993-2015  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -8414,6 +8623,7 @@
 !****************************************************************
 !
       USE M_WCAP
+      USE M_SNL4
       USE M_GENARR
       USE M_PARALL
       USE M_DIFFR
@@ -8434,7 +8644,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2013  Delft University of Technology
+!     Copyright (C) 1993-2015  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -8478,6 +8688,9 @@
 !
 #ifdef SWAN_MODEL
       DEALLOCATE(SIGPOW)
+      DEALLOCATE(CNL4_1)
+      DEALLOCATE(CNL4_2)
+      DEALLOCATE(LAMBDA)
       DEALLOCATE(KGRPNT)
       DEALLOCATE(KGRBND)
       DEALLOCATE(XYTST )
@@ -8509,6 +8722,9 @@
       DEALLOCATE(DIFPARDY)
 #else
       IF (ALLOCATED(SIGPOW))   DEALLOCATE(SIGPOW)
+      IF (ALLOCATED(CNL4_1))   DEALLOCATE(CNL4_1)
+      IF (ALLOCATED(CNL4_2))   DEALLOCATE(CNL4_2)
+      IF (ALLOCATED(LAMBDA))   DEALLOCATE(LAMBDA)
       IF (ALLOCATED(KGRPNT))   DEALLOCATE(KGRPNT)
       IF (ALLOCATED(KGRBND))   DEALLOCATE(KGRBND)
       IF (ALLOCATED(XYTST ))   DEALLOCATE(XYTST )
@@ -8533,16 +8749,18 @@
       IF (ALLOCATED(DIFPARAM)) DEALLOCATE(DIFPARAM)
       IF (ALLOCATED(DIFPARDX)) DEALLOCATE(DIFPARDX)
       IF (ALLOCATED(DIFPARDY)) DEALLOCATE(DIFPARDY)
+      IF (ALLOCATED(MUDLF ))   DEALLOCATE(MUDLF )
       IF (ALLOCATED(NPLAF ))   DEALLOCATE(NPLAF )
       IF (ALLOCATED(LAYH  ))   DEALLOCATE(LAYH  )
       IF (ALLOCATED(VEGDIL))   DEALLOCATE(VEGDIL)
       IF (ALLOCATED(VEGNSL))   DEALLOCATE(VEGNSL)
       IF (ALLOCATED(VEGDRL))   DEALLOCATE(VEGDRL)
+      IF (ALLOCATED(TURBF ))   DEALLOCATE(TURBF )
 !
       IF (ALLOCATED(xcugrd  )) DEALLOCATE(xcugrd  )
       IF (ALLOCATED(ycugrd  )) DEALLOCATE(ycugrd  )
-!PUN!NCF      IF (ALLOCATED(xcugrdgl)) DEALLOCATE(xcugrdgl)
-!PUN!NCF      IF (ALLOCATED(ycugrdgl)) DEALLOCATE(ycugrdgl)
+!PUN      IF (ALLOCATED(xcugrdgl)) DEALLOCATE(xcugrdgl)
+!PUN      IF (ALLOCATED(ycugrdgl)) DEALLOCATE(ycugrdgl)
       IF (ALLOCATED(ivertg  )) DEALLOCATE(ivertg  )
       IF (ALLOCATED( vmark  )) DEALLOCATE( vmark  )
       IF (ALLOCATED( vlist  )) DEALLOCATE( vlist  )

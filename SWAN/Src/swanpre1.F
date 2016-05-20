@@ -45,6 +45,7 @@
 #ifdef SWAN_MODEL
       USE M_COUPLING
 #endif
+      IMPLICIT NONE
 !
 !
 !   --|-----------------------------------------------------------|--
@@ -58,7 +59,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2013  Delft University of Technology
+!     Copyright (C) 1993-2015  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -113,6 +114,7 @@
 !     40.38: Annette Kieftenburg
 !     40.08: W. Erick Rogers
 !     40.31: Marcel Zijlema
+!     40.35: Nico Booij
 !     40.41: Marcel Zijlema
 !     40.51: Marcel Zijlema
 !     40.55: Marcel Zijlema
@@ -225,6 +227,7 @@
 !     40.08, Mar. 03: warning message added for use of curvilinear
 !                     coordinate system
 !     40.31, Dec. 03: removing POOL-mechanism
+!     40.35, Jun. 04: introducing turbulent viscosity model
 !     40.41, Oct. 04: common blocks replaced by modules, include files removed
 !     40.51, Jun. 06: correct input of MDIA
 !     40.55, Dec. 05: introducing vegetation model
@@ -290,6 +293,15 @@
 !               performed                                                 40.17
 !     POWN      user defined power of redistribution function             40.18
 !     RLAMBDA   Dummy array containing lambda values for quadruplets      40.17
+!
+      INTEGER           :: MPTST,IPP,NLEN,ITRAS,JJ
+      INTEGER           :: IGR1,IGR2,IGRD,MXS,MYS
+      INTEGER           :: IVAL,NUMCOR,MSS,I,J,NVAR,IVTYPE
+      REAL              :: TRCF,HGT,SLP,BK,OGAM,OBET,REF0,XP,YP
+      REAL              :: ALTMP,FRLOW,FRHIG,DIFF,GAMMA,TMPDIR,VALX,VALY
+      REAL              :: DEGCNV
+      REAL              :: HH, CC, DD
+      INTEGER           :: NN
 !
       INTEGER, SAVE     :: INCNUM(1:MXINCL) = 0                           40.03
       INTEGER, SAVE     :: INCLEV = 1                                     40.03
@@ -593,6 +605,14 @@
 #endif
           CALL SWCOPI (IARR,XYTST,IPP*NPTSTA)                             40.80 40.31
           DEALLOCATE(IARR)                                                40.31
+        ELSE
+#ifdef SWAN_MODEL
+          DEALLOCATE (M_GENARR_MOD(ng)%XYTST_G)
+          ALLOCATE (M_GENARR_MOD(ng)%XYTST_G(IPP*NPTSTA))
+          XYTST=>M_GENARR_MOD(ng)%XYTST_G
+#else
+          IF (.NOT.ALLOCATED(XYTST)) ALLOCATE(XYTST(0))
+#endif
         ENDIF
         GOTO 100
       ENDIF
@@ -772,7 +792,7 @@
 !
       IF (KEYWIS ('PROP')) THEN                                           40.02
         CALL INKEYW ('STA','    ')                                        40.02
-        IF (KEYWIS ('BSBT')) THEN                                         40.02
+        IF (KEYWIS ('BSBT') .OR. KEYWIS ('BTBS')) THEN                    40.02
           PROPSN = 1                                                      40.02
           PROPSS = 1                                                      40.02
         ELSE IF (KEYWIS ('GSE')) THEN                                     40.02
@@ -1165,7 +1185,7 @@
 !
 !   INPgrid                                                                &
 !      BOTtom / WLEVel / CURrent / VX / VY / FRiction / WInd / WX / WY     &
-!      NPLAnts                                                             &
+!      NPLAnts / TURB / MUDL                                               &
 !      | REG [xpinp] [ypinp] [alpinp]  [mxinp] [myinp]  [dxinp] [dyinp] |
 !     <  CURVilinear [stagrx] [stagry] [mxinp] [myinp]                   > &
 !      | UNSTRUCtured                                                   |
@@ -1317,6 +1337,14 @@
           NPLAF=>M_GENARR_MOD(ng)%NPLAF_G
           NPLAF=0.
 #endif
+        ELSE IF (KEYWIS ('TURB')) THEN                                    40.35
+!         value of turbulent viscosity                                    40.35
+          IGRD = 12                                                       40.35
+          PSNAME = 'TURBGRID'                                             40.35
+        ELSE IF (KEYWIS ('MUDL')) THEN                                    40.59
+!         fluid mud layer                                                 40.59
+          IGRD = 13                                                       40.59
+          PSNAME = 'MUDLGRID'                                             40.59
         ELSE
           IGRD = 1
           PSNAME = 'BOTTGRID'
@@ -1337,8 +1365,8 @@
 !
 !   ============================================================================
 !
-!   READinp    BOTtom/WLevel/CURrent/FRiction/WInd/COORdinates               &
-!              NPLAnts                                                       &
+!   READinp    BOTtom/WLevel/CURrent/FRiction/WInd/COORdinates/              &
+!              NPLAnts/TURB/MUDL                                             &
 !        [fac]  / 'fname1'        \
 !               \ SERIES 'fname2' /  [idla] [nhedf] ([nhedt]) (nhedvec])     &
 !        FREE / FORMAT 'form' / [idfm] / UNFORMATTED
@@ -1488,7 +1516,7 @@
 ! ===========================================================================
 !
 !          / REGular [xpc] [ypc] [alpc] [xlenc] [ylenc] [mxc] [myc] \
-!   CGRID <  CURVilinear [mxc] [myc]  [excval]                       >   &
+!   CGRID <  CURVilinear [mxc] [myc]  [excval] [alpc]                >   &
 !          \ UNSTRUCtured                                           /
 !
 !          / CIRcle               \
@@ -1516,9 +1544,9 @@
           XCLEN = 0.
           YCLEN = 0.
           IF (ITEST.GE.30) THEN                                           40.41
-          CALL MSGERR(1,'there is an unresolved problem with the')        40.08
+          CALL MSGERR(1,'there is an unusual issue with the')             41.53 40.08
           CALL MSGERR(1,'curvilinear mode, so use with caution.')         40.08
-          CALL MSGERR(1,'This problem occurs when the upwind point')      40.08
+          CALL MSGERR(1,'This issue occurs when the upwind point')        40.08
           CALL MSGERR(1,'has not been solved for yet, because it')        40.08
           CALL MSGERR(1,'falls into a different sweep. Normally,')        40.08
           CALL MSGERR(1,'an upwind point will always fall within')        40.08
@@ -1528,6 +1556,8 @@
           CALL MSGERR(1,'the axis of the grid bends about the')           40.08
           CALL MSGERR(1,'direction associated with a particular')         40.08
           CALL MSGERR(1,'directional bin.')                               40.08
+          CALL MSGERR(1,'You may use command SET CURV or enlarge')        41.53
+          CALL MSGERR(1,'parameter [mxitst].')                            41.53
           END IF                                                          40.41
         ELSEIF (KEYWIS('UNSTRUC')) THEN                                   40.80
           OPTG  = 5                                                       40.80
@@ -1612,6 +1642,9 @@
             CALL INREAL ('EXCVAL', EXCFLD(8), 'REQ', 0.)                  30.60
             CALL INREAL ('EXCVAL', EXCFLD(9), 'STA', EXCFLD(8))           30.60
           ENDIF                                                           30.60
+          CALL INREAL ('ALPC',ALPC,'STA',0.)                              41.53
+          ALTMP = ALPC / 360.                                             41.53
+          ALPC = PI2 * (ALTMP - NINT(ALTMP))                              41.53
         ENDIF                                                             30.60
 !
         CALL INKEYW ('STA', 'CIR')                                        20.67
@@ -1855,15 +1888,15 @@
 !
 ! =====================================================================
 !
-!             | -> ACCUR [drel] [dhoval] [dtoval] [npnts]            |    40.41 40.03
-!   NUMeric (<                                                        > & 40.41
-!             | STOPC [dabs] [drel] [curvat] [npnts] [dtabs] [curvt] |    40.93 40.41
+!         | -> STOPC [dabs] [drel] [curvat] [npnts] [dtabs] [curvt] |     40.93 40.41
+!   NUM (<                                                           > &  40.41
+!         | ACCUR [drel] [dhoval] [dtoval] [npnts]                  |     40.41 40.03
 !
 !                    | -> STAT  [mxitst] [alfa] |                         40.23
 !                   <                            >  [limiter]   )     &   40.03
 !                    | NONSTat  [mxitns]        |
 !
-!           ( DIRimpl [cdd] [cdlim]  WNUMber                       )  &
+!           ( DIRimpl [cdd] [cdlim]  DEP|WNUM                      )  &
 !
 !           ( REFRLim [frlim] [power]          (NOT documented)    )  &   41.06
 !
@@ -1884,25 +1917,7 @@
       IF (KEYWIS ('NUM')) THEN
         CALL INKEYW ('REQ','  ')
 !       *** accuracy and criterion to terminate the iteration ***
-        IF (KEYWIS ('ACCUR')) THEN
-          PNUMS(21) = 0.                                                  40.41
-          CALL INREAL ('DREL'   , PNUMS(1) , 'UNC', 0.)
-          CALL INREAL ('DHOVAL' , PNUMS(15), 'UNC', 0.)                   30.82
-          CALL INREAL ('DTOVAL' , PNUMS(16), 'UNC', 0.)                   30.82
-          CALL INREAL ('NPNTS'  , PNUMS(4) , 'UNC', 0.)
-          CALL INKEYW ('STA', 'STAT')                                     40.03
-          IF (KEYWIS ('STAT')) THEN                                       40.03
-            CALL ININTG ('MXITST' , MXITST   , 'UNC', 0 )                 40.80 40.03
-            CALL INREAL ('ALFA'   , PNUMS(30), 'UNC', 0.)                 40.23
-          ELSE IF (KEYWIS ('ITERMX')) THEN                                40.03
-            CALL ININTG ('MXITST' , MXITST   , 'REQ', 0 )                 40.03
-            MXITNS = MXITST                                               40.03
-            CALL MSGERR (1, '[itermx] is replaced; see user manual')      40.03
-          ELSE IF (KEYWIS ('NONST')) THEN                                 40.03
-            CALL ININTG ('MXITNS' , MXITNS   , 'REQ', 0 )                 40.03
-          ENDIF
-          CALL INREAL ('LIMITER', PNUMS(20), 'UNC', 0.)                   30.70
-        ELSE IF (KEYWIS ('STOPC')) THEN                                   40.41
+        IF (KEYWIS ('STOPC')) THEN                                        40.41
           PNUMS(21) = 1.                                                  40.41
           CALL INREAL ('DABS'   , PNUMS(2) , 'STA', 0.00)                 40.41
           CALL INREAL ('DREL'   , PNUMS(1) , 'STA', 0.01)                 40.41
@@ -1922,6 +1937,24 @@
             CALL ININTG ('MXITNS' , MXITNS   , 'REQ', 0 )                 40.41
           ENDIF                                                           40.41
           CALL INREAL ('LIMITER', PNUMS(20), 'UNC', 0.)                   40.41
+        ELSE IF (KEYWIS ('ACCUR')) THEN
+          PNUMS(21) = 0.                                                  40.41
+          CALL INREAL ('DREL'   , PNUMS(1) , 'UNC', 0.)
+          CALL INREAL ('DHOVAL' , PNUMS(15), 'UNC', 0.)                   30.82
+          CALL INREAL ('DTOVAL' , PNUMS(16), 'UNC', 0.)                   30.82
+          CALL INREAL ('NPNTS'  , PNUMS(4) , 'UNC', 0.)
+          CALL INKEYW ('STA', 'STAT')                                     40.03
+          IF (KEYWIS ('STAT')) THEN                                       40.03
+            CALL ININTG ('MXITST' , MXITST   , 'UNC', 0 )                 40.80 40.03
+            CALL INREAL ('ALFA'   , PNUMS(30), 'UNC', 0.)                 40.23
+          ELSE IF (KEYWIS ('ITERMX')) THEN                                40.03
+            CALL ININTG ('MXITST' , MXITST   , 'REQ', 0 )                 40.03
+            MXITNS = MXITST                                               40.03
+            CALL MSGERR (1, '[itermx] is replaced; see user manual')      40.03
+          ELSE IF (KEYWIS ('NONST')) THEN                                 40.03
+            CALL ININTG ('MXITNS' , MXITNS   , 'REQ', 0 )                 40.03
+          ENDIF
+          CALL INREAL ('LIMITER', PNUMS(20), 'UNC', 0.)                   30.70
         END IF
 !
 !       *** numerical scheme in directional space (standard  ***
@@ -1932,13 +1965,16 @@
           CALL INREAL ('CDD'    , PNUMS(6) , 'UNC', 0.)
           CALL INREAL ('CDLIM'  , PNUMS(17), 'UNC', 0.)                   30.80
           IF (PNUMS(17).LT.0.) IREFR = 1                                  30.80
-          IF (PNUMS(17).GT.0.) IREFR = -1                                 40.02
           IF (EQREAL(PNUMS(17),0.)) THEN                                  30.80
             IREFR = 0                                                     30.80
             CALL MSGERR(0, 'Refraction deactivated')                      40.02
           ENDIF
-          CALL INKEYW ('STA','    ')                                      41.07
-          IF (KEYWIS ('WNUM')) PNUMS(32) = 1.                             41.07
+          CALL INKEYW ('STA', 'WNUM')                                     41.56
+          IF (KEYWIS('DEP')) THEN
+             PNUMS(32) = 0.                                               41.56
+          ELSE IF (KEYWIS('WNUM')) THEN
+             PNUMS(32) = 1.                                               41.07
+          ENDIF
         ENDIF
 !
 !       limit Ctheta if user want so                                      41.06
@@ -1985,20 +2021,20 @@
 !
         END IF
 !
-!       limit Csigma if user want so                                      41.35
-!
-        CALL INKEYW ('STA','  ')
-        IF (KEYWIS ('CS')) THEN
-           PNUMS(33) = 1.
-           CALL INREAL ('CFL', PNUMS(34) ,'STA', 0.5)
-        ENDIF
-!
 !       limit Ctheta if user want so                                      41.35
 !
         CALL INKEYW ('STA','  ')
         IF (KEYWIS ('CT')) THEN
            PNUMS(35) = 1.
            CALL INREAL ('CFL', PNUMS(36) ,'STA', 0.5)
+        ENDIF
+!
+!       limit Csigma if user want so                                      41.35
+!
+        CALL INKEYW ('STA','  ')
+        IF (KEYWIS ('CS')) THEN
+           PNUMS(33) = 1.
+           CALL INREAL ('CFL', PNUMS(34) ,'STA', 0.5)
         ENDIF
 !
         CALL INKEYW ('STA','  ')                                          30.82
@@ -2067,10 +2103,10 @@
 !
 ! =============================================================
 !
-!   SET  [level]  [nor]  [depmin]  [maxmes]        &
-!        [maxerr]  [grav]  [rho] [cdcap] [inrhog]  &
-!        [hsrerr]  CARTesian/NAUTical  [pwtail]    &
-!        [froudmax]  [printf]  [prtest]
+!   SET  [level]  [nor]  [depmin]  [maxmes]           &
+!        [maxerr]  [grav]  [rho] [cdcap] [inrhog]     &
+!        [hsrerr]  CARTesian/NAUTical  [pwtail]       &
+!        [froudmax]  [sort]  CURV  [printf]  [prtest]
 !
 ! =============================================================
 !
@@ -2118,8 +2154,15 @@
            PWTAIL(3) = PWTAIL(1) + 1.
          ENDIF
          CALL INREAL ('FROUDMAX', PNUMS(18), 'UNC', 0.)                   30.50
-         CALL ININTG ('PRINTF', PRINTF, 'UNC', 0)
-         CALL ININTG ('PRTEST', PRTEST, 'UNC', 0)
+         CALL INREAL ('SORT'    , asort    , 'UNC', 0.)                   41.48
+         IF (KEYWIS ('CURV')) CCURV = .TRUE.                              41.53
+         CALL ININTG ('PRINTF'  , PRINTF   , 'UNC', 0 )
+         CALL ININTG ('PRTEST'  , PRTEST   , 'UNC', 0 )
+         if ( asort.ne.-999. ) then                                       41.48
+            asort = DEGCNV (asort)
+            ALTMP = asort / 360.
+            asort = PI2 * (ALTMP - NINT(ALTMP))
+         endif
          GOTO 100
       ENDIF
 !
@@ -2266,10 +2309,11 @@
 ! BREaking <                                                                    > &
 !           |    RUEssink [alpha] [a] [b]                                      |
 !           |
-!           |    NKD [alpha] [gamma0] [alpha0] [beta1] [beta2] [delta1]  &     |
-!           |        [delta2] [n_low] [n_high] [R_low] [R_high] [a]            |
+!           |    BKD [alpha] [gamma0] [a1] [a2] [a3]                           |
 !           |                                                                  |
 !           |    TG [alpha] [gamma] [pown]                                     |
+!
+!       ( DIRectionality [spread] )                                               &
 !
 !       ( FREQDep [power] [fmin] [fmax] ) (fmin and fmax not documented)
 !
@@ -2299,26 +2343,20 @@
           CALL INREAL ('ALPHA',  PSURF(1), 'STA', 1.0)
           CALL INREAL ('GAMMA',  PSURF(4), 'STA', 0.42)
           CALL INREAL ('POWN' ,  PSURF(5), 'STA', 4.0)
-        ELSE IF (KEYWIS('NKD')) THEN                                      41.38
+        ELSE IF (KEYWIS('BKD')) THEN                                      41.38
           ISURF = 6                                                       41.38
-          CALL INREAL ('ALPHA' , PSURF(1) ,'STA', 1.0)                    41.38
-          CALL INREAL ('GAMMA0', PSURF(4) ,'STA', 0.49)                   41.38
-          CALL INREAL ('ALPHA0', PSURF(5) ,'STA', 1.0)                    41.38
-          CALL INREAL ('BETA1' , PSURF(6) ,'STA', 10.0)                   41.38
-          CALL INREAL ('BETA2' , PSURF(7) ,'STA', 7.98)                   41.38
-          CALL INREAL ('DELTA1', PSURF(8) ,'STA', 0.26)                   41.38
-          CALL INREAL ('DELTA2', PSURF(9) ,'STA', 750.0)                  41.38
-          CALL INREAL ('N_LOW' , PSURF(10),'STA', 2.0)                    41.38
-          CALL INREAL ('N_HIGH', PSURF(11),'STA', 20.0)                   41.38
-          CALL INREAL ('R_LOW' , PSURF(12),'STA', 1.E-6)                  41.38
-          CALL INREAL ('R_HIGH', PSURF(13),'STA', 50.0)                   41.38
-          CALL INREAL ('A'     , PSURF(14),'STA', 0.86)                   41.38
-!
-          JGAMMA = MCMVAR+1                                               41.38
-          JRESPL = MCMVAR+2                                               41.38
-          MCMVAR = MCMVAR+2                                               41.38
-          ALOCMP = .TRUE.                                                 41.38
+          CALL INREAL ('ALPHA' , PSURF(1) ,'STA', 1.00)                   41.47
+          CALL INREAL ('GAMMA0', PSURF(4) ,'STA', 0.54)                   41.47
+          CALL INREAL ('A1'    , PSURF(5) ,'STA', 7.59)                   41.47
+          CALL INREAL ('A2'    , PSURF(6) ,'STA',-8.06)                   41.47
+          CALL INREAL ('A3'    , PSURF(7) ,'STA', 8.09)                   41.47
         ENDIF
+!
+        CALL INKEYW ('STA', '  ')                                         41.47
+        IF (KEYWIS ('DIR')) THEN                                          41.47
+           IDISRF = 1                                                     41.47
+           CALL INREAL ('SPREAD', PSURF(15), 'STA', 15.)                  41.47
+        END IF                                                            41.47
 !
         CALL INKEYW ('STA', '  ')                                         41.06
         IF (KEYWIS ('FREQD')) THEN                                        41.06
@@ -2429,6 +2467,8 @@
 !                   |              [cfc]      (NOT documented)
 !                   |
 !                   |    MADsen    [kn]
+!                   |
+!                   |    RIPples   [S] [D]
 !
 ! ===============================================
 !
@@ -2455,9 +2495,32 @@
         ELSE IF (KEYWIS('MAD')) THEN
           IBOT = 3
           CALL INREAL('KN',PBOT(5),'UNC',0.)
+        ELSE IF (KEYWIS('RIP')) THEN                                      41.51
+          IBOT = 5
+          CALL INREAL('S',PBOT(6),'UNC',0.)
+          CALL INREAL('D',PBOT(7),'UNC',0.)
+          JFRC2  = MCMVAR+1
+          MCMVAR = MCMVAR+1
+          ALOCMP = .TRUE.
         ELSE
           CALL WRNKEY
         ENDIF
+        GOTO 100
+      ENDIF
+!
+! ==========================================
+!
+!   MUD  [layer]  [rhom]  [viscm]  [rhow]  [viscw]
+!
+! ==========================================
+!
+      IF (KEYWIS ('MUD')) THEN
+        IMUD = 1
+        CALL INREAL('LAYER',PMUD(1),'UNC',0.)
+        CALL INREAL('RHOM' ,PMUD(2),'UNC',0.)
+        CALL INREAL('VISCM',PMUD(3),'UNC',0.)
+        CALL INREAL('RHOW' ,PMUD(4),'UNC',0.)
+        CALL INREAL('VISCW',PMUD(5),'UNC',0.)
         GOTO 100
       ENDIF
 !
@@ -2522,6 +2585,35 @@
         GOTO 100
       END IF
 !
+! =================================================================
+!
+!      TURBulence  [ctb]  (CURrent [tbcur])                               40.35
+!
+! =================================================================
+
+      IF (KEYWIS ('TURB')) THEN                                           40.35
+        ITURBV = 1
+        CALL INREAL ('CTB',  PTURBV(1), 'STA', 0.01)                      40.35
+        CALL INKEYW ('STA', ' ')
+        IF (KEYWIS('CUR')) THEN
+          CALL INREAL ('TBCUR', PTURBV(2), 'STA', 0.004)
+          IF (VARTUR) THEN
+            CALL MSGERR (1, 'turbulence is read; option CUR ignored')
+            PTURBV(2) = -1.
+          ELSE
+            VARTUR = .TRUE.                                               40.35
+!           reserve space for storage of turbulence parameter
+            MCMVAR = MCMVAR + 2                                           40.35
+            JTURB2 = MCMVAR - 1                                           40.35
+            JTURB3 = MCMVAR                                               40.35
+            ALOCMP = .TRUE.                                               40.97
+          ENDIF
+        ELSE
+          PTURBV(2) = -1.                                                 40.35
+        ENDIF
+        GOTO 100
+      ENDIF
+!
 !     ------------------------------------------------------------------
 !
 !     WIND      parameters uniform wind field
@@ -2548,7 +2640,7 @@
 !
         CALL INKEYW ('STA','  ')                                          41.33
         IF ( KEYWIS('DRAG') ) THEN                                        41.33
-          CALL INKEYW ('STA','WU')                                        41.33
+          CALL INKEYW ('STA','FIT')                                       41.49 41.33
           IF (KEYWIS ('WU')) THEN                                         41.33
              IDRAG = 1                                                    41.33
           ELSE IF (KEYWIS ('FIT')) THEN                                   41.33
@@ -2880,18 +2972,25 @@
 !
 ! ============================================================
 !
-!  TRIad [itriad] [trfac] [cutfr] [urcrit] [urslim]                       40.56
+!  TRIad [itriad] [trfac] [cutfr] [a] [b] [urcrit] [urslim]               41.46 40.56
 !
 ! ============================================================
 !
       IF (KEYWIS ('TRI')) THEN
         CALL ININTG ('ITRIAD', ITRIAD, 'STA', 1)
-        IF (ITRIAD.EQ.5) THEN
-           CALL INREAL ('TRFAC', PTRIAD(1), 'STA', 0.13)
-           CALL INREAL ('CUTFR', PTRIAD(2), 'STA', 1.33333333)
-        ELSE
-           CALL INREAL ('TRFAC', PTRIAD(1), 'UNC', 0.0)
+        IF (ITRIAD.EQ.1) THEN
+           CALL INREAL ('TRFAC', PTRIAD(1), 'STA', 0.65)                  41.44
            CALL INREAL ('CUTFR', PTRIAD(2), 'STA', 2.5)                   40.61 40.56 30.82
+        ELSEIF (ITRIAD.EQ.2) THEN
+           CALL INREAL ('TRFAC', PTRIAD(1), 'STA', 0.05)                  41.46
+           CALL INREAL ('A'    , PTRIAD(6), 'STA', 0.95)                  41.46
+           CALL INREAL ('B'    , PTRIAD(7), 'STA',-0.75)                  41.46
+        ELSEIF (ITRIAD.EQ.5) THEN
+           CALL INREAL ('TRFAC', PTRIAD(1), 'STA', 0.35)                  41.45
+           CALL INREAL ('CUTFR', PTRIAD(2), 'STA', 1.33333333)
+        ELSEIF (ITRIAD.EQ.11) THEN
+           CALL INREAL ('TRFAC', PTRIAD(1), 'STA', 0.05)
+           CALL INREAL ('CUTFR', PTRIAD(2), 'STA', 2.5)
         ENDIF
         CALL INREAL ('URCRIT', PTRIAD(4), 'UNC', 0.0)                     40.13
         CALL INREAL ('URSLIM', PTRIAD(5), 'STA', 0.01)                    40.41 40.23 40.13
@@ -3013,7 +3112,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2013  Delft University of Technology
+!     Copyright (C) 1993-2015  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -3145,10 +3244,10 @@
 !            | VX       |
 !            |          |
 !            | VY       |
-! INPgrid  (<            >) &
+!            |          |
 !            | FRiction |
 !            |          |
-!            | WInd     |
+! INPgrid  (<  WInd      >) &
 !            |          |
 !            | WX       |
 !            |          |
@@ -3157,6 +3256,10 @@
 !            | ASTD     |                                                 40.03
 !            |          |
 !            | NPLAnts  |                                                 40.55
+!            |          |
+!            | TURB     |                                                 40.35
+!            |          |
+!            | MUDLayer |                                                 40.59
 !
 !
 !    | REGular [xpinp] [ypinp] [alpinp] [mxinp] [myinp] [dxinp] [dyinp] |
@@ -3521,7 +3624,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2013  Delft University of Technology
+!     Copyright (C) 1993-2015  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -3547,8 +3650,10 @@
 !     40.02: IJsbrand Haagsma
 !     40.04: Annette Kieftenburg
 !     40.31: Marcel Zijlema
+!     40.35: Nico Booij
 !     40.41: Marcel Zijlema
 !     40.55: Marcel Zijlema
+!     40.59: Erick Rogers
 !     41.20: Casey Dietrich
 !
 !  1. Updates
@@ -3562,8 +3667,10 @@
 !     34.01, Feb. 99: Introducing STPNOW
 !     40.02, Oct. 00: Avoided real/int conflict by introducing RPOOL
 !     40.31, Oct. 03: remove POOL construction
+!     40.35, Jun. 04: introducing turbulent viscosity model
 !     40.41, Oct. 04: common blocks replaced by modules, include files removed
 !     40.55, Dec. 05: introducing vegetation model
+!     40.59, Aug. 07: introducing fluid mud-induced dissipation model
 !     41.20, Mar. 10: extension to tightly coupled ADCIRC+SWAN model
 !
 !  2. Purpose
@@ -3656,8 +3763,8 @@
 !
 !   ============================================================================
 !
-!   READinp    BOTtom/WLevel/CURrent/FRiction/WInd/COORdinates               &
-!              NPLAnts                                                       &
+!   READinp    BOTtom/WLevel/CURrent/FRiction/WInd/COORdinates/              &
+!              NPLAnts/TURB/MUDL                                             &
 !        [fac]  / 'fname1'        \
 !               \ SERIES 'fname2' /  [idla] [nhedf] ([nhedt]) (nhedvec])     &
 !        FREE / FORMAT 'form' / [idfm] / UNFORMATTED
@@ -3842,6 +3949,28 @@
           JNPLA3 = MCMVAR                                                 40.55
           ALOCMP = .TRUE.                                                 40.97
         ENDIF                                                             40.55
+      ELSE IF (KEYWIS ('TURB')) THEN                                      40.35
+!       turbulent viscosity                                               40.35
+        IGR1   = 12                                                       40.35
+        VARTUR = .TRUE.                                                   40.35
+        IF (JTURB2.LE.1) THEN                                             40.35
+          MCMVAR = MCMVAR + 2                                             40.35
+          JTURB2 = MCMVAR - 1                                             40.35
+          JTURB3 = MCMVAR                                                 40.35
+          ALOCMP = .TRUE.                                                 40.97
+        ENDIF                                                             40.35
+      ELSE IF (KEYWIS ('MUDL')) THEN                                      40.59
+!       fluid mud layer
+        IGR1   = 13
+        VARMUD = .TRUE.                                                   40.59
+        IMUD   = 1                                                        40.59
+        IF (JMUDL2.LE.1) THEN                                             40.59
+          MCMVAR = MCMVAR + 3                                             40.59
+          JMUDL1 = MCMVAR - 2                                             40.59
+          JMUDL2 = MCMVAR - 1                                             40.59
+          JMUDL3 = MCMVAR                                                 40.59
+          ALOCMP = .TRUE.                                                 40.97
+        ENDIF                                                             40.59
       ELSE
         CALL  WRNKEY
       ENDIF
@@ -3971,6 +4100,12 @@
       ELSE IF (IGR1.EQ.11) THEN                                           40.55
          IF (.NOT.ALLOCATED(NPLAF)) ALLOCATE(NPLAF(MXG(IGR1)*MYG(IGR1)))  40.55
          CALL SWCOPR( TARR, NPLAF, MXG(IGR1)*MYG(IGR1) )                  40.55
+      ELSE IF (IGR1.EQ.12) THEN                                           40.35
+         IF (.NOT.ALLOCATED(TURBF)) ALLOCATE(TURBF(MXG(IGR1)*MYG(IGR1)))  40.35
+         CALL SWCOPR( TARR, TURBF, MXG(IGR1)*MYG(IGR1) )                  40.35
+      ELSE IF (IGR1.EQ.13) THEN                                           40.59
+         IF (.NOT.ALLOCATED(MUDLF)) ALLOCATE(MUDLF(MXG(IGR1)*MYG(IGR1)))  40.59
+         CALL SWCOPR( TARR, MUDLF, MXG(IGR1)*MYG(IGR1) )                  40.59
       END IF                                                              40.31
 #endif
       DEALLOCATE(TARR)                                                    40.31
@@ -4064,7 +4199,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2013  Delft University of Technology
+!     Copyright (C) 1993-2015  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -4235,7 +4370,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2013  Delft University of Technology
+!     Copyright (C) 1993-2015  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -4567,7 +4702,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2013  Delft University of Technology
+!     Copyright (C) 1993-2015  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -4782,7 +4917,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2013  Delft University of Technology
+!     Copyright (C) 1993-2015  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -5147,7 +5282,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2013  Delft University of Technology
+!     Copyright (C) 1993-2015  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -5257,7 +5392,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2013  Delft University of Technology
+!     Copyright (C) 1993-2015  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -5429,7 +5564,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2013  Delft University of Technology
+!     Copyright (C) 1993-2015  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -5600,7 +5735,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2013  Delft University of Technology
+!     Copyright (C) 1993-2015  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -6212,7 +6347,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2013  Delft University of Technology
+!     Copyright (C) 1993-2015  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as

@@ -16,7 +16,7 @@
 !                                                                      *
 #ifdef SWAN_MODEL
       SUBROUTINE SWBLOK ( RTYPE, OQI , OQR , IVTYP, FAC, PSNAME,          41.40
-     &                    MXK  , MYK , IRQ , VOQR , VOQ, ng        )      40.51 40.31
+     &                    MXK  , MYK , IRQ , VOQR , VOQ, OQI3, ng )       40.51 40.31
 #else
       SUBROUTINE SWBLOK ( RTYPE, OQI , OQR , IVTYP, FAC, PSNAME,          41.40
      &                    MXK  , MYK , IRQ , VOQR , VOQ        )          40.51 40.31
@@ -43,7 +43,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2013  Delft University of Technology
+!     Copyright (C) 1993-2015  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -141,17 +141,21 @@
 !
 ! 10. SOURCE TEXT
 !                                                                             30.81
-#ifdef SWAN_MODEL
-      INTEGER, intent(in) :: ng
-#endif
       CHARACTER (LEN=8) :: PSNAME       ! name of output locations        40.13
       CHARACTER (LEN=4) :: RTYPE        ! output type                     40.13
       INTEGER   VOQR(*), IPD
+#ifdef SWAN_MODEL
+      INTEGER, intent(in) :: OQI3, ng
+      INTEGER   OQI(4), IVTYP(OQI3)                                       40.31
+      REAL      OQR(2), VOQ(MXK*MYK,*), FAC(OQI3)                         41.40 40.31
+#else
       INTEGER   OQI(4), IVTYP(OQI(3))                                     40.31
       REAL      OQR(2), VOQ(MXK*MYK,*), FAC(OQI(3))                       41.40 40.31
+#endif
       INTEGER IF, IL                                                      40.41 40.30
       LOGICAL, SAVE :: MATLAB=.FALSE.                                     40.41 40.30
       LOGICAL, SAVE :: NCF   =.FALSE.                                     41.40
+      LOGICAL       :: EXIST = .FALSE.                                    41.43
       CHARACTER (LEN=20) :: CTIM                                          40.41
       CHARACTER (LEN=30) :: NAMVAR                                        40.41
 
@@ -201,14 +205,15 @@
       ELSE IF (NCF .AND. NREF.EQ.0) THEN                                  41.40
         ! reserve free unit number
         IOSTAT = -1
-        CALL FOR (NREF, FILENM, 'NU', IOSTAT)
+        INQUIRE(FILE=FILENM, EXIST=EXIST)                                 41.43
+        CALL FOR (NREF, FILENM, 'UU', IOSTAT)
         IF (STPNOW()) RETURN
-        CLOSE(NREF, STATUS='DELETE')
+        IF (.NOT.EXIST) CLOSE(NREF, STATUS='DELETE')                      41.43
         OQI(1) = NREF
-!jcw    CALL swn_outnc_openblockfile(FILENM, MYK, MXK,
-!    &                               OVLNAM, VOQ(:,VOQR(1)),
-!    &                               VOQ(:,VOQR(2)),
-!    &                               OQI, OQR, IVTYP, IRQ)
+        CALL swn_outnc_openblockfile(FILENM, MYK, MXK,
+     &                               OVLNAM, VOQ(:,VOQR(1)),
+     &                               VOQ(:,VOQR(2)),
+     &                               OQI, OQR, IVTYP, IRQ)
       ENDIF
       IDLA = OQI(4)                                                       40.31 30.00
       NVAR = OQI(3)                                                       40.31 30.00
@@ -272,7 +277,7 @@
      &                    VOQ(1,VOQR(IVTYPE)), NREF, IREC(IRQ),           40.51
      &                    IDLA, OVEXCV(IVTYPE) )
           ELSE IF (NCF) THEN                                              41.40
-             IF ( IVTYPE.GT.3 ) THEN
+             IF (IVTYPE.GT.2.AND.IVTYPE.NE.40) THEN
                 CALL swn_outnc_appendblock(MYK, MXK, IVTYPE, OQI(1),
      &                                     IRQ, VOQ(1,VOQR(IVTYPE)),
      &                                     OVEXCV(IVTYPE), 1)
@@ -357,7 +362,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2013  Delft University of Technology
+!     Copyright (C) 1993-2015  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -584,7 +589,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2013  Delft University of Technology
+!     Copyright (C) 1993-2015  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -709,8 +714,9 @@
       END
 !***********************************************************************
 !                                                                      *
-      SUBROUTINE SWTABP (RTYPE , OQI  , IVTYP, PSNAME, MIP, VOQR, VOQ,    40.31
-     &                   IONOD)                                           40.51
+      SUBROUTINE SWTABP (RTYPE , OQI  , OQR , IVTYP, PSNAME, MIP, VOQR,
+!NNCF      SUBROUTINE SWTABP (RTYPE , OQI  , IVTYP, PSNAME, MIP, VOQR,         40.31
+     &                   VOQ, IONOD)                                      40.51
 !                                                                      *
 !***********************************************************************
 
@@ -723,6 +729,9 @@
       USE OUTP_DATA                                                       40.13
       USE TIMECOMM                                                        40.41
       USE M_PARALL                                                        40.51
+      USE swn_outnc, only: swn_outnc_openblockfile,
+     &                     swn_outnc_appendblock,
+     &                     swn_outnc_close_on_end
 !PUN      USE SIZES, ONLY: MYPROC, MNPROC
 !
 !
@@ -737,7 +746,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2013  Delft University of Technology
+!     Copyright (C) 1993-2015  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -816,6 +825,7 @@
 !             ='TABP'; Output to paper (with header information)
 !             ='TABS';
 !             ='TABT';
+!             ='TABC'; NETCDF output
 !
       CHARACTER RTYPE*4, PSNAME*8
 !
@@ -828,6 +838,7 @@
 !     VOQ
 !
       REAL      VOQ(MIP,*)
+      REAL      OQR(2)
 !
 !  5. Parameter variables
 !
@@ -842,6 +853,7 @@
 !     NUMDEC
 !
       INTEGER NUMDEC
+      LOGICAL EXIST
 !
 !  8. Subroutines used
 !
@@ -922,10 +934,18 @@
         IF (NREF.EQ.0) THEN                                               30.82
           FILENM = OUTP_FILES(OQI(2))                                     40.31 40.13
           IOSTAT = -1                                                     20.75
+          INQUIRE(FILE=FILENM, EXIST=EXIST)
           CALL FOR (NREF, FILENM, 'UF', IOSTAT)
           IF (STPNOW()) RETURN                                            34.01
           OQI(1) = NREF                                                   40.31 30.00
           OUTP_FILES(OQI(2)) = FILENM                                     40.41
+          IF ( RTYPE .EQ. 'TABC' ) THEN
+            IF (.NOT.EXIST) CLOSE(NREF, STATUS='DELETE')
+            CALL swn_outnc_openblockfile(FILENM, 1, MIP,
+     &                                   OVLNAM, VOQ(:,VOQR(1)),
+     &                                   VOQ(:,VOQR(2)),
+     &                                   OQI, OQR, IVTYP, OQI(2))
+          ENDIF
         END IF                                                            30.82
         IF (RTYPE .NE. 'TABD') THEN
           OUTLIN = '    '
@@ -1061,6 +1081,24 @@
 !
 !     ***** printing of the table *****
 !
+      IF (RTYPE.EQ.'TABC') THEN
+        DO JVAR = 1, NVAR
+          IVTYPE = IVTYP(JVAR)
+          IF (IVTYPE.GT.3.AND.IVTYPE.NE.40) THEN
+            CALL swn_outnc_appendblock(1, MIP, IVTYPE, OQI(1),
+     &                                 OQI(2), VOQ(1,VOQR(IVTYPE)),
+     &                                 OVEXCV(IVTYPE), 1)
+            IF ( OVSVTY(IVTYPE).EQ.3 ) THEN
+              CALL swn_outnc_appendblock(1, MIP, IVTYPE, OQI(1),
+     &                                   OQI(2), VOQ(1,VOQR(IVTYPE)+1),
+     &                                   OVEXCV(IVTYPE), 2)
+            ENDIF
+          ENDIF
+        ENDDO
+        CALL swn_outnc_close_on_end(OQI(1), OQI(2))
+        RETURN
+      ENDIF
+!
       IF (RTYPE.EQ.'TABS') THEN
         IF (NSTATM.EQ.1) WRITE (NREF, 102) CHTIME, 'date and time'
       ENDIF
@@ -1131,7 +1169,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2013  Delft University of Technology
+!     Copyright (C) 1993-2015  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -1241,6 +1279,7 @@
       USE M_PARALL                                                        40.31
       USE swn_outnc, only: swn_outnc_spec                                 41.40
 !PUN      USE SIZES, ONLY: MYPROC, MNPROC
+!PUN      use SwanGriddata, only: ivertg
 !
 !
 !   --|-----------------------------------------------------------|--
@@ -1254,7 +1293,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2013  Delft University of Technology
+!     Copyright (C) 1993-2015  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -1435,11 +1474,13 @@
      &                    'locations in spherical coordinates'            33.09 nb!
           CRFORM = '(2F12.6)'                                             40.13
         ENDIF                                                             33.09 NB!
+!PUN        IF ( MNPROC.EQ.1 .OR. .NOT.LCOMPGRD ) THEN
         WRITE (NREF, 103) MIP, 'number of locations'
         DO 110 IP = 1, MIP
           WRITE (NREF, FMT=CRFORM) DBLE(VOQ(IP,VOQR(1))),                 40.13
      &                             DBLE(VOQ(IP,VOQR(2)))                  40.13
  110    CONTINUE
+!PUN        ENDIF
         IF (RTYPE(3:3) .EQ. 'R') THEN
           WRITE (NREF, 102) 'RFREQ', 'relative frequencies in Hz'         40.00
         ELSE
@@ -1571,6 +1612,11 @@
           ELSE
 !           write 1d spectrum
             WRITE (NREF, 115) IP
+!PUN            IF ( MNPROC.GT.1 .AND. LCOMPGRD ) THEN
+!PUN               WRITE (NREF, 115) ivertg(IP)
+!PUN            ELSE
+!PUN               WRITE (NREF, 115) IP
+!PUN            ENDIF
  115        FORMAT ('LOCATION', I6)                                       40.03
             DO IFR = 1, MSC
 !             write frequency spectra to file
@@ -1612,7 +1658,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2013  Delft University of Technology
+!     Copyright (C) 1993-2015  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -1730,6 +1776,7 @@
      &          ACLOC(*)        ,ECOS(MDC)         ,ESIN(MDC)             40.00
       REAL      CG(1), K1(1), K2(1), N(1), ND(1), SIG1(1), SIG2(1)        30.82
       LOGICAL EXCPT                                                       40.80
+      LOGICAL EQREAL                                                      41.54
       REAL, ALLOCATABLE :: ACL(:,:)                                       40.80
 !
       SAVE IENT
@@ -1816,7 +1863,11 @@
 !
 !           EE is energy density in Omega:
 !
-            EE    = ECLL * DSIG / ABS(OMEG2-OMEG1)
+            IF ( .NOT.EQREAL(OMEG1,OMEG2) ) THEN                          41.54
+               EE = ECLL * DSIG / ABS(OMEG2-OMEG1)
+            ELSE                                                          41.54
+               EE = ECLL * DSIG                                           41.54
+            ENDIF                                                         41.54
             IF (ITEST.GE.250 .OR. IOUTES .GE. 40) WRITE (PRTEST, 86)
      &          ID, ISIGM, SIG1(1), K1(1), OMEG1, SIG2(1), K2(1), OMEG2   30.82
   86        FORMAT (' Test SWCMSP/86 ', 2I6, 8(1X,E12.4))
@@ -1847,11 +1898,16 @@
      &                             OMEGA, OMEGB, RUPP, RLOW
   88            FORMAT (' error SWCMSP:', 2I4, 8(1X,E12.4))
               ELSE
+                IF ( .NOT.EQREAL(OMEG1,OMEG2) ) THEN                      41.54
+                   DOMEG = RUPP - RLOW                                    41.54
+                ELSE                                                      41.54
+                   DOMEG = 1.                                             41.54
+                ENDIF                                                     41.54
                 IF (OTYPE.EQ.-2) THEN
                   ACLOC(ID+(IOM-1)*MDC) =
-     &               ACLOC(ID+(IOM-1)*MDC) + EE * (RUPP - RLOW)           40.00
+     &               ACLOC(ID+(IOM-1)*MDC) + EE * DOMEG                   41.54 40.00
                 ELSE
-                  EADD = EE * DDIR * (RUPP - RLOW)                        40.00
+                  EADD = EE * DDIR * DOMEG                                41.54 40.00
                   ACLOC(IOM) = ACLOC(IOM) + EADD
                   ACLOC(IOM+  MSC) = ACLOC(IOM+  MSC) + EADD * ECOS(ID)
                   ACLOC(IOM+2*MSC) = ACLOC(IOM+2*MSC) + EADD * ESIN(ID)
@@ -1882,7 +1938,7 @@
  250      CONTINUE
         ENDIF
         DO 270 IOM = 1, MSC
-          IF (ACLOC(IOM).GT.TINY(1.)) THEN                                40.41
+          IF (ACLOC(IOM).GT.1.E-12) THEN                                  40.41
             EX = ACLOC(IOM+MSC) / ACLOC(IOM)
             EY = ACLOC(IOM+2*MSC) / ACLOC(IOM)
             ACLOC(IOM+MSC) = DEGCNV (ATAN2(EY,EX) * 180./PI)
@@ -1936,7 +1992,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2013  Delft University of Technology
+!     Copyright (C) 1993-2015  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -2232,7 +2288,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2013  Delft University of Technology
+!     Copyright (C) 1993-2015  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as

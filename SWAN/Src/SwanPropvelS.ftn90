@@ -1,9 +1,9 @@
 subroutine SwanPropvelS ( cad   , cas   , ux2   , uy2   , &
                           dep1  , dep2  , cax   , cay   , &
-                          kwave , cgo   , spcsig, idcmin, &
-                          idcmax, ecos  , esin  , coscos, &
+                          kwave , cgo   , spcsig, iddlow, &
+                          iddtop, ecos  , esin  , coscos, &
                           sincos, sinsin, rdx   , rdy   , &
-                          jc    )
+                          dhdx  , dhdy  , dkdx  , dkdy  )
 !
 !   --|-----------------------------------------------------------|--
 !     | Delft University of Technology                            |
@@ -16,7 +16,7 @@ subroutine SwanPropvelS ( cad   , cas   , ux2   , uy2   , &
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2013  Delft University of Technology
+!     Copyright (C) 1993-2015  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -36,15 +36,18 @@ subroutine SwanPropvelS ( cad   , cas   , ux2   , uy2   , &
 !
 !   Authors
 !
+!   40.59: Erick Rogers
 !   40.80: Marcel Zijlema
 !   41.02: Marcel Zijlema
 !   41.06: Gerbrant van Vledder
 !   41.07: Marcel Zijlema
 !   41.35: Casey Dietrich
+!   41.60: Marcel Zijlema
 !
 !   Updates
 !
 !   40.80,     July 2007: New subroutine
+!   40.59,   August 2007: muddy bottom included
 !   41.02, February 2009: adaption of velocities in case of diffraction
 !   41.06,    March 2009: add option of limitation of velocity in theta-direction
 !   41.07,   August 2009: add option of alternative formula for computation of
@@ -52,6 +55,7 @@ subroutine SwanPropvelS ( cad   , cas   , ux2   , uy2   , &
 !                         (x,y)-derivatives of the wave number
 !                         (see Holthuijsen (2007), page 210, footnote 4)
 !   41.35,    March 2012: add option of limitation on csigma and ctheta
+!   41.60,     July 2015: more accurate computation of gradients of depth or wave number for turning rate
 !
 !   Purpose
 !
@@ -72,10 +76,8 @@ subroutine SwanPropvelS ( cad   , cas   , ux2   , uy2   , &
 !
 !   Argument variables
 !
-    integer, intent(in)                        :: jc     ! counter corresponding to current cell
-    !
-    integer, dimension(MSC), intent(in)        :: idcmax ! maximum frequency-dependent counter in directional space
-    integer, dimension(MSC), intent(in)        :: idcmin ! minimum frequency-dependent counter in directional space
+    integer, intent(in)                        :: iddlow ! minimum direction bin that is propagated within a sweep
+    integer, intent(in)                        :: iddtop ! maximum direction bin that is propagated within a sweep
     !
     real, dimension(MDC,MSC), intent(out)      :: cad    ! wave transport velocity in theta-direction
     real, dimension(MDC,MSC), intent(out)      :: cas    ! wave transport velocity in sigma-direction
@@ -85,6 +87,10 @@ subroutine SwanPropvelS ( cad   , cas   , ux2   , uy2   , &
     real, dimension(MDC), intent(in)           :: coscos ! help array containing cosine to power 2 of spectral directions
     real, dimension(nverts), intent(in)        :: dep1   ! water depth at previous time level
     real, dimension(nverts), intent(in)        :: dep2   ! water depth at current time level
+    real, intent(in)                           :: dhdx   ! derivative of depth in x-direction
+    real, intent(in)                           :: dhdy   ! derivative of depth in y-direction
+    real, dimension(MSC), intent(in)           :: dkdx   ! derivative of wave number in x-direction
+    real, dimension(MSC), intent(in)           :: dkdy   ! derivative of wave number in y-direction
     real, dimension(MDC), intent(in)           :: ecos   ! help array containing cosine of spectral directions
     real, dimension(MDC), intent(in)           :: esin   ! help array containing sine of spectral directions
     real, dimension(MSC,ICMAX), intent(in)     :: kwave  ! wave number
@@ -100,55 +106,26 @@ subroutine SwanPropvelS ( cad   , cas   , ux2   , uy2   , &
 !
     integer                               :: icell    ! cell index
     integer                               :: id       ! loop counter over direction bins
-    integer                               :: iddum    ! counter in directional space for considered sweep
+    integer                               :: iddum    ! counter in directional space
     integer, save                         :: ient = 0 ! number of entries in this subroutine
     integer                               :: is       ! loop counter over frequency bins
     integer                               :: iv1      ! first index in computational stencil
     integer                               :: iv2      ! second index in computational stencil
     integer                               :: iv3      ! third index in computational stencil
-    integer                               :: jm       ! counter corresponding to cell below considered sweep
-    integer                               :: jp       ! counter corresponding to cell above considered sweep
-    integer                               :: k        ! loop counter
-    integer, dimension(3)                 :: v        ! vertices in considered cell
     !
     real                                  :: alpha    ! upper limit of CFL restriction
     real, dimension(3)                    :: cd       ! coefficients for computing cad
     real, dimension(10)                   :: cs       ! coefficients for computing cas
-    real                                  :: dhdx     ! derivative of dep2 to x in considered sweep
-    real                                  :: dhdxm    ! derivative of dep2 to x in sweep below considered sweep
-    real                                  :: dhdxp    ! derivative of dep2 to x in sweep above considered sweep
-    real                                  :: dhdy     ! derivative of dep2 to y in considered sweep
-    real                                  :: dhdym    ! derivative of dep2 to y in sweep below considered sweep
-    real                                  :: dhdyp    ! derivative of dep2 to y in sweep above considered sweep
     real, dimension(3)                    :: dloc     ! local depth at vertices
-    real                                  :: duxdx    ! derivative of ux2 to x in considered sweep
-    real                                  :: duxdxm   ! derivative of ux2 to x in sweep below considered sweep
-    real                                  :: duxdxp   ! derivative of ux2 to x in sweep above considered sweep
-    real                                  :: duxdy    ! derivative of ux2 to y in considered sweep
-    real                                  :: duxdym   ! derivative of ux2 to y in sweep below considered sweep
-    real                                  :: duxdyp   ! derivative of ux2 to y in sweep above considered sweep
-    real                                  :: duydx    ! derivative of uy2 to x in considered sweep
-    real                                  :: duydxm   ! derivative of uy2 to x in sweep below considered sweep
-    real                                  :: duydxp   ! derivative of uy2 to x in sweep above considered sweep
-    real                                  :: duydy    ! derivative of uy2 to y in considered sweep
-    real                                  :: duydym   ! derivative of uy2 to y in sweep below considered sweep
-    real                                  :: duydyp   ! derivative of uy2 to y in sweep above considered sweep
+    real                                  :: duxdx    ! derivative of ux2 to x
+    real                                  :: duxdy    ! derivative of ux2 to y
+    real                                  :: duydx    ! derivative of uy2 to x
+    real                                  :: duydy    ! derivative of uy2 to y
     real                                  :: fac      ! a factor
     real                                  :: fac2     ! another factor
     real                                  :: frlim    ! frequency range in which limit on velocity in theta-direction is applied
     real                                  :: kd       ! help variable, wave number times water depth
     real                                  :: pp       ! power of the frequency dependent limiter on refraction
-    real, dimension(2)                    :: rdxl     ! first component of local contravariant base vector rdx(b) = a^(b)_1
-    real, dimension(2)                    :: rdyl     ! second component of local contravariant base vector rdy(b) = a^(b)_2
-    !
-    real, dimension(MSC)                  :: arr      ! auxiliary array
-    real, dimension(MSC)                  :: dkdx     ! derivative of wave number to x in considered sweep
-    real, dimension(MSC)                  :: dkdxm    ! derivative of wave number to x in sweep below considered sweep
-    real, dimension(MSC)                  :: dkdxp    ! derivative of wave number to x in sweep above considered sweep
-    real, dimension(MSC)                  :: dkdy     ! derivative of wave number to y in considered sweep
-    real, dimension(MSC)                  :: dkdym    ! derivative of wave number to y in sweep below considered sweep
-    real, dimension(MSC)                  :: dkdyp    ! derivative of wave number to y in sweep above considered sweep
-    real, dimension(MSC,3)                :: kloc     ! local wave number
     !
     type(celltype), dimension(:), pointer :: cell     ! datastructure for cells with their attributes
     type(verttype), dimension(:), pointer :: vert     ! datastructure for vertices with their attributes
@@ -192,25 +169,7 @@ subroutine SwanPropvelS ( cad   , cas   , ux2   , uy2   , &
     !
     if ( dloc(1) <= DEPMIN .or. dloc(2) <= DEPMIN .or. dloc(3) <= DEPMIN ) return
     !
-    ! compute the derivatives of the depth for the considered sweep
-    !
-    if ( IREFR /= 0 .or. ICUR /= 0 ) then
-       !
-       if ( IREFR == -1 ) then
-          !
-          ! limitation of depths in upwave vertices
-          !
-          dloc(2) = min( dep2(iv2), PNUMS(17)*dloc(1) )
-          dloc(3) = min( dep2(iv3), PNUMS(17)*dloc(1) )
-          !
-       endif
-       !
-       dhdx = rdx(1) * (dloc(1)-dloc(2)) + rdx(2) * (dloc(1)-dloc(3))
-       dhdy = rdy(1) * (dloc(1)-dloc(2)) + rdy(2) * (dloc(1)-dloc(3))
-       !
-    endif
-    !
-    ! compute the derivatives of the ambient current for the considered sweep
+    ! compute the derivatives of the ambient current
     !
     if ( ICUR /= 0 ) then
        !
@@ -218,220 +177,6 @@ subroutine SwanPropvelS ( cad   , cas   , ux2   , uy2   , &
        duxdy = rdy(1) * (ux2(iv1) - ux2(iv2)) + rdy(2) * (ux2(iv1) - ux2(iv3))
        duydx = rdx(1) * (uy2(iv1) - uy2(iv2)) + rdx(2) * (uy2(iv1) - uy2(iv3))
        duydy = rdy(1) * (uy2(iv1) - uy2(iv2)) + rdy(2) * (uy2(iv1) - uy2(iv3))
-       !
-    endif
-    !
-    ! compute the derivatives of the wave number for the considered sweep
-    !
-    if ( int(PNUMS(32)) == 1 ) then
-       !
-       ! compute wave numbers for all frequencies
-       !
-       call KSCIP1 (MSC, spcsig, dloc(1), kloc(1,1), arr, arr, arr)
-       call KSCIP1 (MSC, spcsig, dloc(2), kloc(1,2), arr, arr, arr)
-       call KSCIP1 (MSC, spcsig, dloc(3), kloc(1,3), arr, arr, arr)
-       !
-       dkdx(:) = rdx(1) * (kloc(:,1)-kloc(:,2)) + rdx(2) * (kloc(:,1)-kloc(:,3))
-       dkdy(:) = rdy(1) * (kloc(:,1)-kloc(:,2)) + rdy(2) * (kloc(:,1)-kloc(:,3))
-       !
-    endif
-    !
-    ! compute extra derivatives of depth, wave number and current belonging to neighbouring sweeps meant for refraction
-    !
-    if ( IREFR /= 0 ) then
-       !
-       if ( int(PNUMS(32)) == 0 ) then
-          !
-          dhdxm = dhdx
-          dhdym = dhdy
-          dhdxp = dhdx
-          dhdyp = dhdy
-          !
-       else
-          !
-          dkdxm = dkdx
-          dkdym = dkdy
-          dkdxp = dkdx
-          dkdyp = dkdy
-          !
-       endif
-       !
-       if ( ICUR /= 0 ) then
-          !
-          duxdxm = duxdx
-          duxdym = duxdy
-          duydxm = duydx
-          duydym = duydy
-          duxdxp = duxdx
-          duxdyp = duxdy
-          duydxp = duydx
-          duydyp = duydy
-          !
-       endif
-       !
-       jm=vert(iv1)%noc-mod(vert(iv1)%noc+1-jc,vert(iv1)%noc)        ! cell below considered sweep
-       !
-       icell = vert(iv1)%cell(jm)%atti(CELLID)
-       !
-       v(1) = cell(icell)%atti(CELLV1)
-       v(2) = cell(icell)%atti(CELLV2)
-       v(3) = cell(icell)%atti(CELLV3)
-       !
-       ! compute local contravariant base vectors at present vertex in cell below considered sweep
-       !
-       do k = 1, 3
-          if ( v(k) == iv1 ) then
-             !
-             rdxl(1) = cell(icell)%geom(k)%rdx1
-             rdxl(2) = cell(icell)%geom(k)%rdx2
-             rdyl(1) = cell(icell)%geom(k)%rdy1
-             rdyl(2) = cell(icell)%geom(k)%rdy2
-             !
-             iv2 = v(mod(k  ,3)+1)
-             iv3 = v(mod(k+1,3)+1)
-             !
-             exit
-          endif
-       enddo
-       !
-       if ( KSPHER > 0 ) then
-          do k = 1, 2
-             rdxl(k) = rdxl(k) / (COSLAT(1) * LENDEG)
-             rdyl(k) = rdyl(k) / LENDEG
-          enddo
-       endif
-       !
-       dloc(2) = dep2(iv2)
-       dloc(3) = dep2(iv3)
-       !
-       ! if at least one vertex is dry, skip and go to other cell
-       !
-       if ( dloc(2) <= DEPMIN .or. dloc(3) <= DEPMIN ) goto 10
-       !
-       if ( IREFR == -1 ) then
-          !
-          ! limitation of depths in upwave vertices
-          !
-          dloc(2) = min( dep2(iv2), PNUMS(17)*dloc(1) )
-          dloc(3) = min( dep2(iv3), PNUMS(17)*dloc(1) )
-          !
-       endif
-       !
-       if ( int(PNUMS(32)) == 0 ) then
-          !
-          ! compute the derivatives of the depth in cell below considered sweep
-          !
-          dhdxm = rdxl(1) * (dloc(1)-dloc(2)) + rdxl(2) * (dloc(1)-dloc(3))
-          dhdym = rdyl(1) * (dloc(1)-dloc(2)) + rdyl(2) * (dloc(1)-dloc(3))
-          !
-       else
-          !
-          ! compute wave numbers for all frequencies
-          !
-          call KSCIP1 (MSC, spcsig, dloc(2), kloc(1,2), arr, arr, arr)
-          call KSCIP1 (MSC, spcsig, dloc(3), kloc(1,3), arr, arr, arr)
-          !
-          ! compute the derivatives of the wave number in cell below considered sweep
-          !
-          dkdxm(:) = rdxl(1) * (kloc(:,1)-kloc(:,2)) + rdxl(2) * (kloc(:,1)-kloc(:,3))
-          dkdym(:) = rdyl(1) * (kloc(:,1)-kloc(:,2)) + rdyl(2) * (kloc(:,1)-kloc(:,3))
-          !
-       endif
-       !
-       ! compute the derivatives of the ambient current in cell below considered sweep
-       !
-       if ( ICUR /= 0 ) then
-          !
-          duxdxm = rdxl(1) * (ux2(iv1) - ux2(iv2)) + rdxl(2) * (ux2(iv1) - ux2(iv3))
-          duxdym = rdyl(1) * (ux2(iv1) - ux2(iv2)) + rdyl(2) * (ux2(iv1) - ux2(iv3))
-          duydxm = rdxl(1) * (uy2(iv1) - uy2(iv2)) + rdxl(2) * (uy2(iv1) - uy2(iv3))
-          duydym = rdyl(1) * (uy2(iv1) - uy2(iv2)) + rdyl(2) * (uy2(iv1) - uy2(iv3))
-          !
-       endif
-       !
-  10   continue
-       !
-       jp = mod(jc,vert(iv1)%noc)+1                                  ! cell above considered sweep
-       !
-       icell = vert(iv1)%cell(jp)%atti(CELLID)
-       !
-       v(1) = cell(icell)%atti(CELLV1)
-       v(2) = cell(icell)%atti(CELLV2)
-       v(3) = cell(icell)%atti(CELLV3)
-       !
-       ! compute local contravariant base vectors at present vertex in cell above considered sweep
-       !
-       do k = 1, 3
-          if ( v(k) == iv1 ) then
-             !
-             rdxl(1) = cell(icell)%geom(k)%rdx1
-             rdxl(2) = cell(icell)%geom(k)%rdx2
-             rdyl(1) = cell(icell)%geom(k)%rdy1
-             rdyl(2) = cell(icell)%geom(k)%rdy2
-             !
-             iv2 = v(mod(k  ,3)+1)
-             iv3 = v(mod(k+1,3)+1)
-             !
-             exit
-          endif
-       enddo
-       !
-       if ( KSPHER > 0 ) then
-          do k = 1, 2
-             rdxl(k) = rdxl(k) / (COSLAT(1) * LENDEG)
-             rdyl(k) = rdyl(k) / LENDEG
-          enddo
-       endif
-       !
-       dloc(2) = dep2(iv2)
-       dloc(3) = dep2(iv3)
-       !
-       ! if at least one vertex is dry, skip
-       !
-       if ( dloc(2) <= DEPMIN .or. dloc(3) <= DEPMIN ) goto 20
-       !
-       if ( IREFR == -1 ) then
-          !
-          ! limitation of depths in upwave vertices
-          !
-          dloc(2) = min( dep2(iv2), PNUMS(17)*dloc(1) )
-          dloc(3) = min( dep2(iv3), PNUMS(17)*dloc(1) )
-          !
-       endif
-       !
-       if ( int(PNUMS(32)) == 0 ) then
-          !
-          ! compute the derivatives of the depth in cell above considered sweep
-          !
-          dhdxp = rdxl(1) * (dloc(1)-dloc(2)) + rdxl(2) * (dloc(1)-dloc(3))
-          dhdyp = rdyl(1) * (dloc(1)-dloc(2)) + rdyl(2) * (dloc(1)-dloc(3))
-          !
-       else
-          !
-          ! compute wave numbers for all frequencies
-          !
-          call KSCIP1 (MSC, spcsig, dloc(2), kloc(1,2), arr, arr, arr)
-          call KSCIP1 (MSC, spcsig, dloc(3), kloc(1,3), arr, arr, arr)
-          !
-          ! compute the derivatives of the wave number in cell above considered sweep
-          !
-          dkdxp(:) = rdxl(1) * (kloc(:,1)-kloc(:,2)) + rdxl(2) * (kloc(:,1)-kloc(:,3))
-          dkdyp(:) = rdyl(1) * (kloc(:,1)-kloc(:,2)) + rdyl(2) * (kloc(:,1)-kloc(:,3))
-          !
-       endif
-       !
-       ! compute the derivatives of the ambient current in cell above considered sweep
-       !
-       if ( ICUR /= 0 ) then
-          !
-          duxdxp = rdxl(1) * (ux2(iv1) - ux2(iv2)) + rdxl(2) * (ux2(iv1) - ux2(iv3))
-          duxdyp = rdyl(1) * (ux2(iv1) - ux2(iv2)) + rdyl(2) * (ux2(iv1) - ux2(iv3))
-          duydxp = rdxl(1) * (uy2(iv1) - uy2(iv2)) + rdxl(2) * (uy2(iv1) - uy2(iv3))
-          duydyp = rdyl(1) * (uy2(iv1) - uy2(iv2)) + rdyl(2) * (uy2(iv1) - uy2(iv3))
-          !
-       endif
-       !
-  20   continue
        !
     endif
     !
@@ -468,7 +213,7 @@ subroutine SwanPropvelS ( cad   , cas   , ux2   , uy2   , &
           cs( 9) = cs(5) * (duxdy+duydx)
           cs(10) = cs(5) * duydy
           !
-          do iddum = idcmin(is), idcmax(is)
+          do iddum = iddlow-1, iddtop+1
              id = mod ( iddum - 1 + MDC , MDC ) + 1
              !
              cas(id,is) = cs(6)
@@ -487,7 +232,7 @@ subroutine SwanPropvelS ( cad   , cas   , ux2   , uy2   , &
              !
              fac2 = alpha * FRINTF * spcsig(is)
              !
-             do iddum = idcmin(is), idcmax(is)
+             do iddum = iddlow-1, iddtop+1
                 id = mod ( iddum - 1 + MDC , MDC ) + 1
                 !
                 fac = fac2 * ( abs((rdx(1)+rdx(2))*cax(id,is,1)) + abs((rdy(1)+rdy(2))*cay(id,is,1)) )
@@ -528,7 +273,7 @@ subroutine SwanPropvelS ( cad   , cas   , ux2   , uy2   , &
              !
           endif
           !
-          do iddum = idcmin(is), idcmax(is)
+          do iddum = iddlow-1, iddtop+1
              id = mod ( iddum - 1 + MDC , MDC ) + 1
              !
              cad(id,is) = esin(id)*cd(2) - ecos(id)*cd(3)
@@ -536,42 +281,6 @@ subroutine SwanPropvelS ( cad   , cas   , ux2   , uy2   , &
              if ( ICUR   /= 0 ) cad(id,is) = cad(id,is) + sincos(id)*(duxdx-duydy) + sinsin(id)*duydx - coscos(id)*duxdy
              !
           enddo
-          !
-          if ( int(PNUMS(32)) == 0 ) then
-             !
-             cd(2) = cd(1) * dhdxm
-             cd(3) = cd(1) * dhdym
-             !
-          else
-             !
-             cd(2) = cd(1) * dkdxm(is)
-             cd(3) = cd(1) * dkdym(is)
-             !
-          endif
-          !
-          id = mod ( idcmin(is) - 2 + MDC , MDC ) + 1  ! this direction belongs to sweep below considered sweep
-          !
-          cad(id,is) = esin(id)*cd(2) - ecos(id)*cd(3)
-          if ( IDIFFR /= 0 ) cad(id,is) = cad(id,is)*DIFPARAM(iv1) - DIFPARDX(iv1)*cgo(is,1)*esin(id) + DIFPARDY(iv1)*cgo(is,1)*ecos(id)
-          if ( ICUR   /= 0 ) cad(id,is) = cad(id,is) + sincos(id)*(duxdxm-duydym) + sinsin(id)*duydxm - coscos(id)*duxdym
-          !
-          if ( int(PNUMS(32)) == 0 ) then
-             !
-             cd(2) = cd(1) * dhdxp
-             cd(3) = cd(1) * dhdyp
-             !
-          else
-             !
-             cd(2) = cd(1) * dkdxp(is)
-             cd(3) = cd(1) * dkdyp(is)
-             !
-          endif
-          !
-          id = mod ( idcmax(is) + MDC , MDC ) + 1      ! this direction belongs to sweep above considered sweep
-          !
-          cad(id,is) = esin(id)*cd(2) - ecos(id)*cd(3)
-          if ( IDIFFR /= 0 ) cad(id,is) = cad(id,is)*DIFPARAM(iv1) - DIFPARDX(iv1)*cgo(is,1)*esin(id) + DIFPARDY(iv1)*cgo(is,1)*ecos(id)
-          if ( ICUR   /= 0 ) cad(id,is) = cad(id,is) + sincos(id)*(duxdxp-duydyp) + sinsin(id)*duydxp - coscos(id)*duxdyp
           !
        enddo
        !
@@ -618,7 +327,7 @@ subroutine SwanPropvelS ( cad   , cas   , ux2   , uy2   , &
           !
           do is = 1, MSC
              !
-             do iddum = idcmin(is)-1, idcmax(is)+1
+             do iddum = iddlow-1, iddtop+1
                 id = mod ( iddum - 1 + MDC , MDC ) + 1
                 !
                 fac = fac2 * ( abs((rdx(1)+rdx(2))*cax(id,is,1)) + abs((rdy(1)+rdy(2))*cay(id,is,1)) )

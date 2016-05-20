@@ -11,7 +11,7 @@ subroutine SwanVertlist
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2013  Delft University of Technology
+!     Copyright (C) 1993-2015  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -33,11 +33,13 @@ subroutine SwanVertlist
 !
 !   40.80: Marcel Zijlema
 !   41.07: Casey Dietrich
+!   41.48: Marcel Zijlema
 !
 !   Updates
 !
-!   40.80, July 2007: New subroutine
-!   41.07, July 2009: small fix (assign ref.point to deepest point in case of no b.c.)
+!   40.80,  July 2007: New subroutine
+!   41.07,  July 2009: small fix (assign ref.point to deepest point in case of no b.c.)
+!   41.48, March 2013: including order along a user-given direction
 !
 !   Purpose
 !
@@ -99,59 +101,72 @@ subroutine SwanVertlist
        return
     endif
     !
-    ! determine reference point
+    allocate (dist(nverts))
     !
-    if ( all(mask=vert(:)%atti(VBC)==0) ) then
+    if ( asort /= -999. ) then
        !
-       ! if no boundary condition is given then find the vertex with the maximum depth
-       !
-       depmax = -999.
+       ! order direction asort
        !
        do j = 1, nverts
-          !
-          if ( DEPTH(j) > depmax ) then
-             !
-             depmax = DEPTH(j)
-             kx(1)  = j
-             ky(1)  = j
-             !
-          endif
-          !
+          dist(j) = vert(j)%attr(VERTX) * cos(asort) + vert(j)%attr(VERTY) * sin(asort)
        enddo
        !
     else
        !
-       ! reference point is one of the vertices nearest to the origin where boundary condition is given
+       ! determine reference point
        !
-       kx = minloc(vert(:)%attr(VERTX), vert(:)%atti(VBC)/=0)
-       ky = minloc(vert(:)%attr(VERTY), vert(:)%atti(VBC)/=0)
-       !
-    endif
-    !
-    if ( kx(1) == ky(1) ) then
-       x0 = vert(kx(1))%attr(VERTX)
-       y0 = vert(ky(1))%attr(VERTY)
-    else
-       !
-       d1 = sqrt((vert(kx(1))%attr(VERTX))**2+(vert(kx(1))%attr(VERTY))**2)
-       d2 = sqrt((vert(ky(1))%attr(VERTX))**2+(vert(ky(1))%attr(VERTY))**2)
-       !
-       if ( d1 < d2 ) then
-          x0 = vert(kx(1))%attr(VERTX)
-          y0 = vert(kx(1))%attr(VERTY)
+       if ( all(mask=vert(:)%atti(VBC)==0) ) then
+          !
+          ! if no boundary condition is given then find the vertex with the maximum depth
+          !
+          depmax = -999.
+          !
+          do j = 1, nverts
+             !
+             if ( DEPTH(j) > depmax ) then
+                !
+                depmax = DEPTH(j)
+                kx(1)  = j
+                ky(1)  = j
+                !
+             endif
+             !
+          enddo
+          !
        else
-          x0 = vert(ky(1))%attr(VERTX)
-          y0 = vert(ky(1))%attr(VERTY)
+          !
+          ! reference point is one of the vertices nearest to the origin where boundary condition is given
+          !
+          kx = minloc(vert(:)%attr(VERTX), vert(:)%atti(VBC)/=0)
+          ky = minloc(vert(:)%attr(VERTY), vert(:)%atti(VBC)/=0)
+          !
        endif
        !
+       if ( kx(1) == ky(1) ) then
+          x0 = vert(kx(1))%attr(VERTX)
+          y0 = vert(ky(1))%attr(VERTY)
+       else
+          !
+          d1 = sqrt((vert(kx(1))%attr(VERTX))**2+(vert(kx(1))%attr(VERTY))**2)
+          d2 = sqrt((vert(ky(1))%attr(VERTX))**2+(vert(ky(1))%attr(VERTY))**2)
+          !
+          if ( d1 < d2 ) then
+             x0 = vert(kx(1))%attr(VERTX)
+             y0 = vert(kx(1))%attr(VERTY)
+          else
+             x0 = vert(ky(1))%attr(VERTX)
+             y0 = vert(ky(1))%attr(VERTY)
+          endif
+          !
+       endif
+       !
+       ! calculate distance of each point with respect to reference point
+       !
+       do j = 1, nverts
+          dist(j) = sqrt((vert(j)%attr(VERTX)-x0)**2 + (vert(j)%attr(VERTY)-y0)**2)
+       enddo
+       !
     endif
-    !
-    ! calculate distance of each point with respect to reference point
-    !
-    allocate (dist(nverts))
-    do j = 1, nverts
-       dist(j) = sqrt((vert(j)%attr(VERTX)-x0)**2 + (vert(j)%attr(VERTY)-y0)**2)
-    enddo
     !
     ! sort vertex list in order of increasing distance
     !

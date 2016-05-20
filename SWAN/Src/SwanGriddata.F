@@ -11,7 +11,7 @@ module SwanGriddata
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2013  Delft University of Technology
+!     Copyright (C) 1993-2015  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -73,6 +73,7 @@ module SwanGriddata
     integer, dimension(:), save, allocatable   :: ivertg         ! vertex index in global grid
     integer, dimension(:), save, allocatable   :: vmark          ! boundary marker for vertices
     !
+    real                                       :: asort          ! ordering of vertices along a user-given direction
     real                                       :: maxgsiz        ! maximum gridsize
     real                                       :: mingsiz        ! minimum gridsize
     !

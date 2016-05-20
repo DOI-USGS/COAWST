@@ -11,7 +11,7 @@ subroutine SwanConvStopc ( accur, hscurr, hsprev, hsdifc, tmcurr, tmprev, tmdifc
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2013  Delft University of Technology
+!     Copyright (C) 1993-2015  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -61,7 +61,7 @@ subroutine SwanConvStopc ( accur, hscurr, hsprev, hsdifc, tmcurr, tmprev, tmdifc
     integer, intent(in)                         :: ivup   ! upper index in range of vertices in calling thread
     integer, dimension(NPTST), intent(in)       :: xytst  ! test points for output purposes
     !
-    real, intent(out)                           :: accur  ! percentage of active vertices in which required accuracy has been reached
+    real, intent(inout)                         :: accur  ! percentage of active vertices in which required accuracy has been reached
     real, dimension(MDC,MSC,nverts), intent(in) :: ac2    ! action density at current time level
     real, dimension(nverts), intent(out)        :: delhs  ! difference in wave height between last 2 iterations in all vertices
     real, dimension(nverts), intent(out)        :: deltm  ! difference in mean period between last 2 iterations in all vertices
@@ -253,7 +253,7 @@ subroutine SwanConvStopc ( accur, hscurr, hsprev, hsdifc, tmcurr, tmprev, tmdifc
     !
     !$omp barrier
     !$omp single
-    accur = npacc*100./nwetp
+    if ( npacc > 0. ) accur = ceiling(npacc*10000./nwetp)/100.
     !$omp end single
     !
  11 format(13x,'dHabs          ','dHrel          ','Curvature H    ','dTabs          ','dTrel          ','Curvature T    ')

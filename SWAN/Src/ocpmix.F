@@ -42,7 +42,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2013  Delft University of Technology
+!     Copyright (C) 1993-2015  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -182,7 +182,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2013  Delft University of Technology
+!     Copyright (C) 1993-2015  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -256,6 +256,7 @@
 !     I4     : number of blocks of four years after subtraction of the
 !              millenia and the centuries
 !     ICEN   : number of centuries after subtracking the millenia
+!     ICNT   : count no remainder in day of year
 !     IDYMN  : day of the month
 !     IDYMON : number of days of each month
 !     IDYNOW : local daynumber
@@ -266,8 +267,8 @@
 !     NDAY   : number of days since reference day
 !     NOWDAY : reference day
 !
-      INTEGER I4, ICEN, IDYMN, IDYMON(12), IDYNOW, IMIL, IMN, IYR, IYEAR
-     &, NDAY, NOWDAY
+      INTEGER I4, ICEN, ICNT, IDYMN, IDYMON(12), IDYNOW, IMIL, IMN, IYR
+     &, IYEAR, NDAY, NOWDAY
 !
 !     TT     : time in seconds since begin of the same day
 !
@@ -302,16 +303,20 @@
 !
 !        get year
 !
+      ICNT   = 0
       IDYNOW = NOWDAY-1
 !
       IMIL   = IDYNOW/IDYMIL
       IDYNOW = IDYNOW-IMIL*IDYMIL
+      IF (IDYNOW.EQ.0) ICNT = ICNT + 1
 !
       ICEN   = IDYNOW/IDYCEN
       IDYNOW = IDYNOW-ICEN*IDYCEN
+      IF (IDYNOW.EQ.0) ICNT = ICNT + 1
 !
       I4     = IDYNOW/IFOUR
       IDYNOW = IDYNOW-I4*IFOUR
+      IF (IDYNOW.EQ.0) ICNT = ICNT + 1
 !
       IF (IDYNOW.GE.366) THEN
          IDYNOW = IDYNOW-366
@@ -337,7 +342,13 @@
         IF(IDYNOW.LE.IDYMN) GOTO 40
         IDYNOW=IDYNOW-IDYMN
   30  CONTINUE
-  40  INTTIM(2) = IMN
+  40  IF (ICNT==2) THEN
+          IYEAR=IYEAR-1
+          IMN=12
+          IDYNOW=31
+      ENDIF
+!
+      INTTIM(2) = IMN
       INTTIM(3) = IDYNOW
       INTTIM(1) = IYEAR
 !
@@ -370,7 +381,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2013  Delft University of Technology
+!     Copyright (C) 1993-2015  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -461,7 +472,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2013  Delft University of Technology
+!     Copyright (C) 1993-2015  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -559,7 +570,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2013  Delft University of Technology
+!     Copyright (C) 1993-2015  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -792,7 +803,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2013  Delft University of Technology
+!     Copyright (C) 1993-2015  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -921,7 +932,7 @@
  999  IF (NDSD.LT.0) RETURN                                               40.00
 !     no reading from file due to open error
 !
-!     *** NUMFIL is the number of that is open in one time step  **
+!     *** NUMFIL is the number of files that is open in one time step  **
       NUMFIL = 0                                                          30.00
       IF (ITEST.GE.100) THEN
         WRITE (PRINTF, 12) MXA, MYA, NDSD, IDFM, RFORM,                   40.00
@@ -1162,7 +1173,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2013  Delft University of Technology
+!     Copyright (C) 1993-2015  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -1278,7 +1289,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2013  Delft University of Technology
+!     Copyright (C) 1993-2015  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -1434,7 +1445,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2013  Delft University of Technology
+!     Copyright (C) 1993-2015  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -1535,7 +1546,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2013  Delft University of Technology
+!     Copyright (C) 1993-2015  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -1634,7 +1645,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2013  Delft University of Technology
+!     Copyright (C) 1993-2015  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -1984,7 +1995,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2013  Delft University of Technology
+!     Copyright (C) 1993-2015  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -2111,7 +2122,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2013  Delft University of Technology
+!     Copyright (C) 1993-2015  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -2305,7 +2316,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2013  Delft University of Technology
+!     Copyright (C) 1993-2015  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -2401,7 +2412,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2013  Delft University of Technology
+!     Copyright (C) 1993-2015  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as

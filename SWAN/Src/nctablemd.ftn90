@@ -24,10 +24,15 @@
 !         %varid         int        nc90_var_id
         use netcdf
         implicit none
+        private
+        public                                       :: nctable, nctable_record
+        public                                       :: get_nctable_record, set_nctable_convention_nautical
+        public                                       :: pi
         real,    parameter                           :: pi  = 3.1415927
         real,    parameter                           :: r2d = 180. / pi
         real,    parameter                           :: d2r = pi / 180.
         integer, parameter                           :: variddum = -1
+        logical                                      :: nautical = .true.
         type nctable_record
             character(128)                           :: name, standard_name
             character(128)                           :: long_name
@@ -42,7 +47,7 @@
         data nctable(1) / nctable_record("depth",&
                             "sea_floor_depth_below_sea_level",&
                             "depth below mean sea level", &
-                            "m", NF90_SHORT, 0, 0, variddum) /, &
+                            "m", NF90_FLOAT, 0, 0, variddum) /, &
              nctable(2) / nctable_record("xcur",&
                             "eastward_sea_water_velocity",&
                             "x component of current", &
@@ -53,13 +58,13 @@
                             "m s-1", NF90_SHORT, -20., 20., variddum) /, &
              nctable(4) / nctable_record("xwnd",&
                             "eastward_wind",&
-                            "u-component of wind", &
+                            "U-Component of Wind", &
                             "m s-1", NF90_SHORT, -100., 100., variddum) /, &
              nctable(5) / nctable_record("ywnd",&
                             "northward_wind",&
-                            "v-component of wind", &
+                            "V-Component of Wind", &
                             "m s-1", NF90_SHORT, -100., 100., variddum) /, &
-             nctable(6) / nctable_record("air_sea_temperature_difference",&
+             nctable(6) / nctable_record("astd",&
                             "none",&
                             "air sea temperature difference (k)", &
                             "k", NF90_BYTE, 0, 0, variddum) /, &
@@ -167,7 +172,7 @@
                             "none",&
                             "tps", &
                             "s", NF90_SHORT, 0., 50., variddum) /, &
-             nctable(33) / nctable_record("mean_directional_spread",&
+             nctable(33) / nctable_record("spread",&
                             "none",&
                             "directional spreading", &
                             "degrees", NF90_SHORT, 0., 360., variddum) /, &
@@ -175,7 +180,7 @@
                             "none", &
                             "rtm01", &
                             "s", NF90_SHORT, 0., 50., variddum) /, &
-             nctable(35) / nctable_record("hs_swell",&
+             nctable(35) / nctable_record("hswe",&
                             "sea_surface_swell_wave_significant_height",&
                             "wave height of swell part", &
                             "m", NF90_SHORT, 0., 50., variddum) /, &
@@ -186,7 +191,7 @@
              nctable(37) / nctable_record("botl",&
                             "none",&
                             "depth below still water level", &
-                            "m", NF90_SHORT, 0, 0, variddum) /, &
+                            "m", NF90_FLOAT, 0, 0, variddum) /, &
              nctable(38) / nctable_record("ubot",&
                             "none",&
                             "orbital velocity near bottom", &
@@ -209,20 +214,48 @@
                             "1", NF90_SHORT, 0, 1, variddum) /
 
     contains
-        subroutine get_nctable_record(varname, trecord)
+        subroutine get_nctable_record(varname, trecord, found)
             character(len=*),           intent( in)     :: varname
             type(nctable_record),       intent(out)     :: trecord
+            logical, optional,          intent(out)     :: found
+            character(128)                              :: tmpname
             integer                                     :: i
+            if ( present(found) ) found = .false.
             do i=1,size(nctable)
                 if ( nctable(i)%name == varname ) then
                     trecord = nctable(i)
+                    if ( .not.nautical ) then
+                        tmpname = trecord%standard_name
+                        call nautical_to_cartesian_name(tmpname, trecord%standard_name)
+                    end if
+                    if ( present(found) ) found = .true.
                     return
                 end if
             end do
-            print *,len(varname)
             if ( i > size(nctable) ) then
                 print "(A)", "Could not find ", trim(varname), " in record table"
-                stop "syonara"
             end if
         end subroutine get_nctable_record
+
+        subroutine set_nctable_convention_nautical(isnautical)
+            logical,                    intent( in)    :: isnautical
+            nautical = isnautical
+        end subroutine set_nctable_convention_nautical
+
+        subroutine nautical_to_cartesian_name(nname, cname)
+            character(128),             intent( in)    :: nname
+            character(128),             intent(out)    :: cname
+            integer                                    :: i
+            character(20)                              :: search = 'from_direction'
+            i = index(nname, trim(search))
+            if ( i < 1 ) then
+                cname = nname
+            else
+                if ( i+len(trim(search)) < len(trim(nname)) ) then
+                    cname = nname(1:i-1) // 'to_direction' // nname(i+len(trim(search)):len(trim(nname)))
+                else
+                    cname = nname(1:i-1) // 'to_direction'
+                end if
+            end if
+        end subroutine nautical_to_cartesian_name
     end module nctablemd

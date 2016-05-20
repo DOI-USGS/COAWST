@@ -56,7 +56,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2013  Delft University of Technology
+!     Copyright (C) 1993-2015  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -107,7 +107,7 @@
 !
       INTEGER SWPDIR
       REAL    XCGRID(MXC,MYC), YCGRID(MXC,MYC),
-     &        RDX(10)        , RDY(10)
+     &        RDX(MICMAX)    , RDY(MICMAX)
 !
 !  6. Local variables
 !
@@ -199,6 +199,19 @@
 !
       IF (KSPHER.GT.0) THEN
         DO IC = 1, ICMAX
+          IF(KCGRD(IC).EQ.1)CYCLE ! point is not valid, so cyle 
+!         The above check was added Dec 6 2011
+
+!         Explanation: For PROPSL=1, we are using BSBT, so we don't need 
+!                      COSLAT(4) or COSLAT(5) and in fact if we try to 
+!                      calculate these variables, we could get index out
+!                      of range. The underlying problem is that ICMAX 
+!                      for PROPSL=1 was changed from 3 to 5, but 4 and 5
+!                      are not necessarily valid points.
+
+!                      Another way to fix this would be to have loop go
+!                      from 1 to 3 instead of 1 to ICMAX in cases of 
+!                      PROPSL=1. (outcome should be the same)
           COSLAT(IC) =
      &    COS(DEGRAD*(YCGRID(IXCGRD(IC),IYCGRD(IC))+YOFFS))               33.09
         ENDDO
@@ -262,7 +275,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2013  Delft University of Technology
+!     Copyright (C) 1993-2015  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -513,7 +526,7 @@
       REAL  ::  DEP2(MCGRD)         ,
      &          UX2(MCGRD)          ,
      &          UY2(MCGRD)          ,
-     &          RDX(10), RDY(10)                                          40.08
+     &          RDX(MICMAX), RDY(MICMAX)                                  40.08
 !
       LOGICAL   ANYBIN(MDC,MSC)     ,
      &          LOWEST, LOWBIN, HGHBIN
@@ -866,6 +879,8 @@
       USE OCPCOMM4                                                        40.41
       USE M_DIFFR                                                         40.21
 !
+      IMPLICIT NONE
+!
 !
 !   --|-----------------------------------------------------------|--
 !     | Delft University of Technology                            |
@@ -878,7 +893,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2013  Delft University of Technology
+!     Copyright (C) 1993-2015  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -1044,7 +1059,7 @@
 !
 !************************************************************************
 !
-      INTEGER  IC    ,IS    ,ID    ,SWPDIR
+      INTEGER  IENT, IP, IC    ,IS    ,ID    ,SWPDIR
 !
       REAL     CAX(MDC,MSC,ICMAX)          ,
      &         CAY(MDC,MSC,ICMAX)          ,
@@ -1132,11 +1147,10 @@
      &                   CAD        ,CGO        ,                         30.80
      &                   DEP2       ,DEP1       ,ECOS       ,
      &                   ESIN       ,UX2        ,UY2        ,
-     &                   SWPDIR     ,IDCMIN     ,IDCMAX     ,
      &                   COSCOS     ,SINSIN     ,SINCOS     ,             30.80
      &                   RDX        ,RDY        ,                         30.80
-     &                   CAX        ,CAY        ,ANYBIN     ,             30.80
-     &                   KGRPNT     ,XCGRID     ,YCGRID     ,             30.80
+     &                   CAX        ,CAY        ,                         30.80
+     &                   XCGRID     ,YCGRID     ,                         30.80
      &                   IDDLOW     ,IDDTOP                               40.61
      &                                                      )
 !
@@ -1153,7 +1167,6 @@
       IMPLICIT NONE
 !
 !
-!
 !   --|-----------------------------------------------------------|--
 !     | Delft University of Technology                            |
 !     | Faculty of Civil Engineering                              |
@@ -1165,7 +1178,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2013  Delft University of Technology
+!     Copyright (C) 1993-2015  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -1184,7 +1197,6 @@
 !
 !
 !  0. Authors
-!
 !     30.72: IJsbrand Haagsma
 !     30.80: Nico Booij
 !     40.03: Nico Booij
@@ -1193,6 +1205,7 @@
 !     40.21: Agnieszka Herman
 !     40.30: Marcel Zijlema
 !     40.41: Marcel Zijlema
+!     40.59: Erick Rogers
 !     40.61: John Warner
 !     41.06: Gerbrant van Vledder
 !     41.35: Casey Dietrich
@@ -1217,6 +1230,10 @@
 !     40.21, Aug. 01: adaption of velocities in case of diffraction
 !     40.30, Mar. 03: correcting indices of test point with offsets MXF, MYF
 !     40.41, Oct. 04: common blocks replaced by modules, include files removed
+!     40.59, Aug. 07: replace upwind scheme with centered scheme;
+!                     replace @h/@x method for computation of CAD with @C/@x method
+!                     limitation procedure removed
+!                     sweeping procedure removed
 !     40.61, Dec. 06: correction DO loop 60 (IDCMIN, IDCMAX -> IDDLOW,IDDTOP)
 !     41.06, Mar. 09: add option of limitation of velocity in theta-direction
 !     41.35, Mar. 12: add option of limitation on csigma and ctheta
@@ -1239,34 +1256,26 @@
 !                   -- =  ---------
 !                   @D    sinh(2KD)
 !
-!           @D      S      @D         @D           @Ux   @Uy
+!           @D      Cg     @C         @C           @Ux   @Uy
 !     CAD = -- = ------- [ --sin(D) - --cos(D)] + [--- - ---] *
-!           @T  sinh(2KD)  @X         @Y            @X   @Y
+!           @T      C      @X         @Y            @X   @Y
 !
 !                        @Uy               @Ux
 !     * sin(D)cos(D) +   ---sin(D)sin(D) - ---cos(D)cos(D)
 !                        @X                @Y
 !
-!     @D/@x appr by:   RDX(1) * (DEP(KCGRD(1)) - DEP(KCGRD(2)))
-!                    + RDX(2) * (DEP(KCGRD(1)) - DEP(KCGRD(3)))
-!     @D/@y appr by:   RDY(1) * (DEP(KCGRD(1)) - DEP(KCGRD(2)))
-!                    + RDY(2) * (DEP(KCGRD(1)) - DEP(KCGRD(3)))
+!     @C/@x appr by:   0.5*RDX(1) * (DEP(KCGRD(5)) - DEP(KCGRD(2)))
+!                    + 0.5*RDX(2) * (DEP(KCGRD(4)) - DEP(KCGRD(3)))
+!     @C/@y appr by:   0.5*RDY(1) * (DEP(KCGRD(5)) - DEP(KCGRD(2)))
+!                    + 0.5*RDY(2) * (DEP(KCGRD(4)) - DEP(KCGRD(3)))
 !     etc.
-!
-!     the limitation procedure is described in the system documentation.
 !
 !  4. Argument variables
 !
-!     IDCMAX: upper theta-boundary of current sweep
-!     IDCMIN: lower theta-boundary of current sweep (function of Sigma)
 !     IDDLOW: minimum direction that is propagated within a sweep         40.61
 !     IDDTOP: maximum direction that is propagated within a sweep         40.61
-!     KGRPNT: grid point addresses                                        40.03
-!     SWPDIR: current sweep direction
 !
-      INTEGER, INTENT(IN) :: IDCMIN(MSC), IDCMAX(MSC)
-      INTEGER, INTENT(IN) :: KGRPNT(MXC,MYC)                              40.03
-      INTEGER, INTENT(IN) :: SWPDIR, IDDLOW, IDDTOP                       40.61
+      INTEGER, INTENT(IN) :: IDDLOW, IDDTOP                               40.61
 !
 !     CAS   : Wave transport velocity in S-direction, function of (ID,IS,IC)
 !     CAD   : Wave transport velocity in D-dirctiion, function of (ID,IS,IC)
@@ -1304,170 +1313,97 @@
       REAL  :: KWAVE(MSC,MICMAX)                                          40.22
       REAL  :: UX2(MCGRD)                  ,
      &         UY2(MCGRD)                  ,
-     &         RDX(10)                     ,                              40.08
-     &         RDY(10)                                                    40.08
-!
-!        logical:
-!
-!        ANYBIN    i  if True component (ID,IS) is updated                30.80
-!
-      LOGICAL ANYBIN(MDC,MSC)                                             30.80
-!
+     &         RDX(MICMAX)                 ,                              40.08
+     &         RDY(MICMAX)                                                40.08
 !
 !     variables from common
 !
 !        ICUR    Indicator for current
-!        ICMAX   Maximum array size for the points of the molecule
-!        NSTATC  Indicator if computation is stationair
+!        NSTATC  Indicator if computation is stationary or not
 !        MXC     Maximum counter of gridppoints in x-direction
 !        MYC     Maximum counter of gridppoints in y-direction
 !        MSC     Maximum counter of relative frequency
 !        MDC     Maximum counter of spectral directions
-!
 !        DYNDEP  if True depths vary with time
-!
 !        DT      Time step
 !        RDTIM   1/DT                                                     30.80
-!        PNUMS   array of numerical coefficients; used here:              30.80
-!                PNUMS(17), coeff. for limitation of Ctheta               30.80
 !
-!     local variables
+!     local integer variables :
 !
-!        IX1,IX2,IX3   Counter of gridpoints in x-direction
-!        IY1,IY2,IY3   Counter of gridpoints in y-direction
-!        IS            Counter of relative frequency band
-!        ID, ID1, ID2  Counter of directions
-!        IDDUM         aux. counter of directions
-!        II            counter
-!        ISWEEP        sweep index: 2=current sweep, 1 and 3=neighbouring sweeps
-!        ISWP          counter for sweeps                                 40.02
-!        KCG1          grid address of the active grid point
-!        KCG2, KCG3    grid addresses of two neighbouring grid points
-!        SWPNGB        neighbouring sweep direction
+      INTEGER  :: IENT                      ! tracing variable
+      INTEGER  :: IS                        ! Counter of relative frequency band    !   30.80
+      INTEGER  :: ID ,ID1   ,ID2            ! Counter of directions  !   30.80
+      INTEGER  :: IDDUM                     ! aux. counter of directions !   30.80
+      INTEGER  :: KCG1                      ! grid address of the active grid point  !   30.80
+      INTEGER  :: KCG2  ,KCG3 , KCG4, KCG5  ! grid addresses of neighbouring grid points   !   30.80
+      INTEGER  :: IX1                       ! IX1   Counter of gridpoints in x-direction  !   40.03
+      INTEGER  :: IY1                       ! IY1   Counter of gridpoints in y-direction  !   40.03
 !
-      INTEGER  IENT  ,IS    ,ID    ,II    ,                               30.80
-     &         SWPNGB,IDDUM ,ID1   ,ID2   ,                               30.80
-     &         KCG1  ,KCG2  ,KCG3  ,ISWEEP                                30.80
-      INTEGER  IX1, IY1, IX2, IY2, IX3, IY3                               40.03
-      INTEGER :: ISWP                                                     40.02
+!     local real variables :
 !
-!     logical local variables
+      REAL  :: KD1                                    ! KD1           wavenumber * depth
+      REAL  :: VLSINH                                 ! VLSINH        sinh of KD1
+      REAL  :: COEF                                   ! COEF          aux. quantity
+      REAL  :: CAST1,CAST2,CAST3,CAST4,CAST5          ! aux. quantities to compute Csigma !    40.03
+      REAL  :: CAD_TMP                                ! aux. quantity to compute Ctheta  ! 40.59
+      REAL  :: DHDX   ,DHDY                           ! depth gradient
+      REAL  :: DCDX   ,DCDY                           ! celerity gradient
+      REAL  :: DUXDX ,DUXDY ,DUYDX ,DUYDY             ! current velocity gradients
+      REAL  :: DLOC1, DLOC2, DLOC3, DLOC4, DLOC5      ! depths at active and neighbouring grid points ! 40.59
+      REAL  :: CLOC1, CLOC2, CLOC3, CLOC4, CLOC5      ! depths at active and neighbouring grid points ! 40.59
+      REAL  :: CGLOC1                                 ! group velocity at active grid point ! 40.59
+      REAL  :: KLOC1, KLOC2, KLOC3, KLOC4, KLOC5      ! wavenumbers at active and neighbouring grid points ! 40.59
+      REAL  :: UXLOC1, UXLOC2, UXLOC3, UXLOC4, UXLOC5 ! Ux at active and neighbouring grid points ! 40.59
+      REAL  :: UYLOC1, UYLOC2, UYLOC3, UYLOC4, UYLOC5 ! Uy at active and neighbouring grid points ! 40.59
 !
-!        VALSWP        if true this sweep is valid (all corner points exist)
-!
-      LOGICAL    VALSWP                                                   40.03
-!
-!     real local variables
-!
-!        ALPHA         upper limit of CFL restriction
-!        KD1           wavenumber * depth
-!        COEF          aux. quantity
-!        VLSINH        sinh of KD1
-!        RDXL, RDYL    interpolation factors (see RDX and RDY in common)
-!        CAST..        aux. quantities to compute Csigma
-!        CADT..        aux. quantities to compute Ctheta
-!        DPDX, DPDY    depth gradient
-!        DUXDX,DUXDY,DUYDX,DUYDY  current velocity gradients
-!        FAC           a factor
-!        FAC2          another factor
-!        FRLIM         frequency range in which limit on Ctheta is applied
-!        PP            power of the frequency dependent limiter on refraction
-!
-      REAL     VLSINH ,KD1   ,COEF
-      REAL     RDXL(2),RDYL(2),XC1   ,YC1    ,DET    ,
-     &         DX2    ,DY2    ,DX3   ,DY3
-      REAL     DPDX   ,DPDY   ,DUXDX ,DUXDY ,DUYDX ,DUYDY
-      REAL     CAST1    ,CAST2    ,CAST3(3) ,CAST4(3) ,                   40.03
-     &         CAST5    ,CAST6(3) ,CAST7(3) ,CAST8(3) ,CAST9(3) ,
-     &         CADT1    ,CADT2(3) ,CADT3(3) ,
-     &         CADT4(3) ,CADT5(3) ,CADT6(3) ,CADT7(3)
-      REAL  :: DLOC1, DLOC2, DLOC3
-      REAL  :: FAC, FRLIM, PP                                             41.06
-      REAL  :: ALPHA, FAC2                                                41.35
-!     local depths corrected in view of stability                         40.02
-!
-!  5. Parameter variables
-!
-!     SWP_ARRAY: Array containing the order of sweep handling
-!
-      INTEGER, PARAMETER :: SWP_ARRAY(1:3) = (/2,1,3/)
+      REAL  :: ALPHA                                  ! upper limit of CFL restriction ! 41.35
+      REAL  :: FAC                                    ! a factor ! 41.06
+      REAL  :: FAC2                                   ! another factor ! 41.35
+      REAL  :: FRLIM                                  ! frequency range in which limit on Ctheta is applied ! 41.06
+      REAL  :: PP                                     ! power of the frequency dependent limiter on refraction ! 41.06
 !
 !  8. Remarks
 !
-!       propagation velocity in sigma-direction:
+!  Motivation for using @C/@x instead of @h/@x :                                                                                     40.59
+!  Formulae for computing CAD via @h/@x and @C/@x are identical. However, they differ in result due to numerics.                     40.59
+!     Experiments suggest that @C/@x method with coarse resolution yields results that are similar to those                          40.59
+!     using @C/@x or @h/@x with high resolution.                                                                                     40.59
+!     By contrast, @h/@x method with coarse resolution yields considerably different result.                                         40.59
+!  Further, using @C/@x allows for adding refraction by additional variables included in dispersion relation.                        40.59
+!     Specifically, non-rigid seafloor (mud) can cause refraction even when water layer thickness (i.e. depths) are uniform.         40.59
+!     Obviously, this type of refraction does require the mud to be non-uniform.                                                     40.59
+
+!  Motivation for using centered scheme instead of upwind scheme :                                                                   40.59
+!  Similar to above, the difference is only in numerics; experimental results suggest                                                40.59
+!     better representation of unknown true solution via centered scheme.                                                            40.59
+!  Further, upwind scheme can lead to non-physical asymmetry in CAD, and therefore wave action field                                 40.59
+!  Further still, implementation of the upwind scheme in versions such as 40.41 and 40.51 used sweeping to                           40.59
+!     keep track of results from neighboring sweeps. This involved large amounts of additional code, which is obviously undesirable. 40.59
+!     The utility of this sweeping is not known to this author, since it does not seem to be strictly required by the upwind scheme. 40.59
+!     As evidence, note that v30.75 used the upwind scheme, but did not have additional code for sweeping in SPROSD.                 40.59
+
+!  Note that since we are using a centered scheme now, we stop before we get to the last grid point.                                 40.59
+!  It would be possible to have separate code for falling back to the upwind scheme,                                                 40.59
+!  but this may require sweeping, which would mean much additional code, see e.g. code of public release v40.51                      40.59
+
+!  Note: RDX and RDY are unavailable for P5-P2 and P4-P3, so we use as approximation, 0.5*RDX(1), etc.                               40.59
+!  Experience with implementation of more precise calculations of RDX,RDY, specifically with the SORDUP scheme,                      40.59
+!      yielded imperceptible change in results. However, this could be added later if sufficiently motivated.                        40.59
+
+!  The depth refraction limitation procedure (i.e. IREFR=-1) has been removed, because it is basically a "dirty fix" which           40.59
+!      we hope/expect has been made unnecessary by the other changes here. If we are wrong about this, the "dirty fix" can be        40.59
+!      restored, but this is not straightforward, since C is computed from k, which is an input argument not affected by IREFR.      40.59
+!      To make this work, the depths would be limited here in SPROSD and k would then need to be calculated                          40.59
+!      using the limited depths within SPROSD.                                                                                       40.59
 !
-!                              K(IS,IC)S            DEP2(IX,IY)-DEP1(IX,IY)
-!       CAS(ID,IS,IC) = ------------------------- [ ----------------------- +
-!                       sinh 2K(IS,IC)DEP2(IX,IY)            DT
-!
-!                           (DEP2(IX,IY) - DEP2(IX+KSX,IY)
-!              + UX2(IX,IY) ------------------------------ +
-!                                        DDX
-!
-!                           (DEP2(IX,IY) - DEP2(IX,IY+KSY)
-!              + UY2(IX,IY) ------------------------------ ] - CGO(IS,IC) *
-!                                        DDY
-!
-!                          UX2(IX,IY)-UX2(IX+KSX,IY)
-!         *  [   K(IS,IC) --------------------------- cos**2(D) +
-!                                    DDX
-!
-!                          UX2(IX,IY)-UX2(IX,IY+KSY)
-!              + K(IS,IC) -------------------------- cos(D)sin(D) +
-!                                    DDY
-!
-!                          UY2(IX,IY)-UY2(IX+KSX,IY)
-!              + K(IS,IC) -------------------------- sin(D)cos(D) +
-!                                    DDX
-!
-!                          UY2(IX,IY)-UY2(IX,IY+KSY)
-!              + K(IS,IC) -------------------------- sin**2(D)        ]
-!                                    DDY
-!
-!       -----------------------------------------------------
-!       propagation velocity in theta-direction:
-!
-!       CAD(ID,IS,IC) =
-!
-!                     S                   DEP2(IX,IY)-DEP2(IX+KSX,IY)
-!           ------------------------- * [ --------------------------sin(D) -
-!           sinh 2K(IS,IC)DEP2(IX,IY)               DDX
-!
-!            (DEP2(IX,IY) - DEP2(IX,IY+KSY)
-!           ------------------------------- cos(D) ]  +
-!                        DDY
-!
-!        UX2(IX,IY)-UX2(IX+KSX,IY)   UY2(IX,IY)-UY2(IX,IY+KSY)
-!    [  -------------------------- - ------------------------- ] sin(D)cos(D)+
-!                 DDX                         DDY
-!
-!          UY2(IX,IY)-UY2(IX+KSX,IY)
-!       + --------------------------- sin**2(D) -
-!                   DDX
-!
-!          UX2(IX,IY)-UX2(IX,IY+KSY)
-!         --------------------------- cos**2(D)
-!                   DDY
-!
-!
-!
-!     9. STRUCTURE
-!
+!  9. STRUCTURE
 !   ------------------------------------------------------------
-!   For current sweep and two adjacent sweeps do
-!       determine interpolation factors RDXL and RDYL
-!       determine depth and current gradients
+!       determine celerity and current gradients
 !   ------------------------------------------------------------
 !   For each frequency do
 !       determine auxiliary quantities depending on sigma
-!       For each direction in the sweep and two neighbouring
-!           directions do
-!           If IREFR=-1
-!           Then compute reduction factor for contribution due
-!                to depth gradient
 !           ----------------------------------------------------
-!           determine sweep in which this direction is located
-!           using gradients of the proper sweep determine
+!           using gradients ,  determine
 !           Csigma (CAS) and Ctheta (CAD)
 !   ------------------------------------------------------------
 !   If ITFRE=0
@@ -1477,380 +1413,260 @@
 !   Then make values of CAD=0
 !   ------------------------------------------------------------
 !
-!     10. SOURCE
+!   10. SOURCE
 !
 !************************************************************************
-!
+
       SAVE IENT
       DATA IENT/0/
       IF (LTRACE) CALL STRACE (IENT,'SPROSD')
-!
+
       CAST1 = 0.
       CAST2 = 0.
+      CAST3 = 0.
+      CAST4 = 0.
       CAST5 = 0.
-      CADT1 = 0.
-      IX1   = IXCGRD(1)
-      IY1   = IYCGRD(1)
-      KCG1  = KCGRD(1)
-      XC1   = XCGRID(IX1,IY1)
-      YC1   = YCGRID(IX1,IY1)
+
+      DHDX = 0.
+      DHDY = 0.
+
+      KCG1 = KCGRD(1)
+      KCG2 = KCGRD(2)
+      KCG3 = KCGRD(3)
+      KCG4 = KCGRD(4)
+      KCG5 = KCGRD(5)
+!
+!     Refraction and frequency shift are not defined for points
+!     neighbouring to landpoints
+!
+      IF ( (KCG1.EQ.1).OR.(DEP1(KCG1).LE.DEPMIN).OR.                      30.82
+     &     (KCG2.EQ.1).OR.(DEP1(KCG2).LE.DEPMIN).OR.                      30.82
+     &     (KCG3.EQ.1).OR.(DEP1(KCG3).LE.DEPMIN).OR.                      30.82
+     &     (KCG4.EQ.1).OR.(DEP1(KCG4).LE.DEPMIN).OR.
+     &     (KCG5.EQ.1).OR.(DEP1(KCG5).LE.DEPMIN) ) THEN
+         DO IS = 1, MSC
+            DO ID = 1, MDC
+               CAD(ID,IS,1) = 0.
+               CAS(ID,IS,1) = 0.
+            ENDDO
+         ENDDO
+         GOTO 900
+      ENDIF
+
+      IX1  = IXCGRD(1)
+      IY1  = IYCGRD(1)
+
       DLOC1 = DEP2(KCG1)
+      DLOC2 = DEP2(KCG2)                                                  40.02
+      DLOC3 = DEP2(KCG3)                                                  40.02
+      DLOC4 = DEP2(KCG4)                                                  40.02
+      DLOC5 = DEP2(KCG5)                                                  40.02
+
+      IF ( ICUR .EQ. 1 ) THEN
+
+         UXLOC1 = UX2(KCG1)
+         UXLOC2 = UX2(KCG2)
+         UXLOC3 = UX2(KCG3)
+         UXLOC4 = UX2(KCG4)
+         UXLOC5 = UX2(KCG5)
+
+         UYLOC1 = UY2(KCG1)
+         UYLOC2 = UY2(KCG2)
+         UYLOC3 = UY2(KCG3)
+         UYLOC4 = UY2(KCG4)
+         UYLOC5 = UY2(KCG5)
+
+      ENDIF
 !
 !     *** test output ***
 !
       IF (TESTFL .AND. ITEST .GE. 100 ) THEN
-        WRITE(PRINTF, 211) IX1+MXF-2, IY1+MYF-2, XC1+XOFFS, YC1+YOFFS,    40.30
+        WRITE(PRINTF, 211) IX1+MXF-2, IY1+MYF-2,                          40.30
+     &                     XCGRID(IX1,IY1)+XOFFS, YCGRID(IX1,IY1)+YOFFS,
      &                     DLOC1                                          40.30
  211    FORMAT(' test SPROSD, location:',2I5,2e12.4,', depth:',F9.2)
       ENDIF
 !
-      DO ISWP = 1, 3                                                      40.02
-        ISWEEP = SWP_ARRAY(ISWP)                                          40.02
+!     *** set some terms = 0 ***
 !
-!       *** prepare depth and current gradient for current sweep and ***
-!       *** two adjacent sweeps                                      ***
+      DUXDX = 0.
+      DUYDY = 0.
+      DUYDX = 0.
+      DUXDY = 0.
 !
-        CAST3(ISWEEP)  = 0.
-        CAST4(ISWEEP)  = 0.
-        CAST6(ISWEEP)  = 0.
-        CAST7(ISWEEP)  = 0.
-        CAST8(ISWEEP)  = 0.
-        CAST9(ISWEEP)  = 0.
+!     *** compute the derivatives of the depth and the current velocity ***
 !
-!       *** set the propagation dummy terms CADT 0 ***
+! old upwind scheme:   1DX USING P1-P2
+!                      1DY USING P1-P3
+! new centered scheme: 2DX USING P5-P2
+!                      2DY USING P4-P3
+
+!     *** @D/@X ***
+!      DHDX = 1.0*RDX(1) * (DLOC1-DLOC2) + 1.0*RDX(2) * (DLOC1-DLOC3) ! upwind scheme
+      DHDX = 0.5*RDX(1) * (DLOC5-DLOC2) + 0.5*RDX(2) * (DLOC4-DLOC3) ! centered scheme       40.59
+!     *** @D/@Y ***
+!      DHDY = 1.0*RDY(1) * (DLOC1-DLOC2) + 1.0*RDY(2) * (DLOC1-DLOC3) ! upwind scheme
+      DHDY = 0.5*RDY(1) * (DLOC5-DLOC2) + 0.5*RDY(2) * (DLOC4-DLOC3) ! centered scheme       40.59
+
+      IF ( ICUR .EQ. 1 ) THEN  !           *** current is on ***
 !
-        CADT2(ISWEEP) = 0.
-        CADT3(ISWEEP) = 0.
-        CADT4(ISWEEP) = 0.
-        CADT5(ISWEEP) = 0.
-        CADT6(ISWEEP) = 0.
-        CADT7(ISWEEP) = 0.
-        VALSWP = .TRUE.
+!     *** @Ux/@X ***
+!         DUXDX = 1.0*RDX(1) * (UXLOC1 - UXLOC2) +
+!     &           1.0*RDX(2) * (UXLOC1 - UXLOC3)
+         DUXDX = 0.5*RDX(1) * (UXLOC5 - UXLOC2) +
+     &           0.5*RDX(2) * (UXLOC4 - UXLOC3)                           40.59
+!     *** @Ux/@Y ***
+!         DUXDY = 1.0*RDY(1) * (UXLOC1 - UXLOC2) +
+!     &           1.0*RDY(2) * (UXLOC1 - UXLOC3)
+         DUXDY = 0.5*RDY(1) * (UXLOC5 - UXLOC2) +
+     &           0.5*RDY(2) * (UXLOC4 - UXLOC3)                           40.59
+!     *** @Uy/@X ***
+!         DUYDX = 1.0*RDX(1) * (UYLOC1 - UYLOC2) +
+!     &           1.0*RDX(2) * (UYLOC1 - UYLOC3)
+         DUYDX = 0.5*RDX(1) * (UYLOC5 - UYLOC2) +
+     &           0.5*RDX(2) * (UYLOC4 - UYLOC3)                           40.59
+!     *** @Uy/@Y ***
+!         DUYDY = 1.0*RDY(1) * (UYLOC1 - UYLOC2) +
+!     &           1.0*RDY(2) * (UYLOC1 - UYLOC3)
+         DUYDY = 0.5*RDY(1) * (UYLOC5 - UYLOC2) +
+     &           0.5*RDY(2) * (UYLOC4 - UYLOC3)                           40.59
+
+       CAST3 = UXLOC1 * DHDX
+       CAST4 = UYLOC1 * DHDY
+
+      ELSE     !           *** current is off ***
+
+         DUXDX = 0.
+         DUXDY = 0.
+         DUYDX = 0.
+         DUYDY = 0.
+         CAST3 = 0.
+         CAST4 = 0.
+
+      ENDIF
 !
-        IF (ISWEEP.EQ.2) THEN
-          KCG2 = KCGRD(2)
-          KCG3 = KCGRD(3)
-          IX2  = IXCGRD(2)
-          IY2  = IYCGRD(2)
-          IX3  = IXCGRD(3)
-          IY3  = IYCGRD(3)
-          SWPNGB = SWPDIR
-          DO II = 1, 2
-            RDXL(II) = RDX(II)
-            RDYL(II) = RDY(II)
-          ENDDO
-!         Refraction and frequency shift are not defined for points
-!         neighbouring to landpoints
-          IF ( (KCG1.EQ.1).OR.(DEP2(KCG1).LE.DEPMIN).OR.                  30.82
-     &         (KCG2.EQ.1).OR.(DEP2(KCG2).LE.DEPMIN).OR.                  30.82
-     &         (KCG3.EQ.1).OR.(DEP2(KCG3).LE.DEPMIN) ) THEN               30.82
-            DO IS = 1, MSC
-              DO ID = 1, MDC
-                CAS(ID,IS,1) = 0.
-                CAD(ID,IS,1) = 0.
-              ENDDO
-            ENDDO
-            GOTO 900
-          ENDIF
-        ELSE
-!         determine neighbouring sweep
-          IF (ISWEEP.EQ.1) THEN
-            SWPNGB = SWPDIR-1
-            IF (SWPNGB.EQ.0) SWPNGB = 4
-          ELSE
-            SWPNGB = SWPDIR+1
-            IF (SWPNGB.EQ.5) SWPNGB = 1
-          ENDIF
+!      *** test output ***
 !
-!         determine neighbouring grid points according to sweep
-!
-          IF (SWPNGB.EQ.1) THEN
-            IF (KREPTX.EQ.0) THEN                                         33.09
-              IF (IX1.EQ.1) VALSWP = .FALSE.
-            ENDIF                                                         33.09
-            IF (.NOT.ONED .AND. IY1.EQ.1) VALSWP = .FALSE.
-            IX2 = IX1 - 1
-            IY2 = IY1
-            IX3 = IX1
-            IY3 = IY1 - 1
-          ELSE IF (SWPNGB.EQ.2) THEN
-            IF (KREPTX.EQ.0) THEN                                         33.09
-              IF (IX1.EQ.MXC) VALSWP = .FALSE.
-            ENDIF                                                         33.09
-            IF (.NOT.ONED .AND. IY1.EQ.1) VALSWP = .FALSE.
-            IX2 = IX1 + 1
-            IY2 = IY1
-            IX3 = IX1
-            IY3 = IY1 - 1
-          ELSE IF (SWPNGB.EQ.3) THEN
-            IF (KREPTX.EQ.0) THEN                                         33.09
-              IF (IX1.EQ.MXC) VALSWP = .FALSE.
-            ENDIF                                                         33.09
-            IF (.NOT.ONED .AND. IY1.EQ.MYC) VALSWP = .FALSE.
-            IX2 = IX1 + 1
-            IY2 = IY1
-            IX3 = IX1
-            IY3 = IY1 + 1
-          ELSE IF (SWPNGB.EQ.4) THEN
-            IF (KREPTX.EQ.0) THEN                                         33.09
-              IF (IX1.EQ.1) VALSWP = .FALSE.
-            ENDIF                                                         33.09
-            IF (.NOT.ONED .AND. IY1.EQ.MYC) VALSWP = .FALSE.
-            IX2 = IX1 - 1
-            IY2 = IY1
-            IX3 = IX1
-            IY3 = IY1 + 1
-          ENDIF
-          IF (KREPTX.GT.0) THEN                                           33.09
-            IF (IX2.LE.0)   IX2 = IX2 + MXC                               33.09
-            IF (IX2.GT.MXC) IX2 = IX2 - MXC                               33.09
-          ENDIF
-!
-!         determine interpolation coeffcients (RDXL, RDYL)
-!
-          IF (VALSWP) THEN
-            KCG2 = KGRPNT(IX2,IY2)
-            IF (KCG2.LE.1 .OR. DEP2(KCG2).LE.DEPMIN) VALSWP = .FALSE.     40.14
-            IF (KREPTX.GT.0) THEN                                         33.09
-              DX2 = DX * COSPC                                            33.09
-              DY2 = -DX * SINPC                                           33.09
-            ELSE
-              DX2 = XC1 - XCGRID(IX2,IY2)
-              DY2 = YC1 - YCGRID(IX2,IY2)
-            ENDIF
-            IF (KSPHER.GT.0) THEN
-              DX2 = DX2 * LENDEG * COSLAT(1)
-              DY2 = DY2 * LENDEG
-            ENDIF
-            IF (ONED) THEN
-              KCG3 = KCG1
-              DET     =  DX2**2 + DY2**2
-              RDXL(1) =  DX2/DET
-              RDYL(1) =  DY2/DET
-              RDXL(2) =  0.
-              RDYL(2) =  0.
-            ELSE
-              KCG3 = KGRPNT(IX3,IY3)
-              IF (KCG3.LE.1 .OR. DEP2(KCG3).LE.DEPMIN) VALSWP = .FALSE.   40.14
-              DX3 = XC1 - XCGRID(IX3,IY3)
-              DY3 = YC1 - YCGRID(IX3,IY3)
-              IF (KSPHER.GT.0) THEN
-                DX3 = DX3 * LENDEG * COSLAT(1)
-                DY3 = DY3 * LENDEG
-              ENDIF
-              DET     =  DY3*DX2 - DY2*DX3
-              RDXL(1) =  DY3/DET
-              RDYL(1) = -DX3/DET
-              RDXL(2) = -DY2/DET
-              RDYL(2) =  DX2/DET
-            ENDIF
-          ENDIF
+      IF (TESTFL .AND. ITEST .GE. 100 ) THEN
+        IF (ICUR .EQ. 1) THEN
+          WRITE(PRINTF, 412) UXLOC1,UXLOC2,UXLOC3,UYLOC1,UYLOC2,UYLOC3
+412       FORMAT(10X, 'UX:',3(1X,F8.3),/, 10X, 'UY:',3(1X,F8.3))
         ENDIF
+        WRITE(PRINTF, 413) RDX(1),RDX(2),RDY(1),RDY(2)
+413     FORMAT(10X, 'RDX etc.:',4(1X,E12.4))
+        WRITE(PRINTF, 414) DHDX,  DHDY
+414     FORMAT(10x, 'DHDX,DHDY:',2(1X,E12.4))
+      ENDIF
 !
-!       *** compute the derivatives of the depth and the current velocity ***
-!
-        IF (VALSWP) THEN
-
-          IF (IREFR.EQ.-1) THEN                                           40.02
-
-!           limitation of depths in neighbouring grid points
-
-            DLOC2 = MIN (DEP2(KCG2), PNUMS(17)*DLOC1)
-            DLOC3 = MIN (DEP2(KCG3), PNUMS(17)*DLOC1)
-          ELSE                                                            40.02
-
-!           no limitation                                                 40.02
-
-            DLOC2 = DEP2(KCG2)                                            40.02
-            DLOC3 = DEP2(KCG3)                                            40.02
-          END IF                                                          40.02
-
-!         *** @D/@X ***
-          DPDX = RDXL(1) * (DLOC1-DLOC2) + RDXL(2) * (DLOC1-DLOC3)
-
-!         *** @D/@Y ***
-          DPDY = RDYL(1) * (DLOC1-DLOC2) + RDYL(2) * (DLOC1-DLOC3)
-!
-          CADT2(ISWEEP) = DPDX                                            30.21
-          CADT3(ISWEEP) = DPDY                                            30.21
-!
-          IF ( ICUR .EQ. 1 ) THEN
-!           *** current is on ***
-!
-!           *** @Ux/@X ***
-            DUXDX =  RDXL(1) * (UX2(KCG1) - UX2(KCG2))
-     &             + RDXL(2) * (UX2(KCG1) - UX2(KCG3))
-!
-!           *** @Ux/@Y ***
-            DUXDY =  RDYL(1) * (UX2(KCG1) - UX2(KCG2))
-     &             + RDYL(2) * (UX2(KCG1) - UX2(KCG3))
-!
-!           *** @Uy/@X ***
-            DUYDX =  RDXL(1) * (UY2(KCG1) - UY2(KCG2))
-     &             + RDXL(2) * (UY2(KCG1) - UY2(KCG3))
-!
-!           *** @Uy/@Y ***
-            DUYDY =  RDYL(1) * (UY2(KCG1) - UY2(KCG2))
-     &             + RDYL(2) * (UY2(KCG1) - UY2(KCG3))
-
-            CAST3(ISWEEP) = UX2(KCG1) * DPDX
-            CAST4(ISWEEP) = UY2(KCG1) * DPDY
-          ELSE
-            DUXDX = 0.
-            DUXDY = 0.
-            DUYDX = 0.
-            DUYDY = 0.
-            CAST3(ISWEEP) = 0.
-            CAST4(ISWEEP) = 0.
-          ENDIF
-!
-          CAST6(ISWEEP) = DUXDX
-          CAST7(ISWEEP) = DUXDY
-          CAST8(ISWEEP) = DUYDX
-          CAST9(ISWEEP) = DUYDY
-!
-!         *** coefficients for CAD -> function of IX and IY only ***
-!
-          CADT2(ISWEEP) = DPDX
-          CADT3(ISWEEP) = DPDY
-          CADT4(ISWEEP) = DUXDX
-          CADT5(ISWEEP) = DUYDY
-          CADT6(ISWEEP) = DUYDX
-          CADT7(ISWEEP) = DUXDY
-!
-        ELSE
-!         if gradients cannot be determined because one grid point is missing,
-!         use gradient computed for the central sweep
-          CAST3(ISWEEP) = CAST3(2)
-          CAST4(ISWEEP) = CAST4(2)
-          CAST6(ISWEEP) = CAST6(2)
-          CAST7(ISWEEP) = CAST7(2)
-          CAST8(ISWEEP) = CAST8(2)
-          CAST9(ISWEEP) = CAST9(2)
-          CADT2(ISWEEP) = CADT2(2)
-          CADT3(ISWEEP) = CADT3(2)
-          CADT4(ISWEEP) = CADT4(2)
-          CADT5(ISWEEP) = CADT5(2)
-          CADT6(ISWEEP) = CADT6(2)
-          CADT7(ISWEEP) = CADT7(2)
-        ENDIF
-!
-!       *** test output ***
-!
-        IF (TESTFL .AND. ITEST .GE. 100 ) THEN
-          WRITE(PRINTF, 411) SWPNGB, IX2+MXF-2, IY2+MYF-2, DLOC2,
-     &                               IX3+MXF-2, IY3+MYF-2, DLOC3
- 411      FORMAT(' sweep, depths:', I2, 2(I6,I4,F9.2))
-          IF (ICUR .EQ. 1) THEN
-            WRITE(PRINTF, 412) UX2(KCG1),UX2(KCG2),UX2(KCG3),
-     &                         UY2(KCG1),UY2(KCG2),UY2(KCG3)
- 412        FORMAT(10X, 'UX:',3(1X,F8.3),/, 10X, 'UY:',3(1X,F8.3))
-          ENDIF
-          WRITE(PRINTF, 413) RDXL(1),RDXL(2),RDYL(1),RDYL(2)
- 413      FORMAT(10X, 'RDX etc.:',4(1X,E12.4))
-          WRITE(PRINTF, 414) DPDX,  DPDY
- 414      FORMAT(10x, 'DPDX,DPDY:',2(1X,E12.4))
-        ENDIF
-      ENDDO
-!
-!     *** coefficients for CAS -> function of IX and IY only ***
+!      *** coefficients for CAS -> function of IX and IY only ***
 !
       IF ( NSTATC.EQ.0 .OR. .NOT.DYNDEP) THEN                             40.00
-!       *** stationary calculation ***
-        CAST2 = 0.
+         !       *** stationary calculation ***
+         CAST2 = 0.
       ELSE
-!       nonstationary depth, CAST2 is @D/@t
-        CAST2 = ( DLOC1 - DEP1(KCG1) ) * RDTIM
-      END IF
-!
-      DO 70 IS = 1, MSC
+         !       nonstationary depth, CAST2 is @D/@t
+         CAST2 = ( DLOC1 - DEP1(KCG1) ) * RDTIM
+      ENDIF
+
+      DO IS = 1, MSC
+
+        KLOC1=KWAVE(IS,1)
+        KLOC2=KWAVE(IS,2)
+        KLOC3=KWAVE(IS,3)
+        KLOC4=KWAVE(IS,4)
+        KLOC5=KWAVE(IS,5)
+
+        CGLOC1 = CGO(IS,1)
+
+        CLOC1=SPCSIG(IS)/KLOC1
+        CLOC2=SPCSIG(IS)/KLOC2
+        CLOC3=SPCSIG(IS)/KLOC3
+        CLOC4=SPCSIG(IS)/KLOC4
+        CLOC5=SPCSIG(IS)/KLOC5
+
+!       upwind scheme
+!        DCDX = 1.0*RDX(1) * (CLOC1-CLOC2) + 1.0*RDX(2) * (CLOC1-CLOC3)    40.59
+!        DCDY = 1.0*RDY(1) * (CLOC1-CLOC2) + 1.0*RDY(2) * (CLOC1-CLOC3)    40.59
+!       centered scheme
+        DCDX = 0.5*RDX(1) * (CLOC5-CLOC2) + 0.5*RDX(2) * (CLOC4-CLOC3)    40.59
+        DCDY = 0.5*RDY(1) * (CLOC5-CLOC2) + 0.5*RDY(2) * (CLOC4-CLOC3)    40.59
+
+!       *** coefficients for CAS -> function of IS only ***
+
         KD1 = KWAVE(IS,1) * DLOC1
         IF ( KD1 .GT. 30.0 ) KD1 = 30.
         VLSINH = SINH (2.* KD1 )
-        COEF   = SPCSIG(IS) / VLSINH                                      30.72
-!
-!       *** coefficients for CAS -> function of IS only ***
-!
-        CAST1 = KWAVE(IS,1) * COEF
-        CAST5 = CGO(IS,1) * KWAVE(IS,1)
-!
-!       *** coefficients for CAD -> function of IS only ***
-!
-        CADT1 =  COEF
-!
+        COEF   = SPCSIG(IS) / VLSINH   ! also needed for CAD, if @h/@x method used
+        CAST1  = KWAVE(IS,1) * COEF
+        CAST5  = CGO(IS,1) * KWAVE(IS,1)
+
 !       loop over spectral directions
-!
-        DO 60 IDDUM = IDDLOW-1, IDDTOP+1                                  40.61 40.03
+
+        DO IDDUM = IDDLOW-1, IDDTOP+1 !            40.61 40.03
           ID = MOD ( IDDUM - 1 + MDC , MDC ) + 1
-          IF (IDDUM.EQ.IDCMIN(IS)-1) THEN
-!           direction is in the lower adjacent sweep
-            ISWEEP = 1
-          ELSE IF (IDDUM.EQ.IDCMAX(IS)+1) THEN
-!           direction is in the upper adjacent sweep
-            ISWEEP = 3
-          ELSE
-!           direction is in the current sweep
-            ISWEEP = 2
+
+!          *** computation of CAS and CAD ***
+
+          IF ( INT(PNUMS(32)).EQ.0 ) THEN
+             CAD_TMP=COEF*(ESIN(ID)*DHDX-ECOS(ID)*DHDY) ! @h/@x method, currents not included , Christoffersen, Tolman, Ris, Won et al.
+          ELSE IF ( INT(PNUMS(32)).EQ.1 ) THEN
+             CAD_TMP=(CGLOC1/CLOC1)*(ESIN(ID)*DCDX-ECOS(ID)*DCDY) ! @C/@x method, currents not included, Young method (1999, p. 45)
+!             CAD_TMP=(CGLOC1/KLOC1)*(-1.0)*(ESIN(ID)*DKDX-ECOS(ID)*DKDY)   ! @k/@x method, differs only very slightly from @C/dx
           ENDIF
-!
-!         *** computation of CAS and CAD ***
-!
+
+!         Intuitively, one may expect that variable currents could be included via @C/@x. However, this is not the case.
+!         C is determined from sigma and k (and the latter is determined from sigma).
+!         Thus, if dealing with a fixed sigma value, as in SWAN,
+!            having non-uniform currents does not result in non-uniform k or C...i.e., @C/@x=0 in deep water.
+
           IF (ICUR .EQ. 0) THEN
-            CAS(ID,IS,1) = CAST1 * CAST2
-!
-            CAD(ID,IS,1) = CADT1 * ( ESIN(ID) * CADT2(ISWEEP) -
-     &                               ECOS(ID) * CADT3(ISWEEP) )
+             CAS(ID,IS,1)=CAST1*CAST2
+             CAD(ID,IS,1)=CAD_TMP
 
-!           --- adapt the velocity in case of diffraction                 40.21
-            IF (IDIFFR.EQ.1) THEN                                         40.21
-               CAD(ID,IS,1) = DIFPARAM(KCG1)*CAD(ID,IS,1)
-     &                      - DIFPARDX(KCG1)*CGO(IS,1)*ESIN(ID)           40.21
-     &                      + DIFPARDY(KCG1)*CGO(IS,1)*ECOS(ID)           40.21
-            END IF
+!            --- adapt the velocity in case of diffraction                40.21
+             IF (IDIFFR.EQ.1) THEN                                        40.21
+                CAD(ID,IS,1) = DIFPARAM(KCG1)*CAD(ID,IS,1)
+     &                       - DIFPARDX(KCG1)*CGO(IS,1)*ESIN(ID)
+     &                       + DIFPARDY(KCG1)*CGO(IS,1)*ECOS(ID)          40.21
+             ENDIF
 
           ELSE
-            IF (IDIFFR.EQ.0) THEN                                         40.21
-               CAS(ID,IS,1)= CAST1 *
-     &              (CAST2 + CAST3(ISWEEP) + CAST4(ISWEEP)) -
-     &               CAST5 *
-     &              (COSCOS(ID) * CAST6(ISWEEP) +
-     &               SINCOS(ID) * (CAST7(ISWEEP) + CAST8(ISWEEP)) +
-     &               SINSIN(ID) * CAST9(ISWEEP) )
+             IF (IDIFFR.EQ.0) THEN                                        40.21
+                CAS(ID,IS,1) = CAST1*(CAST2+CAST3+CAST4) -
+     &                         CAST5*
+     &                          (COSCOS(ID)*DUXDX +
+     &                           SINCOS(ID)*(DUXDY+DUYDX) +
+     &                           SINSIN(ID)*DUYDY)
 
-               CAD(ID,IS,1) =
-     &             CADT1 * (ESIN(ID) * CADT2(ISWEEP) -
-     &                      ECOS(ID) * CADT3(ISWEEP)) +
-     &             SINCOS(ID) * (CADT4(ISWEEP) - CADT5(ISWEEP)) +
-     &             SINSIN(ID) *  CADT6(ISWEEP) -
-     &             COSCOS(ID) *  CADT7(ISWEEP)
-            ELSE IF (IDIFFR.EQ.1) THEN                                    40.21
-               CAS(ID,IS,1)= CAST1 *                                      40.21
-     &              (CAST2 + CAST3(ISWEEP) + CAST4(ISWEEP)) -             40.21
-     &               DIFPARAM(KCG1)*CAST5 *                               40.21
-     &              (COSCOS(ID) * CAST6(ISWEEP) +                         40.21
-     &               SINCOS(ID) * (CAST7(ISWEEP) + CAST8(ISWEEP)) +       40.21
-     &               SINSIN(ID) * CAST9(ISWEEP) )                         40.21
+                CAD(ID,IS,1) = CAD_TMP +
+     &                         SINCOS(ID)*(DUXDX-DUYDY) +
+     &                         SINSIN(ID)*DUYDX -
+     &                         COSCOS(ID)*DUXDY ! add currents, Christoffersen, Tolman, Ris, et al.
+             ELSE IF (IDIFFR.EQ.1) THEN                                   40.21
+                CAS(ID,IS,1) = CAST1*(CAST2+CAST3+CAST4) -
+     &                         DIFPARAM(KCG1)*CAST5*
+     &                        (COSCOS(ID)*DUXDX +
+     &                         SINCOS(ID)*(DUXDY+DUYDX) +
+     &                         SINSIN(ID)*DUYDY)                          40.21
 
-               CAD(ID,IS,1) = DIFPARAM(KCG1)*                             40.21
-     &             CADT1 * (ESIN(ID) * CADT2(ISWEEP) -                    40.21
-     &                      ECOS(ID) * CADT3(ISWEEP))                     40.21
-     &                      - DIFPARDX(KCG1)*CGO(IS,1)*ESIN(ID)           40.21
-     &                      + DIFPARDY(KCG1)*CGO(IS,1)*ECOS(ID) +         40.21
-     &             SINCOS(ID) * (CADT4(ISWEEP) - CADT5(ISWEEP)) +         40.21
-     &             SINSIN(ID) *  CADT6(ISWEEP) -                          40.21
-     &             COSCOS(ID) *  CADT7(ISWEEP)                            40.21
-            END IF                                                        40.21
+                CAD(ID,IS,1) = DIFPARAM(KCG1)*CAD_TMP -
+     &                         DIFPARDX(KCG1)*CGO(IS,1)*ESIN(ID) +
+     &                         DIFPARDY(KCG1)*CGO(IS,1)*ECOS(ID) +
+     &                         SINCOS(ID)*(DUXDX-DUYDY) +
+     &                         SINSIN(ID)*DUYDX -
+     &                         COSCOS(ID)*DUXDY                           40.21
+             ENDIF                                                        40.21
           ENDIF
-!
- 60     CONTINUE
- 70   CONTINUE
+
+        ENDDO
+      ENDDO
 !
 !     *** for most cases CAS and CAD will be activated. Therefore ***
 !     *** for IREFR is set 0 (no refraction) or ITFRE = 0 (no     ***
 !     *** frequency shift) we have put the IF statement outside   ***
 !     *** the internal loop above                                 ***
 !
- 10   IF (ITFRE .EQ. 0) THEN
+      IF (ITFRE .EQ. 0) THEN
         DO IS = 1, MSC
           DO ID = 1, MDC
             CAS(ID,IS,1) = 0.0
@@ -1889,7 +1705,7 @@
             !
             FAC2 = ALPHA * FRINTF * SPCSIG(IS)
             !
-            DO IDDUM = IDCMIN(IS), IDCMAX(IS)
+            DO IDDUM = IDDLOW-1, IDDTOP+1
                ID = MOD ( IDDUM - 1 + MDC , MDC ) + 1
                !
                FAC = FAC2 * ( ABS((RDX(1)+RDX(2))*CAX(ID,IS,1)) +
@@ -1915,7 +1731,7 @@
          !
          DO IS = 1, MSC
             !
-            DO IDDUM = IDCMIN(IS)-1, IDCMAX(IS)+1
+            DO IDDUM = IDDLOW-1, IDDTOP+1
                ID = MOD ( IDDUM - 1 + MDC , MDC ) + 1
                !
                FAC = FAC2 * ( ABS((RDX(1)+RDX(2))*CAX(ID,IS,1)) +
@@ -1936,26 +1752,26 @@
       IF (TESTFL .AND. ITEST.GE.140) THEN                                 40.00
         IF (DYNDEP .OR. ICUR.GT.0) THEN
           WRITE(PRINTF, *) ' IS ID1 ID2        values of CAS'             40.00
-          DO 602 IS = 1, MSC
-            ID1 = IDCMIN(IS)-1
-            ID2 = IDCMAX(IS)+1
+          DO IS = 1, MSC
+             ID1 = IDDLOW-1
+             ID2 = IDDTOP+1
             WRITE(PRINTF, 619) IS, ID1, ID2,                              40.00
      &            (CAS(MOD(IDDUM-1+MDC,MDC)+1, IS, 1), IDDUM=ID1,ID2)     40.00
  619        FORMAT(3I4, 2X, 600E12.4)                                     40.00
- 602      CONTINUE
+          ENDDO
         ENDIF
         WRITE(PRINTF, *) ' IS ID1 ID2        values of CAD'               40.00
-        DO 604 IS = 1, MSC
-          ID1 = IDCMIN(IS)-1
-          ID2 = IDCMAX(IS)+1
+        DO IS = 1, MSC
+          ID1 = IDDLOW-1
+          ID2 = IDDTOP+1
           WRITE(PRINTF,619) IS, ID1, ID2,                                 40.00
      &          (CAD(MOD(IDDUM-1+MDC,MDC)+1, IS, 1), IDDUM=ID1,ID2)       40.00
- 604   CONTINUE
+        ENDDO
       ENDIF                                                               40.00
 !
 !     end of the subroutine SPROSD
- 900  RETURN
-      END
+900   RETURN
+      END subroutine SPROSD
 !****************************************************************
 !
       SUBROUTINE DSPHER (CAD, CAX, CAY, ANYBIN, YCGRID, ECOS, ESIN)       40.41 33.09 NB!
@@ -1981,7 +1797,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2013  Delft University of Technology
+!     Copyright (C) 1993-2015  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -2143,7 +1959,6 @@
       USE OCPCOMM4                                                        40.41
 !
 !
-!
 !   --|-----------------------------------------------------------|--
 !     | Delft University of Technology                            |
 !     | Faculty of Civil Engineering                              |
@@ -2155,7 +1970,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2013  Delft University of Technology
+!     Copyright (C) 1993-2015  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -2297,7 +2112,7 @@
 !     Changed ICMAX to MICMAX, since MICMAX doesn't vary over gridpoint   40.22
       REAL  :: CAX(MDC,MSC,MICMAX) ,CAY(MDC,MSC,MICMAX)                   40.22
       REAL  :: IMATRA(MDC,MSC)    ,IMATDA(MDC,MSC)            ,
-     &         RDX(10)            ,RDY(10)                    ,           40.08
+     &         RDX(MICMAX)        ,RDY(MICMAX)                ,           40.08
      &         TRSCF(3)            ,                                      33.09
      &         OBREDF(MDC,MSC,2)                                         040697
       REAL  :: TRAC0(MDC,MSC,MTRNP)                                       40.85
@@ -2306,6 +2121,7 @@
       INTEGER  IDCMIN(MSC)                ,
      &         IDCMAX(MSC)                                                33.09
 !
+      INTEGER IENT
       SAVE IENT
       DATA IENT/0/
       IF (LTRACE) CALL STRACE (IENT,'STRSXY')
@@ -2375,7 +2191,7 @@
 !         *** the term FXY2 is known, store in IMATRA ***
 !         *** the term FXY1 is unknown, store in IMATDA ***
 !
-!         This business of doing rollback regardless of ITERMX is an artifact  40.08
+!         This business of doing rollback regardless of ITERMX was an artifact 40.08
 !         and has been removed. Thus, the code reverts to its form in v40.01   40.08
 !
           IF (NSTATC.EQ.1) THEN                                            40.00
@@ -2462,7 +2278,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2013  Delft University of Technology
+!     Copyright (C) 1993-2015  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -2486,6 +2302,7 @@
 !        33.09: Nico Booij (changes related to spherical coordinates)
 !        40.08: Erick Rogers
 !        40.41: Marcel Zijlema
+!        40.59: W. Erick Rogers
 !        40.85: Marcel Zijlema
 !        40.98: Marcel Zijlema
 !
@@ -2501,6 +2318,7 @@
 !                          Remove option for controllable 1st order diffusion ("XYMU",
 !                          "THETAK", etc.)
 !        40.41, Oct. 04: common blocks replaced by modules, include files removed
+!        40.59, Aug. 07: stencil modification
 !        40.85, Aug. 08: store xy-propagation for output purposes
 !        40.98, Feb. 09: SORDUP scheme is made consistent
 !
@@ -2527,8 +2345,8 @@
 !        KCGRD(1) :   IX  ,IY
 !        KCGRD(2) :   IX-1,IY
 !        KCGRD(3) :   IX  ,IY-1
-!        KCGRD(4) :   IX-2,IY
-!        KCGRD(5) :   IX  ,IY-2
+!        KCGRD(6) :   IX-2,IY                                             40.59
+!        KCGRD(7) :   IX  ,IY-2                                           40.59
 !
 !        The scheme is:
 !
@@ -2537,20 +2355,20 @@
 !            @x
 !
 !        [1.5*CAX(ID,IS,1)*AC2(ID,IS,KCGRD(1))-2.0*CAX(ID,IS,2)*AC2(ID,IS,KCGRD(2))
-!        +0.5*CAX(ID,IS,4)*AC2(ID,IS,KCGRD(4))]/DX
+!        +0.5*CAX(ID,IS,6)*AC2(ID,IS,KCGRD(6))]/DX
 !
 !        @[CAY AC2]
 !        --------- =
 !            @y
 !
 !        [1.5*CAY(ID,IS,1)*AC2(ID,IS,KCGRD(1))-2.0*CAY(ID,IS,3)*AC2(ID,IS,KCGRD(3))
-!        +0.5*CAY(ID,IS,5)*AC2(ID,IS,KCGRD(5))]/DY
+!        +0.5*CAY(ID,IS,7)*AC2(ID,IS,KCGRD(7))]/DY
 !
 !        ADD TO DIAGONAL:
 !        +1.5*CAX(ID,IS,1)/DX+1.5*CAY(ID,IS,1)/DY
 !        ADD TO RHS:
-!        +[2.0*CAX(ID,IS,2)*AC2(ID,IS,KCGRD(2)-0.5*CAX(ID,IS,4)*AC2(ID,IS,KCGRD(4)]/DX
-!        +[2.0*CAY(ID,IS,3)*AC2(ID,IS,KCGRD(3)-0.5*CAY(ID,IS,5)*AC2(ID,IS,KCGRD(5)]/DY
+!        +[2.0*CAX(ID,IS,2)*AC2(ID,IS,KCGRD(2)-0.5*CAX(ID,IS,6)*AC2(ID,IS,KCGRD(6)]/DX
+!        +[2.0*CAY(ID,IS,3)*AC2(ID,IS,KCGRD(3)-0.5*CAY(ID,IS,7)*AC2(ID,IS,KCGRD(7)]/DY
 !
 !     4. PARAMETERLIST
 !
@@ -2600,7 +2418,7 @@
 !   ------------------------------------------------------------
 !
       INTEGER  IS,ID,IDDUM,ISSTOP                                         33.10
-     &         ,IND2,IND3,IND4,IND5                                       33.10
+     &         ,IND2,IND3,IND6,IND7                                       40.59 33.10
 !
       REAL  :: FXY1 ,FXY2
 !
@@ -2608,8 +2426,8 @@
 !     Changed ICMAX to MICMAX, since MICMAX doesn't vary over gridpoint   40.22
       REAL  :: CAX(MDC,MSC,MICMAX) ,CAY(MDC,MSC,MICMAX)                   40.22
       REAL  :: IMATRA(MDC,MSC)    ,IMATDA(MDC,MSC)            ,
-     &         RDX(10)            ,RDY(10)                    ,           40.08
-     &         XMU(5)             ,YMU(5)                                 40.08 33.10
+     &         RDX(MICMAX)        ,RDY(MICMAX)                ,           40.08
+     &         XMU(7)             ,YMU(7)                                 40.59 40.08 33.10
       REAL  :: TRAC0(MDC,MSC,MTRNP)                                       40.85
       REAL  :: TRAC1(MDC,MSC,MTRNP)                                       40.85
 
@@ -2639,17 +2457,21 @@
       DO 200 IS = 1, ISSTOP
         IND2 = KCGRD(2)
         IND3 = KCGRD(3)
-        IND4 = KCGRD(4)                                                   33.10
-        IND5 = KCGRD(5)                                                   33.10
+        IND6 = KCGRD(6)                                                   40.59 33.10
+        IND7 = KCGRD(7)                                                   40.59 33.10
         DO 100 IDDUM = IDCMIN(IS), IDCMAX(IS)
           ID = MOD ( IDDUM - 1 + MDC , MDC ) + 1
 !         find Courant number values: XMU, YMU                            40.08
 !         depending on relative size of XMU and YMU, XNUM is true or      40.08
 !         false because of RDX and RDY, XMU and YMU are always positive   40.08
-          DO IXY=1,5                                                      40.08
+          DO IXY=1,3                                                      40.59 40.08
              XMU(IXY) = RDX(1)*CAX(ID,IS,IXY) + RDY(1)*CAY(ID,IS,IXY)     40.08
              YMU(IXY) = RDX(2)*CAX(ID,IS,IXY) + RDY(2)*CAY(ID,IS,IXY)     40.08
           END DO                                                          40.08
+          DO IXY=6,7                                                      40.59
+             XMU(IXY) = RDX(1)*CAX(ID,IS,IXY) + RDY(1)*CAY(ID,IS,IXY)     40.59
+             YMU(IXY) = RDX(2)*CAX(ID,IS,IXY) + RDY(2)*CAY(ID,IS,IXY)     40.59
+          END DO                                                          40.59
           IF(YMU(1).GT.XMU(1))THEN                                        33.10
 !            propagation mainly from grid point 3
              XNUM=.TRUE.                                                  33.10
@@ -2670,9 +2492,9 @@
 
 !             the known, rhs part FXY2                                    33.08
               FXY2 = AC2(ID,IS,IND2) * 2.0*XMU(2)                         40.08 33.10
-     &              -AC2(ID,IS,IND4) * 0.5*XMU(4)                         40.08 33.10
+     &              -AC2(ID,IS,IND6) * 0.5*XMU(6)                         40.59 40.08 33.10
      &              +AC2(ID,IS,IND3) * 2.0*YMU(3)                         40.08 33.10
-     &              -AC2(ID,IS,IND5) * 0.5*YMU(5)                         40.08 33.10
+     &              -AC2(ID,IS,IND7) * 0.5*YMU(7)                         40.59 40.08 33.10
 
             ELSE                                                          33.10
 !             Spherical coordinates
@@ -2681,17 +2503,17 @@
 
               FXY2 =
      &        AC2(ID,IS,IND2) * CAX(ID,IS,2) * RDX(1) * 2.0               40.08 33.10
-     &       -AC2(ID,IS,IND4) * CAX(ID,IS,4) * RDX(1) * 0.5               40.98 40.08 33.10
+     &       -AC2(ID,IS,IND6) * CAX(ID,IS,6) * RDX(1) * 0.5               40.98 40.59 40.08 33.10
      &       +AC2(ID,IS,IND3) * CAX(ID,IS,3) * RDX(2) * 2.0               40.08 33.10
-     &       -AC2(ID,IS,IND5) * CAX(ID,IS,5) * RDX(2) * 0.5               40.98 40.08 33.10
+     &       -AC2(ID,IS,IND7) * CAX(ID,IS,7) * RDX(2) * 0.5               40.98 40.59 40.08 33.10
      &      +(AC2(ID,IS,IND2) * CAY(ID,IS,2) * RDY(1) * COSLAT(2) * 2.0   40.08 33.10
-     &       -AC2(ID,IS,IND4) * CAY(ID,IS,4) * RDY(1) * COSLAT(4) * 0.5   40.98 40.08 33.10
+     &       -AC2(ID,IS,IND6) * CAY(ID,IS,6) * RDY(1) * COSLAT(6) * 0.5   40.98 40.59 40.08 33.10
      &       +AC2(ID,IS,IND3) * CAY(ID,IS,3) * RDY(2) * COSLAT(3) * 2.0   40.08 33.10
-     &       -AC2(ID,IS,IND5) * CAY(ID,IS,5) * RDY(2) * COSLAT(5) * 0.5   40.98 40.08 33.10
+     &       -AC2(ID,IS,IND7) * CAY(ID,IS,7) * RDY(2) * COSLAT(7) * 0.5   40.98 40.59 40.08 33.10
      &        ) / COSLAT(1) !33.10
             ENDIF
 
-          ELSE      ! switch 2<==>3, 4<==>5 and YMU<==>XMU                33.10
+          ELSE      ! switch 2<==>3, 6<==>7 and YMU<==>XMU                40.59 33.10
 
 ! The diag part FXY1
             FXY1 = 1.5*YMU(1)+ 1.5*XMU(1)                                 40.98 40.08 33.10
@@ -2701,9 +2523,9 @@
 
 !             the known, rhs part  FXY2                                   33.08
               FXY2 = AC2(ID,IS,IND3) * 2.0*YMU(3)                         40.08 33.10
-     &              -AC2(ID,IS,IND5) * 0.5*YMU(5)                         40.08 33.10
+     &              -AC2(ID,IS,IND7) * 0.5*YMU(7)                         40.59 40.08 33.10
      &              +AC2(ID,IS,IND2) * 2.0*XMU(2)                         40.08 33.10
-     &              -AC2(ID,IS,IND4) * 0.5*XMU(4)                         40.08 33.10
+     &              -AC2(ID,IS,IND6) * 0.5*XMU(6)                         40.59 40.08 33.10
 
             ELSE
 !             Spherical coordinates
@@ -2711,13 +2533,13 @@
 !             the known, rhs part  FXY2                                   33.08
               FXY2 =
      &        AC2(ID,IS,IND2) * CAX(ID,IS,2) * RDX(1) * 2.0               40.08 33.10
-     &       -AC2(ID,IS,IND4) * CAX(ID,IS,4) * RDX(1) * 0.5               40.98 40.08 33.10
+     &       -AC2(ID,IS,IND6) * CAX(ID,IS,6) * RDX(1) * 0.5               40.98 40.59 40.08 33.10
      &       +AC2(ID,IS,IND3) * CAX(ID,IS,3) * RDX(2) * 2.0               40.08 33.10
-     &       -AC2(ID,IS,IND5) * CAX(ID,IS,5) * RDX(2) * 0.5               40.98 40.08 33.10
+     &       -AC2(ID,IS,IND7) * CAX(ID,IS,7) * RDX(2) * 0.5               40.98 40.59 40.08 33.10
      &      +(AC2(ID,IS,IND2) * CAY(ID,IS,2) * RDY(1) * COSLAT(2) * 2.0   40.08 33.10
-     &       -AC2(ID,IS,IND4) * CAY(ID,IS,4) * RDY(1) * COSLAT(4) * 0.5   40.98 40.08 33.10
+     &       -AC2(ID,IS,IND6) * CAY(ID,IS,6) * RDY(1) * COSLAT(6) * 0.5   40.98 40.59 40.08 33.10
      &       +AC2(ID,IS,IND3) * CAY(ID,IS,3) * RDY(2) * COSLAT(3) * 2.0   40.08 33.10
-     &       -AC2(ID,IS,IND5) * CAY(ID,IS,5) * RDY(2) * COSLAT(5) * 0.5   40.98 40.08 33.10
+     &       -AC2(ID,IS,IND7) * CAY(ID,IS,7) * RDY(2) * COSLAT(7) * 0.5   40.98 40.59 40.08 33.10
      &        )/ COSLAT(1)
             ENDIF
           END IF
@@ -2790,7 +2612,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2013  Delft University of Technology
+!     Copyright (C) 1993-2015  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -2971,7 +2793,7 @@
       REAL  :: CGO(MSC,MICMAX)                                            33.08 40.22
       REAL  :: CAX(MDC,MSC,MICMAX) ,CAY(MDC,MSC,MICMAX)                   40.22
       REAL  :: IMATRA(MDC,MSC)    ,IMATDA(MDC,MSC)
-      REAL  :: RDX(10)            ,RDY(10)                                40.08
+      REAL  :: RDX(MICMAX)        ,RDY(MICMAX)                            40.08
 !     Changed ICMAX to MICMAX, since MICMAX doesn't vary over gridpoint   40.22
       REAL  :: CAX1(MDC,MSC,MICMAX),CAY1(MDC,MSC,MICMAX)                  33.08 40.22
       REAL  :: DCG, SPCDIR(MDC,6), DXX, DYY, DXY                          33.08
@@ -3244,7 +3066,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2013  Delft University of Technology
+!     Copyright (C) 1993-2015  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -3379,7 +3201,7 @@
 !
 !****************************************************************
 !
-      INTEGER  IS      ,ID      ,IDDLOW  ,IDDTOP  ,IDDUM
+      INTEGER  IENT, IS      ,ID      ,IDDLOW  ,IDDTOP  ,IDDUM
 !
       REAL     DS      ,PNH     ,PN1     ,PN2     ,C1      ,C2      ,
      &         C3      ,A1      ,A3      ,PCD1    ,PCD2    ,RHS12   ,
@@ -3550,6 +3372,8 @@
       USE SWCOMM4                                                         40.41
       USE OCPCOMM4                                                        40.41
 !
+      IMPLICIT NONE
+!
 !
 !   --|-----------------------------------------------------------|--
 !     | Delft University of Technology                            |
@@ -3562,7 +3386,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2013  Delft University of Technology
+!     Copyright (C) 1993-2015  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -3762,7 +3586,7 @@
 !
 !************************************************************************
 !
-      INTEGER  IS      ,ID      ,ISSTOP  ,
+      INTEGER  IENT, IS      ,ID      ,ISSTOP  ,
      &         IDDLOW  ,IDDTOP  ,IDDUM
 !
       REAL     FSA     ,FLEFT   ,FRGHT   ,DS      ,CFLMAX  ,CFLCEN  ,
@@ -3774,8 +3598,8 @@
      &         CAY(MDC,MSC,ICMAX)       ,
      &         AC2(MDC,MSC,MCGRD)       ,
      &         IMATRA(MDC,MSC)          ,
-     &         RDX(10)                  ,                                 40.08
-     &         RDY(10)                                                    40.08
+     &         RDX(MICMAX)              ,                                 40.08
+     &         RDY(MICMAX)                                                40.08
       REAL  :: TRAC0(MDC,MSC,MTRNP)                                       41.07
 !
       INTEGER  IDCMIN(MSC)              ,
@@ -3954,7 +3778,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2013  Delft University of Technology
+!     Copyright (C) 1993-2015  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -4079,7 +3903,7 @@
 !
       LOGICAL  BIN1, BIN2, BIN3
 !
-      INTEGER  IS    ,ID    ,IIDM  ,IIDP  ,
+      INTEGER  IENT  ,IS    ,ID    ,IIDM  ,IIDP  ,
      &         ISSTOP,IDDUM
 !
       REAL     DD    ,PNH   ,PN1   ,PN2
@@ -4217,13 +4041,17 @@
       SUBROUTINE SPREDT (SWPDIR     ,AC2        ,CAX       ,
      &                   CAY        ,IDCMIN     ,IDCMAX    ,
      &                   ISSTOP     ,ANYBIN     ,
+     &                   XCGRID     ,YCGRID     ,                         41.53
      &                   RDX        ,RDY        ,OBREDF    )              40.00
 !
 !****************************************************************
 !
+      USE SWCOMM2                                                         41.53
       USE SWCOMM3                                                         40.41
       USE SWCOMM4                                                         40.41
       USE OCPCOMM4                                                        40.41
+!
+      IMPLICIT NONE
 !
 !
 !   --|-----------------------------------------------------------|--
@@ -4237,7 +4065,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2013  Delft University of Technology
+!     Copyright (C) 1993-2015  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -4256,10 +4084,11 @@
 !
 !
 !     0. Authors
-
+!
 !     40.00, 40.13: Nico Booij
 !     40.41: Marcel Zijlema
-
+!     41.53: Marcel Zijlema
+!
 !     1. UPDATE
 !
 !        40.00, Aug 98: introduction of obstacle reduction factor to
@@ -4268,6 +4097,7 @@
 !        40.13, Aug 01: modification of action densities is skipped
 !                       in case of Mode Noupdate
 !        40.41, Oct 04: common blocks replaced by modules, include files removed
+!        41.53, Oct 14: correction curvilinear grid
 !
 !     2. PURPOSE
 !
@@ -4351,6 +4181,8 @@
 !       IDCMIN 1D    frequency dependent counters in case of a current
 !       IDCMAX 1D    frequency dependent counters in case of a current
 !       ANYBIN 2D    Determines if a bin fall within a sweep
+!       XCGRID       coordinates of computational grid in x-direction
+!       YCGRID       coordinates of computational grid in y-direction
 !
 !     5. SUBROUTINES CALLING
 !
@@ -4387,26 +4219,97 @@
       INTEGER  IS    ,ID    ,
      &         SWPDIR,IDDUM ,ISSTOP                                       40.00
 !
-      REAL     FAC_A ,FAC_B
+      REAL     FAC_A ,FAC_B, WEIG1, WEIG2, TCF1, TCF2, CDEN, CNUM
 !
       REAL  :: AC2(MDC,MSC,MCGRD)                                         30.21
 !     Changed ICMAX to MICMAX, since MICMAX doesn't vary over gridpoint   40.22
       REAL  :: CAX(MDC,MSC,MICMAX)                                        40.22
       REAL  :: CAY(MDC,MSC,MICMAX)                                        40.22
-      REAL  :: RDX(10),  RDY(10)        ,                                 40.08 30.21
+      REAL  :: RDX(MICMAX),  RDY(MICMAX),                                 40.08 30.21
      &         OBREDF(MDC,MSC,2)                                          40.00
+      REAL  :: XCGRID(MXC,MYC), YCGRID(MXC,MYC)                           41.53
 !
       INTEGER  IDCMIN(MSC)              ,
      &         IDCMAX(MSC)
 !
       LOGICAL  ANYBIN(MDC,MSC)
 !
+      INTEGER  IDIR, IDCUM, IDMIN, IDMAX, NCURID, NID(4)                  41.53
+      REAL     IDX, IDY, CLAT                                             41.53
+!
+      INTEGER IENT
       SAVE IENT
       DATA IENT/0/
       IF (LTRACE) CALL STRACE (IENT,'SPREDT')
 !
-        DO 200 IS = 1, ISSTOP
-          DO 190 IDDUM = IDCMIN(IS), IDCMAX(IS)
+      IF ( OPTG.EQ.3 .AND. CCURV ) THEN
+!
+!        --- curvilinear grid                                             41.53
+!            consider the equation on a rectangular grid                  41.53
+!            so that all bins will be filled                              41.53
+!
+        IDX=1./(XCGRID(IXCGRD(1),IYCGRD(1))-XCGRID(IXCGRD(2),IYCGRD(2)))
+        IDY=1./(YCGRID(IXCGRD(1),IYCGRD(1))-YCGRID(IXCGRD(3),IYCGRD(3)))
+!
+        IF ( KSPHER.GT.0 ) THEN
+           CLAT = COS(DEGRAD*(YCGRID(IXCGRD(1),IYCGRD(1))+YOFFS))
+           IDX  = IDX / (CLAT * LENDEG)
+           IDY  = IDY / LENDEG
+        ENDIF
+!
+        IDCUM = 0
+        DO IDIR = 1, 4
+           NID(IDIR) = (MDC*IDIR)/4 - IDCUM
+           IDCUM     = (MDC*IDIR)/4
+        ENDDO
+        !
+        ! determine loop bounds in spectral space for current sweep
+        !
+        IDMIN = MDC+1
+        IDMAX = 0
+        !
+        IDIR   = 1
+        NCURID = 0
+        !
+        DO ID = 1, MDC
+           !
+           IF ( IDIR.EQ.SWPDIR ) THEN
+              IDMIN = MIN(ID,IDMIN)
+              IDMAX = MAX(ID,IDMAX)
+           ENDIF
+           NCURID = NCURID + 1
+           !
+           IF ( NCURID.GE.NID(IDIR) ) THEN
+              IDIR   = IDIR + 1
+              NCURID = 0
+           ENDIF
+           !
+        ENDDO
+!
+        DO IS = 1, MSC
+          DO ID = IDMIN, IDMAX
+!
+             IF ( NUMOBS.GT.0 ) THEN
+                TCF1 = OBREDF(ID,IS,1)
+                TCF2 = OBREDF(ID,IS,2)
+             ELSE
+                TCF1 = 1.
+                TCF2 = 1.
+             ENDIF
+!
+             CDEN = IDX * CAX(ID,IS,1) + IDY * CAY(ID,IS,1)
+!
+             CNUM = IDX * CAX(ID,IS,2) * TCF1 * AC2(ID,IS,KCGRD(2)) +
+     &              IDY * CAY(ID,IS,3) * TCF2 * AC2(ID,IS,KCGRD(3))
+!
+             IF (ACUPDA) AC2(ID,IS,KCGRD(1)) = CNUM / CDEN
+!
+          ENDDO
+        ENDDO
+!
+      ELSE
+        DO IS = 1, ISSTOP
+          DO IDDUM = IDCMIN(IS), IDCMAX(IS)
             ID = MOD ( IDDUM - 1 + MDC , MDC ) + 1
             IF ( ANYBIN(ID,IS) ) THEN
 !
@@ -4432,14 +4335,15 @@
      &           AC2(ID,IS,KCGRD(1)) = MAX ( 0. , (FAC_A + FAC_B))        30.21
 !
             END IF
- 190      CONTINUE
- 200    CONTINUE
+          END DO
+        END DO
+      END IF
 !
       IF ( ITEST .GE. 140 .AND. TESTFL ) THEN
         WRITE(PRINTF,6019) KCGRD(1), SWPDIR
  6019   FORMAT(' PREDT : POINT INDX  SWPDIR         :',2I5)
-        DO 610 IS = 1, ISSTOP
-          DO 600 IDDUM = IDCMIN(IS)-1, IDCMAX(IS)+1
+        DO IS = 1, ISSTOP
+          DO IDDUM = IDCMIN(IS)-1, IDCMAX(IS)+1
             ID = MOD ( IDDUM - 1 + MDC , MDC ) + 1
             WRITE (PRINTF,6020) IS, ID, AC2(ID,IS,KCGRD(1)),
      &                          AC2(ID,IS,KCGRD(2)),
@@ -4447,8 +4351,8 @@
      &                          ANYBIN(ID,IS)
  6020       FORMAT ('       : IS ID AC2 AC2(2) AC2(3) ANYBIN   :',
      &              2I5,3(E12.4),L4)
- 600      CONTINUE
- 610    CONTINUE
+          END DO
+        END DO
       END IF
 !
 !     End of the subroutine SPREDT
@@ -4457,10 +4361,11 @@
 !
 !****************************************************************
 !
-      SUBROUTINE SWAPAR ( DEP2, KWAVE, CGO, SPCSIG )
+      SUBROUTINE SWAPAR ( DEP, MUDL, KWAVE, CGO, DMW, SPCSIG )
 !
 !****************************************************************
 !
+      USE SWCOMM2                                                         40.59
       USE SWCOMM3                                                         40.41
       USE SWCOMM4                                                         40.41
       USE OCPCOMM4                                                        40.41
@@ -4477,7 +4382,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2013  Delft University of Technology
+!     Copyright (C) 1993-2015  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -4502,6 +4407,7 @@
 !     30.82: IJsbrand Haagsma
 !     40.13: Nico Booij
 !     40.41: Marcel Zijlema
+!     40.59: Erick Rogers
 !
 !  1. Updates
 !
@@ -4514,6 +4420,7 @@
 !                     loop over IC now inside routine SWAPAR
 !     40.41, Aug. 04: CG moved to DSPHER and code optimized
 !     40.41, Oct. 04: common blocks replaced by modules, include files removed
+!     40.59, Aug. 07: muddy bottom included
 !
 !  2. Purpose
 !
@@ -4565,7 +4472,7 @@
 !
 !        CGO       2D    Group velocity as function of X and Y and S in the
 !                        direction of wave propagation in absence of currents
-!        DEP2      2D    Depth as function of X and Y at time T
+!        DEP       2D    Depth as function of X and Y at certain time
 !        KWAVE     2D    wavenumber as function of the relative frequency S
 !
 !     5. SUBROUTINES CALLING
@@ -4593,6 +4500,7 @@
 !   Else
 !         Then for every IS do
 !           call KSCIP1 to compute wave number and group velocity
+!           call KSCIP2 to compute muddy wave number and group velocity
 !         ------------------------------------------------------
 !   end if
 !   ------------------------------------------------------------
@@ -4613,31 +4521,44 @@
       INTEGER      IC    ,IS    ,ID
       REAL      :: N(1:MSC), ND(1:MSC)                                    40.13
 !
-      REAL         DEP2(MCGRD)        ,
+      REAL         DEP(MCGRD)         ,
+     &             MUDL(MCGRD)        ,                                   40.59
      &             KWAVE(MSC,ICMAX)   ,
-     &             CGO(MSC,ICMAX)
+     &             CGO(MSC,ICMAX)     ,
+     &             DMW(MSC,ICMAX)
 !
 !
       INTEGER, SAVE :: IENT=0
       IF (LTRACE) CALL STRACE (IENT,'SWAPAR')
 !
       DO IC = 1, ICMAX                                                    40.13
-        INDX  = KCGRD(IC)
-        DEPLOC = DEP2(INDX)
+        INDX   = KCGRD(IC)
+        DEPLOC = DEP(INDX)
+        IF (VARMUD) THEN
+           DM = MUDL(INDX)
+        ELSE
+           DM = PMUD(1)
+        ENDIF
         IF ( DEPLOC .LE. DEPMIN) THEN
 !         *** depth is negative ***
           DO 50 IS = 1, MSC
              KWAVE(IS,IC) = -1.                                           40.41
              CGO(IS,IC)   = 0.                                            40.41
+             DMW(IS,IC)   = 0.                                            40.59
  50       CONTINUE
         ELSE
 !       *** call KSCIP1 to compute KWAVE and CGO ***
           CALL KSCIP1 (MSC, SPCSIG, DEPLOC, KWAVE(1,IC) ,                 40.41
      &                 CGO(1,IC), N, ND)                                  40.41
+          IF (IMUD.EQ.1) THEN                                             40.59
+!         *** call KSCIP2 to compute KWAVE, CGO and DMW ***
+             CALL KSCIP2 (MSC, SPCSIG, DEPLOC, KWAVE(1,IC) ,              40.59
+     &                    CGO(1,IC), N, ND, DMW(1,IC), DM)                40.59
+          ENDIF
         ENDIF
 !
         IF ( TESTFL .AND. IC .EQ. 1 .AND. ITEST.GE. 100 ) THEN
-          WRITE(PRINTF,6021) DEP2(KCGRD(IC))
+          WRITE(PRINTF,6021) DEP(KCGRD(IC))
  6021     FORMAT(' SWAPAR :                   DEP :',E12.4, /,
      &           '   IS          K           CGO                 :')      40.00
           DO 105 IS = 1, MSC
@@ -4664,7 +4585,8 @@
      &                   DSXBOT     ,                                     40.67 40.61
      &                   DSXSRF     ,                                     40.67 40.61
      &                   DSXWCP     ,                                     40.67 40.61
-     &                   DSXVEG     ,                                     40.67 40.61
+     &                   DSXVEG     ,DSXTUR     ,                         40.35 40.67 40.61
+     &                   DSXMUD     ,                                     40.67 40.61
      &                   GSXWND     ,GENRXY     ,                         40.85
      &                   RSXQUA     ,RSXTRI     ,                         40.85
      &                   REDSXY     ,                                     40.85
@@ -4675,6 +4597,8 @@
 !*******************************************************************
 !
       USE SWCOMM3                                                         40.41
+!
+      IMPLICIT NONE
 !
 !
 !   --|-----------------------------------------------------------|--
@@ -4688,7 +4612,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2013  Delft University of Technology
+!     Copyright (C) 1993-2015  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -4786,7 +4710,9 @@
      &         DSXBOT(MCGRD)      ,                                       40.67 40.61
      &         DSXSRF(MCGRD)      ,                                       40.67 40.61
      &         DSXWCP(MCGRD)      ,                                       40.67 40.61
+     &         DSXMUD(MCGRD)      ,                                       40.67 40.61
      &         DSXVEG(MCGRD)      ,                                       40.67 40.61
+     &         DSXTUR(MCGRD)      ,                                       40.35
      &         GSXWND(MCGRD)      ,                                       40.85
      &         RSXQUA(MCGRD)      ,                                       40.85
      &         RSXTRI(MCGRD)      ,                                       40.85
@@ -4808,6 +4734,10 @@
      &        IMATUA(MDC,MSC)           ,                                 40.85
      &        IMAT5L(MDC,MSC)           ,                                 40.85
      &        IMAT6U(MDC,MSC)                                             40.85
+!
+      REAL  ARADSTR, DSDD, SDSDD, S1, ACT1, S2
+      REAL  ACT2, S3, ACT3, ACT4, ACT5, ACONTR
+      INTEGER ISC, IDC, IDM, IDP
 !
       LOGICAL  ANYBIN(MDC,MSC)
       INTEGER, SAVE :: IENT=0
@@ -4909,6 +4839,8 @@
       DSXSRF(KCGRD(1)) = DSXSRF(KCGRD(1)) + ADISSIP(2)     ! surf break           40.67
       DSXBOT(KCGRD(1)) = DSXBOT(KCGRD(1)) + ADISSIP(3)     ! bottom fric          40.67
       DSXVEG(KCGRD(1)) = DSXVEG(KCGRD(1)) + ADISSIP(5)     ! vegetation           40.67
+      DSXTUR(KCGRD(1)) = DSXTUR(KCGRD(1)) + ADISSIP(6)     ! turbulence           40.35
+      DSXMUD(KCGRD(1)) = DSXMUD(KCGRD(1)) + ADISSIP(7)     ! mud dissip           40.67
       DISSXY(KCGRD(1)) = DISSXY(KCGRD(1)) + SUM(ADISSIP)   ! total dissip         40.67
 !
       GSXWND(KCGRD(1)) = GSXWND(KCGRD(1)) + AGENERT(1)     ! wind input           40.85
@@ -4923,7 +4855,12 @@
       TSXSPS(KCGRD(1)) = TSXSPS(KCGRD(1)) + ATRANSP(3)     ! sigma-propagation    40.85
       TRANXY(KCGRD(1)) = TRANXY(KCGRD(1)) + SUM(ATRANSP)   ! total propagation    40.85
 !
-      RADSXY(KCGRD(1)) = RADSXY(KCGRD(1)) + ARADSTR        ! radiation stress     40.85
+!       energy transfer between waves and currents due to radiation stress, see page 439 of
+!       the ICCE paper of Holthuijsen, L.H., Zijlema, M. and Van der Ham, P.J. (2009)
+!       Wave physics in a tidal inlet, in: J.M. Smith (Ed.), Proc. 31st Int. Conf. on Coast. Engng.
+!       ASCE, World Scientific Publishing, Singapore, 437-448
+!
+      RADSXY(KCGRD(1)) = RADSXY(KCGRD(1)) + ARADSTR                       40.85
 !
       IMATLA = 0.
       IMATUA = 0.
@@ -4960,7 +4897,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2013  Delft University of Technology
+!     Copyright (C) 1993-2015  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -5270,7 +5207,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2013  Delft University of Technology
+!     Copyright (C) 1993-2015  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as

@@ -256,7 +256,7 @@
             DO j=1,NPROC
               IF (BOUNDHINDPF(i).eq.0) THEN
                 IF ((BOUNDHINDX(i).ge.IARRC(1,j)).and.                  &
-     &              (BOUNDHINDX(i).le.IARRC(2,j)-4)) THEN
+     &              (BOUNDHINDX(i).le.IARRC(2,j)-3)) THEN
                   BOUNDHINDPF(i)=j
                 ENDIF
               ENDIF
@@ -265,7 +265,7 @@
             DO j=1,NPROC
               IF (BOUNDHINDPF(i).eq.0) THEN
                 IF ((BOUNDHINDY(i).ge.IARRC(3,j)).and.                    &
-     &              (BOUNDHINDY(i).le.IARRC(4,j)-4)) THEN
+     &              (BOUNDHINDY(i).le.IARRC(4,j)-3)) THEN
                   BOUNDHINDPF(i)=j
                 ENDIF
               ENDIF

@@ -6,7 +6,7 @@
 !   SET  [level]  [nor]  [depmin]  [maxmes]                                 &
 !        [maxerr]  [grav]  [rho] [cdcap] [inrhog]                           &
 !        [hsrerr]  CARTesian|NAUTical  [pwtail]                             &
-!        [froudmax]  [printf]  [prtest]
+!        [froudmax]  [sort]  CURV  [printf]  [prtest]
 !
 !   MODE  / STATIONARY \  / TWODimensional
 !         \ DYNAMIC    /  \ ONEDimensional
@@ -15,14 +15,14 @@
 !                \ SPHErical      CCM|QC  /
 !
 !   CGRID  / REGular [xpc] [ypc] [alpc] [xlenc] [ylenc] [mxc] [myc] \
-!         <  CURVilinear [mxc] [myc]  (EXC [xexc] [yexc])            >      &
+!         <  CURVilinear [mxc] [myc]  (EXC [xexc] [yexc]) [alpc]     >      &
 !          \ UNSTRUCtured                                           /
 !
 !          / CIRcle               \
 !          \ SECtor [dir1] [dir2] /  [mdc]  [flow]  [fhig]  [msc]
 !
 !   INPgrid                                                                 &
-!      BOTtom | WLEV | CUR | VX | VY | FRic | WInd | WX | WY | NPLAnts      &
+!      BOT | WLEV | CUR | VX | VY | FR | WI | WX | WY | NPLA | TURB | MUDL  &
 !
 !      | REG [xpinp] [ypinp] [alpinp]  [mxinp] [myinp]  [dxinp] [dyinp] |
 !      |                                                                |
@@ -38,22 +38,22 @@
 !   READgrid UNSTRUCtured <  TRIAngle \
 !                          | EASYmesh / 'fname'
 !
-!   READinp    BOTtom|WLevel|CURrent|FRiction|WInd|COORdinates|NPLAnts      &
+!   READinp    BOTtom|WLevel|CURrent|FRiction|WInd|COOR|NPLAnts|TURB|MUDL   &
 !        [fac]  / 'fname1'        \
 !               \ SERIES 'fname2' /  [idla] [nhedf] ([nhedt]) (nhedvec])    &
 !        FREE | FORMAT 'form' | [idfm] | UNFORMATTED
 !
-!                              | -> WU
-!   WIND  [vel] [dir]   DRAG  <  FIT
+!                              | WU
+!   WIND  [vel] [dir]   DRAG  <  -> FIT
 !                              | SWELL
 !
 !                       |  JONswap  [gamma]  |
-!   BOUNd SHAPespec     |  PM                |
+!   BOUnd SHAPespec     |  PM                |
 !                      <   GAUSs  [sigfr]     >  PEAK|MEAN   DSPR  POWer|DEGRees
 !                       |  BIN               |
 !
 !              / -> SIDE  N|NW|W|SW|S|SE|E|NE | [k]  CCW|CLOCKWise       \
-!   BOUNdspec <                                                           > &
+!   BOUndspec <                                                           > &
 !              \    SEGment  / -> XY  < [x]  [y] >            \          /
 !                            \    IJ  < [i]  [j] > | < [k] >  /
 !
@@ -62,12 +62,12 @@
 !            \  VARiable  /  PAR  < [len] [hs] [per] [dir] [dd] >
 !                         \  FILE < [len] 'fname' [seq] >
 !
-!   BOUNdnest1  NEST 'fname'  CLOSed|OPEN
+!   BOUndnest1  NEst 'fname'  CLOSed|OPEN
 !
-!   BOUNdnest2  WAMNest 'fname' / UNFormatted CRAY|WKstat \
+!   BOUndnest2  WAMNest 'fname' / UNFormatted CRAY|WKstat \
 !                               \ FREE                    / [xgc] [ygc] [lwdate]
 !
-!   BOUNdnest3  WWIII 'fname'  CLOSed|OPEN  [xgc] [ygc]
+!   BOUndnest3  WWIII 'fname'  CLOSed|OPEN  [xgc] [ygc]
 !
 !             | -> DEFault
 !             |
@@ -116,10 +116,11 @@
 !        |                                                             |
 !   BRE <     RUE [alpha] [a] [b]                                       > &
 !        |                                                             |
-!        |    NKD [alpha] [gamma0] [alpha0] [beta1] [beta2] [delta1] & |
-!        |        [delta2] [n_low] [n_high] [R_low] [R_high] [a]       |
+!        |    BKD [alpha] [gamma0] [a1] [a2] [a3]                      |
 !        |                                                             |
 !        |    TG  [alpha] [gamma] [pown]                               |
+!
+!     ( DIRectionality [spread] )                                         &
 !
 !     ( FREQDep [power] [fmin] [fmax] )
 !
@@ -131,10 +132,16 @@
 !              |    COLLins [cfw] [cfc]
 !              |
 !              |    MADsen  [kn]
+!              |
+!              |    RIPples [S] [D]
 !
-!   TRIad   [itriad] [trfac] [cutfr] [urcrit] [urslim]
+!   TRIad [itriad] [trfac] [cutfr] [a] [b] [urcrit] [urslim]
 !
 !   VEGEtation  < [height] [diamtr] [nstems] [drag] >
+!
+!   TURBulence  [ctb]  (CURrent [tbcur])
+!
+!   MUD  [layer]  [rhom]  [viscm]  [rhow]  [viscw]
 !
 !   LIMiter [ursell] [qb]
 !
@@ -159,15 +166,15 @@
 !   PROP   /  BSBT
 !          \  GSE  [waveage] SEC|MIN|HR|DAY
 !
-!             | -> ACCUR [drel] [dhoval] [dtoval] [npnts]               |
+!             | -> STOPC [dabs] [drel] [curvat] [npnts] [dtabs] [curvt] |
 !   NUMeric (<                                                           >  &
-!             |    STOPC [dabs] [drel] [curvat] [npnts] [dtabs] [curvt] |
+!             |    ACCUR [drel] [dhoval] [dtoval] [npnts]               |
 !
 !                    | -> STAT  [mxitst] [alfa] |
 !                   <                            >  [limiter]   )           &
 !                    | NONSTat  [mxitns]        |
 !
-!           ( DIRimpl [cdd] [cdlim]  WNUMber                    )           &
+!           ( DIRimpl [cdd]  DEP|WNUM                           )           &
 !
 !           ( REFRLim [frlim] [power]                           )           &
 !
@@ -216,7 +223,8 @@
 !             FRCOEF|WIND|DISSIP|QB|TRANSP|FORCE|UBOT|URMS|WLEN|STEEPNESS|  &
 !             DHSIGN|DRTM01|LEAK|TSEC|XP|YP|DIST|SETUP|TMM10|RTMM10|DEPTH|  &
 !             TMBOT|QP|BFI|NPLANT|WATLEV|BOTLEV|TPS|DISBOT|DISSURF|DISWCAP| &
-!             GENE|GENW|REDI|REDQ|REDT|PROPA|PROPX|PROPT|PROPS|RADS|LWAVP > &
+!             GENE|GENW|REDI|REDQ|REDT|PROPA|PROPX|PROPT|PROPS|RADS|LWAVP|  &
+!             DISTUR|TURB|DISMUD >                                          &
 !             ([unit]) (OUTPUT [tbegblk] [deltblk] SEC|MIN|HR|DAY)
 !
 !   TABLE   'sname'  HEADER | NOHEADER | INDEXED 'fname'                    &
@@ -224,11 +232,12 @@
 !             FRCOEF|WIND|DISSIP|QB|TRANSP|FORCE|UBOT|URMS|WLEN|STEEPNESS|  &
 !             DHSIGN|DRTM01|LEAK|TIME|TSEC|XP|YP|DIST|SETUP|TMM10|RTMM10|   &
 !             DEPTH|TMBOT|QP|BFI|WATLEV|BOTLEV|TPS|DISBOT|DISSURF|DISWCAP|  &
-!             GENE|GENW|REDI|REDQ|REDT|PROPA|PROPX|PROPT|PROPS|RADS|LWAVP > &
+!             GENE|GENW|REDI|REDQ|REDT|PROPA|PROPX|PROPT|PROPS|RADS|LWAVP|  &
+!             DISTUR|TURB|DISMUD >                                          &
 !             ([unit]) (OUTPUT [tbegtbl] [delttbl] SEC|MIN|HR|DAY)
 !
 !   SPECout 'sname'  SPEC1D|SPEC2D  ABS|REL   'fname'                       &
-!                    MONth  ESCAle                                          &
+!                    MONth  ESCAle  COMPress                                &
 !                    (OUTput [tbeg] [delt] SEC|MIN|HR|DAY)
 !
 !   NESTout 'sname'  'fname'                                                &

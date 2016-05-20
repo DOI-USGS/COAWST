@@ -22,7 +22,7 @@
       USE M_PARALL2
       USE M_BNDSPEC
       USE M_CVMESH
-# ifdef REFINED_GRID
+# ifdef NESTING
       USE M_SREFINED
 # endif
 
@@ -32,6 +32,7 @@
 
       PUBLIC :: ALLOCATE_SWAN_ARRAYS
       PUBLIC :: INIT_POINTERS
+      PUBLIC :: INIT_COUPLING_POINTERS
       PUBLIC :: DEALLOCATE_SWAN_ARRAYS
 
       include 'mpif.h'
@@ -63,7 +64,7 @@
         ALLOCATE (OPSDATZ_MOD(Numgrids))
         ALLOCATE (ORQDATZ_MOD(Numgrids))
         ALLOCATE (COMPT_MOD(Numgrids))
-# ifdef REFINED_GRID
+# ifdef NESTING
         ALLOCATE (REFINED_MOD(Numgrids))
 # endif
 !
@@ -365,6 +366,65 @@
 
       END SUBROUTINE INIT_POINTERS
 
+      SUBROUTINE INIT_COUPLING_POINTERS (ng)
+!
+!=======================================================================
+!                                                                      !
+!  Establish swan pointers to the global arrays.                       !
+!                                                                      !
+!=======================================================================
+!
+      INTEGER, INTENT(IN) :: ng
+!
+!  Allocate pointers
+!
+!  Modules M_GENARR
+!
+      KGRPNT=>M_GENARR_MOD(ng)%KGRPNT_G
+      KGRBND=>M_GENARR_MOD(ng)%KGRBND_G
+      XYTST=> M_GENARR_MOD(ng)%XYTST_G
+      AC2=>   M_GENARR_MOD(ng)%AC2_G
+      XCGRID=>M_GENARR_MOD(ng)%XCGRID_G
+      YCGRID=>M_GENARR_MOD(ng)%YCGRID_G
+      SPCSIG=>M_GENARR_MOD(ng)%SPCSIG_G
+      SPCDIR=>M_GENARR_MOD(ng)%SPCDIR_G
+      DEPTH=> M_GENARR_MOD(ng)%DEPTH_G
+      FRIC=>  M_GENARR_MOD(ng)%FRIC_G
+      UXB=>   M_GENARR_MOD(ng)%UXB_G
+      UYB=>   M_GENARR_MOD(ng)%UYB_G
+      WXI=>   M_GENARR_MOD(ng)%WXI_G
+      WYI=>   M_GENARR_MOD(ng)%WYI_G
+      WLEVL=> M_GENARR_MOD(ng)%WLEVL_G
+      ASTDF=> M_GENARR_MOD(ng)%ASTDF_G
+      NPLAF=> M_GENARR_MOD(ng)%NPLAF_G
+# ifdef WRF_COUPLING
+      CosAngler=>M_GENARR_MOD(ng)%CosAngler_G
+      SinAngler=>M_GENARR_MOD(ng)%SinAngler_G
+# endif
+!
+!  Module M_PARALL
+!
+      IBLKAD=>PARALL_MOD(ng)%IBLKAD_G
+      KGRPGL=>PARALL_MOD(ng)%KGRPGL_G
+      KGRBGL=>PARALL_MOD(ng)%KGRBGL_G
+      XGRDGL=>PARALL_MOD(ng)%XGRDGL_G
+      YGRDGL=>PARALL_MOD(ng)%YGRDGL_G
+!
+!  Module PARALL2
+!
+      BSPECS=>PARALL2_MOD(ng)%BSPECS_G
+      CROSS=> PARALL2_MOD(ng)%CROSS_G
+      BGRIDP=>PARALL2_MOD(ng)%BGRIDP_G
+      AC1=>   PARALL2_MOD(ng)%AC1_G
+      COMPDA=>PARALL2_MOD(ng)%COMPDA_G
+      OURQT=> PARALL2_MOD(ng)%OURQT_G
+!
+! SWANCOMM3
+!
+      NCOMPT=>COMPT_MOD(ng)%NCOMPT_G
+      RCOMPT=>COMPT_MOD(ng)%RCOMPT_G
+      END SUBROUTINE INIT_COUPLING_POINTERS
+
       SUBROUTINE DEALLOCATE_SWAN_ARRAYS (ng, Numgrids)
 !
 !=======================================================================
@@ -386,7 +446,7 @@
         DEALLOCATE (OPSDATZ_MOD)
         DEALLOCATE (ORQDATZ_MOD)
         DEALLOCATE (COMPT_MOD)
-# ifdef REFINED_GRID
+# ifdef NESTING
         DEALLOCATE (REFINED_MOD)
 # endif
 !

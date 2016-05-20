@@ -11,7 +11,7 @@ subroutine SwanPunCollect ( blkndc )
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2013  Delft University of Technology
+!     Copyright (C) 1993-2015  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -32,17 +32,17 @@ subroutine SwanPunCollect ( blkndc )
 !PUN!   Authors
 !PUN!
 !PUN!   41.36: Marcel Zijlema
-!PUN!NCF!   41.40: Sander Hulst
+!PUN!   41.40: Sander Hulst
 !PUN!
 !PUN!   Updates
 !PUN!
 !PUN!   41.36,     July 2012: New subroutine
-!PUN!NCF!   41.40, November 2012: add global grid coordinates for netCDF block
+!PUN!   41.40, November 2012: add global grid coordinates
 !PUN!
 !PUN!   Purpose
 !PUN!
 !PUN!   Determines for each grid vertex in global grid the node number
-!PUN!NCF!   Also determines grid coordinates in global grid
+!PUN!   Also determines grid coordinates in global grid
 !PUN!
 !PUN!   Method
 !PUN!
@@ -52,10 +52,9 @@ subroutine SwanPunCollect ( blkndc )
 !PUN!
 !PUN    use mpi
 !PUN    use ocpcomm4
-!PUN!NCF    use swcomm2, only: XOFFS, YOFFS
+!PUN    use swcomm2, only: XOFFS, YOFFS
 !PUN    use m_parall, only: IAMMASTER
-!PUN!NNCF    use SwanGriddata, only: ivertg, nverts, nvertsg
-!PUN!NCF    use SwanGriddata, only: ivertg, nverts, nvertsg, xcugrd, ycugrd, xcugrdgl, ycugrdgl
+!PUN    use SwanGriddata, only: ivertg, nverts, nvertsg, xcugrd, ycugrd, xcugrdgl, ycugrdgl
 !PUN    use SIZES, only: MYPROC, MNPROC
 !PUN    use GLOBAL, only: COMM
 !PUN!
@@ -80,8 +79,8 @@ subroutine SwanPunCollect ( blkndc )
 !PUN    !
 !PUN    real   , dimension(:), allocatable       :: arr      ! auxiliary real array to gather data
 !PUN    real   , dimension(:), allocatable       :: blknd    ! node number per subdomain (without ghost vertices)
-!PUN!NCF    real   , dimension(:), allocatable       :: xpl      ! user coordinates grid points (without ghost vertices)
-!PUN!NCF    real   , dimension(:), allocatable       :: ypl      ! user coordinates grid points (without ghost vertices)
+!PUN    real   , dimension(:), allocatable       :: xpl      ! user coordinates grid points (without ghost vertices)
+!PUN    real   , dimension(:), allocatable       :: ypl      ! user coordinates grid points (without ghost vertices)
 !PUN    !
 !PUN    character(80)                            :: msgstr   ! string to pass message
 !PUN!
@@ -97,8 +96,8 @@ subroutine SwanPunCollect ( blkndc )
 !PUN    !
 !PUN    allocate(ivertp(nownv))
 !PUN    allocate( blknd(nownv))
-!PUN!NCF    allocate(   xpl(nownv))
-!PUN!NCF    allocate(   ypl(nownv))
+!PUN    allocate(   xpl(nownv))
+!PUN    allocate(   ypl(nownv))
 !PUN    !
 !PUN    ! determine node number per subdomain
 !PUN    !
@@ -108,8 +107,8 @@ subroutine SwanPunCollect ( blkndc )
 !PUN          k = k + 1
 !PUN          ivertp(k) = ivertg(j)
 !PUN          blknd (k) = real(MYPROC+1)
-!PUN!NCF          xpl   (k) = xcugrd(j) + XOFFS
-!PUN!NCF          ypl   (k) = ycugrd(j) + YOFFS
+!PUN          xpl   (k) = xcugrd(j) + XOFFS
+!PUN          ypl   (k) = ycugrd(j) + YOFFS
 !PUN       endif
 !PUN    enddo
 !PUN    !
@@ -148,8 +147,8 @@ subroutine SwanPunCollect ( blkndc )
 !PUN    if ( IAMMASTER ) then
 !PUN       allocate(    iarr(nvertsg))
 !PUN       allocate(     arr(nvertsg))
-!PUN!NCF       allocate(xcugrdgl(nvertsg))
-!PUN!NCF       allocate(ycugrdgl(nvertsg))
+!PUN       allocate(xcugrdgl(nvertsg))
+!PUN       allocate(ycugrdgl(nvertsg))
 !PUN    endif
 !PUN    !
 !PUN    ! gather different amounts of data from each processor to the master
@@ -167,35 +166,35 @@ subroutine SwanPunCollect ( blkndc )
 !PUN          blkndc(iarr(j)) = arr(j)
 !PUN       enddo
 !PUN    endif
-!PUN!NCF    !
-!PUN!NCF    call MPI_GATHERV( xpl, nownv, MPI_REAL, arr, icount, idsplc, MPI_REAL, 0, COMM, ierr )
-!PUN!NCF    if ( ierr /= MPI_SUCCESS ) then
-!PUN!NCF       write (msgstr, '(a,i6)') ' MPI produces some internal error - return code is ',ierr
-!PUN!NCF       call msgerr( 4, trim(msgstr) )
-!PUN!NCF       return
-!PUN!NCF    endif
-!PUN!NCF    !
-!PUN!NCF    if ( IAMMASTER ) then
-!PUN!NCF       do j = 1, nvertsg
-!PUN!NCF          xcugrdgl(iarr(j)) = arr(j)
-!PUN!NCF       enddo
-!PUN!NCF    endif
-!PUN!NCF    !
-!PUN!NCF    call MPI_GATHERV( ypl, nownv, MPI_REAL, arr, icount, idsplc, MPI_REAL, 0, COMM, ierr )
-!PUN!NCF    if ( ierr /= MPI_SUCCESS ) then
-!PUN!NCF       write (msgstr, '(a,i6)') ' MPI produces some internal error - return code is ',ierr
-!PUN!NCF       call msgerr( 4, trim(msgstr) )
-!PUN!NCF       return
-!PUN!NCF    endif
-!PUN!NCF    !
-!PUN!NCF    if ( IAMMASTER ) then
-!PUN!NCF       do j = 1, nvertsg
-!PUN!NCF          ycugrdgl(iarr(j)) = arr(j)
-!PUN!NCF       enddo
-!PUN!NCF    endif
+!PUN    !
+!PUN    call MPI_GATHERV( xpl, nownv, MPI_REAL, arr, icount, idsplc, MPI_REAL, 0, COMM, ierr )
+!PUN    if ( ierr /= MPI_SUCCESS ) then
+!PUN       write (msgstr, '(a,i6)') ' MPI produces some internal error - return code is ',ierr
+!PUN       call msgerr( 4, trim(msgstr) )
+!PUN       return
+!PUN    endif
+!PUN    !
+!PUN    if ( IAMMASTER ) then
+!PUN       do j = 1, nvertsg
+!PUN          xcugrdgl(iarr(j)) = arr(j)
+!PUN       enddo
+!PUN    endif
+!PUN    !
+!PUN    call MPI_GATHERV( ypl, nownv, MPI_REAL, arr, icount, idsplc, MPI_REAL, 0, COMM, ierr )
+!PUN    if ( ierr /= MPI_SUCCESS ) then
+!PUN       write (msgstr, '(a,i6)') ' MPI produces some internal error - return code is ',ierr
+!PUN       call msgerr( 4, trim(msgstr) )
+!PUN       return
+!PUN    endif
+!PUN    !
+!PUN    if ( IAMMASTER ) then
+!PUN       do j = 1, nvertsg
+!PUN          ycugrdgl(iarr(j)) = arr(j)
+!PUN       enddo
+!PUN    endif
 !PUN    !
 !PUN    deallocate(ivertp,blknd)
-!PUN!NCF    deallocate(xpl,ypl)
+!PUN    deallocate(xpl,ypl)
 !PUN    if ( IAMMASTER ) deallocate(icount,idsplc,iarr,arr)
 !PUN    !
 end subroutine SwanPunCollect

@@ -13,7 +13,7 @@ subroutine SwanBndStruc ( xcgrid, ycgrid )
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2013  Delft University of Technology
+!     Copyright (C) 1993-2015  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -101,8 +101,8 @@ subroutine SwanBndStruc ( xcgrid, ycgrid )
     !
     if (done) return
     !
-    allocate (xbnd(1:2*(mxc+myc-2)))
-    allocate (ybnd(1:2*(mxc+myc-2)))
+    if (.not.allocated(xbnd)) allocate (xbnd(1:2*(mxc+myc-2)))
+    if (.not.allocated(ybnd)) allocate (ybnd(1:2*(mxc+myc-2)))
     ibnd = 0
     do iside = 1, 4
       if (iside==1) then
@@ -139,8 +139,8 @@ subroutine SwanBndStruc ( xcgrid, ycgrid )
          lside = myc
       endif
       !
-      allocate (xsid(1:lside))
-      allocate (ysid(1:lside))
+      if (.not.allocated(xsid)) allocate (xsid(1:lside))
+      if (.not.allocated(ysid)) allocate (ysid(1:lside))
       ix = ix0
       iy = iy0
       ispt = 0

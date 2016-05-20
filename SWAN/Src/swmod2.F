@@ -34,7 +34,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2013  Delft University of Technology
+!     Copyright (C) 1993-2015  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -92,9 +92,7 @@
 !     ETOT2  : Second moment of the energy density
 !     ETOT4  : Fourth moment of the energy density
 !     KM_WAM : Mean wavenumber according to the WAM-formulation
-!     KM_20  : Mean wavenumber according to zeroth and second order moments
 !     KM01   : Mean wavenumber according to first and zeroth order moments
-!     SIGM_20: Mean frequency according to zeroth and second order moments
 !     SIGM_10: Mean frequency according to zeroth and first order moments
 !     SIGM01 : Mean frequency according to first and zeroth order moments
 !
@@ -105,14 +103,14 @@
       REAL, SAVE    :: ETOT2
       REAL, SAVE    :: ETOT4
       REAL, SAVE    :: KM_WAM
-      REAL, SAVE    :: KM_20
       REAL, SAVE    :: KM01
-      REAL, SAVE    :: SIGM_20
+      REAL, SAVE    :: SIGM_WAM
       REAL, SAVE    :: SIGM_10
       REAL, SAVE    :: SIGM01
 !
 !$OMP THREADPRIVATE(ACTOT, EDRKTOT, EKTOT, ETOT1, ETOT2, ETOT4,
-!$OMP&              KM_WAM, KM_20, KM01, SIGM_20, SIGM_10, SIGM01)
+!$OMP&              KM_WAM, KM01, SIGM_WAM,
+!$OMP&              SIGM_10, SIGM01)
 !
 !     SIGPOW : contains powers of relative frequencies
 !              second dimension indicates power of sigma
@@ -128,8 +126,6 @@
 !     SSFILL :
 !     SINTGRL: Calculating integral paramters
 !     SWCAP  : Calculating whitecapping source term
-!     SSURF  : use SIGM_20 for nkd scaling
-!     BRKPAR : use KM_20 for nkd scaling
 !
 ! 10. Error messages
 !
@@ -161,7 +157,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2013  Delft University of Technology
+!     Copyright (C) 1993-2015  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -368,7 +364,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2013  Delft University of Technology
+!     Copyright (C) 1993-2015  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -470,7 +466,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2013  Delft University of Technology
+!     Copyright (C) 1993-2015  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -634,7 +630,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2013  Delft University of Technology
+!     Copyright (C) 1993-2015  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -746,7 +742,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2013  Delft University of Technology
+!     Copyright (C) 1993-2015  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -789,7 +785,8 @@
 !     UXB   , UYB
 !     WXI   , WYI
 !     WLEVL , ASTDF
-!     NPLAF
+!     NPLAF, TURBF
+!     MUDLF
 !
 !  4. Modules used
 !
@@ -815,6 +812,7 @@
 !             (+ 2 extra zeros as area separator for all separated areas)
 !     KGRPNT: array containing indirect addresses for grid points
 !     LAYH  : layer thickness for vegetation model
+!     MUDLF : input field containing fluid mud layer
 !     NPLAF : input field containing number of plants per square meter
 !     SPCDIR: (*,1); spectral directions (radians)
 !             (*,2); cosine of spectral directions
@@ -823,6 +821,7 @@
 !             (*,5); cosine*sine of spectral directions
 !             (*,6); sine^2 of spectral directions
 !     SPCSIG: Relative frequencies in computational domain in sigma-space
+!     TURBF : input field containing turbulent viscosity
 !     UXB   : input field of contravariant U-velocity
 !     UYB   : input field of contravariant V-velocity
 !     VEGDIL: vegetation diameter for each layer and grid point
@@ -854,6 +853,8 @@
         REAL, POINTER :: WLEVL_G(:)
         REAL, POINTER :: ASTDF_G(:)
         REAL, POINTER :: NPLAF_G(:)
+        REAL, POINTER :: TURBF_G(:)
+        REAL, POINTER :: MUDLF_G(:)
 # ifdef WRF_COUPLING
         REAL, POINTER :: CosAngler_G(:)
         REAL, POINTER :: SinAngler_G(:)
@@ -878,6 +879,8 @@
       REAL   , POINTER :: WLEVL(:)
       REAL   , POINTER :: ASTDF(:)
       REAL   , POINTER :: NPLAF(:)
+      REAL   , POINTER :: TURBF(:)
+      REAL   , POINTER :: MUDLF(:)
 # ifdef WRF_COUPLING
       REAL  , POINTER :: CosAngler(:)
       REAL  , POINTER :: SinAngler(:)
@@ -892,7 +895,8 @@
       REAL   , SAVE, ALLOCATABLE :: UXB(:)   , UYB(:)
       REAL   , SAVE, ALLOCATABLE :: WXI(:)   , WYI(:)
       REAL   , SAVE, ALLOCATABLE :: WLEVL(:) , ASTDF(:)
-      REAL   , SAVE, ALLOCATABLE :: NPLAF(:)
+      REAL   , SAVE, ALLOCATABLE :: MUDLF(:)
+      REAL   , SAVE, ALLOCATABLE :: NPLAF(:) , TURBF(:)
 #endif
       REAL   , SAVE, ALLOCATABLE :: LAYH(:), VEGDIL(:), VEGDRL(:),
      &                              VEGNSL(:)
@@ -935,7 +939,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2013  Delft University of Technology
+!     Copyright (C) 1993-2015  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -1317,7 +1321,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2013  Delft University of Technology
+!     Copyright (C) 1993-2015  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
