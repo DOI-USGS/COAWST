@@ -1,0 +1,54 @@
+$INPUTS
+!
+!  Input file for scrip_coawst.
+!  The $INPUTS line is required at the top of this file. 
+!  Edit this file to enter the correct information below.
+!  Then run this program as "scrip_coawst scrip_coawst.in"
+!
+! 1) Enter name of output netcdf4 file
+!
+OUTPUT_NCFILE='scrip_file.nc'
+
+! 2) Enter total number of ROMS, SWAN, and WRF (max_dom) grids:
+!
+NGRIDS_ROMS=2,
+NGRIDS_SWAN=2,
+NGRIDS_WRF=2,
+
+! 3) Enter name of the ROMS grid file(s):
+!
+ROMS_GRIDS(1)='roms_grid1.nc',
+ROMS_GRIDS(2)='roms_grid2.nc',
+
+! 4) Enter SWAN information:
+!    -the name(s) of the SWAN grid file(s) for coords and bathy.
+!    -the size of the SWAN grids, and 
+!    -if the swan grids are Spherical(set cartesian=0) or
+!                           Cartesian(set cartesian=1).
+!
+SWAN_COORD(1)='swan_coord1.grd',
+SWAN_COORD(2)='swan_coord2.grd',
+SWAN_BATH(1)='swan_bathy1.bot',
+SWAN_BATH(2)='swan_bathy2.bot',
+SWAN_NUMX(1)=84,
+SWAN_NUMX(2)=116,
+SWAN_NUMY(1)=64,
+SWAN_NUMY(2)=86,
+CARTESIAN(1)=0,
+CARTESIAN(2)=0,
+
+! 5) Enter the name of the WRF input grid(s). If the grid is a 
+!    moving child nest then enter that grid name as 'moving'.
+!    Also provide the grid ratio, this is used for a moving nest.
+!
+WRF_GRIDS(1)='wrfinput_d01',
+WRF_GRIDS(2)='moving',
+PARENT_GRID_RATIO(1)=1,
+PARENT_GRID_RATIO(2)=3,
+PARENT_ID(1)=0
+PARENT_ID(2)=1
+
+!
+!  The $END statement below is required
+!
+$END 

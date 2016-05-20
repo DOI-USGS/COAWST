@@ -1,0 +1,55 @@
+************  This file has been written by John C. Warner ****************
+****************       and by Tarandeep S. Kalra **************************
+************Readme file for using SCRIP_COAWST package*********************
+
+Input file
+   - "scrip_coawst.in"
+
+Compiling the code: 
+   - "make clean"
+   - "make" 
+
+Running the code: 
+   - Executable created ./scrip
+    
+SCRIP_COAWST Wrapper Files Description
+
+1. constants.f*           --> Define common constants
+2. iounits.f*             --> I/O unit manager
+3. kind_mod.f*            --> defining data types
+4. timers.f*              --> CPU timers
+4. scripwrap_mod.f        --> declares all the global variables for SCRIP COAWST
+5. read_roms.f            --> read ROMS grids - rho, psi and masking values
+6. read_swan.f            --> read SWAN grids - rho, psi and masking values
+7. read_wrf.f             --> read WRF grids - rho, psi and masking values
+8. create_masks.f         --> Assigns masking for each model and calls SCRIP 
+                              package routines   
+10.grids.f**              --> Takes the grid information from above files.
+                              This file was modified from original SCRIP package 
+                              to read in data seamlessly from SCRIP_COAWST. 
+12. remap_vars.f*         --> common remapping variables
+13. remap_dist_wgt.f*     --> routines for dist-weight remap
+14. remap_conserv.f**     --> This is modified slightly to allow for 
+                              deallocating variables for SCRIP package to 
+                              run from within SCRIP_COAWST. Originally contains 
+                              routines for conservative remap
+15. scrip.f**             --> Original main SCRIP file. Modified for SCRIP 
+                              package to make it into a subroutine.
+16. remap_write**         --> remap output
+17. scrip_coawst.f        --> MAIN program file. Calls for 
+                              reading the inputs, grids 
+                              and creating masks
+
+NOT USED BUT PART OF ORIGINAL SCRIP PACKAGE
+18. remap_bilinear.f*    --> bilinear interp
+19. remap_bicubic.f*     --> bicubic  interp
+20. remap.f*             --> remapping module
+21. scrip_test_repeat.f* --> testing SCRIP
+22. scrip_test.f*        --> testing SCRIP
+
+Notes:
+    - * refers to Fortran files that were part of original SCRIP Package and have not been altered
+    - **refers to Fortran files edited from original SCRIP Package 
+    - Currently maximum number of grids allocated to "5" for each ROMS, WRF, SWAN code
+    - This can be changed in scripwrap_mod.f to any number 
+    - Output netcdf file name is mentioned in input file 

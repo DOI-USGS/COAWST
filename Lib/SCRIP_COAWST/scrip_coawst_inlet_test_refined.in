@@ -1,0 +1,51 @@
+$INPUTS
+!
+!  Input file for scrip_coawst.
+!  The $INPUTS line is required at the top of this file. 
+!  Edit this file to enter the correct information below.
+!  Then run this program as "scrip_coawst scrip_coawst_inlet_test_refined.in"
+!
+! 1) Enter name of output netcdf4 file
+!
+OUTPUT_NCFILE='scrip_inlet_test_refined.nc'
+
+! 2) Enter total number of ROMS, SWAN, and WRF (max_dom) grids:
+!
+NGRIDS_ROMS=2,
+NGRIDS_SWAN=2,
+NGRIDS_WRF=0,
+
+! 3) Enter name of the ROMS grid file(s):
+!
+ROMS_GRIDS(1)='../../Projects/Inlet_test/Refined/inlet_test_grid.nc',
+ROMS_GRIDS(2)='../../Projects/Inlet_test/Refined/inlet_test_grid_ref3.nc',
+
+! 4) Enter SWAN information:
+!    -the name(s) of the SWAN grid file(s) for coords and bathy.
+!    -the size of the SWAN grids, and 
+!    -if the swan grids are Spherical(set cartesian=0) or
+!                           Cartesian(set cartesian=1).
+!
+SWAN_COORD(1)='../../Projects/Inlet_test/Refined/inlet_test_grid_coord.grd',
+SWAN_COORD(2)='../../Projects/Inlet_test/Refined/inlet_test_grid_coord_ref3.grd',
+SWAN_BATH(1)='../../Projects/Inlet_test/Refined/inlet_test_bathy.bot',
+SWAN_BATH(2)='../../Projects/Inlet_test/Refined/inlet_test_bathy_ref3.bot',
+SWAN_NUMX(1)=77,
+SWAN_NUMX(2)=92,
+SWAN_NUMY(1)=72,
+SWAN_NUMY(2)=50,
+CARTESIAN(1)=1,
+CARTESIAN(2)=1,
+
+! 5) Enter the name of the WRF input grid(s). If the grid is a 
+!    moving child nest then enter that grid name as 'moving'.
+!    Also provide the grid ratio, this is used for a moving nest.
+!
+WRF_GRIDS(1)='wrfinput_d01',
+PARENT_GRID_RATIO(1)=1,
+PARENT_ID(1)=0
+
+!
+!  The $END statement below is required
+!
+$END 

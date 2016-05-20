@@ -1,0 +1,571 @@
+!  Red Tide (Alexandrium fundyense) Biological Model Parameters.
+!
+!svn $Id: red_tide.in 791 2016-05-05 22:39:42Z arango $
+!========================================================= Hernan G. Arango ===
+!  Copyright (c) 2002-2016 The ROMS/TOMS Group                                !
+!    Licensed under a MIT/X style license                                     !
+!    See License_ROMS.txt                                                     !
+!==============================================================================
+!                                                                             !
+! Input parameters can be entered in ANY order, provided that the parameter   !
+! KEYWORD (usually, upper case) is typed correctly followed by "="  or "=="   !
+! symbols. Any comment lines are allowed and must begin with an exclamation   !
+! mark (!) in column one.  Comments may  appear to the right of a parameter   !
+! specification to improve documentation.  Comments will be ignored  during   !
+! reading.  Blank lines are also allowed and ignored. Continuation lines in   !
+! a parameter specification are allowed and must be preceded by a backslash   !
+! (\).  In some instances, more than one value is required for a parameter.   !
+! If fewer values are provided, the  last value  is assigned for the entire   !
+! parameter array.  The multiplication symbol (*),  without blank spaces in   !
+! between, is allowed for a parameter specification.  For example, in a two   !
+! grids nested application:                                                   !
+!                                                                             !
+!    AKT_BAK == 2*1.0d-6  2*5.0d-6              ! m2/s                        !
+!                                                                             !
+! indicates that the first two entries of array AKT_BAK,  in fortran column-  !
+! major order, will have the same value of "1.0d-6" for grid 1,  whereas the  !
+! next two entries will have the same value of "5.0d-6" for grid 2.           !
+!                                                                             !
+! In multiple levels of nesting and/or multiple connected domains  step-ups,  !
+! "Ngrids" entries are expected for some of these parameters.  In such case,  !
+! the order of the entries for a parameter is extremely important.  It  must  !
+! follow the same order (1:Ngrids) as in the state variable declaration. The  !
+! USER may follow the above guidelines for specifying his/her values.  These  !
+! parameters are marked by "==" plural symbol after the KEYWORD.              !
+!                                                                             !
+!==============================================================================
+!
+! NOTICE: Input parameter units are specified within brackets and default
+! ******  values are specified within braces.
+!
+! Switch to control the computation of biology within nested and/or multiple
+! connected grids.
+
+      Lbiology == T
+
+! Maximum number of iterations to achieve convergence of the nonlinear
+! solution.
+
+       BioIter == 1
+
+! Maximum growth rate at optimal temperature and salinty [1/day]
+
+          Gmax == 0.575d0                        ! Gmax
+
+! Germination depth [cm]
+
+            Dg == 1.25d0                         ! Dg
+
+! Nutrient half-saturation constant [millimoles/m3]
+
+            Kn == 3.0d0                          ! Kn
+
+! Mortality rate [1/day]
+
+           Mor == 0.0250d0                       ! Mor
+
+! Growth efficiency [m2/(Watts*day)]
+
+         G_eff == 0.036d0                        ! G_eff
+
+! Respiration rate [1/day]
+
+           G_r == 0.2d0                          ! G_r
+
+! Averaged surface solar  shortwave radiation (Watt/m2) used
+! in the computation of critical depth in the growth function.
+
+   srad_Cdepth == 345.5d0
+
+! Mean diffuse attenuation coefficient in the water column [1/m]
+
+          AttW == 0.2d0                          ! Kw
+
+! Mean diffuse attenuation coefficient in the sediment [1/mm]
+
+          AttS == 3.5d0                          ! Ks
+
+! Light level for germination under light conditions [Watt/m2]
+
+       E_light == 2.4d0                          ! Elgt
+
+! Light level for germination under dark conditions [watt/m2]
+
+        E_dark == 0.024d0                        ! Edrk
+
+! Coldest temperature limit used to compute temperature-dependent
+! growth factor from cubic polynomial fit based on available data,
+! (default = 5.0d0).
+
+   Tmin_growth == 5.0d0                          ! Celsius
+
+! Constant Dissolved Inorganic Nutrient (DIN) concentration below
+! of growth critical depth, (default = 15.0d0).
+
+    DIN_Cdepth == 15.0d0                         ! millimoles/m3
+
+! Dinoflagellate (Alexandrium Fundyense) vertical swimming rate [m/day].
+! The convention in the vertical flux semi-Lagrangian algorithm is
+! upward vertical motion (swimming, floating) is positive whereas
+! downward vertical motion (sinking) is negative.
+
+         wDino == 10.0d0                         ! Wa
+
+! Harmonic/biharmonic horizontal diffusion of biological tracer for
+! nonlinear model and adjoint-based algorithms: [1:NBT,Ngrids].
+
+          TNU2 == 5.0d0                          ! m2/s
+          TNU4 == 0.0d0                          ! m4/s
+
+       ad_TNU2 == 0.0d0                          ! m2/s
+       ad_TNU4 == 0.0d0                          ! m4/s
+
+! Logical switches (TRUE/FALSE) to increase/decrease horizontal diffusivity
+! in specific areas of the application domain (like sponge areas) for the
+! desired grid: [Ngrids]
+
+ LtracerSponge == F
+
+! Vertical mixing coefficients for biological tracers for nonlinear
+! model and basic state scale factor in adjoint-based algorithms:
+! [1:NBT,Ngrids].
+
+       AKT_BAK == 1.0d-6                         ! m2/s
+
+    ad_AKT_fac == 1.0d0                          ! nondimensional
+
+! Nudging/relaxation time scales, inverse scales will be computed
+! internally: [1:NBT,Ngrids].
+
+        TNUDG  == 0.0d0                          ! days
+
+! Set lateral boundary conditions keyword. Notice that a value is expected
+! for each boundary segment per nested grid for each state variable.
+!
+! The biological tracer variables require [1:4,1:NBT,Ngrids] values. The
+! boundary order is: 1=west, 2=south, 3=east, and 4=north. That is,
+! anticlockwise starting at the western boundary.
+!
+! The keyword is case insensitive and usually has three characters. However,
+! it is possible to have compound keywords, if applicable. For example, the
+! keyword "RadNud" implies radiation boundary condition with nudging. This
+! combination is usually used in active/passive radiation conditions.
+!
+! NOTICE: It is possible to specify the lateral boundary conditions for
+! ======  all biological tracers in a compact form with a single entry.
+! If so, all the biological tracers are assumed to have the same boundary
+! condition as in the single entry.
+!
+!   Keyword    Lateral Boundary Condition Type
+!
+!   Cla        Clamped                                _____N_____     j=Mm
+!   Clo        Closed                                |     4     |
+!   Gra        Gradient                              |           |
+!   Nes        Nested                              1 W           E 3
+!   Nud        Nudging                               |           |
+!   Per        Periodic                              |_____S_____|
+!   Rad        Radiation                                   2          j=1
+!                                                   i=1         i=Lm
+!                   W       S       E       N
+!                   e       o       a       o
+!                   s       u       s       r
+!                   t       t       t       t
+!                           h               h
+!
+!                   1       2       3       4
+
+   LBC(isTvar) ==   Per     Per     Per     Per     ! idbio(1), dinoflagellate
+
+! Adjoint-based algorithms can have different lateral boundary
+! conditions keywords.
+
+ad_LBC(isTvar) ==   Per     Clo     Per     Clo     ! idbio(1), dinoflagellate
+
+! Logical switches (TRUE/FALSE) to activate biological tracers point
+! Sources/Sinks (like river runoff) and to specify which tracer variables
+! to consider: [NBT,Ngrids] values are expected. See glossary below for
+! details.
+
+    LtracerSrc == F
+
+! Logical switches (TRUE/FALSE) to read and process biological tracer
+! climatology fields: [NBT,Ngrids] values are expected. See glossary below
+! for details.
+
+    LtracerCLM == F
+
+! Logical switches (TRUE/FALSE) to nudge the desired biological tracer
+! climatology field. If not analytical climatology fields, users need to
+! turn on the logical switches above to process the fields from the
+! climatology NetCDF file that are needed for nudging; [NBT,Ngrids]
+! values are expected. See glossary below for details.
+
+   LnudgeTCLM == F
+
+! Logical switches (TRUE/FALSE) to activate writing of biological fields
+! into HISTORY output files: [1:NBT,Ngrids].
+
+Hout(idTvar) == T       ! ..., DINO               biological tracer
+Hout(idTsur) == F       ! ..., DINO_sflux         surface tracer flux
+
+! Logical switches (TRUE/FALSE) to activate writing of time-averaged fields
+! into AVERAGE output file: [1:NBT,Ngrids].
+
+Aout(idTvar) == T       ! ..., DINO               biological tracer
+
+Aout(idTTav) == F       ! ..., DINO_2             quadratic <t*t> tracer terms
+Aout(idUTav) == F       ! ..., u_DINO             quadratic <u*t> tracer terms
+Aout(idVTav) == F       ! ..., v_DINO             quadratic <v*t> tracer terms
+Aout(iHUTav) == F       ! ..., Huon_DINO          tracer volume flux, <Huon*t>
+Aout(iHVTav) == F       ! ..., Hvom_DINO          tracer volume flux, <Hvom*t>
+
+! Logical switches (TRUE/FALSE) to activate writing of time-averaged,
+! biological tracer diagnostic terms into DIAGNOSTIC output file:
+! [1:NBT,Ngrids].
+
+Dout(iTrate) == T       ! ..., DINO_rate          time rate of change
+Dout(iThadv) == T       ! ..., DINO_hadv          horizontal total advection
+Dout(iTxadv) == T       ! ..., DINO_xadv          horizontal XI-advection
+Dout(iTyadv) == T       ! ..., DINO_yadv          horizontal ETA-advection
+Dout(iTvadv) == T       ! ..., DINO_vadv          vertical advection
+Dout(iThdif) == T       ! ..., DINO_hdiff         horizontal total diffusion
+Dout(iTxdif) == T       ! ..., DINO_xdiff         horizontal XI-diffusion
+Dout(iTydif) == T       ! ..., DINO_ydiff         horizontal ETA-diffusion
+Dout(iTsdif) == T       ! ..., DINO_sdiff         horizontal S-diffusion
+Dout(iTvdif) == T       ! ..., DINO_vdiff         vertical diffusion
+
+!
+!  GLOSSARY:
+!  =========
+!
+!------------------------------------------------------------------------------
+! Red Tide (Stock et al., 2005; He et al., 2008) Biological Model Parameters.
+! Currently, it is configured with one biological tracer (NBT=1):
+!
+! idbio(1)      DINO              dinoflagellate concentration
+!                                   (Alexandrium fundyense)
+!
+!------------------------------------------------------------------------------
+!
+!  Lbiology       Switch to control the computation of a particular module
+!                   within nested and/or multiple connected grids. By default
+!                   this switch is set to TRUE in "mod_scalars" for all grids.
+!                   Ngrids values are expected. The USER has the option, for
+!                   example, to compute the biology in just one of the nested
+!                   grids. If so, this switch needs to be consistent with the
+!                   dimension parameter NBT in "mod_param".  In order to make
+!                   the model more efficient in memory usage, NBT(:) should
+!                   be zero in such grids.
+!
+!  BioIter        Maximum number of iterations to achieve convergence of
+!                   the nonlinear implicit solution.
+!
+!
+!  Gmax           Maximum growth rate at optimal temperature and salinty
+!                   (1/day)
+!
+!  Dg             Mean depth (cm) of sediment over which cysts are able to
+!                   germinate and contribute to the bloom
+!
+!  Kn             Half-saturation constant for nutrient limited growth
+!                   (millimoles/m3)
+!
+!  Mor            Spatially and temporarily averaged mortality rate (1/day)
+!
+!  G_eff          Growth efficiency (m2/Watts/day)
+!
+!  G_r            Maintanenance respiration rate [1/day]
+!
+!
+! srad_Cdepth     Averaged surface solar shortwave radiation used in the
+!                   computation of critical depth in the growth function
+!                   (Watts/m2)
+!
+!  AttW           Mean diffuse attenuation coefficient in the water column
+!                   (1/m)
+!
+!  AttS           Mean diffuse attenuation coefficient in the sediment
+!                   (1/mm)
+!
+!  E_ligth        Light level for germination under "light" conditions
+!                   (Watt/m2)
+!
+!  E_dark         Light level for germination under dark conditions
+!                   (watt/m2)
+!
+!  Tmin_growth    Coldest temperature limit (Celsius) used to compute
+!                   temperature-dependent dinoflagellate growth from
+!                   cubic polynomial fit based on available data.
+!                   Linear extrapolation is used for colder temperatures.
+!                   (Default = 5.0)
+!
+!  DIN_Cdepth     Constant Dissolved Inorganic Nutrient (DIN) concentration
+!                   below of growth critical depth (millimoles/m3).
+!                   (Default = 15.0)
+!
+!  wDino          Dinoflagellate (Alexandrium Fundyense) vertical swimming
+!                   rate (positive; m/day). The convention in the vertical
+!                   flux semi-Lagrangian algorithm is upward vertical motion
+!                   (swimming, floating) is positive whereas downward vertical
+!                   motion (sinking) is negative.
+!
+!------------------------------------------------------------------------------
+! Physical Parameters, [1:NBT,1:Ngrids] values are expected.
+!------------------------------------------------------------------------------
+!
+!  TNU2           Nonlinear model lateral, harmonic, constant, mixing
+!                   coefficient (m2/s) for biological tracer variables;
+!                   [1:NBT,1:Ngrids] values are expected. If variable
+!                   horizontal diffusion is activated, TNU2 is the mixing
+!                   coefficient for the largest grid-cell in the domain.
+!
+!  TNU4           Nonlinear model lateral, biharmonic, constant, mixing
+!                   coefficient (m4/s) for biological tracer variables;
+!                   [1:NBT,1:Ngrids] values are expected. If variable
+!                   horizontal diffusion is activated, TNU4 is the mixing
+!                   coefficient for the largest grid-cell in the domain.
+!
+!  ad_TNU2        Adjoint-based algorithms lateral, harmonic, constant,
+!                   mixing coefficient (m2/s) for biological tracer variables;
+!                   [1:NBT,1:Ngrids] values are expected. If variable
+!                   horizontal diffusion is activated, ad_TNU2 is the mixing
+!                   coefficient for the largest grid-cell in the domain.
+!
+!  ad_TNU4        Adjoint-based algorithms lateral, biharmonic, constant,
+!                   mixing coefficient (m4/s) for biological tracer variables;
+!                   [1:NBT,1:Ngrids] values are expected. If variable
+!                   horizontal diffusion is activated, ad_TNU4 is the mixing
+!                   coefficient for the largest grid-cell in the domain.
+!
+!  LtracerSponge  Logical switches (TRUE/FALSE) to increase/decrease horizontal
+!                   diffusivity of biological tracers in specific areas of the
+!                   domain. It can be used to specify sponge areas with larger
+!                   horizontal mixing coefficients for damping of high
+!                   frequency noise due to open boundary conditions or nesting.
+!                   The CPP option SPONGE is now deprecated and replaced with
+!                   this switch to facilitate or not sponge areas over a
+!                   particular nested grid; [1:NBT,1:Ngrids] values are
+!                   expected.
+!
+!                   The horizontal mixing distribution is specified in
+!                   "ini_hmixcoef.F" as:
+!
+!                     diff2(i,j,itrc) = diff_factor(i,j) * diff2(i,j,itrc)
+!                     diff4(i,j,itrc) = diff_factor(i,j) * diff4(i,j,itrc)
+!
+!                   The variable "diff_factor" can be read from the grid
+!                   NetCDF file. Alternately, the horizontal diffusion in the
+!                   sponge area can be set-up with analytical functions in
+!                   "ana_sponge.h" using CPP ANA_SPONGE when these switches
+!                   are turned ON for a particular grid.
+!
+!  AKT_BAK        Background vertical mixing coefficient (m2/s) for biological
+!                   tracer variables, [1:NBT,1:Ngrids] values are expected.
+!
+!
+!  ad_AKT_fac     Adjoint-based algorithms vertical mixing, basic state,
+!                   scale factor (nondimensional) for biological tracer
+!                   variables; [1:NBT,1:Ngrids] values are expected. In
+!                   some applications, a smaller/larger values of vertical
+!                   mixing are necessary for stability. It is only used
+!                   when FORWARD_MIXING is activated.
+!
+!  TNUDG          Nudging time scale (days), [1:NBT,1:Ngrids]. Inverse scale
+!                   will be computed internally.
+!
+!------------------------------------------------------------------------------
+! Lateral boundary conditions parameters.
+!------------------------------------------------------------------------------
+!
+! The lateral boundary conditions are now specified with logical switches
+! instead of CPP flags to allow nested grid configurations. Their values are
+! load into structured array:
+!
+!    LBC(1:4, nLBCvar, Ngrids)
+!
+! where 1:4 are the number of boundary edges, nLBCvar are the number LBC state
+! variables, and Ngrids is the number of nested grids. For Example, to apply
+! gradient boundary conditions to any tracer we use:
+!
+!    LBC(iwest,  isTvar(itrc), ng) % gradient
+!    LBC(ieast,  isTvar(itrc), ng) % gradient
+!    LBC(isouth, isTvar(itrc), ng) % gradient
+!    LBC(inorth, isTvar(itrc), ng) % gradient
+!
+! The lateral boundary conditions for biological tracers are entered with
+! a keyword. This keyword is case insensitive and usually has three characters.
+! However, it is possible to have compound keywords, if applicable. For example,
+! the keyword "RadNud" implies radiation boundary condition with nudging. This
+! combination is usually used in active/passive radiation conditions.
+!
+! It is possible to specify the lateral boundary conditions for all biological
+! tracers in a compact form with a single entry.  for example, in a East-West
+! periodic application we can just have:
+!
+!                   W       S       E       N
+!                   e       o       a       o
+!                   s       u       s       r
+!                   t       t       t       t
+!                           h               h
+!
+!                   1       2       3       4
+!
+!  LBC(isTvar) ==   Per     Clo     Per     Clo
+!
+! Then, the standard input processing routine will assume that all the
+! biological tracers have the same lateral boundary condition specified by
+! the single entry.
+!
+!   Keyword    Lateral Boundary Condition Type
+!
+!   Cla        Clamped                                _____N_____     j=Mm
+!   Clo        Closed                                |     4     |
+!   Gra        Gradient                              |           |
+!   Nes        Nested                              1 W           E 3
+!   Nud        Nudging                               |           |
+!   Per        Periodic                              |_____S_____|
+!   Rad        Radiation                                   2          j=1
+!                                                   i=1         i=Lm
+!
+!  LBC(isTvar)    Biological Tracers, [1:4, 1:NBT, Ngrids] values are expected.
+!
+! Similarly, the adjoint-based algorithms (ADM, TLM, RPM) can have different
+! lateral boundary conditions keywords:
+!
+!  ad_LBC(isTvar) Biological Tracers, [1:4, 1:NBT, Ngrids] values are expected.
+!
+!------------------------------------------------------------------------------
+!  Tracer point Sources/Sink sources switches: [1:NBT,1:Ngrids].
+!------------------------------------------------------------------------------
+!
+!  LtracerSrc     Logical switches (T/F) to activate biological tracer
+!                   variables point Sources/Sinks.
+!
+!                     LtracerSrc(idbio(1),ng)     Dinoflagellate concetration
+!
+!                   Recall that these switches are usually activated to add
+!                   river runoff as a point source. At minimum, it is necessary
+!                   to specify both temperature and salinity for all rivers.
+!                   The other tracers are optional. The user needs to know the
+!                   correspondence between biological variables and indices
+!                   idbio(1:NBT) when activating one or more of these switches.
+!
+!                   These logical switches REPLACES and ELIMINATES the need to
+!                   have or read the variable "river_flag(river)" in the input
+!                   rivers forcing NetCDF file:
+!
+!                     double river_flag(river)
+!                        river_flag:long_name = "river runoff tracer flag"
+!                        river_flag:option_0 = "all tracers are off"
+!                        river_flag:option_1 = "only temperature"
+!                        river_flag:option_2 = "only salinity"
+!                        river_flag:option_3 = "both temperature and salinity"
+!                        river_flag:units = "nondimensional"
+!
+!                   This logic was too cumbersome and complicated when
+!                   additional tracers are considered. However, this change
+!                   is backward compatible.
+!
+!                   The LtracerSrc switch will be used to activate the reading
+!                   of respective tracer variable from input river forcing
+!                   NetCDF file. If you want to add other tracer variables
+!                   (other than temperature and salinity) as a source for a
+!                   particular river(s), you just need to specify such values
+!                   on those river(s). Then, set the values to ZERO on the
+!                   other river(s) that do NOT require such river forcing for
+!                   that tracer. Recall that you need to specify the tracer
+!                   values for all rivers, even if their values are zero.
+!
+!------------------------------------------------------------------------------
+!  Tracer climatology processing switches: [1:NBT,1:Ngrids].
+!------------------------------------------------------------------------------
+!
+!  LtracerCLM     Logical switches (T/F) to process biological tracer variables
+!                   climatology.  The CPP option TCLIMATOLOGY is now obsolete
+!                   and replaced with these switches to facilitate nesting
+!                   applications. Currently, the CLIMA(ng)%tclm is used for
+!                   horizontal mixing, sponges, and nudging.
+!
+!                     LtracerCLM(idbio(1),ng)     Dinoflagellate concetration
+!
+!                   These switches also controls which climatology tracer
+!                   fields needs to be processed.  So we may reduce the
+!                   memory allocation for the CLIMA(ng)%tclm array.
+!
+!------------------------------------------------------------------------------
+!  Logical switches for nudging to climatology: [1:NBT,1:Ngrids].
+!------------------------------------------------------------------------------
+!
+!  LnudgeTCLM     Logical switches (T/F) to activate the nugding of biological
+!                   tracer variables climatology. These switches also control
+!                   which biological tracer variables to nudge. The CPP option
+!                   TCLM_NUDGING is now obsolete and replaced with these
+!                   switches to facilitate nesting.
+!
+!                     LnudgeTCLM(idbio(1),ng)     Dinoflagellate concetration
+!
+!                   User also needs to TURN ON the respective logical switches
+!                   "LtracerCLM", described above, to process the required 3D
+!                   biological tracer climatology data. This data can be set
+!                   with analytical functions (ANA_TCLIMA) or read from input
+!                   climatology NetCDF file(s).
+!
+!                   The nudging coefficients CLIMA(ng)%Tnudgcof can be set
+!                   with analytical functions in "ana_nudgcoef.h"  using CPP
+!                   option ANA_NUDGCOEF.  Otherwise, it will be read from
+!                   NetCDF file NUDNAME.
+!
+!------------------------------------------------------------------------------
+! Logical switches (T/F) to activate writing of fields into HISTORY files.
+!------------------------------------------------------------------------------
+!
+!  Hout           Logical switches to write out biological fields into
+!                   output HISTORY NetCDF file, [1:NBT,1:Ngrids] values
+!                   are expected:
+!
+!                   Hout(idTvar)              biological tracers
+!                   Hout(idTsur)              biological tracers surface flux
+!
+!                   idTvar(idbio(1))=iDino    Dinoflagellate concentration
+!
+!------------------------------------------------------------------------------
+! Logical switches (T/F) to activate writing of fields into AVERAGE file.
+!------------------------------------------------------------------------------
+!
+!  Aout           Logical switches to write out biological fields into
+!                   output AVERAGE NetCDF file, [1:NBT,1:Ngrids] values
+!                   are expected:
+!
+!                   Aout(idTvar)              biological tracers
+!
+!                   Aout(idTTav)              quadratic <t*t> tracers terms
+!                   Aout(idUTav)              quadratic <u*t> tracers terms
+!                   Aout(idVTav)              quadratic <v*t> tracers terms
+!                   Aout(iHUTav)              tracer u-volume flux, <Huon*t>
+!                   Aout(iHVTav)              tracer v-volume flux, <Hvom*t>
+!
+!                   The idTvar(idbio(:)) are the same to those in the HISTORY
+!                   file.
+!
+!------------------------------------------------------------------------------
+! Logical switches (T/F) to activate writing of time-averaged fields into
+! DIAGNOSTIC file.
+!------------------------------------------------------------------------------
+!
+!  Time-averaged, biological tracers  diagnostic terms, [1:NBT,Ngrids] values
+!  expected: (if DIAGNOSTICS_TS)
+!
+!                 Dout(idDtrc(idbio(1:NBT),iT....),1:Ngrids)
+!
+!  Dout(iTrate)   Write out time rate of change.
+!  Dout(iThadv)   Write out horizontal total advection.
+!  Dout(iTxadv)   Write out horizontal  XI-advection.
+!  Dout(iTyadv)   Write out horizontal ETA-advection.
+!  Dout(iTvadv)   Write out vertical advection.
+!  Dout(iThdif)   Write out horizontal total diffusion, if TS_DIF2 or TS_DIF4.
+!  Dout(iTxdif)   Write out horizonta1  XI-diffusion, if TS_DIF2 or TS_DIF4.
+!  Dout(iTydif)   Write out horizontal ETA-diffusion, if TS_DIF2 or TS_DIF4.
+!  Dout(iTsdif)   Write out horizontal   S-diffusion, if TS_DIF2 or TS_DIF4 and
+!                   rotated tensor (MIX_GEO_TS or MIX_ISO_TS).
+!  Dout(iTvdif)   Write out vertical diffusion.
+!

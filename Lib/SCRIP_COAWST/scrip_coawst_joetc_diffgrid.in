@@ -1,0 +1,45 @@
+$INPUTS
+!
+!  Input file for scrip_coawst.
+!  The $INPUTS line is required at the top of this file. 
+!  Edit this file to enter the correct information below.
+!  Then run this program as "scrip_coawst scrip_coawst_joe_tc_diffgrid.in"
+!
+! 1) Enter name of output netcdf4 file
+!
+OUTPUT_NCFILE='scrip_joe_tc_diffgrid.nc'
+
+! 2) Enter total number of ROMS, SWAN, and WRF (max_dom) grids:
+!
+NGRIDS_ROMS=1,
+NGRIDS_SWAN=1,
+NGRIDS_WRF=1,
+
+! 3) Enter name of the ROMS grid file(s):
+!
+ROMS_GRIDS(1)='../../Projects/JOE_TC/DiffGrid/joe_tc_coarse_grd.nc',
+
+! 4) Enter SWAN information:
+!    -the name(s) of the SWAN grid file(s) for coords and bathy.
+!    -the size of the SWAN grids, and 
+!    -if the swan grids are Spherical(set cartesian=0) or
+!                           Cartesian(set cartesian=1).
+!
+SWAN_COORD(1)='../../Projects/JOE_TC/DiffGrid/joe_tc_coarse_grid_coord.grd',
+SWAN_BATH(1) ='../../Projects/JOE_TC/DiffGrid/joe_tc_coarse_bathy.bot',
+SWAN_NUMX(1)=100,
+SWAN_NUMY(1)=75,
+CARTESIAN(1)=0,
+
+! 5) Enter the name of the WRF input grid(s). If the grid is a 
+!    moving child nest then enter that grid name as 'moving'.
+!    Also provide the grid ratio, this is used for a moving nest.
+!
+WRF_GRIDS(1)='../../Projects/JOE_TC/wrfinput_d01',
+PARENT_GRID_RATIO(1)=1,
+PARENT_ID(1)=0
+
+!
+!  The $END statement below is required
+!
+$END 
