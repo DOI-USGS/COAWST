@@ -564,7 +564,7 @@
      &            ((Istr.le.Isrc).and.(Isrc.le.Iend+1)).and.            &
      &            ((Jstr.le.Jsrc).and.(Jsrc.le.Jend+1))) THEN
                 IF (INT(SOURCES(ng)%Dsrc(is)).eq.0) THEN
-                  FX(i,j)=Huon(i,j,k)*                                  &
+                  FX(Isrc,Jsrc)=Huon(Isrc,Jsrc,k)*                      &
 #  ifdef ONE_TRACER_SOURCE
      &                    SOURCES(ng)%Tsrc(itrc)
 #  elif defined TWO_D_TRACER_SOURCE
@@ -573,7 +573,7 @@
      &                    SOURCES(ng)%Tsrc(is,k,itrc)
 #  endif
                 ELSE
-                  FE(i,j)=Hvom(i,j,k)*                                  &
+                  FE(Isrc,Jsrc)=Hvom(Isrc,Jsrc,k)*                      &
 #  ifdef ONE_TRACER_SOURCE
      &                    SOURCES(ng)%Tsrc(itrc)
 #  elif defined TWO_D_TRACER_SOURCE
