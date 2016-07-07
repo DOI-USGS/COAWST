@@ -985,10 +985,10 @@
       DO j=JstrR,JendR
         DO i=IstrR,IendR
           ij=ij+1
-          BBR=OCEAN(ng)%t(i,j,N(ng),nstp(ng),itemp)+273.16_r8
-          BBR=BBR*BBR*BBR*BBR
-          BBR=0.97_r8*5.67E-8_r8*BBR
-          A(ij)=A(ij)-BBR
+!         BBR=OCEAN(ng)%t(i,j,N(ng),nstp(ng),itemp)+273.16_r8
+!         BBR=BBR*BBR*BBR*BBR
+!         BBR=0.97_r8*5.67E-8_r8*BBR
+!         A(ij)=A(ij)-BBR
 #ifdef MCT_INTERP_OC2AT
           cff=A(ij)*REAL(A2O_CPLMASK(ia,ng)%dst_mask(points(ij)))
 #else
@@ -998,6 +998,12 @@
             FORCES(ng)%lrflx(i,j)=cff*fac
           ELSE
             FORCES(ng)%lrflx(i,j)=FORCES(ng)%lrflx(i,j)+cff*fac
+          END IF
+          IF (ia.eq.Natm_grids) THEN
+            BBR=OCEAN(ng)%t(i,j,N(ng),nstp(ng),itemp)+273.16_r8
+            BBR=BBR*BBR*BBR*BBR
+            BBR=0.97_r8*5.67E-8_r8*BBR
+            FORCES(ng)%lrflx(i,j)=FORCES(ng)%lrflx(i,j)-BBR*fac
           END IF
           range(1)=MIN(range(1),cff)
           range(2)=MAX(range(2),cff)
