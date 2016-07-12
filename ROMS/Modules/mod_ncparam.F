@@ -1,7 +1,7 @@
 #include "cppdefs.h"
       MODULE mod_ncparam
 !
-!svn $Id: mod_ncparam.F 791 2016-05-05 22:39:42Z arango $
+!svn $Id: mod_ncparam.F 807 2016-07-09 02:03:55Z arango $
 !================================================== Hernan G. Arango ===
 !  Copyright (c) 2002-2016 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
@@ -184,6 +184,8 @@
         integer  :: idAice        ! fraction of cell covered by ice
         integer  :: idAlbe        ! shortwave albedo
         integer  :: idbath        ! bathymetry
+        integer  :: idBgEr        ! Background error at observations
+        integer  :: idBgTh        ! Threshold for BQC check
         integer  :: idCfra        ! cloud fraction
         integer  :: idCosW        ! COS(omega(k)*t)
         integer  :: idCos2        ! COS(omega(k)*t)*COS(omega(l)*t)
@@ -229,6 +231,9 @@
         integer  :: idObsZ        ! observations Z-grid location
         integer  :: idOday        ! observations survey time
         integer  :: idOerr        ! observations error
+        integer  :: idOlat        ! observations latitude
+        integer  :: idOlon        ! observations longitude
+        integer  :: idOpro        ! observations provenance
         integer  :: idOPALbur     ! buried opal in sediment
         integer  :: idOPALsed     ! opal in sediment
         integer  :: idOtyp        ! observations type
@@ -242,6 +247,10 @@
         integer  :: idPONbur      ! buried PON in sediment
         integer  :: idPONsed      ! PON in sediment
         integer  :: idPwet        ! wet/dry mask on PSI-points
+        integer  :: idpthR        ! depths of RHO-points
+        integer  :: idpthU        ! depths of U-points
+        integer  :: idpthV        ! depths of V-points
+        integer  :: idpthW        ! depths of W-points
         integer  :: idRdir        ! river runoff direction
         integer  :: idRepo        ! river runoff ETA-positions
         integer  :: idRflg        ! river runoff flag
@@ -786,8 +795,11 @@
       logical :: load
 
       integer, parameter :: inp = 10
-      integer :: Lvar, i, ic, ie, is, j, ng
-      integer :: gtype, varid
+#ifdef DISTRIBUTE
+      integer :: Itile, Jtile
+#endif
+      integer :: Lvar, Ntiles, i, ic, ie, is, j, ng
+      integer :: gtype, tile, varid
 
       real(r8), parameter :: spv = 0.0_r8
       real(r8) :: offset, scale
@@ -1096,6 +1108,14 @@
               idtime=varid
             CASE ('idbath')
               idbath=varid
+            CASE ('idpthR')
+              idpthR=varid
+            CASE ('idpthU')
+              idpthU=varid
+            CASE ('idpthV')
+              idpthV=varid
+            CASE ('idpthW')
+              idpthW=varid
             CASE ('idFsur')
               idFsur=varid
             CASE ('idRzet')
@@ -1961,6 +1981,10 @@
               idVfx2=varid
 #endif
 #if defined FOUR_DVAR || defined VERIFICATION
+            CASE ('idBgEr')
+              idBgEr=varid
+            CASE ('idBgTh')
+              idBgTh=varid
             CASE ('idNLmi')
               idNLmi=varid
             CASE ('idNLmo')
@@ -1983,6 +2007,12 @@
               idOday=varid
             CASE ('idOerr')
               idOerr=varid
+            CASE ('idOlat')
+              idOlat=varid
+            CASE ('idOlon')
+              idOlon=varid
+            CASE ('idOpro')
+              idOpro=varid
             CASE ('idOtyp')
               idOtyp=varid
             CASE ('idOval')
@@ -3028,6 +3058,10 @@
      &        'variable: ',a,/,15x,'Need CASE construct for: ',a)
   80  FORMAT (/,' MOD_NCPARM - Error while reading information ',       &
      &        'for variable: ',a)
+  90  FORMAT (a,i2.2)
+ 100  FORMAT (a,a,i2.2)
+ 110  FORMAT (a)
+ 120  FORMAT (a,a)
 
       RETURN
       END SUBROUTINE initialize_ncparam

@@ -721,5 +721,427 @@
 
       RETURN
       END SUBROUTINE bc_w3d_tile
+
+!
+!***********************************************************************
+      SUBROUTINE dabc_r3d_tile (ng, tile,                               &
+     &                          LBi, UBi, LBj, UBj, LBk, UBk,           &
+     &                          A)
+!***********************************************************************
+!
+      USE mod_param
+      USE mod_boundary
+      USE mod_ncparam
+      USE mod_scalars
+!
+      USE exchange_3d_mod, ONLY : exchange_r3d_tile
+!
+!  Imported variable declarations.
+!
+      integer, intent(in) :: ng, tile
+      integer, intent(in) :: LBi, UBi, LBj, UBj, LBk, UBk
+!
+# ifdef ASSUMED_SHAPE
+      real(r8), intent(inout) :: A(LBi:,LBj:,LBk:)
+# else
+      real(r8), intent(inout) :: A(LBi:UBi,LBj:UBj,LBk:UBk)
+# endif
+!
+!  Local variable declarations.
+!
+      integer :: i, j, k
+
+# include "set_bounds.h"
+!
+!-----------------------------------------------------------------------
+!  East-West gradient boundary conditions.
+!-----------------------------------------------------------------------
+!
+      IF (.not.EWperiodic(ng)) THEN
+        IF (DOMAIN(ng)%Eastern_Edge(tile)) THEN
+          DO k=LBk,UBk
+            DO j=Jstr,Jend
+              IF (LBC_apply(ng)%east(j)) THEN
+                A(Iend+1,j,k)=A(Iend,j,k)
+              END IF
+            END DO
+          END DO
+        END IF
+
+        IF (DOMAIN(ng)%Western_Edge(tile)) THEN
+          DO k=LBk,UBk
+            DO j=Jstr,Jend
+              IF (LBC_apply(ng)%west(j)) THEN
+                A(Istr-1,j,k)=A(Istr,j,k)
+              END IF
+            END DO
+          END DO
+        END IF
+      END IF
+!
+!-----------------------------------------------------------------------
+!  North-South gradient boundary conditions.
+!-----------------------------------------------------------------------
+!
+      IF (.not.NSperiodic(ng)) THEN
+        IF (DOMAIN(ng)%Northern_Edge(tile)) THEN
+          DO k=LBk,UBk
+            DO i=Istr,Iend
+              IF (LBC_apply(ng)%north(i)) THEN
+                A(i,Jend+1,k)=A(i,Jend,k)
+              END IF
+            END DO
+          END DO
+        END IF
+
+        IF (DOMAIN(ng)%Southern_Edge(tile)) THEN
+          DO k=LBk,UBk
+            DO i=Istr,Iend
+              IF (LBC_apply(ng)%south(i)) THEN
+                A(i,Jstr-1,k)=A(i,Jstr,k)
+              END IF
+            END DO
+          END DO
+        END IF
+      END IF
+!
+!-----------------------------------------------------------------------
+!  Boundary corners.
+!-----------------------------------------------------------------------
+!
+      IF (.not.(EWperiodic(ng).or.NSperiodic(ng))) THEN
+        IF (DOMAIN(ng)%SouthWest_Corner(tile)) THEN
+          IF (LBC_apply(ng)%south(Istr-1).and.                          &
+     &        LBC_apply(ng)%west (Jstr-1)) THEN
+            DO k=LBk,UBk
+              A(Istr-1,Jstr-1,k)=0.5_r8*(A(Istr  ,Jstr-1,k)+            &
+     &                                   A(Istr-1,Jstr  ,k))
+            END DO
+          END IF
+        END IF
+        IF (DOMAIN(ng)%SouthEast_Corner(tile)) THEN
+          IF (LBC_apply(ng)%south(Iend+1).and.                          &
+     &        LBC_apply(ng)%east (Jstr-1)) THEN
+            DO k=LBk,UBk
+              A(Iend+1,Jstr-1,k)=0.5_r8*(A(Iend  ,Jstr-1,k)+            &
+     &                                   A(Iend+1,Jstr  ,k))
+            END DO
+          END IF
+        END IF
+        IF (DOMAIN(ng)%NorthWest_Corner(tile)) THEN
+          IF (LBC_apply(ng)%north(Istr-1).and.                          &
+     &        LBC_apply(ng)%west (Jend+1)) THEN
+            DO k=LBk,UBk
+              A(Istr-1,Jend+1,k)=0.5_r8*(A(Istr-1,Jend  ,k)+            &
+     &                                   A(Istr  ,Jend+1,k))
+            END DO
+          END IF
+        END IF
+        IF (DOMAIN(ng)%NorthEast_Corner(tile)) THEN
+          IF (LBC_apply(ng)%north(Iend+1).and.                          &
+     &        LBC_apply(ng)%east (Jend+1)) THEN
+            DO k=LBk,UBk
+              A(Iend+1,Jend+1,k)=0.5_r8*(A(Iend+1,Jend  ,k)+            &
+     &                                   A(Iend  ,Jend+1,k))
+            END DO
+          END IF
+        END IF
+      END IF
+!
+!-----------------------------------------------------------------------
+!  Apply periodic boundary conditions.
+!-----------------------------------------------------------------------
+!
+      IF (EWperiodic(ng).or.NSperiodic(ng)) THEN
+        CALL exchange_r3d_tile (ng, tile,                               &
+     &                          LBi, UBi, LBj, UBj, LBk, UBk,           &
+     &                          A)
+      END IF
+
+      RETURN
+      END SUBROUTINE dabc_r3d_tile
+
+!
+!***********************************************************************
+      SUBROUTINE dabc_u3d_tile (ng, tile,                               &
+     &                          LBi, UBi, LBj, UBj, LBk, UBk,           &
+     &                          A)
+!***********************************************************************
+!
+      USE mod_param
+      USE mod_boundary
+      USE mod_grid
+      USE mod_ncparam
+      USE mod_scalars
+!
+      USE exchange_3d_mod, ONLY : exchange_u3d_tile
+!
+!  Imported variable declarations.
+!
+      integer, intent(in) :: ng, tile
+      integer, intent(in) :: LBi, UBi, LBj, UBj, LBk, UBk
+!
+# ifdef ASSUMED_SHAPE
+      real(r8), intent(inout) :: A(LBi:,LBj:,LBk:)
+# else
+      real(r8), intent(inout) :: A(LBi:UBi,LBj:UBj,LBk:UBk)
+# endif
+!
+!  Local variable declarations.
+!
+      integer :: Imin, Imax
+      integer :: i, j, k
+
+# include "set_bounds.h"
+!
+!-----------------------------------------------------------------------
+!  East-West gradient boundary conditions.
+!-----------------------------------------------------------------------
+!
+      IF (.not.EWperiodic(ng)) THEN
+        IF (DOMAIN(ng)%Eastern_Edge(tile)) THEN
+          DO k=LBk,UBk
+            DO j=Jstr,Jend
+              IF (LBC_apply(ng)%east(j)) THEN
+                A(Iend+1,j,k)=A(Iend,j,k)
+              END IF
+            END DO
+          END DO
+        END IF
+
+        IF (DOMAIN(ng)%Western_Edge(tile)) THEN
+          DO k=LBk,UBk
+            DO j=Jstr,Jend
+              IF (LBC_apply(ng)%west(j)) THEN
+                A(Istr,j,k)=A(Istr+1,j,k)
+              END IF
+            END DO
+          END DO
+        END IF
+      END IF
+!
+!-----------------------------------------------------------------------
+!  North-South gradient boundary conditions.
+!-----------------------------------------------------------------------
+!
+      IF (.not.NSperiodic(ng)) THEN
+        IF (DOMAIN(ng)%Northern_Edge(tile)) THEN
+          DO k=LBk,UBk
+            DO i=IstrU,Iend
+              IF (LBC_apply(ng)%north(i)) THEN
+                A(i,Jend+1,k)=A(i,Jend,k)
+              END IF
+            END DO
+          END DO
+        END IF
+
+        IF (DOMAIN(ng)%Southern_Edge(tile)) THEN
+          DO k=LBk,UBk
+            DO i=IstrU,Iend
+              IF (LBC_apply(ng)%south(i)) THEN
+                A(i,Jstr-1,k)=A(i,Jstr,k)
+              END IF
+            END DO
+          END DO
+        END IF
+      END IF
+!
+!-----------------------------------------------------------------------
+!  Boundary corners.
+!-----------------------------------------------------------------------
+!
+      IF (.not.(EWperiodic(ng).or.NSperiodic(ng))) THEN
+        IF (DOMAIN(ng)%SouthWest_Corner(tile)) THEN
+          IF (LBC_apply(ng)%south(Istr  ).and.                          &
+     &        LBC_apply(ng)%west (Jstr-1)) THEN
+             DO k=LBk,UBk
+              A(Istr  ,Jstr-1,k)=0.5_r8*(A(Istr+1,Jstr-1,k)+            &
+     &                                   A(Istr  ,Jstr  ,k))
+            END DO
+          END IF
+        END IF
+        IF (DOMAIN(ng)%SouthEast_Corner(tile)) THEN
+          IF (LBC_apply(ng)%south(Iend+1).and.                          &
+     &        LBC_apply(ng)%east (Jstr-1)) THEN
+            DO k=LBk,UBk
+              A(Iend+1,Jstr-1,k)=0.5_r8*(A(Iend  ,Jstr-1,k)+            &
+     &                                   A(Iend+1,Jstr  ,k))
+            END DO
+          END IF
+        END IF
+        IF (DOMAIN(ng)%NorthWest_Corner(tile)) THEN
+          IF (LBC_apply(ng)%north(Istr  ).and.                          &
+     &        LBC_apply(ng)%west (Jend+1)) THEN
+            DO k=LBk,UBk
+              A(Istr  ,Jend+1,k)=0.5_r8*(A(Istr  ,Jend  ,k)+            &
+     &                                   A(Istr+1,Jend+1,k))
+            END DO
+          END IF
+        END IF
+        IF (DOMAIN(ng)%NorthEast_Corner(tile)) THEN
+          IF (LBC_apply(ng)%north(Iend+1).and.                          &
+     &        LBC_apply(ng)%east (Jend+1)) THEN
+            DO k=LBk,UBk
+              A(Iend+1,Jend+1,k)=0.5_r8*(A(Iend+1,Jend  ,k)+            &
+     &                                   A(Iend  ,Jend+1,k))
+            END DO
+          END IF
+        END IF
+      END IF
+!
+!-----------------------------------------------------------------------
+!  Apply periodic boundary conditions.
+!-----------------------------------------------------------------------
+!
+      IF (EWperiodic(ng).or.NSperiodic(ng)) THEN
+        CALL exchange_u3d_tile (ng, tile,                               &
+     &                          LBi, UBi, LBj, UBj, LBk, UBk,           &
+     &                          A)
+      END IF
+
+      RETURN
+      END SUBROUTINE dabc_u3d_tile
+
+!
+!***********************************************************************
+      SUBROUTINE dabc_v3d_tile (ng, tile,                               &
+     &                          LBi, UBi, LBj, UBj, LBk, UBk,           &
+     &                          A)
+!***********************************************************************
+!
+      USE mod_param
+      USE mod_boundary
+      USE mod_grid
+      USE mod_ncparam
+      USE mod_scalars
+!
+      USE exchange_3d_mod, ONLY : exchange_v3d_tile
+!
+!  Imported variable declarations.
+!
+      integer, intent(in) :: ng, tile
+      integer, intent(in) :: LBi, UBi, LBj, UBj, LBk, UBk
+!
+# ifdef ASSUMED_SHAPE
+      real(r8), intent(inout) :: A(LBi:,LBj:,:)
+# else
+      real(r8), intent(inout) :: A(LBi:UBi,LBj:UBj,LBk:UBk)
+# endif
+!
+!  Local variable declarations.
+!
+      integer :: Jmin, Jmax
+      integer :: i, j, k
+
+# include "set_bounds.h"
+!
+!-----------------------------------------------------------------------
+!  East-West boundary conditions: Closed (free-slip/no-slip) or
+!  gradient.
+!-----------------------------------------------------------------------
+!
+      IF (.not.EWperiodic(ng)) THEN
+        IF (DOMAIN(ng)%Eastern_Edge(tile)) THEN
+          DO k=LBk,UBk
+            DO j=JstrV,Jend
+              IF (LBC_apply(ng)%east(j)) THEN
+                A(Iend+1,j,k)=A(Iend,j,k)
+              END IF
+            END DO
+          END DO
+        END IF
+
+        IF (DOMAIN(ng)%Western_Edge(tile)) THEN
+          DO k=LBk,UBk
+            DO j=JstrV,Jend
+              IF (LBC_apply(ng)%west(j)) THEN
+                A(Istr-1,j,k)=A(Istr,j,k)
+              END IF
+            END DO
+          END DO
+        END IF
+      END IF
+!
+!-----------------------------------------------------------------------
+!  North-South gradient boundary conditions.
+!-----------------------------------------------------------------------
+!
+      IF (.not.NSperiodic(ng)) THEN
+        IF (DOMAIN(ng)%Northern_Edge(tile)) THEN
+          DO k=LBk,UBk
+            DO i=Istr,Iend
+              IF (LBC_apply(ng)%north(i)) THEN
+                A(i,Jend+1,k)=A(i,Jend,k)
+              END IF
+            END DO
+          END DO
+        END IF
+
+        IF (DOMAIN(ng)%Southern_Edge(tile)) THEN
+          DO k=LBk,UBk
+            DO i=Istr,Iend
+              IF (LBC_apply(ng)%south(i)) THEN
+                A(i,Jstr,k)=A(i,Jstr+1,k)
+              END IF
+            END DO
+          END DO
+        END IF
+      END IF
+!
+!-----------------------------------------------------------------------
+!  Boundary corners.
+!-----------------------------------------------------------------------
+!
+      IF (.not.(EWperiodic(ng).or.NSperiodic(ng))) THEN
+        IF (DOMAIN(ng)%SouthWest_Corner(tile)) THEN
+          IF (LBC_apply(ng)%south(Istr-1).and.                          &
+     &        LBC_apply(ng)%west (Jstr  )) THEN
+            DO k=LBk,UBk
+              A(Istr-1,Jstr  ,k)=0.5_r8*(A(Istr  ,Jstr  ,k)+            &
+     &                                   A(Istr-1,Jstr+1,k))
+            END DO
+          END IF
+        END IF
+        IF (DOMAIN(ng)%SouthEast_Corner(tile)) THEN
+          IF (LBC_apply(ng)%south(Iend+1).and.                          &
+     &        LBC_apply(ng)%east (Jstr  )) THEN
+            DO k=LBk,UBk
+              A(Iend+1,Jstr  ,k)=0.5_r8*(A(Iend  ,Jstr  ,k)+            &
+     &                                   A(Iend+1,Jstr+1,k))
+            END DO
+          END IF
+        END IF
+        IF (DOMAIN(ng)%NorthWest_Corner(tile)) THEN
+          IF (LBC_apply(ng)%north(Istr-1).and.                          &
+     &        LBC_apply(ng)%west (Jend+1)) THEN
+            DO k=LBk,UBk
+              A(Istr-1,Jend+1,k)=0.5_r8*(A(Istr-1,Jend  ,k)+            &
+     &                                   A(Istr  ,Jend+1,k))
+            END DO
+          END IF
+        END IF
+        IF (DOMAIN(ng)%NorthEast_Corner(tile)) THEN
+          IF (LBC_apply(ng)%north(Iend+1).and.                          &
+     &        LBC_apply(ng)%east (Jend+1)) THEN
+            DO k=LBk,UBk
+              A(Iend+1,Jend+1,k)=0.5_r8*(A(Iend+1,Jend  ,k)+            &
+     &                                   A(Iend  ,Jend+1,k))
+            END DO
+          END IF
+        END IF
+      END IF
+!
+!-----------------------------------------------------------------------
+!  Apply periodic boundary conditions.
+!-----------------------------------------------------------------------
+!
+      IF (EWperiodic(ng).or.NSperiodic(ng)) THEN
+        CALL exchange_v3d_tile (ng, tile,                               &
+     &                          LBi, UBi, LBj, UBj, LBk, UBk,           &
+     &                          A)
+      END IF
+
+      RETURN
+      END SUBROUTINE dabc_v3d_tile
 #endif
       END MODULE bc_3d_mod

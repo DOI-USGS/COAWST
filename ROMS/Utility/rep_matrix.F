@@ -2,6 +2,7 @@
 #if defined WEAK_CONSTRAINT && defined OBS_IMPACT
       SUBROUTINE rep_matrix (ng, model, outLoop, NinnLoop)
 !
+!svn $Id: rep_matrix.F 807 2016-07-09 02:03:55Z arango $
 !================================================== Hernan G. Arango ===
 !  Copyright (c) 2002-2016 The ROMS/TOMS Group       Andrew M. Moore   !
 !    Licensed under a MIT/X style license                              !
@@ -47,6 +48,9 @@
       real(r8), dimension(NinnLoop,NinnLoop) :: ztriT, zLT, zLTt
       real(r8), dimension(NinnLoop) :: tau, zwork1, zeref
 # endif
+# ifdef RPCG
+      real(r8), dimension(NinnLoop) :: zfact
+# endif
 !
 !-----------------------------------------------------------------------
 !  Compute observation impact on the weak constraint 4DVAR data
@@ -61,6 +65,15 @@
         DO innLoop=1,NinnLoop
           zt(innLoop)=0.0_r8
         END DO
+# ifdef RPCG
+        DO innLoop=1,NinnLoop
+          IF (innLoop.eq.1) THEN
+            zfact(innLoop)=1.0_r8/cg_QG(1,outLoop)
+          ELSE
+            zfact(innLoop)=1.0_r8/cg_beta(innLoop,outLoop)
+          ENDIF
+        END DO
+# endif
 !
 !  Multiply TLmodVal by the tranpose matrix of Lanczos vectors.
 !  Note that the factor of 1/SQRT(ObsErr) is added to convert to
@@ -69,9 +82,14 @@
         DO innLoop=1,NinnLoop
           DO iobs=1,Ndatum(ng)
             IF (ObsErr(iobs).NE.0.0_r8) THEN
+# ifdef RPCG
+              zt(innLoop)=zt(innLoop)+ObsScale(iobs)*                   &
+     &                    zcglwk(iobs,innLoop,outLoop)*TLmodVal(iobs)
+# else
               zt(innLoop)=zt(innLoop)+ObsScale(iobs)*                   &
      &                    zcglwk(iobs,innLoop,outLoop)*TLmodVal(iobs)/  &
      &                    SQRT(ObsErr(iobs))
+# endif
             END IF
           END DO
         END DO
@@ -175,16 +193,25 @@
 # endif
 !
 !  Finally multiply by the matrix of Lanczos vactors.
+# ifndef RPCG
 !  Note that the factor of 1/SQRT(ObsErr) is added to covert to
 !  x-space.
+# endif
 !
         DO iobs=1,Ndatum(ng)
           DO innLoop=1,NinnLoop
             IF (ObsErr(iobs).NE.0.0_r8) THEN
+# ifdef RPCG
+              ad_ObsVal(iobs)=ad_ObsVal(iobs)+                          &
+     &                        ObsScale(iobs)*                           &
+     &                        TLmodVal_S(iobs,innLoop,outLoop)*         &
+     &                        zu(innLoop)*zfact(innLoop)/ObsErr(iobs)
+#  else
               ad_ObsVal(iobs)=ad_ObsVal(iobs)+                          &
      &                        ObsScale(iobs)*                           &
      &                        zcglwk(iobs,innLoop,outLoop)*zu(innLoop)/ &
      &                        SQRT(ObsErr(iobs))
+#  endif
             END IF
           END DO
         END DO

@@ -105,7 +105,7 @@ balance(isVvel) =  T                      ! 3D momentum (u, v)
 ! Two types of Limited-Memory Preconditioner (LMP) are available
 ! (Tshimanga et al., 2008): spectral LMP and Ritz LMP.
 
-       Lprecond = T
+       Lprecond = F
 
 ! Switch to activate either Ritz Limited-Memory Preconditioner (T)
 ! or spectral Limited-Memory Preconditioner (F) to the IS4DVAR algorithm.
@@ -177,7 +177,7 @@ balance(isVvel) =  T                      ! 3D momentum (u, v)
  CnormB(isTvar) =  T T                    ! NT tracers
 
 ! Switches to compute the correlation normalization coefficients for
-! initial conditions error covariance.
+! surface forcing error covariance.
 
  CnormF(isUstr) =  T                      ! surface U-momentum stress
  CnormF(isVstr) =  T                      ! surface V-momentum stress
@@ -231,6 +231,16 @@ VdecayM(isUvel) == 100.0d0                                ! 3D U-momentum
 VdecayM(isVvel) == 100.0d0                                ! 3D V-momentum
 VdecayM(isTvar) == 100.0d0   100.0d0                      ! 1:NT tracers
 
+! Model error covariance: temporal decorrelation scales (days).
+! This scales are only used in weak-constraint data assimilation.
+
+TdecayM(isFsur) ==  1.0d0                                 ! free-surface
+TdecayM(isUbar) ==  1.0d0                                 ! 2D U-momentum
+TdecayM(isVbar) ==  1.0d0                                 ! 2D V-momentum
+TdecayM(isUvel) ==  1.0d0                                 ! 3D U-momentum
+TdecayM(isVvel) ==  1.0d0                                 ! 3D V-momentum
+TdecayM(isTvar) ==  1.0d0   1.0d0                         ! 1:NT tracers
+
 ! Initial conditions error covariance: horizontal, isotropic decorrelation
 ! scales (m).
 
@@ -275,6 +285,45 @@ VdecayB(isTvar) == 4*100.d0  4*100.d0                     ! 1:NT tracers
 HdecayF(isUstr) == 100.0d+3                       ! surface U-momentum stress
 HdecayF(isVstr) == 100.0d+3                       ! surface V-momentum stress
 HdecayF(isTsur) == 100.0d+3  100.0d+3             ! 1:NT surface tracers flux
+
+! Select flag for BackGround Quality Control (BGQC) of observations:
+!
+!      [1] Quality control in terms of state variable indices
+!      [2] Quality control in terms of observation provenance
+
+      bgqc_type == 1
+
+! If BGQC is in terms of state variables, set number of standard deviations
+! threshold to use in the quality control rejection of observations.
+!
+!   Use a large value (say, 1.0d+5) if you do not want to reject observations
+!   associated with a particular state variable.
+!
+!   Use a small value (typically, 4 standard deviations) to perform quality
+!   control of observations for a particular state variable.
+
+ S_bgqc(isFsur) == 1.0d+5                                 ! free-surface
+ S_bgqc(isUbar) == 1.0d+5                                 ! 2D U-momentum
+ S_bgqc(isVbar) == 1.0d+5                                 ! 2D V-momentum
+ S_bgqc(isUvel) == 1.0d+5                                 ! 3D U-momentum
+ S_bgqc(isVvel) == 1.0d+5                                 ! 3D V-momentum
+ S_bgqc(isTvar) == 4.0d0  4.0d0                           ! 1:NT tracers
+
+! If BGQC is in terms of observation provenance, set number of standard
+! deviations threshold to use in the quality control rejection of
+! observations.
+!
+!   Use a small value (say, 4 standard deviations) to perform quality
+!   control for the desired observation provenance(s).
+!
+!   Nprovenance:   Number of observation provenances to quality control
+!   Iprovenance:   Observation provenance indices to process [1:Nprovenance]
+!   P_bgqc:        Standard deviation threshold [1:Nprovenance]
+
+    Nprovenance == 2
+    Iprovenance == 6     7                ! ARGO Temperature and Salinity
+
+         P_bgqc == 4.0d0 4.0d0
 
 ! If applicable, set switches (T/F) used to adjust surface tracer flux,
 ! [1:NT,1:Ngrids].
@@ -341,6 +390,10 @@ HdecayF(isTsur) == 100.0d+3  100.0d+3             ! 1:NT surface tracers flux
 ! Input/output Lanczos vectors file name, [1:Ngrids].
 
         LCZname == ocean_lcz.nc
+
+! output time-evolved Lanczos vectors file name, [1:Ngrids].
+
+        LZEname == ocean_lze.nc
 
 ! Output model data at observation locations file name, [1:Ngrids].
 
@@ -678,7 +731,62 @@ HdecayF(isTsur) == 100.0d+3  100.0d+3             ! 1:NT surface tracers flux
 !                   HdecayF(isVstr)               wind V-stress
 !
 !------------------------------------------------------------------------------
-! 4DVAR adjustment switches
+! Background Quality Control (BCQC) of observations parameters.
+!------------------------------------------------------------------------------
+!
+!  bgqc_type      Flag to determine the type of background quality control:
+!
+!                    bgqc_type = 1    Background quality control in terms of
+!                                     the state variable index (1 - MstateVar)
+!                                     read from the input observation NetCDF,
+!                                     variable "obs_type".
+!
+!                                     It is general because include all the
+!                                     observation provenances for a particular
+!                                     state variable. For example, all the
+!                                     temperature ofservations.
+!
+!                    bgqc_type = 2    Background quality control in terms of
+!                                     the observation provenance index read
+!                                     from the input observation NetCDF,
+!                                     variable "obs_provenance".
+!
+!                                     It is specific because only include the
+!                                     observations for a particular provenance
+!                                     or instrument. For example, temperature
+!                                     observation from ARGO buoys.
+!
+!  S_bgqc         Number of standard deviations threshold to use in the quality
+!                 control rejection of observations in terms of the state
+!                 variable index.
+!
+!                    S_bgqc(isFsur)             free-surface
+!                    S_bgqc(isUbar)             2D U-momentum
+!                    S_bgqc(isVbar)             2D V-momentum
+!                    S_bgqc(isUvel)             3D U-momentum
+!                    S_bgqc(isVvel)             3D V-momentum
+!                    S_bgqc(isTvar)             NT tracers (4,NT,Ngrids)
+!
+!                 It used when bgqc_type = 1. Use a large value (say 1.0d+5)
+!                 to indicate that the observations are spread out over a wider
+!                 range of background values.
+!
+!  Nprovenance    Number of observation provenances to consider for background
+!                 quality control.  Used when bgqc_type = 2.
+!
+!  Iprovenance    Observation provenance index to consider for background
+!                 quality control.  Use the same index value as specified
+!                 in input observations NetCDF, variable "obs_provenance".
+!                 1:Nprovenance values are expected for each nested grid.
+!                 Used when bgqc_type = 2.
+!
+!  P_bgqc         Number of standard deviations threshold to use in the quality
+!                 control rejection of observations in terms of the provenance
+!                 index, 1:Nprovenance values are expected for each nested
+!                 grid. Used when bgqc_type = 2.
+!
+!------------------------------------------------------------------------------
+! 4DVAR adjustment switches.
 !------------------------------------------------------------------------------
 !
 !  Lstflux        Logical switches (T/F) used to adjust surface tracer flux,
@@ -743,6 +851,8 @@ HdecayF(isTsur) == 100.0d+3  100.0d+3             ! 1:NT surface tracers flux
 !  HSSname        Input/Output Hessian eigenvectors file name.
 !
 !  LCZname        Input/output Lanczos vectors file name.
+!
+!  LZEname        Output time-evolved Lanczos vectors file name.
 !
 !  MODname        Output model data at observations locations file name.
 !

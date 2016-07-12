@@ -573,7 +573,18 @@
      &   'Activate bed load sediment transport Soulsby formula.'
       is=LEN_TRIM(Coptions)+1
       Coptions(is:is+17)=' BEDLOAD_SOULSBY,'
-      sbed_load=sbed_load+1
+#endif
+#if defined BGQC && defined FOUR_DVAR
+      IF (Master) WRITE (stdout,20) 'BGQC',                             &
+     &   'Background quality control of observations.'
+      is=LEN_TRIM(Coptions)+1
+      Coptions(is:is+6)=' BGQC,'
+#endif
+#if defined BEOFS_ONLY && defined WEAK_CONSTRAINT
+      IF (Master) WRITE (stdout,20) 'BEOFS_ONLY',                       &
+     &   'Compute EOFs of the background error covariance matrix.'
+      is=LEN_TRIM(Coptions)+1
+      Coptions(is:is+12)=' BEOFS_ONLY,'
 #endif
 #ifdef BIO_FENNEL
       IF (Master) WRITE (stdout,20) 'BIO_FENNEL',                       &
@@ -581,6 +592,12 @@
       is=LEN_TRIM(Coptions)+1
       Coptions(is:is+12)=' BIO_FENNEL,'
       ibiology=ibiology+1
+#endif
+#if defined BNORM && defined HESSIAN_SV
+      IF (Master) WRITE (stdout,20) 'BNORM',                            &
+     &   'Background normalization of Hessian singular vectors.'
+      is=LEN_TRIM(Coptions)+1
+      Coptions(is:is+7)=' BNORM,'
 #endif
 #ifdef ESTUARYBGC 
       IF (Master) WRITE (stdout,20) 'ESTUARYBGC',                       &
@@ -946,11 +963,23 @@
       is=LEN_TRIM(Coptions)+1
       Coptions(is:is+10)=' ESMF_LIB,'
 #endif
+#ifdef ENKF_RESTART
+      IF (Master) WRITE (stdout,20) 'ENKF_RESTART',                     &
+     &   'Writting fields for offline Ensemble Kalman Filter.'
+      is=LEN_TRIM(Coptions)+1
+      Coptions(is:is+14)=' ENKF_RESTART,'
+#endif
 #ifdef ENSEMBLE
       IF (Master) WRITE (stdout,20) 'ENSEMBLE',                         &
      &   'Ensemble Forecasting Propagator.'
       is=LEN_TRIM(Coptions)+1
       Coptions(is:is+10)=' ENSEMBLE,'
+#endif
+#if defined EVOLVED_LCZ && defined FOUR_DVAR
+      IF (Master) WRITE (stdout,20) 'EVOLVED_LCZ',                      &
+     &   'Compute 4D-Var evolved Hessian singular vectors.'
+      is=LEN_TRIM(Coptions)+1
+      Coptions(is:is+13)=' EVOLVED_LCZ,'
 #endif
 #ifdef FASTICE_CLIMATOLOGY
       IF (Master) WRITE(stdout,20) 'FASTICE_CLIMATOLOGY',               &
@@ -1058,6 +1087,12 @@
       is=LEN_TRIM(Coptions)+1
       Coptions(is:is+12)=' !FULL_GRID,'
 # endif
+#endif
+#if defined GEOPOTENTIAL_HCONV && defined FOUR_DVAR && defined SOLVE3D
+      IF (Master) WRITE (stdout,20) 'GEOPOTENTIAL_HCONV',               &
+     &   'Horizontal convolutions along geopetential surfaces.'
+      is=LEN_TRIM(Coptions)+1
+      Coptions(is:is+20)=' GEOPOTENTIAL_HCONV,'
 #endif
 #ifdef GLOBAL_PERIODIC
       IF (Master) WRITE (stdout,20) 'GLOBAL_PERIODIC',                  &
@@ -1216,6 +1251,12 @@
       is=LEN_TRIM(Coptions)+1
       Coptions(is:is+9)=' IMPULSE,'
 #endif
+#if defined LIMIT_STFLX_COOLING && defined SOLVE3D
+      IF (Master) WRITE (stdout,20) 'LIMIT_STFLX_COOLING',              &
+     &   'Suppress further cooling if SST is at freezing point.'
+      is=LEN_TRIM(Coptions)+1
+      Coptions(is:is+21)=' LIMIT_STFLX_COOLING,'
+#endif
 #ifdef INNER_PRODUCT
       IF (Master) WRITE (stdout,20) 'INNER_PRODUCT',                    &
      &   'Tangent/Adjoint State Matrices Inner Product Test.'
@@ -1274,6 +1315,12 @@
      &   'Kantha and Clayson stability function formulation.'
       is=LEN_TRIM(Coptions)+1
       Coptions(is:is+16)=' KANTHA_CLAYSON,'
+#endif
+#if defined LCZ_FINAL && defined FOUR_DVAR
+      IF (Master) WRITE (stdout,20) 'LCZ_FINAL',                        &
+     &   'Compute 4D-Var Hessian singular vectors.'
+      is=LEN_TRIM(Coptions)+1
+      Coptions(is:is+11)=' LCZ_FINAL,'
 #endif
 #ifdef LMD_BKPP
       IF (Master) WRITE (stdout,20) 'LMD_BKPP',                         &
@@ -2016,6 +2063,12 @@
       is=LEN_TRIM(Coptions)+1
       Coptions(is:is+10)=' RHO_SURF,'
 #endif
+#if defined RPCG && defined WEAK_CONSTRAINT
+      IF (Master) WRITE (stdout,20) 'RPCG',                             &
+     &   'Restricted B-preconditioned Lanczos minimization.'
+      is=LEN_TRIM(Coptions)+1
+      Coptions(is:is+6)=' RPCG,'
+#endif
 #if defined RP_AVERAGES && defined TL_IOMS
       IF (Master) WRITE (stdout,20) 'RP_AVERAGES',                      &
      &   'Writing out time-averaged representer model fields.'
@@ -2196,6 +2249,12 @@
      &   'Subtract snow from total precip (rain).'
       is=LEN_TRIM(Coptions)+1
       Coptions(is:is+16)=' SNOW_FROM_RAIN,'
+#endif
+#ifdef SRELAXATION
+      IF (Master) WRITE (stdout,20) 'SRELAXATION',                      &
+     &   'Surface salinity relaxation as surface flux.'
+      is=LEN_TRIM(Coptions)+1
+      Coptions(is:is+13)=' SRELAXATION,'
 #endif
 #ifdef SOLAR_SOURCE
       IF (Master) WRITE (stdout,20) 'SOLAR_SOURCE',                     &
@@ -2395,6 +2454,12 @@
       is=LEN_TRIM(Coptions)+1
       Coptions(is:is+9)=' TANGENT,'
 #endif
+#if defined TIME_CONV && defined WEAK_CONSTRAINT
+      IF (Master) WRITE (stdout,20) 'TIME_CONV',                        &
+     &   'Weak-constraint 4D-Var time convolution.'
+      is=LEN_TRIM(Coptions)+1
+      Coptions(is:is+11)=' TIME_CONV,'
+#endif
 #if defined TIDES_ASTRO
       IF (Master) WRITE (stdout,20) 'TIDES_ASTRO',                      &
      &   'Compute astronomical (long-period tide) corrections.'
@@ -2452,6 +2517,34 @@
       Coptions(is:is+10)=' TS_HSIMT,'
       itrcHadv=itrcHadv+1
       itrcVadv=itrcVadv+1
+# endif
+# if defined TS_MIX_CLIMA && \
+    (defined TS_DIF2      || defined TS_DIF4)
+      IF (Master) WRITE (stdout,20) 'TS_MIX_CLIMA',                     &
+     &   'Horizontal diffusion of tracer perturbation (T-Tclm).'
+      is=LEN_TRIM(Coptions)+1
+      Coptions(is:is+14)=' TS_MIX_CLIMA,'
+# endif
+# if defined TS_MIX_MAX_SLOPE && defined MIX_ISO_TS && \
+    (defined TS_DIF2          || defined TS_DIF4)
+      IF (Master) WRITE (stdout,20) 'TS_MIX_MAX_SLOPE',                 &
+     &   'Maximum density slope in isopycnal diffusion.'
+      is=LEN_TRIM(Coptions)+1
+      Coptions(is:is+18)=' TS_MIX_MAX_SLOPE,'
+# endif
+# if defined TS_MIX_MAX_SLOPE && defined MIX_ISO_TS && \
+    (defined TS_DIF2          || defined TS_DIF4)
+      IF (Master) WRITE (stdout,20) 'TS_MIX_MAX_STRAT',                 &
+     &   'Minimum density stratification in isopycnal diffusion.'
+      is=LEN_TRIM(Coptions)+1
+      Coptions(is:is+18)=' TS_MIX_MAX_STRAT,'
+# endif
+# if defined TS_MIX_STABILITY && \
+    (defined TS_DIF2          || defined TS_DIF4)
+      IF (Master) WRITE (stdout,20) 'TS_MIX_STABILITY',                 &
+     &   'Weighting diffusion between two time levels.'
+      is=LEN_TRIM(Coptions)+1
+      Coptions(is:is+18)=' TS_MIX_STABILITY,'
 # endif
 # ifdef TS_MPDATA
       IF (Master) WRITE (stdout,20) 'TS_MPDATA',                        &

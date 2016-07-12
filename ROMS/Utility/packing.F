@@ -1,6 +1,6 @@
 #include "cppdefs.h"
 
-#if defined OPT_PERTURBATION
+#if defined OPT_PERTURBATION || defined FORCING_SV
 # define ENERGYNORM_SCALE
 #endif
 #if defined STOCHASTIC_OPT
@@ -25,7 +25,7 @@
 
 #ifdef PROPAGATOR
 !
-!svn $Id: packing.F 429 2009-12-20 17:30:26Z arango $
+!svn $Id: packing.F 807 2016-07-09 02:03:55Z arango $
 !================================================== Hernan G. Arango ===
 !  Copyright (c) 2002-2016 The ROMS/TOMS Group       Andrew M. Moore   !
 !    Licensed under a MIT/X style license                              !
@@ -404,10 +404,9 @@
      &                   OCEAN(ng) % f_u,                               &
      &                   OCEAN(ng) % f_v,                               &
      &                   FORCES(ng) % ad_stflx,                         &
-#  else
+#  endif
      &                   OCEAN(ng) % f_ubar,                            &
      &                   OCEAN(ng) % f_vbar,                            &
-#  endif
      &                   OCEAN(ng) % f_zeta,                            &
      &                   FORCES(ng) % ad_sustr,                         &
      &                   FORCES(ng) % ad_svstr)
@@ -445,9 +444,8 @@
 #  ifdef SOLVE3D
      &                         Hz,                                      &
      &                         f_t, f_u, f_v, ad_stflx,                 &
-#  else
-     &                         f_ubar, f_vbar,                          &
 #  endif
+     &                         f_ubar, f_vbar,                          &
      &                         f_zeta, ad_sustr, ad_svstr)
 !***********************************************************************
 !
@@ -457,6 +455,19 @@
       USE mod_ncparam
       USE mod_scalars
       USE mod_ocean
+!
+#  ifdef FORCING_SV
+      USE ad_exchange_2d_mod
+#   ifdef SOLVE3D
+      USE ad_exchange_3d_mod
+#   endif
+#   ifdef DISTRIBUTE
+      USE mp_exchange_mod, ONLY : ad_mp_exchange2d
+#    ifdef SOLVE3D
+      USE mp_exchange_mod, ONLY : ad_mp_exchange3d, ad_mp_exchange4d
+#    endif
+#   endif
+#  endif
 !
 !  Imported variable declarations.
 !
@@ -487,10 +498,9 @@
       real(r8), intent(inout) :: f_u(LBi:,LBj:,:)
       real(r8), intent(inout) :: f_v(LBi:,LBj:,:)
       real(r8), intent(inout) :: ad_stflx(LBi:,LBj:,:)
-#   else
+#   endif
       real(r8), intent(inout) :: f_ubar(LBi:,LBj:)
       real(r8), intent(inout) :: f_vbar(LBi:,LBj:)
-#   endif
       real(r8), intent(inout) :: f_zeta(LBi:,LBj:)
       real(r8), intent(inout) :: ad_sustr(LBi:,LBj:)
       real(r8), intent(inout) :: ad_svstr(LBi:,LBj:)
@@ -513,10 +523,9 @@
       real(r8), intent(inout) :: f_u(LBi:UBi,LBj:UBj,N(ng))
       real(r8), intent(inout) :: f_v(LBi:UBi,LBj:UBj,N(ng))
       real(r8), intent(inout) :: ad_stflx(LBi:UBi,LBj:UBj,NT(ng))
-#   else
+#   endif
       real(r8), intent(inout) :: f_ubar(LBi:UBi,LBj:UBj)
       real(r8), intent(inout) :: f_vbar(LBi:UBi,LBj:UBj)
-#   endif
       real(r8), intent(inout) :: f_zeta(LBi:UBi,LBj:UBj)
       real(r8), intent(inout) :: ad_sustr(LBi:UBi,LBj:UBj)
       real(r8), intent(inout) :: ad_svstr(LBi:UBi,LBj:UBj)
@@ -541,6 +550,12 @@
 
       real(r8) :: cff, scale
 
+#  ifdef SOLVE3D
+      real(r8) :: cff1, cff2
+      real(r8), dimension(IminS:ImaxS,0:N(ng)) :: CF
+      real(r8), dimension(IminS:ImaxS,0:N(ng)) :: DC
+#  endif
+
 #  include "set_bounds.h"
 
 #  ifdef DISTRIBUTE
@@ -554,6 +569,57 @@
       DO is=Mstr,Mend
         ad_state(is)=Aspv
       END DO
+#  endif
+
+#  ifdef FORCING_SV
+!
+!  Impose adjoint periodic boundary conditions as appropriate.
+!
+#   ifdef DISTRIBUTE
+      CALL ad_mp_exchange2d (ng, tile, iADM, 1,                         &
+     &                    LBi, UBi, LBj, UBj,                           &
+     &                    NghostPoints,                                 &
+     &                    EWperiodic(ng), NSperiodic(ng),               &
+     &                    f_zeta)
+#    ifndef SOLVE3D
+      CALL ad_mp_exchange2d (ng, tile, iADM, 2,                         &
+     &                    LBi, UBi, LBj, UBj,                           &
+     &                    NghostPoints,                                 &
+     &                    EWperiodic(ng), NSperiodic(ng),               &
+     &                    f_ubar, f_vbar)
+#    else
+      CALL ad_mp_exchange3d (ng, tile, iADM, 2,                         &
+     &                    LBi, UBi, LBj, UBj, 1, N(ng),                 &
+     &                    NghostPoints,                                 &
+     &                    EWperiodic(ng), NSperiodic(ng), f_u, f_v)
+      CALL ad_mp_exchange4d (ng, tile, iADM, 1,                         &
+     &                    LBi, UBi, LBj, UBj, 1, N(ng), 1, NT(ng),      &
+     &                    NghostPoints,                                 &
+     &                    EWperiodic(ng), NSperiodic(ng), f_t)
+#    endif
+#   endif
+!
+      IF (EWperiodic(ng).or.NSperiodic(ng)) THEN
+        CALL ad_exchange_r2d_tile (ng, tile,                            &
+     &                          LBi, UBi, LBj, UBj, f_zeta)
+#   ifndef SOLVE3D
+        CALL ad_exchange_u2d_tile (ng, tile,                            &
+     &                          LBi, UBi, LBj, UBj, f_ubar)
+        CALL ad_exchange_v2d_tile (ng, tile,                            &
+     &                          LBi, UBi, LBj, UBj, f_vbar)
+#   else
+        CALL ad_exchange_u3d_tile (ng, tile,                            &
+     &                          LBi, UBi, LBj, UBj, 1, N(ng), f_u)
+        CALL ad_exchange_v3d_tile (ng, tile,                            &
+     &                          LBi, UBi, LBj, UBj, 1, N(ng), f_v)
+      DO itrc=1,NT(ng)
+          CALL ad_exchange_r3d_tile (ng, tile,                          &
+     &                            LBi, UBi, LBj, UBj, 1, N(ng),         &
+     &                            f_t(:,:,:,itrc))
+      END DO
+#   endif
+      END IF
+
 #  endif
 !
 !-----------------------------------------------------------------------
@@ -757,13 +823,19 @@
         Joff=1
 #   endif
 #  endif
+#  ifdef ENERGYNORM_SCALE
+        scale=1.0_r8/SQRT(0.5_r8*g*rho0)
+#  else
         scale=1.0_r8
+#  endif
         DO j=JR_RANGE
           DO i=IR_RANGE
 #  ifdef MASKING
             IF (rmask(i,j).gt.0.0_r8) THEN
               is=IJwaterR(i,j)+offset(isFsur)
               ad_state(is)=scale*f_zeta(i,j)
+              f_zeta(i,j)=0.0_r8
+            ELSE
               f_zeta(i,j)=0.0_r8
             END IF
 #  else
@@ -791,13 +863,22 @@
         Joff=1
 #    endif
 #   endif
+#   ifdef ENERGYNORM_SCALE
+        cff=0.25_r8*rho0
+#   else
         scale=1.0_r8
+#   endif
         DO j=JR_RANGE
           DO i=IU_RANGE
+#   ifdef ENERGYNORM_SCALE
+            scale=1.0_r8/SQRT(cff*(h(i-1,j)+h(i,j)))
+#   endif
 #   ifdef MASKING
             IF (umask(i,j).gt.0.0_r8) THEN
               is=IJwaterU(i,j)+offset(isUbar)
               ad_state(is)=scale*f_ubar(i,j)
+              f_ubar(i,j)=0.0_r8
+            ELSE
               f_ubar(i,j)=0.0_r8
             END IF
 #   else
@@ -823,13 +904,22 @@
         Joff=1+Voff
 #    endif
 #   endif
+#   ifdef ENERGYNORM_SCALE
+        cff=0.25_r8*rho0
+#   else
         scale=1.0_r8
+#   endif
         DO j=JV_RANGE
           DO i=IR_RANGE
+#   ifdef ENERGYNORM_SCALE
+            scale=1.0_r8/SQRT(cff*(h(i,j-1)+h(i,j)))
+#   endif
 #   ifdef MASKING
             IF (vmask(i,j).gt.0.0_r8) THEN
               is=IJwaterV(i,j)+offset(isVbar)
               ad_state(is)=scale*f_vbar(i,j)
+              f_vbar(i,j)=0.0_r8
+            ELSE
               f_vbar(i,j)=0.0_r8
             END IF
 #   else
@@ -846,6 +936,39 @@
 !  Load adjoint of 3D U-velocity.
 !
       IF (SCALARS(ng)%Fstate(isUvel)) THEN
+!
+!   Compute the adjoint forcing for tl_ubar based on f_u.
+!
+        DO j=JR_RANGE
+          DO i=IU_RANGE
+            DC(i,0)=0.0_r8
+            CF(i,0)=0.0_r8
+          END DO
+          DO k=1,N(ng)
+            DO i=IU_RANGE
+              DC(i,k)=0.5_r8*(Hz(i,j,k)+Hz(i-1,j,k))
+              DC(i,0)=DC(i,0)+DC(i,k)
+            END DO
+          END DO
+          DO i=IU_RANGE
+            cff2=f_ubar(i,j)
+            f_ubar(i,j)=0.0_r8
+#  ifdef MASKING
+            cff2=cff2*umask(i,j)
+#  endif
+            cff1=1.0_r8/DC(i,0)
+            CF(i,0)=cff2*cff1
+            cff2=0.0_r8
+          END DO
+          DO k=1,N(ng)
+            DO i=IU_RANGE
+              f_u(i,j,k)=f_u(i,j,k)+DC(i,k)*CF(i,0)
+            END DO
+          END DO
+          DO i=IU_RANGE
+            CF(i,0)=0.0_r8
+          END DO
+        END DO
 #   ifndef MASKING
 #    ifdef FULL_GRID
         Imax=Lm(ng)+1
@@ -859,7 +982,11 @@
         Joff=1
 #    endif
 #   endif
+#   ifdef ENERGYNORM_SCALE
+        cff=0.25_r8*rho0
+#   else
         scale=1.0_r8
+#   endif
         DO k=1,N(ng)
 #   ifdef MASKING
           iadd=(k-1)*NwaterU(ng)+offset(isUvel)
@@ -868,10 +995,15 @@
 #   endif
           DO j=JR_RANGE
             DO i=IU_RANGE
+#   ifdef ENERGYNORM_SCALE
+              scale=1.0_r8/SQRT(cff*(Hz(i-1,j,k)+Hz(i,j,k)))
+#   endif
 #   ifdef MASKING
               IF (umask(i,j).gt.0.0_r8) THEN
                 is=IJwaterU(i,j)+iadd
                 ad_state(is)=scale*f_u(i,j,k)
+                f_u(i,j,k)=0.0_r8
+              ELSE
                 f_u(i,j,k)=0.0_r8
               END IF
 #   else
@@ -887,6 +1019,41 @@
 !  Load adjoint of 3D V-velocity.
 !
       IF (SCALARS(ng)%Fstate(isVvel)) THEN
+!
+!   Compute the adjoint forcing for tl_vbar based on f_v.
+!
+        DO j=JV_RANGE
+          IF (j.ge.JstrM) THEN
+            DO i=IR_RANGE
+              DC(i,0)=0.0_r8
+              CF(i,0)=0.0_r8
+            END DO
+            DO k=1,N(ng)
+              DO i=IR_RANGE
+                DC(i,k)=0.5_r8*(Hz(i,j,k)+Hz(i,j-1,k))
+                DC(i,0)=DC(i,0)+DC(i,k)
+              END DO
+            END DO
+            DO i=IR_RANGE
+              cff2=f_vbar(i,j)
+              f_vbar(i,j)=0.0_r8
+#  ifdef MASKING
+              cff2=cff2*vmask(i,j)
+#  endif
+              cff1=1.0_r8/DC(i,0)
+              CF(i,0)=cff2*cff1
+              cff2=0.0_r8
+            END DO
+            DO k=1,N(ng)
+              DO i=IR_RANGE
+                f_v(i,j,k)=f_v(i,j,k)+DC(i,k)*CF(i,0)
+              END DO
+            END DO
+            DO i=IR_RANGE
+              CF(i,0)=0.0_r8
+            END DO
+          END IF
+        END DO
 #   ifndef MASKING
 #    ifdef FULL_GRID
         Imax=Lm(ng)+2
@@ -900,7 +1067,11 @@
         Joff=1+Voff
 #    endif
 #   endif
+#   ifdef ENERGYNORM_SCALE
+        cff=0.25_r8*rho0
+#   else
         scale=1.0_r8
+#   endif
         DO k=1,N(ng)
 #   ifdef MASKING
           iadd=(k-1)*NwaterV(ng)+offset(isVvel)
@@ -909,10 +1080,15 @@
 #   endif
           DO j=JV_RANGE
             DO i=IR_RANGE
+#   ifdef ENERGYNORM_SCALE
+              scale=1.0_r8/SQRT(cff*(Hz(i,j-1,k)+Hz(i,j,k)))
+#   endif
 #   ifdef MASKING
               IF (vmask(i,j).gt.0.0_r8) THEN
                 is=IJwaterV(i,j)+iadd
                 ad_state(is)=scale*f_v(i,j,k)
+                f_v(i,j,k)=0.0_r8
+              ELSE
                 f_v(i,j,k)=0.0_r8
               END IF
 #   else
@@ -942,7 +1118,17 @@
           Joff=1
 #    endif
 #   endif
+#   ifdef ENERGYNORM_SCALE
+          IF (itrc.eq.itemp) THEN
+            cff=0.5_r8*rho0*Tcoef(ng)*Tcoef(ng)*g*g/bvf_bak
+          ELSE IF (itrc.eq.isalt) THEN
+            cff=0.5_r8*rho0*Scoef(ng)*Scoef(ng)*g*g/bvf_bak
+          ELSE
+            cff=0.5_r8*rho0*Scoef(ng)*Scoef(ng)*g*g/bvf_bak
+          END IF
+#   else
           scale=1.0_r8
+#   endif
           DO k=1,N(ng)
 #   ifdef MASKING
             iadd=(k-1)*NwaterR(ng)+offset(isTvar(itrc))
@@ -951,10 +1137,15 @@
 #   endif
             DO j=JR_RANGE
               DO i=IR_RANGE
+#   ifdef ENERGYNORM_SCALE
+                scale=1.0_r8/SQRT(cff*Hz(i,j,k))
+#   endif
 #   ifdef MASKING
                 IF (rmask(i,j).gt.0.0_r8) THEN
                   is=IJwaterR(i,j)+iadd
                   ad_state(is)=scale*f_t(i,j,k,itrc)
+                  f_t(i,j,k,itrc)=0.0_r8
+                ELSE
                   f_t(i,j,k,itrc)=0.0_r8
                 END IF
 #   else
@@ -6220,10 +6411,9 @@
      &                     OCEAN(ng) % f_t,                             &
      &                     OCEAN(ng) % f_u,                             &
      &                     OCEAN(ng) % f_v,                             &
-#  else
+#  endif
      &                     OCEAN(ng) % f_ubar,                          &
      &                     OCEAN(ng) % f_vbar,                          &
-#  endif
      &                     OCEAN(ng) % f_zeta,                          &
 #  ifdef SOLVE3D
      &                     FORCES(ng) % tl_stflx,                       &
@@ -6255,9 +6445,8 @@
 #  ifdef SOLVE3D
      &                           Hz,                                    &
      &                           f_t, f_u, f_v,                         &
-#  else
-     &                           f_ubar, f_vbar,                        &
 #  endif
+     &                           f_ubar, f_vbar,                        &
      &                           f_zeta,                                &
 #  ifdef SOLVE3D
      &                           tl_stflx,                              &
@@ -6271,6 +6460,19 @@
       USE mod_ncparam
       USE mod_ocean
       USE mod_scalars
+!
+#  ifdef FORCING_SV
+      USE exchange_2d_mod
+#   ifdef SOLVE3D
+      USE exchange_3d_mod
+#   endif
+#   ifdef DISTRIBUTE
+      USE mp_exchange_mod, ONLY : mp_exchange2d
+#    ifdef SOLVE3D
+      USE mp_exchange_mod, ONLY : mp_exchange3d, mp_exchange4d
+#    endif
+#   endif
+#  endif
 !
 !  Imported variable declarations.
 !
@@ -6302,10 +6504,9 @@
       real(r8), intent(inout) :: f_u(LBi:,LBj:,:)
       real(r8), intent(inout) :: f_v(LBi:,LBj:,:)
       real(r8), intent(inout) :: tl_stflx(LBi:,LBj:,:)
-#   else
+#   endif
       real(r8), intent(inout) :: f_ubar(LBi:,LBj:)
       real(r8), intent(inout) :: f_vbar(LBi:,LBj:)
-#   endif
       real(r8), intent(inout) :: f_zeta(LBi:,LBj:)
       real(r8), intent(inout) :: tl_sustr(LBi:,LBj:)
       real(r8), intent(inout) :: tl_svstr(LBi:,LBj:)
@@ -6328,10 +6529,9 @@
       real(r8), intent(inout) :: f_u(LBi:UBi,LBj:UBj,N(ng))
       real(r8), intent(inout) :: f_v(LBi:UBi,LBj:UBj,N(ng))
       real(r8), intent(inout) :: tl_stflx(LBi:UBi,LBj:UBj,NT(ng))
-#   else
+#   endif
       real(r8), intent(inout) :: f_ubar(LBi:UBi,LBj:UBj)
       real(r8), intent(inout) :: f_vbar(LBi:UBi,LBj:UBj)
-#   endif
       real(r8), intent(inout) :: f_zeta(LBi:UBi,LBj:UBj)
       real(r8), intent(inout) :: tl_sustr(LBi:UBi,LBj:UBj)
       real(r8), intent(inout) :: tl_svstr(LBi:UBi,LBj:UBj)
@@ -6352,6 +6552,12 @@
 #  endif
 
       real(r8) :: cff, scale
+
+# ifdef SOLVE3D
+      real(r8) :: cff1, cff2
+      real(r8), dimension(IminS:ImaxS,0:N(ng)) :: CF
+      real(r8), dimension(IminS:ImaxS,0:N(ng)) :: DC
+# endif
 
 #  include "set_bounds.h"
 !
@@ -6556,7 +6762,11 @@
         Joff=1
 #   endif
 #  endif
+#  ifdef ENERGYNORM_SCALE
+        scale=1.0_r8/SQRT(0.5_r8*g*rho0)
+#  else
         scale=1.0_r8
+#  endif
         DO j=JR_RANGE
           DO i=IR_RANGE
 #  ifdef MASKING
@@ -6590,9 +6800,16 @@
         Joff=1
 #    endif
 #   endif
+#   ifdef ENERGYNORM_SCALE
+        cff=0.25_r8*rho0
+#   else
         scale=1.0_r8
+#   endif
         DO j=JR_RANGE
           DO i=IU_RANGE
+#   ifdef ENERGYNORM_SCALE
+            scale=1.0_r8/SQRT(cff*(h(i-1,j)+h(i,j)))
+#   endif
 #   ifdef MASKING
             IF (umask(i,j).gt.0.0_r8) THEN
               is=IJwaterU(i,j)+offset(isUbar)
@@ -6622,9 +6839,16 @@
         Joff=1+Voff
 #    endif
 #   endif
+#   ifdef ENERGYNORM_SCALE
+        cff=0.25_r8*rho0
+#   else
         scale=1.0_r8
+#   endif
         DO j=JV_RANGE
           DO i=IR_RANGE
+#   ifdef ENERGYNORM_SCALE
+            scale=1.0_r8/SQRT(cff*(h(i,j-1)+h(i,j)))
+#   endif
 #   ifdef MASKING
             IF (vmask(i,j).gt.0.0_r8) THEN
               is=IJwaterV(i,j)+offset(isVbar)
@@ -6658,7 +6882,11 @@
         Joff=1
 #    endif
 #   endif
+#   ifdef ENERGYNORM_SCALE
+        cff=0.25_r8*rho0
+#   else
         scale=1.0_r8
+#   endif
         DO k=1,N(ng)
 #   ifdef MASKING
           iadd=(k-1)*NwaterU(ng)+offset(isUvel)
@@ -6667,6 +6895,9 @@
 #   endif
           DO j=JR_RANGE
             DO i=IU_RANGE
+#   ifdef ENERGYNORM_SCALE
+              scale=1.0_r8/SQRT(cff*(Hz(i-1,j,k)+Hz(i,j,k)))
+#   endif
 #   ifdef MASKING
               IF (umask(i,j).gt.0.0_r8) THEN
                 is=IJwaterU(i,j)+iadd
@@ -6679,6 +6910,30 @@
               f_u(i,j,k)=scale*state(is)
 #   endif
             END DO
+          END DO
+        END DO
+!
+!   Compute the forcing forcing for tl_ubar based on f_u.
+!
+        DO j=JR_RANGE
+          DO i=IU_RANGE
+            DC(i,0)=0.0_r8
+            CF(i,0)=0.0_r8
+          END DO
+          DO k=1,N(ng)
+            DO i=IU_RANGE
+              DC(i,k)=0.5_r8*(Hz(i,j,k)+Hz(i-1,j,k))
+              DC(i,0)=DC(i,0)+DC(i,k)
+              CF(i,0)=CF(i,0)+DC(i,k)*f_u(i,j,k)
+            END DO
+          END DO
+          DO i=IU_RANGE
+            cff1=1.0_r8/DC(i,0)
+            cff2=CF(i,0)*cff1
+#  ifdef MASKING
+            cff2=cff2*umask(i,j)
+#  endif
+            f_ubar(i,j)=cff2
           END DO
         END DO
       END IF
@@ -6699,7 +6954,11 @@
         Joff=1+Voff
 #    endif
 #   endif
+#   ifdef ENERGYNORM_SCALE
+        cff=0.25_r8*rho0
+#   else
         scale=1.0_r8
+#   endif
         DO k=1,N(ng)
 #   ifdef MASKING
           iadd=(k-1)*NwaterV(ng)+offset(isVvel)
@@ -6708,6 +6967,9 @@
 #   endif
           DO j=JV_RANGE
             DO i=IR_RANGE
+#   ifdef ENERGYNORM_SCALE
+              scale=1.0_r8/SQRT(cff*(Hz(i,j-1,k)+Hz(i,j,k)))
+#   endif
 #   ifdef MASKING
               IF (vmask(i,j).gt.0.0_r8) THEN
                 is=IJwaterV(i,j)+iadd
@@ -6721,6 +6983,32 @@
 #   endif
             END DO
           END DO
+        END DO
+!
+!   Compute the forcing forcing for tl_vbar based on f_v.
+!
+        DO j=JV_RANGE
+          IF (j.ge.JstrM) THEN
+            DO i=IR_RANGE
+              DC(i,0)=0.0_r8
+              CF(i,0)=0.0_r8
+            END DO
+            DO k=1,N(ng)
+              DO i=IR_RANGE
+                DC(i,k)=0.5_r8*(Hz(i,j,k)+Hz(i,j-1,k))
+                DC(i,0)=DC(i,0)+DC(i,k)
+                CF(i,0)=CF(i,0)+DC(i,k)*f_v(i,j,k)
+              END DO
+            END DO
+            DO i=IR_RANGE
+              cff1=1.0_r8/DC(i,0)
+              cff2=CF(i,0)*cff1
+#  ifdef MASKING
+              cff2=cff2*vmask(i,j)
+#  endif
+              f_vbar(i,j)=cff2
+            END DO
+          END IF
         END DO
       END IF
 !
@@ -6741,7 +7029,17 @@
           Joff=1
 #    endif
 #   endif
+#   ifdef ENERGYNORM_SCALE
+        IF (itrc.eq.itemp) THEN
+          cff=0.5_r8*rho0*Tcoef(ng)*Tcoef(ng)*g*g/bvf_bak
+        ELSE IF (itrc.eq.isalt) THEN
+          cff=0.5_r8*rho0*Scoef(ng)*Scoef(ng)*g*g/bvf_bak
+        ELSE
+          cff=0.5_r8*rho0*Scoef(ng)*Scoef(ng)*g*g/bvf_bak
+        END IF
+#   else
           scale=1.0_r8
+#   endif
           DO k=1,N(ng)
 #   ifdef MASKING
             iadd=(k-1)*NwaterR(ng)+offset(isTvar(itrc))
@@ -6750,6 +7048,9 @@
 #   endif
             DO j=JR_RANGE
               DO i=IR_RANGE
+#   ifdef ENERGYNORM_SCALE
+                scale=1.0_r8/SQRT(cff*Hz(i,j,k))
+#   endif
 #   ifdef MASKING
                 IF (rmask(i,j).gt.0.0_r8) THEN
                   is=IJwaterR(i,j)+iadd
@@ -6766,6 +7067,56 @@
           END DO
         END IF
       END DO
+#  endif
+
+#  ifdef FORCING_SV
+!
+!  Impose periodic boundary conditions as appropriate.
+!
+      IF (EWperiodic(ng).or.NSperiodic(ng)) THEN
+        CALL exchange_r2d_tile (ng, tile,                               &
+     &                          LBi, UBi, LBj, UBj, f_zeta)
+#   ifndef SOLVE3D
+        CALL exchange_u2d_tile (ng, tile,                               &
+     &                          LBi, UBi, LBj, UBj, f_ubar)
+        CALL exchange_v2d_tile (ng, tile,                               &
+     &                          LBi, UBi, LBj, UBj, f_vbar)
+#   else
+        CALL exchange_u3d_tile (ng, tile,                               &
+     &                          LBi, UBi, LBj, UBj, 1, N(ng), f_u)
+        CALL exchange_v3d_tile (ng, tile,                               &
+     &                          LBi, UBi, LBj, UBj, 1, N(ng), f_v)
+      DO itrc=1,NT(ng)
+          CALL exchange_r3d_tile (ng, tile,                             &
+     &                            LBi, UBi, LBj, UBj, 1, N(ng),         &
+     &                            f_t(:,:,:,itrc))
+      END DO
+#   endif
+      END IF
+
+#   ifdef DISTRIBUTE
+      CALL mp_exchange2d (ng, tile, iTLM, 1,                            &
+     &                    LBi, UBi, LBj, UBj,                           &
+     &                    NghostPoints,                                 &
+     &                    EWperiodic(ng), NSperiodic(ng),               &
+     &                    f_zeta)
+#    ifndef SOLVE3D
+      CALL mp_exchange2d (ng, tile, iTLM, 2,                            &
+     &                    LBi, UBi, LBj, UBj,                           &
+     &                    NghostPoints,                                 &
+     &                    EWperiodic(ng), NSperiodic(ng),               &
+     &                    f_ubar, f_vbar)
+#    else
+      CALL mp_exchange3d (ng, tile, iTLM, 2,                            &
+     &                    LBi, UBi, LBj, UBj, 1, N(ng),                 &
+     &                    NghostPoints,                                 &
+     &                    EWperiodic(ng), NSperiodic(ng), f_u, f_v)
+      CALL mp_exchange4d (ng, tile, iTLM, 1,                            &
+     &                    LBi, UBi, LBj, UBj, 1, N(ng), 1, NT(ng),      &
+     &                    NghostPoints,                                 &
+     &                    EWperiodic(ng), NSperiodic(ng), f_t)
+#    endif
+#   endif
 #  endif
 !
 !  Extract tangent linear surface U-momentum stress.

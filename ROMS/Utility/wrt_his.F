@@ -1,7 +1,7 @@
 #include "cppdefs.h"
-      SUBROUTINE wrt_his (ng)
+      SUBROUTINE wrt_his (ng, tile)
 !
-!svn $Id: wrt_his.F 733 2008-09-07 01:56:45Z jcwarner $
+!svn $Id: wrt_his.F 798 2016-05-21 17:04:58Z arango $
 !================================================== Hernan G. Arango ===
 !  Copyright (c) 2002-2016 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
@@ -76,7 +76,7 @@
 !
 !  Imported variable declarations.
 !
-      integer, intent(in) :: ng
+      integer, intent(in) :: ng, tile
 !
 !  Local variable declarations.
 !
@@ -84,7 +84,7 @@
 #ifdef ADJUST_BOUNDARY
       integer :: LBij, UBij
 #endif
-      integer :: Fcount, gfactor, gtype, status, tile
+      integer :: Fcount, gfactor, gtype, status
 #ifdef SOLVE3D
       integer :: i, itrc, j, k
 #endif
@@ -100,6 +100,7 @@
 #ifdef BBL_MODEL
       real(r8), allocatable :: wrk2(:,:)
 #endif
+# include "set_bounds.h"
 !
       SourceFile='wrt_his.F'
 !
@@ -251,6 +252,112 @@
         exit_flag=3
         ioerror=status
         RETURN
+      END IF
+#endif
+#ifdef SOLVE3D
+!
+!  Write time-varying depths of RHO-points.
+!
+      IF (Hout(idpthR,ng)) THEN
+        scale=1.0_r8
+        gtype=gfactor*r3dvar
+        status=nf_fwrite3d(ng, iNLM, HIS(ng)%ncid, HIS(ng)%Vid(idpthR), &
+     &                     HIS(ng)%Rindex, gtype,                       &
+     &                     LBi, UBi, LBj, UBj, 1, N(ng), scale,         &
+# ifdef MASKING
+     &                     GRID(ng) % rmask,                            &
+# endif
+     &                     GRID(ng) % z_r)
+        IF (status.ne.nf90_noerr) THEN
+          IF (Master) THEN
+            WRITE (stdout,10) TRIM(Vname(1,idpthR)), HIS(ng)%Rindex
+          END IF
+          exit_flag=3
+          ioerror=status
+          RETURN
+        END IF
+      END IF
+!
+!  Write time-varying depths of U-points.
+!
+      IF (Hout(idpthU,ng)) THEN
+        scale=1.0_r8
+        gtype=gfactor*u3dvar
+        DO k=1,N(ng)
+          DO j=Jstr-1,Jend+1
+            DO i=IstrU-1,Iend+1
+              GRID(ng)%z_v(i,j,k)=0.5_r8*(GRID(ng)%z_r(i-1,j,k)+        &
+     &                                    GRID(ng)%z_r(i  ,j,k))
+            END DO
+          END DO
+        END DO
+        status=nf_fwrite3d(ng, iNLM, HIS(ng)%ncid, HIS(ng)%Vid(idpthU), &
+     &                     HIS(ng)%Rindex, gtype,                       &
+     &                     LBi, UBi, LBj, UBj, 1, N(ng), scale,         &
+# ifdef MASKING
+     &                     GRID(ng) % umask,                            &
+# endif
+     &                     GRID(ng) % z_v)
+        IF (status.ne.nf90_noerr) THEN
+          IF (Master) THEN
+            WRITE (stdout,10) TRIM(Vname(1,idpthU)), HIS(ng)%Rindex
+          END IF
+          exit_flag=3
+          ioerror=status
+          RETURN
+        END IF
+      END IF
+!
+!  Write time-varying depths of V-points.
+!
+      IF (Hout(idpthV,ng)) THEN
+        scale=1.0_r8
+        gtype=gfactor*v3dvar
+        DO k=1,N(ng)
+          DO j=JstrV-1,Jend+1
+            DO i=Istr-1,Iend+1
+              GRID(ng)%z_v(i,j,k)=0.5_r8*(GRID(ng)%z_r(i,j-1,k)+       &
+     &                                    GRID(ng)%z_r(i,j  ,k))
+            END DO
+          END DO
+        END DO
+        status=nf_fwrite3d(ng, iNLM, HIS(ng)%ncid, HIS(ng)%Vid(idpthV), &
+     &                     HIS(ng)%Rindex, gtype,                       &
+     &                     LBi, UBi, LBj, UBj, 1, N(ng), scale,         &
+# ifdef MASKING
+     &                     GRID(ng) % vmask,                            &
+# endif
+     &                     GRID(ng) % z_v)
+        IF (status.ne.nf90_noerr) THEN
+          IF (Master) THEN
+            WRITE (stdout,10) TRIM(Vname(1,idpthV)), HIS(ng)%Rindex
+          END IF
+          exit_flag=3
+          ioerror=status
+          RETURN
+        END IF
+      END IF
+!
+!  Write time-varying depths of W-points.
+!
+      IF (Hout(idpthW,ng)) THEN
+        scale=1.0_r8
+        gtype=gfactor*w3dvar
+        status=nf_fwrite3d(ng, iNLM, HIS(ng)%ncid, HIS(ng)%Vid(idpthW), &
+     &                     HIS(ng)%Rindex, gtype,                       &
+     &                     LBi, UBi, LBj, UBj, 0, N(ng), scale,         &
+# ifdef MASKING
+     &                     GRID(ng) % rmask,                            &
+# endif
+     &                     GRID(ng) % z_w)
+        IF (status.ne.nf90_noerr) THEN
+          IF (Master) THEN
+            WRITE (stdout,10) TRIM(Vname(1,idpthW)), HIS(ng)%Rindex
+          END IF
+          exit_flag=3
+          ioerror=status
+          RETURN
+        END IF
       END IF
 #endif
 !
@@ -562,11 +669,6 @@
           allocate (Vr2d(LBi:UBi,LBj:UBj))
             Vr2d(LBi:UBi,LBj:UBj)=0.0_r8
         END IF
-#ifdef DISTRIBUTE
-        tile=MyRank
-#else
-        tile=-1
-#endif
         CALL uv_rotate2d (ng, tile, .FALSE., .TRUE.,                    &
      &                    LBi, UBi, LBj, UBj,                           &
      &                    GRID(ng) % CosAngler,                         &
@@ -755,11 +857,6 @@
           allocate (Vr3d(LBi:UBi,LBj:UBj,N(ng)))
           Vr3d(LBi:UBi,LBj:UBj,1:N(ng))=0.0_r8
         END IF
-# ifdef DISTRIBUTE
-        tile=MyRank
-# else
-        tile=-1
-# endif
         CALL uv_rotate3d (ng, tile, .FALSE., .TRUE.,                    &
      &                    LBi, UBi, LBj, UBj, 1, N(ng),                 &
      &                    GRID(ng) % CosAngler,                         &
@@ -817,11 +914,6 @@
         END IF
         scale=1.0_r8
         gtype=gfactor*w3dvar
-# ifdef DISTRIBUTE
-        tile=MyRank
-# else
-        tile=-1
-# endif
         CALL scale_omega (ng, tile, LBi, UBi, LBj, UBj, 0, N(ng),       &
      &                    GRID(ng) % pm,                                &
      &                    GRID(ng) % pn,                                &
@@ -1742,12 +1834,7 @@
           allocate (Vr2d(LBi:UBi,LBj:UBj))
             Vr2d(LBi:UBi,LBj:UBj)=0.0_r8
         END IF
-#ifdef DISTRIBUTE
-        tile=MyRank
-#else
-        tile=-1
-#endif
-        CALL uv_rotate2d (ng, TILE, .FALSE., .TRUE.,                    &
+        CALL uv_rotate2d (ng, tile, .FALSE., .TRUE.,                    &
      &                    LBi, UBi, LBj, UBj,                           &
      &                    GRID(ng) % CosAngler,                         &
      &                    GRID(ng) % SinAngler,                         &
@@ -2431,12 +2518,7 @@
           allocate (Vr2d(LBi:UBi,LBj:UBj))
             Vr2d(LBi:UBi,LBj:UBj)=0.0_r8
         END IF
-#ifdef DISTRIBUTE
-        tile=MyRank
-#else
-        tile=-1
-#endif
-        CALL uv_rotate2d (ng, TILE, .FALSE., .TRUE.,                    &
+        CALL uv_rotate2d (ng, tile, .FALSE., .TRUE.,                    &
      &                    LBi, UBi, LBj, UBj,                           &
      &                    GRID(ng) % CosAngler,                         &
      &                    GRID(ng) % SinAngler,                         &
@@ -4162,11 +4244,6 @@
         END IF
         scale=1.0_r8
         gtype=gfactor*w3dvar
-# ifdef DISTRIBUTE
-        tile=MyRank
-# else
-        tile=-1
-# endif
         CALL scale_omega (ng, tile, LBi, UBi, LBj, UBj, 0, N(ng),       &
      &                    GRID(ng) % pm,                                &
      &                    GRID(ng) % pn,                                &

@@ -1,7 +1,7 @@
 #include "cppdefs.h"
       MODULE mod_grid
 !
-!svn $Id: mod_grid.F 790 2008-10-14 19:32:07Z jcwarner $
+!svn $Id: mod_grid.F 798 2016-05-21 17:04:58Z arango $
 !================================================== Hernan G. Arango ===
 !  Copyright (c) 2002-2016 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
@@ -136,6 +136,10 @@
 !  yv         ETA-coordinates (m) at V-points.                         !
 !  zice       Depth of ice shelf cavity (m, negative) at               !
 !               RHO-points.                                            !
+!  z0_r       Time independent depths (m) at horizontal RHO-points and !
+!               vertical RHO-points.                                   !
+!  z0_w       Time independent depths (m) at horizontal RHO-points and !
+!               vertical W-points.                                     !
 !  z_r        Actual depths (m) at horizontal RHO-points and           !
 !               vertical RHO-points.                                   !
 !  z_w        Actual depths (m) at horizontal RHO-points and           !
@@ -223,10 +227,10 @@
 # endif
           real(r8), pointer :: Huon(:,:,:)
           real(r8), pointer :: Hvom(:,:,:)
+          real(r8), pointer :: z0_r(:,:,:)
+          real(r8), pointer :: z0_w(:,:,:)
           real(r8), pointer :: z_r(:,:,:)
-# if (defined FOUR_DVAR || defined VERIFICATION) && defined OBSERVATIONS
           real(r8), pointer :: z_v(:,:,:)
-# endif
           real(r8), pointer :: z_w(:,:,:)
 # ifdef ICESHELF
           real(r8), pointer :: IcePress(:,:)
@@ -422,10 +426,10 @@
 # endif
       allocate ( GRID(ng) % Huon(LBi:UBi,LBj:UBj,N(ng)) )
       allocate ( GRID(ng) % Hvom(LBi:UBi,LBj:UBj,N(ng)) )
+      allocate ( GRID(ng) % z0_r(LBi:UBi,LBj:UBj,N(ng)) )
+      allocate ( GRID(ng) % z0_w(LBi:UBi,LBj:UBj,0:N(ng)) )
       allocate ( GRID(ng) % z_r(LBi:UBi,LBj:UBj,N(ng)) )
-# if (defined FOUR_DVAR || defined VERIFICATION) && defined OBSERVATIONS
       allocate ( GRID(ng) % z_v(LBi:UBi,LBj:UBj,N(ng)) )
-# endif
       allocate ( GRID(ng) % z_w(LBi:UBi,LBj:UBj,0:N(ng)) )
 
 # ifdef ICESHELF
@@ -748,14 +752,14 @@
               GRID(ng) % Hz(i,j,k) = IniVal
               GRID(ng) % Huon(i,j,k) = IniVal
               GRID(ng) % Hvom(i,j,k) = IniVal
+              GRID(ng) % z0_r(i,j,k) = IniVal
               GRID(ng) % z_r(i,j,k) = IniVal
-# if (defined FOUR_DVAR || defined VERIFICATION) && defined OBSERVATIONS
               GRID(ng) % z_v(i,j,k) = IniVal
-# endif
             END DO
           END DO
           DO k=0,N(ng)
             DO i=Imin,Imax
+              GRID(ng) % z0_w(i,j,k) = IniVal
               GRID(ng) % z_w(i,j,k) = IniVal
             END DO
           END DO

@@ -1,7 +1,7 @@
 !
 !  ROMS/TOMS Cohesive and Non-cohesive Sediment Model Parameters.
 !
-!svn $Id$
+!svn $Id: sediment.in 804 2016-06-06 23:02:36Z arango $
 !========================================================= Hernan G. Arango ===
 !  Copyright (c) 2002-2016 The ROMS/TOMS Group                                !
 !    Licensed under a MIT/X style license                                     !

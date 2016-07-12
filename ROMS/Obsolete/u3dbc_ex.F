@@ -2,7 +2,7 @@
       MODULE u3dbc_mod
 #ifdef SOLVE3D
 !
-!svn $Id$
+!svn $Id: u3dbc_ex.F 795 2016-05-11 01:42:43Z arango $
 !=======================================================================
 !  Copyright (c) 2002-2016 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !

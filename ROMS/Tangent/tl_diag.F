@@ -2,7 +2,7 @@
       MODULE tl_diag_mod
 #ifdef TANGENT
 !
-!svn $Id: tl_diag.F 751 2015-01-07 22:56:36Z arango $
+!svn $Id: tl_diag.F 807 2016-07-09 02:03:55Z arango $
 !================================================== Hernan G. Arango ===
 !  Copyright (c) 2002-2016 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
@@ -239,9 +239,9 @@
 # endif
 !$OMP CRITICAL (TL_DIAGNOSTICS)
         IF (tile_count.eq.0) THEN
-          volume=my_volume
-          avgke=my_avgke
-          avgpe=my_avgpe
+          volume=0.0_r8
+          avgke=0.0_r8
+          avgpe=0.0_r8
         END IF
         volume=volume+my_volume
         avgke=avgke+my_avgke

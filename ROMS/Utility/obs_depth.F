@@ -1,9 +1,10 @@
 #include "cppdefs.h"
-#if defined FOUR_DVAR  && defined OBSERVATIONS && \
-    defined DISTRIBUTE && defined SOLVE3D
+#if (defined FOUR_DVAR    || defined VERIFICATION) && \
+     defined OBSERVATIONS && \
+     defined DISTRIBUTE   && defined SOLVE3D
       SUBROUTINE obs_depth (ng, tile, model)
 !
-!svn $Id$
+!svn $Id: obs_depth.F 798 2016-05-21 17:04:58Z arango $
 !================================================== Hernan G. Arango ===
 !  Copyright (c) 2002-2016 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !

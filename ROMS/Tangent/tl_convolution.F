@@ -3,7 +3,7 @@
 
 #if defined TANGENT && defined FOUR_DVAR
 !
-!svn $Id: tl_convolution.F 751 2015-01-07 22:56:36Z arango $
+!svn $Id: tl_convolution.F 807 2016-07-09 02:03:55Z arango $
 !================================================== Hernan G. Arango ===
 !  Copyright (c) 2002-2016 The ROMS/TOMS Group       Andrew M. Moore   !
 !    Licensed under a MIT/X style license                              !
@@ -114,10 +114,12 @@
      &                          IminS, ImaxS, JminS, JmaxS,             &
      &                          nstp(ng), nnew(ng), Linp, Lweak, ifac,  &
      &                          GRID(ng) % pm,                          &
+     &                          GRID(ng) % om_p,                        &
      &                          GRID(ng) % om_r,                        &
      &                          GRID(ng) % om_u,                        &
      &                          GRID(ng) % om_v,                        &
      &                          GRID(ng) % pn,                          &
+     &                          GRID(ng) % on_p,                        &
      &                          GRID(ng) % on_r,                        &
      &                          GRID(ng) % on_u,                        &
      &                          GRID(ng) % on_v,                        &
@@ -208,8 +210,8 @@
      &                                LBi, UBi, LBj, UBj, LBij, UBij,   &
      &                                IminS, ImaxS, JminS, JmaxS,       &
      &                                nstp, nnew, Linp, Lweak, ifac,    &
-     &                                pm, om_r, om_u, om_v,             &
-     &                                pn, on_r, on_u, on_v,             &
+     &                                pm, om_p, om_r, om_u, om_v,       &
+     &                                pn, on_p, on_r, on_u, on_v,       &
      &                                pmon_p, pmon_r, pmon_u,           &
      &                                pnom_p, pnom_r, pnom_v,           &
 # ifdef MASKING
@@ -296,10 +298,12 @@
 !
 # ifdef ASSUMED_SHAPE
       real(r8), intent(in) :: pm(LBi:,LBj:)
+      real(r8), intent(in) :: om_p(LBi:,LBj:)
       real(r8), intent(in) :: om_r(LBi:,LBj:)
       real(r8), intent(in) :: om_u(LBi:,LBj:)
       real(r8), intent(in) :: om_v(LBi:,LBj:)
       real(r8), intent(in) :: pn(LBi:,LBj:)
+      real(r8), intent(in) :: on_p(LBi:,LBj:)
       real(r8), intent(in) :: on_r(LBi:,LBj:)
       real(r8), intent(in) :: on_u(LBi:,LBj:)
       real(r8), intent(in) :: on_v(LBi:,LBj:)
@@ -383,10 +387,12 @@
 #  endif
 # else
       real(r8), intent(in) :: pm(LBi:UBi,LBj:UBj)
+      real(r8), intent(in) :: om_p(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: om_r(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: om_u(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: om_v(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: pn(LBi:UBi,LBj:UBj)
+      real(r8), intent(in) :: on_p(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: on_r(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: on_u(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: on_v(LBi:UBi,LBj:UBj)
@@ -638,13 +644,14 @@
                 i=BOUNDS(ng)%edge(ib,r2dvar)
                 DO j=JstrT,JendT
                   tl_zeta_obc(j,ib,ir,Linp)=tl_zeta_obc(j,ib,ir,Linp)/  &
-     &                                      SQRT(om_r(i,j)*on_r(i,j))
+     &                                      SQRT(on_r(i,j))
                 END DO
               ELSE IF ((ib.eq.isouth).or.(ib.eq.inorth)) THEN
                 j=BOUNDS(ng)%edge(ib,r2dvar)
                 DO i=IstrT,IendT
                   tl_zeta_obc(i,ib,ir,Linp)=tl_zeta_obc(i,ib,ir,Linp)/  &
-     &                                      SQRT(om_r(i,j)*on_r(i,j))
+     &                                      SQRT(om_r(i,j))
+
                 END DO
               END IF
             END IF
@@ -669,13 +676,13 @@
                 i=BOUNDS(ng)%edge(ib,u2dvar)
                 DO j=JstrT,JendT
                   tl_ubar_obc(j,ib,ir,Linp)=tl_ubar_obc(j,ib,ir,Linp)/  &
-     &                                      SQRT(om_u(i,j)*on_u(i,j))
+     &                                      SQRT(on_u(i,j))
                 END DO
               ELSE IF ((ib.eq.isouth).or.(ib.eq.inorth)) THEN
                 j=BOUNDS(ng)%edge(ib,u2dvar)
                 DO i=IstrP,IendT
                   tl_ubar_obc(i,ib,ir,Linp)=tl_ubar_obc(i,ib,ir,Linp)/  &
-     &                                      SQRT(om_u(i,j)*on_u(i,j))
+     &                                      SQRT(om_u(i,j))
                 END DO
               END IF
             END IF
@@ -700,13 +707,13 @@
                 i=BOUNDS(ng)%edge(ib,v2dvar)
                 DO j=JstrP,JendT
                   tl_vbar_obc(j,ib,ir,Linp)=tl_vbar_obc(j,ib,ir,Linp)/  &
-     &                                      SQRT(om_v(i,j)*on_v(i,j))
+     &                                      SQRT(on_v(i,j))
                 END DO
               ELSE IF ((ib.eq.isouth).or.(ib.eq.inorth)) THEN
                 j=BOUNDS(ng)%edge(ib,v2dvar)
                 DO i=IstrT,IendT
                   tl_vbar_obc(i,ib,ir,Linp)=tl_vbar_obc(i,ib,ir,Linp)/  &
-     &                                      SQRT(om_v(i,j)*on_v(i,j))
+     &                                      SQRT(om_v(i,j))
                 END DO
               END IF
             END IF
@@ -732,7 +739,7 @@
               IF ((ib.eq.iwest).or.(ib.eq.ieast)) THEN
                 i=BOUNDS(ng)%edge(ib,u2dvar)
                 DO j=JstrT,JendT
-                  cff=om_u(i,j)*on_u(i,j)*0.5_r8
+                  cff=on_u(i,j)*0.5_r8
                   DO k=1,N(ng)
                     tl_u_obc(j,k,ib,ir,Linp)=tl_u_obc(j,k,ib,ir,Linp)/  &
      &                                       SQRT(cff*                  &
@@ -743,7 +750,7 @@
               ELSE IF ((ib.eq.isouth).or.(ib.eq.inorth)) THEN
                 j=BOUNDS(ng)%edge(ib,u2dvar)
                 DO i=IstrP,IendT
-                  cff=om_u(i,j)*on_u(i,j)*0.5_r8
+                  cff=om_u(i,j)*0.5_r8
                   DO k=1,N(ng)
                     tl_u_obc(i,k,ib,ir,Linp)=tl_u_obc(i,k,ib,ir,Linp)/  &
      &                                       SQRT(cff*                  &
@@ -773,7 +780,7 @@
               IF ((ib.eq.iwest).or.(ib.eq.ieast)) THEN
                 i=BOUNDS(ng)%edge(ib,v2dvar)
                 DO j=JstrP,JendT
-                  cff=om_v(i,j)*on_v(i,j)*0.5_r8
+                  cff=on_v(i,j)*0.5_r8
                   DO k=1,N(ng)
                     tl_v_obc(j,k,ib,ir,Linp)=tl_v_obc(j,k,ib,ir,Linp)/  &
      &                                       SQRT(cff*                  &
@@ -784,7 +791,7 @@
               ELSE IF ((ib.eq.isouth).or.(ib.eq.inorth)) THEN
                 j=BOUNDS(ng)%edge(ib,v2dvar)
                 DO i=IstrT,IendT
-                  cff=om_v(i,j)*on_v(i,j)*0.5_r8
+                  cff=om_v(i,j)*0.5_r8
                   DO k=1,N(ng)
                     tl_v_obc(i,k,ib,ir,Linp)=tl_v_obc(i,k,ib,ir,Linp)/  &
      &                                       SQRT(cff*                  &
@@ -815,7 +822,7 @@
                 IF ((ib.eq.iwest).or.(ib.eq.ieast)) THEN
                   i=BOUNDS(ng)%edge(ib,r2dvar)
                   DO j=JstrT,JendT
-                    cff=om_r(i,j)*on_r(i,j)
+                    cff=on_r(i,j)
                     DO k=1,N(ng)
                       tl_t_obc(j,k,ib,ir,Linp,it)=                      &
      &                                   tl_t_obc(j,k,ib,ir,Linp,it)/   &
@@ -825,7 +832,7 @@
                 ELSE IF ((ib.eq.isouth).or.(ib.eq.inorth)) THEN
                   j=BOUNDS(ng)%edge(ib,r2dvar)
                   DO i=IstrT,IendT
-                    cff=om_r(i,j)*on_r(i,j)
+                    cff=om_r(i,j)
                     DO k=1,N(ng)
                       tl_t_obc(i,k,ib,ir,Linp,it)=                      &
      &                                   tl_t_obc(i,k,ib,ir,Linp,it)/   &
@@ -970,9 +977,18 @@
      &                       DTsizeH(rec,isUvel),                       &
      &                       DTsizeV(rec,isUvel),                       &
      &                       Kh, Kv,                                    &
-     &                       pm, pn, pmon_r, pnom_p,                    &
+     &                       pm, pn,                                    &
+#  ifdef GEOPOTENTIAL_HCONV
+     &                       on_r, om_p,                                &
+#  else
+     &                       pmon_r, pnom_p,                            &
+#  endif
 #  ifdef MASKING
+#   ifdef GEOPOTENTIAL_HCONV
+     &                       pmask, rmask, umask, vmask,                &
+#   else
      &                       umask, pmask,                              &
+#   endif
 #  endif
      &                       Hz, z_r,                                   &
      &                       tl_u(:,:,:,Linp))
@@ -986,9 +1002,18 @@
      &                       DTsizeH(rec,isVvel),                       &
      &                       DTsizeV(rec,isVvel),                       &
      &                       Kh, Kv,                                    &
-     &                       pm, pn, pmon_p, pnom_r,                    &
+     &                       pm, pn,                                    &
+#  ifdef GEOPOTENTIAL_HCONV
+     &                       on_p, om_r,                                &
+#  else
+     &                       pmon_p, pnom_r,                            &
+#  endif
 #  ifdef MASKING
+#   ifdef GEOPOTENTIAL_HCONV
+     &                       pmask, rmask, umask, vmask,                &
+#   else
      &                       vmask, pmask,                              &
+#   endif
 #  endif
      &                       Hz, z_r,                                   &
      &                       tl_v(:,:,:,Linp))
@@ -1006,7 +1031,12 @@
      &                         DTsizeH(rec,is),                         &
      &                         DTsizeV(rec,is),                         &
      &                         Kh, Kv,                                  &
-     &                         pm, pn, pmon_u, pnom_v,                  &
+     &                         pm, pn,                                  &
+#  ifdef GEOPOTENTIAL_HCONV
+     &                         on_u, om_v,                              &
+#  else
+     &                         pmon_u, pnom_v,                          &
+#  endif
 #  ifdef MASKING
      &                         rmask, umask, vmask,                     &
 #  endif

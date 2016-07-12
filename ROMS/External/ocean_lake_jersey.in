@@ -507,6 +507,11 @@ Hout(idBath) == F       ! bath               time-dependent bathymetry
 
 Hout(idTvar) == 2*T     ! temp, salt         temperature and salinity
 
+Hout(idpthR) == F       ! z_rho              time-varying depths of RHO-points
+Hout(idpthU) == F       ! z_u                time-varying depths of U-points
+Hout(idpthV) == F       ! z_v                time-varying depths of V-points
+Hout(idpthW) == F       ! z_w                time-varying depths of W-points
+
 Hout(idUsms) == F       ! sustr              surface U-stress
 Hout(idVsms) == F       ! svstr              surface V-stress
 Hout(idUbms) == F       ! bustr              bottom U-stress
@@ -783,6 +788,7 @@ Dout(iTvdif) == 2*T     ! temp_vdiff, ...    vertical diffusion
 
 ! Output NetCDF file names, [1:Ngrids].
 
+     DAINAME == lake_jersey_dai.nc
      GSTNAME == lake_jersey_gst.nc
      RSTNAME == lake_jersey_rst.nc
      HISNAME == lake_jersey_his.nc
@@ -1965,6 +1971,18 @@ Dout(iTvdif) == 2*T     ! temp_vdiff, ...    vertical diffusion
 !                 TCLM_NUDGING is now obsolete and replaced with these
 !                 switches to facilitate nesting applications.
 !
+!                 Only NAT active tracers (temperature, salinity) and NPT
+!                 inert tracers need to be specified here:
+!
+!                   LnudgeTCLM(itemp,ng)     for temperature (itemp=1)
+!                   LnudgeTCLM(isalt,ng)     for salinity    (isalt=2)
+!                   LnudgeTCLM(NAT+1,ng)     for inert tracer 1
+!                   ...                      ...
+!                   LnudgeTCLM(NAT+NPT,ng)   for inert tracer NPT
+!
+!                 Other biological and sediment tracers switches are specified
+!                 in their respective input scripts.
+!
 !                 User also needs to TURN ON the respective logical switches
 !                 "LtracerCLM", described above, to process the required 3D
 !                 tracer climatology data. This data can be set with analytical
@@ -2061,6 +2079,11 @@ Dout(iTvdif) == 2*T     ! temp_vdiff, ...    vertical diffusion
 ! Hout(idBath)   Write out time-dependent bathymetry.
 !
 ! Hout(idTvar)   Write out active (NAT) tracers: temperature and salinity.
+!
+! Hout(idpthR)   Write out time-varying depths of RHO-points.
+! Hout(idpthU)   Write out time-varying depths of U-points.
+! Hout(idpthV)   Write out time-varying depths of V-points.
+! Hout(idpthW)   Write out time-varying depths of W-points.
 !
 ! Hout(idUsms)   Write out surface U-momentum stress.
 ! Hout(idVsms)   Write out surface V-momentum stress.
@@ -2446,6 +2469,8 @@ Dout(iTvdif) == 2*T     ! temp_vdiff, ...    vertical diffusion
 !
 ! Output file names:
 !
+! DAINAME      Output data assimilation next cycle initial conditions (4D-Var
+!                analysis) or restart (Ensemble Kalman Filter, EnKF) file name.
 ! GSTNAME      Output GST analysis re-start file name.
 ! RSTNAME      Output re-start file name.
 ! HISNAME      Output history file name.

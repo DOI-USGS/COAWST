@@ -520,6 +520,11 @@ Hout(idBath) == T       ! bath               time-dependent bathymetry
 
 Hout(idTvar) == T T     ! temp, salt         temperature and salinity
 
+Hout(idpthR) == F       ! z_rho              time-varying depths of RHO-points
+Hout(idpthU) == F       ! z_u                time-varying depths of U-points
+Hout(idpthV) == F       ! z_v                time-varying depths of V-points
+Hout(idpthW) == F       ! z_w                time-varying depths of W-points
+
 Hout(idUair) == F       ! Uwind              surface U-wind
 Hout(idVair) == F       ! Vwind              surface V-wind
 Hout(idUairE) == F      ! Uwind_eastward     surface U-wind
@@ -873,6 +878,7 @@ Dout(iTvdif) == F F     ! temp_vdiff, ...    vertical diffusion
 
 ! Output NetCDF file names, [1:Ngrids].
 
+     DAINAME == ocean_dai.nc
      GSTNAME == ocean_gst.nc
      RSTNAME == ocean_trench_rst.nc
      HISNAME == ocean_trench_his.nc
@@ -2071,6 +2077,18 @@ Dout(iTvdif) == F F     ! temp_vdiff, ...    vertical diffusion
 !                 TCLM_NUDGING is now obsolete and replaced with these
 !                 switches to facilitate nesting applications.
 !
+!                 Only NAT active tracers (temperature, salinity) and NPT
+!                 inert tracers need to be specified here:
+!
+!                   LnudgeTCLM(itemp,ng)     for temperature (itemp=1)
+!                   LnudgeTCLM(isalt,ng)     for salinity    (isalt=2)
+!                   LnudgeTCLM(NAT+1,ng)     for inert tracer 1
+!                   ...                      ...
+!                   LnudgeTCLM(NAT+NPT,ng)   for inert tracer NPT
+!
+!                 Other biological and sediment tracers switches are specified
+!                 in their respective input scripts.
+!
 !                 User also needs to TURN ON the respective logical switches
 !                 "LtracerCLM", described above, to process the required 3D
 !                 tracer climatology data. This data can be set with analytical
@@ -2164,6 +2182,11 @@ Dout(iTvdif) == F F     ! temp_vdiff, ...    vertical diffusion
 !
 !  Hout(idTvar)  Write out active (NAT) tracers: temperature and salinity.
 !
+!  Hout(idpthR)   Write out time-varying depths of RHO-points.
+!  Hout(idpthU)   Write out time-varying depths of U-points.
+!  Hout(idpthV)   Write out time-varying depths of V-points.
+!  Hout(idpthW)   Write out time-varying depths of W-points.
+!
 !  Hout(idUsms)  Write out surface U-momentum stress.
 !  Hout(idVsms)  Write out surface V-momentum stress.
 !  Hout(idUbms)  Write out bottom  U-momentum stress.
@@ -2244,8 +2267,9 @@ Dout(iTvdif) == F F     ! temp_vdiff, ...    vertical diffusion
 ! Generic User parameters.
 !------------------------------------------------------------------------------
 !
-!  NUSER       Number of User parameters to consider (integer).
-!  USER        Vector containing user parameters (real array). This array
+! NUSER        Number of User parameters to consider (integer).
+!
+! USER         Vector containing user parameters (real array). This array
 !                is used with the SANITY_CHECK to test the correctness of
 !                the tangent linear adjoint models.  It contains information
 !                of the model variable and grid point to perturb:
@@ -2276,58 +2300,162 @@ Dout(iTvdif) == F F     ! temp_vdiff, ...    vertical diffusion
 !------------------------------------------------------------------------------
 !
 ! NetCDF-4/HDF5 compression parameters for output files. This capability
-! is used when both NETCDF4 and DEFLATE C-preprocessing options are
+! is used when both HDF5 and DEFLATE C-preprocessing options are
 ! activated. The user needs to compile with the NetCDF-4/HDF5 and MPI
 ! libraries. File deflation cannot be used in parallel I/O for writing
-! because the compression makes it imposible for the HDF5 library
+! because the compression makes it impossible for the HDF5 library
 ! to exactly map the data to the disk location.  For more information,
 ! check NetCDF official website: www.unidata.ucar.edu/software/netcdf.
 !
-! NC_SHUFFLE    Shuffle filter integer flag. If non-zero, turn on shuffle
-!                 filter.
+! NC_SHUFFLE   Shuffle filter integer flag. If non-zero, turn on shuffle
+!                filter.
 !
-! NC_DEFLATE    Deflate filter integer flag, If non-zero, turn on deflate
-!                 filter at the level specified by the NC_DLEVEL parameter.
+! NC_DEFLATE   Deflate filter integer flag, If non-zero, turn on deflate
+!                filter at the level specified by the NC_DLEVEL parameter.
 !
-! NC_DLEVEL     Deflate filter level parameter (integer). If NC_DEFLATE is
-!                 non-zero, set the deflate level to this value. Must be
-!                 between 0 and 9.
+! NC_DLEVEL    Deflate filter level parameter (integer). If NC_DEFLATE is
+!                non-zero, set the deflate level to this value. Must be
+!                between 0 and 9.
 !
 !------------------------------------------------------------------------------
-! Input/output NetCDF file names (string with a maximum of eighty characters).
+! Input/output NetCDF file names (string with a maximum of 256 characters).
 !------------------------------------------------------------------------------
+!
+! Input file names:
 !
 !  GRDNAME     Input grid file name.
+!
 !  ININAME     Input nonlinear initial conditions file name. It can be a
 !                re-start file.
-!  IRPNAME     Input representer model initial conditions file name.
+!
 !  ITLNAME     Input tangent linear model initial conditions file name.
+!
+!  IRPNAME     Input representer model initial conditions file name.
+!
 !  IADNAME     Input adjoint model initial conditions file name.
-!  FRCNAME     Input forcing fields file name.
-!  CLMNAME     Input climatology fields file name.
-!  BRYNAME     Input open boundary data file name.
+!
 !  FWDNAME     Input forward solution fields file name.
+!
 !  ADSNAME     Input adjoint sensitivity functional file name.
 !
-!  GSTNAME     Output GST analysis re-start file name.
-!  RSTNAME     Output re-start file name.
-!  HISNAME     Output history file name.
-!  TLFNAME     Output impulse forcing for tangent linear (TLM and RPM) models.
-!  TLMNAME     Output tangent linear file name.
-!  ADJNAME     Output adjoint file name.
-!  AVGNAME     Output averages file name.
-!  DIANAME     Output diagnostics file name.
-!  STANAME     Output stations file name.
-!  FLTNAME     Output floats file name.
+!
+! Nesting grids connectivity data:
+!
+!  NGCNAME     Input nested grids contact points information file name. This
+!                NetCDF file is currently generated using script:
+!
+!                matlab/grid/contact.m
+!
+!                from the ROMS Matlab repository.  The nesting information
+!                is not trivial and this Matlab scripts is quite complex. See
+!
+!                https://www.myroms.org/wiki/index.php/Nested_Grids
+!                https://www.myroms.org/wiki/index.php/Grid_Processing_Scripts
+!
+!                for more information.
+!
+!
+! Input lateral boundary conditions and climatology file names:
+!
+! BRYNAME      Input open boundary data file name(s) per nested grid.
+!
+! CLMNAME      Input climatology fields file name(s) per nested grid
+!
+!  The USER has the option to split input data time records into several
+!  NetCDF files, as many as required. If so, use a single line per entry
+!  with a vertical bar (|) symbol after each entry, except the last one:
+!
+!    BRYNAME == my_bry_year1.nc |
+!               my_bry_year2.nc
+!
+!    CLMNAME == my_clm_year1.nc |
+!               my_clm_year2.nc
+!
+!
+! Input nudging coefficients file name:
+!
+! NUDNAME      Input nudging coefficients file name.
+!
+!
+! Input Sources/Sinks forcing file name:
+!
+! SSFNAME      River runoff data. This file is now separated from the
+!                regular forcing files to allow manipulations over nested
+!                grids.  A particular nesting grid may or may not have
+!                Sources/Sinks forcing.
+!
+!                For example, in an application with 3 nested grids but
+!                with river forcing in grids 1 and 3 we would have:
+!
+!                    LuvSrc == T F T
+!                LtracerSrc == 2*T 2*F 2*T
+!
+!                   SSFNAME == my_rivers_grid1.nc \
+!                              my_rivers_grid2.nc \
+!                              my_rivers_grid3.nc
+!
+!                Here, "my_rivers_grid2.nc" is a dummy name that will never
+!                be processed in ROMS because of the logical switches are
+!                FALSE the second grid.
+!
+!
+! Input forcing file(s) name:
+!
+! NFFILES      Number of unique forcing files per nested grid.
+!
+! FRCNAME      Input forcing fields file name per nested grid.
+!
+!  The USER has the option to enter several file names for forcing fields
+!  and/or split input data time records for each nested grid. For example,
+!  the USER may have different files for wind products, heat fluxes, tides,
+!  etc.  The model will scan the file list and will read the needed data
+!  from the first file in the list containing the forcing field. Therefore,
+!  the order of the file names is very important. It is also possible to
+!  split input data time records into several NetCDF files.
+!
+!  Use a single line per entry with a continuation (\) or vertical bar (|)
+!  symbol after each entry, except the last one:
+!
+!    NFFILES == 7                          ! number of unique forcing files
+!
+!    FRCNAME == my_tides.nc       \        ! tidal forcing
+!               my_lwrad_year1.nc |        ! net longwave radiation flux
+!               my_lwrad_year2.nc \
+!               my_swrad_year1.nc |        ! solar shortwave radiation flux
+!               my_swrad_year2.nc \
+!               my_winds_year1.nc |        ! surface winds
+!               my_winds_year2.nc \
+!               my_Pair_year1.nc  |        ! surface air pressure
+!               my_Pair_year2.nc  \
+!               my_Qair_year1.nc  |        ! surface air relative humidity
+!               my_Qair_year2.nc  \
+!               my_Tair_year1.nc  |        ! surface air temperature
+!               my_Tair_year2.nc
+!
+!
+! Output file names:
+!
+! DAINAME      Output data assimilation next cycle initial conditions (4D-Var
+!                analysis) or restart (Ensemble Kalman Filter, EnKF) file name.
+! GSTNAME      Output GST analysis re-start file name.
+! RSTNAME      Output re-start file name.
+! HISNAME      Output history file name.
+! TLFNAME      Output impulse forcing for tangent linear (TLM and RPM) models.
+! TLMNAME      Output tangent linear file name.
+! ADJNAME      Output adjoint file name.
+! AVGNAME      Output averages file name.
+! DIANAME      Output diagnostics file name.
+! STANAME      Output stations file name.
+! FLTNAME      Output floats file name.
 !
 !------------------------------------------------------------------------------
 ! Input ASCII parameters file names.
 !------------------------------------------------------------------------------
 !
-!  APARNAM     Input assimilation parameters file name.
-!  SPOSNAM     Input stations positions file name.
-!  FPOSNAM     Input initial drifters positions file name.
-!  BPARNAM     Input biological parameters file name.
-!  SPARNAM     Input sediment transport parameters file name.
-!  USRNAME     USER's input generic file name.
+! APARNAM      Input assimilation parameters file name.
+! SPOSNAM      Input stations positions file name.
+! FPOSNAM      Input initial drifters positions file name.
+! BPARNAM      Input biological parameters file name.
+! SPARNAM      Input sediment transport parameters file name.
+! USRNAME      USER's input generic file name.
 !

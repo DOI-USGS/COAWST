@@ -2,7 +2,7 @@
 #ifdef MODEL_COUPLING
       SUBROUTINE read_CouplePar (model)
 !
-!svn $Id$
+!svn $Id: read_couplepar.F 795 2016-05-11 01:42:43Z arango $
 !================================================== Hernan G. Arango ===
 !  Copyright (c) 2002-2016 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !

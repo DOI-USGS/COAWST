@@ -539,6 +539,11 @@ Hout(idBath) == 2*F     ! bath               time-dependent bathymetry
 
 Hout(idTvar) == 2*T 2*T ! temp, salt         temperature and salinity
 
+Hout(idpthR) == 2*F     ! z_rho              time-varying depths of RHO-points
+Hout(idpthU) == 2*F     ! z_u                time-varying depths of U-points
+Hout(idpthV) == 2*F     ! z_v                time-varying depths of V-points
+Hout(idpthW) == 2*F     ! z_w                time-varying depths of W-points
+
 Hout(idUsms) == 2*F     ! sustr              surface U-stress
 Hout(idVsms) == 2*F     ! svstr              surface V-stress
 Hout(idUbms) == 2*F     ! bustr              bottom U-stress
@@ -612,33 +617,6 @@ Hout(idMtls) == 2*F     ! gls                turbulent length scale
 ! compact parameter specification.
 
  Hout(inert) == T       ! dye_01, ...        inert passive tracers
-
-! Logical switches (TRUE/FALSE) to activate writing of exposed sediment
-! layer properties into HISTORY output file.  Currently, MBOTP properties
-! are expected for the bottom boundary layer and/or sediment models:
-!
-! idBott( 1=isd50)   grain_diameter          mean grain diameter
-! idBott( 2=idens)   grain_density           mean grain density
-! idBott( 3=iwsed)   settling_vel            mean settling velocity
-! idBott( 4=itauc)   erosion_stress          critical erosion stress
-! idBott( 5=irlen)   ripple_length           ripple length
-! idBott( 6=irhgt)   ripple_height           ripple height
-! idBott( 7=ibwav)   bed_wave_amp            wave excursion amplitude
-! idBott( 8=izdef)   Zo_def                  default bottom roughness
-! idBott( 9=izapp)   Zo_app                  apparent bottom roughness
-! idBott(10=izNik)   Zo_Nik                  Nikuradse bottom roughness
-! idBott(11=izbio)   Zo_bio                  biological bottom roughness
-! idBott(12=izbfm)   Zo_bedform              bed form bottom roughness
-! idBott(13=izbld)   Zo_bedload              bed load bottom roughness
-! idBott(14=izwbl)   Zo_wbl                  wave bottom roughness
-! idBott(15=iactv)   active_layer_thickness  active layer thickness
-! idBott(16=ishgt)   saltation               saltation height
-!
-!                                 1 1 1 1 1 1 1
-!               1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6
-
-Hout(idBott) == T T T T T T T T T F F F F F F F \
-                T T T T T T T T T F F F F F F F
 
 ! Logical switches (TRUE/FALSE) to activate writing of time-averaged
 ! fields into AVERAGE output file.
@@ -847,6 +825,7 @@ Dout(iTvdif) == 2*T 2*T ! temp_vdiff, ...    vertical diffusion
 
 ! Output NetCDF file names, [1:Ngrids].
 
+     DAINAME == dogbone_dai.nc
      GSTNAME == dogbone_gst.nc
      RSTNAME == dogbone_rst_left.nc \
                 dogbone_rst_right.nc
@@ -2049,6 +2028,18 @@ Dout(iTvdif) == 2*T 2*T ! temp_vdiff, ...    vertical diffusion
 !                 TCLM_NUDGING is now obsolete and replaced with these
 !                 switches to facilitate nesting applications.
 !
+!                 Only NAT active tracers (temperature, salinity) and NPT
+!                 inert tracers need to be specified here:
+!
+!                   LnudgeTCLM(itemp,ng)     for temperature (itemp=1)
+!                   LnudgeTCLM(isalt,ng)     for salinity    (isalt=2)
+!                   LnudgeTCLM(NAT+1,ng)     for inert tracer 1
+!                   ...                      ...
+!                   LnudgeTCLM(NAT+NPT,ng)   for inert tracer NPT
+!
+!                 Other biological and sediment tracers switches are specified
+!                 in their respective input scripts.
+!
 !                 User also needs to TURN ON the respective logical switches
 !                 "LtracerCLM", described above, to process the required 3D
 !                 tracer climatology data. This data can be set with analytical
@@ -2146,6 +2137,11 @@ Dout(iTvdif) == 2*T 2*T ! temp_vdiff, ...    vertical diffusion
 !
 ! Hout(idTvar)   Write out active (NAT) tracers: temperature and salinity.
 !
+! Hout(idpthR)   Write out time-varying depths of RHO-points.
+! Hout(idpthU)   Write out time-varying depths of U-points.
+! Hout(idpthV)   Write out time-varying depths of V-points.
+! Hout(idpthW)   Write out time-varying depths of W-points.
+!
 ! Hout(idUsms)   Write out surface U-momentum stress.
 ! Hout(idVsms)   Write out surface V-momentum stress.
 ! Hout(idUbms)   Write out bottom  U-momentum stress.
@@ -2212,8 +2208,6 @@ Dout(iTvdif) == 2*T 2*T ! temp_vdiff, ...    vertical diffusion
 ! Hout(idMtls)   Write out turbulent kinetic energy times length scale.
 !
 ! Hout(inert)    Write out extra inert passive tracers.
-!
-! Hout(idBott)   Write out exposed sediment layer properties, 1:MBOTP.
 !
 !------------------------------------------------------------------------------
 ! Logical switches (T/F) to activate writing of time-averaged fields into
@@ -2532,6 +2526,8 @@ Dout(iTvdif) == 2*T 2*T ! temp_vdiff, ...    vertical diffusion
 !
 ! Output file names:
 !
+! DAINAME      Output data assimilation next cycle initial conditions (4D-Var
+!                analysis) or restart (Ensemble Kalman Filter, EnKF) file name.
 ! GSTNAME      Output GST analysis re-start file name.
 ! RSTNAME      Output re-start file name.
 ! HISNAME      Output history file name.

@@ -3,7 +3,7 @@
 #if (defined TL_AVERAGES && defined TANGENT) || \
     (defined RP_AVERAGES && defined TL_IOMS)
 !
-!svn $Id: tl_set_avg.F 751 2015-01-07 22:56:36Z arango $
+!svn $Id: tl_set_avg.F 795 2016-05-11 01:42:43Z arango $
 !================================================== Hernan G. Arango ===
 !  Copyright (c) 2002-2016 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !

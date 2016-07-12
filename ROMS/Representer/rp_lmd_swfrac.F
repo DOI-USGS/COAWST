@@ -8,7 +8,7 @@
      &                               IminS, ImaxS, JminS, JmaxS,        &
      &                               Zscale, Z, tl_Z, tl_swdk)
 !
-!svn $Id: rp_lmd_swfrac.F 751 2015-01-07 22:56:36Z arango $
+!svn $Id: rp_lmd_swfrac.F 795 2016-05-11 01:42:43Z arango $
 !================================================== Hernan G. Arango ===
 !  Copyright (c) 2002-2016 The ROMS/TOMS Group       Andrew M. Moore   !
 !    Licensed under a MIT/X style license                              !

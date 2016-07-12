@@ -3,7 +3,7 @@
 
 #if defined TANGENT && (defined WEAK_CONSTRAINT || defined FORCING_SV)
 !
-!svn $Id: tl_forcing.F 751 2015-01-07 22:56:36Z arango $
+!svn $Id: tl_forcing.F 807 2016-07-09 02:03:55Z arango $
 !================================================== Hernan G. Arango ===
 !  Copyright (c) 2002-2016 The ROMS/TOMS Group   Emanuele Di Lorenzo   !
 !    Licensed under a MIT/X style license            Andrew M. Moore   !
@@ -47,19 +47,17 @@
      &                      OCEAN(ng) % f_t,                            &
      &                      OCEAN(ng) % f_u,                            &
      &                      OCEAN(ng) % f_v,                            &
-# else
+# endif
      &                      OCEAN(ng) % f_ubar,                         &
      &                      OCEAN(ng) % f_vbar,                         &
-# endif
      &                      OCEAN(ng) % f_zeta,                         &
 # ifdef SOLVE3D
      &                      OCEAN(ng) % tl_t,                           &
      &                      OCEAN(ng) % tl_u,                           &
      &                      OCEAN(ng) % tl_v,                           &
-# else
+# endif
      &                      OCEAN(ng) % tl_ubar,                        &
      &                      OCEAN(ng) % tl_vbar,                        &
-# endif
 # ifdef SOLVE3D
      &                      COUPLING(ng) % tl_Zt_avg1,                  &
 # endif
@@ -75,15 +73,13 @@
      &                            Kfrc, Nfrc,                           &
 # ifdef SOLVE3D
      &                            f_t, f_u, f_v,                        &
-# else
-     &                            f_ubar, f_vbar,                       &
 # endif
+     &                            f_ubar, f_vbar,                       &
      &                            f_zeta,                               &
 # ifdef SOLVE3D
      &                            tl_t, tl_u, tl_v,                     &
-# else
-     &                            tl_ubar, tl_vbar,                     &
 # endif
+     &                            tl_ubar, tl_vbar,                     &
 # ifdef SOLVE3D
      &                            tl_Zt_avg1,                           &
 # endif
@@ -108,19 +104,17 @@
       real(r8), intent(in) :: f_t(LBi:,LBj:,:,:)
       real(r8), intent(in) :: f_u(LBi:,LBj:,:)
       real(r8), intent(in) :: f_v(LBi:,LBj:,:)
-#  else
+#  endif
       real(r8), intent(in) :: f_ubar(LBi:,LBj:)
       real(r8), intent(in) :: f_vbar(LBi:,LBj:)
-#  endif
       real(r8), intent(in) :: f_zeta(LBi:,LBj:)
 #  ifdef SOLVE3D
       real(r8), intent(inout) :: tl_t(LBi:,LBj:,:,:,:)
       real(r8), intent(inout) :: tl_u(LBi:,LBj:,:,:)
       real(r8), intent(inout) :: tl_v(LBi:,LBj:,:,:)
-#  else
+#  endif
       real(r8), intent(inout) :: tl_ubar(LBi:,LBj:,:)
       real(r8), intent(inout) :: tl_vbar(LBi:,LBj:,:)
-#  endif
 #  ifdef SOLVE3D
       real(r8), intent(inout) :: tl_Zt_avg1(LBi:,LBj:)
 #  endif
@@ -130,19 +124,17 @@
       real(r8), intent(in) :: f_t(LBi:UBi,LBj:UBj,N(ng),NT(ng))
       real(r8), intent(in) :: f_u(LBi:UBi,LBj:UBj,N(ng))
       real(r8), intent(in) :: f_v(LBi:UBi,LBj:UBj,N(ng))
-#  else
+#  endif
       real(r8), intent(in) :: f_ubar(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: f_vbar(LBi:UBi,LBj:UBj)
-#  endif
       real(r8), intent(in) :: f_zeta(LBi:UBi,LBj:UBj)
 #  ifdef SOLVE3D
       real(r8), intent(inout) :: tl_t(LBi:UBi,LBj:UBj,N(ng),3,NT(ng))
       real(r8), intent(inout) :: tl_u(LBi:UBi,LBj:UBj,N(ng),2)
       real(r8), intent(inout) :: tl_v(LBi:UBi,LBj:UBj,N(ng),2)
-#  else
+#  endif
       real(r8), intent(inout) :: tl_ubar(LBi:UBi,LBj:UBj,3)
       real(r8), intent(inout) :: tl_vbar(LBi:UBi,LBj:UBj,3)
-#  endif
 #  ifdef SOLVE3D
       real(r8), intent(inout) :: tl_Zt_avg1(LBi:UBi,LBj:UBj)
 #  endif
@@ -185,7 +177,22 @@
 !  also called on the first timestep. tl_forcing MUST be called
 !  before tl_ini_fields.
 !
-# ifdef SOLVE3D
+# ifdef FORCING_SV
+#  ifdef SOLVE3D
+      DO j=JstrR,JendR
+        DO i=IstrR,IendR
+          tl_Zt_avg1(i,j)=tl_Zt_avg1(i,j)+f_zeta(i,j)
+        END DO
+      END DO
+#  else
+      DO j=JstrR,JendR
+        DO i=IstrR,IendR
+          tl_zeta(i,j,Kfrc)=tl_zeta(i,j,Kfrc)+f_zeta(i,j)
+        END DO
+      END DO
+#  endif
+# else
+#  ifdef SOLVE3D
       IF(iic(ng).eq.ntstart(ng)) THEN
        DO j=JstrR,JendR
          DO i=IstrR,IendR
@@ -199,12 +206,13 @@
           END DO
         END DO
       END IF
-# else
+#  else
       DO j=JstrR,JendR
         DO i=IstrR,IendR
           tl_zeta(i,j,Kfrc)=tl_zeta(i,j,Kfrc)+f_zeta(i,j)
         END DO
       END DO
+#  endif
 # endif
 
 # ifndef SOLVE3D
@@ -224,6 +232,22 @@
       END DO
 
 # else
+!
+!  Tangent linear 2D momentum.
+!
+      DO j=JstrR,JendR
+        DO i=Istr,IendR
+          tl_ubar(i,j,1)=tl_ubar(i,j,1)+f_ubar(i,j)
+          tl_ubar(i,j,2)=tl_ubar(i,j,2)+f_ubar(i,j)
+        END DO
+      END DO
+!
+      DO j=Jstr,JendR
+        DO i=IstrR,IendR
+          tl_vbar(i,j,1)=tl_vbar(i,j,1)+f_vbar(i,j)
+          tl_vbar(i,j,2)=tl_vbar(i,j,2)+f_vbar(i,j)
+        END DO
+      END DO
 !
 !  Tangent linear 3D momentum.
 !

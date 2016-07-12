@@ -2,7 +2,7 @@
 #if defined ADJOINT && defined IMPULSE
       SUBROUTINE wrt_impulse (ng, tile, model, INPncname)
 !
-!svn $Id: wrt_impulse.F 429 2009-12-20 17:30:26Z arango $
+!svn $Id: wrt_impulse.F 807 2016-07-09 02:03:55Z arango $
 !================================================== Hernan G. Arango ===
 !  Copyright (c) 2002-2016 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
@@ -441,6 +441,14 @@
 # endif
       END DO
 !
+!  Close input NetCDF file.
+!
+      CALL netcdf_close (ng, model, INPncid, INPncname, .FALSE.)
+      IF (exit_flag.ne.NoError) THEN
+        WRITE (stdout,50) TRIM(INPncname)
+        RETURN
+      END IF
+!
 !-----------------------------------------------------------------------
 !  Synchronize impulse NetCDF file to disk to allow other processes
 !  to access data immediately after it is written.
@@ -449,7 +457,7 @@
       CALL netcdf_sync (ng, model, INPncname, TLF(ng)%ncid)
       IF (exit_flag.ne.NoError) RETURN
 
-      IF (Master)  WRITE (stdout,50) Nrec-1, TRIM(TLF(ng)%name)
+      IF (Master)  WRITE (stdout,60) Nrec-1, TRIM(TLF(ng)%name)
 !
   10  FORMAT (/,' WRT_IMPULSE - unable to open input NetCDF file: ',a)
   20  FORMAT (/,' WRT_IMPULSE - error while reading variable: ',a,2x,   &
@@ -458,7 +466,8 @@
      &        'at time record = ',i3,/,17x,'into NetCDF file: ',a)
   40  FORMAT (/,' WRT_IMPULSE - cannot find state variable: ',a,        &
      &        /,12x,'in input NetCDF file: ',a)
-  50  FORMAT (4x,'WRT_IMPULSE - wrote convolved adjoint impulses, ',    &
+  50  FORMAT (/,' WRT_IMPULSE - unable to close input NetCDF file: ',a)
+  60  FORMAT (4x,'WRT_IMPULSE - wrote convolved adjoint impulses, ',    &
      &           'records: 001 to ',i3.3,/,18x,'file: ',a)
 
       RETURN

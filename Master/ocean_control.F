@@ -89,7 +89,7 @@
 # elif defined R_SYMMETRY
 #  include "symmetry.h"
 # elif defined IS4DVAR
-#   include "is4dvar_ocean.h"
+#  include "is4dvar_ocean.h"
 # elif defined W4DPSAS
 #  include "w4dpsas_ocean.h"
 # elif defined W4DVAR

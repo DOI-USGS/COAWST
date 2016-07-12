@@ -2,7 +2,7 @@
       MODULE set_depth_mod
 #ifdef SOLVE3D
 !
-!svn $Id: set_depth.F 732 2008-09-07 01:55:51Z jcwarner $
+!svn $Id: set_depth.F 798 2016-05-21 17:04:58Z arango $
 !=======================================================================
 !  Copyright (c) 2002-2016 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
@@ -21,7 +21,8 @@
       implicit none
 !
       PRIVATE
-      PUBLIC  :: set_depth, set_depth_tile
+      PUBLIC  :: set_depth0, set_depth0_tile
+      PUBLIC  :: set_depth,  set_depth_tile
 # ifdef ADJUST_BOUNDARY
       PUBLIC  :: set_depth_bry
 # endif
@@ -187,7 +188,6 @@
               hwater=hwater-ABS(zice(i,j))
 # endif
               hinv=1.0_r8/hwater
-
               z_w0=cff_w+cff1_w*hwater
               z_w(i,j,k)=z_w0+Zt_avg1(i,j)*(1.0_r8+z_w0*hinv)
               z_r0=cff_r+cff1_r*hwater
@@ -343,6 +343,208 @@
 
       RETURN
       END SUBROUTINE set_depth_tile
+
+!
+!***********************************************************************
+      SUBROUTINE set_depth0 (ng, tile)
+!***********************************************************************
+!
+      USE mod_param
+      USE mod_grid
+      USE mod_ocean
+!
+!  Imported variable declarations.
+!
+      integer, intent(in) :: ng, tile
+!
+!  Local variable declarations.
+!
+# include "tile.h"
+!
+# ifdef PROFILE
+      CALL wclock_on (ng, iNLM, 12)
+# endif
+      CALL set_depth0_tile (ng, tile,                                   &
+     &                      LBi, UBi, LBj, UBj,                         &
+     &                      IminS, ImaxS, JminS, JmaxS,                 &
+     &                      GRID(ng) % h,                               &
+# ifdef ICESHELF
+     &                      GRID(ng) % zice,                            &
+# endif
+     &                      GRID(ng) % z0_r,                            &
+     &                      GRID(ng) % z0_w)
+# ifdef PROFILE
+      CALL wclock_off (ng, iNLM, 12)
+# endif
+
+      RETURN
+      END SUBROUTINE set_depth0
+!
+!***********************************************************************
+      SUBROUTINE set_depth0_tile (ng, tile,                             &
+     &                            LBi, UBi, LBj, UBj,                   &
+     &                            IminS, ImaxS, JminS, JmaxS,           &
+     &                            h,                                    &
+# ifdef ICESHELF
+     &                            zice,                                 &
+# endif
+     &                            z_r, z_w)
+!***********************************************************************
+!
+      USE mod_param
+      USE mod_scalars
+!
+      USE exchange_2d_mod
+      USE exchange_3d_mod
+# ifdef DISTRIBUTE
+      USE mp_exchange_mod, ONLY : mp_exchange2d, mp_exchange3d
+# endif
+!
+!  Imported variable declarations.
+!
+      integer, intent(in) :: ng, tile
+      integer, intent(in) :: LBi, UBi, LBj, UBj
+      integer, intent(in) :: IminS, ImaxS, JminS, JmaxS
+!
+# ifdef ASSUMED_SHAPE
+#  ifdef ICESHELF
+      real(r8), intent(in) :: zice(LBi:,LBj:)
+#  endif
+      real(r8), intent(inout) :: h(LBi:,LBj:)
+      real(r8), intent(out) :: z_r(LBi:,LBj:,:)
+      real(r8), intent(out) :: z_w(LBi:,LBj:,0:)
+# else
+#  ifdef ICESHELF
+      real(r8), intent(in) :: zice(LBi:UBi,LBj:UBj)
+#  endif
+      real(r8), intent(inout) :: h(LBi:UBi,LBj:UBj)
+      real(r8), intent(out) :: z_r(LBi:UBi,LBj:UBj,N(ng))
+      real(r8), intent(out) :: z_w(LBi:UBi,LBj:UBj,0:N(ng))
+# endif
+!
+!  Local variable declarations.
+!
+      integer :: i, j, k
+
+      real(r8) :: cff_r, cff1_r, cff2_r, cff_w, cff1_w, cff2_w
+      real(r8) :: hinv, hwater, z_r0, z_w0
+
+      real(r8), parameter :: zeta0 = 0.0_r8
+
+# include "set_bounds.h"
+!
+!-----------------------------------------------------------------------
+!  Original formulation: Compute time independent vertical depths
+!                        (meters, negative) at RHO- and W-points.
+!  Various stretching functions are possible.
+!
+!         z_w(x,y,s,t) = Zo_w + zeta(x,y,0) * [1.0 + Zo_w / h(x,y)]
+!
+!                 Zo_w = hc * [s(k) - C(k)] + C(k) * h(x,y)
+!
+!  where zeta(x,y,0) = 0 for time independent depths.
+!
+!-----------------------------------------------------------------------
+!
+      IF (Vtransform(ng).eq.1) THEN
+        DO j=JstrT,JendT
+          DO i=IstrT,IendT
+            z_w(i,j,0)=-h(i,j)
+          END DO
+          DO k=1,N(ng)
+            cff_r=hc(ng)*(SCALARS(ng)%sc_r(k)-SCALARS(ng)%Cs_r(k))
+            cff_w=hc(ng)*(SCALARS(ng)%sc_w(k)-SCALARS(ng)%Cs_w(k))
+            cff1_r=SCALARS(ng)%Cs_r(k)
+            cff1_w=SCALARS(ng)%Cs_w(k)
+            DO i=IstrT,IendT
+              hwater=h(i,j)
+# ifdef ICESHELF
+              hwater=hwater-ABS(zice(i,j))
+# endif
+              hinv=1.0_r8/hwater
+              z_w0=cff_w+cff1_w*hwater
+              z_w(i,j,k)=z_w0+zeta0*(1.0_r8+z_w0*hinv)
+              z_r0=cff_r+cff1_r*hwater
+              z_r(i,j,k)=z_r0+zeta0*(1.0_r8+z_r0*hinv)
+# ifdef ICESHELF
+              z_w(i,j,k)=z_w(i,j,k)-ABS(zice(i,j))
+              z_r(i,j,k)=z_r(i,j,k)-ABS(zice(i,j))
+# endif
+            END DO
+          END DO
+        END DO
+!
+!-----------------------------------------------------------------------
+!  New formulation: Compute time independent vertical depths
+!                   (meters, negative) at RHO- and W-points.
+!  Various stretching functions are possible.
+!
+!         z_w(x,y,s,t) = zeta(x,y,0) + [zeta(x,y,t)+ h(x,y)] * Zo_w
+!
+!                 Zo_w = [hc * s(k) + C(k) * h(x,y)] / [hc + h(x,y)]
+!
+!  where zeta(x,y,0) = 0 for time independent depths.
+!
+!-----------------------------------------------------------------------
+!
+      ELSE IF (Vtransform(ng).eq.2) THEN
+        DO j=JstrT,JendT
+          DO i=IstrT,IendT
+            z_w(i,j,0)=-h(i,j)
+          END DO
+          DO k=1,N(ng)
+            cff_r=hc(ng)*SCALARS(ng)%sc_r(k)
+            cff_w=hc(ng)*SCALARS(ng)%sc_w(k)
+            cff1_r=SCALARS(ng)%Cs_r(k)
+            cff1_w=SCALARS(ng)%Cs_w(k)
+            DO i=IstrT,IendT
+              hwater=h(i,j)
+# ifdef ICESHELF
+              hwater=hwater-ABS(zice(i,j))
+# endif
+              hinv=1.0_r8/(hc(ng)+hwater)
+              cff2_r=(cff_r+cff1_r*hwater)*hinv
+              cff2_w=(cff_w+cff1_w*hwater)*hinv
+
+              z_w(i,j,k)=zeta0+(zeta0+hwater)*cff2_w
+              z_r(i,j,k)=zeta0+(zeta0+hwater)*cff2_r
+# ifdef ICESHELF
+              z_w(i,j,k)=z_w(i,j,k)-ABS(zice(i,j))
+              z_r(i,j,k)=z_r(i,j,k)-ABS(zice(i,j))
+# endif
+            END DO
+          END DO
+        END DO
+      END IF
+!
+!-----------------------------------------------------------------------
+!  Exchange boundary information.
+!-----------------------------------------------------------------------
+!
+      IF (EWperiodic(ng).or.NSperiodic(ng)) THEN
+        CALL exchange_w3d_tile (ng, tile,                               &
+     &                          LBi, UBi, LBj, UBj, 0, N(ng),           &
+     &                          z_w)
+        CALL exchange_r3d_tile (ng, tile,                               &
+     &                          LBi, UBi, LBj, UBj, 1, N(ng),           &
+     &                          z_r)
+      END IF
+
+# ifdef DISTRIBUTE
+      CALL mp_exchange3d (ng, tile, iNLM, 1,                            &
+     &                    LBi, UBi, LBj, UBj, 0, N(ng),                 &
+     &                    NghostPoints,                                 &
+     &                    EWperiodic(ng), NSperiodic(ng),               &
+     &                    z_w)
+      CALL mp_exchange3d (ng, tile, iNLM, 1,                            &
+     &                    LBi, UBi, LBj, UBj, 1, N(ng),                 &
+     &                    NghostPoints,                                 &
+     &                    EWperiodic(ng), NSperiodic(ng),               &
+     &                    z_r)
+# endif
+
+      RETURN
+      END SUBROUTINE set_depth0_tile
 
 # ifdef ADJUST_BOUNDARY
 !

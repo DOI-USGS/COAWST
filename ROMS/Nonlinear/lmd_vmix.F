@@ -2,7 +2,7 @@
       MODULE lmd_vmix_mod
 #if defined NONLINEAR && defined LMD_MIXING && defined SOLVE3D
 !
-!svn $Id: lmd_vmix.F 732 2008-09-07 01:55:51Z jcwarner $
+!svn $Id: lmd_vmix.F 795 2016-05-11 01:42:43Z arango $
 !=======================================================================
 !  Copyright (c) 2002-2016 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !

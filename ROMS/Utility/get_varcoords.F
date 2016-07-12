@@ -4,7 +4,7 @@
      &                          Xmin, Xmax, X, Ymin, Ymax, Y,           &
      &                          rectangular)
 !
-!svn $Id: get_varcoords.F 1420 2011-07-06 17:59:33Z kate $
+!svn $Id: get_varcoords.F 795 2016-05-11 01:42:43Z arango $
 !================================================== Hernan G. Arango ===
 !  Copyright (c) 2002-2016 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !

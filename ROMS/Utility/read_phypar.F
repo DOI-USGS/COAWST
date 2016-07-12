@@ -1418,6 +1418,34 @@
                   Hout(i,ng)=Ltracer(itrc,ng)
                 END DO
               END DO
+            CASE ('Hout(idpthR)')
+              IF (idpthR.eq.0) THEN
+                IF (Master) WRITE (out,280) 'idpthR'
+                exit_flag=5
+                RETURN
+              END IF
+              Npts=load_l(Nval, Cval, Ngrids, Hout(idpthR,:))
+            CASE ('Hout(idpthU)')
+              IF (idpthU.eq.0) THEN
+                IF (Master) WRITE (out,280) 'idpthU'
+                exit_flag=5
+                RETURN
+              END IF
+              Npts=load_l(Nval, Cval, Ngrids, Hout(idpthU,:))
+            CASE ('Hout(idpthV)')
+              IF (idpthV.eq.0) THEN
+                IF (Master) WRITE (out,280) 'idpthV'
+                exit_flag=5
+                RETURN
+              END IF
+              Npts=load_l(Nval, Cval, Ngrids, Hout(idpthV,:))
+            CASE ('Hout(idpthW)')
+              IF (idpthW.eq.0) THEN
+                IF (Master) WRITE (out,280) 'idpthW'
+                exit_flag=5
+                RETURN
+              END IF
+              Npts=load_l(Nval, Cval, Ngrids, Hout(idpthW,:))
             CASE ('Hout(idUsms)')
               IF (idUsms.eq.0) THEN
                 IF (Master) WRITE (out,280) 'idUsms'
@@ -3908,6 +3936,10 @@
             CASE ('NC_DLEVEL')
               Npts=load_i(Nval, Rval, 1, Ivalue)
               deflate_level=Ivalue(1)
+            CASE ('DAINAME')
+              label='DAI - Data Assimilation Initial/Restart fields'
+              Npts=load_s1d(Nval, Cval, Cdim, line, label, igrid,       &
+     &                      Nfiles, DAI)
             CASE ('GSTNAME')
               label='GST - generalized stability theory analysis'
               Npts=load_s1d(Nval, Cval, Cdim, line, label, igrid,       &
@@ -4285,9 +4317,12 @@
 #endif
       END DO
 !
-!  Set switch to create NetCDF file.
+!  Set various parameters.
 !
       DO ng=1,Ngrids
+!
+!  Set switch to craeate NetCDF file.
+!
 #ifdef SOLVE3D
         DO i=1,NV
           IF (Hout(i,ng)) LdefHIS(ng)=.TRUE.
@@ -4396,6 +4431,12 @@
 !
         nTLM(ng)=nHIS(ng)
         LcycleTLM(ng)=.FALSE.
+#endif
+#if defined TIME_CONV && defined WEAK_CONSTRAINT
+!
+!  Set number of full state records needed for time convolutions.
+!
+        NrecTC(ng)=(ntimes(ng)/nADJ(ng))+1
 #endif
 #if defined FOUR_DVAR
 !
@@ -5459,6 +5500,18 @@
      &          Hout(idTvar(itrc),ng), 'Hout(idTvar)',                  &
      &          'Write out tracer ', itrc, TRIM(Vname(1,idTvar(itrc)))
           END DO
+          IF (Hout(idpthR,ng)) WRITE (out,170) Hout(idpthR,ng),         &
+     &       'Hout(idpthR)',                                            &
+     &       'Write out time-varying dephts of RHO-points.'
+          IF (Hout(idpthU,ng)) WRITE (out,170) Hout(idpthU,ng),         &
+     &       'Hout(idpthU)',                                            &
+     &       'Write out time-varying dephts of U-points.'
+          IF (Hout(idpthV,ng)) WRITE (out,170) Hout(idpthV,ng),         &
+     &       'Hout(idpthV)',                                            &
+     &       'Write out time-varying dephts of V-points.'
+          IF (Hout(idpthW,ng)) WRITE (out,170) Hout(idpthW,ng),         &
+     &       'Hout(idpthW)',                                            &
+     &       'Write out time-varying dephts of W-points.'
 #endif
           IF (Hout(idUsms,ng)) WRITE (out,170) Hout(idUsms,ng),         &
      &       'Hout(idUsms)',                                            &
@@ -6917,6 +6970,10 @@
 !-----------------------------------------------------------------------
 !
           WRITE (out,220)
+#if defined FOUR_DVAR || defined ENKF_RESTART
+          WRITE (out,230) 'Output DA Initial/Restart File:  ',          &
+     &                    TRIM(DAI(ng)%name)
+#endif
 #ifdef PROPAGATOR
           WRITE (out,230) '       Output GST Restart File:  ',          &
      &                    TRIM(GST(ng)%name)

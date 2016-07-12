@@ -260,7 +260,11 @@
 !
 !  Always use Gaussian distribution between -1 and +1, by Zscheme=1.
 !
+# ifdef BEOFS_ONLY
+      Zscheme=0
+# else
       Zscheme=1
+# endif
 !
 !  2D random initialization at RHO-points.
 !

@@ -1,6 +1,6 @@
 #include "cppdefs.h"
 !
-!svn $Id$
+!svn $Id: lbc.F 795 2016-05-11 01:42:43Z arango $
 !================================================== Hernan G. Arango ===
 !  Copyright (c) 2002-2016 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
@@ -71,7 +71,7 @@
 !
 ! Local variable declarations
 !
-      integer :: i, ibry, ie, ifield, is, ne, status
+      integer :: i, ibry, ie, ifield, is, ne, lstr, lvar, status
 #if !defined PARALLEL_IN  && defined DISTRIBUTE
       integer, dimension(2) :: ibuffer
 #endif

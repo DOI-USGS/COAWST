@@ -510,6 +510,11 @@ Hout(idBath) == T       ! bath               time-dependent bathymetry
 
 Hout(idTvar) == T T     ! temp, salt         temperature and salinity
 
+Hout(idpthR) == F       ! z_rho              time-varying depths of RHO-points
+Hout(idpthU) == F       ! z_u                time-varying depths of U-points
+Hout(idpthV) == F       ! z_v                time-varying depths of V-points
+Hout(idpthW) == F       ! z_w                time-varying depths of W-points
+
 Hout(idUsms) == T       ! sustr              surface U-stress
 Hout(idVsms) == T       ! svstr              surface V-stress
 Hout(idUbms) == T       ! bustr              bottom U-stress
@@ -789,6 +794,7 @@ Dout(iTvdif) == T T     ! temp_vdiff, ...    vertical diffusion
 
 ! Output NetCDF file names, [1:Ngrids].
 
+     DAINAME == ocean_dai.nc
      GSTNAME == ocean_gst.nc
      RSTNAME == ocean_rst.nc
      HISNAME == ocean_his.nc
@@ -1507,6 +1513,13 @@ Dout(iTvdif) == T T     ! temp_vdiff, ...    vertical diffusion
 !                    flux:  dt * crgban_cw * u_star**3
 !
 !------------------------------------------------------------------------------
+! Constants used in the wave effects on currents formulations.
+!------------------------------------------------------------------------------
+!
+!  WEC_ALPHA     If 0 then all wave dissip goes to break and none to roller.
+!                If 1 then all wave dissip goes to roller and none to breaking.
+!
+!------------------------------------------------------------------------------
 ! Constants used in the computation of momentum stress.
 !------------------------------------------------------------------------------
 !
@@ -1980,6 +1993,18 @@ Dout(iTvdif) == T T     ! temp_vdiff, ...    vertical diffusion
 !                 TCLM_NUDGING is now obsolete and replaced with these
 !                 switches to facilitate nesting applications.
 !
+!                 Only NAT active tracers (temperature, salinity) and NPT
+!                 inert tracers need to be specified here:
+!
+!                   LnudgeTCLM(itemp,ng)     for temperature (itemp=1)
+!                   LnudgeTCLM(isalt,ng)     for salinity    (isalt=2)
+!                   LnudgeTCLM(NAT+1,ng)     for inert tracer 1
+!                   ...                      ...
+!                   LnudgeTCLM(NAT+NPT,ng)   for inert tracer NPT
+!
+!                 Other biological and sediment tracers switches are specified
+!                 in their respective input scripts.
+!
 !                 User also needs to TURN ON the respective logical switches
 !                 "LtracerCLM", described above, to process the required 3D
 !                 tracer climatology data. This data can be set with analytical
@@ -2062,232 +2087,97 @@ Dout(iTvdif) == T T     ! temp_vdiff, ...    vertical diffusion
 ! HISTORY file.
 !------------------------------------------------------------------------------
 !
-! Hout(idUvel)   Write out 3D U-velocity component.
-! Hout(idVvel)   Write out 3D V-velocity component.
-! Hout(idu3dE)   Write out 3D Eastward  velocity component at RHO-points.
-! Hout(idv3dN)   Write out 3D Northward velocity component at RHO-points.
-! Hout(idWvel)   Write out 3D W-velocity component.
-! Hout(idOvel)   Write out 3D omega vertical velocity.
-! Hout(idUbar)   Write out 2D U-velocity component.
-! Hout(idVbar)   Write out 2D V-velocity component.
-! Hout(idu2dE)   Write out 2D Eastward  velocity component at RHO-points.
-! Hout(idv2dN)   Write out 2D Northward velocity component at RHO-points.
-! Hout(idFsur)   Write out free-surface.
-! Hout(idBath)   Write out time-dependent bathymetry.
+!  Hout(idUvel)  Write out 3D U-velocity component.
+!  Hout(idVvel)  Write out 3D V-velocity component.
+!  Hout(idWvel)  Write out 3D W-velocity component.
+!  Hout(idOvel)  Write out 3D omega vertical velocity.
+!  Hout(idUbar)  Write out 2D U-velocity component.
+!  Hout(idVbar)  Write out 2D V-velocity component.
+!  Hout(idFsur)  Write out free-surface.
+!  Hout(idBath)  Write out time-dependent bathymetry.
 !
-! Hout(idTvar)   Write out active (NAT) tracers: temperature and salinity.
+!  Hout(idTvar)  Write out active (NAT) tracers: temperature and salinity.
 !
-! Hout(idUsms)   Write out surface U-momentum stress.
-! Hout(idVsms)   Write out surface V-momentum stress.
-! Hout(idUbms)   Write out bottom  U-momentum stress.
-! Hout(idVbms)   Write out bottom  V-momentum stress.
+!  Hout(idpthR)   Write out time-varying depths of RHO-points.
+!  Hout(idpthU)   Write out time-varying depths of U-points.
+!  Hout(idpthV)   Write out time-varying depths of V-points.
+!  Hout(idpthW)   Write out time-varying depths of W-points.
 !
-! Hout(idUbrs)   Write out current-induced, U-momentum stress.
-! Hout(idVbrs)   Write out current-induced, V-momentum stress.
-! Hout(idUbws)   Write out wind-induced, bottom U-wave stress.
-! Hout(idVbws)   Write out wind-induced, bottom V-wave stress.
-! Hout(idUbcs)   Write out bottom maximum wave and current U-stress.
-! Hout(idVbcs)   Write out bottom maximum wave and current V-stress.
+!  Hout(idUsms)  Write out surface U-momentum stress.
+!  Hout(idVsms)  Write out surface V-momentum stress.
+!  Hout(idUbms)  Write out bottom  U-momentum stress.
+!  Hout(idVbms)  Write out bottom  V-momentum stress.
 !
-! Hout(idUbot)   Write out wind-induced, bed wave orbital U-velocity.
-! Hout(idVbot)   Write out wind-induced, bed wave orbital V-velocity.
-! Hout(idUbur)   Write out bottom U-velocity above bed.
-! Hout(idVbvr)   Write out bottom V-velocity above bed.
+!  Hout(idUbrs)  Write out current-induced, U-momentum stress.
+!  Hout(idVbrs)  Write out current-induced, V-momentum stress.
+!  Hout(idUbws)  Write out wind-induced, bottom U-wave stress.
+!  Hout(idVbws)  Write out wind-induced, bottom V-wave stress.
+!  Hout(idUbcs)  Write out bottom maximum wave and current U-stress.
+!  Hout(idVbcs)  Write out bottom maximum wave and current V-stress.
 !
-! Hout(idW2xx)   Write out 2D radiation stress, Sxx component.
-! Hout(idW2xy)   Write out 2D radiation stress, Sxy component.
-! Hout(idW2yy)   Write out 2D radiation stress, Syy component.
-! Hout(idU2rs)   Write out 2D U-radiation stress.
-! Hout(idV2rs)   Write out 2D V-radiation stress.
-! Hout(idU2Sd)   Write out 2D U-Stokes velocity.
-! Hout(idV2Sd)   Write out 2D V-Stokes velocity.
+!  Hout(idUbot)  Write out wind-induced, bed wave orbital U-velocity.
+!  Hout(idVbot)  Write out wind-induced, bed wave orbital V-velocity.
+!  Hout(idUbur)  Write out bottom U-velocity above bed.
+!  Hout(idVbvr)  Write out bottom V-velocity above bed.
 !
-! Hout(idW3xx)   Write out 3D radiation stress, Sxx component.
-! Hout(idW3xy)   Write out 3D radiation stress, Sxy component.
-! Hout(idW3yy)   Write out 3D radiation stress, Syy component.
-! Hout(idW3zx)   Write out 3D radiation stress, Szx component.
-! Hout(idW3zy)   Write out 3D radiation stress, Szy component.
-! Hout(idU3rs)   Write out 3D U-radiation stress.
-! Hout(idV3rs)   Write out 3D V-radiation stress.
-! Hout(idU3Sd)   Write out 3D U-Stokes velocity.
-! Hout(idV3Sd)   Write out 3D V-Stokes velocity.
+!  Hout(idW2xx)  Write out 2D radiation stress, Sxx component.
+!  Hout(idW2xy)  Write out 2D radiation stress, Sxy component.
+!  Hout(idW2yy)  Write out 2D radiation stress, Syy component.
+!  Hout(idW3xx)  Write out 3D radiation stress, Sxx component.
+!  Hout(idW3xy)  Write out 3D radiation stress, Sxy component.
+!  Hout(idW3yy)  Write out 3D radiation stress, Syy component.
+!  Hout(idW3zx)  Write out 3D radiation stress, Szx component.
+!  Hout(idW3zy)  Write out 3D radiation stress, Szy component.
 !
-! Hout(idWamp)   Write out wave height.
-! Hout(idWlen)   Write out wave length.
-! Hout(idWdir)   Write out wave direction.
-! Hout(idWptp)   Write out wave surface period.
-! Hout(idWpbt)   Write out wave bottom period.
-! Hout(idWorb)   Write out wave bottom orbital velocity.
-! Hout(idWdis)   Write out wave dissipation.
+!  Hout(idU2rs)  Write out 2D WEC U-stress.
+!  Hout(idV2rs)  Write out 2D WEC V-stress.
+!  Hout(idU3rs)  Write out 3D WEC U-stress.
+!  Hout(idV3rs)  Write out 3D WEC V-stress.
 !
-! Hout(idPair)   Write out surface air pressure.
-! Hout(idUair)   Write out surface U-wind component.
-! Hout(idVair)   Write out surface V-wind component.
+!  Hout(idU2Sd)  Write out 2D U-Stokes velocity.
+!  Hout(idV2Sd)  Write out 2D V-Stokes velocity.
+!  Hout(idU3Sd)  Write out 3D U-Stokes velocity.
+!  Hout(idV3Sd)  Write out 3D V-Stokes velocity.
+!  Hout(idW3St)  Write out 3D W-Stokes velocity.
+!  Hout(idW3Sd)  Write out 3D Omega-Stokes velocity.
 !
-! Hout(idTsur)   Write out surface net heat and salt flux
-! Hout(idLhea)   Write out latent heat flux.
-! Hout(idShea)   Write out sensible heat flux.
-! Hout(idLrad)   Write out long-wave radiation flux.
-! Hout(idSrad)   Write out short-wave radiation flux.
-! Hout(idEmPf)   Write out E-P flux.
-! Hout(idevap)   Write out evaporation rate.
-! Hout(idrain)   Write out precipitation rate.
+!  Hout(idWamp)  Write out wave height.
+!  Hout(idWlen)  Write out wave length.
+!  Hout(idWdir)  Write out wave direction.
+!  Hout(idWptp)  Write out wave surface period.
+!  Hout(idWpbt)  Write out wave bottom period.
+!  Hout(idWorb)  Write out wave bottom orbital velocity.
+!  Hout(idWbrk)  Write out wave breaking (percent).
+!  Hout(idUwav)  Write out wave-depth avgeraged U-velocity.
+!  Hout(idVwav)  Write out wave-depth avgeraged V-velocity.
+!  Hout(idWdif)  Write out wave dissipation due to bottom friction.
+!  Hout(idWdib)  Write out wave dissipation due to breaking.
+!  Hout(idWdiw)  Write out wave dissipation due to white capping.
+!  Hout(idWdis)  Write out wave roller dissipation.
+!  Hout(idWrol)  Write out wave roller action density.
+!  Hout(idWztw)  Write out WEC quasi-static sea level adjustment.
+!  Hout(idWqsp)  Write out WEC quasi-static pressure.
+!  Hout(idWbeh)  Write out WEC Bernoulli head.
 !
-! Hout(idDano)   Write out density anomaly.
-! Hout(idVvis)   Write out vertical viscosity coefficient.
-! Hout(idTdif)   Write out vertical diffusion coefficient of temperature.
-! Hout(idSdif)   Write out vertical diffusion coefficient of salinity.
-! Hout(idHsbl)   Write out depth of oceanic surface boundary layer.
-! Hout(idHbbl)   Write out depth of oceanic bottom boundary layer.
-! Hout(idMtke)   Write out turbulent kinetic energy.
-! Hout(idMtls)   Write out turbulent kinetic energy times length scale.
+!  Hout(idTsur)  Write out surface net heat and salt flux
+!  Hout(idLhea)  Write out latent heat flux.
+!  Hout(idShea)  Write out sensible heat flux.
+!  Hout(idLrad)  Write out long-wave radiation flux.
+!  Hout(idSrad)  Write out short-wave radiation flux.
+!  Hout(idEmPf)  Write out E-P flux.
+!  Hout(idevap)  Write out evaporation rate.
+!  Hout(idrain)  Write out precipitation rate.
 !
-! Hout(inert)    Write out extra inert passive tracers.
+!  Hout(idDano)  Write out density anomaly.
+!  Hout(idVvis)  Write out vertical viscosity coefficient.
+!  Hout(idTdif)  Write out vertical diffusion coefficient of temperature.
+!  Hout(idSdif)  Write out vertical diffusion coefficient of salinity.
+!  Hout(idHsbl)  Write out depth of oceanic surface boundary layer.
+!  Hout(idHbbl)  Write out depth of oceanic bottom boundary layer.
+!  Hout(idMtke)  Write out turbulent kinetic energy.
+!  Hout(idMtls)  Write out turbulent kinetic energy times length scale.
 !
-!------------------------------------------------------------------------------
-! Logical switches (T/F) to activate writing of time-averaged fields into
-! AVERAGE file.
-!------------------------------------------------------------------------------
-!
-! Aout(idUvel)   Write out 3D U-velocity component.
-! Aout(idVvel)   Write out 3D V-velocity component.
-! Aout(idu3dE)   Write out 3D Eastward  velocity component at RHO-points.
-! Aout(idv3dN)   Write out 3D Northward velocity component at RHO-points.
-! Aout(idWvel)   Write out 3D W-velocity component.
-! Aout(idOvel)   Write out 3D omega vertical velocity.
-! Aout(idUbar)   Write out 2D U-velocity component.
-! Aout(idVbar)   Write out 2D V-velocity component.
-! Aout(idu2dE)   Write out 2D Eastward  velocity component at RHO-points.
-! Aout(idv2dN)   Write out 2D Northward velocity component at RHO-points.
-! Aout(idFsur)   Write out free-surface.
-!
-! Aout(idTvar)   Write out active (NAT) tracers: temperature and salinity.
-!
-! Aout(idUsms)   Write out surface U-momentum stress.
-! Aout(idVsms)   Write out surface V-momentum stress.
-! Aout(idUbms)   Write out bottom  U-momentum stress.
-! Aout(idVbms)   Write out bottom  V-momentum stress.
-!
-! Aout(idW2xx)   Write out 2D radiation stress, Sxx component.
-! Aout(idW2xy)   Write out 2D radiation stress, Sxy component.
-! Aout(idW2yy)   Write out 2D radiation stress, Syy component.
-! Aout(idU2rs)   Write out 2D U-radiation stress.
-! Aout(idV2rs)   Write out 2D V-radiation stress.
-! Aout(idU2Sd)   Write out 2D U-Stokes velocity.
-! Aout(idV2Sd)   Write out 2D V-Stokes velocity.
-!
-! Aout(idW3xx)   Write out 3D radiation stress, Sxx component.
-! Aout(idW3xy)   Write out 3D radiation stress, Sxy component.
-! Aout(idW3yy)   Write out 3D radiation stress, Syy component.
-! Aout(idW3zx)   Write out 3D radiation stress, Szx component.
-! Aout(idW3zy)   Write out 3D radiation stress, Szy component.
-! Aout(idU3rs)   Write out 3D U-radiation stress.
-! Aout(idV3rs)   Write out 3D V-radiation stress.
-! Aout(idU3Sd)   Write out 3D U-Stokes velocity.
-! Aout(idV3Sd)   Write out 3D V-Stokes velocity.
-!
-! Aout(idPair)   Write out surface air pressure.
-! Aout(idUair)   Write out surface U-wind component.
-! Aout(idVair)   Write out surface V-wind component.
-!
-! Aout(idTsur)   Write out surface net heat and salt flux
-! Aout(idLhea)   Write out latent heat flux.
-! Aout(idShea)   Write out sensible heat flux.
-! Aout(idLrad)   Write out long-wave radiation flux.
-! Aout(idSrad)   Write out short-wave radiation flux.
-! Aout(idevap)   Write out evaporation rate.
-! Aout(idrain)   Write out precipitation rate.
-!
-! Aout(idDano)   Write out density anomaly.
-! Aout(idVvis)   Write out vertical viscosity coefficient.
-! Aout(idTdif)   Write out vertical diffusion coefficient of temperature.
-! Aout(idSdif)   Write out vertical diffusion coefficient of salinity.
-! Aout(idHsbl)   Write out depth of oceanic surface boundary layer.
-! Aout(idHbbl)   Write out depth of oceanic bottom boundary layer.
-!
-! Aout(id2dRV)   Write out 2D relative vorticity (vertically integrated).
-! Aout(id3dRV)   Write out 3D relative vorticity.
-! Aout(id2dPV)   Write out 2D potential vorticity (shallow water).
-! Aout(id3dPV)   Write out 3D potential vorticity.
-!
-! Aout(idu3dD)   Write out detided 3D U-velocity.
-! Aout(idv3dD)   Write out detided 3D V-velocity.
-! Aout(idu2dD)   Write out detided 2D U-velocity.
-! Aout(idv2dD)   Write out detided 2D V-velocity.
-! Aout(idFsuD)   Write out detided free-surface
-!
-! Aout(idTrcD)   Write out detided temperature and salinity.
-!
-! Aout(idHUav)   Write out u-volume flux, Huon.
-! Aout(idHVav)   Write out v-volume flux, Hvom.
-! Aout(idUUav)   Write out quadratic <u*u> term.
-! Aout(idUVav)   Write out quadratic <u*v> term.
-! Aout(idVVav)   Write out quadratic <v*v> term.
-! Aout(idU2av)   Write out quadratic <ubar*ubar> term.
-! Aout(idV2av)   Write out quadratic <vbar*vbar> term.
-! Aout(idZZav)   Write out quadratic <zeta*zeta> term.
-!
-! Aout(idTTav)   Write out quadratic <t*t> active and inert tracers terms.
-! Aout(idUTav)   Write out quadratic <u*t> active and inert tracers terms.
-! Aout(idVTav)   Write out quadratic <v*t> active and inert tracers terms.
-! Aout(iHUTav)   Write out active and inert tracer u-volume flux, <Huon*t>.
-! Aout(iHVTav)   Write out active and inert tracer v-volume flux, <Hvom*t>.
-!
-! Aout(inert)    Write out extra inert passive tracers.
-!
-!------------------------------------------------------------------------------
-! Logical switches (T/F) to activate writing of time-averaged fields into
-! DIAGNOSTIC file.
-!------------------------------------------------------------------------------
-!
-! Time-averaged, 2D momentum (ubar,vbar) diagnostic terms:
-! (if DIAGNOSTICS_UV)
-!
-! Dout(M2rate)   Write out acceleration.
-! Dout(M2pgrd)   Write out pressure gradient.
-! Dout(M2fcor)   Write out Coriolis force, if UV_COR.
-! Dout(M2hadv)   Write out horizontal total advection, if UV_ADV.
-! Dout(M2xadv)   Write out horizontal  XI-advection, if UV_ADV.
-! Dout(M2yadv)   Write out horizontal ETA-advection, if UV_ADV.
-! Dout(M2hrad)   Write out horizontal total radiation stress, NEARSHORE_MELLOR.
-! Dout(M2hvis)   Write out horizontal total viscosity, if UV_VIS2 or UV_VIS4.
-! Dout(M2xvis)   Write out horizontal  XI-viscosity, if UV_VIS2 or UV_VIS4.
-! Dout(M2yvis)   Write out horizontal ETA-viscosity, if UV_VIS2 or UV_VIS4.
-! Dout(M2sstr)   Write out surface stress.
-! Dout(M2bstr)   Write out bottom stress
-!
-! Time-averaged, 3D momentum (u,v) diagnostic terms:
-! (if SOLVE3D and DIAGNOSTICS_UV)
-!
-! Dout(M3rate)   Write out acceleration.
-! Dout(M3pgrd)   Write out pressure gradient.
-! Dout(M3fcor)   Write out Coriolis force, if UV_COR.
-! Dout(M3hadv)   Write out horizontal total advection, if UV_ADV.
-! Dout(M3xadv)   Write out horizontal  XI-advection, if UV_ADV.
-! Dout(M3yadv)   Write out horizontal ETA-advection, if UV_ADV.
-! Dout(M3hrad)   Write out horizontal total radiation stress, NEARSHORE_MELLOR.
-! Dout(M3vrad)   Write out vertical radiation stress, if NEARSHORE_MELLOR.
-! Dout(M3hvis)   Write out horizontal total viscosity, if UV_VIS2 or UV_VIS4.
-! Dout(M3xvis)   Write out horizontal  XI-viscosity, if UV_VIS2 or UV_VIS4.
-! Dout(M3yvis)   Write out horizontal ETA-viscosity, if UV_VIS2 or UV_VIS4.
-! Dout(M3yvis)   Write out horizontal ETA-viscosity, if UV_VIS2 or UV_VIS4.
-! Dout(M3vvis)   Write out vertical viscosity.
-!
-! Time-averaged, active (temperature and salinity) and passive (inert) tracer
-! diagnostic terms, [1:NAT+NPT,Ngrids] values expected:
-! (if SOLVE3D and DIAGNOSTICS_TS)
-!
-! Dout(iTrate)   Write out time rate of change.
-! Dout(iThadv)   Write out horizontal total advection.
-! Dout(iTxadv)   Write out horizontal  XI-advection.
-! Dout(iTyadv)   Write out horizontal ETA-advection.
-! Dout(iTvadv)   Write out vertical advection.
-! Dout(iThdif)   Write out horizontal total diffusion, if TS_DIF2 or TS_DIF4.
-! Dout(iTxdif)   Write out horizonta1  XI-diffusion, if TS_DIF2 or TS_DIF4.
-! Dout(iTydif)   Write out horizontal ETA-diffusion, if TS_DIF2 or TS_DIF4.
-! Dout(iTsdif)   Write out horizontal   S-diffusion, if TS_DIF2 or TS_DIF4 and
-!                  rotated tensor (MIX_GEO_TS or MIX_ISO_TS).
-! Dout(iTvdif)   Write out vertical diffusion.
+!  Hout(inert)   Write out extra inert passive tracers.
 !
 !------------------------------------------------------------------------------
 ! Generic User parameters.
@@ -2461,6 +2351,8 @@ Dout(iTvdif) == T T     ! temp_vdiff, ...    vertical diffusion
 !
 ! Output file names:
 !
+! DAINAME      Output data assimilation next cycle initial conditions (4D-Var
+!                analysis) or restart (Ensemble Kalman Filter, EnKF) file name.
 ! GSTNAME      Output GST analysis re-start file name.
 ! RSTNAME      Output re-start file name.
 ! HISNAME      Output history file name.

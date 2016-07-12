@@ -2,7 +2,7 @@
       FUNCTION def_dim (ng, model, ncid, ncname, DimName, DimSize,      &
      &                  DimID)
 !
-!svn $Id: def_dim.F 677 2008-08-05 20:17:30Z arango $
+!svn $Id: def_dim.F 795 2016-05-11 01:42:43Z arango $
 !================================================== Hernan G. Arango ===
 !  Copyright (c) 2002-2016 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !

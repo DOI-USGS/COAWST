@@ -1,7 +1,7 @@
 #include "cppdefs.h"
       MODULE state_copy_mod
 !
-!svn $Id$
+!svn $Id: state_copy.F 807 2016-07-09 02:03:55Z arango $
 !================================================== Hernan G. Arango ===
 !  Copyright (c) 2002-2016 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
@@ -45,6 +45,10 @@
      &                       s1_t, s2_t,                                &
      &                       s1_u, s2_u,                                &
      &                       s1_v, s2_v,                                &
+# if defined WEAK_CONSTRAINT && defined TIME_CONV
+     &                       s1_ubar, s2_ubar,                          &
+     &                       s1_vbar, s2_vbar,                          &
+# endif
 #else
      &                       s1_ubar, s2_ubar,                          &
      &                       s1_vbar, s2_vbar,                          &
@@ -87,6 +91,10 @@
       real(r8), intent(in) :: s2_t(LBi:,LBj:,:,:,:)
       real(r8), intent(in) :: s2_u(LBi:,LBj:,:,:)
       real(r8), intent(in) :: s2_v(LBi:,LBj:,:,:)
+#  if defined WEAK_CONSTRAINT && defined TIME_CONV
+      real(r8), intent(in) :: s2_ubar(LBi:,LBj:,:)
+      real(r8), intent(in) :: s2_vbar(LBi:,LBj:,:)
+#  endif
 # else
       real(r8), intent(in) :: s2_ubar(LBi:,LBj:,:)
       real(r8), intent(in) :: s2_vbar(LBi:,LBj:,:)
@@ -114,6 +122,10 @@
       real(r8), intent(inout) :: s1_t(LBi:,LBj:,:,:,:)
       real(r8), intent(inout) :: s1_u(LBi:,LBj:,:,:)
       real(r8), intent(inout) :: s1_v(LBi:,LBj:,:,:)
+#  if defined WEAK_CONSTRAINT && defined TIME_CONV
+      real(r8), intent(inout) :: s1_ubar(LBi:,LBj:,:)
+      real(r8), intent(inout) :: s1_vbar(LBi:,LBj:,:)
+#  endif
 # else
       real(r8), intent(inout) :: s1_ubar(LBi:,LBj:,:)
       real(r8), intent(inout) :: s1_vbar(LBi:,LBj:,:)
@@ -145,6 +157,10 @@
       real(r8), intent(in) :: s2_t(LBi:UBi,LBj:UBj,N(ng),3,NT(ng))
       real(r8), intent(in) :: s2_u(LBi:UBi,LBj:UBj,N(ng),2)
       real(r8), intent(in) :: s2_v(LBi:UBi,LBj:UBj,N(ng),2)
+#  if defined WEAK_CONSTRAINT && defined TIME_CONV
+      real(r8), intent(in) :: s2_ubar(LBi:UBi,LBj:UBj,3)
+      real(r8), intent(in) :: s2_vbar(LBi:UBi,LBj:UBj,3)
+#  endif
 # else
       real(r8), intent(in) :: s2_ubar(LBi:UBi,LBj:UBj,3)
       real(r8), intent(in) :: s2_vbar(LBi:UBi,LBj:UBj,3)
@@ -174,6 +190,10 @@
       real(r8), intent(inout) :: s1_t(LBi:UBi,LBj:UBj,N(ng),3,NT(ng))
       real(r8), intent(inout) :: s1_u(LBi:UBi,LBj:UBj,N(ng),2)
       real(r8), intent(inout) :: s1_v(LBi:UBi,LBj:UBj,N(ng),2)
+#  if defined WEAK_CONSTRAINT && defined TIME_CONV
+      real(r8), intent(inout) :: s1_ubar(LBi:UBi,LBj:UBj,3)
+      real(r8), intent(inout) :: s1_vbar(LBi:UBi,LBj:UBj,3)
+#  endif
 # else
       real(r8), intent(inout) :: s1_ubar(LBi:UBi,LBj:UBj,3)
       real(r8), intent(inout) :: s1_vbar(LBi:UBi,LBj:UBj,3)
@@ -240,7 +260,7 @@
       END IF
 #endif
 
-#ifndef SOLVE3D
+#if !defined SOLVE3D || (defined WEAK_CONSTRAINT && defined TIME_CONV)
 !
 !  2D U-momentum component.
 !
@@ -289,7 +309,7 @@
       END IF
 #endif
 
-#ifndef SOLVE3D
+#if !defined SOLVE3D || (defined WEAK_CONSTRAINT && defined TIME_CONV)
 !
 !  2D V-momentum component.
 !

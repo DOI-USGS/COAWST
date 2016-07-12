@@ -4,7 +4,7 @@
 
 #if defined NONLINEAR && defined FOUR_DVAR && defined SOLVE3D
 !
-!svn $Id: conv_3d.F 732 2008-09-07 01:55:51Z jcwarner $
+!svn $Id: conv_3d.F 807 2016-07-09 02:03:55Z arango $
 !================================================== Hernan G. Arango ===
 !  Copyright (c) 2002-2016 The ROMS/TOMS Group       Andrew M. Moore   !
 !    Licensed under a MIT/X style license                              !
@@ -19,6 +19,9 @@
 !  For Gaussian (bell-shaped) correlations, the space convolution      !
 !  of the diffusion operator is an efficient way  to estimate the      !
 !  finite domain error covariances.                                    !
+!                                                                      !
+!  Notice that "z_r" and "Hz" are assumed to be time invariant in      !
+!  the spatial convolution. That it, they are not adjointable.         !
 !                                                                      !
 !  On Input:                                                           !
 !                                                                      !
@@ -68,7 +71,12 @@
      &                          Nghost, NHsteps, NVsteps,               &
      &                          DTsizeH, DTsizeV,                       &
      &                          Kh, Kv,                                 &
-     &                          pm, pn, pmon_u, pnom_v,                 &
+     &                          pm, pn,                                 &
+# ifdef GEOPOTENTIAL_HCONV
+     &                          on_u, om_v,                             &
+# else
+     &                          pmon_u, pnom_v,                         &
+# endif
 # ifdef MASKING
      &                          rmask, umask, vmask,                    &
 # endif
@@ -79,7 +87,7 @@
       USE mod_param
       USE mod_scalars
 !
-      USE bc_3d_mod, ONLY: bc_r3d_tile
+      USE bc_3d_mod, ONLY: dabc_r3d_tile
 # ifdef DISTRIBUTE
       USE mp_exchange_mod, ONLY : mp_exchange3d
 # endif
@@ -96,8 +104,13 @@
 # ifdef ASSUMED_SHAPE
       real(r8), intent(in) :: pm(LBi:,LBj:)
       real(r8), intent(in) :: pn(LBi:,LBj:)
+#  ifdef GEOPOTENTIAL_HCONV
+      real(r8), intent(in) :: on_u(LBi:,LBj:)
+      real(r8), intent(in) :: om_v(LBi:,LBj:)
+#  else
       real(r8), intent(in) :: pmon_u(LBi:,LBj:)
       real(r8), intent(in) :: pnom_v(LBi:,LBj:)
+#  endif
 #  ifdef MASKING
       real(r8), intent(in) :: rmask(LBi:,LBj:)
       real(r8), intent(in) :: umask(LBi:,LBj:)
@@ -112,8 +125,13 @@
 # else
       real(r8), intent(in) :: pm(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: pn(LBi:UBi,LBj:UBj)
+#  ifdef GEOPOTENTIAL_HCONV
+      real(r8), intent(in) :: on_u(LBi:UBi,LBj:UBj)
+      real(r8), intent(in) :: om_v(LBi:UBi,LBj:UBj)
+#  else
       real(r8), intent(in) :: pmon_u(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: pnom_v(LBi:UBi,LBj:UBj)
+#  endif
 #  ifdef MASKING
       real(r8), intent(in) :: rmask(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: umask(LBi:UBi,LBj:UBj)
@@ -129,15 +147,16 @@
 !
 !  Local variable declarations.
 !
-      integer :: Nnew, Nold, Nsav, i, j, k, step
+      integer :: Nnew, Nold, Nsav, i, j, k, k1, k2, step
 
-      real(r8) :: cff, cff1
+      real(r8) :: cff, cff1, cff2, cff3, cff4
 
       real(r8), dimension(LBi:UBi,LBj:UBj,LBk:UBk,2) :: Awrk
 
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: FE
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: FX
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: Hfac
+
 # ifdef VCONVOLUTION
 #  ifndef SPLINES_VCONV
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS,0:N(ng)) :: FC
@@ -156,11 +175,19 @@
       real(r8), dimension(IminS:ImaxS,0:N(ng)) :: FS
 #  endif
 # endif
+# ifdef GEOPOTENTIAL_HCONV
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS,2) :: FZ
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS,2) :: dAdz
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS,2) :: dAdx
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS,2) :: dAde
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS,2) :: dZdx
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS,2) :: dZde
+# endif
 
 # include "set_bounds.h"
 !
 !-----------------------------------------------------------------------
-!  Space convolution of the diffusion equation for a 2D state variable
+!  Space convolution of the diffusion equation for a 3D state variable
 !  at RHO-points.
 !-----------------------------------------------------------------------
 !
@@ -196,9 +223,9 @@
 !
       Nold=1
       Nnew=2
-      CALL bc_r3d_tile (ng, tile,                                       &
-     &                  LBi, UBi, LBj, UBj, LBk, UBk,                   &
-     &                  A)
+      CALL dabc_r3d_tile (ng, tile,                                     &
+     &                    LBi, UBi, LBj, UBj, LBk, UBk,                 &
+     &                    A)
 # ifdef DISTRIBUTE
       CALL mp_exchange3d (ng, tile, model, 1,                           &
      &                    LBi, UBi, LBj, UBj, LBk, UBk,                 &
@@ -219,26 +246,175 @@
 !-----------------------------------------------------------------------
 !
       DO step=1,NHsteps
+
+# ifdef GEOPOTENTIAL_HCONV
 !
-!  Compute XI- and ETA-components of diffusive flux.
+!  Diffusion along geopotential surfaces: Compute horizontal and
+!  vertical gradients.  Notice the recursive blocking sequence.  The
+!  vertical placement of the gradients is:
+!
+!        dAdx,dAde(:,:,k1) k     rho-points
+!        dAdx,dAde(:,:,k2) k+1   rho-points
+!          FZ,dAdz(:,:,k1) k-1/2   W-points
+!          FZ,dAdz(:,:,k2) k+1/2   W-points
+!
+        k2=1
+        K_LOOP : DO k=0,N(ng)
+          k1=k2
+          k2=3-k1
+          IF (k.lt.N(ng)) THEN
+            DO j=Jstr,Jend
+              DO i=Istr,Iend+1
+                cff=0.5_r8*(pm(i-1,j)+pm(i,j))
+#  ifdef MASKING
+                cff=cff*umask(i,j)
+#  endif
+                dZdx(i,j,k2)=cff*(z_r(i  ,j,k+1)-                       &
+     &                            z_r(i-1,j,k+1))
+#  ifdef MASKING
+                dAdx(i,j,k2)=cff*(Awrk(i  ,j,k+1,Nold)*rmask(i  ,j)-    &
+     &                            Awrk(i-1,j,k+1,Nold)*rmask(i-1,j))
+#  else
+                dAdx(i,j,k2)=cff*(Awrk(i  ,j,k+1,Nold)-                 &
+     &                            Awrk(i-1,j,k+1,Nold))
+#  endif
+              END DO
+            END DO
+            DO j=Jstr,Jend+1
+              DO i=Istr,Iend
+                cff=0.5_r8*(pn(i,j-1)+pn(i,j))
+#  ifdef MASKING
+                cff=cff*vmask(i,j)
+#  endif
+                dZde(i,j,k2)=cff*(z_r(i,j  ,k+1)-                       &
+     &                            z_r(i,j-1,k+1))
+#  ifdef MASKING
+                dAde(i,j,k2)=cff*(Awrk(i,j  ,k+1,Nold)*rmask(i,j  )-    &
+     &                            Awrk(i,j-1,k+1,Nold)*rmask(i,j-1))
+#  else
+                dAde(i,j,k2)=cff*(Awrk(i,j  ,k+1,Nold)-                 &
+     &                            Awrk(i,j-1,k+1,Nold))
+#  endif
+              END DO
+            END DO
+          END IF
+          IF ((k.eq.0).or.(k.eq.N(ng))) THEN
+            DO j=Jstr-1,Jend+1
+              DO i=Istr-1,Iend+1
+                dAdz(i,j,k2)=0.0_r8
+                FZ(i,j,k2)=0.0_r8
+              END DO
+            END DO
+          ELSE
+            DO j=Jstr-1,Jend+1
+              DO i=Istr-1,Iend+1
+                cff=1.0_r8/(z_r(i,j,k+1)-z_r(i,j,k))
+                dAdz(i,j,k2)=cff*(Awrk(i,j,k+1,Nold)-                  &
+     &                            Awrk(i,j,k  ,Nold))
+#  ifdef MASKING
+                dAdz(i,j,k2)=dAdz(i,j,k2)*rmask(i,j)
+#  endif
+              END DO
+            END DO
+          END IF
+!
+!  Compute components of the rotated A flux (A m3/s) along geopotential
+!  surfaces.
+!
+          IF (k.gt.0) THEN
+            DO j=Jstr,Jend
+              DO i=Istr,Iend+1
+                cff=0.25_r8*(Kh(i-1,j)+Kh(i-1,j))*on_u(i,j)
+                cff1=MIN(dZdx(i,j,k1),0.0_r8)
+                cff2=MAX(dZdx(i,j,k1),0.0_r8)
+                FX(i,j)=cff*                                            &
+     &                  (Hz(i,j,k)+Hz(i-1,j,k))*                        &
+     &                  (dAdx(i,j,k1)-                                  &
+     &                   0.5_r8*(cff1*(dAdz(i-1,j,k1)+                  &
+     &                                 dAdz(i  ,j,k2))+                 &
+     &                           cff2*(dAdz(i-1,j,k2)+                  &
+     &                                 dAdz(i  ,j,k1))))
+              END DO
+            END DO
+            DO j=Jstr,Jend+1
+              DO i=Istr,Iend
+                cff=0.25_r8*(Kh(i,j-1)+Kh(i,j))*om_v(i,j)
+                cff1=MIN(dZde(i,j,k1),0.0_r8)
+                cff2=MAX(dZde(i,j,k1),0.0_r8)
+                FE(i,j)=cff*                                            &
+     &                  (Hz(i,j,k)+Hz(i,j-1,k))*                        &
+     &                  (dAde(i,j,k1)-                                  &
+     &                   0.5_r8*(cff1*(dAdz(i,j-1,k1)+                  &
+     &                                 dAdz(i,j  ,k2))+                 &
+     &                           cff2*(dAdz(i,j-1,k2)+                  &
+     &                                 dAdz(i,j  ,k1))))
+              END DO
+            END DO
+            IF (k.lt.N(ng)) THEN
+              DO j=Jstr,Jend
+                DO i=Istr,Iend
+                  cff=0.5_r8*Kh(i,j)
+                  cff1=MIN(dZdx(i  ,j,k1),0.0_r8)
+                  cff2=MIN(dZdx(i+1,j,k2),0.0_r8)
+                  cff3=MAX(dZdx(i  ,j,k2),0.0_r8)
+                  cff4=MAX(dZdx(i+1,j,k1),0.0_r8)
+                  FZ(i,j,k2)=cff*                                       &
+     &                       (cff1*(cff1*dAdz(i,j,k2)-dAdx(i  ,j,k1))+  &
+     &                        cff2*(cff2*dAdz(i,j,k2)-dAdx(i+1,j,k2))+  &
+     &                        cff3*(cff3*dAdz(i,j,k2)-dAdx(i  ,j,k2))+  &
+     &                        cff4*(cff4*dAdz(i,j,k2)-dAdx(i+1,j,k1)))
+                  cff1=MIN(dZde(i,j  ,k1),0.0_r8)
+                  cff2=MIN(dZde(i,j+1,k2),0.0_r8)
+                  cff3=MAX(dZde(i,j  ,k2),0.0_r8)
+                  cff4=MAX(dZde(i,j+1,k1),0.0_r8)
+                  FZ(i,j,k2)=FZ(i,j,k2)+                                &
+     &                       cff*                                       &
+     &                       (cff1*(cff1*dAdz(i,j,k2)-dAde(i,j  ,k1))+  &
+     &                        cff2*(cff2*dAdz(i,j,k2)-dAde(i,j+1,k2))+  &
+     &                        cff3*(cff3*dAdz(i,j,k2)-dAde(i,j  ,k2))+  &
+     &                        cff4*(cff4*dAdz(i,j,k2)-dAde(i,j+1,k1)))
+                END DO
+              END DO
+            END IF
+!
+!  Time-step harmonic, geopotential diffusion term (m Tunits).
+!
+            DO j=Jstr,Jend
+              DO i=Istr,Iend
+                Awrk(i,j,k,Nnew)=Awrk(i,j,k,Nold)+                      &
+     &                           Hfac(i,j)*                             &
+     &                           (FX(i+1,j  )-FX(i,j)+                  &
+     &                            FE(i  ,j+1)-FE(i,j))+                 &
+     &                           DTsizeH*                               &
+     &                           (FZ(i,j,k2)-FZ(i,j,k1))
+              END DO
+            END DO
+          END IF
+        END DO K_LOOP
+
+# else
+
+!
+!  Diffusion along S-coordinates: compute XI- and ETA-components of
+!  diffusive flux.
 !
         DO k=1,N(ng)
           DO j=Jstr,Jend
             DO i=Istr,Iend+1
               FX(i,j)=pmon_u(i,j)*0.5_r8*(Kh(i-1,j)+Kh(i,j))*           &
      &                (Awrk(i,j,k,Nold)-Awrk(i-1,j,k,Nold))
-# ifdef MASKING
+#  ifdef MASKING
               FX(i,j)=FX(i,j)*umask(i,j)
-# endif
+#  endif
             END DO
           END DO
           DO j=Jstr,Jend+1
             DO i=Istr,Iend
               FE(i,j)=pnom_v(i,j)*0.5_r8*(Kh(i,j-1)+Kh(i,j))*           &
      &                (Awrk(i,j,k,Nold)-Awrk(i,j-1,k,Nold))
-# ifdef MASKING
+#  ifdef MASKING
               FE(i,j)=FE(i,j)*vmask(i,j)
-# endif
+#  endif
             END DO
           END DO
 !
@@ -253,12 +429,13 @@
             END DO
           END DO
         END DO
+# endif
 !
 !  Apply boundary conditions.
 !
-        CALL bc_r3d_tile (ng, tile,                                     &
-     &                    LBi, UBi, LBj, UBj, LBk, UBk,                 &
-     &                    Awrk(:,:,:,Nnew))
+        CALL dabc_r3d_tile (ng, tile,                                   &
+     &                      LBi, UBi, LBj, UBj, LBk, UBk,               &
+     &                      Awrk(:,:,:,Nnew))
 # ifdef DISTRIBUTE
         CALL mp_exchange3d (ng, tile, model, 1,                         &
      &                      LBi, UBi, LBj, UBj, LBk, UBk,               &
@@ -466,9 +643,9 @@
           END DO
         END DO
       END DO
-      CALL bc_r3d_tile (ng, tile,                                       &
-     &                  LBi, UBi, LBj, UBj, LBk, UBk,                   &
-     &                  A)
+      CALL dabc_r3d_tile (ng, tile,                                     &
+     &                    LBi, UBi, LBj, UBj, LBk, UBk,                 &
+     &                    A)
 # ifdef DISTRIBUTE
       CALL mp_exchange3d (ng, tile, model, 1,                           &
      &                    LBi, UBi, LBj, UBj, LBk, UBk,                 &
@@ -487,9 +664,18 @@
      &                          Nghost, NHsteps, NVsteps,               &
      &                          DTsizeH, DTsizeV,                       &
      &                          Kh, Kv,                                 &
-     &                          pm, pn, pmon_r, pnom_p,                 &
+     &                          pm, pn,                                 &
+# ifdef GEOPOTENTIAL_HCONV
+     &                          on_r, om_p,                             &
+# else
+     &                          pmon_r, pnom_p,                         &
+# endif
 # ifdef MASKING
+#  ifdef GEOPOTENTIAL_HCONV
+     &                          pmask, rmask, umask, vmask,             &
+#  else
      &                          umask, pmask,                           &
+#  endif
 # endif
      &                          Hz, z_r,                                &
      &                          A)
@@ -498,7 +684,7 @@
       USE mod_param
       USE mod_scalars
 !
-      USE bc_3d_mod, ONLY: bc_u3d_tile
+      USE bc_3d_mod, ONLY: dabc_u3d_tile
 # ifdef DISTRIBUTE
       USE mp_exchange_mod, ONLY : mp_exchange3d
 # endif
@@ -515,11 +701,23 @@
 # ifdef ASSUMED_SHAPE
       real(r8), intent(in) :: pm(LBi:,LBj:)
       real(r8), intent(in) :: pn(LBi:,LBj:)
+#  ifdef GEOPOTENTIAL_HCONV
+      real(r8), intent(in) :: on_r(LBi:,LBj:)
+      real(r8), intent(in) :: om_p(LBi:,LBj:)
+#  else
       real(r8), intent(in) :: pmon_r(LBi:,LBj:)
       real(r8), intent(in) :: pnom_p(LBi:,LBj:)
+#  endif
 #  ifdef MASKING
+#   ifdef GEOPOTENTIAL_HCONV
+      real(r8), intent(in) :: pmask(LBi:,LBj:)
+      real(r8), intent(in) :: rmask(LBi:,LBj:)
+      real(r8), intent(in) :: umask(LBi:,LBj:)
+      real(r8), intent(in) :: vmask(LBi:,LBj:)
+#   else
       real(r8), intent(in) :: umask(LBi:,LBj:)
       real(r8), intent(in) :: pmask(LBi:,LBj:)
+#   endif
 #  endif
       real(r8), intent(in) :: Hz(LBi:,LBj:,:)
       real(r8), intent(in) :: z_r(LBi:,LBj:,:)
@@ -530,11 +728,23 @@
 # else
       real(r8), intent(in) :: pm(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: pn(LBi:UBi,LBj:UBj)
+#  ifdef GEOPOTENTIAL_HCONV
+      real(r8), intent(in) :: on_r(LBi:UBi,LBj:UBj)
+      real(r8), intent(in) :: om_p(LBi:UBi,LBj:UBj)
+#  else
       real(r8), intent(in) :: pmon_r(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: pnom_p(LBi:UBi,LBj:UBj)
+#  endif
 #  ifdef MASKING
+#   ifdef GEOPOTENTIAL_HCONV
+      real(r8), intent(in) :: pmask(LBi:UBi,LBj:UBj)
+      real(r8), intent(in) :: rmask(LBi:UBi,LBj:UBj)
+      real(r8), intent(in) :: umask(LBi:UBi,LBj:UBj)
+      real(r8), intent(in) :: vmask(LBi:UBi,LBj:UBj)
+#   else
       real(r8), intent(in) :: umask(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: pmask(LBi:UBi,LBj:UBj)
+#   endif
 #  endif
       real(r8), intent(in) :: Hz(LBi:UBi,LBj:UBj,N(ng))
       real(r8), intent(in) :: z_r(LBi:UBi,LBj:UBj,N(ng))
@@ -546,9 +756,9 @@
 !
 !  Local variable declarations.
 !
-      integer :: Nnew, Nold, Nsav, i, j, k, step
+      integer :: Nnew, Nold, Nsav, i, j, k, k1, k2, step
 
-      real(r8) :: cff, cff1
+      real(r8) :: cff, cff1, cff2, cff3, cff4
 
       real(r8), dimension(LBi:UBi,LBj:UBj,LBk:UBk,2) :: Awrk
 
@@ -573,6 +783,17 @@
 #  else
       real(r8), dimension(IminS:ImaxS,0:N(ng)) :: FS
 #  endif
+# endif
+# ifdef GEOPOTENTIAL_HCONV
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: dZdx
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: dZde
+
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS,2) :: FZ
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS,2) :: dAdz
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS,2) :: dAdx
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS,2) :: dAde
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS,2) :: dZdx_r
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS,2) :: dZde_p
 # endif
 
 # include "set_bounds.h"
@@ -619,9 +840,9 @@
 !
       Nold=1
       Nnew=2
-      CALL bc_u3d_tile (ng, tile,                                       &
-     &                  LBi, UBi, LBj, UBj, LBk, UBk,                   &
-     &                  A)
+      CALL dabc_u3d_tile (ng, tile,                                     &
+     &                    LBi, UBi, LBj, UBj, LBk, UBk,                 &
+     &                    A)
 # ifdef DISTRIBUTE
       CALL mp_exchange3d (ng, tile, model, 1,                           &
      &                    LBi, UBi, LBj, UBj, LBk, UBk,                 &
@@ -642,8 +863,181 @@
 !-----------------------------------------------------------------------
 !
       DO step=1,NHsteps
+
+# ifdef GEOPOTENTIAL_HCONV
 !
-!  Compute XI- and ETA-components of diffusive flux.
+!  Diffusion along geopotential surfaces: Compute horizontal and
+!  vertical gradients.  Notice the recursive blocking sequence.  The
+!  vertical placement of the gradients is:
+!
+!        dAdx,dAde(:,:,k1) k     rho-points
+!        dAdx,dAde(:,:,k2) k+1   rho-points
+!          FZ,dAdz(:,:,k1) k-1/2   W-points
+!          FZ,dAdz(:,:,k2) k+1/2   W-points
+!
+        k2=1
+        K_LOOP : DO k=0,N(ng)
+          k1=k2
+          k2=3-k1
+          IF (k.lt.N(ng)) THEN
+            DO j=Jstr,Jend
+              DO i=IstrU-1,Iend+1
+                cff=0.5_r8*(pm(i-1,j)+pm(i,j))
+#  ifdef MASKING
+                cff=cff*umask(i,j)
+#  endif
+                dZdx(i,j)=cff*(z_r(i  ,j,k+1)-                          &
+     &                         z_r(i-1,j,k+1))
+              END DO
+            END DO
+!
+            DO j=Jstr,Jend+1
+              DO i=IstrU-1,Iend
+                cff=0.5_r8*(pn(i,j-1)+pn(i,j))
+#  ifdef MASKING
+                cff=cff*vmask(i,j)
+#  endif
+                dZde(i,j)=cff*(z_r(i,j  ,k+1)-                          &
+     &                         z_r(i,j-1,k+1))
+              END DO
+            END DO
+!
+            DO j=Jstr,Jend
+              DO i=IstrU-1,Iend
+#  ifdef MASKING
+                dAdx(i,j,k2)=pm(i,j)*                                   &
+     &                       (Awrk(i+1,j,k+1,Nold)*umask(i+1,j)-        &
+     &                        Awrk(i  ,j,k+1,Nold)*umask(i  ,j))
+                dAdx(i,j,k2)=dAdx(i,j,k2)*rmask(i,j)
+#  else
+                dAdx(i,j,k2)=pm(i,j)*(Awrk(i+1,j,k+1,Nold)-             &
+     &                                Awrk(i  ,j,k+1,Nold))
+#  endif
+                dZdx_r(i,j,k2)=0.5_r8*(dZdx(i  ,j)+                     &
+     &                                 dZdx(i+1,j))
+              END DO
+            END DO
+!
+            DO j=Jstr,Jend+1
+              DO i=IstrU,Iend
+                cff=0.25_r8*(pn(i-1,j  )+pn(i,j  )+                     &
+     &                       pn(i-1,j-1)+pn(i,j-1))
+#  ifdef MASKING
+                dAde(i,j,k2)=cff*                                       &
+     &                       (Awrk(i,j  ,k+1,Nold)*umask(i,j  )-        &
+     &                        Awrk(i,j-1,k+1,Nold)*umask(i,j-1))
+                dAde(i,j,k2)=dAde(i,j,k2)*pmask(i,j)
+#  else
+                dAde(i,j,k2)=cff*(Awrk(i,j  ,k+1,Nold)-                 &
+     &                            Awrk(i,j-1,k+1,Nold))
+#  endif
+                dZde_p(i,j,k2)=0.5_r8*(dZde(i-1,j)+                     &
+     &                                 dZde(i  ,j))
+              END DO
+            END DO
+          END IF
+!
+          IF ((k.eq.0).or.(k.eq.N(ng))) THEN
+            DO j=Jstr-1,Jend+1
+              DO i=IstrU-1,Iend+1
+                dAdz(i,j,k2)=0.0_r8
+                FZ(i,j,k2)=0.0_r8
+              END DO
+            END DO
+          ELSE
+            DO j=Jstr-1,Jend+1
+              DO i=IstrU-1,Iend+1
+                cff=1.0_r8/(z_r(i,j,k+1)-z_r(i,j,k))
+                dAdz(i,j,k2)=cff*(Awrk(i,j,k+1,Nold)-                  &
+     &                            Awrk(i,j,k  ,Nold))
+#  ifdef MASKING
+                dAdz(i,j,k2)=dAdz(i,j,k2)*umask(i,j)
+#  endif
+              END DO
+            END DO
+          END IF
+!
+!  Compute components of the rotated A flux (A m3/s) along geopotential
+!  surfaces.
+!
+          IF (k.gt.0) THEN
+            DO j=Jstr,Jend
+              DO i=IstrU-1,Iend
+                cff=Kh(i,j)*on_r(i,j)
+                cff1=MIN(dZdx_r(i,j,k1),0.0_r8)
+                cff2=MAX(dZdx_r(i,j,k1),0.0_r8)
+                FX(i,j)=cff*                                            &
+     &                  Hz(i,j,k)*                                      &
+     &                  (dAdx(i,j,k1)-                                  &
+     &                   0.5_r8*(cff1*(dAdz(i  ,j,k1)+                  &
+     &                                 dAdz(i+1,j,k2))+                 &
+     &                           cff2*(dAdz(i  ,j,k2)+                  &
+     &                                 dAdz(i+1,j,k1))))
+              END DO
+            END DO
+            DO j=Jstr,Jend+1
+              DO i=IstrU,Iend
+                cff=0.0625_r8*(Kh(i-1,j-1)+Kh(i-1,j)+                   &
+     &                         Kh(i  ,j-1)+Kh(i  ,j))*om_p(i,j)
+                cff1=MIN(dZde_p(i,j,k1),0.0_r8)
+                cff2=MAX(dZde_p(i,j,k1),0.0_r8)
+                FE(i,j)=cff*                                            &
+     &                  (Hz(i-1,j-1,k)+Hz(i-1,j,k)+                     &
+     &                   Hz(i  ,j-1,k)+Hz(i  ,j,k))*                    &
+     &                  (dAde(i,j,k1)-                                  &
+     &                   0.5_r8*(cff1*(dAdz(i,j-1,k1)+                  &
+     &                                 dAdz(i,j  ,k2))+                 &
+     &                           cff2*(dAdz(i,j-1,k2)+                  &
+     &                                 dAdz(i,j  ,k1))))
+              END DO
+            END DO
+            IF (k.lt.N(ng)) THEN
+              DO j=Jstr,Jend
+                DO i=IstrU,Iend
+                  cff=0.25_r8*(Kh(i-1,j)+Kh(i,j))
+                  cff1=MIN(dZdx_r(i-1,j,k1),0.0_r8)
+                  cff2=MIN(dZdx_r(i  ,j,k2),0.0_r8)
+                  cff3=MAX(dZdx_r(i-1,j,k2),0.0_r8)
+                  cff4=MAX(dZdx_r(i  ,j,k1),0.0_r8)
+                  FZ(i,j,k2)=cff*                                       &
+     &                       (cff1*(cff1*dAdz(i,j,k2)-dAdx(i-1,j,k1))+  &
+     &                        cff2*(cff2*dAdz(i,j,k2)-dAdx(i  ,j,k2))+  &
+     &                        cff3*(cff3*dAdz(i,j,k2)-dAdx(i-1,j,k2))+  &
+     &                        cff4*(cff4*dAdz(i,j,k2)-dAdx(i  ,j,k1)))
+                  cff1=MIN(dZde_p(i,j  ,k1),0.0_r8)
+                  cff2=MIN(dZde_p(i,j+1,k2),0.0_r8)
+                  cff3=MAX(dZde_p(i,j  ,k2),0.0_r8)
+                  cff4=MAX(dZde_p(i,j+1,k1),0.0_r8)
+                  FZ(i,j,k2)=FZ(i,j,k2)+                                &
+     &                       cff*                                       &
+     &                       (cff1*(cff1*dAdz(i,j,k2)-dAde(i,j  ,k1))+  &
+     &                        cff2*(cff2*dAdz(i,j,k2)-dAde(i,j+1,k2))+  &
+     &                        cff3*(cff3*dAdz(i,j,k2)-dAde(i,j  ,k2))+  &
+     &                        cff4*(cff4*dAdz(i,j,k2)-dAde(i,j+1,k1)))
+                END DO
+              END DO
+            END IF
+!
+!  Time-step harmonic, geopotential diffusion term (m Tunits).
+!
+            DO j=Jstr,Jend
+              DO i=IstrU,Iend
+                Awrk(i,j,k,Nnew)=Awrk(i,j,k,Nold)+                      &
+     &                           Hfac(i,j)*                             &
+     &                           (FX(i,j  )-FX(i-1,j)+                  &
+     &                            FE(i,j+1)-FE(i  ,j))+                 &
+     &                           DTsizeH*                               &
+     &                           (FZ(i,j,k2)-FZ(i,j,k1))
+              END DO
+            END DO
+          END IF
+        END DO K_LOOP
+
+# else
+
+!
+!  Diffusion along S-coordinates: compute XI- and ETA-components of
+!  diffusive flux.
 !
         DO k=1,N(ng)
           DO j=Jstr,Jend
@@ -657,9 +1051,9 @@
               FE(i,j)=pnom_p(i,j)*0.25_r8*(Kh(i-1,j  )+Kh(i,j  )+       &
      &                                     Kh(i-1,j-1)+Kh(i,j-1))*      &
      &                (Awrk(i,j,k,Nold)-Awrk(i,j-1,k,Nold))
-# ifdef MASKING
+#  ifdef MASKING
               FE(i,j)=FE(i,j)*pmask(i,j)
-# endif
+#  endif
             END DO
           END DO
 !
@@ -674,12 +1068,13 @@
             END DO
           END DO
         END DO
+# endif
 !
 !  Apply boundary conditions.
 !
-        CALL bc_u3d_tile (ng, tile,                                     &
-     &                    LBi, UBi, LBj, UBj, LBk, UBk,                 &
-     &                    Awrk(:,:,:,Nnew))
+        CALL dabc_u3d_tile (ng, tile,                                   &
+     &                      LBi, UBi, LBj, UBj, LBk, UBk,               &
+     &                      Awrk(:,:,:,Nnew))
 # ifdef DISTRIBUTE
         CALL mp_exchange3d (ng, tile, model, 1,                         &
      &                      LBi, UBi, LBj, UBj, LBk, UBk,               &
@@ -892,9 +1287,9 @@
           END DO
         END DO
       END DO
-      CALL bc_u3d_tile (ng, tile,                                       &
-     &                  LBi, UBi, LBj, UBj, LBk, UBk,                   &
-     &                  A)
+      CALL dabc_u3d_tile (ng, tile,                                     &
+     &                    LBi, UBi, LBj, UBj, LBk, UBk,                 &
+     &                    A)
 # ifdef DISTRIBUTE
       CALL mp_exchange3d (ng, tile, model, 1,                           &
      &                    LBi, UBi, LBj, UBj, LBk, UBk,                 &
@@ -913,9 +1308,18 @@
      &                          Nghost, NHsteps, NVsteps,               &
      &                          DTsizeH, DTsizeV,                       &
      &                          Kh, Kv,                                 &
-     &                          pm, pn, pmon_p, pnom_r,                 &
+     &                          pm, pn,                                 &
+# ifdef GEOPOTENTIAL_HCONV
+     &                          on_p, om_r,                             &
+# else
+     &                          pmon_p, pnom_r,                         &
+# endif
 # ifdef MASKING
+#  ifdef GEOPOTENTIAL_HCONV
+     &                          pmask, rmask, umask, vmask,             &
+#  else
      &                          vmask, pmask,                           &
+#  endif
 # endif
      &                          Hz, z_r,                                &
      &                          A)
@@ -924,7 +1328,7 @@
       USE mod_param
       USE mod_scalars
 !
-      USE bc_3d_mod, ONLY: bc_v3d_tile
+      USE bc_3d_mod, ONLY: dabc_v3d_tile
 # ifdef DISTRIBUTE
       USE mp_exchange_mod, ONLY : mp_exchange3d
 # endif
@@ -941,11 +1345,23 @@
 # ifdef ASSUMED_SHAPE
       real(r8), intent(in) :: pm(LBi:,LBj:)
       real(r8), intent(in) :: pn(LBi:,LBj:)
+#  ifdef GEOPOTENTIAL_HCONV
+      real(r8), intent(in) :: on_p(LBi:,LBj:)
+      real(r8), intent(in) :: om_r(LBi:,LBj:)
+#  else
       real(r8), intent(in) :: pmon_p(LBi:,LBj:)
       real(r8), intent(in) :: pnom_r(LBi:,LBj:)
+#  endif
 #  ifdef MASKING
+#   ifdef GEOPOTENTIAL_HCONV
+      real(r8), intent(in) :: pmask(LBi:,LBj:)
+      real(r8), intent(in) :: rmask(LBi:,LBj:)
+      real(r8), intent(in) :: umask(LBi:,LBj:)
+      real(r8), intent(in) :: vmask(LBi:,LBj:)
+#   else
       real(r8), intent(in) :: vmask(LBi:,LBj:)
       real(r8), intent(in) :: pmask(LBi:,LBj:)
+#   endif
 #  endif
       real(r8), intent(in) :: Hz(LBi:,LBj:,:)
       real(r8), intent(in) :: z_r(LBi:,LBj:,:)
@@ -956,11 +1372,23 @@
 # else
       real(r8), intent(in) :: pm(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: pn(LBi:UBi,LBj:UBj)
+#  ifdef GEOPOTENTIAL_HCONV
+      real(r8), intent(in) :: on_p(LBi:UBi,LBj:UBj)
+      real(r8), intent(in) :: om_r(LBi:UBi,LBj:UBj)
+#  else
       real(r8), intent(in) :: pmon_p(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: pnom_r(LBi:UBi,LBj:UBj)
+#  endif
 #  ifdef MASKING
+#   ifdef GEOPOTENTIAL_HCONV
+      real(r8), intent(in) :: pmask(LBi:UBi,LBj:UBj)
+      real(r8), intent(in) :: rmask(LBi:UBi,LBj:UBj)
+      real(r8), intent(in) :: umask(LBi:UBi,LBj:UBj)
+      real(r8), intent(in) :: vmask(LBi:UBi,LBj:UBj)
+#   else
       real(r8), intent(in) :: vmask(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: pmask(LBi:UBi,LBj:UBj)
+#   endif
 #  endif
       real(r8), intent(in) :: Hz(LBi:UBi,LBj:UBj,N(ng))
       real(r8), intent(in) :: z_r(LBi:UBi,LBj:UBj,N(ng))
@@ -972,9 +1400,9 @@
 !
 !  Local variable declarations.
 !
-      integer :: Nnew, Nold, Nsav, i, j, k, step
+      integer :: Nnew, Nold, Nsav, i, j, k, k1, k2, step
 
-      real(r8) :: cff, cff1
+      real(r8) :: cff, cff1, cff2, cff3, cff4
 
       real(r8), dimension(LBi:UBi,LBj:UBj,LBk:UBk,2) :: Awrk
 
@@ -999,6 +1427,17 @@
 #  else
       real(r8), dimension(IminS:ImaxS,0:N(ng)) :: FS
 #  endif
+# endif
+# ifdef GEOPOTENTIAL_HCONV
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: dZdx
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: dZde
+
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS,2) :: FZ
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS,2) :: dAdz
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS,2) :: dAdx
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS,2) :: dAde
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS,2) :: dZdx_p
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS,2) :: dZde_r
 # endif
 
 # include "set_bounds.h"
@@ -1045,9 +1484,9 @@
 !
       Nold=1
       Nnew=2
-      CALL bc_v3d_tile (ng, tile,                                       &
-     &                  LBi, UBi, LBj, UBj, LBk, UBk,                   &
-     &                  A)
+      CALL dabc_v3d_tile (ng, tile,                                     &
+     &                    LBi, UBi, LBj, UBj, LBk, UBk,                 &
+     &                    A)
 # ifdef DISTRIBUTE
       CALL mp_exchange3d (ng, tile, model, 1,                           &
      &                    LBi, UBi, LBj, UBj, LBk, UBk,                 &
@@ -1068,6 +1507,178 @@
 !-----------------------------------------------------------------------
 !
       DO step=1,NHsteps
+
+# ifdef GEOPOTENTIAL_HCONV
+!
+!  Diffusion along geopotential surfaces: Compute horizontal and
+!  vertical gradients.  Notice the recursive blocking sequence.  The
+!  vertical placement of the gradients is:
+!
+!        dAdx,dAde(:,:,k1) k     rho-points
+!        dAdx,dAde(:,:,k2) k+1   rho-points
+!          FZ,dAdz(:,:,k1) k-1/2   W-points
+!          FZ,dAdz(:,:,k2) k+1/2   W-points
+!
+        k2=1
+        K_LOOP : DO k=0,N(ng)
+          k1=k2
+          k2=3-k1
+          IF (k.lt.N(ng)) THEN
+            DO j=JstrV-1,Jend
+              DO i=Istr,Iend+1
+                cff=0.5_r8*(pm(i-1,j)+pm(i,j))
+#  ifdef MASKING
+                cff=cff*umask(i,j)
+#  endif
+                dZdx(i,j)=cff*(z_r(i  ,j,k+1)-                          &
+     &                         z_r(i-1,j,k+1))
+              END DO
+            END DO
+!
+            DO j=JstrV-1,Jend+1
+              DO i=Istr,Iend
+                cff=0.5_r8*(pn(i,j-1)+pn(i,j))
+#  ifdef MASKING
+                cff=cff*vmask(i,j)
+#  endif
+                dZde(i,j)=cff*(z_r(i,j  ,k+1)-                          &
+     &                         z_r(i,j-1,k+1))
+              END DO
+            END DO
+!
+            DO j=JstrV,Jend
+              DO i=Istr,Iend+1
+                cff=0.25_r8*(pm(i-1,j-1)+pm(i-1,j)+                     &
+     &                       pm(i  ,j-1)+pm(i  ,j))
+#  ifdef MASKING
+                dAdx(i,j,k2)=cff*                                       &
+     &                       (Awrk(i  ,j,k+1,Nold)*vmask(i  ,j)-        &
+     &                        Awrk(i-1,j,k+1,Nold)*vmask(i-1,j))
+                dAdx(i,j,k2)=dAdx(i,j,k2)*pmask(i,j)
+#  else
+                dAdx(i,j,k2)=cff*(Awrk(i  ,j,k+1,Nold)-                 &
+     &                            Awrk(i-1,j,k+1,Nold))
+#  endif
+                dZdx_p(i,j,k2)=0.5_r8*(dZdx(i,j-1)+                     &
+     &                                 dZdx(i,j  ))
+              END DO
+            END DO
+!
+            DO j=JstrV-1,Jend
+              DO i=Istr,Iend
+#  ifdef MASKING
+                dAde(i,j,k2)=pn(i,j)*                                   &
+     &                       (Awrk(i,j+1,k+1,Nold)*vmask(i,j+1)-        &
+     &                        Awrk(i,j  ,k+1,Nold)*vmask(i,j  ))
+                dAde(i,j,k2)=dAde(i,j,k2)*rmask(i,j)
+#  else
+                dAde(i,j,k2)=pn(i,j)*(Awrk(i,j+1,k+1,Nold)-             &
+     &                                Awrk(i,j  ,k+1,Nold))
+#  endif
+                dZde_r(i,j,k2)=0.5_r8*(dZde(i,j  )+                     &
+     &                                 dZde(i,j+1))
+              END DO
+            END DO
+          END IF
+!
+          IF ((k.eq.0).or.(k.eq.N(ng))) THEN
+            DO j=JstrV-1,Jend+1
+              DO i=Istr-1,Iend+1
+                dAdz(i,j,k2)=0.0_r8
+                FZ(i,j,k2)=0.0_r8
+              END DO
+            END DO
+          ELSE
+            DO j=JstrV-1,Jend+1
+              DO i=Istr-1,Iend+1
+                cff=1.0_r8/(z_r(i,j,k+1)-z_r(i,j,k))
+                dAdz(i,j,k2)=cff*(Awrk(i,j,k+1,Nold)-                  &
+     &                            Awrk(i,j,k  ,Nold))
+#  ifdef MASKING
+                dAdz(i,j,k2)=dAdz(i,j,k2)*vmask(i,j)
+#  endif
+              END DO
+            END DO
+          END IF
+!
+!  Compute components of the rotated A flux (A m3/s) along geopotential
+!  surfaces.
+!
+          IF (k.gt.0) THEN
+            DO j=JstrV,Jend
+              DO i=Istr,Iend+1
+                cff=0.0625_r8*(Kh(i-1,j-1)+Kh(i-1,j)+                   &
+     &                         Kh(i  ,j-1)+Kh(i  ,j))*on_p(i,j)
+                cff1=MIN(dZdx_p(i,j,k1),0.0_r8)
+                cff2=MAX(dZdx_p(i,j,k1),0.0_r8)
+                FX(i,j)=cff*                                            &
+     &                  (Hz(i-1,j-1,k)+Hz(i-1,j,k)+                     &
+     &                   Hz(i  ,j-1,k)+Hz(i  ,j,k))*                    &
+     &                  (dAdx(i,j,k1)-                                  &
+     &                   0.5_r8*(cff1*(dAdz(i-1,j,k1)+                  &
+     &                                 dAdz(i  ,j,k2))+                 &
+     &                           cff2*(dAdz(i-1,j,k2)+                  &
+     &                                 dAdz(i  ,j,k1))))
+              END DO
+            END DO
+            DO j=JstrV-1,Jend
+              DO i=Istr,Iend
+                cff=Kh(i,j)*om_r(i,j)
+                cff1=MIN(dZde_r(i,j,k1),0.0_r8)
+                cff2=MAX(dZde_r(i,j,k1),0.0_r8)
+                FE(i,j)=cff*                                            &
+     &                  Hz(i,j,k)*                                      &
+     &                  (dAde(i,j,k1)-                                  &
+     &                   0.5_r8*(cff1*(dAdz(i,j  ,k1)+                  &
+     &                                 dAdz(i,j+1,k2))+                 &
+     &                           cff2*(dAdz(i,j  ,k2)+                  &
+     &                                 dAdz(i,j+1,k1))))
+              END DO
+            END DO
+            IF (k.lt.N(ng)) THEN
+              DO j=JstrV,Jend
+                DO i=Istr,Iend
+                  cff=0.5_r8*(Kh(i,j-1)+Kh(i,j))
+                  cff1=MIN(dZdx_p(i  ,j,k1),0.0_r8)
+                  cff2=MIN(dZdx_p(i+1,j,k2),0.0_r8)
+                  cff3=MAX(dZdx_p(i  ,j,k2),0.0_r8)
+                  cff4=MAX(dZdx_p(i+1,j,k1),0.0_r8)
+                  FZ(i,j,k2)=cff*                                       &
+     &                       (cff1*(cff1*dAdz(i,j,k2)-dAdx(i  ,j,k1))+  &
+     &                        cff2*(cff2*dAdz(i,j,k2)-dAdx(i+1,j,k2))+  &
+     &                        cff3*(cff3*dAdz(i,j,k2)-dAdx(i  ,j,k2))+  &
+     &                        cff4*(cff4*dAdz(i,j,k2)-dAdx(i+1,j,k1)))
+                  cff1=MIN(dZde_r(i,j-1,k1),0.0_r8)
+                  cff2=MIN(dZde_r(i,j  ,k2),0.0_r8)
+                  cff3=MAX(dZde_r(i,j-1,k2),0.0_r8)
+                  cff4=MAX(dZde_r(i,j  ,k1),0.0_r8)
+                  FZ(i,j,k2)=FZ(i,j,k2)+                                &
+     &                       cff*                                       &
+     &                       (cff1*(cff1*dAdz(i,j,k2)-dAde(i,j-1,k1))+  &
+     &                        cff2*(cff2*dAdz(i,j,k2)-dAde(i,j  ,k2))+  &
+     &                        cff3*(cff3*dAdz(i,j,k2)-dAde(i,j-1,k2))+  &
+     &                        cff4*(cff4*dAdz(i,j,k2)-dAde(i,j  ,k1)))
+                END DO
+              END DO
+            END IF
+!
+!  Time-step harmonic, geopotential diffusion term (m Tunits).
+!
+            DO j=JstrV,Jend
+              DO i=Istr,Iend
+                Awrk(i,j,k,Nnew)=Awrk(i,j,k,Nold)+                      &
+     &                           Hfac(i,j)*                             &
+     &                           (FX(i+1,j)-FX(i,j  )+                  &
+     &                            FE(i  ,j)-FE(i,j-1))+                 &
+     &                           DTsizeH*                               &
+     &                           (FZ(i,j,k2)-FZ(i,j,k1))
+              END DO
+            END DO
+          END IF
+        END DO K_LOOP
+
+# else
+
 !
 !  Compute XI- and ETA-components of diffusive flux.
 !
@@ -1077,9 +1688,9 @@
               FX(i,j)=pmon_p(i,j)*0.25_r8*(Kh(i-1,j  )+Kh(i,j  )+       &
      &                                     Kh(i-1,j-1)+Kh(i,j-1))*      &
      &                (Awrk(i,j,k,Nold)-Awrk(i-1,j,k,Nold))
-# ifdef MASKING
+#  ifdef MASKING
               FX(i,j)=FX(i,j)*pmask(i,j)
-# endif
+#  endif
             END DO
           END DO
           DO j=JstrV-1,Jend
@@ -1100,12 +1711,13 @@
             END DO
           END DO
         END DO
+# endif
 !
 !  Apply boundary conditions.
 !
-        CALL bc_v3d_tile (ng, tile,                                     &
-     &                    LBi, UBi, LBj, UBj, LBk, UBk,                 &
-     &                    Awrk(:,:,:,Nnew))
+        CALL dabc_v3d_tile (ng, tile,                                   &
+     &                      LBi, UBi, LBj, UBj, LBk, UBk,               &
+     &                      Awrk(:,:,:,Nnew))
 # ifdef DISTRIBUTE
         CALL mp_exchange3d (ng, tile, model, 1,                         &
      &                      LBi, UBi, LBj, UBj, LBk, UBk,               &
@@ -1318,9 +1930,9 @@
           END DO
         END DO
       END DO
-      CALL bc_v3d_tile (ng, tile,                                       &
-     &                  LBi, UBi, LBj, UBj, LBk, UBk,                   &
-     &                  A)
+      CALL dabc_v3d_tile (ng, tile,                                     &
+     &                    LBi, UBi, LBj, UBj, LBk, UBk,                 &
+     &                    A)
 # ifdef DISTRIBUTE
       CALL mp_exchange3d (ng, tile, model, 1,                           &
      &                    LBi, UBi, LBj, UBj, LBk, UBk,                 &

@@ -3,7 +3,7 @@
 
 #if defined TLM_CHECK || defined PROPAGATOR
 !
-!svn $Id: dotproduct.F 429 2009-12-20 17:30:26Z arango $
+!svn $Id: dotproduct.F 807 2016-07-09 02:03:55Z arango $
 !================================================== Hernan G. Arango ===
 !  Copyright (c) 2002-2016 The ROMS/TOMS Group       Andrew M. Moore   !
 !    Licensed under a MIT/X style license                              !
@@ -720,6 +720,17 @@
      &                        GRID(ng) % umask,                         &
      &                        GRID(ng) % vmask,                         &
 #  endif
+#  ifdef BNORM
+#    ifdef SOLVE3D
+     &                        OCEAN(ng) % e_t,                          &
+     &                        OCEAN(ng) % e_u,                          &
+     &                        OCEAN(ng) % e_v,                          &
+#    else
+     &                        OCEAN(ng) % e_ubar,                       &
+     &                        OCEAN(ng) % e_vbar,                       &
+#    endif
+     &                        OCEAN(ng) % e_zeta,                       &
+#  endif
 #  ifdef SOLVE3D
      &                        GRID(ng) % Hz,                            &
 #  else
@@ -749,6 +760,14 @@
      &                              StateNorm,                          &
 #  ifdef MASKING
      &                              rmask, umask, vmask,                &
+#  endif
+#  ifdef BNORM
+#    ifdef SOLVE3D
+     &                              e_t, e_u, e_v,                      &
+#    else
+     &                              e_ubar, e_vbar,                     &
+#    endif
+     &                              e_zeta,                             &
 #  endif
 #  ifdef SOLVE3D
      &                              Hz,                                 &
@@ -801,6 +820,17 @@
       real(r8), intent(in) :: tl_vbar(LBi:,LBj:,:)
 #   endif
       real(r8), intent(in) :: tl_zeta(LBi:,LBj:,:)
+#   ifdef BNORM
+      real(r8), intent(in) :: e_zeta(LBi:,LBj:,:)
+#    ifdef SOLVE3D
+      real(r8), intent(in) :: e_t(LBi:,LBj:,:,:,:)
+      real(r8), intent(in) :: e_u(LBi:,LBj:,:,:)
+      real(r8), intent(in) :: e_v(LBi:,LBj:,:,:)
+#    else
+      real(r8), intent(in) :: e_ubar(LBi:,LBj:,:)
+      real(r8), intent(in) :: e_vbar(LBi:,LBj:,:)
+#    endif
+#   endif
 #  else
 #   ifdef MASKING
       real(r8), intent(in) :: rmask(LBi:UBi,LBj:UBj)
@@ -821,6 +851,17 @@
       real(r8), intent(in) :: tl_vbar(LBi:UBi,LBj:UBj,3)
 #   endif
       real(r8), intent(in) :: tl_zeta(LBi:UBi,LBj:UBj,3)
+#   ifdef BNORM
+      real(r8), intent(in) :: e_zeta(LBi:UBi,LBj:UBj,NSA)
+#    ifdef SOLVE3D
+      real(r8), intent(in) :: e_t(LBi:UBi,LBj:UBj,N(ng),NSA,NT(ng))
+      real(r8), intent(in) :: e_u(LBi:UBi,LBj:UBj,N(ng),NSA)
+      real(r8), intent(in) :: e_v(LBi:UBi,LBj:UBj,N(ng),NSA)
+#    else
+      real(r8), intent(in) :: e_ubar(LBi:UBi,LBj:UBj,NSA)
+      real(r8), intent(in) :: e_vbar(LBi:UBi,LBj:UBj,NSA)
+#    endif
+#   endif
 #  endif
 !
 !  Local variable declarations.
@@ -862,7 +903,16 @@
       scale=0.5_r8*g*rho0
       DO j=JR_RANGE
         DO i=IR_RANGE
+#  ifdef BNORM
+          IF (e_zeta(i,j,1).gt.0.0_r8) THEN
+            cff1=1.0_r8/(e_zeta(i,j,1)*e_zeta(i,j,1))
+          ELSE
+            cff1=1.0_r8
+          END IF
+          cff1=cff1*tl_zeta(i,j,Kinp)*tl_zeta(i,j,Kinp)
+#  else
           cff1=scale*tl_zeta(i,j,Kinp)*tl_zeta(i,j,Kinp)
+#  endif
 #  ifdef MASKING
           cff1=cff1*rmask(i,j)
 #  endif
@@ -877,8 +927,17 @@
       cff=0.25_r8*rho0
       DO j=JR_RANGE
         DO i=IU_RANGE
+#   ifdef BNORM
+          IF (e_ubar(i,j,1).gt.0.0_r8) THEN
+            cff1=1.0_r8/(e_ubar(i,j,1)*e_ubar(i,j,1))
+          ELSE
+            cff1=1.0_r8
+          END IF
+          cff1=cff1*tl_ubar(i,j,Kinp)*tl_ubar(i,j,Kinp)
+#   else
           scale=cff*(h(i-1,j)+h(i,j))
           cff1=scale*tl_ubar(i,j,Kinp)*tl_ubar(i,j,Kinp)
+#   endif
 #   ifdef MASKING
           cff1=cff1*umask(i,j)
 #   endif
@@ -891,8 +950,17 @@
       cff=0.25_r8*rho0
       DO j=JV_RANGE
         DO i=IR_RANGE
+#   ifdef BNORM
+          IF (e_vbar(i,j,1).gt.0.0_r8) THEN
+            cff1=1.0_r8/(e_vbar(i,j,1)*e_vbar(i,j,1))
+          ELSE
+            cff1=1.0_r8
+          END IF
+          cff1=cff1*tl_vbar(i,j,Kinp)*tl_vbar(i,j,Kinp)
+#   else
           scale=cff*(h(i,j-1)+h(i,j))
           cff1=scale*tl_vbar(i,j,Kinp)*tl_vbar(i,j,Kinp)
+#   endif
 #   ifdef MASKING
           cff1=cff1*vmask(i,j)
 #   endif
@@ -907,8 +975,17 @@
       DO k=1,N(ng)
         DO j=JR_RANGE
           DO i=IU_RANGE
+#   ifdef BNORM
+            IF (e_u(i,j,k,1).gt.0.0_r8) THEN
+              cff1=1.0_r8/(e_u(i,j,k,1)*e_u(i,j,k,1))
+            ELSE
+              cff1=1.0_r8
+            END IF
+            cff1=cff1*tl_u(i,j,k,Ninp)*tl_u(i,j,k,Ninp)
+#   else
             scale=cff*(Hz(i-1,j,k)+Hz(i,j,k))
             cff1=scale*tl_u(i,j,k,Ninp)*tl_u(i,j,k,Ninp)
+#   endif
 #   ifdef MASKING
             cff1=cff1*umask(i,j)
 #   endif
@@ -923,8 +1000,17 @@
       DO k=1,N(ng)
         DO j=JV_RANGE
           DO i=IR_RANGE
+#   ifdef BNORM
+            IF (e_v(i,j,k,1).gt.0.0_r8) THEN
+              cff1=1.0_r8/(e_v(i,j,k,1)*e_v(i,j,k,1))
+            ELSE
+              cff1=1.0_r8
+            END IF
+            cff1=cff1*tl_v(i,j,k,Ninp)*tl_v(i,j,k,Ninp)
+#   else
             scale=cff*(Hz(i,j-1,k)+Hz(i,j,k))
             cff1=scale*tl_v(i,j,k,Ninp)*tl_v(i,j,k,Ninp)
+#   endif
 #   ifdef MASKING
             cff1=cff1*vmask(i,j)
 #   endif
@@ -946,9 +1032,19 @@
         DO k=1,N(ng)
           DO j=JR_RANGE
             DO i=IR_RANGE
+#   ifdef BNORM
+              IF (e_t(i,j,k,1,itrc).gt.0.0_r8) THEN
+                cff1=1.0_r8/(e_t(i,j,k,1,itrc)*e_t(i,j,k,1,itrc))
+              ELSE
+                cff1=1.0_r8
+              END IF
+              cff1=cff1*tl_t(i,j,k,Ninp,itrc)*                          &
+     &                  tl_t(i,j,k,Ninp,itrc)
+#   else
               scale=cff*Hz(i,j,k)
               cff1=scale*tl_t(i,j,k,Ninp,itrc)*                         &
      &                   tl_t(i,j,k,Ninp,itrc)
+#   endif
 #   ifdef MASKING
               cff1=cff1*rmask(i,j)
 #   endif

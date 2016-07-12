@@ -1,7 +1,7 @@
 #include "cppdefs.h"
       SUBROUTINE wrt_info (ng, model, ncid, ncname)
 !
-!svn $Id: wrt_info.F 791 2016-05-05 22:39:42Z arango $
+!svn $Id: wrt_info.F 806 2016-06-10 01:01:57Z arango $
 !================================================== Hernan G. Arango ===
 !  Copyright (c) 2002-2016 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
@@ -74,7 +74,7 @@
       logical :: Cgrid = .TRUE.
 
       integer :: LBi, UBi, LBj, UBj
-      integer :: i, j, k, ibry, itrc, status, varid
+      integer :: i, j, k, ibry, ilev, itrc, status, varid
 
 #ifdef DISTRIBUTE
       integer, dimension(2) :: ibuffer
@@ -90,7 +90,7 @@
       real(r8), dimension(NT(ng),4) :: Tobc
 #endif
 #ifdef STATIONS
-      real(r8), dimension(Nstation(ng)) :: wrk
+      real(r8), dimension(Nstation(ng)) :: Zpos, wrk
 #endif
 !
       SourceFile='wrt_info.F'
@@ -1373,6 +1373,15 @@
 
       CALL netcdf_put_fvar (ng, model, ncname, 'hc',                    &
      &                      hc(ng), (/0/), (/0/),                       &
+     &                      ncid = ncid)
+      IF (exit_flag.ne.NoError) RETURN
+!
+!  SGRID conventions for staggered data on structured grids. The value
+!  is arbitrary but is set to unity so it can be used as logical during
+!  post-processing.
+!
+      CALL netcdf_put_ivar (ng, model, ncname, 'grid',                  &
+     &                      (/1/), (/0/), (/0/),                        &
      &                      ncid = ncid)
       IF (exit_flag.ne.NoError) RETURN
 !

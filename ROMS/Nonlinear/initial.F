@@ -46,7 +46,7 @@
       USE nesting_mod, ONLY : nesting
 #endif
 #ifdef SOLVE3D
-      USE set_depth_mod, ONLY : set_depth
+      USE set_depth_mod, ONLY : set_depth0, set_depth
       USE omega_mod, ONLY : omega
       USE rho_eos_mod, ONLY : rho_eos
       USE set_massflux_mod, ONLY : set_massflux
@@ -711,7 +711,8 @@
 !
       DO ng=1,Ngrids
         DO tile=first_tile(ng),last_tile(ng),+1
-          CALL set_depth (ng, tile)
+          CALL set_depth0 (ng, tile)
+          CALL set_depth  (ng, tile)
         END DO
 !$OMP BARRIER
       END DO

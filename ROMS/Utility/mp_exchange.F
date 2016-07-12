@@ -2,7 +2,7 @@
       MODULE mp_exchange_mod
 #ifdef DISTRIBUTE
 !
-!svn $Id: mp_exchange.F 1598 2008-07-25 03:29:09Z jcwarner $
+!svn $Id: mp_exchange.F 795 2016-05-11 01:42:43Z arango $
 !================================================== Hernan G. Arango ===
 !  Copyright (c) 2002-2016 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !

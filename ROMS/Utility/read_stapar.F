@@ -2,7 +2,7 @@
 #ifdef STATIONS
       SUBROUTINE read_StaPar (model, inp, out, Lwrite)
 !
-!svn $Id$
+!svn $Id: read_stapar.F 804 2016-06-06 23:02:36Z arango $
 !================================================== Hernan G. Arango ===
 !  Copyright (c) 2002-2016 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
@@ -31,10 +31,10 @@
 !
 !  Local variable declarations.
 !
-      integer :: Npts, Nval
-      integer :: flag, i, igrid, itrc, ng, status
+      integer :: Mstation, Npts, Nval
+      integer :: flag, i, igrid, ista, itrc, ng, status
 
-      integer :: decode_line, load_i, load_l
+      integer :: decode_line, load_i, load_l, load_r
 
       real(r8) :: Xpos, Ypos
 

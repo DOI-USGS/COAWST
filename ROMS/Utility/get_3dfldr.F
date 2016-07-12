@@ -8,7 +8,7 @@
 # endif
      &                       Fout)
 !
-!svn $Id: get_3dfldr.F 1598 2008-07-25 03:29:09Z jcwarner $
+!svn $Id: get_3dfldr.F 795 2016-05-11 01:42:43Z arango $
 !================================================== Hernan G. Arango ===
 !  Copyright (c) 2002-2016 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !

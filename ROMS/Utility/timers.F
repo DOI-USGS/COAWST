@@ -1,7 +1,7 @@
 #include "cppdefs.h"
       SUBROUTINE wclock_on (ng, model, region)
 !
-!svn $Id: timers.F 1598 2008-07-25 03:29:09Z jcwarner $
+!svn $Id: timers.F 795 2016-05-11 01:42:43Z arango $
 !=======================================================================
 !  Copyright (c) 2002-2016 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !

@@ -2,7 +2,7 @@
       MODULE ad_htobs_mod
 #if defined ADJOINT && defined OBSERVATIONS && defined WEAK_CONSTRAINT
 !
-!svn $Id: ad_htobs.F 751 2015-01-07 22:56:36Z arango $
+!svn $Id: ad_htobs.F 807 2016-07-09 02:03:55Z arango $
 !================================================== Hernan G. Arango ===
 !  Copyright (c) 2002-2016 The ROMS/TOMS Group       Andrew M. Moore   !
 !    Licensed under a MIT/X style license                              !
@@ -174,6 +174,15 @@
 !
         Mstr=NstrObs(ng)
         Mend=NendObs(ng)
+
+# ifdef BGQC
+!
+!  Reject observation that fail background quality control check.
+!
+        DO iobs=Mstr,Mend
+          ADmodVal(iobs)=ObsScale(iobs)*ADmodVal(iobs)
+        END DO
+# endif
 !
 !  Free-surface.
 !
@@ -387,7 +396,7 @@
           END IF
         END DO
 # endif
-# ifdef DISTRIBUTE
+# if defined DISTRIBUTE && !defined BGQC
 !
 !-----------------------------------------------------------------------
 !  Collect all observations scaling factors.

@@ -6,7 +6,7 @@
     (defined TS_DIF2  || defined TS_DIF4)
 
 !
-!svn $Id: t3dmix.F 1311 2008-01-10 04:13:52Z jcwarner $
+!svn $Id: t3dmix.F 795 2016-05-11 01:42:43Z arango $
 !=======================================================================
 !  Copyright (c) 2002-2016 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !

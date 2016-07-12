@@ -4,7 +4,7 @@
 
 #if defined NONLINEAR && defined FOUR_DVAR
 !
-!svn $Id: conv_2d.F 732 2008-09-07 01:55:51Z jcwarner $
+!svn $Id: conv_2d.F 807 2016-07-09 02:03:55Z arango $
 !================================================== Hernan G. Arango ===
 !  Copyright (c) 2002-2016 The ROMS/TOMS Group       Andrew M. Moore   !
 !    Licensed under a MIT/X style license                              !
@@ -72,7 +72,7 @@
       USE mod_param
       USE mod_scalars
 !
-      USE bc_2d_mod, ONLY: bc_r2d_tile
+      USE bc_2d_mod, ONLY: dabc_r2d_tile
 # ifdef DISTRIBUTE
       USE mp_exchange_mod, ONLY : mp_exchange2d
 # endif
@@ -141,9 +141,9 @@
 !
       Nold=1
       Nnew=2
-      CALL bc_r2d_tile (ng, tile,                                       &
-     &                  LBi, UBi, LBj, UBj,                             &
-     &                  A)
+      CALL dabc_r2d_tile (ng, tile,                                     &
+     &                    LBi, UBi, LBj, UBj,                           &
+     &                    A)
 # ifdef DISTRIBUTE
       CALL mp_exchange2d (ng, tile, model, 1,                           &
      &                    LBi, UBi, LBj, UBj,                           &
@@ -197,9 +197,9 @@
 !
 !  Apply boundary conditions. If applicable, exchange boundary data.
 !
-        CALL bc_r2d_tile (ng, tile,                                     &
-     &                    LBi, UBi, LBj, UBj,                           &
-     &                    Awrk(:,:,Nnew))
+        CALL dabc_r2d_tile (ng, tile,                                   &
+     &                      LBi, UBi, LBj, UBj,                         &
+     &                      Awrk(:,:,Nnew))
 # ifdef DISTRIBUTE
         CALL mp_exchange2d (ng, tile, model, 1,                         &
      &                      LBi, UBi, LBj, UBj,                         &
@@ -224,9 +224,9 @@
           A(i,j)=Awrk(i,j,Nold)
         END DO
       END DO
-      CALL bc_r2d_tile (ng, tile,                                       &
-     &                  LBi, UBi, LBj, UBj,                             &
-     &                  A)
+      CALL dabc_r2d_tile (ng, tile,                                     &
+     &                    LBi, UBi, LBj, UBj,                           &
+     &                    A)
 # ifdef DISTRIBUTE
       CALL mp_exchange2d (ng, tile, model, 1,                           &
      &                    LBi, UBi, LBj, UBj,                           &
@@ -254,7 +254,7 @@
       USE mod_param
       USE mod_scalars
 !
-      USE bc_2d_mod, ONLY: bc_u2d_tile
+      USE bc_2d_mod, ONLY: dabc_u2d_tile
 # ifdef DISTRIBUTE
       USE mp_exchange_mod, ONLY : mp_exchange2d
 # endif
@@ -324,9 +324,9 @@
 !
       Nold=1
       Nnew=2
-      CALL bc_u2d_tile (ng, tile,                                       &
-     &                  LBi, UBi, LBj, UBj,                             &
-     &                  A)
+      CALL dabc_u2d_tile (ng, tile,                                     &
+     &                    LBi, UBi, LBj, UBj,                           &
+     &                    A)
 # ifdef DISTRIBUTE
       CALL mp_exchange2d (ng, tile, model, 1,                           &
      &                    LBi, UBi, LBj, UBj,                           &
@@ -378,9 +378,9 @@
 !
 !  Apply boundary conditions. If applicable, exchange boundary data.
 !
-        CALL bc_u2d_tile (ng, tile,                                     &
-     &                    LBi, UBi, LBj, UBj,                           &
-     &                    Awrk(:,:,Nnew))
+        CALL dabc_u2d_tile (ng, tile,                                   &
+     &                      LBi, UBi, LBj, UBj,                         &
+     &                      Awrk(:,:,Nnew))
 # ifdef DISTRIBUTE
         CALL mp_exchange2d (ng, tile, model, 1,                         &
      &                      LBi, UBi, LBj, UBj,                         &
@@ -405,9 +405,9 @@
           A(i,j)=Awrk(i,j,Nold)
         END DO
       END DO
-      CALL bc_u2d_tile (ng, tile,                                       &
-     &                  LBi, UBi, LBj, UBj,                             &
-     &                  A)
+      CALL dabc_u2d_tile (ng, tile,                                     &
+     &                    LBi, UBi, LBj, UBj,                           &
+     &                    A)
 # ifdef DISTRIBUTE
       CALL mp_exchange2d (ng, tile, model, 1,                           &
      &                    LBi, UBi, LBj, UBj,                           &
@@ -435,7 +435,7 @@
       USE mod_param
       USE mod_scalars
 !
-      USE bc_2d_mod, ONLY: bc_v2d_tile
+      USE bc_2d_mod, ONLY: dabc_v2d_tile
 # ifdef DISTRIBUTE
       USE mp_exchange_mod, ONLY : mp_exchange2d
 # endif
@@ -505,9 +505,9 @@
 !
       Nold=1
       Nnew=2
-      CALL bc_v2d_tile (ng, tile,                                       &
-     &                  LBi, UBi, LBj, UBj,                             &
-     &                  A)
+      CALL dabc_v2d_tile (ng, tile,                                     &
+     &                    LBi, UBi, LBj, UBj,                           &
+     &                    A)
 # ifdef DISTRIBUTE
       CALL mp_exchange2d (ng, tile, model, 1,                           &
      &                    LBi, UBi, LBj, UBj,                           &
@@ -559,9 +559,9 @@
 !
 !  Apply boundary conditions. If applicable, exchange boundary data.
 !
-        CALL bc_v2d_tile (ng, tile,                                     &
-     &                    LBi, UBi, LBj, UBj,                           &
-     &                    Awrk(:,:,Nnew))
+        CALL dabc_v2d_tile (ng, tile,                                   &
+     &                      LBi, UBi, LBj, UBj,                         &
+     &                      Awrk(:,:,Nnew))
 # ifdef DISTRIBUTE
         CALL mp_exchange2d (ng, tile, model, 1,                         &
      &                      LBi, UBi, LBj, UBj,                         &
@@ -586,9 +586,9 @@
           A(i,j)=Awrk(i,j,Nold)
         END DO
       END DO
-      CALL bc_v2d_tile (ng, tile,                                       &
-     &                  LBi, UBi, LBj, UBj,                             &
-     &                  A)
+      CALL dabc_v2d_tile (ng, tile,                                     &
+     &                    LBi, UBi, LBj, UBj,                           &
+     &                    A)
 # ifdef DISTRIBUTE
       CALL mp_exchange2d (ng, tile, model, 1,                           &
      &                    LBi, UBi, LBj, UBj,                           &

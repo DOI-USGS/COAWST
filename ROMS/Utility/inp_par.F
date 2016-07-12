@@ -1,7 +1,7 @@
 #include "cppdefs.h"
       SUBROUTINE inp_par (model)
 !
-!svn $Id: inp_par.F 838 2008-11-17 04:22:18Z jcwarner $
+!svn $Id: inp_par.F 795 2016-05-11 01:42:43Z arango $
 !================================================== Hernan G. Arango ===
 !  Copyright (c) 2002-2016 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
@@ -43,7 +43,7 @@
 !
       logical :: Lwrite
 
-      integer :: Itile, Jtile, Nghost, tile
+      integer :: Itile, Jtile, Nghost, Ntiles, tile
       integer :: Imin, Imax, Jmin, Jmax
       integer :: Uoff, Voff
 #ifdef DISTRIBUTE
@@ -1831,9 +1831,9 @@
       END IF
       load_lbc=ic
 
- 10   FORMAT (/,' LOAD_LBC - illegal lateral boundary condition ',      &
+ 10   FORMAT (/,' INP_PAR - illegal lateral boundary condition ',       &
      &        'keyword: ',a,/,11x,a)
- 20   FORMAT (/,' LOAD_LBC - incorrect continuation symbol in line:',/, &
+ 20   FORMAT (/,' INP_PAR - incorrect continuation symbol in line:',/,  &
      &        11x,a,/,11x,'number of nested grid values exceeded.')
 
       RETURN
@@ -2108,7 +2108,7 @@
       END IF
       load_s1d=Nval
 
- 10   FORMAT (/,' LOAD_S1D - incorrect continuation symbol in line:',/, &
+ 10   FORMAT (/,' INP_PAR - incorrect continuation symbol in line:',/,  &
      &        11x,a,/,11x,'number of nested grid values exceeded.')
 
       RETURN
@@ -2343,9 +2343,9 @@
       END IF
       load_s2d=Nval
 
- 10   FORMAT (/,' LOAD_S2D - incorrect continuation symbol in line:',/, &
+ 10   FORMAT (/,' INP_PAR - incorrect continuation symbol in line:',/,  &
      &        11x,a,/,11x,'inner dimension of structure exceeded.')
- 20   FORMAT (/,' LOAD_S2D - incorrect continuation symbol in line:',/, &
+ 20   FORMAT (/,' INP_PAR - incorrect continuation symbol in line:',/,  &
      &        11x,a,/,11x,'number of nested grid values exceeded.')
 
       RETURN

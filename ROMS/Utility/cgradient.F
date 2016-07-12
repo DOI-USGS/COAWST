@@ -4,7 +4,7 @@
 
 #ifdef IS4DVAR
 !
-!svn $Id$
+!svn $Id: cgradient.F 807 2016-07-09 02:03:55Z arango $
 !================================================== Hernan G. Arango ===
 !  Copyright (c) 2002-2016 The ROMS/TOMS Group       Andrew M. Moore   !
 !    Licensed under a MIT/X style license                              !
@@ -6593,6 +6593,22 @@
      &                        cg_zv, (/1,1/), (/Ninner,Ninner/),        &
      &                        ncid = ADM(ng)%ncid)
         IF (exit_flag.ne.NoError) RETURN
+# ifdef EVOLVED_LCZ
+        CALL netcdf_put_fvar (ng, model, HSS(ng)%name, 'cg_beta',       &
+     &                        cg_beta, (/1,1/), (/Ninner+1,Nouter/),    &
+     &                        ncid = HSS(ng)%ncid)
+        IF (exit_flag.ne.NoError) RETURN
+!
+        CALL netcdf_put_fvar (ng, model, HSS(ng)%name, 'cg_delta',      &
+     &                        cg_delta, (/1,1/), (/Ninner,Nouter/),     &
+     &                        ncid = HSS(ng)%ncid)
+        IF (exit_flag.ne.NoError) RETURN
+!
+        CALL netcdf_put_fvar (ng, model, HSS(ng)%name, 'cg_zv',         &
+     &                        cg_zv, (/1,1/), (/Ninner,Ninner/),        &
+     &                        ncid = HSS(ng)%ncid)
+        IF (exit_flag.ne.NoError) RETURN
+# endif
       END IF
 !
 !-----------------------------------------------------------------------

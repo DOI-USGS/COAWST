@@ -1,7 +1,7 @@
 #include "cppdefs.h"
       MODULE mod_netcdf
 !
-!svn $Id: mod_netcdf.F 814 2008-10-29 01:42:17Z jcwarner $
+!svn $Id: mod_netcdf.F 807 2016-07-09 02:03:55Z arango $
 !================================================== Hernan G. Arango ===
 !  Copyright (c) 2002-2016 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
@@ -108,9 +108,9 @@
       integer :: var_Aint(NvarA)        ! attribute integer values
       real(r8) :: var_Afloat(NvarA)     ! attribute float values
 !
-      character (len=40) :: var_Aname(NvarA)     ! Attribute names
-      character (len=40) :: var_Dname(NvarD)     ! dimension names
-      character (len=80) :: var_Achar(NvarA)     ! Attribute char values
+      character (len=40)   :: var_Aname(NvarA)   ! Attribute names
+      character (len=40)   :: var_Dname(NvarD)   ! dimension names
+      character (len=1024) :: var_Achar(NvarA)   ! Attribute char values
 !
 !  External data representation for floating-point variables.
 !
@@ -1164,7 +1164,7 @@
       integer, dimension(4) :: ibuffer
 #endif
 
-      character (len=80) :: text
+      character (len=1024) :: text
 !
 !-----------------------------------------------------------------------
 !  Inquire about the NetCDF dimensions (names and values).
@@ -1968,6 +1968,8 @@
 #endif
       real(r8) :: Afactor, Aoffset, Aspval
 
+      real(r8), parameter :: Aepsilon = 1.0E-8_r8
+
       real(r8), dimension(3) :: AttValue
 
       character (len=12), dimension(3) :: AttName
@@ -2073,13 +2075,24 @@
           Aspval=AttValue(3)
         END IF
 
-        DO i=1,Asize(1)
-          IF (ABS(A(i)).ge.ABS(Aspval)) THEN
+        DO i=1,Asize(1)                       ! zero out missing values
+          IF ((foundit(3).and.(ABS(A(i)-Aspval).lt.Aepsilon)).or.       &
+     &        (.not.foundit(3).and.(ABS(A(i)).ge.ABS(Aspval)))) THEN
             A(i)=0.0_r8
-          ELSE
-            A(i)=Afactor*A(i)+Aoffset
           END IF
         END DO
+
+        IF (foundit(1)) THEN                  ! scale data
+          DO i=1,Asize(1)
+            A(i)=Afactor*A(i)
+          END DO
+        END IF
+
+        IF (foundit(2)) THEN                  ! add data offset
+          DO i=1,Asize(1)
+            A(i)=A(i)+Aoffset
+          END DO
+        END IF
       END IF
 !
 !  Compute minimum and maximum values of read variable.
@@ -2181,6 +2194,8 @@
       integer, dimension(2) :: ibuffer
 #endif
       real(r8) :: Afactor, Aoffset, Aspval
+
+      real(r8), parameter :: Aepsilon = 1.0E-8_r8
 
       real(r8), dimension(3) :: AttValue
 
@@ -2285,15 +2300,30 @@
           Aspval=AttValue(3)
         END IF
 
-        DO j=1,Asize(2)
+        DO j=1,Asize(2)                       ! zero out missing values
           DO i=1,Asize(1)
-            IF (ABS(A(i,j)).ge.ABS(Aspval)) THEN
+            IF ((foundit(3).and.(ABS(A(i,j)-Aspval).lt.Aepsilon)).or.   &
+     &          (.not.foundit(3).and.(ABS(A(i,j)).ge.ABS(Aspval)))) THEN
               A(i,j)=0.0_r8
-            ELSE
-              A(i,j)=Afactor*A(i,j)+Aoffset
             END IF
           END DO
         END DO
+
+        IF (foundit(1)) THEN                  ! scale data
+          DO j=1,Asize(2)
+            DO i=1,Asize(1)
+              A(i,j)=Afactor*A(i,j)
+            END DO
+          END DO
+        END IF
+
+        IF (foundit(2)) THEN                  ! add data offset
+          DO j=1,Asize(2)
+            DO i=1,Asize(1)
+              A(i,j)=A(i,j)+Aoffset
+            END DO
+          END DO
+        END IF
       END IF
 !
 !  Compute minimum and maximum values of read variable.
@@ -2392,6 +2422,8 @@
       integer, dimension(2) :: ibuffer
 #endif
       real(r8) :: Afactor, Aoffset, Aspval
+
+      real(r8), parameter :: Aepsilon = 1.0E-8_r8
 
       real(r8), dimension(3) :: AttValue
 
@@ -2499,17 +2531,38 @@
           Aspval=AttValue(3)
         END IF
 
-        DO k=1,Asize(3)
+        DO k=1,Asize(3)                       ! zero out missing values
           DO j=1,Asize(2)
             DO i=1,Asize(1)
-              IF (ABS(A(i,j,k)).ge.ABS(Aspval)) THEN
+              IF ((foundit(3).and.                                      &
+     &             (ABS(A(i,j,k)-Aspval).lt.Aepsilon)).or.              &
+     &            (.not.foundit(3).and.                                 &
+     &             (ABS(A(i,j,k)).ge.ABS(Aspval)))) THEN
                 A(i,j,k)=0.0_r8
-              ELSE
-                A(i,j,k)=Afactor*A(i,j,k)+Aoffset
               END IF
             END DO
           END DO
         END DO
+
+        IF (foundit(1)) THEN                  ! scale data
+          DO k=1,Asize(3)
+            DO j=1,Asize(2)
+              DO i=1,Asize(1)
+                A(i,j,k)=Afactor*A(i,j,k)
+              END DO
+            END DO
+          END DO
+        END IF
+
+        IF (foundit(2)) THEN                  ! add data offset
+          DO k=1,Asize(3)
+            DO j=1,Asize(2)
+              DO i=1,Asize(1)
+                A(i,j,k)=A(i,j,k)+Aoffset
+              END DO
+            END DO
+          END DO
+        END IF
       END IF
 !
 !  Compute minimum and maximum values of read variable.
@@ -2608,6 +2661,8 @@
       integer, dimension(2) :: ibuffer
 #endif
       real(r8) :: Afactor, Aoffset, Aspval
+
+      real(r8), parameter :: Aepsilon = 1.0E-8_r8
 
       real(r8), dimension(3) :: AttValue
 
@@ -2717,19 +2772,44 @@
           Aspval=AttValue(3)
         END IF
 
-        DO l=1,Asize(4)
+        DO l=1,Asize(4)                       ! zero out missing values
           DO k=1,Asize(3)
             DO j=1,Asize(2)
               DO i=1,Asize(1)
-                IF (ABS(A(i,j,k,l)).ge.ABS(Aspval)) THEN
+                IF ((foundit(3).and.                                    &
+     &               (ABS(A(i,j,k,l)-Aspval).lt.Aepsilon)).or.          &
+     &              (.not.foundit(3).and.                               &
+     &               (ABS(A(i,j,k,l)).ge.ABS(Aspval)))) THEN
                   A(i,j,k,l)=0.0_r8
-                ELSE
-                  A(i,j,k,l)=Afactor*A(i,j,k,l)+Aoffset
                 END IF
               END DO
             END DO
           END DO
         END DO
+
+        IF (foundit(1)) THEN                  ! scale data
+          DO l=1,Asize(4)
+            DO k=1,Asize(3)
+              DO j=1,Asize(2)
+                DO i=1,Asize(1)
+                  A(i,j,k,l)=Afactor*A(i,j,k,l)
+                END DO
+              END DO
+            END DO
+          END DO
+        END IF
+
+        IF (foundit(2)) THEN                  ! add data offset
+          DO l=1,Asize(4)
+            DO k=1,Asize(3)
+              DO j=1,Asize(2)
+                DO i=1,Asize(1)
+                  A(i,j,k,l)=A(i,j,k,l)+Aoffset
+                END DO
+              END DO
+            END DO
+          END DO
+        END IF
       END IF
 !
 !  Compute minimum and maximum values of read variable.

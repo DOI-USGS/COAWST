@@ -1,11 +1,11 @@
 #include "cppdefs.h"
-#if defined IS4DVAR              || \
-    (defined WEAK_CONSTRAINT     && \
-     (defined POSTERIOR_EOFS     || defined POSTERIOR_ERROR_I ||\
-      defined POSTERIOR_ERROR_F))
+#if defined IS4DVAR               || \
+    (defined WEAK_CONSTRAINT      && \
+     (defined POSTERIOR_EOFS      || defined POSTERIOR_ERROR_I ||\
+      defined POSTERIOR_ERROR_F)) || defined LCZ_FINAL
       SUBROUTINE wrt_hessian (ng, kout, nout)
 !
-!svn $Id: wrt_hessian.F 429 2009-12-20 17:30:26Z arango $
+!svn $Id: wrt_hessian.F 807 2016-07-09 02:03:55Z arango $
 !================================================== Hernan G. Arango ===
 !  Copyright (c) 2002-2016 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !

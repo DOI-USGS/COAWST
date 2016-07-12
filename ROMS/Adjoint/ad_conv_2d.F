@@ -4,7 +4,7 @@
 
 #if defined ADJOINT && defined FOUR_DVAR
 !
-!svn $Id: ad_conv_2d.F 751 2015-01-07 22:56:36Z arango $
+!svn $Id: ad_conv_2d.F 807 2016-07-09 02:03:55Z arango $
 !================================================== Hernan G. Arango ===
 !  Copyright (c) 2002-2016 The ROMS/TOMS Group       Andrew M. Moore   !
 !    Licensed under a MIT/X style license                              !
@@ -72,7 +72,7 @@
       USE mod_param
       USE mod_scalars
 !
-      USE ad_bc_2d_mod, ONLY: ad_bc_r2d_tile
+      USE ad_bc_2d_mod, ONLY: ad_dabc_r2d_tile
 # ifdef DISTRIBUTE
       USE mp_exchange_mod, ONLY : ad_mp_exchange2d
 # endif
@@ -167,13 +167,13 @@
      &                       EWperiodic(ng), NSperiodic(ng),            &
      &                       ad_A)
 # endif
-!>    CALL bc_r2d_tile (ng, tile,                                       &
-!>   &                  LBi, UBi, LBj, UBj,                             &
-!>   &                  tl_A)
+!>    CALL dabc_r2d_tile (ng, tile,                                     &
+!>   &                    LBi, UBi, LBj, UBj,                           &
+!>   &                    tl_A)
 !>
-      CALL ad_bc_r2d_tile (ng, tile,                                    &
-     &                     LBi, UBi, LBj, UBj,                          &
-     &                     ad_A)
+      CALL ad_dabc_r2d_tile (ng, tile,                                  &
+     &                       LBi, UBi, LBj, UBj,                        &
+     &                       ad_A)
       DO j=Jstr,Jend
         DO i=Istr,Iend
 !>        tl_A(i,j)=tl_Awrk(i,j,Nold)
@@ -211,13 +211,13 @@
      &                         EWperiodic(ng), NSperiodic(ng),          &
      &                         ad_Awrk(:,:,Nnew))
 # endif
-!>      CALL bc_r2d_tile (ng, tile,                                     &
-!>   &                    LBi, UBi, LBj, UBj,                           &
-!>   &                    tl_Awrk(:,:,Nnew))
+!>      CALL dabc_r2d_tile (ng, tile,                                   &
+!>   &                      LBi, UBi, LBj, UBj,                         &
+!>   &                      tl_Awrk(:,:,Nnew))
 !>
-        CALL ad_bc_r2d_tile (ng, tile,                                  &
-     &                       LBi, UBi, LBj, UBj,                        &
-     &                       ad_Awrk(:,:,Nnew))
+        CALL ad_dabc_r2d_tile (ng, tile,                                &
+     &                         LBi, UBi, LBj, UBj,                      &
+     &                         ad_Awrk(:,:,Nnew))
 !
 !  Time-step adjoint horizontal diffusion terms.
 !
@@ -298,13 +298,13 @@
      &                       EWperiodic(ng), NSperiodic(ng),            &
      &                       ad_A)
 # endif
-!>    CALL bc_r2d_tile (ng, tile,                                       &
-!>   &                  LBi, UBi, LBj, UBj,                             &
-!>   &                  tl_A)
+!>    CALL dabc_r2d_tile (ng, tile,                                     &
+!>   &                    LBi, UBi, LBj, UBj,                           &
+!>   &                    tl_A)
 !>
-      CALL ad_bc_r2d_tile (ng, tile,                                    &
-     &                     LBi, UBi, LBj, UBj,                          &
-     &                     ad_A)
+      CALL ad_dabc_r2d_tile (ng, tile,                                  &
+     &                       LBi, UBi, LBj, UBj,                        &
+     &                       ad_A)
 
       RETURN
       END SUBROUTINE ad_conv_r2d_tile
@@ -325,7 +325,7 @@
       USE mod_param
       USE mod_scalars
 !
-      USE ad_bc_2d_mod, ONLY: ad_bc_u2d_tile
+      USE ad_bc_2d_mod, ONLY: ad_dabc_u2d_tile
 # ifdef DISTRIBUTE
       USE mp_exchange_mod, ONLY : ad_mp_exchange2d
 # endif
@@ -419,13 +419,13 @@
      &                       EWperiodic(ng), NSperiodic(ng),            &
      &                       ad_A)
 # endif
-!>    CALL bc_u2d_tile (ng, tile,                                       &
-!>   &                  LBi, UBi, LBj, UBj,                             &
-!>   &                  tl_A)
+!>    CALL dabc_u2d_tile (ng, tile,                                     &
+!>   &                    LBi, UBi, LBj, UBj,                           &
+!>   &                    tl_A)
 !>
-      CALL ad_bc_u2d_tile (ng, tile,                                    &
-     &                     LBi, UBi, LBj, UBj,                          &
-     &                     ad_A)
+      CALL ad_dabc_u2d_tile (ng, tile,                                  &
+     &                       LBi, UBi, LBj, UBj,                        &
+     &                       ad_A)
       DO j=Jstr,Jend
         DO i=IstrU,Iend
 !>        tl_A(i,j)=tl_Awrk(i,j,Nold)
@@ -463,13 +463,13 @@
      &                         EWperiodic(ng), NSperiodic(ng),          &
      &                         ad_Awrk(:,:,Nnew))
 # endif
-!>      CALL bc_u2d_tile (ng, tile,                                     &
-!>   &                    LBi, UBi, LBj, UBj,                           &
-!>   &                    tl_Awrk(:,:,Nnew))
+!>      CALL dabc_u2d_tile (ng, tile,                                   &
+!>   &                      LBi, UBi, LBj, UBj,                         &
+!>   &                      tl_Awrk(:,:,Nnew))
 !>
-        CALL ad_bc_u2d_tile (ng, tile,                                  &
-     &                       LBi, UBi, LBj, UBj,                        &
-     &                       ad_Awrk(:,:,Nnew))
+        CALL ad_dabc_u2d_tile (ng, tile,                                &
+     &                         LBi, UBi, LBj, UBj,                      &
+     &                         ad_Awrk(:,:,Nnew))
 !
 !  Time-step adjoint horizontal diffusion terms.
 !
@@ -548,13 +548,13 @@
      &                       EWperiodic(ng), NSperiodic(ng),            &
      &                       ad_A)
 # endif
-!>    CALL bc_u2d_tile (ng, tile,                                       &
-!>   &                  LBi, UBi, LBj, UBj,                             &
-!>   &                  tl_A)
+!>    CALL dabc_u2d_tile (ng, tile,                                     &
+!>   &                    LBi, UBi, LBj, UBj,                           &
+!>   &                    tl_A)
 !>
-      CALL ad_bc_u2d_tile (ng, tile,                                    &
-     &                     LBi, UBi, LBj, UBj,                          &
-     &                     ad_A)
+      CALL ad_dabc_u2d_tile (ng, tile,                                  &
+     &                       LBi, UBi, LBj, UBj,                        &
+     &                       ad_A)
 
       RETURN
       END SUBROUTINE ad_conv_u2d_tile
@@ -575,7 +575,7 @@
       USE mod_param
       USE mod_scalars
 !
-      USE ad_bc_2d_mod, ONLY: ad_bc_v2d_tile
+      USE ad_bc_2d_mod, ONLY: ad_dabc_v2d_tile
 # ifdef DISTRIBUTE
       USE mp_exchange_mod, ONLY : ad_mp_exchange2d
 # endif
@@ -669,13 +669,13 @@
      &                       EWperiodic(ng), NSperiodic(ng),            &
      &                       ad_A)
 # endif
-!>    CALL bc_v2d_tile (ng, tile,                                       &
-!>   &                  LBi, UBi, LBj, UBj,                             &
-!>   &                  tl_A)
+!>    CALL dabc_v2d_tile (ng, tile,                                     &
+!>   &                    LBi, UBi, LBj, UBj,                           &
+!>   &                    tl_A)
 !>
-      CALL ad_bc_v2d_tile (ng, tile,                                    &
-     &                     LBi, UBi, LBj, UBj,                          &
-     &                     ad_A)
+      CALL ad_dabc_v2d_tile (ng, tile,                                  &
+     &                       LBi, UBi, LBj, UBj,                        &
+     &                       ad_A)
       DO j=JstrV,Jend
         DO i=Istr,Iend
 !>        tl_A(i,j)=tl_Awrk(i,j,Nold)
@@ -713,13 +713,13 @@
      &                         EWperiodic(ng), NSperiodic(ng),          &
      &                         ad_Awrk(:,:,Nnew))
 # endif
-!>      CALL bc_v2d_tile (ng, tile,                                     &
-!>   &                    LBi, UBi, LBj, UBj,                           &
-!>   &                    tl_Awrk(:,:,Nnew))
+!>      CALL dabc_v2d_tile (ng, tile,                                   &
+!>   &                      LBi, UBi, LBj, UBj,                         &
+!>   &                      tl_Awrk(:,:,Nnew))
 !>
-        CALL ad_bc_v2d_tile (ng, tile,                                  &
-     &                       LBi, UBi, LBj, UBj,                        &
-     &                       ad_Awrk(:,:,Nnew))
+        CALL ad_dabc_v2d_tile (ng, tile,                                &
+     &                         LBi, UBi, LBj, UBj,                      &
+     &                         ad_Awrk(:,:,Nnew))
 !
 !  Time-step adjoint horizontal diffusion terms.
 !
@@ -798,13 +798,13 @@
      &                       EWperiodic(ng), NSperiodic(ng),            &
      &                       ad_A)
 # endif
-!>    CALL bc_v2d_tile (ng, tile,                                       &
-!>   &                  LBi, UBi, LBj, UBj,                             &
-!>   &                  tl_A)
+!>    CALL dabc_v2d_tile (ng, tile,                                     &
+!>   &                    LBi, UBi, LBj, UBj,                           &
+!>   &                    tl_A)
 !>
-      CALL ad_bc_v2d_tile (ng, tile,                                    &
-     &                     LBi, UBi, LBj, UBj,                          &
-     &                     ad_A)
+      CALL ad_dabc_v2d_tile (ng, tile,                                  &
+     &                       LBi, UBi, LBj, UBj,                        &
+     &                       ad_A)
 
       RETURN
       END SUBROUTINE ad_conv_v2d_tile

@@ -2,7 +2,7 @@
 #ifdef TANGENT
       SUBROUTINE tl_set_data (ng, tile)
 !
-!svn $Id: tl_set_data.F 751 2015-01-07 22:56:36Z arango $
+!svn $Id: tl_set_data.F 807 2016-07-09 02:03:55Z arango $
 !================================================== Hernan G. Arango ===
 !  Copyright (c) 2002-2016 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
@@ -1449,8 +1449,6 @@
      &                       OCEAN(ng)%f_zeta,                          &
      &                       update)
         IF (exit_flag.ne.NoError) RETURN
-
-#   ifndef SOLVE3D
 !
 !  Set 2D momentum forcing.
 !
@@ -1467,7 +1465,6 @@
      &                       OCEAN(ng)%f_vbar,                          &
      &                       update)
         IF (exit_flag.ne.NoError) RETURN
-#   endif
 
 #   ifdef SOLVE3D
 !

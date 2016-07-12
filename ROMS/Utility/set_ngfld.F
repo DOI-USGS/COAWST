@@ -3,7 +3,7 @@
      &                      LBi, UBi, UBj, Istr, Iend, Jrec,            &
      &                      Finp, Fout, update)
 !
-!svn $Id: set_ngfld.F 1336 2008-01-24 02:45:56Z jcwarner $
+!svn $Id: set_ngfld.F 795 2016-05-11 01:42:43Z arango $
 !================================================== Hernan G. Arango ===
 !  Copyright (c) 2002-2016 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !

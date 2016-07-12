@@ -2,7 +2,7 @@
       SUBROUTINE get_bounds (ng, tile, gtype, Nghost, Itile, Jtile,     &
      &                       LBi, UBi, LBj, UBj)
 !
-!svn $Id: get_bounds.F 814 2008-10-29 01:42:17Z jcwarner $
+!svn $Id: get_bounds.F 795 2016-05-11 01:42:43Z arango $
 !================================================== Hernan G. Arango ===
 !  Copyright (c) 2002-2016 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !

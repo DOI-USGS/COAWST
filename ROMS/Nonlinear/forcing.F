@@ -4,7 +4,7 @@
 #if defined NLM_OUTER  || defined SENSITIVITY_4DVAR || \
     defined TL_W4DPSAS || defined W4DPSAS
 !
-!svn $Id: forcing.F 732 2008-09-07 01:55:51Z jcwarner $
+!svn $Id: forcing.F 807 2016-07-09 02:03:55Z arango $
 !================================================== Hernan G. Arango ===
 !  Copyright (c) 2002-2016 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
@@ -49,19 +49,17 @@
      &                   OCEAN(ng) % f_t,                               &
      &                   OCEAN(ng) % f_u,                               &
      &                   OCEAN(ng) % f_v,                               &
-# else
+# endif
      &                   OCEAN(ng) % f_ubar,                            &
      &                   OCEAN(ng) % f_vbar,                            &
-# endif
      &                   OCEAN(ng) % f_zeta,                            &
 # ifdef SOLVE3D
      &                   OCEAN(ng) % t,                                 &
      &                   OCEAN(ng) % u,                                 &
      &                   OCEAN(ng) % v,                                 &
-# else
+# endif
      &                   OCEAN(ng) % ubar,                              &
      &                   OCEAN(ng) % vbar,                              &
-# endif
 # ifdef SOLVE3D
      &                   COUPLING(ng) % Zt_avg1,                        &
 # endif
@@ -77,15 +75,13 @@
      &                         Kfrc, Nfrc,                              &
 # ifdef SOLVE3D
      &                         f_t, f_u, f_v,                           &
-# else
-     &                         f_ubar, f_vbar,                          &
 # endif
+     &                         f_ubar, f_vbar,                          &
      &                         f_zeta,                                  &
 # ifdef SOLVE3D
      &                         t, u, v,                                 &
-# else
-     &                         ubar, vbar,                              &
 # endif
+     &                         ubar, vbar,                              &
 # ifdef SOLVE3D
      &                         Zt_avg1,                                 &
 # endif
@@ -110,19 +106,17 @@
       real(r8), intent(in) :: f_t(LBi:,LBj:,:,:)
       real(r8), intent(in) :: f_u(LBi:,LBj:,:)
       real(r8), intent(in) :: f_v(LBi:,LBj:,:)
-#  else
+#  endif
       real(r8), intent(in) :: f_ubar(LBi:,LBj:)
       real(r8), intent(in) :: f_vbar(LBi:,LBj:)
-#  endif
       real(r8), intent(in) :: f_zeta(LBi:,LBj:)
 #  ifdef SOLVE3D
       real(r8), intent(inout) :: t(LBi:,LBj:,:,:,:)
       real(r8), intent(inout) :: u(LBi:,LBj:,:,:)
       real(r8), intent(inout) :: v(LBi:,LBj:,:,:)
-#  else
+#  endif
       real(r8), intent(inout) :: ubar(LBi:,LBj:,:)
       real(r8), intent(inout) :: vbar(LBi:,LBj:,:)
-#  endif
 #  ifdef SOLVE3D
       real(r8), intent(inout) :: Zt_avg1(LBi:,LBj:)
 #  endif
@@ -132,19 +126,17 @@
       real(r8), intent(in) :: f_t(LBi:UBi,LBj:UBj,N(ng),NT(ng))
       real(r8), intent(in) :: f_u(LBi:UBi,LBj:UBj,N(ng))
       real(r8), intent(in) :: f_v(LBi:UBi,LBj:UBj,N(ng))
-#  else
+#  endif
       real(r8), intent(in) :: f_ubar(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: f_vbar(LBi:UBi,LBj:UBj)
-#  endif
       real(r8), intent(in) :: f_zeta(LBi:UBi,LBj:UBj)
 #  ifdef SOLVE3D
       real(r8), intent(inout) :: t(LBi:UBi,LBj:UBj,N(ng),3,NT(ng))
       real(r8), intent(inout) :: u(LBi:UBi,LBj:UBj,N(ng),2)
       real(r8), intent(inout) :: v(LBi:UBi,LBj:UBj,N(ng),2)
-#  else
+#  endif
       real(r8), intent(inout) :: ubar(LBi:UBi,LBj:UBj,3)
       real(r8), intent(inout) :: vbar(LBi:UBi,LBj:UBj,3)
-#  endif
 #  ifdef SOLVE3D
       real(r8), intent(inout) :: Zt_avg1(LBi:UBi,LBj:UBj)
 #  endif
@@ -211,6 +203,22 @@
       END DO
 
 # else
+!
+!  Tangent linear 2D momentum.
+!
+      DO j=JstrR,JendR
+        DO i=Istr,IendR
+          ubar(i,j,1)=ubar(i,j,1)+f_ubar(i,j)
+          ubar(i,j,2)=ubar(i,j,2)+f_ubar(i,j)
+        END DO
+      END DO
+!
+      DO j=Jstr,JendR
+        DO i=IstrR,IendR
+          vbar(i,j,1)=vbar(i,j,1)+f_vbar(i,j)
+          vbar(i,j,2)=vbar(i,j,2)+f_vbar(i,j)
+        END DO
+      END DO
 !
 !  3D momentum.
 !

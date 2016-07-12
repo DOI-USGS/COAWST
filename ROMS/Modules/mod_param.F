@@ -1,7 +1,7 @@
 #include "cppdefs.h"
       MODULE mod_param
 !
-!svn $Id: mod_param.F 838 2008-11-17 04:22:18Z jcwarner $
+!svn $Id: mod_param.F 807 2016-07-09 02:03:55Z arango $
 !================================================== Hernan G. Arango ===
 !  Copyright (c) 2002-2016 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
@@ -559,6 +559,14 @@
 !
       integer, allocatable :: Nbico(:)
 #endif
+
+#if defined TIME_CONV && defined WEAK_CONSTRAINT
+!
+!  Number of full state records needed for time convolutions. It is
+!  assign to (ntimes(ng)/nADJ(ng))+1 in "read_phypar.F"
+!
+      integer, allocatable :: NrecTC(:)
+#endif
 !
 !-----------------------------------------------------------------------
 !  Model state parameters.
@@ -662,6 +670,10 @@
       allocate ( N(Ngrids) )
 
       allocate ( NT(Ngrids) )
+
+#if defined TIME_CONV && defined WEAK_CONSTRAINT
+      allocate ( NrecTC(Ngrids) )
+#endif
 
       allocate ( NTCLM(Ngrids) )
 

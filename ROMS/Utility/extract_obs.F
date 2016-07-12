@@ -2,7 +2,7 @@
       MODULE extract_obs_mod
 #if defined FOUR_DVAR || defined VERIFICATION
 !
-!svn $Id$
+!svn $Id: extract_obs.F 807 2016-07-09 02:03:55Z arango $
 !================================================== Hernan G. Arango ===
 !  Copyright (c) 2002-2016 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
@@ -136,6 +136,12 @@
 # endif
      &                          Aobs)
 !***********************************************************************
+
+# ifdef BGQC
+!
+      USE mod_scalars, ONLY: inner, outer
+      USE mod_fourdvar, ONLY: wrtNLmod
+# endif
 !
 !  Imported variable declarations.
 !
@@ -239,10 +245,20 @@
      &               Hmat(2)*A(i2,j1)+                                  &
      &               Hmat(3)*A(i2,j2)+                                  &
      &               Hmat(4)*A(i1,j2)
+# ifdef BGQC
+#  ifdef IS4DVAR
+          IF ((inner.eq.0).and.(wrtNLmod(ng))) THEN
+#  else
+          IF ((inner.eq.0).and.(outer.eq.0)) THEN
+#  endif
+# endif
 # ifdef MASKING
-          IF (wsum.gt.0.0_r8) ObsScale(iobs)=1.0_r8
+            IF (wsum.gt.0.0_r8) ObsScale(iobs)=1.0_r8
 # else
-          ObsScale(iobs)=1.0_r8
+            ObsScale(iobs)=1.0_r8
+# endif
+# ifdef BGQC
+          END IF
 # endif
         END IF
       END DO
@@ -268,6 +284,10 @@
 !***********************************************************************
 !
       USE mod_param
+#  ifdef BGQC
+      USE mod_scalars, ONLY: inner, outer
+      USE mod_fourdvar, ONLY: wrtNLmod
+#  endif
 !
 !  Imported variable declarations.
 !
@@ -366,11 +386,27 @@
             IF (Zobs(iobs).ge.Ztop) THEN
               r1=0.0_r8                        ! If shallower, ignore.
               r2=0.0_r8
+# ifdef BGQC
+#  ifdef IS4DVAR
+              IF ((inner.eq.0).and.wrtNLmod(ng)) ObsScale(iobs)=0.0_r8
+#  else
+              IF ((inner.eq.0).and.(outer.eq.0)) ObsScale(iobs)=0.0_r8
+#  endif
+# else
               ObsScale(iobs)=0.0_r8
+# endif
             ELSE IF (Zbot.ge.Zobs(iobs)) THEN
               r1=0.0_r8                        ! If deeper, ignore.
               r2=0.0_r8
+# ifdef BGQC
+#  ifdef IS4DVAR
+              IF ((inner.eq.0).and.wrtNLmod(ng)) ObsScale(iobs)=0.0_r8
+#  else
+              IF ((inner.eq.0).and.(outer.eq.0)) ObsScale(iobs)=0.0_r8
+#  endif
+# else
               ObsScale(iobs)=0.0_r8
+# endif
             ELSE
               DO k=N(ng),2,-1                  ! Otherwise, interpolate
                 Ztop=Adepth(i1,j1,k  )         ! to fractional level
@@ -423,11 +459,27 @@
      &                 Hmat(6)*A(i2,j1,k2)+                             &
      &                 Hmat(7)*A(i2,j2,k2)+                             &
      &                 Hmat(8)*A(i1,j2,k2)
-#  ifdef MASKING
-            IF (wsum.gt.0.0_r8) ObsScale(iobs)=1.0_r8
+# ifdef BGQC
+#  ifdef IS4DVAR
+            IF ((inner.eq.0).and.wrtNLmod(ng)) THEN
 #  else
-            ObsScale(iobs)=1.0_r8
+            IF ((inner.eq.0).and.(outer.eq.0)) THEN
 #  endif
+# endif
+#  ifdef MASKING
+              IF (wsum.gt.0.0_r8) ObsScale(iobs)=1.0_r8
+#  else
+              ObsScale(iobs)=1.0_r8
+#  endif
+# ifdef BGQC
+            END IF
+# endif
+!
+!  Reject observations that lie in the lower most grid box (AMM).
+!
+            IF ((Zobs(iobs).gt.0.0_r8).and.(Zobs(iobs).le.1.0_r8)) THEN
+              ObsScale(iobs)=0.0_r8
+            END IF
           END IF
         END IF
       END DO

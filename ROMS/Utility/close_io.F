@@ -1,7 +1,7 @@
 #include "cppdefs.h"
       SUBROUTINE close_inp (ng, model)
 !
-!svn $Id: close_io.F 1601 2008-07-25 15:02:43Z jcwarner $
+!svn $Id: close_io.F 798 2016-05-21 17:04:58Z arango $
 !================================================== Hernan G. Arango ===
 !  Copyright (c) 2002-2016 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
@@ -153,7 +153,7 @@
 !
       logical :: First
 
-      integer :: Fcount, i, ng
+      integer :: Fcount, MyError, i, ng
 #if defined FILTERED_RST
       integer :: ifile
 #endif
@@ -215,6 +215,11 @@
         IF (RST(ng)%ncid.ne.-1) THEN
           CALL netcdf_close (ng, iNLM, RST(ng)%ncid)
         END IF
+#if defined FOUR_DVAR || defined ENKF_RESTART
+        IF (DAI(ng)%ncid.ne.-1) THEN
+          CALL netcdf_close (ng, iNLM, DAI(ng)%ncid)
+        END IF
+#endif
 #if defined FORWARD_READ || defined FORWARD_WRITE
         IF ((FWD(ng)%ncid.ne.-1).and.(FWD(ng)%ncid.eq.HIS(ng)%ncid)) THEN
           FWD(ng)%ncid=-1
@@ -308,6 +313,15 @@
               WRITE (stdout,20) 'RESTART', RST(ng)%Nrec(Fcount)
             END IF
           END IF
+
+#if defined FOUR_DVAR || defined ENKF_RESTART
+          IF (associated(DAI(ng)%Nrec)) THEN
+            Fcount=DAI(ng)%Fcount
+            IF (DAI(ng)%Nrec(Fcount).gt.0) THEN
+              WRITE (stdout,20) 'DA IC  ', DAI(ng)%Nrec(Fcount)
+            END IF
+          END IF
+#endif
 
 #ifdef ADJOINT
           IF (associated(ADM(ng)%Nrec)) THEN

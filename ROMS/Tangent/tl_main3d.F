@@ -2,7 +2,7 @@
 #if defined TANGENT && defined SOLVE3D
       SUBROUTINE tl_main3d (RunInterval)
 !
-!svn $Id: tl_main3d.F 751 2015-01-07 22:56:36Z arango $
+!svn $Id: tl_main3d.F 798 2016-05-21 17:04:58Z arango $
 !================================================== Hernan G. Arango ===
 !  Copyright (c) 2002-2016 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
@@ -65,7 +65,9 @@
 !!    USE tl_gls_corstep_mod, ONLY : tl_gls_corstep
 !!    USE tl_gls_prestep_mod, ONLY : tl_gls_prestep
 # endif
+# ifndef FORCING_SV
       USE tl_ini_fields_mod, ONLY : tl_ini_fields, tl_ini_zeta
+# endif
 # ifdef LMD_MIXING_NOT_YET
 !!    USE tl_lmd_vmix_mod, ONLY : tl_lmd_vmix
 # endif
@@ -206,17 +208,20 @@
           IF (FrequentImpulse(ng)) THEN
             DO tile=first_tile(ng),last_tile(ng),+1
               CALL tl_forcing (ng, tile, kstp(ng), nstp(ng))
+              CALL tl_set_depth (ng, tile)
             END DO
 !$OMP BARRIER
           END IF
 #  else
           DO tile=first_tile(ng),last_tile(ng),+1
             CALL tl_forcing (ng, tile, kstp(ng), nstp(ng))
+            CALL tl_set_depth (ng, tile)
           END DO
 !$OMP BARRIER
 #  endif
         END DO
 # endif
+# ifndef FORCING_SV
 !
 !-----------------------------------------------------------------------
 !  If not a restart, initialize all time levels and compute other
@@ -243,6 +248,7 @@
 !$OMP BARRIER
           END IF
         END DO
+# endif
 !
 !-----------------------------------------------------------------------
 !  Compute horizontal mass fluxes (Hz*u/n and Hz*v/m), density related

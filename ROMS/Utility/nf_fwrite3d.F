@@ -1,7 +1,7 @@
 #include "cppdefs.h"
       MODULE nf_fwrite3d_mod
 !
-!svn $Id: nf_fwrite3d.F 733 2008-09-07 01:56:45Z jcwarner $
+!svn $Id: nf_fwrite3d.F 795 2016-05-11 01:42:43Z arango $
 !================================================== Hernan G. Arango ===
 !  Copyright (c) 2002-2016 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !

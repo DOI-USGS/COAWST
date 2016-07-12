@@ -281,6 +281,7 @@
               IF (FrequentImpulse(ng)) THEN
                 DO tile=first_tile(ng),last_tile(ng),+1
                   CALL forcing (ng, tile, kstp(ng), nstp(ng))
+                  CALL set_depth (ng, tile)
                 END DO
 !$OMP BARRIER
               END IF

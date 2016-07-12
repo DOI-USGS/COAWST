@@ -3,7 +3,7 @@
 #if  defined ADJOINT && defined FOUR_DVAR  && defined OBSERVATIONS && \
     !defined WEAK_CONSTRAINT
 !
-!svn $Id: ad_misfit.F 751 2015-01-07 22:56:36Z arango $
+!svn $Id: ad_misfit.F 807 2016-07-09 02:03:55Z arango $
 !================================================== Hernan G. Arango ===
 !  Copyright (c) 2002-2016 The ROMS/TOMS Group       Andrew M. Moore   !
 !    Licensed under a MIT/X style license                              !
@@ -39,7 +39,7 @@
       CALL ad_misfit_tile (ng, tile, model,                             &
      &                     LBi, UBi, LBj, UBj,                          &
      &                     IminS, ImaxS, JminS, JmaxS,                  &
-     &                     knew(ng),                                    &
+     &                     kstp(ng),                                    &
 # ifdef SOLVE3D
      &                     nstp(ng),                                    &
 # endif
@@ -65,7 +65,7 @@
       SUBROUTINE ad_misfit_tile (ng, tile, model,                       &
      &                           LBi, UBi, LBj, UBj,                    &
      &                           IminS, ImaxS, JminS, JmaxS,            &
-     &                           knew,                                  &
+     &                           kstp,                                  &
 # ifdef SOLVE3D
      &                           nstp,                                  &
 # endif
@@ -99,7 +99,7 @@
       integer, intent(in) :: ng, tile, model
       integer, intent(in) :: LBi, UBi, LBj, UBj
       integer, intent(in) :: IminS, ImaxS, JminS, JmaxS
-      integer, intent(in) :: knew
+      integer, intent(in) :: kstp
 # ifdef SOLVE3D
       integer, intent(in) :: nstp
 # endif
@@ -160,6 +160,7 @@
 !-----------------------------------------------------------------------
 !
       IF (ProcessObs(ng)) THEN
+# ifndef BGQC
 !
 !  Set observation scale (ObsScale). The scale factor is used for
 !  screenning  or normalization of the observations. If only screening,
@@ -170,6 +171,7 @@
         DO iobs=1,Mobs
           ObsScale(iobs)=IniVal
         END DO
+# endif
 !
 !  Compute adjoint forcing terms at observation locations.
 !
@@ -177,14 +179,19 @@
           ADmodVal(iobs)=ObsErr(iobs)*                                  &
      &                   (NLmodVal(iobs)+TLmodVal(iobs)-ObsVal(iobs))
         END DO
+
+# ifdef BGQC
+!
+!  Reject observations that fail background quality control check.
+!
+        DO iobs=1,Nobs(ng)
+          ADmodVal(iobs)=ObsScale(iobs)*ADmodVal(iobs)
+        END DO
+# endif
 !
 !  Set adjoint time index to update.
 !
-        IF (iic(ng).eq.1) THEN
-          kfrc=knew
-        ELSE
-          kfrc=1
-        END IF
+        kfrc=kstp
 # ifdef SOLVE3D
         nfrc=nstp
 # endif
@@ -325,7 +332,7 @@
           END IF
         END DO
 # endif
-# ifdef DISTRIBUTE
+# if defined DISTRIBUTE && !defined BGQC
 !
 !-----------------------------------------------------------------------
 !  Collect all observations scaling factors.

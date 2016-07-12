@@ -8,7 +8,7 @@
 # endif
      &                      Fout)
 !
-!svn $Id: get_3dfld.F 1598 2008-07-25 03:29:09Z jcwarner $
+!svn $Id: get_3dfld.F 795 2016-05-11 01:42:43Z arango $
 !================================================== Hernan G. Arango ===
 !  Copyright (c) 2002-2016 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
@@ -80,8 +80,8 @@
       integer :: i, job, lend, lstr, lvar, status
       integer :: Vsize(4)
 
-      real(r8) :: Clength, Fmax, Fmin, Tdelta
-      real(r8) :: Tmax, Tmin, Tmono, Tscale
+      real(r8) :: Clength, Fmax, Fmin, Tdelta, Tend
+      real(r8) :: Tmax, Tmin, Tmono, Tscale, Tstr
       real(r8) :: Fval, Tval
 
       character (len=14)  :: t_code
@@ -271,6 +271,12 @@
         END IF
       END IF
 !
+  10  FORMAT (/,' GET_3DFLD   - unable to find dimension ',a,           &
+     &        /,15x,'for variable: ',a,/,15x,'in file: ',a,             &
+     &        /,15x,'file is not CF compliant...')
+  20  FORMAT (/,' GET_3DFLD   - unable to find requested variable: ',a, &
+     &        /,15x,'in input NetCDF file: ',a)
+  30  FORMAT (/,' GET_3DFLD   - unable to open input NetCDF file: ',a)
   40  FORMAT (/,' GET_3DFLD   - error while reading variable: ',a,2x,   &
      &       ' at TIME index = ',i7)
   50  FORMAT (3x,' GET_3DFLD   - ',a,/,19x,'(Min = ',1p,e15.8,0p,       &

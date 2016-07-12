@@ -3,7 +3,7 @@
 
 #if defined TANGENT && defined FOUR_DVAR
 !
-!svn $Id: tl_variability.F 751 2015-01-07 22:56:36Z arango $
+!svn $Id: tl_variability.F 807 2016-07-09 02:03:55Z arango $
 !================================================== Hernan G. Arango ===
 !  Copyright (c) 2002-2016 The ROMS/TOMS Group       Andrew M. Moore   !
 !    Licensed under a MIT/X style license                              !
@@ -100,6 +100,10 @@
      &                          OCEAN(ng) % e_t,                        &
      &                          OCEAN(ng) % e_u,                        &
      &                          OCEAN(ng) % e_v,                        &
+#  if defined WEAK_CONSTRAINT && defined TIME_CONV
+     &                          OCEAN(ng) % e_ubar,                     &
+     &                          OCEAN(ng) % e_vbar,                     &
+#  endif
 # else
      &                          OCEAN(ng) % e_ubar,                     &
      &                          OCEAN(ng) % e_vbar,                     &
@@ -126,6 +130,10 @@
      &                          OCEAN(ng) % tl_t,                       &
      &                          OCEAN(ng) % tl_u,                       &
      &                          OCEAN(ng) % tl_v,                       &
+#  if defined WEAK_CONSTRAINT && defined TIME_CONV
+     &                          OCEAN(ng) % tl_ubar,                    &
+     &                          OCEAN(ng) % tl_vbar,                    &
+#  endif
 # else
      &                          OCEAN(ng) % tl_ubar,                    &
      &                          OCEAN(ng) % tl_vbar,                    &
@@ -155,6 +163,9 @@
 # endif
 # ifdef SOLVE3D
      &                                t_std, u_std, v_std,              &
+#  if defined WEAK_CONSTRAINT && defined TIME_CONV
+     &                                ubar_std, vbar_std,               &
+#  endif
 # else
      &                                ubar_std, vbar_std,               &
 # endif
@@ -174,6 +185,9 @@
 # endif
 # ifdef SOLVE3D
      &                                tl_t, tl_u, tl_v,                 &
+#  if defined WEAK_CONSTRAINT && defined TIME_CONV
+     &                                tl_ubar, tl_vbar,                 &
+#  endif
 # else
      &                                tl_ubar, tl_vbar,                 &
 # endif
@@ -220,6 +234,10 @@
       real(r8), intent(in) :: t_std(LBi:,LBj:,:,:,:)
       real(r8), intent(in) :: u_std(LBi:,LBj:,:,:)
       real(r8), intent(in) :: v_std(LBi:,LBj:,:,:)
+#   if defined WEAK_CONSTRAINT && defined TIME_CONV
+      real(r8), intent(in) :: ubar_std(LBi:,LBj:,:)
+      real(r8), intent(in) :: vbar_std(LBi:,LBj:,:)
+#   endif
 #  else
       real(r8), intent(in) :: ubar_std(LBi:,LBj:,:)
       real(r8), intent(in) :: vbar_std(LBi:,LBj:,:)
@@ -246,6 +264,10 @@
       real(r8), intent(inout) :: tl_t(LBi:,LBj:,:,:,:)
       real(r8), intent(inout) :: tl_u(LBi:,LBj:,:,:)
       real(r8), intent(inout) :: tl_v(LBi:,LBj:,:,:)
+#   if defined WEAK_CONSTRAINT && defined TIME_CONV
+      real(r8), intent(inout) :: tl_ubar(LBi:,LBj:,:)
+      real(r8), intent(inout) :: tl_vbar(LBi:,LBj:,:)
+#   endif
 #  else
       real(r8), intent(inout) :: tl_ubar(LBi:,LBj:,:)
       real(r8), intent(inout) :: tl_vbar(LBi:,LBj:,:)
@@ -275,6 +297,10 @@
       real(r8), intent(in) :: t_std(LBi:UBi,LBj:UBj,N(ng),NSA,NT(ng))
       real(r8), intent(in) :: u_std(LBi:UBi,LBj:UBj,N(ng),NSA)
       real(r8), intent(in) :: v_std(LBi:UBi,LBj:UBj,N(ng),NSA)
+#   if defined WEAK_CONSTRAINT && defined TIME_CONV
+      real(r8), intent(in) :: ubar_std(LBi:UBi,LBj:UBj,NSA)
+      real(r8), intent(in) :: vbar_std(LBi:UBi,LBj:UBj,NSA)
+#   endif
 #  else
       real(r8), intent(in) :: ubar_std(LBi:UBi,LBj:UBj,NSA)
       real(r8), intent(in) :: vbar_std(LBi:UBi,LBj:UBj,NSA)
@@ -303,6 +329,10 @@
       real(r8), intent(inout) :: tl_t(LBi:UBi,LBj:UBj,N(ng),3,NT(ng))
       real(r8), intent(inout) :: tl_u(LBi:UBi,LBj:UBj,N(ng),2)
       real(r8), intent(inout) :: tl_v(LBi:UBi,LBj:UBj,N(ng),2)
+#   if defined WEAK_CONSTRAINT && defined TIME_CONV
+      real(r8), intent(inout) :: tl_ubar(LBi:UBi,LBj:UBj,3)
+      real(r8), intent(inout) :: tl_vbar(LBi:UBi,LBj:UBj,3)
+#   endif
 #  else
       real(r8), intent(inout) :: tl_ubar(LBi:UBi,LBj:UBj,3)
       real(r8), intent(inout) :: tl_vbar(LBi:UBi,LBj:UBj,3)
@@ -348,7 +378,7 @@
      &                    EWperiodic(ng), NSperiodic(ng),               &
      &                    tl_zeta(:,:,Linp))
 # endif
-# ifndef SOLVE3D
+# if !defined SOLVE3D || (defined WEAK_CONSTRAINT && defined TIME_CONV)
 !
 !  2D U-momentum.
 !

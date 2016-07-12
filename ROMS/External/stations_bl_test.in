@@ -124,30 +124,24 @@ Sout(idMtke) == F       ! tke                turbulent kinetic energy
 Sout(idMtls) == F       ! gls                turbulent length scale
 
 ! Logical switches (TRUE/FALSE) to activate writing of exposed sediment
-! layer properties into STATIONS output file.  Currently, MBOTP properties
-! are expected for the bottom boundary layer and/or sediment models:
-!
-! idBott( 1=isd50)   grain_diameter          mean grain diameter
-! idBott( 2=idens)   grain_density           mean grain density
-! idBott( 3=iwsed)   settling_vel            mean settling velocity
-! idBott( 4=itauc)   erosion_stress          critical erosion stress
-! idBott( 5=irlen)   ripple_length           ripple length
-! idBott( 6=irhgt)   ripple_height           ripple height
-! idBott( 7=ibwav)   bed_wave_amp            wave excursion amplitude
-! idBott( 8=izdef)   Zo_def                  default bottom roughness
-! idBott( 9=izapp)   Zo_app                  apparent bottom roughness
-! idBott(10=izNik)   Zo_Nik                  Nikuradse bottom roughness
-! idBott(11=izbio)   Zo_bio                  biological bottom roughness
-! idBott(12=izbfm)   Zo_bedform              bed form bottom roughness
-! idBott(13=izbld)   Zo_bedload              bed load bottom roughness
-! idBott(14=izwbl)   Zo_wbl                  wave bottom roughness
-! idBott(15=iactv)   active_layer_thickness  active layer thickness
-! idBott(16=ishgt)   saltation               saltation height
-!
-!                                 1 1 1 1 1 1 1
-!               1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6
+! layer properties into STATIONS output file.
 
-Sout(idBott) == F F F F F F F F F F F F F F F F
+Sout(isd50)  == F       ! grain_diameter     mean grain diameter
+Sout(idens)  == F       ! grain_density      mean grain density
+Sout(iwsed)  == F       ! settling_vel       mean settling velocity
+Sout(itauc)  == F       ! erosion_stress     critical erosion stress
+Sout(irlen)  == F       ! ripple_length      ripple length
+Sout(irhgt)  == F       ! ripple_height      ripple height
+Sout(ibwav)  == F       ! bed_wave_amp       wave excursion amplitude
+Sout(izdef)  == F       ! Zo_def             default bottom roughness
+Sout(izapp)  == F       ! Zo_app             apparent bottom roughness
+Sout(izNik)  == F       ! Zo_Nik             Nikuradse bottom roughness
+Sout(izbio)  == F       ! Zo_bio             biological bottom roughness
+Sout(izbfm)  == F       ! Zo_bedform         bed form bottom roughness
+Sout(izbld)  == F       ! Zo_bedload         bed load bottom roughness
+Sout(izwbl)  == F       ! Zo_wbl             wave bottom roughness
+Sout(iactv)  == F       ! active_layer_t...  active layer thickness
+Sout(ishgt)  == F       ! saltation          saltation height
 
 ! Number of stations to process in each nested grid.  These values are
 ! essential because the station arrays are dynamically allocated using
@@ -275,7 +269,22 @@ POS =  GRID  FLAG      X-POS       Y-POS     COMMENT
 !  Sout(idMtke)  Write out turbulent kinetic energy.
 !  Sout(idMtls)  Write out turbulent kinetic energy times length scale.
 !
-!  Sout(idBott)  Write out exposed sediment layer properties, 1:MBOTP.
+!  Sout(isd50)   Write out mean grain diameter.
+!  Sout(idens)   Write out mean grain density.
+!  Sout(iwsed)   Write out mean settling velocity.
+!  Sout(itauc)   Write out critical erosion stress.
+!  Sout(irlen)   Write out ripple length.
+!  Sout(irhgt)   Write out ripple height.
+!  Sout(ibwav)   Write out wave excursion amplitude.
+!  Sout(izdef)   Write out default bottom roughness.
+!  Sout(izapp)   Write out apparent bottom roughness.
+!  Sout(izNik)   Write out Nikuradse bottom roughness.
+!  Sout(izbio)   Write out biological bottom roughness.
+!  Sout(izbfm)   Write out bed form bottom roughness.
+!  Sout(izbld)   Write out bed load bottom roughness.
+!  Sout(izwbl)   Write out wave bottom roughness.
+!  Sout(iactv)   Write out active layer thickness.
+!  Sout(ishgt)   Write out saltation height.
 !
 !------------------------------------------------------------------------------
 ! Station positions KEYWORDS.

@@ -215,6 +215,18 @@
         END DO
       END IF
 #endif
+#ifdef ENKF_RESTART
+!
+!  Create Ensenble Kalman Filter (EnKF) reastart NetCDF file.
+!
+      IF (Nrun.eq.1) THEN
+        DO ng=1,Ngrids
+          LdefDAI(ng)=.TRUE.
+          CALL def_dai (ng)
+          IF (exit_flag.ne.NoError) RETURN
+        END DO
+      END IF
+#endif
 
       RETURN
       END SUBROUTINE ROMS_initialize
@@ -302,7 +314,29 @@
 !  Local variable declarations.
 !
       integer :: Fcount, ng, thread
+#ifdef ENKF_RESTART
+      integer :: tile
+#endif
 
+#ifdef ENKF_RESTART
+!
+!-----------------------------------------------------------------------
+!  Write out initial conditions for the next time window of the Ensemble
+!  Kalman (EnKF) filter.
+!-----------------------------------------------------------------------
+!
+# ifdef DISTRIBUTE
+      tile=MyRank
+# else
+      tile=-1
+# endif
+!
+      IF (exit_flag.eq.NoError) THEN
+        DO ng=1,Ngrids
+          CALL wrt_dai (ng, tile)
+        END DO
+      END IF
+#endif
 #ifdef VERIFICATION
 !
 !-----------------------------------------------------------------------

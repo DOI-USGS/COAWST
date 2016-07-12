@@ -2,7 +2,7 @@
 #if (defined FOUR_DVAR || defined VERIFICATION) && defined OBSERVATIONS
       SUBROUTINE obs_read (ng, model, backward)
 !
-!svn $Id$
+!svn $Id: obs_read.F 807 2016-07-09 02:03:55Z arango $
 !================================================== Hernan G. Arango ===
 !  Copyright (c) 2002-2016 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
@@ -106,6 +106,15 @@
      &                        total = (/Nobs(ng)/))
         IF (exit_flag.ne.NoError) RETURN
 !
+!  Read in observation provenance identifier.
+!
+        CALL netcdf_get_ivar (ng, model, OBS(ng)%name, Vname(1,idOpro), &
+     &                        ObsProv(Mstr:),                           &
+     &                        ncid = OBS(ng)%ncid,                      &
+     &                        start = (/NstrObs(ng)/),                  &
+     &                        total = (/Nobs(ng)/))
+        IF (exit_flag.ne.NoError) RETURN
+!
 !  Read in observation time (days).
 !
         CALL netcdf_get_fvar (ng, model, OBS(ng)%name, Vname(1,idObsT), &
@@ -167,7 +176,7 @@
 #  ifdef DISTRIBUTE
 !
 !  If distributed-memory and Zobs in meters (Zobs < 0),  zero-out
-!  Zobs values in all nodes by itself to facilitate exchages between
+!  Zobs values in all nodes but itself to facilitate exchages between
 !  tiles latter before writting into observation NetCDF file.
 !
         IF (.not.wrote_Zobs(ng)) THEN
@@ -208,6 +217,7 @@
 !  Read in nonlinear model values at observation locations.
 !
         IF (readNLmod.and.haveNLmod(ng)) THEN
+# ifdef VERIFICATION
           CALL netcdf_get_fvar (ng, model, DAV(ng)%name,                &
      &                          Vname(1,idNLmo),                        &
      &                          NLmodVal(Mstr:),                        &
@@ -215,6 +225,31 @@
      &                          start = (/NstrObs(ng)/),                &
      &                          total = (/Nobs(ng)/))
           IF (exit_flag.ne.NoError) RETURN
+# else
+          CALL netcdf_get_fvar (ng, model, DAV(ng)%name,                &
+     &                          Vname(1,idNLmo),                        &
+     &                          NLmodVal(Mstr:),                        &
+     &                          ncid = DAV(ng)%ncid,                    &
+     &                          start = (/NstrObs(ng),outer/),          &
+     &                          total = (/Nobs(ng),1/))
+          IF (exit_flag.ne.NoError) RETURN
+# endif
+# ifdef BGQC
+          CALL netcdf_get_fvar (ng, model, DAV(ng)%name,                &
+     &                          Vname(1,idBgEr),                        &
+     &                          BgErr(Mstr:),                           &
+     &                          ncid = DAV(ng)%ncid,                    &
+     &                          start = (/NstrObs(ng)/),                &
+     &                          total = (/Nobs(ng)/))
+          IF (exit_flag.ne.NoError) RETURN
+          CALL netcdf_get_fvar (ng, model, DAV(ng)%name,                &
+     &                          Vname(1,idObsS),                        &
+     &                          ObsScale(Mstr:),                        &
+     &                          ncid = DAV(ng)%ncid,                    &
+     &                          start = (/NstrObs(ng)/),                &
+     &                          total = (/Nobs(ng)/))
+          IF (exit_flag.ne.NoError) RETURN
+# endif
         END IF
 
 # if defined TLM_OBS && !defined WEAK_CONSTRAINT
