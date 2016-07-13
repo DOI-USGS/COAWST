@@ -520,10 +520,10 @@ Hout(idBath) == T       ! bath               time-dependent bathymetry
 
 Hout(idTvar) == T T     ! temp, salt         temperature and salinity
 
-Hout(idpthR) == F       ! z_rho              time-varying depths of RHO-points
-Hout(idpthU) == F       ! z_u                time-varying depths of U-points
-Hout(idpthV) == F       ! z_v                time-varying depths of V-points
-Hout(idpthW) == F       ! z_w                time-varying depths of W-points
+Hout(idpthR) == T       ! z_rho              time-varying depths of RHO-points
+Hout(idpthU) == T       ! z_u                time-varying depths of U-points
+Hout(idpthV) == T       ! z_v                time-varying depths of V-points
+Hout(idpthW) == T       ! z_w                time-varying depths of W-points
 
 Hout(idUair) == F       ! Uwind              surface U-wind
 Hout(idVair) == F       ! Vwind              surface V-wind
