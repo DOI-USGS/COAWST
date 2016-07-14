@@ -10,7 +10,7 @@
 ###PBS -e isabel_105.err
 ###PBS -o isabel_105.out
 ### PBS queue
-#PBS -q standard
+###PBS -q standard
 
 umask 0002
 
@@ -19,6 +19,6 @@ cat $PBS_NODEFILE
 
 NPROCS=`wc -l < $PBS_NODEFILE`
 
-cd /raid3/jcwarner/Projects/coawst_v3.1/coawst_v3.1_114/
+cd /peach/data0/jcwarner/Models/COAWST_regress
 
 mpirun -np 8 -machinefile $PBS_NODEFILE ./coawstM Projects/Sandy/coupling_sandy1.in > cwstv3.out
