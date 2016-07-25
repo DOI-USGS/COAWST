@@ -1017,7 +1017,7 @@
       nLBCvar=nLBCvar+1
 # endif
 # ifdef ICE_MODEL
-      nLBCvar=nLBCvar+10
+      nLBCvar=nLBCvar+11
 # endif
 # ifdef WEC
       nLBCvar=nLBCvar+4
