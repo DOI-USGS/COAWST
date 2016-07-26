@@ -31,7 +31,8 @@ disp(' ## Defining Dimensions...')
   eu   = MP;
   ev   = M;
   N       = gn.N;
-  
+  NvegdimID =1 ;
+
 psidimID = netcdf.defDim(nc_init,'xpsi',L);
 xrhodimID = netcdf.defDim(nc_init,'xrho',LP);
 xudimID = netcdf.defDim(nc_init,'xu',L);

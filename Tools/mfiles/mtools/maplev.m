@@ -20,11 +20,13 @@ ii=find(~isnan(a));
 av=sum(a(ii))/length(ii); %% calculate the mean value of the valid data points
 
 jj=find(isnan(a));
-%a(jj)=av;           %% find the invalid point and fill them with the mean av
+if (length(ii)<2)
+ a(jj)=av;           %% find the invalid point and fill them with the mean av
+else
 %jcw 9/12/2015 - dont use avg to replace, use closest point
-[X,Y]=meshgrid([1:jm],[1:im]);
-a(jj)=griddata(X(ii),Y(ii),a(ii),X(jj),Y(jj),'nearest');
-
+ [X,Y]=meshgrid([1:jm],[1:im]);
+ a(jj)=griddata(X(ii),Y(ii),a(ii),X(jj),Y(jj),'nearest');
+end
 b=a;                %% define a working arrey
 
 %% Five point laplacian filter smoothing.
