@@ -1245,7 +1245,7 @@
           DO k=1,N(ng)
             DO i=I_RANGE
               cff1=CF(i,0)*(FCs(i,k)-FCs(i,k-1))
-#  ifdef SPLINES
+#  ifdef SPLINES_VDIFF
               t(i,j,k,nnew,itrc)=t(i,j,k,nnew,itrc)-cff1*oHz(i,j,k)
 #  else
               t(i,j,k,nnew,itrc)=t(i,j,k,nnew,itrc)-cff1
@@ -1687,7 +1687,7 @@
       DO k=1,N(ng)
         DO j=JstrR,JendR
           DO i=IstrR,IendR
-#  if !defined SPLINES || defined TS_MPDATA
+#  if !defined SPLINES_VDIFF || defined TS_MPDATA
             t(i,j,k,nnew,itrc)=t(i,j,k,nnew,itrc)*oHz(i,j,k)
             t(i,j,k,nnew,itrc+1)=t(i,j,k,nnew,itrc+1)*oHz(i,j,k)
 #  endif
