@@ -1,4 +1,4 @@
-function create_roms_netcdf_init_mw(init_file,gn,Nbed,NNS,NCS)
+function create_roms_netcdf_init_mw(init_file,gn,Nbed,NNS,NCS,NVEG)
 
 %create init file
 nc_init=netcdf.create(init_file,'clobber');
@@ -31,8 +31,7 @@ disp(' ## Defining Dimensions...')
   eu   = MP;
   ev   = M;
   N       = gn.N;
-  NvegdimID =1 ;
-
+  
 psidimID = netcdf.defDim(nc_init,'xpsi',L);
 xrhodimID = netcdf.defDim(nc_init,'xrho',LP);
 xudimID = netcdf.defDim(nc_init,'xu',L);
@@ -47,6 +46,7 @@ s_rhodimID = netcdf.defDim(nc_init,'sc_r',N);
 s_wdimID = netcdf.defDim(nc_init,'sc_w',N+1);
 NbeddimID = netcdf.defDim(nc_init,'Nbed',Nbed);
 timedimID = netcdf.defDim(nc_init,'time',1);
+NvegdimID = netcdf.defDim(nc_init,'Nveg',NVEG);
 
 %% Variables and attributes:
 disp(' ## Defining Dimensions, Variables, and Attributes...')

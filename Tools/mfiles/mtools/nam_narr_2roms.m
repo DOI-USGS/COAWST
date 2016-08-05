@@ -44,8 +44,8 @@ get_Wind=1;       % surface u- and v- winds (m/s)
 ROMS_NAMNARR_name='roms_namnarr_Sandy2012.nc';
 
 %(3) Enter start and end dates
-namnarr_start = datenum('27-Oct-2012');
-namnarr_end   = datenum('2-Nov-2012');
+namnarr_start = datenum('28-Oct-2012');
+namnarr_end   = datenum('31-Oct-2012');
 
 %(4) Select to interpolate to a roms grid or a user defined grid.
 % Set one of these to a 1, the other to a 0.

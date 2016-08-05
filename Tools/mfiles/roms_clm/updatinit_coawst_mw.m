@@ -8,69 +8,70 @@ function updatinit_coawst_mw(fn,gn,ini,wdr,T1)
 % In cppdefs.h you should have 
 % #undef ana_initial
 % #undef ana_sediment
-% This m file is set to initalize US_East_grid.nc.
+% This m file is set to work from roms_master_climatology.
 %
 % jcw 5-25-2005
 % jcw 3-7-07 add L and M for get grid
+% 28July2016 Big update to be consistent with create_roms_init.
 %
-
-%Use clm file to get the data
-nc_clm=netcdf.open(fn,'NC_NOWRITE');
-
-%get number of time steps in clm file
-timeid = netcdf.inqVarID(nc_clm,'ocean_time');
-t_clim=netcdf.getVar(nc_clm,timeid);
 
 %1) Enter name of netcdf initial file to be created.
 %   If it already exists it will be overwritten!!.
     init_file=[ini];
-%   nc_init=netcdf.open(init_file,'NC_WRITE');
-    
-%2) Enter start time of initial file, in seconds and time step if file
-% has more than one
+
+%2) If you want to read the initial data from another netcdf file, then 
+%   enter read_int=1 and provide a name of history or rst file to read data from.
+%   Otherwise set read_int=0.
+    read_init=1;
+%   Use clm file to get the data
+    nc_clm=netcdf.open(fn,'NC_NOWRITE');
+
+%3) Enter start time of initial file, in seconds.
 %   This time needs to be consistent with model time (ie dstart and time_ref).
 %   See *.in files for more detail. 
-    tidx=1;
-    ocean_time=T1-datenum(1858,11,17,0,0,0);%ocean_time=t_clim(tidx);
+    if (read_init)
+      ocean_time=T1-datenum(1858,11,17,0,0,0);
+    else
+      ocean_time=0;
+    end
 
-%3) Enter number of vertical sigma levels in model.
-%   This will be same value as entered in mod_param.F
-    N=gn.N;
+%4) Set values of theta_s, theta_b, Tcline, and N from your *.in file.
+    theta_s   = gn.theta_s;
+    theta_b   = gn.theta_b;
+    Tcline    = gn.Tcline;
+    N         = gn.N;
+    Vtransform= gn.Vtransform;
+    Vstretching=gn.Vstretching;
 
-%4) Enter the values of theta_s, theta_b, and Tcline from your *.in file.
-    theta_s = gn.theta_s;  
-    theta_b = gn.theta_b;  
-    Tcline =  gn.Tcline;
-
-  [LP,MP]=size(gn.lon_rho);
-  L=LP-1;
-  Lm=L-1;
-  M=MP-1;
-  Mm=M-1;
-  L  = Lm+1;
-  M  = Mm+1;
-  xi_psi  = L;
-  xi_rho  = LP;
-  xi_u    = L;
-  xi_v    = LP;
-  eta_psi = M;
-  eta_rho = MP;
-  eta_u   = MP;
-  eta_v   = M;
-  s       = gn.N;
-
-%5) Vertical metrics.
-   hmin=0;
-   hc=gn.hc;
+%5) Obtain grid information.
+   h=gn.h;
+   hmin=min(h(:));
+   hc=min([hmin,Tcline]);
+   [LP,MP]=size(gn.lon_rho);
+   L=LP-1;
+   Lm=L-1;
+   M=MP-1;
+   Mm=M-1;
+   L  = Lm+1;
+   M  = Mm+1;
+   xi_psi  = L;
+   xi_rho  = LP;
+   xi_u    = L;
+   xi_v    = LP;
+   eta_psi = M;
+   eta_rho = MP;
+   eta_u   = MP;
+   eta_v   = M;
+   s       = gn.N;
    Cs_r=gn.Cs_r;
    Cs_w=gn.Cs_w;
    sc_r=gn.s_rho;
    sc_w=gn.s_w;
     
 %6) Initialize zeta, salt, temp, u, v, ubar, vbar.
-%moved this to fill part below
+%   moved this to fill part below
 %% 
-NAT=2;                            % Number of active tracers. Usually 2 (temp + salt). Same 
+NAT=2;            % Number of active tracers. Usually 2 (temp + salt).
 
 % 
 %7) Enter number of mud sediments (NCS) and number of sand sediments (NNS).
@@ -165,6 +166,8 @@ for isand=1:NNS
     for time=1:length(ocean_time)
       eval(['sandfrac_',count,'(1:xi_rho,1:eta_rho,k,time) = 1/NST;'])      %fraction of each sed class in each bed cell
       eval(['sandmass_',count,'(1:xi_rho,1:eta_rho,k,time) = squeeze(bed_thickness(1:xi_rho,1:eta_rho,k,time)).*Srho(isand).*(1.0-squeeze(bed_porosity(1:xi_rho,1:eta_rho,k,time))).*squeeze(sandfrac_',count,'(1:xi_rho,1:eta_rho,k,time));'])          %mass of each sed class in each bed cell
+      eval(['bedload_Usand_',count,'(1:xi_u,1:eta_u,time) = 0;'])              %bed load
+      eval(['bedload_Vsand_',count,'(1:xi_v,1:eta_v,time) = 0;'])              %bed load
     end
   end
 end
@@ -204,11 +207,21 @@ end
     dmix_slope(1:xi_rho,1:eta_rho,time)=0.0;
     dmix_time(1:xi_rho,1:eta_rho,time)=0.0;
 
+%12)
+%
+% set vegetation properties 
+  NVEG=1; 
+  plant_density=zeros(xi_rho,eta_rho,NVEG);
+  plant_height=zeros(xi_rho,eta_rho,NVEG);
+  plant_diameter=zeros(xi_rho,eta_rho,NVEG);
+  plant_thickness=zeros(xi_rho,eta_rho,NVEG);
+  marsh_mask=zeros(xi_rho,eta_rho,NVEG);
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %now create the netcdf file first
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-create_roms_netcdf_init_mw(init_file,gn,Nbed,NNS,NCS)
+create_roms_netcdf_init_mw(init_file,gn,Nbed,NNS,NCS,NVEG)
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %now write the data from the arrays to the netcdf file
@@ -242,21 +255,18 @@ for i=1:length(vars3d)
     clear temp3 tempv tempt
 end
 
-
-morvars={'theta_s','theta_b','Tcline','Cs_r','Cs_w','sc_w','sc_r','hc','bed_thickness',...
-    'bed_age','bed_porosity','bed_biodiff','grain_diameter','grain_density','settling_vel','erosion_stress',...
-    'ripple_height','ripple_length','dmix_offset','dmix_slope','dmix_time','ocean_time'};
+spherical=1;
+morvars={'theta_s','theta_b','Tcline','Cs_r','Cs_w','sc_w','sc_r','hc', ...
+         'Vtransform','Vstretching','spherical','bed_thickness',...
+         'bed_age','bed_porosity','bed_biodiff','grain_diameter', ...
+         'grain_density','settling_vel','erosion_stress',...
+         'ripple_height','ripple_length','dmix_offset','dmix_slope','dmix_time', ...
+         'ocean_time'};
 for i=1:length(morvars)
     eval(['tempid = netcdf.inqVarID(nc_init,''',morvars{i},''');']);%get id
     eval(['netcdf.putVar(nc_init,tempid,',morvars{i},');']);%set variable
     eval(['clear ',morvars{i},';']);
 end
-
-tempid = netcdf.inqVarID(nc_init,'Vtransform');
-netcdf.putVar(nc_init,tempid,1);
-tempid = netcdf.inqVarID(nc_init,'Vstretching');
-netcdf.putVar(nc_init,tempid,1);
-clear tempid
 
 for mm=1:NCS
     count=['00',num2str(mm)];
@@ -283,9 +293,19 @@ for mm=1:NNS
     
     eval(['tempid = netcdf.inqVarID(nc_init,''sandmass_',count,''');']);%mass of each sed class in each bed cell
     eval(['netcdf.putVar(nc_init,tempid,sandmass_',count,');']);
+
+    eval(['tempid = netcdf.inqVarID(nc_init,''bedload_Usand_',count,''');']);%mass of each sed class in each bed cell
+    eval(['netcdf.putVar(nc_init,tempid,bedload_Usand_',count,');']);
+    eval(['tempid = netcdf.inqVarID(nc_init,''bedload_Vsand_',count,''');']);%mass of each sed class in each bed cell
+    eval(['netcdf.putVar(nc_init,tempid,bedload_Vsand_',count,');']);
 end
 
-
+%Veg
+ncwrite(init_file,'plant_height',plant_height);
+ncwrite(init_file,'plant_diameter',plant_diameter);
+ncwrite(init_file,'plant_density',plant_density);
+ncwrite(init_file,'plant_thickness',plant_thickness);
+ncwrite(init_file,'marsh_mask',marsh_mask);
 
 %close file
 netcdf.close(nc_init)

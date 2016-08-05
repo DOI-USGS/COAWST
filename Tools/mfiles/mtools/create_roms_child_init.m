@@ -536,9 +536,77 @@ if (NST>0)
   dmix_time=maplev(squeeze(dmix_time(:,:)));
   clear zt
 end
+
+%12 Vegetation
+Numdims=length(finfo.Dimensions);
+NVEG=1;
+for i=1:Numdims
+  if (strcmp(['Nveg'],finfo.Dimensions(i).Name))
+      NVEG=finfo.Dimensions(i).Length
+  end
+end
+
+if (NVEG>0)
+  display('Initializing vegetation properties.')
+%
+  zt=ncread(parent_ini,'plant_density');
+  if (size(zt)>2)
+    zt=squeeze(zt(:,:,1));
+  end
+  zt=double(zt.*mar);
+  zt(zt<-9999)=nan;
+  zt(zt>9999)=nan;
+  plant_density=griddata(lor,lar,zt,Gout.lon_rho,Gout.lat_rho);
+  plant_density=maplev(squeeze(plant_density(:,:)));
+  clear zt
+%
+  zt=ncread(parent_ini,'plant_height');
+  if (size(zt)>2)
+    zt=squeeze(zt(:,:,1));
+  end
+  zt=double(zt.*mar);
+  zt(zt<-9999)=nan;
+  zt(zt>9999)=nan;
+  plant_height=griddata(lor,lar,zt,Gout.lon_rho,Gout.lat_rho);
+  plant_height=maplev(squeeze(plant_height(:,:)));
+  clear zt
+%
+  zt=ncread(parent_ini,'plant_diameter');
+  if (size(zt)>2)
+    zt=squeeze(zt(:,:,1));
+  end
+  zt=double(zt.*mar);
+  zt(zt<-9999)=nan;
+  zt(zt>9999)=nan;
+  plant_diameter=griddata(lor,lar,zt,Gout.lon_rho,Gout.lat_rho);
+  plant_diameter=maplev(squeeze(plant_diameter(:,:)));
+  clear zt
+%
+  zt=ncread(parent_ini,'plant_thickness');
+  if (size(zt)>2)
+    zt=squeeze(zt(:,:,1));
+  end
+  zt=double(zt.*mar);
+  zt(zt<-9999)=nan;
+  zt(zt>9999)=nan;
+  plant_thickness=griddata(lor,lar,zt,Gout.lon_rho,Gout.lat_rho);
+  plant_thickness=maplev(squeeze(plant_thickness(:,:)));
+  clear zt
+%
+  zt=ncread(parent_ini,'marsh_mask');
+  if (size(zt)>2)
+    zt=squeeze(zt(:,:,1));
+  end
+  zt=double(zt.*mar);
+  zt(zt<-9999)=nan;
+  zt(zt>9999)=nan;
+  marsh_mask=griddata(lor,lar,zt,Gout.lon_rho,Gout.lat_rho);
+  marsh_mask=maplev(squeeze(marsh_mask(:,:)));
+  clear zt
+end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %create init file
-create_roms_netcdf_init_mw(init_file,Gout,Nbed,NNS,NCS)
+create_roms_netcdf_init_mw(init_file,Gout,Nbed,NNS,NCS,NVEG)
 
 ncwrite(init_file,'theta_s',Gout.theta_s);
 ncwrite(init_file,'theta_b',Gout.theta_b);
@@ -595,4 +663,11 @@ if (NST>0)
   ncwrite(init_file,'dmix_offset',dmix_offset);
   ncwrite(init_file,'dmix_slope',dmix_slope);
   ncwrite(init_file,'dmix_time',dmix_time);
+end
+if (NVEG>0)
+  ncwrite(init_file,'plant_height',plant_height);
+  ncwrite(init_file,'plant_diameter',plant_diameter);
+  ncwrite(init_file,'plant_density',plant_density);
+  ncwrite(init_file,'plant_thickness',plant_thickness);
+  ncwrite(init_file,'marsh_mask',marsh_mask);
 end

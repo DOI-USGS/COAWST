@@ -1,11 +1,12 @@
 % roms_master_climatology_coawst_mw
 %
 % This routine :
-%  - creates climatology, boundary, and initial condition files for ROMS: coawst_clm.nc ; coawst_bdy.nc ; coawst_ini.nc 
-% on a user-defined grid for a user-defined date.
+%  - creates climatology, boundary, and initial condition files for ROMS: 
+%    coawst_clm.nc ; coawst_bdy.nc ; coawst_ini.nc 
+%    on a user-defined grid for a user-defined date.
 %
 % This is currently set up to use opendap calls to acquire data
-% from HYCOM + NCODA Global 1/12 Degree Analysis and interp to US_East grid.
+% from HYCOM + NCODA Global 1/12 Degree Analysis and interp to roms grid.
 %
 % Before running this routine, user needs to setup "nctoolbox" within Matlab.
 %  
@@ -27,16 +28,15 @@ T1=datenum(2012,10,22,0,0,0); %start date
 numdays=15;
 dayFrequency=7;
 
-% (2) Enter URL of the HYCOM catalog for the requested time, T1; see http://tds.hycom.org/thredds/catalog.html
+% (2) Enter URL of the HYCOM catalog for the requested time, T1
+%     see http://tds.hycom.org/thredds/catalog.html
  url='http://tds.hycom.org/thredds/dodsC/GLBa0.08/expt_90.9';      % 2011-01 to 2013-08
 
 % (3) Enter working directory (wdr)
 wdr='c:\work\models\COAWST'
-eval(['cd ',wdr])
 
 % (4) Enter path and name of the ROMS grid (modelgrid)
 modelgrid='USeast_grd19.nc'
-eval(['gridname=''',modelgrid,''';']);
 
 % (5) Enter grid vertical coordinate parameters --These need to be consistent with the ROMS setup. 
 theta_s=5;
@@ -47,6 +47,8 @@ Vtransform  =1;        %vertical transformation equation
 Vstretching =1;        %vertical stretching function
 
 %%%%%%%%%%%%%%%%%%%%%   END OF USER INPUT  %%%%%%%%%%%%%%%%%%%%%%%%%%
+eval(['cd ',wdr])
+eval(['gridname=''',modelgrid,''';']);
 
 disp('getting roms grid dimensions ...');
 %gn=roms_get_grid_mw(gridname,[theta_s theta_b Tcline N]);
@@ -71,6 +73,7 @@ gn.z_v=shiftdim(gn.z_v,2);
 gn.z_w=shiftdim(gn.z_w,2);
 
 tic
+
 % Call to get HYCOM indices for the defined ROMS grid
 disp('getting hycom indices')
 get_ijrg(gn,url)
@@ -81,7 +84,6 @@ fn=updatclim_coawst_mw(T1,gn,'coawst_clm.nc',wdr,url)
 
 % Call to create the boundary (bdy) file
 disp('going to create bndry file')
-
 updatbdry_coawst_mw(fn,gn,'coawst_bdy.nc',wdr)
 
 % Call to create the initial (ini) file

@@ -7,7 +7,7 @@
 %    on a user-defined grid for a user-defined date.
 %
 % This is currently set up to use opendap calls to acquire data
-%  from HYCOM + NCODA Global 1/12 Degree Analysis and interp to US_East grid.
+% from HYCOM + NCODA Global 1/12 Degree Analysis and interp to roms grid.
 %
 % Before running this routine, user needs to setup "nctoolbox" within Matlab.
 %  
@@ -26,18 +26,17 @@
 % (1) Enter start date (T1) and number of days to get climatology data 
 T1=datenum(2012,10,28,12,0,0); %start date
 %number of days to create clm for
-numdays=4;
+numdays=5;
 dayFrequency=1;
 
 % (2) Enter URL of the HYCOM catalog for the requested time, T1
 %     see http://tds.hycom.org/thredds/catalog.html
-url='http://tds.hycom.org/thredds/dodsC/GLBa0.08/expt_90.9';      % Jan 2011 - Present
+ url='http://tds.hycom.org/thredds/dodsC/GLBa0.08/expt_90.9';      % 2011-01 to 2013-08
 
 % (3) Enter working directory (wdr)
-wdr='c:\work\models\COAWST\Projects\Sandy2';
+wdr='g:\data\models\COAWST\Projects\Sandy';
 
 % (4) Enter path and name of the ROMS grid (modelgrid)
-%modelgrid='Sandy_roms_grid.nc'
 modelgrid='Sandy_roms_grid.nc'
 
 % (5) Enter grid vertical coordinate parameters --These need to be consistent with the ROMS setup. 
@@ -45,13 +44,34 @@ theta_s=5;
 theta_b=0.4;
 Tcline=50;
 N=16;
+Vtransform  =1;        %vertical transformation equation
+Vstretching =1;        %vertical stretching function
 
 %%%%%%%%%%%%%%%%%%%%%   END OF USER INPUT  %%%%%%%%%%%%%%%%%%%%%%%%%%
 eval(['cd ',wdr])
 eval(['gridname=''',modelgrid,''';']);
 
-disp('getting roms and hycom grid dimensions ...');
-gn=roms_get_grid_mw(gridname,[theta_s theta_b Tcline N]);
+disp('getting roms grid dimensions ...');
+%gn=roms_get_grid_mw(gridname,[theta_s theta_b Tcline N]);
+Sinp.N           =N;            %number of vertical levels
+Sinp.Vtransform  =Vtransform;   %vertical transformation equation
+Sinp.Vstretching =Vstretching;  %vertical stretching function
+Sinp.theta_s     =theta_s;      %surface control parameter
+Sinp.theta_b     =theta_b;      %bottom  control parameter
+Sinp.Tcline      =Tcline;       %surface/bottom stretching width
+if (Vtransform==1)
+  h=ncread(gridname,'h');
+  hmin=min(h(:));
+  hc=min(max(hmin,0),Tcline);
+elseif (Vtransform==2)
+  hc=Tcline;
+end
+Sinp.hc          =hc;           %stretching width used in ROMS
+gn=get_roms_grid(gridname,Sinp);
+gn.z_r=shiftdim(gn.z_r,2);
+gn.z_u=shiftdim(gn.z_u,2);
+gn.z_v=shiftdim(gn.z_v,2);
+gn.z_w=shiftdim(gn.z_w,2);
 
 tic
 
@@ -74,8 +94,13 @@ updatinit_coawst_mw(fn,gn,'coawst_ini.nc',wdr,T1)
 %% Call to create the long climatology (clm) file
 if numdays>1
     disp('going to create more days of clm and bnd files')
-    eval(['!copy coawst_clm.nc coawst_clm_',datestr(T1,'yyyymmdd'),'.nc'])
-    eval(['!copy coawst_bdy.nc coawst_bdy_',datestr(T1,'yyyymmdd'),'.nc'])
+    if (ispc)
+      eval(['!copy coawst_clm.nc coawst_clm_',datestr(T1,'yyyymmdd'),'.nc'])
+      eval(['!copy coawst_bdy.nc coawst_bdy_',datestr(T1,'yyyymmdd'),'.nc'])
+    else
+      eval(['!cp coawst_clm.nc coawst_clm_',datestr(T1,'yyyymmdd'),'.nc'])
+      eval(['!cp coawst_bdy.nc coawst_bdy_',datestr(T1,'yyyymmdd'),'.nc'])
+    end
     for it=dayFrequency:dayFrequency:numdays-1      %1st day already created, NEED to set number of days at top!
         fname=['coawst_clm_',datestr(T1+it,'yyyymmdd'),'.nc']
         fn=updatclim_coawst_mw(T1+it,gn,fname,wdr,url)

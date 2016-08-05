@@ -68,14 +68,15 @@
 #  define ATM2OCN_FLUXES
 #  define ANA_SSFLUX
 #  undef  LONGWAVE_OUT
-#  define ATM_PRESS
 # else
-#  define ANA_SMFLUX
-#  define ANA_STFLUX
-#  define ANA_SSFLUX
+#  define BULK_FLUXES
 # endif
+# define ATM_PRESS
 # define ANA_BTFLUX
 # define ANA_BSFLUX
+# define ANA_BPFLUX
+# define ANA_SPFLUX
+# define ANA_SRFLUX
 # define EMINUSP
 # define SOLAR_SOURCE
 
@@ -89,6 +90,12 @@
 #  define N2S2_HORAVG
 #  define RI_SPLINES
 # endif
+
+# define SSH_TIDES
+# define UV_TIDES
+# define RAMP_TIDES
+# define ANA_FSOBC
+# define ANA_M2OBC
 
 /* Output */
 # undef DIAGNOSTICS_UV

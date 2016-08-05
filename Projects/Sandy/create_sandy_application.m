@@ -1,10 +1,13 @@
 % create_sandy_application
 %
 % jcwarner 19August2014
-% a list of procedures and notes
-% used to create the Sandy app files
-% for roms and swan. The wrf files
+%          29July2016 - general updates for workshop.
+%
+% This is a list of procedures and notes used to create the 
+% Projects/Sandy files for roms and swan. The wrf files
 % are assumed to already be created.
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %
 % cd Projects/Sandy
 % This is a place to create all the necessary files.
@@ -14,10 +17,11 @@
 % by Dave Gill and Cindy Bruyere. They provided a link to a WRF
 % tutorial here:
 %
-%If you are interested in the WRF-only processing (allowing you to define the atmospheric domain), please take a look at the following web page:
-%http://www2.mmm.ucar.edu/wrf/OnLineTutorial/compilation_tutorial.php
+% If you are interested in the WRF-only processing (allowing you to define 
+% the atmospheric domain), please take a look at the following web page:
+% http://www2.mmm.ucar.edu/wrf/OnLineTutorial/compilation_tutorial.php
 %
-%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Step 1:  ROMS grid
 %
 % As a first cut, you can use the wrf grid. 
@@ -26,6 +30,8 @@ netcdf_load('wrfinput_d01')
 figure
 pcolorjw(XLONG,XLAT,double(1-LANDMASK))
 hold on
+title('WRF LANDMASK grid, Lambert conformal proj')
+xlabel('longitude'); ylabel('latitiude')
 %
 % pick 4 corners for roms parent grid
 Istr=27; Iend=84;
@@ -35,7 +41,7 @@ plot(XLONG(Iend,Jstr),XLAT(Iend,Jstr),'g+')
 plot(XLONG(Istr,Jend),XLAT(Istr,Jend),'g+')
 plot(XLONG(Iend,Jend),XLAT(Iend,Jend),'g+')
 
-%step 3: pick number of points in the grid
+% pick number of points in the grid
 numx=84;
 numy=64;
 
@@ -43,7 +49,7 @@ numy=64;
 % You should not need to change this.
 % start in lower left and go clockwise
 corner_lon=double([XLONG(Istr,Jstr) XLONG(Istr,Jend) XLONG(Iend,Jend) XLONG(Iend,Jstr) ]);
-corner_lat=double([XLAT(Istr,Jstr) XLAT(Istr,Jend) XLAT(Iend,Jend) XLAT(Iend,Jstr) ]);
+corner_lat=double([ XLAT(Istr,Jstr)  XLAT(Istr,Jend)  XLAT(Iend,Jend)  XLAT(Iend,Jstr) ]);
 x=[1 numx; 1 numx]; y=[1 1; numy numy];
 z=[corner_lon(1) corner_lon(2) corner_lon(4) corner_lon(3)];
 F = TriScatteredInterp(x(:),y(:),z(:));
@@ -56,6 +62,7 @@ F = TriScatteredInterp(x(:),y(:),z(:));
 lat=F(X,Y).';
 plot(lon,lat,'k-')
 plot(lon',lat','k-')
+text(-75,27,'- - - roms grid')
 %
 % Call generic grid creation
 %
@@ -65,8 +72,8 @@ rho.lon=lon;
 rho.depth=zeros(size(rho.lon))+100;  % for now just make zeros
 rho.mask=zeros(size(rho.lon));       % for now just make zeros
 spherical='T';
-%projection='lambert conformal conic';
-projection='mercator';
+projection='lambert conformal conic';
+%projection='mercator';
 save temp_jcw33.mat rho spherical projection
 eval(['mat2roms_mw(''temp_jcw33.mat'',''',roms_grid,''');'])
 !del temp_jcw33.mat
@@ -76,7 +83,7 @@ disp(['Created roms grid -->   ',roms_grid])
 disp(['     '])
 disp(['You need to edit depth in ',roms_grid])
 disp(['     '])
-%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Step 2: Masking
 %
 % base this on the WRF mask.
@@ -85,7 +92,10 @@ F = TriScatteredInterp(double(XLONG(:)),double(XLAT(:)), ...
 roms_mask=F(lon,lat);
 figure
 pcolorjw(lon,lat,roms_mask)
+title('ROMS 1-LANDMASK grid, Lambert conformal proj')
+xlabel('longitude'); ylabel('latitiude')
 %
+% compute mask on rho, u, v, and psi points.
 water = double(roms_mask);
 u_mask = water(1:end-1,:) & water(2:end,:);
 v_mask= water(:,1:end-1) & water(:,2:end);
@@ -96,17 +106,20 @@ ncwrite('Sandy_roms_grid.nc','mask_v',double(v_mask));
 ncwrite('Sandy_roms_grid.nc','mask_psi',double(psi_mask));
 %
 % use coastline tool to get coast:
-% http://www.ngdc.noaa.gov/mgg/coast/
+% use GEODAS software http://www.ngdc.noaa.gov/mgg/geodas/geodas.html
 % select lat bounds of 45 / 25 lon of -84 / -60 
 %
 lon=coastline(:,1);
 lat=coastline(:,2);
 save coastline.mat lon lat
 %
-% use editmask to create better mask
+% To create better mask, use editmask with the 
+% grid file Sandy_roms_grid.nc and 
+% the coastline file coastline.mat
 %
 editmask
 %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Step 3: Bathymetry
 %
 % You can use a source like this:
@@ -117,17 +130,22 @@ netcdf_load(roms_grid)
 h=griddata(h_lon,h_lat,h_USeast,lon_rho,lat_rho);
 h(isnan(h))=5;
 %smooth h a little
-hnew=h;
-hnew(2:end-1,2:end-1)=0.2*(h(1:end-2,2:end-1)+h(2:end-1,2:end-1)+h(3:end,2:end-1)+ ...
-                       h(2:end-1,1:end-2)+h(2:end-1,3:end));
+h(2:end-1,2:end-1)=0.2*(h(1:end-2,2:end-1)+h(2:end-1,2:end-1)+h(3:end,2:end-1)+ ...
+                        h(2:end-1,1:end-2)+h(2:end-1,3:end));
 % Bathymetry can be smoothed using
 % http://drobilica.irb.hr/~mathieu/Bathymetry/index.html 
 figure
 pcolorjw(lon_rho,lat_rho,h)
-hnew(isnan(hnew))=5;
-ncwrite(roms_grid,'h',hnew);
+hold on
+load coastline.mat
+plot(lon,lat,'k')
+caxis([5 2500]); colorbar
+title('ROMS bathy')
+xlabel('longitude'); ylabel('latitiude')
+ncwrite(roms_grid,'h',h);
 %
-% Step 4: child grid
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Step 4: roms child grid
 %
 % plot wrf d01 and d02 grids
 netcdf_load('wrfinput_d01')
@@ -141,6 +159,11 @@ plot(XLONG(:,1),XLAT(:,1),'r'); plot(XLONG(:,end),XLAT(:,end),'r')
 % plot roms parent grid
 plot(lon_rho(1,:),lat_rho(1,:),'k'); plot(lon_rho(end,:),lat_rho(end,:),'k')
 plot(lon_rho(:,1),lat_rho(:,1),'k'); plot(lon_rho(:,end),lat_rho(:,end),'k')
+text(-75,29,'roms parent grid')
+text(-77,27,'wrf parent grid')
+text(-77.2,34,'wrf child grid')
+title('LANDMASKS')
+xlabel('longitude'); ylabel('latitiude')
 %
 % Select child indices
 Istr=22; Iend=60; Jstr=26; Jend=54;
@@ -162,14 +185,17 @@ netcdf_load('Sandy_roms_grid_ref3.nc')
 load USeast_bathy.mat
 h=griddata(h_lon,h_lat,h_USeast,lon_rho,lat_rho);
 h(isnan(h))=5;
-hnew=h;
-hnew(2:end-1,2:end-1)=0.2*(h(1:end-2,2:end-1)+h(2:end-1,2:end-1)+h(3:end,2:end-1)+ ...
-                       h(2:end-1,1:end-2)+h(2:end-1,3:end));
-% Bathymetry can be smoothed using
-% http://drobilica.irb.hr/~mathieu/Bathymetry/index.html 
+h=h;
+h(2:end-1,2:end-1)=0.2*(h(1:end-2,2:end-1)+h(2:end-1,2:end-1)+h(3:end,2:end-1)+ ...
+                        h(2:end-1,1:end-2)+h(2:end-1,3:end));
 figure
-pcolorjw(lon_rho,lat_rho,hnew)
-ncwrite('Sandy_roms_grid_ref3.nc','h',hnew);
+pcolorjw(lon_rho,lat_rho,h)
+hold on
+plot(lon,lat,'r')
+caxis([5 2500]); colorbar
+title('ROMS bathy')
+xlabel('longitude'); ylabel('latitiude')
+ncwrite('Sandy_roms_grid_ref3.nc','h',h);
 %
 % recompute child mask based on WRF mask
 %
@@ -179,6 +205,10 @@ F = TriScatteredInterp(double(XLONG(:)),double(XLAT(:)), ...
 roms_mask=F(lon_rho,lat_rho);
 figure
 pcolorjw(lon_rho,lat_rho,roms_mask)
+title('ROMS child mask')
+xlabel('longitude'); ylabel('latitiude')
+hold on
+plot(lon,lat,'r')
 water = double(roms_mask);
 u_mask = water(1:end-1,:) & water(2:end,:);
 v_mask= water(:,1:end-1) & water(:,2:end);
@@ -188,6 +218,7 @@ ncwrite('Sandy_roms_grid_ref3.nc','mask_u',double(u_mask));
 ncwrite('Sandy_roms_grid_ref3.nc','mask_v',double(v_mask));
 ncwrite('Sandy_roms_grid_ref3.nc','mask_psi',double(psi_mask));
 %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Step 5: 3D BC's
 %
 % Need to download nctoolbox from
@@ -213,6 +244,7 @@ create_roms_child_clm('Sandy_roms_grid.nc','Sandy_roms_grid_ref3.nc', ...
                        'Sandy_clm.nc','Sandy_clm_ref3.nc')
 % that will interpolate the data from the parent.
 %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Step 6: 2D BC's
 %
 % Get the tidal data at
@@ -221,70 +253,88 @@ svn checkout https://coawstmodel.sourcerepo.com/coawstmodel/data .
 % and start time. then run that file
 create_roms_tides
 %
-% Step 7: Surface forcings
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Step 7: Surface forcings.
 %
-% To create a forcing file with just wind forcing
-% you need to get wind data, such as from  http://nomads.ncdc.noaa.gov/
-% I got uwnd.10m.2012.nc and vwnd.10m.2012.nc
-% then run the m file:
-narr2romsnc
+% To create ROMS surface forcing files, there are several options such as:
+% - create_roms_forcings.m: converts data from matlab workspce to a netcdf forcing file.
+% - narrnc2roms.m: you need to get files from ftp://ftp.cdc.noaa.gov/Datasets/NARR/monolevel/
+%                  and then run the mfile to create netcdf forcing file.
+% - nam_narr_2roms.m: same as narrnc2roms, but the data is read via THREDDS.
+%                     Suggest you try this one first.
+nam_narr_2roms
 %
-%  To create a surface wind forcing file for SWAN, we used
-%  nam_narr_2swan.m
-%
-% To create a forcing file that has winds and many other vars like
-% Uwind, Vwind, Pair, Tair, Qair, rain, swrad, lwrad you can use:
-% COAWST/Tools/mfiles/mtools/create_roms_forcings 
-%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Step 8: roms input files.
 %
 edit sandy.h
+% some of model setup cppdefs:
+#define ROMS_MODEL
+#define NESTING
+#undef  WRF_MODEL
+#undef  SWAN_MODEL
+#undef  MCT_LIB
+#undef  MCT_INTERP_OC2AT
+#undef  MCT_INTERP_WV2AT
+#undef  MCT_INTERP_OC2WV
+
 %and
 edit ocean_sandy.in
 %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Step 9: build file
 %
-edit and run coawst.bash 
+edit and run coawst.bash
 %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Step 10: run file
 %
-edit run_nemo
-
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%  coupling to WRF
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+edit and run run_coawst
 %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%  ROMS - WRF coupling
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Step 11: create SCRIP weights
 % cd to LIib/SCRIP_COAWST and run
 ./scrip_coawst scrip_coawst_sandy.in
 % to create all the scrip interpolation weights
-%  You can use that .in file to create weights for a moving 
+% You can use scrip_coawst_sandy.in file to create weights for a moving 
 % sandy nest or a static nest.
 %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Step 12: input files.
 %
 edit sandy.h
+% some of model setup cppdefs:
+#define ROMS_MODEL
+#define NESTING
+#define WRF_MODEL
+#undef  SWAN_MODEL
+#define MCT_LIB
+#define MCT_INTERP_OC2AT
+#undef  MCT_INTERP_WV2AT
+#undef  MCT_INTERP_OC2WV
+
 %and
 edit ocean_sandy.in
 %and
 edit coupling_sandy.in
 %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Step 13: build file
 %
 edit and run coawst.bash 
 %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Step 14: run file
 %
 copy wrf* and namelist.input from Projects/Sandy to the root directory.
-edit run_nemo
-
+edit run_coawst
 %
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%  coupling to SWAN
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%
-% Step 15:  create swan grids: run roms2swan twice
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%  SWAN only application
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Step 15:  create swan grids: use roms2swan
 roms2swan('Sandy_roms_grid.nc')
 % this created swan_coord.grd and swan_bathy.bot and i renamed them to be
 % Sandy_swan_bathy.bot and Sandy_swan_coord.grd
@@ -292,7 +342,28 @@ roms2swan('Sandy_roms_grid_ref3.nc')
 % this created swan_coord.grd and swan_bathy.bot and i renamed them to be
 % Sandy_swan_bathy_ref3.bot and Sandy_swan_coord_ref3.grd
 %
-% Step 16 - create SWAN boundary TPAR files
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Step 16 - create SWAN forcing files
+% To create a surface wind forcing file for SWAN, similar to nam_narr_2roms, use
+nam_narr_2swan
+% This m-file uses THREDDS to access data via internet to create the forcing file.
+% The output file is set to be swan_narr_Oct2012.dat.  Make a copy of this for
+% the child swan grid.
+copy swan_narr_Oct2012.dat swan_narr_Oct2012_ref3.dat
+% In the swan INPUT file, you need to set the WIND Inpgrid commnand line
+% to be consistent with the data file created. The INPGRID line would look like
+%
+&& KEYWORD TO CREATE WIND GRID &&
+INPGRID WIND REGULAR -90 25 0 300 200 0.1 0.1 &
+        NONSTATIONARY 20121027.000000 3 HR 20121102.000000
+READINP WIND 1 'Projects/Sandy/swan_narr_Oct2012.dat' 4 0 FREE
+%
+% These values are from the grid size  and time stamps:
+%  lon_rho=[270:0.1:300]-360;
+%  lat_rho=[ 25:0.1:45 ];  % Create a 0.1 degree lon-lat grid
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Step 17 - create SWAN boundary TPAR files
 %
 % READ THE INSTRUCTIONS IN THE COAWST MANUAL 
 % FOR SWAN BC's SECTION 10.
@@ -303,16 +374,82 @@ roms2swan('Sandy_roms_grid_ref3.nc')
 %  multi_1.at_10m.hs.201210.grb2
 %  multi_1.at_10m.dp.201210.grb2
 %
-% then run the m file to create the TPAR files
-COAWST\Tools\mfiles\swan_forc\ww3_swan_input.m
+% then run the ww3_swan_input m-file to create the TPAR files
+ww3_swan_input
 % - this file prodcues TPAR files. Place the TPAR files in 
 %  your project folder. 
 % - Also, the m files creates some commands lines called
 % "BOUNDSPEC." You must copy the command lines from the file 
-% Bound_spec_command and place them into your SWAN INPUT file.
-% This is only done for the parent grid.
+% Bound_spec_command and place them into your SWAN INPUT file,
+% such as swan_sandy.in. This is only done for the parent grid.
 %
-% Step 17 - create SWAN init files.
-% To create an init file for swan, you can run SWAN in stationary mode
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Step 18 - create SWAN init files.
+% To create init file for swan, you can run SWAN in stationary mode
 % and create a ‘hot start’ file(s). 
+edit sandy.h
+% some of model setup cppdefs:
+#undef  ROMS_MODEL
+#define NESTING
+#undef  WRF_MODEL
+#define SWAN_MODEL
+#undef  MCT_LIB
+#undef  MCT_INTERP_OC2AT
+#undef  MCT_INTERP_WV2AT
+#undef  MCT_INTERP_OC2WV
+% and rerun coawst.bash to build a new executable.
 %
+% Edit the swan_sandy.in files to just have INIT 
+%
+& Restart name **********************************
+INIT
+%
+% and compute stationary and create a hotfile.
+%
+COMPUTE STAT 20121028.120000
+HOTFILE 'Sandy_init.hot'
+%
+% do the same for the sandy ref3 input file.
+%
+qsub run_coawst % to run swan in stat mode.
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%Step 19 - run SWAN by itself
+% To run SWAN and create the init files use:
+mpirun -np 16 -machinefile $PBS_NODEFILE ./coawstM Projects/Sandy/swan_sandy.in Projects/Sandy/swan_sandy_ref3.in > cwstv3.out
+% this step created the *.hot files. 
+% Copy those files to the Projects/Sandy folder.
+%
+% To run SWAN for the multi day simulation, edit the swan.in files and list the init files:
+& Restart name **********************************
+INITIAL HOTSTART SINGLE 'Projects/Sandy/Sandy_init.hot'
+&INIT
+%
+% and change the run to be nonstationary
+%
+COMPUTE NONSTAT 20121028.120000 180 SEC 20121030.120000
+%
+% notice the command to create hourly restart files:
+RESTART 'swan_rst.dat' FREE 1 HR
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%  ROMS - WRF - SWAN coupling
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%Step 20 - to run ROMS + WRF + SWAN
+edit sandy.h
+% some of model setup cppdefs:
+#define ROMS_MODEL
+#define NESTING
+#define WRF_MODEL
+#define SWAN_MODEL
+#define MCT_LIB
+#define MCT_INTERP_OC2AT
+#define MCT_INTERP_WV2AT
+#define MCT_INTERP_OC2WV
+%
+% recompile and run with
+%
+
+
+
+

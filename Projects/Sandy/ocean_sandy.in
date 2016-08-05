@@ -146,17 +146,17 @@ GridsInLayer =  1 1
 !
 !                   1       2       3       4
 
-   LBC(isFsur) ==   Gra     Cha     Gra     Gra \       ! free-surface
+   LBC(isFsur) ==   Clo     Cha     Cha     Cha \       ! free-surface
                     Nes     Nes     Nes     Nes
-   LBC(isUbar) ==   Gra     Fla     Fla     Gra \       ! 2D U-momentum
+   LBC(isUbar) ==   Clo     Fla     Fla     Fla \       ! 2D U-momentum
                     Nes     Nes     Nes     Nes
-   LBC(isVbar) ==   Gra     Fla     Fla     Gra \       ! 2D V-momentum
+   LBC(isVbar) ==   Clo     Fla     Fla     Fla \       ! 2D V-momentum
                     Nes     Nes     Nes     Nes
-   LBC(isUvel) ==   Gra     RadNud  Gra     Gra \       ! 3D U-momentum
+   LBC(isUvel) ==   Clo     RadNud  RadNud  RadNud \    ! 3D U-momentum
                     Nes     Nes     Nes     Nes
-   LBC(isVvel) ==   Gra     RadNud  Gra     Gra \       ! 3D V-momentum
+   LBC(isVvel) ==   Clo     RadNud  RadNud  RadNud \    ! 3D V-momentum
                     Nes     Nes     Nes     Nes
-   LBC(isMtke) ==   Gra     Gra     Gra     Gra \       ! mixing TKE
+   LBC(isMtke) ==   Clo     Gra     Gra     Gra \       ! mixing TKE
                     Nes     Nes     Nes     Nes
 
    LBC(isTvar) ==   Gra     RadNud  RadNud  Gra \       ! temperature
@@ -166,13 +166,13 @@ GridsInLayer =  1 1
 
 ! Wec boundary conditions
 
-   LBC(isU2Sd) ==   Gra     Gra     Gra     Clo \       ! 2D U-stokes
+   LBC(isU2Sd) ==   Clo     Gra     Gra     Gra \       ! 2D U-stokes
                     Nes     Nes     Nes     Nes
-   LBC(isV2Sd) ==   Gra     Gra     Gra     Clo \       ! 2D V-stokes
+   LBC(isV2Sd) ==   Clo     Gra     Gra     Gra \       ! 2D V-stokes
                     Nes     Nes     Nes     Nes
-   LBC(isU3Sd) ==   Gra     Gra     Gra     Clo \       ! 3D U-stokes
+   LBC(isU3Sd) ==   Clo     Gra     Gra     Gra \       ! 3D U-stokes
                     Nes     Nes     Nes     Nes
-   LBC(isV3Sd) ==   Gra     Gra     Gra     Clo \       ! 3D V-stokes
+   LBC(isV3Sd) ==   Clo     Gra     Gra     Gra \       ! 3D V-stokes
                     Nes     Nes     Nes     Nes
 
 ! Ice boundary conditions
@@ -395,7 +395,7 @@ LtracerSponge == F F                            ! temperature, salinity, inert
 ! origin for tidal forcing, and model reference time for output
 ! NetCDF units attribute.
 
-      DSTART =  56229.5d0 56229.5d0        ! days
+      DSTART =  56228.5d0 56228.5d0        ! days
   TIDE_START =  52866.0d0                  ! days
     TIME_REF =  18581117.0d0               ! yyyymmdd.dd
 
@@ -892,10 +892,11 @@ Dout(iTvdif) == F F     ! temp_vdiff, ...    vertical diffusion
 ! per entry with a continuation (\) or vertical bar (|) symbol after each
 ! entry, except the last one.
 
-     NFFILES == 1 1                        ! number of unique forcing files
+     NFFILES == 2 1                        ! number of unique forcing files
 
-     FRCNAME == Projects/Sandy/roms_narr_Oct2012.nc \
-                Projects/Sandy/roms_narr_ref3_Oct2012.nc   ! forcing file 1, grid 1
+     FRCNAME == Projects/Sandy/roms_namnarr_Sandy2012.nc \
+                Projects/Sandy/tide_forc_Sandy.nc        \
+                Projects/Sandy/roms_namnarr_Sandy2012.nc
 
 ! Output NetCDF file names, [1:Ngrids].
 

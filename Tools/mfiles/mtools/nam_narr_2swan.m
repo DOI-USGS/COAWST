@@ -17,7 +17,7 @@
 %
 % 29Sept2014 - jcwarner
 %
-
+echo off
 %%%%%%%%%%%%%%%%%%%%%   START OF USER INPUT  %%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %(1) Select which variables to include in this ascii forcing file.
@@ -41,8 +41,8 @@ if (interpto_swan_grid)
   nx=84;
   ny=24;
 elseif (interpto_user_grid)
-  lon_rho=[270:0.1:300]-360;
-  lat_rho=[ 25:0.1:45 ];  % Create a 0.1 degree lon-lat grid
+  lon_rho=[255:0.1:310]-360;
+  lat_rho=[ 10:0.1:50 ];  % Create a 0.1 degree lon-lat grid
 else
   disp('pick a grid')
 end

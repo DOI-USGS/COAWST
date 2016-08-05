@@ -13,6 +13,7 @@
 % jcw 7-8-2008
 % jcw 07Feb2012 updated for netcdf mathworks interface
 % jcw 19March2015 update to use get_roms_grid
+% jcw 28July2016 updated veg params
 %
 
 %!         W-level  RHO-level                                           !
@@ -89,6 +90,7 @@
 
 %5) Obtain grid information.
    grid_file='E:\data\models\COAWST\Projects\JOE_TC\DiffGrid\joe_tc_coarse_grd.nc'    %<-enter name of grid here
+    
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % calc some grid stuff here - do not change this.
 % You go on to step 6.
@@ -161,6 +163,7 @@
     salt(1:xi_rho,1:eta_rho,1:N,1:length(init_time)) = 35;
     temp(1:xi_rho,1:eta_rho,1:N,1:length(init_time)) = 18;
   end
+
 %7) Enter number of mud sediments (NCS) and number of sand sediments (NNS).
 %   These values should be the same as in mod_param.F
     NCS = 0;   %number of cohesive sed classes
@@ -323,7 +326,7 @@ dmix_time=0.0;
 %12)
 %
 % set vegetation properties 
-NVEG=1 ; 
+NVEG=1;
 plant_density=zeros(xi_rho,eta_rho,NVEG);
 plant_height=zeros(xi_rho,eta_rho,NVEG);
 plant_diameter=zeros(xi_rho,eta_rho,NVEG);
@@ -335,7 +338,7 @@ marsh_mask=zeros(xi_rho,eta_rho,NVEG);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %create init file
-create_roms_netcdf_init_mw(init_file,Gout,Nbed,NNS,NCS)
+create_roms_netcdf_init_mw(init_file,Gout,Nbed,NNS,NCS,NVEG)
 
 %now write the data from the arrays to the netcdf file
 disp(' ## Filling Variables in netcdf file with data...')
@@ -345,8 +348,8 @@ ncwrite(init_file,'theta_b',Gout.theta_b);
 ncwrite(init_file,'Tcline',Gout.Tcline);
 ncwrite(init_file,'Cs_r',Gout.Cs_r);
 ncwrite(init_file,'Cs_w',Gout.Cs_w);
-ncwrite(init_file,'s_w',Gout.s_w);
-ncwrite(init_file,'s_rho',Gout.s_rho);
+ncwrite(init_file,'sc_w',Gout.s_w);
+ncwrite(init_file,'sc_r',Gout.s_rho);
 ncwrite(init_file,'hc',Gout.hc);
 ncwrite(init_file,'Vtransform',Gout.Vtransform);
 ncwrite(init_file,'Vstretching',Gout.Vstretching);

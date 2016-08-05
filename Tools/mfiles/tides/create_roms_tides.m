@@ -16,7 +16,7 @@
 % Requires: T_TIDE and TIDAL_ELLIPSE packages 
  
 %%%%% BEGINNING of USER-MODIFIED SECTION %%%%%
-IPLOT=0;            % 1 to make plots, 0 for no plots
+IPLOT=1;            % 1 to make plots, 0 for no plots
 IWRITE=1;           % 1 to write output to netcdf, 0 for no output
 
 % (1) Specify existing Grid File and new tide Forcing Files 
@@ -372,6 +372,12 @@ end,
 %---------------------------------------------------------------------
 
 if (IWRITE),
+  Tide.Ephase(isnan(Tide.Ephase))=0;
+  Tide.Eamp(isnan(Tide.Eamp))=0;
+  Tide.Cphase(isnan(Tide.Cphase))=0;
+  Tide.Cangle(isnan(Tide.Cangle))=0;
+  Tide.Cmin(isnan(Tide.Cmin))=0;
+  Tide.Cmax(isnan(Tide.Cmax))=0;
   ncwrite(Fname,'tide_period',Tide.period);
   ncwrite(Fname,'tide_Ephase',Tide.Ephase);
   ncwrite(Fname,'tide_Eamp',Tide.Eamp);
