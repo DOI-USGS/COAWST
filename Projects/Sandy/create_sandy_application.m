@@ -354,13 +354,13 @@ copy swan_narr_Oct2012.dat swan_narr_Oct2012_ref3.dat
 % to be consistent with the data file created. The INPGRID line would look like
 %
 && KEYWORD TO CREATE WIND GRID &&
-INPGRID WIND REGULAR -90 25 0 300 200 0.1 0.1 &
-        NONSTATIONARY 20121027.000000 3 HR 20121102.000000
+INPGRID WIND REGULAR -105 10 0 550 400 0.1 0.1 &
+       NONSTATIONARY 20121028.000000 3 HR 20121031.000000
 READINP WIND 1 'Projects/Sandy/swan_narr_Oct2012.dat' 4 0 FREE
 %
 % These values are from the grid size  and time stamps:
-%  lon_rho=[270:0.1:300]-360;
-%  lat_rho=[ 25:0.1:45 ];  % Create a 0.1 degree lon-lat grid
+%  lon_rho=[255:0.1:310]-360;
+%  lat_rho=[ 10:0.1:50 ];  % Create a 0.1 degree lon-lat grid
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Step 17 - create SWAN boundary TPAR files
@@ -404,22 +404,19 @@ edit sandy.h
 & Restart name **********************************
 INIT
 %
-% and compute stationary and create a hotfile.
+% and set to compute stationary and create a hotfile.
 %
 COMPUTE STAT 20121028.120000
 HOTFILE 'Sandy_init.hot'
 %
 % do the same for the sandy ref3 input file.
 %
-qsub run_coawst % to run swan in stat mode.
-%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%Step 19 - run SWAN by itself
 % To run SWAN and create the init files use:
 mpirun -np 16 -machinefile $PBS_NODEFILE ./coawstM Projects/Sandy/swan_sandy.in Projects/Sandy/swan_sandy_ref3.in > cwstv3.out
 % this step created the *.hot files. 
 % Copy those files to the Projects/Sandy folder.
-%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Step 19 - run SWAN by itself for multiday simulation.
 % To run SWAN for the multi day simulation, edit the swan.in files and list the init files:
 & Restart name **********************************
 INITIAL HOTSTART SINGLE 'Projects/Sandy/Sandy_init.hot'
@@ -432,6 +429,8 @@ COMPUTE NONSTAT 20121028.120000 180 SEC 20121030.120000
 % notice the command to create hourly restart files:
 RESTART 'swan_rst.dat' FREE 1 HR
 %
+% then run the program
+mpirun -np 16 -machinefile $PBS_NODEFILE ./coawstM Projects/Sandy/swan_sandy.in Projects/Sandy/swan_sandy_ref3.in > cwstv3.out
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%  ROMS - WRF - SWAN coupling
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
