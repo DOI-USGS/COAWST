@@ -1,7 +1,7 @@
 #include "cppdefs.h"
       MODULE mod_iounits
 !
-!svn $Id: mod_iounits.F 807 2016-07-09 02:03:55Z arango $
+!svn $Id: mod_iounits.F 813 2016-08-08 20:07:37Z arango $
 !================================================== Hernan G. Arango ===
 !  Copyright (c) 2002-2016 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
@@ -206,7 +206,7 @@
 !
 !  Local variable declarations.
 !
-      integer :: i
+      integer :: i, ng
 
       character (len=1), parameter :: blank = ' '
 !
@@ -259,6 +259,48 @@
       allocate ( nBCfiles(Ngrids) )
       allocate ( nCLMfiles(Ngrids) )
       allocate ( nFfiles(Ngrids) )
+!
+!-----------------------------------------------------------------------
+!  Initialize I/O NetCDF files ID to close state.
+!-----------------------------------------------------------------------
+!
+      DO ng=1,Ngrids
+        ADM(ng)%ncid=-1
+        ADS(ng)%ncid=-1
+        AVG(ng)%ncid=-1
+        BLK(ng)%ncid=-1
+!       BRY(ng)%ncid=-1
+!       CLM(ng)%ncid=-1
+        DAI(ng)%ncid=-1
+        DAV(ng)%ncid=-1
+        DIA(ng)%ncid=-1
+        ERR(ng)%ncid=-1
+        FLT(ng)%ncid=-1
+        FWD(ng)%ncid=-1
+        GRD(ng)%ncid=-1
+        GST(ng)%ncid=-1
+        HIS(ng)%ncid=-1
+        HSS(ng)%ncid=-1
+        IAD(ng)%ncid=-1
+        INI(ng)%ncid=-1
+        IRP(ng)%ncid=-1
+        ITL(ng)%ncid=-1
+        LCZ(ng)%ncid=-1
+        LZE(ng)%ncid=-1
+        NUD(ng)%ncid=-1
+        OBS(ng)%ncid=-1
+!       QCK(ng)%ncid=-1
+        RST(ng)%ncid=-1
+        SSF(ng)%ncid=-1
+        STA(ng)%ncid=-1
+        TLF(ng)%ncid=-1
+        TLM(ng)%ncid=-1
+
+        TIDE(ng)%ncid=-1
+
+        NRM(1:4,ng)%ncid=-1
+        STD(1:4,ng)%ncid=-1
+      END DO
 !
 !-----------------------------------------------------------------------
 !  Initialize file names to blanks.

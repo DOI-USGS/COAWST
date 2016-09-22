@@ -1116,9 +1116,9 @@
         DO i=is,ie
           ij=ij+1
           cff=grid%LH(i,j)
-#  ifdef MOVE_NESTS
+#   ifdef MOVE_NESTS
           cff=cff*MOV_MASK(i,j)
-#  endif
+#   endif
           AA(ij)=cff
         END DO
       END DO
@@ -1132,9 +1132,9 @@
         DO i=is,ie
           ij=ij+1
           cff=grid%HFX(i,j)
-#  ifdef MOVE_NESTS
+#   ifdef MOVE_NESTS
           cff=cff*MOV_MASK(i,j)
-#  endif
+#   endif
           AA(ij)=cff
         END DO
       END DO
@@ -1142,6 +1142,7 @@
      &                           AA, Asize)
 !-----------------------------------------------------------------------
 !     USTRESS    Surface u-stress (m2 s-2).
+!     Use Uearth and Vearth rotated velocities to partition UST.
 !
       ij=0
       DO j=js,je
@@ -1150,11 +1151,12 @@
           cff2=2.0/(((grid%u_2(i,1,j)+grid%u_2(i+1,1,j))**2+            &
      &               (grid%v_2(i,1,j)+grid%v_2(i,1,j+1))**2)**0.5+eps)
           ij=ij+1
-          cff=cff1*cff2*(grid%UST(i,j)**2)*                             &
-     &           0.5*(grid%u_2(i,1,j)+grid%u_2(i+1,1,j))
-#  ifdef MOVE_NESTS
+          cff3=0.5*(grid%u_2(i,1,j)+grid%u_2(i+1,1,j))*grid%cosa(i,j)-  &
+     &         0.5*(grid%v_2(i,1,j)+grid%v_2(i,1,j+1))*grid%sina(i,j)
+          cff=cff1*cff2*(grid%UST(i,j)**2)*cff3
+#   ifdef MOVE_NESTS
           cff=cff*MOV_MASK(i,j)
-#  endif
+#   endif
           AA(ij)=cff
         END DO
       END DO
@@ -1162,6 +1164,7 @@
      &                           AA, Asize)
 !-----------------------------------------------------------------------
 !     VSTRESS    Surface v-stress (m2 s-2).
+!     Use Uearth and Vearth rotated velocities to partition UST.
 !
       ij=0
       DO j=js,je
@@ -1170,11 +1173,12 @@
           cff2=2.0/(((grid%u_2(i,1,j)+grid%u_2(i+1,1,j))**2+            &
      &               (grid%v_2(i,1,j)+grid%v_2(i,1,j+1))**2)**0.5+eps)
           ij=ij+1
-          cff=cff1*cff2*(grid%UST(i,j)**2)*                             &
-     &           0.5*(grid%v_2(i,1,j)+grid%v_2(i,1,j+1))
-#  ifdef MOVE_NESTS
+          cff3=0.5*(grid%v_2(i,1,j)+grid%v_2(i,1,j+1))*grid%cosa(i,j)+  &
+     &         0.5*(grid%u_2(i,1,j)+grid%u_2(i+1,1,j))*grid%sina(i,j)
+          cff=cff1*cff2*(grid%UST(i,j)**2)*cff3
+#   ifdef MOVE_NESTS
           cff=cff*MOV_MASK(i,j)
-#  endif
+#   endif
           AA(ij)=cff
         END DO
       END DO
@@ -1194,9 +1198,9 @@
           cff=grid%PSFC(i,j)*                                           &
      &           exp((9.81*grid%ht(i,j))/                               &
      &           (287.0*grid%T2(i,j)*(1.0+0.61*grid%Q2(i,j))))
-#  ifdef MOVE_NESTS
+#   ifdef MOVE_NESTS
           cff=cff*MOV_MASK(i,j)
-#  endif
+#   endif
           AA(ij)=cff
         END DO
       END DO
@@ -1232,9 +1236,9 @@
 !
           ij=ij+1
           cff=cff2/cff3
-#  ifdef MOVE_NESTS
+#   ifdef MOVE_NESTS
           cff=cff*MOV_MASK(i,j)
-#  endif
+#   endif
           AA(ij)=cff
         END DO
       END DO
@@ -1248,9 +1252,9 @@
         DO i=is,ie
           ij=ij+1
           cff=grid%T2(i,j)-273.15
-#  ifdef MOVE_NESTS
+#   ifdef MOVE_NESTS
           cff=cff*MOV_MASK(i,j)
-#  endif
+#   endif
           AA(ij)=cff
         END DO
       END DO
@@ -1260,33 +1264,34 @@
 !-----------------------------------------------------------------------
 #  if defined BULK_FLUXES || defined ECOSIM
 !     U10        U-Wind speed at 10 m (m s-1).
-!
+!     Rotate to earth lon lat.
+!     
       ij=0
       DO j=js,je
         DO i=is,ie
           ij=ij+1
-          cff=grid%U10(i,j)
-#  ifdef MOVE_NESTS
+          cff=grid%U10(i,j)*grid%cosa(i,j)-grid%V10(i,j)*grid%sina(i,j)
+#   ifdef MOVE_NESTS
           cff=cff*MOV_MASK(i,j)
-#  endif
+#   endif
           AA(ij)=cff
         END DO
       END DO
       CALL AttrVect_importRAttr (AttrVect_O(ia,io)%atm2ocn_AV, "U10",   &
      &                           AA, Asize)
-#  endif
+!
 !-----------------------------------------------------------------------
-#  if defined BULK_FLUXES || defined ECOSIM
 !     V10        V-Wind speed at 10 m (m s-1).
+!     Rotate to earth lon lat.
 !
       ij=0
       DO j=js,je
         DO i=is,ie
           ij=ij+1
-          cff=grid%V10(i,j)
-#  ifdef MOVE_NESTS
+          cff=grid%V10(i,j)*grid%cosa(i,j)+grid%U10(i,j)*grid%sina(i,j)
+#   ifdef MOVE_NESTS
           cff=cff*MOV_MASK(i,j)
-#  endif
+#   endif
           AA(ij)=cff
         END DO
       END DO
@@ -1302,9 +1307,9 @@
         DO i=is,ie
           ij=ij+1
           cff=grid%CLDFRA(i,1,j)
-#  ifdef MOVE_NESTS
+#   ifdef MOVE_NESTS
           cff=cff*MOV_MASK(i,j)
-#  endif
+#   endif
           AA(ij)=cff
         END DO
       END DO
@@ -1320,9 +1325,9 @@
         DO i=is,ie
           ij=ij+1
           cff=0.001*(grid%RAINCV(i,j)+grid%RAINNCV(i,j))/grid%dt
-#  ifdef MOVE_NESTS
+#   ifdef MOVE_NESTS
           cff=cff*MOV_MASK(i,j)
-#  endif
+#   endif
           AA(ij)=cff
         END DO
       END DO
@@ -1339,9 +1344,9 @@
           ij=ij+1
 !         AA(ij)=0.001*(grid%SFCEVP(i,j))/grid%dt
           cff=0.001*(grid%QFX(i,j))
-#  ifdef MOVE_NESTS
+#   ifdef MOVE_NESTS
           cff=cff*MOV_MASK(i,j)
-#  endif
+#   endif
           AA(ij)=cff
         END DO
       END DO
@@ -1597,7 +1602,7 @@
       DO j=js,je
         DO i=is,ie
           ij=ij+1
-          cff=grid%U10(i,j)
+          cff=grid%U10(i,j)*grid%cosa(i,j)-grid%V10(i,j)*grid%sina(i,j)
 #  ifdef MOVE_NESTS
           cff=cff*MOV_MASK(i,j)
 #  endif
@@ -1613,7 +1618,7 @@
       DO j=js,je
         DO i=is,ie
           ij=ij+1
-          cff=grid%V10(i,j)
+          cff=grid%V10(i,j)*grid%cosa(i,j)+grid%U10(i,j)*grid%sina(i,j)
 #  ifdef MOVE_NESTS
           cff=cff*MOV_MASK(i,j)
 #  endif

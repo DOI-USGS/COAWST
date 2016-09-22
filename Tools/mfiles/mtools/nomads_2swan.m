@@ -1,21 +1,23 @@
-%   script nam_narr_2swan.m
+%   script nomads_2swan.m
 %
-%   inputs-     3hour NAM 12km data grib files and/or
-%               3hour NARR 32 km grib files and can  
-%               combine and interpolate to a common grid.
+%   inputs-     3hour NAM 12km data grib files
+%               3hour NARR 32 km grib files
+%               3hour GFS  0.5 deg grib files
+%               Can combine and interpolates to a common grid.
 %               All data is read thru THREDDs from
-%               http://nomads.ncdc.noaa.gov/data.php?name=access
+%               https://www.ncdc.noaa.gov/nomads/data-products
 % 
-%   user selects:   - to get NAM and/or NARR data.
-%                     or read data from a netcdf file.
-%                   - time interval [nam_start:nam_end]
+%   user selects:   - time interval [nam_start:nam_end]
 %                   - spatial interval [roms grid or generic grid]
 %                   - variables to be inlucded
+%                   - to get 1) NAM and/or NARR, -- or -- 2) GFS.
 %
 %   output-     SWAN ASCII wind forcing file
 %   needs-      native matlab to read opendap
 %
 % 29Sept2014 - jcwarner
+% 19Sept2016 - jcwarner add GFS read option
+%                       add rotation of NAM and NARR from Lamb Conf to Lat Lon.
 %
 echo off
 %%%%%%%%%%%%%%%%%%%%%   START OF USER INPUT  %%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -25,11 +27,11 @@ echo off
 get_Wind=1;       % surface u- and v- winds (m/s)
 
 %(2) Enter name of output SWAN forcing file
-SWAN_NAMNARR_name='swan_narr_Oct2012.dat';
+SWAN_forc_name='swan_narr_Oct2012.dat';
 
 %(3) Enter start and end dates - needed if using get_NARR or get_NAM
 namnarr_start = datenum('28-Oct-2012');
-namnarr_end   = datenum('31-Oct-2012');
+namnarr_end   = datenum('29-Oct-2012');
 
 %(4) Select to interpolate to a roms grid or a user defined grid.
 % Set one of these to a 1, the other to a 0.
@@ -41,15 +43,24 @@ if (interpto_swan_grid)
   nx=84;
   ny=24;
 elseif (interpto_user_grid)
-  lon_rho=[255:0.1:310]-360;
+% Need to provide lon_rho, lat_rho, and angle_rho.
+% NAM / NARR grids are centered at~ -100 deg lon; GFS = 0:360 lon
+  lon_rho=[255:0.1:310];%-360;
   lat_rho=[ 10:0.1:50 ];  % Create a 0.1 degree lon-lat grid
+  lon_rho=repmat(lon_rho,length(lat_rho),1)';
+  lat_rho=repmat(lat_rho',1,size(lon_rho,1))';
+  angle_rho = lon_rho*0;
 else
   disp('pick a grid')
 end
 
-%5) Select which data to obtain: NAM, NARR, or both.
-get_NARR=1;  %NARR-A grid 221 32km data
-get_NAM=1;   %NAM grid 218 12km data
+%5) Select which data to obtain: NAM, NARR, both NAM+NARR -- or -- GFS.
+get_NARR=0;  %NARR-A grid 221 32km data
+get_NAM=0;   %NAM grid 218 12km data
+% --- or    ---
+get_GFS=1;   %GFS 0.5 degree
+% GFS is 6 hr and NAM/NARR is 3 hr. I dont have time interpolation
+% added in so you have to pick NAM/NARR or GFS.
 %
 % -- or  --
 %
@@ -68,21 +79,25 @@ if (interpto_swan_grid)
   lon_rho=reshape(zz,nx,ny);
   zz=grd(gridsize+1:end);
   lat_rho=reshape(zz,nx,ny);
-elseif (interpto_user_grid)
-  lon_rho=repmat(lon_rho,length(lat_rho),1)';
-  lat_rho=repmat(lat_rho',1,size(lon_rho,1))';
-else
-  disp('pick a grid')
 end
 [Lp,Mp]=size(lon_rho);
 L=Lp-1;
 M=Mp-1;
 
 % now figure out what year they want
-NAMNARR_time=[namnarr_start:3/24:namnarr_end];
-ntimes=length(NAMNARR_time);
-Time=NAMNARR_time-datenum(1858,11,17,0,0,0);
-
+if ((get_NARR+get_NAM)>0)
+  NAMNARR_time=[namnarr_start:3/24:namnarr_end];
+  ntimes=length(NAMNARR_time);
+  Time=NAMNARR_time-datenum(1858,11,17,0,0,0);
+end
+if (get_GFS>0)
+  NAMNARR_time=[namnarr_start:6/24:namnarr_end];
+  ntimes=length(NAMNARR_time);
+  Time=NAMNARR_time-datenum(1858,11,17,0,0,0);
+end
+if ((get_NARR+get_NAM)>0 && (get_GFS)>0)
+  disp('cant do GFS and NAM/NARR'); return;
+end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % 
 % pre allocate some arrays
@@ -92,6 +107,46 @@ if (get_Wind)
   Vwind=zeros(size(lon_rho,1),size(lon_rho,2),ntimes);
 end
 %
+if (get_GFS)
+  disp('going to get GFS grid 4 0.5deg data');
+%
+  for mm=1:ntimes
+    dd=datestr(Time(mm)+datenum(1858,11,17,0,0,0),'yyyymmddTHHMMSS');
+    disp(['getting GFS grid 4 0.5deg data at ',dd]);
+    url=['http://nomads.ncdc.noaa.gov/thredds/dodsC/gfs-004-anl/',dd(1:6),'/',dd(1:8),'/gfsanl_4_',dd(1:8),'_',dd(10:11),'00_000.grb2'];
+    if (mm==1)
+      x=ncread(url,'lon');
+      y=ncread(url,'lat');
+      [nlon,nlat]=meshgrid(x,y);
+    end
+%
+    if (get_Wind)
+      var=squeeze(ncread(url,'U-component_of_wind_height_above_ground'));
+      var=squeeze(var(:,:,1));
+      var=var.';
+      F=TriScatteredInterp(nlon(:),nlat(:),double(var(:)));
+      cff=F(double(lon_rho),double(lat_rho));
+      cff(isnan(cff))=0;
+      Uwind_ll=cff;
+  %
+      var=squeeze(ncread(url,'V-component_of_wind_height_above_ground'));
+      var=squeeze(var(:,:,1));
+      var=var.';
+      F=TriScatteredInterp(nlon(:),nlat(:),double(var(:)));
+      cff=F(double(lon_rho),double(lat_rho));
+      cff(isnan(cff))=0;
+      Vwind_ll=cff;
+  %
+  %   Rotate winds to ROMS or user grid.
+  %
+      cffx=Uwind_ll.*cos(angle_rho)+Vwind_ll.*sin(angle_rho);
+      cffy=Vwind_ll.*cos(angle_rho)-Uwind_ll.*sin(angle_rho);
+      Uwind(:,:,mm)=cffx;
+      Vwind(:,:,mm)=cffy;
+    end
+  end
+  save GFS_data.mat
+end
 if (get_NARR)
   disp('going to get NARR-A grid 221 32km data');
 %
@@ -103,7 +158,7 @@ if (get_NARR)
       x=ncread(url,'x');
       y=ncread(url,'y');
       clo=-107.0;   clat=50.0;
-      earth_rad=6367.470;
+      earth_rad=6371.2;
       [X,Y]=meshgrid(x,y);
       m_proj('lambert conformal conic','clongitude',clo,'lat',[clat clat]);
       [nlon,nlat]=m_xy2ll(X/earth_rad,Y/earth_rad);
@@ -116,7 +171,7 @@ if (get_NARR)
       F=TriScatteredInterp(nlon(:),nlat(:),double(var(:)));
       cff=F(double(lon_rho),double(lat_rho));
       cff(isnan(cff))=0;
-      Uwind(:,:,mm)=cff;
+      Uwind_lamb=cff;
 %
       var=squeeze(ncread(url,'v_wind_height_above_ground'));
       var=squeeze(var(:,:,1));
@@ -124,16 +179,32 @@ if (get_NARR)
       F=TriScatteredInterp(nlon(:),nlat(:),double(var(:)));
       cff=F(double(lon_rho),double(lat_rho));
       cff(isnan(cff))=0;
-      Vwind(:,:,mm)=cff;
+      Vwind_lamb=cff;
+  %
+  %   Rotate winds to earth lon lat based on http://ruc.noaa.gov/RUC.faq.html
+  %
+  %   ROTCON_P          R  WIND ROTATION CONSTANT, = 1 FOR POLAR STEREO
+  %                         AND SIN(LAT_TAN_P) FOR LAMBERT CONFORMAL
+  %   LON_XX_P          R  MERIDIAN ALIGNED WITH CARTESIAN X-AXIS(DEG)
+  %   LAT_TAN_P         R  LATITUDE AT LAMBERT CONFORMAL PROJECTION
+  %                         IS TRUE (DEG)
+      lat_tan_p  =  clat;                    % 50.0 for NARR;
+      lon_xx_p   =  clo;                     % -107.0 for NARR;
+      rotcon_p   =  sin(lat_tan_p*pi/180);
+      deg2rad=2*pi/360;
 %
-      if (~get_NAM)
-        if (interpto_swan_grid)    % do this below, dont need it twice
-          cffx=Uwind(:,:,count).*cos(angle)+Vwind(:,:,count).*sin(angle);
-          cffy=Vwind(:,:,count).*cos(angle)-Uwind(:,:,count).*sin(angle);
-          Uwind(:,:,count)=cffx;
-          Vwind(:,:,count)=cffy;
-        end
-      end
+      angle2 = rotcon_p*(lon_rho-lon_xx_p)*deg2rad;
+      sinx2 = sin(angle2);
+      cosx2 = cos(angle2);
+      Uwind_rot = cosx2.*Uwind_lamb+sinx2.*Vwind_lamb;
+      Vwind_rot =-sinx2.*Uwind_lamb+cosx2.*Vwind_lamb;
+  %
+  %   Rotate winds to ROMS or user grid.
+  %
+      cffx=Uwind_rot.*cos(angle_rho)+Vwind_rot.*sin(angle_rho);
+      cffy=Vwind_rot.*cos(angle_rho)-Uwind_rot.*sin(angle_rho);
+      Uwind(:,:,mm)=cffx;
+      Vwind(:,:,mm)=cffy;
     end
   end
   save NARR_data.mat
@@ -168,7 +239,7 @@ if (get_NAM)
         x=ncread(url,'x');
         y=ncread(url,'y');
         clo=-95.0;   clat=25.0;
-        earth_rad=6367.470;
+        earth_rad=6371.2;
         [X,Y]=meshgrid(x,y);
         m_proj('lambert conformal conic','clongitude',clo,'lat',[clat clat]);
         [nlon,nlat]=m_xy2ll(X/earth_rad,Y/earth_rad);
@@ -189,19 +260,42 @@ if (get_NAM)
         var=squeeze(var(:,:,1));
         var=var.';
         F=TriScatteredInterp(nlon(:),nlat(:),double(var(:)));
-        zz=F(lon_rho,lat_rho);
-        zz(isnan(zz))=0;
-        cff=squeeze(Uwind(:,:,mm)).*(1-mask)+zz.*mask;
-        Uwind(:,:,mm)=cff;
+        cff=F(lon_rho,lat_rho);
+        cff(isnan(cff))=0;
+        Uwind_lamb=cff;
     %
         var=squeeze(ncread(url,'v_wind_height_above_ground'));
         var=squeeze(var(:,:,1));
         var=var.';
         F=TriScatteredInterp(nlon(:),nlat(:),double(var(:)));
-        zz=F(lon_rho,lat_rho);
-        zz(isnan(zz))=0;
-        cff=squeeze(Vwind(:,:,mm)).*(1-mask)+zz.*mask;
-        Vwind(:,:,mm)=cff;
+        cff=F(lon_rho,lat_rho);
+        cff(isnan(cff))=0;
+        Vwind_lamb=cff;
+  %
+  %   Rotate winds to earth lon lat based on http://ruc.noaa.gov/RUC.faq.html
+  %
+  %   ROTCON_P          R  WIND ROTATION CONSTANT, = 1 FOR POLAR STEREO
+  %                         AND SIN(LAT_TAN_P) FOR LAMBERT CONFORMAL
+  %   LON_XX_P          R  MERIDIAN ALIGNED WITH CARTESIAN X-AXIS(DEG)
+  %   LAT_TAN_P         R  LATITUDE AT LAMBERT CONFORMAL PROJECTION
+  %                         IS TRUE (DEG)
+        lat_tan_p  =  clat;                    % 25.0 for NAM;
+        lon_xx_p   =  clo;                     % -95.0 for NAM;
+        rotcon_p   =  sin(lat_tan_p*pi/180);
+        deg2rad=2*pi/360;
+%
+        angle2 = rotcon_p*(lon_rho-lon_xx_p)*deg2rad;
+        sinx2 = sin(angle2);
+        cosx2 = cos(angle2);
+        Uwind_rot = cosx2.*Uwind_lamb+sinx2.*Vwind_lamb;
+        Vwind_rot =-sinx2.*Uwind_lamb+cosx2.*Vwind_lamb;
+  %
+  %   Rotate winds to ROMS or user grid and merge with previous data.
+  %
+        cffx=Uwind_rot.*cos(angle_rho)+Vwind_rot.*sin(angle_rho);
+        cffy=Vwind_rot.*cos(angle_rho)-Uwind_rot.*sin(angle_rho);
+        Uwind(:,:,mm)=squeeze(Uwind(:,:,mm)).*(1-mask)+cffx.*mask;
+        Vwind(:,:,mm)=squeeze(Vwind(:,:,mm)).*(1-mask)+cffy.*mask;
       end
     catch ME
       disp(['cldnt get that data at ', url])
@@ -217,7 +311,7 @@ if(get_netcdf_file)
   get_Wind=1;
 end
 %
-fid = fopen(SWAN_NAMNARR_name,'w');
+fid = fopen(SWAN_forc_name,'w');
 for i=1:length(Time)
   if (get_Wind)
     disp(['Writing winds for SWAN at ',datestr(Time(i)+datenum(1858,11,17,0,0,0))])
@@ -230,6 +324,6 @@ end
 fclose(fid);
 
 %
-disp(['------------ wrote ',SWAN_NAMNARR_name,' ------------']);
+disp(['------------ wrote ',SWAN_forc_name,' ------------']);
 
 

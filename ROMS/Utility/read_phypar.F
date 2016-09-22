@@ -1,7 +1,7 @@
 #include "cppdefs.h"
       SUBROUTINE read_PhyPar (model, inp, out, Lwrite)
 !
-!svn $Id: read_phypar.F 793 2016-05-10 00:08:25Z arango $
+!svn $Id: read_phypar.F 819 2016-08-26 17:33:44Z arango $
 !================================================== Hernan G. Arango ===
 !  Copyright (c) 2002-2016 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
@@ -4394,6 +4394,17 @@
 !  we are estimating initial conditions.
 !
         nADJ(ng)=ntimes(ng)
+#endif
+#if defined W4DPSAS || defined W4DVAR
+!
+!  If dual formulation and strong constraint, limit writing the adjoint
+!  solution to the end of time-stepping.
+!
+        IF (nADJ(ng).gt.ntimes(ng)) THEN
+          nADJ(ng)=ntimes(ng)
+        END IF
+#endif
+#if defined IS4DVAR || defined W4DPSAS || defined W4DVAR
 !
 !  Insure that restart file is written only at the end.  In sequential
 !  data assimilation the restart file is used as the first guess for

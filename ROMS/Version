@@ -1,4 +1,4 @@
-ROMS/TOMS Framework: July 14, 2016
+ROMS/TOMS Framework:  August 30, 2016
 ===================
 
 Copyright (c) 2002-2016 The ROMS/TOMS Group
@@ -7,5 +7,5 @@ Copyright (c) 2002-2016 The ROMS/TOMS Group
 
 svn: $HeadURL: https://www.myroms.org/svn/src/trunk/ROMS/Version $
 svn: $LastChangedBy: arango $
-svn: $LastChangedRevision: 809 $
-svn: $LastChangedDate: 2016-07-14 12:38:45 -0400 (Thu, 14 Jul 2016) $
+svn: $LastChangedRevision: 820 $
+svn: $LastChangedDate: 2016-08-30 16:14:28 -0400 (Tue, 30 Aug 2016) $

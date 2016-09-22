@@ -2,7 +2,7 @@
 #if defined FOUR_DVAR || defined ENKF_RESTART
       SUBROUTINE def_dai (ng)
 !
-!svn $Id: def_dai.F 802 2016-05-25 21:48:44Z arango $
+!svn $Id: def_dai.F 813 2016-08-08 20:07:37Z arango $
 !================================================== Hernan G. Arango ===
 !  Copyright (c) 2002-2016 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
@@ -348,7 +348,6 @@
         Vinfo( 3)=Vname(3,idFsur)
         Vinfo(14)=Vname(4,idFsur)
         Vinfo(16)=Vname(1,idtime)
-        Vinfo(20)='mask_rho'
         Vinfo(22)='coordinates'
         Aval(5)=REAL(Iinfo(1,idFsur,ng),r8)
         status=def_var(ng, iNLM, DAI(ng)%ncid, DAI(ng)%Vid(idFsur),     &

@@ -1,7 +1,7 @@
 #include "cppdefs.h"
       SUBROUTINE checkadj
 !
-!svn $Id: checkadj.F 791 2016-05-05 22:39:42Z arango $
+!svn $Id: checkadj.F 820 2016-08-30 20:14:28Z arango $
 !================================================== Hernan G. Arango ===
 !  Copyright (c) 2002-2016 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
@@ -77,14 +77,6 @@
 !  adjoint-based algorithms.
 !-----------------------------------------------------------------------
 !
-      string=uppercase('atm_press')
-      ifound=INDEX(TRIM(Coptions), TRIM(string))
-      IF (ifound.ne.0) THEN
-        ic=ic+1
-        IF (Master) WRITE(stdout,20) TRIM(string),                      &
-     &                               'not tested, FATAL ERROR'
-      END IF
-
       string=uppercase('bedload_mpm')
       ifound=INDEX(TRIM(Coptions), TRIM(string))
       IF (ifound.ne.0) THEN
@@ -107,13 +99,6 @@
         ic=ic+1
         IF (Master) WRITE(stdout,20) TRIM(string),                      &
      &                               'not coded, FATAL ERROR'
-      END IF
-
-      string=uppercase('bio_umaine')
-      ifound=INDEX(TRIM(Coptions), TRIM(string))
-      IF (ifound.ne.0) THEN
-        ic=ic+1
-        IF (Master) WRITE(stdout,20) TRIM(string), 'not coded'
       END IF
 
 # ifndef NL_BULK_FLUXES
@@ -139,7 +124,7 @@
       string=uppercase('clima_ts_mix')
       ifound=INDEX(TRIM(Coptions), TRIM(string))
       IF (ifound.ne.0) THEN
-        IF (Master) WRITE(stdout,20) TRIM(string),                      &
+        IF (Master) WRITE(stdout,10) TRIM(string),                      &
      &                               'not tested, WARNING'
       END IF
 
@@ -297,6 +282,14 @@
      &                               'not coded, FATAL ERROR'
       END IF
 
+      string=uppercase('geopotential_hconv')
+      ifound=INDEX(TRIM(Coptions), TRIM(string))
+      IF (ifound.ne.0) THEN
+        ic=ic+1
+        IF (Master) WRITE(stdout,10) TRIM(string),                      &
+     &                               'experimental, AVOID USAGE'
+      END IF
+
 # ifndef FORWARD_MIXING
       string=uppercase('gls_mixing')
       ifound=INDEX(TRIM(Coptions), TRIM(string))
@@ -306,6 +299,14 @@
      &                               'not differentiable, WARNING'
       END IF
 # endif
+
+      string=uppercase('limit_bstress')
+      ifound=INDEX(TRIM(Coptions), TRIM(string))
+      IF (ifound.ne.0) THEN
+        ic=ic+1
+        IF (Master) WRITE(stdout,20) TRIM(string),                      &
+     &                               'not coded, FATAL ERROR'
+      END IF
 
 # ifndef FORWARD_MIXING
       string=uppercase('lmd_mixing')

@@ -2561,9 +2561,9 @@
 !
       one=1.0_r8
       zero=0.0_r8
-#ifdef SWAN_COUPLING
-      Infinity=one/zero
-#endif
+!#ifdef SWAN_COUPLING
+!      Infinity=one/zero
+!#endif
       Co=1.0_r8/(2.0_r8+SQRT(2.0_r8))
       gorho0=g/rho0
       DO ng=1,Ngrids

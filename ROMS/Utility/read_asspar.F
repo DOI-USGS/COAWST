@@ -2,7 +2,7 @@
 #if defined FOUR_DVAR || defined VERIFICATION
       SUBROUTINE read_AssPar (model, inp, out, Lwrite)
 !
-!svn $Id: read_asspar.F 807 2016-07-09 02:03:55Z arango $
+!svn $Id: read_asspar.F 820 2016-08-30 20:14:28Z arango $
 !================================================== Hernan G. Arango ===
 !  Copyright (c) 2002-2016 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
@@ -22,6 +22,8 @@
       USE mod_iounits
       USE mod_ncparam
       USE mod_scalars
+!
+      USE strings_mod, ONLY : uppercase
 !
       implicit none
 !
@@ -1127,7 +1129,7 @@
      &                    TRIM(aparnam)
 #  endif
 #  if defined FOUR_DVAR || (defined HESSIAN_SV && defined BNORM)
-#   if defined IS4DVAR          || defined OBS_SENSITIBITY || \
+#   if defined IS4DVAR          || defined OBS_SENSITIVITY || \
        defined OPT_OBSERVATIONS || defined WEAK_CONSTRAINT
 #    if defined SENSITIVITY_4DVAR || \
         defined TL_W4DPSAS        || defined TL_W4DVAR || \
@@ -1223,21 +1225,25 @@
 #   if !(defined CORRELATION || defined OPT_OBSERVATIONS)
           fname=OBS(ng)%name
           IF (.not.find_file(ng, fname, 'OBSname')) GO TO 30
-          WRITE (out,160) '            Observations File:  ',           &
+          WRITE (out,160) '      Input observations File:  ',           &
      &                    TRIM(fname)
 #   endif
-#  endif
           WRITE (out,160) '    Input/Output Lanczos File:  ',           &
      &                    TRIM(LCZ(ng)%name)
-#  ifndef IS4DVAR_SENSITIVITY
+#   ifndef IS4DVAR_SENSITIVITY
           WRITE (out,160) '    Input/Output Hessian File:  ',           &
      &                    TRIM(HSS(ng)%name)
-#  endif
-#  ifdef EVOLVED_LCZ
+#   endif
+#   ifdef EVOLVED_LCZ
           WRITE (out,160) '  Output evolved Lanczos File:  ',           &
      &                    TRIM(LZE(ng)%name)
+#   endif
 #  endif
 #  ifdef VERIFICATION
+          fname=OBS(ng)%name
+          IF (.not.find_file(ng, fname, 'OBSname')) GO TO 30
+          WRITE (out,160) '      Input observations File:  ',           &
+     &                    TRIM(fname)
           WRITE (out,160) '     Output verification File:  ',           &
      &                    TRIM(DAV(ng)%name)
 #  else
@@ -1256,6 +1262,25 @@
   40      CONTINUE
         END DO
       END IF
+
+#  if defined WEAK_CONSTRAINT && defined RPCG
+!
+!  Stop if activating pre-conditioning for the RBLanczos minimization
+!  algorithm. It does not work yet.
+!
+      DO ng=1,Ngrids
+        IF (Lprecond) THEN
+          IF (Master) THEN
+            WRITE (out,230) 'Lprecond', Lprecond,                       &
+     &            'pre-conditioning does not work yet with ' //         &
+     &            uppercase('rpcg') // ' algorithm.',                   &
+     &            'Set Lprecond to F in ' // TRIM(aparnam)
+          END IF
+          exit_flag=5
+          RETURN
+        END IF
+      END DO
+#  endif
 
 #  if defined WEAK_CONSTRAINT && defined TIME_CONV
 !
@@ -1281,7 +1306,11 @@
  110  FORMAT (10x,l1,2x,a,t30,a,i2.2,':',1x,a)
  120  FORMAT (f11.3,2x,a,t30,a)
  130  FORMAT (f11.3,2x,a,t30,a,a,'.')
- 150  FORMAT (/,' Input Assimilation Files:',/)
+#  ifdef VERIFICATION
+ 150  FORMAT (/,' Input/Output Verification Files:',/)
+#  else
+ 150  FORMAT (/,' Input/Output Assimilation Files:',/)
+#  endif
  160  FORMAT (2x,a,a)
  170  FORMAT (3x,4(1x,l1),2x,a,t30,a)
  180  FORMAT (3x,4(1x,l1),2x,a,t30,a,i2.2,':',1x,a)
@@ -1289,6 +1318,8 @@
  200  FORMAT (1p,e11.4,2x,a,'(',i2.2,')',t30,a,':',1x,i6)
  210  FORMAT (/,' READ_ASSPAR - variable info not yet loaded, ', a)
  220  FORMAT (/,' READ_ASSPAR - could not find input file:  ',a)
+ 230  FORMAT (/,' READ_ASSPAR - Illegal parameter, ', a, ' = ', 1x, l1, &
+     &        /,15x,a,/,15x,a)
 # endif
 
       RETURN

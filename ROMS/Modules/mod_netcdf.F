@@ -1,7 +1,7 @@
 #include "cppdefs.h"
       MODULE mod_netcdf
 !
-!svn $Id: mod_netcdf.F 807 2016-07-09 02:03:55Z arango $
+!svn $Id: mod_netcdf.F 814 2016-08-18 01:30:40Z arango $
 !================================================== Hernan G. Arango ===
 !  Copyright (c) 2002-2016 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
@@ -73,7 +73,7 @@
 !  Local dimension parameters.
 !
       integer, parameter :: Mdims = 50  ! maximum number of dimensions
-      integer, parameter :: Mvars = 800 ! maximum number of variables
+      integer, parameter :: Mvars = 900 ! maximum number of variables
       integer, parameter :: NvarD = 5   ! number of variable dimensions
       integer, parameter :: NvarA = 50  ! number of variable attributes
 !
@@ -1574,7 +1574,7 @@
 !
 !=======================================================================
 !                                                                      !
-!  This routine gets requested floating-point variable attribute(s).   !
+!  This routine gets requested variable floating-point attribute(s).   !
 !                                                                      !
 !  On Input:                                                           !
 !                                                                      !
@@ -1653,9 +1653,14 @@
       END DO
 
       IF (InpThread) THEN
-        status=nf90_inquire_variable(my_ncid, varid,                    &
-     &                               name = my_Vname,                   &
-     &                               nAtts = my_natts)
+        IF (varid.eq.nf90_global) THEN
+          status=nf90_inquire(my_ncid,                                  &
+     &                        nAttributes = my_natts)
+        ELSE
+          status=nf90_inquire_variable(my_ncid, varid,                  &
+     &                                 name = my_Vname,                 &
+     &                                 nAtts = my_natts)
+        END IF
         IF (status.eq.nf90_noerr) THEN
           DO j=1,my_natts
             status=nf90_inq_attname(my_ncid, varid, j, my_Aname)
@@ -1743,6 +1748,184 @@
 
       RETURN
       END SUBROUTINE netcdf_get_fatt
+
+      SUBROUTINE netcdf_get_satt (ng, model, ncname, varid, AttName,    &
+     &                            AttValue, foundit, ncid)
+!
+!=======================================================================
+!                                                                      !
+!  This routine gets requested variable string attribute(s).           !
+!                                                                      !
+!  On Input:                                                           !
+!                                                                      !
+!     ng           Nested grid number (integer)                        !
+!     model        Calling model identifier (integer)                  !
+!     ncname       NetCDF file name (string)                           !
+!     varid        Variable ID for variable attribute or               !
+!                    NF90_GLOBAL for a global attribute (integer)      !
+!     AttName      Attribute name to read (string array)               !
+!     ncid         NetCDF file ID (integer, OPTIONAL)                  !
+!                                                                      !
+!  On Ouput:                                                           !
+!                                                                      !
+!     AttValue     Attribute value (string array)                      !
+!     foundit      Switch (T/F) activated when the requested           !
+!                    attribute is found (logical array)                !
+!                                                                      !
+!=======================================================================
+!
+      USE mod_param
+      USE mod_parallel
+      USE mod_iounits
+      USE mod_scalars
+
+#if !defined PARALLEL_IO  && defined DISTRIBUTE
+!
+      USE distribute_mod, ONLY : mp_bcasti, mp_bcasts
+#endif
+!
+!  Imported variable declarations.
+!
+      integer, intent(in) :: ng, model, varid
+
+      integer, intent(in), optional :: ncid
+
+      character (len=*), intent(in) :: ncname
+      character (len=*), intent(in) :: AttName(:)
+
+      logical, intent(out) :: foundit(:)
+
+      character (len=*), intent(out) :: AttValue(:)
+!
+!  Local variable declarations.
+!
+      integer :: i, j, my_natts, my_ncid, nvatts, status
+
+#if !defined PARALLEL_IO  && defined DISTRIBUTE
+      integer, dimension(20) :: ibuffer
+#endif
+
+      character (len=40) :: my_Aname
+      character (len=40) :: my_Vname
+!
+!-----------------------------------------------------------------------
+!  Inquire ID of requested variable.
+!-----------------------------------------------------------------------
+!
+!  If appropriate, open file for reading.
+!
+      IF (.not.PRESENT(ncid)) THEN
+        CALL netcdf_open (ng, model, TRIM(ncname), 0, my_ncid)
+        IF (exit_flag.ne.NoError) RETURN
+      ELSE
+        my_ncid=ncid
+      END IF
+!
+!  Get number of variable attributes to process.
+!
+      nvatts=UBOUND(AttValue, DIM=1)
+!
+!  Inquire about requested attribute value.
+!
+      DO i=1,nvatts
+        foundit(i)=.FALSE.
+        AttValue(i)=' '
+      END DO
+
+      IF (InpThread) THEN
+        IF (varid.eq.nf90_global) THEN
+          status=nf90_inquire(my_ncid,                                  &
+     &                        nAttributes = my_natts)
+        ELSE
+          status=nf90_inquire_variable(my_ncid, varid,                  &
+     &                                 name = my_Vname,                 &
+     &                                 nAtts = my_natts)
+        END IF
+        IF (status.eq.nf90_noerr) THEN
+          DO j=1,my_natts
+            status=nf90_inq_attname(my_ncid, varid, j, my_Aname)
+            IF (status.eq.nf90_noerr) THEN
+              DO i=1,nvatts
+                IF (TRIM(my_Aname).eq.TRIM(AttName(i))) THEN
+                  status=nf90_get_att(my_ncid, varid, TRIM(AttName(i)), &
+     &                                AttValue(i))
+                  IF (status.ne.nf90_noerr) THEN
+                    IF (Master) WRITE (stdout,10) TRIM(AttName(i)),     &
+     &                                            TRIM(my_Vname),       &
+     &                                            TRIM(ncname),         &
+     &                                            TRIM(SourceFile)
+                    exit_flag=2
+                    ioerror=status
+                  END IF
+                  foundit(i)=.TRUE.
+                  EXIT
+                END IF
+              END DO
+            ELSE
+              IF (Master) WRITE (stdout,20) j,                          &
+     &                                      TRIM(my_Vname),             &
+     &                                      TRIM(ncname),               &
+     &                                      TRIM(SourceFile)
+              exit_flag=2
+              ioerror=status
+              EXIT
+            END IF
+          END DO
+        ELSE
+          IF (Master) WRITE (stdout,30) TRIM(my_Vname),                 &
+     &                                  TRIM(ncname),                   &
+     &                                  TRIM(SourceFile)
+          exit_flag=2
+          ioerror=status
+        END IF
+      END IF
+
+#if !defined PARALLEL_IO  && defined DISTRIBUTE
+!
+!  Broadcast information to all processors in the group. Pack all
+!  data into a real array for efficient communications.
+!
+      ibuffer=0
+      j=0
+      DO i=1,nvatts
+        IF (foundit(i)) THEN
+          ibuffer(i)=1
+        END IF
+        j=j+1
+      END DO
+      ibuffer(j+1)=exit_flag
+      ibuffer(j+2)=ioerror
+      CALL mp_bcasti (ng, model, ibuffer)
+      CALL mp_bcasts (ng, model, AttValue)
+      j=0
+      DO i=1,nvatts
+        IF (ibuffer(i).gt.0) THEN
+          foundit(i)=.TRUE.
+        END IF
+        j=j+1
+      END DO
+      exit_flag=ibuffer(j+1)
+      ioerror=ibuffer(j+2)
+#endif
+!
+!  If applicable, close input NetCDF file.
+!
+      IF (.not.PRESENT(ncid)) THEN
+        CALL netcdf_close (ng, model, my_ncid, ncname, .FALSE.)
+      END IF
+!
+  10  FORMAT (/,' NETCDF_GET_SATT - error while reading attribute:',    &
+     &        1x,a,'for variable',1x,a,/,19x,'in input file:',2x,a,/,   &
+     &        19x,'call from:',2x,a)
+  20  FORMAT (/,' NETCDF_GET_SATT - error while inquiring attribute:',  &
+     &        1x,i2.2,'for variable',1x,a,/,19x,'in input file:',2x,a,  &
+     &        /,19x,'call from:',2x,a)
+  30  FORMAT (/,' NETCDF_GET_SATT - error while inquiring number of ',  &
+     &        'attributes for variable:',1x,a,/,19x,'in input file:',   &
+     &        2x,a,/,19x,'call from:',2x,a)
+
+      RETURN
+      END SUBROUTINE netcdf_get_satt
 
       SUBROUTINE netcdf_get_fvar_0d (ng, model, ncname, myVarName, A,   &
      &                               ncid, start, total,                &

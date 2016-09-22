@@ -2,7 +2,7 @@
 #ifdef DIAGNOSTICS
       SUBROUTINE set_diags (ng, tile)
 !
-!svn $Id: set_diags.F 795 2016-05-11 01:42:43Z arango $
+!svn $Id: set_diags.F 812 2016-08-05 19:07:23Z arango $
 !================================================== Hernan G. Arango ===
 !  Copyright (c) 2002-2016 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
@@ -108,8 +108,6 @@
 !-----------------------------------------------------------------------
 !
       IF (nDIA(ng).eq.0) RETURN
-
-# if defined DIAGNOSTICS_TS || defined DIAGNOSTICS_UV
 !
 !-----------------------------------------------------------------------
 ! Initialize time-averaged diagnostic arrays when appropriate.  Notice
@@ -122,11 +120,11 @@
      &    ((iic(ng).ge.ntsDIA(ng)).and.(nDIA(ng).eq.1)).or.             &
      &    ((nrrec(ng).gt.0).and.(iic(ng).eq.ntstart(ng)))) THEN
 
-#  ifdef WET_DRY
+# ifdef WET_DRY
 !
 !  If wetting and drying, initialize time dependent counters for wet
 !  points. The time averaged field at each point is only accumulated
-!  over wet points since its multiplied by the appropriate mask.
+!  over wet points since it is multiplied by the appropriate mask.
 !
         DO j=Jstr,JendR
           DO i=Istr,IendR
@@ -156,7 +154,8 @@
      &                                      1.0_r8))
           END DO
         END DO
-#  endif
+# endif
+# if defined DIAGNOSTICS_TS || defined DIAGNOSTICS_UV
 !
 !  Initialize.
 !
@@ -223,6 +222,7 @@
         END DO
 #   endif
 #  endif
+# endif
 !
 !-----------------------------------------------------------------------
 !  Accumulate time-averaged fields.
@@ -230,7 +230,7 @@
 !
       ELSE IF (iic(ng).gt.ntsDIA(ng)) THEN
 
-#  ifdef WET_DRY
+# ifdef WET_DRY
 !
 !  If wetting and drying, accumulate wet points counters.
 !  points. The time averaged field at each point is only accumulated
@@ -268,7 +268,8 @@
      &                                      1.0_r8))
           END DO
         END DO
-#  endif
+# endif
+# if defined DIAGNOSTICS_TS || defined DIAGNOSTICS_UV
 !
 !  Accumulate diagnostic terms.
 !
@@ -338,8 +339,8 @@
         END DO
 #   endif
 #  endif
-      END IF
 # endif
+      END IF
 !
 !-----------------------------------------------------------------------
 !  Convert accumulated sums into time-averages, if appropriate

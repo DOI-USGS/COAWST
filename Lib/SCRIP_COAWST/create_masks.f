@@ -32,9 +32,10 @@
       integer(int_kind)   :: ncstat, nc_file_id
       integer(int_kind)   :: i, j, c, Ikeep, Jkeep
       integer(int_kind)   :: mo, ma, mw, nx, ny, grdsize
-      integer(int_kind)   :: N, INOUT, count
+      integer(int_kind)   :: N, INOUT, count, do_adjust
       real(dbl_kind)      :: dist1, dist_max
       real(dbl_kind)      :: xx2, yy2, PX, PY
+      real(dbl_kind)      :: lons, lats, lond, latd, tol, zz
 
       contains
 !=======================================================================
@@ -165,6 +166,52 @@
             enddo
           enddo
           deallocate(XX, YY)
+!
+!  Compare src and dst lon points and see if points are coincident. 
+!  The test looks for less than 2.0e-7 rads =  1.1459e-05 degs =~ 1.3m
+!  If so, then offset the dst by 2.0e-7 rads
+!
+          tol=1.1459e-05
+          do_adjust=0
+          do i=1,ngrd_rm(mo)%xi_size
+            if (do_adjust.eq.1) exit
+            do j=1,ngrd_rm(mo)%eta_size
+              if (do_adjust.eq.1) exit
+              lons=ngrd_rm(mo)%lon_rho_o(i,j)
+              lats=ngrd_rm(mo)%lat_rho_o(i,j)
+              do nx=1,ngrd_sw(mw)%Numx_swan
+                if (do_adjust.eq.1) exit
+                do ny=1,ngrd_sw(mw)%Numy_swan
+                  lond=ngrd_sw(mw)%lon_rho_w(nx,ny)
+                  latd=ngrd_sw(mw)%lat_rho_w(nx,ny)
+                  zz=min(abs(lons-lond),abs(lats-latd))
+                  if (zz.le.tol) then
+                    do_adjust=1
+                    exit
+                  end if
+                enddo
+              enddo
+            enddo
+          enddo
+          if (do_adjust.eq.1) then
+            do nx=1,ngrd_sw(mw)%Numx_swan
+              do ny=1,ngrd_sw(mw)%Numy_swan
+                ngrd_sw(mw)%lon_rho_w(nx,ny)=                           &
+     &                                  ngrd_sw(mw)%lon_rho_w(nx,ny)+tol
+                ngrd_sw(mw)%lat_rho_w(nx,ny)=                           &
+     &                                  ngrd_sw(mw)%lat_rho_w(nx,ny)+tol
+              enddo
+            enddo
+            do nx=1,ngrd_sw(mw)%Numx_swan+1
+              do ny=1,ngrd_sw(mw)%Numy_swan+1
+                ngrd_sw(mw)%x_full_grid(nx,ny)=                         &
+     &                                ngrd_sw(mw)%x_full_grid(nx,ny)+tol
+                ngrd_sw(mw)%y_full_grid(nx,ny)=                         &
+     &                                ngrd_sw(mw)%y_full_grid(nx,ny)+tol
+              enddo
+            enddo
+          end if
+          do_adjust=0
 !
 !  Send the data to SCRIP routines
 !

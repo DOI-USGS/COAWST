@@ -6,7 +6,7 @@
     defined HESSIAN_SV || defined HESSIAN_SO || defined HESSIAN_FSV || \
     (defined ADJOINT   && defined TANGENT)
 !
-!svn $Id: ini_adjust.F 807 2016-07-09 02:03:55Z arango $
+!svn $Id: ini_adjust.F 820 2016-08-30 20:14:28Z arango $
 !================================================== Hernan G. Arango ===
 !  Copyright (c) 2002-2016 The ROMS/TOMS Group       Andrew M. Moore   !
 !    Licensed under a MIT/X style license                              !
@@ -953,6 +953,7 @@
 !***********************************************************************
 !
       USE mod_param
+      USE mod_ncparam
 #  if defined ADJUST_STFLUX || defined ADJUST_WSTRESS
       USE mod_scalars
 #  endif
@@ -976,34 +977,34 @@
 #   endif
 #   ifdef ADJUST_BOUNDARY
 #    ifdef SOLVE3D
-      real(r8), intent(in) :: ad_t_obc(LBij:,:,:,:,:,:)
-      real(r8), intent(in) :: ad_u_obc(LBij:,:,:,:,:)
-      real(r8), intent(in) :: ad_v_obc(LBij:,:,:,:,:)
+      real(r8), intent(inout) :: ad_t_obc(LBij:,:,:,:,:,:)
+      real(r8), intent(inout) :: ad_u_obc(LBij:,:,:,:,:)
+      real(r8), intent(inout) :: ad_v_obc(LBij:,:,:,:,:)
 #    endif
-      real(r8), intent(in) :: ad_ubar_obc(LBij:,:,:,:)
-      real(r8), intent(in) :: ad_vbar_obc(LBij:,:,:,:)
-      real(r8), intent(in) :: ad_zeta_obc(LBij:,:,:,:)
+      real(r8), intent(inout) :: ad_ubar_obc(LBij:,:,:,:)
+      real(r8), intent(inout) :: ad_vbar_obc(LBij:,:,:,:)
+      real(r8), intent(inout) :: ad_zeta_obc(LBij:,:,:,:)
 #   endif
 #   ifdef ADJUST_WSTRESS
-      real(r8), intent(in) :: ad_ustr(LBi:,LBj:,:,:)
-      real(r8), intent(in) :: ad_vstr(LBi:,LBj:,:,:)
+      real(r8), intent(inout) :: ad_ustr(LBi:,LBj:,:,:)
+      real(r8), intent(inout) :: ad_vstr(LBi:,LBj:,:,:)
 #   endif
 #   ifdef SOLVE3D
 #    ifdef ADJUST_STFLUX
-      real(r8), intent(in) :: ad_tflux(LBi:,LBj:,:,:,:)
+      real(r8), intent(inout) :: ad_tflux(LBi:,LBj:,:,:,:)
 #    endif
-      real(r8), intent(in) :: ad_t(LBi:,LBj:,:,:,:)
-      real(r8), intent(in) :: ad_u(LBi:,LBj:,:,:)
-      real(r8), intent(in) :: ad_v(LBi:,LBj:,:,:)
+      real(r8), intent(inout) :: ad_t(LBi:,LBj:,:,:,:)
+      real(r8), intent(inout) :: ad_u(LBi:,LBj:,:,:)
+      real(r8), intent(inout) :: ad_v(LBi:,LBj:,:,:)
 #    if defined WEAK_CONSTRAINT && defined TIME_CONV
-      real(r8), intent(in) :: ad_ubar(LBi:,LBj:,:)
-      real(r8), intent(in) :: ad_vbar(LBi:,LBj:,:)
+      real(r8), intent(inout) :: ad_ubar(LBi:,LBj:,:)
+      real(r8), intent(inout) :: ad_vbar(LBi:,LBj:,:)
 #    endif
 #   else
-      real(r8), intent(in) :: ad_ubar(LBi:,LBj:,:)
-      real(r8), intent(in) :: ad_vbar(LBi:,LBj:,:)
+      real(r8), intent(inout) :: ad_ubar(LBi:,LBj:,:)
+      real(r8), intent(inout) :: ad_vbar(LBi:,LBj:,:)
 #   endif
-      real(r8), intent(in) :: ad_zeta(LBi:,LBj:,:)
+      real(r8), intent(inout) :: ad_zeta(LBi:,LBj:,:)
 #   ifdef ADJUST_BOUNDARY
 #    ifdef SOLVE3D
       real(r8), intent(inout) :: tl_t_obc(LBij:,:,:,:,:,:)
@@ -1042,36 +1043,36 @@
 #   endif
 #   ifdef ADJUST_BOUNDARY
 #    ifdef SOLVE3D
-      real(r8), intent(in) :: ad_t_obc(LBij:UBij,N(ng),4,               &
-     &                                 Nbrec(ng),2,NT(ng))
-      real(r8), intent(in) :: ad_u_obc(LBij:UBij,N(ng),4,Nbrec(ng),2)
-      real(r8), intent(in) :: ad_v_obc(LBij:UBij,N(ng),4,Nbrec(ng),2)
+      real(r8), intent(inout) :: ad_t_obc(LBij:UBij,N(ng),4,            &
+     &                                    Nbrec(ng),2,NT(ng))
+      real(r8), intent(inout) :: ad_u_obc(LBij:UBij,N(ng),4,Nbrec(ng),2)
+      real(r8), intent(inout) :: ad_v_obc(LBij:UBij,N(ng),4,Nbrec(ng),2)
 #    endif
-      real(r8), intent(in) :: ad_ubar_obc(LBij:UBij,4,Nbrec(ng),2)
-      real(r8), intent(in) :: ad_vbar_obc(LBij:UBij,4,Nbrec(ng),2)
-      real(r8), intent(in) :: ad_zeta_obc(LBij:UBij,4,Nbrec(ng),2)
+      real(r8), intent(inout) :: ad_ubar_obc(LBij:UBij,4,Nbrec(ng),2)
+      real(r8), intent(inout) :: ad_vbar_obc(LBij:UBij,4,Nbrec(ng),2)
+      real(r8), intent(input) :: ad_zeta_obc(LBij:UBij,4,Nbrec(ng),2)
 #   endif
 #   ifdef ADJUST_WSTRESS
-      real(r8), intent(in) :: ad_ustr(LBi:UBi,LBj:UBj,Nfrec(ng),2)
-      real(r8), intent(in) :: ad_vstr(LBi:UBi,LBj:UBj,Nfrec(ng),2)
+      real(r8), intent(inout) :: ad_ustr(LBi:UBi,LBj:UBj,Nfrec(ng),2)
+      real(r8), intent(inout) :: ad_vstr(LBi:UBi,LBj:UBj,Nfrec(ng),2)
 #   endif
 #   ifdef SOLVE3D
 #    ifdef ADJUST_STFLUX
-      real(r8), intent(in) :: ad_tflux(LBi:UBi,LBj:UBj,                 &
-     &                                 Nfrec(ng),2,NT(ng))
+      real(r8), intent(inout) :: ad_tflux(LBi:UBi,LBj:UBj,              &
+     &                                    Nfrec(ng),2,NT(ng))
 #    endif
-      real(r8), intent(in) :: ad_t(LBi:UBi,LBj:UBj,N(ng),3,NT(ng))
-      real(r8), intent(in) :: ad_u(LBi:UBi,LBj:UBj,N(ng),2)
-      real(r8), intent(in) :: ad_v(LBi:UBi,LBj:UBj,N(ng),2)
+      real(r8), intent(inout) :: ad_t(LBi:UBi,LBj:UBj,N(ng),3,NT(ng))
+      real(r8), intent(inout) :: ad_u(LBi:UBi,LBj:UBj,N(ng),2)
+      real(r8), intent(inout) :: ad_v(LBi:UBi,LBj:UBj,N(ng),2)
 #    if defined WEAK_CONSTRAINT && defined TIME_CONV
-      real(r8), intent(in) :: ad_ubar(LBi:UBi,LBj:UBj,3)
-      real(r8), intent(in) :: ad_vbar(LBi:UBi,LBj:UBj,3)
+      real(r8), intent(inout) :: ad_ubar(LBi:UBi,LBj:UBj,3)
+      real(r8), intent(inout) :: ad_vbar(LBi:UBi,LBj:UBj,3)
 #    endif
 #   else
-      real(r8), intent(in) :: ad_ubar(LBi:UBi,LBj:UBj,3)
-      real(r8), intent(in) :: ad_vbar(LBi:UBi,LBj:UBj,3)
+      real(r8), intent(inout) :: ad_ubar(LBi:UBi,LBj:UBj,3)
+      real(r8), intent(inout) :: ad_vbar(LBi:UBi,LBj:UBj,3)
 #   endif
-      real(r8), intent(in) :: ad_zeta(LBi:UBi,LBj:UBj,3)
+      real(r8), intent(inout) :: ad_zeta(LBi:UBi,LBj:UBj,3)
 #   ifdef ADJUST_BOUNDARY
 #    ifdef SOLVE3D
       real(r8), intent(inout) :: tl_t_obc(LBij:UBij,N(ng),4,            &
@@ -1108,7 +1109,396 @@
 !
 !  Local variable declarations.
 !
+#  ifdef MASKING
+      integer :: i, j, k
+      integer :: ib, ir, it
+#  endif
       real(r8) :: fac1, fac2
+
+#  ifdef MASKING
+#   include "set_bounds.h"
+!
+!-----------------------------------------------------------------------
+!  Multiply by land-sea mask - fail safe. Notice that if add=.FALSE. the
+!  "state_addition" routine is not called and the state arrays are not
+!  masked.
+!-----------------------------------------------------------------------
+!
+!  Free-surface.
+!
+      DO j=JstrT,JendT
+        DO i=IstrT,IendT
+          ad_zeta(i,j,Linp)=ad_zeta(i,j,Linp)*rmask(i,j)
+        END DO
+      END DO
+
+#   ifdef ADJUST_BOUNDARY
+!
+!  Free-surface open boundaries.
+!
+      IF (ANY(Lobc(:,isFsur,ng))) THEN
+        DO ir=1,Nbrec(ng)
+          IF ((Lobc(iwest,isFsur,ng)).and.                              &
+     &        DOMAIN(ng)%Western_Edge(tile)) THEN
+            ib=iwest
+            DO j=Jstr,Jend
+              ad_zeta_obc(j,ib,ir,Linp)=ad_zeta_obc(j,ib,ir,Linp)*      &
+     &                                  rmask(Istr-1,j)
+            END DO
+          END IF
+          IF ((Lobc(ieast,isFsur,ng)).and.                              &
+     &        DOMAIN(ng)%Eastern_Edge(tile)) THEN
+            ib=ieast
+            DO j=Jstr,Jend
+              ad_zeta_obc(j,ib,ir,Linp)=ad_zeta_obc(j,ib,ir,Linp)*      &
+     &                                  rmask(Iend+1,j)
+            END DO
+          END IF
+          IF ((Lobc(isouth,isFsur,ng)).and.                             &
+     &        DOMAIN(ng)%Southern_Edge(tile)) THEN
+            ib=isouth
+            DO i=Istr,Iend
+              ad_zeta_obc(i,ib,ir,Linp)=ad_zeta_obc(i,ib,ir,Linp)*      &
+     &                                  rmask(i,Jstr-1)
+            END DO
+          END IF
+          IF ((Lobc(inorth,isFsur,ng)).and.                             &
+     &        DOMAIN(ng)%Northern_Edge(tile)) THEN
+            ib=inorth
+            DO i=Istr,Iend
+              ad_zeta_obc(i,ib,ir,Linp)=ad_zeta_obc(i,ib,ir,Linp)*      &
+     &                                  rmask(i,Jend+1)
+            END DO
+          END IF
+        END DO
+      END IF
+#   endif
+
+#   if !defined SOLVE3D || \
+       (defined WEAK_CONSTRAINT && defined TIME_CONV)
+!
+!  2D U-momentum component.
+!
+      DO j=JstrT,JendT
+        DO i=IstrP,IendT
+          ad_ubar(i,j,Linp)=ad_ubar(i,j,Linp)*umask(i,j)
+        END DO
+      END DO
+!
+!  2D V-momentum component.
+!
+      DO j=JstrP,JendT
+        DO i=IstrT,IendT
+          ad_vbar(i,j,Linp)=ad_vbar(i,j,Linp)*vmask(i,j)
+        END DO
+      END DO
+#   endif
+
+#   ifdef ADJUST_BOUNDARY
+!
+!  2D U-momentum open boundaries.
+!
+      IF (ANY(Lobc(:,isUbar,ng))) THEN
+        DO ir=1,Nbrec(ng)
+          IF ((Lobc(iwest,isUbar,ng)).and.                              &
+     &        DOMAIN(ng)%Western_Edge(tile)) THEN
+            ib=iwest
+            DO j=Jstr,Jend
+              ad_ubar_obc(j,ib,ir,Linp)=ad_ubar_obc(j,ib,ir,Linp)*      &
+     &                                  umask(Istr,j)
+            END DO
+          END IF
+          IF ((Lobc(ieast,isUbar,ng)).and.                              &
+     &        DOMAIN(ng)%Eastern_Edge(tile)) THEN
+            ib=ieast
+            DO j=Jstr,Jend
+              ad_ubar_obc(j,ib,ir,Linp)=ad_ubar_obc(j,ib,ir,Linp)*      &
+     &                                  umask(Iend+1,j)
+            END DO
+          END IF
+          IF ((Lobc(isouth,isUbar,ng)).and.                             &
+     &        DOMAIN(ng)%Southern_Edge(tile)) THEN
+            ib=isouth
+            DO i=IstrU,Iend
+              ad_ubar_obc(i,ib,ir,Linp)=ad_ubar_obc(i,ib,ir,Linp)*      &
+     &                                  umask(i,Jstr-1)
+            END DO
+          END IF
+          IF ((Lobc(inorth,isUbar,ng)).and.                             &
+     &        DOMAIN(ng)%Northern_Edge(tile)) THEN
+            ib=inorth
+            DO i=IstrU,Iend
+              ad_ubar_obc(i,ib,ir,Linp)=ad_ubar_obc(i,ib,ir,Linp)*      &
+     &                                  umask(i,Jend+1)
+            END DO
+          END IF
+        END DO
+      END IF
+!
+!  2D V-momentum open boundaries.
+!
+      IF (ANY(Lobc(:,isVbar,ng))) THEN
+        DO ir=1,Nbrec(ng)
+          IF ((Lobc(iwest,isVbar,ng)).and.                              &
+     &        DOMAIN(ng)%Western_Edge(tile)) THEN
+            ib=iwest
+            DO j=JstrV,Jend
+              ad_vbar_obc(j,ib,ir,Linp)=ad_vbar_obc(j,ib,ir,Linp)*      &
+     &                                  vmask(Istr-1,j)
+            END DO
+          END IF
+          IF ((Lobc(ieast,isVbar,ng)).and.                              &
+     &        DOMAIN(ng)%Eastern_Edge(tile)) THEN
+            ib=ieast
+            DO j=JstrV,Jend
+              ad_vbar_obc(j,ib,ir,Linp)=ad_vbar_obc(j,ib,ir,Linp)*      &
+     &                                  vmask(Iend+1,j)
+            END DO
+          END IF
+          IF ((Lobc(isouth,isVbar,ng)).and.                             &
+     &        DOMAIN(ng)%Southern_Edge(tile)) THEN
+            ib=isouth
+            DO i=Istr,Iend
+              ad_vbar_obc(i,ib,ir,Linp)=ad_vbar_obc(i,ib,ir,Linp)*      &
+     &                                  vmask(i,Jstr)
+            END DO
+          END IF
+          IF ((Lobc(inorth,isVbar,ng)).and.                             &
+     &        DOMAIN(ng)%Northern_Edge(tile)) THEN
+            ib=inorth
+            DO i=Istr,Iend
+              ad_vbar_obc(i,ib,ir,Linp)=ad_vbar_obc(i,ib,ir,Linp)*      &
+     &                                  vmask(i,Jend+1)
+            END DO
+          END IF
+        END DO
+      END IF
+#   endif
+
+#   ifdef ADJUST_WSTRESS
+!
+!  Surface momentum stress.
+!
+      DO ir=1,Nfrec(ng)
+        DO j=JstrT,JendT
+          DO i=IstrP,IendT
+            ad_ustr(i,j,ir,Linp)=ad_ustr(i,j,ir,Linp)*umask(i,j)
+          END DO
+        END DO
+        DO j=JstrP,JendT
+          DO i=IstrT,IendT
+            ad_vstr(i,j,ir,Linp)=ad_vstr(i,j,ir,Linp)*vmask(i,j)
+          END DO
+        END DO
+      END DO
+#   endif
+
+#   ifdef SOLVE3D
+!
+!  3D U-momentum component.
+!
+      DO k=1,N(ng)
+        DO j=JstrT,JendT
+          DO i=IstrP,IendT
+            ad_u(i,j,k,Linp)=ad_u(i,j,k,Linp)*umask(i,j)
+          END DO
+        END DO
+      END DO
+
+#    ifdef ADJUST_BOUNDARY
+!
+!  3D U-momentum open boundaries.
+!
+      IF (ANY(Lobc(:,isUvel,ng))) THEN
+        DO ir=1,Nbrec(ng)
+          IF ((Lobc(iwest,isUvel,ng)).and.                              &
+     &        DOMAIN(ng)%Western_Edge(tile)) THEN
+            ib=iwest
+            DO k=1,N(ng)
+              DO j=Jstr,Jend
+                ad_u_obc(j,k,ib,ir,Linp)=ad_u_obc(j,k,ib,ir,Linp)*      &
+     &                                   umask(Istr,j)
+              END DO
+            END DO
+          END IF
+          IF ((Lobc(ieast,isUvel,ng)).and.                              &
+     &        DOMAIN(ng)%Eastern_Edge(tile)) THEN
+            ib=ieast
+            DO k=1,N(ng)
+              DO j=Jstr,Jend
+                ad_u_obc(j,k,ib,ir,Linp)=ad_u_obc(j,k,ib,ir,Linp)*      &
+     &                                   umask(Iend+1,j)
+              END DO
+            END DO
+          END IF
+          IF ((Lobc(isouth,isUvel,ng)).and.                             &
+     &        DOMAIN(ng)%Southern_Edge(tile)) THEN
+            ib=isouth
+            DO k=1,N(ng)
+              DO i=IstrU,Iend
+                ad_u_obc(i,k,ib,ir,Linp)=ad_u_obc(i,k,ib,ir,Linp)*      &
+     &                                   umask(i,Jstr-1)
+              END DO
+            END DO
+          END IF
+          IF ((Lobc(inorth,isUvel,ng)).and.                             &
+     &        DOMAIN(ng)%Northern_Edge(tile)) THEN
+            ib=inorth
+            DO k=1,N(ng)
+              DO i=IstrU,Iend
+                ad_u_obc(i,k,ib,ir,Linp)=ad_u_obc(i,k,ib,ir,Linp)*      &
+     &                                   umask(i,Jend+1)
+              END DO
+            END DO
+          END IF
+        END DO
+      END IF
+#    endif
+!
+!  3D V-momentum component.
+!
+      DO k=1,N(ng)
+        DO j=JstrP,JendT
+          DO i=IstrT,IendT
+            ad_v(i,j,k,Linp)=ad_v(i,j,k,Linp)*vmask(i,j)
+          END DO
+        END DO
+      END DO
+
+#    ifdef ADJUST_BOUNDARY
+!
+!  3D V-momentum open boundaries.
+!
+      IF (ANY(Lobc(:,isVvel,ng))) THEN
+        DO ir=1,Nbrec(ng)
+          IF ((Lobc(iwest,isVvel,ng)).and.                              &
+     &        DOMAIN(ng)%Western_Edge(tile)) THEN
+            ib=iwest
+            DO k=1,N(ng)
+              DO j=JstrV,Jend
+                ad_v_obc(j,k,ib,ir,Linp)=ad_v_obc(j,k,ib,ir,Linp)*      &
+     &                                   vmask(Istr-1,j)
+              END DO
+            END DO
+          END IF
+          IF ((Lobc(ieast,isVvel,ng)).and.                              &
+     &        DOMAIN(ng)%Eastern_Edge(tile)) THEN
+            ib=ieast
+            DO k=1,N(ng)
+              DO j=JstrV,Jend
+                ad_v_obc(j,k,ib,ir,Linp)=ad_v_obc(j,k,ib,ir,Linp)*      &
+     &                                   vmask(Iend+1,j)
+              END DO
+            END DO
+          END IF
+          IF ((Lobc(isouth,isVvel,ng)).and.                             &
+     &        DOMAIN(ng)%Southern_Edge(tile)) THEN
+            ib=isouth
+            DO k=1,N(ng)
+              DO i=Istr,Iend
+                ad_v_obc(i,k,ib,ir,Linp)=ad_v_obc(i,k,ib,ir,Linp)*      &
+     &                                   vmask(i,Jstr)
+              END DO
+            END DO
+          END IF
+          IF ((Lobc(inorth,isVvel,ng)).and.                             &
+     &        DOMAIN(ng)%Northern_Edge(tile)) THEN
+            ib=inorth
+            DO k=1,N(ng)
+              DO i=Istr,Iend
+                ad_v_obc(i,k,ib,ir,Linp)=ad_v_obc(i,k,ib,ir,Linp)*      &
+     &                                   vmask(i,Jend+1)
+              END DO
+            END DO
+          END IF
+        END DO
+      END IF
+#    endif
+!
+!  Tracers.
+!
+      DO it=1,NT(ng)
+        DO k=1,N(ng)
+          DO j=JstrT,JendT
+            DO i=IstrT,IendT
+              ad_t(i,j,k,Linp,it)=ad_t(i,j,k,Linp,it)*rmask(i,j)
+            END DO
+          END DO
+        END DO
+      END DO
+
+#    ifdef ADJUST_BOUNDARY
+!
+!  Tracers open boundaries.
+!
+      DO it=1,NT(ng)
+        IF (ANY(Lobc(:,isTvar(it),ng))) THEN
+          DO ir=1,Nbrec(ng)
+            IF ((Lobc(iwest,isTvar(it),ng)).and.                        &
+     &          DOMAIN(ng)%Western_Edge(tile)) THEN
+              ib=iwest
+              DO k=1,N(ng)
+                DO j=Jstr,Jend
+                  ad_t_obc(j,k,ib,ir,Linp,it)=                          &
+     &                    ad_t_obc(j,k,ib,ir,Linp,it)*rmask(Istr-1,j)
+                END DO
+              END DO
+            END IF
+            IF ((Lobc(ieast,isTvar(it),ng)).and.                        &
+     &          DOMAIN(ng)%Eastern_Edge(tile)) THEN
+              ib=ieast
+              DO k=1,N(ng)
+                DO j=Jstr,Jend
+                  ad_t_obc(j,k,ib,ir,Linp,it)=                          &
+     &                    ad_t_obc(j,k,ib,ir,Linp,it)*rmask(Iend+1,j)
+                END DO
+              END DO
+            END IF
+            IF ((Lobc(isouth,isTvar(it),ng)).and.                       &
+     &          DOMAIN(ng)%Southern_Edge(tile)) THEN
+              ib=isouth
+              DO k=1,N(ng)
+                DO i=Istr,Iend
+                  ad_t_obc(i,k,ib,ir,Linp,it)=                          &
+     &                    ad_t_obc(i,k,ib,ir,Linp,it)*rmask(i,Jstr-1)
+                END DO
+              END DO
+            END IF
+            IF ((Lobc(inorth,isTvar(it),ng)).and.                       &
+     &          DOMAIN(ng)%Northern_Edge(tile)) THEN
+              ib=inorth
+              DO k=1,N(ng)
+                DO i=Istr,Iend
+                  ad_t_obc(i,k,ib,ir,Linp,it)=                          &
+     &                    ad_t_obc(i,k,ib,ir,Linp,it)*rmask(i,Jend+1)
+                END DO
+              END DO
+            END IF
+          END DO
+        END IF
+      END DO
+#    endif
+
+#    ifdef ADJUST_STFLUX
+!
+!  Surface tracers flux.
+!
+      DO it=1,NT(ng)
+        IF (Lstflux(it,ng)) THEN
+          DO ir=1,Nfrec(ng)
+            DO j=JstrT,JendT
+              DO i=IstrT,IendT
+                ad_tflux(i,j,ir,Linp,it)=ad_tflux(i,j,ir,Linp,it)*      &
+     &                                   rmask(i,j)
+              END DO
+            END DO
+          END DO
+        END IF
+      END DO
+#    endif
+#   endif
+
+#  endif
 !
 !-----------------------------------------------------------------------
 !  Load or add adjoint state variables into tangent linear state
@@ -1375,6 +1765,7 @@
 !***********************************************************************
 !
       USE mod_param
+      USE mod_ncparam
 #  if defined ADJUST_STFLUX || defined ADJUST_WSTRESS
       USE mod_scalars
 #  endif
@@ -1398,34 +1789,34 @@
 #   endif
 #   ifdef ADJUST_BOUNDARY
 #    ifdef SOLVE3D
-      real(r8), intent(in) :: tl_t_obc(LBij:,:,:,:,:,:)
-      real(r8), intent(in) :: tl_u_obc(LBij:,:,:,:,:)
-      real(r8), intent(in) :: tl_v_obc(LBij:,:,:,:,:)
+      real(r8), intent(inout) :: tl_t_obc(LBij:,:,:,:,:,:)
+      real(r8), intent(inout) :: tl_u_obc(LBij:,:,:,:,:)
+      real(r8), intent(inout) :: tl_v_obc(LBij:,:,:,:,:)
 #    endif
-      real(r8), intent(in) :: tl_ubar_obc(LBij:,:,:,:)
-      real(r8), intent(in) :: tl_vbar_obc(LBij:,:,:,:)
-      real(r8), intent(in) :: tl_zeta_obc(LBij:,:,:,:)
+      real(r8), intent(inout) :: tl_ubar_obc(LBij:,:,:,:)
+      real(r8), intent(inout) :: tl_vbar_obc(LBij:,:,:,:)
+      real(r8), intent(inout) :: tl_zeta_obc(LBij:,:,:,:)
 #   endif
 #   ifdef ADJUST_WSTRESS
-      real(r8), intent(in) :: tl_ustr(LBi:,LBj:,:,:)
-      real(r8), intent(in) :: tl_vstr(LBi:,LBj:,:,:)
+      real(r8), intent(inout) :: tl_ustr(LBi:,LBj:,:,:)
+      real(r8), intent(inout) :: tl_vstr(LBi:,LBj:,:,:)
 #   endif
 #   ifdef SOLVE3D
 #    ifdef ADJUST_STFLUX
       real(r8), intent(inout) :: tl_tflux(LBi:,LBj:,:,:,:)
 #    endif
-      real(r8), intent(in) :: tl_t(LBi:,LBj:,:,:,:)
-      real(r8), intent(in) :: tl_u(LBi:,LBj:,:,:)
-      real(r8), intent(in) :: tl_v(LBi:,LBj:,:,:)
+      real(r8), intent(inout) :: tl_t(LBi:,LBj:,:,:,:)
+      real(r8), intent(inout) :: tl_u(LBi:,LBj:,:,:)
+      real(r8), intent(inout) :: tl_v(LBi:,LBj:,:,:)
 #    if defined WEAK_CONSTRAINT && defined TIME_CONV
-      real(r8), intent(in) :: tl_ubar(LBi:,LBj:,:)
-      real(r8), intent(in) :: tl_vbar(LBi:,LBj:,:)
+      real(r8), intent(inout) :: tl_ubar(LBi:,LBj:,:)
+      real(r8), intent(inout) :: tl_vbar(LBi:,LBj:,:)
 #    endif
 #   else
-      real(r8), intent(in) :: tl_ubar(LBi:,LBj:,:)
-      real(r8), intent(in) :: tl_vbar(LBi:,LBj:,:)
+      real(r8), intent(inout) :: tl_ubar(LBi:,LBj:,:)
+      real(r8), intent(inout) :: tl_vbar(LBi:,LBj:,:)
 #   endif
-      real(r8), intent(in) :: tl_zeta(LBi:,LBj:,:)
+      real(r8), intent(inout) :: tl_zeta(LBi:,LBj:,:)
 #   ifdef ADJUST_BOUNDARY
 #    ifdef SOLVE3D
       real(r8), intent(inout) :: ad_t_obc(LBij:,:,:,:,:,:)
@@ -1464,36 +1855,36 @@
 #   endif
 #   ifdef ADJUST_BOUNDARY
 #    ifdef SOLVE3D
-      real(r8), intent(in) :: tl_t_obc(LBij:UBij,N(ng),4,               &
-     &                                 Nbrec(ng),2,NT(ng))
-      real(r8), intent(in) :: tl_u_obc(LBij:UBij,N(ng),4,Nbrec(ng),2)
-      real(r8), intent(in) :: tl_v_obc(LBij:UBij,N(ng),4,Nbrec(ng),2)
+      real(r8), intent(inout) :: tl_t_obc(LBij:UBij,N(ng),4,            &
+     &                                    Nbrec(ng),2,NT(ng))
+      real(r8), intent(inout) :: tl_u_obc(LBij:UBij,N(ng),4,Nbrec(ng),2)
+      real(r8), intent(inout) :: tl_v_obc(LBij:UBij,N(ng),4,Nbrec(ng),2)
 #    endif
-      real(r8), intent(in) :: tl_ubar_obc(LBij:UBij,4,Nbrec(ng),2)
-      real(r8), intent(in) :: tl_vbar_obc(LBij:UBij,4,Nbrec(ng),2)
-      real(r8), intent(in) :: tl_zeta_obc(LBij:UBij,4,Nbrec(ng),2)
+      real(r8), intent(inout) :: tl_ubar_obc(LBij:UBij,4,Nbrec(ng),2)
+      real(r8), intent(inout) :: tl_vbar_obc(LBij:UBij,4,Nbrec(ng),2)
+      real(r8), intent(inout) :: tl_zeta_obc(LBij:UBij,4,Nbrec(ng),2)
 #   endif
 #   ifdef ADJUST_WSTRESS
-      real(r8), intent(in) :: tl_ustr(LBi:UBi,LBj:UBj,Nfrec(ng),2)
-      real(r8), intent(in) :: tl_vstr(LBi:UBi,LBj:UBj,Nfrec(ng),2)
+      real(r8), intent(inout) :: tl_ustr(LBi:UBi,LBj:UBj,Nfrec(ng),2)
+      real(r8), intent(inout) :: tl_vstr(LBi:UBi,LBj:UBj,Nfrec(ng),2)
 #   endif
 #   ifdef SOLVE3D
 #    ifdef ADJUST_STFLUX
-      real(r8), intent(in) :: tl_tflux(LBi:UBi,LBj:UBj,                 &
-     &                                 Nfrec(ng),2,NT(ng))
+      real(r8), intent(inout) :: tl_tflux(LBi:UBi,LBj:UBj,              &
+     &                                    Nfrec(ng),2,NT(ng))
 #    endif
-      real(r8), intent(in) :: tl_t(LBi:UBi,LBj:UBj,N(ng),3,NT(ng))
-      real(r8), intent(in) :: tl_u(LBi:UBi,LBj:UBj,N(ng),2)
-      real(r8), intent(in) :: tl_v(LBi:UBi,LBj:UBj,N(ng),2)
+      real(r8), intent(inout) :: tl_t(LBi:UBi,LBj:UBj,N(ng),3,NT(ng))
+      real(r8), intent(inout) :: tl_u(LBi:UBi,LBj:UBj,N(ng),2)
+      real(r8), intent(inout) :: tl_v(LBi:UBi,LBj:UBj,N(ng),2)
 #    if defined WEAK_CONSTRAINT && defined TIME_CONV
-      real(r8), intent(in) :: tl_ubar(LBi:UBi,LBj:UBj,3)
-      real(r8), intent(in) :: tl_vbar(LBi:UBi,LBj:UBj,3)
+      real(r8), intent(inout) :: tl_ubar(LBi:UBi,LBj:UBj,3)
+      real(r8), intent(inout) :: tl_vbar(LBi:UBi,LBj:UBj,3)
 #    endif
 #   else
-      real(r8), intent(in) :: tl_ubar(LBi:UBi,LBj:UBj,3)
-      real(r8), intent(in) :: tl_vbar(LBi:UBi,LBj:UBj,3)
+      real(r8), intent(inout) :: tl_ubar(LBi:UBi,LBj:UBj,3)
+      real(r8), intent(inout) :: tl_vbar(LBi:UBi,LBj:UBj,3)
 #   endif
-      real(r8), intent(in) :: tl_zeta(LBi:UBi,LBj:UBj,3)
+      real(r8), intent(inout) :: tl_zeta(LBi:UBi,LBj:UBj,3)
 #   ifdef ADJUST_BOUNDARY
 #    ifdef SOLVE3D
       real(r8), intent(inout) :: ad_t_obc(LBij:UBij,N(ng),4,            &
@@ -1530,7 +1921,398 @@
 !
 !  Local variable declarations.
 !
+#  ifdef MASKING
+      integer :: i, j, k
+      integer :: ib, ir, it
+#  endif
       real(r8) :: fac1, fac2
+#  ifdef MASKING
+#   include "set_bounds.h"
+#  endif
+
+#  ifdef MASKING
+!
+!-----------------------------------------------------------------------
+!  Multiply by land-sea mask - fail safe. Notice that if add=.FALSE. the
+!  "state_addition" routine is not called and the state arrays are not
+!  masked.
+!-----------------------------------------------------------------------
+!
+!  Free-surface.
+!
+      DO j=JstrT,JendT
+        DO i=IstrT,IendT
+          tl_zeta(i,j,Linp)=tl_zeta(i,j,Linp)*rmask(i,j)
+        END DO
+      END DO
+
+#   ifdef ADJUST_BOUNDARY
+!
+!  Free-surface open boundaries.
+!
+      IF (ANY(Lobc(:,isFsur,ng))) THEN
+        DO ir=1,Nbrec(ng)
+          IF ((Lobc(iwest,isFsur,ng)).and.                              &
+     &        DOMAIN(ng)%Western_Edge(tile)) THEN
+            ib=iwest
+            DO j=Jstr,Jend
+              tl_zeta_obc(j,ib,ir,Linp)=tl_zeta_obc(j,ib,ir,Linp)*      &
+     &                                  rmask(Istr-1,j)
+            END DO
+          END IF
+          IF ((Lobc(ieast,isFsur,ng)).and.                              &
+     &        DOMAIN(ng)%Eastern_Edge(tile)) THEN
+            ib=ieast
+            DO j=Jstr,Jend
+              tl_zeta_obc(j,ib,ir,Linp)=tl_zeta_obc(j,ib,ir,Linp)*      &
+     &                                  rmask(Iend+1,j)
+            END DO
+          END IF
+          IF ((Lobc(isouth,isFsur,ng)).and.                             &
+     &        DOMAIN(ng)%Southern_Edge(tile)) THEN
+            ib=isouth
+            DO i=Istr,Iend
+              tl_zeta_obc(i,ib,ir,Linp)=tl_zeta_obc(i,ib,ir,Linp)*      &
+     &                                  rmask(i,Jstr-1)
+            END DO
+          END IF
+          IF ((Lobc(inorth,isFsur,ng)).and.                             &
+     &        DOMAIN(ng)%Northern_Edge(tile)) THEN
+            ib=inorth
+            DO i=Istr,Iend
+              tl_zeta_obc(i,ib,ir,Linp)=tl_zeta_obc(i,ib,ir,Linp)*      &
+     &                                  rmask(i,Jend+1)
+            END DO
+          END IF
+        END DO
+      END IF
+#   endif
+
+#   if !defined SOLVE3D || \
+       (defined WEAK_CONSTRAINT && defined TIME_CONV)
+!
+!  2D U-momentum component.
+!
+      DO j=JstrT,JendT
+        DO i=IstrP,IendT
+          tl_ubar(i,j,Linp)=tl_ubar(i,j,Linp)*umask(i,j)
+        END DO
+      END DO
+!
+!  2D V-momentum component.
+!
+      DO j=JstrP,JendT
+        DO i=IstrT,IendT
+          tl_vbar(i,j,Linp)=tl_vbar(i,j,Linp)*vmask(i,j)
+        END DO
+      END DO
+#   endif
+
+#   ifdef ADJUST_BOUNDARY
+!
+!  2D U-momentum open boundaries.
+!
+      IF (ANY(Lobc(:,isUbar,ng))) THEN
+        DO ir=1,Nbrec(ng)
+          IF ((Lobc(iwest,isUbar,ng)).and.                              &
+     &        DOMAIN(ng)%Western_Edge(tile)) THEN
+            ib=iwest
+            DO j=Jstr,Jend
+              tl_ubar_obc(j,ib,ir,Linp)=tl_ubar_obc(j,ib,ir,Linp)*      &
+     &                                  umask(Istr,j)
+            END DO
+          END IF
+          IF ((Lobc(ieast,isUbar,ng)).and.                              &
+     &        DOMAIN(ng)%Eastern_Edge(tile)) THEN
+            ib=ieast
+            DO j=Jstr,Jend
+              tl_ubar_obc(j,ib,ir,Linp)=tl_ubar_obc(j,ib,ir,Linp)*      &
+     &                                  umask(Iend+1,j)
+            END DO
+          END IF
+          IF ((Lobc(isouth,isUbar,ng)).and.                             &
+     &        DOMAIN(ng)%Southern_Edge(tile)) THEN
+            ib=isouth
+            DO i=IstrU,Iend
+              tl_ubar_obc(i,ib,ir,Linp)=tl_ubar_obc(i,ib,ir,Linp)*      &
+     &                                  umask(i,Jstr-1)
+            END DO
+          END IF
+          IF ((Lobc(inorth,isUbar,ng)).and.                             &
+     &        DOMAIN(ng)%Northern_Edge(tile)) THEN
+            ib=inorth
+            DO i=IstrU,Iend
+              tl_ubar_obc(i,ib,ir,Linp)=tl_ubar_obc(i,ib,ir,Linp)*      &
+     &                                  umask(i,Jend+1)
+            END DO
+          END IF
+        END DO
+      END IF
+!
+!  2D V-momentum open boundaries.
+!
+      IF (ANY(Lobc(:,isVbar,ng))) THEN
+        DO ir=1,Nbrec(ng)
+          IF ((Lobc(iwest,isVbar,ng)).and.                              &
+     &        DOMAIN(ng)%Western_Edge(tile)) THEN
+            ib=iwest
+            DO j=JstrV,Jend
+              tl_vbar_obc(j,ib,ir,Linp)=tl_vbar_obc(j,ib,ir,Linp)*      &
+     &                                  vmask(Istr-1,j)
+            END DO
+          END IF
+          IF ((Lobc(ieast,isVbar,ng)).and.                              &
+     &        DOMAIN(ng)%Eastern_Edge(tile)) THEN
+            ib=ieast
+            DO j=JstrV,Jend
+              tl_vbar_obc(j,ib,ir,Linp)=tl_vbar_obc(j,ib,ir,Linp)*      &
+     &                                  vmask(Iend+1,j)
+            END DO
+          END IF
+          IF ((Lobc(isouth,isVbar,ng)).and.                             &
+     &        DOMAIN(ng)%Southern_Edge(tile)) THEN
+            ib=isouth
+            DO i=Istr,Iend
+              tl_vbar_obc(i,ib,ir,Linp)=tl_vbar_obc(i,ib,ir,Linp)*      &
+     &                                  vmask(i,Jstr)
+            END DO
+          END IF
+          IF ((Lobc(inorth,isVbar,ng)).and.                             &
+     &        DOMAIN(ng)%Northern_Edge(tile)) THEN
+            ib=inorth
+            DO i=Istr,Iend
+              tl_vbar_obc(i,ib,ir,Linp)=tl_vbar_obc(i,ib,ir,Linp)*      &
+     &                                  vmask(i,Jend+1)
+            END DO
+          END IF
+        END DO
+      END IF
+#   endif
+
+#   ifdef ADJUST_WSTRESS
+!
+!  Surface momentum stress.
+!
+      DO ir=1,Nfrec(ng)
+        DO j=JstrT,JendT
+          DO i=IstrP,IendT
+            tl_ustr(i,j,ir,Linp)=tl_ustr(i,j,ir,Linp)*umask(i,j)
+          END DO
+        END DO
+        DO j=JstrP,JendT
+          DO i=IstrT,IendT
+            tl_vstr(i,j,ir,Linp)=tl_vstr(i,j,ir,Linp)*vmask(i,j)
+          END DO
+        END DO
+      END DO
+#   endif
+
+#   ifdef SOLVE3D
+!
+!  3D U-momentum component.
+!
+      DO k=1,N(ng)
+        DO j=JstrT,JendT
+          DO i=IstrP,IendT
+            tl_u(i,j,k,Linp)=tl_u(i,j,k,Linp)*umask(i,j)
+          END DO
+        END DO
+      END DO
+
+#    ifdef ADJUST_BOUNDARY
+!
+!  3D U-momentum open boundaries.
+!
+      IF (ANY(Lobc(:,isUvel,ng))) THEN
+        DO ir=1,Nbrec(ng)
+          IF ((Lobc(iwest,isUvel,ng)).and.                              &
+     &        DOMAIN(ng)%Western_Edge(tile)) THEN
+            ib=iwest
+            DO k=1,N(ng)
+              DO j=Jstr,Jend
+                tl_u_obc(j,k,ib,ir,Linp)=tl_u_obc(j,k,ib,ir,Linp)*      &
+     &                                   umask(Istr,j)
+              END DO
+            END DO
+          END IF
+          IF ((Lobc(ieast,isUvel,ng)).and.                              &
+     &        DOMAIN(ng)%Eastern_Edge(tile)) THEN
+            ib=ieast
+            DO k=1,N(ng)
+              DO j=Jstr,Jend
+                tl_u_obc(j,k,ib,ir,Linp)=tl_u_obc(j,k,ib,ir,Linp)*      &
+     &                                   umask(Iend+1,j)
+              END DO
+            END DO
+          END IF
+          IF ((Lobc(isouth,isUvel,ng)).and.                             &
+     &        DOMAIN(ng)%Southern_Edge(tile)) THEN
+            ib=isouth
+            DO k=1,N(ng)
+              DO i=IstrU,Iend
+                tl_u_obc(i,k,ib,ir,Linp)=tl_u_obc(i,k,ib,ir,Linp)*      &
+     &                                   umask(i,Jstr-1)
+              END DO
+            END DO
+          END IF
+          IF ((Lobc(inorth,isUvel,ng)).and.                             &
+     &        DOMAIN(ng)%Northern_Edge(tile)) THEN
+            ib=inorth
+            DO k=1,N(ng)
+              DO i=IstrU,Iend
+                tl_u_obc(i,k,ib,ir,Linp)=tl_u_obc(i,k,ib,ir,Linp)*      &
+     &                                   umask(i,Jend+1)
+              END DO
+            END DO
+          END IF
+        END DO
+      END IF
+#    endif
+!
+!  3D V-momentum component.
+!
+      DO k=1,N(ng)
+        DO j=JstrP,JendT
+          DO i=IstrT,IendT
+            tl_v(i,j,k,Linp)=tl_v(i,j,k,Linp)*vmask(i,j)
+          END DO
+        END DO
+      END DO
+
+#    ifdef ADJUST_BOUNDARY
+!
+!  3D V-momentum open boundaries.
+!
+      IF (ANY(Lobc(:,isVvel,ng))) THEN
+        DO ir=1,Nbrec(ng)
+          IF ((Lobc(iwest,isVvel,ng)).and.                              &
+     &        DOMAIN(ng)%Western_Edge(tile)) THEN
+            ib=iwest
+            DO k=1,N(ng)
+              DO j=JstrV,Jend
+                tl_v_obc(j,k,ib,ir,Linp)=tl_v_obc(j,k,ib,ir,Linp)*      &
+     &                                   vmask(Istr-1,j)
+              END DO
+            END DO
+          END IF
+          IF ((Lobc(ieast,isVvel,ng)).and.                              &
+     &        DOMAIN(ng)%Eastern_Edge(tile)) THEN
+            ib=ieast
+            DO k=1,N(ng)
+              DO j=JstrV,Jend
+                tl_v_obc(j,k,ib,ir,Linp)=tl_v_obc(j,k,ib,ir,Linp)*      &
+     &                                   vmask(Iend+1,j)
+              END DO
+            END DO
+          END IF
+          IF ((Lobc(isouth,isVvel,ng)).and.                             &
+     &        DOMAIN(ng)%Southern_Edge(tile)) THEN
+            ib=isouth
+            DO k=1,N(ng)
+              DO i=Istr,Iend
+                tl_v_obc(i,k,ib,ir,Linp)=tl_v_obc(i,k,ib,ir,Linp)*      &
+     &                                   vmask(i,Jstr)
+              END DO
+            END DO
+          END IF
+          IF ((Lobc(inorth,isVvel,ng)).and.                             &
+     &        DOMAIN(ng)%Northern_Edge(tile)) THEN
+            ib=inorth
+            DO k=1,N(ng)
+              DO i=Istr,Iend
+                tl_v_obc(i,k,ib,ir,Linp)=tl_v_obc(i,k,ib,ir,Linp)*      &
+     &                                   vmask(i,Jend+1)
+              END DO
+            END DO
+          END IF
+        END DO
+      END IF
+#    endif
+!
+!  Tracers.
+!
+      DO it=1,NT(ng)
+        DO k=1,N(ng)
+          DO j=JstrT,JendT
+            DO i=IstrT,IendT
+              tl_t(i,j,k,Linp,it)=tl_t(i,j,k,Linp,it)*rmask(i,j)
+            END DO
+          END DO
+        END DO
+      END DO
+
+#    ifdef ADJUST_BOUNDARY
+!
+!  Tracers open boundaries.
+!
+      DO it=1,NT(ng)
+        IF (ANY(Lobc(:,isTvar(it),ng))) THEN
+          DO ir=1,Nbrec(ng)
+            IF ((Lobc(iwest,isTvar(it),ng)).and.                        &
+     &          DOMAIN(ng)%Western_Edge(tile)) THEN
+              ib=iwest
+              DO k=1,N(ng)
+                DO j=Jstr,Jend
+                  tl_t_obc(j,k,ib,ir,Linp,it)=                          &
+     &                    tl_t_obc(j,k,ib,ir,Linp,it)*rmask(Istr-1,j)
+                END DO
+              END DO
+            END IF
+            IF ((Lobc(ieast,isTvar(it),ng)).and.                        &
+     &          DOMAIN(ng)%Eastern_Edge(tile)) THEN
+              ib=ieast
+              DO k=1,N(ng)
+                DO j=Jstr,Jend
+                  tl_t_obc(j,k,ib,ir,Linp,it)=                          &
+     &                    tl_t_obc(j,k,ib,ir,Linp,it)*rmask(Iend+1,j)
+                END DO
+              END DO
+            END IF
+            IF ((Lobc(isouth,isTvar(it),ng)).and.                       &
+     &          DOMAIN(ng)%Southern_Edge(tile)) THEN
+              ib=isouth
+              DO k=1,N(ng)
+                DO i=Istr,Iend
+                  tl_t_obc(i,k,ib,ir,Linp,it)=                          &
+     &                    tl_t_obc(i,k,ib,ir,Linp,it)*rmask(i,Jstr-1)
+                END DO
+              END DO
+            END IF
+            IF ((Lobc(inorth,isTvar(it),ng)).and.                       &
+     &          DOMAIN(ng)%Northern_Edge(tile)) THEN
+              ib=inorth
+              DO k=1,N(ng)
+                DO i=Istr,Iend
+                  tl_t_obc(i,k,ib,ir,Linp,it)=                          &
+     &                    tl_t_obc(i,k,ib,ir,Linp,it)*rmask(i,Jend+1)
+                END DO
+              END DO
+            END IF
+          END DO
+        END IF
+      END DO
+#    endif
+
+#    ifdef ADJUST_STFLUX
+!
+!  Surface tracers flux.
+!
+      DO it=1,NT(ng)
+        IF (Lstflux(it,ng)) THEN
+          DO ir=1,Nfrec(ng)
+            DO j=JstrT,JendT
+              DO i=IstrT,IendT
+                tl_tflux(i,j,ir,Linp,it)=tl_tflux(i,j,ir,Linp,it)*      &
+     &                                   rmask(i,j)
+              END DO
+            END DO
+          END DO
+        END IF
+      END DO
+#    endif
+#   endif
+
+#  endif
 !
 !-----------------------------------------------------------------------
 !  Load or add tangent linear state variables into adjoint state

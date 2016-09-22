@@ -27,6 +27,7 @@ EXEDIR  = .
      NETCDF_INCFILE := netcdf.inc
 #    NETCDF_MODFILE := netcdf.mod
 # TYPESIZES_MODFILE := typesizes.mod
+FLAGS = $(FFLAGS)
 
 INCLUDE =
 
