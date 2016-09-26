@@ -30,7 +30,7 @@
 #define UV_ADV
 #undef  UV_C2ADVECTION
 #define TS_MPDATA
-#define TS_U3HADVECTION
+#undef  TS_U3HADVECTION
 #define DJ_GRADPS
 #define SALINITY
 #define SPLINES_VDIFF
