@@ -17,7 +17,7 @@
 %filename=strcat('K:\ISABEL_INWAVE\OUTPUTS\run_8\point',num2str(point),'.spc2d');
 %filename='point1.spc2d';
 
-filename='Projects/Sandy_InWave/offbreach_2012103100.spc2d';
+filename='D:\Sandy_InWave\offbreach_2012103100.spc2d';
 [FA1,DIR1,S1]=read_swan(filename);
 
 

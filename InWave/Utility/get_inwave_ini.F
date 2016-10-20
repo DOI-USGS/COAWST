@@ -39,7 +39,7 @@
 !
       integer :: LBi, UBi, LBj, UBj
 
-      real(r8) :: ac_ini(LBi:UBi,LBj:UBj,ND(ng))
+      real(r8) :: ac_ini(LBi:UBi,LBj:UBj,ND)
       real(r8) :: Ta
       real(r8) :: Amin,Amax
       
@@ -127,7 +127,7 @@
 
       status= nf_fread3d (ng, iNLM, TRIM(ncname), ncIWINIid(ng),        &
      &            TRIM(Vname(1,idACen)),varid, tindex, gtype,           &
-     &            Vsize, LBi, UBi, LBj, UBj, 1, ND(ng), Ascl,           &
+     &            Vsize, LBi, UBi, LBj, UBj, 1, ND, Ascl,               &
      &            Amin, Amax,                                           &
 #ifdef MASKING
      &            GRID (ng)% rmask,                                     &

@@ -112,7 +112,7 @@
       real(r8), intent(in) :: kwc(LBi:,LBj:,:)
       real(r8), intent(in) :: h_tot(LBi:,LBj:)
 #  else
-      real(r8), intent(inout) :: AC(LBi:UBi,LBj:UBj,ND(ng),3)
+      real(r8), intent(inout) :: AC(LBi:UBi,LBj:UBj,ND,3)
 #   ifdef MASKING
       real(r8), intent(in) :: rmask(LBi:UBi,LBj:UBj)
 #   endif
@@ -120,8 +120,8 @@
       real(r8), intent(inout) :: Dissip_break(LBi:UBi,LBj:UBj)
       real(r8), intent(inout) :: Dissip_wcap(LBi:UBi,LBj:UBj)
 #   endif
-      real(r8), intent(in) :: Tr(LBi:UBi,LBj:UBj,ND(ng))
-      real(r8), intent(in) :: kwc(LBi:UBi,LBj:UBj,ND(ng))
+      real(r8), intent(in) :: Tr(LBi:UBi,LBj:UBj,ND)
+      real(r8), intent(in) :: kwc(LBi:UBi,LBj:UBj,ND)
       real(r8), intent(in) :: h_tot(LBi:UBi,LBj:UBj)
 #  endif
 !
@@ -136,7 +136,7 @@
       real(r8), parameter :: break =0.45_r8
       real(r8), parameter :: n_r =15.0_r8
       real(r8), parameter :: EWlim = 0.00001_r8
-      real(r8):: EN(ND(ng))
+      real(r8):: EN(ND)
 
 # include "set_bounds.h"
 
@@ -147,7 +147,7 @@
           EW=0.0_r8
           KM=0.0_r8
           TRM=0.0_r8
-          DO d=1,ND(ng)
+          DO d=1,ND
 !=======================================================================
 !  Compute the energy from action balance and wave heigth
 !=======================================================================
@@ -164,8 +164,8 @@
             KM=KM+kwc(i,j,d)*EN(d)
             TRM=TRM+Tr(i,j,d)*EN(d)
           ENDDO
-          KM=KM/(ND(ng)*max(EW,EWlim))
-          TRM=TRM/(ND(ng)*max(EW,EWlim))
+          KM=KM/(ND*max(EW,EWlim))
+          TRM=TRM/(ND*max(EW,EWlim))
           IF (EW.lt.0.0_r8)EW=0.0_r8
 !=======================================================================
 !  Compute the wave height
@@ -201,7 +201,7 @@
 !=======================================================================
 !  Distribute dissipation over directions and recompute Ac
 !=======================================================================
-          DO d=1,ND(ng)
+          DO d=1,ND
 #   if defined WDISS_INWAVE
             IF(Dissip_break(i,j).gt.0.0_r8.and.EW.gt.0.0_r8)THEN
 #   else
@@ -232,7 +232,7 @@
 !=======================================================================
 !  Distribute dissipation over directions and recompute Ac
 !=======================================================================
-          DO d=1,ND(ng)
+          DO d=1,ND
             IF(H.gt.0.0_r8.and.EW.gt.0.0_r8)THEN
 #   if defined WDISS_INWAVE
               EN(d)=EN(d)-Dissip_break(i,j)*EN(d)/EW

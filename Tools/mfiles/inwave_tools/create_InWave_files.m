@@ -60,7 +60,7 @@ elseif (INWAVE_SHOREFACE)
 elseif (INWAVE_SHORE)
     inwave_gen_file='InWave_shore_param';
 elseif (INWAVE_SANDY)
-    inwave_gen_file='InWave_Sandy_param';
+    inwave_gen_file='InWave_Sandy_param_strip';
 elseif (INLET_TEST)
     inwave_gen_file='InWave_inlet_test_param';
 elseif (MY_APP)

@@ -34,14 +34,14 @@
 #include "tile.h"
 !
       CALL cx3dbc_tile (ng, tile,                                       &
-     &                 LBi, UBi, LBj, UBj, ND(ng),                      &
+     &                 LBi, UBi, LBj, UBj,                              &
      &                 WAVEP(ng) % cx)
       RETURN
       END SUBROUTINE cx3dbc
 !
 !***********************************************************************
       SUBROUTINE cx3dbc_tile (ng, tile,                                 &
-     &                       LBi, UBi, LBj, UBj, ND,                    &
+     &                       LBi, UBi, LBj, UBj,                        &
      &                       cx)
 !***********************************************************************
 !
@@ -54,7 +54,7 @@
 !  Imported variable declarations.
 !
       integer, intent(in) :: ng, tile
-      integer, intent(in) :: LBi, UBi, LBj, UBj, ND
+      integer, intent(in) :: LBi, UBi, LBj, UBj
 !
 # ifdef ASSUMED_SHAPE
       real(r8), intent(inout) :: cx(LBi:,LBj:,:)

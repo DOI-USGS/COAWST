@@ -40,7 +40,7 @@
 # include "tile.h"
 !
       CALL ct3dbc_dir_tile (ng, tile,                                   &
-     &                 LBi, UBi, LBj, UBj, ND(ng)+1,                    &
+     &                 LBi, UBi, LBj, UBj,                              &
      &                 WAVEP(ng)% ct)
       RETURN
       END SUBROUTINE ct3dbc_dir
@@ -48,11 +48,12 @@
 !
 !***********************************************************************
       SUBROUTINE ct3dbc_dir_tile (ng, tile,                             &
-     &                       LBi, UBi, LBj, UBj, ND,                    &
+     &                       LBi, UBi, LBj, UBj,                        &
      &                       ct)
 !***********************************************************************
 !
       USE mod_param
+      USE mod_inwave_params
       USE mod_boundary
       USE mod_grid
       USE mod_scalars
@@ -63,13 +64,13 @@
 !  Imported variable declarations.
 !
       integer, intent(in) :: ng, tile
-      integer, intent(in) :: LBi, UBi, LBj, UBj, ND
+      integer, intent(in) :: LBi, UBi, LBj, UBj
 
 !
 # ifdef ASSUMED_SHAPE
       real(r8), intent(inout) :: ct(LBi:,LBj:,:)
 # else
-      real(r8), intent(inout) :: ct(LBi:UBi,LBj:UBj,ND)
+      real(r8), intent(inout) :: ct(LBi:UBi,LBj:UBj,ND+1)
 # endif
 !
 !  Local variable declarations.
@@ -79,20 +80,20 @@
 
 # include "set_bounds.h"
 
-        DO j=Jstr,Jend
-          DO i=Istr,Iend
+      DO j=Jstr,Jend
+        DO i=Istr,Iend
 #  if defined UP_CT_GRADIENT
-            ct(i,j,ND)=ct(i,j,ND-1)
+          ct(i,j,ND+1)=ct(i,j,ND)
 #  elif defined UP_CT_WALL
-            ct(i,j,ND)=0.0_r8
+          ct(i,j,ND+1)=0.0_r8
 #  endif
 #  if defined DOWN_CT_GRADIENT
-            ct(i,j,1)=ct(i,j,2)
+          ct(i,j,1)=ct(i,j,2)
 #  elif defined DOWN_CT_WALL
-            ct(i,j,1)=0.0_r8
+          ct(i,j,1)=0.0_r8
 #  endif
-          ENDDO
         ENDDO
+      ENDDO
 
       RETURN
       END SUBROUTINE ct3dbc_dir_tile

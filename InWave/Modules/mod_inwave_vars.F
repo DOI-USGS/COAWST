@@ -73,20 +73,20 @@
       IF (ng.eq.1) allocate ( WAVEP(Ngrids) )
       IF (ng.eq.1) allocate ( WAVEG(Ngrids) )
 
-      allocate ( WAVEP(ng) % AC(LBi:UBi,LBj:UBj,ND(ng),3) )
-      allocate ( WAVEP(ng) % cx(LBi:UBi,LBj:UBj,ND(ng)) )
-      allocate ( WAVEP(ng) % cy(LBi:UBi,LBj:UBj,ND(ng)) )
-      allocate ( WAVEP(ng) % ct(LBi:UBi,LBj:UBj,ND(ng)+1) )
-      allocate ( WAVEP(ng) % Tr(LBi:UBi,LBj:UBj,ND(ng)) )
-      allocate ( WAVEP(ng) % Ta(LBi:UBi,LBj:UBj,ND(ng)) )
-      allocate ( WAVEP(ng) % kwc(LBi:UBi,LBj:UBj,ND(ng)) )
-      allocate ( WAVEP(ng) % cwc(LBi:UBi,LBj:UBj,ND(ng)) )
+      allocate ( WAVEP(ng) % AC(LBi:UBi,LBj:UBj,ND,3) )
+      allocate ( WAVEP(ng) % cx(LBi:UBi,LBj:UBj,ND) )
+      allocate ( WAVEP(ng) % cy(LBi:UBi,LBj:UBj,ND) )
+      allocate ( WAVEP(ng) % ct(LBi:UBi,LBj:UBj,ND+1) )
+      allocate ( WAVEP(ng) % Tr(LBi:UBi,LBj:UBj,ND) )
+      allocate ( WAVEP(ng) % Ta(LBi:UBi,LBj:UBj,ND) )
+      allocate ( WAVEP(ng) % kwc(LBi:UBi,LBj:UBj,ND) )
+      allocate ( WAVEP(ng) % cwc(LBi:UBi,LBj:UBj,ND) )
       allocate ( WAVEP(ng) % h_tot(LBi:UBi,LBj:UBj) )
       allocate ( WAVEP(ng) % u_rho(LBi:UBi,LBj:UBj) )
       allocate ( WAVEP(ng) % v_rho(LBi:UBi,LBj:UBj) )
 
-      allocate ( WAVEG(ng) % wd(ND(ng)) )
-      allocate ( WAVEG(ng) % pd(ND(ng)) )
+      allocate ( WAVEG(ng) % wd(ND) )
+      allocate ( WAVEG(ng) % pd(ND) )
 
       RETURN
       END SUBROUTINE allocate_inwave_vars
@@ -176,7 +176,7 @@
 ! Compute degree bins. This may need to be moved.
 !-----------------------------------------------------------------------
 !
-      IF (.not.allocated(ndirs)) allocate (ndirs(ND(ng)))
+      IF (.not.allocated(ndirs)) allocate (ndirs(ND))
       ncini_name=IWINIname(ng)
       call get_inwave_grid(ng, ncini_name, ndirs)
       cnvrad=pi/180.0_r8
@@ -186,7 +186,7 @@
 ! Pass the directions of the bins to radians
 !-----------------------------------------------------------------------
 !
-      DO d=1,ND(ng)
+      DO d=1,ND
         WAVEG(ng)%wd(d)=ndirs(d)*cnvrad
       END DO
 !
@@ -194,11 +194,11 @@
 ! Compute the angle increment
 !-----------------------------------------------------------------------
 !
-      DO d=1,ND(ng)
+      DO d=1,ND
         IF(d.gt.1)THEN
           cff=WAVEG(ng)%wd(d)-WAVEG(ng)%wd(d-1)
         ELSE
-          cff=WAVEG(ng)%wd(ND(ng))-WAVEG(ng)%wd(1)
+          cff=WAVEG(ng)%wd(ND)-WAVEG(ng)%wd(1)
         ENDIF
         IF (cff.lt.0.0_r8) THEN
           cff=cff+pi
@@ -212,7 +212,7 @@
 ! check if we are working on a segment or if we have to wrap around
 !-----------------------------------------------------------------------
 !
-      end_ang=WAVEG(ng)%wd(ND(ng))+WAVEG(ng)%pd(ND(ng))
+      end_ang=WAVEG(ng)%wd(ND)+WAVEG(ng)%pd(ND)
       IF(end_ang.ge.twopi)end_ang=end_ang- twopi
       IF(end_ang.ne.WAVEG(ng)%wd(1))THEN
         write (stdout,30)
@@ -228,10 +228,10 @@
 !  Read initial condition.
 !-----------------------------------------------------------------------
 
-      allocate (ac_ini(LBi:UBi,LBj:UBj,ND(ng)))
-      allocate (cx_ini(LBi:UBi,LBj:UBj,ND(ng)))
-      allocate (cy_ini(LBi:UBi,LBj:UBj,ND(ng)))
-      allocate (ct_ini(LBi:UBi,LBj:UBj,ND(ng)+1))
+      allocate (ac_ini(LBi:UBi,LBj:UBj,ND))
+      allocate (cx_ini(LBi:UBi,LBj:UBj,ND))
+      allocate (cy_ini(LBi:UBi,LBj:UBj,ND))
+      allocate (ct_ini(LBi:UBi,LBj:UBj,ND+1))
 !
       ncini_name=IWINIname(ng)
       call get_inwave_ini(ng, LBi, UBi, LBj, UBj, ncini_name, ac_ini,   &
@@ -248,7 +248,7 @@
           WAVEP(ng) % u_rho(i,j) = IniVal
           WAVEP(ng) % v_rho(i,j) = IniVal
           WAVEP(ng) % h_tot(i,j) = GRID(ng) % h(i,j)
-          DO d=1,ND(ng)
+          DO d=1,ND
             WAVEP(ng) % AC(i,j,d,1) = AC_ini(i,j,d)
             WAVEP(ng) % AC(i,j,d,2) = AC_ini(i,j,d)
             WAVEP(ng) % AC(i,j,d,3) = AC_ini(i,j,d)
@@ -265,7 +265,7 @@
       
       DO j=Jmin,Jmax
         DO i=Imin,Imax
-          WAVEP(ng) % ct(i,j,ND(ng)+1) = ct_ini(i,j,ND(ng)+1)
+          WAVEP(ng) % ct(i,j,ND+1) = ct_ini(i,j,ND+1)
         END DO
       END DO
       IF (allocated(ac_ini)) deallocate(ac_ini)

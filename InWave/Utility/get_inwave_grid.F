@@ -28,7 +28,7 @@
       integer, intent(in) :: ng
 
       character (len=80), intent(in) :: nc_name
-      real(r8), intent(inout) :: WD(ND(ng))
+      real(r8), intent(inout) :: WD(ND)
 
 !
 !  Local variable declarations
@@ -71,7 +71,7 @@
         ioerror=status
       END IF
       status=nf90_inquire_dimension(ncid, dimIDs(1), len=ndims)
-      IF (ndims.ne.ND(ng)) THEN
+      IF (ndims.ne.ND) THEN
         WRITE (stdout,30) TRIM('num energy bins not same as in input file')
         exit_flag=4
         ioerror=status

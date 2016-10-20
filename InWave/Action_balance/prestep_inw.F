@@ -133,13 +133,13 @@
       real(r8), intent(in) :: om_v(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: u(LBi:UBi,LBj:UBj,N(ng),2)
       real(r8), intent(in) :: v(LBi:UBi,LBj:UBj,N(ng),2)
-      real(r8), intent(inout) :: AC(LBi:UBi,LBj:UBj,ND(ng),3)
-      real(r8), intent(in) :: cx(LBi:UBi,LBj:UBj,ND(ng))
-      real(r8), intent(in) :: cy(LBi:UBi,LBj:UBj,ND(ng))
-      real(r8), intent(in) :: ct(LBi:UBi,LBj:UBj,ND(ng)+1)
-      real(r8), intent(in) :: Tr(LBi:UBi,LBj:UBj,ND(ng))
-      real(r8), intent(in) :: kwc(LBi:UBi,LBj:UBj,ND(ng))
-      real(r8), intent(in) :: pd(ND(ng))
+      real(r8), intent(inout) :: AC(LBi:UBi,LBj:UBj,ND,3)
+      real(r8), intent(in) :: cx(LBi:UBi,LBj:UBj,ND)
+      real(r8), intent(in) :: cy(LBi:UBi,LBj:UBj,ND)
+      real(r8), intent(in) :: ct(LBi:UBi,LBj:UBj,ND+1)
+      real(r8), intent(in) :: Tr(LBi:UBi,LBj:UBj,ND)
+      real(r8), intent(in) :: kwc(LBi:UBi,LBj:UBj,ND)
+      real(r8), intent(in) :: pd(ND)
 # endif
 !
 !  Local variable declarations.
@@ -154,12 +154,12 @@
       real(r8), dimension(IminS:ImaxS,0:N(ng)) :: CF
       real(r8), dimension(IminS:ImaxS,0:N(ng)) :: DC
       real(r8), dimension(IminS:ImaxS,0:N(ng)) :: FC
-      real(r8), dimension(IminS:ImaxS,0:ND(ng)+2) :: FD
+      real(r8), dimension(IminS:ImaxS,0:ND+2) :: FD
 
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: FE
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: FX
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: curv
-      real(r8), dimension(IminS:ImaxS,0:ND(ng)+1) :: curvd
+      real(r8), dimension(IminS:ImaxS,0:ND+1) :: curvd
 
 
 # include "set_bounds.h"
@@ -171,7 +171,7 @@
 !  Compute time rate of change of intermediate AC due to
 !  horizontal advection.
 !
-      D_LOOP: DO d=1,ND(ng)
+      D_LOOP: DO d=1,ND
 !  Third-order, uptream-biased horizontal advective fluxes.
         DO j=Jstr,Jend
           DO i=Istrm1,Iendp2
@@ -288,10 +288,10 @@
 
         DO i=Istr,Iend
 # if defined THETA_AC_PERIODIC
-            FD(i,0)=AC(i,j,ND(ng)  ,nstp)-                              &
-     &              AC(i,j,ND(ng)-1,nstp)
+            FD(i,0)=AC(i,j,ND  ,nstp)-                                  &
+     &              AC(i,j,ND-1,nstp)
             FD(i,1)=AC(i,j,1       ,nstp)-                              &
-     &              AC(i,j,ND(ng)  ,nstp)
+     &              AC(i,j,ND  ,nstp)
 # else
 !!IN THIS POINT IT DOESNT MATTER THE BOUNDARY CONDITION, 
 !!WE JUST PUT IT AS IF IT WAS A NO GRADIENT
@@ -299,21 +299,21 @@
           FD(i,0)=0.0_r8
           FD(i,1)=0.0_r8
 # endif
-          DO d=2,ND(ng)
+          DO d=2,ND
             FD(i,d)=AC(i,j,d       ,nstp)-                              &
      &              AC(i,j,d-1     ,nstp)
           END DO
 # if defined THETA_AC_PERIODIC
-          FD(i,ND(ng)+1)=FD(i,1)
-          FD(i,ND(ng)+2)=FD(i,2)
+          FD(i,ND+1)=FD(i,1)
+          FD(i,ND+2)=FD(i,2)
 # else
-          FD(i,ND(ng)+1)=0.0_r8
-          FD(i,ND(ng)+2)=0.0_r8
+          FD(i,ND+1)=0.0_r8
+          FD(i,ND+2)=0.0_r8
 # endif
         END DO
 !
         DO i=Istr,Iend
-          DO d=0,ND(ng)+1
+          DO d=0,ND+1
             curvd(i,d)=FD(i,d+1)-FD(i,d)
           END DO
         END DO
@@ -323,7 +323,7 @@
         DO i=Istr,Iend
           DO d=1,1
 # if defined THETA_AC_PERIODIC
-            cff=ct(i,j,d)/(0.5_r8*(pd(d)+pd(ND(ng))))
+            cff=ct(i,j,d)/(0.5_r8*(pd(d)+pd(ND)))
 # else
 #  if defined THETA_AC_WALL
             cff=0.0_r8
@@ -333,7 +333,7 @@
 # endif
             FD(i,d)=cff*0.5_r8*                                         &
 # if defined THETA_AC_PERIODIC
-     &              (AC(i,j,ND(ng),nstp)+                               &
+     &              (AC(i,j,ND,nstp)+                                   &
      &               AC(i,j,d  ,nstp))-                                 &
 # else
      &              (AC(i,j,d     ,nstp)+                               &
@@ -342,7 +342,7 @@
      &               cff1*(curvd(i,d-1)*MAX(cff,0.0_r8)+                &
      &                     curvd(i,d  )*MIN(cff,0.0_r8))
           END DO
-          DO d=2,ND(ng)
+          DO d=2,ND
             cff=ct(i,j,d)/(0.5_r8*(pd(d)+pd(d-1)))
             FD(i,d)=cff*0.5_r8*                                         &
      &              (AC(i,j,d-1,nstp)+                                  &
@@ -350,23 +350,23 @@
      &               cff1*(curvd(i,d-1)*MAX(cff,0.0_r8)+                &
      &                     curvd(i,d  )*MIN(cff,0.0_r8))
           END DO
-          DO d=ND(ng)+1,ND(ng)+1
+          DO d=ND+1,ND+1
 # if defined THETA_AC_PERIODIC
-            cff=ct(i,j,d)/(0.5_r8*(pd(1)+pd(ND(ng))))
+            cff=ct(i,j,d)/(0.5_r8*(pd(1)+pd(ND)))
 # else
 #  if defined THETA_AC_WALL
             cff=0.0_r8
 #  else
-            cff=ct(i,j,d)/(pd(ND(ng)))
+            cff=ct(i,j,d)/(pd(ND))
 #  endif
 # endif
             FD(i,d)=cff*0.5_r8*                                         &
 # if defined THETA_AC_PERIODIC
-     &              (AC(i,j,ND(ng),nstp)+                               &
+     &              (AC(i,j,ND,nstp)+                                   &
      &               AC(i,j,1  ,nstp))-                                 &
 # else
-     &              (AC(i,j,ND(ng),nstp)+                               &
-     &               AC(i,j,ND(ng),nstp))-                              &
+     &              (AC(i,j,ND,nstp)+                                   &
+     &               AC(i,j,ND,nstp))-                                  &
 # endif
      &               cff1*(curvd(i,d-1)*MAX(cff,0.0_r8)+                &
      &                     curvd(i,d  )*MIN(cff,0.0_r8))
@@ -385,7 +385,7 @@
           cff2=0.5_r8-Gamma
         END IF
         DO i=Istr,Iend
-          DO d=1,ND(ng)
+          DO d=1,ND
             AC(i,j,d,3)=(cff1*AC(i,j,d,nstp)+                           &
      &                   cff2*AC(i,j,d,nnew))-                          &
      &                   cff*pd(d)*                                     &
@@ -394,7 +394,7 @@
         END DO
         
         DO i=Istr,Iend
-          DO d=1,ND(ng)
+          DO d=1,ND
             AC(i,j,d,3)=MAX(0.0_r8,AC(i,j,d,3))
           END DO
         END DO
@@ -418,13 +418,13 @@
 !
       IF (EWperiodic(ng).or.NSperiodic(ng)) THEN
         CALL exchange_AC3d_tile (ng, tile,                              &
-     &                           LBi, UBi, LBj, UBj, 1, ND(ng),         &
+     &                           LBi, UBi, LBj, UBj, 1, ND,             &
      &                           AC(:,:,:,3))
       END IF
 
 # ifdef DISTRIBUTE
       CALL mp_exchange3d (ng, tile, iNLM, 1,                            &
-     &                    LBi, UBi, LBj, UBj, 1, ND(ng),                &
+     &                    LBi, UBi, LBj, UBj, 1, ND,                    &
      &                    NghostPoints,                                 &
      &                    EWperiodic(ng), NSperiodic(ng),               &
      &                    AC(:,:,:,3))

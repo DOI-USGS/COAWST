@@ -73,7 +73,7 @@ endif
 ifdef USE_MPI
        MPI_INCDIR ?= c:\\work\\models\\MPICH2\\include
        MPI_LIBDIR ?= c:\\work\\models\\MPICH2\\lib
-       LIBS       += $(MPI_LIBDIR)\\libfmpich2g.a
+#       LIBS       += $(MPI_LIBDIR)\\libfmpich2g.a
            FFLAGS += -I$(MPI_INCDIR)
          CPPFLAGS += -DMPI
  ifdef USE_MPIF90

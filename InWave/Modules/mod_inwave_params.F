@@ -28,7 +28,7 @@
 
 !  These integers are assigned values in mod_ncparam.F
 
-      integer, allocatable :: ND(:)
+      integer :: ND
 
       CONTAINS
 
@@ -45,7 +45,7 @@
 !  Allocate dimension parameters.
 !-----------------------------------------------------------------------
 !
-      allocate ( ND(Ngrids) )
+!mai      allocate ( ND )
 
       RETURN
       END SUBROUTINE allocate_inwave_params

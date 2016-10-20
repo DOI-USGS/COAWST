@@ -156,10 +156,10 @@ if (make_InWave_ini)
     
   ini_file=strcat(filepath,'InWave_ini.nc');  % name of the initial file
 
-  Ac=ones(Nbins,Mm,Lm).*0;
-  Cx=ones(Nbins,Mm,Lm-1).*0;
-  Cy=ones(Nbins,Mm-1,Lm).*0;
-  Ct=ones(Nbins+1,Mm,Lm).*0;
+  Ac=ones(Lm,Mm,Nbins).*0;
+  Cx=ones(Lm-1,Mm,Nbins).*0;
+  Cy=ones(Lm,Mm-1,Nbins).*0;
+  Ct=ones(Lm,Mm,Nbins+1).*0;
 
 end
 
@@ -212,18 +212,18 @@ TA=Tm;
 close all
 
  % if obc(4)==1
-      Ac_west=zeros(length(time),Nbins_bnd,Mm);
+      Ac_west=zeros(Mm,Nbins_bnd,length(time));
       for i=1:Mm
           time_r=time-((i-1)*20).*(tan(-(theta-270)*pi/180))./Cg(i,1);
           eta=a1*cos(2*pi*f1*time_r)+a2*cos(2*pi*f2*time_r);
           E=1/8*1025*9.81*(2.*abs(hilbert(eta))).^2;
           Ac1=E./(2*pi/Tm);
-          Ac_west(:,dumd,i)=Ac1(:);
+          Ac_west(i,dumd,:)=Ac1(:);
       end
  % end
   
  % if obc(1)==1
-    Ac_north=zeros(length(time),Nbins_bnd,Lm);
+    Ac_north=zeros(Lm,Nbins_bnd,length(time));
     suma=0;
       for i=1:Lm
           suma=suma+((i-1)*20).*(tan(-(theta-270)*pi/180))/Cg(Mm,i);
@@ -238,12 +238,12 @@ close all
           dumd=find(dist==min(dist));
           end
           Ac1(isnan(Ac1)==1)=0.0;
-          Ac_north(:,dumd,i)=Ac1(:);
+          Ac_north(i,dumd,:)=Ac1(:);
       end
  % end
 
  % if obc(3)==1
-      Ac_south=zeros(length(time),Nbins_bnd,Lm);
+      Ac_south=zeros(Lm,Nbins_bnd,length(time));
       suma=0;
       for i=1:Lm
           suma=suma+((i-1)*20).*(tan(-(theta-270)*pi/180))/Cg(1,i);
@@ -258,7 +258,7 @@ close all
           dumd=find(dist==min(dist));
           end
           Ac1(isnan(Ac1)==1)=0.0;
-          Ac_south(:,dumd,i)=Ac1(:);
+          Ac_south(i,dumd,:)=Ac1(:);
       end
 %  end
     

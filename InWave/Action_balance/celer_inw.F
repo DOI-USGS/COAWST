@@ -134,18 +134,18 @@
       real(r8), intent(in) :: angler(LBi:,LBj:)
       real(r8), intent(in) :: pm(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: pn(LBi:UBi,LBj:UBj)
-      real(r8), intent(inout) :: cx(LBi:UBi,LBj:UBj,ND(ng))
-      real(r8), intent(inout) :: cy(LBi:UBi,LBj:UBj,ND(ng))
-      real(r8), intent(inout) :: ct(LBi:UBi,LBj:UBj,ND(ng)+1)
-      real(r8), intent(in) :: kwc(LBi:UBi,LBj:UBj,ND(ng))
-      real(r8), intent(in) :: cwc(LBi:UBi,LBj:UBj,ND(ng))
-      real(r8), intent(inout) :: Tr(LBi:UBi,LBj:UBj,ND(ng))
-      real(r8), intent(inout) :: Ta(LBi:UBi,LBj:UBj,ND(ng))
+      real(r8), intent(inout) :: cx(LBi:UBi,LBj:UBj,ND)
+      real(r8), intent(inout) :: cy(LBi:UBi,LBj:UBj,ND)
+      real(r8), intent(inout) :: ct(LBi:UBi,LBj:UBj,ND+1)
+      real(r8), intent(in) :: kwc(LBi:UBi,LBj:UBj,ND)
+      real(r8), intent(in) :: cwc(LBi:UBi,LBj:UBj,ND)
+      real(r8), intent(inout) :: Tr(LBi:UBi,LBj:UBj,ND)
+      real(r8), intent(inout) :: Ta(LBi:UBi,LBj:UBj,ND)
       real(r8), intent(in) :: h_tot(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: u_rho(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: v_rho(LBi:UBi,LBj:UBj)
-      real(r8), intent(in) :: wd(ND(ng))
-      real(r8), intent(in) :: pd(ND(ng))
+      real(r8), intent(in) :: wd(ND)
+      real(r8), intent(in) :: pd(ND)
 # endif
 !
 !  Local variable declarations.
@@ -159,9 +159,9 @@
       real(r8) :: G1, cr, cgr, cgrx, cgry
       real(r8) :: dudx, dudy, dvdx, dvdy, dhdx, dhdy
       real(r8) :: cff, cosde, sinde
-      real(r8), dimension(LBi:UBi,LBj:UBj,ND(ng)) :: cx_rho
-      real(r8), dimension(LBi:UBi,LBj:UBj,ND(ng)) :: cy_rho
-      real(r8), dimension(LBi:UBi,LBj:UBj,ND(ng)) :: ct_r
+      real(r8), dimension(LBi:UBi,LBj:UBj,ND) :: cx_rho
+      real(r8), dimension(LBi:UBi,LBj:UBj,ND) :: cy_rho
+      real(r8), dimension(LBi:UBi,LBj:UBj,ND) :: ct_r
       real(r8), parameter:: minTa=2.0_r8
 
 # include "set_bounds.h"
@@ -170,7 +170,7 @@
       halfpi=0.5_r8*pi
       otwopi=1.0_r8/twopi
 
-      DO d=1,ND(ng)
+      DO d=1,ND
         DO j=Jstr-1,Jend+1
           DO i=Istr-1,Iend+1
 !
@@ -247,12 +247,12 @@
 
 # ifdef ACT_ADVECTION
 
-      DO d=1,ND(ng)
+      DO d=1,ND
         DO j=Jstr,Jend
           DO i=Istr,Iend
 
 #  ifdef DOPPLER
-          IF((h_tot(i,j).le.Dcrit(ng))                                 &
+          IF((h_tot(i,j).le.Dcrit(ng))                                  &
      &        .or.((u_dir.lt.0.0_r8)                                    &
      &        .and.(u_dir.le.u_block)))                                 &
      &     THEN
@@ -314,7 +314,7 @@
 
 # endif
 
-      DO d=1,ND(ng)
+      DO d=1,ND
         DO j=Jstr,Jend
           DO i=Istr,Iend
            wr=twopi/Tr(i,j,d)
@@ -331,19 +331,19 @@
 !  Apply nonperiodic boundary conditions in xi and etai space.
 
       CALL Tr3dbc_tile (ng, tile,                                       &
-     &                  LBi, UBi, LBj, UBj, ND(ng),                     &
+     &                  LBi, UBi, LBj, UBj, ND,                         &
      &                  Tr)
       CALL Tr3dbc_tile (ng, tile,                                       &
-     &                  LBi, UBi, LBj, UBj, ND(ng),                     &
+     &                  LBi, UBi, LBj, UBj, ND,                         &
      &                  Ta)
 # ifdef DISTRIBUTE
       CALL mp_exchange3d (ng, tile, iNLM, 1,                            &
-     &                    LBi, UBi, LBj, UBj, 1, ND(ng),                &
+     &                    LBi, UBi, LBj, UBj, 1, ND,                    &
      &                    NghostPoints,                                 &
      &                    EWperiodic(ng), NSperiodic(ng),               &
      &                    Tr)
       CALL mp_exchange3d (ng, tile, iNLM, 1,                            &
-     &                    LBi, UBi, LBj, UBj, 1, ND(ng),                &
+     &                    LBi, UBi, LBj, UBj, 1, ND,                    &
      &                    NghostPoints,                                 &
      &                    EWperiodic(ng), NSperiodic(ng),               &
      &                    Ta)
@@ -355,7 +355,7 @@
 !=======================================================================
 !
 # ifdef ACX_ADVECTION
-      DO d=1,ND(ng)
+      DO d=1,ND
         DO j=Jstr,Jend
 !         DO i=Istr,Iend+1
           DO i=IstrU,Iend
@@ -370,7 +370,7 @@
 # endif
 
 # ifdef ACY_ADVECTION
-      DO d=1,ND(ng)
+      DO d=1,ND
         DO j=JstrV,Jend
           DO i=Istr,Iend
             cy(i,j,d)=0.5_r8*(cy_rho(i,j-1,d)+cy_rho(i,j,d))
@@ -385,7 +385,7 @@
 
 # ifdef ACT_ADVECTION
           
-      DO d=2,ND(ng)
+      DO d=2,ND
         DO j=Jstr,Jend
           DO i=Istr,Iend
             ct(i,j,d)=0.5_r8*(ct_r(i,j,d-1)+ ct_r(i,j,d))
@@ -422,42 +422,42 @@
 !
 #  ifdef ACX_ADVECTION
       CALL cx3dbc_tile (ng, tile,                                       &
-     &                  LBi, UBi, LBj, UBj, ND(ng),                     &
+     &                  LBi, UBi, LBj, UBj,                             &
      &                  cx)
 #  endif
 #  ifdef ACY_ADVECTION
       CALL cy3dbc_tile (ng, tile,                                       &
-     &                  LBi, UBi, LBj, UBj, ND(ng),                     &
+     &                  LBi, UBi, LBj, UBj,                             &
      &                  cy)
 #  endif
 #  ifdef ACT_ADVECTION
       CALL ct3dbc_tile (ng, tile,                                       &
-     &                  LBi, UBi, LBj, UBj, ND(ng)+1,                   &
+     &                  LBi, UBi, LBj, UBj,                             &
      &                  ct)
       CALL ct3dbc_dir_tile (ng, tile,                                   &
-     &                      LBi, UBi, LBj, UBj, ND(ng)+1,               &
+     &                      LBi, UBi, LBj, UBj,                         &
      &                      ct)
 #  endif
 !
 !  Apply periodic boundary conditions.
 !
-        IF (EWperiodic(ng).or.NSperiodic(ng)) THEN
+      IF (EWperiodic(ng).or.NSperiodic(ng)) THEN
 #  ifdef ACX_ADVECTION
-      CALL exchange_r3d_tile (ng, tile,                                 &
-     &                        LBi, UBi, LBj, UBj, 1, ND(ng),            &
+        CALL exchange_r3d_tile (ng, tile,                               &
+     &                        LBi, UBi, LBj, UBj, 1, ND,                &
      &                        cx)
 #  endif
 #  ifdef ACY_ADVECTION
-      CALL exchange_r3d_tile (ng, tile,                                 &
-     &                        LBi, UBi, LBj, UBj, 1, ND(ng),            &
+        CALL exchange_r3d_tile (ng, tile,                               &
+     &                        LBi, UBi, LBj, UBj, 1, ND,                &
      &                        cy)
 #  endif
 #  ifdef ACT_ADVECTION
-      CALL exchange_r3d_tile (ng, tile,                                 &
-     &                        LBi, UBi, LBj, UBj, 1, ND(ng)+1,          &
+        CALL exchange_r3d_tile (ng, tile,                               &
+     &                        LBi, UBi, LBj, UBj, 1, ND+1,              &
      &                        ct)
 #  endif
-        END IF
+      END IF
 
 # ifdef DISTRIBUTE
 !
@@ -465,21 +465,21 @@
 !
 #  ifdef ACX_ADVECTION
       CALL mp_exchange3d (ng, tile, iNLM, 1,                            &
-     &                    LBi, UBi, LBj, UBj, 1, ND(ng),                &
+     &                    LBi, UBi, LBj, UBj, 1, ND,                    &
      &                    NghostPoints,                                 &
      &                    EWperiodic(ng), NSperiodic(ng),               &
      &                    cx)
 #  endif
 #  ifdef ACY_ADVECTION
       CALL mp_exchange3d (ng, tile, iNLM, 1,                            &
-     &                    LBi, UBi, LBj, UBj, 1, ND(ng),                &
+     &                    LBi, UBi, LBj, UBj, 1, ND,                    &
      &                    NghostPoints,                                 &
      &                    EWperiodic(ng), NSperiodic(ng),               &
      &                    cy)
 #  endif
 #  ifdef ACT_ADVECTION
       CALL mp_exchange3d (ng, tile, iNLM, 1,                            &
-     &                    LBi, UBi, LBj, UBj, 1, ND(ng)+1,              &
+     &                    LBi, UBi, LBj, UBj, 1, ND+1,                  &
      &                    NghostPoints,                                 &
      &                    EWperiodic(ng), NSperiodic(ng),               &
      &                    ct)

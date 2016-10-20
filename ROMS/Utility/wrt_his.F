@@ -3748,7 +3748,7 @@
         gtype=gfactor*r3dvar
         status=nf_fwrite3d(ng, iNLM, HIS(ng)%ncid, HIS(ng)%Vid(idACen), &
      &                     HIS(ng)%Rindex, gtype,                       &
-     &                     LBi, UBi, LBj, UBj, 1, ND(ng), scale,        &
+     &                     LBi, UBi, LBj, UBj, 1, ND, scale,            &
 # ifdef MASKING
 #  ifdef WET_DRY
      &                     GRID(ng) % rmask_full,                       &
@@ -3774,7 +3774,7 @@
         gtype=gfactor*u3dvar
         status=nf_fwrite3d(ng, iNLM, HIS(ng)%ncid, HIS(ng)%Vid(idACcx), &
      &                     HIS(ng)%Rindex, gtype,                       &
-     &                     LBi, UBi, LBj, UBj, 1, ND(ng), scale,        &
+     &                     LBi, UBi, LBj, UBj, 1, ND, scale,            &
 # ifdef MASKING
 #  ifdef WET_DRY
      &                     GRID(ng) % umask_full,                       &
@@ -3801,7 +3801,7 @@
         gtype=gfactor*v3dvar
         status=nf_fwrite3d(ng, iNLM, HIS(ng)%ncid, HIS(ng)%Vid(idACcy), &
      &                     HIS(ng)%Rindex, gtype,                       &
-     &                     LBi, UBi, LBj, UBj, 1, ND(ng), scale,        &
+     &                     LBi, UBi, LBj, UBj, 1, ND, scale,            &
 # ifdef MASKING
 #  ifdef WET_DRY
      &                     GRID(ng) % vmask_full,                       &
@@ -3827,7 +3827,7 @@
         gtype=gfactor*r3dvar
         status=nf_fwrite3d(ng, iNLM, HIS(ng)%ncid, HIS(ng)%Vid(idACct), &
      &                     HIS(ng)%Rindex, gtype,                       &
-     &                     LBi, UBi, LBj, UBj, 1, ND(ng), scale,        &
+     &                     LBi, UBi, LBj, UBj, 1, ND, scale,            &
 # ifdef MASKING
 #  ifdef WET_DRY
      &                     GRID(ng) % rmask_full,                       &
@@ -3853,7 +3853,7 @@
         gtype=gfactor*r3dvar
         status=nf_fwrite3d(ng, iNLM, HIS(ng)%ncid, HIS(ng)%Vid(idACtp), &
      &                     HIS(ng)%Rindex, gtype,                       &
-     &                     LBi, UBi, LBj, UBj, 1, ND(ng), scale,        &
+     &                     LBi, UBi, LBj, UBj, 1, ND, scale,            &
 # ifdef MASKING
 #  ifdef WET_DRY
      &                     GRID(ng) % rmask_full,                       &

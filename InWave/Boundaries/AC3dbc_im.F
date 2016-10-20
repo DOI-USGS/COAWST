@@ -73,7 +73,7 @@
 # ifdef ASSUMED_SHAPE
       real(r8), intent(inout) :: AC(LBi:,LBj:,:,:)
 # else
-      real(r8), intent(inout) :: AC(LBi:UBi,LBj:UBj,ND(ng),3)
+      real(r8), intent(inout) :: AC(LBi:UBi,LBj:UBj,ND,3)
 # endif
 !
 !  Local variable declarations.
@@ -102,7 +102,7 @@
 !  Western edge, implicit upstream radiation condition.
 !
         IF (LBC(iwest,isAC3d,ng)%radiation) THEN
-          DO k=1,ND(ng)
+          DO k=1,ND
             DO j=Jstr,Jend+1
               grad(Istr-1,j)=AC(Istr-1,j  ,k,nstp)-                     &
      &                       AC(Istr-1,j-1,k,nstp)
@@ -151,7 +151,7 @@
 !  Western edge, clamped boundary condition.
 !
         ELSE IF (LBC(iwest,isAC3d,ng)%clamped) THEN
-          DO k=1,ND(ng)
+          DO k=1,ND
             DO d_bnd=1,WAVEB(ng)%ND_BND
               IF(WAVEB(ng)%WD_BND(d_bnd).EQ.WAVEG(ng)%wd(k))then
                 DO j=Jstr,Jend
@@ -170,7 +170,7 @@
 !  Western edge, gradient boundary condition.
 !
         ELSE IF (LBC(iwest,isAC3d,ng)%gradient) THEN
-          DO k=1,ND(ng)
+          DO k=1,ND
             DO j=Jstr,Jend
               IF (LBC_apply(ng)%west(j)) THEN
                 AC(Istr-1,j,k,nout)=AC(Istr,j,k,nout)
@@ -185,7 +185,7 @@
 !  Western edge, closed boundary condition.
 !
         ELSE IF (LBC(iwest,isAC3d,ng)%closed) THEN
-          DO k=1,ND(ng)
+          DO k=1,ND
             DO j=Jstr,Jend
               IF (LBC_apply(ng)%west(j)) THEN
                 AC(Istr-1,j,k,nout)=AC(Istr,j,k,nout)
@@ -208,7 +208,7 @@
 !  Eastern edge, implicit upstream radiation condition.
 !
         IF (LBC(ieast,isAC3d,ng)%radiation) THEN
-          DO k=1,ND(ng)
+          DO k=1,ND
             DO j=Jstr,Jend+1
               grad(Iend  ,j)=AC(Iend  ,j  ,k,nstp)-                     &
      &                       AC(Iend  ,j-1,k,nstp)
@@ -256,7 +256,7 @@
 !
         ELSE IF (LBC(ieast,isAC3d,ng)%clamped) THEN
           DO d_bnd=1,WAVEB(ng)%ND_BND
-            DO k=1,ND(ng)
+            DO k=1,ND
               IF(WAVEB(ng)%WD_BND(d_bnd).EQ.WAVEG(ng)%wd(k)) THEN
                 IF (LBC_apply(ng)%east(j)) THEN
                   DO j=Jstr,Jend
@@ -274,7 +274,7 @@
 !  Eastern edge, gradient boundary condition.
 !
         ELSE IF (LBC(ieast,isAC3d,ng)%gradient) THEN
-          DO k=1,ND(ng)
+          DO k=1,ND
             DO j=Jstr,Jend
               IF (LBC_apply(ng)%east(j)) THEN
                 AC(Iend+1,j,k,nout)=AC(Iend,j,k,nout)
@@ -289,7 +289,7 @@
 !  Eastern edge, closed boundary condition.
 !
         ELSE IF (LBC(ieast,isAC3d,ng)%closed) THEN
-          DO k=1,ND(ng)
+          DO k=1,ND
             DO j=Jstr,Jend
               IF (LBC_apply(ng)%east(j)) THEN
                 AC(Iend+1,j,k,nout)=AC(Iend,j,k,nout)
@@ -312,7 +312,7 @@
 !  Southern edge, implicit upstream radiation condition.
 !
         IF (LBC(isouth,isAC3d,ng)%radiation) THEN
-          DO k=1,ND(ng)
+          DO k=1,ND
             DO i=Istr,Iend+1
               grad(i,Jstr  )=AC(i  ,Jstr  ,k,nstp)-                     &
      &                       AC(i-1,Jstr  ,k,nstp)
@@ -359,7 +359,7 @@
 !
         ELSE IF (LBC(isouth,isAC3d,ng)%clamped) THEN
           DO d_bnd=1,WAVEB(ng)%ND_BND
-            DO k=1,ND(ng)
+            DO k=1,ND
               IF(WAVEB(ng)%WD_BND(d_bnd).EQ.WAVEG(ng)%wd(k))then
                 DO i=Istr,Iend
                   IF (LBC_apply(ng)%south(i)) THEN
@@ -377,7 +377,7 @@
 !  Southern edge, gradient boundary condition.
 !
         ELSE IF (LBC(isouth,isAC3d,ng)%gradient) THEN
-          DO k=1,ND(ng)
+          DO k=1,ND
             DO i=Istr,Iend
               IF (LBC_apply(ng)%south(i)) THEN
                 AC(i,Jstr-1,k,nout)=AC(i,Jstr,k,nout)
@@ -392,7 +392,7 @@
 !  Southern edge, closed boundary condition.
 !
         ELSE IF (LBC(isouth,isAC3d,ng)%closed) THEN
-          DO k=1,ND(ng)
+          DO k=1,ND
             DO i=Istr,Iend
               IF (LBC_apply(ng)%south(i)) THEN
                 AC(i,Jstr-1,k,nout)=AC(i,Jstr,k,nout)
@@ -415,7 +415,7 @@
 !  Northern edge, implicit upstream radiation condition.
 !
         IF (LBC(inorth,isAC3d,ng)%radiation) THEN
-          DO k=1,ND(ng)
+          DO k=1,ND
             DO i=Istr,Iend+1
               grad(i,Jend  )=AC(i  ,Jend  ,k,nstp)-                     &
      &                       AC(i-1,Jend  ,k,nstp)
@@ -462,7 +462,7 @@
 !
         ELSE IF (LBC(inorth,isAC3d,ng)%clamped) THEN
           DO d_bnd=1,WAVEB(ng)%ND_BND
-            DO k=1,ND(ng)
+            DO k=1,ND
               IF(WAVEB(ng)%WD_BND(d_bnd).EQ.WAVEG(ng)%wd(k))then
                 DO i=Istr,Iend
                   IF (LBC_apply(ng)%north(i)) THEN
@@ -480,7 +480,7 @@
 !  Northern edge, gradient boundary condition.
 !
         ELSE IF (LBC(inorth,isAC3d,ng)%gradient) THEN
-          DO k=1,ND(ng)
+          DO k=1,ND
             DO i=Istr,Iend
               IF (LBC_apply(ng)%north(i)) THEN
                 AC(i,Jend+1,k,nout)=AC(i,Jend,k,nout)
@@ -495,7 +495,7 @@
 !  Northern edge, closed boundary condition.
 !
         ELSE IF (LBC(inorth,isAC3d,ng)%closed) THEN
-          DO k=1,ND(ng)
+          DO k=1,ND
             DO i=Istr,Iend
               IF (LBC_apply(ng)%north(i)) THEN
                 AC(i,Jend+1,k,nout)=AC(i,Jend,k,nout)
@@ -517,7 +517,7 @@
         IF (DOMAIN(ng)%SouthWest_Corner(tile)) THEN
           IF (LBC_apply(ng)%south(Istr-1).and.                          &
      &        LBC_apply(ng)%west (Jstr-1)) THEN
-            DO k=1,ND(ng)
+            DO k=1,ND
               AC(Istr-1,Jstr-1,k,nout)=0.5_r8*                          &
      &                                     (AC(Istr  ,Jstr-1,k,nout)+   &
      &                                      AC(Istr-1,Jstr  ,k,nout))
@@ -527,7 +527,7 @@
         IF (DOMAIN(ng)%SouthEast_Corner(tile)) THEN
           IF (LBC_apply(ng)%south(Iend+1).and.                          &
      &        LBC_apply(ng)%east (Jstr-1)) THEN
-            DO k=1,ND(ng)
+            DO k=1,ND
               AC(Iend+1,Jstr-1,k,nout)=0.5_r8*                          &
      &                                     (AC(Iend  ,Jstr-1,k,nout)+   &
      &                                      AC(Iend+1,Jstr  ,k,nout))
@@ -537,7 +537,7 @@
         IF (DOMAIN(ng)%NorthWest_Corner(tile)) THEN
           IF (LBC_apply(ng)%north(Istr-1).and.                          &
      &        LBC_apply(ng)%west (Jend+1)) THEN
-            DO k=1,ND(ng)
+            DO k=1,ND
               AC(Istr-1,Jend+1,k,nout)=0.5_r8*                          &
      &                                     (AC(Istr-1,Jend  ,k,nout)+   &
      &                                      AC(Istr  ,Jend+1,k,nout))
@@ -547,7 +547,7 @@
         IF (DOMAIN(ng)%NorthEast_Corner(tile)) THEN
           IF (LBC_apply(ng)%north(Iend+1).and.                          &
      &        LBC_apply(ng)%east (Jend+1)) THEN
-            DO k=1,ND(ng)
+            DO k=1,ND
               AC(Iend+1,Jend+1,k,nout)=0.5_r8*                          &
      &                                     (AC(Iend+1,Jend  ,k,nout)+   &
      &                                      AC(Iend  ,Jend+1,k,nout))

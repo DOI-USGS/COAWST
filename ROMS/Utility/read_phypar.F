@@ -272,15 +272,15 @@
               END DO
 #ifdef INWAVE_MODEL
             CASE ('ND')
-              Npts=load_i(Nval, Rval, Ngrids, ND)
-              DO ng=1,Ngrids
-                IF (ND(ng).lt.0) THEN
+              Npts=load_i(Nval, Rval, 1, ND)  !mai
+!mai              DO ng=1,Ngrids
+                IF (ND.lt.0) THEN
                   IF (Master) WRITE (out,300) 'ND', ng,                 &
      &              'must be greater than zero.'
                   exit_flag=5
                   RETURN
                 END IF
-              END DO
+!end              END DO
 #endif
 #if defined ESTUARYBGC && defined SPECTRAL_LIGHT
             CASE ('NBAND') 

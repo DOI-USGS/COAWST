@@ -71,7 +71,7 @@ if obc(3)==1
 %
   ACID = netcdf.defVar(nc_bndry,'AC_south','double',[xrhodimID eanglec_dimID etime_dimID]);
   netcdf.putAtt(nc_bndry,ACID,'long_name','southern boundary wave action envelope');
-  netcdf.putAtt(nc_bndry,ACID,'units','Joules');
+  netcdf.putAtt(nc_bndry,ACID,'units','Joules s m-2 rad-1');
   netcdf.putAtt(nc_bndry,ACID,'field','AC, scalar, series');
 
   TaID = netcdf.defVar(nc_bndry,'Ta_south','double',TA_dimID);
@@ -86,7 +86,7 @@ if obc(2)==1
 %
   ACID = netcdf.defVar(nc_bndry,'AC_east','double',[erhodimID eanglec_dimID etime_dimID]);
   netcdf.putAtt(nc_bndry,ACID,'long_name','eastern boundary wave action envelope');
-  netcdf.putAtt(nc_bndry,ACID,'units','Joules');
+  netcdf.putAtt(nc_bndry,ACID,'units','Joules s m-2 rad-1');
   netcdf.putAtt(nc_bndry,ACID,'field','AC, scalar, series');
 
   TaID = netcdf.defVar(nc_bndry,'Ta_east','double',TA_dimID);
@@ -101,7 +101,7 @@ if obc(1)==1
 %
   ACID = netcdf.defVar(nc_bndry,'AC_north','double',[xrhodimID eanglec_dimID etime_dimID]);
   netcdf.putAtt(nc_bndry,ACID,'long_name','northern boundary wave action envelope');
-  netcdf.putAtt(nc_bndry,ACID,'units','Joules');
+  netcdf.putAtt(nc_bndry,ACID,'units','Joules s m-2 rad-1');
   netcdf.putAtt(nc_bndry,ACID,'field','AC, scalar, series');
 
   TaID = netcdf.defVar(nc_bndry,'Ta_north','double',TA_dimID);
@@ -116,7 +116,7 @@ if obc(4)==1
 %
   ACID = netcdf.defVar(nc_bndry,'AC_west','double',[erhodimID eanglec_dimID etime_dimID]);
   netcdf.putAtt(nc_bndry,ACID,'long_name','western boundary wave action envelope');
-  netcdf.putAtt(nc_bndry,ACID,'units','Joules');
+  netcdf.putAtt(nc_bndry,ACID,'units','Joules s m-2 rad-1');
   netcdf.putAtt(nc_bndry,ACID,'field','AC, scalar, series');
 
   TaID = netcdf.defVar(nc_bndry,'Ta_west','double',TA_dimID);

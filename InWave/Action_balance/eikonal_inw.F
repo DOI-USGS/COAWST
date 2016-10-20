@@ -76,7 +76,7 @@
 !
       integer, intent(in) :: ng, tile
       integer, intent(in) :: LBi, UBi, LBj, UBj
-      real(r8), intent(inout) :: wd(ND(ng))
+      real(r8), intent(inout) :: wd(ND)
 
 #  ifdef ASSUMED_SHAPE
       real(r8), intent(in) :: pm(LBi:,LBj:)
@@ -87,9 +87,9 @@
 #  else
       real(r8), intent(in) :: pm(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: pn(LBi:UBi,LBj:UBj)
-      real(r8), intent(in) :: angler(LBi:UBi,LBj:UBj,ND(ng))
-      real(r8), intent(inout) :: kwc(LBi:UBi,LBj:UBj,ND(ng))
-      real(r8), intent(inout) :: Ta(LBi:UBi,LBj:UBj,ND(ng))
+      real(r8), intent(in) :: angler(LBi:UBi,LBj:UBj,ND)
+      real(r8), intent(inout) :: kwc(LBi:UBi,LBj:UBj,ND)
+      real(r8), intent(inout) :: Ta(LBi:UBi,LBj:UBj,ND)
 #  endif
 !
 !  Local variable declarations.
@@ -109,7 +109,7 @@
 !       DO i=Istr+1,Iend-1
       DO j=Jstr,Jend
         DO i=Istr,Iend
-          DO d=1,ND(ng)
+          DO d=1,ND
 
 !=======================================================================
 ! Compute xi and etai components of the wave number
@@ -147,7 +147,7 @@
 !      END DO
 
       CALL bc_r3d_tile (ng, tile,                                       &
-     &                  LBi, UBi, LBj, UBj, 1, ND(ng),                  &
+     &                  LBi, UBi, LBj, UBj, 1, ND,                      &
      &                  kwc)
 
 !
@@ -156,7 +156,7 @@
 ! Exchange boundary data.
 !
       CALL mp_exchange3d (ng, tile, iNLM, 1,                            &
-     &                    LBi, UBi, LBj, UBj, 1, ND(ng),                &
+     &                    LBi, UBi, LBj, UBj, 1, ND,                    &
      &                    NghostPoints,                                 &
      &                    EWperiodic(ng), NSperiodic(ng),               &
      &                    kwc)

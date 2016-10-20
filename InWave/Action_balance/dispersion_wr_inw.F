@@ -109,9 +109,9 @@
       real(r8), intent(in) :: h(LBi:,LBj:)
       real(r8), intent(in) :: zeta(LBi:UBi,LBj:UBj)
       real(r8), intent(inout) :: h_tot(LBi:UBi,LBj:UBj)
-      real(r8), intent(inout) :: kwc(LBi:UBi,LBj:UBj,ND(ng))
-      real(r8), intent(inout) :: cwc(LBi:UBi,LBj:UBj,ND(ng))
-      real(r8), intent(inout) :: Tr(LBi:UBi,LBj:UBj,ND(ng))
+      real(r8), intent(inout) :: kwc(LBi:UBi,LBj:UBj,ND)
+      real(r8), intent(inout) :: cwc(LBi:UBi,LBj:UBj,ND)
+      real(r8), intent(inout) :: Tr(LBi:UBi,LBj:UBj,ND)
 # endif
 !
 !  Local variable declarations.
@@ -151,7 +151,7 @@
 !       Compute the relative frequency from the linear dispersion      !
 !======================================================================!
 !
-      DO d=1,ND(ng)
+      DO d=1,ND
         DO j=Jstr,Jend
           DO i=Istr,Iend
             IF(h_tot(i,j).ge.Dcrit(ng))THEN
@@ -167,7 +167,7 @@
       END DO
 
       CALL bc_r3d_tile (ng, tile,                                       &
-     &                  LBi, UBi, LBj, UBj, 1, ND(ng),                  &
+     &                  LBi, UBi, LBj, UBj, 1, ND,                      &
      &                  Tr)
 
       CALL bc_r2d_tile (ng, tile,                                       &
@@ -184,7 +184,7 @@
      &                    EWperiodic(ng), NSperiodic(ng),               &
      &                    h_tot)
       CALL mp_exchange3d (ng, tile, iNLM, 1,                            &
-     &                    LBi, UBi, LBj, UBj, 1, ND(ng),                &
+     &                    LBi, UBi, LBj, UBj, 1, ND,                    &
      &                    NghostPoints,                                 &
      &                    EWperiodic(ng), NSperiodic(ng),               &
      &                    Tr)

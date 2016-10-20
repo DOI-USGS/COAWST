@@ -3955,8 +3955,8 @@
 !---------------------------------------------------------------------
 !
 'AC'                                               ! Input/Output
-  'wave energy envelope'
-  'Joules'                                         ! [m/s]
+  'wave action envelope'
+  'Joules s m-2 rad-1'                             ! [kg rad/s]
   'AC, scalar, series'
   'energy_time'
   'idACen'
@@ -3991,8 +3991,8 @@
   1.0d0
 
 'AC_west'                                          ! Input/Ouput
-  'western boundary wave energy envelope'
-  'Joules'                                         ! [kg m2/s2]
+  'western boundary wave action envelope'
+  'Joules s m-2 rad-1'                             ! [kg rad/s]
   'AC_west, scalar, series'
   'energy_time'
   'idACbc(iwest)'
@@ -4000,8 +4000,8 @@
   1.0d0
 
 'AC_east'                                          ! Input/Output
-  'eastern boundary wave energy envelope'
-  'Joules'                                         ! [kg m2/s2]
+  'eastern boundary wave action envelope'
+  'Joules s m-2 rad-1'                             ! [kg rad/s]
   'AC_east, scalar, series'
   'energy_time'
   'idACbc(ieast)'
@@ -4009,8 +4009,8 @@
   1.0d0
 
 'AC_south'                                         ! Input/Output
-  'southern boundary wave energy envelope'
-  'Joules'                                         ! [kg m2/s2]
+  'southern boundary wave action envelope'
+  'Joules s m-2 rad-1'                             ! [kg rad/s]
   'AC_south, scalar, series'
   'energy_time'
   'idACbc(isouth)'
@@ -4018,8 +4018,8 @@
   1.0d0
 
 'AC_north'                                          ! Input/Output
-  'northern boundary wave energy envelope'
-  'Joules'                                          ! [kg m2/s2]
+  'northern boundary wave action envelope'
+  'Joules s m-2 rad-1'                             ! [kg rad/s]
   'AC_north, scalar, series'
   'energy_time'
   'idACbc(inorth)'

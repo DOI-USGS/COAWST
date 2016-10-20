@@ -35,14 +35,14 @@
 #include "tile.h"
 !
       CALL cy3dbc_tile (ng, tile,                                       &
-     &                 LBi, UBi, LBj, UBj, ND(ng),                      &
+     &                 LBi, UBi, LBj, UBj,                              &
      &                 WAVEP(ng) % cy)
       RETURN
       END SUBROUTINE cy3dbc
 !
 !***********************************************************************
       SUBROUTINE cy3dbc_tile (ng, tile,                                 &
-     &                       LBi, UBi, LBj, UBj, ND,                    &
+     &                       LBi, UBi, LBj, UBj,                        &
      &                       cy)
 !***********************************************************************
 !
@@ -55,7 +55,7 @@
 !  Imported variable declarations.
 !
       integer, intent(in) :: ng, tile
-      integer, intent(in) :: LBi, UBi, LBj, UBj, ND
+      integer, intent(in) :: LBi, UBi, LBj, UBj
 !
 # ifdef ASSUMED_SHAPE
       real(r8), intent(inout) :: cy(LBi:,LBj:,:)

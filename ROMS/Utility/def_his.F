@@ -193,7 +193,7 @@
 #endif
 #ifdef INWAVE_MODEL
         status=def_dim(ng, iNLM, HIS(ng)%ncid, ncname,'ND',             &
-                       ND(ng), DimIDs(33))
+                       ND, DimIDs(33))
 #endif
 
 #ifdef SOLVE3D

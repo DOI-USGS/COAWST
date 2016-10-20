@@ -36,7 +36,7 @@
 # include "tile.h"
 !
       CALL ct3dbc_tile (ng, tile,                                       &
-     &                 LBi, UBi, LBj, UBj, ND(ng)+1,                    &
+     &                 LBi, UBi, LBj, UBj,                              &
      &                 WAVEP(ng)% ct)
       RETURN
       END SUBROUTINE ct3dbc
@@ -44,7 +44,7 @@
 !
 !***********************************************************************
       SUBROUTINE ct3dbc_tile (ng, tile,                                 &
-     &                       LBi, UBi, LBj, UBj, ND,                    &
+     &                       LBi, UBi, LBj, UBj,                        &
      &                       ct)
 !***********************************************************************
 !
@@ -57,7 +57,7 @@
 !  Imported variable declarations.
 !
       integer, intent(in) :: ng, tile
-      integer, intent(in) :: LBi, UBi, LBj, UBj, ND
+      integer, intent(in) :: LBi, UBi, LBj, UBj
 !
 # ifdef ASSUMED_SHAPE
       real(r8), intent(inout) :: ct(LBi:,LBj:,:)
@@ -80,7 +80,7 @@
 !  Western edge, gradient boundary condition.
 !
         IF (LBC(iwest,isCT3d,ng)%gradient) THEN
-          DO d=1,ND
+          DO d=1,ND+1
             DO j=Jstr,Jend
               IF (LBC_apply(ng)%west(j)) THEN
                 ct(Istr-1,j,d)=ct(Istr,j,d)
@@ -95,7 +95,7 @@
 !  Western edge, closed boundary condition.
 !
         ELSE IF (LBC(iwest,isCT3d,ng)%closed) THEN
-          DO d=1,ND
+          DO d=1,ND+1
             DO j=Jstr,Jend
               IF (LBC_apply(ng)%west(j)) THEN
                 ct(Istr-1,j,d)=0.0_r8
@@ -118,7 +118,7 @@
 !  Eastern edge, gradient boundary condition.
 !
         IF (LBC(ieast,isCT3d,ng)%gradient) THEN
-          DO d=1,ND
+          DO d=1,ND+1
             DO j=Jstr,Jend
               IF (LBC_apply(ng)%east(j)) THEN
                 ct(Iend+1,j,d)=ct(Iend,j,d)
@@ -133,7 +133,7 @@
 !  Eastern edge, closed boundary condition.
 !
         ELSE IF (LBC(ieast,isCT3d,ng)%closed) THEN
-          DO d=1,ND
+          DO d=1,ND+1
             DO j=Jstr,Jend
               IF (LBC_apply(ng)%east(j)) THEN
                 ct(Iend+1,j,d)=0.0_r8
@@ -156,7 +156,7 @@
 !  Southern edge, gradient boundary condition.
 !
         IF (LBC(isouth,isCT3d,ng)%gradient) THEN
-          DO d=1,ND
+          DO d=1,ND+1
             DO i=Istr,Iend
               IF (LBC_apply(ng)%south(i)) THEN
                 ct(i,Jstr-1,d)=ct(i,Jstr,d)
@@ -171,7 +171,7 @@
 !  Southern edge, closed boundary condition.
 !
         ELSE IF (LBC(isouth,isCT3d,ng)%closed) THEN
-          DO d=1,ND
+          DO d=1,ND+1
             DO i=Istr,Iend
               IF (LBC_apply(ng)%south(i)) THEN
                 ct(i,Jstr-1,d)=0.0_r8
@@ -194,7 +194,7 @@
 !  Northern edge, gradient boundary condition.
 !
         IF (LBC(inorth,isCT3d,ng)%gradient) THEN
-          DO d=1,ND
+          DO d=1,ND+1
             DO i=Istr,Iend
               IF (LBC_apply(ng)%north(i)) THEN
                 ct(i,Jend+1,d)=ct(i,Jend,d)
@@ -209,7 +209,7 @@
 !  Northern edge, closed boundary condition.
 !
         ELSE IF (LBC(inorth,isCT3d,ng)%closed) THEN
-          DO d=1,ND
+          DO d=1,ND+1
             DO i=Istr,Iend
               IF (LBC_apply(ng)%north(i)) THEN
                 ct(i,Jend+1,d)=0.0_r8
@@ -231,7 +231,7 @@
         IF (DOMAIN(ng)%SouthWest_Corner(tile)) THEN
           IF (LBC_apply(ng)%south(Istr-1).and.                          &
      &        LBC_apply(ng)%west (Jstr-1)) THEN
-            DO d=1,ND
+            DO d=1,ND+1
               ct(Istr-1,Jstr-1,d)=0.5_r8*                               &
      &                            (ct(Istr  ,Jstr-1,d)+                 &
      &                             ct(Istr-1,Jstr  ,d))
@@ -241,7 +241,7 @@
         IF (DOMAIN(ng)%SouthEast_Corner(tile)) THEN
           IF (LBC_apply(ng)%south(Iend+1).and.                          &
      &        LBC_apply(ng)%east (Jstr-1)) THEN
-            DO d=1,ND
+            DO d=1,ND+1
               ct(Iend+1,Jstr-1,d)=0.5_r8*                               &
      &                           (ct(Iend  ,Jstr-1,d)+                  &
      &                            ct(Iend+1,Jstr  ,d))
@@ -251,7 +251,7 @@
         IF (DOMAIN(ng)%NorthWest_Corner(tile)) THEN
           IF (LBC_apply(ng)%north(Istr-1).and.                          &
      &        LBC_apply(ng)%west (Jend+1)) THEN
-            DO d=1,ND
+            DO d=1,ND+1
               ct(Istr-1,Jend+1,d)=0.5_r8*                               &
      &                            (ct(Istr-1,Jend  ,d)+                 &
      &                             ct(Istr  ,Jend+1,d))
@@ -261,7 +261,7 @@
         IF (DOMAIN(ng)%NorthEast_Corner(tile)) THEN
           IF (LBC_apply(ng)%north(Iend+1).and.                          &
      &        LBC_apply(ng)%east (Jend+1)) THEN
-            DO d=1,ND
+            DO d=1,ND+1
               ct(Iend+1,Jend+1,d)=0.5_r8*                               &
      &                            (ct(Iend+1,Jend  ,d)+                 &
      &                             ct(Iend  ,Jend+1,d))

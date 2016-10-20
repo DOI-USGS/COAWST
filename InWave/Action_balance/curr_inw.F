@@ -127,10 +127,10 @@
       real(r8), intent(in) :: ubar(LBi:UBi,LBj:UBj,2)
       real(r8), intent(in) :: vbar(LBi:UBi,LBj:UBj,2)
 #   endif
-      real(r8), intent(in) :: kwc(LBi:UBi,LBj:UBj,ND(ng))
-      real(r8), intent(in) :: h_tot(LBi:UBi,LBj:UBj,ND(ng))
-      real(r8), intent(inout) :: u_rho(LBi:UBi,LBj:UBj,ND(ng))
-      real(r8), intent(inout) :: v_rho(LBi:UBi,LBj:UBj,ND(ng))
+      real(r8), intent(in) :: kwc(LBi:UBi,LBj:UBj,ND)
+      real(r8), intent(in) :: h_tot(LBi:UBi,LBj:UBj,ND)
+      real(r8), intent(inout) :: u_rho(LBi:UBi,LBj:UBj,ND)
+      real(r8), intent(inout) :: v_rho(LBi:UBi,LBj:UBj,ND)
 #  endif
 !
 !  Local variable declarations.
@@ -157,10 +157,10 @@
 ! We can change this is the future.
 
           kwc_mean=0.0_r8
-          DO d=1,ND(ng)
+          DO d=1,ND
             kwc_mean=kwc_mean+kwc(i,j,d)
           END DO
-          kwc_mean=kwc_mean/ND(ng)
+          kwc_mean=kwc_mean/ND
 !
 !======================================================================!
 !     Compute u and v currents affecting the wave field at rho points  !

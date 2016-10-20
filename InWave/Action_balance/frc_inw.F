@@ -124,10 +124,10 @@
 #  endif
       real(r8), intent(in) :: WD(:)
 # else
-      real(r8), intent(in) :: Tr(LBi:UBi,LBj:UBj,ND(ng))
-      real(r8), intent(in) :: Ta(LBi:UBi,LBj:UBj,ND(ng))
-      real(r8), intent(in) :: kwc(LBi:UBi,LBj:UBj,ND(ng))
-      real(r8), intent(inout) :: AC(LBi:UBi,LBj:UBj,ND(ng),3)
+      real(r8), intent(in) :: Tr(LBi:UBi,LBj:UBj,ND)
+      real(r8), intent(in) :: Ta(LBi:UBi,LBj:UBj,ND)
+      real(r8), intent(in) :: kwc(LBi:UBi,LBj:UBj,ND)
+      real(r8), intent(inout) :: AC(LBi:UBi,LBj:UBj,ND,3)
       real(r8), intent(inout) :: Hwave(LBi:UBi,LBj:UBj)
       real(r8), intent(inout) :: Dwave(LBi:UBi,LBj:UBj)
       real(r8), intent(inout) :: Lwave(LBi:UBi,LBj:UBj)
@@ -142,7 +142,7 @@
       real(r8), intent(inout) :: Pwave_bot(LBi:UBi,LBj:UBj)
 #  endif
       real(r8), intent(in) :: rho(LBi:UBi,LBj:UBj)
-      real(r8), intent(in) :: WD(ND(ng))
+      real(r8), intent(in) :: WD(ND)
       real(r8), intent(in) :: h_tot(LBi:UBi,LBj:UBj)
 # endif
 !
@@ -168,7 +168,7 @@
           TRM=0.0_r8
           DIRM=0.0_r8
           IF(h_tot(i,j).ge.Dcrit(ng))then
-            DO d=1,ND(ng)
+            DO d=1,ND
 !=======================================================================
 !  Compute the energy from the action balance and the wave height
 !=======================================================================
