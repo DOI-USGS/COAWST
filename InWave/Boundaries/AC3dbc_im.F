@@ -152,7 +152,7 @@
 !
         ELSE IF (LBC(iwest,isAC3d,ng)%clamped) THEN
           DO k=1,ND
-            DO d_bnd=1,WAVEB(ng)%ND_BND
+            DO d_bnd=1,WAVEB(ng)%ND_bnd
               IF(WAVEB(ng)%WD_BND(d_bnd).EQ.WAVEG(ng)%wd(k))then
                 DO j=Jstr,Jend
                   IF (LBC_apply(ng)%west(j)) THEN
@@ -255,7 +255,7 @@
 !  Eastern edge, clamped boundary condition.
 !
         ELSE IF (LBC(ieast,isAC3d,ng)%clamped) THEN
-          DO d_bnd=1,WAVEB(ng)%ND_BND
+          DO d_bnd=1,WAVEB(ng)%ND_bnd
             DO k=1,ND
               IF(WAVEB(ng)%WD_BND(d_bnd).EQ.WAVEG(ng)%wd(k)) THEN
                 IF (LBC_apply(ng)%east(j)) THEN
@@ -358,7 +358,7 @@
 !  Southern edge, clamped boundary condition.
 !
         ELSE IF (LBC(isouth,isAC3d,ng)%clamped) THEN
-          DO d_bnd=1,WAVEB(ng)%ND_BND
+          DO d_bnd=1,WAVEB(ng)%ND_bnd
             DO k=1,ND
               IF(WAVEB(ng)%WD_BND(d_bnd).EQ.WAVEG(ng)%wd(k))then
                 DO i=Istr,Iend
@@ -461,7 +461,7 @@
 !  Northern edge, clamped boundary condition.
 !
         ELSE IF (LBC(inorth,isAC3d,ng)%clamped) THEN
-          DO d_bnd=1,WAVEB(ng)%ND_BND
+          DO d_bnd=1,WAVEB(ng)%ND_bnd
             DO k=1,ND
               IF(WAVEB(ng)%WD_BND(d_bnd).EQ.WAVEG(ng)%wd(k))then
                 DO i=Istr,Iend

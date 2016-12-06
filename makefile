@@ -517,15 +517,16 @@ endif
 
 ifdef USE_INWAVE
  modules  +=	InWave/Drivers \
-             InWave/Action_balance \
-             InWave/Boundaries \
-             InWave/Modules \
-             InWave/Utility
+		InWave/Action_balance \
+		InWave/Boundaries \
+		InWave/Modules \
+		InWave/Utility
  includes +=	InWave/Drivers \
-             InWave/Action_balance \
-             InWave/Boundaries \
-             InWave/Modules \
-             InWave/Utility
+		InWave/Action_balance \
+		InWave/Boundaries \
+		InWave/Include \
+		InWave/Modules \
+		InWave/Utility
 endif
 
 ifdef USE_ROMS

@@ -10,9 +10,8 @@
 !  NFREQ       number of frequency dimensions in Fourier components    !
 !  NDIRSW      number of directional dimensions in SWAN spectra        !
 !  NFREQSW     number of frequency dimensions in SWAN spectra          !
-!  N           number of time steps                                    !
+!  Insteps     number of time steps                                    !
 !  DUR         duration of the time series to generate                 !
-!  N           number of time steps                                    !
 !  DT          time step in the time series of the free surface        !
 !              elevation signal                                        !
 !  FNYQ        Nyquist frequency                                       !
@@ -88,12 +87,15 @@
 
          integer             :: ndir,nfreq
          integer             :: ndirsw,nfreqsw
-         integer             :: N
+         integer             :: Insteps
          real(r8)            :: dur,dt
          real(r8)            :: fnyq,fmax,fmin,df,Trep
          real(r8)            :: ddir,fp
          real(r8)            :: mainang, hm0gew, dang,int
          real(r8)            :: df_fft
+         real(r8)            :: SpecTimeIso(2)
+         real(r8)            :: SpecTime(2)
+         real(r8)            :: SpecTimedt
 
          real(r8), pointer :: fsw(:)
          real(r8), pointer :: f(:)
@@ -145,7 +147,6 @@
 !  Allocate and initialize module variables.
 !-----------------------------------------------------------------------
 !
-
       IF (ng.eq.1) allocate ( WAVES(Ngrids) )
 
       RETURN
@@ -153,7 +154,7 @@
 
 !
 !***********************************************************************
-      SUBROUTINE inwave_swan_run (ng)
+      SUBROUTINE inwave_swan_run (ng, first)
 !***********************************************************************
 !
 !=======================================================================
@@ -174,28 +175,26 @@
       USE mod_iounits
       USE mod_scalars
       USE mod_inwave_params
-!      USE mod_inwave_spectra
 
 !  Imported variable declarations.
 !
-      integer, intent(in) :: ng
+      integer, intent(in) :: ng, first
 
 !  Local variable declarations.
 
-      integer             :: dir_index,i
-
+      integer :: i, dir_index
 !
 !-----------------------------------------------------------------------
 ! Read swan output spectra
 !-----------------------------------------------------------------------
 !
-      call swan_reader (ng)
+      call swan_reader (ng, first)
 !
 !-----------------------------------------------------------------------
 ! Generate the arrays for the frequency components and Fourier components
 !-----------------------------------------------------------------------
 !
-      call array_gen (ng)
+      call array_gen (ng, first)
 !
 !-----------------------------------------------------------------------
 ! Generate random phases fro each frequency component
@@ -213,26 +212,25 @@
 ! Compute the Fourier Components
 !-----------------------------------------------------------------------
 !
-      DO dir_index=1,nd(ng)
-        call FourierComp (dir_index,ng)
+      DO dir_index=1,ND
+        call FourierComp (dir_index, ng, first)
       ENDDO
 !
 !-----------------------------------------------------------------------
 ! Compute the Hilbert transform
 !-----------------------------------------------------------------------
 !
-
       call hilbert(WAVES(ng)%Comptemp_tot,size(WAVES(ng)%Comptemp_tot))
 
       WAVES(ng)%Ampzeta_tot(:)=abs(WAVES(ng)%Comptemp_tot)
 
 !
 !-----------------------------------------------------------------------
-! Compute the wave energy
+! Compute the wave energy, scale for each direction
 !-----------------------------------------------------------------------
 !
-      DO dir_index=1,nd(ng)
-        DO i=1,WAVES(ng)%N
+      DO dir_index=1,ND
+        DO i=1,WAVES(ng)%Insteps
           WAVES(ng)%Ampzeta(i,dir_index)=0.5_r8*g*rho0*                 &
      &                                   (WAVES(ng)%Ampzeta_tot(i)*     &
      &                                   WAVES(ng)%SDD(dir_index)/      &
@@ -246,7 +244,7 @@
 
 !
 !***********************************************************************
-      SUBROUTINE array_gen (ng)
+      SUBROUTINE array_gen (ng, first)
 !***********************************************************************
 !
 !=======================================================================
@@ -259,31 +257,30 @@
       USE mod_scalars
       USE mod_inwave_vars
       USE mod_inwave_params
-!      USE mod_inwave_spectra
+      USE mod_inwave_bound
+!     USE mod_inwave_spectra
 
       implicit none
 
 !  Imported variable declarations.
 !
-      integer, intent(in) :: ng
+      integer, intent(in) :: ng, first
 
 !  Local variable declarations.
 
-      integer :: i,j,p,n_pos_f
-      real    :: N_ini
-
-      real(r8), pointer     :: temp(:)   ! scratch array
-      real(r8)              :: Fmin, Fmax
+      integer             :: i, j, p, n_pos_f
+      real(r8)            :: Fmin, Fmax, cff
 !
 !-----------------------------------------------------------------------
 ! Define the Nyquist frequency, the maximum and minimum frequencies and 
 ! the number of directional bins
 !-----------------------------------------------------------------------
 !
-      WAVES(ng)%fnyq=3.0_r8*WAVES(ng)%fp
-      WAVES(ng)%fmax=WAVES(ng)%fnyq
-      WAVES(ng)%fmin=WAVES(ng)%fp/20.0_r8
-      WAVES(ng)%ndir=nd(ng)
+      IF (first.eq.1) THEN
+        WAVES(ng)%fnyq=3.0_r8*WAVES(ng)%fp
+        WAVES(ng)%fmax=WAVES(ng)%fnyq
+        WAVES(ng)%fmin=WAVES(ng)%fp/20.0_r8
+        WAVES(ng)%ndir=ND
 !
 !-----------------------------------------------------------------------
 ! Create the frequency and directional arrays for the fft
@@ -291,64 +288,90 @@
 !
       WAVES(ng)%nfreq=1000.0_r8    !!!! I choose this because I wanted
 
-      allocate (temp(WAVES(ng)%nfreq))
-      allocate (WAVES(ng)%f(WAVES(ng)%nfreq))
-      allocate (WAVES(ng)%SD(WAVES(ng)%nfreq,nd (ng)))
-      allocate (WAVES(ng)%SDD(nd(ng)))
+        allocate (WAVES(ng)%f(WAVES(ng)%nfreq))
+        allocate (WAVES(ng)%SD(WAVES(ng)%nfreq,ND))
+        allocate (WAVES(ng)%SDD(ND))
 
-      WAVES(ng)%df=(WAVES(ng)%fmax-WAVES(ng)%fmin)/(WAVES(ng)%nfreq-1)
+        WAVES(ng)%df=(WAVES(ng)%fmax-WAVES(ng)%fmin)/                   &
+     &                REAL((WAVES(ng)%nfreq-1),r8)
 
-      DO i=1,WAVES(ng)%nfreq
-        WAVES(ng)%f(i)=REAL(i+1,r8)*WAVES(ng)%df+WAVES(ng)%fmin
-      END DO
+        write(*,*) 'Computing AC boundary forcing'
+        DO i=1,WAVES(ng)%nfreq
+!         WAVES(ng)%f(i)=REAL(i+1,r8)*WAVES(ng)%df+WAVES(ng)%fmin
+          WAVES(ng)%f(i)=REAL(i-1,r8)*WAVES(ng)%df+WAVES(ng)%fmin
+        END DO
+      END IF
 !
 !-----------------------------------------------------------------------
 ! Interpolate from the SWAN 2D spectral grid to the 2D spectral grid that
 ! we predefine
-!-----------------------------------------------------------------------
 !
-      call interp2d ( 1, WAVES(ng)%nfreqsw, 1, WAVES(ng)%ndirsw,        &
+      call interp2d (1, WAVES(ng)%nfreqsw, 1, WAVES(ng)%ndirsw,         &
      &               WAVES(ng)%fsw, WAVES(ng)%theta, WAVES(ng)%SDSW,    &
-     &               1, WAVES(ng)%nfreq, 1, nd (ng),                    &
-     &               1, WAVES(ng)%nfreq, 1, nd (ng),                    &
+     &               1, WAVES(ng)%nfreq, 1, ND,                         &
+     &               1, WAVES(ng)%nfreq, 1, ND,                         &
      &               WAVES(ng)%f, WAVEG(ng)%wd,                         &
      &               WAVES(ng)%SD)
-
-      WAVES(ng)%SDD = sum(WAVES(ng)%SD, DIM = 1)*WAVES(ng)%df
-
-      WAVES(ng)%int=0.0_r8
-
-      DO i=1,nd(ng)
-        WAVES(ng)%int =WAVES(ng)%int+WAVES(ng)%SDD(i)*WAVEG(ng)%pd(i)
-      ENDDO
-
-      WAVES(ng)%dur=1./WAVES(ng)%df
-      WAVES(ng)%N=nint(WAVES(ng)%dur/dt(ng))
-
-      IF (mod(WAVES(ng)%N,2)/=0)THEN
-        WAVES(ng)%N=WAVES(ng)%N+1
-      ENDIF
-
-!     allocate(WAVES(ng)%CompFn(WAVES(ng)%N))
-      allocate(WAVES(ng)%CompFn(WAVES(ng)%nfreq))
-      allocate(WAVES(ng)%zeta(WAVES(ng)%N,WAVES(ng)%ndir))
-      allocate(WAVES(ng)%Ampzeta(WAVES(ng)%N,WAVES(ng)%ndir))
-      allocate(WAVES(ng)%Ampzeta_tot(WAVES(ng)%N))
-
+!
+!  Sum up all wave E for each dir.
+!
       DO j=1,WAVES(ng)%ndir
-        DO i=1,WAVES(ng)%N    
-          WAVES(ng)%zeta(i,j)=0.0_r8
-          WAVES(ng)%Ampzeta(i,j)=0.0_r8
+        cff=0.0_r8
+        DO i=1,WAVES(ng)%nfreq
+          cff=cff+WAVES(ng)%SD(i,j)
+        ENDDO
+        WAVES(ng)%SDD(j)=cff
+      ENDDO
+!
+!  Sum up E over all dirs (so this should be Etot?)
+!
+      WAVES(ng)%int=0.0_r8
+      DO i=1,ND
+        WAVES(ng)%int=WAVES(ng)%int+WAVES(ng)%SDD(i)*WAVEG(ng)%pd(i)
+      ENDDO
+!
+      IF (first.eq.1) THEN
+!
+!  Set bound directional arrays to be equal to the computational dirs
+!  jcw add.
+!
+        WAVEB(ng)%ND_bnd=ND
+        allocate(WAVEB(ng)%WD_bnd(ND))
+        DO i=1,ND
+          WAVEB(ng)%WD_BND(i)=WAVEG(ng)%wd(i)
         END DO
-      END DO
+!
+!  Determine the time dimensions of duration and num steps.
+!
+        WAVES(ng)%dur=1./WAVES(ng)%df
+        WAVES(ng)%Insteps=nint(WAVES(ng)%dur/dt(ng))
+
+!        IF (mod(WAVES(ng)%N,2)/=0)THEN
+!          WAVES(ng)%N=WAVES(ng)%N+1
+!        ENDIF
+!
+!  Allocate and init the computational arrays.
+!
+        allocate(WAVES(ng)%CompFn(WAVES(ng)%Insteps))
+        allocate(WAVES(ng)%zeta(WAVES(ng)%Insteps,WAVES(ng)%ndir))
+        allocate(WAVES(ng)%Ampzeta(WAVES(ng)%Insteps,WAVES(ng)%ndir))
+        allocate(WAVES(ng)%Ampzeta_tot(WAVES(ng)%Insteps))
 !
 !-----------------------------------------------------------------------
 ! Create frequency and directional arrays for the spectra
 !-----------------------------------------------------------------------
 !
-      allocate (WAVES(ng)%position(size(WAVES(ng)%f)))
-      allocate (WAVES(ng)%phase(size(WAVES(ng)%f),WAVES(ng)%ndir))
-      allocate (WAVES(ng)%amp(size(WAVES(ng)%f),WAVES(ng)%ndir))
+        allocate (WAVES(ng)%position(WAVES(ng)%nfreq))
+        allocate (WAVES(ng)%phase(WAVES(ng)%nfreq,WAVES(ng)%ndir))
+        allocate (WAVES(ng)%amp(WAVES(ng)%nfreq,WAVES(ng)%ndir))
+      END IF
+!
+      DO j=1,WAVES(ng)%ndir
+        DO i=1,WAVES(ng)%Insteps
+          WAVES(ng)%zeta(i,j)=0.0_r8
+          WAVES(ng)%Ampzeta(i,j)=0.0_r8
+        END DO
+      END DO
 
       RETURN
 
@@ -360,7 +383,6 @@
 !***********************************************************************
 !
       USE mod_scalars
-!      USE mod_inwave_spectra
 
       implicit none
 
@@ -370,12 +392,12 @@
       
 !  Local variable declarations.
 
-      integer               :: i,j
-      real(r8)              :: twopi
+      integer :: i,j
+      real(r8) :: twopi
 
       call random_number(WAVES(ng)%phase)
 
-      twopi= 2.0_r8*pi
+      twopi=2.0_r8*pi
 
       DO j=1,WAVES(ng)%ndir
         DO i=1,size(WAVES(ng)%f)
@@ -389,7 +411,7 @@
 
 !
 !***********************************************************************
-      SUBROUTINE tpdcalc(Sf,f,Trep)
+      SUBROUTINE tpdcalc(Sf,f,frep)
 !***********************************************************************
 !
       USE mod_inwave_bound
@@ -398,8 +420,7 @@
 
       real(r8), intent(in)  :: Sf(:), f(:)
       real(r8), pointer     :: temp(:)
-      real(r8)              :: Trep
-
+      real(r8)              :: frep
 
       allocate(temp(size(Sf)))
       temp=0.0_r8
@@ -407,7 +428,8 @@
        temp=1.0_r8
       end where
 
-      Trep=sum(temp*Sf*f)/sum(temp*Sf)
+      frep=sum(temp*Sf*f)/sum(temp*Sf)
+      deallocate(temp)
 
       RETURN
 
@@ -421,7 +443,7 @@
 
       use mod_scalars
       use mod_inwave_params
-!      USE mod_inwave_spectra
+      USE mod_inwave_vars
 
       implicit none
 
@@ -434,7 +456,6 @@
       integer                         :: i, j
       integer                         :: dir_index
       real(r8)                        :: cff1, cff2
-
 !
 !-----------------------------------------------------------------------
 ! Compute the amplitude for the Fourier components
@@ -442,7 +463,8 @@
 !-----------------------------------------------------------------------
 !
       cff1=WAVES(ng)%df
-      cff2=WAVES(ng)%dang
+!     cff2=WAVES(ng)%dang
+      cff2=WAVEG(ng)%pd(2)  !  jcw use pd not dang, not sure of pd(1)
       DO j=1,WAVES(ng)%ndir
         DO i=1,WAVES(ng)%nfreq
           WAVES(ng)%amp(i,j)= sqrt(2.0_r8*WAVES(ng)%SD(i,j)*cff1*cff2)
@@ -461,7 +483,7 @@
 
 !
 !***********************************************************************
-      SUBROUTINE FourierComp (dir_index,ng)
+      SUBROUTINE FourierComp (dir_index, ng, first)
 !***********************************************************************
 !
 
@@ -472,67 +494,96 @@
 
 !  Imported variable declarations.
 !
-      integer, intent(in) :: ng
+      integer, intent(in) :: dir_index, ng, first
 
 !  Local variable declarations.
 !
-
-      integer                         :: i,F2
-      integer                         :: dir_index,nn
+      integer                         :: mai, jcw
+      integer                         :: i, j, F2, nn
+      real(r8)                        :: cff
+      real(r8)                        :: twopi
       complex(kind(0.0d0))            :: compi
 
-      WAVES(ng)%CompFn=0.0_r8
+      twopi=2.0_r8*pi
+!     WAVES(ng)%CompFn=0.0_r8
 
-      F2=0.0_r8
-
+      F2=0
       compi = (0.0_r8,1.0_r8)
 
 ! COMPUTES THE FOURIER COMPONENTS
 
-      DO i=1,WAVES(ng)%nfreq
-!     DO i=1,WAVES(ng)%N
-        WAVES(ng)%CompFn(i)=0.5_r8*WAVES(ng)%amp(i,dir_index)*          &
-     &                      exp(compi*WAVES(ng)%phase(i,dir_index))
-      END DO
+      mai=0
+      jcw=1
+      
+      IF (mai.eq.1) THEN           ! this was mai original
+!        DO i=1,WAVES(ng)%N
+!          WAVES(ng)%CompFn(i)=0.5_r8*WAVES(ng)%amp(i,dir_index)*        &
+!     &                        exp(compi*WAVES(ng)%phase(i,dir_index))
+!        END DO
 
-      nn=size(WAVES(ng)%CompFn(WAVES(ng)%N/2+2:WAVES(ng)%N))
+!        nn=size(WAVES(ng)%CompFn(WAVES(ng)%N/2+2:WAVES(ng)%N))
 
-      allocate(WAVES(ng)%Comptemp(nn))
+!        allocate(WAVES(ng)%Comptemp(nn))
 
-      WAVES(ng)%Comptemp=conjg(WAVES(ng)%CompFn(2:WAVES(ng)%N/2))
+!        WAVES(ng)%Comptemp=conjg(WAVES(ng)%CompFn(2:WAVES(ng)%N/2))
 
-      call flipiv(WAVES(ng)%Comptemp,size(WAVES(ng)%Comptemp))
+!        call flipiv(WAVES(ng)%Comptemp,size(WAVES(ng)%Comptemp))
 
-      WAVES(ng)%CompFn(WAVES(ng)%N/2+2:WAVES(ng)%N)=WAVES(ng)%Comptemp
+!        WAVES(ng)%CompFn(WAVES(ng)%N/2+2:WAVES(ng)%N)=WAVES(ng)%Comptemp
 
-      deallocate(WAVES(ng)%Comptemp)
+!        deallocate(WAVES(ng)%Comptemp)
 
-      allocate(WAVES(ng)%Comptemp(size(WAVES(ng)%CompFn)))
+!        allocate(WAVES(ng)%Comptemp(size(WAVES(ng)%CompFn)))
 
-      IF (dir_index.eq.1)THEN
-        allocate(WAVES(ng)%Comptemp_tot(size(WAVES(ng)%CompFn)))
-      ENDIF
+!        IF (dir_index.eq.1)THEN
+!          allocate(WAVES(ng)%Comptemp_tot(size(WAVES(ng)%CompFn)))
+!        ENDIF
 
-      WAVES(ng)%Comptemp=fft(WAVES(ng)%CompFn,inv=.true.,stat=F2)
+!        WAVES(ng)%Comptemp=fft(WAVES(ng)%CompFn,inv=.true.,stat=F2)
 
 ! SCALE FACTOR
 
-      WAVES(ng)%Comptemp=WAVES(ng)%Comptemp/                            &
-     &                   sqrt(real(size(WAVES(ng)%Comptemp)))
+!        WAVES(ng)%Comptemp=WAVES(ng)%Comptemp/                          &
+!     &                     sqrt(real(size(WAVES(ng)%Comptemp)))
 
-      WAVES(ng)%zeta(:,dir_index)=dble(WAVES(ng)%Comptemp*WAVES(ng)%N)
+!        WAVES(ng)%zeta(:,dir_index)=dble(WAVES(ng)%Comptemp*WAVES(ng)%N)
 
-      WAVES(ng)%Comptemp=WAVES(ng)%zeta(:,dir_index)
+!        WAVES(ng)%Comptemp=WAVES(ng)%zeta(:,dir_index)
 
-      WAVES(ng)%Comptemp_tot=WAVES(ng)%Comptemp_tot+WAVES(ng)%Comptemp
+!        WAVES(ng)%Comptemp_tot=WAVES(ng)%Comptemp_tot+WAVES(ng)%Comptemp
 
 ! COMPUTES THE HILBERT TRANSFORM
 
-      CALL hilbert(WAVES(ng)%Comptemp,size(WAVES(ng)%Comptemp))
+!        CALL hilbert(WAVES(ng)%Comptemp,size(WAVES(ng)%Comptemp))
+!        WAVES(ng)%Ampzeta(:,dir_index)=abs(WAVES(ng)%Comptemp)
 
-      WAVES(ng)%Ampzeta(:,dir_index)=abs(WAVES(ng)%Comptemp)
+!        deallocate(WAVES(ng)%Comptemp)
+      END IF           ! jcw, this was mai original
+!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+      IF (jcw.eq.1) THEN           ! this is jcw approach
+        DO i=1,WAVES(ng)%Insteps
+          WAVES(ng)%CompFn(i)=0.0_r8
+          DO j=1,WAVES(ng)%nfreq
+            cff=REAL((i-1),r8)*dt(ng)
+            WAVES(ng)%CompFn(i)=WAVES(ng)%CompFn(i)+                    &
+     &                          WAVES(ng)%amp(j,dir_index)*             &
+     &                          COS(twopi*WAVES(ng)%f(j)*cff+           &
+     &                              WAVES(ng)%phase(j,dir_index))
+          END DO
+        END DO
 
-      deallocate(WAVES(ng)%Comptemp)
+        IF ((dir_index.eq.1).and.(first.eq.1)) THEN
+          allocate(WAVES(ng)%Comptemp_tot(WAVES(ng)%Insteps))
+        ENDIF
+
+        DO i=1,WAVES(ng)%Insteps
+          WAVES(ng)%Comptemp_tot(i)=WAVES(ng)%Comptemp_tot(i)+          &
+     &                              WAVES(ng)%CompFn(i)
+        END DO
+
+      END IF           ! jcw
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
       RETURN
 

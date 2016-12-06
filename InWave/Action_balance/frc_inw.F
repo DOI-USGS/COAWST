@@ -105,14 +105,15 @@
       integer, intent(in) :: IminS, ImaxS, JminS, JmaxS
 !
 # ifdef ASSUMED_SHAPE
+      real(r8), intent(in) :: WD(:)
       real(r8), intent(in) :: Tr(LBi:,LBj:,:)
       real(r8), intent(in) :: Ta(LBi:,LBj:,:)
       real(r8), intent(in) :: kwc(LBi:,LBj:,:)
-      real(r8), intent(inout) :: AC(LBi:,LBj:,:,:)
+      real(r8), intent(in) :: AC(LBi:,LBj:,:,:)
       real(r8), intent(inout) :: Hwave(LBi:,LBj:)
       real(r8), intent(inout) :: Dwave(LBi:,LBj:)
       real(r8), intent(inout) :: Lwave(LBi:,LBj:)
-      real(r8), intent(inout) :: h_tot(LBi:,LBj:)
+      real(r8), intent(in) :: h_tot(LBi:,LBj:)
 #  if defined WAVES_UB
       real(r8), intent(inout) :: Uwave_rms(LBi:,LBj:)
 #  endif
@@ -122,16 +123,16 @@
 #  if defined WAVES_BOT_PERIOD
       real(r8), intent(inout) :: Pwave_bot(LBi:,LBj:)
 #  endif
-      real(r8), intent(in) :: WD(:)
 # else
+      real(r8), intent(in) :: WD(ND)
       real(r8), intent(in) :: Tr(LBi:UBi,LBj:UBj,ND)
       real(r8), intent(in) :: Ta(LBi:UBi,LBj:UBj,ND)
       real(r8), intent(in) :: kwc(LBi:UBi,LBj:UBj,ND)
-      real(r8), intent(inout) :: AC(LBi:UBi,LBj:UBj,ND,3)
+      real(r8), intent(in) :: AC(LBi:UBi,LBj:UBj,ND,3)
       real(r8), intent(inout) :: Hwave(LBi:UBi,LBj:UBj)
       real(r8), intent(inout) :: Dwave(LBi:UBi,LBj:UBj)
       real(r8), intent(inout) :: Lwave(LBi:UBi,LBj:UBj)
-
+      real(r8), intent(in) :: h_tot(LBi:UBi,LBj:UBj)
 #  if defined WAVES_UB
       real(r8), intent(inout) :: Uwave_rms(LBi:UBi,LBj:UBj)
 #  endif
@@ -141,9 +142,6 @@
 #  if defined WAVES_BOT_PERIOD
       real(r8), intent(inout) :: Pwave_bot(LBi:UBi,LBj:UBj)
 #  endif
-      real(r8), intent(in) :: rho(LBi:UBi,LBj:UBj)
-      real(r8), intent(in) :: WD(ND)
-      real(r8), intent(in) :: h_tot(LBi:UBi,LBj:UBj)
 # endif
 !
 !  Local variable declarations.
@@ -151,8 +149,9 @@
       integer :: i, j, d
       real(r8) :: EW, KM, TRM, H, DIRM, twopi
       real(r8) :: EN
-      real(r8), parameter :: Lmin = 10.0_r8
-      real(r8), parameter :: Pmin = 2.0_r8
+      real(r8), parameter :: Lmin=10.0_r8
+      real(r8), parameter :: Pmin=2.0_r8
+      real(r8), parameter :: Trmin=1.0_r8
 !
 
 # include "set_bounds.h"
@@ -172,8 +171,8 @@
 !=======================================================================
 !  Compute the energy from the action balance and the wave height
 !=======================================================================
-              EN=AC(i,j,d,3)*twopi/Tr(i,j,d)
-              IF(EN.lt.0.0_r8)EN=0.0_r8
+              EN=MAX(0.0_r8, AC(i,j,d,3)*twopi/MAX(Trmin,Tr(i,j,d)))
+!             IF(EN.lt.0.0_r8)EN=0.0_r8
 !=======================================================================
 !  Compute the total energy
 !=======================================================================

@@ -70,9 +70,9 @@
 !
       integer :: ILB, IUB, JLB, JUB
       integer :: Imin, Imax, Jmin, Jmax
-      integer :: i, j, d, my_tile
+      integer :: i, j, d, my_tile, tidx
 
-      real(r8)::twopi
+      real(r8):: otwopi
 
       logical :: update = .FALSE.
 
@@ -106,40 +106,46 @@
       Jmax=UBj
 #endif
 
-      twopi=2.0_r8*pi
-
+!     twopi=2.0_r8*pi   !  jcw check this
+      otwopi=1.0_r8/(2.0_r8*pi)
+!
+!     Compute the time index for the BC data. The Ampzeta array
+!     is Insteps long, but it repeats every 1/df.
+!
+      tidx=MOD(iic(ng),WAVES(ng)%Insteps)+1
+!
       IF (LBC(iwest,isAC3d,ng)%acquire) THEN
-        DO d=1,ND(ng)
+        DO d=1,ND
           DO j=Jmin,Jmax
-            WAVEB(ng)%AC_west(j,d)=WAVES(ng)%Ampzeta(iic(ng),d)/        &
-     &      WAVEP(ng)% Tr(LBi,j,ND(ng))*twopi
+            WAVEB(ng)%AC_west(j,d)=WAVES(ng)%Ampzeta(tidx,d)*           &
+     &                             WAVEP(ng)%Tr(LBi,j,d)*otwopi
           END DO
         END DO
       END IF
 
       IF (LBC(ieast,isAC3d,ng)%acquire) THEN
-        DO d=1,ND(ng)
+        DO d=1,ND
           DO j=Jmin,Jmax
-            WAVEB(ng)%AC_east(j,d)=WAVES(ng)%Ampzeta(iic(ng),d)/        &
-     &      WAVEP(ng)% Tr(UBi,j,ND(ng))*twopi
+            WAVEB(ng)%AC_east(j,d)=WAVES(ng)%Ampzeta(tidx,d)*           &
+     &                             WAVEP(ng)%Tr(UBi,j,d)*otwopi
           END DO
         END DO
       END IF
 
       IF (LBC(inorth,isAC3d,ng)%acquire) THEN
-        DO d=1,ND(ng)
+        DO d=1,ND
           DO i=Imin,Imax
-            WAVEB(ng)%AC_north(i,d)=WAVES(ng)%Ampzeta(iic(ng),d)/       &
-     &      WAVEP(ng)% Tr(i,UBj,ND(ng))*twopi
+            WAVEB(ng)%AC_north(i,d)=WAVES(ng)%Ampzeta(tidx,d)*          &
+     &                              WAVEP(ng)%Tr(i,UBj,d)*otwopi
           END DO
         END DO
       END IF
 
       IF (LBC(isouth,isAC3d,ng)%acquire) THEN
-        DO d=1,ND(ng)
+        DO d=1,ND
           DO j=Imin,Imax
-            WAVEB(ng)%AC_south(j,d)=WAVES(ng)%Ampzeta(iic(ng),d)/       &
-     &      WAVEP(ng)% Tr(i,LBj,ND(ng))*twopi
+            WAVEB(ng)%AC_south(j,d)=WAVES(ng)%Ampzeta(tidx,d)*          &
+     &                              WAVEP(ng)%Tr(i,LBj,d)*otwopi
           END DO
         END DO
       END IF

@@ -132,10 +132,11 @@
 #   if !defined WDISS_INWAVE
       real(r8) :: Db
 #   endif
-      real(r8), parameter :: alfa =1.0_r8
-      real(r8), parameter :: break =0.45_r8
-      real(r8), parameter :: n_r =15.0_r8
-      real(r8), parameter :: EWlim = 0.00001_r8
+      real(r8), parameter :: Trmin=1.0_r8
+      real(r8), parameter :: alfa=1.0_r8
+      real(r8), parameter :: break=0.45_r8
+      real(r8), parameter :: n_r=15.0_r8
+      real(r8), parameter :: EWlim=0.00001_r8
       real(r8):: EN(ND)
 
 # include "set_bounds.h"
@@ -151,7 +152,7 @@
 !=======================================================================
 !  Compute the energy from action balance and wave heigth
 !=======================================================================
-            EN(d)=AC(i,j,d,nout)*twopi/(Tr(i,j,d))
+            EN(d)=AC(i,j,d,nout)*twopi/(MAX(Trmin,Tr(i,j,d)))
 !=======================================================================
 !  Compute the total energy
 !=======================================================================

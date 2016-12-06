@@ -84,6 +84,7 @@
 !-----------------------------------------------------------------------
 !
       DO i=Istr,Iend
+       Iout(i)=0
        IF((Xout(i).lt.Xinp(LBx)))THEN
         Iout(i)=0
        ELSE
@@ -100,6 +101,7 @@
       ENDDO
 
       DO i=Jstr,Jend
+       Jout(i)=0
        IF((Yout(i).lt.Yinp(LBy)))THEN
         Jout(i)=0
        ELSE

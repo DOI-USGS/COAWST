@@ -30,7 +30,6 @@ else
   [LP,MP]=size(depth);
   TA= 8.3;                % representative absolute wave period (sec)
   theta=270;
-
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -38,12 +37,10 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 if (make_InWave_ini || make_InWave_bnd )  
-
-  Nbins= 21;                 % number of directional bins considered in the simulation
-  Bindirs_c = [310:5:410];   % center angles of the directional bins, size Nbins.
-  Bindirs = [310-2.5:5:410+2.5]; % Nbins+1
+  Nbins= 36;                 % number of directional bins considered in the simulation
+  Bindirs_c = [5:10:355];   % center angles of the directional bins, size Nbins.
+  Bindirs = [5:10:355]; % Nbins+1
   pd=ones(size(Bindirs)).*5./(Nbins);% Nbins+1
-  
 end  
 
 if (make_InWave_ini)  

@@ -3,11 +3,11 @@
 
 !
 !************************************************************************
-      SUBROUTINE get_inwave_ini(ng, LBi, UBi, LBj, UBj, ncname, AC_ini, &
-     &                          Ta)
+      SUBROUTINE get_inwave_ini(ng, LBi, UBi, LBj, UBj, IniRec,         &
+                                ncname, ac_ini, ta_ini)
 !************************************************************************
 !
-!svn $Id: get_inwave_ini.F 1336 2008-01-24 02:45:56Z jcwarner $
+! svn $Id: get_inwave_ini.F 1336 2008-01-24 02:45:56Z jcwarner $
 ! LAST CHANGE: mai 12/28/2010
 !
 !=======================================================================!
@@ -26,32 +26,29 @@
       USE mod_inwave_vars
       USE nf_fread3d_mod
       USE inwave_iounits
-
 !
       implicit none
 !
 !  Imported variable declarations.
 !
-      integer, intent(in) :: ng
+      integer, intent(in) :: ng, IniRec
+      integer, intent(in) :: LBi, UBi, LBj, UBj
       character (len=80), intent(in) :: ncname
+      real(r8), intent(inout) :: ac_ini(LBi:UBi,LBj:UBj,ND)
+      real(r8), intent(inout) :: ta_ini(LBi:UBi,LBj:UBj,ND)
 !
 !  Local variable declarations.
 !
-      integer :: LBi, UBi, LBj, UBj
-
-      real(r8) :: ac_ini(LBi:UBi,LBj:UBj,ND)
       real(r8) :: Ta
-      real(r8) :: Amin,Amax
-      
+      real(r8) :: Amin, Amax
       real(r8) , parameter :: Ascl=1.0_r8
 
-      integer :: status
-      integer, dimension(4) :: start, total
+      integer :: ndims, status
       integer :: Vsize(4)
+      integer, dimension(nf90_max_var_dims) :: dimIDs
 
-      integer :: i, varid, tindex, gtype
-      integer :: nxnc,nync,ndnc,nxunc,nyvnc
-
+      integer :: i, j, k, varid, gtype
+      integer :: nxnc, nync, ndnc, nxunc, nyvnc
 
 
 !# ifdef PROFILE
@@ -86,10 +83,30 @@
       IF (status.ne.nf90_noerr) THEN
         WRITE (stdout,20)TRIM(Vname(1,idACtp))
         exit_flag=2
-         ioerror=status
+        ioerror=status
       ENDIF
-
-      status=nf90_get_var(ncIWINIid(ng),varid,Ta)
+      status=nf90_inquire_variable(ncIWINIid(ng),varid,dimids = dimIDs)
+      status=nf90_inquire_dimension(ncIWINIid(ng), dimIDs(1), len=ndims)
+      IF (ndims.eq.1) THEN
+        status=nf90_get_var(ncIWINIid(ng),varid,Ta)
+        DO i=LBi,UBi
+          DO j=LBj,UBj
+            DO k=1,ND
+              ta_ini(i,j,k)=Ta
+            END DO
+          END DO
+        END DO
+      ELSE
+        gtype=r3dvar
+        status= nf_fread3d (ng, iNLM, TRIM(ncname), ncIWINIid(ng),      &
+     &              TRIM(Vname(1,idACen)),varid, IniRec, gtype,         &
+     &              Vsize, LBi, UBi, LBj, UBj, 1, ND, Ascl,             &
+     &              Amin, Amax,                                         &
+#ifdef MASKING
+     &              GRID (ng)% rmask,                                   &
+#endif
+     &              ta_ini)
+      ENDIF
       IF (status.ne.nf90_noerr) THEN
         WRITE (stdout,30)TRIM(Vname(1,idACtp))
         exit_flag=2
@@ -108,8 +125,9 @@
       status=nf90_inquire_dimension(ncIWINIid(ng), varid, len=nync)
       status=nf90_inq_dimid(ncIWINIid(ng),'eta_v', varid)
       status=nf90_inquire_dimension(ncIWINIid(ng), varid, len=nyvnc)
-      status=nf90_inq_dimid(ncIWINIid(ng),'energy_angle_c', varid)
-      status=nf90_inquire_dimension(ncIWINIid(ng), varid, len=ndnc)
+!     status=nf90_inq_dimid(ncIWINIid(ng),'energy_angle_c', varid)
+!     write(*,*) 'status is  **** ', status
+!     status=nf90_inquire_dimension(ncIWINIid(ng), varid, len=ndnc)
 
 !
 !-----------------------------------------------------------------------
@@ -122,18 +140,15 @@
         exit_flag=2
          ioerror=status
       ENDIF
-!     gtype=var_flag(varid)*r3dvar
       gtype=r3dvar
-
       status= nf_fread3d (ng, iNLM, TRIM(ncname), ncIWINIid(ng),        &
-     &            TRIM(Vname(1,idACen)),varid, tindex, gtype,           &
+     &            TRIM(Vname(1,idACen)),varid, IniRec, gtype,           &
      &            Vsize, LBi, UBi, LBj, UBj, 1, ND, Ascl,               &
      &            Amin, Amax,                                           &
 #ifdef MASKING
      &            GRID (ng)% rmask,                                     &
 #endif
      &            AC_ini)
-
       IF (status.ne.nf90_noerr) THEN
         WRITE (stdout,30)TRIM(Vname(1,idACen))
         exit_flag=2

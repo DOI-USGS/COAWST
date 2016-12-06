@@ -3954,6 +3954,33 @@
 !  Define names of variables associated with InWave
 !---------------------------------------------------------------------
 !
+'Ta'                                                ! Input
+  'representative absolute peak period'
+  'seconds'                                         ! [s]
+  'TA, scalar'
+  'TA_dim'
+  'idACtp'
+  'nulvar'
+  1.0d0
+
+'energy_angle'                                       ! Input
+  'direction respect to the north of the bin'
+  'degrees'                                          ! [deg]
+  'energy_angle, scalar, series'
+  'ND-1'
+  'idACag'
+  'nulvar'
+  1.0d0
+
+'energy_angle_c'                                     ! Input
+  'direction respect to the north of the bin'
+  'degrees'                                          ! [deg]
+  'energy_angle_centered, scalar, series'
+  'ND'
+  'idACac'
+  'nulvar'
+  1.0d0
+
 'AC'                                               ! Input/Output
   'wave action envelope'
   'Joules s m-2 rad-1'                             ! [kg rad/s]
@@ -4025,16 +4052,6 @@
   'idACbc(inorth)'
   'nulvar'
   1.0d0
-
-'Ta'                                                ! Input
-  'representative absolute peak period'
-  'seconds'                                          ! [s]
-  'TA, scalar'
-  'TA_dim'
-  'idACtp'
-  'nulvar'
-  1.0d0
-
 !
 !---------------------------------------------------------------------
 !  Define names of variables associated with Fennel et al (2006),

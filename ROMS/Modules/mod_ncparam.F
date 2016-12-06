@@ -1429,16 +1429,20 @@
             CASE ('idHbbl')
               idHbbl=varid
 #ifdef INWAVE_MODEL
+              CASE ('idACtp')
+                idACtp=varid
+              CASE ('idACag')
+                idACag=varid
+              CASE ('idACac')
+                idACac=varid
               CASE ('idACen')
                 idACen=varid
-              CASE ('idACct')
-                idACct=varid
               CASE ('idACcx')
                 idACcx=varid
               CASE ('idACcy')
                 idACcy=varid
-              CASE ('idACtp')
-                idACtp=varid
+              CASE ('idACct')
+                idACct=varid
               CASE ('idACbc(iwest)')
                 idACbc(iwest)=varid
               CASE ('idACbc(ieast)')

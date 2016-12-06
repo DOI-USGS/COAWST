@@ -64,9 +64,9 @@
 
 #if defined VEGETATION && (defined VEG_DRAG || defined VEG_BIOMASS)
       integer :: DimIDs(35)
-#elif defined ESTUARYBGC 
+#elif defined ESTUARYBGC
       integer :: DimIDs(34)
-#elif defined INWAVE_MODEL 
+#elif defined INWAVE_MODEL
       integer :: DimIDs(33)
 #else
       integer :: DimIDs(32)
@@ -191,6 +191,7 @@
      &                 IOBOUNDS(ng)%xy_v, DimIDs(19))
         IF (exit_flag.ne.NoError) RETURN
 #endif
+        
 #ifdef INWAVE_MODEL
         status=def_dim(ng, iNLM, HIS(ng)%ncid, ncname,'ND',             &
                        ND, DimIDs(33))
@@ -385,17 +386,6 @@
 # endif
 #endif
 !
-!  Define dimensions for the plant array variables
-!
-#ifdef VEGETATION 
-# if defined VEG_DRAG || defined VEG_BIOMASS
-        v3pgrd(1)=DimIDs( 1)
-        v3pgrd(2)=DimIDs( 5)
-        v3pgrd(3)=DimIDs(35)
-        v3pgrd(4)=DimIDs(12)
-# endif 
-#endif 
-!
 !  Define dimension vectors for staggered v-momentum type variables.
 !
 #if defined WRITE_WATER && defined MASKING
@@ -415,7 +405,19 @@
         v3dgrd(3)=DimIDs( 9)
         v3dgrd(4)=DimIDs(12)
 # endif
-# ifdef INWAVE_MODEL
+#endif
+!
+!  Define dimensions for the plant array variables
+!
+#ifdef VEGETATION
+# if defined VEG_DRAG || defined VEG_BIOMASS
+        v3pgrd(1)=DimIDs( 1)
+        v3pgrd(2)=DimIDs( 5)
+        v3pgrd(3)=DimIDs(35)
+        v3pgrd(4)=DimIDs(12)
+# endif
+#endif
+#ifdef INWAVE_MODEL
 !
 !  Define dimension vector for energy wave layer type variables.
 !
@@ -438,7 +440,6 @@
         t3degrd(2)=DimIDs( 5)
         t3degrd(3)=DimIDs(33)
         t3degrd(4)=DimIDs(12)
-# endif
 #endif
 #ifdef SOLVE3D
 !
@@ -4511,11 +4512,16 @@
             got_var(idWbeh)=.TRUE.
             HIS(ng)%Vid(idWbeh)=var_id(i)
 #endif
-
 #ifdef INWAVE_MODEL
           ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idACen))) THEN
             got_var(idACen)=.TRUE.
             HIS(ng)%Vid(idACen)=var_id(i)
+          ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idACag))) THEN
+            got_var(idACag)=.TRUE.
+            HIS(ng)%Vid(idACag)=var_id(i)
+          ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idACac))) THEN
+            got_var(idACac)=.TRUE.
+            HIS(ng)%Vid(idACac)=var_id(i)
           ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idACcx))) THEN
             got_var(idACcx)=.TRUE.
             HIS(ng)%Vid(idACcx)=var_id(i)
@@ -5008,6 +5014,62 @@
           RETURN
         END IF
 #ifdef SOLVE3D
+# ifdef INWAVE_MODEL
+        IF (.not.got_var(idACen).and.Hout(idACen,ng)) THEN
+          IF (Master) WRITE (stdout,70) TRIM(Vname(1,idACen)),          &
+     &                                  TRIM(ncname)
+          exit_flag=3
+          RETURN
+        END IF
+        IF (.not.got_var(idACag).and.Hout(idACag,ng)) THEN
+          IF (Master) WRITE (stdout,70) TRIM(Vname(1,idACag)),          &
+     &                                  TRIM(ncname)
+          exit_flag=3
+          RETURN
+        END IF
+        IF (.not.got_var(idACac).and.Hout(idACac,ng)) THEN
+          IF (Master) WRITE (stdout,70) TRIM(Vname(1,idACac)),          &
+     &                                  TRIM(ncname)
+          exit_flag=3
+          RETURN
+        END IF
+        IF (.not.got_var(idACcx).and.Hout(idACcx,ng)) THEN
+          IF (Master) WRITE (stdout,70) TRIM(Vname(1,idACcx)),          &
+     &                                  TRIM(ncname)
+          exit_flag=3
+          RETURN
+        END IF
+        IF (.not.got_var(idACcy).and.Hout(idACcy,ng)) THEN
+          IF (Master) WRITE (stdout,70) TRIM(Vname(1,idACcy)),          &
+     &                                  TRIM(ncname)
+          exit_flag=3
+          RETURN
+        END IF
+        IF (.not.got_var(idACct).and.Hout(idACct,ng)) THEN
+          IF (Master) WRITE (stdout,70) TRIM(Vname(1,idACct)),          &
+     &                                  TRIM(ncname)
+          exit_flag=3
+          RETURN
+        END IF
+        IF (.not.got_var(idACtp).and.Hout(idACtp,ng)) THEN
+          IF (Master) WRITE (stdout,70) TRIM(Vname(1,idACtp)),          &
+     &                                  TRIM(ncname)
+          exit_flag=3
+          RETURN
+        END IF
+        IF (.not.got_var(idWdib).and.Hout(idWdib,ng)) THEN
+          IF (Master) WRITE (stdout,70) TRIM(Vname(1,idWdib)),          &
+     &                                  TRIM(ncname)
+          exit_flag=3
+          RETURN
+        END IF
+        IF (.not.got_var(idWdiw).and.Hout(idWdiw,ng)) THEN
+          IF (Master) WRITE (stdout,70) TRIM(Vname(1,idWdiw)),          &
+     &                                  TRIM(ncname)
+          exit_flag=3
+          RETURN
+        END IF
+# endif
 # ifdef UV_KIRBY
         IF (.not.got_var(idUwav).and.Hout(idUwav,ng)) THEN
           IF (Master) WRITE (stdout,70) TRIM(Vname(1,idUwav)),          &

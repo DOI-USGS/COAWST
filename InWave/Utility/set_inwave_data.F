@@ -65,7 +65,7 @@
       integer, intent(in) :: LBi, UBi, LBj, UBj
 
       integer :: ILB, IUB, JLB, JUB
-      integer :: ND_BND, my_tile
+      integer :: ND_bnd, my_tile
 
 !
 !  Local variable declarations.
@@ -82,32 +82,32 @@
       JLB=BOUNDS(ng)%LBj(my_tile)
       JUB=BOUNDS(ng)%UBj(my_tile)
 
-      ND_BND=WAVEB(ng)%ND_BND
+      ND_bnd=WAVEB(ng)%ND_bnd
 
       IF (LBC(iwest,isAC3d,ng)%acquire) THEN
-        CALL set_ngfld (ng, iNLM, idACbc(iwest), JLB, JUB, ND_BND,      &
-     &                  0, Mm(ng)+1, ND_BND,                            &
+        CALL set_ngfld (ng, iNLM, idACbc(iwest), JLB, JUB, ND_bnd,      &
+     &                  0, Mm(ng)+1, ND_bnd,                            &
      &                  WAVEB(ng) % ACG_west(JLB,1,1),                  &
      &                  WAVEB(ng) % AC_west(JLB,1),                     &
      &                  update)
       END IF
       IF (LBC(ieast,isAC3d,ng)%acquire) THEN
-        CALL set_ngfld (ng, iNLM, idACbc(ieast), JLB, JUB, ND_BND,      &
-     &                  0, Mm(ng)+1, ND_BND,                            &
+        CALL set_ngfld (ng, iNLM, idACbc(ieast), JLB, JUB, ND_bnd,      &
+     &                  0, Mm(ng)+1, ND_bnd,                            &
      &                  WAVEB(ng) % ACG_east(JLB,1,1),                  &
      &                  WAVEB(ng) % AC_east(JLB,1),                     &
      &                  update)
       END IF
       IF (LBC(inorth,isAC3d,ng)%acquire) THEN
-        CALL set_ngfld (ng, iNLM, idACbc(inorth), ILB, IUB, ND_BND,     &
-     &                  0, Lm(ng)+1, ND_BND,                            &
+        CALL set_ngfld (ng, iNLM, idACbc(inorth), ILB, IUB, ND_bnd,     &
+     &                  0, Lm(ng)+1, ND_bnd,                            &
      &                  WAVEB(ng) % ACG_north(ILB,1,1),                 &
      &                  WAVEB(ng) % AC_north(ILB,1),                    &
      &                  update)
       END IF
       IF (LBC(isouth,isAC3d,ng)%acquire) THEN
-        CALL set_ngfld (ng, iNLM, idACbc(isouth), ILB, IUB, ND_BND,     &
-     &                  0, Lm(ng)+1, ND_BND,                            &
+        CALL set_ngfld (ng, iNLM, idACbc(isouth), ILB, IUB, ND_bnd,     &
+     &                  0, Lm(ng)+1, ND_bnd,                            &
      &                  WAVEB(ng) % ACG_south(ILB,1,1),                 &
      &                  WAVEB(ng) % AC_south(ILB,1),                    &
      &                  update)

@@ -50,10 +50,9 @@
 # endif
      &                            GRID(ng) % h,                         &
      &                            COUPLING(ng)%Zt_avg1 ,                &
-     &                            WAVEP(ng) % Tr,                       &
-     &                            WAVEP(ng) % h_tot,                    &
      &                            WAVEP(ng) % kwc,                      &
-     &                            WAVEP(ng) % cwc)
+     &                            WAVEP(ng) % Tr,                       &
+     &                            WAVEP(ng) % h_tot)
 !# ifdef PROFILE
 !      CALL wclock_off (ng, iNLM, 35)
 !# endif
@@ -67,10 +66,9 @@
 # ifdef MASKING
      &                                  rmask,                          &
 # endif
-     &                                  h,                              &
-     &                                  zeta,                           &
-     &                                  Tr,                             &
-     &                                  h_tot, kwc, cwc)
+     &                                  h, zeta,                        &
+     &                                  kwc, Tr,                        &
+     &                                  h_tot)
 !***********************************************************************
 !
       USE mod_param
@@ -98,20 +96,18 @@
 #  endif
       real(r8), intent(in) :: h(LBi:,LBj:)
       real(r8), intent(in) :: zeta(LBi:,LBj:)
-      real(r8), intent(inout) :: h_tot(LBi:,LBj:)
-      real(r8), intent(inout) :: kwc(LBi:,LBj:,:)
-      real(r8), intent(inout) :: cwc(LBi:,LBj:,:)
+      real(r8), intent(in) :: kwc(LBi:,LBj:,:)
       real(r8), intent(inout) :: Tr(LBi:,LBj:,:)
+      real(r8), intent(inout) :: h_tot(LBi:,LBj:)
 # else
 #  ifdef MASKING
       real(r8), intent(in) :: rmask(LBi:UBi,LBj:UBj)
 #  endif
       real(r8), intent(in) :: h(LBi:,LBj:)
       real(r8), intent(in) :: zeta(LBi:UBi,LBj:UBj)
-      real(r8), intent(inout) :: h_tot(LBi:UBi,LBj:UBj)
-      real(r8), intent(inout) :: kwc(LBi:UBi,LBj:UBj,ND)
-      real(r8), intent(inout) :: cwc(LBi:UBi,LBj:UBj,ND)
+      real(r8), intent(in) :: kwc(LBi:UBi,LBj:UBj,ND)
       real(r8), intent(inout) :: Tr(LBi:UBi,LBj:UBj,ND)
+      real(r8), intent(inout) :: h_tot(LBi:UBi,LBj:UBj)
 # endif
 !
 !  Local variable declarations.
@@ -126,7 +122,7 @@
       real(r8) :: cff, cff1, cff2
       real(r8) :: tanhkh, sinhtkh, o2aa, Vcur, cosde, sinde
       real(r8), parameter :: maxErr = 0.1_r8
-      real(r8), parameter :: Trmin = 2.0_r8
+      real(r8), parameter :: Trmin = 1.0_r8
 
 
 # include "set_bounds.h"

@@ -37,6 +37,9 @@
 #if defined SEDIMENT || defined BBL_MODEL
       USE mod_sediment
 #endif
+#ifdef INWAVE_MODEL
+      USE mod_inwave_params
+#endif
 !
       USE def_var_mod, ONLY : def_var
 !
@@ -57,6 +60,8 @@
 
 #if defined VEGETATION && (defined VEG_DRAG || defined VEG_BIOMASS)
       integer :: DimIDs(35)
+#elif defined INWAVE_MODEL
+      integer :: DimIDs(33)
 #else
       integer :: DimIDs(32)
 #endif
@@ -71,6 +76,13 @@
 # endif
 #endif
       integer :: def_dim
+
+#ifdef INWAVE_MODEL
+      integer :: r3degrd(4)
+      integer :: u3degrd(4)
+      integer :: v3degrd(4)
+      integer :: t3degrd(4)
+#endif
 
 #ifdef SOLVE3D
       integer :: itrc
@@ -216,6 +228,10 @@
 #  endif
 # endif
 !
+#ifdef INWAVE_MODEL
+        status=def_dim(ng, iNLM, RST(ng)%ncid, ncname,'ND',             &
+                       ND, DimIDs(33))
+#endif
 # if defined VEGETATION
 #  if defined VEG_DRAG || defined VEG_BIOMASS
         status=def_dim(ng, iNLM, RST(ng)%ncid, ncname, 'NVEG',          &
@@ -371,14 +387,38 @@
 !
 !  Define dimensions for the plant array variables
 !
-#if !defined PERFECT_RESTART && defined VEGETATION     
+#if !defined PERFECT_RESTART && defined VEGETATION
 # if defined VEG_DRAG || defined VEG_BIOMASS
         v3pgrd(1)=DimIDs( 1)
         v3pgrd(2)=DimIDs( 5)
         v3pgrd(3)=DimIDs(35)
         v3pgrd(4)=DimIDs(12)
-# endif 
-#endif 
+# endif
+#endif
+#ifdef INWAVE_MODEL
+!
+!  Define dimension vector for energy wave layer type variables.
+!
+        r3degrd(1)=DimIDs( 1)
+        r3degrd(2)=DimIDs( 5)
+        r3degrd(3)=DimIDs(33)
+        r3degrd(4)=DimIDs(12)
+
+        u3degrd(1)=DimIDs( 2)
+        u3degrd(2)=DimIDs( 6)
+        u3degrd(3)=DimIDs(33)
+        u3degrd(4)=DimIDs(12)
+
+        v3degrd(1)=DimIDs( 3)
+        v3degrd(2)=DimIDs( 7)
+        v3degrd(3)=DimIDs(33)
+        v3degrd(4)=DimIDs(12)
+
+        t3degrd(1)=DimIDs( 1)
+        t3degrd(2)=DimIDs( 5)
+        t3degrd(3)=DimIDs(33)
+        t3degrd(4)=DimIDs(12)
+#endif
 !
 !  Define dimension vectors for staggered v-momentum type variables.
 !
@@ -1131,6 +1171,38 @@
         status=def_var(ng, iNLM, RST(ng)%ncid, RST(ng)%Vid(idVsms),     &
      &                   NF_FRST, nvd3, sv2dgrd, Aval, Vinfo, ncname)
         IF (exit_flag.ne.NoError) RETURN
+# endif
+# ifdef INWAVE_MODEL
+!
+!  Define 3D Action density wave energy.
+!
+        Vinfo( 1)=Vname(1,idACen)
+        Vinfo( 2)=Vname(2,idACen)
+        Vinfo( 3)=Vname(3,idACen)
+        Vinfo(14)=Vname(4,idACen)
+        Vinfo(16)=Vname(1,idtime)
+# if defined WRITE_WATER && defined MASKING
+        Vinfo(20)='mask_rho'
+# endif
+        Vinfo(22)='coordinates'
+        Aval(5)=REAL(r3dvar,r8)
+        status=def_var(ng, iNLM, RST(ng)%ncid, RST(ng)%Vid(idACen),     &
+     &                 NF_FRST, nvd4, r3degrd, Aval, Vinfo, ncname)
+!
+!  Define Peak period.
+!
+        Vinfo( 1)=Vname(1,idACtp)
+        Vinfo( 2)=Vname(2,idACtp)
+        Vinfo( 3)=Vname(3,idACtp)
+        Vinfo(14)=Vname(4,idACtp)
+        Vinfo(16)=Vname(1,idtime)
+# if defined WRITE_WATER && defined MASKING
+        Vinfo(20)='mask_rho'
+# endif
+        Vinfo(22)='coordinates'
+        Aval(5)=REAL(r3dvar,r8)
+        status=def_var(ng, iNLM, RST(ng)%ncid, RST(ng)%Vid(idACtp),   &
+     &                 NF_FOUT, nvd4, t3degrd, Aval, Vinfo, ncname)
 # endif
 # if defined BENTHIC
 !------------------------------------------
@@ -2452,6 +2524,14 @@
 #  endif
 # endif
 #endif
+#ifdef INWAVE_MODEL
+          ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idACen))) THEN
+            got_var(idACen)=.TRUE.
+            RST(ng)%Vid(idACen)=var_id(i)
+          ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idACtp))) THEN
+            got_var(idACtp)=.TRUE.
+            RST(ng)%Vid(idACtp)=var_id(i)
+#endif
 #if defined WEC
           ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idU2Sd))) THEN
             got_var(idU2Sd)=.TRUE.
@@ -2855,6 +2935,20 @@
           RETURN
         END IF
 # endif
+#endif
+#ifdef INWAVE_MODEL
+        IF (.not.got_var(idACen)) THEN
+          IF (Master) WRITE (stdout,40) TRIM(Vname(1,idACen)),          &
+     &                                  TRIM(ncname)
+          exit_flag=3
+          RETURN
+        END IF
+        IF (.not.got_var(idACtp)) THEN
+          IF (Master) WRITE (stdout,40) TRIM(Vname(1,idACtp)),          &
+     &                                  TRIM(ncname)
+          exit_flag=3
+          RETURN
+        END IF
 #endif
 #ifdef NEMURO_SED1
         IF (.not.got_var(idPONsed)) THEN

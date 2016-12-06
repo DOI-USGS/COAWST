@@ -41,6 +41,10 @@
       USE mod_ncparam
       USE mod_netcdf
       USE mod_scalars
+#ifdef INWAVE_MODEL
+      USE mod_inwave_vars
+      USE mod_inwave_bound
+#endif
 #ifdef SEDIMENT
       USE mod_sediment
 #endif
@@ -1311,6 +1315,10 @@
 
 #ifdef SEDIMENT
 # include <sediment_wrt.h>
+#endif
+
+#ifdef INWAVE_MODEL
+# include <inwave_wrt.h>
 #endif
 
 !#ifdef VEGETATION 

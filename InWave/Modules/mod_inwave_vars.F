@@ -92,7 +92,8 @@
       END SUBROUTINE allocate_inwave_vars
 !
 !***********************************************************************
-      SUBROUTINE initialize_inwave_vars (ng, LBi, UBi, LBj, UBj, tile)
+      SUBROUTINE initialize_inwave_vars (ng, LBi, UBi, LBj, UBj, tile,  &
+     &                                   IniRec)
 !***********************************************************************
 !
 !======================================================================!
@@ -115,7 +116,7 @@
 !
 !  Imported variable declarations.
 !
-      integer, intent(in) :: ng, tile
+      integer, intent(in) :: ng, tile, IniRec
 !
 !  Local variable declarations.
 !
@@ -133,7 +134,8 @@
       real(r8), allocatable :: cx_ini(:,:,:)
       real(r8), allocatable :: cy_ini(:,:,:)
       real(r8), allocatable :: ct_ini(:,:,:)
-      real(r8) :: Ta_ini
+      real(r8), allocatable :: ta_ini(:,:,:)
+!     real(r8) :: Ta_ini
       real(r8) :: end_ang
 
       character (len=80) :: ncini_name
@@ -201,6 +203,7 @@
           cff=WAVEG(ng)%wd(ND)-WAVEG(ng)%wd(1)
         ENDIF
         IF (cff.lt.0.0_r8) THEN
+!  +2pi ?
           cff=cff+pi
         ENDIF
         WAVEG(ng)%pd(d)=cff
@@ -232,10 +235,11 @@
       allocate (cx_ini(LBi:UBi,LBj:UBj,ND))
       allocate (cy_ini(LBi:UBi,LBj:UBj,ND))
       allocate (ct_ini(LBi:UBi,LBj:UBj,ND+1))
+      allocate (ta_ini(LBi:UBi,LBj:UBj,ND))
 !
       ncini_name=IWINIname(ng)
-      call get_inwave_ini(ng, LBi, UBi, LBj, UBj, ncini_name, ac_ini,   &
-     &                    Ta_ini)
+      call get_inwave_ini(ng, LBi, UBi, LBj, UBj, IniRec,               &
+     &                    ncini_name, ac_ini, ta_ini)
 !
 !-----------------------------------------------------------------------
 !  Initialize module variables.
@@ -249,14 +253,16 @@
           WAVEP(ng) % v_rho(i,j) = IniVal
           WAVEP(ng) % h_tot(i,j) = GRID(ng) % h(i,j)
           DO d=1,ND
-            WAVEP(ng) % AC(i,j,d,1) = AC_ini(i,j,d)
-            WAVEP(ng) % AC(i,j,d,2) = AC_ini(i,j,d)
-            WAVEP(ng) % AC(i,j,d,3) = AC_ini(i,j,d)
+            WAVEP(ng) % AC(i,j,d,1) = ac_ini(i,j,d)
+            WAVEP(ng) % AC(i,j,d,2) = ac_ini(i,j,d)
+            WAVEP(ng) % AC(i,j,d,3) = ac_ini(i,j,d)
             WAVEP(ng) % cx(i,j,d) = IniVal
             WAVEP(ng) % cy(i,j,d) = IniVal
             WAVEP(ng) % ct(i,j,d) = IniVal
-            WAVEP(ng) % Ta(i,j,d) = Ta_ini
-            WAVEP(ng) % Tr(i,j,d) = Ta_ini
+!           WAVEP(ng) % Ta(i,j,d) = Ta_ini
+!           WAVEP(ng) % Tr(i,j,d) = Ta_ini
+            WAVEP(ng) % Ta(i,j,d) = ta_ini(i,j,d)
+            WAVEP(ng) % Tr(i,j,d) = ta_ini(i,j,d)
             WAVEP(ng) % kwc(i,j,d) = IniVal
             WAVEP(ng) % cwc(i,j,d) = IniVal
           END DO
@@ -272,6 +278,7 @@
       IF (allocated(cx_ini)) deallocate(cx_ini)
       IF (allocated(cy_ini)) deallocate(cy_ini)
       IF (allocated(ct_ini)) deallocate(ct_ini)
+      IF (allocated(ta_ini)) deallocate(ta_ini)
 
  30   FORMAT (/,' THE DIRECTIONAL SPACE IS A SECTOR, NEED TO SELECT     &
      &        ANOTHER BOUNDARY CONDITION THAT IS NOT PERIODIC')

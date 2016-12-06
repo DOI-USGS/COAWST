@@ -40,9 +40,9 @@
 !#  ifdef PROFILE
 !      CALL wclock_on (ng, iNLM, 35)
 !#  endif
-
       CALL eikonal_inw_tile(ng, tile,                                   &
      &                      LBi, UBi, LBj, UBj,                         &
+     &                      IminS, ImaxS, JminS, JmaxS,                 &
      &                      GRID(ng) % pm,                              &
      &                      GRID(ng) % pn,                              &
      &                      WAVEP(ng) % kwc,WAVEP(ng) % Ta,             &
@@ -58,6 +58,7 @@
 !***********************************************************************
       SUBROUTINE eikonal_inw_tile(ng, tile,                             &
      &                            LBi, UBi, LBj, UBj,                   &
+     &                            IminS, ImaxS, JminS, JmaxS,           &
      &                            pm, pn, kwc, Ta,                      &
      &                            wd, angler)
 !***********************************************************************
@@ -76,6 +77,7 @@
 !
       integer, intent(in) :: ng, tile
       integer, intent(in) :: LBi, UBi, LBj, UBj
+      integer, intent(in) :: IminS, ImaxS, JminS, JmaxS
       real(r8), intent(inout) :: wd(ND)
 
 #  ifdef ASSUMED_SHAPE
@@ -83,51 +85,61 @@
       real(r8), intent(in) :: pn(LBi:,LBj:)
       real(r8), intent(in) :: angler(LBi:,LBj:)
       real(r8), intent(inout) :: kwc(LBi:,LBj:,:)
-      real(r8), intent(inout) :: Ta(LBi:,LBj:,:)
+      real(r8), intent(in) :: Ta(LBi:,LBj:,:)
 #  else
       real(r8), intent(in) :: pm(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: pn(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: angler(LBi:UBi,LBj:UBj,ND)
       real(r8), intent(inout) :: kwc(LBi:UBi,LBj:UBj,ND)
-      real(r8), intent(inout) :: Ta(LBi:UBi,LBj:UBj,ND)
+      real(r8), intent(in) :: Ta(LBi:UBi,LBj:UBj,ND)
 #  endif
 !
 !  Local variable declarations.
 !
       integer :: i, j, k, d
 
-      real(r8) :: twopi, otwopi
-      real(r8) :: alfa_wave, kx, ky
+      real(r8) :: twopi, otwopi, Ta_min
+      real(r8) :: alfa_wave, kx, ky, cff
 
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: CF
 !
 #  include "set_bounds.h"
 !
       twopi=2.0_r8*pi
       otwopi=1.0_r8/twopi
+      Ta_min=1.0_r8
 
-!     DO j=Jstr+1,Jend-1
-!       DO i=Istr+1,Iend-1
-      DO j=Jstr,Jend
-        DO i=Istr,Iend
-          DO d=1,ND
-
+      DO d=1,ND
+        DO j=Jstr-1,Jend+1
+          DO i=Istr-1,Iend+1
+            cff=MAX(Ta_min,Ta(i,j,d))
+            CF(i,j)=twopi/cff
+          END DO
+        END DO
+        DO j=Jstr,Jend
+          DO i=Istr,Iend
+!
 !=======================================================================
 ! Compute xi and etai components of the wave number
 !=======================================================================
 !
-            alfa_wave =(1.5_r8*pi-wd(d))-angler(i,j)
-            kx= kwc(i,j,d)*cos(alfa_wave)
-            ky= kwc(i,j,d)*sin(alfa_wave)
+            alfa_wave=(1.5_r8*pi-wd(d))-angler(i,j)
+            kx=kwc(i,j,d)*cos(alfa_wave)
+            ky=kwc(i,j,d)*sin(alfa_wave)
 !
 !=======================================================================
 ! Compute the time change of xi and etai components of the wave number
 !=======================================================================
 !
+!           kx=kx-pm(i,j)*dt(ng)*0.5_r8*                                &
+!    &         (twopi/Ta(i+1,j,d)-twopi/Ta(i-1,j,d))
+!           ky=ky-pn(i,j)*dt(ng)*0.5_r8*                                &
+!    &         (twopi/Ta(i,j+1,d)-twopi/Ta(i,j-1,d))
             kx=kx-pm(i,j)*dt(ng)*0.5_r8*                                &
-     &         (twopi/Ta(i+1,j,d)-twopi/Ta(i-1,j,d))
+     &         (CF(i+1,j)-CF(i-1,j))
             ky=ky-pn(i,j)*dt(ng)*0.5_r8*                                &
-     &         (twopi/Ta(i,j+1,d)-twopi/Ta(i,j-1,d))
-            kwc(i,j,d)=max(((kx*kx+ky*ky)**0.5_r8),0.000001_r8)
+     &         (CF(i,j+1)-CF(i,j-1))
+            kwc(i,j,d)=MAX(((kx*kx+ky*ky)**0.5_r8),0.000001_r8)
           END DO
         END DO
       END DO

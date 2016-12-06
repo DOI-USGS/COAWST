@@ -94,7 +94,7 @@ GridsInLayer =  1
           Lm == 75            ! Number of I-direction INTERIOR RHO-points
           Mm == 70            ! Number of J-direction INTERIOR RHO-points
            N == 8             ! Number of vertical levels
-          ND == 21             ! Number of wave directional bins
+          ND == 36             ! Number of wave directional bins
 
         Nbed =  1             ! Number of sediment bed layers
 
@@ -146,7 +146,7 @@ GridsInLayer =  1
 !
 !                   1       2       3       4
 
-   LBC(isFsur) ==   Gra     Clo     Gra     Cla         ! free-surface
+   LBC(isFsur) ==   Gra     Clo     Gra     Gra         ! free-surface
    LBC(isUbar) ==   Gra     Clo     Gra     Red         ! 2D U-momentum
    LBC(isVbar) ==   Gra     Clo     Gra     Red         ! 2D V-momentum
    LBC(isUvel) ==   Gra     Clo     Gra     Red         ! 3D U-momentum
@@ -392,7 +392,7 @@ LtracerSponge == F F                            ! temperature, salinity, inert
 
       DSTART =  0.0d0                      ! days
   TIDE_START =  0.0d0                      ! days
-    TIME_REF =  0.0d0                      ! yyyymmdd.dd
+    TIME_REF =  20000101.0d0               ! yyyymmdd.dd
 
 ! Nudging/relaxation time scales, inverse scales will be computed
 ! internally, [1:Ngrids].

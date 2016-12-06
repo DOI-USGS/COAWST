@@ -140,9 +140,14 @@ plot(DIR1(1,:),zz,'+')
 zz2=zz(I);
 hold on
 plot(DIR2,zz2,'r+')
-zz3=interp1(DIR2,zz2,Bindirs_c);
-plot(Bindirs_c,zz3,'go')
-wghts=zz3./sum(zz3);
+%zz4=interp1(DIR2,zz2,Bindirs_c);
+DIR3=[DIR2 DIR2+360];
+zz3=[zz2 zz2];
+plot(DIR3,zz3,'r.')
+zz4=interp1(DIR3,zz3,Bindirs_c);
+%
+plot(Bindirs_c,zz4,'go')
+wghts=zz4./sum(zz4);
 
 
 for mm=1:Nbins

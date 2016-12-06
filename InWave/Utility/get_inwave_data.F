@@ -44,7 +44,7 @@
       integer :: LBi, UBi, LBj, UBj
       integer :: Imin, Imax, Jmin, Jmax
       integer :: i, j, d, d_bnd, my_tile
-      integer :: ND_BND
+      integer :: ND_bnd
 !
 !  Lower and upper bounds for nontiled (global values) boundary arrays.
 !
@@ -63,7 +63,7 @@
 !
 !  Get the number of wave directional bins for the boundary.
 !
-      ND_BND=WAVEB(ng)%ND_BND
+      ND_bnd=WAVEB(ng)%ND_bnd
 
 # ifdef PROFILE
 !
@@ -78,28 +78,28 @@
         CALL get_ngfld (ng, iNLM, idACbc(iwest),                        &
      &                  ncBRYid(idACbc(iwest),ng),                      &
      &                  nBCfiles(ng), BRY(1,ng), update(1),             &
-     &                  JLB, JUB, ND_BND, 2, 0, Mm(ng)+1, ND_BND,       &
+     &                  JLB, JUB, ND_bnd, 2, 0, Mm(ng)+1, ND_bnd,       &
      &                  WAVEB(ng)%ACG_west(JLB,1,1))
       END IF
       IF (LBC(ieast,isAC3d,ng)%acquire) THEN
         CALL get_ngfld (ng, iNLM, idACbc(ieast),                        &
      &                  ncBRYid(idACbc(ieast),ng),                      &
      &                  nBCfiles(ng), BRY(1,ng), update(1),             &
-     &                  JLB, JUB, ND_BND, 2, 0, Mm(ng)+1, ND_BND,       &
+     &                  JLB, JUB, ND_bnd, 2, 0, Mm(ng)+1, ND_bnd,       &
      &                  WAVEB(ng)%ACG_east(JLB,1,1))
       END IF
       IF (LBC(inorth,isAC3d,ng)%acquire) THEN
         CALL get_ngfld (ng, iNLM, idACbc(inorth),                       &
      &                  ncBRYid(idACbc(inorth),ng),                     &
      &                  nBCfiles(ng), BRY(1,ng), update(1),             &
-     &                  ILB, IUB, ND_BND, 2, 0, Lm(ng)+1, ND_BND,       &
+     &                  ILB, IUB, ND_bnd, 2, 0, Lm(ng)+1, ND_bnd,       &
      &                  WAVEB(ng)%ACG_north(ILB,1,1))
       END IF
       IF (LBC(isouth,isAC3d,ng)%acquire) THEN
         CALL get_ngfld (ng, iNLM, idACbc(isouth),                       &
      &                  ncBRYid(idACbc(isouth),ng),                     &
      &                  nBCfiles(ng), BRY(1,ng), update(1),             &
-     &                  ILB, IUB, ND_BND, 2, 0, Lm(ng)+1, ND_BND,       &
+     &                  ILB, IUB, ND_bnd, 2, 0, Lm(ng)+1, ND_bnd,       &
      &                  WAVEB(ng)%ACG_south(ILB,1,1))
       END IF
 

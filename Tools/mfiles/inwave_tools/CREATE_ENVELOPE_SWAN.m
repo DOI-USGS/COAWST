@@ -79,7 +79,7 @@ filename='D:\Sandy_InWave\offbreach_2012103100.spc2d';
 
     % PLOT SPECTRA IN CARTESIAN SYSTEM
 
-    figure(1)
+    figure
     plot(f,SW,'linewidth',2)
     hold on
     plot(swan_f,SF,'r','linewidth',2)
@@ -90,28 +90,32 @@ filename='D:\Sandy_InWave\offbreach_2012103100.spc2d';
 
     % COMPUTATION AF THE AMPLITUDE OF EACH FREQUENCY COMPONENT
     clear w
-    w(:,1)=2*pi*f(1,:);
+    w=2*pi*f(1,:);
     Dw=2*pi*Df(1,:);
-    aj1=zeros(nf);
+%   aj1=zeros(nf);
+    aj1=zeros(1,nf);
     comp1=find(SW(1,:)>0);
     aj1(comp1)=sqrt(2*SW(1,comp1)*Df);
     figure5=('envelope_spectra_case');
 
     % RANDOM PHASE FOR EACH COMPONENT
-    eps=(2*pi*rand(length(comp1))-pi);
+%   eps=(2*pi*rand(length(comp1))-pi);
+    eps=(2*pi*rand(1,length(comp1))-pi);
 
-    ind=0;
-    time=[0:1:3600];
+%   ind=0;
+    dt=0.1;
+    time=[0:dt:3600];
     eta1=zeros(length(time),1);
 
     %para 1000 s cada 0.05 s
-    count=0;
-    for t=0:1:3600
-        count=count+1;
-        ind=ind+1;
-        for j=1:length(comp1)
-            eta1(ind,1)=eta1(ind,1)+aj1(comp1(j)).*cos(-w(comp1(j)).*t+eps(comp1(j)));
-        end
+%    for ind=1:length(time)
+%        t=time(ind);
+%        for j=1:length(comp1)
+%            eta1(ind)=eta1(ind)+aj1(comp1(j)).*cos(-w(comp1(j)).*t+eps(j));
+%        end
+%    end
+    for ind=1:length(comp1)
+        eta1=eta1+aj1(comp1(ind)).*cos(-w(comp1(ind)).*time+eps(ind)).';
     end
 
     figure2=strcat('signal_case',num2str(1));
@@ -122,7 +126,7 @@ filename='D:\Sandy_InWave\offbreach_2012103100.spc2d';
 
     % graphic representation of the generated serie
 
-    figure (2)
+    figure
     title('Free surface elevation')
     plot(time,eta1,'LineWidth',2)
     hold on
@@ -138,11 +142,11 @@ filename='D:\Sandy_InWave\offbreach_2012103100.spc2d';
 
     % OBTAINING THE ENVELOPE
 
-    figure(2)
+%   figure(2)
     x_hil=hilbert(eta1);
     amp_hil=sqrt(real(x_hil).^2+imag(x_hil).^2);
     plot(time,amp_hil,'g','LineWidth',2)
-    axis([0 1000 -5 5])
+    axis([0 3600 -1 1])
     legend('Sea surface elevation','Envelope')
     hold off
 %    print('-dpng','-r200',figure2)

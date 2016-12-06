@@ -52,12 +52,13 @@
 #define ANA_FSOBC
 #define ANA_M2OBC
 #define ANA_SMFLUX
-#define UV_QDRAG
+#define UV_LOGDRAG
 
 #ifdef SOLVE3D
 # undef  SSW_BBL
 # ifdef SSW_BBL
 #  define SSW_CALC_ZNOT
+#  define SSW_CALC_UB
 #  undef  SSW_LOGINT
 # endif
 

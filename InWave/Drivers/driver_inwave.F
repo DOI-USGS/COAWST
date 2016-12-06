@@ -21,7 +21,7 @@
       CONTAINS
 !
 !***********************************************************************
-      SUBROUTINE inwave_init (ng, tile)
+      SUBROUTINE inwave_init (ng, tile, IniRec)
 !***********************************************************************
 !
       USE mod_param
@@ -40,7 +40,7 @@
 !
 !  Imported variable declarations.
 !
-      integer, intent(in) :: ng, tile
+      integer, intent(in) :: ng, tile, IniRec
 !
 !  Local variable declarations.
 !
@@ -48,7 +48,7 @@
 !
       CALL allocate_inwave_vars (ng, LBi, UBi, LBj, UBj)
 
-      CALL initialize_inwave_vars (ng, LBi, UBi, LBj, UBj, tile)
+      CALL initialize_inwave_vars (ng, LBi, UBi, LBj, UBj, tile, IniRec)
 
       CALL allocate_inwave_bound (ng)
 
@@ -61,7 +61,7 @@
 # if !defined INWAVE_SWAN_COUPLING
       CALL get_inwave_data (ng)
 # else
-      CALL inwave_swan_run (ng)
+      CALL inwave_swan_run (ng, 1)
 # endif
 
       RETURN
@@ -99,12 +99,12 @@
 !
 !  Imported variable declarations.
 !
-     integer, intent(in) :: ng, tile
+      integer, intent(in) :: ng, tile
 !
 !  Local variable declarations.
 !
-!      integer :: subs, thread
-
+!     integer :: subs, thread
+      integer :: istp
 !
 !-----------------------------------------------------------------------
 !  Time-step wave action balance equations.
@@ -125,6 +125,15 @@
 # if !defined INWAVE_SWAN_COUPLING
         CALL get_inwave_data (ng)
         IF (exit_flag.ne.NoError) RETURN
+# else
+        IF(iic(ng).gt.ntstart(ng)) then
+          istp=NINT(WAVES(ng)%SpecTimedt/dt(ng))
+          write(*,*) 'istp is ', istp, time(ng)
+          IF (MOD(iic(ng),istp).eq.0) THEN
+             write(*,*) 'remainder ', iic(ng)/istp+1
+             CALL inwave_swan_run (ng, iic(ng)/istp+1)
+          END IF
+        END IF
 # endif
 
 !
@@ -262,7 +271,7 @@
 !        DO thread=0,numthreads-1
 !          subs=NtileX(ng)*NtileE(ng)/numthreads
 !          DO tile=subs*thread,subs*(thread+1)-1,+1
-!            CALL eikonal_inw (ng, tile)
+             CALL eikonal_inw (ng, tile)
 !          END DO
 !        END DO
 

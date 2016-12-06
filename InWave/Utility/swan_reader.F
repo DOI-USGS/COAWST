@@ -1,9 +1,8 @@
 #include "cppdefs.h"
 !
 !************************************************************************
-      SUBROUTINE swan_reader (ng)
+      SUBROUTINE swan_reader (ng, first)
 !************************************************************************
-!
 !
 #if defined INWAVE_MODEL & defined INWAVE_SWAN_COUPLING
 !
@@ -19,23 +18,23 @@
       USE inwave_iounits
       USE mod_scalars
       USE mod_inwave_swan
-
 !
       implicit none
 !
 !  Imported variable declarations.
 !
-      integer, intent(in) :: ng
-
+      integer, intent(in) :: ng, first
 !
 !  Local variable declarations.
 !
       character(6)       :: rtext
-      real(r8)           :: factor,exc,m0
+      character(72)      :: rline
+      real(r8)           :: factor, exc, m0, frep, cff, DTTIME
       integer            :: nfreq, ndir, switch
-      integer            :: i, j
+      integer            :: i, j, inp
       integer            :: nfreqsw, ndirsw
       integer            :: minpos
+      INTEGER            :: INTTIM(6)
       integer,allocatable       :: posang(:)
 
       real(r8), pointer  :: temp(:), findline(:)
@@ -46,15 +45,13 @@
       real(r8), parameter :: rad = pi/180.0_r8
       real(r8), parameter :: irad = 180.0_r8/pi
 
-      integer :: ND_BND
-
 !
 !-----------------------------------------------------------------------
 ! Open the spectral file
 !-----------------------------------------------------------------------
 !
-      open(44,file=IWSWNname(ng),form='formatted',status='old')
-
+      inp=44
+      open(inp,file=IWSWNname(ng),form='formatted',status='old')
       switch=0
 !
 !-----------------------------------------------------------------------
@@ -62,7 +59,7 @@
 !-----------------------------------------------------------------------
 !
       DO while (switch==0)
-        read(44,'(a)')rtext
+        read(inp,'(a)')rtext
         IF (rtext == 'RFREQ ') THEN
           switch = 1
         ELSEIF (rtext == 'AFREQ ') THEN
@@ -74,10 +71,11 @@
 ! Read nfreq and f
 !-----------------------------------------------------------------------
 !
-      read(44,*)nfreqsw
-      allocate(WAVES(ng)%fsw(nfreqsw))
+      read(inp,*)nfreqsw
+      IF (first.eq.1) allocate(WAVES(ng)%fsw(nfreqsw))
+
       DO i=1,nfreqsw
-        read(44,*)WAVES(ng)%fsw(i)
+        read(inp,*) WAVES(ng)%fsw(i)
       ENDDO
       WAVES(ng)%nfreqsw=nfreqsw
 !
@@ -95,7 +93,7 @@
 ! Read CDIR or NDIR
 !-----------------------------------------------------------------------
 !
-      read(44,'(a)')rtext
+      read(inp,'(a)')rtext
       IF (rtext == 'NDIR  ') THEN
         switch = 1
       ELSEIF (rtext == 'CDIR  ') THEN
@@ -108,12 +106,12 @@
 ! Read ndir, theta
 !-----------------------------------------------------------------------
 !
-      read(44,*)ndirsw
+      read(inp,*) ndirsw
       allocate(theta1(ndirsw))
-      allocate(WAVES(ng)%theta(ndirsw))
+      IF (first.eq.1) allocate(WAVES(ng)%theta(ndirsw))
 
       DO i=1,ndirsw
-        read(44,*)theta1(i)
+        read(inp,*)theta1(i)
         IF(theta1(i).lt.0.0_r8)THEN
           theta1(i)=(360.0_r8+theta1(i))
         ENDIF
@@ -141,17 +139,53 @@
           ENDIF
         ENDDO
       ENDIF
-
-      read(44,'(a)')rtext
-      read(44,*)exc
+!
+!-----------------------------------------------------------------------
+! Find exception value
+!-----------------------------------------------------------------------
+!
       i=0
+      DO WHILE (i==0)
+        READ (inp,'(a)',ERR=215,END=240) rline
+        IF(rline(41:49).eq.'exception') THEN
+          read(rline(1:15),*) exc
+          i=1
+        END IF
+      END DO
+!
+!-----------------------------------------------------------------------
+! Get time
+!-----------------------------------------------------------------------
+!
+      i=0
+      DO WHILE (i==0)
+        READ (inp,'(a)',ERR=215,END=240) rline
+        IF(rline(41:44).eq.'date') THEN
+          read(rline(1:15),*) WAVES(ng)%SpecTimeIso(1)
+          read(rline(1:4),'(I4)') INTTIM(1)
+          read(rline(5:6),'(I4)') INTTIM(2)
+          read(rline(7:8),'(I4)') INTTIM(3)
+          read(rline(10:11),'(I4)') INTTIM(4)
+          read(rline(12:13),'(I4)') INTTIM(5)
+          read(rline(14:15),'(I4)') INTTIM(6)
+          i=1
+          WAVES(ng)%SpecTime(1)=DTTIME(INTTIM)
+!  Set dt SpecTime to a large valule in case the spec2d file 
+!  has only 1 time instance.
+          IF (first.eq.1) THEN
+            WAVES(ng)%SpecTime(2)=WAVES(ng)%SpecTime(1)
+            WAVES(ng)%SpecTimedt=99999999.0_r8
+          END IF
+        END IF
+      END DO
 !
 !-----------------------------------------------------------------------
 ! Find FACTOR keyword
 !-----------------------------------------------------------------------
 !
+      i=0
       DO WHILE (i==0)
-        read(44,'(a)')rtext
+        read(inp,'(a)')rtext
         IF (rtext == 'FACTOR') THEN
           i=1
         ELSEIF (rtext == 'ZERO  ') THEN
@@ -162,19 +196,66 @@
           stop
         ENDIF
       END DO
-      read(44,*)factor
+      read(inp,*)factor
 !
 !-----------------------------------------------------------------------
 ! Read S_array
 !-----------------------------------------------------------------------
 !
       allocate(sdsw1(nfreqsw,ndirsw))
-      allocate(WAVES(ng)%SDSW(nfreqsw,ndirsw))
-     
+      IF (first.eq.1) allocate(WAVES(ng)%SDSW(nfreqsw,ndirsw))
+
       DO i=1,nfreqsw
-        read(44,*)sdsw1(i,:)
+        read(inp,*)sdsw1(i,:)
       END DO
-      where (sdsw1 == exc) sdsw1 =0.0_r8
+      where (sdsw1 == exc) sdsw1=0.0_r8
+!
+!-----------------------------------------------------------------------
+!  Read the next time and close file for now.?
+!-----------------------------------------------------------------------
+!
+      i=0
+      DO WHILE (i==0)
+        READ (inp,'(a)',ERR=215,END=240) rline 
+        IF(rline(41:44).eq.'date') THEN
+          read(rline(1:15),*) WAVES(ng)%SpecTimeIso(2)
+          read(rline(1:4),'(I4)') INTTIM(1)
+          read(rline(5:6),'(I4)') INTTIM(2)
+          read(rline(7:8),'(I4)') INTTIM(3)
+          read(rline(10:11),'(I4)') INTTIM(4)
+          read(rline(12:13),'(I4)') INTTIM(5)
+          read(rline(14:15),'(I4)') INTTIM(6)
+          WAVES(ng)%SpecTime(2)=DTTIME(INTTIM)
+          IF (first.eq.1) THEN
+!  Compute the dt SpecTime if we do get a second time stamp.
+            WAVES(ng)%SpecTimedt=WAVES(ng)%SpecTime(2)-                 &
+     &                           WAVES(ng)%SpecTime(1)
+            i=1
+          ELSE
+!  If not first, then keep reading until we get the next time stamp.
+            IF ((WAVES(ng)%SpecTime(2)-WAVES(ng)%SpecTime(1)).gt.        &
+     &          (time(ng)-dt(ng))) THEN
+              read(inp,'(a)')rtext
+              IF (rtext == 'ZERO  ') THEN
+                write(*,*) 'Zero energy density input for this point'
+                stop
+              ELSEIF (rtext == 'NODATA') THEN
+                write(*,*) 'SWAN file has no data for this point'
+                stop
+              ENDIF
+              read(inp,*)factor
+              DO i=1,nfreqsw
+                read(inp,*)sdsw1(i,:)
+              END DO
+              where (sdsw1 == exc) sdsw1=0.0_r8
+              i=1
+              write(*,*) 'Read 2D spec data for ',                      &
+     &                    WAVES(ng)%SpecTimeIso(2)
+            END IF
+          END IF
+        END IF
+      END DO
+      close(inp)
 !
 !-----------------------------------------------------------------------
 ! Convert to m2/Hz/rad
@@ -182,10 +263,9 @@
 !
       DO j=1,ndirsw
         DO i=1,nfreqsw
-            sdsw1(i,j)=sdsw1(i,j)*factor*irad
+          sdsw1(i,j)=sdsw1(i,j)*factor*irad
         END DO
       END DO
-      close(44)
 !
 !-----------------------------------------------------------------------
 ! Convert from energy density to variance density and order
@@ -200,12 +280,13 @@
 
       deallocate(sdsw1)
       deallocate(theta1)
+      deallocate(posang)
 !
 !-----------------------------------------------------------------------
 ! Integrate the directional spectra over the directions
 !-----------------------------------------------------------------------
 !
-      allocate(WAVES(ng)%Sf(nfreqsw))
+      IF (first.eq.1) allocate(WAVES(ng)%Sf(nfreqsw))
       
       WAVES(ng)%Sf = sum(WAVES(ng)%SDSW, DIM = 2)*WAVES(ng)%dang
 !
@@ -225,7 +306,7 @@
       deallocate(temp)
 !
 !-----------------------------------------------------------------------
-! Calculate zero-order moment  
+! Calculate zero-order moment
 !-----------------------------------------------------------------------
 !
       allocate (temp(nfreqsw+1))
@@ -242,15 +323,68 @@
       END DO
       deallocate (temp)
       WAVES(ng)%hm0gew=4.0_r8*sqrt(m0)
+      write(*,*) 'waves hm0 is ---->  ', WAVES(ng)%hm0gew
 !
 !-----------------------------------------------------------------------
 ! Compute the representative period
 !-----------------------------------------------------------------------
 !
-      call tpdcalc(WAVES(ng)%Sf,WAVES(ng)%fsw,WAVES(ng)%Trep)
-      WAVES(ng)%fp=WAVES(ng)%Trep
-      WAVES(ng)%Trep=1.0_r8/WAVES(ng)%Trep
+      call tpdcalc(WAVES(ng)%Sf,WAVES(ng)%fsw,frep)
+!
+      WAVES(ng)%Trep=1.0_r8/frep
+      WAVES(ng)%fp=frep
+      write(*,*) 'frep is ... ',  WAVES(ng)%Trep, WAVES(ng)%fp
 
 #endif
+!
+ 215  write(*,*) 'End of swan reader'
+!     exit_flag=4
+ 240  write(*,*) 'SWAN 2d Iso spec time is ', WAVES(ng)%SpecTimeIso
+      write(*,*) 'SWAN 2d spec time is ', WAVES(ng)%SpecTime
       RETURN
       END SUBROUTINE swan_reader
+
+!*******************************************************************
+      FUNCTION DTTIME (INTTIM)
+!                                                                  *
+!     Borrowed from SWAN ocpmix.F DTTIME                           *
+!*******************************************************************
+!
+      USE mod_scalars
+
+      IMPLICIT NONE
+
+      real(r8) ::  DTTIME
+!
+      INTEGER INTTIM(6)
+!
+      INTEGER IDYMON(12), IYEAR, IYRM1, IDNOW, I, II
+!
+      LOGICAL LEAPYR, LOGREF
+!
+      DATA IDYMON /31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31/
+!
+      IYEAR = INTTIM(1)
+      IYRM1 = IYEAR-1
+      LEAPYR=(MOD(IYEAR,4).EQ.0.AND.MOD(IYEAR,100).NE.0).OR.            &
+     &        MOD(IYEAR,400).EQ.0
+      IDNOW=0
+      DO I = 1,INTTIM(2)-1
+        IDNOW=IDNOW+IDYMON(I)
+      END DO
+      IDNOW=IDNOW+INTTIM(3)
+      IF (LEAPYR.AND.INTTIM(2).GT.2) IDNOW=IDNOW+1
+      IDNOW = IDNOW + IYEAR*365 + IYRM1/4 - IYRM1/100 + IYRM1/400 + 1
+      IF (IYEAR.EQ.0) IDNOW=IDNOW-1
+!      IF (.NOT.LOGREF) THEN
+!        REFDAY = IDNOW
+!        LOGREF = .TRUE.
+!        DTTIME = 0.
+!      ELSE
+!        DTTIME = REAL(IDNOW-REFDAY) * 24.*3600.
+        DTTIME = REAL(IDNOW) * 24.*3600.
+!      ENDIF
+      DTTIME = DTTIME + 3600.*REAL(INTTIM(4)) + 60.*REAL(INTTIM(5)) +   &
+     &                  REAL(INTTIM(6))
+      RETURN
+      END

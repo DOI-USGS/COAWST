@@ -979,129 +979,126 @@ MODULE math_tools
 !%         K. Creager, 3-19-92, modified to use power of 2 FFT
 !%         T. Krauss, 11-4-92, revised
 !%   Copyright (c) 1988-1999 The MathWorks, Inc. All Rights Reserved.
-!%   $Revision: 1.3 $  $Date: 1999/01/11 19:03:18 $
+!%   $Revision: 1.3 $  $Date: 1999/01/11 19:03:18
 !
 !%   Reference(s):
-!%     [1] Jon Claerbout, Introduction to Geophysical Data Analysis.
+!%  [1] Jon Claerbout, Introduction to Geophysical Data Analysis.
 
-subroutine hilbert(xi,m)
+      subroutine hilbert(xi,m)
 
-! use math_tools
+      IMPLICIT NONE
 
-IMPLICIT NONE
-
-integer                             :: m,n
-complex(fftkind),dimension(m)                :: xi
-complex(fftkind),dimension(:),allocatable    :: x
-integer,dimension(:),allocatable    :: h
-real                                :: p
+      integer                             :: m,n
+      complex(fftkind),dimension(m)                :: xi
+      complex(fftkind),dimension(:),allocatable    :: x
+      integer,dimension(:),allocatable    :: h
+      real                                :: p
 
 
-p=log(real(m))/log(2.)
-n=ceiling(p)
-n=2**n
+      p=log(real(m))/log(2.)
+      n=ceiling(p)
+      n=2**n
 
-allocate(x(n))
-x=0
-x(1:m)=real(xi)
+      allocate(x(n))
+      x=0
+      x(1:m)=real(xi)
 
-x=fft(x, inv=.false.)
-x=x*sqrt(real(n))           ! Scale factor
+      x=fft(x, inv=.false.)
+      x=x*sqrt(real(n))           ! Scale factor
 
-allocate(h(n))
+      allocate(h(n))
 
-h(1)=1
-h(2:(n/2))=2
-h((n/2)+1)=1
-h((n/2)+2:n)=0
+      h(1)=1
+      h(2:(n/2))=2
+      h((n/2)+1)=1
+      h((n/2)+2:n)=0
 
-x=x*h
+      x=x*h
 
-deallocate(h)
+      deallocate(h)
 
-x=fft(x,inv=.true.)
-x=x/sqrt(real(n))           ! Scale factor
+      x=fft(x,inv=.true.)
+      x=x/sqrt(real(n))           ! Scale factor
 
-xi=x(1:m)
-deallocate(x)
+      xi=x(1:m)
+      deallocate(x)
 
-return
+      return
 
-end subroutine hilbert
+      end subroutine hilbert
 
 !
 !     3) Matrix flip up to down and/or left to right
 !
-subroutine flipv(x,M)
+      subroutine flipv(x,M)
 
-IMPLICIT NONE
+      IMPLICIT NONE
 
 ! x is input vector
 ! M is size vector
 
-integer                             :: M, i
-real*8, dimension(M)                :: x
-real*8, dimension(:),allocatable    :: temp1, temp3
-integer,dimension(:),allocatable    :: temp2
+      integer                             :: M, i
+      real*8, dimension(M)                :: x
+      real*8, dimension(:),allocatable    :: temp1, temp3
+      integer,dimension(:),allocatable    :: temp2
 
-allocate(temp1(M))
-allocate(temp2(M))
-allocate(temp3(M))
+      allocate(temp1(M))
+      allocate(temp2(M))
+      allocate(temp3(M))
 
-i=0 ! wwvv to quiet the compiler
+      i=0 ! wwvv to quiet the compiler
 
-temp1=0
-temp2=0
-temp3=0
+      temp1=0
+      temp2=0
+      temp3=0
     
-temp1=x
-temp2=(/(i,i=0,M-1)/)
-temp3=temp1(M-temp2)
-x=temp3
+      temp1=x
+      temp2=(/(i,i=0,M-1)/)
+      temp3=temp1(M-temp2)
+      x=temp3
 
-deallocate(temp1)
-deallocate(temp2)
-deallocate(temp3)
+      deallocate(temp1)
+      deallocate(temp2)
+      deallocate(temp3)
+      return
 
-return
+      end subroutine flipv
 
-end subroutine flipv
 
-subroutine flipiv(x,M)
+      subroutine flipiv(x,M)
 
-IMPLICIT NONE
+      IMPLICIT NONE
 
 ! x is input vector
 ! M is size vector
 
-integer                                     :: M, i
-complex(fftkind),dimension(M)                 :: x
-real(kind(0.0)),allocatable,dimension(:)             :: temp1r, temp3r, temp1i, temp3i
-complex(kind(0.0)), parameter                :: compi=(0.,1.)
-allocate(temp1r(M))
-allocate(temp3r(M))
-allocate(temp1i(M))
-allocate(temp3i(M))
-temp1r=0.d0
-temp1i=0.d0
-temp3r=0.d0
-temp3i=0.d0
-temp1r=real(x)
-temp1i=imag(x)
-do i=0,M-1
-    temp3r(i+1)=temp1r(M-i)
-    temp3i(i+1)=temp1i(M-i)
-enddo
+      integer                                  :: M, i
+      complex(fftkind),dimension(M)            :: x
+      real(kind(0.0)),allocatable,dimension(:) :: temp1r, temp3r
+      real(kind(0.0)),allocatable,dimension(:) :: temp1i, temp3i
+      complex(kind(0.0)), parameter            :: compi=(0.,1.)
+      allocate(temp1r(M))
+      allocate(temp3r(M))
+      allocate(temp1i(M))
+      allocate(temp3i(M))
+      temp1r=0.d0
+      temp1i=0.d0
+      temp3r=0.d0
+      temp3i=0.d0
+      temp1r=real(x)
+      temp1i=imag(x)
+      do i=0,M-1
+        temp3r(i+1)=temp1r(M-i)
+        temp3i(i+1)=temp1i(M-i)
+      enddo
 
-x=temp3r+compi*temp3i
-deallocate(temp1r)
-deallocate(temp3r)
-deallocate(temp1i)
-deallocate(temp3i)
+      x=temp3r+compi*temp3i
+      deallocate(temp1r)
+      deallocate(temp3r)
+      deallocate(temp1i)
+      deallocate(temp3i)
 
-return
+      return
+      end subroutine flipiv
 
-end subroutine flipiv
-
-
-END MODULE math_tools
+      END MODULE math_tools

@@ -101,7 +101,7 @@
       real(r8), intent(inout) :: h_tot(LBi:,LBj:)
       real(r8), intent(inout) :: kwc(LBi:,LBj:,:)
       real(r8), intent(inout) :: cwc(LBi:,LBj:,:)
-      real(r8), intent(inout) :: Tr(LBi:,LBj:,:)
+      real(r8), intent(in) :: Tr(LBi:,LBj:,:)
 # else
 #  ifdef MASKING
       real(r8), intent(in) :: rmask(LBi:UBi,LBj:UBj)
@@ -111,7 +111,7 @@
       real(r8), intent(inout) :: h_tot(LBi:UBi,LBj:UBj)
       real(r8), intent(inout) :: kwc(LBi:UBi,LBj:UBj,ND)
       real(r8), intent(inout) :: cwc(LBi:UBi,LBj:UBj,ND)
-      real(r8), intent(inout) :: Tr(LBi:UBi,LBj:UBj,ND)
+      real(r8), intent(in) :: Tr(LBi:UBi,LBj:UBj,ND)
 # endif
 !
 !  Local variable declarations.
@@ -120,7 +120,7 @@
       integer :: Isup, Iinf, Jsup, Jinf
 
       real(r8) :: twopi, otwopi
-      real(r8) :: error
+      real(r8) :: error, Tr_min
       real(r8) :: L0, k0, k1, tkh, kh, kx, ky, wr
       real(r8) :: F, FDER
       real(r8) :: cff, cff1, cff2
@@ -133,6 +133,7 @@
 !
       twopi=2.0_r8*pi
       otwopi=1.0_r8/twopi
+      Tr_min=1.0_r8
 !
 !======================================================================!
 !           Compute the total water depth at rho points                !
@@ -155,10 +156,10 @@
         DO j=Jstr,Jend
           DO i=Istr,Iend
             IF(h_tot(i,j).ge.Dcrit(ng))THEN
-              L0=(g*Tr(i,j,d)**2.0_r8*otwopi)
+              L0=g*otwopi*MAX(Tr_min,Tr(i,j,d))**2.0_r8
               k0=twopi/L0
               error=100.0_r8
-              wr=twopi/Tr(i,j,d)
+              wr=twopi/MAX(Tr_min,Tr(i,j,d))
               DO WHILE(error.gt.maxErr)
                 kh=k0*h_tot(i,j)
                 tanhkh=TANH(kh)

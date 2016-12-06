@@ -118,7 +118,7 @@
       real(r8), intent(inout) :: ct(LBi:,LBj:,:)
       real(r8), intent(in) :: kwc(LBi:,LBj:,:)
       real(r8), intent(in) :: cwc(LBi:,LBj:,:)
-      real(r8), intent(inout) :: Tr(LBi:,LBj:,:)
+      real(r8), intent(in) :: Tr(LBi:,LBj:,:)
       real(r8), intent(inout) :: Ta(LBi:,LBj:,:)
       real(r8), intent(in) :: h_tot(LBi:,LBj:)
       real(r8), intent(in) :: u_rho(LBi:,LBj:)
@@ -139,7 +139,7 @@
       real(r8), intent(inout) :: ct(LBi:UBi,LBj:UBj,ND+1)
       real(r8), intent(in) :: kwc(LBi:UBi,LBj:UBj,ND)
       real(r8), intent(in) :: cwc(LBi:UBi,LBj:UBj,ND)
-      real(r8), intent(inout) :: Tr(LBi:UBi,LBj:UBj,ND)
+      real(r8), intent(in) :: Tr(LBi:UBi,LBj:UBj,ND)
       real(r8), intent(inout) :: Ta(LBi:UBi,LBj:UBj,ND)
       real(r8), intent(in) :: h_tot(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: u_rho(LBi:UBi,LBj:UBj)
@@ -153,16 +153,18 @@
       integer :: i, j, k, d
       real(r8) :: twopi, otwopi, halfpi
       real(r8) :: alfa_wave, kx, ky, kh, wa, wr
-      real(r8) :: theta_cur, u_dir, u_block
+      real(r8) :: theta_cur
       real(r8) :: cff1
       real(r8) :: dir_edge
       real(r8) :: G1, cr, cgr, cgrx, cgry
       real(r8) :: dudx, dudy, dvdx, dvdy, dhdx, dhdy
       real(r8) :: cff, cosde, sinde
+      real(r8), dimension(LBi:UBi,LBj:UBj) :: u_dir
+      real(r8), dimension(LBi:UBi,LBj:UBj) :: u_block
       real(r8), dimension(LBi:UBi,LBj:UBj,ND) :: cx_rho
       real(r8), dimension(LBi:UBi,LBj:UBj,ND) :: cy_rho
       real(r8), dimension(LBi:UBi,LBj:UBj,ND) :: ct_r
-      real(r8), parameter:: minTa=2.0_r8
+      real(r8), parameter:: Tamin=1.0_r8
 
 # include "set_bounds.h"
 !
@@ -193,15 +195,15 @@
             ELSE
               theta_cur = ATAN2(v_rho(i,j),u_rho(i,j))
             ENDIF
-            u_dir = sqrt(u_rho(i,j)**2+v_rho(i,j)**2)*                  &
+            u_dir(i,j)= sqrt(u_rho(i,j)**2+v_rho(i,j)**2)*              &
      &              cos(alfa_wave-theta_cur)
-            u_block = -(twopi/Tr(i,j,d))/(kwc(i,j,d))
+            u_block(i,j) = -(twopi/MAX(Tamin,Tr(i,j,d)))/(kwc(i,j,d))
 # endif
 
 # ifdef DOPPLER
            IF((h_tot(i,j).le.Dcrit(ng))                                 &
-     &        .or.((u_dir.lt.0.0_r8)                                    &
-     &        .and.(u_dir.le.u_block)))                                 &
+     &        .or.((u_dir(i,j).lt.0.0_r8)                               &
+     &        .and.(u_dir(i,j).le.u_block(i,j))))                       &
      &     THEN
 # else
            IF(h_tot(i,j).le.Dcrit(ng)) THEN
@@ -243,18 +245,18 @@
             ENDIF
           ENDDO
         ENDDO
-      ENDDO
+!      ENDDO
 
 # ifdef ACT_ADVECTION
 
-      DO d=1,ND
+!      DO d=1,ND
         DO j=Jstr,Jend
           DO i=Istr,Iend
 
 #  ifdef DOPPLER
           IF((h_tot(i,j).le.Dcrit(ng))                                  &
-     &        .or.((u_dir.lt.0.0_r8)                                    &
-     &        .and.(u_dir.le.u_block)))                                 &
+     &        .or.((u_dir(i,j).lt.0.0_r8)                               &
+     &        .and.(u_dir(i,j).le.u_block(i,j))))                       &
      &     THEN
 #  else
            IF(h_tot(i,j).le.Dcrit(ng)) THEN
@@ -293,7 +295,7 @@
 !           if (i.eq.Istr)dhdx=(pm(i,j))*(h_tot(i+1,j)-h_tot(i,j))
 !           if (j.eq.Jstr)dhdy=(pn(i,j))*(h_tot(i,j+1)-h_tot(i,j))
             kh=kwc(i,j,d)*h_tot(i,j)
-            ct_r(i,j,d)=twopi/(Tr(i,j,d)*sinh(2.0_r8*kh))*              &
+            ct_r(i,j,d)=twopi/(MAX(Tamin,Tr(i,j,d))*sinh(2.0_r8*kh))*   &
      &                 (sin(dir_edge)*dhdx-cos(dir_edge)*dhdy)
 
 #  ifdef DOPPLER
@@ -310,38 +312,38 @@
             ENDIF
           ENDDO
         ENDDO
-       ENDDO
+!       ENDDO
 
 # endif
 
-      DO d=1,ND
+!      DO d=1,ND
         DO j=Jstr,Jend
           DO i=Istr,Iend
-           wr=twopi/Tr(i,j,d)
+           wr=twopi/MAX(Tamin,Tr(i,j,d))
            wa=wr
 #  ifdef DOPPLER
-           wa=wa+kwc(i,j,d)*u_dir
+           wa=wa+kwc(i,j,d)*u_dir(i,j)
 #  endif
-           Ta(i,j,d)=twopi/wa
-           if (Ta(i,j,d).lt.minTa) Ta(i,j,d)=minTa
+           Ta(i,j,d)=MAX(Tamin,twopi/wa)
+!          if (Ta(i,j,d).lt.minTa) Ta(i,j,d)=minTa
           ENDDO
         ENDDO
       ENDDO
 
 !  Apply nonperiodic boundary conditions in xi and etai space.
 
-      CALL Tr3dbc_tile (ng, tile,                                       &
-     &                  LBi, UBi, LBj, UBj, ND,                         &
-     &                  Tr)
+!      CALL Tr3dbc_tile (ng, tile,                                       &
+!     &                  LBi, UBi, LBj, UBj, ND,                         &
+!     &                  Tr)
       CALL Tr3dbc_tile (ng, tile,                                       &
      &                  LBi, UBi, LBj, UBj, ND,                         &
      &                  Ta)
 # ifdef DISTRIBUTE
-      CALL mp_exchange3d (ng, tile, iNLM, 1,                            &
-     &                    LBi, UBi, LBj, UBj, 1, ND,                    &
-     &                    NghostPoints,                                 &
-     &                    EWperiodic(ng), NSperiodic(ng),               &
-     &                    Tr)
+!      CALL mp_exchange3d (ng, tile, iNLM, 1,                            &
+!     &                    LBi, UBi, LBj, UBj, 1, ND,                    &
+!     &                    NghostPoints,                                 &
+!     &                    EWperiodic(ng), NSperiodic(ng),               &
+!     &                    Tr)
       CALL mp_exchange3d (ng, tile, iNLM, 1,                            &
      &                    LBi, UBi, LBj, UBj, 1, ND,                    &
      &                    NghostPoints,                                 &

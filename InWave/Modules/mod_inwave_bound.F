@@ -44,9 +44,9 @@
           real(r8), pointer :: ACG_south(:,:,:)
 #endif
 
-          real(r8), allocatable :: WD_BND(:)
+          real(r8), allocatable :: WD_bnd(:)
 
-          integer :: ND_BND, ND_ini, ND_end
+          integer :: ND_bnd, ND_ini, ND_end
 
         END TYPE T_INWAVE_BOUND
 
@@ -78,7 +78,7 @@
 !
 !  Local variable declarations.
 !
-      integer :: ND_BND
+      integer :: ND_bnd
       integer :: LBi, UBi, LBj, UBj
       integer :: my_tile
       character (len=80) :: ncbnd_name
@@ -96,7 +96,7 @@
 !  Allocate and initialize module variables.
 !-----------------------------------------------------------------------
 
-      IF (ng.eq.1) allocate ( WAVEB(Ngrids) )
+      IF (ng.eq.1) allocate (WAVEB(Ngrids))
 
 !-----------------------------------------------------------------------
 !  Read the boundary grid
@@ -105,37 +105,37 @@
 #if !defined INWAVE_SWAN_COUPLING
       ncbnd_name=IWBNDname(ng)
       call get_inwave_bnd_grid(ng, ncbnd_name)
-      ND_BND=WAVEB(ng) % ND_BND
+      ND_bnd=WAVEB(ng)%ND_bnd
 #else
-      ND_BND=ND(ng)
+      ND_bnd=ND
+!     moved this to mod_inwave_swan 
 #endif
 
-
       IF (LBC(ieast,isAC3d,ng)%acquire) THEN
-        allocate ( WAVEB(ng) % AC_east(LBj:UBj,ND_BND) )
+        allocate ( WAVEB(ng) % AC_east(LBj:UBj,nd) )
 # ifndef ANA_ACOBC
-        allocate ( WAVEB(ng) % ACG_east(LBj:UBj,ND_BND,2) )
+        allocate ( WAVEB(ng) % ACG_east(LBj:UBj,ND_bnd,2) )
 # endif
       END IF
 
       IF (LBC(iwest,isAC3d,ng)%acquire) THEN
-        allocate ( WAVEB(ng) % AC_west(LBj:UBj,ND_BND) )
+        allocate ( WAVEB(ng) % AC_west(LBj:UBj,ND_bnd) )
 # ifndef ANA_ACOBC
-        allocate ( WAVEB(ng) % ACG_west(LBj:UBj,ND_BND,2) )
+        allocate ( WAVEB(ng) % ACG_west(LBj:UBj,ND_bnd,2) )
 # endif
       END IF
 
       IF (LBC(inorth,isAC3d,ng)%acquire) THEN
-        allocate ( WAVEB(ng) % AC_north(LBi:UBi,ND_BND) )
+        allocate ( WAVEB(ng) % AC_north(LBi:UBi,ND_bnd) )
 # ifndef ANA_ACOBC
-        allocate ( WAVEB(ng) % ACG_north(LBi:UBi,ND_BND,2) )
+        allocate ( WAVEB(ng) % ACG_north(LBi:UBi,ND_bnd,2) )
 # endif
       END IF
 
       IF (LBC(isouth,isAC3d,ng)%acquire) THEN
-        allocate ( WAVEB(ng) % AC_south(LBi:UBi,ND_BND) )
+        allocate ( WAVEB(ng) % AC_south(LBi:UBi,ND_bnd) )
 # ifndef ANA_ACOBC
-        allocate ( WAVEB(ng) % ACG_south(LBi:UBi,ND_BND,2) )
+        allocate ( WAVEB(ng) % ACG_south(LBi:UBi,ND_bnd,2) )
 # endif
       END IF
 

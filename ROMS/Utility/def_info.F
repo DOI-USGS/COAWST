@@ -70,7 +70,11 @@
       USE mod_netcdf
       USE mod_scalars
       USE mod_strings
-!
+#ifdef INWAVE_MODEL
+      USE mod_inwave_vars
+      USE mod_inwave_bound
+#endif
+!     
       USE def_var_mod, ONLY : def_var
 #if !defined PARALLEL_OUT  && defined DISTRIBUTE
       USE distribute_mod, ONLY : mp_bcasti
@@ -97,6 +101,9 @@
       integer :: srdim, stadim, status, swdim, trcdim, usrdim
 #ifdef SEDIMENT
       integer :: seddim
+#endif
+#ifdef INWAVE_MODEL
+      integer :: inwdim
 #endif
 #ifdef FOUR_DVAR
       integer :: statedim
@@ -150,6 +157,9 @@
       trcdim=DimIDs(11)
 #ifdef SEDIMENT
       seddim=DimIDs(32)
+#endif
+#ifdef INWAVE_MODEL
+      inwdim=DimIDs(33)
 #endif
       stadim=DimIDs(13)
       brydim=DimIDs(14)
@@ -2737,6 +2747,10 @@
 
 #ifdef SEDIMENT
 # include <sediment_def.h>
+#endif
+
+#ifdef INWAVE_MODEL
+# include <inwave_def.h>
 #endif
 !
 !-----------------------------------------------------------------------

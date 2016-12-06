@@ -42,12 +42,16 @@
       USE mod_stepping
 !
       USE nf_fwrite2d_mod, ONLY : nf_fwrite2d
-# if defined PERFECT_RESTART || defined SOLVE3D
+#if defined PERFECT_RESTART || defined SOLVE3D
       USE nf_fwrite3d_mod, ONLY : nf_fwrite3d
-# endif
-# if defined PERFECT_RESTART && defined SOLVE3D
+#endif
+#if defined PERFECT_RESTART && defined SOLVE3D
       USE nf_fwrite4d_mod, ONLY : nf_fwrite4d
-# endif
+#endif
+#ifdef INWAVE_MODEL
+      USE mod_inwave_params
+      USE mod_inwave_vars
+#endif
 !
       implicit none
 !
@@ -59,9 +63,9 @@
 !
       integer :: LBi, UBi, LBj, UBj
       integer :: Fcount, gfactor, gtype, i, itrc, status, varid
-# if defined PERFECT_RESTART || defined SOLVE3D
+#if defined PERFECT_RESTART || defined SOLVE3D
       integer :: ntmp(1)
-# endif
+#endif
       real(r8) :: scale
 !
       LBi=LBOUND(GRID(ng)%h,DIM=1)
@@ -1822,6 +1826,54 @@
         END IF
       END DO
 # endif
+#endif
+#ifdef INWAVE_MODEL
+!
+!  Write out AC wave energy density.
+!
+      scale=1.0_r8
+      gtype=gfactor*r3dvar
+      status=nf_fwrite3d(ng, iNLM, RST(ng)%ncid, RST(ng)%Vid(idACen),   &
+     &                   RST(ng)%Rindex, gtype,                         &
+     &                   LBi, UBi, LBj, UBj, 1, ND, scale,              &
+# ifdef MASKING
+#  ifdef WET_DRY
+     &                   GRID(ng) % rmask_full,                         &
+#  else
+     &                   GRID(ng) % rmask,                              &
+#  endif
+# endif
+     &                   WAVEP(ng) % AC(:,:,:,NOUT))
+      IF (status.ne.nf90_noerr) THEN
+        IF (Master) WRITE (stdout,10) TRIM(Vname(1,idACen)),            &
+     &                                RST(ng)%Rindex
+        exit_flag=3
+        ioerror=status
+        RETURN
+      END IF
+!
+!  Write out energy peak period.
+!
+      scale=1.0_r8
+      gtype=gfactor*r3dvar
+      status=nf_fwrite3d(ng, iNLM, RST(ng)%ncid, RST(ng)%Vid(idACtp),   &
+     &                   RST(ng)%Rindex, gtype,                         &
+     &                   LBi, UBi, LBj, UBj, 1, ND, scale,              &
+# ifdef MASKING
+#  ifdef WET_DRY
+     &                   GRID(ng) % rmask_full,                         &
+#  else
+     &                   GRID(ng) % rmask,                              &
+#  endif
+# endif
+     &                   WAVEP(ng) % Ta)
+      IF (status.ne.nf90_noerr) THEN
+        IF (Master) WRITE (stdout,10) TRIM(Vname(1,idACtp)),            &
+     &                                RST(ng)%Rindex
+        exit_flag=3
+        ioerror=status
+        RETURN
+      END IF
 #endif
 #ifdef WEC
 !
