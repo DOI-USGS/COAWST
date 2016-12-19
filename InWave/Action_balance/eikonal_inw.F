@@ -49,8 +49,8 @@
      &                      GRID(ng) % on_v,                            &
 # ifdef MASKING
      &                      GRID(ng) % rmask,                           &
-     &                      GRID(ng) % umask_wet,                           &
-     &                      GRID(ng) % vmask_wet,                           &
+     &                      GRID(ng) % umask_wet,                       &
+     &                      GRID(ng) % vmask_wet,                       &
 # endif
      &                      WAVEP(ng) % cx,                             &
      &                      WAVEP(ng) % cy,                             &
@@ -184,7 +184,7 @@
             kx=kx-cff*mask_CF(i,j)
 !
             cff=0.5_r8*pn(i,j)*dt(ng)*                                  &
-     &         (CF(i,j+1)-CF(i,j-1))*mask_CF(i,j+1)*mask_CF(i,j+1)
+     &         (CF(i,j+1)-CF(i,j-1))*mask_CF(i,j+1)*mask_CF(i,j-1)
             ky=ky-cff*mask_CF(i,j)
 !
             kwc(i,j,d)=MAX(SQRT(kx*kx+ky*ky),0.000001_r8)
