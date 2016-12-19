@@ -203,12 +203,14 @@
           cff=WAVEG(ng)%wd(ND)-WAVEG(ng)%wd(1)
         ENDIF
         IF (cff.lt.0.0_r8) THEN
-!  +2pi ?
+!  +2pi jcw?
           cff=cff+pi
         ENDIF
         WAVEG(ng)%pd(d)=cff
       END DO
-
+!  jcw check this
+      WAVEG(ng)%pd(1)=WAVEG(ng)%pd(2)
+      
 #if defined THETA_AC_PERIODIC
 !
 !-----------------------------------------------------------------------

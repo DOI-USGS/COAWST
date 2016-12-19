@@ -1,4 +1,6 @@
 #include "cppdefs.h"
+#undef  AC_U3HADVECTION
+#define AC_HSIMT
       MODULE prestep_inw_mod
 #if defined INWAVE_MODEL
 !
@@ -146,7 +148,11 @@
 !
       integer :: i, indx, is, itrc, j, d, ltrc
 
+# if defined AC_MPDATA || defined AC_HSIMT
+      real(r8), parameter :: Gamma = 0.5_r8
+# else
       real(r8), parameter :: Gamma = 1.0_r8/6.0_r8
+# endif
       real(r8), parameter :: eps = 1.0E-16_r8
 
       real(r8) :: cff, cff1, cff2, cff3, cff4
@@ -172,14 +178,15 @@
 !  horizontal advection.
 !
       D_LOOP: DO d=1,ND
+# ifdef AC_U3HADVECTION
 !  Third-order, uptream-biased horizontal advective fluxes.
         DO j=Jstr,Jend
           DO i=Istrm1,Iendp2
             FX(i,j)=AC(i  ,j,d,nstp)-                                   &
      &              AC(i-1,j,d,nstp)
-# ifdef MASKING
+#  ifdef MASKING
             FX(i,j)=FX(i,j)*umask(i,j)
-# endif
+#  endif
           END DO
         END DO
         IF (.not.(CompositeGrid(iwest,ng).or.EWperiodic(ng))) THEN
@@ -220,9 +227,9 @@
           DO i=Istr,Iend
             FE(i,j)=AC(i,j  ,d,nstp)-                                   &
      &              AC(i,j-1,d,nstp)
-# ifdef MASKING
+#  ifdef MASKING
             FE(i,j)=FE(i,j)*vmask(i,j)
-# endif
+#  endif
           END DO
         END DO
         IF (.not.(CompositeGrid(isouth,ng).or.NSperiodic(ng))) THEN
@@ -258,6 +265,29 @@
      &                     curv(i,j  )*MIN(cff,0.0_r8))
           END DO
         END DO
+# elif defined AC_MPDATA || defined AC_HSIMT
+!
+!  First-order, upstream differences horizontal advective fluxes.
+!
+          DO j=Jstr,Jend
+            DO i=Istr,Iend+1
+              cff=cx(i,j,d)*on_u(i,j)
+              cff1=MAX(cff,0.0_r8)
+              cff2=MIN(cff,0.0_r8)
+              FX(i,j)=cff1*AC(i-1,j,d,nstp)+                            &
+     &                cff2*AC(i  ,j,d,nstp)
+            END DO
+          END DO
+          DO j=Jstr,Jend+1
+            DO i=Istr,Iend
+              cff=cy(i,j,d)*om_v(i,j)
+              cff1=MAX(cff,0.0_r8)
+              cff2=MIN(cff,0.0_r8)
+              FE(i,j)=cff1*AC(i,j-1,d,nstp)+                            &
+     &                cff2*AC(i,j  ,d,nstp)
+            END DO
+          END DO
+# endif
 !
 !  Time-step horizontal advection.
 !
@@ -285,13 +315,12 @@
 ! Need to wrap around in theta dir. NOt always
 !
       J_LOOP: DO j=Jstr,Jend
-
         DO i=Istr,Iend
 # if defined THETA_AC_PERIODIC
-            FD(i,0)=AC(i,j,ND  ,nstp)-                                  &
-     &              AC(i,j,ND-1,nstp)
-            FD(i,1)=AC(i,j,1       ,nstp)-                              &
-     &              AC(i,j,ND  ,nstp)
+          FD(i,0)=AC(i,j,ND  ,nstp)-                                    &
+     &            AC(i,j,ND-1,nstp)
+          FD(i,1)=AC(i,j,1       ,nstp)-                                &
+     &            AC(i,j,ND  ,nstp)
 # else
 !!IN THIS POINT IT DOESNT MATTER THE BOUNDARY CONDITION, 
 !!WE JUST PUT IT AS IF IT WAS A NO GRADIENT
@@ -300,8 +329,8 @@
           FD(i,1)=0.0_r8
 # endif
           DO d=2,ND
-            FD(i,d)=AC(i,j,d       ,nstp)-                              &
-     &              AC(i,j,d-1     ,nstp)
+            FD(i,d)=AC(i,j,d  ,nstp)-                                   &
+     &              AC(i,j,d-1,nstp)
           END DO
 # if defined THETA_AC_PERIODIC
           FD(i,ND+1)=FD(i,1)
@@ -334,10 +363,10 @@
             FD(i,d)=cff*0.5_r8*                                         &
 # if defined THETA_AC_PERIODIC
      &              (AC(i,j,ND,nstp)+                                   &
-     &               AC(i,j,d  ,nstp))-                                 &
+     &               AC(i,j,d ,nstp))-                                  &
 # else
-     &              (AC(i,j,d     ,nstp)+                               &
-     &               AC(i,j,d  ,nstp))-                                 &
+     &              (AC(i,j,d ,nstp)+                                   &
+     &               AC(i,j,d ,nstp))-                                  &
 # endif
      &               cff1*(curvd(i,d-1)*MAX(cff,0.0_r8)+                &
      &                     curvd(i,d  )*MIN(cff,0.0_r8))
@@ -363,7 +392,7 @@
             FD(i,d)=cff*0.5_r8*                                         &
 # if defined THETA_AC_PERIODIC
      &              (AC(i,j,ND,nstp)+                                   &
-     &               AC(i,j,1  ,nstp))-                                 &
+     &               AC(i,j,1 ,nstp))-                                  &
 # else
      &              (AC(i,j,ND,nstp)+                                   &
      &               AC(i,j,ND,nstp))-                                  &
@@ -377,30 +406,18 @@
 !
         IF (iic(ng).eq.ntfirst(ng)) THEN
           cff=0.5_r8*dt(ng)
-          cff1=1.0_r8
-          cff2=0.0_r8
         ELSE
           cff=(1.0_r8-Gamma)*dt(ng)
-          cff1=0.5_r8+Gamma
-          cff2=0.5_r8-Gamma
         END IF
-        DO i=Istr,Iend
-          DO d=1,ND
-            AC(i,j,d,3)=(cff1*AC(i,j,d,nstp)+                           &
-     &                   cff2*AC(i,j,d,nnew))-                          &
-     &                   cff*pd(d)*                                     &
+        DO d=1,ND
+          DO i=Istr,Iend
+            AC(i,j,d,3)=AC(i,j,d,3)-                                    &
+     &                  cff*pd(d)*                                      &
      &                  (FD(i,d+1)-FD(i,d))
-          END DO
-        END DO
-        
-        DO i=Istr,Iend
-          DO d=1,ND
             AC(i,j,d,3)=MAX(0.0_r8,AC(i,j,d,3))
           END DO
         END DO
-
       END DO J_LOOP
-
 !
 !=======================================================================
 !  Apply lateral boundary conditions.
@@ -412,7 +429,6 @@
      &                  IminS, ImaxS, JminS, JmaxS,                     &
      &                  nstp, 3,                                        &
      &                  AC)
-
 !
 !  Apply periodic boundary conditions.
 !

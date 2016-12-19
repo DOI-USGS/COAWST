@@ -115,7 +115,7 @@
       integer :: i, is, itrc, j, k, d
       integer :: Isup, Iinf, Jsup, Jinf
 
-      real(r8) :: twopi, otwopi
+      real(r8) :: twopi
       real(r8) :: error
       real(r8) :: L0, k0, k1, tkh, kh, kx, ky, wr
       real(r8) :: F, FDER
@@ -128,7 +128,6 @@
 # include "set_bounds.h"
 !
       twopi=2.0_r8*pi
-      otwopi=1.0_r8/twopi
 !
 !======================================================================!
 !           Compute the total water depth at rho points                !

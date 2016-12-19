@@ -152,7 +152,7 @@
 
       integer :: i, j, k, d
       real(r8) :: twopi, otwopi, halfpi
-      real(r8) :: alfa_wave, kx, ky, kh, wa, wr
+      real(r8) :: alfa_wave, kh, wa, wr
       real(r8) :: theta_cur
       real(r8) :: cff1
       real(r8) :: dir_edge
@@ -181,9 +181,6 @@
 !=======================================================================
 !
             alfa_wave =(1.5_r8*pi-wd(d))-angler(i,j)
-
-            kx= kwc(i,j,d)*cos(alfa_wave)
-            ky= kwc(i,j,d)*sin(alfa_wave)
 # ifdef DOPPLER
 !
 !=======================================================================
@@ -191,15 +188,14 @@
 !=======================================================================
 !
             IF (u_rho(i,j).eq.0.0_r8) THEN
-              theta_cur = 0.5_r8*pi*SIGN(1.0_r8,v_rho(i,j))
+              theta_cur=0.5_r8*pi*SIGN(1.0_r8,v_rho(i,j))
             ELSE
-              theta_cur = ATAN2(v_rho(i,j),u_rho(i,j))
+              theta_cur=ATAN2(v_rho(i,j),u_rho(i,j))
             ENDIF
-            u_dir(i,j)= sqrt(u_rho(i,j)**2+v_rho(i,j)**2)*              &
-     &              cos(alfa_wave-theta_cur)
+            u_dir(i,j)=SQRT(u_rho(i,j)**2+v_rho(i,j)**2)*              &
+     &                 COS(alfa_wave-theta_cur)
             u_block(i,j) = -(twopi/MAX(Tamin,Tr(i,j,d)))/(kwc(i,j,d))
 # endif
-
 # ifdef DOPPLER
            IF((h_tot(i,j).le.Dcrit(ng))                                 &
      &        .or.((u_dir(i,j).lt.0.0_r8)                               &
@@ -363,7 +359,6 @@
           DO i=IstrU,Iend
             cx(i,j,d)=0.5_r8*(cx_rho(i-1,j,d)+cx_rho(i,j,d))
 #  ifdef MASKING
-!  Apply Land/Sea mask
             cx(i,j,d)=cx(i,j,d)*umask(i,j)
 #  endif
           END DO
@@ -377,7 +372,6 @@
           DO i=Istr,Iend
             cy(i,j,d)=0.5_r8*(cy_rho(i,j-1,d)+cy_rho(i,j,d))
 #  ifdef MASKING
-!  Apply Land/Sea mask
             cy(i,j,d)=cy(i,j,d)*vmask(i,j)
 #  endif
           END DO
@@ -386,7 +380,6 @@
 # endif
 
 # ifdef ACT_ADVECTION
-          
       DO d=2,ND
         DO j=Jstr,Jend
           DO i=Istr,Iend

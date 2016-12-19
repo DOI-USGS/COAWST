@@ -44,23 +44,22 @@
       CALL frc_inw_tile(ng, tile,                                       &
      &                 LBi, UBi, LBj, UBj,                              &
      &                 IminS, ImaxS, JminS, JmaxS,                      &
+     &                 FORCES(ng) % Hwave,                              &
+     &                 FORCES(ng) % Dwave,                              &
+     &                 FORCES(ng) % Lwave,                              &
+#  if defined WAVES_UB
+     &                 FORCES(ng) % Uwave_rms,                          &
+#  endif
+#  if defined WAVES_TOP_PERIOD
+     &                 FORCES(ng) % Pwave_top,                          &
+#  endif
+#  if defined WAVES_BOT_PERIOD
+     &                 FORCES(ng) % Pwave_bot,                          &
+#  endif
      &                 WAVEP(ng)% AC, WAVEP(ng)% Tr,                    &
      &                 WAVEP(ng)% Ta, WAVEP(ng)% kwc,                   &
      &                 WAVEG(ng) % WD,                                  &
-     &                 WAVEP(ng) % h_tot,                               &
-     &                 FORCES(ng) % Hwave,                              &
-     &                 FORCES(ng) % Dwave,                              &
-     &                 FORCES(ng) % Lwave                               &
-#  if defined WAVES_UB
-     &                 ,FORCES(ng) % Uwave_rms                          &
-#  endif
-#  if defined WAVES_TOP_PERIOD
-     &                 ,FORCES(ng) % Pwave_top                          &
-#  endif
-#  if defined WAVES_BOT_PERIOD
-     &                 ,FORCES(ng) % Pwave_bot                          &
-#  endif
-     &                 )
+     &                 WAVEP(ng) % h_tot)
 !#  ifdef PROFILE
 !      CALL wclock_off (ng, iNLM, 35)
 !#  endif
@@ -71,19 +70,18 @@
       SUBROUTINE frc_inw_tile(ng, tile,                                 &
      &                       LBi, UBi, LBj, UBj,                        &
      &                       IminS, ImaxS, JminS, JmaxS,                &
-     &                       AC, Tr, Ta, kwc, WD,                       &
-     &                       h_tot,                                     &
-     &                       Hwave, Dwave, Lwave                        &
+     &                       Hwave, Dwave, Lwave,                       &
 #  if defined WAVES_UB
-     &                       ,Uwave_rms                                 &
+     &                       Uwave_rms,                                 &
 #  endif
 #  if defined WAVES_TOP_PERIOD
-     &                       ,Pwave_top                                 &
+     &                       Pwave_top,                                 &
 #  endif
 #  if defined WAVES_BOT_PERIOD
-     &                       ,Pwave_bot                                 &
+     &                       Pwave_bot,                                 &
 #  endif
-     &                       )
+     &                       AC, Tr, Ta, kwc,                           &
+     &                       WD, h_tot)
 !***********************************************************************
 !
       USE mod_param
@@ -91,6 +89,7 @@
       USE mod_boundary
       USE mod_grid
       USE mod_scalars
+      USE mod_stepping
       USE exchange_2d_mod
 
 #  ifdef DISTRIBUTE
@@ -105,15 +104,9 @@
       integer, intent(in) :: IminS, ImaxS, JminS, JmaxS
 !
 # ifdef ASSUMED_SHAPE
-      real(r8), intent(in) :: WD(:)
-      real(r8), intent(in) :: Tr(LBi:,LBj:,:)
-      real(r8), intent(in) :: Ta(LBi:,LBj:,:)
-      real(r8), intent(in) :: kwc(LBi:,LBj:,:)
-      real(r8), intent(in) :: AC(LBi:,LBj:,:,:)
       real(r8), intent(inout) :: Hwave(LBi:,LBj:)
       real(r8), intent(inout) :: Dwave(LBi:,LBj:)
       real(r8), intent(inout) :: Lwave(LBi:,LBj:)
-      real(r8), intent(in) :: h_tot(LBi:,LBj:)
 #  if defined WAVES_UB
       real(r8), intent(inout) :: Uwave_rms(LBi:,LBj:)
 #  endif
@@ -123,16 +116,16 @@
 #  if defined WAVES_BOT_PERIOD
       real(r8), intent(inout) :: Pwave_bot(LBi:,LBj:)
 #  endif
+      real(r8), intent(in) :: AC(LBi:,LBj:,:,:)
+      real(r8), intent(in) :: Tr(LBi:,LBj:,:)
+      real(r8), intent(in) :: Ta(LBi:,LBj:,:)
+      real(r8), intent(in) :: kwc(LBi:,LBj:,:)
+      real(r8), intent(in) :: WD(:)
+      real(r8), intent(in) :: h_tot(LBi:,LBj:)
 # else
-      real(r8), intent(in) :: WD(ND)
-      real(r8), intent(in) :: Tr(LBi:UBi,LBj:UBj,ND)
-      real(r8), intent(in) :: Ta(LBi:UBi,LBj:UBj,ND)
-      real(r8), intent(in) :: kwc(LBi:UBi,LBj:UBj,ND)
-      real(r8), intent(in) :: AC(LBi:UBi,LBj:UBj,ND,3)
       real(r8), intent(inout) :: Hwave(LBi:UBi,LBj:UBj)
       real(r8), intent(inout) :: Dwave(LBi:UBi,LBj:UBj)
       real(r8), intent(inout) :: Lwave(LBi:UBi,LBj:UBj)
-      real(r8), intent(in) :: h_tot(LBi:UBi,LBj:UBj)
 #  if defined WAVES_UB
       real(r8), intent(inout) :: Uwave_rms(LBi:UBi,LBj:UBj)
 #  endif
@@ -142,6 +135,12 @@
 #  if defined WAVES_BOT_PERIOD
       real(r8), intent(inout) :: Pwave_bot(LBi:UBi,LBj:UBj)
 #  endif
+      real(r8), intent(in) :: AC(LBi:UBi,LBj:UBj,ND,3)
+      real(r8), intent(in) :: Tr(LBi:UBi,LBj:UBj,ND)
+      real(r8), intent(in) :: Ta(LBi:UBi,LBj:UBj,ND)
+      real(r8), intent(in) :: kwc(LBi:UBi,LBj:UBj,ND)
+      real(r8), intent(in) :: WD(ND)
+      real(r8), intent(in) :: h_tot(LBi:UBi,LBj:UBj)
 # endif
 !
 !  Local variable declarations.
@@ -166,13 +165,13 @@
           KM=0.0_r8
           TRM=0.0_r8
           DIRM=0.0_r8
-          IF(h_tot(i,j).ge.Dcrit(ng))then
+          IF (h_tot(i,j).ge.Dcrit(ng)) THEN
             DO d=1,ND
 !=======================================================================
 !  Compute the energy from the action balance and the wave height
 !=======================================================================
-              EN=MAX(0.0_r8, AC(i,j,d,3)*twopi/MAX(Trmin,Tr(i,j,d)))
-!             IF(EN.lt.0.0_r8)EN=0.0_r8
+              EN=MAX(0.0_r8,AC(i,j,d,nnew(ng))*twopi/                   &
+     &                      MAX(Trmin,Tr(i,j,d)))
 !=======================================================================
 !  Compute the total energy
 !=======================================================================
@@ -182,11 +181,11 @@
 !  What we do is give more importance to those wave 
 !  numbers with more energy
 !=======================================================================
-             KM=KM+kwc(i,j,d)*EN
-             TRM=TRM+Tr(i,j,d)*EN
-             DIRM=DIRM+WD(d)*EN
+              KM=KM+kwc(i,j,d)*EN
+              TRM=TRM+Tr(i,j,d)*EN
+              DIRM=DIRM+WD(d)*EN
             ENDDO
-            IF(EW.ge.0.001_r8)then
+            IF (EW.ge.0.001_r8) THEN
               KM=KM/EW
               Lwave(i,j)=twopi/KM
               Dwave(i,j)=DIRM/EW
@@ -221,7 +220,6 @@
           ENDIF
         ENDDO
       ENDDO
-      
 # if defined WDISS_INWAVE
 !
 !  Apply boundary conditions.

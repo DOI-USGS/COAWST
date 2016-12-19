@@ -143,8 +143,8 @@
 
       IF (LBC(isouth,isAC3d,ng)%acquire) THEN
         DO d=1,ND
-          DO j=Imin,Imax
-            WAVEB(ng)%AC_south(j,d)=WAVES(ng)%Ampzeta(tidx,d)*          &
+          DO i=Imin,Imax
+            WAVEB(ng)%AC_south(i,d)=WAVES(ng)%Ampzeta(tidx,d)*          &
      &                              WAVEP(ng)%Tr(i,LBj,d)*otwopi
           END DO
         END DO

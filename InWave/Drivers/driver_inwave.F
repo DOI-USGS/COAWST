@@ -128,9 +128,7 @@
 # else
         IF(iic(ng).gt.ntstart(ng)) then
           istp=NINT(WAVES(ng)%SpecTimedt/dt(ng))
-          write(*,*) 'istp is ', istp, time(ng)
           IF (MOD(iic(ng),istp).eq.0) THEN
-             write(*,*) 'remainder ', iic(ng)/istp+1
              CALL inwave_swan_run (ng, iic(ng)/istp+1)
           END IF
         END IF

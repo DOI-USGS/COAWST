@@ -16,8 +16,9 @@
 !======================================================================!
 !
       USE inwave_iounits
-      USE mod_scalars
       USE mod_inwave_swan
+      USE mod_parallel
+      USE mod_scalars
 !
       implicit none
 !
@@ -33,7 +34,7 @@
       integer            :: nfreq, ndir, switch
       integer            :: i, j, inp
       integer            :: nfreqsw, ndirsw
-      integer            :: minpos
+      integer            :: minpos, readerr
       INTEGER            :: INTTIM(6)
       integer,allocatable       :: posang(:)
 
@@ -43,13 +44,14 @@
       real(r8), pointer  :: theta1(:)
 
       real(r8), parameter :: rad = pi/180.0_r8
-      real(r8), parameter :: irad = 180.0_r8/pi
+      real(r8), parameter :: orad = 180.0_r8/pi
 
 !
 !-----------------------------------------------------------------------
 ! Open the spectral file
 !-----------------------------------------------------------------------
 !
+      readerr=0
       inp=44
       open(inp,file=IWSWNname(ng),form='formatted',status='old')
       switch=0
@@ -189,10 +191,14 @@
         IF (rtext == 'FACTOR') THEN
           i=1
         ELSEIF (rtext == 'ZERO  ') THEN
-          write(*,*) 'Zero energy density input for this point'
+          IF (Master) THEN
+            WRITE(stdout,*) 'Zero energy density input for this point'
+          END IF
           stop
         ELSEIF (rtext == 'NODATA') THEN
-          write(*,*) 'SWAN file has no data for this point'
+          IF (Master) THEN
+            WRITE(stdout,*) 'SWAN file has no data for this point'
+          END IF
           stop
         ENDIF
       END DO
@@ -211,7 +217,8 @@
       where (sdsw1 == exc) sdsw1=0.0_r8
 !
 !-----------------------------------------------------------------------
-!  Read the next time and close file for now.?
+!  If first, then read the next time and close file for now.
+!  If not first, then read until the next times step and get data.
 !-----------------------------------------------------------------------
 !
       i=0
@@ -233,14 +240,18 @@
             i=1
           ELSE
 !  If not first, then keep reading until we get the next time stamp.
-            IF ((WAVES(ng)%SpecTime(2)-WAVES(ng)%SpecTime(1)).gt.        &
+            IF ((WAVES(ng)%SpecTime(2)-WAVES(ng)%SpecTime(1)).gt.       &
      &          (time(ng)-dt(ng))) THEN
               read(inp,'(a)')rtext
               IF (rtext == 'ZERO  ') THEN
-                write(*,*) 'Zero energy density input for this point'
+                IF (Master) THEN
+                  WRITE(stdout,*) 'Zero energy density input'
+                END IF
                 stop
               ELSEIF (rtext == 'NODATA') THEN
-                write(*,*) 'SWAN file has no data for this point'
+                IF (Master) THEN
+                  WRITE(stdout,*) 'SWAN file has no data'
+                END IF
                 stop
               ENDIF
               read(inp,*)factor
@@ -249,8 +260,10 @@
               END DO
               where (sdsw1 == exc) sdsw1=0.0_r8
               i=1
-              write(*,*) 'Read 2D spec data for ',                      &
+              IF (Master) THEN
+                WRITE(stdout,*) 'Using 2D spec data at ',               &
      &                    WAVES(ng)%SpecTimeIso(2)
+              END IF
             END IF
           END IF
         END IF
@@ -263,7 +276,7 @@
 !
       DO j=1,ndirsw
         DO i=1,nfreqsw
-          sdsw1(i,j)=sdsw1(i,j)*factor*irad
+          sdsw1(i,j)=sdsw1(i,j)*factor*orad
         END DO
       END DO
 !
@@ -275,6 +288,7 @@
         WAVES(ng)%theta(j)=theta1(posang(j))
         DO i=1,nfreqsw
           WAVES(ng)%SDSW(i,j)=sdsw1(i,posang(j))/(rho0*g)
+!         WAVES(ng)%SDSW(i,j)=sdsw1(i,posang(j))
         ENDDO
       ENDDO
 
@@ -322,8 +336,10 @@
         m0=m0+WAVES(ng)%Sf(i)*(temp(i+1)-temp(i))
       END DO
       deallocate (temp)
-      WAVES(ng)%hm0gew=4.0_r8*sqrt(m0)
-      write(*,*) 'waves hm0 is ---->  ', WAVES(ng)%hm0gew
+      WAVES(ng)%hm0gew=4.004_r8*sqrt(m0)
+      IF (Master) THEN
+        WRITE(stdout,*) 'Waves hm0 is ', WAVES(ng)%hm0gew
+      END IF
 !
 !-----------------------------------------------------------------------
 ! Compute the representative period
@@ -333,14 +349,20 @@
 !
       WAVES(ng)%Trep=1.0_r8/frep
       WAVES(ng)%fp=frep
-      write(*,*) 'frep is ... ',  WAVES(ng)%Trep, WAVES(ng)%fp
-
-#endif
+      IF (Master) THEN
+        WRITE(stdout,*) 'frep is ... ',  WAVES(ng)%Trep, WAVES(ng)%fp
+      END IF
 !
- 215  write(*,*) 'End of swan reader'
+      GO TO 250
+ 215  IF (Master) THEN
+        WRITE (stdout,*) 'swan_reader.F Error reading swan 2d spec file'
+      END IF
 !     exit_flag=4
- 240  write(*,*) 'SWAN 2d Iso spec time is ', WAVES(ng)%SpecTimeIso
-      write(*,*) 'SWAN 2d spec time is ', WAVES(ng)%SpecTime
+ 240  IF (Master) THEN
+        WRITE(stdout,*) 'END of 2d spec file'
+      END IF
+ 250  CONTINUE
+#endif
       RETURN
       END SUBROUTINE swan_reader
 

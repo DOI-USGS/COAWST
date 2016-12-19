@@ -46,16 +46,15 @@
      &                 LBi, UBi, LBj, UBj,                              &
      &                 IminS, ImaxS, JminS, JmaxS,                      &
      &                 nstp(ng), nout,                                  &
-     &                 WAVEP(ng) % h_tot,                               &
-     &                 WAVEP(ng) % AC, WAVEP(ng) % Tr, WAVEP(ng) % kwc  &
 # ifdef MASKING
-     &                 ,GRID(ng) % rmask                                &
+     &                 GRID(ng) % rmask,                                &
 # endif
 #  if defined WDISS_INWAVE
-     &                 ,FORCES(ng) % Dissip_break                       &
-     &                 ,FORCES(ng) % Dissip_wcap                        &
+     &                 FORCES(ng) % Dissip_break,                       &
+     &                 FORCES(ng) % Dissip_wcap,                        &
 #  endif
-     &                 )
+     &                 WAVEP(ng) % h_tot,                               &
+     &                 WAVEP(ng) % AC, WAVEP(ng) % Tr, WAVEP(ng) % kwc)
 !#  ifdef PROFILE
 !      CALL wclock_off (ng, iNLM, 35)
 !#  endif
@@ -67,17 +66,15 @@
      &                       LBi, UBi, LBj, UBj,                        &
      &                       IminS, ImaxS, JminS, JmaxS,                &
      &                       nstp, nout,                                &
-     &                       h_tot,                                     &
-     &                       AC, Tr, kwc                                &
 # ifdef MASKING
-     &                       ,rmask                                     &
+     &                       rmask,                                     &
 # endif
 #  if defined WDISS_INWAVE
-     &                       ,Dissip_break                              &
-     &                       ,Dissip_wcap                               &
+     &                       Dissip_break,                              &
+     &                       Dissip_wcap,                               &
 #  endif
-     &                       )
-
+     &                       h_tot,                                     &
+     &                       AC, Tr, kwc)
 !***********************************************************************
 !
       USE mod_param
@@ -100,7 +97,6 @@
       integer, intent(in) :: nstp, nout
 !
 #  ifdef ASSUMED_SHAPE
-      real(r8), intent(inout) :: AC(LBi:,LBj:,:,:)
 #   ifdef MASKING
       real(r8), intent(in) :: rmask(LBi:,LBj:)
 #   endif
@@ -108,11 +104,11 @@
       real(r8), intent(inout) :: Dissip_break(LBi:,LBj:)
       real(r8), intent(inout) :: Dissip_wcap(LBi:,LBj:)
 #   endif
+      real(r8), intent(in) :: h_tot(LBi:,LBj:)
+      real(r8), intent(inout) :: AC(LBi:,LBj:,:,:)
       real(r8), intent(in) :: Tr(LBi:,LBj:,:)
       real(r8), intent(in) :: kwc(LBi:,LBj:,:)
-      real(r8), intent(in) :: h_tot(LBi:,LBj:)
 #  else
-      real(r8), intent(inout) :: AC(LBi:UBi,LBj:UBj,ND,3)
 #   ifdef MASKING
       real(r8), intent(in) :: rmask(LBi:UBi,LBj:UBj)
 #   endif
@@ -120,9 +116,10 @@
       real(r8), intent(inout) :: Dissip_break(LBi:UBi,LBj:UBj)
       real(r8), intent(inout) :: Dissip_wcap(LBi:UBi,LBj:UBj)
 #   endif
+      real(r8), intent(in) :: h_tot(LBi:UBi,LBj:UBj)
+      real(r8), intent(inout) :: AC(LBi:UBi,LBj:UBj,ND,3)
       real(r8), intent(in) :: Tr(LBi:UBi,LBj:UBj,ND)
       real(r8), intent(in) :: kwc(LBi:UBi,LBj:UBj,ND)
-      real(r8), intent(in) :: h_tot(LBi:UBi,LBj:UBj)
 #  endif
 !
 !  Local variable declarations.
@@ -177,36 +174,36 @@
 !  Compute the energy dissipation
 !=======================================================================
 #  ifdef ROELVINK
-        if (h_tot(i,j).ge.Dcrit(ng))then
-          Hmax_r=break*(max(h_tot(i,j),0.0_r8))
-          Qb=min(1.0_r8,1.0_r8-exp(-(H/Hmax_r)**n_r))
+          IF (h_tot(i,j).ge.Dcrit(ng)) THEN
+            Hmax_r=break*(MAX(h_tot(i,j),0.0_r8))
+            Qb=MIN(1.0_r8,1.0_r8-EXP(-(H/Hmax_r)**n_r))
 #   if defined WDISS_INWAVE
-          if(TRM.gt.0.0_r8)then
-            Dissip_break(i,j)=2.0_r8*alfa*1./TRM*EW*Qb*dt(ng)
-          endif
+            IF (TRM.gt.0.0_r8) THEN
+              Dissip_break(i,j)=2.0_r8*alfa*1./TRM*EW*Qb*dt(ng)
+            END IF
 #    ifdef MASKING
-          Dissip_break(i,j)=Dissip_break(i,j)*rmask(i,j)
+            Dissip_break(i,j)=Dissip_break(i,j)*rmask(i,j)
 #    endif
 #   else
-          if(TRM.gt.0.0_r8)then
-            Db=2.0_r8*alfa*1./TRM*EW*Qb*dt(ng)
-          endif
+            IF (TRM.gt.0.0_r8) THEN
+              Db=2.0_r8*alfa*1./TRM*EW*Qb*dt(ng)
+            END IF
 #   endif
-         else
+          ELSE
 #   if defined WDISS_INWAVE
-          Dissip_break(i,j)=0.0_r8
+            Dissip_break(i,j)=0.0_r8
 #   else
-          Db=0.0_r8
+            Db=0.0_r8
 #   endif
-         endif
+          END IF
 !=======================================================================
 !  Distribute dissipation over directions and recompute Ac
 !=======================================================================
           DO d=1,ND
 #   if defined WDISS_INWAVE
-            IF(Dissip_break(i,j).gt.0.0_r8.and.EW.gt.0.0_r8)THEN
+            IF (Dissip_break(i,j).gt.0.0_r8.and.EW.gt.0.0_r8) THEN
 #   else
-            IF(Db.gt.0.0_r8.and.EW.gt.0.0_r8)THEN
+            IF (Db.gt.0.0_r8.and.EW.gt.0.0_r8) THEN
 #   endif
 #   if defined WDISS_INWAVE
               EN(d)=EN(d)-Dissip_break(i,j)*EN(d)/EW
@@ -214,6 +211,9 @@
               EN(d)=EN(d)-Db*EN(d)/EW
 #   endif
               AC(i,j,d,nout)=EN(d)*Tr(i,j,d)/(twopi)
+#   ifdef MASKING
+              AC(i,j,d,nout)=AC(i,j,d,nout)*rmask(i,j)
+#   endif
             ENDIF
           ENDDO
 #  else
@@ -228,7 +228,7 @@
 #    endif
           Dissip_wcap(i,j)=0.0_r8
 #   else
-          Db=max (0.0_r8,diff)
+          Db=MAX(0.0_r8,diff)
 #   endif
 !=======================================================================
 !  Distribute dissipation over directions and recompute Ac
@@ -241,17 +241,17 @@
               EN(d)=EN(d)-Db*EN(d)/EW
 #   endif
               AC(i,j,d,nout)=EN(d)*Tr(i,j,d)/(twopi)
+#   ifdef MASKING
+              AC(i,j,d,nout)=AC(i,j,d,nout)*rmask(i,j)
+#   endif
             ENDIF
           ENDDO
 #  endif
-
-#   if defined WDISS_INWAVE
+#  if defined WDISS_INWAVE
           Dissip_break(i,j)=Dissip_break(i,j)/(dt(ng)*rho0)
-#   endif
-
+#  endif
         ENDDO
       ENDDO
-
 # if defined WDISS_INWAVE
 !
 !  Apply boundary conditions.
@@ -270,9 +270,7 @@
      &                    EWperiodic(ng), NSperiodic(ng),               &
      &                    Dissip_break, Dissip_wcap)
 #  endif
-
 # endif
-
       RETURN
       END SUBROUTINE dissip_inw_tile
 # endif

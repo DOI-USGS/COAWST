@@ -254,11 +254,11 @@
 !                                                                      !
 !=======================================================================
 !
-      USE mod_scalars
-      USE mod_inwave_vars
-      USE mod_inwave_params
       USE mod_inwave_bound
-!     USE mod_inwave_spectra
+      USE mod_inwave_params
+      USE mod_inwave_vars
+      USE mod_parallel
+      USE mod_scalars
 
       implicit none
 
@@ -286,16 +286,24 @@
 ! Create the frequency and directional arrays for the fft
 !-----------------------------------------------------------------------
 !
-      WAVES(ng)%nfreq=1000.0_r8    !!!! I choose this because I wanted
+        WAVES(ng)%nfreq=1000.0_r8    !!!! I choose this because I wanted
 
         allocate (WAVES(ng)%f(WAVES(ng)%nfreq))
         allocate (WAVES(ng)%SD(WAVES(ng)%nfreq,ND))
         allocate (WAVES(ng)%SDD(ND))
+        DO j=1,WAVES(ng)%ndir
+          DO i=1,WAVES(ng)%nfreq
+            WAVES(ng)%SD(i,j)=0.0_r8
+          ENDDO
+          WAVES(ng)%SDD(j)=0.0_r8
+        ENDDO
 
         WAVES(ng)%df=(WAVES(ng)%fmax-WAVES(ng)%fmin)/                   &
      &                REAL((WAVES(ng)%nfreq-1),r8)
 
-        write(*,*) 'Computing AC boundary forcing'
+        IF (Master) THEN
+          WRITE(stdout,*) 'Computing AC boundary forcing'
+        END IF
         DO i=1,WAVES(ng)%nfreq
 !         WAVES(ng)%f(i)=REAL(i+1,r8)*WAVES(ng)%df+WAVES(ng)%fmin
           WAVES(ng)%f(i)=REAL(i-1,r8)*WAVES(ng)%df+WAVES(ng)%fmin
@@ -323,11 +331,12 @@
         WAVES(ng)%SDD(j)=cff
       ENDDO
 !
-!  Sum up E over all dirs (so this should be Etot?)
+!  Sum up E over all freqs ?jcw
 !
       WAVES(ng)%int=0.0_r8
-      DO i=1,ND
-        WAVES(ng)%int=WAVES(ng)%int+WAVES(ng)%SDD(i)*WAVEG(ng)%pd(i)
+      DO i=1,WAVES(ng)%ndir
+!       WAVES(ng)%int=WAVES(ng)%int+WAVES(ng)%SDD(i)*WAVEG(ng)%pd(i)
+        WAVES(ng)%int=WAVES(ng)%int+WAVES(ng)%SDD(i)
       ENDDO
 !
       IF (first.eq.1) THEN
@@ -382,6 +391,7 @@
       SUBROUTINE random_phase (ng)
 !***********************************************************************
 !
+      USE mod_parallel
       USE mod_scalars
 
       implicit none
@@ -392,19 +402,56 @@
       
 !  Local variable declarations.
 
-      integer :: i,j
+      integer :: i, j, k, Npts, MyError
       real(r8) :: twopi
+#ifdef DISTRIBUTE
+      real(r8), allocatable :: wrk(:)
+#endif
 
       call random_number(WAVES(ng)%phase)
 
       twopi=2.0_r8*pi
 
-      DO j=1,WAVES(ng)%ndir
-        DO i=1,size(WAVES(ng)%f)
-          WAVES(ng)%phase(i,j)=WAVES(ng)%phase(i,j)*twopi
+#ifdef DISTRIBUTE
+      IF (Master) THEN
+#endif
+        DO i=1,WAVES(ng)%nfreq
+          DO j=1,WAVES(ng)%ndir
+            WAVES(ng)%phase(i,j)=WAVES(ng)%phase(i,j)*twopi
+ !          WAVES(ng)%phase(i,j)=0.1_r8*twopi
+          END DO
+        END DO
+#ifdef DISTRIBUTE
+      END IF
+#endif
+#ifdef DISTRIBUTE
+!
+!  Scatter phase to all the nodes.
+!
+      Npts=WAVES(ng)%nfreq*WAVES(ng)%ndir
+      allocate(wrk(Npts))
+      IF (Master) THEN
+        k=0
+        DO i=1,WAVES(ng)%nfreq
+          DO j=1,WAVES(ng)%ndir
+            k=k+1
+            wrk(k)=WAVES(ng)%phase(i,j)
+          END DO
+        END DO
+      END IF
+      CALL MPI_BCAST(wrk, Npts, MP_FLOAT, 0,                            &
+     &               OCN_COMM_WORLD, MyError)
+      k=0
+      DO i=1,WAVES(ng)%nfreq
+        DO j=1,WAVES(ng)%ndir
+          k=k+1
+          WAVES(ng)%phase(i,j)=wrk(k)
         END DO
       END DO
-
+!
+      deallocate(wrk)
+#endif
+      
       RETURN
 
       END SUBROUTINE random_phase
@@ -471,7 +518,7 @@
         END DO
       END DO
 
-! Assing a position in the spectral frequency arrat to each Fourier component
+! Assing a position in the spectral frequency array to each Fourier component
 
       DO i=1,WAVES(ng)%nfreq
         WAVES(ng)%position(i)=i
@@ -575,6 +622,12 @@
 
         IF ((dir_index.eq.1).and.(first.eq.1)) THEN
           allocate(WAVES(ng)%Comptemp_tot(WAVES(ng)%Insteps))
+        ENDIF
+
+        IF (dir_index.eq.1) THEN
+          DO i=1,WAVES(ng)%Insteps
+            WAVES(ng)%Comptemp_tot(i)=0.0_r8
+          END DO
         ENDIF
 
         DO i=1,WAVES(ng)%Insteps

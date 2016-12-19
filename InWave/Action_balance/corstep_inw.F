@@ -1,4 +1,6 @@
 #include "cppdefs.h"
+#undef  AC_U3HADVECTION
+#define AC_HSIMT
       MODULE corstep_inw_mod
 #if defined INWAVE_MODEL
 !
@@ -146,7 +148,6 @@
 !
 !  Local variable declarations.
 !
-
       integer :: i, is, itrc, j, k, d
 
       real(r8) :: cff, cff1, cff2, cff3
@@ -155,19 +156,30 @@
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: curv
       real(r8), dimension(IminS:ImaxS,0:ND+1) :: curvd
       real(r8), dimension(IminS:ImaxS,0:ND+2) :: FD
+# ifdef AC_HSIMT
+      real(r8) :: cc1, cc2, cc3, epson, sw
+      real(r8) :: sw_xi, rl, rkal, a1, b1, betal, rt, rkar, betar
+      real(r8) :: sw_eta, rd, rkad, betad, ru, rkau, betau
+      real(r8), dimension(IminS:ImaxS) :: kax, kax_inverse
+      real(r8), dimension(IminS:ImaxS) :: grad_x
+      real(r8), dimension(JminS:JmaxS) :: grad_y
+      real(r8), dimension(JminS:JmaxS) :: kay, kay_inverse
+      real(r8), dimension(0:N(ng)) :: kaz, kaz_inverse, grad_k
+# endif
 
 # include "set_bounds.h"
 
 !  Compute horizontal AC advection fluxes.
 !
       D_LOOP: DO d=1,ND
+# ifdef  AC_U3HADVECTION
           DO j=Jstr,Jend
             DO i=Istrm1,Iendp2
               FX(i,j)=AC(i  ,j,d,3)-                                    &
      &                AC(i-1,j,d,3)
-# ifdef MASKING
+#  ifdef MASKING
               FX(i,j)=FX(i,j)*umask(i,j)
-# endif
+#  endif
             END DO
           END DO
           IF (.not.(CompositeGrid(iwest,ng).or.EWperiodic(ng))) THEN
@@ -208,9 +220,9 @@
             DO i=Istr,Iend
               FE(i,j)=AC(i,j  ,d,3)-                                    &
      &                AC(i,j-1,d,3)
-# ifdef MASKING
+#  ifdef MASKING
               FE(i,j)=FE(i,j)*vmask(i,j)
-# endif
+#  endif
             END DO
           END DO
           IF (.not.(CompositeGrid(isouth,ng).or.NSperiodic(ng))) THEN
@@ -246,6 +258,150 @@
      &                      curv(i,j  )*MIN(cff,0.0_r8))
             END DO
           END DO
+# elif defined AC_MPDATA || defined AC_HSIMT
+      cc1=0.25_r8
+      cc2=0.5_r8
+      cc3=1.0_r8/12.0_r8
+      epson=1.0E-12_r8
+!
+      DO j=Jstr,Jend
+        DO i=Istr-1,Iend+2
+          grad_x(i)=(AC(i,j,d,3)-AC(i-1,j,d,3))
+          cff=0.5_r8*(pm(i-1,j)+pm(i,j))
+          kax(i)=(1.0_r8-abs(cx(i,j,d)*dt(ng)*cff))
+#  ifdef MASKING
+          grad_x(i)=grad_x(i)*umask(i,j)
+          kax(i)=kax(i)*umask(i,j)
+#  endif
+        END DO
+        IF (.not.EWperiodic(ng)) THEN
+          IF (DOMAIN(ng)%Western_Edge(tile)) THEN
+            IF (cx(Istr,j,d).ge.0.0_r8) THEN
+              grad_x(Istr-1)=0.0_r8
+              kax(Istr-1)=0.0_r8
+            END IF
+          END IF
+          IF (DOMAIN(ng)%Eastern_Edge(tile)) THEN
+            IF (cx(Iend+1,j,d).lt.0.0_r8) THEN
+              grad_x(Iend+2)=0.0_r8
+              kax(Iend+2)=0.0_r8
+            END IF
+          END IF
+        END IF
+        DO i=Istr,Iend+1
+          IF (kax(i).le.epson) THEN
+            kax_inverse(i)=0.0_r8
+          ELSE
+            kax_inverse(i)=1.0_r8/MAX(kax(i),epson)
+          END IF
+          IF (cx(i,j,d).ge.0.0_r8) THEN
+            IF (abs(grad_x(i)).le.epson) THEN
+              rl=0.0_r8
+              rkal=0.0_r8
+            ELSE
+              rl=grad_x(i-1)/(grad_x(i))
+              rkal=kax(i-1)*kax_inverse(i)
+            END IF
+            a1= cc1*kax(i)+cc2-cc3*kax_inverse(i)
+            b1=-cc1*kax(i)+cc2+cc3*kax_inverse(i)
+            betal=a1+b1*rl
+            cff=0.5_r8*max(0.0_r8,min(2.0_r8,2.0_r8*rl*rkal,betal))*    &
+     &                                  grad_x(i)*kax(i)
+#  ifdef MASKING
+            cff=cff*rmask(i-2,j)
+#  endif
+            sw_xi=AC(i-1,j,d,3)+cff
+          ELSE
+            IF (abs(grad_x(i)).le.epson) THEN
+              rt=0.0_r8
+              rkar=0.0_r8
+            ELSE
+              rt=grad_x(i+1)/(grad_x(i))
+              rkar=kax(i+1)*kax_inverse(i)
+            END IF
+            a1= cc1*kax(i)+cc2-cc3*kax_inverse(i)
+            b1=-cc1*kax(i)+cc2+cc3*kax_inverse(i)
+            betar=a1+b1*rt
+            cff=0.5_r8*max(0.0_r8,min(2.0_r8,2.0_r8*rt*rkar,betar))*    &
+     &                                grad_x(i)*kax(i)
+#  ifdef MASKING
+            cff=cff*rmask(i+1,j)
+#  endif
+            sw_xi=AC(i,j,d,3)-cff
+          END IF
+          FX(i,j)=sw_xi*cx(i,j,d)*on_u(i,j)
+        END DO
+      END DO
+!
+      DO i=Istr,Iend
+        DO j=Jstr-1,Jend+2
+          grad_y(j)=(AC(i,j,d,3)-AC(i,j-1,d,3))
+          cff=0.5_r8*(pn(i,j)+pn(i,j-1))
+          kay(j)=(1.0_r8-abs(cy(i,j,d)*dt(ng)*cff))
+#  ifdef MASKING
+          grad_y(j)=grad_y(j)*vmask(i,j)
+          kay(j)=kay(j)*vmask(i,j)
+#  endif
+        END DO
+        IF (.not.NSperiodic(ng)) THEN
+          IF (DOMAIN(ng)%Southern_Edge(tile)) THEN
+            IF (cy(i,Jstr,d).ge.0.0_r8) THEN
+              grad_y(Jstr-1)=0.0_r8
+              kay(Jstr-1)=0.0_r8
+            END IF
+          END IF
+          IF (DOMAIN(ng)%Northern_Edge(tile)) THEN
+            IF (cy(i,Jend+1,d).lt.0.0_r8) THEN
+              grad_y(Jend+2)=0.0_r8
+              kay(Jend+2)=0.0_r8
+            END IF
+          END IF
+        END IF
+        DO j=Jstr,Jend+1
+          IF (kay(j).le.epson) THEN
+            kay_inverse(j)=0.0_r8
+          ELSE
+            kay_inverse(j)=1.0_r8/MAX(kay(j),epson)
+          END IF
+          IF (cy(i,j,d).ge.0.0_r8) THEN
+            IF (abs(grad_y(j)).le.epson) THEN
+              rd=0.0_r8
+              rkad=0.0_r8
+            ELSE
+              rd=grad_y(j-1)/grad_y(j)
+              rkad=kay(j-1)*kay_inverse(j)
+            END IF
+            a1= cc1*kay(j)+cc2-cc3*kay_inverse(j)
+            b1=-cc1*kay(j)+cc2+cc3*kay_inverse(j)
+            betad=a1+b1*rd
+            cff=0.5_r8*max(0.0_r8,min(2.0_r8,2.0_r8*rd*rkad,betad))*    &
+     &                              grad_y(j)*kay(j)
+#  ifdef MASKING
+            cff=cff*rmask(i,j-2)
+#  endif
+            sw_eta=AC(i,j-1,d,3)+cff
+          ELSE
+            IF (abs(grad_y(j)).le.epson) THEN
+              ru=0.0_r8
+              rkau=0.0_r8
+            ELSE
+              ru=grad_y(j+1)/(grad_y(j))
+              rkau=kay(j+1)*kay_inverse(j)
+            END IF
+            a1= cc1*kay(j)+cc2-cc3*kay_inverse(j)
+            b1=-cc1*kay(j)+cc2+cc3*kay_inverse(j)
+            betau=a1+b1*ru
+            cff=0.5*max(0.0_r8,min(2.0_r8,2.0_r8*ru*rkau,betau))*       &
+     &                            grad_y(j)*kay(j)
+#  ifdef MASKING
+            cff=cff*rmask(i,j+1)
+#  endif
+            sw_eta=AC(i,j,d,3)-cff
+          END IF
+          FE(i,j)=sw_eta*cy(i,j,d)*om_v(i,j)
+        END DO
+      END DO
+# endif
 !
 !  Time-step horizontal advection term.
 !
@@ -264,12 +420,11 @@
 !-----------------------------------------------------------------------
 !
       J_LOOP: DO j=Jstr,Jend
-
         DO i=Istr,Iend
 # if defined THETA_AC_PERIODIC
             FD(i,0)=AC(i,j,ND  ,3)-                                     &
      &              AC(i,j,ND-1,3)
-            FD(i,1)=AC(i,j,1       ,3)-                                 &
+            FD(i,1)=AC(i,j,1   ,3)-                                     &
      &              AC(i,j,ND  ,3)
 # else
 !!IN THIS POINT IT DOESNT MATTER THE BOUNDARY CONDITION, 
@@ -279,8 +434,8 @@
           FD(i,1)=0.0_r8
 # endif
           DO d=2,ND
-            FD(i,d)=AC(i,j,d       ,3)-                                 &
-     &              AC(i,j,d-1     ,3)
+            FD(i,d)=AC(i,j,d  ,3)-                                      &
+     &              AC(i,j,d-1,3)
           END DO
 # if defined THETA_AC_PERIODIC
           FD(i,ND+1)=FD(i,1)
@@ -318,7 +473,7 @@
      &              (AC(i,j,d     ,3)+                                  &
      &               AC(i,j,d  ,3))-                                    &
 # endif
-     &               cff1*(curvd(i,d-1)*MAX(cff,0.0_r8)+                 &
+     &               cff1*(curvd(i,d-1)*MAX(cff,0.0_r8)+                &
      &                     curvd(i,d  )*MIN(cff,0.0_r8))
           END DO
           DO d=2,ND
@@ -354,68 +509,46 @@
 !
 !  Time-step directional advection (m Tunits).
 !
-        DO i=Istr,Iend
-          DO d=1,ND
+        DO d=1,ND
+          DO i=Istr,Iend
             cff=dt(ng)*pd(d)
             AC(i,j,d,nnew)=AC(i,j,d,nnew)-                              &
      &                     cff*(FD(i,d+1)-FD(i,d))
             AC(i,j,d,nnew)=MAX(0.0_r8,AC(i,j,d,nnew))
           END DO
         END DO
-
       END DO J_LOOP
-
 # if defined ENERGY_DISSIPATION
       CALL dissip_inw_tile (ng, tile,                                   &
      &                      LBi, UBi, LBj, UBj,                         &
      &                      IminS, ImaxS, JminS, JmaxS,                 &
      &                      nstp, nnew,                                 &
-     &                      WAVEP(ng) % h_tot,                          &
-     &                      AC, Tr, kwc                                 &
 #  ifdef MASKING
-     &                     ,rmask                                       &
+     &                      rmask,                                      &
 #  endif
 #  if defined WDISS_INWAVE
-     &                     ,FORCES(ng) % Dissip_break                   &
-     &                     ,FORCES(ng) % Dissip_wcap                    &
+     &                     FORCES(ng) % Dissip_break,                   &
+     &                     FORCES(ng) % Dissip_wcap,                    &
 #  endif
-     &                 )
+     &                     WAVEP(ng) % h_tot,                           &
+     &                     AC, Tr, kwc)
 # endif
-
-
 !-----------------------------------------------------------------------
 !  Apply lateral boundary conditions.
 !-----------------------------------------------------------------------
-# ifdef MASKING
-!
-!  Apply Land/Sea mask.
-!
-        DO d=1,ND
-          DO j=JstrR,JendR
-            DO i=IstrR,IendR
-              AC(i,j,d,nnew)=AC(i,j,d,nnew)*rmask(i,j)
-            END DO
-          END DO
-        END DO
-# endif
-
-!  Apply no periodic boundary conditions.
-
       CALL AC3dbc_tile (ng, tile,                                       &
      &                  LBi, UBi, LBj, UBj,                             &
      &                  IminS, ImaxS, JminS, JmaxS,                     &
      &                  nstp, nnew,                                     &
      &                  AC)
-
 !
 !  Apply periodic boundary conditions.
 !
       IF (EWperiodic(ng).or.NSperiodic(ng)) THEN
-      CALL exchange_AC3d_tile (ng, tile,                                &
-     &                         LBi, UBi, LBj, UBj, 1, ND,               &
-     &                         AC(:,:,:,nnew))
+        CALL exchange_AC3d_tile (ng, tile,                              &
+     &                           LBi, UBi, LBj, UBj, 1, ND,             &
+     &                           AC(:,:,:,nnew))
       END IF
-
 # ifdef DISTRIBUTE
 !
 !  Exchange boundary data.

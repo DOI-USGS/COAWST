@@ -88,9 +88,9 @@
 
 # include "set_bounds.h"
 # ifdef RAMP_INWAVE
-        ramp=TANH((tdays(ng)-dstart)/0.07_r8)
+      ramp=TANH((tdays(ng)-dstart)/0.07_r8)
 # else
-        ramp=1.0_r8
+      ramp=1.0_r8
 # endif
 !
 !-----------------------------------------------------------------------
