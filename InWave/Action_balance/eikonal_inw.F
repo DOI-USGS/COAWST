@@ -55,6 +55,7 @@
      &                      WAVEP(ng) % cx,                             &
      &                      WAVEP(ng) % cy,                             &
      &                      WAVEP(ng) % kwc, WAVEP(ng) % Ta,            &
+     &                            WAVEP(ng) % h_tot,                    &
      &                      WAVEG(ng) % wd, GRID(ng)%angler)
 
 !#  ifdef PROFILE
@@ -73,7 +74,7 @@
 # ifdef MASKING
      &                            rmask, umask, vmask,                  &
 # endif
-     &                            cx, cy, kwc, Ta,                      &
+     &                            cx, cy, kwc, Ta, h_tot,               &
      &                            wd, angler)
 !***********************************************************************
 !
@@ -99,29 +100,31 @@
       real(r8), intent(in) :: pn(LBi:,LBj:)
       real(r8), intent(in) :: om_u(LBi:,LBj:)
       real(r8), intent(in) :: on_v(LBi:,LBj:)
-#  ifdef MASKING
+#   ifdef MASKING
       real(r8), intent(in) :: rmask(LBi:,LBj:)
       real(r8), intent(in) :: umask(LBi:,LBj:)
       real(r8), intent(in) :: vmask(LBi:,LBj:)
-#  endif
+#   endif
       real(r8), intent(in) :: cx(LBi:,LBj:,:)
       real(r8), intent(in) :: cy(LBi:,LBj:,:)
       real(r8), intent(in) :: angler(LBi:,LBj:)
       real(r8), intent(inout) :: kwc(LBi:,LBj:,:)
+      real(r8), intent(in) :: h_tot(LBi:,LBj:)
       real(r8), intent(in) :: Ta(LBi:,LBj:,:)
 #  else
       real(r8), intent(in) :: pm(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: pn(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: om_u(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: on_v(LBi:UBi,LBj:UBj)
-#  ifdef MASKING
+#   ifdef MASKING
       real(r8), intent(in) :: rmask(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: umask(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: vmask(LBi:UBi,LBj:UBj)
-#  endif
+#   endif
       real(r8), intent(in) :: cx(LBi:UBi,LBj:UBj,ND)
       real(r8), intent(in) :: cy(LBi:UBi,LBj:UBj,ND)
       real(r8), intent(in) :: angler(LBi:UBi,LBj:UBj,ND)
+      real(r8), intent(in) :: h_tot(LBi:UBi,LBj:UBj)
       real(r8), intent(inout) :: kwc(LBi:UBi,LBj:UBj,ND)
       real(r8), intent(in) :: Ta(LBi:UBi,LBj:UBj,ND)
 #  endif
@@ -132,9 +135,12 @@
 
       real(r8) :: twopi, otwopi, Ta_min
       real(r8) :: alfa_wave, kx, ky, cff, cff1, cff2, cff3
+      real(r8) :: crk, crx, cry, kh
 
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: CF
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: mask_CF
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: FE
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: FX
 !
 #  include "set_bounds.h"
 !
@@ -174,24 +180,87 @@
 ! Compute the time change of xi and etai components of the wave number
 !=======================================================================
 !
+!  Mai
 !           kx=kx-pm(i,j)*dt(ng)*0.5_r8*                                &
 !    &         (twopi/Ta(i+1,j,d)-twopi/Ta(i-1,j,d))
 !           ky=ky-pn(i,j)*dt(ng)*0.5_r8*                                &
 !    &         (twopi/Ta(i,j+1,d)-twopi/Ta(i,j-1,d))
 !
-            cff=0.5_r8*pm(i,j)*dt(ng)*                                  &
-     &          (CF(i+1,j)-CF(i-1,j))*mask_CF(i+1,j)*mask_CF(i-1,j)
-            kx=kx-cff*mask_CF(i,j)
+!  JCW 1
+!            cff=0.5_r8*pm(i,j)*dt(ng)*                                  &
+!     &          (CF(i+1,j)-CF(i-1,j))*mask_CF(i+1,j)*mask_CF(i-1,j)
+!            kx=kx-cff*mask_CF(i,j)
 !
-            cff=0.5_r8*pn(i,j)*dt(ng)*                                  &
-     &         (CF(i,j+1)-CF(i,j-1))*mask_CF(i,j+1)*mask_CF(i,j-1)
-            ky=ky-cff*mask_CF(i,j)
+!            cff=0.5_r8*pn(i,j)*dt(ng)*                                  &
+!     &         (CF(i,j+1)-CF(i,j-1))*mask_CF(i,j+1)*mask_CF(i,j-1)
+!            ky=ky-cff*mask_CF(i,j)
 !
-            kwc(i,j,d)=MAX(SQRT(kx*kx+ky*ky),0.000001_r8)
+!            kwc(i,j,d)=MAX(SQRT(kx*kx+ky*ky),0.000001_r8)
           END DO
         END DO
-      END DO
+
+
+
 !
+! JCW 2
+
+          DO j=Jstr,Jend
+            DO i=Istr,Iend+1
+              IF (cx(i,j,d).eq.0.0_r8) THEN
+                alfa_wave=0.5_r8*pi*SIGN(1.0_r8,cy(i,j,d))
+              ELSE
+                alfa_wave=ATAN2(cy(i,j,d),cx(i,j,d))
+              ENDIF
+              kh=kwc(i,j,d)*h_tot(i,j)
+              crk=sqrt(g/kwc(i,j,d)*tanh(kh))
+              crx=crk*cos(alfa_wave)
+              cry=crk*sin(alfa_wave)
+              cff=crx
+              cff1=MAX(cff,0.0_r8)
+              cff2=MIN(cff,0.0_r8)
+              FX(i,j)=cff1*kwc(i-1,j,d)+                            &
+     &                cff2*kwc(i  ,j,d)
+            END DO
+          END DO
+          DO j=Jstr,Jend+1
+            DO i=Istr,Iend
+              IF (cx(i,j,d).eq.0.0_r8) THEN
+                alfa_wave=0.5_r8*pi*SIGN(1.0_r8,cy(i,j,d))
+              ELSE
+                alfa_wave=ATAN2(cy(i,j,d),cx(i,j,d))
+              ENDIF
+              kh=kwc(i,j,d)*h_tot(i,j)
+              crk=sqrt(g/kwc(i,j,d)*tanh(kh))
+              crx=crk*cos(alfa_wave)
+              cry=crk*sin(alfa_wave)
+              cff=cry
+              cff1=MAX(cff,0.0_r8)
+              cff2=MIN(cff,0.0_r8)
+              FE(i,j)=cff1*kwc(i,j-1,d)+                            &
+     &                cff2*kwc(i,j  ,d)
+            END DO
+          END DO
+!
+!  Time-step horizontal advection.
+!
+          cff=dt(ng)
+        DO j=Jstr,Jend
+          DO i=Istr,Iend
+            kwc(i,j,d)=kwc(i,j,d)-                                      &
+     &                   cff*pm(i,j)*pn(i,j)*                           &
+     &                  (FX(i+1,j)-FX(i,j)+                             &
+     &                   FE(i,j+1)-FE(i,j))
+          END DO
+        END DO
+
+
+
+      END DO
+
+
+
+
+      
       CALL bc_r3d_tile (ng, tile,                                       &
      &                  LBi, UBi, LBj, UBj, 1, ND,                      &
      &                  kwc)
