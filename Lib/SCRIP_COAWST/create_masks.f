@@ -33,9 +33,12 @@
       integer(int_kind)   :: i, j, c, Ikeep, Jkeep
       integer(int_kind)   :: mo, ma, mw, nx, ny, grdsize
       integer(int_kind)   :: N, INOUT, count, do_adjust
-      real(dbl_kind)      :: dist1, dist_max
-      real(dbl_kind)      :: xx2, yy2, PX, PY
-      real(dbl_kind)      :: lons, lats, lond, latd, tol, zz
+      real(dbl_kind)      :: dist1, dist_max, dlon
+      real(dbl_kind)      :: latrad1, latrad2, dep, dlat
+      real(dbl_kind)      :: xx1, yy1, xx2, yy2, PX, PY
+      real(dbl_kind)      :: lons, lats, lond, latd, tol, cff
+      integer(int_kind), allocatable :: src_mask_unlim(:,:)
+      integer(int_kind), allocatable :: dst_mask_unlim(:,:)
 
       contains
 !=======================================================================
@@ -93,6 +96,7 @@
           nx=ngrd_sw(mw)%Numx_swan
           ny=ngrd_sw(mw)%Numy_swan
           allocate(ngrd_sw(mw)%dst_mask(nx,ny))
+          allocate(dst_mask_unlim(nx,ny))
 !
 !  Compute swan grid dst mask. Start by using locations on dst grid
 !  where src_mask=1.
@@ -106,8 +110,14 @@
               yy2=ngrd_sw(mw)%lat_rho_w(nx,ny)
               do j=1,ngrd_rm(mo)%eta_size
                 do i=1,ngrd_rm(mo)%xi_size
-                  dist1=sqrt((ngrd_rm(mo)%lon_rho_o(i,j)-xx2)**2+       &
-     &                       (ngrd_rm(mo)%lat_rho_o(i,j)-yy2)**2)
+                  xx1=ngrd_rm(mo)%lon_rho_o(i,j)
+                  yy1=ngrd_rm(mo)%lat_rho_o(i,j)
+                  dlon = xx1-xx2
+                  latrad1=abs(yy1*deg2rad)
+                  latrad2=abs(yy2*deg2rad)
+                  dep=cos(0.5*(latrad2+latrad1))*dlon
+                  dlat=yy2-yy1
+                  dist1=1852.0*60.0*sqrt(dlat**2+dep**2)
                   if(dist1<=dist_max)then
                     dist_max=dist1
                     Ikeep=i
@@ -184,8 +194,8 @@
                 do ny=1,ngrd_sw(mw)%Numy_swan
                   lond=ngrd_sw(mw)%lon_rho_w(nx,ny)
                   latd=ngrd_sw(mw)%lat_rho_w(nx,ny)
-                  zz=min(abs(lons-lond),abs(lats-latd))
-                  if (zz.le.tol) then
+                  cff=min(abs(lons-lond),abs(lats-latd))
+                  if (cff.le.tol) then
                     do_adjust=1
                     exit
                   end if
@@ -252,11 +262,13 @@
      &                       map1_name, map2_name,                      &
      &                       ngrd_rm(mo)%mask_rho_o,                    &
      &                       ngrd_sw(mw)%dst_mask,                      &
+     &                       dst_mask_unlim,                            &
      &                       counter_grid,                              &
      &                       Ngrids_comb_total,                         &
      &                       output_ncfile)
 
           deallocate(ngrd_sw(mw)%dst_mask)
+          deallocate(dst_mask_unlim)
         end do
       end do
       do mo=1,Ngrids_roms
@@ -321,6 +333,7 @@
           nx=ngrd_rm(mo)%xi_size
           ny=ngrd_rm(mo)%eta_size
           allocate(ngrd_rm(mo)%dst_mask(nx,ny))
+          allocate(dst_mask_unlim(nx,ny))
 !
 !  Compute roms grid dst mask. Start by using locations on dst grid
 !  where src_mask=1.
@@ -334,8 +347,14 @@
               yy2=ngrd_rm(mo)%lat_rho_o(nx,ny)
               do j=1,ngrd_sw(mw)%Numy_swan
                 do i=1,ngrd_sw(mw)%Numx_swan
-                  dist1=sqrt((ngrd_sw(mw)%lon_rho_w(i,j)-xx2)**2+       &
-     &                       (ngrd_sw(mw)%lat_rho_w(i,j)-yy2)**2)
+                  xx1=ngrd_sw(mw)%lon_rho_w(i,j)
+                  yy1=ngrd_sw(mw)%lat_rho_w(i,j)
+                  dlon = xx1-xx2
+                  latrad1=abs(yy1*deg2rad)
+                  latrad2=abs(yy2*deg2rad)
+                  dep=cos(0.5*(latrad2+latrad1))*dlon
+                  dlat=yy2-yy1
+                  dist1=1852.0*60.0*sqrt(dlat**2+dep**2)
                   if(dist1<=dist_max)then
                     dist_max=dist1
                     Ikeep=i
@@ -434,11 +453,13 @@
      &                       map1_name, map2_name,                      &
      &                       ngrd_sw(mw)%mask_rho_w,                    &
      &                       ngrd_rm(mo)%dst_mask,                      &
+     &                       dst_mask_unlim,                            &
      &                       counter_grid,                              &
      &                       Ngrids_comb_total,                         &
      &                       output_ncfile)
 
           deallocate(ngrd_rm(mo)%dst_mask)
+          deallocate(dst_mask_unlim)
         end do
       end do
       do mw=1,Ngrids_swan
@@ -503,6 +524,7 @@
           nx=ngrd_wr(ma)%we_size
           ny=ngrd_wr(ma)%sn_size
           allocate(ngrd_wr(ma)%dst_mask(nx,ny))
+          allocate(dst_mask_unlim(nx,ny))
 !
 !  Compute wrf grid dst mask. Start by using locations on dst grid
 !  where src_mask=1.
@@ -516,8 +538,14 @@
               yy2=ngrd_wr(ma)%lat_rho_a(nx,ny)
               do j=1,ngrd_rm(mo)%eta_size
                 do i=1,ngrd_rm(mo)%xi_size
-                  dist1=sqrt((ngrd_rm(mo)%lon_rho_o(i,j)-xx2)**2+       &
-     &                       (ngrd_rm(mo)%lat_rho_o(i,j)-yy2)**2)
+                  xx1=ngrd_rm(mo)%lon_rho_o(i,j)
+                  yy1=ngrd_rm(mo)%lat_rho_o(i,j)
+                  dlon = xx1-xx2
+                  latrad1=abs(yy1*deg2rad)
+                  latrad2=abs(yy2*deg2rad)
+                  dep=cos(0.5*(latrad2+latrad1))*dlon
+                  dlat=yy2-yy1
+                  dist1=1852.0*60.0*sqrt(dlat**2+dep**2)
                   if(dist1<=dist_max)then
                     dist_max=dist1
                     Ikeep=i
@@ -616,11 +644,13 @@
      &                       map1_name, map2_name,                      &
      &                       ngrd_rm(mo)%mask_rho_o,                    &
      &                       ngrd_wr(ma)%dst_mask,                      &
+     &                       dst_mask_unlim,                            &
      &                       counter_grid,                              &
      &                       Ngrids_comb_total,                         &
      &                       output_ncfile)
 
           deallocate(ngrd_wr(ma)%dst_mask)
+          deallocate(dst_mask_unlim)
         end do
       end do
       do mo=1,Ngrids_roms
@@ -666,11 +696,32 @@
       do mo=1,Ngrids_roms
         do ma=1,Ngrids_wrf
 !
+!  create an  unlimited src mask to determine dst cells removed
+!  due to src land masking.
+!
+          nx=ngrd_wr(ma)%we_size
+          ny=ngrd_wr(ma)%sn_size
+          allocate(src_mask_unlim(nx,ny))
+          do j=1,ngrd_wr(ma)%sn_size
+            do i=1,ngrd_wr(ma)%we_size
+              src_mask_unlim(i,j)=1
+            end do
+          end do
+!  Mask out child portion of the src mask.
+          if ((ma.lt.Ngrids_wrf).and.(wrf_grids(ma+1)/="moving")) then
+            do j=ngrd_wr(ma)%jstr_a,ngrd_wr(ma)%jend_a
+              do i=ngrd_wr(ma)%istr_a,ngrd_wr(ma)%iend_a
+                src_mask_unlim(i,j)=0
+              end do
+            end do
+          end if
+!
 !  Allocate the destination mask
 !
           nx=ngrd_rm(mo)%xi_size
           ny=ngrd_rm(mo)%eta_size
           allocate(ngrd_rm(mo)%dst_mask(nx,ny))
+          allocate(dst_mask_unlim(nx,ny))
 !
 !  Compute roms grid dst mask. Start by using locations on dst grid
 !  where src_mask=1.
@@ -684,8 +735,14 @@
               yy2=ngrd_rm(mo)%lat_rho_o(nx,ny)
               do j=1,ngrd_wr(ma)%sn_size
                 do i=1,ngrd_wr(ma)%we_size
-                  dist1=sqrt((ngrd_wr(ma)%lon_rho_a(i,j)-xx2)**2+       &
-     &                       (ngrd_wr(ma)%lat_rho_a(i,j)-yy2)**2)
+                  xx1=ngrd_wr(ma)%lon_rho_a(i,j)
+                  yy1=ngrd_wr(ma)%lat_rho_a(i,j)
+                  dlon = xx1-xx2
+                  latrad1=abs(yy1*deg2rad)
+                  latrad2=abs(yy2*deg2rad)
+                  dep=cos(0.5*(latrad2+latrad1))*dlon
+                  dlat=yy2-yy1
+                  dist1=1852.0*60.0*sqrt(dlat**2+dep**2)
                   if(dist1<=dist_max)then
                     dist_max=dist1
                     Ikeep=i
@@ -693,14 +750,20 @@
                   endif
                 enddo
               enddo
-              ngrd_rm(mo)%dst_mask(nx,ny)=                              &
-     &                                 ngrd_wr(ma)%src_mask(Ikeep,Jkeep)
+              count=ngrd_wr(ma)%src_mask(Ikeep,Jkeep)
+              ngrd_rm(mo)%dst_mask(nx,ny)=count
+              count=src_mask_unlim(Ikeep,Jkeep)
+              dst_mask_unlim(nx,ny)=count
             enddo
           enddo
 !  Apply the roms grid Land/Sea mask to dst_mask
+!  Check to see if there are any dst points that have valid mask
+!  but are not being picked up by the src grid
           do j=1,ngrd_rm(mo)%eta_size
             do i=1,ngrd_rm(mo)%xi_size
               ngrd_rm(mo)%dst_mask(i,j)=ngrd_rm(mo)%dst_mask(i,j)*      &
+     &                                  ngrd_rm(mo)%mask_rho_o(i,j)
+              dst_mask_unlim(i,j)=dst_mask_unlim(i,j)*                  &
      &                                  ngrd_rm(mo)%mask_rho_o(i,j)
             end do
           end do
@@ -738,9 +801,10 @@
               PY=ngrd_rm(mo)%lat_rho_o(nx,ny)
               INOUT=0
               call PNPOLY( PX, PY, XX, YY, N, INOUT )
-              ngrd_rm(mo)%dst_mask(nx,ny)=                              &
-     &          ngrd_rm(mo)%dst_mask(nx,ny)*                            &
-     &          MIN(INOUT+1,1)
+              ngrd_rm(mo)%dst_mask(nx,ny)=
+     &          ngrd_rm(mo)%dst_mask(nx,ny)*MIN(INOUT+1,1)
+              dst_mask_unlim(nx,ny)=                                    &
+     &          dst_mask_unlim(nx,ny)*MIN(INOUT+1,1)
             enddo
           enddo
           deallocate(XX, YY)
@@ -784,11 +848,13 @@
      &                       map1_name, map2_name,                      &
      &                       ngrd_wr(ma)%mask_rho_a,                    &
      &                       ngrd_rm(mo)%dst_mask,                      &
+     &                       dst_mask_unlim,                            &
      &                       counter_grid,                              &
      &                       Ngrids_comb_total,                         &
      &                       output_ncfile)
-
+!
           deallocate(ngrd_rm(mo)%dst_mask)
+          deallocate(src_mask_unlim, dst_mask_unlim)
         end do
       end do
       do ma=1,Ngrids_wrf
@@ -840,6 +906,7 @@
           nx=ngrd_sw(mw)%Numx_swan
           ny=ngrd_sw(mw)%Numy_swan
           allocate(ngrd_sw(mw)%dst_mask(nx,ny))
+          allocate(dst_mask_unlim(nx,ny))
 !
 !  Compute swan grid dst mask. Start by using locations on dst grid
 !  where src_mask=1.
@@ -853,8 +920,14 @@
               yy2=ngrd_sw(mw)%lat_rho_w(nx,ny)
               do j=1,ngrd_wr(ma)%sn_size
                 do i=1,ngrd_wr(ma)%we_size
-                  dist1=sqrt((ngrd_wr(ma)%lon_rho_a(i,j)-xx2)**2+       &
-     &                       (ngrd_wr(ma)%lat_rho_a(i,j)-yy2)**2)
+                  xx1=ngrd_wr(ma)%lon_rho_a(i,j)
+                  yy1=ngrd_wr(ma)%lat_rho_a(i,j)
+                  dlon = xx1-xx2
+                  latrad1=abs(yy1*deg2rad)
+                  latrad2=abs(yy2*deg2rad)
+                  dep=cos(0.5*(latrad2+latrad1))*dlon
+                  dlat=yy2-yy1
+                  dist1=1852.0*60.0*sqrt(dlat**2+dep**2)
                   if(dist1<=dist_max)then
                     dist_max=dist1
                     Ikeep=i
@@ -953,11 +1026,13 @@
      &                       map1_name, map2_name,                      &
      &                       ngrd_wr(ma)%mask_rho_a,                    &
      &                       ngrd_sw(mw)%dst_mask,                      &
+     &                       dst_mask_unlim,                            &
      &                       counter_grid,                              &
      &                       Ngrids_comb_total,                         &
      &                       output_ncfile)
 
           deallocate(ngrd_sw(mw)%dst_mask)
+          deallocate(dst_mask_unlim)
         end do
       end do
       do ma=1,Ngrids_wrf
@@ -1022,6 +1097,7 @@
           nx=ngrd_wr(ma)%we_size
           ny=ngrd_wr(ma)%sn_size
           allocate(ngrd_wr(ma)%dst_mask(nx,ny))
+          allocate(dst_mask_unlim(nx,ny))
 !
 !  Compute wrf grid dst mask. Start by using locations on dst grid
 !  where src_mask=1.
@@ -1035,8 +1111,14 @@
               yy2=ngrd_wr(ma)%lat_rho_a(nx,ny)
               do j=1,ngrd_sw(mw)%Numy_swan
                 do i=1,ngrd_sw(mw)%Numx_swan
-                  dist1=sqrt((ngrd_sw(mw)%lon_rho_w(i,j)-xx2)**2+       &
-     &                       (ngrd_sw(mw)%lat_rho_w(i,j)-yy2)**2)
+                  xx1=ngrd_sw(mw)%lon_rho_w(i,j)
+                  yy1=ngrd_sw(mw)%lat_rho_w(i,j)
+                  dlon = xx1-xx2
+                  latrad1=abs(yy1*deg2rad)
+                  latrad2=abs(yy2*deg2rad)
+                  dep=cos(0.5*(latrad2+latrad1))*dlon
+                  dlat=yy2-yy1
+                  dist1=1852.0*60.0*sqrt(dlat**2+dep**2)
                   if(dist1<=dist_max)then
                     dist_max=dist1
                     Ikeep=i
@@ -1135,11 +1217,13 @@
      &                       map1_name, map2_name,                      &
      &                       ngrd_sw(mw)%mask_rho_w,                    &
      &                       ngrd_wr(ma)%dst_mask,                      &
+     &                       dst_mask_unlim,                            &
      &                       counter_grid,                              &
      &                       Ngrids_comb_total,                         &
      &                       output_ncfile)
 
           deallocate(ngrd_wr(ma)%dst_mask)
+          deallocate(dst_mask_unlim)
         end do
       end do
       do mw=1,Ngrids_swan

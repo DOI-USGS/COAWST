@@ -106,8 +106,8 @@
      &                   Ngrids_roms*Ngrids_wrf  + 
      &                   Ngrids_swan*Ngrids_wrf)*2 
 
-      write(stdout,*) "Common netcdf file",output_ncfile
-      write(stdout,*) "Number of netcdf subgroups", Ngrids_comb_total
+      write(stdout,*) "Common netcdf file is: ",output_ncfile
+      write(stdout,*) "Number of netcdf subgroups ", Ngrids_comb_total
 
 !      allocate(roms_grids(Ngrids_roms))
       do i = 1,Ngrids_roms 

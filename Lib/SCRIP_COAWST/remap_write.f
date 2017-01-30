@@ -115,7 +115,7 @@
       subroutine write_remap(map1_name, map2_name, 
      &                       interp_file1, interp_file2, output_opt, 
      &                       counter_grid, Ngrids_comb_total, 
-     &                       output_ncfile )
+     &                       output_ncfile)
 
 !-----------------------------------------------------------------------
 !
@@ -201,7 +201,7 @@
       case ('scrip')
         call write_remap_scrip(map1_name, interp_file1, 1,  
      &                          counter_grid, Ngrids_comb_total, 
-     &                          output_ncfile)       
+     &                          output_ncfile)
       case ('ncar-csm')
         call write_remap_csm  (map1_name, interp_file1, 1)
       case default
@@ -260,8 +260,6 @@
      &, counter_grid           ! counter for writing netcdf outputfile
      &, Ngrids_comb_total      ! Total number of outputfile 
                                ! subgroups for netcdf file
-                              
-
 !-----------------------------------------------------------------------
 !
 !     local variables
@@ -284,9 +282,9 @@
 !     create netCDF file for mapping and define some global attributes
 !
 !-----------------------------------------------------------------------
-      
+
       if (counter_grid.eq.1) THEN
-       ncstat = nf_create (output_ncfile,NF_NETCDF4, nc_file_id)
+       ncstat = nf_create (output_ncfile, NF_NETCDF4, nc_file_id)
        call netcdf_error_handler(ncstat)
       endif
 
@@ -341,7 +339,6 @@
       ncstat = nf_put_att_text (grpid, NF_GLOBAL, trim(grid2_ctmp),
      &                          len_trim(grid2_name), grid2_name)
       call netcdf_error_handler(ncstat)
-
 
 !-----------------------------------------------------------------------
 !
@@ -794,7 +791,7 @@
         call netcdf_error_handler(ncstat)
       endif
 
-      if (counter_grid.eq.Ngrids_comb_total) THEN ! Change this later 
+      if (counter_grid.eq.Ngrids_comb_total) THEN
           ncstat = nf_close(nc_file_id)
           call netcdf_error_handler(ncstat)
       endif 

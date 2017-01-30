@@ -37,11 +37,15 @@
 
       real(dbl_kind)    :: xx2, yy2, xxend_1, yyend_1
       real(dbl_kind)    :: dist1, dist_max
+      integer(int_kind), allocatable :: mask_3drho_a(:,:,:) 
       real(dbl_kind), allocatable :: lon_3drho_a(:,:,:)  
       real(dbl_kind), allocatable :: lat_3drho_a(:,:,:) 
-      real(dbl_kind), allocatable :: mask_3drho_a(:,:,:) 
-      real(dbl_kind), allocatable :: lon_psi_a(:,:), lat_psi_a(:,:)
-
+      real(dbl_kind), allocatable :: lon_psi_a(:,:)
+      real(dbl_kind), allocatable :: lat_psi_a(:,:)
+      real(dbl_kind), allocatable :: xlonu_a(:,:,:)
+      real(dbl_kind), allocatable :: xlatu_a(:,:,:)
+      real(dbl_kind), allocatable :: xlonv_a(:,:,:)
+      real(dbl_kind), allocatable :: xlatv_a(:,:,:)
 
       allocate(ngrd_wr(Ngrids_wrf))
 
@@ -70,7 +74,7 @@
           call netcdf_error_handler(ncstat)
           ncstat = nf_inq_dimlen(nc_file_id,nc_grdsize_id,
      &                                      time_size)
-        call netcdf_error_handler(ncstat)
+          call netcdf_error_handler(ncstat)
 
 !      Read variable for rho points and masking id 
           ncstat=nf_inq_varid(nc_file_id,'XLONG',nc_grdlon_id)
@@ -92,7 +96,7 @@
           call netcdf_error_handler(ncstat)
           ncstat=nf_get_var_double(nc_file_id,nc_grdlat_id,lat_3drho_a)
           call netcdf_error_handler(ncstat)
-           ncstat=nf_get_var_int(nc_file_id,nc_grdmsk_id,mask_3drho_a)
+          ncstat=nf_get_var_int(nc_file_id,nc_grdmsk_id,mask_3drho_a)
           call netcdf_error_handler(ncstat)
 
 !      Allocate 2d arrays
@@ -114,7 +118,7 @@
 
           deallocate(lon_3drho_a,lat_3drho_a,mask_3drho_a)
         endif
-      end do 
+      end do
 !  come up to here for the moving nest full parent grid.
 
       do ma=1,Ngrids_wrf
