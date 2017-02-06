@@ -247,13 +247,17 @@
 !
       subroutine create_wrf_moving_grid(ma)
 
+      use grids                      ! module with grid information
       implicit none
 
       integer (int_kind), intent(in) :: ma
 
-      integer (int_kind) :: i, j, nx, ny, mm, nn, pgr
-      integer (int_kind) :: icount, jcount, pid
-      real (dbl_kind) :: x1, y1, x2, y2, dx, dy
+      integer (int_kind) :: i, j, ii, jj, nx, ny, mm, nn, pgr
+      integer (int_kind) :: icount, jcount, pid, Ikeep, Jkeep
+      real (dbl_kind)    :: x1, y1, x2, y2, dx, dy
+      real (dbl_kind)    :: dist1, dist_max, dlon
+      real (dbl_kind)    :: latrad1, latrad2, dep, dlat
+      real (dbl_kind)    :: xx1, yy1, xx2, yy2
       real (dbl_kind), allocatable :: lon_rho_t(:,:), lat_rho_t(:,:)
 
 !  Create a grid that is the size of the parent x refined ratio.
@@ -269,9 +273,6 @@
       allocate( ngrd_wr(ma)%lon_rho_a(nx,ny) )
       allocate( ngrd_wr(ma)%lat_rho_a(nx,ny) )
       allocate( ngrd_wr(ma)%mask_rho_a(nx,ny) )
-
-! need to revisit masking
-      ngrd_wr(ma)%mask_rho_a=1
 
 ! this gets every pgr th point
       icount=0
@@ -380,6 +381,37 @@
      &                           ngrd_wr(ma)%lat_rho_a)
 
       deallocate( lon_rho_t, lat_rho_t )
+!
+! Compute child mask based on closest parent cell.
+!
+      do ii=1,nx
+        do jj=1,ny
+          dist_max=10e6
+          Ikeep=1
+          Jkeep=1
+          xx2=ngrd_wr(ma)%lon_rho_a(ii,jj)
+          yy2=ngrd_wr(ma)%lat_rho_a(ii,jj)
+          do j=1,ngrd_wr(pid)%sn_size
+            do i=1,ngrd_wr(pid)%we_size
+              xx1=ngrd_wr(pid)%lon_rho_a(i,j)
+              yy1=ngrd_wr(pid)%lat_rho_a(i,j)
+              dlon = xx1-xx2
+              latrad1=abs(yy1*deg2rad)
+              latrad2=abs(yy2*deg2rad)
+              dep=cos(0.5*(latrad2+latrad1))*dlon
+              dlat=yy2-yy1
+              dist1=1852.0*60.0*sqrt(dlat**2+dep**2)
+              if(dist1<=dist_max)then
+                dist_max=dist1
+                Ikeep=i
+                Jkeep=j
+              endif
+            enddo
+          enddo
+          ngrd_wr(ma)%mask_rho_a(ii,jj)=                                &
+     &                   ngrd_wr(pid)%mask_rho_a(Ikeep,Jkeep)
+        enddo
+      enddo
 
       end subroutine create_wrf_moving_grid
 

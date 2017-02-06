@@ -29,7 +29,7 @@
       character(char_len) :: interp_file1, interp_file2
       character(char_len) :: map1_name, map2_name
       character(char_len) :: mo_string, mw_string, ma_string
-      integer(int_kind)   :: ncstat, nc_file_id
+      integer(int_kind)   :: ncstat, nc_file_id, offset
       integer(int_kind)   :: i, j, c, Ikeep, Jkeep
       integer(int_kind)   :: mo, ma, mw, nx, ny, grdsize
       integer(int_kind)   :: N, INOUT, count, do_adjust
@@ -529,6 +529,7 @@
 !  Compute wrf grid dst mask. Start by using locations on dst grid
 !  where src_mask=1.
 !
+          offset=MIN(mo-1,1)
           do nx=1,ngrd_wr(ma)%we_size
             do ny=1,ngrd_wr(ma)%sn_size
               dist_max=10e6
@@ -536,8 +537,8 @@
               Jkeep=1
               xx2=ngrd_wr(ma)%lon_rho_a(nx,ny)
               yy2=ngrd_wr(ma)%lat_rho_a(nx,ny)
-              do j=1,ngrd_rm(mo)%eta_size
-                do i=1,ngrd_rm(mo)%xi_size
+              do j=1+offset,ngrd_rm(mo)%eta_size-offset
+                do i=1+offset,ngrd_rm(mo)%xi_size-offset
                   xx1=ngrd_rm(mo)%lon_rho_o(i,j)
                   yy1=ngrd_rm(mo)%lat_rho_o(i,j)
                   dlon = xx1-xx2
@@ -803,7 +804,7 @@
               call PNPOLY( PX, PY, XX, YY, N, INOUT )
               ngrd_rm(mo)%dst_mask(nx,ny)=
      &          ngrd_rm(mo)%dst_mask(nx,ny)*MIN(INOUT+1,1)
-              dst_mask_unlim(nx,ny)=                                    &
+                dst_mask_unlim(nx,ny)=                                  &
      &          dst_mask_unlim(nx,ny)*MIN(INOUT+1,1)
             enddo
           enddo
@@ -1102,6 +1103,7 @@
 !  Compute wrf grid dst mask. Start by using locations on dst grid
 !  where src_mask=1.
 !
+          offset=MIN(mw-1,1)
           do nx=1,ngrd_wr(ma)%we_size
             do ny=1,ngrd_wr(ma)%sn_size
               dist_max=10e6
@@ -1109,8 +1111,8 @@
               Jkeep=1
               xx2=ngrd_wr(ma)%lon_rho_a(nx,ny)
               yy2=ngrd_wr(ma)%lat_rho_a(nx,ny)
-              do j=1,ngrd_sw(mw)%Numy_swan
-                do i=1,ngrd_sw(mw)%Numx_swan
+              do j=1+offset,ngrd_sw(mw)%Numy_swan-offset
+                do i=1+offset,ngrd_sw(mw)%Numx_swan-offset
                   xx1=ngrd_sw(mw)%lon_rho_w(i,j)
                   yy1=ngrd_sw(mw)%lat_rho_w(i,j)
                   dlon = xx1-xx2
