@@ -364,6 +364,7 @@ Dout(STvdif) == T       ! sand_01_vdiff, ...      vertical diffusion
 
    MUD_Ltclm == F F
 
+! Logical switches (TRUE/FALSE) to nudge the desired cohesive sediment
 ! tracer climatology field. If not analytical climatology fields, users
 ! need to turn on the logical switches above to process the fields from
 ! the climatology NetCDF file that are needed for nudging. See glossary
@@ -407,6 +408,46 @@ Dout(MTxdif) == T       ! mud_01_xdiff, ...       horizontal XI-diffusion
 Dout(MTydif) == T       ! mud_01_ydiff, ...       horizontal ETA-diffusion
 Dout(MTsdif) == T       ! mud_01_sdiff, ...       horizontal S-diffusion
 Dout(MTvdif) == T       ! mud_01_vdiff, ...       vertical diffusion
+
+!------------------------------------------------------------------------------
+! Mixed Bed parameters- Transition threshold for cohesive mix  
+! and non-cohesive behaviors [1:Ngrids] values expected.
+!------------------------------------------------------------------------------
+! Cohesive transition- Under that value of total mud fraction 
+! entire bed behaves as a non-cohesive bed  
+
+   TRANSC == 0.03d0
+    
+! Noncohesive transition- Over that value of total mud fraction
+! entire bed behaves as a cohesive bed
+
+   TRANSN == 0.2d0
+
+!------------------------------------------------------------------------------
+! Cohesive/Mixed bed critical shear
+! Bed critical shear stress values if cohesive or mixed Bed is active 
+! These values are applied to the entire bed. [1:Ngrids] values expected.
+!------------------------------------------------------------------------------
+
+! Minimum shear for erosion
+
+   MUD_TAUCR_MIN == 0.030000d0
+    
+! Maximum shear for erosion
+
+   MUD_TAUCR_MAX == 5.20d0
+    
+! Tau_crit profile slope
+
+   MUD_TAUCR_SLOPE == 0.300000d0
+    
+! Tau_crit profile offset
+
+   MUD_TAUCR_OFF == 1.000000d0
+    
+! Tau_crit consolidation rate 
+
+   MUD_TAUCR_TIME == 28800.0d0
 
 !------------------------------------------------------------------------------
 ! Flocculation Sediment Parameters.
@@ -830,8 +871,205 @@ Dout(MTvdif) == T       ! mud_01_vdiff, ...       vertical diffusion
 !                    HOUT(idsed(i)) with i=NCS+1,NST.
 !
 !  Hout(iSVbld)    Logical switches to activate writing of non-cohesive
-!                    sediment bed load at V-points into HISTORY NetCDF file,
+!                     sediment bed load at V-points into HISTORY NetCDF file,
+!                     HOUT(idsed(i)) with i=NCS+1,NST.
+!
+!  Aout(*S...)     Logical switches to activate writing of time-averaged
+!                    non-cohesive sediment concentration into AVERAGE
+!                    NetCDF file, AOUT(idTvar(idsed(i))) with i=1:NCS+1,NST.
+!
+!                    Aout(idsand)                 suspended concentration
+!
+!                    Aout(iSTTav)                 quadratic <t*t> tracer terms
+!                    Aout(iSUTav)                 quadratic <u*t> tracer terms
+!                    Aout(iSVTav)                 quadratic <v*t> tracer terms
+!                    Aout(SHUTav)                 tracer volume flux, <Huon*t>
+!                    Aout(SHVTav)                 tracer volume flux, <Hvom*t>
+!
+!                    Aout(iSUbld)                 bed load at U-points
+!                    Aout(iSVbld)                 bed load at V-points
+!
+!  Dout(ST....)    Logical switches to activate writing of time-averaged
+!                    non-cohesive tracers diagnostic terms into DIAGNOSTIC
+!                    NetCDF file, DOUT(idsed(i),ST....) with i=NCS+1,NST.
+!
+!                    Dout(STrate)   Time rate of change
+!                    Dout(SThadv)   Horizontal total advection
+!                    Dout(STxadv)   Horizontal  XI-advection
+!                    Dout(STyadv)   Horizontal ETA-advection
+!                    Dout(STvadv)   Vertical advection
+!                    Dout(SThdif)   Horizontal total diffusion
+!                    Dout(STxdif)   Horizonta1  XI-diffusion
+!                    Dout(STydif)   Horizontal ETA-diffusion
+!                    Dout(STsdif)   Horizontal   S-diffusion
+!                    Dout(STvdif)   Vertical diffusion
+!
+!------------------------------------------------------------------------------
+! Suspended Cohesive Sediment KEYWORDS, [1:NCS,1:Ngrids] values expected.
+!------------------------------------------------------------------------------
+!
+!  MUD_SD50        Median sediment grain diameter (mm).
+!
+!  MUD_CSED        Sediment concentration (kg/m3). It may be used to initialize
+!                    sediment fields using analytical expressions.
+!
+!  MUD_SRHO        Sediment grain density (kg/m3).
+!
+!  MUD_WSED        Particle settling velocity (mm/s).
+!
+!  MUD_ERATE       Surface erosion rate (kg/m2/s).
+!
+!  MUD_TAU_CE      Critical shear for erosion (N/m2).
+!
+!  MUD_TAU_CD      Critical shear for deposition (N/m2).
+!
+!  MUD_POROS       Porosity (nondimensional: 0.0-1.0):  Vwater/(Vwater+Vsed).
+!
+!  MUD_TNU2        Nonlinar model lateral, harmonic, constant, mixing
+!                    coefficient (m2/s) for suspended cohesive sediment;
+!                    [1:NCS,1:Ngrids]. If variable horizontal diffusion is
+!                    activated, MUD_TNU2 is the mixing coefficient for
+!                    the largest grid-cell in the domain.
+!
+!  MUD_TNU4        Nonlinar model lateral, biharmonic, constant, mixing
+!                    coefficient (m4/s) for suspended cohesive sediment;
+!                    [1:NCS,1:Ngrids]. If variable horizontal diffusion is
+!                    activated, MUD_TNU4 is the mixing coefficient for
+!                    the largest grid-cell in the domain.
+!
+!  ad_MUD_TNU2     Adjoint-based algorithms lateral, harmonic, constant,
+!                    mixing coefficient (m2/s) for suspended cohesive
+!                    sediment; [1:NCS,1:Ngrids]. If variable horizontal
+!                    diffusion is activated, ad_MUD_TNU2 is the mixing
+!                    coefficient for the largest grid-cell in the domain.
+!
+!  ad_MUD_TNU4     Adjoint-based algorithms lateral, harmonic, constant,
+!                    mixing coefficient (m4/s) for suspended cohesive
+!                    sediment; [1:NCS,1:Ngrids]. If variable horizontal
+!                    diffusion is activated, ad_MUD_TNU4 is the mixing
+!                    coefficient for the largest grid-cell in the domain.
+!
+!  MUD_Sponge      Logical switches (TRUE/FALSE) to increase horizontal
+!                    diffusivity of cohesive sediment tracers in sponge
+!                    areas of the domain. The CPP option SPONGE is now
+!                    deprecated and replaced with this switch to
+!                    facilitate or not sponge areas of desired tracer
+!                    in a particular nested grid.
+!
+!  MUD_AKT_BAK     Background vertical mixing coefficient (m2/s),
+!                    AKT_BAK(idsed(i)) with i=1:NCS.
+!
+!  MUD_AKT_fac     Adjoint-based algorithms vertical mixing, basic state,
+!                   scale factor (nondimensional) for sediment tracer
+!                   variables; [1:NCS,1:Ngrids] values are expected. In
+!                   some applications, a smaller/larger values of vertical
+!                   mixing are necessary for stability. It is only used
+!                   when FORWARD_MIXING is activated.
+!
+!  MUD_TNUDG       Nudging time scale (days), TNUDG(idsed(i)) with i=1:NCS.
+!                    Inverse scale will be computed internally.
+!
+!  MUD_MORPH_FAC   Morphological time scale factor (nondimensional; greater
+!                    than or equal to 1.0). A value of 1.0 has no scale
+!                    effect.
+!
+!  MUD_Ltsrc       Logical switches (T/F) to activate cohesive sediment tracer
+!                    variables point Sources/Sinks; [1:NCS,1:Ngrids] values
+!                    are expected.
+!
+!                      MUD_Ltsrc(  1,ng)           mud_01
+!                      ...                         ...
+!                      MUD_Ltsrc(NCS,ng)           ...
+!
+!                    Recall that these switches are usually activated to add
+!                    river runoff as a point source.  At minimum, it is
+!                    necessary to specify both temperature and salinity for
+!                    all rivers. The other tracers are optional. The user needs
+!                    to know the correspondence between sediment variables and
+!                    indices idsed(1:NCS) when activating one or more of these
+!                    switches.
+!
+!                    This logical switch REPLACES and ELIMINATES the need to
+!                    have or read the variable "river_flag(river)" in the input
+!                    rivers forcing NetCDF file:
+!
+!                      double river_flag(river)
+!                        river_flag:long_name = "river runoff tracer flag"
+!                        river_flag:option_0 = "all tracers are off"
+!                        river_flag:option_1 = "only temperature"
+!                        river_flag:option_2 = "only salinity"
+!                        river_flag:option_3 = "both temperature and salinity"
+!                        river_flag:units = "nondimensional"
+!
+!                    This logic was too cumbersome and complicated when
+!                    additional tracers are considered. However, this change
+!                    is backward compatible.
+!
+!                    This logical switch will be used to activate the reading
+!                    of respective tracer variable from input river forcing
+!                    NetCDF file. If you want to add other tracer variables
+!                    (other than temperature and salinity) as a source for a
+!                    particular river(s), you just need to specify such values
+!                    on those river(s). Then, set the values to ZERO on the
+!                    other river(s) that do NOT require such river forcing for
+!                    that tracer. Recall that you need to specify the tracer
+!                    values for all rivers, even if their values are zero.
+!
+!  SAND_Ltclm      Logical switches (T/F) to process noncohesive sediment
+!                    tracer climatology.  The CPP option TCLIMATOLOGY is now
+!                    obsolete and replaced with these switches to facilitate
+!                    nesting applications. Currently, the CLIMA(ng)%tclm is
+!                    used for horizontal mixing, sponges, and nudging.
+!
+!                      SAND_Ltclm(  1,ng)          sand_01
+!                      ...                         ...
+!                      SAND_Ltclm(NNS,ng)          ...
+!
+!                    These switches also controls which climatology tracer
+!                    fields needs to be processed.  So we may reduce the
+!                    memory allocation for the CLIMA(ng)%tclm array.
+!
+!  SAND_Tnudge     Logical switches (T/F) to activate nugding of noncohesive
+!                    sediment tracer climatology. These switches also control
+!                    which sediment tracer variables to nudge. The CPP option
+!                    TCLM_NUDGING is now obsolete and replaced with these
+!                    switches to facilitate nesting.
+!
+!                      MUD_Tnudge(  1,ng)          sand_01
+!                      ...                         ...
+!                      MUD_Tnudge(NNS,ng)          ...
+!
+!                    User also needs to TURN ON the respective logical switches
+!                    "SAND_Ltclm", described above, to process the required 3D
+!                    sediment tracer climatology data. This data can be set
+!                    with analytical functions (ANA_TCLIMA) or read from input
+!                    climatology NetCDF file(s).
+!
+!                    The nudging coefficients CLIMA(ng)%Tnudgcof can be set
+!                    with analytical functions in "ana_nudgcoef.h"  using CPP
+!                    option ANA_NUDGCOEF.  Otherwise, it will be read from
+!                    NetCDF file NUDNAME.
+!
+!  Hout(idsand)    Logical switches to activate writing of non-cohesive
+!                     sediment concentration into HISTORY NetCDF file,
+!                     HOUT(idTvar(idsed(i))) with i=1:NCS+1,NST.
+!
+!  Hout(iSfrac)    Logical switches to activate writing of non-cohesive
+!                     sediment class fraction composition of each bed layer
+!                     into HISTORY NetCDF file, HOUT(idfrac(i)) with
+!                     i=NCS+1,NST.
+!
+!  Hout(iSmass)    Logical switches to activate writing of non-cohesive
+!                    sediment mass of each bed layer into HISTORY NetCDF file,
 !                    HOUT(idsed(i)) with i=NCS+1,NST.
+!
+!  Hout(iSUbld)    Logical switches to activate writing of non-cohesive
+!                    sediment bed load at U-points into HISTORY NetCDF file,
+!                    HOUT(idsed(i)) with i=NCS+1,NST.
+!
+!  Hout(iSVbld)    Logical switches to activate writing of non-cohesive
+!                     sediment bed load at V-points into HISTORY NetCDF file,
+!                     HOUT(idsed(i)) with i=NCS+1,NST.
 !
 !  Aout(*S...)     Logical switches to activate writing of time-averaged
 !                    non-cohesive sediment concentration into AVERAGE
@@ -1068,7 +1306,7 @@ Dout(MTvdif) == T       ! mud_01_vdiff, ...       vertical diffusion
 !  TRANSC          Cohesive transition- Under that value of total mud fraction
 !                  entire bed behaves as a non-cohesive bed
 !
-!  TRANSN          Cohesive transition- Over that value of total mud fraction
+!  TRANSN          Non-cohesive transition- Over that value of total mud fraction
 !                  entire bed behaves as a cohesive bed
 !
 !------------------------------------------------------------------------------

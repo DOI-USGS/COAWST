@@ -1,6 +1,6 @@
-# svn $Id: CYGWIN-ifort.mk 734 2008-09-07 01:58:06Z jcwarner $
+# svn $Id: CYGWIN-ifort.mk 834 2017-01-25 18:49:17Z arango $
 #::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
-# Copyright (c) 2002-2016 The ROMS/TOMS Group                           :::
+# Copyright (c) 2002-2017 The ROMS/TOMS Group                           :::
 #   Licensed under a MIT/X style license                                :::
 #   See License_ROMS.txt                                                :::
 #::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
@@ -59,9 +59,12 @@
 #
 
 ifdef USE_NETCDF4
-    NETCDF_INCDIR ?= /usr/local/netcdf4/include
-    NETCDF_LIBDIR ?= /usr/local/netcdf4/lib
-      HDF5_LIBDIR ?= /usr/local/hdf5/lib
+        NF_CONFIG ?= nf-config
+    NETCDF_INCDIR ?= $(shell $(NF_CONFIG) --prefix)/include
+             LIBS := $(shell $(NF_CONFIG) --flibs)
+#    NETCDF_INCDIR ?= /usr/local/netcdf4/include
+#    NETCDF_LIBDIR ?= /usr/local/netcdf4/lib
+#      HDF5_LIBDIR ?= /usr/local/hdf5/lib
 else
     NETCDF_INCDIR ?= /netcdf-win32/include
     NETCDF_LIBDIR ?= /netcdf-win32/lib

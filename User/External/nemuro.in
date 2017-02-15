@@ -1,8 +1,8 @@
 !  NEMURO Ecosystem Model Parameters.
 !
-!svn $Id: nemuro.in 795 2016-05-11 01:42:43Z arango $
+!svn $Id: nemuro.in 830 2017-01-24 21:21:11Z arango $
 !========================================================= Hernan G. Arango ===
-!  Copyright (c) 2002-2016 The ROMS/TOMS Group                                !
+!  Copyright (c) 2002-2017 The ROMS/TOMS Group                                !
 !    Licensed under a MIT/X style license                                     !
 !    See License_ROMS.txt                                                     !
 !==============================================================================
@@ -343,6 +343,13 @@ ad_LBC(isTvar) ==   Per     Clo     Per     Clo \    ! idbio( 1), nanophyto
 
 Hout(idTvar) == 11*T    ! ..., NO3, ...          biological tracers
 Hout(idTsur) == 11*F    ! ..., NO3_sflux, ...    surface tracer flux
+
+! Logical switches (TRUE/FALSE) to activate writing of biological fields
+! into QUICKSAVE output file: [1:NBT,Ngrids].
+
+Qout(idTvar) == 11*F    ! ..., NO3, ...          biological tracers
+Qout(idsurT) == 11*F    ! ..., NO3_sur, ...      surface biological tracer
+Qout(idTsur) == 11*F    ! ..., NO3_sflux, ...    surface tracer flux
 
 ! Logical switches (TRUE/FALSE) to activate writing of time-averaged fields
 ! into AVERAGE output file: [1;NBT,Ngrids].
@@ -918,6 +925,21 @@ Dout(iTvdif) == 11*T    ! ..., NO3_vdiff, ...    vertical diffusion
 !                   idTvar(idbio( 9))=iDON_    Dissolved Organic Nitrogen
 !                   idTvar(idbio(10))=iSiOH    Silicate concentration
 !                   idTvar(idbio(11))=iopal    Particulate organic silica
+!
+!------------------------------------------------------------------------------
+! Logical switches (T/F) to activate writing of fields into QUICKSAVE file.
+!------------------------------------------------------------------------------
+!
+!  Qout             Logical switches to write out biological fields into
+!                     output QUICKSAVE NetCDF file, [1:NBT,1:Ngrids] values
+!                     are expected:
+!
+!                     Qout(idTvar)      biological tracers
+!                     Qout(idsurT)      surface biological tracers
+!                     Qout(idTsur)      biological tracers surface flux
+!
+!                     The idTvar(idbio(:)), idsurR(idbio(:)), and
+!                     idTsur(idbio(:)) indices are provided above.
 !
 !------------------------------------------------------------------------------
 ! Logical switches (T/F) to activate writing of fields into AVERAGE file.

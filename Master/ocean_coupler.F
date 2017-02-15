@@ -3,9 +3,9 @@
 
 #if defined ROMS_COUPLING && defined MCT_LIB
 !
-!svn $Id: ocean_coupler.F 755 2008-09-14 19:07:08Z jcwarner $
+!svn $Id: ocean_coupler.F 830 2017-01-24 21:21:11Z arango $
 !==================================================== John C. Warner ===
-!  Copyright (c) 2002-2016 The ROMS/TOMS Group      Hernan G. Arango   !
+!  Copyright (c) 2002-2017 The ROMS/TOMS Group      Hernan G. Arango   !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================

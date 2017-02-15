@@ -5,8 +5,8 @@
 #
 
 #FORT = ifort
-#FORT = gfortran
-FORT  = pgi
+FORT = gfortran
+#FORT  = pgi
 
 #
 #   YOU  SHOULD NOT NEED TO CHANGE ANYTHING BELOW HERE
@@ -38,10 +38,10 @@ OBJSET  = \
 	netcdf.o \
 	scripwrap_mod.o \
 	create_fullgrid.o \
+	grids.o \
 	read_swan.o \
 	read_roms.o \
 	read_wrf.o \
-	grids.o \
 	remap_vars.o \
 	remap_distwgt.o \
 	remap_conserv.o \

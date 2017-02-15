@@ -1,6 +1,6 @@
-# svn $Id: Linux-necsx.mk 429 2009-12-20 17:30:26Z arango $
+# svn $Id: Linux-necsx.mk 834 2017-01-25 18:49:17Z arango $
 #::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
-# Copyright (c) 2002-2016 The ROMS/TOMS Group                           :::
+# Copyright (c) 2002-2017 The ROMS/TOMS Group                           :::
 #   Licensed under a MIT/X style license                                :::
 #   See License_ROMS.txt                                                :::
 #::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
@@ -52,9 +52,9 @@
 #
 
 ifdef USE_NETCDF4
-        NC_CONFIG ?= nc-config
-    NETCDF_INCDIR ?= $(shell $(NC_CONFIG) --prefix)/include
-             LIBS := $(shell $(NC_CONFIG) --flibs)
+        NF_CONFIG ?= nf-config
+    NETCDF_INCDIR ?= $(shell $(NF_CONFIG) --prefix)/include
+             LIBS := $(shell $(NF_CONFIG) --flibs)
 else
     NETCDF_INCDIR ?= /usr/local/include
     NETCDF_LIBDIR ?= /usr/local/lib

@@ -63,8 +63,8 @@ BOUNDSPEC SEGMENT XY -62.7319 43.1393 -61.9388 43.1242 VARIABLE FILE 0 'Projects
 &BOUNDSPEC SEGMENT XY -62.7319 43.1393 -61.9388 43.1242 VARIABLE FILE 0 'Projects/Sandy/TPAR19.txt'
 
 & Restart name **********************************
-&INITIAL HOTSTART 'Projects/Sandy/Sandy_init.hot'
-INIT
+INITIAL HOTSTART SINGLE 'Projects/Sandy/Sandy_init.hot'
+&INIT
 
 & PHYSICS  ****************************************
 BREAKING CONSTANT 1.0 0.73

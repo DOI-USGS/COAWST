@@ -1,9 +1,9 @@
 !
 !  EcoSim Biological Model Parameters.
 !
-!svn $Id: ecosim.in 795 2016-05-11 01:42:43Z arango $
+!svn $Id: ecosim.in 830 2017-01-24 21:21:11Z arango $
 !========================================================= Hernan G. Arango ===
-!  Copyright (c) 2002-2016 The ROMS/TOMS Group              W. Paul Bissett   !
+!  Copyright (c) 2002-2017 The ROMS/TOMS Group              W. Paul Bissett   !
 !    Licensed under a MIT/X style license                                     !
 !    See License_ROMS.txt                                                     !
 !==============================================================================
@@ -624,6 +624,13 @@ ad_LBC(isTvar) ==   Per     Clo     Per     Clo      ! idbio(:), compact
 
   Hout(idTvar) == 61*T   ! ..., DIC, ...           biological tracer
   Hout(idTsur) == 61*F   ! ..., DIC_sflux, ...     surface tracer flux
+
+! Logical switches (TRUE/FALSE) to write biological fields into QUICKSAVE
+! output file, [NBT,Ngrids] values are expected.
+
+  Qout(idTvar) == 61*F   ! ..., DIC, ...           biological tracer
+  Qout(idsurT) == 61*F   ! ..., DIC_sur, ...       surface bological tracer
+  Qout(idTsur) == 61*F   ! ..., DIC_sflux, ...     surface tracer flux
 
 ! Logical switches (TRUE/FALSE) to activate writing of time-averaged fields
 ! into AVERAGE output file, [NBT,Ngrids] values are expected.
@@ -1307,6 +1314,21 @@ ad_LBC(isTvar) ==   Per     Clo     Per     Clo      ! idbio(:), compact
 !
 !                     The idTvar(idbio(:)) and idTsur(idbio(:)) indices are
 !                     provided above.
+!
+!------------------------------------------------------------------------------
+! Logical switches (T/F) to activate writing of fields into QUICKSAVE file.
+!------------------------------------------------------------------------------
+!
+!  Qout             Logical switches to write out biological fields into
+!                     output QUICKSAVE NetCDF file, [1:NBT,1:Ngrids] values
+!                     are expected:
+!
+!                     Qout(idTvar)      biological tracers
+!                     Qout(idsurT)      surface biological tracers
+!                     Qout(idTsur)      biological tracers surface flux
+!
+!                     The idTvar(idbio(:)), idsurR(idbio(:)), and
+!                     idTsur(idbio(:)) indices are provided above.
 !
 !------------------------------------------------------------------------------
 ! Logical switches (T/F) to activate writing of fields into AVERAGE file.
