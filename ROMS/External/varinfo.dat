@@ -1,9 +1,9 @@
 !
 !  ROMS/TOMS IO NetCDF variables.
 !
-!svn $Id: varinfo.dat 734 2008-09-07 01:58:06Z jcwarner $
+!svn $Id: varinfo.dat 830 2017-01-24 21:21:11Z arango $
 !========================================================= Hernan G. Arango ===
-!  Copyright (c) 2002-2016 The ROMS/TOMS Group                                !
+!  Copyright (c) 2002-2017 The ROMS/TOMS Group                                !
 !    Licensed under a MIT/X style license                                     !
 !    See License_ROMS.txt                                                     !
 !==============================================================================
@@ -169,6 +169,42 @@
   'r3dvar'
   1.0d0
 
+'u_sur'                                            ! Output
+  'model surface u-momentum component'
+  'meter second-1'                                 ! [m/s]
+  'u_sur, scalar, series'
+  'ocean_time'
+  'idUsur'
+  'u2dvar'
+  1.0d0
+
+'v_sur'                                            ! Output
+  'model surface v-momentum component'
+  'meter second-1'                                 ! [m/s]
+  'v_sur, scalar, series'
+  'ocean_time'
+  'idVsur'
+  'v2dvar'
+  1.0d0
+
+'u_sur_eastward'                                   ! Output
+  'model surface eastward momentum component at RHO-points'
+  'meter second-1'                                 ! [m/s]
+  'u_sur_eastward, scalar, series'
+  'ocean_time'
+  'idUsuE'
+  'r2dvar'
+  1.0d0
+
+'v_sur_northward'                                  ! Output
+  'model surface northward momentum component at RHO-points'
+  'meter second-1'                                 ! [m/s]
+  'v_sur_northward, scalar, series'
+  'ocean_time'
+  'idVsuN'
+  'r2dvar'
+  1.0d0
+
 'w'                                                ! Output
   'vertical momentum component'
   'meter second-1'                                 ! [m/s]
@@ -212,6 +248,24 @@
   'ocean_time'
   'idTvar(isalt)'
   'r3dvar'
+  1.0d0
+
+'temp_sur'                                         ! Output
+  'model surface potential temperature'
+  'Celsius'                                        ! [Celsius]
+  'temp_sur, scalar, series'
+  'ocean_time'
+  'idsurT(itemp)'
+  'r2dvar'
+  1.0d0
+
+'salt_sur'                                         ! Output
+  'model surface salinity'
+  'nondimensional'                                 ! [PSU]
+  'salinity, scalar, series'
+  'ocean_time'
+  'idsurT(isalt)'
+  'r2dvar'
   1.0d0
 
 'z_rho'                                            ! Output

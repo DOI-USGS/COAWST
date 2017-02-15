@@ -1,9 +1,9 @@
 #include "cppdefs.h"
       SUBROUTINE initial
 !
-!svn $Id: initial.F 790 2008-10-14 19:32:07Z jcwarner $
+!svn $Id: initial.F 830 2017-01-24 21:21:11Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2016 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2017 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -656,6 +656,25 @@
 !$OMP BARRIER
         END IF
       END DO
+#endif
+
+#ifdef OBSERVATIONS
+!
+!-----------------------------------------------------------------------
+!  Open observations NetCDF file and initialize various variables
+!  needed for processing the nonlinear state solution at observation
+!  locations. Need to be done after processing initial conditions since
+!  the correct initial time is needed to determine the first "ObsTime"
+!  to process.
+!-----------------------------------------------------------------------
+!
+      DO ng=1,Ngrids
+!$OMP MASTER
+        CALL obs_initial (ng, iNLM, .FALSE.)
+!$OMP END MASTER
+        IF (exit_flag.ne.NoError) RETURN
+      END DO
+!$OMP BARRIER
 #endif
 
 #if (defined W4DPSAS || defined TL_W4DPSAS || \

@@ -1,8 +1,8 @@
 !  Nutrient-Phytoplankton-Zooplankton-Detritus Biological Model Parameters.
 !
-!svn $Id: npzd_Powell.in 795 2016-05-11 01:42:43Z arango $
+!svn $Id: npzd_Powell.in 830 2017-01-24 21:21:11Z arango $
 !========================================================= Hernan G. Arango ===
-!  Copyright (c) 2002-2016 The ROMS/TOMS Group                                !
+!  Copyright (c) 2002-2017 The ROMS/TOMS Group                                !
 !    Licensed under a MIT/X style license                                     !
 !    See License_ROMS.txt                                                     !
 !==============================================================================
@@ -232,6 +232,13 @@ ad_LBC(isTvar) ==   Per     Clo     Per     Clo \    ! idbio(1), NO3
 
 Hout(idTvar) == 4*T     ! ..., NO3, ...           biological tracer
 Hout(idTsur) == 4*F     ! ..., NO3_sflux, ...     surface tracer flux
+
+! Logical switches (TRUE/FALSE) to activate writing of biological fields
+! into QUICKSAVE output files: [1:NBT,Ngrids].
+
+Qout(idTvar) == 4*F     ! ..., NO3, ...           biological tracer
+Qout(idsurT) == 4*F     ! ..., NO3_sur, ...       surface biological tracer
+Qout(idTsur) == 4*F     ! ..., NO3_sflux, ...     surface tracer flux
 
 ! Logical switches (TRUE/FALSE) to activate writing of time-averaged fields
 ! into AVERAGE output file: [1:NBT,Ngrids].
@@ -567,6 +574,21 @@ Dout(iTvdif) == 4*T     ! ..., NO3_vdiff, ...     vertical diffusion
 !                   idTvar(idbio(2))=iPhyt    Phytoplankton biomass
 !                   idTvar(idbio(3))=iZoop    Zooplankton biomass
 !                   idTvar(idbio(4))=iSdet    Detritus concentration
+!
+!------------------------------------------------------------------------------
+! Logical switches (T/F) to activate writing of fields into QUICKSAVE file.
+!------------------------------------------------------------------------------
+!
+!  Qout             Logical switches to write out biological fields into
+!                     output QUICKSAVE NetCDF file, [1:NBT,1:Ngrids] values
+!                     are expected:
+!
+!                     Qout(idTvar)      biological tracers
+!                     Qout(idsurT)      surface biological tracers
+!                     Qout(idTsur)      biological tracers surface flux
+!
+!                     The idTvar(idbio(:)), idsurR(idbio(:)), and
+!                     idTsur(idbio(:)) indices are provided above.
 !
 !------------------------------------------------------------------------------
 ! Logical switches (T/F) to activate writing of fields into AVERAGE file.

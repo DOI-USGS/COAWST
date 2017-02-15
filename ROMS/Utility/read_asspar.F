@@ -2,9 +2,9 @@
 #if defined FOUR_DVAR || defined VERIFICATION
       SUBROUTINE read_AssPar (model, inp, out, Lwrite)
 !
-!svn $Id: read_asspar.F 820 2016-08-30 20:14:28Z arango $
+!svn $Id: read_asspar.F 830 2017-01-24 21:21:11Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2016 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2017 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -153,6 +153,9 @@
             CASE ('NpostI')
               Npts=load_i(Nval, Rval, 1, Ivalue)
               NpostI=Ivalue(1)
+            CASE ('Nimpact')
+              Npts=load_i(Nval, Rval, 1, Ivalue)
+              Nimpact=Ivalue(1)
             CASE ('tl_M2diff')
               Npts=load_r(Nval, Rval, Ngrids, tl_M2diff)
             CASE ('tl_M3diff')
@@ -766,6 +769,18 @@
           WRITE (out,80) NpostI, 'NpostI',                              &
      &            'Number of Lanczos iterations in posterior analysis.'
 #   endif
+#   if defined W4DPSAS_SENSITIVITY || defined W$DVAR_SENSITIVITY
+          WRITE (out,80) Nimpact, 'Nimpact',                             &
+     &            'Observations impact/sensitivity outer loop to use.'
+          IF (Nimpact.gt.Nouter) THEN
+            IF (Master) THEN
+              WRITE (out,240) 'Nimpact', Nimpact,                        &
+     &              'must be less or equal than Nouter'
+            END IF
+            exit_flag=5
+            RETURN
+          END IF
+#   endif
 #   ifndef TLM_CHECK
 #    ifndef IS4DVAR_SENSITIVITY
           WRITE (out,170) LdefNRM(1:4,ng), 'LdefNRM',                   &
@@ -1320,6 +1335,8 @@
  220  FORMAT (/,' READ_ASSPAR - could not find input file:  ',a)
  230  FORMAT (/,' READ_ASSPAR - Illegal parameter, ', a, ' = ', 1x, l1, &
      &        /,15x,a,/,15x,a)
+ 240  FORMAT (/,' READ_ASSPAR - Illegal parameter, ', a, ' = ', 1x, i2, &
+     &        /,15x,a)
 # endif
 
       RETURN

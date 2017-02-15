@@ -3,9 +3,9 @@
 
 #if defined FOUR_DVAR
 !
-!svn $Id: normalization.F 807 2016-07-09 02:03:55Z arango $
+!svn $Id: normalization.F 830 2017-01-24 21:21:11Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2016 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2017 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -95,10 +95,12 @@
      &                           IminS, ImaxS, JminS, JmaxS,            &
      &                           nstp(ng), nnew(ng), ifac,              &
      &                           GRID(ng) % pm,                         &
+     &                           GRID(ng) % om_p,                       &
      &                           GRID(ng) % om_r,                       &
      &                           GRID(ng) % om_u,                       &
      &                           GRID(ng) % om_v,                       &
      &                           GRID(ng) % pn,                         &
+     &                           GRID(ng) % on_p,                       &
      &                           GRID(ng) % on_r,                       &
      &                           GRID(ng) % on_u,                       &
      &                           GRID(ng) % on_v,                       &
@@ -165,10 +167,12 @@
      &                           IminS, ImaxS, JminS, JmaxS,            &
      &                           nstp(ng), nnew(ng), ifac,              &
      &                           GRID(ng) % pm,                         &
+     &                           GRID(ng) % om_p,                       &
      &                           GRID(ng) % om_r,                       &
      &                           GRID(ng) % om_u,                       &
      &                           GRID(ng) % om_v,                       &
      &                           GRID(ng) % pn,                         &
+     &                           GRID(ng) % on_p,                       &
      &                           GRID(ng) % on_r,                       &
      &                           GRID(ng) % on_u,                       &
      &                           GRID(ng) % on_v,                       &
@@ -235,8 +239,8 @@
      &                               LBi, UBi, LBj, UBj, LBij, UBij,    &
      &                               IminS, ImaxS, JminS, JmaxS,        &
      &                               nstp, nnew, ifac,                  &
-     &                               pm, om_r, om_u, om_v,              &
-     &                               pn, on_r, on_u, on_v,              &
+     &                               pm, om_p, om_r, om_u, om_v,        &
+     &                               pn, on_p, on_r, on_u, on_v,        &
      &                               pmon_p, pmon_r, pmon_u,            &
      &                               pnom_p, pnom_r, pnom_v,            &
 # ifdef MASKING
@@ -321,10 +325,12 @@
 !
 # ifdef ASSUMED_SHAPE
       real(r8), intent(in) :: pm(LBi:,LBj:)
+      real(r8), intent(in) :: om_p(LBi:,LBj:)
       real(r8), intent(in) :: om_r(LBi:,LBj:)
       real(r8), intent(in) :: om_u(LBi:,LBj:)
       real(r8), intent(in) :: om_v(LBi:,LBj:)
       real(r8), intent(in) :: pn(LBi:,LBj:)
+      real(r8), intent(in) :: on_p(LBi:,LBj:)
       real(r8), intent(in) :: on_r(LBi:,LBj:)
       real(r8), intent(in) :: on_u(LBi:,LBj:)
       real(r8), intent(in) :: on_v(LBi:,LBj:)
@@ -383,10 +389,12 @@
 #  endif
 # else
       real(r8), intent(in) :: pm(LBi:UBi,LBj:UBj)
+      real(r8), intent(in) :: om_p(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: om_r(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: om_u(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: om_v(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: pn(LBi:UBi,LBj:UBj)
+      real(r8), intent(in) :: on_p(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: on_r(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: on_u(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: on_v(LBi:UBi,LBj:UBj)
@@ -1018,9 +1026,18 @@
      &                                     DTsizeH(ifile,isUvel),       &
      &                                     DTsizeV(ifile,isUvel),       &
      &                                     Kh, Kv,                      &
-     &                                     pm, pn, pmon_r, pnom_p,      &
+     &                                     pm, pn,                      &
+#  ifdef GEOPOTENTIAL_HCONV
+     &                                     on_r, om_p,                  &
+#  else
+     &                                     pmon_r, pnom_p,              &
+#  endif
 #  ifdef MASKING
+#   ifdef GEOPOTENTIAL_HCONV
+     &                                     pmask, rmask, umask, vmask,  &
+#   else
      &                                     umask, pmask,                &
+#   endif
 #  endif
      &                                     Hz, z_r,                     &
      &                                     A3d)
@@ -1165,9 +1182,18 @@
      &                                     DTsizeH(ifile,isVvel),       &
      &                                     DTsizeV(ifile,isVvel),       &
      &                                     Kh, Kv,                      &
-     &                                     pm, pn, pmon_p, pnom_r,      &
+     &                                     pm, pn,                      &
+#  ifdef GEOPOTENTIAL_HCONV
+     &                                     on_p, om_r,                  &
+#  else
+     &                                     pmon_p, pnom_r,              &
+#  endif
 #  ifdef MASKING
+#   ifdef GEOPOTENTIAL_HCONV
+     &                                     pmask, rmask, umask, vmask,  &
+#   else
      &                                     vmask, pmask,                &
+#   endif
 #  endif
      &                                     Hz, z_r,                     &
      &                                     A3d)
@@ -1337,7 +1363,12 @@
      &                                       DTsizeH(ifile,is),         &
      &                                       DTsizeV(ifile,is),         &
      &                                       Kh, Kv,                    &
-     &                                       pm, pn, pmon_u, pnom_v,    &
+     &                                       pm, pn,                    &
+#  ifdef GEOPOTENTIAL_HCONV
+     &                                       on_u, om_v,                &
+#  else
+     &                                       pmon_u, pnom_v,            &
+#  endif
 #  ifdef MASKING
      &                                       rmask, umask, vmask,       &
 #  endif
@@ -2942,8 +2973,8 @@
      &                               LBi, UBi, LBj, UBj, LBij, UBij,    &
      &                               IminS, ImaxS, JminS, JmaxS,        &
      &                               nstp, nnew, ifac,                  &
-     &                               pm, om_r, om_u, om_v,              &
-     &                               pn, on_r, on_u, on_v,              &
+     &                               pm, om_p, om_r, om_u, om_v,        &
+     &                               pn, on_p, on_r, on_u, on_v,        &
      &                               pmon_p, pmon_r, pmon_u,            &
      &                               pnom_p, pnom_r, pnom_v,            &
 # ifdef MASKING
@@ -3024,10 +3055,12 @@
 !
 # ifdef ASSUMED_SHAPE
       real(r8), intent(in) :: pm(LBi:,LBj:)
+      real(r8), intent(in) :: om_p(LBi:,LBj:)
       real(r8), intent(in) :: om_r(LBi:,LBj:)
       real(r8), intent(in) :: om_u(LBi:,LBj:)
       real(r8), intent(in) :: om_v(LBi:,LBj:)
       real(r8), intent(in) :: pn(LBi:,LBj:)
+      real(r8), intent(in) :: on_p(LBi:,LBj:)
       real(r8), intent(in) :: on_r(LBi:,LBj:)
       real(r8), intent(in) :: on_u(LBi:,LBj:)
       real(r8), intent(in) :: on_v(LBi:,LBj:)
@@ -3086,10 +3119,12 @@
 #  endif
 # else
       real(r8), intent(in) :: pm(LBi:UBi,LBj:UBj)
+      real(r8), intent(in) :: om_p(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: om_r(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: om_u(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: om_v(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: pn(LBi:UBi,LBj:UBj)
+      real(r8), intent(in) :: on_p(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: on_r(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: on_u(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: on_v(LBi:UBi,LBj:UBj)
@@ -3564,9 +3599,18 @@
      &                               DTsizeH(ifile,isUvel),             &
      &                               DTsizeV(ifile,isUvel),             &
      &                               Kh, Kv,                            &
-     &                               pm, pn, pmon_r, pnom_p,            &
+     &                               pm, pn,                            &
+#  ifdef GEOPOTENTIAL_HCONV
+     &                               on_r, om_p,                        &
+#  else
+     &                               pmon_r, pnom_p,                    &
+#  endif
 #  ifdef MASKING
+#   ifdef GEOPOTENTIAL_HCONV
+     &                               pmask, rmask, umask, vmask,        &
+#   else
      &                               umask, pmask,                      &
+#   endif
 #  endif
      &                               Hz, z_r,                           &
      &                               A3d)
@@ -3656,9 +3700,18 @@
      &                               DTsizeH(ifile,isVvel),             &
      &                               DTsizeV(ifile,isVvel),             &
      &                               Kh, Kv,                            &
-     &                               pm, pn, pmon_p, pnom_r,            &
+     &                               pm, pn,                            &
+#  ifdef GEOPOTENTIAL_HCONV
+     &                               on_p, om_r,                        &
+#  else
+     &                               pmon_p, pnom_r,                    &
+#  endif
 #  ifdef MASKING
+#   ifdef GEOPOTENTIAL_HCONV
+     &                               pmask, rmask, umask, vmask,        &
+#   else
      &                               vmask, pmask,                      &
+#   endif
 #  endif
      &                               Hz, z_r,                           &
      &                               A3d)
@@ -3786,7 +3839,12 @@
      &                                 DTsizeH(ifile,is),               &
      &                                 DTsizeV(ifile,is),               &
      &                                 Kh, Kv,                          &
-     &                                 pm, pn, pmon_u, pnom_v,          &
+     &                                 pm, pn,                          &
+#  ifdef GEOPOTENTIAL_HCONV
+     &                                 on_u, om_v,                      &
+#  else
+     &                                 pmon_u, pnom_v,                  &
+#  endif
 #  ifdef MASKING
      &                                 rmask, umask, vmask,             &
 #  endif
@@ -4365,7 +4423,8 @@
      &                                   DTsizeHB(ibry,isUvel),         &
      &                                   DTsizeVB(ibry,isUvel),         &
      &                                   Kh, Kv,                        &
-     &                                   pm, pn, pmon_r, pnom_p,        &
+     &                                   pm, pn,                        &
+     &                                   pmon_r, pnom_p,                &
 #  ifdef MASKING
      &                                   umask, pmask,                  &
 #  endif
@@ -4525,7 +4584,8 @@
      &                                   DTsizeHB(ibry,isVvel),         &
      &                                   DTsizeVB(ibry,isVvel),         &
      &                                   Kh, Kv,                        &
-     &                                   pm, pn, pmon_p, pnom_r,        &
+     &                                   pm, pn,                        &
+     &                                   pmon_p, pnom_r,                &
 #  ifdef MASKING
      &                                   vmask, pmask,                  &
 #  endif
@@ -4694,7 +4754,8 @@
      &                                     DTsizeHB(ibry,is),           &
      &                                     DTsizeVB(ibry,is),           &
      &                                     Kh, Kv,                      &
-     &                                     pm, pn, pmon_u, pnom_v,      &
+     &                                     pm, pn,                      &
+     &                                     pmon_u, pnom_v,              &
 #  ifdef MASKING
      &                                     rmask, umask, vmask,         &
 #  endif

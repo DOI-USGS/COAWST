@@ -2,9 +2,9 @@
       MODULE obs_k2z_mod
 #ifdef SOLVE3D
 !
-!svn $Id: obs_k2z.F 798 2016-05-21 17:04:58Z arango $
+!svn $Id: obs_k2z.F 830 2017-01-24 21:21:11Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2016 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2017 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================

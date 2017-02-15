@@ -4,7 +4,7 @@
 !
 !svn $Id: wec_wave_mix.F 1428 2008-03-12 13:07:21Z jcwarner $
 !=======================================================================
-!  Copyright (c) 2002-2010 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2017 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                           Hernan G. Arango   !
 !                                                   Nirnimesh Kumar    !

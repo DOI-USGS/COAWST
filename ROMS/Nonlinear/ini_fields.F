@@ -2,9 +2,9 @@
       MODULE ini_fields_mod
 #ifdef NONLINEAR
 !
-!svn $Id: ini_fields.F 838 2008-11-17 04:22:18Z jcwarner $
+!svn $Id: ini_fields.F 830 2017-01-24 21:21:11Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2016 The ROMS/TOMS Group       Andrew M. Moore   !
+!  Copyright (c) 2002-2017 The ROMS/TOMS Group       Andrew M. Moore   !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================

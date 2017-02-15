@@ -1,9 +1,9 @@
 #include "cppdefs.h"
       SUBROUTINE def_info (ng, model, ncid, ncname, DimIDs)
 !
-!svn $Id: def_info.F 807 2016-07-09 02:03:55Z arango $
+!svn $Id: def_info.F 830 2017-01-24 21:21:11Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2016 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2017 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -138,7 +138,7 @@
 #ifdef BIOLOGY
       character (len=512) :: bio_file
 #endif
-      character (len=1024) :: string
+      character (len=4096) :: string
 !
 !-----------------------------------------------------------------------
 !  Set dimension variables.
@@ -255,7 +255,7 @@
 !  Define file climate and forecast metadata convention global
 !  attribute.
 !
-        type='CF-1.4'
+        type='CF-1.4, SGRID-0.3'
         IF (exit_flag.eq.NoError) THEN
           status=nf90_put_att(ncid, nf90_global, 'Conventions',         &
      &                        TRIM(type))
@@ -306,6 +306,8 @@
          type='ROMS/TOMS boundary conditions error covariance norm file'
         ELSE IF (ncid.eq.NRM(4,ng)%ncid) THEN
           type='ROMS/TOMS surface forcing error covariance norm file'
+        ELSE IF (ncid.eq.QCK(ng)%ncid) THEN
+          type='ROMS/TOMS quicksave file'
         ELSE IF (ncid.eq.RST(ng)%ncid) THEN
           type='ROMS/TOMS restart file'
         ELSE IF (ncid.eq.STA(ng)%ncid) THEN
@@ -2160,6 +2162,15 @@
 # if defined POSTERIOR_EOFS && defined WEAK_CONSTRAINT
       Vinfo( 1)='NpostI'
       Vinfo( 2)='number of Lanczos iterations in posterior analysis'
+      status=def_var(ng, model, ncid, varid, nf90_int,                  &
+     &               1, (/0/), Aval, Vinfo, ncname,                     &
+     &               SetParAccess = .FALSE.)
+      IF (exit_flag.ne.NoError) RETURN
+# endif
+# if defined IS4DVAR_SENSITIVITY || defined W4DPSAS_SENSITIVITY || \
+     defined W4DVAR_SENSITIVITY
+      Vinfo( 1)='Nimpact'
+      Vinfo( 2)='Observations impact/sensitivity outer loop to use'
       status=def_var(ng, model, ncid, varid, nf90_int,                  &
      &               1, (/0/), Aval, Vinfo, ncname,                     &
      &               SetParAccess = .FALSE.)

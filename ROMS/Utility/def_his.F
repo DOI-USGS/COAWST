@@ -1,9 +1,9 @@
 #include "cppdefs.h"
       SUBROUTINE def_his (ng, ldef)
 !
-!svn $Id: def_his.F 733 2008-09-07 01:56:45Z jcwarner $
+!svn $Id: def_his.F 830 2017-01-24 21:21:11Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2016 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2017 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -5581,15 +5581,16 @@
      &                                    TRIM(ncname)
             exit_flag=3
             RETURN
+          END IF
 # ifdef ADJUST_BOUNDARY
-          ELSE IF (.not.got_var(idSbry(isTvar(itrc)))) THEN
+          IF (.not.got_var(idSbry(isTvar(itrc)))) THEN
             IF (Master) WRITE (stdout,70)                               &
      &                        TRIM(Vname(1,idSbry(isTvar(itrc)))),      &
      &                        TRIM(ncname)
             exit_flag=3
             RETURN
-# endif
           END IF
+# endif
         END DO
         DO itrc=1,NAT
           IF (.not.got_var(idTsur(itrc)).and.Hout(idTsur(itrc),ng)) THEN
@@ -5682,10 +5683,10 @@
         HIS(ng)%Rindex=MIN(HIS(ng)%Rindex,rec_size)
       END IF QUERY
 !
-  10  FORMAT (6x,'DEF_HIS   - creating history file, Grid ',i2.2,': ',  &
-     &        a)
-  20  FORMAT (6x,'DEF_HIS   - inquiring history file, Grid ',i2.2,': ', &
-     &        a)
+  10  FORMAT (6x,'DEF_HIS     - creating  history', t43,                &
+     &        ' file, Grid ',i2.2,': ', a)
+  20  FORMAT (6x,'DEF_HIS     - inquiring history', t43,                &
+     &        ' file, Grid ',i2.2,': ', a)
   30  FORMAT (/,' DEF_HIS - unable to create history NetCDF file: ',a)
   40  FORMAT ('time dependent',1x,a)
   50  FORMAT (1pe11.4,1x,'millimeter')

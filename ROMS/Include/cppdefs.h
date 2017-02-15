@@ -1,9 +1,9 @@
 /*
 ** Include file "cppdefs.h"
 **
-** svn $Id: cppdefs.h 818 2008-11-02 14:56:47Z jcwarner $
+** svn $Id: cppdefs.h 830 2017-01-24 21:21:11Z arango $
 ********************************************************** Hernan G. Arango ***
-** Copyright (c) 2002-2016 The ROMS/TOMS Group                               **
+** Copyright (c) 2002-2017 The ROMS/TOMS Group                               **
 **   Licensed under a MIT/X style license                                    **
 **   See License_ROMS.txt                                                    **
 *******************************************************************************
@@ -416,27 +416,35 @@
 ** AD_SENSITIVITY      use if adjoint sensitivity driver                     **
 ** AFT_EIGENMODES      use if adjoint finite time eingenmodes driver         **
 ** ARRAY_MODES         use if W4DVAR representer matrix array modes          **
+** BEOFS_ONLY          use to compute EOFs of background error covariance    **
+** BGQC                use if background quality control of observations     **
+** BNORM               use if Background norm for Hessian singular vectors   **
 ** CLIPPING            use if W4DVAR representer matrix clipping analysis    **
 ** CORRELATION         use if background-error correlation model driver      **
 ** ENSEMBLE            use if ensemble prediction driver                     **
+** EVOLVED_LCZ         use to Compute 4DVar evolved Hessian singular vectors **
 ** FORCING_SV          use if forcing singular vectors driver                **
 ** FT_EIGENMODES       use if finite time eingenmodes driver: normal modes   **
-** INNER_PRODUCT       use if tangent linear and adjoint inner product check **
-** IS4DVAR             use if incremental 4DVar data assimilation            **
-** IS4DVAR_SENSITIVITY use if I4DVar observations sensitivity driver         **
+** GEOPOTENTIAL_HCONV  use if horizontal convolutions along geopotentials    **
 ** HESSIAN_FSV         use if Hessian forcing singular vectors               **
 ** HESSIAN_SO          use if Hessian stochastic optimals                    **
 ** HESSIAN_SV          use if Hessian singular vectors                       **
+** INNER_PRODUCT       use if tangent linear and adjoint inner product check **
+** IS4DVAR             use if incremental 4DVar data assimilation            **
+** IS4DVAR_SENSITIVITY use if I4DVar observations sensitivity driver         **
+** LCZ_FINAL           use to compute 4DVar Hessian singular vectors         **
 ** OPT_OBSERVATIONS    use if optimal observations driver                    **
 ** OPT_PERTURBATION    use if optimal perturbations driver, singular vectors **
 ** PICARD_TEST         use if representer tangent linear model test          **
 ** PSEUDOSPECTRA       use if pseudospectra of tangent linear resolvant      **
 ** R_SYMMETRY          use if representer matrix symmetry test               **
+** RPCG                use if Restricted B-preconditioned Lanczos solver     **
 ** RPM_DRIVER          use if generic representers model driver              **
 ** SANITY_CHECK        use if tangent linear and adjoint codes sanity check  **
 ** SO_SEMI             use if stochastic optimals driver, semi-norm          **
 ** SO_TRACE            use if stochastic optimals, randomized trace          **
 ** STOCHASTIC_OPT      use if stochastic optimals                            **
+** TIME_CONV           use if weak-constraint 4DVar time convolutions        **
 ** TLM_CHECK           use if tangent linear model linearization check       **
 ** TLM_DRIVER          use if generic tangent linear model driver            **
 ** W4DPSAS             use if weak constraint 4DPSAS data assimilation       **
@@ -455,6 +463,7 @@
 ** CELERITY_WRITE      use if writing radiation celerity in forward file     **
 ** CLIPPING_SPLIT      use to separate analysis due to IC, forcing, and OBC  **
 ** DATALESS_LOOPS      use if testing convergence of Picard iterations       **
+** ENKF_RESTART        use if writting restart fields for EnKF               **
 ** FORWARD_MIXING      use if processing forward vertical mixing coefficient **
 ** FORWARD_WRITE       use if writing out forward solution, basic state      **
 ** FORWARD_READ        use if reading in  forward solution, basic state      **
@@ -471,6 +480,7 @@
 ** POSTERIOR_ERROR_I   use if initial posterior analysis error covariance    **
 ** RECOMPUTE_4DVAR     use if recomputing 4DVar in analysis algorithms       **
 ** RPM_RELAXATION      use if Picard iterations, Diffusive Relaxation of RPM **
+** SKIP_NLM            use to skip running NLM, reading NLM trajectory       **
 ** SO_SEMI_WHITE       use to activate SO semi norm white/red noise processes**
 ** STOCH_OPT_WHITE     use to activate SO white/red noise processes          **
 ** SPLINES_VCONV       use to activate implicit splines vertical convolution **

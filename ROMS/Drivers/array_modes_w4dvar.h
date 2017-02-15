@@ -1,8 +1,8 @@
       MODULE ocean_control_mod
 !
-!svn $Id: array_modes_w4dvar.h 795 2016-05-11 01:42:43Z arango $
+!svn $Id: array_modes_w4dvar.h 830 2017-01-24 21:21:11Z arango $
 !=================================================== Andrew M. Moore ===
-!  Copyright (c) 2002-2016 The ROMS/TOMS Group      Hernan G. Arango   !
+!  Copyright (c) 2002-2017 The ROMS/TOMS Group      Hernan G. Arango   !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -562,10 +562,13 @@
       END DO
 !
 !:::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
-!  Run nonlinear model and compute basic state trajectory.
+!  Run nonlinear model and compute basic state trajectory. It processes
+!  and writes the observations accept/reject flag (ObsScale) once to
+!  allow background quality control, if any.
 !:::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 !
       DO ng=1,Ngrids
+        wrtObsScale(ng)=.TRUE.
         IF (Master) THEN
           WRITE (stdout,20) 'NL', ng, ntstart(ng), ntend(ng)
         END IF
@@ -582,6 +585,7 @@
 
       DO ng=1,Ngrids
         wrtNLmod(ng)=.FALSE.
+        wrtObsScale(ng)=.FALSE.
       END DO
 !
 !  Set forward basic state NetCDF ID to nonlinear model trajectory to

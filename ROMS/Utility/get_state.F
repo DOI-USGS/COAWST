@@ -1,9 +1,9 @@
 #include "cppdefs.h"
       SUBROUTINE get_state (ng, model, msg, ncname, IniRec, Tindex)
 !
-!svn $Id: get_state.F 807 2016-07-09 02:03:55Z arango $
+!svn $Id: get_state.F 830 2017-01-24 21:21:11Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2016 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2017 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -222,7 +222,7 @@
         RETURN
       END IF
 
-#ifdef NO_LBC_ATT
+#if defined DEBUGGING || defined NO_LBC_ATT
 !
 !  Lateral boundary conditions attribute not checked in restart file.
 !

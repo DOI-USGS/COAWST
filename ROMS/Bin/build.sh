@@ -1,8 +1,8 @@
 #!/bin/csh -f
 #
-# svn $Id: build.sh 751 2015-01-07 22:56:36Z arango $
+# svn $Id: build.sh 834 2017-01-25 18:49:17Z arango $
 #:::::::::::::::::::::::::::::::::::::::::::::::::::::::::: John Wilkin :::
-# Copyright (c) 2002-2016 The ROMS/TOMS Group                           :::
+# Copyright (c) 2002-2017 The ROMS/TOMS Group                           :::
 #   Licensed under a MIT/X style license                                :::
 #   See License_ROMS.txt                                                :::
 #::::::::::::::::::::::::::::::::::::::::::::::::::::: Hernan G. Arango :::
@@ -204,7 +204,7 @@ endif
 #
 # Notice that when the USE_NETCDF4 macro is activated, we need the
 # serial or parallel version of the NetCDF-4/HDF5 library. The
-# configuration script NC_CONFIG (available since NetCDF 4.0.1)
+# configuration script NF_CONFIG (available since NetCDF 4.0.1)
 # is used to set up all the required libraries according to the
 # installed options (openDAP, netCDF4/HDF5 file format). The
 # parallel library uses the MPI-I/O layer (usually available
@@ -258,17 +258,17 @@ if ($?USE_MY_LIBS) then
       if ($?USE_NETCDF4) then
         if ($?USE_PARALLEL_IO && $?USE_MPI) then
           if ($which_MPI == "mpich" ) then
-            setenv NC_CONFIG      /opt/intelsoft/mpich/netcdf4/bin/nc-config
+            setenv NF_CONFIG      /opt/intelsoft/mpich/netcdf4/bin/nf-config
             setenv NETCDF_INCDIR  /opt/intelsoft/mpich/netcdf4/include
           else if ($which_MPI == "mpich2" ) then
-            setenv NC_CONFIG      /opt/intelsoft/mpich2/netcdf4/bin/nc-config
+            setenv NF_CONFIG      /opt/intelsoft/mpich2/netcdf4/bin/nf-config
             setenv NETCDF_INCDIR  /opt/intelsoft/mpich2/netcdf4/include
           else if ($which_MPI == "openmpi" ) then
-            setenv NC_CONFIG      /opt/intelsoft/openmpi/netcdf4/bin/nc-config
+            setenv NF_CONFIG      /opt/intelsoft/openmpi/netcdf4/bin/nf-config
             setenv NETCDF_INCDIR  /opt/intelsoft/openmpi/netcdf4/include
           endif
         else
-          setenv NC_CONFIG        /opt/intelsoft/serial/netcdf4/bin/nc-config
+          setenv NF_CONFIG        /opt/intelsoft/serial/netcdf4/bin/nf-config
           setenv NETCDF_INCDIR    /opt/intelsoft/serial/netcdf4/include
         endif
       else
@@ -308,17 +308,17 @@ if ($?USE_MY_LIBS) then
       if ($?USE_NETCDF4) then
         if ($?USE_PARALLEL_IO && $?USE_MPI) then
           if ($which_MPI == "mpich" ) then
-            setenv NC_CONFIG      /opt/pgisoft/mpich/netcdf4/bin/nc-config
+            setenv NF_CONFIG      /opt/pgisoft/mpich/netcdf4/bin/nf-config
             setenv NETCDF_INCDIR  /opt/pgisoft/mpich/netcdf4/include
           else if ($which_MPI == "mpich2" ) then
-            setenv NC_CONFIG      /opt/pgisoft/mpich2/netcdf4/bin/nc-config
+            setenv NF_CONFIG      /opt/pgisoft/mpich2/netcdf4/bin/nf-config
             setenv NETCDF_INCDIR  /opt/pgisoft/mpich2/netcdf4/include
           else if ($which_MPI == "openmpi" ) then
-            setenv NC_CONFIG      /opt/pgisoft/openmpi/netcdf4/bin/nc-config
+            setenv NF_CONFIG      /opt/pgisoft/openmpi/netcdf4/bin/nf-config
             setenv NETCDF_INCDIR  /opt/pgisoft/openmpi/netcdf4/include
           endif
         else
-          setenv NC_CONFIG        /opt/pgisoft/serial/netcdf4/bin/nc-config
+          setenv NF_CONFIG        /opt/pgisoft/serial/netcdf4/bin/nf-config
           setenv NETCDF_INCDIR    /opt/pgisoft/serial/netcdf4/include
         endif
       else
@@ -353,14 +353,14 @@ if ($?USE_MY_LIBS) then
       if ($?USE_NETCDF4) then
         if ($?USE_PARALLEL_IO && $?USE_MPI) then
           if ($which_MPI == "mpich2" ) then
-            setenv NC_CONFIG      /opt/gfortransoft/mpich2/netcdf4/bin/nc-config
+            setenv NF_CONFIG      /opt/gfortransoft/mpich2/netcdf4/bin/nf-config
             setenv NETCDF_INCDIR  /opt/gfortransoft/mpich2/netcdf4/include
           else if ($which_MPI == "openmpi" ) then
-            setenv NC_CONFIG      /opt/gfortransoft/openmpi/netcdf4/bin/nc-config
+            setenv NF_CONFIG      /opt/gfortransoft/openmpi/netcdf4/bin/nf-config
             setenv NETCDF_INCDIR  /opt/gfortransoft/openmpi/netcdf4/include
           endif
         else
-          setenv NC_CONFIG        /opt/gfortransoft/serial/netcdf4/bin/nc-config
+          setenv NF_CONFIG        /opt/gfortransoft/serial/netcdf4/bin/nf-config
           setenv NETCDF_INCDIR    /opt/gfortransoft/serial/netcdf4/include
         endif
       else

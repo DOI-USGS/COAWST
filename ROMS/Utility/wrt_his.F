@@ -1,9 +1,9 @@
 #include "cppdefs.h"
       SUBROUTINE wrt_his (ng, tile)
 !
-!svn $Id: wrt_his.F 798 2016-05-21 17:04:58Z arango $
+!svn $Id: wrt_his.F 830 2017-01-24 21:21:11Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2016 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2017 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -4794,18 +4794,18 @@
   10  FORMAT (/,' WRT_HIS - error while writing variable: ',a,/,11x,    &
      &        'into history NetCDF file for time record: ',i4)
 #ifdef SOLVE3D
-  20  FORMAT (6x,'WRT_HIS   - wrote history  fields (Index=', i1,       &
+  20  FORMAT (6x,'WRT_HIS     - wrote history', t39,                    &
 # ifdef NESTING
-     &        ',',i1,') into time record = ',i7.7,2x,i2.2)
+     &        'fields (Index=',i1,',',i1,') in record = ',i7.7,2x,i2.2)
 # else
-     &        ',',i1,') into time record = ',i7.7)
+     &        'fields (Index=',i1,',',i1,') in record = ',i7.7)
 # endif
 #else
-  20  FORMAT (6x,'WRT_HIS   - wrote history  fields (Index=', i1,       &
+  20  FORMAT (6x,'WRT_HIS     - wrote history', t39,                    &
 # ifdef NESTING
-     &        ') into time record = ',i7.7,2x,i2.2)
+     &        'fields (Index=',i1,')   in record = ',i7.7,2x,i2.2)
 # else
-     &        ') into time record = ',i7.7)
+     &        'fields (Index=',i1,')   in record = ',i7.7)
 # endif
 #endif
       RETURN

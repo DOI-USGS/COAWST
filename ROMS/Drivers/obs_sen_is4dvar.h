@@ -1,8 +1,8 @@
       MODULE ocean_control_mod
 !
-!svn $Id: obs_sen_is4dvar.h 795 2016-05-11 01:42:43Z arango $
+!svn $Id: obs_sen_is4dvar.h 830 2017-01-24 21:21:11Z arango $
 !=================================================== Andrew M. Moore ===
-!  Copyright (c) 2002-2016 The ROMS/TOMS Group      Hernan G. Arango   !
+!  Copyright (c) 2002-2017 The ROMS/TOMS Group      Hernan G. Arango   !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -301,6 +301,21 @@
      &                        cg_delta)
         IF (exit_flag.ne. NoError) RETURN
       END DO
+
+#ifdef SKIP_NLM
+!
+!-----------------------------------------------------------------------
+!  If skiping runing nonlinear model, read in observation screening and
+!  quality control flag.
+!-----------------------------------------------------------------------
+!
+      wrtObsScale(1:Ngrids)=.FALSE.
+      DO ng=1,Ngrids
+        CALL netcdf_get_fvar (ng, iTLM, LCZ(ng)%name, Vname(1,idObsS),  &
+     &                        ObsScale)
+        IF (exit_flag.ne.NoError) RETURN
+      END DO
+#endif
 !
 !-----------------------------------------------------------------------
 !  Read in standard deviation factors for error covariance.
@@ -472,6 +487,7 @@
         END DO
       END IF
 #endif
+#ifndef SKIP_NLM
 !
 !  Run nonlinear model for the combined assimilation plus forecast
 !  period, t=t0 to t2. Save nonlinear (basic state) tracjectory, xb(t),
@@ -484,13 +500,14 @@
       END DO
 
 !$OMP PARALLEL
-#ifdef SOLVE3D
+# ifdef SOLVE3D
       CALL main3d (RunInterval)
-#else
+# else
       CALL main2d (RunInterval)
-#endif
+# endif
 !$OMP END PARALLEL
       IF (exit_flag.ne.NoError) RETURN
+#endif
 
 #if defined BULK_FLUXES && defined NL_BULK_FLUXES
 !
@@ -707,6 +724,16 @@
 #ifdef OBS_IMPACT_SPLIT
         wrtIMPACT_IC(ng)=.FALSE.
 #endif
+      END DO
+!
+!  Write out outer loop beeing processed.
+!
+      SourceFile='obs_sen_w4dpsas.h, ROMS_run'
+      DO ng=1,Ngrids
+        CALL netcdf_put_ivar (ng, iNLM, DAV(ng)%name, 'Nimpact',        &
+     &                        Nimpact, (/0/), (/0/),                    &
+     &                        ncid = DAV(ng)%ncid)
+        IF (exit_flag.ne.NoError) RETURN
       END DO
 !
 !  Run tangent linear model for the assimilation period, t=t0 to t1.

@@ -3,9 +3,9 @@
       MODULE lmd_bkpp_mod
 #if defined NONLINEAR && defined LMD_BKPP && defined SOLVE3D
 !
-!svn $Id: lmd_bkpp.F 795 2016-05-11 01:42:43Z arango $
+!svn $Id: lmd_bkpp.F 830 2017-01-24 21:21:11Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2016 The ROMS/TOMS Group       Scott M. Durski   !
+!  Copyright (c) 2002-2017 The ROMS/TOMS Group       Scott M. Durski   !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================

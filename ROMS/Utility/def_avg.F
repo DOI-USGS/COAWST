@@ -5,9 +5,9 @@
    (defined TL_AVERAGES && defined TANGENT)
       SUBROUTINE def_avg (ng, ldef)
 !
-!svn $Id: def_avg.F 733 2008-09-07 01:56:45Z jcwarner $
+!svn $Id: def_avg.F 830 2017-01-24 21:21:11Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2016 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2017 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -847,8 +847,8 @@
           END IF
         END DO
 
-# ifdef BEST_NPZ
-#ifdef STATIONARY
+#  ifdef BEST_NPZ
+#   ifdef STATIONARY
 !-------------------------
 !3D Stationary Variable Array
 !--------------------------
@@ -866,8 +866,8 @@
      &                     NF_FOUT,nvd4,t3dgrd,Aval,Vinfo,ncname)
           END IF
         END DO
-#endif
-#ifdef STATIONARY2
+#   endif
+#   ifdef STATIONARY2
 !-------------------------
 !2D Stationary Array
 !--------------------------
@@ -885,8 +885,8 @@
      &                     NF_FOUT,nvd3,t2dgrd,Aval,Vinfo,ncname)
           END IF
         END DO
-#endif
-#ifdef BIOFLUX
+#   endif
+#   ifdef BIOFLUX
 !-------------------------
 !bioflux Array
 !--------------------------
@@ -906,8 +906,8 @@
             END IF
 !        END DO
 !        END DO
-#endif
-#ifdef PROD3
+#   endif
+#   ifdef PROD3
 !-------------------------------
 !3D Production variables
 !-------------------------------
@@ -925,8 +925,8 @@
      &                    NF_FOUT,nvd4,t3dgrd,Aval,Vinfo,ncname)
           END IF
         END DO
-#endif
-#ifdef PROD2
+#   endif
+#   ifdef PROD2
 !-------------------------------
 !2D Production variables
 !-------------------------------
@@ -944,11 +944,11 @@
      &                     NF_FOUT,nvd3,t2dgrd,Aval,Vinfo,ncname)
           END IF
         END DO
-#endif
+#   endif
 !------------------
 !benthic bio variables
 !-------------------
-#  if defined BENTHIC
+#   if defined BENTHIC
         DO itrc=1,NBeT(ng)
           IF (Aout(idBeTvar(itrc),ng)) THEN
             Vinfo( 1)=Vname(1,idBeTvar(itrc))
@@ -960,21 +960,21 @@
             Vinfo(3)=Vname(3,idBeTvar(itrc))
             Vinfo(14)=Vname(4,idBeTvar(itrc))
             Vinfo(16)=Vname(1,idtime)
-#  if defined WRITE_WATER && defined MASKING
+#    if defined WRITE_WATER && defined MASKING
             Vinfo(20)='mask_rho'
-#  endif
+#    endif
             Vinfo(22)='coordinates'
             Aval(5)=REAL(r2dvar,r8)
             status=def_var(ng, model,ncavgid(ng),avgBid(itrc,ng),  &
      &                     NF_FOUT,nvd3,t2dgrd,Aval,Vinfo,ncname)
           END IF
         END DO
-#  endif
+#   endif
 !------------------
 !ice bio variables
 !-------------------
-# if defined ICE_BIO
-#   ifdef CLIM_ICE_1D
+#   if defined ICE_BIO
+#    ifdef CLIM_ICE_1D
         DO itrc=1,NIceT(ng)
           IF (Aout(idIceBvar(itrc),ng)) THEN
             Vinfo( 1)=Vname(1,idIceBvar(itrc))
@@ -989,7 +989,7 @@
      &                     NF_FOUT,nvd3,t2dgrd,Aval,Vinfo,ncname)
           END IF
         END DO
-#elif defined BERING_10K
+#    elif defined BERING_10K
 !
 !  Define ice algae.
 !
@@ -999,9 +999,9 @@
           Vinfo( 3)=Vname(3,idIcePhL)
           Vinfo(14)=Vname(4,idIcePhL)
           Vinfo(16)=Vname(1,idtime)
-#  if defined WRITE_WATER && defined MASKING
+#     if defined WRITE_WATER && defined MASKING
           Vinfo(20)='mask_rho'
-#  endif
+#     endif
           Vinfo(22)='coordinates'
           Aval(5)=REAL(Iinfo(1,idIcePhL,ng),r8)
           status=def_var(ng, model, AVG(ng)%ncid,                       &
@@ -1018,9 +1018,9 @@
           Vinfo( 3)=Vname(3,idIceNO3)
           Vinfo(14)=Vname(4,idIceNO3)
           Vinfo(16)=Vname(1,idtime)
-#  if defined WRITE_WATER && defined MASKING
+#     if defined WRITE_WATER && defined MASKING
           Vinfo(20)='mask_rho'
-#  endif
+#     endif
           Vinfo(22)='coordinates'
           Aval(5)=REAL(Iinfo(1,idIceNO3,ng),r8)
           status=def_var(ng, model, AVG(ng)%ncid,                       &
@@ -1037,9 +1037,9 @@
           Vinfo( 3)=Vname(3,idIceNH4)
           Vinfo(14)=Vname(4,idIceNH4)
           Vinfo(16)=Vname(1,idtime)
-#  if defined WRITE_WATER && defined MASKING
+#     if defined WRITE_WATER && defined MASKING
           Vinfo(20)='mask_rho'
-#  endif
+#     endif
           Vinfo(22)='coordinates'
           Aval(5)=REAL(Iinfo(1,idIceNH4,ng),r8)
           status=def_var(ng, model, AVG(ng)%ncid,                       &
@@ -1056,9 +1056,9 @@
           Vinfo( 3)=Vname(3,idIceLog)
           Vinfo(14)=Vname(4,idIceLog)
           Vinfo(16)=Vname(1,idtime)
-#  if defined WRITE_WATER && defined MASKING
+#     if defined WRITE_WATER && defined MASKING
           Vinfo(20)='mask_rho'
-#  endif
+#     endif
           Vinfo(22)='coordinates'
           Aval(5)=REAL(Iinfo(1,idIceLog,ng),r8)
           status=def_var(ng, model, AVG(ng)%ncid,                       &
@@ -1066,11 +1066,11 @@
      &                   nvd3, t2dgrd, Aval, Vinfo, ncname)
           IF (exit_flag.ne.NoError) RETURN
         END IF
-# endif
-#endif
+#    endif
+#   endif
 
-# endif
-# ifdef BIO_GOANPZ
+#  endif
+#  ifdef BIO_GOANPZ
         DO itrc=1,NTS(ng)
           IF (Aout(idTSvar(itrc),ng)) THEN
             Vinfo( 1)=Vname(1,idTSvar(itrc))
@@ -1086,7 +1086,7 @@
             IF (exit_flag.ne.NoError) RETURN
           END IF
         END DO
-# endif
+#  endif
 
 #  if defined AVERAGES_DETIDE && (defined SSH_TIDES || defined UV_TIDES)
 !
@@ -2009,7 +2009,6 @@
      &                   NF_FOUT, nvd3, v2dgrd, Aval, Vinfo, ncname)
           IF (exit_flag.ne.NoError) RETURN
         END IF
-
 # ifdef BBL
 !
 !  Define bottom u-momentum stress at rho points.
@@ -2211,6 +2210,7 @@
           IF (exit_flag.ne.NoError) RETURN
         END IF
 # endif
+
 
 # if defined SEDIMENT && defined BEDLOAD
         DO i=1,NST
@@ -5027,10 +5027,10 @@
       END IF
 # endif
 !
-  10  FORMAT (6x,'DEF_AVG   - creating average file, Grid ',i2.2,': ',  &
-     &        a)
-  20  FORMAT (6x,'DEF_AVG   - inquiring average file, Grid ',i2.2,': ', &
-     &        a)
+  10  FORMAT (6x,'DEF_AVG     - creating  average', t43,                &
+     &        ' file, Grid ',i2.2,': ', a)
+  20  FORMAT (6x,'DEF_AVG     - inquiring average', t43,                &
+     &        ' file, Grid ',i2.2,': ', a)
   30  FORMAT (/,' DEF_AVG - unable to create averages NetCDF file: ',a)
   40  FORMAT (1pe11.4,1x,'millimeter')
   50  FORMAT (/,' DEF_AVG - unable to open averages NetCDF file: ',a)

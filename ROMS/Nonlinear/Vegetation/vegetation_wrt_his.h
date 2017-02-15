@@ -1,7 +1,7 @@
 /*
 ** svn $Id: vegetation_wrt.h 429 2015-06-10 10:40:26Z arango $
 *************************************************** Hernan G. Arango ***
-** Copyright (c) 2002-2016 The ROMS/TOMS Group                        **
+** Copyright (c) 2002-2017 The ROMS/TOMS Group                        **
 **    See License_ROMS.txt                                            **
 *************************************************** John C. Warner    **
 *************************************************** Neil K. Ganju     **

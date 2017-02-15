@@ -2,9 +2,9 @@
 
       SUBROUTINE biology_floats (ng, Lstr, Lend, Predictor, my_thread)
 !
-!svn $Id$
+!svn $Id: oyster_floats.h 830 2017-01-24 21:21:11Z arango $
 !************************************************** Hernan G. Arango ***
-!  Copyright (c) 2002-2016 The ROMS/TOMS Group      Diego A. Narvaez   !
+!  Copyright (c) 2002-2017 The ROMS/TOMS Group      Diego A. Narvaez   !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !***********************************************************************

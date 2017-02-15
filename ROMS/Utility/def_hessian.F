@@ -5,9 +5,9 @@
       defined POSTERIOR_ERROR_F)) ||  defined LCZ_FINAL
       SUBROUTINE def_hessian (ng)
 !
-!svn $Id: def_hessian.F 807 2016-07-09 02:03:55Z arango $
+!svn $Id: def_hessian.F 830 2017-01-24 21:21:11Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2016 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2017 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -1052,10 +1052,10 @@
         HSS(ng)%Rindex=rec_size
       END IF QUERY
 !
-  10  FORMAT (3x,'DEF_HESSIAN  - creating Hessian file, Grid ',i2.2,    &
-     &        ': ',a)
-  20  FORMAT (3x,'DEF_HESSIAN  - inquiring Hessian file, Grid ',i2.2,   &
-     &        ': ',a)
+  10  FORMAT (6x,'DEF_HESSIAN - creating  Hessian', t43,                &
+     &        ' file, Grid ',i2.2,': ', a)
+  20  FORMAT (6x,'DEF_HESSIAN - inquiring Hessian', t43,                &
+     &        ' file, Grid ',i2.2,': ', a)
   30  FORMAT (/,' DEF_HESSIAN - unable to create Hessian NetCDF file:', &
      &        1x,a)
   40  FORMAT (a,', Hessian eigenvectors')

@@ -1,9 +1,9 @@
 #include "cppdefs.h"
       MODULE mod_scalars
 !
-!svn $Id: mod_scalars.F 807 2016-07-09 02:03:55Z arango $
+!svn $Id: mod_scalars.F 830 2017-01-24 21:21:11Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2016 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2017 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -892,6 +892,7 @@
         logical, allocatable :: LdefLCZ(:)       ! Lanczos Vectors file
         logical, allocatable :: LdefLZE(:)       ! Evolved Lanczos file
         logical, allocatable :: LdefMOD(:)       ! 4DVAR file
+        logical, allocatable :: LdefQCK(:)       ! Quicksave file
         logical, allocatable :: LdefRST(:)       ! Restart file
         logical, allocatable :: LdefSTA(:)       ! Stations file
         logical, allocatable :: LdefTIDE(:)      ! tide forcing file
@@ -905,6 +906,7 @@
         logical, allocatable :: LwrtHIS(:)       ! Write history file
         logical, allocatable :: LwrtHIS2(:)      ! Write history2 file
         logical, allocatable :: LwrtPER(:)       ! Write during ensemble
+        logical, allocatable :: LwrtQCK(:)       ! write quicksave file
         logical, allocatable :: LwrtRST(:)       ! Write restart file
         logical, allocatable :: LwrtTLM(:)       ! Write tangent file
         logical, allocatable :: LwrtTLF(:)       ! Write impulse file
@@ -946,6 +948,7 @@
         integer, allocatable :: ndefDIA(:)       ! Diagnostics file
         integer, allocatable :: ndefHIS(:)       ! History file
         integer, allocatable :: ndefHIS2(:)      ! History2 file
+        integer, allocatable :: ndefQCK(:)       ! Quicksave file
         integer, allocatable :: ndefTLM(:)       ! Tangent linear file
 !
 !  Starting timestep for accumulation of output.
@@ -963,6 +966,7 @@
         integer, allocatable :: nFLT(:)          ! Floats file
         integer, allocatable :: nHIS(:)          ! History file
         integer, allocatable :: nHIS2(:)         ! History2 file
+        integer, allocatable :: nQCK(:)          ! Quicksave file
         integer, allocatable :: nRST(:)          ! Restart file
         integer, allocatable :: nSTA(:)          ! Stations file
         integer, allocatable :: nTLM(:)          ! Tangent linear file
@@ -2100,6 +2104,7 @@
       allocate ( LdefLCZ(Ngrids) )
       allocate ( LdefLZE(Ngrids) )
       allocate ( LdefMOD(Ngrids) )
+      allocate ( LdefQCK(Ngrids) )
       allocate ( LdefRST(Ngrids) )
       allocate ( LdefSTA(Ngrids) )
       allocate ( LdefTIDE(Ngrids) )
@@ -2113,6 +2118,7 @@
       allocate ( LwrtHIS(Ngrids) )
       allocate ( LwrtHIS2(Ngrids) )
       allocate ( LwrtPER(Ngrids) )
+      allocate ( LwrtQCK(Ngrids) )
       allocate ( LwrtRST(Ngrids) )
       allocate ( LwrtTLM(Ngrids) )
       allocate ( LwrtTLF(Ngrids) )
@@ -2139,6 +2145,7 @@
       allocate ( ndefAVG2(Ngrids) )
       allocate ( ndefDIA(Ngrids) )
       allocate ( ndefHIS(Ngrids) )
+      allocate ( ndefQCK(Ngrids) )
       allocate ( ndefHIS2(Ngrids) )
       allocate ( ndefTLM(Ngrids) )
 
@@ -2153,6 +2160,7 @@
       allocate ( nFLT(Ngrids) )
       allocate ( nHIS(Ngrids) )
       allocate ( nHIS2(Ngrids) )
+      allocate ( nQCK(Ngrids) )
       allocate ( nRST(Ngrids) )
       allocate ( nSTA(Ngrids) )
       allocate ( nTLM(Ngrids) )
@@ -2716,6 +2724,7 @@
         LdefIRP(ng)=.FALSE.
         LdefITL(ng)=.FALSE.
         LdefMOD(ng)=.FALSE.
+        LdefQCK(ng)=.FALSE.
         LdefRST(ng)=.TRUE.
         LdefSTA(ng)=.TRUE.
         LdefTLM(ng)=.FALSE.
@@ -2729,6 +2738,7 @@
         LwrtHIS(ng)=.FALSE.
         LwrtHIS2(ng)=.FALSE.
         LwrtPER(ng)=.FALSE.
+        LwrtQCK(ng)=.FALSE.
         LwrtRST(ng)=.FALSE.
         LwrtTLM(ng)=.FALSE.
         LwrtInfo(ng)=.TRUE.

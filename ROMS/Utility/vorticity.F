@@ -6,9 +6,9 @@
    (defined RP_AVERAGES && defined TL_IOMS) || \
    (defined TL_AVERAGES && defined TANGENT)
 !
-!svn $Id: vorticity.F 795 2016-05-11 01:42:43Z arango $
+!svn $Id: vorticity.F 830 2017-01-24 21:21:11Z arango $
 !=======================================================================
-!  Copyright (c) 2002-2016 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2017 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !================================================== Hernan G. Arango ===
@@ -88,7 +88,7 @@
      &                     GRID(ng) % umask,                            &
      &                     GRID(ng) % vmask,                            &
 # endif
-     &                     GRID(ng) % fomn,                             &
+     &                     GRID(ng) % f,                                &
      &                     GRID(ng) % h,                                &
      &                     GRID(ng) % om_u,                             &
      &                     GRID(ng) % on_v,                             &
@@ -128,7 +128,7 @@
 # ifdef MASKING
      &                           pmask, umask, vmask,                   &
 # endif
-     &                           fomn, h, om_u, on_v, pm, pn,           &
+     &                           f, h, om_u, on_v, pm, pn,              &
 # ifdef SOLVE3D
      &                           z_r, pden, u, v,                       &
 # endif
@@ -171,7 +171,7 @@
       real(r8), intent(in) :: umask(LBi:,LBj:)
       real(r8), intent(in) :: vmask(LBi:,LBj:)
 #  endif
-      real(r8), intent(in) :: fomn(LBi:,LBj:)
+      real(r8), intent(in) :: f(LBi:,LBj:)
       real(r8), intent(in) :: h(LBi:,LBj:)
       real(r8), intent(in) :: om_u(LBi:,LBj:)
       real(r8), intent(in) :: on_v(LBi:,LBj:)
@@ -201,7 +201,7 @@
       real(r8), intent(in) :: umask(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: vmask(LBi:UBi,LBj:UBj)
 #  endif
-      real(r8), intent(in) :: fomn(LBi:UBi,LBj:UBj)
+      real(r8), intent(in) :: f(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: h(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: om_u(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: on_v(LBi:UBi,LBj:UBj)
@@ -232,7 +232,7 @@
       integer :: k, k1, k2
 # endif
       real(r8) :: cff
-      real(r8) :: dVdx_p, dUde_p
+      real(r8) :: dVdx_p, dUde_p, fomn_p
 # ifdef SOLVE3D
       real(r8) :: dRde_pr, dRdx_pr, dRdz_pr, dUdz_pr, dVdz_pr
       real(r8) :: orho0
@@ -349,9 +349,12 @@
 !  (meter-1 second-1) at horizontal PSI-points and vertical RHO-points.
 !
         IF (k.gt.0) THEN
-          DO j=Jstr,JendR
-            DO i=Istr,IendR
-              cff=pm(i,j)*pn(i,j)
+          DO j=Jstr,Jend
+            DO i=Istr,Iend
+              cff=0.0625_r8*                                            &
+     &            (pm(i-1,j-1)+pm(i-1,j)+pm(i,j-1)+pm(i,j))*            &
+     &            (pn(i-1,j-1)+pn(i-1,j)+pn(i,j-1)+pn(i,j))
+              fomn_p=0.25_r8*(f(i-1,j-1)+f(i-1,j)+f(i,j-1)+f(i,j))/cff
               dRde_pr=dRde(i-1,j  )+dRde(i,j)
               dRdx_pr=dRdx(i  ,j-1)+dRdx(i,j)
               dRdz_pr=0.125_r8*(dRdz(i-1,j-1,k1)+dRdz(i-1,j-1,k2)+      &
@@ -364,7 +367,7 @@
      &                dVdz(i  ,j  ,k1)+dVdz(i  ,j  ,k2)
               rvor(i,j,k)=cff*(dVdx(i,j)-dUde(i,j))
               pvor(i,j,k)=orho0*                                        &
-     &                    (cff*dRdz_pr*(fomn(i,j)+                      &
+     &                    (cff*dRdz_pr*(fomn_p+                         &
      &                                  dVdx(i,j)-dUde(i,j))+           &
      &                     0.125_r8*(dUdz_pr*dRde_pr-dVdz_pr*dRdx_pr))
             END DO
@@ -399,8 +402,12 @@
 !  Compute vertically-integrated relative vorticity (second-1) and
 !  potential vorticity (meter-1 second-1) at PSI-points.
 !
-      DO j=Jstr,JendR
-        DO i=Istr,IendR
+      DO j=Jstr,Jend
+        DO i=Istr,Iend
+          cff=0.0625_r8*                                                &
+     &        (pm(i-1,j-1)+pm(i-1,j)+pm(i,j-1)+pm(i,j))*                &
+     &        (pn(i-1,j-1)+pn(i-1,j)+pn(i,j-1)+pn(i,j))
+          fomn_p=0.25_r8*(f(i-1,j-1)+f(i-1,j)+f(i,j-1)+f(i,j))/cff
           cff=pm(i,j)*pn(i,j)
           dVdx_p=on_v(i  ,j)*vbar(i  ,j,kout)-                          &
      &           on_v(i-1,j)*vbar(i-1,j,kout)
@@ -413,7 +420,7 @@
           dUde_p=dUde_p*pmask(i,j)
 # endif
           rvor_bar(i,j)=cff*(dVdx_p-dUde_p)
-          pvor_bar(i,j)=cff*((fomn(i,j)+dVdx_p-dUde_p)/                 &
+          pvor_bar(i,j)=cff*((fomn_p+dVdx_p-dUde_p)/                    &
      &                       (h(i,j)+zeta(i,j,kout)))
         END DO
       END DO

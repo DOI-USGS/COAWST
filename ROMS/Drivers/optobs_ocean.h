@@ -1,8 +1,8 @@
       MODULE ocean_control_mod
 !
-!svn $Id: optobs_ocean.h 795 2016-05-11 01:42:43Z arango $
+!svn $Id: optobs_ocean.h 830 2017-01-24 21:21:11Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2016 The ROMS/TOMS Group           W. G. Zhang   !
+!  Copyright (c) 2002-2017 The ROMS/TOMS Group           W. G. Zhang   !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================

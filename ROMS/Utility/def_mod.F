@@ -2,9 +2,9 @@
 #if defined FOUR_DVAR || defined VERIFICATION
       SUBROUTINE def_mod (ng)
 !
-!svn $Id: def_mod.F 815 2016-08-18 19:07:00Z arango $
+!svn $Id: def_mod.F 830 2017-01-24 21:21:11Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2016 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2017 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -437,6 +437,18 @@
      &                 1, (/0/), Aval, Vinfo, ncname,                   &
      &                 SetParAccess = .FALSE.)
         IF (exit_flag.ne.NoError) RETURN
+# endif
+# if defined IS4DVAR_SENSITIVITY || defined W4DPSAS_SENSITIVITY || \
+     defined W4DVAR_SENSITIVITY
+!
+!  Observations impact/sensitivity outer loop beeing processed.
+!
+      Vinfo( 1)='Nimpact'
+      Vinfo( 2)='Observations impact/sensitivity outer loop to use'
+        status=def_var(ng, iNLM, DAV(ng)%ncid, varid, nf90_int,         &
+     &                 1, (/0/), Aval, Vinfo, ncname,                   &
+     &                 SetParAccess = .FALSE.)
+      IF (exit_flag.ne.NoError) RETURN
 # endif
 # ifndef IS4DVAR_SENSITIVITY
 !
@@ -1786,10 +1798,10 @@
 # endif
       END IF QUERY
 
-  10  FORMAT (/,6x,'DEF_MOD   - creating model/observation data file,', &
-     &        ' Grid ',i2.2,': ',a)
-  20  FORMAT (/,6x,'DEF_MOD   - inquiring model/observation data file,',&
-     &        ' Grid ',i2.2,': ',a)
+  10  FORMAT (/,6x,'DEF_MOD     - creating model/observation data',     &
+     &        ' file, Grid ',i2.2,': ',a)
+  20  FORMAT (/,6x,'DEF_MOD     - inquiring model/observation data',    &
+     &        ' file Grid ',i2.2,': ',a)
   30  FORMAT (/,' DEF_MOD - unable to open observation/model file: ',a)
   40  FORMAT (/,' DEF_MOD - unable to create model/observation file:',  &
      &        1x,a)

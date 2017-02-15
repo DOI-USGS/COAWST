@@ -2,9 +2,9 @@
 #ifdef TL_IOMS
       SUBROUTINE rp_initial (ng)
 !
-!svn $Id: rp_initial.F 795 2016-05-11 01:42:43Z arango $
+!svn $Id: rp_initial.F 830 2017-01-24 21:21:11Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2016 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2017 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -204,12 +204,6 @@
       TLM(ng)%Rindex=0
       Fcount=TLM(ng)%Fcount
       TLM(ng)%Nrec(Fcount)=0
-!
-!  Open observations NetCDF file and initialize various variables
-!  needed for processing the nonlinear state solution at observation
-!  locations.
-!
-      CALL obs_initial (ng, iRPM, .FALSE.)
 !$OMP END MASTER
 !$OMP BARRIER
 # endif
@@ -487,6 +481,23 @@
         END DO
 !$OMP BARRIER
       END IF
+# endif
+
+# ifdef OBSERVATIONS
+!
+!-----------------------------------------------------------------------
+!  Open observations NetCDF file and initialize various variables
+!  needed for processing the tangent linear state solution at
+!  observation locations. Need to be done after processing initial
+!  conditions since the correct initial time is needed to determine
+!  the first "ObsTime" to process.
+!-----------------------------------------------------------------------
+!
+!$OMP MASTER
+      CALL obs_initial (ng, iRPM, .FALSE.)
+!$OMP MASTER
+!$OMP BARRIER
+      IF (exit_flag.ne.NoError) RETURN
 # endif
 
 # if defined ANA_PERTURB && defined SANITY_CHECK

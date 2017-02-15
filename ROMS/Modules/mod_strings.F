@@ -1,9 +1,9 @@
 #include "cppdefs.h"
       MODULE mod_strings
 !
-!svn $Id: mod_strings.F 1368 2011-01-21 00:34:18Z kate $
+!svn $Id: mod_strings.F 830 2017-01-24 21:21:11Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2016 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2017 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================

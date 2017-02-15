@@ -2,9 +2,9 @@
       MODULE array_modes_mod
 #if defined WEAK_CONSTRAINT && (defined ARRAY_MODES || defined CLIPPING)
 !
-!svn $Id: array_modes.F 795 2016-05-11 01:42:43Z arango $
+!svn $Id: array_modes.F 830 2017-01-24 21:21:11Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2016 The ROMS/TOMS Group       Andrew M. Moore   !
+!  Copyright (c) 2002-2017 The ROMS/TOMS Group       Andrew M. Moore   !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -63,6 +63,10 @@
       integer :: iobs, innLoop
 
       real(r8) :: zsum
+#  ifdef RPCG
+      real(r8) :: zfact
+      real(r8), dimension(NinnLoop)  :: zdot
+#  endif
 !
 !-----------------------------------------------------------------------
 !  Check the dot-product of the array mode with the corresponding
@@ -71,6 +75,29 @@
 !
       MASTER_THREAD : IF (Master) THEN
 
+#  ifdef RPCG
+        DO innLoop=1,NinnLoop
+          zdot(innLoop)=0.0_r8
+          IF (innLoop.eq.1) THEN
+            zfact=1.0_r8/cg_Gnorm_v(outLoop)
+          ELSE
+            zfact=1.0_r8/cg_beta(innLoop,outLoop)
+          END IF
+          DO iobs=1,Ndatum(ng)
+            IF (ObsErr(iobs).ne.0.0_r8) THEN
+              zdot(innLoop)=zdot(innLoop)+                              &
+     &                      TLmodval(iobs)*zfact*                       &
+     &                      TLmodVal_S(iobs,innLoop,outLoop)/           &
+     &                      ObsErr(iobs)
+            END IF
+          END DO
+        END DO
+!
+        zsum=0.0_r8
+        DO innLoop=1,NinnLoop
+          zsum=zsum+zdot(innLoop)*cg_zv(innLoop,Nvct,outLoop)
+        END DO
+#  else
         DO iobs=1,Ndatum(ng)
           ADModVal(iobs)=0.0_r8
         END DO
@@ -102,6 +129,7 @@
         DO iobs=1,Ndatum(ng)
           zsum=zsum+TLmodVal(iobs)*ADmodVal(iobs)
         END DO
+#  endif
 !
 !  Compare the dot-product with (cg_Ritz-1).
 !
@@ -172,6 +200,8 @@
      &                     zcglwk(iobs,innLoop,outLoop)
           END DO
         END DO
+
+#  ifndef RPCG
 !
 !  Now convert ADmodVal back to physical units.
 !
@@ -180,6 +210,7 @@
             ADmodVal(iobs)=ADmodVal(iobs)/SQRT(ObsErr(iobs))
           END IF
         END DO
+#  endif
 
       END IF MASTER_THREAD
 

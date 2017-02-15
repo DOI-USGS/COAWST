@@ -1,8 +1,8 @@
       SUBROUTINE read_BioPar (model, inp, out, Lwrite)
 !
-!svn $Id$
+!svn $Id: ecosim_inp.h 830 2017-01-24 21:21:11Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2016 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2017 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -381,6 +381,36 @@
                     RETURN
                   END IF
                   Hout(i,ng)=Ltrc(itrc,ng)
+                END DO
+              END DO
+            CASE ('Qout(idTvar)')
+              Npts=load_l(Nval, Cval, NBT*Ngrids, Ltrc)
+              DO ng=1,Ngrids
+                DO itrc=1,NBT
+                  i=idTvar(idbio(itrc))
+                  Qout(i,ng)=Ltrc(itrc,ng)
+                END DO
+              END DO
+            CASE ('Qout(idsurT)')
+              Npts=load_l(Nval, Cval, NBT*Ngrids, Ltrc)
+              DO ng=1,Ngrids
+                DO itrc=1,NBT
+                  i=idsurT(idbio(itrc))
+                  IF (i.eq.0) THEN
+                    IF (Master) WRITE (out,30)                          &
+     &                                'idsurT(idbio(', itrc, '))'
+                    exit_flag=5
+                    RETURN
+                  END IF
+                  Qout(i,ng)=Ltrc(itrc,ng)
+                END DO
+              END DO
+            CASE ('Qout(idTsur)')
+              Npts=load_l(Nval, Cval, NBT*Ngrids, Ltrc)
+              DO ng=1,Ngrids
+                DO itrc=1,NBT
+                  i=idTsur(idbio(itrc))
+                  Qout(i,ng)=Ltrc(itrc,ng)
                 END DO
               END DO
 #if defined AVERAGES    || \
@@ -1230,144 +1260,174 @@
      &              TRIM(Vname(1,idTvar(i)))
               END IF
             END DO
-            DO itrc=1,NBT
-              i=idbio(itrc)
-              IF (Hout(idTvar(i),ng)) WRITE (out,160)                   &
-     &            Hout(idTvar(i),ng), 'Hout(idTvar)',                   &
-     &            'Write out tracer ', i, TRIM(Vname(1,idTvar(i)))
-            END DO
-            DO itrc=1,NBT
-              i=idbio(itrc)
-              IF (Hout(idTsur(i),ng)) WRITE (out,160)                   &
-     &            Hout(idTsur(i),ng), 'Hout(idTsur)',                   &
-     &            'Write out tracer flux ', i, TRIM(Vname(1,idTvar(i)))
-            END DO
+            IF ((nHIS(ng).gt.0).and.ANY(Hout(:,ng))) THEN
+              WRITE (out,'(1x)')
+              DO itrc=1,NBT
+                i=idbio(itrc)
+                IF (Hout(idTvar(i),ng)) WRITE (out,160)                 &
+     &              Hout(idTvar(i),ng), 'Hout(idTvar)',                 &
+     &              'Write out tracer ', i, TRIM(Vname(1,idTvar(i)))
+              END DO
+              DO itrc=1,NBT
+                i=idbio(itrc)
+                IF (Hout(idTsur(i),ng)) WRITE (out,160)                 &
+     &              Hout(idTsur(i),ng), 'Hout(idTsur)',                 &
+     &              'Write out tracer flux ', i,                        &
+     &              TRIM(Vname(1,idTvar(i)))
+              END DO
+            END IF
+            IF ((nQCK(ng).gt.0).and.ANY(Qout(:,ng))) THEN
+              WRITE (out,'(1x)')
+              DO itrc=1,NBT
+                i=idbio(itrc)
+                IF (Qout(idTvar(i),ng)) WRITE (out,160)                 &
+     &              Qout(idTvar(i),ng), 'Qout(idTvar)',                 &
+     &              'Write out tracer ', i, TRIM(Vname(1,idTvar(i)))
+              END DO
+              DO itrc=1,NBT
+                i=idbio(itrc)
+                IF (Qout(idsurT(i),ng)) WRITE (out,160)                 &
+     &              Qout(idsurT(i),ng), 'Qout(idsurT)',                 &
+     &              'Write out surface tracer ', i,                     &
+     &              TRIM(Vname(1,idTvar(i)))
+              END DO
+              DO itrc=1,NBT
+                i=idbio(itrc)
+                IF (Qout(idTsur(i),ng)) WRITE (out,160)                 &
+     &              Qout(idTsur(i),ng), 'Qout(idTsur)',                 &
+     &              'Write out tracer flux ', i,                        &
+     &              TRIM(Vname(1,idTvar(i)))
+              END DO
+            END IF
 #if defined AVERAGES    || \
    (defined AD_AVERAGES && defined ADJOINT) || \
    (defined RP_AVERAGES && defined TL_IOMS) || \
    (defined TL_AVERAGES && defined TANGENT)
-            WRITE (out,'(1x)')
-            DO itrc=1,NBT
-              i=idbio(itrc)
-              IF (Aout(idTvar(i),ng)) WRITE (out,160)                   &
-     &            Aout(idTvar(i),ng), 'Aout(idTvar)',                   &
-     &            'Write out averaged tracer ', i,                      &
-     &            TRIM(Vname(1,idTvar(i)))
-            END DO
-            DO itrc=1,NBT
-              i=idbio(itrc)
-              IF (Aout(idTTav(i),ng)) WRITE (out,160)                   &
-     &            Aout(idTTav(i),ng), 'Aout(idTTav)',                   &
-     &            'Write out averaged <t*t> for tracer ', i,            &
-     &            TRIM(Vname(1,idTvar(i)))
-            END DO
-            DO itrc=1,NBT
-              i=idbio(itrc)
-              IF (Aout(idUTav(i),ng)) WRITE (out,160)                   &
-     &            Aout(idUTav(i),ng), 'Aout(idUTav)',                   &
-     &            'Write out averaged <u*t> for tracer ', i,            &
-     &            TRIM(Vname(1,idTvar(i)))
-            END DO
-            DO itrc=1,NBT
-              i=idbio(itrc)
-              IF (Aout(idVTav(i),ng)) WRITE (out,160)                   &
-     &            Aout(idVTav(i),ng), 'Aout(idVTav)',                   &
-     &            'Write out averaged <v*t> for tracer ', i,            &
-     &            TRIM(Vname(1,idTvar(i)))
-            END DO
-            DO itrc=1,NBT
-              i=idbio(itrc)
-              IF (Aout(iHUTav(i),ng)) WRITE (out,160)                   &
-     &            Aout(iHUTav(i),ng), 'Aout(iHUTav)',                   &
-     &            'Write out averaged <Huon*t> for tracer ', i,         &
-     &            TRIM(Vname(1,idTvar(i)))
-            END DO
-            DO itrc=1,NBT
-              i=idbio(itrc)
-              IF (Aout(iHVTav(i),ng)) WRITE (out,160)                   &
-     &            Aout(iHVTav(i),ng), 'Aout(iHVTav)',                   &
-     &            'Write out averaged <Hvom*t> for tracer ', i,         &
-     &            TRIM(Vname(1,idTvar(i)))
-            END DO
+            IF ((nAVG(ng).gt.0).and.ANY(Aout(:,ng))) THEN
+              WRITE (out,'(1x)')
+              DO itrc=1,NBT
+                i=idbio(itrc)
+                IF (Aout(idTvar(i),ng)) WRITE (out,160)                 &
+     &              Aout(idTvar(i),ng), 'Aout(idTvar)',                 &
+     &              'Write out averaged tracer ', i,                    &
+     &              TRIM(Vname(1,idTvar(i)))
+              END DO
+              DO itrc=1,NBT
+                i=idbio(itrc)
+                IF (Aout(idTTav(i),ng)) WRITE (out,160)                 &
+     &              Aout(idTTav(i),ng), 'Aout(idTTav)',                 &
+     &              'Write out averaged <t*t> for tracer ', i,          &
+     &              TRIM(Vname(1,idTvar(i)))
+              END DO
+              DO itrc=1,NBT
+                i=idbio(itrc)
+                IF (Aout(idUTav(i),ng)) WRITE (out,160)                 &
+     &              Aout(idUTav(i),ng), 'Aout(idUTav)',                 &
+     &              'Write out averaged <u*t> for tracer ', i,          &
+     &              TRIM(Vname(1,idTvar(i)))
+              END DO
+              DO itrc=1,NBT
+                i=idbio(itrc)
+                IF (Aout(idVTav(i),ng)) WRITE (out,160)                 &
+     &              Aout(idVTav(i),ng), 'Aout(idVTav)',                 &
+     &              'Write out averaged <v*t> for tracer ', i,          &
+     &              TRIM(Vname(1,idTvar(i)))
+              END DO
+              DO itrc=1,NBT
+                i=idbio(itrc)
+                IF (Aout(iHUTav(i),ng)) WRITE (out,160)                 &
+     &              Aout(iHUTav(i),ng), 'Aout(iHUTav)',                 &
+     &              'Write out averaged <Huon*t> for tracer ', i,       &
+     &              TRIM(Vname(1,idTvar(i)))
+              END DO
+              DO itrc=1,NBT
+                i=idbio(itrc)
+                IF (Aout(iHVTav(i),ng)) WRITE (out,160)                 &
+     &              Aout(iHVTav(i),ng), 'Aout(iHVTav)',                 &
+     &              'Write out averaged <Hvom*t> for tracer ', i,       &
+     &              TRIM(Vname(1,idTvar(i)))
+              END DO
+            END IF
 #endif
 #ifdef DIAGNOSTICS_TS
-            WRITE (out,'(1x)')
-            DO i=1,NBT
-              itrc=idbio(i)
-              IF (Dout(idDtrc(itrc,iTrate),ng))                         &
-     &          WRITE (out,160) .TRUE., 'Dout(iTrate)',                 &
-     &            'Write out rate of change of tracer ', itrc,          &
-     &            TRIM(Vname(1,idTvar(itrc)))
-            END DO
-            DO i=1,NBT
-              itrc=idbio(i)
-              IF (Dout(idDtrc(itrc,iThadv),ng))                         &
-     &          WRITE (out,160) .TRUE., 'Dout(iThadv)',                 &
-     &            'Write out horizontal advection, tracer ', itrc,      &
-     &            TRIM(Vname(1,idTvar(itrc)))
-            END DO
-            DO i=1,NBT
-              itrc=idbio(i)
-              IF (Dout(idDtrc(itrc,iTxadv),ng))                         &
-     &          WRITE (out,160) .TRUE., 'Dout(iTxadv)',                 &
-     &            'Write out horizontal X-advection, tracer ', itrc,    &
-     &            TRIM(Vname(1,idTvar(itrc)))
-            END DO
-            DO i=1,NBT
-              itrc=idbio(i)
-              IF (Dout(idDtrc(itrc,iTyadv),ng))                         &
-     &          WRITE (out,160) .TRUE., 'Dout(iTyadv)',                 &
-     &            'Write out horizontal Y-advection, tracer ', itrc,    &
-     &            TRIM(Vname(1,idTvar(itrc)))
-            END DO
-            DO i=1,NBT
-              itrc=idbio(i)
-              IF (Dout(idDtrc(itrc,iTvadv),ng))                         &
-     &          WRITE (out,160) .TRUE., 'Dout(iTvadv)',                 &
-     &            'Write out vertical advection, tracer ', itrc,        &
-     &            TRIM(Vname(1,idTvar(itrc)))
-            END DO
+            IF ((nDIA(ng).gt.0).and.ANY(Dout(:,ng))) THEN
+              WRITE (out,'(1x)')
+              DO i=1,NBT
+                itrc=idbio(i)
+                IF (Dout(idDtrc(itrc,iTrate),ng))                         &
+     &            WRITE (out,160) .TRUE., 'Dout(iTrate)',                 &
+     &              'Write out rate of change of tracer ', itrc,          &
+     &              TRIM(Vname(1,idTvar(itrc)))
+              END DO
+              DO i=1,NBT
+                itrc=idbio(i)
+                IF (Dout(idDtrc(itrc,iThadv),ng))                         &
+     &            WRITE (out,160) .TRUE., 'Dout(iThadv)',                 &
+     &              'Write out horizontal advection, tracer ', itrc,      &
+     &              TRIM(Vname(1,idTvar(itrc)))
+              END DO
+              DO i=1,NBT
+                itrc=idbio(i)
+                IF (Dout(idDtrc(itrc,iTxadv),ng))                         &
+     &            WRITE (out,160) .TRUE., 'Dout(iTxadv)',                 &
+     &              'Write out horizontal X-advection, tracer ', itrc,    &
+     &              TRIM(Vname(1,idTvar(itrc)))
+              END DO
+              DO i=1,NBT
+                itrc=idbio(i)
+                IF (Dout(idDtrc(itrc,iTyadv),ng))                         &
+     &            WRITE (out,160) .TRUE., 'Dout(iTyadv)',                 &
+     &              'Write out horizontal Y-advection, tracer ', itrc,    &
+     &              TRIM(Vname(1,idTvar(itrc)))
+              END DO
+              DO i=1,NBT
+                itrc=idbio(i)
+                IF (Dout(idDtrc(itrc,iTvadv),ng))                         &
+     &            WRITE (out,160) .TRUE., 'Dout(iTvadv)',                 &
+     &              'Write out vertical advection, tracer ', itrc,        &
+     &              TRIM(Vname(1,idTvar(itrc)))
+              END DO
 # if defined TS_DIF2 || defined TS_DIF4
-            DO i=1,NBT
-              itrc=idbio(i)
-              IF (Dout(idDtrc(itrc,iThdif),ng))                         &
-     &          WRITE (out,160) .TRUE., 'Dout(iThdif)',                 &
-     &            'Write out horizontal diffusion, tracer ', itrc,      &
-     &            TRIM(Vname(1,idTvar(itrc)))
-            END DO
-            DO i=1,NBT
-              itrc=idbio(i)
-              IF (Dout(idDtrc(i,iTxdif),ng))                            &
-     &          WRITE (out,160) .TRUE., 'Dout(iTxdif)',                 &
-     &            'Write out horizontal X-diffusion, tracer ', itrc,    &
-     &            TRIM(Vname(1,idTvar(itrc)))
-            END DO
-            DO i=1,NBT
-              itrc=idbio(i)
-              IF (Dout(idDtrc(itrc,iTydif),ng))                         &
-     &          WRITE (out,160) .TRUE., 'Dout(iTydif)',                 &
-     &            'Write out horizontal Y-diffusion, tracer ', itrc,    &
-     &            TRIM(Vname(1,idTvar(itrc)))
-            END DO
+              DO i=1,NBT
+                itrc=idbio(i)
+                IF (Dout(idDtrc(itrc,iThdif),ng))                         &
+     &            WRITE (out,160) .TRUE., 'Dout(iThdif)',                 &
+     &              'Write out horizontal diffusion, tracer ', itrc,      &
+     &              TRIM(Vname(1,idTvar(itrc)))
+              END DO
+              DO i=1,NBT
+                itrc=idbio(i)
+                IF (Dout(idDtrc(i,iTxdif),ng))                            &
+     &            WRITE (out,160) .TRUE., 'Dout(iTxdif)',                 &
+     &              'Write out horizontal X-diffusion, tracer ', itrc,    &
+     &              TRIM(Vname(1,idTvar(itrc)))
+              END DO
+              DO i=1,NBT
+                itrc=idbio(i)
+                IF (Dout(idDtrc(itrc,iTydif),ng))                         &
+     &            WRITE (out,160) .TRUE., 'Dout(iTydif)',                 &
+     &              'Write out horizontal Y-diffusion, tracer ', itrc,    &
+     &              TRIM(Vname(1,idTvar(itrc)))
+              END DO
 #  if defined MIX_GEO_TS || defined MIX_ISO_TS
-            DO i=1,NBT
-              itrc=idbio(i)
-              IF (Dout(idDtrc(itrc,iTsdif),ng))                         &
-     &          WRITE (out,160) .TRUE., 'Dout(iTsdif)',                 &
-     &            'Write out horizontal S-diffusion, tracer ', itrc,    &
-     &            TRIM(Vname(1,idTvar(itrc)))
-            END DO
+              DO i=1,NBT
+                itrc=idbio(i)
+                IF (Dout(idDtrc(itrc,iTsdif),ng))                         &
+     &            WRITE (out,160) .TRUE., 'Dout(iTsdif)',                 &
+     &              'Write out horizontal S-diffusion, tracer ', itrc,    &
+     &              TRIM(Vname(1,idTvar(itrc)))
+              END DO
 #  endif
 # endif
-            DO i=1,NBT
-              itrc=idbio(i)
-              IF (Dout(idDtrc(itrc,iTvdif),ng))                         &
-     &          WRITE (out,160) .TRUE., 'Dout(iTvdif)',                 &
-     &            'Write out vertical diffusion, tracer ', itrc,        &
-     &            TRIM(Vname(1,idTvar(itrc)))
-            END DO
+              DO i=1,NBT
+                itrc=idbio(i)
+                IF (Dout(idDtrc(itrc,iTvdif),ng))                         &
+     &            WRITE (out,160) .TRUE., 'Dout(iTvdif)',                 &
+     &              'Write out vertical diffusion, tracer ', itrc,        &
+     &              TRIM(Vname(1,idTvar(itrc)))
+              END DO
+            END IF
 #endif
-
           END IF
         END DO
       END IF

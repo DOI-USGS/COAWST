@@ -2,9 +2,9 @@
       SUBROUTINE checkvars (ng, model, ncname, string, Nrec, Nvar,      &
      &                      tvarnam, get_var, have_var)
 !
-!svn $Id: checkvars.F 807 2016-07-09 02:03:55Z arango $
+!svn $Id: checkvars.F 830 2017-01-24 21:21:11Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2016 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2017 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================

@@ -5,7 +5,7 @@
 !
 !svn $Id: radiation_stress.F 445 2010-02-06 17:34:09Z arango $
 !=======================================================================
-!  Copyright (c) 2002-2010 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2017 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                           Hernan G. Arango   !
 !================================================== John C. Warner ====!

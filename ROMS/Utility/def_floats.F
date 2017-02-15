@@ -2,9 +2,9 @@
 #ifdef FLOATS
       SUBROUTINE def_floats (ng, ldef)
 !
-!svn $Id: def_floats.F 733 2008-09-07 01:56:45Z jcwarner $
+!svn $Id: def_floats.F 830 2017-01-24 21:21:11Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2016 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2017 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -905,10 +905,10 @@
 
       END IF QUERY
 !
-  10  FORMAT (6x,'DEF_FLOATS  - creating floats file, Grid ',i2.2,      &
-     &        ': ',a)
-  20  FORMAT (6x,'DEF_FLOATS  - inquiring floats file, Grid ',i2.2,     &
-     &        ': ',a)
+  10  FORMAT (6x,'DEF_FLOATS  - creating  floats', t43,                 &
+     &        ' file, Grid ',i2.2,': ', a)
+  20  FORMAT (6x,'DEF_AVG     - inquiring floats', t43,                 &
+     &        ' file, Grid ',i2.2,': ', a)
   30  FORMAT (/,' DEF_FLOATS - unable to create floats NetCDF',         &
      &        ' file: ',a)
   40  FORMAT (1pe11.4,1x,'millimeter')

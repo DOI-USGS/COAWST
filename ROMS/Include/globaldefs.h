@@ -1,9 +1,9 @@
 /*
 ** Include file "globaldef.h"
 **
-** svn $Id: globaldefs.h 838 2008-11-17 04:22:18Z jcwarner $
+** svn $Id: globaldefs.h 830 2017-01-24 21:21:11Z arango $
 ********************************************************** Hernan G. Arango ***
-** Copyright (c) 2002-2016 The ROMS/TOMS Group     Alexander F. Shchepetkin  **
+** Copyright (c) 2002-2017 The ROMS/TOMS Group     Alexander F. Shchepetkin  **
 **   Licensed under a MIT/X style license                                    **
 **   See License_ROMS.txt                                                    **
 *******************************************************************************

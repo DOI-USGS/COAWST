@@ -1,8 +1,8 @@
 #!/bin/bash
 #
-# svn $Id: build.bash 751 2015-01-07 22:56:36Z arango $
+# svn $Id: build.bash 834 2017-01-25 18:49:17Z arango $
 #::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
-# Copyright (c) 2002-2016 The ROMS/TOMS Group                           :::
+# Copyright (c) 2002-2017 The ROMS/TOMS Group                           :::
 #   Licensed under a MIT/X style license                                :::
 #   See License_ROMS.txt                                                :::
 #::::::::::::::::::::::::::::::::::::::::::::::::::::: Hernan G. Arango :::
@@ -204,7 +204,7 @@ fi
 #
 # Notice that when the USE_NETCDF4 macro is activated, we need the
 # serial or parallel version of the NetCDF-4/HDF5 library. The
-# configuration script NC_CONFIG (available since NetCDF 4.0.1)
+# configuration script NF_CONFIG (available since NetCDF 4.0.1)
 # is used to set up all the required libraries according to the
 # installed options (openDAP, netCDF4/HDF5 file format). The
 # parallel library uses the MPI-I/O layer (usually available
@@ -257,17 +257,17 @@ if [ -n "${USE_MY_LIBS:+1}" ]; then
       if [ -n "${USE_NETCDF4:+1}" ]; then
         if [ -n "${USE_PARALLEL_IO:+1}" ] && [ -n "${USE_MPI:+1}" ]; then
           if [ "${which_MPI}" = "mpich" ]; then
-            export     NC_CONFIG=/opt/intelsoft/mpich/netcdf4/bin/nc-config
+            export     NF_CONFIG=/opt/intelsoft/mpich/netcdf4/bin/nf-config
             export NETCDF_INCDIR=/opt/intelsoft/mpich/netcdf4/include
           elif [ "${which_MPI}" = "mpich2" ]; then
-            export     NC_CONFIG=/opt/intelsoft/mpich2/netcdf4/bin/nc-config
+            export     NF_CONFIG=/opt/intelsoft/mpich2/netcdf4/bin/nf-config
             export NETCDF_INCDIR=/opt/intelsoft/mpich2/netcdf4/include
           elif [ "${which_MPI}" = "openmpi" ]; then
-            export     NC_CONFIG=/opt/intelsoft/openmpi/netcdf4/bin/nc-config
+            export     NF_CONFIG=/opt/intelsoft/openmpi/netcdf4/bin/nf-config
             export NETCDF_INCDIR=/opt/intelsoft/openmpi/netcdf4/include
           fi
         else
-          export       NC_CONFIG=/opt/intelsoft/serial/netcdf4/bin/nc-config
+          export       NF_CONFIG=/opt/intelsoft/serial/netcdf4/bin/nf-config
           export   NETCDF_INCDIR=/opt/intelsoft/serial/netcdf4/include
         fi
       else
@@ -307,17 +307,17 @@ if [ -n "${USE_MY_LIBS:+1}" ]; then
       if [ -n "${USE_NETCDF4:+1}" ]; then
         if [ -n "${USE_PARALLEL_IO:+1}" ] && [ -n "${USE_MPI:+1}" ]; then
           if [ "${which_MPI}" = "mpich" ]; then
-            export     NC_CONFIG=/opt/pgisoft/mpich/netcdf4/bin/nc-config
+            export     NF_CONFIG=/opt/pgisoft/mpich/netcdf4/bin/nf-config
             export NETCDF_INCDIR=/opt/pgisoft/mpich/netcdf4/include
           elif [ "${which_MPI}" = "mpich2" ]; then
-            export     NC_CONFIG=/opt/pgisoft/mpich2/netcdf4/bin/nc-config
+            export     NF_CONFIG=/opt/pgisoft/mpich2/netcdf4/bin/nf-config
             export NETCDF_INCDIR=/opt/pgisoft/mpich2/netcdf4/include
           elif [ "${which_MPI}" = "openmpi" ]; then
-            export     NC_CONFIG=/opt/pgisoft/openmpi/netcdf4/bin/nc-config
+            export     NF_CONFIG=/opt/pgisoft/openmpi/netcdf4/bin/nf-config
             export NETCDF_INCDIR=/opt/pgisoft/openmpi/netcdf4/include
           fi
         else
-          export       NC_CONFIG=/opt/pgisoft/serial/netcdf4/bin/nc-config
+          export       NF_CONFIG=/opt/pgisoft/serial/netcdf4/bin/nf-config
           export   NETCDF_INCDIR=/opt/pgisoft/serial/netcdf4/include
         fi
       else
@@ -352,14 +352,14 @@ if [ -n "${USE_MY_LIBS:+1}" ]; then
       if [ -n "${USE_NETCDF4:+1}" ]; then
         if [ -n "${USE_PARALLEL_IO:+1}" ] && [ -n "${USE_MPI:+1}" ]; then
           if [ "${which_MPI}" = "mpich2" ]; then
-            export     NC_CONFIG=/opt/gfortransoft/mpich2/netcdf4/bin/nc-config
+            export     NF_CONFIG=/opt/gfortransoft/mpich2/netcdf4/bin/nf-config
             export NETCDF_INCDIR=/opt/gfortransoft/mpich2/netcdf4/include
           elif [ "${which_MPI}" = "openmpi" ]; then
-            export     NC_CONFIG=/opt/gfortransoft/openmpi/netcdf4/bin/nc-config
+            export     NF_CONFIG=/opt/gfortransoft/openmpi/netcdf4/bin/nf-config
             export NETCDF_INCDIR=/opt/gfortransoft/openmpi/netcdf4/include
           fi
         else
-          export       NC_CONFIG=/opt/gfortransoft/serial/netcdf4/bin/nc-config
+          export       NF_CONFIG=/opt/gfortransoft/serial/netcdf4/bin/nf-config
           export   NETCDF_INCDIR=/opt/gfortransoft/serial/netcdf4/include
         fi
       else

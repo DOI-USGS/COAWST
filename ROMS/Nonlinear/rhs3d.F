@@ -2,9 +2,9 @@
       MODULE rhs3d_mod
 #if defined NONLINEAR && defined SOLVE3D
 !
-!svn $Id: rhs3d.F 732 2008-09-07 01:55:51Z jcwarner $
+!svn $Id: rhs3d.F 830 2017-01-24 21:21:11Z arango $
 !=======================================================================
-!  Copyright (c) 2002-2016 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2017 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                           Hernan G. Arango   !
 !========================================== Alexander F. Shchepetkin ===

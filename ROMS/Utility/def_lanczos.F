@@ -2,9 +2,9 @@
 #if defined IS4DVAR
       SUBROUTINE def_lanczos (ng)
 !
-!svn $Id: def_lanczos.F 795 2016-05-11 01:42:43Z arango $
+!svn $Id: def_lanczos.F 830 2017-01-24 21:21:11Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2016 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2017 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -1028,10 +1028,10 @@
         LCZ(ng)%Rindex=rec_size
       END IF QUERY
 !
-  10  FORMAT (3x,'DEF_LANCZOS  - creating Lanczos file, Grid ',i2.2,    &
-     &        ': ',a)
-  20  FORMAT (3x,'DEF_LANCZOS  - inquiring Lanczos file, Grid ',i2.2,   &
-     &        ': ',a)
+  10  FORMAT (6x,'DEF_LANCZOS - creating  Lanczos', t43,                &
+     &        ' file, Grid ',i2.2,': ', a)
+  20  FORMAT (6x,'DEF_LANCZOS - inquiring Lanczos', t43,                &
+     &        ' file, Grid ',i2.2,': ', a)
   30  FORMAT (/,' DEF_LANCZOS - unable to create Lanczos NetCDF file:', &
      &        1x,a)
   40  FORMAT (a,', Lanczos vectors')

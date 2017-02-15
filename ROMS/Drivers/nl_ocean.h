@@ -1,8 +1,8 @@
       MODULE ocean_control_mod
 !
-!svn $Id: nl_ocean.h 814 2008-10-29 01:42:17Z jcwarner $
+!svn $Id: nl_ocean.h 830 2017-01-24 21:21:11Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2016 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2017 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -203,13 +203,13 @@
 
 #ifdef VERIFICATION
 !
-!  Create out NetCDF file containing model solution at observation
-!  locations.
+!  Create NetCDF file for model solution at observation locations.
 !
       IF (Nrun.eq.1) THEN
         DO ng=1,Ngrids
           LdefMOD(ng)=.TRUE.
           wrtNLmod(ng)=.TRUE.
+          wrtObsScale(ng)=.TRUE.
           CALL def_mod (ng)
           IF (exit_flag.ne.NoError) RETURN
         END DO

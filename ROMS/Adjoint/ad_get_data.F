@@ -2,9 +2,9 @@
 #ifdef ADJOINT
       SUBROUTINE ad_get_data (ng)
 !
-!svn $Id: ad_get_data.F 795 2016-05-11 01:42:43Z arango $
+!svn $Id: ad_get_data.F 830 2017-01-24 21:21:11Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2016 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2017 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -99,7 +99,7 @@
         CALL get_ngfldr (ng, iADM, idRtra, SSF(ng)%ncid,                &
      &                   1, SSF(ng), update(1),                         &
      &                   1, Nsrc(ng), 1, 2, 1, Nsrc(ng), 1,             &
-     &                   SOURCES(ng) % QbarG(:,1))
+     &                   SOURCES(ng) % QbarG)
         IF (exit_flag.ne.NoError) RETURN
       END IF
 

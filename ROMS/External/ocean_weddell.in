@@ -1,9 +1,9 @@
 !
 !  ROMS/TOMS Standard Input parameters.
 !
-!svn $Id$
+!svn $Id: ocean_weddell.in 830 2017-01-24 21:21:11Z arango $
 !========================================================= Hernan G. Arango ===
-!  Copyright (c) 2002-2016 The ROMS/TOMS Group                                !
+!  Copyright (c) 2002-2017 The ROMS/TOMS Group                                !
 !    Licensed under a MIT/X style license                                     !
 !    See License_ROMS.txt                                                     !
 !==============================================================================
@@ -227,11 +227,13 @@ ad_VolCons(north) ==  F                            ! northern boundary
         NFLT == 1
        NINFO == 1
 
-! Output history, average, diagnostic files parameters.
+! Output history, quicksave, average, and diagnostic files parameters.
 
      LDEFOUT == T
         NHIS == 864
      NDEFHIS == 0
+        NQCK == 0
+     NDEFQCK == 0
       NTSAVG == 1
         NAVG == 864
      NDEFAVG == 0
@@ -592,13 +594,118 @@ Hout(idMtke) == F       ! tke                turbulent kinetic energy
 Hout(idMtls) == F       ! gls                turbulent length scale
 
 ! Logical switches (TRUE/FALSE) to activate writing of extra inert passive
-! tracers other than biological and sediment tracers. An inert passive tracer
-! is one that it is only advected and diffused. Other processes are ignored.
-! These tracers include, for example, dyes, pollutants, oil spills, etc.
-! NPT values are expected. However, these switches can be activated using
-! compact parameter specification.
+! tracers other than biological and sediment tracers into the HISTORY
+! output file. An inert passive tracer is one that it is only advected and
+! diffused. Other processes are ignored. These tracers include, for example,
+! dyes, pollutants, oil spills, etc. NPT values are expected. However, these
+! switches can be activated using compact parameter specification.
 
  Hout(inert) == T       ! dye_01, ...        inert passive tracers
+
+! Logical switches (TRUE/FALSE) to activate writing of fields into
+! QUICKSAVE output file.
+
+Qout(idUvel) == F       ! u                  3D U-velocity
+Qout(idVvel) == F       ! v                  3D V-velocity
+Qout(idu3dE) == F       ! u_eastward         3D U-eastward  at RHO-points
+Qout(idv3dN) == F       ! v_northward        3D V-northward at RHO-points
+Qout(idWvel) == F       ! w                  3D W-velocity
+Qout(idOvel) == F       ! omega              omega vertical velocity
+Qout(idUbar) == T       ! ubar               2D U-velocity
+Qout(idVbar) == T       ! vbar               2D V-velocity
+Qout(idu2dE) == T       ! ubar_eastward      2D U-eastward  at RHO-points
+Qout(idv2dN) == T       ! vbar_northward     2D V-northward at RHO-points
+Qout(idFsur) == T       ! zeta               free-surface
+Qout(idBath) == T       ! bath               time-dependent bathymetry
+
+Qout(idTvar) == F F     ! temp, salt         temperature and salinity
+
+Qout(idUsur) == T       ! u_sur              surface U-velocity
+Qout(idVsur) == T       ! v_sur              surface V-velocity
+Qout(idUsuE) == T       ! u_sur_eastward     surface U-eastward  velocity
+Qout(idVsuN) == T       ! v_sur_northward    surface V-northward velocity
+
+Qout(idsurT) == T T     ! temp_sur, salt_sur surface temperature and salinity
+
+Qout(idpthR) == F       ! z_rho              time-varying depths of RHO-points
+Qout(idpthU) == F       ! z_u                time-varying depths of U-points
+Qout(idpthV) == F       ! z_v                time-varying depths of V-points
+Qout(idpthW) == F       ! z_w                time-varying depths of W-points
+
+Qout(idUsms) == F       ! sustr              surface U-stress
+Qout(idVsms) == F       ! svstr              surface V-stress
+Qout(idUbms) == F       ! bustr              bottom U-stress
+Qout(idVbms) == F       ! bvstr              bottom V-stress
+
+Qout(idUbrs) == F       ! bustrc             bottom U-current stress
+Qout(idVbrs) == F       ! bvstrc             bottom V-current stress
+Qout(idUbws) == F       ! bustrw             bottom U-wave stress
+Qout(idVbws) == F       ! bvstrw             bottom V-wave stress
+Qout(idUbcs) == F       ! bustrcwmax         bottom max wave-current U-stress
+Qout(idVbcs) == F       ! bvstrcwmax         bottom max wave-current V-stress
+
+Qout(idUbot) == F       ! Ubot               bed wave orbital U-velocity
+Qout(idVbot) == F       ! Vbot               bed wave orbital V-velocity
+Qout(idUbur) == F       ! Ur                 bottom U-velocity above bed
+Qout(idVbvr) == F       ! Vr                 bottom V-velocity above bed
+
+Qout(idW2xx) == F       ! Sxx_bar            2D radiation stress, Sxx component
+Qout(idW2xy) == F       ! Sxy_bar            2D radiation stress, Sxy component
+Qout(idW2yy) == F       ! Syy_bar            2D radiation stress, Syy component
+Qout(idU2rs) == F       ! Ubar_Rstress       2D radiation U-stress
+Qout(idV2rs) == F       ! Vbar_Rstress       2D radiation V-stress
+Qout(idU2Sd) == F       ! ubar_stokes        2D U-Stokes velocity
+Qout(idV2Sd) == F       ! vbar_stokes        2D V-Stokes velocity
+
+Qout(idW3xx) == F       ! Sxx                3D radiation stress, Sxx component
+Qout(idW3xy) == F       ! Sxy                3D radiation stress, Sxy component
+Qout(idW3yy) == F       ! Syy                3D radiation stress, Syy component
+Qout(idW3zx) == F       ! Szx                3D radiation stress, Szx component
+Qout(idW3zy) == F       ! Szy                3D radiation stress, Szy component
+Qout(idU3rs) == F       ! u_Rstress          3D U-radiation stress
+Qout(idV3rs) == F       ! v_Rstress          3D V-radiation stress
+Qout(idU3Sd) == F       ! u_stokes           3D U-Stokes velocity
+Qout(idV3Sd) == F       ! v_stokes           3D V-Stokes velocity
+
+Qout(idWamp) == F       ! Hwave              wave height
+Qout(idWlen) == F       ! Lwave              wave length
+Qout(idWdir) == F       ! Dwave              wave direction
+Qout(idWptp) == F       ! Pwave_top          wave surface period
+Qout(idWpbt) == F       ! Pwave_bot          wave bottom period
+Qout(idWorb) == F       ! Ub_swan            wave bottom orbital velocity
+Qout(idWdis) == F       ! Wave_dissip        wave dissipation
+
+Qout(idPair) == F       ! Pair               surface air pressure
+Qout(idUair) == F       ! Uair               surface U-wind component
+Qout(idVair) == F       ! Vair               surface V-wind component
+
+Qout(idTsur) == F F     ! shflux, ssflux     surface net heat and salt flux
+Qout(idLhea) == F       ! latent             latent heat flux
+Qout(idShea) == F       ! sensible           sensible heat flux
+Qout(idLrad) == F       ! lwrad              longwave radiation flux
+Qout(idSrad) == F       ! swrad              shortwave radiation flux
+Qout(idEmPf) == F       ! EminusP            E-P flux
+Qout(idevap) == F       ! evaporation        evaporation rate
+Qout(idrain) == F       ! rain               precipitation rate
+
+Qout(idDano) == F       ! rho                density anomaly
+Qout(idVvis) == F       ! AKv                vertical viscosity
+Qout(idTdif) == F       ! AKt                vertical T-diffusion
+Qout(idSdif) == F       ! AKs                vertical Salinity diffusion
+Qout(idHsbl) == F       ! Hsbl               depth of surface boundary layer
+Qout(idHbbl) == F       ! Hbbl               depth of bottom boundary layer
+Qout(idMtke) == F       ! tke                turbulent kinetic energy
+Qout(idMtls) == F       ! gls                turbulent length scale
+
+! Logical switches (TRUE/FALSE) to activate writing of extra inert passive
+! tracers other than biological and sediment tracers into the QUICKSAVE
+! output file. An inert passive tracer is one that it is only advected and
+! diffused. Other processes are ignored. These tracers include, for example,
+! dyes, pollutants, oil spills, etc. NPT values are expected. However, these
+! switches can be activated using compact parameter specification.
+
+ Qout(inert) == F       ! dye_01, ...        inert passive tracers
+ Qout(Snert) == F       ! dye_01_sur, ..     surface inert passive tracers
 
 ! Logical switches (TRUE/FALSE) to activate writing of time-averaged
 ! fields into AVERAGE output file.
@@ -778,6 +885,7 @@ Dout(iTvdif) == T T     ! temp_vdiff, ...    vertical diffusion
 
      NBCFILES == 1                          ! number of boundary files
      BRYNAME == ocean_bry.nc
+     CLMNAME == ocean_clm.nc
 
 ! Input climatology nudging coefficients file name.
 
@@ -809,6 +917,7 @@ Dout(iTvdif) == T T     ! temp_vdiff, ...    vertical diffusion
      GSTNAME == ocean_gst.nc
      RSTNAME == ocean_rst.nc
      HISNAME == ocean_his.nc
+     QCKNAME == ocean_qck.nc
      TLMNAME == ocean_tlm.nc
      TLFNAME == ocean_tlf.nc
      ADJNAME == ocean_adj.nc
@@ -1179,58 +1288,80 @@ Dout(iTvdif) == T T     ! temp_vdiff, ...    vertical diffusion
 !                fields are written at all levels in double precision.
 !
 ! NRST         Number of time-steps between writing of re-start fields.
+!                Set NRST=0 to suppress writing of RESTART file.
 !
-! NSTA         Number of time-steps between writing data into stations file.
+! NSTA         Number of time-steps between writing data into STATIONS file.
 !                Station data is written at all levels.
 !
-! NFLT         Number of time-steps between writing data into floats file.
+! NFLT         Number of time-steps between writing data into FLOATS file.
 !
 ! NINFO        Number of time-steps between print of single line information
 !                to standard output.  It also determines the interval between
 !                computation of global energy diagnostics.
 !
 !------------------------------------------------------------------------------
-!  Output history and average files parameters.
+!  Output HISTORY, QUICKSAVE, AVERAGE and DIAGNOSTIC files parameters.
 !------------------------------------------------------------------------------
+!
+!  Notice that it is possible to have two types of output NetCDF files for
+!  instantaneous fields: HISTORY and QUICKSAVE. The QUICKSAVE file can be used
+!  for writing fewer fields at shorter time intervals. For example, the User
+!  may just write 2D and surface fields frequently (hourly) to reduce file
+!  size and to time resolve fast dynamics. In conjunction, the User may write
+!  full HISTORY fields infrequently (daily, weekly, etc) to avoid creating
+!  large output files. This gives a lot of flexibility to manage ROMS output.
+!
 !
 ! LDEFOUT      Logical switch (T/F) used to create new output files when
 !                initializing from a re-start file, abs(NRREC) > 0.  If TRUE
-!                and applicable, a new history, average, diagnostic and
-!                station files are created during the initialization stage.
-!                If FALSE and applicable, data is appended to existing
-!                history, average, diagnostic and station files.  See also
-!                parameters NDEFHIS, NDEFAVG and NDEFDIA below.
+!                and applicable, a new HISTORY, QUICKSAVE, AVERAGE, DIAGNOSTIC
+!                and STATIONS files are created during the initialization
+!                stage. If FALSE and applicable, data is appended to existing
+!                HISTORY, QUICKSAVE, AVERAGE, DIAGNOSTIC and STATIONS files.
+!                See also parameters NDEFHIS, NDEFQCK, NDEFAVG and NDEFDIA
+!                below.
 !
-! NHIS         Number of time-steps between writing fields into history file.
+! NHIS         Number of time-steps between writing fields into HISTORY file.
+!                Set NHIS=0 to suppress writing of HISTORY file.
 !
-! NDEFHIS      Number of time-steps between the creation of new history file.
-!                If NDEFHIS=0, the model will only process one history file.
-!                This feature is useful for long simulations when history files
+! NDEFHIS      Number of time-steps between the creation of new HISTORY file.
+!                If NDEFHIS=0, the model will only process one HISTORY file.
+!                This feature is useful for long simulations when HISTORY file
 !                get too large; it creates a new file every NDEFHIS time-steps.
+!
+! NQCK         Number of time-steps between writing fields into QUICKSAVE file.
+!                Set NQCK=0 to suppress writing of QUICKSAVE file.
+!
+! NDEFQCK      Number of time-steps between the creation of new QUICKSAVE file.
+!                If NDEFQCK=0, the model will only process one QUICKSAVE file.
+!                This feature is useful for long simulations when QUICKSAVE
+!                file get too large; it creates a new file every NDEFQCK
+!                time-steps.
 !
 ! NTSAVG       Starting time-step for the accumulation of output time-averaged
 !                data.
 !
 ! NAVG         Number of time-steps between writing time-averaged data
-!                into averages file.  Averaged date is written for all fields.
+!                into AVERAGE file.  Averaged date is written for all fields.
+!                Set NAVG=0 to suppress writing of AVERAGE file.
 !
-! NDEFAVG      Number of time-steps between the creation of new average
-!                file.  If NDEFAVG=0, the model will only process one average
+! NDEFAVG      Number of time-steps between the creation of new AVERAGE
+!                file.  If NDEFAVG=0, the model will only process one AVERAGE
 !                file.  This feature is useful for long simulations when
-!                average files get too large; it creates a new file every
+!                AVERAGE file get too large; it creates a new file every
 !                NDEFAVG time-steps.
 !
 ! NTSDIA       Starting time-step for the accumulation of output time-averaged
 !                diagnostics data.
 !
 ! NDIA         Number of time-steps between writing time-averaged diagnostics
-!                data into diagnostics file.  Averaged date is written for all
-!                fields.
+!                data into DIAGNOSTIC file.  Averaged date is written for all
+!                fields. Set NDIA=0 to suppress writing of DIAGNOSTIC file.
 !
 ! NDEFDIA      Number of time-steps between the creation of new time-averaged
 !                diagnostics file.  If NDEFDIA=0, the model will only process
-!                one diagnostics file.  This feature is useful for long
-!                simulations when diagnostics files get too large; it creates
+!                one DIAGNOSTICS file.  This feature is useful for long
+!                simulations when DIAGNOSTIC file get too large; it creates
 !                a new file every NDEFDIA time-steps.
 !
 !------------------------------------------------------------------------------
@@ -2184,6 +2315,106 @@ Dout(iTvdif) == T T     ! temp_vdiff, ...    vertical diffusion
 ! Hout(inert)    Write out extra inert passive tracers.
 !
 !------------------------------------------------------------------------------
+! Logical switches (T/F) to activate writing of instantaneous fields into
+! QUICKSAVE file.
+!------------------------------------------------------------------------------
+!
+! Qout(idUvel)   Write out 3D U-velocity component.
+! Qout(idVvel)   Write out 3D V-velocity component.
+! Qout(idu3dE)   Write out 3D Eastward  velocity component at RHO-points.
+! Qout(idv3dN)   Write out 3D Northward velocity component at RHO-points.
+! Qout(idWvel)   Write out 3D W-velocity component.
+! Qout(idOvel)   Write out 3D omega vertical velocity.
+! Qout(idUbar)   Write out 2D U-velocity component.
+! Qout(idVbar)   Write out 2D V-velocity component.
+! Qout(idu2dE)   Write out 2D Eastward  velocity component at RHO-points.
+! Qout(idv2dN)   Write out 2D Northward velocity component at RHO-points.
+! Qout(idFsur)   Write out free-surface.
+! Qout(idBath)   Write out time-dependent bathymetry.
+!
+! Qout(idTvar)   Write out active (NAT) tracers: temperature and salinity.
+!
+! Qout(idUsur)   Write out surface U-velocity component.
+! Qout(idVsur)   Write out surface V-velocity component.
+! Qout(idUsuE)   Write out surface Eastward  velocity component at RHO-points.
+! Qout(idVsuN)   Write out surface Northward velocity component at RHO-points.
+!
+! Qout(idsurT)   Write out surface temperature and salinity
+
+! Qout(idpthR)   Write out time-varying depths of RHO-points.
+! Qout(idpthU)   Write out time-varying depths of U-points.
+! Qout(idpthV)   Write out time-varying depths of V-points.
+! Qout(idpthW)   Write out time-varying depths of W-points.
+!
+! Qout(idUsms)   Write out surface U-momentum stress.
+! Qout(idVsms)   Write out surface V-momentum stress.
+! Qout(idUbms)   Write out bottom  U-momentum stress.
+! Qout(idVbms)   Write out bottom  V-momentum stress.
+!
+! Qout(idUbrs)   Write out current-induced, U-momentum stress.
+! Qout(idVbrs)   Write out current-induced, V-momentum stress.
+! Qout(idUbws)   Write out wind-induced, bottom U-wave stress.
+! Qout(idVbws)   Write out wind-induced, bottom V-wave stress.
+! Qout(idUbcs)   Write out bottom maximum wave and current U-stress.
+! Qout(idVbcs)   Write out bottom maximum wave and current V-stress.
+!
+! Qout(idUbot)   Write out wind-induced, bed wave orbital U-velocity.
+! Qout(idVbot)   Write out wind-induced, bed wave orbital V-velocity.
+! Qout(idUbur)   Write out bottom U-velocity above bed.
+! Qout(idVbvr)   Write out bottom V-velocity above bed.
+!
+! Qout(idW2xx)   Write out 2D radiation stress, Sxx component.
+! Qout(idW2xy)   Write out 2D radiation stress, Sxy component.
+! Qout(idW2yy)   Write out 2D radiation stress, Syy component.
+! Qout(idU2rs)   Write out 2D U-radiation stress.
+! Qout(idV2rs)   Write out 2D V-radiation stress.
+! Qout(idU2Sd)   Write out 2D U-Stokes velocity.
+! Qout(idV2Sd)   Write out 2D V-Stokes velocity.
+!
+! Qout(idW3xx)   Write out 3D radiation stress, Sxx component.
+! Qout(idW3xy)   Write out 3D radiation stress, Sxy component.
+! Qout(idW3yy)   Write out 3D radiation stress, Syy component.
+! Qout(idW3zx)   Write out 3D radiation stress, Szx component.
+! Qout(idW3zy)   Write out 3D radiation stress, Szy component.
+! Qout(idU3rs)   Write out 3D U-radiation stress.
+! Qout(idV3rs)   Write out 3D V-radiation stress.
+! Qout(idU3Sd)   Write out 3D U-Stokes velocity.
+! Qout(idV3Sd)   Write out 3D V-Stokes velocity.
+!
+! Qout(idWamp)   Write out wave height.
+! Qout(idWlen)   Write out wave length.
+! Qout(idWdir)   Write out wave direction.
+! Qout(idWptp)   Write out wave surface period.
+! Qout(idWpbt)   Write out wave bottom period.
+! Qout(idWorb)   Write out wave bottom orbital velocity.
+! Qout(idWdis)   Write out wave dissipation.
+!
+! Qout(idPair)   Write out surface air pressure.
+! Qout(idUair)   Write out surface U-wind component.
+! Qout(idVair)   Write out surface V-wind component.
+!
+! Qout(idTsur)   Write out surface net heat and salt flux
+! Qout(idLhea)   Write out latent heat flux.
+! Qout(idShea)   Write out sensible heat flux.
+! Qout(idLrad)   Write out long-wave radiation flux.
+! Qout(idSrad)   Write out short-wave radiation flux.
+! Qout(idEmPf)   Write out E-P flux.
+! Qout(idevap)   Write out evaporation rate.
+! Qout(idrain)   Write out precipitation rate.
+!
+! Qout(idDano)   Write out density anomaly.
+! Qout(idVvis)   Write out vertical viscosity coefficient.
+! Qout(idTdif)   Write out vertical diffusion coefficient of temperature.
+! Qout(idSdif)   Write out vertical diffusion coefficient of salinity.
+! Qout(idHsbl)   Write out depth of oceanic surface boundary layer.
+! Qout(idHbbl)   Write out depth of oceanic bottom boundary layer.
+! Qout(idMtke)   Write out turbulent kinetic energy.
+! Qout(idMtls)   Write out turbulent kinetic energy times length scale.
+!
+! Qout(inert)    Write out inert passive tracers.
+! Qout(Snert)    Write out surface inert passive tracers.
+!
+!------------------------------------------------------------------------------
 ! Logical switches (T/F) to activate writing of time-averaged fields into
 ! AVERAGE file.
 !------------------------------------------------------------------------------
@@ -2505,6 +2736,7 @@ Dout(iTvdif) == T T     ! temp_vdiff, ...    vertical diffusion
 ! GSTNAME      Output GST analysis re-start file name.
 ! RSTNAME      Output re-start file name.
 ! HISNAME      Output history file name.
+! QCKNAME      Output quicksave file name.
 ! TLFNAME      Output impulse forcing for tangent linear (TLM and RPM) models.
 ! TLMNAME      Output tangent linear file name.
 ! ADJNAME      Output adjoint file name.

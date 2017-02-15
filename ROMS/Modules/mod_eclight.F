@@ -2,9 +2,9 @@
       MODULE mod_eclight
 #if defined BIOLOGY && (defined ECOSIM || defined SPECTRAL_LIGHT)
 !
-!svn $Id: mod_eclight.F 795 2016-05-11 01:42:43Z arango $
+!svn $Id: mod_eclight.F 830 2017-01-24 21:21:11Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2016 The ROMS/TOMS Group       W. Paul Bissett   !
+!  Copyright (c) 2002-2017 The ROMS/TOMS Group       W. Paul Bissett   !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================

@@ -4,7 +4,7 @@
       SUBROUTINE wrt_evolved (ng, kout, nout)
 !
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2016 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2017 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -478,20 +478,21 @@
   10  FORMAT (/,' WRT_EVOLVED - error while writing variable: ',a,/,    &
      &        15x,'into evolved LCZ NetCDF file for time record: ',i4)
 # ifdef SOLVE3D
-  20  FORMAT (3x,'WRT_EVOLVED  - wrote evolved LCZ vecs (Index=', i1,   &
+  20  FORMAT (6x,'WRT_EVOLVED - wrote evolved LCZ',t39,                 &
 #  ifdef NESTING
-     &        ',',i1,') into time record = ',i7.7,2x,i2.2)
+     &        'fields (Index=',i1,',',i1,') in record = ',i7.7,2x,i2.2)
 #  else
-     &        ',',i1,') into time record = ',i7.7)
+     &        'fields (Index=',i1,',',i1,') in record = ',i7.7)
 #  endif
 # else
-  20  FORMAT (3x,'WRT_EVOLVED  - wrote evolved LCZ vecs (Index=', i1,   &
+  20  FORMAT (6x,'WRT_EVOLVED - wrote evolved LCS',t39,                 &
 #  ifdef NESTING
-     &        ') into time record = ',i7.7,2x,i2.2)
+     &        'fields (Index=',i1,')   in record = ',i7.7,2x,i2.2)
 #  else
-     &        ') into time record = ',i7.7)
+     &        'fields (Index=',i1,')   in record = ',i7.7)
 #  endif
 # endif
+
       RETURN
       END SUBROUTINE wrt_evolved
 #else

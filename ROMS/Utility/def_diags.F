@@ -2,9 +2,9 @@
 #ifdef DIAGNOSTICS
       SUBROUTINE def_diags (ng, ldef)
 !
-!svn $Id: def_diags.F 795 2016-05-11 01:42:43Z arango $
+!svn $Id: def_diags.F 830 2017-01-24 21:21:11Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2016 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2017 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -759,10 +759,10 @@
      &              0.5_r8*REAL(nDIA(ng),r8)*dt(ng)
       END IF
 !
-  10  FORMAT (6x,'DEF_DIAGS - creating diagnostics file, Grid ',i2.2,   &
-     &        ': ',a)
-  20  FORMAT (6x,'DEF_DIAGS - inquiring diagnostics file, Grid ',i2.2,  &
-     &        ': ',a)
+  10  FORMAT (6x,'DEF_DIAGS   - creating  diagnostics', t43,            &
+     &        ' file, Grid ',i2.2,': ', a)
+  20  FORMAT (6x,'DEF_DIAGS   - inquiring diagnostics', t43,            &
+     &        ' file, Grid ',i2.2,': ', a)
   30  FORMAT (/,' DEF_DIAGS - unable to create diagnostics NetCDF',     &
      &        ' file: ',a)
   40  FORMAT (1pe11.4,1x,'millimeter')

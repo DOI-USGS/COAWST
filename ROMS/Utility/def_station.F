@@ -2,9 +2,9 @@
 #ifdef STATIONS
       SUBROUTINE def_station (ng, ldef)
 !
-!svn $Id: def_station.F 733 2008-09-07 01:56:45Z jcwarner $
+!svn $Id: def_station.F 830 2017-01-24 21:21:11Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2016 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2017 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -50,6 +50,7 @@
       integer :: status
 
       integer :: DimIDs(32), pgrd(2)
+      integer :: Vsize(4)
 
       integer :: def_dim
 
@@ -337,7 +338,7 @@
      &                   SetParAccess = .FALSE.)
           IF (exit_flag.ne.NoError) RETURN
         END IF
-!
+
 # ifdef SOLVE3D
 !
 !  Define 3D momentum component in the XI-direction.
@@ -3510,10 +3511,10 @@
         STA(ng)%Rindex=(ntstart(ng)-1)/nSTA(ng)
       END IF QUERY
 !
-  10  FORMAT (6x,'DEF_STATION - creating stations file, Grid ',i2.2,    &
-     &        ': ',a)
-  20  FORMAT (6x,'DEF_STATION - inquiring stations file, Grid ',i2.2,   &
-     &        ': ',a)
+  10  FORMAT (6x,'DEF_STATION - creating  stations', t43,               &
+     &        ' file, Grid ',i2.2,': ', a)
+  20  FORMAT (6x,'DEF_STATION - inquiring stations', t43,               &
+     &        ' file, Grid ',i2.2,': ', a)
   30  FORMAT (/,' DEF_STATION - unable to create stations NetCDF ',     &
      &        'file: ',a)
   40  FORMAT (1pe11.4,1x,'millimeter')

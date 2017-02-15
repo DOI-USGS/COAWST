@@ -2,9 +2,9 @@
 #if defined NONLINEAR && defined SOLVE3D && (!defined OFFLINE)
       SUBROUTINE main3d (RunInterval)
 !
-!svn $Id: main3d.F 838 2008-11-17 04:22:18Z jcwarner $
+!svn $Id: main3d.F 830 2017-01-24 21:21:11Z arango $
 !=======================================================================
-!  Copyright (c) 2002-2016 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2017 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                           Hernan G. Arango   !
 !========================================== Alexander F. Shchepetkin ===

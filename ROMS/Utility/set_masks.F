@@ -2,9 +2,9 @@
       MODULE set_masks_mod
 #ifdef MASKING
 !
-!svn $Id: set_masks.F 585 2012-01-03 18:44:28Z arango $
+!svn $Id: set_masks.F 830 2017-01-24 21:21:11Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2016 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2017 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================

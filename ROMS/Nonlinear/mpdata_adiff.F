@@ -4,9 +4,9 @@
       MODULE mpdata_adiff_mod
 #if defined NONLINEAR && defined TS_MPDATA && defined SOLVE3D
 !
-!svn $Id: mpdata_adiff.F 732 2008-09-07 01:55:51Z jcwarner $
+!svn $Id: mpdata_adiff.F 830 2017-01-24 21:21:11Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2016 The ROMS/TOMS Group        John C. Warner   !
+!  Copyright (c) 2002-2017 The ROMS/TOMS Group        John C. Warner   !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================

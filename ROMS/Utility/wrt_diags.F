@@ -2,9 +2,9 @@
 #ifdef DIAGNOSTICS
       SUBROUTINE wrt_diags (ng)
 !
-!svn $Id: wrt_diags.F 795 2016-05-11 01:42:43Z arango $
+!svn $Id: wrt_diags.F 830 2017-01-24 21:21:11Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2016 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2017 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -297,11 +297,11 @@
 !
   10  FORMAT (/,' WRT_DIAGS - error while writing variable: ',a,/,13x,  &
      &        'into diagnostics NetCDF file for time record: ',i4)
-  20  FORMAT (6x,'WRT_DIAGS - wrote diagnostics fields into time ',     &
+  20  FORMAT (6x,'WRT_DIAGS   - wrote diagnostics fields',t58,          &
 # ifdef NESTING
-     &        'record = ',t72,i7.7,2x,i2.2)
+     &        'in record = ',i7.7,2x,i2.2)
 # else
-     &        'record = ',t72,i7.7)
+     &        'in record = ',i7.7)
 # endif
 #else
       SUBROUTINE wrt_diags

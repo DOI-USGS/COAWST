@@ -1,9 +1,9 @@
 #include "cppdefs.h"
       SUBROUTINE read_PhyPar (model, inp, out, Lwrite)
 !
-!svn $Id: read_phypar.F 819 2016-08-26 17:33:44Z arango $
+!svn $Id: read_phypar.F 830 2017-01-24 21:21:11Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2016 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2017 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -680,6 +680,10 @@
               Npts=load_i(Nval, Rval, Ngrids, nHIS2)
             CASE ('NDEFHIS2')
               Npts=load_i(Nval, Rval, Ngrids, ndefHIS2)
+            CASE ('NQCK')
+              Npts=load_i(Nval, Rval, Ngrids, nQCK)
+            CASE ('NDEFQCK')
+              Npts=load_i(Nval, Rval, Ngrids, ndefQCK)
             CASE ('NTSAVG')
               Npts=load_i(Nval, Rval, Ngrids, ntsAVG)
 #ifdef ADJOINT
@@ -2405,6 +2409,241 @@
               END DO
 # endif
 #endif
+            CASE ('Qout(idUvel)')
+              Npts=load_l(Nval, Cval, Ngrids, Qout(idUvel,:))
+            CASE ('Qout(idVvel)')
+              Npts=load_l(Nval, Cval, Ngrids, Qout(idVvel,:))
+            CASE ('Qout(idWvel)')
+              Npts=load_l(Nval, Cval, Ngrids, Qout(idWvel,:))
+            CASE ('Qout(idOvel)')
+              Npts=load_l(Nval, Cval, Ngrids, Qout(idOvel,:))
+            CASE ('Qout(idUbar)')
+              Npts=load_l(Nval, Cval, Ngrids, Qout(idUbar,:))
+            CASE ('Qout(idVbar)')
+              Npts=load_l(Nval, Cval, Ngrids, Qout(idVbar,:))
+            CASE ('Qout(idFsur)')
+              Npts=load_l(Nval, Cval, Ngrids, Qout(idFsur,:))
+#if defined SEDIMENT && defined SED_MORPH
+            CASE ('Qout(idBath)')
+              Npts=load_l(Nval, Cval, Ngrids, Qout(idBath,:))
+#endif
+            CASE ('Qout(idu2dE)')
+              Npts=load_l(Nval, Cval, Ngrids, Qout(idu2dE,:))
+            CASE ('Qout(idv2dN)')
+              Npts=load_l(Nval, Cval, Ngrids, Qout(idv2dN,:))
+            CASE ('Qout(idu3dE)')
+              Npts=load_l(Nval, Cval, Ngrids, Qout(idu3dE,:))
+            CASE ('Qout(idv3dN)')
+              Npts=load_l(Nval, Cval, Ngrids, Qout(idv3dN,:))
+            CASE ('Qout(idTvar)')
+              Npts=load_l(Nval, Cval, NAT*Ngrids, Ltracer)
+              DO ng=1,Ngrids
+                DO itrc=1,NAT
+                  i=idTvar(itrc)
+                  Qout(i,ng)=Ltracer(itrc,ng)
+                END DO
+              END DO
+            CASE ('Qout(idUsur)')
+              IF (idUsur.eq.0) THEN
+                IF (Master) WRITE (out,280) 'idUsur'
+                exit_flag=5
+                RETURN
+              END IF
+              Npts=load_l(Nval, Cval, Ngrids, Qout(idUsur,:))
+            CASE ('Qout(idVsur)')
+              IF (idUsur.eq.0) THEN
+                IF (Master) WRITE (out,280) 'idVsur'
+                exit_flag=5
+                RETURN
+              END IF
+              Npts=load_l(Nval, Cval, Ngrids, Qout(idVsur,:))
+            CASE ('Qout(idUsuE)')
+              IF (idUsuE.eq.0) THEN
+                IF (Master) WRITE (out,280) 'idUsuE'
+                exit_flag=5
+                RETURN
+              END IF
+              Npts=load_l(Nval, Cval, Ngrids, Qout(idUsuE,:))
+            CASE ('Qout(idVsuN)')
+              IF (idVsuN.eq.0) THEN
+                IF (Master) WRITE (out,280) 'idVsuN'
+                exit_flag=5
+                RETURN
+              END IF
+              Npts=load_l(Nval, Cval, Ngrids, Qout(idVsuN,:))
+            CASE ('Qout(idsurT)')
+              IF (MAXVAL(idsurT).eq.0) THEN
+                IF (Master) WRITE (out,280) 'idsurT'
+                exit_flag=5
+                RETURN
+              END IF
+              Npts=load_l(Nval, Cval, NAT*Ngrids, Ltracer)
+              DO ng=1,Ngrids
+                DO itrc=1,NAT
+                  i=idsurT(itrc)
+                  Qout(i,ng)=Ltracer(itrc,ng)
+                END DO
+              END DO
+            CASE ('Qout(idpthR)')
+              Npts=load_l(Nval, Cval, Ngrids, Qout(idpthR,:))
+            CASE ('Qout(idpthU)')
+              Npts=load_l(Nval, Cval, Ngrids, Qout(idpthU,:))
+            CASE ('Qout(idpthV)')
+              Npts=load_l(Nval, Cval, Ngrids, Qout(idpthV,:))
+            CASE ('Qout(idpthW)')
+              Npts=load_l(Nval, Cval, Ngrids, Qout(idpthW,:))
+            CASE ('Qout(idUsms)')
+              Npts=load_l(Nval, Cval, Ngrids, Qout(idUsms,:))
+            CASE ('Qout(idVsms)')
+              Npts=load_l(Nval, Cval, Ngrids, Qout(idVsms,:))
+            CASE ('Qout(idUbms)')
+              Npts=load_l(Nval, Cval, Ngrids, Qout(idUbms,:))
+            CASE ('Qout(idVbms)')
+              Npts=load_l(Nval, Cval, Ngrids, Qout(idVbms,:))
+#ifdef BBL_MODEL
+            CASE ('Qout(idUbrs)')
+              Npts=load_l(Nval, Cval, Ngrids, Qout(idUbrs,:))
+            CASE ('Qout(idVbrs)')
+              Npts=load_l(Nval, Cval, Ngrids, Qout(idVbrs,:))
+            CASE ('Qout(idUbws)')
+              Npts=load_l(Nval, Cval, Ngrids, Qout(idUbws,:))
+            CASE ('Qout(idVbws)')
+              Npts=load_l(Nval, Cval, Ngrids, Qout(idVbws,:))
+            CASE ('Qout(idUbcs)')
+              Npts=load_l(Nval, Cval, Ngrids, Qout(idUbcs,:))
+            CASE ('Qout(idVbcs)')
+              Npts=load_l(Nval, Cval, Ngrids, Qout(idVbcs,:))
+            CASE ('Qout(idUbot)')
+              Npts=load_l(Nval, Cval, Ngrids, Qout(idUbot,:))
+            CASE ('Qout(idVbot)')
+              Npts=load_l(Nval, Cval, Ngrids, Qout(idVbot,:))
+            CASE ('Qout(idUbur)')
+              Npts=load_l(Nval, Cval, Ngrids, Qout(idUbur,:))
+            CASE ('Qout(idVbvr)')
+              Npts=load_l(Nval, Cval, Ngrids, Qout(idVbvr,:))
+#endif
+            CASE ('Qout(idW2xx)')
+              Npts=load_l(Nval, Cval, Ngrids, Qout(idW2xx,:))
+            CASE ('Qout(idW2xy)')
+              Npts=load_l(Nval, Cval, Ngrids, Qout(idW2xy,:))
+            CASE ('Qout(idW2yy)')
+              Npts=load_l(Nval, Cval, Ngrids, Qout(idW2yy,:))
+            CASE ('Qout(idU2rs)')
+              Npts=load_l(Nval, Cval, Ngrids, Qout(idU2rs,:))
+            CASE ('Qout(idV2rs)')
+              Npts=load_l(Nval, Cval, Ngrids, Qout(idV2rs,:))
+            CASE ('Qout(idU2Sd)')
+              Npts=load_l(Nval, Cval, Ngrids, Qout(idU2Sd,:))
+            CASE ('Qout(idV2Sd)')
+              Npts=load_l(Nval, Cval, Ngrids, Qout(idV2Sd,:))
+            CASE ('Qout(idW3xx)')
+              Npts=load_l(Nval, Cval, Ngrids, Qout(idW3xx,:))
+            CASE ('Qout(idW3xy)')
+              Npts=load_l(Nval, Cval, Ngrids, Qout(idW3xy,:))
+            CASE ('Qout(idW3yy)')
+              Npts=load_l(Nval, Cval, Ngrids, Qout(idW3yy,:))
+            CASE ('Qout(idW3zx)')
+              Npts=load_l(Nval, Cval, Ngrids, Qout(idW3zx,:))
+            CASE ('Qout(idW3zy)')
+              Npts=load_l(Nval, Cval, Ngrids, Qout(idW3zy,:))
+            CASE ('Qout(idU3rs)')
+              Npts=load_l(Nval, Cval, Ngrids, Qout(idU3rs,:))
+            CASE ('Qout(idV3rs)')
+              Npts=load_l(Nval, Cval, Ngrids, Qout(idV3rs,:))
+            CASE ('Qout(idU3Sd)')
+              Npts=load_l(Nval, Cval, Ngrids, Qout(idU3Sd,:))
+            CASE ('Qout(idV3Sd)')
+              Npts=load_l(Nval, Cval, Ngrids, Qout(idV3Sd,:))
+            CASE ('Qout(idWamp)')
+              Npts=load_l(Nval, Cval, Ngrids, Qout(idWamp,:))
+            CASE ('Qout(idWlen)')
+              Npts=load_l(Nval, Cval, Ngrids, Qout(idWlen,:))
+            CASE ('Qout(idWdir)')
+              Npts=load_l(Nval, Cval, Ngrids, Qout(idWdir,:))
+#ifdef WAVES_TOP_PERIOD
+            CASE ('Qout(idWptp)')
+              Npts=load_l(Nval, Cval, Ngrids, Qout(idWptp,:))
+#endif
+#ifdef WAVES_BOT_PERIOD
+            CASE ('Qout(idWpbt)')
+              Npts=load_l(Nval, Cval, Ngrids, Qout(idWpbt,:))
+#endif
+#ifdef WAVES_UB
+            CASE ('Qout(idWorb)')
+              Npts=load_l(Nval, Cval, Ngrids, Qout(idWorb,:))
+#endif
+#if defined TKE_WAVEDISS || defined WAVES_OCEAN
+            CASE ('Qout(idWdis)')
+              Npts=load_l(Nval, Cval, Ngrids, Qout(idWdis,:))
+#endif
+#ifdef SOLVE3D
+# if defined BULK_FLUXES || defined ECOSIM || defined ATM_PRESS
+            CASE ('Qout(idPair)')
+              Npts=load_l(Nval, Cval, Ngrids, Qout(idPair,:))
+# endif
+# if defined BULK_FLUXES || defined ECOSIM
+            CASE ('Qout(idUair)')
+              Npts=load_l(Nval, Cval, Ngrids, Qout(idUair,:))
+            CASE ('Qout(idVair)')
+              Npts=load_l(Nval, Cval, Ngrids, Qout(idVair,:))
+# endif
+#endif
+            CASE ('Qout(idTsur)')
+              Npts=load_l(Nval, Cval, NAT*Ngrids, Ltracer)
+              DO ng=1,Ngrids
+                DO itrc=1,NAT
+                  i=idTsur(itrc)
+                  Qout(i,ng)=Ltracer(itrc,ng)
+                END DO
+              END DO
+            CASE ('Qout(idLhea)')
+              Npts=load_l(Nval, Cval, Ngrids, Qout(idLhea,:))
+            CASE ('Qout(idShea)')
+              Npts=load_l(Nval, Cval, Ngrids, Qout(idShea,:))
+            CASE ('Qout(idLrad)')
+              Npts=load_l(Nval, Cval, Ngrids, Qout(idLrad,:))
+            CASE ('Qout(idSrad)')
+              Npts=load_l(Nval, Cval, Ngrids, Qout(idSrad,:))
+            CASE ('Qout(idEmPf)')
+              Npts=load_l(Nval, Cval, Ngrids, Qout(idEmPf,:))
+            CASE ('Qout(idevap)')
+              Npts=load_l(Nval, Cval, Ngrids, Qout(idevap,:))
+            CASE ('Qout(idrain)')
+              Npts=load_l(Nval, Cval, Ngrids, Qout(idrain,:))
+            CASE ('Qout(idDano)')
+              Npts=load_l(Nval, Cval, Ngrids, Qout(idDano,:))
+            CASE ('Qout(idVvis)')
+              Npts=load_l(Nval, Cval, Ngrids, Qout(idVvis,:))
+            CASE ('Qout(idTdif)')
+              Npts=load_l(Nval, Cval, Ngrids, Qout(idTdif,:))
+            CASE ('Qout(idSdif)')
+              Npts=load_l(Nval, Cval, Ngrids, Qout(idSdif,:))
+            CASE ('Qout(idHsbl)')
+              Npts=load_l(Nval, Cval, Ngrids, Qout(idHsbl,:))
+            CASE ('Qout(idHbbl)')
+              Npts=load_l(Nval, Cval, Ngrids, Qout(idHbbl,:))
+            CASE ('Qout(idMtke)')
+              Npts=load_l(Nval, Cval, Ngrids, Qout(idMtke,:))
+            CASE ('Qout(idMtls)')
+              Npts=load_l(Nval, Cval, Ngrids, Qout(idMtls,:))
+#if defined SOLVE3D && defined T_PASSIVE
+            CASE ('Qout(inert)')
+              Npts=load_l(Nval, Cval, NPT*Ngrids, Linert)
+              DO ng=1,Ngrids
+                DO i=1,NPT
+                  itrc=idTvar(inert(i))
+                  Qout(itrc,ng)=Linert(i,ng)
+                END DO
+              END DO
+            CASE ('Qout(Snert)')
+              Npts=load_l(Nval, Cval, NPT*Ngrids, Linert)
+              DO ng=1,Ngrids
+                DO i=1,NPT
+                  itrc=idsurT(inert(i))
+                  Qout(itrc,ng)=Linert(i,ng)
+                END DO
+              END DO
+#endif
 #if defined AVERAGES    || \
    (defined AD_AVERAGES && defined ADJOINT) || \
    (defined RP_AVERAGES && defined TL_IOMS) || \
@@ -3956,6 +4195,10 @@
               label='HIS2 - nonlinear model surface fields'
               Npts=load_s1d(Nval, Cval, Cdim, line, label, igrid,       &
      &                      Nfiles, HIS2)
+            CASE ('QCKNAME')
+              label='QCK - nonlinear model quicksave fields'
+              Npts=load_s1d(Nval, Cval, Cdim, line, label, igrid,       &
+     &                      Nfiles, QCK)
             CASE ('TLMNAME')
               label='TLM - tangent linear model history fields'
               Npts=load_s1d(Nval, Cval, Cdim, line, label, igrid,       &
@@ -4323,15 +4566,15 @@
 !
 !  Set switch to craeate NetCDF file.
 !
-#ifdef SOLVE3D
-        DO i=1,NV
-          IF (Hout(i,ng)) LdefHIS(ng)=.TRUE.
-        END DO
-#else
-        IF (Hout(idFsur,ng).or.Hout(idUbar,ng).or.Hout(idVbar,ng)) THEN
+        IF ((nHIS(ng).gt.0).and.ANY(Hout(:,ng))) THEN
           LdefHIS(ng)=.TRUE.
         END IF
-#endif
+!
+!  Set switch to create quicksave NetCDF file.
+!
+        IF ((nQCK(ng).gt.0).and.ANY(Qout(:,ng))) THEN
+          LdefQCK(ng)=.TRUE.
+        END IF
 !
 !  Set switch to process climatology file.
 !
@@ -4478,6 +4721,10 @@
         IF (((nrrec(ng).eq.0).and.(nHIS(ng).gt.ntimes(ng))).or.         &
      &      (nHIS(ng).eq.0)) THEN
           LdefHIS(ng)=.FALSE.
+        END IF
+        IF (((nrrec(ng).eq.0).and.(nQCK(ng).gt.ntimes(ng))).or.         &
+     &      (nQCK(ng).eq.0)) THEN
+          LdefQCK(ng)=.FALSE.
         END IF
         IF (((nrrec(ng).eq.0).and.(nRST(ng).gt.ntimes(ng))).or.         &
      &      (nRST(ng).eq.0)) THEN
@@ -4637,6 +4884,14 @@
             WRITE (out,130) ndefHIS(ng), 'ndefHIS',                     &
      &            'Number of timesteps between creation of new',        &
      &            'history files.'
+          END IF
+          WRITE (out,130) nQCK(ng), 'nQCK',                             &
+     &          'Number of timesteps between the writing fields',       &
+     &          'into quicksave file.'
+          IF (ndefQCK(ng).gt.0) THEN
+            WRITE (out,130) ndefQCK(ng), 'ndefQCK',                     &
+     &            'Number of timesteps between creation of new',        &
+     &            'brief snpashots files.'
           END IF
 #if defined AVERAGES    || \
    (defined AD_AVERAGES && defined ADJOINT) || \
@@ -5467,380 +5722,383 @@
           END DO
 # endif
 #endif
+          IF ((nHIS(ng).gt.0).and.ANY(Hout(:,ng))) THEN
+            WRITE (out,'(1x)')
 #if defined SEDIMENT && defined SED_MORPH
-          IF (Hout(idBath,ng)) WRITE (out,170) Hout(idBath,ng),         &
-     &       'Hout(idBath)',                                            &
-     &       'Write out time-dependent bathymetry.'
+            IF (Hout(idBath,ng)) WRITE (out,170) Hout(idBath,ng),       &
+     &         'Hout(idBath)',                                          &
+     &         'Write out time-dependent bathymetry.'
 #endif
-          IF (Hout(idFsur,ng)) WRITE (out,170) Hout(idFsur,ng),         &
-     &       'Hout(idFsur)',                                            &
-     &       'Write out free-surface.'
-          IF (Hout(idUbar,ng)) WRITE (out,170) Hout(idUbar,ng),         &
-     &       'Hout(idUbar)',                                            &
-     &       'Write out 2D U-momentum component.'
-          IF (Hout(idVbar,ng)) WRITE (out,170) Hout(idVbar,ng),         &
-     &       'Hout(idVbar)',                                            &
-     &       'Write out 2D V-momentum component.'
-          IF (Hout(idu2dE,ng)) WRITE (out,170) Hout(idu2dE,ng),         &
-     &       'Hout(idu2dE)',                                            &
-     &       'Write out 2D U-eastward  at RHO-points.'
-          IF (Hout(idv2dN,ng)) WRITE (out,170) Hout(idv2dN,ng),         &
-     &       'Hout(idv2dN)',                                            &
-     &       'Write out 2D V-northward at RHO-points.'
+            IF (Hout(idFsur,ng)) WRITE (out,170) Hout(idFsur,ng),       &
+     &         'Hout(idFsur)',                                          &
+     &         'Write out free-surface.'
+            IF (Hout(idUbar,ng)) WRITE (out,170) Hout(idUbar,ng),       &
+     &         'Hout(idUbar)',                                          &
+     &         'Write out 2D U-momentum component.'
+            IF (Hout(idVbar,ng)) WRITE (out,170) Hout(idVbar,ng),       &
+     &         'Hout(idVbar)',                                          &
+     &         'Write out 2D V-momentum component.'
+            IF (Hout(idu2dE,ng)) WRITE (out,170) Hout(idu2dE,ng),       &
+     &         'Hout(idu2dE)',                                          &
+     &         'Write out 2D U-eastward  at RHO-points.'
+            IF (Hout(idv2dN,ng)) WRITE (out,170) Hout(idv2dN,ng),       &
+     &         'Hout(idv2dN)',                                          &
+     &         'Write out 2D V-northward at RHO-points.'
 #ifdef SOLVE3D
-          IF (Hout(idUvel,ng)) WRITE (out,170) Hout(idUvel,ng),         &
-     &       'Hout(idUvel)',                                            &
-     &       'Write out 3D U-momentum component.'
-          IF (Hout(idVvel,ng)) WRITE (out,170) Hout(idVvel,ng),         &
-     &       'Hout(idVvel)',                                            &
-     &       'Write out 3D V-momentum component.'
-          IF (Hout(idu3dE,ng)) WRITE (out,170) Hout(idu3dE,ng),         &
-     &       'Hout(idu3dE)',                                            &
-     &       'Write out 3D U-wastward  component at RHO-points.'
-          IF (Hout(idv3dN,ng)) WRITE (out,170) Hout(idv3dN,ng),         &
-     &       'Hout(idv3dN)',                                            &
-     &       'Write out 3D V-northward component at RHO-points.'
-          IF (Hout(idWvel,ng)) WRITE (out,170) Hout(idWvel,ng),         &
-     &       'Hout(idWvel)',                                            &
-     &       'Write out W-momentum component.'
-          IF (Hout(idOvel,ng)) WRITE (out,170) Hout(idOvel,ng),         &
-     &       'Hout(idOvel)',                                            &
-     &       'Write out omega vertical velocity.'
-          DO itrc=1,NAT
-            IF (Hout(idTvar(itrc),ng)) WRITE (out,180)                  &
-     &          Hout(idTvar(itrc),ng), 'Hout(idTvar)',                  &
-     &          'Write out tracer ', itrc, TRIM(Vname(1,idTvar(itrc)))
-          END DO
-          IF (Hout(idpthR,ng)) WRITE (out,170) Hout(idpthR,ng),         &
-     &       'Hout(idpthR)',                                            &
-     &       'Write out time-varying dephts of RHO-points.'
-          IF (Hout(idpthU,ng)) WRITE (out,170) Hout(idpthU,ng),         &
-     &       'Hout(idpthU)',                                            &
-     &       'Write out time-varying dephts of U-points.'
-          IF (Hout(idpthV,ng)) WRITE (out,170) Hout(idpthV,ng),         &
-     &       'Hout(idpthV)',                                            &
-     &       'Write out time-varying dephts of V-points.'
-          IF (Hout(idpthW,ng)) WRITE (out,170) Hout(idpthW,ng),         &
-     &       'Hout(idpthW)',                                            &
-     &       'Write out time-varying dephts of W-points.'
+            IF (Hout(idUvel,ng)) WRITE (out,170) Hout(idUvel,ng),       &
+     &         'Hout(idUvel)',                                          &
+     &         'Write out 3D U-momentum component.'
+            IF (Hout(idVvel,ng)) WRITE (out,170) Hout(idVvel,ng),       &
+     &         'Hout(idVvel)',                                          &
+     &         'Write out 3D V-momentum component.'
+            IF (Hout(idu3dE,ng)) WRITE (out,170) Hout(idu3dE,ng),       &
+     &         'Hout(idu3dE)',                                          &
+     &         'Write out 3D U-wastward  component at RHO-points.'
+            IF (Hout(idv3dN,ng)) WRITE (out,170) Hout(idv3dN,ng),       &
+     &         'Hout(idv3dN)',                                          &
+     &         'Write out 3D V-northward component at RHO-points.'
+            IF (Hout(idWvel,ng)) WRITE (out,170) Hout(idWvel,ng),       &
+     &         'Hout(idWvel)',                                          &
+     &         'Write out W-momentum component.'
+            IF (Hout(idOvel,ng)) WRITE (out,170) Hout(idOvel,ng),       &
+     &         'Hout(idOvel)',                                          &
+     &         'Write out omega vertical velocity.'
+            DO itrc=1,NAT
+              IF (Hout(idTvar(itrc),ng)) WRITE (out,180)                &
+     &            Hout(idTvar(itrc),ng), 'Hout(idTvar)',                &
+     &            'Write out tracer ', itrc, TRIM(Vname(1,idTvar(itrc)))
+            END DO
+            IF (Hout(idpthR,ng)) WRITE (out,170) Hout(idpthR,ng),       &
+     &         'Hout(idpthR)',                                          &
+     &         'Write out time-varying dephts of RHO-points.'
+            IF (Hout(idpthU,ng)) WRITE (out,170) Hout(idpthU,ng),       &
+     &         'Hout(idpthU)',                                          &
+     &         'Write out time-varying dephts of U-points.'
+            IF (Hout(idpthV,ng)) WRITE (out,170) Hout(idpthV,ng),       &
+     &         'Hout(idpthV)',                                          &
+     &         'Write out time-varying dephts of V-points.'
+            IF (Hout(idpthW,ng)) WRITE (out,170) Hout(idpthW,ng),       &
+     &         'Hout(idpthW)',                                          &
+     &         'Write out time-varying dephts of W-points.'
 #endif
-          IF (Hout(idUsms,ng)) WRITE (out,170) Hout(idUsms,ng),         &
-     &       'Hout(idUsms)',                                            &
-     &       'Write out surface U-momentum stress.'
-          IF (Hout(idVsms,ng)) WRITE (out,170) Hout(idVsms,ng),         &
-     &       'Hout(idVsms)',                                            &
-     &       'Write out surface V-momentum stress.'
-          IF (Hout(idUbms,ng)) WRITE (out,170) Hout(idUbms,ng),         &
-     &       'Hout(idUbms)',                                            &
-     &       'Write out bottom U-momentum stress.'
-          IF (Hout(idVbms,ng)) WRITE (out,170) Hout(idVbms,ng),         &
-     &       'Hout(idVbms)',                                            &
-     &       'Write out bottom V-momentum stress.'
+            IF (Hout(idUsms,ng)) WRITE (out,170) Hout(idUsms,ng),       &
+     &         'Hout(idUsms)',                                          &
+     &         'Write out surface U-momentum stress.'
+            IF (Hout(idVsms,ng)) WRITE (out,170) Hout(idVsms,ng),       &
+     &         'Hout(idVsms)',                                          &
+     &         'Write out surface V-momentum stress.'
+            IF (Hout(idUbms,ng)) WRITE (out,170) Hout(idUbms,ng),       &
+     &         'Hout(idUbms)',                                          &
+     &         'Write out bottom U-momentum stress.'
+            IF (Hout(idVbms,ng)) WRITE (out,170) Hout(idVbms,ng),       &
+     &         'Hout(idVbms)',                                          &
+     &         'Write out bottom V-momentum stress.'
 #ifdef BBL_MODEL
-          IF (Hout(idUbrs,ng)) WRITE (out,170) Hout(idUbrs,ng),         &
-     &       'Hout(idUbrs)',                                            &
-     &       'Write out bottom U-current stress.'
-          IF (Hout(idVbrs,ng)) WRITE (out,170) Hout(idVbrs,ng),         &
-     &       'Hout(idVbrs)',                                            &
-     &       'Write out bottom V-current stress.'
-          IF (Hout(idUbws,ng)) WRITE (out,170) Hout(idUbws,ng),         &
-     &       'Hout(idUbws)',                                            &
-     &       'Write out wind-induced, bottom U-wave stress.'
-          IF (Hout(idVbws,ng)) WRITE (out,170) Hout(idVbws,ng),         &
-     &       'Hout(idVbws)',                                            &
-     &       'Write out wind-induced, bottom V-wave stress.'
-          IF (Hout(idUbcs,ng)) WRITE (out,170) Hout(idUbcs,ng),         &
-     &       'Hout(idUbcs)',                                            &
-     &       'Write out max wind + current, bottom U-wave stress.'
-          IF (Hout(idVbcs,ng)) WRITE (out,170) Hout(idVbcs,ng),         &
-     &       'Hout(idVbcs)',                                            &
-     &       'Write out max wind + current, bottom V-wave stress.'
-          IF (Hout(idUVwc,ng)) WRITE (out,170) Hout(idUVwc,ng),         &
-     &       'Hout(idUVwc)',                                            &
-     &       'Write out max wind + current, bottom UV-wave stress.'
-          IF (Hout(idUbot,ng)) WRITE (out,170) Hout(idUbot,ng),         &
-     &       'Hout(idUbot)',                                            &
-     &       'Write out bed wave orbital U-velocity.'
-          IF (Hout(idVbot,ng)) WRITE (out,170) Hout(idVbot,ng),         &
-     &       'Hout(idVbot)',                                            &
-     &       'Write out bed wave orbital V-velocity.'
-          IF (Hout(idUbur,ng)) WRITE (out,170) Hout(idUbur,ng),         &
-     &       'Hout(idUbur)',                                            &
-     &       'Write out bottom U-momentum above bed.'
-          IF (Hout(idVbvr,ng)) WRITE (out,170) Hout(idVbvr,ng),         &
-     &       'Hout(idVbvr)',                                            &
-     &       'Write out bottom V-momentum above bed.'
+            IF (Hout(idUbrs,ng)) WRITE (out,170) Hout(idUbrs,ng),       &
+     &         'Hout(idUbrs)',                                          &
+     &         'Write out bottom U-current stress.'
+            IF (Hout(idVbrs,ng)) WRITE (out,170) Hout(idVbrs,ng),       &
+     &         'Hout(idVbrs)',                                          &
+     &         'Write out bottom V-current stress.'
+            IF (Hout(idUbws,ng)) WRITE (out,170) Hout(idUbws,ng),       &
+     &         'Hout(idUbws)',                                          &
+     &         'Write out wind-induced, bottom U-wave stress.'
+            IF (Hout(idVbws,ng)) WRITE (out,170) Hout(idVbws,ng),       &
+     &         'Hout(idVbws)',                                          &
+     &         'Write out wind-induced, bottom V-wave stress.'
+            IF (Hout(idUbcs,ng)) WRITE (out,170) Hout(idUbcs,ng),       &
+     &         'Hout(idUbcs)',                                          &
+     &         'Write out max wind + current, bottom U-wave stress.'
+            IF (Hout(idVbcs,ng)) WRITE (out,170) Hout(idVbcs,ng),       &
+     &         'Hout(idVbcs)',                                          &
+     &         'Write out max wind + current, bottom V-wave stress.'
+            IF (Hout(idUVwc,ng)) WRITE (out,170) Hout(idUVwc,ng),       &
+     &         'Hout(idUVwc)',                                          &
+     &         'Write out max wind + current, bottom UV-wave stress.'
+            IF (Hout(idUbot,ng)) WRITE (out,170) Hout(idUbot,ng),       &
+     &         'Hout(idUbot)',                                          &
+     &         'Write out bed wave orbital U-velocity.'
+            IF (Hout(idVbot,ng)) WRITE (out,170) Hout(idVbot,ng),       &
+     &         'Hout(idVbot)',                                          &
+     &         'Write out bed wave orbital V-velocity.'
+            IF (Hout(idUbur,ng)) WRITE (out,170) Hout(idUbur,ng),       &
+     &         'Hout(idUbur)',                                          &
+     &         'Write out bottom U-momentum above bed.'
+            IF (Hout(idVbvr,ng)) WRITE (out,170) Hout(idVbvr,ng),       &
+     &         'Hout(idVbvr)',                                          &
+     &         'Write out bottom V-momentum above bed.'
 #endif
 #if defined WEC_MELLOR
-          IF (Hout(idW2xx,ng)) WRITE (out,170) Hout(idW2xx,ng),         &
-     &       'Hout(idW2xx)',                                            &
-     &       'Write out 2D radiation stress, Sxx.'
-          IF (Hout(idW2xy,ng)) WRITE (out,170) Hout(idW2xy,ng),         &
-     &       'Hout(idW2xy)',                                            &
-     &       'Write out 2D radiation stress, Sxy.'
-          IF (Hout(idW2yy,ng)) WRITE (out,170) Hout(idW2yy,ng),         &
-     &       'Hout(idW2yy)',                                            &
-     &       'Write out 2D radiation stress, Syy.'
+            IF (Hout(idW2xx,ng)) WRITE (out,170) Hout(idW2xx,ng),       &
+     &         'Hout(idW2xx)',                                          &
+     &         'Write out 2D radiation stress, Sxx.'
+            IF (Hout(idW2xy,ng)) WRITE (out,170) Hout(idW2xy,ng),       &
+     &         'Hout(idW2xy)',                                          &
+     &         'Write out 2D radiation stress, Sxy.'
+            IF (Hout(idW2yy,ng)) WRITE (out,170) Hout(idW2yy,ng),       &
+     &         'Hout(idW2yy)',                                          &
+     &         'Write out 2D radiation stress, Syy.'
 #endif
 #if defined WEC
-          IF (Hout(idU2rs,ng)) WRITE (out,170) Hout(idU2rs,ng),         &
-     &       'Hout(idU2rs)',                                            &
-     &       'Write out total 2D u-radiation stress.'
-          IF (Hout(idV2rs,ng)) WRITE (out,170) Hout(idV2rs,ng),         &
-     &       'Hout(idV2rs)',                                            &
-     &       'Write out total 2D v-radiation stress.'
-          IF (Hout(idU2Sd,ng)) WRITE (out,170) Hout(idU2Sd,ng),         &
-     &       'Hout(idU2Sd)',                                            &
-     &       'Write out 2D u-momentum stokes velocity.'
-          IF (Hout(idV2Sd,ng)) WRITE (out,170) Hout(idV2Sd,ng),         &
-     &       'Hout(idV2Sd)',                                            &
-     &       'Write out 2D v-momentum stokes velocity.'
+            IF (Hout(idU2rs,ng)) WRITE (out,170) Hout(idU2rs,ng),       &
+     &         'Hout(idU2rs)',                                          &
+     &         'Write out total 2D u-radiation stress.'
+            IF (Hout(idV2rs,ng)) WRITE (out,170) Hout(idV2rs,ng),       &
+     &         'Hout(idV2rs)',                                          &
+     &         'Write out total 2D v-radiation stress.'
+            IF (Hout(idU2Sd,ng)) WRITE (out,170) Hout(idU2Sd,ng),       &
+     &         'Hout(idU2Sd)',                                          &
+     &         'Write out 2D u-momentum stokes velocity.'
+            IF (Hout(idV2Sd,ng)) WRITE (out,170) Hout(idV2Sd,ng),       &
+     &         'Hout(idV2Sd)',                                          &
+     &         'Write out 2D v-momentum stokes velocity.'
 #endif
 #ifdef SOLVE3D
 # ifdef WEC_MELLOR
-          IF (Hout(idW3xx,ng)) WRITE (out,170) Hout(idW3xx,ng),         &
-     &       'Hout(idW3xx)',                                            &
-     &       'Write out 3D radiation stress, Sxx.'
-          IF (Hout(idW3xy,ng)) WRITE (out,170) Hout(idW3xy,ng),         &
-     &       'Hout(idW3xy)',                                            &
-     &       'Write out 3D radiation stress, Sxy.'
-          IF (Hout(idW3yy,ng)) WRITE (out,170) Hout(idW3yy,ng),         &
-     &       'Hout(idW3yy)',                                            &
-     &       'Write out 3D radiation stress, Syy.'
-          IF (Hout(idW3zx,ng)) WRITE (out,170) Hout(idW3zx,ng),         &
-     &       'Hout(idW3zx)',                                            &
-     &       'Write out 3D radiation stress, Szx.'
-          IF (Hout(idW3zy,ng)) WRITE (out,170) Hout(idW3zy,ng),         &
-     &       'Hout(idW3zy)',                                            &
-     &       'Write out 3D radiation stress, Szy.'
+            IF (Hout(idW3xx,ng)) WRITE (out,170) Hout(idW3xx,ng),       &
+     &         'Hout(idW3xx)',                                          &
+     &         'Write out 3D radiation stress, Sxx.'
+            IF (Hout(idW3xy,ng)) WRITE (out,170) Hout(idW3xy,ng),       &
+     &         'Hout(idW3xy)',                                          &
+     &         'Write out 3D radiation stress, Sxy.'
+            IF (Hout(idW3yy,ng)) WRITE (out,170) Hout(idW3yy,ng),       &
+     &         'Hout(idW3yy)',                                          &
+     &         'Write out 3D radiation stress, Syy.'
+            IF (Hout(idW3zx,ng)) WRITE (out,170) Hout(idW3zx,ng),       &
+     &         'Hout(idW3zx)',                                          &
+     &         'Write out 3D radiation stress, Szx.'
+            IF (Hout(idW3zy,ng)) WRITE (out,170) Hout(idW3zy,ng),       &
+     &         'Hout(idW3zy)',                                          &
+     &         'Write out 3D radiation stress, Szy.'
 #  endif
 #  ifdef WEC
-          IF (Hout(idU3rs,ng)) WRITE (out,170) Hout(idU3rs,ng),         &
-     &       'Hout(idU3rs)',                                            &
-     &       'Write out total 3D u-radiation stress.'
-          IF (Hout(idV3rs,ng)) WRITE (out,170) Hout(idV3rs,ng),         &
-     &       'Hout(idV3rs)',                                            &
-     &       'Write out total 3D v-radiation stress.'
-          IF (Hout(idU3Sd,ng)) WRITE (out,170) Hout(idU3Sd,ng),         &
-     &       'Hout(idU3Sd)',                                            &
-     &       'Write out 3D u-momentum stokes velocity.'
-          IF (Hout(idV3Sd,ng)) WRITE (out,170) Hout(idV3Sd,ng),         &
-     &       'Hout(idV3Sd)',                                            &
-     &       'Write out 3D v-momentum stokes velocity.'
-          IF (Hout(idW3Sd,ng)) WRITE (out,170) Hout(idW3Sd,ng),         &
-     &       'Hout(idW3Sd)',                                            &
-     &       'Write out 3D omega-momentum stokes velocity.'
-          IF (Hout(idW3St,ng)) WRITE (out,170) Hout(idW3St,ng),         &
-     &       'Hout(idW3St)',                                            &
-     &       'Write out 3D w-momentum stokes velocity.'
+            IF (Hout(idU3rs,ng)) WRITE (out,170) Hout(idU3rs,ng),       &
+     &         'Hout(idU3rs)',                                          &
+     &         'Write out total 3D u-radiation stress.'
+            IF (Hout(idV3rs,ng)) WRITE (out,170) Hout(idV3rs,ng),       &
+     &         'Hout(idV3rs)',                                          &
+     &         'Write out total 3D v-radiation stress.'
+            IF (Hout(idU3Sd,ng)) WRITE (out,170) Hout(idU3Sd,ng),       &
+     &         'Hout(idU3Sd)',                                          &
+     &         'Write out 3D u-momentum stokes velocity.'
+            IF (Hout(idV3Sd,ng)) WRITE (out,170) Hout(idV3Sd,ng),       &
+     &         'Hout(idV3Sd)',                                          &
+     &         'Write out 3D v-momentum stokes velocity.'
+            IF (Hout(idW3Sd,ng)) WRITE (out,170) Hout(idW3Sd,ng),       &
+     &         'Hout(idW3Sd)',                                          &
+     &         'Write out 3D omega-momentum stokes velocity.'
+            IF (Hout(idW3St,ng)) WRITE (out,170) Hout(idW3St,ng),       &
+     &         'Hout(idW3St)',                                          &
+     &         'Write out 3D w-momentum stokes velocity.'
 # endif
 # ifdef WEC_VF
-          IF (Hout(idWztw,ng)) WRITE (out,170) Hout(idWztw,ng),         &
-     &       'Hout(idWztw)',                                            &
-     &       'Write out WEC quasi-static sea level adjustment.'
-          IF (Hout(idWqsp,ng)) WRITE (out,170) Hout(idWqsp,ng),         &
-     &       'Hout(idWqsp)',                                            &
-     &       'Write out WEC quasi-static pressure.'
-          IF (Hout(idWbeh,ng)) WRITE (out,170) Hout(idWbeh,ng),         &
-     &       'Hout(idWbeh)',                                            &
-     &       'Write out WEC Bernoulli head.'
+            IF (Hout(idWztw,ng)) WRITE (out,170) Hout(idWztw,ng),       &
+     &         'Hout(idWztw)',                                          &
+     &         'Write out WEC quasi-static sea level adjustment.'
+            IF (Hout(idWqsp,ng)) WRITE (out,170) Hout(idWqsp,ng),       &
+     &         'Hout(idWqsp)',                                          &
+     &         'Write out WEC quasi-static pressure.'
+            IF (Hout(idWbeh,ng)) WRITE (out,170) Hout(idWbeh,ng),       &
+     &         'Hout(idWbeh)',                                          &
+     &         'Write out WEC Bernoulli head.'
 # endif
 #endif
 #ifdef WAVES_HEIGHT
-          IF (Hout(idWamp,ng)) WRITE (out,170) Hout(idWamp,ng),         &
-     &       'Hout(idWamp)',                                            &
-     &       'Write out wave height.'
+            IF (Hout(idWamp,ng)) WRITE (out,170) Hout(idWamp,ng),       &
+     &         'Hout(idWamp)',                                          &
+     &         'Write out wave height.'
 #endif
 #ifdef WAVES_LENGTH
-          IF (Hout(idWlen,ng)) WRITE (out,170) Hout(idWlen,ng),         &
-     &       'Hout(idWlen)',                                            &
-     &       'Write out wavelength.'
+            IF (Hout(idWlen,ng)) WRITE (out,170) Hout(idWlen,ng),       &
+     &         'Hout(idWlen)',                                          &
+     &         'Write out wavelength.'
 #endif
 #ifdef WAVES_LENGTHP
-          IF (Hout(idWlep,ng)) WRITE (out,170) Hout(idWlep,ng),         &
-     &       'Hout(idWlep)',                                            &
-     &       'Write out peak wavelength.'
+            IF (Hout(idWlep,ng)) WRITE (out,170) Hout(idWlep,ng),       &
+     &         'Hout(idWlep)',                                          &
+     &         'Write out peak wavelength.'
 #endif
 #ifdef WAVES_DIR
-          IF (Hout(idWdir,ng)) WRITE (out,170) Hout(idWdir,ng),         &
-     &       'Hout(idWdir)',                                            &
-     &       'Write out wave direction.'
+            IF (Hout(idWdir,ng)) WRITE (out,170) Hout(idWdir,ng),       &
+     &         'Hout(idWdir)',                                          &
+     &         'Write out wave direction.'
 #endif
 #ifdef WAVES_TOP_PERIOD
-          IF (Hout(idWptp,ng)) WRITE (out,170) Hout(idWptp,ng),         &
-     &       'Hout(idWptp)',                                            &
-     &       'Write out wave surface period.'
+            IF (Hout(idWptp,ng)) WRITE (out,170) Hout(idWptp,ng),       &
+     &         'Hout(idWptp)',                                          &
+     &         'Write out wave surface period.'
 #endif
 #ifdef WAVES_BOT_PERIOD
-          IF (Hout(idWpbt,ng)) WRITE (out,170) Hout(idWpbt,ng),         &
-     &       'Hout(idWpbt)',                                            &
-     &       'Write out wave bottom period.'
+            IF (Hout(idWpbt,ng)) WRITE (out,170) Hout(idWpbt,ng),       &
+     &         'Hout(idWpbt)',                                          &
+     &         'Write out wave bottom period.'
 #endif
 #ifdef WAVES_OCEAN
-          IF (Hout(idWorb,ng)) WRITE (out,170) Hout(idWorb,ng),         &
-     &       'Hout(idWorb)',                                            &
-     &       'Write out wave bottom orbital velocity.'
+            IF (Hout(idWorb,ng)) WRITE (out,170) Hout(idWorb,ng),       &
+     &         'Hout(idWorb)',                                          &
+     &         'Write out wave bottom orbital velocity.'
 #endif
 #if defined WAVES_OCEAN || (defined WEC_VF && defined BOTTOM_STREAMING)
-          IF (Hout(idWdif,ng)) WRITE (out,170) Hout(idWdif,ng),         &
-     &       'Hout(idWdif)',                                            &
-     &       'Write out wave dissipation due to bottom friction.'
+            IF (Hout(idWdif,ng)) WRITE (out,170) Hout(idWdif,ng),       &
+     &         'Hout(idWdif)',                                          &
+     &         'Write out wave dissipation due to bottom friction.'
 #endif
 #if defined WAVES_OCEAN || defined TKE_WAVEDISS || \
     defined WDISS_THORGUZA || defined WDISS_CHURTHOR
-          IF (Hout(idWdib,ng)) WRITE (out,170) Hout(idWdib,ng),         &
-     &       'Hout(idWdib)',                                            &
-     &       'Write out wave dissipation due to breaking.'
-          IF (Hout(idWdiw,ng)) WRITE (out,170) Hout(idWdiw,ng),         &
-     &       'Hout(idWdiw)',                                            &
-     &       'Write out wave dissipation due to white capping.'
+            IF (Hout(idWdib,ng)) WRITE (out,170) Hout(idWdib,ng),       &
+     &         'Hout(idWdib)',                                          &
+     &         'Write out wave dissipation due to breaking.'
+            IF (Hout(idWdiw,ng)) WRITE (out,170) Hout(idWdiw,ng),       &
+     &         'Hout(idWdiw)',                                          &
+     &         'Write out wave dissipation due to white capping.'
 #endif
 #ifdef ROLLER_SVENDSEN
-          IF (Hout(idWbrk,ng)) WRITE (out,170) Hout(idWbrk,ng),         &
-     &       'Hout(idWbrk)',                                            &
-     &       'Write out percent wave breaking.'
+            IF (Hout(idWbrk,ng)) WRITE (out,170) Hout(idWbrk,ng),       &
+     &         'Hout(idWbrk)',                                          &
+     &         'Write out percent wave breaking.'
 #endif
 #ifdef WEC_ROLLER
-          IF (Hout(idWdis,ng)) WRITE (out,170) Hout(idWdis,ng),         &
-     &       'Hout(idWdis)',                                            &
-     &       'Write out wave roller dissipation.'
+            IF (Hout(idWdis,ng)) WRITE (out,170) Hout(idWdis,ng),       &
+     &         'Hout(idWdis)',                                          &
+     &         'Write out wave roller dissipation.'
 #endif
 #ifdef ROLLER_RENIERS
-          IF (Hout(idWrol,ng)) WRITE (out,170) Hout(idWrol,ng),         &
-     &       'Hout(idWrol)',                                            &
-     &       'Write out wave roller action density.'
+            IF (Hout(idWrol,ng)) WRITE (out,170) Hout(idWrol,ng),       &
+     &         'Hout(idWrol)',                                          &
+     &         'Write out wave roller action density.'
 #endif
 #ifdef WAVES_DSPR
-          IF (Hout(idWvds,ng)) WRITE (out,170) Hout(idWvds,ng),         &
-     &       'Hout(idWvds)',                                            &
-     &       'Write out wave directional spread.'
-          IF (Hout(idWvqp,ng)) WRITE (out,170) Hout(idWvqp,ng),         &
-     &       'Hout(idWvqp)',                                            &
-     &       'Write out wave spectrum peakedness.'
+            IF (Hout(idWvds,ng)) WRITE (out,170) Hout(idWvds,ng),       &
+     &         'Hout(idWvds)',                                          &
+     &         'Write out wave directional spread.'
+            IF (Hout(idWvqp,ng)) WRITE (out,170) Hout(idWvqp,ng),       &
+     &         'Hout(idWvqp)',                                          &
+     &         'Write out wave spectrum peakedness.'
 #endif
 #ifdef UV_KIRBY
-          IF (Hout(idUwav,ng)) WRITE (out,170) Hout(idUwav,ng),         &
-     &       'Hout(idUwav)',                                            &
-     &       'Wave-avg surface u-velocity.'
-          IF (Hout(idVwav,ng)) WRITE (out,170) Hout(idVwav,ng),         &
-     &       'Hout(idVwav)',                                            &
-     &       'Wave-avg surface v-velocity.'
+            IF (Hout(idUwav,ng)) WRITE (out,170) Hout(idUwav,ng),       &
+     &         'Hout(idUwav)',                                          &
+     &         'Wave-avg surface u-velocity.'
+            IF (Hout(idVwav,ng)) WRITE (out,170) Hout(idVwav,ng),       &
+     &         'Hout(idVwav)',                                          &
+     &         'Wave-avg surface v-velocity.'
 #endif
 #ifdef INWAVE_MODEL
-          IF (Hout(idACen,ng)) WRITE (out,170) Hout(idACen,ng),         &
-     &       'Hout(idACen)',                                            &
-     &       'Write out 3D wave action'
-          IF (Hout(idACCt,ng)) WRITE (out,170) Hout(idACct,ng),         &
-     &       'Hout(idACct)',                                            &
-     &       'Wave group celerity in the theta coordinate.'
-          IF (Hout(idACcx,ng)) WRITE (out,170) Hout(idACcx,ng),         &
-     &       'Hout(idACcx)',                                            &
-     &       'Wave group celerity in the xi coordinate.'
-          IF (Hout(idACcy,ng)) WRITE (out,170) Hout(idACcy,ng),         &
-     &       'Hout(idACcy)',                                            &
-     &       'Wave group celerity in the eta space.'
-          IF (Hout(idACtp,ng)) WRITE (out,170) Hout(idACtp,ng),         &
-     &       'Hout(idACtp)',                                            &
-     &       'Wave group peak period.'
+            IF (Hout(idACen,ng)) WRITE (out,170) Hout(idACen,ng),       &
+     &         'Hout(idACen)',                                          &
+     &         'Write out 3D wave action'
+            IF (Hout(idACCt,ng)) WRITE (out,170) Hout(idACct,ng),       &
+     &         'Hout(idACct)',                                          &
+     &         'Wave group celerity in the theta coordinate.'
+            IF (Hout(idACcx,ng)) WRITE (out,170) Hout(idACcx,ng),       &
+     &         'Hout(idACcx)',                                          &
+     &         'Wave group celerity in the xi coordinate.'
+            IF (Hout(idACcy,ng)) WRITE (out,170) Hout(idACcy,ng),       &
+     &         'Hout(idACcy)',                                          &
+     &         'Wave group celerity in the eta space.'
+            IF (Hout(idACtp,ng)) WRITE (out,170) Hout(idACtp,ng),       &
+     &         'Hout(idACtp)',                                          &
+     &         'Wave group peak period.'
 #endif
 #if defined SOLVE3D && defined T_PASSIVE
-          DO itrc=1,NPT
-            IF (Hout(idTvar(inert(itrc)),ng)) WRITE (out,180)           &
-     &          Hout(idTvar(inert(itrc)),ng), 'Hout(inert)',            &
-     &          'Write out inert passive tracer ', itrc,                &
-     &          TRIM(Vname(1,idTvar(inert(itrc))))
-          END DO
+            DO itrc=1,NPT
+              IF (Hout(idTvar(inert(itrc)),ng)) WRITE (out,180)         &
+     &            Hout(idTvar(inert(itrc)),ng), 'Hout(inert)',          &
+     &            'Write out inert passive tracer ', itrc,              &
+     &            TRIM(Vname(1,idTvar(inert(itrc))))
+            END DO
 #endif
 #ifdef SOLVE3D
 # if defined RUNOFF
-          IF (Hout(idRunoff,ng)) WRITE (out,170) Hout(idRunoff,ng),     &
-     &       'Hout(idRunoff)',                                          &
-     &       'Write out surface fresh water input via runoff.'
+            IF (Hout(idRunoff,ng)) WRITE (out,170) Hout(idRunoff,ng),   &
+     &         'Hout(idRunoff)',                                        &
+     &         'Write out surface fresh water input via runoff.'
 # endif
 # if defined BULK_FLUXES || defined ECOSIM || defined ATM_PRESS \
   || defined ATM2OCN_FLUXES || defined CCSM_FLUXES2D
-          IF (Hout(idPair,ng)) WRITE (out,170) Hout(idPair,ng),         &
-     &       'Hout(idPair)',                                            &
-     &       'Write out surface air pressure.'
+            IF (Hout(idPair,ng)) WRITE (out,170) Hout(idPair,ng),       &
+     &         'Hout(idPair)',                                          &
+     &         'Write out surface air pressure.'
 # endif
 # if defined BULK_FLUXES || defined ECOSIM
-          IF (Hout(idUair,ng)) WRITE (out,170) Hout(idUair,ng),         &
-     &       'Hout(idUair)',                                            &
-     &       'Write out surface U-wind component.'
-          IF (Hout(idVair,ng)) WRITE (out,170) Hout(idVair,ng),         &
-     &       'Hout(idVair)',                                            &
-     &       'Write out surface V-wind component.'
-          IF (Hout(idUairE,ng)) WRITE (out,170) Hout(idUairE,ng),        &
-     &       'Hout(idUairE)',                                            &
-     &       'Write out surface Eastward U-wind component.'
-          IF (Hout(idVairN,ng)) WRITE (out,170) Hout(idVairN,ng),        &
-     &       'Hout(idVairN)',                                            &
-     &       'Write out surface Northward V-wind component.'
+            IF (Hout(idUair,ng)) WRITE (out,170) Hout(idUair,ng),       &
+     &         'Hout(idUair)',                                          &
+     &         'Write out surface U-wind component.'
+            IF (Hout(idVair,ng)) WRITE (out,170) Hout(idVair,ng),       &
+     &         'Hout(idVair)',                                          &
+     &         'Write out surface V-wind component.'
+            IF (Hout(idUairE,ng)) WRITE (out,170) Hout(idUairE,ng),     &
+     &         'Hout(idUairE)',                                         &
+     &         'Write out surface Eastward U-wind component.'
+            IF (Hout(idVairN,ng)) WRITE (out,170) Hout(idVairN,ng),     &
+     &         'Hout(idVairN)',                                         &
+     &         'Write out surface Northward V-wind component.'
 # endif
-          IF (Hout(idTsur(itemp),ng)) WRITE (out,170)                   &
-     &        Hout(idTsur(itemp),ng), 'Hout(idTsur)',                   &
-     &       'Write out surface net heat flux.'
-          IF (Hout(idTsur(isalt),ng)) WRITE (out,170)                   &
-     &        Hout(idTsur(isalt),ng), 'Hout(idTsur)',                   &
-     &       'Write out surface net salt flux.'
+            IF (Hout(idTsur(itemp),ng)) WRITE (out,170)                 &
+     &          Hout(idTsur(itemp),ng), 'Hout(idTsur)',                 &
+     &         'Write out surface net heat flux.'
+            IF (Hout(idTsur(isalt),ng)) WRITE (out,170)                 &
+     &          Hout(idTsur(isalt),ng), 'Hout(idTsur)',                 &
+     &         'Write out surface net salt flux.'
 # ifdef SHORTWAVE
-          IF (Hout(idSrad,ng)) WRITE (out,170) Hout(idSrad,ng),         &
-     &       'Hout(idSrad)',                                            &
-     &       'Write out shortwave radiation flux.'
+            IF (Hout(idSrad,ng)) WRITE (out,170) Hout(idSrad,ng),       &
+     &         'Hout(idSrad)',                                          &
+     &         'Write out shortwave radiation flux.'
 # endif
 # ifdef BULK_FLUXES
-          IF (Hout(idLrad,ng)) WRITE (out,170) Hout(idLrad,ng),         &
-     &       'Hout(idLrad)',                                            &
-     &       'Write out longwave radiation flux.'
-          IF (Hout(idLhea,ng)) WRITE (out,170) Hout(idLhea,ng),         &
-     &       'Hout(idLhea)',                                            &
-     &       'Write out latent heat flux.'
-          IF (Hout(idShea,ng)) WRITE (out,170) Hout(idShea,ng),         &
-     &       'Hout(idShea)',                                            &
-     &       'Write out sensible heat flux.'
+            IF (Hout(idLrad,ng)) WRITE (out,170) Hout(idLrad,ng),       &
+     &         'Hout(idLrad)',                                          &
+     &         'Write out longwave radiation flux.'
+            IF (Hout(idLhea,ng)) WRITE (out,170) Hout(idLhea,ng),       &
+     &         'Hout(idLhea)',                                          &
+     &         'Write out latent heat flux.'
+            IF (Hout(idShea,ng)) WRITE (out,170) Hout(idShea,ng),       &
+     &         'Hout(idShea)',                                          &
+     &         'Write out sensible heat flux.'
 #  ifdef EMINUSP
-          IF (Hout(idEmPf,ng)) WRITE (out,170) Hout(idEmPf,ng),         &
-     &       'Hout(idEmPf)',                                            &
-     &       'Write out E-P flux.'
-          IF (Hout(idevap,ng)) WRITE (out,170) Hout(idevap,ng),         &
-     &       'Hout(idevap)',                                            &
-     &       'Write out evaporation rate.'
-          IF (Hout(idrain,ng)) WRITE (out,170) Hout(idrain,ng),         &
-     &       'Hout(idrain)',                                            &
-     &       'Write out rain rate.'
+            IF (Hout(idEmPf,ng)) WRITE (out,170) Hout(idEmPf,ng),       &
+     &         'Hout(idEmPf)',                                          &
+     &         'Write out E-P flux.'
+            IF (Hout(idevap,ng)) WRITE (out,170) Hout(idevap,ng),       &
+     &         'Hout(idevap)',                                          &
+     &         'Write out evaporation rate.'
+            IF (Hout(idrain,ng)) WRITE (out,170) Hout(idrain,ng),       &
+     &         'Hout(idrain)',                                          &
+     &         'Write out rain rate.'
 #  endif
 # endif
-          IF (Hout(idDano,ng)) WRITE (out,170) Hout(idDano,ng),         &
-     &       'Hout(idDano)',                                            &
-     &       'Write out density anomaly.'
-          IF (Hout(idVvis,ng)) WRITE (out,170) Hout(idVvis,ng),         &
-     &       'Hout(idVvis)',                                            &
-     &       'Write out vertical viscosity: AKv.'
-          IF (Hout(idTdif,ng)) WRITE (out,170) Hout(idTdif,ng),         &
-     &       'Hout(idTdif)',                                            &
-     &       'Write out vertical diffusion: AKt(itemp).'
-          IF (Hout(idSdif,ng)) WRITE (out,170) Hout(idSdif,ng),         &
-     &       'Hout(idSdif)',                                            &
-     &       'Write out vertical diffusion: AKt(isalt).'
+            IF (Hout(idDano,ng)) WRITE (out,170) Hout(idDano,ng),       &
+     &         'Hout(idDano)',                                          &
+     &         'Write out density anomaly.'
+            IF (Hout(idVvis,ng)) WRITE (out,170) Hout(idVvis,ng),       &
+     &         'Hout(idVvis)',                                          &
+     &         'Write out vertical viscosity: AKv.'
+            IF (Hout(idTdif,ng)) WRITE (out,170) Hout(idTdif,ng),       &
+     &         'Hout(idTdif)',                                          &
+     &         'Write out vertical diffusion: AKt(itemp).'
+            IF (Hout(idSdif,ng)) WRITE (out,170) Hout(idSdif,ng),       &
+     &         'Hout(idSdif)',                                          &
+     &         'Write out vertical diffusion: AKt(isalt).'
 # ifdef LMD_SKPP
-          IF (Hout(idHsbl,ng)) WRITE (out,170) Hout(idHsbl,ng),         &
-     &       'Hout(idHsbl)',                                            &
-     &       'Write out depth of surface boundary layer.'
+            IF (Hout(idHsbl,ng)) WRITE (out,170) Hout(idHsbl,ng),       &
+     &         'Hout(idHsbl)',                                          &
+     &         'Write out depth of surface boundary layer.'
 # endif
 # ifdef LMD_BKPP
-          IF (Hout(idHbbl,ng)) WRITE (out,170) Hout(idHbbl,ng),         &
-     &       'Hout(idHbbl)',                                            &
-     &       'Write out depth of bottom boundary layer.'
+            IF (Hout(idHbbl,ng)) WRITE (out,170) Hout(idHbbl,ng),       &
+     &         'Hout(idHbbl)',                                          &
+     &         'Write out depth of bottom boundary layer.'
 # endif
 # if defined GLS_MIXING || defined MY25_MIXING
-          IF (Hout(idMtke,ng)) WRITE (out,170) Hout(idMtke,ng),         &
-     &       'Hout(idMtke)',                                            &
-     &       'Write out turbulent kinetic energy.'
-          IF (Hout(idMtls,ng)) WRITE (out,170) Hout(idMtls,ng),         &
-     &       'Hout(idMtls)',                                            &
-     &       'Write out turbulent generic length-scale.'
+            IF (Hout(idMtke,ng)) WRITE (out,170) Hout(idMtke,ng),       &
+     &         'Hout(idMtke)',                                          &
+     &         'Write out turbulent kinetic energy.'
+            IF (Hout(idMtls,ng)) WRITE (out,170) Hout(idMtls,ng),       &
+     &         'Hout(idMtls)',                                          &
+     &         'Write out turbulent generic length-scale.'
 # endif
 #endif
+          END IF
 #if defined HISTORY2
           WRITE (out,'(1x)')
           IF (Hout2(idFsur,ng)) WRITE (out,170) Hout2(idFsur,ng),       &
@@ -6102,355 +6360,659 @@
           END DO
 # endif
 #endif
+
+          IF ((nQCK(ng).gt.0).and.ANY(Qout(:,ng))) THEN
+            WRITE (out,'(1x)')
+#if defined SEDIMENT && defined SED_MORPH
+            IF (Qout(idBath,ng)) WRITE (out,170) Qout(idBath,ng),       &
+     &         'Qout(idBath)',                                          &
+     &       'Write out time-dependent bathymetry.'
+#endif
+            IF (Qout(idFsur,ng)) WRITE (out,170) Qout(idFsur,ng),       &
+     &         'Qout(idFsur)',                                          &
+     &         'Write out free-surface.'
+            IF (Qout(idUbar,ng)) WRITE (out,170) Qout(idUbar,ng),       &
+     &         'Qout(idUbar)',                                          &
+     &         'Write out 2D U-momentum component.'
+            IF (Qout(idVbar,ng)) WRITE (out,170) Qout(idVbar,ng),       &
+     &         'Qout(idVbar)',                                          &
+     &         'Write out 2D V-momentum component.'
+            IF (Qout(idu2dE,ng)) WRITE (out,170) Qout(idu2dE,ng),       &
+     &         'Qout(idu2dE)',                                          &
+     &         'Write out 2D U-eastward  at RHO-points.'
+            IF (Qout(idv2dN,ng)) WRITE (out,170) Qout(idv2dN,ng),       &
+     &         'Qout(idv2dN)',                                          &
+     &         'Write out 2D V-northward at RHO-points.'
+#ifdef SOLVE3D
+            IF (Qout(idUvel,ng)) WRITE (out,170) Qout(idUvel,ng),       &
+     &         'Qout(idUvel)',                                          &
+     &         'Write out 3D U-momentum component.'
+            IF (Qout(idVvel,ng)) WRITE (out,170) Qout(idVvel,ng),       &
+     &         'Qout(idVvel)',                                          &
+     &         'Write out 3D V-momentum component.'
+            IF (Qout(idUsur,ng)) WRITE (out,170) Qout(idUsur,ng),       &
+     &         'Qout(idUsur)',                                          &
+     &         'Write out surface U-momentum component.'
+            IF (Qout(idVsur,ng)) WRITE (out,170) Qout(idVsur,ng),       &
+     &         'Qout(idVsur)',                                          &
+     &         'Write out surface V-momentum component.'
+            IF (Qout(idu3dE,ng)) WRITE (out,170) Qout(idu3dE,ng),       &
+     &         'Qout(idu3dE)',                                          &
+     &         'Write out 3D U-wastward  component at RHO-points.'
+            IF (Qout(idv3dN,ng)) WRITE (out,170) Qout(idv3dN,ng),       &
+     &         'Qout(idv3dN)',                                          &
+     &         'Write out 3D V-northward component at RHO-points.'
+            IF (Qout(idu3dE,ng)) WRITE (out,170) Qout(idu3dE,ng),       &
+     &         'Qout(idu3dE)',                                          &
+     &         'Write out surface U-wastward  component at RHO-points.'
+            IF (Qout(idv3dN,ng)) WRITE (out,170) Qout(idv3dN,ng),       &
+     &         'Qout(idv3dN)',                                          &
+     &         'Write out surface V-northward component at RHO-points.'
+            IF (Qout(idWvel,ng)) WRITE (out,170) Qout(idWvel,ng),       &
+     &         'Qout(idWvel)',                                          &
+     &         'Write out W-momentum component.'
+            IF (Qout(idOvel,ng)) WRITE (out,170) Qout(idOvel,ng),       &
+     &         'Qout(idOvel)',                                          &
+     &         'Write out omega vertical velocity.'
+            DO itrc=1,NAT
+              IF (Qout(idTvar(itrc),ng)) WRITE (out,180)                &
+     &            Qout(idTvar(itrc),ng), 'Qout(idTvar)',                &
+     &            'Write out tracer ', itrc, TRIM(Vname(1,idTvar(itrc)))
+            END DO
+            DO itrc=1,NAT
+              IF (Qout(idsurT(itrc),ng)) WRITE (out,180)                &
+     &            Qout(idsurT(itrc),ng), 'Qout(idsurT)',                &
+     &            'Write out surface tracer ', itrc,                    &
+     &            TRIM(Vname(1,idsurT(itrc)))
+            END DO
+            IF (Qout(idpthR,ng)) WRITE (out,170) Qout(idpthR,ng),       &
+     &         'Qout(idpthR)',                                          &
+     &         'Write out time-varying dephts of RHO-points.'
+            IF (Qout(idpthU,ng)) WRITE (out,170) Qout(idpthU,ng),       &
+     &         'Qout(idpthU)',                                          &
+     &         'Write out time-varying dephts of U-points.'
+            IF (Qout(idpthV,ng)) WRITE (out,170) Qout(idpthV,ng),       &
+     &         'Qout(idpthV)',                                          &
+     &         'Write out time-varying dephts of V-points.'
+            IF (Qout(idpthW,ng)) WRITE (out,170) Qout(idpthW,ng),       &
+     &         'Qout(idpthW)',                                          &
+     &         'Write out time-varying dephts of W-points.'
+#endif
+            IF (Qout(idUsms,ng)) WRITE (out,170) Qout(idUsms,ng),       &
+     &         'Qout(idUsms)',                                          &
+     &         'Write out surface U-momentum stress.'
+            IF (Qout(idVsms,ng)) WRITE (out,170) Qout(idVsms,ng),       &
+     &         'Qout(idVsms)',                                          &
+     &         'Write out surface V-momentum stress.'
+            IF (Qout(idUbms,ng)) WRITE (out,170) Qout(idUbms,ng),       &
+     &         'Qout(idUbms)',                                          &
+     &         'Write out bottom U-momentum stress.'
+            IF (Qout(idVbms,ng)) WRITE (out,170) Qout(idVbms,ng),       &
+     &         'Qout(idVbms)',                                          &
+     &         'Write out bottom V-momentum stress.'
+#ifdef BBL_MODEL
+            IF (Qout(idUbrs,ng)) WRITE (out,170) Qout(idUbrs,ng),       &
+     &         'Qout(idUbrs)',                                          &
+     &         'Write out bottom U-current stress.'
+            IF (Qout(idVbrs,ng)) WRITE (out,170) Qout(idVbrs,ng),       &
+     &         'Qout(idVbrs)',                                          &
+     &         'Write out bottom V-current stress.'
+            IF (Qout(idUbws,ng)) WRITE (out,170) Qout(idUbws,ng),       &
+     &         'Qout(idUbws)',                                          &
+     &         'Write out wind-induced, bottom U-wave stress.'
+            IF (Qout(idVbws,ng)) WRITE (out,170) Qout(idVbws,ng),       &
+     &         'Qout(idVbws)',                                          &
+     &         'Write out wind-induced, bottom V-wave stress.'
+            IF (Qout(idUbcs,ng)) WRITE (out,170) Qout(idUbcs,ng),       &
+     &         'Qout(idUbcs)',                                          &
+     &         'Write out max wind + current, bottom U-wave stress.'
+            IF (Qout(idVbcs,ng)) WRITE (out,170) Qout(idVbcs,ng),       &
+     &         'Qout(idVbcs)',                                          &
+     &         'Write out max wind + current, bottom V-wave stress.'
+            IF (Qout(idUbot,ng)) WRITE (out,170) Qout(idUbot,ng),       &
+     &         'Qout(idUbot)',                                          &
+     &         'Write out bed wave orbital U-velocity.'
+            IF (Qout(idVbot,ng)) WRITE (out,170) Qout(idVbot,ng),       &
+     &         'Qout(idVbot)',                                          &
+     &         'Write out bed wave orbital V-velocity.'
+            IF (Qout(idUbur,ng)) WRITE (out,170) Qout(idUbur,ng),       &
+     &         'Qout(idUbur)',                                          &
+     &         'Write out bottom U-momentum above bed.'
+            IF (Qout(idVbvr,ng)) WRITE (out,170) Qout(idVbvr,ng),       &
+     &         'Qout(idVbvr)',                                          &
+     &         'Write out bottom V-momentum above bed.'
+#endif
+#if defined NEARSHORE_MELLOR
+            IF (Qout(idW2xx,ng)) WRITE (out,170) Qout(idW2xx,ng),       &
+     &         'Qout(idW2xx)',                                          &
+     &         'Write out 2D radiation stress, Sxx.'
+            IF (Qout(idW2xy,ng)) WRITE (out,170) Qout(idW2xy,ng),       &
+     &         'Qout(idW2xy)',                                          &
+     &         'Write out 2D radiation stress, Sxy.'
+            IF (Qout(idW2yy,ng)) WRITE (out,170) Qout(idW2yy,ng),       &
+     &         'Qout(idW2yy)',                                          &
+     &         'Write out 2D radiation stress, Syy.'
+            IF (Qout(idU2rs,ng)) WRITE (out,170) Qout(idU2rs,ng),       &
+     &         'Qout(idU2rs)',                                          &
+     &         'Write out total 2D u-radiation stress.'
+            IF (Qout(idV2rs,ng)) WRITE (out,170) Qout(idV2rs,ng),       &
+     &         'Qout(idV2rs)',                                          &
+     &         'Write out total 2D v-radiation stress.'
+            IF (Qout(idU2Sd,ng)) WRITE (out,170) Qout(idU2Sd,ng),       &
+     &         'Qout(idU2Sd)',                                          &
+     &         'Write out 2D u-momentum stokes velocity.'
+            IF (Qout(idV2Sd,ng)) WRITE (out,170) Qout(idV2Sd,ng),       &
+     &         'Qout(idV2Sd)',                                          &
+     &         'Write out 2D v-momentum stokes velocity.'
+# ifdef SOLVE3D
+            IF (Qout(idW3xx,ng)) WRITE (out,170) Qout(idW3xx,ng),       &
+     &         'Qout(idW3xx)',                                          &
+     &         'Write out 3D radiation stress, Sxx.'
+            IF (Qout(idW3xy,ng)) WRITE (out,170) Qout(idW3xy,ng),       &
+     &         'Qout(idW3xy)',                                          &
+     &         'Write out 3D radiation stress, Sxy.'
+            IF (Qout(idW3yy,ng)) WRITE (out,170) Qout(idW3yy,ng),       &
+     &         'Qout(idW3yy)',                                          &
+     &         'Write out 3D radiation stress, Syy.'
+#  ifdef NEARSHORE_MELLOR05
+            IF (Qout(idW3zx,ng)) WRITE (out,170) Qout(idW3zx,ng),       &
+     &         'Qout(idW3zx)',                                          &
+     &         'Write out 3D radiation stress, Szx.'
+            IF (Qout(idW3zy,ng)) WRITE (out,170) Qout(idW3zy,ng),       &
+     &         'Qout(idW3zy)',                                          &
+     &         'Write out 3D radiation stress, Szy.'
+#  endif
+            IF (Qout(idU3rs,ng)) WRITE (out,170) Qout(idU3rs,ng),       &
+     &         'Qout(idU3rs)',                                          &
+     &         'Write out total 3D u-radiation stress.'
+            IF (Qout(idV3rs,ng)) WRITE (out,170) Qout(idV3rs,ng),       &
+     &         'Qout(idV3rs)',                                          &
+     &         'Write out total 3D v-radiation stress.'
+            IF (Qout(idU3Sd,ng)) WRITE (out,170) Qout(idU3Sd,ng),       &
+     &         'Qout(idU3Sd)',                                          &
+     &         'Write out 3D u-momentum stokes velocity.'
+            IF (Qout(idV3Sd,ng)) WRITE (out,170) Qout(idV3Sd,ng),       &
+     &         'Qout(idV3Sd)',                                          &
+     &         'Write out 3D v-momentum stokes velocity.'
+# endif
+#endif
+#ifdef WAVES_HEIGHT
+            IF (Qout(idWamp,ng)) WRITE (out,170) Qout(idWamp,ng),       &
+     &         'Qout(idWamp)',                                          &
+     &         'Write out wave height.'
+#endif
+#ifdef WAVES_LENGTH
+            IF (Qout(idWlen,ng)) WRITE (out,170) Qout(idWlen,ng),       &
+     &         'Qout(idWlen)',                                          &
+     &         'Write out wavelength.'
+#endif
+#ifdef WAVES_DIR
+            IF (Qout(idWdir,ng)) WRITE (out,170) Qout(idWdir,ng),       &
+     &         'Qout(idWdir)',                                          &
+     &         'Write out wave direction.'
+#endif
+#ifdef WAVES_TOP_PERIOD
+            IF (Qout(idWptp,ng)) WRITE (out,170) Qout(idWptp,ng),       &
+     &         'Qout(idWptp)',                                          &
+     &         'Write out wave surface period.'
+#endif
+#ifdef WAVES_BOT_PERIOD
+            IF (Qout(idWpbt,ng)) WRITE (out,170) Qout(idWpbt,ng),       &
+     &         'Qout(idWpbt)',                                          &
+     &         'Write out wave bottom period.'
+#endif
+#ifdef WAVES_UB
+            IF (Qout(idWorb,ng)) WRITE (out,170) Qout(idWorb,ng),       &
+     &         'Qout(idWorb)',                                          &
+     &         'Write out wave bottom orbital velocity.'
+#endif
+#if defined TKE_WAVEDISS || defined WAVES_OCEAN
+            IF (Qout(idWdis,ng)) WRITE (out,170) Qout(idWdis,ng),       &
+     &         'Qout(idWdis)',                                          &
+     &         'Write out wave dissipation.'
+#endif
+#if defined SOLVE3D && defined T_PASSIVE
+            DO itrc=1,NPT
+              IF (Qout(idTvar(inert(itrc)),ng)) WRITE (out,180)         &
+     &            Qout(idTvar(inert(itrc)),ng), 'Qout(inert)',          &
+     &            'Write out inert passive tracer ', itrc,              &
+     &            TRIM(Vname(1,idTvar(inert(itrc))))
+            END DO
+            DO itrc=1,NPT
+              IF (Qout(idsurT(inert(itrc)),ng)) WRITE (out,180)         &
+     &            Qout(idsurT(inert(itrc)),ng), 'Qout(Snert)',          &
+     &            'Write out inert passive tracer ', itrc,              &
+     &            TRIM(Vname(1,idsurT(inert(itrc))))
+            END DO
+#endif
+#ifdef SOLVE3D
+# if defined BULK_FLUXES || defined ECOSIM || defined ATM_PRESS
+            IF (Qout(idPair,ng)) WRITE (out,170) Qout(idPair,ng),       &
+     &         'Qout(idPair)',                                          &
+     &         'Write out surface air pressure.'
+# endif
+# if defined BULK_FLUXES || defined ECOSIM
+            IF (Qout(idUair,ng)) WRITE (out,170) Qout(idUair,ng),       &
+     &         'Qout(idUair)',                                          &
+     &         'Write out surface U-wind component.'
+            IF (Qout(idVair,ng)) WRITE (out,170) Qout(idVair,ng),       &
+     &         'Qout(idVair)',                                          &
+     &         'Write out surface V-wind component.'
+# endif
+            IF (Qout(idTsur(itemp),ng)) WRITE (out,170)                 &
+     &          Qout(idTsur(itemp),ng), 'Qout(idTsur)',                 &
+     &         'Write out surface net heat flux.'
+            IF (Qout(idTsur(isalt),ng)) WRITE (out,170)                 &
+     &          Qout(idTsur(isalt),ng), 'Qout(idTsur)',                 &
+     &         'Write out surface net salt flux.'
+# ifdef SHORTWAVE
+            IF (Qout(idSrad,ng)) WRITE (out,170) Qout(idSrad,ng),       &
+     &         'Qout(idSrad)',                                          &
+     &         'Write out shortwave radiation flux.'
+# endif
+# ifdef BULK_FLUXES
+            IF (Qout(idLrad,ng)) WRITE (out,170) Qout(idLrad,ng),       &
+     &         'Qout(idLrad)',                                          &
+     &         'Write out longwave radiation flux.'
+            IF (Qout(idLhea,ng)) WRITE (out,170) Qout(idLhea,ng),       &
+     &         'Qout(idLhea)',                                          &
+     &         'Write out latent heat flux.'
+            IF (Qout(idShea,ng)) WRITE (out,170) Qout(idShea,ng),       &
+     &         'Qout(idShea)',                                          &
+     &         'Write out sensible heat flux.'
+#  ifdef EMINUSP
+            IF (Qout(idEmPf,ng)) WRITE (out,170) Qout(idEmPf,ng),       &
+     &         'Qout(idEmPf)',                                          &
+     &         'Write out E-P flux.'
+            IF (Qout(idevap,ng)) WRITE (out,170) Qout(idevap,ng),       &
+     &         'Qout(idevap)',                                          &
+     &         'Write out evaporation rate.'
+            IF (Qout(idrain,ng)) WRITE (out,170) Qout(idrain,ng),       &
+     &         'Qout(idrain)',                                          &
+     &         'Write out rain rate.'
+#  endif
+# endif
+            IF (Qout(idDano,ng)) WRITE (out,170) Qout(idDano,ng),       &
+     &         'Qout(idDano)',                                          &
+     &         'Write out density anomaly.'
+            IF (Qout(idVvis,ng)) WRITE (out,170) Qout(idVvis,ng),       &
+     &         'Qout(idVvis)',                                          &
+     &         'Write out vertical viscosity: AKv.'
+            IF (Qout(idTdif,ng)) WRITE (out,170) Qout(idTdif,ng),       &
+     &         'Qout(idTdif)',                                          &
+     &         'Write out vertical diffusion: AKt(itemp).'
+            IF (Qout(idSdif,ng)) WRITE (out,170) Qout(idSdif,ng),       &
+     &         'Qout(idSdif)',                                          &
+     &         'Write out vertical diffusion: AKt(isalt).'
+# ifdef LMD_SKPP
+            IF (Qout(idHsbl,ng)) WRITE (out,170) Qout(idHsbl,ng),       &
+     &         'Qout(idHsbl)',                                          &
+     &         'Write out depth of surface boundary layer.'
+# endif
+# ifdef LMD_BKPP
+            IF (Qout(idHbbl,ng)) WRITE (out,170) Qout(idHbbl,ng),       &
+     &         'Qout(idHbbl)',                                          &
+     &         'Write out depth of bottom boundary layer.'
+# endif
+# if defined GLS_MIXING || defined MY25_MIXING
+            IF (Qout(idMtke,ng)) WRITE (out,170) Qout(idMtke,ng),       &
+     &         'Qout(idMtke)',                                          &
+     &         'Write out turbulent kinetic energy.'
+            IF (Qout(idMtls,ng)) WRITE (out,170) Qout(idMtls,ng),       &
+     &         'Qout(idMtls)',                                          &
+     &         'Write out turbulent generic length-scale.'
+# endif
+#endif
+          END IF
 #if defined AVERAGES    || \
    (defined AD_AVERAGES && defined ADJOINT) || \
    (defined RP_AVERAGES && defined TL_IOMS) || \
    (defined TL_AVERAGES && defined TANGENT)
-          WRITE (out,'(1x)')
-          IF (Aout(idFsur,ng)) WRITE (out,170) Aout(idFsur,ng),         &
-     &       'Aout(idFsur)',                                            &
-     &       'Write out averaged free-surface.'
-          IF (Aout(idUbar,ng)) WRITE (out,170) Aout(idUbar,ng),         &
-     &       'Aout(idUbar)',                                            &
-     &       'Write out averaged 2D U-momentum component.'
-          IF (Aout(idVbar,ng)) WRITE (out,170) Aout(idVbar,ng),         &
-     &       'Aout(idVbar)',                                            &
-     &       'Write out averaged 2D V-momentum component.'
-          IF (Aout(idu2dE,ng)) WRITE (out,170) Aout(idu2dE,ng),         &
-     &       'Aout(idu2dE)',                                            &
-     &       'Write out averaged 2D U-eastward  at RHO-points.'
-          IF (Aout(idv2dN,ng)) WRITE (out,170) Aout(idv2dN,ng),         &
-     &       'Aout(idv2dN)',                                            &
-     &       'Write out averaged 2D V-northward at RHO-points.'
+          IF ((nAVG(ng).gt.0).and.ANY(Aout(:,ng))) THEN
+            WRITE (out,'(1x)')
+            IF (Aout(idFsur,ng)) WRITE (out,170) Aout(idFsur,ng),       &
+     &         'Aout(idFsur)',                                          &
+     &         'Write out averaged free-surface.'
+            IF (Aout(idUbar,ng)) WRITE (out,170) Aout(idUbar,ng),       &
+     &         'Aout(idUbar)',                                          &
+     &         'Write out averaged 2D U-momentum component.'
+            IF (Aout(idVbar,ng)) WRITE (out,170) Aout(idVbar,ng),       &
+     &         'Aout(idVbar)',                                          &
+     &         'Write out averaged 2D V-momentum component.'
+            IF (Aout(idu2dE,ng)) WRITE (out,170) Aout(idu2dE,ng),       &
+     &         'Aout(idu2dE)',                                          &
+     &         'Write out averaged 2D U-eastward  at RHO-points.'
+            IF (Aout(idv2dN,ng)) WRITE (out,170) Aout(idv2dN,ng),       &
+     &         'Aout(idv2dN)',                                          &
+     &         'Write out averaged 2D V-northward at RHO-points.'
 # ifdef SOLVE3D
-          IF (Aout(idUvel,ng)) WRITE (out,170) Aout(idUvel,ng),         &
-     &       'Aout(idUvel)',                                            &
-     &       'Write out averaged 3D U-momentum component.'
-          IF (Aout(idVvel,ng)) WRITE (out,170) Aout(idVvel,ng),         &
-     &       'Aout(idVvel)',                                            &
-     &       'Write out averaged 3D V-momentum component.'
-          IF (Aout(idu3dE,ng)) WRITE (out,170) Aout(idu3dE,ng),         &
-     &       'Aout(idu3dE)',                                            &
-     &       'Write out averaged 3D U-eastward  at RHO-points.'
-          IF (Aout(idv3dN,ng)) WRITE (out,170) Aout(idv3dN,ng),         &
-     &       'Aout(idv3dN)',                                            &
-     &       'Write out averaged 3D V-northward at RHO-points.'
-          IF (Aout(idWvel,ng)) WRITE (out,170) Aout(idWvel,ng),         &
-     &       'Aout(idWvel)',                                            &
-     &       'Write out averaged W-momentum component.'
-          IF (Aout(idOvel,ng)) WRITE (out,170) Aout(idOvel,ng),         &
-     &       'Aout(idOvel)',                                            &
-     &       'Write out averaged omega vertical velocity.'
-          DO itrc=1,NAT
-            IF (Aout(idTvar(itrc),ng)) WRITE (out,180)                  &
-     &          Aout(idTvar(itrc),ng), 'Aout(idTvar)',                  &
-     &          'Write out averaged tracer ', itrc,                     &
-     &          TRIM(Vname(1,idTvar(itrc)))
-          END DO
+            IF (Aout(idUvel,ng)) WRITE (out,170) Aout(idUvel,ng),       &
+     &         'Aout(idUvel)',                                          &
+     &         'Write out averaged 3D U-momentum component.'
+            IF (Aout(idVvel,ng)) WRITE (out,170) Aout(idVvel,ng),       &
+     &         'Aout(idVvel)',                                          &
+     &         'Write out averaged 3D V-momentum component.'
+            IF (Aout(idu3dE,ng)) WRITE (out,170) Aout(idu3dE,ng),       &
+     &         'Aout(idu3dE)',                                          &
+     &         'Write out averaged 3D U-eastward  at RHO-points.'
+            IF (Aout(idv3dN,ng)) WRITE (out,170) Aout(idv3dN,ng),       &
+     &         'Aout(idv3dN)',                                          &
+     &         'Write out averaged 3D V-northward at RHO-points.'
+            IF (Aout(idWvel,ng)) WRITE (out,170) Aout(idWvel,ng),       &
+     &         'Aout(idWvel)',                                          &
+     &         'Write out averaged W-momentum component.'
+            IF (Aout(idOvel,ng)) WRITE (out,170) Aout(idOvel,ng),       &
+     &         'Aout(idOvel)',                                          &
+     &         'Write out averaged omega vertical velocity.'
+            DO itrc=1,NAT
+              IF (Aout(idTvar(itrc),ng)) WRITE (out,180)                &
+     &            Aout(idTvar(itrc),ng), 'Aout(idTvar)',                &
+     &            'Write out averaged tracer ', itrc,                   &
+     &            TRIM(Vname(1,idTvar(itrc)))
+            END DO
 # endif
-          IF (Aout(idUsms,ng)) WRITE (out,170) Aout(idUsms,ng),         &
-     &       'Aout(idUsms)',                                            &
-     &       'Write out averaged surface U-momentum stress.'
-          IF (Aout(idVsms,ng)) WRITE (out,170) Aout(idVsms,ng),         &
-     &       'Aout(idVsms)',                                            &
-     &       'Write out averaged surface V-momentum stress.'
-          IF (Aout(idUbms,ng)) WRITE (out,170) Aout(idUbms,ng),         &
-     &       'Aout(idUbms)',                                            &
-     &       'Write out averaged bottom U-momentum stress.'
-          IF (Aout(idVbms,ng)) WRITE (out,170) Aout(idVbms,ng),         &
-     &       'Aout(idVbms)',                                            &
-     &       'Write out averaged bottom V-momentum stress.'
+            IF (Aout(idUsms,ng)) WRITE (out,170) Aout(idUsms,ng),       &
+     &         'Aout(idUsms)',                                          &
+     &         'Write out averaged surface U-momentum stress.'
+            IF (Aout(idVsms,ng)) WRITE (out,170) Aout(idVsms,ng),       &
+     &         'Aout(idVsms)',                                          &
+     &         'Write out averaged surface V-momentum stress.'
+            IF (Aout(idUbms,ng)) WRITE (out,170) Aout(idUbms,ng),       &
+     &         'Aout(idUbms)',                                          &
+     &         'Write out averaged bottom U-momentum stress.'
+            IF (Aout(idVbms,ng)) WRITE (out,170) Aout(idVbms,ng),       &
+     &         'Aout(idVbms)',                                          &
+     &         'Write out averaged bottom V-momentum stress.'
 # ifdef BBL_MODEL
-          IF (Aout(idUbrs,ng)) WRITE (out,170) Aout(idUbrs,ng),         &
-     &       'Aout(idUbrs)',                                            &
-     &       'Write out averaged bottom U-current stress.'
-          IF (Aout(idVbrs,ng)) WRITE (out,170) Aout(idVbrs,ng),         &
-     &       'Aout(idVbrs)',                                            &
-     &       'Write out averaged bottom V-current stress.'
-          IF (Aout(idUbws,ng)) WRITE (out,170) Aout(idUbws,ng),         &
-     &       'Aout(idUbws)',                                            &
-     &       'Write out averaged wind-induced, bottom U-wave stress.'
-          IF (Aout(idVbws,ng)) WRITE (out,170) Aout(idVbws,ng),         &
-     &       'Aout(idVbws)',                                            &
-     &       'Write out averaged wind-induced, bottom V-wave stress.'
-          IF (Aout(idUbcs,ng)) WRITE (out,170) Aout(idUbcs,ng),         &
-     &       'Aout(idUbcs)',                                            &
-     &       'Write out averaged max wind + current, bottom U-wave stress.'
-          IF (Aout(idVbcs,ng)) WRITE (out,170) Aout(idVbcs,ng),         &
-     &       'Aout(idVbcs)',                                            &
-     &       'Write out averaged max wind + current, bottom V-wave stress.'
-          IF (Aout(idUVwc,ng)) WRITE (out,170) Aout(idUVwc,ng),         &
-     &       'Aout(idUVwc)',                                            &
-     &       'Write out averaged max wind + current, bottom UV-wave stress.'
-          IF (Aout(idUbot,ng)) WRITE (out,170) Aout(idUbot,ng),         &
-     &       'Aout(idUbot)',                                            &
-     &       'Write out averaged bed wave orbital U-velocity.'
-          IF (Aout(idVbot,ng)) WRITE (out,170) Aout(idVbot,ng),         &
-     &       'Aout(idVbot)',                                            &
-     &       'Write out averaged bed wave orbital V-velocity.'
-          IF (Aout(idUbur,ng)) WRITE (out,170) Aout(idUbur,ng),         &
-     &       'Aout(idUbur)',                                            &
-     &       'Write out averaged bottom U-momentum above bed.'
-          IF (Aout(idVbvr,ng)) WRITE (out,170) Aout(idVbvr,ng),         &
-     &       'Aout(idVbvr)',                                            &
-     &       'Write out averaged bottom V-momentum above bed.'
+            IF (Aout(idUbrs,ng)) WRITE (out,170) Aout(idUbrs,ng),       &
+     &         'Aout(idUbrs)',                                          &
+     &         'Write out averaged bottom U-current stress.'
+            IF (Aout(idVbrs,ng)) WRITE (out,170) Aout(idVbrs,ng),       &
+     &         'Aout(idVbrs)',                                          &
+     &         'Write out averaged bottom V-current stress.'
+            IF (Aout(idUbws,ng)) WRITE (out,170) Aout(idUbws,ng),       &
+     &         'Aout(idUbws)',                                          &
+     &         'Write out averaged wind-induced, bottom U-wave stress.'
+            IF (Aout(idVbws,ng)) WRITE (out,170) Aout(idVbws,ng),       &
+     &         'Aout(idVbws)',                                          &
+     &         'Write out averaged wind-induced, bottom V-wave stress.'
+            IF (Aout(idUbcs,ng)) WRITE (out,170) Aout(idUbcs,ng),       &
+     &         'Aout(idUbcs)',                                          &
+     &         'Write out averaged max wind+curr bottom U-wave stress.'
+            IF (Aout(idVbcs,ng)) WRITE (out,170) Aout(idVbcs,ng),       &
+     &         'Aout(idVbcs)',                                          &
+     &         'Write out averaged max wind+curr bottom V-wave stress.'
+            IF (Aout(idUVwc,ng)) WRITE (out,170) Aout(idUVwc,ng),       &
+     &         'Aout(idUVwc)',                                          &
+     &         'Write out averaged max wind+curr bottom UV-wave stress.'
+            IF (Aout(idUbot,ng)) WRITE (out,170) Aout(idUbot,ng),       &
+     &         'Aout(idUbot)',                                          &
+     &         'Write out averaged bed wave orbital U-velocity.'
+            IF (Aout(idVbot,ng)) WRITE (out,170) Aout(idVbot,ng),       &
+     &         'Aout(idVbot)',                                          &
+     &         'Write out averaged bed wave orbital V-velocity.'
+            IF (Aout(idUbur,ng)) WRITE (out,170) Aout(idUbur,ng),       &
+     &         'Aout(idUbur)',                                          &
+     &         'Write out averaged bottom U-momentum above bed.'
+            IF (Aout(idVbvr,ng)) WRITE (out,170) Aout(idVbvr,ng),       &
+     &         'Aout(idVbvr)',                                          &
+     &         'Write out averaged bottom V-momentum above bed.'
 # endif
 # if defined WEC_MELLOR
-          IF (Aout(idW2xx,ng)) WRITE (out,170) Aout(idW2xx,ng),         &
-     &       'Aout(idW2xx)',                                            &
-     &       'Write out averaged 2D radiation stress, Sxx.'
-          IF (Aout(idW2xy,ng)) WRITE (out,170) Aout(idW2xy,ng),         &
-     &       'Aout(idW2xy)',                                            &
-     &       'Write out averaged 2D radiation stress, Sxy.'
-          IF (Aout(idW2yy,ng)) WRITE (out,170) Aout(idW2yy,ng),         &
-     &       'Aout(idW2yy)',                                            &
-     &       'Write out averaged 2D radiation stress, Syy.'
+            IF (Aout(idW2xx,ng)) WRITE (out,170) Aout(idW2xx,ng),       &
+     &         'Aout(idW2xx)',                                          &
+     &         'Write out averaged 2D radiation stress, Sxx.'
+            IF (Aout(idW2xy,ng)) WRITE (out,170) Aout(idW2xy,ng),       &
+     &         'Aout(idW2xy)',                                          &
+     &         'Write out averaged 2D radiation stress, Sxy.'
+            IF (Aout(idW2yy,ng)) WRITE (out,170) Aout(idW2yy,ng),       &
+     &         'Aout(idW2yy)',                                          &
+     &         'Write out averaged 2D radiation stress, Syy.'
 # endif
 # if defined WEC
-          IF (Aout(idU2rs,ng)) WRITE (out,170) Aout(idU2rs,ng),         &
-     &       'Aout(idU2rs)',                                            &
-     &       'Write out averaged total 2D u-wec stress.'
-          IF (Aout(idV2rs,ng)) WRITE (out,170) Aout(idV2rs,ng),         &
-     &       'Aout(idV2rs)',                                            &
-     &       'Write out averaged total 2D v-wec stress.'
-          IF (Aout(idU2Sd,ng)) WRITE (out,170) Aout(idU2Sd,ng),         &
-     &       'Aout(idU2Sd)',                                            &
-     &       'Write out averaged 2D u-momentum stokes velocity.'
-          IF (Aout(idV2Sd,ng)) WRITE (out,170) Aout(idV2Sd,ng),         &
-     &       'Aout(idV2Sd)',                                            &
-     &       'Write out averaged 2D v-momentum stokes velocity.'
+            IF (Aout(idU2rs,ng)) WRITE (out,170) Aout(idU2rs,ng),       &
+     &         'Aout(idU2rs)',                                          &
+     &         'Write out averaged total 2D u-wec stress.'
+            IF (Aout(idV2rs,ng)) WRITE (out,170) Aout(idV2rs,ng),       &
+     &         'Aout(idV2rs)',                                          &
+     &         'Write out averaged total 2D v-wec stress.'
+            IF (Aout(idU2Sd,ng)) WRITE (out,170) Aout(idU2Sd,ng),       &
+     &         'Aout(idU2Sd)',                                          &
+     &         'Write out averaged 2D u-momentum stokes velocity.'
+            IF (Aout(idV2Sd,ng)) WRITE (out,170) Aout(idV2Sd,ng),       &
+     &         'Aout(idV2Sd)',                                          &
+     &         'Write out averaged 2D v-momentum stokes velocity.'
 # endif
 # if defined WEC_MELLOR
 #  ifdef SOLVE3D
-          IF (Aout(idW3xx,ng)) WRITE (out,170) Aout(idW3xx,ng),         &
-     &       'Aout(idW3xx)',                                            &
-     &       'Write out averaged 3D radiation stress, Sxx.'
-          IF (Aout(idW3xy,ng)) WRITE (out,170) Aout(idW3xy,ng),         &
-     &       'Aout(idW3xy)',                                            &
-     &       'Write out averaged 3D radiation stress, Sxy.'
-          IF (Aout(idW3yy,ng)) WRITE (out,170) Aout(idW3yy,ng),         &
-     &       'Aout(idW3yy)',                                            &
-     &       'Write out averaged 3D radiation stress, Syy.'
-          IF (Aout(idW3zx,ng)) WRITE (out,170) Aout(idW3zx,ng),         &
-     &       'Aout(idW3zx)',                                            &
-     &       'Write out averaged 3D radiation stress, Szx.'
-          IF (Aout(idW3zy,ng)) WRITE (out,170) Aout(idW3zy,ng),         &
-     &       'Aout(idW3zy)',                                            &
-     &       'Write out averaged 3D radiation stress, Szy.'
+            IF (Aout(idW3xx,ng)) WRITE (out,170) Aout(idW3xx,ng),       &
+     &         'Aout(idW3xx)',                                          &
+     &         'Write out averaged 3D radiation stress, Sxx.'
+            IF (Aout(idW3xy,ng)) WRITE (out,170) Aout(idW3xy,ng),       &
+     &         'Aout(idW3xy)',                                          &
+     &         'Write out averaged 3D radiation stress, Sxy.'
+            IF (Aout(idW3yy,ng)) WRITE (out,170) Aout(idW3yy,ng),       &
+     &         'Aout(idW3yy)',                                          &
+     &         'Write out averaged 3D radiation stress, Syy.'
+            IF (Aout(idW3zx,ng)) WRITE (out,170) Aout(idW3zx,ng),       &
+     &         'Aout(idW3zx)',                                          &
+     &         'Write out averaged 3D radiation stress, Szx.'
+            IF (Aout(idW3zy,ng)) WRITE (out,170) Aout(idW3zy,ng),       &
+     &         'Aout(idW3zy)',                                          &
+     &         'Write out averaged 3D radiation stress, Szy.'
 #  endif
 # endif
 # if defined WEC
 #  ifdef SOLVE3D
-          IF (Aout(idU3rs,ng)) WRITE (out,170) Aout(idU3rs,ng),         &
-     &       'Aout(idU3rs)',                                            &
-     &       'Write out averaged total 3D u-wec stress.'
-          IF (Aout(idV3rs,ng)) WRITE (out,170) Aout(idV3rs,ng),         &
-     &       'Aout(idV3rs)',                                            &
-     &       'Write out averaged total 3D v-wec stress.'
-          IF (Aout(idU3Sd,ng)) WRITE (out,170) Aout(idU3Sd,ng),         &
-     &       'Aout(idU3Sd)',                                            &
-     &       'Write out averaged 3D u-momentum stokes velocity.'
-          IF (Aout(idV3Sd,ng)) WRITE (out,170) Aout(idV3Sd,ng),         &
-     &       'Aout(idV3Sd)',                                            &
-     &       'Write out averaged 3D v-momentum stokes velocity.'
-          IF (Aout(idW3Sd,ng)) WRITE (out,170) Aout(idW3Sd,ng),         &
-     &       'Aout(idW3Sd)',                                            &
-     &       'Write out averaged 3D Omega-momentum stokes velocity.'
-          IF (Aout(idW3St,ng)) WRITE (out,170) Aout(idW3St,ng),         &
-     &       'Aout(idW3St)',                                            &
-     &       'Write out averaged 3D w-momentum stokes velocity.'
+            IF (Aout(idU3rs,ng)) WRITE (out,170) Aout(idU3rs,ng),       &
+     &         'Aout(idU3rs)',                                          &
+     &         'Write out averaged total 3D u-wec stress.'
+            IF (Aout(idV3rs,ng)) WRITE (out,170) Aout(idV3rs,ng),       &
+     &         'Aout(idV3rs)',                                          &
+     &         'Write out averaged total 3D v-wec stress.'
+            IF (Aout(idU3Sd,ng)) WRITE (out,170) Aout(idU3Sd,ng),       &
+     &         'Aout(idU3Sd)',                                          &
+     &         'Write out averaged 3D u-momentum stokes velocity.'
+            IF (Aout(idV3Sd,ng)) WRITE (out,170) Aout(idV3Sd,ng),       &
+     &         'Aout(idV3Sd)',                                          &
+     &         'Write out averaged 3D v-momentum stokes velocity.'
+            IF (Aout(idW3Sd,ng)) WRITE (out,170) Aout(idW3Sd,ng),       &
+     &         'Aout(idW3Sd)',                                          &
+     &         'Write out averaged 3D Omega-momentum stokes velocity.'
+            IF (Aout(idW3St,ng)) WRITE (out,170) Aout(idW3St,ng),       &
+     &         'Aout(idW3St)',                                          &
+     &         'Write out averaged 3D w-momentum stokes velocity.'
 #  endif
-          IF (Aout(idWztw,ng)) WRITE (out,170) Aout(idWztw,ng),         &
-     &       'Aout(idWztw)',                                            &
-     &       'Write out averaged total 3D u-wec stress.'
-
-
+            IF (Aout(idWztw,ng)) WRITE (out,170) Aout(idWztw,ng),       &
+     &         'Aout(idWztw)',                                          &
+     &         'Write out averaged total 3D u-wec stress.'
 # endif
 # if defined SOLVE3D && defined T_PASSIVE
-          DO itrc=1,NPT
-            IF (Aout(idTvar(inert(itrc)),ng)) WRITE (out,180)           &
-     &          Aout(idTvar(inert(itrc)),ng), 'Aout(inert)',            &
-     &          'Write out  averaged inert passive tracer ', itrc,      &
-     &          TRIM(Vname(1,idTvar(inert(itrc))))
-          END DO
+            DO itrc=1,NPT
+              IF (Aout(idTvar(inert(itrc)),ng)) WRITE (out,180)         &
+     &            Aout(idTvar(inert(itrc)),ng), 'Aout(inert)',          &
+     &            'Write out  averaged inert passive tracer ', itrc,    &
+     &            TRIM(Vname(1,idTvar(inert(itrc))))
+            END DO
 # endif
 # ifdef SOLVE3D
 #  if defined RUNOFF
-          IF (Aout(idRunoff,ng)) WRITE (out,170) Aout(idRunoff,ng),     &
-     &       'Aout(idRunoff)',                                          &
-     &       'Write out averaged surface fresh water input via runoff.'
+            IF (Aout(idRunoff,ng)) WRITE (out,170) Aout(idRunoff,ng),   &
+     &         'Aout(idRunoff)',                                        &
+     &         'Write out averaged surface freshwater input via runoff.'
 #  endif
 #  if defined BULK_FLUXES || defined ECOSIM || defined ATM_PRESS \
    || defined ATM2OCN_FLUXES || defined CCSM_FLUXES2D
-          IF (Aout(idPair,ng)) WRITE (out,170) Aout(idPair,ng),         &
-     &       'Aout(idPair)',                                            &
-     &       'Write out averaged surface air pressure.'
+            IF (Aout(idPair,ng)) WRITE (out,170) Aout(idPair,ng),       &
+     &         'Aout(idPair)',                                          &
+     &         'Write out averaged surface air pressure.'
 #  endif
 #  if defined BULK_FLUXES || defined ECOSIM
-          IF (Aout(idUair,ng)) WRITE (out,170) Aout(idUair,ng),         &
-     &       'Aout(idUair)',                                            &
-     &       'Write out averaged surface U-wind component.'
-          IF (Aout(idVair,ng)) WRITE (out,170) Aout(idVair,ng),         &
-     &       'Aout(idVair)',                                            &
-     &       'Write out averaged surface V-wind component.'
-          IF (Aout(idUairE,ng)) WRITE (out,170) Aout(idUairE,ng),        &
-     &       'Aout(idUairE)',                                            &
-     &       'Write out averaged Eastward surface U-wind component.'
-          IF (Aout(idVairN,ng)) WRITE (out,170) Aout(idVairN,ng),        &
-     &       'Aout(idVairN)',                                            &
-     &       'Write out averaged Northward surface V-wind component.'
+            IF (Aout(idUair,ng)) WRITE (out,170) Aout(idUair,ng),       &
+     &         'Aout(idUair)',                                          &
+     &         'Write out averaged surface U-wind component.'
+            IF (Aout(idVair,ng)) WRITE (out,170) Aout(idVair,ng),       &
+     &         'Aout(idVair)',                                          &
+     &         'Write out averaged surface V-wind component.'
+            IF (Aout(idUairE,ng)) WRITE (out,170) Aout(idUairE,ng),     &
+     &         'Aout(idUairE)',                                         &
+     &         'Write out averaged Eastward surface U-wind component.'
+            IF (Aout(idVairN,ng)) WRITE (out,170) Aout(idVairN,ng),     &
+     &         'Aout(idVairN)',                                         &
+     &         'Write out averaged Northward surface V-wind component.'
 #  endif
-          IF (Aout(idTsur(itemp),ng)) WRITE (out,170)                   &
-     &        Aout(idTsur(itemp),ng), 'Aout(idTsur)',                   &
-     &       'Write out averaged surface net heat flux.'
-          IF (Aout(idTsur(isalt),ng)) WRITE (out,170)                   &
-     &        Aout(idTsur(isalt),ng), 'Aout(idTsur)',                   &
-     &       'Write out averaged surface net salt flux.'
+            IF (Aout(idTsur(itemp),ng)) WRITE (out,170)                 &
+     &          Aout(idTsur(itemp),ng), 'Aout(idTsur)',                 &
+     &         'Write out averaged surface net heat flux.'
+            IF (Aout(idTsur(isalt),ng)) WRITE (out,170)                 &
+     &          Aout(idTsur(isalt),ng), 'Aout(idTsur)',                 &
+     &         'Write out averaged surface net salt flux.'
 #  ifdef SHORTWAVE
-          IF (Aout(idSrad,ng)) WRITE (out,170) Aout(idSrad,ng),         &
-     &       'Aout(idSrad)',                                            &
-     &       'Write out averaged shortwave radiation flux.'
+            IF (Aout(idSrad,ng)) WRITE (out,170) Aout(idSrad,ng),       &
+     &         'Aout(idSrad)',                                          &
+     &         'Write out averaged shortwave radiation flux.'
 #  endif
 #  ifdef BULK_FLUXES
-          IF (Aout(idLrad,ng)) WRITE (out,170) Aout(idLrad,ng),         &
-     &       'Aout(idLrad)',                                            &
-     &       'Write out averaged longwave radiation flux.'
-          IF (Aout(idLhea,ng)) WRITE (out,170) Aout(idLhea,ng),         &
-     &       'Aout(idLhea)',                                            &
-     &       'Write out averaged latent heat flux.'
-          IF (Aout(idShea,ng)) WRITE (out,170) Aout(idShea,ng),         &
-     &       'Aout(idShea)',                                            &
-     &       'Write out averaged sensible heat flux.'
+            IF (Aout(idLrad,ng)) WRITE (out,170) Aout(idLrad,ng),       &
+     &         'Aout(idLrad)',                                          &
+     &         'Write out averaged longwave radiation flux.'
+            IF (Aout(idLhea,ng)) WRITE (out,170) Aout(idLhea,ng),       &
+     &         'Aout(idLhea)',                                          &
+     &         'Write out averaged latent heat flux.'
+            IF (Aout(idShea,ng)) WRITE (out,170) Aout(idShea,ng),       &
+     &         'Aout(idShea)',                                          &
+     &         'Write out averaged sensible heat flux.'
 #   ifdef EMINUSP
-          IF (Aout(idevap,ng)) WRITE (out,170) Aout(idevap,ng),         &
-     &       'Aout(idevap)',                                            &
-     &       'Write out averaged evaporation rate.'
-          IF (Aout(idrain,ng)) WRITE (out,170) Aout(idrain,ng),         &
-     &       'Aout(idrain)',                                            &
-     &       'Write out averaged rain rate.'
+            IF (Aout(idevap,ng)) WRITE (out,170) Aout(idevap,ng),       &
+     &         'Aout(idevap)',                                          &
+     &         'Write out averaged evaporation rate.'
+            IF (Aout(idrain,ng)) WRITE (out,170) Aout(idrain,ng),       &
+     &         'Aout(idrain)',                                          &
+     &         'Write out averaged rain rate.'
 #   endif
 #  endif
-          IF (Aout(idDano,ng)) WRITE (out,170) Aout(idDano,ng),         &
-     &       'Aout(idDano)',                                            &
-     &       'Write out averaged density anomaly.'
+            IF (Aout(idDano,ng)) WRITE (out,170) Aout(idDano,ng),       &
+     &         'Aout(idDano)',                                          &
+     &         'Write out averaged density anomaly.'
 #  if defined LMD_MIXING || defined MY25_MIXING || defined GLS_MIXING
-          IF (Aout(idVvis,ng)) WRITE (out,170) Aout(idVvis,ng),         &
-     &       'Aout(idVvis)',                                            &
-     &       'Write out averaged vertical viscosity: AKv.'
-          IF (Aout(idTdif,ng)) WRITE (out,170) Aout(idTdif,ng),         &
-     &       'Aout(idTdif)',                                            &
-     &       'Write out averaged vertical diffusion: AKt(itemp).'
-          IF (Aout(idSdif,ng)) WRITE (out,170) Aout(idSdif,ng),         &
-     &       'Aout(idSdif)',                                            &
-     &       'Write out averaged vertical diffusion: AKt(isalt).'
+            IF (Aout(idVvis,ng)) WRITE (out,170) Aout(idVvis,ng),       &
+     &         'Aout(idVvis)',                                          &
+     &         'Write out averaged vertical viscosity: AKv.'
+            IF (Aout(idTdif,ng)) WRITE (out,170) Aout(idTdif,ng),       &
+     &         'Aout(idTdif)',                                          &
+     &         'Write out averaged vertical diffusion: AKt(itemp).'
+            IF (Aout(idSdif,ng)) WRITE (out,170) Aout(idSdif,ng),       &
+     &         'Aout(idSdif)',                                          &
+     &         'Write out averaged vertical diffusion: AKt(isalt).'
 #  endif
 #  ifdef LMD_SKPP
-          IF (Aout(idHsbl,ng)) WRITE (out,170) Aout(idHsbl,ng),         &
-     &       'Aout(idHsbl)',                                            &
-     &       'Write out averaged depth of surface boundary layer.'
+            IF (Aout(idHsbl,ng)) WRITE (out,170) Aout(idHsbl,ng),       &
+     &         'Aout(idHsbl)',                                          &
+     &         'Write out averaged depth of surface boundary layer.'
 #  endif
 #  ifdef LMD_BKPP
-          IF (Aout(idHbbl,ng)) WRITE (out,170) Aout(idHbbl,ng),         &
-     &       'Aout(idHbbl)',                                            &
-     &       'Write out averaged depth of bottom boundary layer.'
+            IF (Aout(idHbbl,ng)) WRITE (out,170) Aout(idHbbl,ng),       &
+     &         'Aout(idHbbl)',                                          &
+     &         'Write out averaged depth of bottom boundary layer.'
 #  endif
 # endif
-          IF (Aout(id2dRV,ng)) WRITE (out,170) Aout(id2dRV,ng),         &
-     &       'Aout(id2dRV)',                                            &
-     &       'Write out averaged 2D relative vorticity.'
-          IF (Aout(id2dPV,ng)) WRITE (out,170) Aout(id2dPV,ng),         &
-     &       'Aout(id2dPV)',                                            &
-     &       'Write out averaged 2D potential vorticity.'
+            IF (Aout(id2dRV,ng)) WRITE (out,170) Aout(id2dRV,ng),       &
+     &         'Aout(id2dRV)',                                          &
+     &         'Write out averaged 2D relative vorticity.'
+            IF (Aout(id2dPV,ng)) WRITE (out,170) Aout(id2dPV,ng),       &
+     &         'Aout(id2dPV)',                                          &
+     &         'Write out averaged 2D potential vorticity.'
 # ifdef SOLVE3D
-          IF (Aout(id3dRV,ng)) WRITE (out,170) Aout(id3dRV,ng),         &
-     &       'Aout(id3dRV)',                                            &
-     &       'Write out averaged 3D relative vorticity.'
-          IF (Aout(id3dPV,ng)) WRITE (out,170) Aout(id3dPV,ng),         &
-     &       'Aout(id3dPV)',                                            &
-     &       'Write out averaged 3D potential vorticity.'
+            IF (Aout(id3dRV,ng)) WRITE (out,170) Aout(id3dRV,ng),       &
+     &         'Aout(id3dRV)',                                          &
+     &         'Write out averaged 3D relative vorticity.'
+            IF (Aout(id3dPV,ng)) WRITE (out,170) Aout(id3dPV,ng),       &
+     &         'Aout(id3dPV)',                                          &
+     &         'Write out averaged 3D potential vorticity.'
 # endif
-          IF (Aout(idZZav,ng)) WRITE (out,170) Aout(idZZav,ng),         &
-     &       'Aout(idZZav)',                                            &
-     &       'Write out averaged quadratic <zeta*zeta> term.'
-          IF (Aout(idU2av,ng)) WRITE (out,170) Aout(idU2av,ng),         &
-     &       'Aout(idU2av)',                                            &
-     &       'Write out averaged quadratic <ubar*ubar> term.'
-          IF (Aout(idV2av,ng)) WRITE (out,170) Aout(idV2av,ng),         &
-     &       'Aout(idV2av)',                                            &
-     &       'Write out averaged quadratic <vbar*vbar> term.'
+            IF (Aout(idZZav,ng)) WRITE (out,170) Aout(idZZav,ng),       &
+     &         'Aout(idZZav)',                                          &
+     &         'Write out averaged quadratic <zeta*zeta> term.'
+            IF (Aout(idU2av,ng)) WRITE (out,170) Aout(idU2av,ng),       &
+     &         'Aout(idU2av)',                                          &
+     &         'Write out averaged quadratic <ubar*ubar> term.'
+            IF (Aout(idV2av,ng)) WRITE (out,170) Aout(idV2av,ng),       &
+     &         'Aout(idV2av)',                                          &
+     &         'Write out averaged quadratic <vbar*vbar> term.'
 # ifdef SOLVE3D
-          IF (Aout(idHUav,ng)) WRITE (out,170) Aout(idHUav,ng),         &
-     &       'Aout(idHUav)',                                            &
-     &       'Write out averaged u-volume flux, Huon.'
-          IF (Aout(idHVav,ng)) WRITE (out,170) Aout(idHVav,ng),         &
-     &       'Aout(idHVav)',                                            &
-     &       'Write out averaged v-volume flux, Hvom.'
-          IF (Aout(idUUav,ng)) WRITE (out,170) Aout(idUUav,ng),         &
-     &       'Aout(idUUav)',                                            &
-     &       'Write out averaged quadratic <u*u> term.'
-          IF (Aout(idUVav,ng)) WRITE (out,170) Aout(idUVav,ng),         &
-     &       'Aout(idUVav)',                                            &
-     &       'Write out averaged quadratic <u*v> term.'
-          IF (Aout(idVVav,ng)) WRITE (out,170) Aout(idVVav,ng),         &
-     &       'Aout(idVVav)',                                            &
-     &       'Write out averaged quadratic <v*v> term.'
-          DO itrc=1,NAT+NPT
-            IF (Aout(idTTav(itrc),ng)) WRITE (out,180)                  &
-     &          Aout(idTTav(itrc),ng), 'Aout(idTTav)',                  &
-     &          'Write out averaged <t*t> for tracer ', itrc,           &
-     &          TRIM(Vname(1,idTvar(itrc)))
-          END DO
-          DO itrc=1,NAT+NPT
-            IF (Aout(idUTav(itrc),ng)) WRITE (out,180)                  &
-     &          Aout(idUTav(itrc),ng), 'Aout(idUTav)',                  &
-     &          'Write out averaged <u*t> for tracer ', itrc,           &
-     &          TRIM(Vname(1,idTvar(itrc)))
-          END DO
-          DO itrc=1,NAT+NPT
-            IF (Aout(idVTav(itrc),ng)) WRITE (out,180)                  &
-     &          Aout(idVTav(itrc),ng), 'Aout(idVTav)',                  &
-     &          'Write out averaged <v*t> for tracer ', itrc,           &
-     &          TRIM(Vname(1,idTvar(itrc)))
-          END DO
-          DO itrc=1,NAT+NPT
-            IF (Aout(iHUTav(itrc),ng)) WRITE (out,180)                  &
-     &          Aout(iHUTav(itrc),ng), 'Aout(iHUTav)',                  &
-     &          'Write out averaged <Huon*t> for tracer ', itrc,        &
-     &          TRIM(Vname(1,idTvar(itrc)))
-          END DO
-          DO itrc=1,NAT+NPT
-            IF (Aout(iHVTav(itrc),ng)) WRITE (out,180)                  &
-     &          Aout(iHVTav(itrc),ng), 'Aout(iHVTav)',                  &
-     &          'Write out averaged <Hvom*t> for tracer ', itrc,        &
-     &          TRIM(Vname(1,idTvar(itrc)))
-          END DO
+            IF (Aout(idHUav,ng)) WRITE (out,170) Aout(idHUav,ng),       &
+     &         'Aout(idHUav)',                                          &
+     &         'Write out averaged u-volume flux, Huon.'
+            IF (Aout(idHVav,ng)) WRITE (out,170) Aout(idHVav,ng),       &
+     &         'Aout(idHVav)',                                          &
+     &         'Write out averaged v-volume flux, Hvom.'
+            IF (Aout(idUUav,ng)) WRITE (out,170) Aout(idUUav,ng),       &
+     &         'Aout(idUUav)',                                          &
+     &         'Write out averaged quadratic <u*u> term.'
+            IF (Aout(idUVav,ng)) WRITE (out,170) Aout(idUVav,ng),       &
+     &         'Aout(idUVav)',                                          &
+     &         'Write out averaged quadratic <u*v> term.'
+            IF (Aout(idVVav,ng)) WRITE (out,170) Aout(idVVav,ng),       &
+     &         'Aout(idVVav)',                                          &
+     &         'Write out averaged quadratic <v*v> term.'
+            DO itrc=1,NAT+NPT
+              IF (Aout(idTTav(itrc),ng)) WRITE (out,180)                &
+     &            Aout(idTTav(itrc),ng), 'Aout(idTTav)',                &
+     &            'Write out averaged <t*t> for tracer ', itrc,         &
+     &            TRIM(Vname(1,idTvar(itrc)))
+            END DO
+            DO itrc=1,NAT+NPT
+              IF (Aout(idUTav(itrc),ng)) WRITE (out,180)                &
+     &            Aout(idUTav(itrc),ng), 'Aout(idUTav)',                &
+     &            'Write out averaged <u*t> for tracer ', itrc,         &
+     &            TRIM(Vname(1,idTvar(itrc)))
+            END DO
+            DO itrc=1,NAT+NPT
+              IF (Aout(idVTav(itrc),ng)) WRITE (out,180)                &
+     &            Aout(idVTav(itrc),ng), 'Aout(idVTav)',                &
+     &            'Write out averaged <v*t> for tracer ', itrc,         &
+     &            TRIM(Vname(1,idTvar(itrc)))
+            END DO
+            DO itrc=1,NAT+NPT
+              IF (Aout(iHUTav(itrc),ng)) WRITE (out,180)                &
+     &            Aout(iHUTav(itrc),ng), 'Aout(iHUTav)',                &
+     &            'Write out averaged <Huon*t> for tracer ', itrc,      &
+     &            TRIM(Vname(1,idTvar(itrc)))
+            END DO
+            DO itrc=1,NAT+NPT
+              IF (Aout(iHVTav(itrc),ng)) WRITE (out,180)                &
+     &            Aout(iHVTav(itrc),ng), 'Aout(iHVTav)',                &
+     &            'Write out averaged <Hvom*t> for tracer ', itrc,      &
+     &            TRIM(Vname(1,idTvar(itrc)))
+            END DO
 # endif
 # if defined AVERAGES_DETIDE && (defined SSH_TIDES || defined UV_TIDES)
-          WRITE (out,'(1x)')
-          IF (Aout(idFsuD,ng)) WRITE (out,170) Aout(idFsuD,ng),         &
-     &       'Aout(idFsuD)',                                            &
-     &       'Write out detided free-surface.'
-          IF (Aout(idu2dD,ng)) WRITE (out,170) Aout(idu2dD,ng),         &
-     &       'Aout(idu2dD)',                                            &
-     &       'Write out detided 2D U-velocity.'
-          IF (Aout(idv2dD,ng)) WRITE (out,170) Aout(idv2dD,ng),         &
-     &       'Aout(idv2dD)',                                            &
-     &       'Write out detided 2D V-velocity.'
+            WRITE (out,'(1x)')
+            IF (Aout(idFsuD,ng)) WRITE (out,170) Aout(idFsuD,ng),       &
+     &         'Aout(idFsuD)',                                          &
+     &         'Write out detided free-surface.'
+            IF (Aout(idu2dD,ng)) WRITE (out,170) Aout(idu2dD,ng),       &
+     &         'Aout(idu2dD)',                                          &
+     &         'Write out detided 2D U-velocity.'
+            IF (Aout(idv2dD,ng)) WRITE (out,170) Aout(idv2dD,ng),       &
+     &         'Aout(idv2dD)',                                          &
+     &         'Write out detided 2D V-velocity.'
 #  ifdef SOLVE3D
-          IF (Aout(idu3dD,ng)) WRITE (out,170) Aout(idu3dD,ng),         &
-     &       'Aout(idu3dD)',                                            &
-     &       'Write out detided 3D U-velocity.'
-          IF (Aout(idv3dD,ng)) WRITE (out,170) Aout(idv3dD,ng),         &
-     &       'Aout(idv3dD)',                                            &
-     &       'Write out detided 3D V-velocity.'
-          DO itrc=1,NAT
-            IF (Aout(idTrcD(itrc),ng)) WRITE (out,180)                  &
-     &          Aout(idTrcD(itrc),ng), 'Aout(idTrcD)',                  &
-     &          'Write out detided tracer ', itrc,                      &
-     &          TRIM(Vname(1,idTvar(itrc)))
-          END DO
+            IF (Aout(idu3dD,ng)) WRITE (out,170) Aout(idu3dD,ng),       &
+     &         'Aout(idu3dD)',                                          &
+     &         'Write out detided 3D U-velocity.'
+            IF (Aout(idv3dD,ng)) WRITE (out,170) Aout(idv3dD,ng),       &
+     &         'Aout(idv3dD)',                                          &
+     &         'Write out detided 3D V-velocity.'
+            DO itrc=1,NAT
+              IF (Aout(idTrcD(itrc),ng)) WRITE (out,180)                &
+     &            Aout(idTrcD(itrc),ng), 'Aout(idTrcD)',                &
+     &            'Write out detided tracer ', itrc,                    &
+     &            TRIM(Vname(1,idTvar(itrc)))
+            END DO
 #  endif
 # endif
+          END IF
 #endif
 #if defined AVERAGES2
           WRITE (out,'(1x)')
@@ -6714,258 +7276,262 @@
 # endif
 #endif
 #ifdef DIAGNOSTICS_UV
-          WRITE (out,'(1x)')
-          IF (Dout(idDu2d(M2rate),ng).or.Dout(idDv2d(M2rate),ng))       &
-     &       WRITE (out,170) .TRUE., 'Dout(M2rate)',                    &
-     &       'Write out 2D momentum acceleration.'
-          IF (Dout(idDu2d(M2pgrd),ng).or.Dout(idDv2d(M2pgrd),ng))       &
-     &       WRITE (out,170) .TRUE., 'Dout(M2pgrd)',                    &
-     &       'Write out 2D momentum pressure gradient.'
+          IF ((nDIA(ng).gt.0).and.ANY(Dout(:,ng))) THEN
+            WRITE (out,'(1x)')
+            IF (Dout(idDu2d(M2rate),ng).or.Dout(idDv2d(M2rate),ng))     &
+     &         WRITE (out,170) .TRUE., 'Dout(M2rate)',                  &
+     &         'Write out 2D momentum acceleration.'
+            IF (Dout(idDu2d(M2pgrd),ng).or.Dout(idDv2d(M2pgrd),ng))     &
+     &         WRITE (out,170) .TRUE., 'Dout(M2pgrd)',                  &
+     &         'Write out 2D momentum pressure gradient.'
 # ifdef UV_COR
-          IF (Dout(idDu2d(M2fcor),ng).or.Dout(idDv2d(M2fcor),ng))       &
-     &       WRITE (out,170) .TRUE., 'Dout(M2fcor)',                    &
-     &       'Write out 2D momentum Coriolis force.'
+            IF (Dout(idDu2d(M2fcor),ng).or.Dout(idDv2d(M2fcor),ng))     &
+     &         WRITE (out,170) .TRUE., 'Dout(M2fcor)',                  &
+     &         'Write out 2D momentum Coriolis force.'
 # endif
 # ifdef UV_ADV
-          IF (Dout(idDu2d(M2hadv),ng).or.Dout(idDv2d(M2hadv),ng))       &
-     &       WRITE (out,170) .TRUE., 'Dout(M2hadv)',                    &
-     &       'Write out 2D momentum horizontal advection.'
-          IF (Dout(idDu2d(M2xadv),ng).or.Dout(idDv2d(M2xadv),ng))       &
-     &       WRITE (out,170) .TRUE., 'Dout(M2xadv)',                    &
-     &       'Write out 2D momentum horizontal X-advection.'
-          IF (Dout(idDu2d(M2yadv),ng).or.Dout(idDv2d(M2yadv),ng))       &
-     &       WRITE (out,170) .TRUE., 'Dout(M2yadv)',                    &
-     &       'Write out 2D momentum horizontal Y-advection.'
+            IF (Dout(idDu2d(M2hadv),ng).or.Dout(idDv2d(M2hadv),ng))     &
+     &         WRITE (out,170) .TRUE., 'Dout(M2hadv)',                  &
+     &         'Write out 2D momentum horizontal advection.'
+            IF (Dout(idDu2d(M2xadv),ng).or.Dout(idDv2d(M2xadv),ng))     &
+     &         WRITE (out,170) .TRUE., 'Dout(M2xadv)',                  &
+     &         'Write out 2D momentum horizontal X-advection.'
+            IF (Dout(idDu2d(M2yadv),ng).or.Dout(idDv2d(M2yadv),ng))     &
+     &         WRITE (out,170) .TRUE., 'Dout(M2yadv)',                  &
+     &         'Write out 2D momentum horizontal Y-advection.'
 # endif
 # ifdef NEARSHORE_MELLOR
-          IF (Dout(idDu2d(M2hrad),ng).or.Dout(idDv2d(M2hrad),ng))       &
-     &       WRITE (out,170) .TRUE., 'Dout(M2hrad)',                    &
-     &       'Write out 2D momentum horizontal radiation stress.'
+            IF (Dout(idDu2d(M2hrad),ng).or.Dout(idDv2d(M2hrad),ng))     &
+     &         WRITE (out,170) .TRUE., 'Dout(M2hrad)',                  &
+     &         'Write out 2D momentum horizontal radiation stress.'
 # endif
 # if defined UV_VIS2 || defined UV_VIS4
-          IF (Dout(idDu2d(M2hvis),ng).or.Dout(idDv2d(M2hvis),ng))       &
-     &       WRITE (out,170) .TRUE., 'Dout(M2hvis)',                    &
-     &       'Write out 2D momentum horizontal viscosity.'
-          IF (Dout(idDu2d(M2xvis),ng).or.Dout(idDv2d(M2xvis),ng))       &
-     &       WRITE (out,170) .TRUE., 'Dout(M2xvis)',                    &
-     &       'Write out 2D momentum horizontal X-viscosity.'
-          IF (Dout(idDu2d(M2yvis),ng).or.Dout(idDv2d(M2yvis),ng))       &
-     &       WRITE (out,170) .TRUE., 'Dout(M2yvis)',                    &
-     &       'Write out 2D momentum horizontal Y-viscosity.'
+            IF (Dout(idDu2d(M2hvis),ng).or.Dout(idDv2d(M2hvis),ng))     &
+     &         WRITE (out,170) .TRUE., 'Dout(M2hvis)',                  &
+     &         'Write out 2D momentum horizontal viscosity.'
+            IF (Dout(idDu2d(M2xvis),ng).or.Dout(idDv2d(M2xvis),ng))     &
+     &         WRITE (out,170) .TRUE., 'Dout(M2xvis)',                  &
+     &         'Write out 2D momentum horizontal X-viscosity.'
+            IF (Dout(idDu2d(M2yvis),ng).or.Dout(idDv2d(M2yvis),ng))     &
+     &         WRITE (out,170) .TRUE., 'Dout(M2yvis)',                  &
+     &         'Write out 2D momentum horizontal Y-viscosity.'
 # endif
-          IF (Dout(idDu2d(M2sstr),ng).or.Dout(idDv2d(M2sstr),ng))       &
-     &       WRITE (out,170) .TRUE., 'Dout(M2sstr)',                    &
-     &       'Write out 2D momentum surface stress.'
-          IF (Dout(idDu2d(M2bstr),ng).or.Dout(idDv2d(M2bstr),ng))       &
-     &       WRITE (out,170) .TRUE., 'Dout(M2bstr)',                    &
-     &       'Write out 2D momentum bottom stress.'
+            IF (Dout(idDu2d(M2sstr),ng).or.Dout(idDv2d(M2sstr),ng))     &
+     &         WRITE (out,170) .TRUE., 'Dout(M2sstr)',                  &
+     &         'Write out 2D momentum surface stress.'
+            IF (Dout(idDu2d(M2bstr),ng).or.Dout(idDv2d(M2bstr),ng))     &
+     &         WRITE (out,170) .TRUE., 'Dout(M2bstr)',                  &
+     &         'Write out 2D momentum bottom stress.'
 # ifdef SOLVE3D
-          WRITE (out,'(1x)')
-          IF (Dout(idDu3d(M3rate),ng).or.Dout(idDv3d(M3rate),ng))       &
-     &       WRITE (out,170) .TRUE., 'Dout(M3rate)',                    &
-     &       'Write out 3D momentum acceleration.'
-          IF (Dout(idDu3d(M3pgrd),ng).or.Dout(idDv3d(M3pgrd),ng))       &
-     &       WRITE (out,170) .TRUE., 'Dout(M3pgrd)',                    &
-     &       'Write out 3D momentum pressure gradient.'
+            WRITE (out,'(1x)')
+            IF (Dout(idDu3d(M3rate),ng).or.Dout(idDv3d(M3rate),ng))     &
+     &         WRITE (out,170) .TRUE., 'Dout(M3rate)',                  &
+     &         'Write out 3D momentum acceleration.'
+            IF (Dout(idDu3d(M3pgrd),ng).or.Dout(idDv3d(M3pgrd),ng))     &
+     &         WRITE (out,170) .TRUE., 'Dout(M3pgrd)',                  &
+     &         'Write out 3D momentum pressure gradient.'
 #  ifdef UV_COR
-          IF (Dout(idDu3d(M3fcor),ng).or.Dout(idDv3d(M3fcor),ng))       &
-     &       WRITE (out,170) .TRUE., 'Dout(M3fcor)',                    &
-     &       'Write out 3D momentum Coriolis force.'
+            IF (Dout(idDu3d(M3fcor),ng).or.Dout(idDv3d(M3fcor),ng))     &
+     &         WRITE (out,170) .TRUE., 'Dout(M3fcor)',                  &
+     &         'Write out 3D momentum Coriolis force.'
 #  endif
 #  ifdef UV_ADV
-          IF (Dout(idDu3d(M3hadv),ng).or.Dout(idDv3d(M3hadv),ng))       &
-     &       WRITE (out,170) .TRUE., 'Dout(M3hadv)',                    &
-     &       'Write out 3D momentum horizontal advection.'
-          IF (Dout(idDu3d(M3xadv),ng).or.Dout(idDv3d(M3xadv),ng))       &
-     &       WRITE (out,170) .TRUE., 'Dout(M3xadv)',                    &
-     &       'Write out 3D momentum horizontal X-advection.'
-          IF (Dout(idDu3d(M3yadv),ng).or.Dout(idDv3d(M3yadv),ng))       &
-     &       WRITE (out,170) .TRUE., 'Dout(M3yadv)',                    &
-     &       'Write out 3D momentum horizontal Y-advection.'
-          IF (Dout(idDu3d(M3vadv),ng).or.Dout(idDv3d(M3vadv),ng))       &
-     &       WRITE (out,170) .TRUE., 'Dout(M3vadv)',                    &
-     &       'Write out 3D momentum vertical advection.'
+            IF (Dout(idDu3d(M3hadv),ng).or.Dout(idDv3d(M3hadv),ng))     &
+     &         WRITE (out,170) .TRUE., 'Dout(M3hadv)',                  &
+     &         'Write out 3D momentum horizontal advection.'
+            IF (Dout(idDu3d(M3xadv),ng).or.Dout(idDv3d(M3xadv),ng))     &
+     &         WRITE (out,170) .TRUE., 'Dout(M3xadv)',                  &
+     &         'Write out 3D momentum horizontal X-advection.'
+            IF (Dout(idDu3d(M3yadv),ng).or.Dout(idDv3d(M3yadv),ng))     &
+     &         WRITE (out,170) .TRUE., 'Dout(M3yadv)',                  &
+     &         'Write out 3D momentum horizontal Y-advection.'
+            IF (Dout(idDu3d(M3vadv),ng).or.Dout(idDv3d(M3vadv),ng))     &
+     &         WRITE (out,170) .TRUE., 'Dout(M3vadv)',                  &
+     &         'Write out 3D momentum vertical advection.'
 #  endif
 #  ifdef NEARSHORE_MELLOR
-          IF (Dout(idDu3d(M3hrad),ng).or.Dout(idDv3d(M3hrad),ng))       &
-     &       WRITE (out,170) .TRUE., 'Dout(M3hrad)',                    &
-     &       'Write out 3D momentum horizontal radiation stress.'
-          IF (Dout(idDu3d(M3vrad),ng).or.Dout(idDv3d(M3vrad),ng))       &
-     &       WRITE (out,170) .TRUE., 'Dout(M3vrad)',                    &
-     &       'Write out 3D momentum vertical radiation stress.'
+            IF (Dout(idDu3d(M3hrad),ng).or.Dout(idDv3d(M3hrad),ng))     &
+     &         WRITE (out,170) .TRUE., 'Dout(M3hrad)',                  &
+     &         'Write out 3D momentum horizontal radiation stress.'
+            IF (Dout(idDu3d(M3vrad),ng).or.Dout(idDv3d(M3vrad),ng))     &
+     &         WRITE (out,170) .TRUE., 'Dout(M3vrad)',                  &
+     &         'Write out 3D momentum vertical radiation stress.'
 #  endif
 #  if defined UV_VIS2 || defined UV_VIS4
-          IF (Dout(idDu3d(M3hvis),ng).or.Dout(idDv3d(M3hvis),ng))       &
-     &       WRITE (out,170) .TRUE., 'Dout(M3hvis)',                    &
-     &       'Write out 3D momentum horizontal viscosity.'
-          IF (Dout(idDu3d(M3xvis),ng).or.Dout(idDv3d(M3xvis),ng))       &
-     &       WRITE (out,170) .TRUE., 'Dout(M3xvis)',                    &
-     &       'Write out 3D momentum horizontal X-viscosity.'
-          IF (Dout(idDu3d(M3yvis),ng).or.Dout(idDv3d(M3yvis),ng))       &
-     &       WRITE (out,170) .TRUE., 'Dout(M3yvis)',                    &
-     &       'Write out 3D momentum horizontal Y-viscosity.'
+            IF (Dout(idDu3d(M3hvis),ng).or.Dout(idDv3d(M3hvis),ng))     &
+     &         WRITE (out,170) .TRUE., 'Dout(M3hvis)',                  &
+     &         'Write out 3D momentum horizontal viscosity.'
+            IF (Dout(idDu3d(M3xvis),ng).or.Dout(idDv3d(M3xvis),ng))     &
+     &         WRITE (out,170) .TRUE., 'Dout(M3xvis)',                  &
+     &         'Write out 3D momentum horizontal X-viscosity.'
+            IF (Dout(idDu3d(M3yvis),ng).or.Dout(idDv3d(M3yvis),ng))     &
+     &         WRITE (out,170) .TRUE., 'Dout(M3yvis)',                  &
+     &         'Write out 3D momentum horizontal Y-viscosity.'
 #  endif
-          IF (Dout(idDu3d(M3vvis),ng).or.Dout(idDv3d(M3vvis),ng))       &
-     &       WRITE (out,170) .TRUE., 'Dout(M3vvis)',                    &
-     &       'Write out 3D momentum vertical viscosity.'
+            IF (Dout(idDu3d(M3vvis),ng).or.Dout(idDv3d(M3vvis),ng))     &
+     &         WRITE (out,170) .TRUE., 'Dout(M3vvis)',                  &
+     &         'Write out 3D momentum vertical viscosity.'
 # endif
+          END IF
 #endif
 #if defined DIAGNOSTICS_TS && defined SOLVE3D
-          WRITE (out,'(1x)')
-          DO itrc=1,NAT
-            IF (Dout(idDtrc(itrc,iTrate),ng))                           &
-     &        WRITE (out,180) .TRUE., 'Dout(iTrate)',                   &
-     &            'Write out rate of change of tracer ', itrc,          &
-     &            TRIM(Vname(1,idTvar(itrc)))
-          END DO
+          IF (nDIA(ng).gt.0) THEN
+            WRITE (out,'(1x)')
+            DO itrc=1,NAT
+              IF (Dout(idDtrc(itrc,iTrate),ng))                         &
+     &          WRITE (out,180) .TRUE., 'Dout(iTrate)',                 &
+     &              'Write out rate of change of tracer ', itrc,        &
+     &              TRIM(Vname(1,idTvar(itrc)))
+            END DO
 # ifdef T_PASSIVE
-          DO i=1,NPT
-            itrc=inert(i)
-            IF (Dout(idDtrc(itrc,iTrate),ng))                           &
-     &        WRITE (out,180) .TRUE., 'Dout(iTrate)',                   &
-     &            'Write out rate of change of tracer ', itrc,          &
-     &            TRIM(Vname(1,idTvar(itrc)))
-          END DO
+            DO i=1,NPT
+              itrc=inert(i)
+              IF (Dout(idDtrc(itrc,iTrate),ng))                         &
+     &          WRITE (out,180) .TRUE., 'Dout(iTrate)',                 &
+     &              'Write out rate of change of tracer ', itrc,        &
+     &              TRIM(Vname(1,idTvar(itrc)))
+            END DO
 # endif
-          DO itrc=1,NAT
-            IF (Dout(idDtrc(itrc,iThadv),ng))                           &
-     &        WRITE (out,180) .TRUE., 'Dout(iThadv)',                   &
-     &            'Write out horizontal advection, tracer ', itrc,      &
-     &            TRIM(Vname(1,idTvar(itrc)))
-          END DO
+            DO itrc=1,NAT
+              IF (Dout(idDtrc(itrc,iThadv),ng))                         &
+     &          WRITE (out,180) .TRUE., 'Dout(iThadv)',                 &
+     &              'Write out horizontal advection, tracer ', itrc,    &
+     &              TRIM(Vname(1,idTvar(itrc)))
+            END DO
 # ifdef T_PASSIVE
-          DO i=1,NPT
-            itrc=inert(i)
-            IF (Dout(idDtrc(itrc,iThadv),ng))                           &
-     &        WRITE (out,180) .TRUE., 'Dout(iThadv)',                   &
-     &            'Write out horizontal advection, tracer ', itrc,      &
-     &            TRIM(Vname(1,idTvar(itrc)))
-          END DO
+            DO i=1,NPT
+              itrc=inert(i)
+              IF (Dout(idDtrc(itrc,iThadv),ng))                         &
+     &          WRITE (out,180) .TRUE., 'Dout(iThadv)',                 &
+     &              'Write out horizontal advection, tracer ', itrc,    &
+     &              TRIM(Vname(1,idTvar(itrc)))
+            END DO
 # endif
-          DO itrc=1,NAT
-            IF (Dout(idDtrc(itrc,iTxadv),ng))                           &
-     &        WRITE (out,180) .TRUE., 'Dout(iTxadv)',                   &
-     &            'Write out horizontal X-advection, tracer ', itrc,    &
-     &            TRIM(Vname(1,idTvar(itrc)))
-          END DO
+            DO itrc=1,NAT
+              IF (Dout(idDtrc(itrc,iTxadv),ng))                         &
+     &          WRITE (out,180) .TRUE., 'Dout(iTxadv)',                 &
+     &              'Write out horizontal X-advection, tracer ', itrc,  &
+     &              TRIM(Vname(1,idTvar(itrc)))
+            END DO
 # ifdef T_PASSIVE
-          DO i=1,NPT
-            itrc=inert(i)
-            IF (Dout(idDtrc(itrc,iTxadv),ng))                           &
-     &        WRITE (out,180) .TRUE., 'Dout(iTxadv)',                   &
-     &            'Write out horizontal X-advection, tracer ', itrc,    &
-     &            TRIM(Vname(1,idTvar(itrc)))
-          END DO
+            DO i=1,NPT
+              itrc=inert(i)
+              IF (Dout(idDtrc(itrc,iTxadv),ng))                         &
+     &          WRITE (out,180) .TRUE., 'Dout(iTxadv)',                 &
+     &              'Write out horizontal X-advection, tracer ', itrc,  &
+     &              TRIM(Vname(1,idTvar(itrc)))
+            END DO
 # endif
-          DO itrc=1,NAT
-            IF (Dout(idDtrc(itrc,iTyadv),ng))                           &
-     &        WRITE (out,180) .TRUE., 'Dout(iTyadv)',                   &
-     &            'Write out horizontal Y-advection, tracer ', itrc,    &
-     &            TRIM(Vname(1,idTvar(itrc)))
-          END DO
+            DO itrc=1,NAT
+              IF (Dout(idDtrc(itrc,iTyadv),ng))                         &
+     &          WRITE (out,180) .TRUE., 'Dout(iTyadv)',                 &
+     &              'Write out horizontal Y-advection, tracer ', itrc,  &
+     &              TRIM(Vname(1,idTvar(itrc)))
+            END DO
 # ifdef T_PASSIVE
-          DO i=1,NPT
-            itrc=inert(i)
-            IF (Dout(idDtrc(itrc,iTyadv),ng))                           &
-     &        WRITE (out,180) .TRUE., 'Dout(iTyadv)',                   &
-     &            'Write out horizontal Y-advection, tracer ', itrc,    &
-     &            TRIM(Vname(1,idTvar(itrc)))
-          END DO
+            DO i=1,NPT
+              itrc=inert(i)
+              IF (Dout(idDtrc(itrc,iTyadv),ng))                         &
+     &          WRITE (out,180) .TRUE., 'Dout(iTyadv)',                 &
+     &              'Write out horizontal Y-advection, tracer ', itrc,  &
+     &              TRIM(Vname(1,idTvar(itrc)))
+            END DO
 # endif
-          DO itrc=1,NAT
-            IF (Dout(idDtrc(itrc,iTvadv),ng))                           &
-     &        WRITE (out,180) .TRUE., 'Dout(iTvadv)',                   &
-     &            'Write out vertical advection, tracer ', itrc,        &
-     &            TRIM(Vname(1,idTvar(itrc)))
-          END DO
+            DO itrc=1,NAT
+              IF (Dout(idDtrc(itrc,iTvadv),ng))                         &
+     &          WRITE (out,180) .TRUE., 'Dout(iTvadv)',                 &
+     &              'Write out vertical advection, tracer ', itrc,      &
+     &              TRIM(Vname(1,idTvar(itrc)))
+            END DO
 # ifdef T_PASSIVE
-          DO i=1,NPT
-            itrc=inert(i)
-            IF (Dout(idDtrc(itrc,iTvadv),ng))                           &
-     &        WRITE (out,180) .TRUE., 'Dout(iTvadv)',                   &
-     &            'Write out vertical advection, tracer ', itrc,        &
-     &            TRIM(Vname(1,idTvar(itrc)))
-          END DO
+            DO i=1,NPT
+              itrc=inert(i)
+              IF (Dout(idDtrc(itrc,iTvadv),ng))                         &
+     &          WRITE (out,180) .TRUE., 'Dout(iTvadv)',                 &
+     &              'Write out vertical advection, tracer ', itrc,      &
+     &              TRIM(Vname(1,idTvar(itrc)))
+            END DO
 # endif
 # if defined TS_DIF2 || defined TS_DIF4
-          DO itrc=1,NAT
-            IF (Dout(idDtrc(itrc,iThdif),ng))                           &
-     &        WRITE (out,180) .TRUE., 'Dout(iThdif)',                   &
-     &            'Write out horizontal diffusion, tracer ', itrc,      &
-     &            TRIM(Vname(1,idTvar(itrc)))
-          END DO
+            DO itrc=1,NAT
+              IF (Dout(idDtrc(itrc,iThdif),ng))                         &
+     &          WRITE (out,180) .TRUE., 'Dout(iThdif)',                 &
+     &              'Write out horizontal diffusion, tracer ', itrc,    &
+     &              TRIM(Vname(1,idTvar(itrc)))
+            END DO
 #  ifdef T_PASSIVE
-          DO i=1,NPT
-            itrc=inert(i)
-            IF (Dout(idDtrc(itrc,iThdif),ng))                           &
-     &        WRITE (out,180) .TRUE., 'Dout(iThdif)',                   &
-     &            'Write out horizontal diffusion, tracer ', itrc,      &
-     &            TRIM(Vname(1,idTvar(itrc)))
-          END DO
+            DO i=1,NPT
+              itrc=inert(i)
+              IF (Dout(idDtrc(itrc,iThdif),ng))                         &
+     &          WRITE (out,180) .TRUE., 'Dout(iThdif)',                 &
+     &              'Write out horizontal diffusion, tracer ', itrc,    &
+     &              TRIM(Vname(1,idTvar(itrc)))
+            END DO
 #  endif
-          DO itrc=1,NAT
-            IF (Dout(idDtrc(itrc,iTxdif),ng))                           &
-     &        WRITE (out,180) .TRUE., 'Dout(iTxdif)',                   &
-     &            'Write out horizontal X-diffusion, tracer ', itrc,    &
-     &            TRIM(Vname(1,idTvar(itrc)))
-          END DO
+            DO itrc=1,NAT
+              IF (Dout(idDtrc(itrc,iTxdif),ng))                         &
+     &          WRITE (out,180) .TRUE., 'Dout(iTxdif)',                 &
+     &              'Write out horizontal X-diffusion, tracer ', itrc,  &
+     &              TRIM(Vname(1,idTvar(itrc)))
+            END DO
 #  ifdef T_PASSIVE
-          DO i=1,NPT
-            itrc=inert(i)
-            IF (Dout(idDtrc(i,iTxdif),ng))                              &
-     &        WRITE (out,180) .TRUE., 'Dout(iTxdif)',                   &
-     &            'Write out horizontal X-diffusion, tracer ', itrc,    &
-     &            TRIM(Vname(1,idTvar(itrc)))
-          END DO
+            DO i=1,NPT
+              itrc=inert(i)
+              IF (Dout(idDtrc(i,iTxdif),ng))                            &
+     &          WRITE (out,180) .TRUE., 'Dout(iTxdif)',                 &
+     &              'Write out horizontal X-diffusion, tracer ', itrc,  &
+     &              TRIM(Vname(1,idTvar(itrc)))
+            END DO
 #  endif
-          DO itrc=1,NAT
-            IF (Dout(idDtrc(itrc,iTydif),ng))                           &
-     &        WRITE (out,180) .TRUE., 'Dout(iTydif)',                   &
-     &            'Write out horizontal Y-diffusion , tracer ', itrc,   &
-     &            TRIM(Vname(1,idTvar(itrc)))
-          END DO
+            DO itrc=1,NAT
+              IF (Dout(idDtrc(itrc,iTydif),ng))                         &
+     &          WRITE (out,180) .TRUE., 'Dout(iTydif)',                 &
+     &              'Write out horizontal Y-diffusion , tracer ', itrc, &
+     &              TRIM(Vname(1,idTvar(itrc)))
+            END DO
 #  ifdef T_PASSIVE
-          DO i=1,NPT
-            itrc=inert(i)
-            IF (Dout(idDtrc(itrc,iTydif),ng))                           &
-     &        WRITE (out,180) .TRUE., 'Dout(iTydif)',                   &
-     &            'Write out horizontal Y-diffusion, tracer ', itrc,    &
-     &            TRIM(Vname(1,idTvar(itrc)))
-          END DO
+            DO i=1,NPT
+              itrc=inert(i)
+              IF (Dout(idDtrc(itrc,iTydif),ng))                         &
+     &          WRITE (out,180) .TRUE., 'Dout(iTydif)',                 &
+     &              'Write out horizontal Y-diffusion, tracer ', itrc,  &
+     &              TRIM(Vname(1,idTvar(itrc)))
+            END DO
 #  endif
 #  if defined MIX_GEO_TS || defined MIX_ISO_TS
-          DO itrc=1,NAT
-            IF (Dout(idDtrc(itrc,iTsdif),ng))                           &
-     &        WRITE (out,180) .TRUE., 'Dout(iTsdif)',                   &
-     &            'Write out horizontal S-diffusion, tracer ', itrc,    &
-     &            TRIM(Vname(1,idTvar(itrc)))
-          END DO
+            DO itrc=1,NAT
+              IF (Dout(idDtrc(itrc,iTsdif),ng))                         &
+     &          WRITE (out,180) .TRUE., 'Dout(iTsdif)',                 &
+     &              'Write out horizontal S-diffusion, tracer ', itrc,  &
+     &              TRIM(Vname(1,idTvar(itrc)))
+            END DO
 #   ifdef T_PASSIVE
-          DO i=1,NPT
-            itrc=inert(i)
-            IF (Dout(idDtrc(itrc,iTsdif),ng))                           &
-     &        WRITE (out,180) .TRUE., 'Dout(iTsdif)',                   &
-     &            'Write out horizontal S-diffusion, tracer ', itrc,    &
-     &            TRIM(Vname(1,idTvar(itrc)))
-          END DO
+            DO i=1,NPT
+              itrc=inert(i)
+              IF (Dout(idDtrc(itrc,iTsdif),ng))                         &
+     &          WRITE (out,180) .TRUE., 'Dout(iTsdif)',                 &
+     &              'Write out horizontal S-diffusion, tracer ', itrc,  &
+     &              TRIM(Vname(1,idTvar(itrc)))
+            END DO
 #   endif
 #  endif
 # endif
-          DO itrc=1,NAT
-            IF (Dout(idDtrc(itrc,iTvdif),ng))                           &
-     &        WRITE (out,180) .TRUE., 'Dout(iTvdif)',                   &
-     &            'Write out vertical diffusion, tracer ', itrc,        &
-     &            TRIM(Vname(1,idTvar(itrc)))
-          END DO
+            DO itrc=1,NAT
+              IF (Dout(idDtrc(itrc,iTvdif),ng))                         &
+     &          WRITE (out,180) .TRUE., 'Dout(iTvdif)',                 &
+     &              'Write out vertical diffusion, tracer ', itrc,      &
+     &              TRIM(Vname(1,idTvar(itrc)))
+            END DO
 # ifdef T_PASSIVE
-          DO i=1,NPT
-            itrc=inert(i)
-            IF (Dout(idDtrc(itrc,iTvdif),ng))                           &
-     &        WRITE (out,180) .TRUE., 'Dout(iTvdif)',                   &
-     &            'Write out vertical diffusion, tracer ', itrc,        &
-     &            TRIM(Vname(1,idTvar(itrc)))
-          END DO
+            DO i=1,NPT
+              itrc=inert(i)
+              IF (Dout(idDtrc(itrc,iTvdif),ng))                         &
+     &          WRITE (out,180) .TRUE., 'Dout(iTvdif)',                 &
+     &              'Write out vertical diffusion, tracer ', itrc,      &
+     &              TRIM(Vname(1,idTvar(itrc)))
+            END DO
 # endif
+          END IF
 #endif
 #if defined HDF5 && defined DEFLATE
           WRITE (out,120) shuffle, 'shuffle',                           &

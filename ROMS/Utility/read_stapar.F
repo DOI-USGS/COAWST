@@ -2,9 +2,9 @@
 #ifdef STATIONS
       SUBROUTINE read_StaPar (model, inp, out, Lwrite)
 !
-!svn $Id: read_stapar.F 804 2016-06-06 23:02:36Z arango $
+!svn $Id: read_stapar.F 830 2017-01-24 21:21:11Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2016 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2017 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================

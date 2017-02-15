@@ -4,9 +4,9 @@
       SUBROUTINE rpcg_lanczos (ng, model, outLoop, innLoop, NinnLoop,   &
      &                         Lcgini)
 !
-!svn $Id: rpcg_lanczos.F 807 2016-07-09 02:03:55Z arango $
+!svn $Id: rpcg_lanczos.F 830 2017-01-24 21:21:11Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2016 The ROMS/TOMS Group       Selime Gurol      !
+!  Copyright (c) 2002-2017 The ROMS/TOMS Group       Selime Gurol      !
 !    Licensed under a MIT/X style license            Andrew M. Moore   !
 !    See License_ROMS.txt                                              !
 !=======================================================================

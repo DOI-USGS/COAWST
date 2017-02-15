@@ -2,9 +2,9 @@
       MODULE extract_obs_mod
 #if defined FOUR_DVAR || defined VERIFICATION
 !
-!svn $Id: extract_obs.F 807 2016-07-09 02:03:55Z arango $
+!svn $Id: extract_obs.F 830 2017-01-24 21:21:11Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2016 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2017 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -53,7 +53,7 @@
 !                                                                      !
 !  On Output:                                                          !
 !                                                                      !
-!     ObsScale   Observation screenning flag.                          !
+!     ObsVetting Observation screenning flag, 0: reject or 1: accept.  !
 !     Aobs       Extracted model values at observation positions.      !
 !     Zobs       Observations Z-locations (grid coordinates).          !
 !                                                                      !
@@ -128,7 +128,7 @@
      &                          ifield, Mobs, NobsSTR, NobsEND,         &
      &                          Xmin, Xmax, Ymin, Ymax,                 &
      &                          time, dt,                               &
-     &                          ObsType, ObsScale,                      &
+     &                          ObsType, ObsVetting,                    &
      &                          Tobs, Xobs, Yobs,                       &
      &                          A,                                      &
 # ifdef MASKING
@@ -136,12 +136,6 @@
 # endif
      &                          Aobs)
 !***********************************************************************
-
-# ifdef BGQC
-!
-      USE mod_scalars, ONLY: inner, outer
-      USE mod_fourdvar, ONLY: wrtNLmod
-# endif
 !
 !  Imported variable declarations.
 !
@@ -163,7 +157,7 @@
       real(r8), intent(in) :: Amask(LBi:,LBj:)
 #  endif
 
-      real(r8), intent(inout) :: ObsScale(:)
+      real(r8), intent(inout) :: ObsVetting(:)
       real(r8), intent(inout) :: Aobs(:)
 # else
       integer, intent(in) :: ObsType(Mobs)
@@ -175,7 +169,7 @@
 #  ifdef MASKING
       real(r8), intent(in) :: Amask(LBi:UBi,LBj:UBj)
 #  endif
-      real(r8), intent(inout) :: ObsScale(Mobs)
+      real(r8), intent(inout) :: ObsVetting(Mobs)
       real(r8), intent(inout) :: Aobs(Mobs)
 # endif
 !
@@ -245,20 +239,10 @@
      &               Hmat(2)*A(i2,j1)+                                  &
      &               Hmat(3)*A(i2,j2)+                                  &
      &               Hmat(4)*A(i1,j2)
-# ifdef BGQC
-#  ifdef IS4DVAR
-          IF ((inner.eq.0).and.(wrtNLmod(ng))) THEN
-#  else
-          IF ((inner.eq.0).and.(outer.eq.0)) THEN
-#  endif
-# endif
 # ifdef MASKING
-            IF (wsum.gt.0.0_r8) ObsScale(iobs)=1.0_r8
+          IF (wsum.gt.0.0_r8) ObsVetting(iobs)=1.0_r8
 # else
-            ObsScale(iobs)=1.0_r8
-# endif
-# ifdef BGQC
-          END IF
+          ObsVetting(iobs)=1.0_r8
 # endif
         END IF
       END DO
@@ -274,7 +258,7 @@
      &                          ifield, Mobs, NobsSTR, NobsEND,         &
      &                          Xmin, Xmax, Ymin, Ymax,                 &
      &                          time, dt,                               &
-     &                          ObsType, ObsScale,                      &
+     &                          ObsType, ObsVetting,                    &
      &                          Tobs, Xobs, Yobs, Zobs,                 &
      &                          A, Adepth,                              &
 #  ifdef MASKING
@@ -284,10 +268,6 @@
 !***********************************************************************
 !
       USE mod_param
-#  ifdef BGQC
-      USE mod_scalars, ONLY: inner, outer
-      USE mod_fourdvar, ONLY: wrtNLmod
-#  endif
 !
 !  Imported variable declarations.
 !
@@ -309,7 +289,7 @@
 #   ifdef MASKING
       real(r8), intent(in) :: Amask(LBi:,LBj:)
 #   endif
-      real(r8), intent(inout) :: ObsScale(:)
+      real(r8), intent(inout) :: ObsVetting(:)
       real(r8), intent(inout) :: Zobs(:)
       real(r8), intent(inout) :: Aobs(:)
 #  else
@@ -323,7 +303,7 @@
 #   ifdef MASKING
       real(r8), intent(in) :: Amask(LBi:UBi,LBj:UBj)
 #   endif
-      real(r8), intent(inout) :: ObsScale(Mobs)
+      real(r8), intent(inout) :: ObsVetting(Mobs)
       real(r8), intent(inout) :: Zobs(Mobs)
       real(r8), intent(inout) :: Aobs(Mobs)
 #  endif
@@ -386,27 +366,11 @@
             IF (Zobs(iobs).ge.Ztop) THEN
               r1=0.0_r8                        ! If shallower, ignore.
               r2=0.0_r8
-# ifdef BGQC
-#  ifdef IS4DVAR
-              IF ((inner.eq.0).and.wrtNLmod(ng)) ObsScale(iobs)=0.0_r8
-#  else
-              IF ((inner.eq.0).and.(outer.eq.0)) ObsScale(iobs)=0.0_r8
-#  endif
-# else
-              ObsScale(iobs)=0.0_r8
-# endif
+              ObsVetting(iobs)=0.0_r8
             ELSE IF (Zbot.ge.Zobs(iobs)) THEN
               r1=0.0_r8                        ! If deeper, ignore.
               r2=0.0_r8
-# ifdef BGQC
-#  ifdef IS4DVAR
-              IF ((inner.eq.0).and.wrtNLmod(ng)) ObsScale(iobs)=0.0_r8
-#  else
-              IF ((inner.eq.0).and.(outer.eq.0)) ObsScale(iobs)=0.0_r8
-#  endif
-# else
-              ObsScale(iobs)=0.0_r8
-# endif
+              ObsVetting(iobs)=0.0_r8
             ELSE
               DO k=N(ng),2,-1                  ! Otherwise, interpolate
                 Ztop=Adepth(i1,j1,k  )         ! to fractional level
@@ -459,26 +423,16 @@
      &                 Hmat(6)*A(i2,j1,k2)+                             &
      &                 Hmat(7)*A(i2,j2,k2)+                             &
      &                 Hmat(8)*A(i1,j2,k2)
-# ifdef BGQC
-#  ifdef IS4DVAR
-            IF ((inner.eq.0).and.wrtNLmod(ng)) THEN
-#  else
-            IF ((inner.eq.0).and.(outer.eq.0)) THEN
-#  endif
-# endif
 #  ifdef MASKING
-              IF (wsum.gt.0.0_r8) ObsScale(iobs)=1.0_r8
+            IF (wsum.gt.0.0_r8) ObsVetting(iobs)=1.0_r8
 #  else
-              ObsScale(iobs)=1.0_r8
+            ObsVetting(iobs)=1.0_r8
 #  endif
-# ifdef BGQC
-            END IF
-# endif
 !
 !  Reject observations that lie in the lower most grid box (AMM).
 !
             IF ((Zobs(iobs).gt.0.0_r8).and.(Zobs(iobs).le.1.0_r8)) THEN
-              ObsScale(iobs)=0.0_r8
+              ObsVetting(iobs)=0.0_r8
             END IF
           END IF
         END IF

@@ -1,9 +1,9 @@
 #include "cppdefs.h"
       MODULE analytical_mod
 !
-!svn $Id: analytical.F 1372 2011-01-21 00:38:29Z kate $
+!svn $Id: analytical.F 830 2017-01-24 21:21:11Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2016 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2017 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -85,7 +85,7 @@
       implicit none
 !
       CONTAINS
-
+!
 #ifdef ANALYTICAL
 # if defined ANA_AIOBC && defined ICE_MODEL
 #  include <ana_aiobc.h>

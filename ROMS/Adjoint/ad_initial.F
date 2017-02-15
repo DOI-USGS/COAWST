@@ -2,9 +2,9 @@
 #ifdef ADJOINT
       SUBROUTINE ad_initial (ng)
 !
-!svn $Id: ad_initial.F 807 2016-07-09 02:03:55Z arango $
+!svn $Id: ad_initial.F 830 2017-01-24 21:21:11Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2016 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2017 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -209,14 +209,6 @@
 !  Initialize surface forcing counter for storage arrays.
 !
       SFcount(ng)=Nfrec(ng)+1
-#  endif
-#  ifdef OBSERVATIONS
-!
-!  Initialize various variables needed for processing observations
-!  backwards in time.
-!
-      CALL obs_initial (ng, iADM, .TRUE.)
-      IF (exit_flag.ne.NoError) RETURN
 #  endif
 !$OMP END MASTER
 !$OMP BARRIER
@@ -526,6 +518,22 @@
         END DO
 !$OMP BARRIER
       END IF
+# endif
+
+# ifdef OBSERVATIONS
+!
+!-----------------------------------------------------------------------
+!  Initialize various variables needed for processing observations
+!  backwards in time. Need to be done after processing initial
+!  conditions since the correct initial time is needed to determine
+!  the first "ObsTime" to process.
+!-----------------------------------------------------------------------
+!
+!$OMP MASTER
+      CALL obs_initial (ng, iADM, .TRUE.)
+!$OMP MASTER
+!$OMP BARRIER
+      IF (exit_flag.ne.NoError) RETURN
 # endif
 
 # if defined ANA_PERTURB  && \
