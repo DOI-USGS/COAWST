@@ -1291,12 +1291,6 @@
                   t_dfloc(ng)=Rbed(ng)
                 END DO
 #endif
-            CASE ('Hout(idiff)')
-              Npts=load_l(Nval, Cval, Ngrids, Lbed)
-              i=idSbed(idiff)
-              DO ng=1,Ngrids
-                Hout(i,ng)=Lbed(ng)
-              END DO
             CASE ('Qout(ithck)')
               Npts=load_l(Nval, Cval, Ngrids, Lbed)
               i=idSbed(ithck)

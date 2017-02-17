@@ -2176,7 +2176,7 @@
 # ifdef MASKING
      &                     GRID(ng) % rmask,                            &
 # endif
-     &                     FORCES(ng) % Ub_swan)
+     &                     FORCES(ng) % Uwave_rms)
         IF (status.ne.nf90_noerr) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idWorb)), QCK(ng)%Rindex
@@ -2191,25 +2191,25 @@
 !
 !  Write out wave dissipation.
 !
-      IF (Qout(idWdis,ng)) THEN
-        scale=1.0_r8
-        gtype=gfactor*r2dvar
-        status=nf_fwrite2d(ng, iNLM, QCK(ng)%ncid, QCK(ng)%Vid(idWdis), &
-     &                     QCK(ng)%Rindex, gtype,                       &
-     &                     LBi, UBi, LBj, UBj, scale,                   &
-# ifdef MASKING
-     &                     GRID(ng) % rmask,                            &
-# endif
-     &                     FORCES(ng) % wave_dissip)
-        IF (status.ne.nf90_noerr) THEN
-          IF (Master) THEN
-            WRITE (stdout,10) TRIM(Vname(1,idWdis)), QCK(ng)%Rindex
-          END IF
-          exit_flag=3
-          ioerror=status
-          RETURN
-        END IF
-      END IF
+!      IF (Qout(idWdis,ng)) THEN
+!        scale=1.0_r8
+!        gtype=gfactor*r2dvar
+!        status=nf_fwrite2d(ng, iNLM, QCK(ng)%ncid, QCK(ng)%Vid(idWdis), &
+!     &                     QCK(ng)%Rindex, gtype,                       &
+!     &                     LBi, UBi, LBj, UBj, scale,                   &
+!# ifdef MASKING
+!     &                     GRID(ng) % rmask,                            &
+!# endif
+!     &                     FORCES(ng) % wave_dissip)
+!        IF (status.ne.nf90_noerr) THEN
+!          IF (Master) THEN
+!            WRITE (stdout,10) TRIM(Vname(1,idWdis)), QCK(ng)%Rindex
+!          END IF
+!          exit_flag=3
+!          ioerror=status
+!          RETURN
+!        END IF
+!      END IF
 #endif
 !
 !-----------------------------------------------------------------------
