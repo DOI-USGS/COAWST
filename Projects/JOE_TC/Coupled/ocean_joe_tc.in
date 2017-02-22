@@ -650,7 +650,7 @@ Qout(idVsur) == T       ! v_sur              surface V-velocity
 Qout(idUsuE) == T       ! u_sur_eastward     surface U-eastward  velocity
 Qout(idVsuN) == T       ! v_sur_northward    surface V-northward velocity
 
-Qout(idsurT) == T T     ! temp_sur, salt_sur surface temperature and salinity
+!Qout(idsurT) == T T     ! temp_sur, salt_sur surface temperature and salinity
 
 Qout(idpthR) == F       ! z_rho              time-varying depths of RHO-points
 Qout(idpthU) == F       ! z_u                time-varying depths of U-points
