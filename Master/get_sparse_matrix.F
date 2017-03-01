@@ -78,6 +78,8 @@
       IF (scrip_opt.eq.1) THEN
         status=nf90_inq_ncid(ncSPSid,grp_name,grpid)
         ncid=grpid
+      ELSE
+        ncid=ncSPSid
       END IF
 !
 ! Get the src and dst grid dimensions.
