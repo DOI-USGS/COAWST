@@ -190,7 +190,7 @@
       real(r8), intent(in) :: Vinp(LBi:UBi,LBj:UBj,LBk:UBk)
 
       real(r8), intent(inout) :: Uout(LBi:UBi,LBj:UBj,LBk:UBk)
-      real(r8), intent(inout) :: Vout(LBi:UBi,LBj:UBj,LBk,UBk)
+      real(r8), intent(inout) :: Vout(LBi:UBi,LBj:UBj,LBk:UBk)
 # endif
 !
 !  Local variable declarations.

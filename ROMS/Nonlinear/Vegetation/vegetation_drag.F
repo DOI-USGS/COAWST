@@ -217,8 +217,7 @@
 !
 ! Blade bending angle
 !
-              bend(i,j,iveg)=ACOSD(cflex**one_third)
-
+              bend(i,j,iveg)=ACOS(cflex**one_third)*rad2deg
 # else
 !
 ! For stiff vegetation
