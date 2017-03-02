@@ -746,6 +746,9 @@
                     COMPDA(KCGRD(1),JPBOT) = 0.
                     COMPDA(KCGRD(1),JDBOT) = 0.
                   END IF
+                  COMPDA(KCGRD(1),JDSXB) = 0.
+                  COMPDA(KCGRD(1),JDSXS) = 0.
+                  COMPDA(KCGRD(1),JDSXW) = 0.
                 END DO
               END DO
               DEALLOCATE(CGO)
