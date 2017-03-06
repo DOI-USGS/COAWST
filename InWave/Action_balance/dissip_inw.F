@@ -49,6 +49,11 @@
 # ifdef MASKING
      &                 GRID(ng) % rmask,                                &
 # endif
+# ifdef WET_DRY
+     &                 GRID(ng) % rmask_wet,                            &
+     &                 GRID(ng) % umask_wet,                            &
+     &                 GRID(ng) % vmask_wet,                            &
+# endif
 #  if defined WDISS_INWAVE
      &                 FORCES(ng) % Dissip_break,                       &
      &                 FORCES(ng) % Dissip_wcap,                        &
@@ -68,6 +73,9 @@
      &                       nstp, nout,                                &
 # ifdef MASKING
      &                       rmask,                                     &
+# endif
+# ifdef WET_DRY
+     &                       rmask_wet, umask_wet, vmask_wet,           &
 # endif
 #  if defined WDISS_INWAVE
      &                       Dissip_break,                              &
@@ -100,6 +108,11 @@
 #   ifdef MASKING
       real(r8), intent(in) :: rmask(LBi:,LBj:)
 #   endif
+#   ifdef WET_DRY
+      real(r8), intent(in) :: rmask_wet(LBi:,LBj:)
+      real(r8), intent(in) :: umask_wet(LBi:,LBj:)
+      real(r8), intent(in) :: vmask_wet(LBi:,LBj:)
+#   endif
 #   if defined WDISS_INWAVE
       real(r8), intent(inout) :: Dissip_break(LBi:,LBj:)
       real(r8), intent(inout) :: Dissip_wcap(LBi:,LBj:)
@@ -111,6 +124,11 @@
 #  else
 #   ifdef MASKING
       real(r8), intent(in) :: rmask(LBi:UBi,LBj:UBj)
+#   endif
+#   ifdef WET_DRY
+      real(r8), intent(in) :: rmask_wet(LBi:UBi,LBj:UBj)
+      real(r8), intent(in) :: umask_wet(LBi:UBi,LBj:UBj)
+      real(r8), intent(in) :: vmask_wet(LBi:UBi,LBj:UBj)
 #   endif
 #   if defined WDISS_INWAVE
       real(r8), intent(inout) :: Dissip_break(LBi:UBi,LBj:UBj)
@@ -125,7 +143,8 @@
 !  Local variable declarations.
 !
       integer :: i, j, d
-      real(r8) :: EW, KM, TRM, H, Qb, Hmax_r, diff, Emax_r,twopi
+      real(r8) :: EW, KM, TRM, H, Qb, Hmax_r, diff, Emax_r
+      real(r8) :: twopi, otwopi
 #   if !defined WDISS_INWAVE
       real(r8) :: Db
 #   endif
@@ -139,7 +158,8 @@
 # include "set_bounds.h"
 
       twopi=2.0_r8*pi
-      
+      otwopi=1.0_r8/twopi
+!
       DO j=Jstr,Jend
         DO i=Istr,Iend
           EW=0.0_r8
@@ -164,7 +184,8 @@
           ENDDO
           KM=KM/(ND*max(EW,EWlim))
           TRM=TRM/(ND*max(EW,EWlim))
-          IF (EW.lt.0.0_r8)EW=0.0_r8
+!         IF (EW.lt.0.0_r8)EW=0.0_r8
+          EW=MAX(EW,0.0_r8)
 !=======================================================================
 !  Compute the wave height
 !=======================================================================
@@ -210,9 +231,12 @@
 #   else
               EN(d)=EN(d)-Db*EN(d)/EW
 #   endif
-              AC(i,j,d,nout)=EN(d)*Tr(i,j,d)/(twopi)
+              AC(i,j,d,nout)=EN(d)*Tr(i,j,d)*otwopi
 #   ifdef MASKING
               AC(i,j,d,nout)=AC(i,j,d,nout)*rmask(i,j)
+#   endif
+#   ifdef WET_DRY
+              AC(i,j,d,nout)=AC(i,j,d,nout)*rmask_wet(i,j)
 #   endif
             ENDIF
           ENDDO
@@ -222,9 +246,12 @@
           Emax_r=0.0625_r8*g*rho0*Hmax_r**2.0_r8
           diff=EW-Emax_r
 #   if defined WDISS_INWAVE
-          Dissip_break(i,j)=max (0.0_r8,diff)
+          Dissip_break(i,j)=MAX(0.0_r8,diff)
 #    ifdef MASKING
           Dissip_break(i,j)=Dissip_break(i,j)*rmask(i,j)
+#    endif
+#    ifdef WET_DRY
+          Dissip_break(i,j)=Dissip_break(i,j)*rmask_wet(i,j)
 #    endif
           Dissip_wcap(i,j)=0.0_r8
 #   else
@@ -240,9 +267,12 @@
 #   else
               EN(d)=EN(d)-Db*EN(d)/EW
 #   endif
-              AC(i,j,d,nout)=EN(d)*Tr(i,j,d)/(twopi)
+              AC(i,j,d,nout)=EN(d)*Tr(i,j,d)*otwopi
 #   ifdef MASKING
               AC(i,j,d,nout)=AC(i,j,d,nout)*rmask(i,j)
+#   endif
+#   ifdef WET_DRY
+              AC(i,j,d,nout)=AC(i,j,d,nout)*rmask_wet(i,j)
 #   endif
             ENDIF
           ENDDO

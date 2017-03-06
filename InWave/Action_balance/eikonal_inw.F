@@ -83,6 +83,7 @@
       USE mod_inwave_params
       USE bc_3d_mod
       USE exchange_3d_mod
+      USE Tr3dbc_mod
 
 #  ifdef DISTRIBUTE
       USE mp_exchange_mod, ONLY : mp_exchange3d
@@ -138,6 +139,7 @@
       real(r8) :: crk, crx, cry, kh
 
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: CF
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: CF2
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: mask_CF
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: FE
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: FX
@@ -167,14 +169,14 @@
 ! Compute xi and etai components of the wave number
 !=======================================================================
 !
-!           alfa_wave=(1.5_r8*pi-wd(d))-angler(i,j)
-            IF (cx(i,j,d).eq.0.0_r8) THEN
-              alfa_wave=0.5_r8*pi*SIGN(1.0_r8,cy(i,j,d))
-            ELSE
-              alfa_wave=ATAN2(cy(i,j,d),cx(i,j,d))
-            ENDIF
-            kx=kwc(i,j,d)*COS(alfa_wave)
-            ky=kwc(i,j,d)*SIN(alfa_wave)
+!            alfa_wave=(1.5_r8*pi-wd(d))-angler(i,j)
+!            IF (cx(i,j,d).eq.0.0_r8) THEN
+!              alfa_wave=0.5_r8*pi*SIGN(1.0_r8,cy(i,j,d))
+!            ELSE
+!              alfa_wave=ATAN2(cy(i,j,d),cx(i,j,d))
+!            ENDIF
+!            kx=kwc(i,j,d)*COS(alfa_wave)
+!            ky=kwc(i,j,d)*SIN(alfa_wave)
 !
 !=======================================================================
 ! Compute the time change of xi and etai components of the wave number
@@ -185,6 +187,7 @@
 !    &         (twopi/Ta(i+1,j,d)-twopi/Ta(i-1,j,d))
 !           ky=ky-pn(i,j)*dt(ng)*0.5_r8*                                &
 !    &         (twopi/Ta(i,j+1,d)-twopi/Ta(i,j-1,d))
+!           kwc(i,j,d)=MAX(SQRT(kx*kx+ky*ky),0.000001_r8)
 !
 !  JCW 1
 !            cff=0.5_r8*pm(i,j)*dt(ng)*                                  &
@@ -206,16 +209,17 @@
 
           DO j=Jstr,Jend
             DO i=Istr,Iend+1
-              IF (cx(i,j,d).eq.0.0_r8) THEN
-                alfa_wave=0.5_r8*pi*SIGN(1.0_r8,cy(i,j,d))
-              ELSE
-                alfa_wave=ATAN2(cy(i,j,d),cx(i,j,d))
-              ENDIF
-              kh=kwc(i,j,d)*h_tot(i,j)
-              crk=sqrt(g/kwc(i,j,d)*tanh(kh))
-              crx=crk*cos(alfa_wave)
-              cry=crk*sin(alfa_wave)
-              cff=crx
+              alfa_wave=(1.5_r8*pi-wd(d))-angler(i,j)
+!             IF (cx(i,j,d).eq.0.0_r8) THEN
+!               alfa_wave=0.5_r8*pi*SIGN(1.0_r8,cy(i,j,d))
+!             ELSE
+!               alfa_wave=ATAN2(cy(i,j,d),cx(i,j,d))
+!             ENDIF
+              cff1=kwc(i-1,j,d)*h_tot(i-1,j)
+              cff2=kwc(i,j,d)*h_tot(i,j)
+              crk=0.5_r8*(sqrt(g/kwc(i-1,j,d)*tanh(cff1))+          &
+     &                    sqrt(g/kwc(i  ,j,d)*tanh(cff2)))
+              cff=crk*cos(alfa_wave)
               cff1=MAX(cff,0.0_r8)
               cff2=MIN(cff,0.0_r8)
               FX(i,j)=cff1*kwc(i-1,j,d)+                            &
@@ -224,16 +228,17 @@
           END DO
           DO j=Jstr,Jend+1
             DO i=Istr,Iend
-              IF (cx(i,j,d).eq.0.0_r8) THEN
-                alfa_wave=0.5_r8*pi*SIGN(1.0_r8,cy(i,j,d))
-              ELSE
-                alfa_wave=ATAN2(cy(i,j,d),cx(i,j,d))
-              ENDIF
-              kh=kwc(i,j,d)*h_tot(i,j)
-              crk=sqrt(g/kwc(i,j,d)*tanh(kh))
-              crx=crk*cos(alfa_wave)
-              cry=crk*sin(alfa_wave)
-              cff=cry
+              alfa_wave=(1.5_r8*pi-wd(d))-angler(i,j)
+!             IF (cx(i,j,d).eq.0.0_r8) THEN
+!               alfa_wave=0.5_r8*pi*SIGN(1.0_r8,cy(i,j,d))
+!             ELSE
+!               alfa_wave=ATAN2(cy(i,j,d),cx(i,j,d))
+!             ENDIF
+              cff1=kwc(i,j-1,d)*h_tot(i,j-1)
+              cff2=kwc(i,j  ,d)*h_tot(i,j)
+              crk=0.5_r8*(sqrt(g/kwc(i,j-1,d)*tanh(cff1))+         &
+     &                    sqrt(g/kwc(i,j  ,d)*tanh(cff2)))
+              cff=crk*sin(alfa_wave)
               cff1=MAX(cff,0.0_r8)
               cff2=MIN(cff,0.0_r8)
               FE(i,j)=cff1*kwc(i,j-1,d)+                            &
@@ -243,7 +248,7 @@
 !
 !  Time-step horizontal advection.
 !
-          cff=dt(ng)
+        cff=dt(ng)
         DO j=Jstr,Jend
           DO i=Istr,Iend
             kwc(i,j,d)=kwc(i,j,d)-                                      &
@@ -257,13 +262,13 @@
 
       END DO
 
-
-
-
-      
-      CALL bc_r3d_tile (ng, tile,                                       &
-     &                  LBi, UBi, LBj, UBj, 1, ND,                      &
+      CALL Tr3dbc_tile (ng, tile,                                       &
+     &                  LBi, UBi, LBj, UBj, ND,                         &
      &                  kwc)
+      
+!      CALL bc_r3d_tile (ng, tile,                                       &
+!     &                  LBi, UBi, LBj, UBj, 1, ND,                      &
+!     &                  kwc)
 !
 # ifdef DISTRIBUTE
 !

@@ -1,6 +1,6 @@
 #include "cppdefs.h"
-#undef  AC_U3HADVECTION
-#define AC_HSIMT
+#define AC_U3HADVECTION
+#undef  AC_HSIMT
       MODULE corstep_inw_mod
 #if defined INWAVE_MODEL
 !
@@ -48,6 +48,11 @@
      &                      GRID(ng) % umask,                           &
      &                      GRID(ng) % vmask,                           &
 # endif
+# ifdef WET_DRY
+     &                      GRID(ng) % rmask_wet,                       &
+     &                      GRID(ng) % umask_wet,                       &
+     &                      GRID(ng) % vmask_wet,                       &
+# endif
      &                      GRID(ng) % pm,                              &
      &                      GRID(ng) % pn,                              &
      &                      GRID(ng) % on_u,                            &
@@ -74,6 +79,9 @@
      &                            nrhs, nstp, nnew,                     &
 # ifdef MASKING
      &                            rmask, umask, vmask,                  &
+# endif
+# ifdef WET_DRY
+     &                            rmask_wet, umask_wet, vmask_wet,      &
 # endif
      &                            pm, pn, on_u, om_v,                   &
      &                            u, v,                                 &
@@ -110,6 +118,11 @@
       real(r8), intent(in) :: umask(LBi:,LBj:)
       real(r8), intent(in) :: vmask(LBi:,LBj:)
 #  endif
+#  ifdef WET_DRY
+      real(r8), intent(in) :: rmask_wet(LBi:,LBj:)
+      real(r8), intent(in) :: umask_wet(LBi:,LBj:)
+      real(r8), intent(in) :: vmask_wet(LBi:,LBj:)
+#  endif
       real(r8), intent(in) :: pm(LBi:,LBj:)
       real(r8), intent(in) :: pn(LBi:,LBj:)
       real(r8), intent(in) :: on_u(LBi:,LBj:)
@@ -123,14 +136,17 @@
       real(r8), intent(in) :: Tr(LBi:,LBj:,:)
       real(r8), intent(in) :: kwc(LBi:,LBj:,:)
       real(r8), intent(in) :: pd(:)
-
 # else
-
 #  ifdef MASKING
       real(r8), intent(in) :: rmask(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: umask(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: vmask(LBi:UBi,LBj:UBj)
 #  endif
+#   ifdef WET_DRY
+      real(r8), intent(in) :: rmask_wet(LBi:UBi,LBj:UBj)
+      real(r8), intent(in) :: umask_wet(LBi:UBi,LBj:UBj)
+      real(r8), intent(in) :: vmask_wet(LBi:UBi,LBj:UBj)
+#   endif
       real(r8), intent(in) :: pm(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: pn(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: on_u(LBi:UBi,LBj:UBj)
@@ -526,12 +542,15 @@
 #  ifdef MASKING
      &                      rmask,                                      &
 #  endif
+# ifdef WET_DRY
+     &                      rmask_wet, umask_wet, vmask_wet,            &
+# endif
 #  if defined WDISS_INWAVE
-     &                     FORCES(ng) % Dissip_break,                   &
-     &                     FORCES(ng) % Dissip_wcap,                    &
+     &                      FORCES(ng) % Dissip_break,                  &
+     &                      FORCES(ng) % Dissip_wcap,                   &
 #  endif
-     &                     WAVEP(ng) % h_tot,                           &
-     &                     AC, Tr, kwc)
+     &                      WAVEP(ng) % h_tot,                          &
+     &                      AC, Tr, kwc)
 # endif
 !-----------------------------------------------------------------------
 !  Apply lateral boundary conditions.

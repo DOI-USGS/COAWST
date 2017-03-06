@@ -44,6 +44,7 @@
 !
 !  Local variable declarations.
 !
+      integer :: istp
 # include "tile.h"
 !
       CALL allocate_inwave_vars (ng, LBi, UBi, LBj, UBj)
@@ -62,6 +63,10 @@
       CALL get_inwave_data (ng)
 # else
       CALL inwave_swan_run (ng, 1)
+      istp=NINT(WAVES(ng)%SpecTimedt/dt(ng))
+      IF (iic(ng).ne.0) THEN
+         CALL inwave_swan_run (ng, 2)
+      END IF
 # endif
 
       RETURN
@@ -269,7 +274,7 @@
 !        DO thread=0,numthreads-1
 !          subs=NtileX(ng)*NtileE(ng)/numthreads
 !          DO tile=subs*thread,subs*(thread+1)-1,+1
-             CALL eikonal_inw (ng, tile)
+            CALL eikonal_inw (ng, tile)
 !          END DO
 !        END DO
 

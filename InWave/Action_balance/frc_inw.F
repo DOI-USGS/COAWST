@@ -161,7 +161,8 @@
 
       DO j=Jstr,Jend
         DO i=Istr,Iend
-          EW=0.000001_r8
+!         EW=0.000001_r8
+          EW=0.0_r8
           KM=0.0_r8
           TRM=0.0_r8
           DIRM=0.0_r8

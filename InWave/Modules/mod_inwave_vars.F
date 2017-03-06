@@ -251,29 +251,30 @@
 !
       DO j=Jmin,Jmax
         DO i=Imin,Imax
-          WAVEP(ng) % u_rho(i,j) = IniVal
-          WAVEP(ng) % v_rho(i,j) = IniVal
-          WAVEP(ng) % h_tot(i,j) = GRID(ng) % h(i,j)
+          WAVEP(ng) % u_rho(i,j)=IniVal
+          WAVEP(ng) % v_rho(i,j)=IniVal
+          WAVEP(ng) % h_tot(i,j)=GRID(ng) % h(i,j)
           DO d=1,ND
-            WAVEP(ng) % AC(i,j,d,1) = ac_ini(i,j,d)
-            WAVEP(ng) % AC(i,j,d,2) = ac_ini(i,j,d)
-            WAVEP(ng) % AC(i,j,d,3) = ac_ini(i,j,d)
-            WAVEP(ng) % cx(i,j,d) = IniVal
-            WAVEP(ng) % cy(i,j,d) = IniVal
-            WAVEP(ng) % ct(i,j,d) = IniVal
-!           WAVEP(ng) % Ta(i,j,d) = Ta_ini
-!           WAVEP(ng) % Tr(i,j,d) = Ta_ini
-            WAVEP(ng) % Ta(i,j,d) = ta_ini(i,j,d)
-            WAVEP(ng) % Tr(i,j,d) = ta_ini(i,j,d)
-            WAVEP(ng) % kwc(i,j,d) = IniVal
-            WAVEP(ng) % cwc(i,j,d) = IniVal
+            WAVEP(ng) % AC(i,j,d,1)=ac_ini(i,j,d)
+            WAVEP(ng) % AC(i,j,d,2)=ac_ini(i,j,d)
+            WAVEP(ng) % AC(i,j,d,3)=ac_ini(i,j,d)
+            WAVEP(ng) % cx(i,j,d)=IniVal
+            WAVEP(ng) % cy(i,j,d)=IniVal
+            WAVEP(ng) % ct(i,j,d)=IniVal
+!           WAVEP(ng) % Ta(i,j,d)=Ta_ini
+!           WAVEP(ng) % Tr(i,j,d)=Ta_ini
+            WAVEP(ng) % Ta(i,j,d)=ta_ini(i,j,d)
+            WAVEP(ng) % Tr(i,j,d)=ta_ini(i,j,d)
+            WAVEP(ng) % kwc(i,j,d)=IniVal
+            WAVEP(ng) % cwc(i,j,d)=IniVal
           END DO
         END DO
       END DO
       
       DO j=Jmin,Jmax
         DO i=Imin,Imax
-          WAVEP(ng) % ct(i,j,ND+1) = ct_ini(i,j,ND+1)
+!         WAVEP(ng) % ct(i,j,ND+1)=ct_ini(i,j,ND+1)
+          WAVEP(ng) % ct(i,j,ND+1)=IniVal
         END DO
       END DO
       IF (allocated(ac_ini)) deallocate(ac_ini)

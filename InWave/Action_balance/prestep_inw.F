@@ -1,6 +1,6 @@
 #include "cppdefs.h"
-#undef  AC_U3HADVECTION
-#define AC_HSIMT
+#define AC_U3HADVECTION
+#undef  AC_HSIMT
       MODULE prestep_inw_mod
 #if defined INWAVE_MODEL
 !

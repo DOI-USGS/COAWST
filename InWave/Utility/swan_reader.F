@@ -221,8 +221,8 @@
 !  If not first, then read until the next times step and get data.
 !-----------------------------------------------------------------------
 !
-      i=0
-      DO WHILE (i==0)
+      j=0
+      DO WHILE (j==0)
         READ (inp,'(a)',ERR=215,END=240) rline 
         IF(rline(41:44).eq.'date') THEN
           read(rline(1:15),*) WAVES(ng)%SpecTimeIso(2)
@@ -237,11 +237,15 @@
 !  Compute the dt SpecTime if we do get a second time stamp.
             WAVES(ng)%SpecTimedt=WAVES(ng)%SpecTime(2)-                 &
      &                           WAVES(ng)%SpecTime(1)
-            i=1
+            j=1
+            IF (Master) THEN
+              WRITE(stdout,*) 'Using 2D spec data at ',                 &
+     &                         WAVES(ng)%SpecTimeIso(1)
+            END IF
           ELSE
 !  If not first, then keep reading until we get the next time stamp.
-            IF ((WAVES(ng)%SpecTime(2)-WAVES(ng)%SpecTime(1)).gt.       &
-     &          (time(ng)-dt(ng))) THEN
+            IF ((time(ng)-dstart*24.0_r8*3600.0_r8).gt.                 &
+     &          (WAVES(ng)%SpecTime(2)-WAVES(ng)%SpecTime(1))) THEN
               read(inp,'(a)')rtext
               IF (rtext == 'ZERO  ') THEN
                 IF (Master) THEN
@@ -259,11 +263,12 @@
                 read(inp,*)sdsw1(i,:)
               END DO
               where (sdsw1 == exc) sdsw1=0.0_r8
-              i=1
               IF (Master) THEN
                 WRITE(stdout,*) 'Using 2D spec data at ',               &
-     &                    WAVES(ng)%SpecTimeIso(2)
+     &                           WAVES(ng)%SpecTimeIso(2)
               END IF
+            ELSE
+              j=1
             END IF
           END IF
         END IF

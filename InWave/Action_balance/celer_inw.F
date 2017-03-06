@@ -43,11 +43,17 @@
 
       CALL celer_inw_tile(ng, tile,                                     &
      &                    LBi, UBi, LBj, UBj,                           &
+     &                    IminS, ImaxS, JminS, JmaxS,                   &
      &                    nrhs(ng), nstp(ng), nnew(ng),                 &
 # ifdef MASKING
      &                    GRID(ng) % rmask,                             &
      &                    GRID(ng) % umask,                             &
      &                    GRID(ng) % vmask,                             &
+# endif
+# ifdef WET_DRY
+     &                    GRID(ng) % rmask_wet,                         &
+     &                    GRID(ng) % umask_wet,                         &
+     &                    GRID(ng) % vmask_wet,                         &
 # endif
      &                    GRID(ng) % angler,                            &
      &                    GRID(ng) % pm,                                &
@@ -73,9 +79,13 @@
 !***********************************************************************
       SUBROUTINE celer_inw_tile(ng, tile,                               &
      &                          LBi, UBi, LBj, UBj,                     &
+     &                          IminS, ImaxS, JminS, JmaxS,             &
      &                          nrhs, nstp, nnew,                       &
 # ifdef MASKING
      &                          rmask, umask, vmask,                    &
+# endif
+# ifdef WET_DRY
+     &                          rmask_wet, umask_wet, vmask_wet,        &
 # endif
      &                          angler, pm, pn,                         &
      &                          h_tot,u_rho,v_rho,                      &
@@ -102,6 +112,7 @@
 !
       integer, intent(in) :: ng, tile
       integer, intent(in) :: LBi, UBi, LBj, UBj
+      integer, intent(in) :: IminS, ImaxS, JminS, JmaxS
       integer, intent(in) :: nrhs, nstp, nnew
 
 # ifdef ASSUMED_SHAPE
@@ -110,6 +121,11 @@
       real(r8), intent(in) :: umask(LBi:,LBj:)
       real(r8), intent(in) :: vmask(LBi:,LBj:)
 #  endif
+#   ifdef WET_DRY
+      real(r8), intent(in) :: rmask_wet(LBi:,LBj:)
+      real(r8), intent(in) :: umask_wet(LBi:,LBj:)
+      real(r8), intent(in) :: vmask_wet(LBi:,LBj:)
+#   endif
       real(r8), intent(in) :: angler(LBi:,LBj:)
       real(r8), intent(in) :: pm(LBi:,LBj:)
       real(r8), intent(in) :: pn(LBi:,LBj:)
@@ -131,6 +147,11 @@
       real(r8), intent(in) :: umask(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: vmask(LBi:UBi,LBj:UBj)
 #  endif
+#   ifdef WET_DRY
+      real(r8), intent(in) :: rmask_wet(LBi:UBi,LBj:UBj)
+      real(r8), intent(in) :: umask_wet(LBi:UBi,LBj:UBj)
+      real(r8), intent(in) :: vmask_wet(LBi:UBi,LBj:UBj)
+#   endif
       real(r8), intent(in) :: angler(LBi:,LBj:)
       real(r8), intent(in) :: pm(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: pn(LBi:UBi,LBj:UBj)
@@ -159,11 +180,11 @@
       real(r8) :: G1, cr, cgr, cgrx, cgry
       real(r8) :: dudx, dudy, dvdx, dvdy, dhdx, dhdy
       real(r8) :: cff, cosde, sinde
-      real(r8), dimension(LBi:UBi,LBj:UBj) :: u_dir
-      real(r8), dimension(LBi:UBi,LBj:UBj) :: u_block
-      real(r8), dimension(LBi:UBi,LBj:UBj,ND) :: cx_rho
-      real(r8), dimension(LBi:UBi,LBj:UBj,ND) :: cy_rho
-      real(r8), dimension(LBi:UBi,LBj:UBj,ND) :: ct_r
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: u_dir
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: u_block
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS,ND) :: cx_rho
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS,ND) :: cy_rho
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS,ND) :: ct_r
       real(r8), parameter:: Tamin=1.0_r8
 
 # include "set_bounds.h"
@@ -321,6 +342,7 @@
            wa=wa+kwc(i,j,d)*u_dir(i,j)
 #  endif
            Ta(i,j,d)=MAX(Tamin,twopi/wa)
+           Ta(i,j,d)=MIN(Ta(i,j,d),500000.0_r8)
 !          if (Ta(i,j,d).lt.minTa) Ta(i,j,d)=minTa
           ENDDO
         ENDDO
@@ -361,6 +383,9 @@
 #  ifdef MASKING
             cx(i,j,d)=cx(i,j,d)*umask(i,j)
 #  endif
+#  ifdef WET_DRY
+            cx(i,j,d)=cx(i,j,d)*umask_wet(i,j)
+#  endif
           END DO
         END DO
       ENDDO
@@ -373,6 +398,9 @@
             cy(i,j,d)=0.5_r8*(cy_rho(i,j-1,d)+cy_rho(i,j,d))
 #  ifdef MASKING
             cy(i,j,d)=cy(i,j,d)*vmask(i,j)
+#  endif
+#  ifdef WET_DRY
+            cy(i,j,d)=cy(i,j,d)*vmask_wet(i,j)
 #  endif
           END DO
         END DO
@@ -388,29 +416,38 @@
 !  Apply Land/Sea mask
             ct(i,j,d)=ct(i,j,d)*rmask(i,j)
 #  endif
+#  ifdef WET_DRY
+            ct(i,j,d)=ct(i,j,d)*rmask_wet(i,j)
+#  endif
           END DO
         END DO
       ENDDO
       
-!      DO j=Jstr,Jend
-!        DO i=Istr,Iend
-!          ct(i,j,1)=ct_r(i,j,ND(ng))
-!#  ifdef MASKING
-!!  Apply Land/Sea mask
-!          ct(i,j,1)=ct(i,j,1)*rmask(i,j)
-!#  endif
-!        END DO
-!      END DO
-!     
-!      DO j=Jstr,Jend
-!        DO i=Istr,Iend
-!          ct(i,j,ND(ng)+1)=ct_r(i,j,ND(ng))
-!#  ifdef MASKING
-!!  Apply Land/Sea mask
-!          ct(i,j,ND(ng)+1)=ct(i,j,ND(ng)+1)*rmask(i,j)
-!#  endif
-!        END DO
-!      END DO
+      DO j=Jstr,Jend
+        DO i=Istr,Iend
+          ct(i,j,1)=ct_r(i,j,ND)
+#  ifdef MASKING
+!  Apply Land/Sea mask
+          ct(i,j,1)=ct(i,j,1)*rmask(i,j)
+#  endif
+#  ifdef WET_DRY
+          ct(i,j,1)=ct(i,j,1)*rmask_wet(i,j)
+#  endif
+        END DO
+      END DO
+     
+      DO j=Jstr,Jend
+        DO i=Istr,Iend
+          ct(i,j,ND+1)=ct_r(i,j,ND)
+#  ifdef MASKING
+!  Apply Land/Sea mask
+          ct(i,j,ND+1)=ct(i,j,ND+1)*rmask(i,j)
+#  endif 
+#  ifdef WET_DRY
+          ct(i,j,ND+1)=ct(i,j,ND+1)*rmask_wet(i,j)
+#  endif
+        END DO
+      END DO
 # endif
 !
 !  Apply nonperiodic boundary conditions in xi and etai space.

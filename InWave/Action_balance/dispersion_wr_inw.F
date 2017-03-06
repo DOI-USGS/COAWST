@@ -74,6 +74,7 @@
       USE mod_param
       USE mod_scalars
       USE mod_inwave_params
+      USE Tr3dbc_mod
       USE exchange_3d_mod
       USE exchange_2d_mod
 
@@ -153,6 +154,7 @@
               wr=sqrt(g*kwc(i,j,d)*tanh(kwc(i,j,d)*h_tot(i,j)))
 !             Tr(i,j,d)=twopi/wr
               Tr(i,j,d)=MAX(twopi/wr,Trmin)
+              Tr(i,j,d)=MIN(Tr(i,j,d),500000.0_r8)
 !             if (Tr(i,j,d).lt.Trmin) Tr(i,j,d)=Trmin
             ELSE
               Tr(i,j,d)=Trmin
@@ -161,8 +163,11 @@
         END DO
       END DO
 
-      CALL bc_r3d_tile (ng, tile,                                       &
-     &                  LBi, UBi, LBj, UBj, 1, ND,                      &
+!      CALL bc_r3d_tile (ng, tile,                                       &
+!     &                  LBi, UBi, LBj, UBj, 1, ND,                      &
+!     &                  Tr)
+      CALL Tr3dbc_tile (ng, tile,                                       &
+     &                  LBi, UBi, LBj, UBj, ND,                         &
      &                  Tr)
 
       CALL bc_r2d_tile (ng, tile,                                       &
