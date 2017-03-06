@@ -32,13 +32,14 @@
       integer(int_kind)   :: ncstat, nc_file_id, offset
       integer(int_kind)   :: i, j, c, Ikeep, Jkeep
       integer(int_kind)   :: mo, ma, mw, nx, ny, grdsize
-      integer(int_kind)   :: N, INOUT, count, do_adjust
+      integer(int_kind)   :: N, INOUT, count
       real(dbl_kind)      :: dist1, dist_max, dlon
       real(dbl_kind)      :: latrad1, latrad2, dep, dlat
       real(dbl_kind)      :: xx1, yy1, xx2, yy2, PX, PY
       real(dbl_kind)      :: lons, lats, lond, latd, tol, cff
       integer(int_kind), allocatable :: src_mask_unlim(:,:)
       integer(int_kind), allocatable :: dst_mask_unlim(:,:)
+      integer(int_kind), allocatable :: do_adjust(:)
 
       contains
 !=======================================================================
@@ -88,7 +89,9 @@
         end do
       end if
 !  NOTICE piped swan and roms loops to end
+      allocate(do_adjust(Ngrids_swan))
       do mw=1,Ngrids_swan
+        do_adjust(mw)=0
         do mo=1,Ngrids_roms
 !
 !  Allocate the destination mask
@@ -110,14 +113,16 @@
               yy2=ngrd_sw(mw)%lat_rho_w(nx,ny)
               do j=1,ngrd_rm(mo)%eta_size
                 do i=1,ngrd_rm(mo)%xi_size
-                  xx1=ngrd_rm(mo)%lon_rho_o(i,j)
-                  yy1=ngrd_rm(mo)%lat_rho_o(i,j)
-                  dlon = xx1-xx2
-                  latrad1=abs(yy1*deg2rad)
-                  latrad2=abs(yy2*deg2rad)
-                  dep=cos(0.5*(latrad2+latrad1))*dlon
-                  dlat=yy2-yy1
-                  dist1=1852.0*60.0*sqrt(dlat**2+dep**2)
+                  dist1=sqrt((ngrd_rm(mo)%lon_rho_o(i,j)-xx2)**2+       &
+     &                       (ngrd_rm(mo)%lat_rho_o(i,j)-yy2)**2)
+!                 xx1=ngrd_rm(mo)%lon_rho_o(i,j)
+!                 yy1=ngrd_rm(mo)%lat_rho_o(i,j)
+!                 dlon = xx1-xx2
+!                 latrad1=abs(yy1*deg2rad)
+!                 latrad2=abs(yy2*deg2rad)
+!                 dep=cos(0.5*(latrad2+latrad1))*dlon
+!                 dlat=yy2-yy1
+!                 dist1=1852.0*60.0*sqrt(dlat**2+dep**2)
                   if(dist1<=dist_max)then
                     dist_max=dist1
                     Ikeep=i
@@ -181,47 +186,46 @@
 !  The test looks for less than 2.0e-7 rads =  1.1459e-05 degs =~ 1.3m
 !  If so, then offset the dst by 2.0e-7 rads
 !
-          tol=1.1459e-05
-          do_adjust=0
-          do i=1,ngrd_rm(mo)%xi_size
-            if (do_adjust.eq.1) exit
-            do j=1,ngrd_rm(mo)%eta_size
-              if (do_adjust.eq.1) exit
-              lons=ngrd_rm(mo)%lon_rho_o(i,j)
-              lats=ngrd_rm(mo)%lat_rho_o(i,j)
-              do nx=1,ngrd_sw(mw)%Numx_swan
-                if (do_adjust.eq.1) exit
-                do ny=1,ngrd_sw(mw)%Numy_swan
-                  lond=ngrd_sw(mw)%lon_rho_w(nx,ny)
-                  latd=ngrd_sw(mw)%lat_rho_w(nx,ny)
-                  cff=min(abs(lons-lond),abs(lats-latd))
-                  if (cff.le.tol) then
-                    do_adjust=1
-                    exit
-                  end if
+            tol=1.1459e-05
+            do i=1,ngrd_rm(mo)%xi_size
+              if (do_adjust(mw).eq.1) exit
+              do j=1,ngrd_rm(mo)%eta_size
+                if (do_adjust(mw).eq.1) exit
+                lons=ngrd_rm(mo)%lon_rho_o(i,j)
+                lats=ngrd_rm(mo)%lat_rho_o(i,j)
+                do nx=1,ngrd_sw(mw)%Numx_swan
+                  if (do_adjust(mw).eq.1) exit
+                  do ny=1,ngrd_sw(mw)%Numy_swan
+                    lond=ngrd_sw(mw)%lon_rho_w(nx,ny)
+                    latd=ngrd_sw(mw)%lat_rho_w(nx,ny)
+                    cff=min(abs(lons-lond),abs(lats-latd))
+                    if (cff.le.tol) then
+                      do_adjust(mw)=1
+                  write(*,*) 'Do adjust for coincident points grid ', mw
+                      exit
+                    end if
+                  enddo
                 enddo
               enddo
             enddo
-          enddo
-          if (do_adjust.eq.1) then
-            do nx=1,ngrd_sw(mw)%Numx_swan
-              do ny=1,ngrd_sw(mw)%Numy_swan
-                ngrd_sw(mw)%lon_rho_w(nx,ny)=                           &
+            if (do_adjust(mw).eq.1) then
+              do nx=1,ngrd_sw(mw)%Numx_swan
+                do ny=1,ngrd_sw(mw)%Numy_swan
+                  ngrd_sw(mw)%lon_rho_w(nx,ny)=                         &
      &                                  ngrd_sw(mw)%lon_rho_w(nx,ny)+tol
-                ngrd_sw(mw)%lat_rho_w(nx,ny)=                           &
+                  ngrd_sw(mw)%lat_rho_w(nx,ny)=                         &
      &                                  ngrd_sw(mw)%lat_rho_w(nx,ny)+tol
+                enddo
               enddo
-            enddo
-            do nx=1,ngrd_sw(mw)%Numx_swan+1
-              do ny=1,ngrd_sw(mw)%Numy_swan+1
-                ngrd_sw(mw)%x_full_grid(nx,ny)=                         &
+              do nx=1,ngrd_sw(mw)%Numx_swan+1
+                do ny=1,ngrd_sw(mw)%Numy_swan+1
+                  ngrd_sw(mw)%x_full_grid(nx,ny)=                       &
      &                                ngrd_sw(mw)%x_full_grid(nx,ny)+tol
-                ngrd_sw(mw)%y_full_grid(nx,ny)=                         &
+                  ngrd_sw(mw)%y_full_grid(nx,ny)=                       &
      &                                ngrd_sw(mw)%y_full_grid(nx,ny)+tol
+                enddo
               enddo
-            enddo
-          end if
-          do_adjust=0
+            end if
 !
 !  Send the data to SCRIP routines
 !
@@ -266,7 +270,28 @@
      &                       counter_grid,                              &
      &                       Ngrids_comb_total,                         &
      &                       output_ncfile)
-
+!
+!  Undo the grid adjust.
+          if ((do_adjust(mw).eq.1).and.(mo.lt.Ngrids_roms)) then
+            do nx=1,ngrd_sw(mw)%Numx_swan
+              do ny=1,ngrd_sw(mw)%Numy_swan
+                ngrd_sw(mw)%lon_rho_w(nx,ny)=                           &
+     &                                ngrd_sw(mw)%lon_rho_w(nx,ny)-tol
+                ngrd_sw(mw)%lat_rho_w(nx,ny)=                           &
+     &                                ngrd_sw(mw)%lat_rho_w(nx,ny)-tol
+              enddo
+            enddo
+            do nx=1,ngrd_sw(mw)%Numx_swan+1
+              do ny=1,ngrd_sw(mw)%Numy_swan+1
+                ngrd_sw(mw)%x_full_grid(nx,ny)=                         &
+     &                              ngrd_sw(mw)%x_full_grid(nx,ny)-tol
+                ngrd_sw(mw)%y_full_grid(nx,ny)=                         &
+     &                              ngrd_sw(mw)%y_full_grid(nx,ny)-tol
+              enddo
+            enddo
+          end if
+          do_adjust(mw)=0
+!
           deallocate(ngrd_sw(mw)%dst_mask)
           deallocate(dst_mask_unlim)
         end do
@@ -347,14 +372,16 @@
               yy2=ngrd_rm(mo)%lat_rho_o(nx,ny)
               do j=1,ngrd_sw(mw)%Numy_swan
                 do i=1,ngrd_sw(mw)%Numx_swan
-                  xx1=ngrd_sw(mw)%lon_rho_w(i,j)
-                  yy1=ngrd_sw(mw)%lat_rho_w(i,j)
-                  dlon = xx1-xx2
-                  latrad1=abs(yy1*deg2rad)
-                  latrad2=abs(yy2*deg2rad)
-                  dep=cos(0.5*(latrad2+latrad1))*dlon
-                  dlat=yy2-yy1
-                  dist1=1852.0*60.0*sqrt(dlat**2+dep**2)
+                  dist1=sqrt((ngrd_sw(mw)%lon_rho_w(i,j)-xx2)**2+       &
+     &                       (ngrd_sw(mw)%lat_rho_w(i,j)-yy2)**2)
+!                 xx1=ngrd_sw(mw)%lon_rho_w(i,j)
+!                 yy1=ngrd_sw(mw)%lat_rho_w(i,j)
+!                 dlon = xx1-xx2
+!                 latrad1=abs(yy1*deg2rad)
+!                 latrad2=abs(yy2*deg2rad)
+!                 dep=cos(0.5*(latrad2+latrad1))*dlon
+!                 dlat=yy2-yy1
+!                 dist1=1852.0*60.0*sqrt(dlat**2+dep**2)
                   if(dist1<=dist_max)then
                     dist_max=dist1
                     Ikeep=i
