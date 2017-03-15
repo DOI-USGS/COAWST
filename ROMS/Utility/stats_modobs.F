@@ -2,7 +2,7 @@
 #if (defined FOUR_DVAR || defined VERIFICATION) && defined OBSERVATIONS
       SUBROUTINE stats_modobs (ng)
 !
-!svn $Id: stats_modobs.F 830 2017-01-24 21:21:11Z arango $
+!svn $Id: stats_modobs.F 838 2017-03-04 03:21:45Z arango $
 !================================================== Hernan G. Arango ===
 !  Copyright (c) 2002-2017 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
@@ -56,20 +56,21 @@
       integer :: i, ic, iobs, status, varid, vindex
       integer :: LBi, UBi, LBj, UBj
       integer, dimension(2) :: start, total
-      integer, dimension(0:NstateVar(ng)) :: Ncount, is
+      integer, dimension(NstateVar(ng)) :: Ncount, is
 
       integer, dimension(Ndatum(ng)) :: obs_type
       integer, dimension(Ndatum(ng)) :: provenance
+      integer, dimension(Nsurvey(ng)) :: survey_Nobs
 
       real(r8) :: cff1, cff2
       real(r8), parameter :: IniVal = 0.0_r8
       real(r8), parameter :: LARGE = 1.0e+10_r8
 
-      real(r8), dimension(0:NstateVar(ng)) :: CC, MB, MSE, SDE
-      real(r8), dimension(0:NstateVar(ng)) :: mod_min, mod_max
-      real(r8), dimension(0:NstateVar(ng)) :: mod_mean, mod_std
-      real(r8), dimension(0:NstateVar(ng)) :: obs_min, obs_max
-      real(r8), dimension(0:NstateVar(ng)) :: obs_mean, obs_std
+      real(r8), dimension(NstateVar(ng)) :: CC, MB, MSE, SDE
+      real(r8), dimension(NstateVar(ng)) :: mod_min, mod_max
+      real(r8), dimension(NstateVar(ng)) :: mod_mean, mod_std
+      real(r8), dimension(NstateVar(ng)) :: obs_min, obs_max
+      real(r8), dimension(NstateVar(ng)) :: obs_mean, obs_std
 
       real(r8), dimension(Ndatum(ng)) :: mod_value
       real(r8), dimension(Ndatum(ng)) :: obs_depths
@@ -96,6 +97,19 @@
 !  Inquire about input observations variables.
 !
       CALL netcdf_inq_var (ng, iNLM, OBS(ng)%name)
+      IF (exit_flag.ne.NoError) RETURN
+!
+!  Read in and write out number of observations per survey.
+!
+      CALL netcdf_get_ivar (ng, iNLM, OBS(ng)%name, Vname(1,idNobs),    &
+     &                      survey_Nobs,                                &
+     &                      ncid = OBS(ng)%ncid,                        &
+     &                      start = (/1/), total = (/Nsurvey(ng)/))
+      IF (exit_flag.ne. NoError) RETURN
+
+      CALL netcdf_put_ivar (ng, iNLM, DAV(ng)%name, Vname(1,idNobs),    &
+     &                      survey_Nobs, (/1/), (/Nsurvey(ng)/),        &
+     &                      ncid = DAV(ng)%ncid)
       IF (exit_flag.ne.NoError) RETURN
 !
 !  Read in and write out survey time.
@@ -309,7 +323,7 @@
 !
 !  Initialize.
 !
-      DO i=0,NstateVar(ng)
+      DO i=1,NstateVar(ng)
         CC(i)=0.0_r8
         MB(i)=0.0_r8
         MSE(i)=0.0_r8
@@ -414,48 +428,48 @@
 !
 !  Write comparison statistics to NetCDF file.
 !
-      CALL netcdf_put_ivar (ng, iNLM, DAV(ng)%name, 'Nobs',             &
-     &                      Ncount(0:), (/1/), (/NstateVar(ng)+1/),     &
+      CALL netcdf_put_ivar (ng, iNLM, DAV(ng)%name, 'Nused_obs',        &
+     &                      Ncount, (/1/), (/NstateVar(ng)/),           &
      &                      ncid = DAV(ng)%ncid)
       IF (exit_flag.ne.NoError) RETURN
 
       CALL netcdf_put_fvar (ng, iNLM, DAV(ng)%name, 'obs_mean',         &
-     &                      obs_mean(0:), (/1/), (/NstateVar(ng)+1/),   &
+     &                      obs_mean, (/1/), (/NstateVar(ng)/),         &
      &                      ncid = DAV(ng)%ncid)
       IF (exit_flag.ne.NoError) RETURN
 
       CALL netcdf_put_fvar (ng, iNLM, DAV(ng)%name, 'obs_std',          &
-     &                      obs_std(0:), (/1/), (/NstateVar(ng)+1/),    &
+     &                      obs_std, (/1/), (/NstateVar(ng)/),          &
      &                      ncid = DAV(ng)%ncid)
       IF (exit_flag.ne.NoError) RETURN
 
       CALL netcdf_put_fvar (ng, iNLM, DAV(ng)%name, 'model_mean',       &
-     &                      mod_mean(0:), (/1/), (/NstateVar(ng)+1/),   &
+     &                      mod_mean, (/1/), (/NstateVar(ng)/),         &
      &                      ncid = DAV(ng)%ncid)
       IF (exit_flag.ne.NoError) RETURN
 
       CALL netcdf_put_fvar (ng, iNLM, DAV(ng)%name, 'model_std',        &
-     &                      mod_std(0:), (/1/), (/NstateVar(ng)+1/),    &
+     &                      mod_std, (/1/), (/NstateVar(ng)/),          &
      &                      ncid = DAV(ng)%ncid)
       IF (exit_flag.ne.NoError) RETURN
 
       CALL netcdf_put_fvar (ng, iNLM, DAV(ng)%name, 'model_bias',       &
-     &                      MB(0:), (/1/), (/NstateVar(ng)+1/),         &
+     &                      MB, (/1/), (/NstateVar(ng)/),               &
      &                      ncid = DAV(ng)%ncid)
       IF (exit_flag.ne.NoError) RETURN
 
       CALL netcdf_put_fvar (ng, iNLM, DAV(ng)%name, 'SDE',              &
-     &                      SDE(0:), (/1/), (/NstateVar(ng)+1/),        &
+     &                      SDE, (/1/), (/NstateVar(ng)/),              &
      &                      ncid = DAV(ng)%ncid)
       IF (exit_flag.ne.NoError) RETURN
 
       CALL netcdf_put_fvar (ng, iNLM, DAV(ng)%name, 'CC',               &
-     &                      CC(0:), (/1/), (/NstateVar(ng)+1/),         &
+     &                      CC, (/1/), (/NstateVar(ng)/),               &
      &                      ncid = DAV(ng)%ncid)
       IF (exit_flag.ne.NoError) RETURN
 
       CALL netcdf_put_fvar (ng, iNLM, DAV(ng)%name, 'MSE',              &
-     &                      MSE(0:), (/1/), (/NstateVar(ng)+1/),        &
+     &                      MSE, (/1/), (/NstateVar(ng)/),              &
      &                      ncid = DAV(ng)%ncid)
       IF (exit_flag.ne.NoError) RETURN
 !

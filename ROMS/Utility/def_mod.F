@@ -2,7 +2,7 @@
 #if defined FOUR_DVAR || defined VERIFICATION
       SUBROUTINE def_mod (ng)
 !
-!svn $Id: def_mod.F 830 2017-01-24 21:21:11Z arango $
+!svn $Id: def_mod.F 839 2017-03-04 17:18:29Z arango $
 !================================================== Hernan G. Arango ===
 !  Copyright (c) 2002-2017 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
@@ -46,7 +46,8 @@
 
       integer, parameter :: Natt = 25
 
-      integer :: iterDim, datumDim, recordDim, stateDim, surveyDim
+      integer :: iterDim, datumDim, recordDim
+      integer :: stateDim, stateDimp, surveyDim
 # ifdef RPCG
       integer :: datumDimp, NouterDimp
 # endif
@@ -58,7 +59,7 @@
 # endif
       integer :: i, j, nvatt, nvdim, status, varid, vindex
       integer :: OBSncid
-      integer :: CostDim(2), Vsize(4), vardim(3)
+      integer :: Vsize(4), vardim(3)
 # ifdef DISTRIBUTE
       integer :: ibuffer(2)
 # endif
@@ -158,7 +159,11 @@
         IF (exit_flag.ne.NoError) RETURN
 
         status=def_dim(ng, iNLM, DAV(ng)%ncid, ncname, 'state_var',     &
-     &                 NstateVar(ng)+1, stateDim)
+     &                 NstateVar(ng), stateDim)
+        IF (exit_flag.ne.NoError) RETURN
+
+        status=def_dim(ng, iNLM, DAV(ng)%ncid, ncname, 'cost_var',     &
+     &                 NstateVar(ng)+1, stateDimp)
         IF (exit_flag.ne.NoError) RETURN
 
         status=def_dim(ng, iNLM, DAV(ng)%ncid, ncname, 'datum',         &
@@ -202,9 +207,6 @@
         status=def_dim(ng, iNLM, DAV(ng)%ncid, ncname, 'iteration',     &
      &                 nf90_unlimited, iterDim)
         IF (exit_flag.ne.NoError) RETURN
-!
-        CostDim(1)=stateDim
-        CostDim(2)=iterDim
 #  endif
 # endif
 !
@@ -455,6 +457,13 @@
 !  Define model-observation comparison statistics.
 !
         Vinfo( 1)='Nobs'
+        Vinfo( 2)='number of observations with the same survey time'
+        status=def_var(ng, iNLM, DAV(ng)%ncid, varid, nf90_int,         &
+     &                 1, (/surveyDim/), Aval, Vinfo, ncname,           &
+     &                 SetParAccess = .FALSE.)
+        IF (exit_flag.ne.NoError) RETURN
+!
+        Vinfo( 1)='Nused_obs'
         Vinfo( 2)='Number of usable observations'
         status=def_var(ng, iNLM, DAV(ng)%ncid, varid, nf90_int,         &
      &                 1, (/stateDim/), Aval, Vinfo, ncname,            &
@@ -813,14 +822,14 @@
         Vinfo( 1)='NL_iDataPenalty'
         Vinfo( 2)='nonlinear model initial data penalty function'
         status=def_var(ng, iNLM, DAV(ng)%ncid, varid, nf90_double,      &
-     &                 1, (/stateDim/), Aval, Vinfo, ncname,            &
+     &                 1, (/stateDimp/), Aval, Vinfo, ncname,           &
      &                 SetParAccess = .FALSE.)
         IF (exit_flag.ne.NoError) RETURN
 !
         Vinfo( 1)='NL_fDataPenalty'
         Vinfo( 2)='nonlinear model final data penalty function'
         status=def_var(ng, iNLM, DAV(ng)%ncid, varid, nf90_double,      &
-     &                 2, (/stateDim,NouterDim/), Aval, Vinfo, ncname,  &
+     &                 2, (/stateDimp,NouterDim/), Aval, Vinfo, ncname, &
      &                 SetParAccess = .FALSE.)
         IF (exit_flag.ne.NoError) RETURN
 # endif
@@ -834,14 +843,14 @@
         Vinfo( 1)='RP_iDataPenalty'
         Vinfo( 2)='representer model initial data penalty function'
         status=def_var(ng, iNLM, DAV(ng)%ncid, varid, nf90_double,      &
-     &                 2, (/stateDim,NouterDim/), Aval, Vinfo, ncname,  &
+     &                 2, (/stateDimp,NouterDim/), Aval, Vinfo, ncname, &
      &                 SetParAccess = .FALSE.)
         IF (exit_flag.ne.NoError) RETURN
 !
         Vinfo( 1)='RP_fDataPenalty'
         Vinfo( 2)='representer model final data penalty function'
         status=def_var(ng, iNLM, DAV(ng)%ncid, varid, nf90_double,      &
-     &                 2, (/stateDim,NouterDim/), Aval, Vinfo, ncname,  &
+     &                 2, (/stateDimp,NouterDim/), Aval, Vinfo, ncname, &
      &                 SetParAccess = .FALSE.)
         IF (exit_flag.ne.NoError) RETURN
 # endif
@@ -1341,7 +1350,7 @@
         Vinfo( 1)='NLcost_function'
         Vinfo( 2)='nonlinear model misfit cost function'
         status=def_var(ng, iNLM, DAV(ng)%ncid, varid, nf90_double,      &
-     &                 2, (/stateDim,MouterDim/), Aval, Vinfo, ncname)
+     &                 2, (/stateDimp,MouterDim/), Aval, Vinfo, ncname)
         IF (exit_flag.ne.NoError) RETURN
 !
 !  Define model minus observations misfit TLM cost function.
