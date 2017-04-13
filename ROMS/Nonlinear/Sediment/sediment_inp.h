@@ -1240,11 +1240,11 @@
               END DO
 #endif
 #if defined SED_FLOCS
-            CASE ('l_ADS')
+            CASE ('L_ADS')
               Npts=load_l(Nval, Cval, Ngrids, l_ADS)
-            CASE ('l_ASH')
+            CASE ('L_ASH')
               Npts=load_l(Nval, Cval, Ngrids, l_ASH)
-            CASE ('l_COLLFRAG')
+            CASE ('L_COLLFRAG')
               Npts=load_l(Nval, Cval, Ngrids, l_COLLFRAG)
             CASE ('F_DP0')
               Npts=load_r(Nval, Rval, Ngrids, f_dp0)
@@ -1270,7 +1270,7 @@
               Npts=load_r(Nval, Rval, Ngrids, f_collfragparam)
             CASE ('F_CLIM')
               Npts=load_r(Nval, Rval, Ngrids, f_clim)
-            CASE ('l_testcase')
+            CASE ('L_TESTCASE')
               Npts=load_l(Nval, Cval, Ngrids, l_testcase)
 #endif
 #if defined SED_FLOCS && defined SED_DEFLOC

@@ -284,6 +284,7 @@
       WRITE(*,*) 'Boolean for shear aggregation (L_ASH)                        : ',l_ASH
       WRITE(*,*) 'Boolean for collision fragmenation (L_COLLFRAG)              : ',l_COLLFRAG
       WRITE(*,*) 'Collision fragmentation parameter (f_collfragparam)          : ',f_collfragparam
+      WRITE(*,*) 'Boolean for test case from Verney (L_TESTCASE)               : ',l_testcase
       WRITE(*,*) ' '
       WRITE(*,*) 'Value of eps                                                 : ',eps
       WRITE(*,*) ' '

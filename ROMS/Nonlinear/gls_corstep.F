@@ -267,6 +267,7 @@
       real(r8) :: Gh, Gm, Kprod, Ls_unlmt, Ls_lmt, Pprod, Sh, Sm
       real(r8) :: cff, cff1, cff2, cff3
       real(r8) :: cmu_fac1, cmu_fac2, cmu_fac3, cmu_fac4
+      real(r8) :: cmu, cmup, alphan, alpham
       real(r8) :: gls_c3, gls_exp1, gls_fac1, gls_fac2, gls_fac3
       real(r8) :: gls_fac4, gls_fac5, gls_fac6, ql, sqrt2, strat2
       real(r8) :: tke_exp1, tke_exp2, tke_exp3, tke_exp4, wall_fac
@@ -1081,6 +1082,16 @@
 !
             Sm=Sm*sqrt2/gls_cmu0(ng)**3
             Sh=Sh*sqrt2/gls_cmu0(ng)**3
+# elif defined KANTHA_CLAYSON_KCQE
+            cff=MAX((0.5477_r8**6)*tke(i,j,k,nnew),1.0E-4_r8)
+            alpham=Ls_lmt*Ls_lmt*shear2(i,j,k)/cff
+            alphan=-2.0_r8*Gh/(gls_cmu0(ng)**6)
+            cff2=(1.0_r8+0.4679_r8*alphan+0.07372_r8*alpham+             &
+     &           0.01761_r8*alphan*alpham+0.03371_r8*alphan*alphan)
+            cmu=(0.1682_r8+0.03269_r8*alphan)/cff2
+            cmup=(0.1783_r8+0.01586_r8*alphan+0.003173_r8*alpham)/cff2
+            Sm=cmu/(sqrt(2.0_r8)*gls_cmu0(ng)**3)
+            Sh=cmup/(sqrt(2.0_r8)*gls_cmu0(ng)**3)
 # elif defined KANTHA_CLAYSON
             cff=1.0_r8-my_Sh2*Gh
             Sh=my_Sh1/cff
