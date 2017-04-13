@@ -52,7 +52,7 @@
 
 !***********************************************************************
 
-      subroutine remap(dst_array, map_wts, dst_add, src_add, 
+      subroutine remap(dst_array, map_wts, dst_add, src_add,            &
      &                 src_array, src_grad1, src_grad2, src_grad3)
 
 !-----------------------------------------------------------------------
@@ -67,18 +67,19 @@
 !
 !-----------------------------------------------------------------------
 
-      integer (kind=int_kind), dimension(:), intent(in) ::
-     &     dst_add,     ! destination address for each link
+      integer (kind=int_kind), dimension(:), intent(in) ::              &
+     &     dst_add,                                                     &
+                        ! destination address for each link
      &     src_add      ! source      address for each link
 
-      real (kind=dbl_kind), dimension(:,:), intent(in) ::
+      real (kind=dbl_kind), dimension(:,:), intent(in) ::               &
      &     map_wts      ! remapping weights for each link
 
-      real (kind=dbl_kind), dimension(:), intent(in) ::
+      real (kind=dbl_kind), dimension(:), intent(in) ::                 &
      &     src_array    ! array with source field to be remapped
 
-      real (kind=dbl_kind), dimension(:), intent(in), optional ::
-     &     src_grad1    ! gradient arrays on source grid necessary for
+      real (kind=dbl_kind), dimension(:), intent(in), optional ::       &
+     &     src_grad1    ! gradient arrays on source grid necessary for  &
      &,    src_grad2    ! higher-order remappings
      &,    src_grad3
 
@@ -88,7 +89,7 @@
 !
 !-----------------------------------------------------------------------
 
-      real (kind=dbl_kind), dimension(:), intent(inout) ::
+      real (kind=dbl_kind), dimension(:), intent(inout) ::              &
      &     dst_array    ! array for remapped field on destination grid
 
 !-----------------------------------------------------------------------
@@ -123,7 +124,7 @@
       case(1)
 
         do n=1,size(dst_add)
-          dst_array(dst_add(n)) = dst_array(dst_add(n)) + 
+          dst_array(dst_add(n)) = dst_array(dst_add(n)) +               &
      &                            src_array(src_add(n))*map_wts(1,n)
         end do
 
@@ -137,17 +138,17 @@
 
         if (size(map_wts,DIM=1) == 3) then
           do n=1,size(dst_add)
-            dst_array(dst_add(n)) = dst_array(dst_add(n)) +
-     &                              src_array(src_add(n))*map_wts(1,n) +
-     &                              src_grad1(src_add(n))*map_wts(2,n) +
+            dst_array(dst_add(n)) = dst_array(dst_add(n)) +             &
+     &                              src_array(src_add(n))*map_wts(1,n) +&
+     &                              src_grad1(src_add(n))*map_wts(2,n) +&
      &                              src_grad2(src_add(n))*map_wts(3,n)
           end do
         else if (size(map_wts,DIM=1) == 4) then
           do n=1,size(dst_add)
             dst_array(dst_add(n)) = dst_array(dst_add(n)) +
-     &                              src_array(src_add(n))*map_wts(1,n) +
-     &                              src_grad1(src_add(n))*map_wts(2,n) +
-     &                              src_grad2(src_add(n))*map_wts(3,n) +
+     &                              src_array(src_add(n))*map_wts(1,n) +&
+     &                              src_grad1(src_add(n))*map_wts(2,n) +&
+     &                              src_grad2(src_add(n))*map_wts(3,n) +&
      &                              src_grad3(src_add(n))*map_wts(4,n)
           end do
         endif

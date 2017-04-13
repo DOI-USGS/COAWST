@@ -43,19 +43,19 @@
 
 !-----------------------------------------------------------------------
 
-      real (kind = dbl_kind), parameter :: 
-     &                        zero   = 0.0_dbl_kind,
-     &                        one    = 1.0_dbl_kind,
-     &                        two    = 2.0_dbl_kind,
-     &                        three  = 3.0_dbl_kind,
-     &                        four   = 4.0_dbl_kind,
-     &                        five   = 5.0_dbl_kind,
-     &                        half   = 0.5_dbl_kind,
-     &                        quart  = 0.25_dbl_kind,
-     &                        bignum = 1.e+20_dbl_kind,
-     &                        tiny   = 1.e-14_dbl_kind,
-     &                        pi     = 3.14159265359_dbl_kind,
-     &                        pi2    = two*pi,
+      real (kind = dbl_kind), parameter ::                              &
+     &                        zero   = 0.0_dbl_kind,                    &
+     &                        one    = 1.0_dbl_kind,                    &
+     &                        two    = 2.0_dbl_kind,                    &
+     &                        three  = 3.0_dbl_kind,                    &
+     &                        four   = 4.0_dbl_kind,                    &
+     &                        five   = 5.0_dbl_kind,                    &
+     &                        half   = 0.5_dbl_kind,                    &
+     &                        quart  = 0.25_dbl_kind,                   &
+     &                        bignum = 1.e+20_dbl_kind,                 &
+     &                        tiny   = 1.e-14_dbl_kind,                 &
+     &                        pi     = 3.14159265359_dbl_kind,          &
+     &                        pi2    = two*pi,                          &
      &                        pih    = half*pi
 !----------------------------------------------------------------------
 

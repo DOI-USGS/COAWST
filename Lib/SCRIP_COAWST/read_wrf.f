@@ -31,8 +31,8 @@
       ! local variables 
       integer(int_kind) :: i, j, iunit
       integer(int_kind) :: t, nx, ny, ma, time_size
-      integer(int_kind) :: ncstat, nc_file_id, nc_grdsize_id,
-     &         nc_grdlat_id, nc_grdlon_id, nc_grdmsk_id,
+      integer(int_kind) :: ncstat, nc_file_id, nc_grdsize_id,           &
+     &         nc_grdlat_id, nc_grdlon_id, nc_grdmsk_id,                &
      &         nc_grdcrnrlat_id, nc_grdcrnrlon_id
 
       real(dbl_kind)    :: xx2, yy2, xxend_1, yyend_1
@@ -61,18 +61,18 @@
           ncstat=nf_inq_dimid(nc_file_id,'west_east',nc_grdsize_id)
           call netcdf_error_handler(ncstat)
 !     Get the grid size in each direction
-          ncstat=nf_inq_dimlen(nc_file_id,nc_grdsize_id,
+          ncstat=nf_inq_dimlen(nc_file_id,nc_grdsize_id,                &
      &                                    ngrd_wr(ma)%we_size)
 
           call netcdf_error_handler(ncstat)
           ncstat=nf_inq_dimid(nc_file_id,'south_north',nc_grdsize_id)
           call netcdf_error_handler(ncstat)
-          ncstat=nf_inq_dimlen(nc_file_id,nc_grdsize_id,
+          ncstat=nf_inq_dimlen(nc_file_id,nc_grdsize_id,                &
      &                                    ngrd_wr(ma)%sn_size)
           call netcdf_error_handler(ncstat)
           ncstat = nf_inq_dimid(nc_file_id,'Time',nc_grdsize_id)
           call netcdf_error_handler(ncstat)
-          ncstat = nf_inq_dimlen(nc_file_id,nc_grdsize_id,
+          ncstat = nf_inq_dimlen(nc_file_id,nc_grdsize_id,              &
      &                                      time_size)
           call netcdf_error_handler(ncstat)
 
@@ -136,13 +136,13 @@
         allocate(ngrd_wr(ma)%x_full_grid(nx+1,ny+1))
         allocate(ngrd_wr(ma)%y_full_grid(nx+1,ny+1))
 
-        call create_psimesh(nx, ny, ngrd_wr(ma)%lon_rho_a,
-     &                              ngrd_wr(ma)%lat_rho_a,
+        call create_psimesh(nx, ny, ngrd_wr(ma)%lon_rho_a,              &
+     &                              ngrd_wr(ma)%lat_rho_a,              &
      &                               lon_psi_a, lat_psi_a)
 
-        call create_extra_rho_grid(nx-1, ny-1,
-     &                             lon_psi_a, lat_psi_a,
-     &                             ngrd_wr(ma)%x_full_grid,
+        call create_extra_rho_grid(nx-1, ny-1,                          &
+     &                             lon_psi_a, lat_psi_a,                &
+     &                             ngrd_wr(ma)%x_full_grid,             &
      &                             ngrd_wr(ma)%y_full_grid)
 
         deallocate(lon_psi_a, lat_psi_a)
@@ -151,7 +151,7 @@
 !     Find the parent grid indices w.r.t child grid
 !
       do ma=1,Ngrids_wrf-1
-        allocate(ngrd_wr(ma)%istr_a,ngrd_wr(ma)%jstr_a,
+        allocate(ngrd_wr(ma)%istr_a,ngrd_wr(ma)%jstr_a,                 &
      &           ngrd_wr(ma)%iend_a,ngrd_wr(ma)%jend_a)
 
         nx=ngrd_wr(ma)%we_size
@@ -162,7 +162,7 @@
 
         do j=1,ny
           do i=1,nx
-            dist1=sqrt((ngrd_wr(ma)%lon_rho_a(i,j)-xx2)**2+
+            dist1=sqrt((ngrd_wr(ma)%lon_rho_a(i,j)-xx2)**2+             &
      &                 (ngrd_wr(ma)%lat_rho_a(i,j)-yy2)**2)
             if(dist1<=dist_max)then
               dist_max=dist1
@@ -173,14 +173,14 @@
         enddo
 
         dist_max=10e6
-        xxend_1=ngrd_wr(ma+1)%lon_rho_a(ngrd_wr(ma+1)%we_size-1,
+        xxend_1=ngrd_wr(ma+1)%lon_rho_a(ngrd_wr(ma+1)%we_size-1,        &
      &                                  ngrd_wr(ma+1)%sn_size-1)
-        yyend_1=ngrd_wr(ma+1)%lat_rho_a(ngrd_wr(ma+1)%we_size-1,
+        yyend_1=ngrd_wr(ma+1)%lat_rho_a(ngrd_wr(ma+1)%we_size-1,        &
      &                                    ngrd_wr(ma+1)%sn_size-1)
 
         do j=1,ny
           do i=1,nx
-            dist1=sqrt((ngrd_wr(ma)%lon_rho_a(i,j)-xxend_1)**2+      
+            dist1=sqrt((ngrd_wr(ma)%lon_rho_a(i,j)-xxend_1)**2+         &
      &                 (ngrd_wr(ma)%lat_rho_a(i,j)-yyend_1)**2)
             if(dist1<=dist_max)then
               dist_max=dist1
@@ -199,7 +199,7 @@
 !
 !======================================================================
 !
-      subroutine create_psimesh(nx, ny, lon_rho,lat_rho,
+      subroutine create_psimesh(nx, ny, lon_rho,lat_rho,                &
      &                      lon_psi, lat_psi) 
 
       implicit none 
@@ -210,7 +210,7 @@
 
       integer (int_kind), intent(in) :: nx, ny
       real (dbl_kind), intent(in) :: lon_rho(nx,ny), lat_rho(nx,ny)
-      real (dbl_kind), intent(out) :: lon_psi(nx-1,ny-1), 
+      real (dbl_kind), intent(out) :: lon_psi(nx-1,ny-1),               &
      &                                lat_psi(nx-1,ny-1)
 
       integer (int_kind) :: i, j

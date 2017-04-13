@@ -829,9 +829,9 @@
               PY=ngrd_rm(mo)%lat_rho_o(nx,ny)
               INOUT=0
               call PNPOLY( PX, PY, XX, YY, N, INOUT )
-              ngrd_rm(mo)%dst_mask(nx,ny)=
+              ngrd_rm(mo)%dst_mask(nx,ny)=                              &
      &          ngrd_rm(mo)%dst_mask(nx,ny)*MIN(INOUT+1,1)
-                dst_mask_unlim(nx,ny)=                                  &
+              dst_mask_unlim(nx,ny)=                                    &
      &          dst_mask_unlim(nx,ny)*MIN(INOUT+1,1)
             enddo
           enddo
@@ -1262,83 +1262,83 @@
       end subroutine wav2atm_mask
 
 !======================================================================
-C                                                                       
+!                                                                       
          SUBROUTINE PNPOLY( PX, PY, XX, YY, N, INOUT )                     
-C
-C        https://www.ecse.rpi.edu/~wrf/Research/Short_Notes/pnpoly.html
-C        Copyright (c) 1970-2003, Wm. Randolph Franklin
-C        Permission is hereby granted, free of charge, to any person 
-C        obtaining a copy of this software and associated documentation
-C        files (the "Software"), to deal in the Software without 
-C        restriction, including without limitation the rights to use, 
-C        copy, modify, merge, publish, distribute, sublicense, and/or 
-C        sell copies of the Software, and to permit persons to whom the
-C        Software is furnished to do so, subject to the following 
-C        conditions: 
-C        1.Redistributions of source code must retain the above 
-C          copyright notice, this list of conditions and the following
-C          disclaimers. 
-C        2.Redistributions in binary form must reproduce the above
-C          copyright notice in the documentation and/or other materials
-C          provided with the distribution. 
-C        3.The name of W. Randolph Franklin may not be used to endorse
-C          or promote products derived from this Software without 
-C          specific prior written permission. 
-C
-C        THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
-C        EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
-C        OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND 
-C        NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT 
-C        HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, 
-C        WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
-C        FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR 
-C        OTHER DEALINGS IN THE SOFTWARE. 
-C                                                                       
-C        PURPOSE                                                        
-C           TO DETERMINE WHETHER A POINT IS INSIDE A POLYGON            
-C                                                                       
-C        USAGE                                                          
-C           CALL PNPOLY (PX, PY, XX, YY, N, INOUT )                     
-C                                                                       
-C        DESCRIPTION OF THE PARAMETERS                                  
-C           PX      - X-COORDINATE OF POINT IN QUESTION.                
-C           PY      - Y-COORDINATE OF POINT IN QUESTION.                
-C           XX      - N LONG VECTOR CONTAINING X-COORDINATES OF         
-C                     VERTICES OF POLYGON.                              
-C           YY      - N LONG VECTOR CONTAING Y-COORDINATES OF           
-C                     VERTICES OF POLYGON.                              
-C           N       - NUMBER OF VERTICES IN THE POLYGON.                
-C           INOUT   - THE SIGNAL RETURNED:                              
-C                     -1 IF THE POINT IS OUTSIDE OF THE POLYGON,        
-C                      0 IF THE POINT IS ON AN EDGE OR AT A VERTEX,     
-C                      1 IF THE POINT IS INSIDE OF THE POLYGON.         
-C                                                                       
-C        REMARKS                                                        
-C           THE VERTICES MAY BE LISTED CLOCKWISE OR ANTICLOCKWISE.      
-C           THE FIRST MAY OPTIONALLY BE REPEATED, IF SO N MAY           
-C           OPTIONALLY BE INCREASED BY 1.                               
-C           THE INPUT POLYGON MAY BE A COMPOUND POLYGON CONSISTING      
-C           OF SEVERAL SEPARATE SUBPOLYGONS. IF SO, THE FIRST VERTEX    
-C           OF EACH SUBPOLYGON MUST BE REPEATED, AND WHEN CALCULATING   
-C           N, THESE FIRST VERTICES MUST BE COUNTED TWICE.              
-C           INOUT IS THE ONLY PARAMETER WHOSE VALUE IS CHANGED.         
-C           THE SIZE OF THE ARRAYS MUST BE INCREASED IF N > MAXDIM      
-C           WRITTEN BY RANDOLPH FRANKLIN, UNIVERSITY OF OTTAWA, 7/70.   
-C                                                                       
-C        SUBROUTINES AND FUNCTION SUBPROGRAMS REQUIRED                  
-C           NONE                                                        
-C                                                                       
-C        METHOD                                                         
-C           A VERTICAL LINE IS DRAWN THRU THE POINT IN QUESTION. IF IT  
-C           CROSSES THE POLYGON AN ODD NUMBER OF TIMES, THEN THE        
-C           POINT IS INSIDE OF THE POLYGON.                             
-C                                                                       
-C        Modifications:
-C          - jcw 12Dec2015 I/O var declarations, 
-C                          allow more than 200 maxdim
-C     ..................................................................
-C                                                                       
-C     SUBROUTINE PNPOLY(PX,PY,XX,YY,N,INOUT)
+!
+!        https://www.ecse.rpi.edu/~wrf/Research/Short_Notes/pnpoly.html
+!        Copyright (c) 1970-2003, Wm. Randolph Franklin
+!        Permission is hereby granted, free of charge, to any person 
+!        obtaining a copy of this software and associated documentation
+!        files (the "Software"), to deal in the Software without 
+!        restriction, including without limitation the rights to use, 
+!        copy, modify, merge, publish, distribute, sublicense, and/or 
+!        sell copies of the Software, and to permit persons to whom the
+!        Software is furnished to do so, subject to the following 
+!        conditions: 
+!        1.Redistributions of source code must retain the above 
+!          copyright notice, this list of conditions and the following
+!          disclaimers. 
+!        2.Redistributions in binary form must reproduce the above
+!          copyright notice in the documentation and/or other materials
+!          provided with the distribution. 
+!        3.The name of W. Randolph Franklin may not be used to endorse
+!          or promote products derived from this Software without 
+!          specific prior written permission. 
+!
+!        THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+!        EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
+!        OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND 
+!        NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT 
+!        HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, 
+!        WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
+!        FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR 
+!        OTHER DEALINGS IN THE SOFTWARE. 
+!                                                                       
+!        PURPOSE                                                        
+!           TO DETERMINE WHETHER A POINT IS INSIDE A POLYGON            
+!                                                                       
+!        USAGE                                                          
+!           CALL PNPOLY (PX, PY, XX, YY, N, INOUT )                     
+!                                                                       
+!        DESCRIPTION OF THE PARAMETERS                                  
+!           PX      - X-COORDINATE OF POINT IN QUESTION.                
+!           PY      - Y-COORDINATE OF POINT IN QUESTION.                
+!           XX      - N LONG VECTOR CONTAINING X-COORDINATES OF         
+!                     VERTICES OF POLYGON.                              
+!           YY      - N LONG VECTOR CONTAING Y-COORDINATES OF           
+!                     VERTICES OF POLYGON.                              
+!           N       - NUMBER OF VERTICES IN THE POLYGON.                
+!           INOUT   - THE SIGNAL RETURNED:                              
+!                     -1 IF THE POINT IS OUTSIDE OF THE POLYGON,        
+!                      0 IF THE POINT IS ON AN EDGE OR AT A VERTEX,     
+!                      1 IF THE POINT IS INSIDE OF THE POLYGON.         
+!                                                                       
+!        REMARKS                                                        
+!           THE VERTICES MAY BE LISTED CLOCKWISE OR ANTICLOCKWISE.      
+!           THE FIRST MAY OPTIONALLY BE REPEATED, IF SO N MAY           
+!           OPTIONALLY BE INCREASED BY 1.                               
+!           THE INPUT POLYGON MAY BE A COMPOUND POLYGON CONSISTING      
+!           OF SEVERAL SEPARATE SUBPOLYGONS. IF SO, THE FIRST VERTEX    
+!           OF EACH SUBPOLYGON MUST BE REPEATED, AND WHEN CALCULATING   
+!           N, THESE FIRST VERTICES MUST BE COUNTED TWICE.              
+!           INOUT IS THE ONLY PARAMETER WHOSE VALUE IS CHANGED.         
+!           THE SIZE OF THE ARRAYS MUST BE INCREASED IF N > MAXDIM      
+!           WRITTEN BY RANDOLPH FRANKLIN, UNIVERSITY OF OTTAWA, 7/70.   
+!                                                                       
+!        SUBROUTINES AND FUNCTION SUBPROGRAMS REQUIRED                  
+!           NONE                                                        
+!                                                                       
+!        METHOD                                                         
+!           A VERTICAL LINE IS DRAWN THRU THE POINT IN QUESTION. IF IT  
+!           CROSSES THE POLYGON AN ODD NUMBER OF TIMES, THEN THE        
+!           POINT IS INSIDE OF THE POLYGON.                             
+!                                                                       
+!        Modifications:
+!          - jcw 12Dec2015 I/O var declarations, 
+!                          allow more than 200 maxdim
+!     ..................................................................
+!                                                                       
+!     SUBROUTINE PNPOLY(PX,PY,XX,YY,N,INOUT)
 !     REAL X(200),Y(200),XX(N),YY(N)
       real(dbl_kind), intent(in) :: PX, PY, XX(1:N), YY(1:N)
       integer, intent(in) :: N
@@ -1347,7 +1347,7 @@ C     SUBROUTINE PNPOLY(PX,PY,XX,YY,N,INOUT)
       real(dbl_kind) :: X(N),Y(N)
       LOGICAL MX,MY,NX,NY
       INTEGER O, MAXDIM
-C      OUTPUT UNIT FOR PRINTED MESSAGES
+!     OUTPUT UNIT FOR PRINTED MESSAGES
       DATA O/6/
       MAXDIM=N+1
       IF(N.LE.MAXDIM)GO TO 6

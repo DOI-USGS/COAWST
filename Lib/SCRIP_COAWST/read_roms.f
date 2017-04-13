@@ -32,9 +32,9 @@
 
       integer(int_kind) :: i, j, iunit
       integer(int_kind) :: nx, ny, mo 
-      integer(int_kind)  :: ncstat, nc_file_id, nc_grdsize_id, 
-     &                      nc_grdlat_id, nc_grdlon_id, 
-     &                      nc_grdcrnrlat_id, nc_grdcrnrlon_id,
+      integer(int_kind)  :: ncstat, nc_file_id, nc_grdsize_id,          &
+     &                      nc_grdlat_id, nc_grdlon_id,                 &
+     &                      nc_grdcrnrlat_id, nc_grdcrnrlon_id,         &
      &                      nc_grdmsk_id
 
       real(dbl_kind) :: xx2, yy2, xxend_1, yyend_1
@@ -64,13 +64,13 @@
         ncstat=nf_inq_dimid(nc_file_id,'xi_rho',nc_grdsize_id) 
         call netcdf_error_handler(ncstat)
 !     Get the grid size in each direction 
-        ncstat=nf_inq_dimlen(nc_file_id,nc_grdsize_id,                  
+        ncstat=nf_inq_dimlen(nc_file_id,nc_grdsize_id,                  &                 
      &                            ngrd_rm(mo)%xi_size)
         call netcdf_error_handler(ncstat)
 
         ncstat=nf_inq_dimid(nc_file_id,'eta_rho',nc_grdsize_id) 
         call netcdf_error_handler(ncstat)
-        ncstat=nf_inq_dimlen(nc_file_id,nc_grdsize_id,
+        ncstat=nf_inq_dimlen(nc_file_id,nc_grdsize_id,                  &
      &                           ngrd_rm(mo)%eta_size)
         call netcdf_error_handler(ncstat)
 
@@ -78,7 +78,7 @@
         ncstat=nf_inq_varid(nc_file_id, 'spherical', checksphere_id)
         call netcdf_error_handler(ncstat)
 
-        ncstat=nf_inq_var(nc_file_id, checksphere_id,  RHNAME, RHTYPE,
+        ncstat=nf_inq_var(nc_file_id, checksphere_id,  RHNAME, RHTYPE,  &
      &                    RHN, RHDIMS, RHNATT)
         call netcdf_error_handler(ncstat)
 
@@ -119,23 +119,23 @@
 !         
 !     Allocate arrays
 !
-        allocate(ngrd_rm(mo)%
+        allocate(ngrd_rm(mo)%                                           &
      &           lon_rho_o(ngrd_rm(mo)%xi_size,ngrd_rm(mo)%eta_size))
-        allocate(ngrd_rm(mo)%
+        allocate(ngrd_rm(mo)%                                           &
      &           lat_rho_o(ngrd_rm(mo)%xi_size,ngrd_rm(mo)%eta_size))
-        allocate(ngrd_rm(mo)%
+        allocate(ngrd_rm(mo)%                                           &
      &           mask_rho_o(ngrd_rm(mo)%xi_size,ngrd_rm(mo)%eta_size))
-        allocate(ngrd_rm(mo)%x_full_grid(ngrd_rm(mo)%xi_size+1,
+        allocate(ngrd_rm(mo)%x_full_grid(ngrd_rm(mo)%xi_size+1,         &
      &                                   ngrd_rm(mo)%eta_size+1))
-        allocate(ngrd_rm(mo)%y_full_grid(ngrd_rm(mo)%xi_size+1
+        allocate(ngrd_rm(mo)%y_full_grid(ngrd_rm(mo)%xi_size+1          &
      &                                  ,ngrd_rm(mo)%eta_size+1))
 !   
 !       Making lon_psi and lat_psi as local arrays 
 !       Local arrays need to deallocated, no_psi_pts=no_rho_pts-1
 !
-        allocate(lon_psi_o(ngrd_rm(mo)%xi_size-1,
+        allocate(lon_psi_o(ngrd_rm(mo)%xi_size-1,                             &
      &                     ngrd_rm(mo)%eta_size-1))
-        allocate(lat_psi_o(ngrd_rm(mo)%xi_size-1,
+        allocate(lat_psi_o(ngrd_rm(mo)%xi_size-1,                             &
      &                     ngrd_rm(mo)%eta_size-1))
 
 
@@ -162,34 +162,34 @@
         call netcdf_error_handler(ncstat)
 
 !     Get variables
-        ncstat=nf_get_var_double(nc_file_id, nc_grdlon_id,
+        ncstat=nf_get_var_double(nc_file_id, nc_grdlon_id,              &
      &                                     ngrd_rm(mo)%lon_rho_o)
         call netcdf_error_handler(ncstat)
         ngrd_rm(mo)%lon_rho_o=ngrd_rm(mo)%lon_rho_o*scale
 
-        ncstat=nf_get_var_double(nc_file_id, nc_grdlat_id,
+        ncstat=nf_get_var_double(nc_file_id, nc_grdlat_id,              &
      &                                     ngrd_rm(mo)%lat_rho_o)
         call netcdf_error_handler(ncstat)
         ngrd_rm(mo)%lat_rho_o=ngrd_rm(mo)%lat_rho_o*scale
 
-        ncstat=nf_get_var_int(nc_file_id, nc_grdmsk_id,
+        ncstat=nf_get_var_int(nc_file_id, nc_grdmsk_id,                 &
      &                                     ngrd_rm(mo)%mask_rho_o)
         call netcdf_error_handler(ncstat)
 
-        ncstat=nf_get_var_double(nc_file_id, nc_grdcrnrlon_id,
+        ncstat=nf_get_var_double(nc_file_id, nc_grdcrnrlon_id,          &
      &                                       lon_psi_o)
         call netcdf_error_handler(ncstat)
         lon_psi_o=lon_psi_o*scale
 
-        ncstat=nf_get_var_double(nc_file_id, nc_grdcrnrlat_id,
+        ncstat=nf_get_var_double(nc_file_id, nc_grdcrnrlat_id,          &
      &                                       lat_psi_o)
         call netcdf_error_handler(ncstat)
         lat_psi_o=lat_psi_o*scale
  
-        call create_extra_rho_grid(ngrd_rm(mo)%xi_size-1,
-     &                             ngrd_rm(mo)%eta_size-1,
-     &                             lon_psi_o, lat_psi_o,
-     &                             ngrd_rm(mo)%x_full_grid,
+        call create_extra_rho_grid(ngrd_rm(mo)%xi_size-1,               &
+     &                             ngrd_rm(mo)%eta_size-1,              &
+     &                             lon_psi_o, lat_psi_o,                &
+     &                             ngrd_rm(mo)%x_full_grid,             &
      &                             ngrd_rm(mo)%y_full_grid)
 
         deallocate(lon_psi_o, lat_psi_o)
@@ -199,7 +199,7 @@
 !   Find child grid with respect to parent grid
 !
       do mo=1,Ngrids_roms-1
-        allocate(ngrd_rm(mo)%istr_o,ngrd_rm(mo)%jstr_o,
+        allocate(ngrd_rm(mo)%istr_o,ngrd_rm(mo)%jstr_o,                 &
      &           ngrd_rm(mo)%iend_o,ngrd_rm(mo)%jend_o)
 
         nx=ngrd_rm(mo)%xi_size
@@ -211,7 +211,7 @@
 
         do j=1,ny
           do i=1,nx
-            dist1=sqrt((ngrd_rm(mo)%lon_rho_o(i,j)-xx2)**2+
+            dist1=sqrt((ngrd_rm(mo)%lon_rho_o(i,j)-xx2)**2+             &
      &                 (ngrd_rm(mo)%lat_rho_o(i,j)-yy2)**2)
             if(dist1<=dist_max)then
               dist_max=dist1
@@ -222,13 +222,13 @@
         enddo
         dist_max=10e6
 !       The second last point 
-        xxend_1=ngrd_rm(mo+1)%lon_rho_o(ngrd_rm(mo+1)%xi_size-1,        
+        xxend_1=ngrd_rm(mo+1)%lon_rho_o(ngrd_rm(mo+1)%xi_size-1,        &
      &                                ngrd_rm(mo+1)%eta_size-1 )
-        yyend_1=ngrd_rm(mo+1)%lat_rho_o(ngrd_rm(mo+1)%xi_size-1,
+        yyend_1=ngrd_rm(mo+1)%lat_rho_o(ngrd_rm(mo+1)%xi_size-1,        &
      &                                ngrd_rm(mo+1)%eta_size-1 )
         do j=1,ny
           do i=1,nx
-            dist1=sqrt((ngrd_rm(mo)%lon_rho_o(i,j)-xxend_1)**2+
+            dist1=sqrt((ngrd_rm(mo)%lon_rho_o(i,j)-xxend_1)**2+         &
      &                 (ngrd_rm(mo)%lat_rho_o(i,j)-yyend_1)**2)
             if(dist1<=dist_max)then
               dist_max=dist1

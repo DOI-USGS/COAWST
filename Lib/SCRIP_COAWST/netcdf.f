@@ -59,7 +59,7 @@
 !
 !-----------------------------------------------------------------------
 
-      integer (kind=int_kind), intent(in) :: 
+      integer (kind=int_kind), intent(in) ::                            &
      &    istat   ! integer status returned by netCDF function call
 
 !-----------------------------------------------------------------------

@@ -45,10 +45,10 @@
 
 !-----------------------------------------------------------------------
 
-      integer (kind=int_kind), parameter ::
+      integer (kind=int_kind), parameter ::                             &
      &    max_iter = 100   ! max iteration count for i,j iteration
 
-      real (kind=dbl_kind), parameter ::
+      real (kind=dbl_kind), parameter ::                                &
      &     converge = 1.e-10_dbl_kind  ! convergence criterion
 
 !***********************************************************************
@@ -71,29 +71,29 @@
 !
 !-----------------------------------------------------------------------
 
-      integer (kind=int_kind) :: n,icount,
-     &     dst_add,        ! destination address
-     &     iter,           ! iteration counter
+      integer (kind=int_kind) :: n,icount,                              &
+     &     dst_add,        ! destination address                        &
+     &     iter,           ! iteration counter                          &
      &     nmap            ! index of current map being computed
 
-      integer (kind=int_kind), dimension(4) :: 
+      integer (kind=int_kind), dimension(4) ::                          &
      &     src_add         ! address for the four source points
 
-      real (kind=dbl_kind), dimension(4)  ::
-     &     src_lats,       ! latitudes  of four bilinear corners
-     &     src_lons,       ! longitudes of four bilinear corners
+      real (kind=dbl_kind), dimension(4)  ::                            &
+     &     src_lats,       ! latitudes  of four bilinear corners        &
+     &     src_lons,       ! longitudes of four bilinear corners        &
      &     wgts            ! bilinear weights for four corners
 
-      real (kind=dbl_kind) ::
-     &     plat, plon,       ! lat/lon coords of destination point
-     &     iguess, jguess,   ! current guess for bilinear coordinate
-     &     thguess, phguess, ! current guess for lat/lon coordinate
-     &     deli, delj,       ! corrections to i,j
-     &     dth1, dth2, dth3, ! some latitude  differences
-     &     dph1, dph2, dph3, ! some longitude differences
-     &     dthp, dphp,       ! difference between point and sw corner
-     &     mat1, mat2, mat3, mat4, ! matrix elements
-     &     determinant,      ! matrix determinant
+      real (kind=dbl_kind) ::                                           &
+     &     plat, plon,       ! lat/lon coords of destination point      &
+     &     iguess, jguess,   ! current guess for bilinear coordinate    &
+     &     thguess, phguess, ! current guess for lat/lon coordinate     &
+     &     deli, delj,       ! corrections to i,j                       &
+     &     dth1, dth2, dth3, ! some latitude  differences               &
+     &     dph1, dph2, dph3, ! some longitude differences               &
+     &     dthp, dphp,       ! difference between point and sw corner   &
+     &     mat1, mat2, mat3, mat4, ! matrix elements                    &
+     &     determinant,      ! matrix determinant                       &
      &     sum_wgts          ! sum of weights for normalization
 
 !-----------------------------------------------------------------------
@@ -122,9 +122,9 @@
         !*** find nearest square of grid points on source grid
         !***
 
-        call grid_search_bilin(src_add, src_lats, src_lons, 
-     &                         plat, plon, grid1_dims,
-     &                         grid1_center_lat, grid1_center_lon,
+        call grid_search_bilin(src_add, src_lats, src_lons,             &
+     &                         plat, plon, grid1_dims,                  &
+     &                         grid1_center_lat, grid1_center_lon,      &
      &                         grid1_bound_box, bin_addr1, bin_addr2)
 
         !***
@@ -171,14 +171,14 @@
 
           iter_loop1: do iter=1,max_iter
 
-            dthp = plat - src_lats(1) - dth1*iguess -
+            dthp = plat - src_lats(1) - dth1*iguess -                   &
      &                    dth2*jguess - dth3*iguess*jguess
             dphp = plon - src_lons(1)
 
             if (dphp >  three*pih) dphp = dphp - pi2
             if (dphp < -three*pih) dphp = dphp + pi2
 
-            dphp = dphp - dph1*iguess - dph2*jguess - 
+            dphp = dphp - dph1*iguess - dph2*jguess -                   &
      &                    dph3*iguess*jguess
 
             mat1 = dth1 + dth3*jguess
@@ -191,7 +191,7 @@
             deli = (dthp*mat4 - mat2*dphp)/determinant
             delj = (mat1*dphp - dthp*mat3)/determinant
 
-            if (abs(deli) < converge .and. 
+            if (abs(deli) < converge .and.                              &
      &          abs(delj) < converge) exit iter_loop1
 
             iguess = iguess + deli
@@ -282,9 +282,9 @@
         !*** find nearest square of grid points on source grid
         !***
 
-        call grid_search_bilin(src_add, src_lats, src_lons, 
-     &                         plat, plon, grid2_dims,
-     &                         grid2_center_lat, grid2_center_lon,
+        call grid_search_bilin(src_add, src_lats, src_lons,             &
+     &                         plat, plon, grid2_dims,                  &
+     &                         grid2_center_lat, grid2_center_lon,      &
      &                         grid2_bound_box, bin_addr2, bin_addr1)
 
         !***
@@ -331,14 +331,14 @@
 
           iter_loop2: do iter=1,max_iter
 
-            dthp = plat - src_lats(1) - dth1*iguess -
+            dthp = plat - src_lats(1) - dth1*iguess -                   &
      &                    dth2*jguess - dth3*iguess*jguess
             dphp = plon - src_lons(1)
 
             if (dphp >  pi) dphp = dphp - pi2
             if (dphp < -pi) dphp = dphp + pi2
 
-            dphp = dphp - dph1*iguess - dph2*jguess - 
+            dphp = dphp - dph1*iguess - dph2*jguess -                   &
      &                    dph3*iguess*jguess
 
             mat1 = dth1 + dth3*jguess
@@ -351,7 +351,7 @@
             deli = (dthp*mat4 - mat2*dphp)/determinant
             delj = (mat1*dphp - dthp*mat3)/determinant
 
-            if (abs(deli) < converge .and. 
+            if (abs(deli) < converge .and.                              &
      &          abs(delj) < converge) exit iter_loop2
 
             iguess = iguess + deli
@@ -422,10 +422,10 @@
 
 !***********************************************************************
 
-      subroutine grid_search_bilin(src_add, src_lats, src_lons, 
-     &                             plat, plon, src_grid_dims,
-     &                             src_center_lat, src_center_lon,
-     &                             src_grid_bound_box,
+      subroutine grid_search_bilin(src_add, src_lats, src_lons,         &
+     &                             plat, plon, src_grid_dims,           &
+     &                             src_center_lat, src_center_lon,      &
+     &                             src_grid_bound_box,                  &
      &                             src_bin_add, dst_bin_add)
 
 !-----------------------------------------------------------------------
@@ -442,11 +442,11 @@
 !
 !-----------------------------------------------------------------------
 
-      integer (kind=int_kind), dimension(4), intent(out) ::
+      integer (kind=int_kind), dimension(4), intent(out) ::             &
      &        src_add  ! address of each corner point enclosing P
 
-      real (kind=dbl_kind), dimension(4), intent(out) ::
-     &        src_lats, ! latitudes  of the four corner points
+      real (kind=dbl_kind), dimension(4), intent(out) ::                &
+     &        src_lats, ! latitudes  of the four corner points          &
      &        src_lons  ! longitudes of the four corner points
 
 !-----------------------------------------------------------------------
@@ -455,22 +455,22 @@
 !
 !-----------------------------------------------------------------------
 
-      real (kind=dbl_kind), intent(in) ::
-     &        plat,   ! latitude  of the search point
+      real (kind=dbl_kind), intent(in) ::                               &
+     &        plat,   ! latitude  of the search point                   &
      &        plon    ! longitude of the search point
 
-      integer (kind=int_kind), dimension(2), intent(in) ::
+      integer (kind=int_kind), dimension(2), intent(in) ::              &
      &        src_grid_dims  ! size of each src grid dimension
 
-      real (kind=dbl_kind), dimension(:), intent(in) ::
-     &        src_center_lat, ! latitude  of each src grid center 
+      real (kind=dbl_kind), dimension(:), intent(in) ::                 &
+     &        src_center_lat, ! latitude  of each src grid center       &
      &        src_center_lon  ! longitude of each src grid center
 
-      real (kind=dbl_kind), dimension(:,:), intent(in) ::
+      real (kind=dbl_kind), dimension(:,:), intent(in) ::               &
      &        src_grid_bound_box ! bound box for source grid
 
-      integer (kind=int_kind), dimension(:,:), intent(in) ::
-     &        src_bin_add,    ! latitude bins for restricting
+      integer (kind=int_kind), dimension(:,:), intent(in) ::            &
+     &        src_bin_add,    ! latitude bins for restricting           &
      &        dst_bin_add     ! searches
 
 !-----------------------------------------------------------------------
@@ -479,15 +479,15 @@
 !
 !-----------------------------------------------------------------------
 
-      integer (kind=int_kind) :: n, next_n, srch_add,   ! dummy indices
-     &    nx, ny,            ! dimensions of src grid
-     &    min_add, max_add,  ! addresses for restricting search
+      integer (kind=int_kind) :: n, next_n, srch_add,   ! dummy indices &
+     &    nx, ny,            ! dimensions of src grid                   &
+     &    min_add, max_add,  ! addresses for restricting search         &
      &    i, j, jp1, ip1, n_add, e_add, ne_add  ! addresses
 
-      real (kind=dbl_kind) ::  ! vectors for cross-product check
-     &      vec1_lat, vec1_lon,
-     &      vec2_lat, vec2_lon, cross_product, cross_product_last,
-     &      coslat_dst, sinlat_dst, coslon_dst, sinlon_dst,
+      real (kind=dbl_kind) ::  ! vectors for cross-product check        &
+     &      vec1_lat, vec1_lon,                                         &
+     &      vec2_lat, vec2_lon, cross_product, cross_product_last,      &
+     &      coslat_dst, sinlat_dst, coslon_dst, sinlon_dst,             &
      &      dist_min, distance ! for computing dist-weighted avg
 
 !-----------------------------------------------------------------------
@@ -501,7 +501,7 @@
       min_add = size(src_center_lat)
       max_add = 1
       do n=1,num_srch_bins
-        if (plat >= bin_lats(1,n) .and. plat <= bin_lats(2,n) .and.
+        if (plat >= bin_lats(1,n) .and. plat <= bin_lats(2,n) .and.     &
      &      plon >= bin_lons(1,n) .and. plon <= bin_lons(2,n)) then
           min_add = min(min_add, src_bin_add(1,n))
           max_add = max(max_add, src_bin_add(2,n))
@@ -521,9 +521,9 @@
 
         !*** first check bounding box
 
-        if (plat <= src_grid_bound_box(2,srch_add) .and. 
-     &      plat >= src_grid_bound_box(1,srch_add) .and.
-     &      plon <= src_grid_bound_box(4,srch_add) .and. 
+        if (plat <= src_grid_bound_box(2,srch_add) .and.                &
+     &      plat >= src_grid_bound_box(1,srch_add) .and.                &
+     &      plon <= src_grid_bound_box(4,srch_add) .and.                &
      &      plon >= src_grid_bound_box(3,srch_add)) then
 
           !***
@@ -619,7 +619,7 @@
             !***
 
             if (n == 1) cross_product_last = cross_product
-            if (cross_product*cross_product_last < zero) 
+            if (cross_product*cross_product_last < zero)                &
      &          exit corner_loop
             cross_product_last = cross_product
 
@@ -665,9 +665,9 @@
       dist_min = bignum
       src_lats = bignum
       do srch_add = min_add,max_add
-        distance = acos(coslat_dst*cos(src_center_lat(srch_add))*
-     &                 (coslon_dst*cos(src_center_lon(srch_add)) +
-     &                  sinlon_dst*sin(src_center_lon(srch_add)))+
+        distance = acos(coslat_dst*cos(src_center_lat(srch_add))*       &
+     &                 (coslon_dst*cos(src_center_lon(srch_add)) +      &
+     &                  sinlon_dst*sin(src_center_lon(srch_add)))+      &
      &                  sinlat_dst*sin(src_center_lat(srch_add)))
 
         if (distance < dist_min) then
@@ -712,14 +712,14 @@
 !
 !-----------------------------------------------------------------------
 
-      integer (kind=int_kind), intent(in) ::
-     &        dst_add,  ! address on destination grid
+      integer (kind=int_kind), intent(in) ::                            &
+     &        dst_add,  ! address on destination grid                   &
      &        nmap      ! identifies which direction for mapping
 
-      integer (kind=int_kind), dimension(4), intent(in) ::
+      integer (kind=int_kind), dimension(4), intent(in) ::              &
      &        src_add   ! addresses on source grid
 
-      real (kind=dbl_kind), dimension(4), intent(in) ::
+      real (kind=dbl_kind), dimension(4), intent(in) ::                 &
      &        weights ! array of remapping weights for these links
 
 !-----------------------------------------------------------------------
@@ -728,7 +728,7 @@
 !
 !-----------------------------------------------------------------------
 
-      integer (kind=int_kind) :: n, ! dummy index
+      integer (kind=int_kind) :: n, ! dummy index                       &
      &       num_links_old          ! placeholder for old link number
 
 !-----------------------------------------------------------------------
@@ -745,7 +745,7 @@
         num_links_old  = num_links_map1
         num_links_map1 = num_links_old + 4
 
-        if (num_links_map1 > max_links_map1) 
+        if (num_links_map1 > max_links_map1)                            &
      &     call resize_remap_vars(1,resize_increment)
 
         do n=1,4
@@ -759,7 +759,7 @@
         num_links_old  = num_links_map2
         num_links_map2 = num_links_old + 4
 
-        if (num_links_map2 > max_links_map2) 
+        if (num_links_map2 > max_links_map2)                            &
      &     call resize_remap_vars(2,resize_increment)
 
         do n=1,4

@@ -68,23 +68,23 @@
 !
 !-----------------------------------------------------------------------
 
-      integer (kind=int_kind), save :: 
+      integer (kind=int_kind), save ::                                  &
      &        num_srch_cells ! num cells in restricted search arrays
 
-      integer (kind=int_kind), dimension(:), allocatable, save :: 
+      integer (kind=int_kind), dimension(:), allocatable, save ::       &
      &        srch_add       ! global address of cells in srch arrays
 
-      real (kind=dbl_kind), parameter :: 
-     &     north_thresh = 1.45_dbl_kind, ! threshold for coord transf.
+      real (kind=dbl_kind), parameter ::                                &
+     &     north_thresh = 1.45_dbl_kind, ! threshold for coord transf.  &
      &     south_thresh =-2.00_dbl_kind  ! threshold for coord transf.
 
-      real (kind=dbl_kind), dimension(:,:), allocatable, save ::
-     &     srch_corner_lat,  ! lat of each corner of srch cells
+      real (kind=dbl_kind), dimension(:,:), allocatable, save ::        &
+     &     srch_corner_lat,  ! lat of each corner of srch cells         &
      &     srch_corner_lon   ! lon of each corner of srch cells
 
 
-      integer (kind=int_kind), dimension(:,:), allocatable, save ::
-     &        link_add1,  ! min,max link add to restrict search
+      integer (kind=int_kind), dimension(:,:), allocatable, save ::     &
+     &        link_add1,  ! min,max link add to restrict search         &
      &        link_add2   ! min,max link add to restrict search
 !***********************************************************************
 
@@ -108,39 +108,39 @@
 !
 !-----------------------------------------------------------------------
 
-      integer (kind=int_kind), parameter :: 
+      integer (kind=int_kind), parameter ::                             &
      &        max_subseg = 10000 ! max number of subsegments per segment
                                  ! to prevent infinite loop
 
-      integer (kind=int_kind) :: 
-     &        grid1_add,  ! current linear address for grid1 cell
-     &        grid2_add,  ! current linear address for grid2 cell
-     &        min_add,    ! addresses for restricting search of
-     &        max_add,    !   destination grid
-     &        n, nwgt,    ! generic counters
-     &        corner,     ! corner of cell that segment starts from
-     &        next_corn,  ! corner of cell that segment ends on
+      integer (kind=int_kind) ::                                        &
+     &        grid1_add,  ! current linear address for grid1 cell       &
+     &        grid2_add,  ! current linear address for grid2 cell       &
+     &        min_add,    ! addresses for restricting search of         &
+     &        max_add,    !   destination grid                          &
+     &        n, nwgt,    ! generic counters                            &
+     &        corner,     ! corner of cell that segment starts from     &
+     &        next_corn,  ! corner of cell that segment ends on         &
      &        num_subseg  ! number of subsegments 
 
-      logical (kind=log_kind) :: 
-     &        lcoinc,  ! flag for coincident segments
-     &        lrevers, ! flag for reversing direction of segment
+      logical (kind=log_kind) ::                                        &
+     &        lcoinc,  ! flag for coincident segments                   &
+     &        lrevers, ! flag for reversing direction of segment        &
      &        lbegin   ! flag for first integration of a segment
 
       logical (kind=log_kind) ::  first_call  ! First call is a flag
 !     used by scrip_coawst for allocating properly in subroutine
 !     store_conserv
  
-      logical (kind=log_kind), dimension(:), allocatable ::
+      logical (kind=log_kind), dimension(:), allocatable ::             &
      &        srch_mask   ! mask for restricting searches
 
-      real (kind=dbl_kind) ::
-     &     intrsct_lat, intrsct_lon,       ! lat/lon of next intersect
-     &     beglat, endlat, beglon, endlon, ! endpoints of current seg.
+      real (kind=dbl_kind) ::                                           &
+     &     intrsct_lat, intrsct_lon,       ! lat/lon of next intersect  &
+     &     beglat, endlat, beglon, endlon, ! endpoints of current seg.  &
      &     norm_factor                     ! factor for normalizing wts
 
-      real (kind=dbl_kind), dimension(:), allocatable ::
-     &       grid2_centroid_lat, grid2_centroid_lon, ! centroid coords
+      real (kind=dbl_kind), dimension(:), allocatable ::                &
+     &       grid2_centroid_lat, grid2_centroid_lon, ! centroid coords  &
      &       grid1_centroid_lat, grid1_centroid_lon  ! on each grid
 
       real (kind=dbl_kind), dimension(2) :: begseg ! begin lat/lon for
@@ -155,9 +155,9 @@
 !
 !-----------------------------------------------------------------------
 
-      allocate( grid1_centroid_lat(grid1_size),
-     &          grid1_centroid_lon(grid1_size),
-     &          grid2_centroid_lat(grid2_size),
+      allocate( grid1_centroid_lat(grid1_size),                         &
+     &          grid1_centroid_lon(grid1_size),                         &
+     &          grid2_centroid_lat(grid2_size),                         &
      &          grid2_centroid_lon(grid2_size))
 
       grid1_centroid_lat = zero
@@ -186,7 +186,7 @@
         min_add = grid2_size
         max_add = 1
         do n=1,num_srch_bins
-          if (grid1_add >= bin_addr1(1,n) .and.
+          if (grid1_add >= bin_addr1(1,n) .and.                         &
      &        grid1_add <= bin_addr1(2,n)) then
             min_add = min(min_add, bin_addr2(1,n))
             max_add = max(max_add, bin_addr2(2,n))
@@ -200,13 +200,13 @@
         num_srch_cells = 0
         do grid2_add = min_add,max_add
         
-          srch_mask(grid2_add) = (grid2_bound_box(1,grid2_add) <= 
-     &                            grid1_bound_box(2,grid1_add)) .and.
-     &                           (grid2_bound_box(2,grid2_add) >= 
-     &                            grid1_bound_box(1,grid1_add)) .and.
-     &                           (grid2_bound_box(3,grid2_add) <= 
-     &                            grid1_bound_box(4,grid1_add)) .and.
-     &                           (grid2_bound_box(4,grid2_add) >= 
+          srch_mask(grid2_add) = (grid2_bound_box(1,grid2_add) <=       &
+     &                            grid1_bound_box(2,grid1_add)) .and.   &
+     &                           (grid2_bound_box(2,grid2_add) >=       &
+     &                            grid1_bound_box(1,grid1_add)) .and.   &
+     &                           (grid2_bound_box(3,grid2_add) <=       &
+     &                            grid1_bound_box(4,grid1_add)) .and.   &
+     &                           (grid2_bound_box(4,grid2_add) >=       &
      &                            grid1_bound_box(3,grid1_add))
 
           if (srch_mask(grid2_add)) num_srch_cells = num_srch_cells+1
@@ -216,8 +216,8 @@
         !*** create search arrays
         !***
 
-        allocate(srch_add(num_srch_cells),
-     &           srch_corner_lat(grid2_corners,num_srch_cells),
+        allocate(srch_add(num_srch_cells),                              &
+     &           srch_corner_lat(grid2_corners,num_srch_cells),         &
      &           srch_corner_lon(grid2_corners,num_srch_cells))
 
         n = 0
@@ -254,7 +254,7 @@
           !*** direction (SW to NE).
           !***
 
-          if ((endlat < beglat) .or.
+          if ((endlat < beglat) .or.                                    &
      &        (endlat == beglat .and. endlon < beglon)) then 
             beglat = grid1_corner_lat(next_corn,grid1_add)
             beglon = grid1_corner_lon(next_corn,grid1_add)
@@ -298,8 +298,8 @@
             !***
 
             call timer_start(2)
-            call intersection(grid2_add,intrsct_lat,intrsct_lon,lcoinc,
-     &                        beglat, beglon, endlat, endlon, begseg, 
+            call intersection(grid2_add,intrsct_lat,intrsct_lon,lcoinc, &
+     &                        beglat, beglon, endlat, endlon, begseg,   &
      &                        lbegin, lrevers)
             call timer_stop(2)
             lbegin = .false.
@@ -310,18 +310,18 @@
 
             call timer_start(3)
             if (grid2_add /= 0) then
-              call line_integral(weights, num_wts,
-     &                         beglon, intrsct_lon, beglat, intrsct_lat,
-     &                         grid1_center_lat(grid1_add), 
-     &                         grid1_center_lon(grid1_add),
-     &                         grid2_center_lat(grid2_add), 
+              call line_integral(weights, num_wts,                      &
+     &                         beglon, intrsct_lon, beglat, intrsct_lat,&
+     &                         grid1_center_lat(grid1_add),             &
+     &                         grid1_center_lon(grid1_add),             &
+     &                         grid2_center_lat(grid2_add),             &
      &                         grid2_center_lon(grid2_add))
             else
-              call line_integral(weights, num_wts,
-     &                         beglon, intrsct_lon, beglat, intrsct_lat,
-     &                         grid1_center_lat(grid1_add), 
-     &                         grid1_center_lon(grid1_add),
-     &                         grid1_center_lat(grid1_add), 
+              call line_integral(weights, num_wts,                      &
+     &                         beglon, intrsct_lon, beglat, intrsct_lat,&
+     &                         grid1_center_lat(grid1_add),             &
+     &                         grid1_center_lon(grid1_add),             &
+     &                         grid1_center_lat(grid1_add),             &
      &                         grid1_center_lon(grid1_add))
             endif
             call timer_stop(3)
@@ -352,21 +352,21 @@
             if (grid2_add /= 0) then
               if (grid1_mask(grid1_add)) then
                 call timer_start(4)
-                call store_link_cnsrv(grid1_add, grid2_add, weights, 
+                call store_link_cnsrv(grid1_add, grid2_add, weights,    &
      &                                first_call)
                 call timer_stop(4)
-                grid1_frac(grid1_add) = grid1_frac(grid1_add) + 
+                grid1_frac(grid1_add) = grid1_frac(grid1_add) +         &
      &                                  weights(1)
-                grid2_frac(grid2_add) = grid2_frac(grid2_add) + 
+                grid2_frac(grid2_add) = grid2_frac(grid2_add) +         &
      &                                  weights(num_wts+1)
               endif
 
             endif
 
             grid1_area(grid1_add) = grid1_area(grid1_add) + weights(1)
-            grid1_centroid_lat(grid1_add) = 
+            grid1_centroid_lat(grid1_add) =                             &
      &      grid1_centroid_lat(grid1_add) + weights(2)
-            grid1_centroid_lon(grid1_add) = 
+            grid1_centroid_lon(grid1_add) =                             &
      &      grid1_centroid_lon(grid1_add) + weights(3)
 
             !***
@@ -414,7 +414,7 @@
         min_add = grid1_size
         max_add = 1
         do n=1,num_srch_bins
-          if (grid2_add >= bin_addr2(1,n) .and.
+          if (grid2_add >= bin_addr2(1,n) .and.                         &
      &        grid2_add <= bin_addr2(2,n)) then
             min_add = min(min_add, bin_addr1(1,n))
             max_add = max(max_add, bin_addr1(2,n))
@@ -427,20 +427,20 @@
 
         num_srch_cells = 0
         do grid1_add = min_add, max_add
-          srch_mask(grid1_add) = (grid1_bound_box(1,grid1_add) <= 
-     &                            grid2_bound_box(2,grid2_add)) .and.
-     &                           (grid1_bound_box(2,grid1_add) >= 
-     &                            grid2_bound_box(1,grid2_add)) .and.
-     &                           (grid1_bound_box(3,grid1_add) <= 
-     &                            grid2_bound_box(4,grid2_add)) .and.
-     &                           (grid1_bound_box(4,grid1_add) >= 
+          srch_mask(grid1_add) = (grid1_bound_box(1,grid1_add) <=       &
+     &                            grid2_bound_box(2,grid2_add)) .and.   &
+     &                           (grid1_bound_box(2,grid1_add) >=       &
+     &                            grid2_bound_box(1,grid2_add)) .and.   &
+     &                           (grid1_bound_box(3,grid1_add) <=       &
+     &                            grid2_bound_box(4,grid2_add)) .and.   &
+     &                           (grid1_bound_box(4,grid1_add) >=       &
      &                            grid2_bound_box(3,grid2_add))
 
           if (srch_mask(grid1_add)) num_srch_cells = num_srch_cells+1
         end do
 
-        allocate(srch_add(num_srch_cells),
-     &           srch_corner_lat(grid1_corners,num_srch_cells),
+        allocate(srch_add(num_srch_cells),                              &
+     &           srch_corner_lat(grid1_corners,num_srch_cells),         &
      &           srch_corner_lon(grid1_corners,num_srch_cells))
 
         n = 0
@@ -472,7 +472,7 @@
           !*** sweeps, always integrate in the same direction
           !***
 
-          if ((endlat < beglat) .or.
+          if ((endlat < beglat) .or.                                    &
      &        (endlat == beglat .and. endlon < beglon)) then 
             beglat = grid2_corner_lat(next_corn,grid2_add)
             beglon = grid2_corner_lon(next_corn,grid2_add)
@@ -516,8 +516,8 @@
             !***
 
             call timer_start(6)
-            call intersection(grid1_add,intrsct_lat,intrsct_lon,lcoinc,
-     &                        beglat, beglon, endlat, endlon, begseg,
+            call intersection(grid1_add,intrsct_lat,intrsct_lon,lcoinc, &
+     &                        beglat, beglon, endlat, endlon, begseg,   &
      &                        lbegin, lrevers)
             call timer_stop(6)
             lbegin = .false.
@@ -528,18 +528,18 @@
 
             call timer_start(7)
             if (grid1_add /= 0) then
-              call line_integral(weights, num_wts,
-     &                         beglon, intrsct_lon, beglat, intrsct_lat,
-     &                         grid1_center_lat(grid1_add), 
-     &                         grid1_center_lon(grid1_add),
-     &                         grid2_center_lat(grid2_add), 
+              call line_integral(weights, num_wts,                      &
+     &                         beglon, intrsct_lon, beglat, intrsct_lat,&
+     &                         grid1_center_lat(grid1_add),             &
+     &                         grid1_center_lon(grid1_add),             &
+     &                         grid2_center_lat(grid2_add),             &
      &                         grid2_center_lon(grid2_add))
             else
-              call line_integral(weights, num_wts,
-     &                         beglon, intrsct_lon, beglat, intrsct_lat,
-     &                         grid2_center_lat(grid2_add), 
-     &                         grid2_center_lon(grid2_add),
-     &                         grid2_center_lat(grid2_add), 
+              call line_integral(weights, num_wts,                      &
+     &                         beglon, intrsct_lon, beglat, intrsct_lat,&
+     &                         grid2_center_lat(grid2_add),             &
+     &                         grid2_center_lon(grid2_add),             &
+     &                         grid2_center_lat(grid2_add),             &
      &                         grid2_center_lon(grid2_add))
             endif
             call timer_stop(7)
@@ -568,22 +568,22 @@
             if (.not. lcoinc .and. grid1_add /= 0) then
               if (grid1_mask(grid1_add)) then
                 call timer_start(8)
-                call store_link_cnsrv(grid1_add, grid2_add, weights, 
+                call store_link_cnsrv(grid1_add, grid2_add, weights,    &
      &                                first_call)
                 call timer_stop(8)
-                grid1_frac(grid1_add) = grid1_frac(grid1_add) + 
+                grid1_frac(grid1_add) = grid1_frac(grid1_add) +         &
      &                                  weights(1)
-                grid2_frac(grid2_add) = grid2_frac(grid2_add) + 
+                grid2_frac(grid2_add) = grid2_frac(grid2_add) +         &
      &                                  weights(num_wts+1)
               endif
 
             endif
 
-            grid2_area(grid2_add) = grid2_area(grid2_add) + 
+            grid2_area(grid2_add) = grid2_area(grid2_add) +             &
      &                                      weights(num_wts+1)
-            grid2_centroid_lat(grid2_add) = 
+            grid2_centroid_lat(grid2_add) =                             &
      &      grid2_centroid_lat(grid2_add) + weights(num_wts+2)
-            grid2_centroid_lon(grid2_add) = 
+            grid2_centroid_lon(grid2_add) =                             &
      &      grid2_centroid_lon(grid2_add) + weights(num_wts+3)
 
             !***
@@ -631,7 +631,7 @@
 
       grid1_add = 0
       pole_loop1: do n=1,grid1_size
-        if (grid1_area(n) < -three*pih .and.
+        if (grid1_area(n) < -three*pih .and.                            &
      &      grid1_center_lat(n) > zero) then
           grid1_add = n
           exit pole_loop1
@@ -640,7 +640,7 @@
 
       grid2_add = 0
       pole_loop2: do n=1,grid2_size
-        if (grid2_area(n) < -three*pih .and.
+        if (grid2_area(n) < -three*pih .and.                            &
      &      grid2_center_lat(n) > zero) then
           grid2_add = n
           exit pole_loop2
@@ -649,28 +649,28 @@
 
       if (grid1_add /=0) then
         grid1_area(grid1_add) = grid1_area(grid1_add) + weights(1)
-        grid1_centroid_lat(grid1_add) = 
+        grid1_centroid_lat(grid1_add) =                                 &
      &  grid1_centroid_lat(grid1_add) + weights(2)
-        grid1_centroid_lon(grid1_add) =
+        grid1_centroid_lon(grid1_add) =                                 &
      &  grid1_centroid_lon(grid1_add) + weights(3)
       endif
 
       if (grid2_add /=0) then
-        grid2_area(grid2_add) = grid2_area(grid2_add) + 
+        grid2_area(grid2_add) = grid2_area(grid2_add) +                 &
      &                                  weights(num_wts+1)
-        grid2_centroid_lat(grid2_add) = 
+        grid2_centroid_lat(grid2_add) =                                 &
      &  grid2_centroid_lat(grid2_add) + weights(num_wts+2)
-        grid2_centroid_lon(grid2_add) =
+        grid2_centroid_lon(grid2_add) =                                 &
      &  grid2_centroid_lon(grid2_add) + weights(num_wts+3)
       endif
 
       if (grid1_add /= 0 .and. grid2_add /=0) then
-        call store_link_cnsrv(grid1_add, grid2_add, weights, 
+        call store_link_cnsrv(grid1_add, grid2_add, weights,            &
      &                        first_call)
 
-        grid1_frac(grid1_add) = grid1_frac(grid1_add) + 
+        grid1_frac(grid1_add) = grid1_frac(grid1_add) +                 &
      &                          weights(1)
-        grid2_frac(grid2_add) = grid2_frac(grid2_add) + 
+        grid2_frac(grid2_add) = grid2_frac(grid2_add) +                 &
      &                          weights(num_wts+1)
       endif
 
@@ -684,7 +684,7 @@
 
       grid1_add = 0
       pole_loop3: do n=1,grid1_size
-        if (grid1_area(n) < -three*pih .and.
+        if (grid1_area(n) < -three*pih .and.                            &
      &      grid1_center_lat(n) < zero) then
           grid1_add = n
           exit pole_loop3
@@ -693,7 +693,7 @@
 
       grid2_add = 0
       pole_loop4: do n=1,grid2_size
-        if (grid2_area(n) < -three*pih .and.
+        if (grid2_area(n) < -three*pih .and.                            &
      &      grid2_center_lat(n) < zero) then
           grid2_add = n
           exit pole_loop4
@@ -701,28 +701,28 @@
       end do pole_loop4
       if (grid1_add /=0) then
         grid1_area(grid1_add) = grid1_area(grid1_add) + weights(1)
-        grid1_centroid_lat(grid1_add) = 
+        grid1_centroid_lat(grid1_add) =                                 &
      &  grid1_centroid_lat(grid1_add) + weights(2)
-        grid1_centroid_lon(grid1_add) =
+        grid1_centroid_lon(grid1_add) =                                 &
      &  grid1_centroid_lon(grid1_add) + weights(3)
       endif
 
       if (grid2_add /=0) then
-        grid2_area(grid2_add) = grid2_area(grid2_add) + 
+        grid2_area(grid2_add) = grid2_area(grid2_add) +                 &
      &                                  weights(num_wts+1)
-        grid2_centroid_lat(grid2_add) = 
+        grid2_centroid_lat(grid2_add) =                                 &
      &  grid2_centroid_lat(grid2_add) + weights(num_wts+2)
-        grid2_centroid_lon(grid2_add) =
+        grid2_centroid_lon(grid2_add) =                                 &
      &  grid2_centroid_lon(grid2_add) + weights(num_wts+3)
       endif
 
       if (grid1_add /= 0 .and. grid2_add /=0) then
-        call store_link_cnsrv(grid1_add, grid2_add, weights, 
+        call store_link_cnsrv(grid1_add, grid2_add, weights,            &
      &                        first_call)
 
-        grid1_frac(grid1_add) = grid1_frac(grid1_add) + 
+        grid1_frac(grid1_add) = grid1_frac(grid1_add) +                 &
      &                          weights(1)
-        grid2_frac(grid2_add) = grid2_frac(grid2_add) + 
+        grid2_frac(grid2_add) = grid2_frac(grid2_add) +                 &
      &                          weights(num_wts+1)
       endif
 
@@ -773,8 +773,8 @@
         case (norm_opt_frcarea)
           if (grid2_frac(grid2_add) /= zero) then
             if (luse_grid2_area) then
-              norm_factor = grid2_area(grid2_add)/
-     &                     (grid2_frac(grid2_add)*
+              norm_factor = grid2_area(grid2_add)/                      &
+     &                     (grid2_frac(grid2_add)*                      &
      &                      grid2_area_in(grid2_add))
             else
               norm_factor = one/grid2_frac(grid2_add)
@@ -787,11 +787,11 @@
         end select
 
         wts_map1(1,n) =  weights(1)*norm_factor
-        wts_map1(2,n) = (weights(2) - weights(1)*
-     &                              grid1_centroid_lat(grid1_add))*
+        wts_map1(2,n) = (weights(2) - weights(1)*                       &
+     &                              grid1_centroid_lat(grid1_add))*     &
      &                              norm_factor
-        wts_map1(3,n) = (weights(3) - weights(1)*
-     &                              grid1_centroid_lon(grid1_add))*
+        wts_map1(3,n) = (weights(3) - weights(1)*                       &
+     &                              grid1_centroid_lon(grid1_add))*     &
      &                              norm_factor
 
         if (num_maps > 1) then
@@ -809,8 +809,8 @@
           case (norm_opt_frcarea)
             if (grid1_frac(grid1_add) /= zero) then
               if (luse_grid1_area) then
-                norm_factor = grid1_area(grid1_add)/
-     &                       (grid1_frac(grid1_add)*
+                norm_factor = grid1_area(grid1_add)/                    &
+     &                       (grid1_frac(grid1_add)*                    &
      &                        grid1_area_in(grid1_add))
               else
                 norm_factor = one/grid1_frac(grid1_add)
@@ -823,11 +823,11 @@
           end select
 
           wts_map2(1,n) =  weights(num_wts+1)*norm_factor
-          wts_map2(2,n) = (weights(num_wts+2) - weights(num_wts+1)*
-     &                                grid2_centroid_lat(grid2_add))*
+          wts_map2(2,n) = (weights(num_wts+2) - weights(num_wts+1)*     &
+     &                                grid2_centroid_lat(grid2_add))*   &
      &                                norm_factor
-          wts_map2(3,n) = (weights(num_wts+3) - weights(num_wts+1)*
-     &                                grid2_centroid_lon(grid2_add))*
+          wts_map2(3,n) = (weights(num_wts+3) - weights(num_wts+1)*     &
+     &                                grid2_centroid_lon(grid2_add))*   &
      &                                norm_factor
           
         endif
@@ -852,7 +852,7 @@
         if (grid1_area(n) < -.01) then
           print *,'Grid 1 area error: ',n,grid1_area(n)
         endif
-        if (grid1_centroid_lat(n) < -pih-.01 .or.
+        if (grid1_centroid_lat(n) < -pih-.01 .or.                       &
      &      grid1_centroid_lat(n) >  pih+.01) then
           print *,'Grid 1 centroid lat error: ',n,grid1_centroid_lat(n)
         endif
@@ -864,7 +864,7 @@
         if (grid2_area(n) < -.01) then
           print *,'Grid 2 area error: ',n,grid2_area(n)
         endif
-        if (grid2_centroid_lat(n) < -pih-.01 .or.
+        if (grid2_centroid_lat(n) < -pih-.01 .or.                       &
      &      grid2_centroid_lat(n) >  pih+.01) then
           print *,'Grid 2 centroid lat error: ',n,grid2_centroid_lat(n)
         endif
@@ -883,20 +883,20 @@
           if (norm_opt /= norm_opt_none .and. wts_map1(1,n) > 1.01) then
             print *,'Map 1 weight > 1',grid1_add,grid2_add,wts_map1(1,n)
           endif
-          grid2_centroid_lat(grid2_add) = 
+          grid2_centroid_lat(grid2_add) =                               &
      &    grid2_centroid_lat(grid2_add) + wts_map1(1,n)
 
           if (num_maps > 1) then
             if (wts_map2(1,n) < -.01) then
-              print *,'Map 2 weight < 0 ',grid1_add,grid2_add,
+              print *,'Map 2 weight < 0 ',grid1_add,grid2_add,          &
      &                                    wts_map2(1,n)
             endif
             if (norm_opt /= norm_opt_none .and.                         &
      &                     wts_map2(1,n) > 1.01) then
-              print *,'Map 2 weight < 0 ',grid1_add,grid2_add,
+              print *,'Map 2 weight < 0 ',grid1_add,grid2_add,          &
      &                                  wts_map2(1,n)
             endif
-            grid1_centroid_lat(grid1_add) = 
+            grid1_centroid_lat(grid1_add) =                             &
      &      grid1_centroid_lat(grid1_add) + wts_map2(1,n)
           endif
         end do
@@ -916,7 +916,7 @@
           end select
       
           if (abs(grid2_centroid_lat(grid2_add)-norm_factor) > .01) then
-            print *,'Error: sum of wts for map1 ',grid2_add,
+            print *,'Error: sum of wts for map1 ',grid2_add,            &
      &              grid2_centroid_lat(grid2_add),norm_factor
           endif
         end do
@@ -937,7 +937,7 @@
             endif
           end select
           if (abs(grid1_centroid_lat(grid1_add)-norm_factor) > .01) then
-            print *,'Error: sum of wts for map2 ',grid1_add,
+            print *,'Error: sum of wts for map2 ',grid1_add,            &
      &              grid1_centroid_lat(grid1_add),norm_factor
           endif
         end do
@@ -950,8 +950,8 @@
 
 !***********************************************************************
 
-      subroutine intersection(location,intrsct_lat,intrsct_lon,lcoinc,
-     &                        beglat, beglon, endlat, endlon, begseg,
+      subroutine intersection(location,intrsct_lat,intrsct_lon,lcoinc,  &
+     &                        beglat, beglon, endlat, endlon, begseg,   &
      &                        lbegin, lrevers)
 
 !-----------------------------------------------------------------------
@@ -971,15 +971,15 @@
 !
 !-----------------------------------------------------------------------
 
-      logical (kind=log_kind), intent(in) ::
-     &     lbegin, ! flag for first integration along this segment
+      logical (kind=log_kind), intent(in) ::                            &
+     &     lbegin, ! flag for first integration along this segment      &
      &     lrevers ! flag whether segment integrated in reverse
 
-      real (kind=dbl_kind), intent(in) :: 
-     &     beglat, beglon,  ! beginning lat/lon endpoints for segment
+      real (kind=dbl_kind), intent(in) ::                               &
+     &     beglat, beglon,  ! beginning lat/lon endpoints for segment   &
      &     endlat, endlon   ! ending    lat/lon endpoints for segment
 
-      real (kind=dbl_kind), dimension(2), intent(inout) :: 
+      real (kind=dbl_kind), dimension(2), intent(inout) ::              &
      &     begseg ! begin lat/lon of full segment
 
 !-----------------------------------------------------------------------
@@ -988,15 +988,15 @@
 !
 !-----------------------------------------------------------------------
 
-      integer (kind=int_kind), intent(out) ::
+      integer (kind=int_kind), intent(out) ::                           &
      &        location  ! address in destination array containing this
                         ! segment
 
-      logical (kind=log_kind), intent(out) ::
+      logical (kind=log_kind), intent(out) ::                           &
      &        lcoinc    ! flag segments which are entirely coincident
                         ! with a grid line
 
-      real (kind=dbl_kind), intent(out) ::
+      real (kind=dbl_kind), intent(out) ::                              &
      &     intrsct_lat, intrsct_lon ! lat/lon coords of next intersect.
 
 !-----------------------------------------------------------------------
@@ -1007,28 +1007,28 @@
 
       integer (kind=int_kind) :: n, next_n, cell, srch_corners, pole_loc
 
-      integer (kind=int_kind), save :: 
+      integer (kind=int_kind), save ::                                  &
      &     last_loc  ! save location when crossing threshold
 
-      logical (kind=log_kind) :: 
+      logical (kind=log_kind) ::                                        &
      &     loutside  ! flags points outside grid
 
-      logical (kind=log_kind), save :: 
+      logical (kind=log_kind), save ::                                  &
      &     lthresh = .false.  ! flags segments crossing threshold bndy
 
-      real (kind=dbl_kind) ::
-     &     lon1, lon2,       ! local longitude variables for segment
-     &     lat1, lat2,       ! local latitude  variables for segment
-     &     grdlon1, grdlon2, ! local longitude variables for grid cell
-     &     grdlat1, grdlat2, ! local latitude  variables for grid cell
-     &     vec1_lat, vec1_lon, ! vectors and cross products used
-     &     vec2_lat, vec2_lon, ! during grid search
-     &     cross_product, 
-     &     eps, offset,        ! small offset away from intersect
-     &     s1, s2, determ,     ! variables used for linear solve to
+      real (kind=dbl_kind) ::                                           &
+     &     lon1, lon2,       ! local longitude variables for segment    &
+     &     lat1, lat2,       ! local latitude  variables for segment    &
+     &     grdlon1, grdlon2, ! local longitude variables for grid cell  &
+     &     grdlat1, grdlat2, ! local latitude  variables for grid cell  &
+     &     vec1_lat, vec1_lon, ! vectors and cross products used        &
+     &     vec2_lat, vec2_lon, ! during grid search                     &
+     &     cross_product,                                               &
+     &     eps, offset,        ! small offset away from intersect       &
+     &     s1, s2, determ,     ! variables used for linear solve to     &
      &     mat1, mat2, mat3, mat4, rhs1, rhs2  ! find intersection
 
-      real (kind=dbl_kind), save ::
+      real (kind=dbl_kind), save ::                                     &
      &     intrsct_lat_off, intrsct_lon_off ! lat/lon coords offset 
                                             ! for next search
 
@@ -1048,8 +1048,8 @@
       if (beglat > north_thresh .or. beglat < south_thresh) then
 
         if (lthresh) location = last_loc
-        call pole_intersection(location,
-     &               intrsct_lat,intrsct_lon,lcoinc,lthresh,
+        call pole_intersection(location,                                &
+     &               intrsct_lat,intrsct_lon,lcoinc,lthresh,            &
      &               beglat, beglon, endlat, endlon, begseg, lrevers)
         if (lthresh) then
           last_loc = location
@@ -1117,9 +1117,9 @@
             !*** positive, the point is contained in the cell.
             !***
 
-            vec1_lat = srch_corner_lat(next_n,cell) - 
+            vec1_lat = srch_corner_lat(next_n,cell) -                   &
      &                 srch_corner_lat(n     ,cell)
-            vec1_lon = srch_corner_lon(next_n,cell) - 
+            vec1_lon = srch_corner_lon(next_n,cell) -                   &
      &                 srch_corner_lon(n     ,cell)
             vec2_lat = lat1 - srch_corner_lat(n,cell)
             vec2_lon = lon1 - srch_corner_lon(n,cell)
@@ -1313,7 +1313,7 @@
           s1 = (rhs1*mat4 - mat2*rhs2)/determ
           s2 = (mat1*rhs2 - rhs1*mat3)/determ
 
-          if (s2 >= zero .and. s2 <= one .and.
+          if (s2 >= zero .and. s2 <= one .and.                          &
      &        s1 >  zero. and. s1 <= one) then
 
             !***
@@ -1394,7 +1394,7 @@
 !-----------------------------------------------------------------------
 
       if (lthresh) then
-        if (intrsct_lat < north_thresh .or. intrsct_lat > south_thresh)
+        if (intrsct_lat < north_thresh .or. intrsct_lat > south_thresh) &
      &      lthresh = .false.
       else if (lat1 > zero .and. intrsct_lat > north_thresh) then
         intrsct_lat = north_thresh + tiny
@@ -1420,8 +1420,8 @@
 
 !***********************************************************************
 
-      subroutine pole_intersection(location,
-     &                 intrsct_lat,intrsct_lon,lcoinc,lthresh,
+      subroutine pole_intersection(location,                            &
+     &                 intrsct_lat,intrsct_lon,lcoinc,lthresh,          &
      &                 beglat, beglon, endlat, endlon, begseg, lrevers)
 
 !-----------------------------------------------------------------------
@@ -1439,14 +1439,14 @@
 !
 !-----------------------------------------------------------------------
 
-      real (kind=dbl_kind), intent(in) :: 
-     &     beglat, beglon,  ! beginning lat/lon endpoints for segment
+      real (kind=dbl_kind), intent(in) ::                               &
+     &     beglat, beglon,  ! beginning lat/lon endpoints for segment   &
      &     endlat, endlon   ! ending    lat/lon endpoints for segment
 
-      real (kind=dbl_kind), dimension(2), intent(inout) :: 
+      real (kind=dbl_kind), dimension(2), intent(inout) ::              &
      &     begseg ! begin lat/lon of full segment
 
-      logical (kind=log_kind), intent(in) ::
+      logical (kind=log_kind), intent(in) ::                            &
      &        lrevers   ! flag true if segment integrated in reverse
 
 !-----------------------------------------------------------------------
@@ -1455,18 +1455,18 @@
 !
 !-----------------------------------------------------------------------
 
-      integer (kind=int_kind), intent(inout) ::
+      integer (kind=int_kind), intent(inout) ::                         &
      &        location  ! address in destination array containing this
                         ! segment -- also may contain last location on
                         ! entry
 
-      logical (kind=log_kind), intent(out) ::
+      logical (kind=log_kind), intent(out) ::                           &
      &        lcoinc    ! flag segment coincident with grid line
 
-      logical (kind=log_kind), intent(inout) ::
+      logical (kind=log_kind), intent(inout) ::                         &
      &        lthresh   ! flag segment crossing threshold boundary
 
-      real (kind=dbl_kind), intent(out) ::
+      real (kind=dbl_kind), intent(out) ::                              &
      &     intrsct_lat, intrsct_lon ! lat/lon coords of next intersect.
 
 !-----------------------------------------------------------------------
@@ -1479,22 +1479,22 @@
 
       logical (kind=log_kind) :: loutside ! flags points outside grid
 
-      real (kind=dbl_kind) :: pi4, rns, ! north/south conversion
-     &     x1, x2,       ! local x variables for segment
-     &     y1, y2,       ! local y variables for segment
-     &     begx, begy,   ! beginning x,y variables for segment
-     &     endx, endy,   ! beginning x,y variables for segment
-     &     begsegx, begsegy,   ! beginning x,y variables for segment
-     &     grdx1, grdx2, ! local x variables for grid cell
-     &     grdy1, grdy2, ! local y variables for grid cell
-     &     vec1_y, vec1_x, ! vectors and cross products used
-     &     vec2_y, vec2_x, ! during grid search
-     &     cross_product, eps, ! eps=small offset away from intersect
-     &     s1, s2, determ,     ! variables used for linear solve to
+      real (kind=dbl_kind) :: pi4, rns, ! north/south conversion        &
+     &     x1, x2,       ! local x variables for segment                &
+     &     y1, y2,       ! local y variables for segment                &
+     &     begx, begy,   ! beginning x,y variables for segment          &
+     &     endx, endy,   ! beginning x,y variables for segment          &
+     &     begsegx, begsegy,   ! beginning x,y variables for segment    &
+     &     grdx1, grdx2, ! local x variables for grid cell              &
+     &     grdy1, grdy2, ! local y variables for grid cell              &
+     &     vec1_y, vec1_x, ! vectors and cross products used            &
+     &     vec2_y, vec2_x, ! during grid search                         &
+     &     cross_product, eps, ! eps=small offset away from intersect   &
+     &     s1, s2, determ,     ! variables used for linear solve to     &
      &     mat1, mat2, mat3, mat4, rhs1, rhs2  ! find intersection
 
-      real (kind=dbl_kind), dimension(:,:), allocatable ::
-     &     srch_corner_x,  ! x of each corner of srch cells
+      real (kind=dbl_kind), dimension(:,:), allocatable ::              &
+     &     srch_corner_x,  ! x of each corner of srch cells             &
      &     srch_corner_y   ! y of each corner of srch cells
 
       !***
@@ -1504,17 +1504,17 @@
 
       logical (kind=log_kind), save :: luse_last = .false.
 
-      real (kind=dbl_kind), save :: 
+      real (kind=dbl_kind), save ::                                     &
      &     intrsct_x, intrsct_y  ! x,y for intersection
 
       !***
       !*** variables necessary if segment manages to hit pole
       !***
 
-      integer (kind=int_kind), save :: 
+      integer (kind=int_kind), save ::                                  &
      &     avoid_pole_count = 0  ! count attempts to avoid pole
 
-      real (kind=dbl_kind), save :: 
+      real (kind=dbl_kind), save ::                                     &
      &     avoid_pole_offset = tiny  ! endpoint offset to avoid pole
 
 !-----------------------------------------------------------------------
@@ -1537,9 +1537,9 @@
 !
 !-----------------------------------------------------------------------
 
-      allocate(srch_corner_x(size(srch_corner_lat,DIM=1),
-     &                       size(srch_corner_lat,DIM=2)),
-     &         srch_corner_y(size(srch_corner_lat,DIM=1),
+      allocate(srch_corner_x(size(srch_corner_lat,DIM=1),               &
+     &                       size(srch_corner_lat,DIM=2)),              &
+     &         srch_corner_y(size(srch_corner_lat,DIM=1),               &
      &                       size(srch_corner_lat,DIM=2)))
 
       if (beglat > zero) then
@@ -1560,9 +1560,9 @@
       endif
       x2 = rns*two*sin(pi4 - half*endlat)*cos(endlon)
       y2 =     two*sin(pi4 - half*endlat)*sin(endlon)
-      srch_corner_x = rns*two*sin(pi4 - half*srch_corner_lat)*
+      srch_corner_x = rns*two*sin(pi4 - half*srch_corner_lat)*          &
      &                        cos(srch_corner_lon)
-      srch_corner_y =     two*sin(pi4 - half*srch_corner_lat)*
+      srch_corner_y =     two*sin(pi4 - half*srch_corner_lat)*          &
      &                        sin(srch_corner_lon)
 
       begx = x1
@@ -1613,9 +1613,9 @@
             !*** positive, the point is contained in the cell.
             !***
 
-            vec1_x = srch_corner_x(next_n,cell) - 
+            vec1_x = srch_corner_x(next_n,cell) -                       &
      &               srch_corner_x(n     ,cell)
-            vec1_y = srch_corner_y(next_n,cell) - 
+            vec1_y = srch_corner_y(next_n,cell) -                       &
      &               srch_corner_y(n     ,cell)
             vec2_x = x1 - srch_corner_x(n,cell)
             vec2_y = y1 - srch_corner_y(n,cell)
@@ -1774,8 +1774,8 @@
           s1 = (rhs1*mat4 - mat2*rhs2)/determ
           s2 = (mat1*rhs2 - rhs1*mat3)/determ
 
-          if (s2 >= zero .and. s2 <= one .and.
-     &        s1 >  zero. and. s1 <= one) then
+          if (s2 >= zero .and. s2 <= one .and.                          &
+     &        s1 >  zero .and. s1 <= one) then
 
             !***
             !*** recompute intersection using entire segment
@@ -1820,14 +1820,14 @@
               !***
 
               intrsct_lon = rns*atan2(intrsct_y,intrsct_x)
-              if (intrsct_lon < zero) 
+              if (intrsct_lon < zero)                                   &
      &          intrsct_lon = intrsct_lon + pi2
 
               if (abs(intrsct_x) > 1.d-10) then
-                intrsct_lat = (pi4 - 
+                intrsct_lat = (pi4 -                                    &
      &            asin(rns*half*intrsct_x/cos(intrsct_lon)))*two
               else if (abs(intrsct_y) > 1.d-10) then
-                intrsct_lat = (pi4 - 
+                intrsct_lat = (pi4 -                                    &
      &            asin(half*intrsct_y/sin(intrsct_lon)))*two
               else
                 intrsct_lat = two*pi4
@@ -1876,7 +1876,7 @@
 !
 !-----------------------------------------------------------------------
 
-      if (abs(intrsct_x) < 1.e-10 .and. abs(intrsct_y) < 1.e-10 .and.
+      if (abs(intrsct_x) < 1.e-10 .and. abs(intrsct_y) < 1.e-10 .and.   &
      &    (endx /= zero .and. endy /=0)) then
         if (avoid_pole_count > 2) then
            avoid_pole_count = 0
@@ -1911,7 +1911,7 @@
 !-----------------------------------------------------------------------
 
       if (lthresh) then
-        if (intrsct_lat > north_thresh .or. intrsct_lat < south_thresh)
+        if (intrsct_lat > north_thresh .or. intrsct_lat < south_thresh) &
      &    lthresh = .false.
       else if (beglat > zero .and. intrsct_lat < north_thresh) then
         mat4 = endlat - begseg(1)
@@ -1950,8 +1950,8 @@
 
 !***********************************************************************
 
-      subroutine line_integral(weights, num_wts, 
-     &                       in_phi1, in_phi2, theta1, theta2,
+      subroutine line_integral(weights, num_wts,                        &
+     &                       in_phi1, in_phi2, theta1, theta2,          &
      &                       grid1_lat, grid1_lon, grid2_lat, grid2_lon)
 
 !-----------------------------------------------------------------------
@@ -1968,13 +1968,13 @@
 !
 !-----------------------------------------------------------------------
 
-      integer (kind=int_kind), intent(in) ::
+      integer (kind=int_kind), intent(in) ::                            &
      &        num_wts  ! number of weights to compute
 
-      real (kind=dbl_kind), intent(in) :: 
-     &     in_phi1, in_phi2,     ! longitude endpoints for the segment
-     &     theta1, theta2,       ! latitude  endpoints for the segment
-     &     grid1_lat, grid1_lon, ! reference coordinates for each
+      real (kind=dbl_kind), intent(in) ::                               &
+     &     in_phi1, in_phi2,     ! longitude endpoints for the segment  &
+     &     theta1, theta2,       ! latitude  endpoints for the segment  &
+     &     grid1_lat, grid1_lon, ! reference coordinates for each       &
      &     grid2_lat, grid2_lon  ! grid (to ensure correct 0,2pi interv.
 
 !-----------------------------------------------------------------------
@@ -1983,7 +1983,7 @@
 !
 !-----------------------------------------------------------------------
 
-      real (kind=dbl_kind), dimension(2*num_wts), intent(out) ::
+      real (kind=dbl_kind), dimension(2*num_wts), intent(out) ::        &
      &     weights   ! line integral contribution to weights
 
 !-----------------------------------------------------------------------
@@ -1992,7 +1992,7 @@
 !
 !-----------------------------------------------------------------------
 
-      real (kind=dbl_kind) :: dphi, sinth1, sinth2, costh1, costh2, fac,
+      real (kind=dbl_kind) :: dphi, sinth1, sinth2, costh1, costh2, fac,&
      &                        phi1, phi2, phidiff1, phidiff2, sinint
       real (kind=dbl_kind) :: f1, f2, fint
 
@@ -2025,9 +2025,9 @@
 
       weights(        1) = dphi*(sinth1 + sinth2)
       weights(num_wts+1) = dphi*(sinth1 + sinth2)
-      weights(        2) = dphi*(costh1 + costh2 + (theta1*sinth1 +
+      weights(        2) = dphi*(costh1 + costh2 + (theta1*sinth1 +     &
      &                                              theta2*sinth2))
-      weights(num_wts+2) = dphi*(costh1 + costh2 + (theta1*sinth1 +
+      weights(num_wts+2) = dphi*(costh1 + costh2 + (theta1*sinth1 +     &
      &                                              theta2*sinth2))
 
 !-----------------------------------------------------------------------
@@ -2063,8 +2063,8 @@
           fac = -pi
         endif
         fint = f1 + (f2-f1)*(fac-phi1)/abs(dphi)
-        weights(3) = half*phi1*(phi1-fac)*f1 -
-     &               half*phi2*(phi2+fac)*f2 +
+        weights(3) = half*phi1*(phi1-fac)*f1 -                          &
+     &               half*phi2*(phi2+fac)*f2 +                          &
      &               half*fac*(phi1+phi2)*fint
       endif
 
@@ -2091,8 +2091,8 @@
           fac = -pi
         endif
         fint = f1 + (f2-f1)*(fac-phi1)/abs(dphi)
-        weights(num_wts+3) = half*phi1*(phi1-fac)*f1 -
-     &                       half*phi2*(phi2+fac)*f2 +
+        weights(num_wts+3) = half*phi1*(phi1-fac)*f1 -                  &
+     &                       half*phi2*(phi2+fac)*f2 +                  &
      &                       half*fac*(phi1+phi2)*fint
       endif
 
@@ -2118,13 +2118,13 @@
 !
 !-----------------------------------------------------------------------
 
-      integer (kind=int_kind), intent(in) ::
-     &        add1,  ! address on grid1
+      integer (kind=int_kind), intent(in) ::                            &
+     &        add1,  ! address on grid1                                 &
      &        add2   ! address on grid2
 
       logical (kind=log_kind), intent(inout) :: first_call
 
-      real (kind=dbl_kind), dimension(:), intent(in) ::
+      real (kind=dbl_kind), dimension(:), intent(in) ::                 &
      &        weights ! array of remapping weights for this link
 
 !-----------------------------------------------------------------------
@@ -2179,7 +2179,7 @@
 
           wts_map1(:,nlink) = wts_map1(:,nlink) + weights(1:num_wts)
           if (num_maps == 2) then
-            wts_map2(:,nlink) = wts_map2(:,nlink) + 
+            wts_map2(:,nlink) = wts_map2(:,nlink) +                     &
      &                                  weights(num_wts+1:2*num_wts)
           endif
           return
@@ -2197,7 +2197,7 @@
 !-----------------------------------------------------------------------
 
       num_links_map1  = num_links_map1 + 1
-      if (num_links_map1 > max_links_map1) 
+      if (num_links_map1 > max_links_map1)                              &
      &   call resize_remap_vars(1,resize_increment)
 
       grid1_add_map1(num_links_map1) = add1
@@ -2206,7 +2206,7 @@
 
       if (num_maps > 1) then
         num_links_map2  = num_links_map2 + 1
-        if (num_links_map2 > max_links_map2) 
+        if (num_links_map2 > max_links_map2)                            &
      &     call resize_remap_vars(2,resize_increment)
 
         grid1_add_map2(num_links_map2) = add1

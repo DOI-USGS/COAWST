@@ -141,13 +141,13 @@
         allocate(ngrd_sw(mw)%x_full_grid(nx+1,ny+1))
         allocate(ngrd_sw(mw)%y_full_grid(nx+1,ny+1))
 
-        call create_psimesh(nx, ny, ngrd_sw(mw)%lon_rho_w,
-     &                              ngrd_sw(mw)%lat_rho_w,
+        call create_psimesh(nx, ny, ngrd_sw(mw)%lon_rho_w,              &
+     &                              ngrd_sw(mw)%lat_rho_w,              &
      &                               lon_psi_w, lat_psi_w) 
  
-        call create_extra_rho_grid(nx-1, ny-1, 
-     &                             lon_psi_w, lat_psi_w,
-     &                             ngrd_sw(mw)%x_full_grid,  
+        call create_extra_rho_grid(nx-1, ny-1,                          &
+     &                             lon_psi_w, lat_psi_w,                &
+     &                             ngrd_sw(mw)%x_full_grid,             &
      &                             ngrd_sw(mw)%y_full_grid)
 
         deallocate(lon_psi_w, lat_psi_w)
@@ -156,7 +156,7 @@
 !     Find the indices of child grid with respect to parent grid
 !
       do mw=1,Ngrids_swan-1
-        allocate(ngrd_sw(mw)%istr_w,ngrd_sw(mw)%jstr_w,
+        allocate(ngrd_sw(mw)%istr_w,ngrd_sw(mw)%jstr_w,                 &
      &           ngrd_sw(mw)%iend_w,ngrd_sw(mw)%jend_w)
 
         nx=ngrd_sw(mw)%Numx_swan
@@ -167,25 +167,25 @@
 
         do j=1,ny
           do i=1,nx
-            dist1=sqrt((ngrd_sw(mw)%lon_rho_w(i,j)-xx2)**2+
+            dist1=sqrt((ngrd_sw(mw)%lon_rho_w(i,j)-xx2)**2+             &
      &                 (ngrd_sw(mw)%lat_rho_w(i,j)-yy2)**2)
             if(dist1<=dist_max)then
               dist_max=dist1
               ngrd_sw(mw)%istr_w=i
               ngrd_sw(mw)%jstr_w=j
-            endif
+             endif
           enddo
         enddo
 
         dist_max=10e6
-        xxend_1=ngrd_sw(mw+1)%lon_rho_w(ngrd_sw(mw+1)%Numx_swan-1,
+        xxend_1=ngrd_sw(mw+1)%lon_rho_w(ngrd_sw(mw+1)%Numx_swan-1,      &
      &                                  ngrd_sw(mw+1)%Numy_swan-1)
-        yyend_1=ngrd_sw(mw+1)%lat_rho_w(ngrd_sw(mw+1)%Numx_swan-1,
+        yyend_1=ngrd_sw(mw+1)%lat_rho_w(ngrd_sw(mw+1)%Numx_swan-1,      &
      &                                  ngrd_sw(mw+1)%Numy_swan-1)
 
         do j=1,ny
           do i=1,nx
-            dist1=sqrt((ngrd_sw(mw)%lon_rho_w(i,j)-xxend_1)**2+
+            dist1=sqrt((ngrd_sw(mw)%lon_rho_w(i,j)-xxend_1)**2+         &
      &                 (ngrd_sw(mw)%lat_rho_w(i,j)-yyend_1)**2)
             if(dist1<=dist_max)then
               dist_max=dist1
@@ -204,7 +204,7 @@
       end subroutine load_swan_grid
 !======================================================================
 
-      subroutine create_psimesh(nx, ny, lon_rho,lat_rho,
+      subroutine create_psimesh(nx, ny, lon_rho,lat_rho,                &
      &                      lon_psi, lat_psi) 
 
       implicit none 
@@ -215,7 +215,7 @@
 
       integer (int_kind), intent(in) :: nx, ny
       real (dbl_kind), intent(in) :: lon_rho(nx,ny), lat_rho(nx,ny)
-      real (dbl_kind), intent(out) :: lon_psi(nx-1,ny-1), 
+      real (dbl_kind), intent(out) :: lon_psi(nx-1,ny-1),               &
      &                                lat_psi(nx-1,ny-1)
 
       integer (int_kind) :: i, j

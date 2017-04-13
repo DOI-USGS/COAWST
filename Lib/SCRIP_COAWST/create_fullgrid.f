@@ -55,9 +55,9 @@
       end do
       do i=2,iend-1
           !extrapolate North boundary
-        x_full_psi(i,jend)=x_psi(i-1,jend-2)+(x_psi(i-1,jend-2)-       
+        x_full_psi(i,jend)=x_psi(i-1,jend-2)+(x_psi(i-1,jend-2)-        &
      &                                     x_psi(i-1,jend-3))
-        y_full_psi(i,jend)=y_psi(i-1,jend-2)+(y_psi(i-1,jend-2)-      
+        y_full_psi(i,jend)=y_psi(i-1,jend-2)+(y_psi(i-1,jend-2)-        &
      &                                       y_psi(i-1,jend-3))
       end do
       do j=2,jend-1
@@ -67,9 +67,9 @@
       end do
       do j=2,jend-1
           !extrapolate East boundary
-        x_full_psi(iend,j)=x_psi(iend-2,j-1)+(x_psi(iend-2,j-1)-       
+        x_full_psi(iend,j)=x_psi(iend-2,j-1)+(x_psi(iend-2,j-1)-        &
      &                                      x_psi(iend-3,j-1))
-        y_full_psi(iend,j)=y_psi(iend-2,j-1)+(y_psi(iend-2,j-1)-       
+        y_full_psi(iend,j)=y_psi(iend-2,j-1)+(y_psi(iend-2,j-1)-        &
      &                                       y_psi(iend-3,j-1))
       end do
 !______________________________________________________________________
@@ -83,24 +83,24 @@
       ! Now extrapolate to four corners
       ! SouthEast
 
-      x_full_psi(1,1)=x_full_psi(1,2)-(x_full_psi(1,3)
+      x_full_psi(1,1)=x_full_psi(1,2)-(x_full_psi(1,3)                  &
      &                                 -x_full_psi(1,2))
-      y_full_psi(1,1)=y_full_psi(1,2)-                               
+      y_full_psi(1,1)=y_full_psi(1,2)-                                  &
      &               (y_full_psi(1,3)-y_full_psi(1,2))
       ! NorthWest 
-      x_full_psi(1,jend)=x_full_psi(1,jend-1)+(x_full_psi(1,jend-1)-
+      x_full_psi(1,jend)=x_full_psi(1,jend-1)+(x_full_psi(1,jend-1)-    &
      &                                          x_full_psi(1,jend-2))
-      y_full_psi(1,jend)=y_full_psi(1,jend-1)+(y_full_psi(1,jend-1)-
+      y_full_psi(1,jend)=y_full_psi(1,jend-1)+(y_full_psi(1,jend-1)-    &
      &                                          y_full_psi(1,jend-2))
       ! SouthWest 
-      x_full_psi(iend,1)=x_full_psi(iend,2)-(x_full_psi(iend,3)-    
+      x_full_psi(iend,1)=x_full_psi(iend,2)-(x_full_psi(iend,3)-        &
      &                                        x_full_psi(iend,2))
-      y_full_psi(iend,1)=y_full_psi(iend,2)-(y_full_psi(iend,3)-    
+      y_full_psi(iend,1)=y_full_psi(iend,2)-(y_full_psi(iend,3)-        &
      &                                        y_full_psi(iend,2))
        ! NorthEast 
-      x_full_psi(iend,jend)=x_full_psi(iend,jend-1)+                 
+      x_full_psi(iend,jend)=x_full_psi(iend,jend-1)+                    &
      &             (x_full_psi(iend,jend-1)-x_full_psi(iend,jend-2))
-      y_full_psi(iend,jend)=y_full_psi(iend,jend-1)+                 
+      y_full_psi(iend,jend)=y_full_psi(iend,jend-1)+                    &
      &              (y_full_psi(iend,jend-1)-y_full_psi(iend,jend-2))
 
       end subroutine create_extra_rho_grid
