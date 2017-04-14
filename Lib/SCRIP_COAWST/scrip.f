@@ -78,13 +78,13 @@
 
       implicit none 
 
-      character (char_len), intent(in) :: 
-     &           grid1_file,   ! filename of grid file containing grid1
-     &           grid2_file,   ! filename of grid file containing grid2
-     &           interp_file1, ! filename for output remap data (map2)
-     &           interp_file2, ! filename for output remap data (map2)
-     &           map1_name,    ! name for mapping from grid1 to grid2
-     &           map2_name,    ! name for mapping from grid2 to grid1
+      character (char_len), intent(in) ::                               &
+     &           grid1_file,   ! filename of grid file containing grid1 &
+     &           grid2_file,   ! filename of grid file containing grid2 &
+     &           interp_file1, ! filename for output remap data (map2)  &
+     &           interp_file2, ! filename for output remap data (map2)  &
+     &           map1_name,    ! name for mapping from grid1 to grid2   &
+     &           map2_name,    ! name for mapping from grid2 to grid1   &
      &           output_ncfile ! name for output netcdf file
 
       integer (kind=int_kind), intent(in) :: grid1_xdim, grid1_ydim
@@ -106,12 +106,12 @@
 !-----------------------------------------------------------------------
 !     local variables
 !-----------------------------------------------------------------------
-      character (char_len) :: 
-     &           map_method,   ! choice for mapping method
-     &           normalize_opt,! option for normalizing weights
+      character (char_len) ::                                           &
+     &           map_method,   ! choice for mapping method              &
+     &           normalize_opt,! option for normalizing weights         &
      &           output_opt    ! option for output conventions
 
-      integer (kind=int_kind) ::
+      integer (kind=int_kind) ::                                        &
      &           nmap         ! number of mappings to compute (1 or 2)
 
 !      namelist /remap_inputs/ grid1_file, grid2_file, 
@@ -120,7 +120,7 @@
 !     &                        luse_grid1_area, luse_grid2_area,
 !     &                        map_method, normalize_opt, output_opt,
 !     &                        restrict_type, num_srch_bins
-      integer (kind=int_kind) :: n,     ! dummy counter
+      integer (kind=int_kind) :: n,     ! dummy counter                 &
      &                           iunit  ! unit number for namelist file
 
 !-----------------------------------------------------------------------
@@ -178,13 +178,13 @@
 !     initialize grid information for both grids
 !
 !-----------------------------------------------------------------------
-      call grid_init_coawst(grid1_file, grid2_file, 
-     &                      grid1_xdim, grid1_ydim,
-     &                      grid1_lon_rho, grid1_lat_rho,
-     &                      grid1_lon_psi, grid1_lat_psi,
-     &                      grid2_xdim, grid2_ydim, 
-     &                      grid2_lon_rho, grid2_lat_rho,
-     &                      grid2_lon_psi, grid2_lat_psi,
+      call grid_init_coawst(grid1_file, grid2_file,                     &
+     &                      grid1_xdim, grid1_ydim,                     &
+     &                      grid1_lon_rho, grid1_lat_rho,               &
+     &                      grid1_lon_psi, grid1_lat_psi,               &
+     &                      grid2_xdim, grid2_ydim,                     &
+     &                      grid2_lon_rho, grid2_lat_rho,               &
+     &                      grid2_lon_psi, grid2_lat_psi,               &
      &                      src_mask, dst_mask)
 
       write(stdout, *) ' Computing remappings between: ',grid1_file
@@ -425,7 +425,7 @@
 
         mxlinks = size(grid1_add_map1)
 
-        allocate (add1_tmp(mxlinks), add2_tmp(mxlinks), 
+        allocate (add1_tmp(mxlinks), add2_tmp(mxlinks),                 &
      &            wts_tmp(num_wts,mxlinks))
 
         add1_tmp = grid1_add_map1
@@ -440,8 +440,8 @@
         deallocate (grid1_add_map1, grid2_add_map1, wts_map1)
 
         num_links_map1 = mxlinks + add_wts
-        allocate (grid1_add_map1(num_links_map1),
-     &            grid2_add_map1(num_links_map1),
+        allocate (grid1_add_map1(num_links_map1),                       &
+     &            grid2_add_map1(num_links_map1),                       &
      &            wts_map1(num_wts,num_links_map1))
 
         !***

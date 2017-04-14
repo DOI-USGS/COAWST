@@ -47,36 +47,36 @@
 !
 !-----------------------------------------------------------------------
 
-      integer (kind=int_kind), parameter ::
-     &      norm_opt_none    = 1
-     &,     norm_opt_dstarea = 2
-     &,     norm_opt_frcarea = 3
+      integer (kind=int_kind), parameter ::                             &
+     &      norm_opt_none    = 1                                        &
+     &,     norm_opt_dstarea = 2                                        &
+     &,     norm_opt_frcarea = 3                                       
 
-      integer (kind=int_kind), parameter ::
-     &      map_type_conserv  = 1
-     &,     map_type_bilinear = 2
-     &,     map_type_bicubic  = 3
+      integer (kind=int_kind), parameter ::                             &
+     &      map_type_conserv  = 1                                       &
+     &,     map_type_bilinear = 2                                       &
+     &,     map_type_bicubic  = 3                                       &
      &,     map_type_distwgt  = 4
 
-      integer (kind=int_kind), save :: 
-     &      max_links_map1  ! current size of link arrays
-     &,     num_links_map1  ! actual number of links for remapping
-     &,     max_links_map2  ! current size of link arrays
-     &,     num_links_map2  ! actual number of links for remapping
-     &,     num_maps        ! num of remappings for this grid pair
-     &,     num_wts         ! num of weights used in remapping
-     &,     map_type        ! identifier for remapping method
-     &,     norm_opt        ! option for normalization (conserv only)
+      integer (kind=int_kind), save ::                                  &
+     &      max_links_map1  ! current size of link arrays               &
+     &,     num_links_map1  ! actual number of links for remapping      &
+     &,     max_links_map2  ! current size of link arrays               &
+     &,     num_links_map2  ! actual number of links for remapping      &
+     &,     num_maps        ! num of remappings for this grid pair      &
+     &,     num_wts         ! num of weights used in remapping          &
+     &,     map_type        ! identifier for remapping method           &
+     &,     norm_opt        ! option for normalization (conserv only)   &
      &,     resize_increment ! default amount to increase array size
 
-      integer (kind=int_kind), dimension(:), allocatable, save ::
-     &      grid1_add_map1, ! grid1 address for each link in mapping 1
-     &      grid2_add_map1, ! grid2 address for each link in mapping 1
-     &      grid1_add_map2, ! grid1 address for each link in mapping 2
+      integer (kind=int_kind), dimension(:), allocatable, save ::       &
+     &      grid1_add_map1, ! grid1 address for each link in mapping 1  &
+     &      grid2_add_map1, ! grid2 address for each link in mapping 1  &
+     &      grid1_add_map2, ! grid1 address for each link in mapping 2  &
      &      grid2_add_map2  ! grid2 address for each link in mapping 2
 
-      real (kind=dbl_kind), dimension(:,:), allocatable, save ::
-     &      wts_map1, ! map weights for each link (num_wts,max_links)
+      real (kind=dbl_kind), dimension(:,:), allocatable, save ::        &
+     &      wts_map1, ! map weights for each link (num_wts,max_links)   &
      &      wts_map2  ! map weights for each link (num_wts,max_links)
 
 !***********************************************************************
@@ -137,8 +137,8 @@
 !   
 !-----------------------------------------------------------------------
 
-      allocate (grid1_add_map1(max_links_map1),
-     &          grid2_add_map1(max_links_map1),
+      allocate (grid1_add_map1(max_links_map1),                         &
+     &          grid2_add_map1(max_links_map1),                         &
      &          wts_map1(num_wts, max_links_map1))
 
 !-----------------------------------------------------------------------
@@ -148,8 +148,8 @@
 !-----------------------------------------------------------------------
 
       if (num_maps > 1) then
-        allocate (grid1_add_map2(max_links_map2),
-     &            grid2_add_map2(max_links_map2),
+        allocate (grid1_add_map2(max_links_map2),                       &
+     &            grid2_add_map2(max_links_map2),                       &
      &            wts_map2(num_wts, max_links_map2))
       endif
 
@@ -174,8 +174,8 @@
 !
 !-----------------------------------------------------------------------
 
-      integer (kind=int_kind), intent(in) ::
-     &     nmap,      ! identifies which mapping array to resize
+      integer (kind=int_kind), intent(in) ::                            &
+     &     nmap,      ! identifies which mapping array to resize        &
      &     increment  ! the number of links to add(subtract) to arrays
 
 !-----------------------------------------------------------------------
@@ -184,15 +184,15 @@
 !
 !-----------------------------------------------------------------------
 
-      integer (kind=int_kind) ::
-     &   ierr,     ! error flag
+      integer (kind=int_kind) ::                                        &
+     &   ierr,     ! error flag                                         &
      &   mxlinks   ! size of link arrays
 
-      integer (kind=int_kind), dimension(:), allocatable ::
-     &   add1_tmp, ! temp array for resizing address arrays
+      integer (kind=int_kind), dimension(:), allocatable ::             &
+     &   add1_tmp, ! temp array for resizing address arrays             &
      &   add2_tmp  ! temp array for resizing address arrays
 
-      real (kind=dbl_kind), dimension(:,:), allocatable ::
+      real (kind=dbl_kind), dimension(:,:), allocatable ::              &
      &   wts_tmp   ! temp array for resizing weight arrays
 
 !-----------------------------------------------------------------------
@@ -209,7 +209,7 @@
         !***
 
         mxlinks = size(grid1_add_map1)
-        allocate (add1_tmp(mxlinks), add2_tmp(mxlinks), 
+        allocate (add1_tmp(mxlinks), add2_tmp(mxlinks),                 &
      &            wts_tmp(num_wts,mxlinks))
 
         add1_tmp = grid1_add_map1
@@ -223,8 +223,8 @@
 
         deallocate (grid1_add_map1, grid2_add_map1, wts_map1)
         max_links_map1 = mxlinks + increment
-        allocate (grid1_add_map1(max_links_map1),
-     &            grid2_add_map1(max_links_map1),
+        allocate (grid1_add_map1(max_links_map1),                       &
+     &            grid2_add_map1(max_links_map1),                       &
      &            wts_map1(num_wts,max_links_map1))
 
         !***
@@ -251,7 +251,7 @@
         !***
 
         mxlinks = size(grid1_add_map2)
-        allocate (add1_tmp(mxlinks), add2_tmp(mxlinks), 
+        allocate (add1_tmp(mxlinks), add2_tmp(mxlinks),                 &
      &            wts_tmp(num_wts,mxlinks),stat=ierr)
         if (ierr .ne. 0) then
           print *,'error allocating temps in resize: ',ierr
@@ -269,8 +269,8 @@
 
         deallocate (grid1_add_map2, grid2_add_map2, wts_map2)
         max_links_map2 = mxlinks + increment
-        allocate (grid1_add_map2(max_links_map2),
-     &            grid2_add_map2(max_links_map2),
+        allocate (grid1_add_map2(max_links_map2),                       &
+     &            grid2_add_map2(max_links_map2),                       &
      &            wts_map2(num_wts,max_links_map2),stat=ierr)
         if (ierr .ne. 0) then
           print *,'error allocating new arrays in resize: ',ierr

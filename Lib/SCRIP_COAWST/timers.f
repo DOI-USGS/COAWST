@@ -40,23 +40,23 @@
 
       implicit none
 
-      integer (kind=int_kind), parameter ::  
+      integer (kind=int_kind), parameter ::                             &
      &     max_timers = 99  ! max number of timers allowed
 
-      integer (kind=int_kind), save :: 
+      integer (kind=int_kind), save ::                                  &
      &     cycles_max       ! max value of clock allowed by system
 
-      integer (kind=int_kind), dimension(max_timers), save :: 
-     &     cycles1,         ! cycle number at start for each timer
+      integer (kind=int_kind), dimension(max_timers), save ::           &
+     &     cycles1,         ! cycle number at start for each timer      &
      &     cycles2          ! cycle number at stop  for each timer
 
-      real (kind=real_kind), save ::  
+      real (kind=real_kind), save ::                                    &
      &     clock_rate       ! clock_rate in seconds for each cycle
 
-      real (kind=real_kind), dimension(max_timers), save ::  
+      real (kind=real_kind), dimension(max_timers), save ::             &
      &     cputime          ! accumulated cpu time in each timer
 
-      character (len=8), dimension(max_timers), save ::  
+      character (len=8), dimension(max_timers), save ::                 &
      &     status           ! timer status string
 
 !***********************************************************************
@@ -81,7 +81,7 @@
 !
 !-----------------------------------------------------------------------
 
-      integer (kind=int_kind), intent(in) ::  
+      integer (kind=int_kind), intent(in) ::                            &
      &    timer            ! timer number
 
 !-----------------------------------------------------------------------
@@ -111,7 +111,7 @@
 !
 !-----------------------------------------------------------------------
 
-      integer (kind=int_kind), intent(in) ::  
+      integer (kind=int_kind), intent(in) ::                            &
      &    timer            ! timer number
 
 !-----------------------------------------------------------------------
@@ -140,7 +140,7 @@
 !
 !-----------------------------------------------------------------------
 
-      integer (kind=int_kind), intent(in) ::  
+      integer (kind=int_kind), intent(in) ::                            &
      &    timer            ! timer number
 
 !-----------------------------------------------------------------------
@@ -149,7 +149,7 @@
 !
 !-----------------------------------------------------------------------
 
-      real (kind=real_kind) ::  
+      real (kind=real_kind) ::                                          &
      &     timer_get   ! accumulated cputime in given timer
 
 !-----------------------------------------------------------------------
@@ -182,7 +182,7 @@
 !
 !-----------------------------------------------------------------------
 
-      integer (kind=int_kind), intent(in) ::  
+      integer (kind=int_kind), intent(in) ::                            &
      &    timer            ! timer number
 
 !-----------------------------------------------------------------------
@@ -193,11 +193,11 @@
       !---
 
       if (status(timer) .eq. 'stopped') then
-        write(*,"(' CPU time for timer',i3,':',1p,e16.8)")  
+        write(*,"(' CPU time for timer',i3,':',1p,e16.8)")              &
      &       timer,cputime(timer)
       else
         call timer_stop(timer)
-        write(*,"(' CPU time for timer',i3,':',1p,e16.8)")  
+        write(*,"(' CPU time for timer',i3,':',1p,e16.8)")              &
      &       timer,cputime(timer)
         call timer_start(timer)
       endif
@@ -222,7 +222,7 @@
 !
 !-----------------------------------------------------------------------
 
-      integer (kind=int_kind), intent(in) ::  
+      integer (kind=int_kind), intent(in) ::                            &
      &    timer            ! timer number
 
 !-----------------------------------------------------------------------
@@ -256,7 +256,7 @@
 !
 !-----------------------------------------------------------------------
 
-      integer (kind=int_kind), intent(in) ::  
+      integer (kind=int_kind), intent(in) ::                            &
      &    timer            ! timer number
 
 !-----------------------------------------------------------------------
@@ -274,10 +274,10 @@
         !---
 
         if (cycles2(timer) .ge. cycles1(timer)) then
-          cputime(timer) = cputime(timer) + clock_rate*  
+          cputime(timer) = cputime(timer) + clock_rate*                 &
      &                     (cycles2(timer) - cycles1(timer))
         else
-          cputime(timer) = cputime(timer) + clock_rate*  
+          cputime(timer) = cputime(timer) + clock_rate*                 &
      &                (cycles2(timer) - cycles1(timer) + cycles_max)
         endif
 

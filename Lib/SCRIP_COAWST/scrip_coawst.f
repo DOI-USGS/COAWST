@@ -89,7 +89,7 @@
       namelist /inputs/ Ngrids_roms, Ngrids_swan, Ngrids_wrf,           &
      &                  roms_grids, swan_coord, swan_bath,              &
      &                  swan_numx, swan_numy, cartesian,                &
-     &                  wrf_grids, parent_grid_ratio, parent_id,
+     &                  wrf_grids, parent_grid_ratio, parent_id,        &
      &                  output_ncfile
 
       write(stdout,*)"================================================"
@@ -102,8 +102,8 @@
       write(stdout,*) "Ngrid_wrf =",Ngrids_wrf
 
 !     Total number of grid interpolation combinations 
-      Ngrids_comb_total=(Ngrids_roms*Ngrids_swan + 
-     &                   Ngrids_roms*Ngrids_wrf  + 
+      Ngrids_comb_total=(Ngrids_roms*Ngrids_swan +                      &
+     &                   Ngrids_roms*Ngrids_wrf  +                      &
      &                   Ngrids_swan*Ngrids_wrf)*2 
 
       write(stdout,*) "Common netcdf file is: ",output_ncfile

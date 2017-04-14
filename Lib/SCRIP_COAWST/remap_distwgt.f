@@ -50,11 +50,11 @@
 !
 !-----------------------------------------------------------------------
 
-      integer (kind=int_kind), parameter :: 
+      integer (kind=int_kind), parameter ::                             &
      &     num_neighbors=4  ! num nearest neighbors to interpolate from
 
-      real (kind=dbl_kind), dimension(:), allocatable, save ::
-     &     coslat, sinlat, ! cosine, sine of grid lats (for distance)
+      real (kind=dbl_kind), dimension(:), allocatable, save ::          &
+     &     coslat, sinlat, ! cosine, sine of grid lats (for distance)   &
      &     coslon, sinlon, ! cosine, sine of grid lons (for distance)
      &     wgtstmp         ! an array to hold the link weight
 
@@ -79,24 +79,24 @@
 !
 !-----------------------------------------------------------------------
 
-      logical (kind=log_kind), dimension(num_neighbors) ::
+      logical (kind=log_kind), dimension(num_neighbors) ::              &
      &     nbr_mask        ! mask at nearest neighbors
 
-      integer (kind=int_kind) :: n,
-     &     dst_add,        ! destination address
+      integer (kind=int_kind) :: n,                                     &
+     &     dst_add,        ! destination address                        &
      &     nmap            ! index of current map being computed
 
-      integer (kind=int_kind), dimension(num_neighbors) ::
+      integer (kind=int_kind), dimension(num_neighbors) ::              &
      &     nbr_add         ! source address at nearest neighbors
 
-      real (kind=dbl_kind), dimension(num_neighbors) ::
+      real (kind=dbl_kind), dimension(num_neighbors) ::                 &
      &     nbr_dist        ! angular distance four nearest neighbors
 
-      real (kind=dbl_kind) ::
-     &     coslat_dst,     ! cos(lat) of destination grid point
-     &     coslon_dst,     ! cos(lon) of destination grid point
-     &     sinlat_dst,     ! sin(lat) of destination grid point
-     &     sinlon_dst,     ! sin(lon) of destination grid point
+      real (kind=dbl_kind) ::                                           &
+     &     coslat_dst,     ! cos(lat) of destination grid point         &
+     &     coslon_dst,     ! cos(lon) of destination grid point         &
+     &     sinlat_dst,     ! sin(lat) of destination grid point         &
+     &     sinlon_dst,     ! sin(lon) of destination grid point         &
      &     dist_tot        ! sum of neighbor distances (for normalizing)
 
 !-----------------------------------------------------------------------
@@ -118,7 +118,7 @@
       !*** calculations
       !***
 
-      allocate (coslat(grid1_size), coslon(grid1_size),
+      allocate (coslat(grid1_size), coslon(grid1_size),                 &
      &          sinlat(grid1_size), sinlon(grid1_size))
 
       coslat = cos(grid1_center_lat)
@@ -146,11 +146,11 @@
         !*** distances to each point
         !***
 
-        call grid_search_nbr(nbr_add, nbr_dist, 
-     &                       grid2_center_lat(dst_add),
-     &                       grid2_center_lon(dst_add),
-     &                       coslat_dst, coslon_dst, 
-     &                       sinlat_dst, sinlon_dst,
+        call grid_search_nbr(nbr_add, nbr_dist,                         &
+     &                       grid2_center_lat(dst_add),                 &
+     &                       grid2_center_lon(dst_add),                 &
+     &                       coslat_dst, coslon_dst,                    &
+     &                       sinlat_dst, sinlon_dst,                    &
      &                       bin_addr1, bin_addr2)
 
         !***
@@ -200,7 +200,7 @@
       !*** calculations
       !***
 
-      allocate (coslat(grid2_size), coslon(grid2_size),
+      allocate (coslat(grid2_size), coslon(grid2_size),                 &
      &          sinlat(grid2_size), sinlon(grid2_size))
 
       coslat = cos(grid2_center_lat)
@@ -228,11 +228,11 @@
         !*** distances to each point
         !***
 
-        call grid_search_nbr(nbr_add, nbr_dist,
-     &                       grid1_center_lat(dst_add),
-     &                       grid1_center_lon(dst_add),
-     &                       coslat_dst, coslon_dst, 
-     &                       sinlat_dst, sinlon_dst,
+        call grid_search_nbr(nbr_add, nbr_dist,                         &
+     &                       grid1_center_lat(dst_add),                 &
+     &                       grid1_center_lon(dst_add),                 &
+     &                       coslat_dst, coslon_dst,                    &
+     &                       sinlat_dst, sinlon_dst,                    &
      &                       bin_addr2, bin_addr1)
 
         !***
@@ -277,8 +277,8 @@
 
 !***********************************************************************
 
-      subroutine grid_search_nbr(nbr_add, nbr_dist, plat, plon, 
-     &               coslat_dst, coslon_dst, sinlat_dst, sinlon_dst,
+      subroutine grid_search_nbr(nbr_add, nbr_dist, plat, plon,         &
+     &               coslat_dst, coslon_dst, sinlat_dst, sinlon_dst,    &
      &               src_bin_add, dst_bin_add)
 
 !-----------------------------------------------------------------------
@@ -294,10 +294,10 @@
 !
 !-----------------------------------------------------------------------
 
-      integer (kind=int_kind), dimension(num_neighbors), intent(out) ::
+      integer (kind=int_kind), dimension(num_neighbors), intent(out) :: &
      &        nbr_add  ! address of each of the closest points
 
-      real (kind=dbl_kind), dimension(num_neighbors), intent(out) ::
+      real (kind=dbl_kind), dimension(num_neighbors), intent(out) ::    &
      &        nbr_dist ! distance to each of the closest points
 
 !-----------------------------------------------------------------------
@@ -306,16 +306,16 @@
 !
 !-----------------------------------------------------------------------
 
-      integer (kind=int_kind), dimension(:,:), intent(in) ::
-     &        src_bin_add, ! search bins for restricting search
+      integer (kind=int_kind), dimension(:,:), intent(in) ::            &
+     &        src_bin_add, ! search bins for restricting search         &
      &        dst_bin_add   
 
-      real (kind=dbl_kind), intent(in) ::
-     &        plat,         ! latitude  of the search point
-     &        plon,         ! longitude of the search point
-     &        coslat_dst,   ! cos(lat)  of the search point
-     &        coslon_dst,   ! cos(lon)  of the search point
-     &        sinlat_dst,   ! sin(lat)  of the search point
+      real (kind=dbl_kind), intent(in) ::                               &
+     &        plat,         ! latitude  of the search point             &
+     &        plon,         ! longitude of the search point             &
+     &        coslat_dst,   ! cos(lat)  of the search point             &
+     &        coslon_dst,   ! cos(lon)  of the search point             &
+     &        sinlat_dst,   ! sin(lat)  of the search point             &
      &        sinlon_dst    ! sin(lon)  of the search point
 
 !-----------------------------------------------------------------------
@@ -324,10 +324,10 @@
 !
 !-----------------------------------------------------------------------
 
-      integer (kind=int_kind) :: n, nmax, nadd, nchk, ! dummy indices
+      integer (kind=int_kind) :: n, nmax, nadd, nchk, ! dummy indices   &
      &        min_add, max_add, nm1, np1, i, j, ip1, im1, jp1, jm1
 
-      real (kind=dbl_kind) ::
+      real (kind=dbl_kind) ::                                           &
      &        distance      ! angular distance
 
 !-----------------------------------------------------------------------
@@ -371,7 +371,7 @@
           im1 = max(i-1,1)
 
           n = n+1
-          if (plat >= bin_lats(1,n) .and. plat <= bin_lats(2,n) .and.
+          if (plat >= bin_lats(1,n) .and. plat <= bin_lats(2,n) .and.   &
      &        plon >= bin_lons(1,n) .and. plon <= bin_lons(3,n)) then
             min_add = src_bin_add(1,n)
             max_add = src_bin_add(2,n)
@@ -404,9 +404,9 @@
         !*** find distance to this point
         !***
 
-        distance = acos(sinlat_dst*sinlat(nadd) +
-     &                  coslat_dst*coslat(nadd)*
-     &                 (coslon_dst*coslon(nadd) +
+        distance = acos(sinlat_dst*sinlat(nadd) +                       &
+     &                  coslat_dst*coslat(nadd)*                        &
+     &                 (coslon_dst*coslon(nadd) +                       &
      &                  sinlon_dst*sinlon(nadd)) )
 
         !***
@@ -450,12 +450,12 @@
 !
 !-----------------------------------------------------------------------
 
-      integer (kind=int_kind), intent(in) ::
-     &        add1,  ! address on grid1
-     &        add2,  ! address on grid2
+      integer (kind=int_kind), intent(in) ::                            &
+     &        add1,  ! address on grid1                                 &
+     &        add2,  ! address on grid2                                 &
      &        nmap   ! identifies which direction for mapping
 
-      real (kind=dbl_kind), dimension(:), intent(in) ::
+      real (kind=dbl_kind), dimension(:), intent(in) ::                 &
      &        weights ! array of remapping weights for this link
 
 !-----------------------------------------------------------------------
@@ -471,7 +471,7 @@
 
         num_links_map1  = num_links_map1 + 1
 
-        if (num_links_map1 > max_links_map1) 
+        if (num_links_map1 > max_links_map1)                            &
      &     call resize_remap_vars(1,resize_increment)
 
         grid1_add_map1(num_links_map1) = add1

@@ -54,11 +54,11 @@
 !
 !-----------------------------------------------------------------------
 
-      integer (kind=int_kind) ::
+      integer (kind=int_kind) ::                                        &
      &  field_choice   ! choice of field to be interpolated
 
-      character (char_len) :: 
-     &  interp_file,   ! filename containing remap data (map1)
+      character (char_len) ::                                           &
+     &  interp_file,   ! filename containing remap data (map1)          &
      &  output_file    ! filename for test results
 
       namelist /remap_inputs/ field_choice, interp_file, output_file
@@ -69,51 +69,51 @@
 !
 !-----------------------------------------------------------------------
 
-      character (char_len) :: 
+      character (char_len) ::                                           &
      &        map_name      ! name for mapping from grid1 to grid2
 
-      integer (kind=int_kind) ::    ! netCDF ids for files and arrays
-     &        ncstat, nc_outfile_id, 
-     &        nc_srcgrdcntrlat_id, nc_srcgrdcntrlon_id,
-     &        nc_dstgrdcntrlat_id, nc_dstgrdcntrlon_id,
-     &        nc_srcgrdrank_id, nc_dstgrdrank_id,
-     &        nc_srcgrdimask_id, nc_dstgrdimask_id,
-     &        nc_srcgrdarea_id, nc_dstgrdarea_id,
-     &        nc_srcgrdfrac_id, nc_dstgrdfrac_id,
-     &        nc_srcarray_id, nc_srcgradlat_id, nc_srcgradlon_id,
-     &        nc_dstarray1_id, nc_dstarray1a_id, nc_dstarray2_id,
+      integer (kind=int_kind) ::    ! netCDF ids for files and arrays   &
+     &        ncstat, nc_outfile_id,                                    &
+     &        nc_srcgrdcntrlat_id, nc_srcgrdcntrlon_id,                 &
+     &        nc_dstgrdcntrlat_id, nc_dstgrdcntrlon_id,                 &
+     &        nc_srcgrdrank_id, nc_dstgrdrank_id,                       &
+     &        nc_srcgrdimask_id, nc_dstgrdimask_id,                     &
+     &        nc_srcgrdarea_id, nc_dstgrdarea_id,                       &
+     &        nc_srcgrdfrac_id, nc_dstgrdfrac_id,                       &
+     &        nc_srcarray_id, nc_srcgradlat_id, nc_srcgradlon_id,       &
+     &        nc_dstarray1_id, nc_dstarray1a_id, nc_dstarray2_id,       &
      &        nc_dsterror1_id, nc_dsterror1a_id, nc_dsterror2_id
 
-      integer (kind=int_kind), dimension(:), allocatable ::
+      integer (kind=int_kind), dimension(:), allocatable ::             &
      &        nc_grid1size_id, nc_grid2size_id
 
 !-----------------------------------------------------------------------
 
-      character (char_len) :: 
+      character (char_len) ::                                           &
      &          dim_name    ! netCDF dimension name
 
-      integer (kind=int_kind) :: i,j,n,imin,imax,idiff,
-     &    ip1,im1,jp1,jm1,nx,ny, ! for computing bicub gradients
-     &    in,is,ie,iw,ine,inw,ise,isw,
+      integer (kind=int_kind) :: i,j,n,imin,imax,idiff,                 &
+     &    ip1,im1,jp1,jm1,nx,ny, ! for computing bicub gradients        &
+     &    in,is,ie,iw,ine,inw,ise,isw,                                  &
      &    iunit                  ! unit number for namelist file
 
-      integer (kind=int_kind), dimension(:), allocatable ::
+      integer (kind=int_kind), dimension(:), allocatable ::             &
      &    grid1_imask, grid2_imask, grid2_count
 
-      real (kind=dbl_kind) ::
-     &    delew, delns,     ! variables for computing bicub gradients
+      real (kind=dbl_kind) ::                                           &
+     &    delew, delns,     ! variables for computing bicub gradients   &
      &    length            ! length scale for cosine hill test field
 
-      real (kind=dbl_kind), dimension(:), allocatable ::
-     &    grid1_array, 
-     &    grid1_tmp, 
-     &    grad1_lat, 
-     &    grad1_lon, 
-     &    grad1_latlon, 
-     &    grad1_lat_zero, 
-     &    grad1_lon_zero, 
-     &    grid2_array, 
-     &    grid2_err,
+      real (kind=dbl_kind), dimension(:), allocatable ::                &
+     &    grid1_array,                                                  &
+     &    grid1_tmp,                                                    &
+     &    grad1_lat,                                                    &
+     &    grad1_lon,                                                    &
+     &    grad1_latlon,                                                 &
+     &    grad1_lat_zero,                                               &
+     &    grad1_lon_zero,                                               &
+     &    grid2_array,                                                  &
+     &    grid2_err,                                                    &
      &    grid2_tmp
 
 !-----------------------------------------------------------------------
@@ -142,17 +142,17 @@
 !
 !-----------------------------------------------------------------------
 
-      allocate (grid1_array    (grid1_size), 
-     &          grid1_tmp      (grid1_size),
-     &          grad1_lat      (grid1_size), 
-     &          grad1_lon      (grid1_size), 
-     &          grad1_lat_zero (grid1_size), 
-     &          grad1_lon_zero (grid1_size), 
-     &          grid1_imask    (grid1_size),
-     &          grid2_array    (grid2_size), 
-     &          grid2_err      (grid2_size),
-     &          grid2_tmp      (grid2_size),
-     &          grid2_imask    (grid2_size),
+      allocate (grid1_array    (grid1_size),                            &
+     &          grid1_tmp      (grid1_size),                            &
+     &          grad1_lat      (grid1_size),                            &
+     &          grad1_lon      (grid1_size),                            &
+     &          grad1_lat_zero (grid1_size),                            &
+     &          grad1_lon_zero (grid1_size),                            &
+     &          grid1_imask    (grid1_size),                            &
+     &          grid2_array    (grid2_size),                            &
+     &          grid2_err      (grid2_size),                            &
+     &          grid2_tmp      (grid2_size),                            &
+     &          grid2_imask    (grid2_size),                            &
      &          grid2_count    (grid2_size))
 
       where (grid1_mask)
@@ -179,7 +179,7 @@
       ncstat = nf_create (output_file, NF_CLOBBER, nc_outfile_id)
       call netcdf_error_handler(ncstat)
 
-      ncstat = nf_put_att_text (nc_outfile_id, NF_GLOBAL, 'title',
+      ncstat = nf_put_att_text (nc_outfile_id, NF_GLOBAL, 'title',      &
      &                          len_trim(map_name), map_name)
       call netcdf_error_handler(ncstat)
 
@@ -187,19 +187,19 @@
       !*** define grid size dimensions
       !***
 
-      allocate( nc_grid1size_id(grid1_rank),
+      allocate( nc_grid1size_id(grid1_rank),                            &
      &          nc_grid2size_id(grid2_rank))
 
       do n=1,grid1_rank
         write(dim_name,1000) 'grid1_dim',n
-        ncstat = nf_def_dim (nc_outfile_id, dim_name, 
+        ncstat = nf_def_dim (nc_outfile_id, dim_name,                   &
      &                       grid1_dims(n), nc_grid1size_id(n))
         call netcdf_error_handler(ncstat)
       end do
 
       do n=1,grid2_rank
         write(dim_name,1000) 'grid2_dim',n
-        ncstat = nf_def_dim (nc_outfile_id, dim_name, 
+        ncstat = nf_def_dim (nc_outfile_id, dim_name,                   &
      &                       grid2_dims(n), nc_grid2size_id(n))
         call netcdf_error_handler(ncstat)
       end do
@@ -209,21 +209,21 @@
       !*** define grid center latitude array
       !***
 
-      ncstat = nf_def_var (nc_outfile_id, 'src_grid_center_lat', 
-     &                     NF_DOUBLE, grid1_rank, nc_grid1size_id, 
+      ncstat = nf_def_var (nc_outfile_id, 'src_grid_center_lat',        &
+     &                     NF_DOUBLE, grid1_rank, nc_grid1size_id,      &
      &                     nc_srcgrdcntrlat_id)
       call netcdf_error_handler(ncstat)
 
-      ncstat = nf_put_att_text (nc_outfile_id, nc_srcgrdcntrlat_id, 
+      ncstat = nf_put_att_text (nc_outfile_id, nc_srcgrdcntrlat_id,     &
      &                          'units', 7, 'radians')
       call netcdf_error_handler(ncstat)
 
-      ncstat = nf_def_var (nc_outfile_id, 'dst_grid_center_lat', 
-     &                     NF_DOUBLE, grid2_rank, nc_grid2size_id, 
+      ncstat = nf_def_var (nc_outfile_id, 'dst_grid_center_lat',        &
+     &                     NF_DOUBLE, grid2_rank, nc_grid2size_id,      &
      &                     nc_dstgrdcntrlat_id)
       call netcdf_error_handler(ncstat)
 
-      ncstat = nf_put_att_text (nc_outfile_id, nc_dstgrdcntrlat_id, 
+      ncstat = nf_put_att_text (nc_outfile_id, nc_dstgrdcntrlat_id,     &
      &                          'units', 7, 'radians')
       call netcdf_error_handler(ncstat)
 
@@ -231,21 +231,21 @@
       !*** define grid center longitude array
       !***
 
-      ncstat = nf_def_var (nc_outfile_id, 'src_grid_center_lon', 
-     &                     NF_DOUBLE, grid1_rank, nc_grid1size_id, 
+      ncstat = nf_def_var (nc_outfile_id, 'src_grid_center_lon',        &
+     &                     NF_DOUBLE, grid1_rank, nc_grid1size_id,      &
      &                     nc_srcgrdcntrlon_id)
       call netcdf_error_handler(ncstat)
 
-      ncstat = nf_put_att_text (nc_outfile_id, nc_srcgrdcntrlon_id, 
+      ncstat = nf_put_att_text (nc_outfile_id, nc_srcgrdcntrlon_id,     &
      &                          'units', 7, 'radians')
       call netcdf_error_handler(ncstat)
 
-      ncstat = nf_def_var (nc_outfile_id, 'dst_grid_center_lon', 
-     &                     NF_DOUBLE, grid2_rank, nc_grid2size_id, 
+      ncstat = nf_def_var (nc_outfile_id, 'dst_grid_center_lon',        &
+     &                     NF_DOUBLE, grid2_rank, nc_grid2size_id,      &
      &                     nc_dstgrdcntrlon_id)
       call netcdf_error_handler(ncstat)
 
-      ncstat = nf_put_att_text (nc_outfile_id, nc_dstgrdcntrlon_id, 
+      ncstat = nf_put_att_text (nc_outfile_id, nc_dstgrdcntrlon_id,     &
      &                          'units', 7, 'radians')
       call netcdf_error_handler(ncstat)
 
@@ -253,19 +253,19 @@
       !*** define grid mask
       !***
 
-      ncstat = nf_def_var (nc_outfile_id, 'src_grid_imask', NF_INT,
+      ncstat = nf_def_var (nc_outfile_id, 'src_grid_imask', NF_INT,     &
      &               grid1_rank, nc_grid1size_id, nc_srcgrdimask_id)
       call netcdf_error_handler(ncstat)
 
-      ncstat = nf_put_att_text (nc_outfile_id, nc_srcgrdimask_id, 
+      ncstat = nf_put_att_text (nc_outfile_id, nc_srcgrdimask_id,       &
      &                          'units', 8, 'unitless')
       call netcdf_error_handler(ncstat)
 
-      ncstat = nf_def_var (nc_outfile_id, 'dst_grid_imask', NF_INT,
+      ncstat = nf_def_var (nc_outfile_id, 'dst_grid_imask', NF_INT,     &
      &               grid2_rank, nc_grid2size_id, nc_dstgrdimask_id)
       call netcdf_error_handler(ncstat)
 
-      ncstat = nf_put_att_text (nc_outfile_id, nc_dstgrdimask_id, 
+      ncstat = nf_put_att_text (nc_outfile_id, nc_dstgrdimask_id,       &
      &                          'units', 8, 'unitless')
       call netcdf_error_handler(ncstat)
 
@@ -273,13 +273,13 @@
       !*** define grid area arrays
       !***
 
-      ncstat = nf_def_var (nc_outfile_id, 'src_grid_area', 
-     &                     NF_DOUBLE, grid1_rank, nc_grid1size_id, 
+      ncstat = nf_def_var (nc_outfile_id, 'src_grid_area',              &
+     &                     NF_DOUBLE, grid1_rank, nc_grid1size_id,      &
      &                     nc_srcgrdarea_id)
       call netcdf_error_handler(ncstat)
 
       ncstat = nf_def_var (nc_outfile_id, 'dst_grid_area', 
-     &                     NF_DOUBLE, grid2_rank, nc_grid2size_id, 
+     &                     NF_DOUBLE, grid2_rank, nc_grid2size_id,      &
      &                     nc_dstgrdarea_id)
       call netcdf_error_handler(ncstat)
 
@@ -287,13 +287,13 @@
       !*** define grid fraction arrays
       !***
 
-      ncstat = nf_def_var (nc_outfile_id, 'src_grid_frac', 
-     &                     NF_DOUBLE, grid1_rank, nc_grid1size_id, 
+      ncstat = nf_def_var (nc_outfile_id, 'src_grid_frac',              &
+     &                     NF_DOUBLE, grid1_rank, nc_grid1size_id,      &
      &                     nc_srcgrdfrac_id)
       call netcdf_error_handler(ncstat)
 
-      ncstat = nf_def_var (nc_outfile_id, 'dst_grid_frac', 
-     &                     NF_DOUBLE, grid2_rank, nc_grid2size_id, 
+      ncstat = nf_def_var (nc_outfile_id, 'dst_grid_frac',              &
+     &                     NF_DOUBLE, grid2_rank, nc_grid2size_id,      &
      &                     nc_dstgrdfrac_id)
       call netcdf_error_handler(ncstat)
 
@@ -301,8 +301,8 @@
       !*** define source array
       !***
 
-      ncstat = nf_def_var (nc_outfile_id, 'src_array', 
-     &                     NF_DOUBLE, grid1_rank, nc_grid1size_id, 
+      ncstat = nf_def_var (nc_outfile_id, 'src_array',                  &
+     &                     NF_DOUBLE, grid1_rank, nc_grid1size_id,      &
      &                     nc_srcarray_id)
       call netcdf_error_handler(ncstat)
 
@@ -310,13 +310,13 @@
       !*** define gradient arrays
       !***
 
-      ncstat = nf_def_var (nc_outfile_id, 'src_grad_lat', 
-     &                     NF_DOUBLE, grid1_rank, nc_grid1size_id, 
+      ncstat = nf_def_var (nc_outfile_id, 'src_grad_lat',               &
+     &                     NF_DOUBLE, grid1_rank, nc_grid1size_id,      &
      &                     nc_srcgradlat_id)
       call netcdf_error_handler(ncstat)
 
-      ncstat = nf_def_var (nc_outfile_id, 'src_grad_lon', 
-     &                     NF_DOUBLE, grid1_rank, nc_grid1size_id, 
+      ncstat = nf_def_var (nc_outfile_id, 'src_grad_lon',               &
+     &                     NF_DOUBLE, grid1_rank, nc_grid1size_id,      &
      &                     nc_srcgradlon_id)
       call netcdf_error_handler(ncstat)
 
@@ -324,18 +324,18 @@
       !*** define destination arrays
       !***
 
-      ncstat = nf_def_var (nc_outfile_id, 'dst_array1', 
-     &                     NF_DOUBLE, grid2_rank, nc_grid2size_id, 
+      ncstat = nf_def_var (nc_outfile_id, 'dst_array1',                 &
+     &                     NF_DOUBLE, grid2_rank, nc_grid2size_id,      &
      &                     nc_dstarray1_id)
       call netcdf_error_handler(ncstat)
 
-      ncstat = nf_def_var (nc_outfile_id, 'dst_array1a', 
-     &                     NF_DOUBLE, grid2_rank, nc_grid2size_id, 
+      ncstat = nf_def_var (nc_outfile_id, 'dst_array1a',                &
+     &                     NF_DOUBLE, grid2_rank, nc_grid2size_id,      &
      &                     nc_dstarray1a_id)
       call netcdf_error_handler(ncstat)
 
-      ncstat = nf_def_var (nc_outfile_id, 'dst_array2', 
-     &                     NF_DOUBLE, grid2_rank, nc_grid2size_id, 
+      ncstat = nf_def_var (nc_outfile_id, 'dst_array2',                 &
+     &                     NF_DOUBLE, grid2_rank, nc_grid2size_id,      &
      &                     nc_dstarray2_id)
       call netcdf_error_handler(ncstat)
 
@@ -343,18 +343,18 @@
       !*** define error arrays
       !***
 
-      ncstat = nf_def_var (nc_outfile_id, 'dst_error1', 
-     &                     NF_DOUBLE, grid2_rank, nc_grid2size_id, 
+      ncstat = nf_def_var (nc_outfile_id, 'dst_error1',                 &
+     &                     NF_DOUBLE, grid2_rank, nc_grid2size_id,      &
      &                     nc_dsterror1_id)
       call netcdf_error_handler(ncstat)
 
-      ncstat = nf_def_var (nc_outfile_id, 'dst_error1a', 
-     &                     NF_DOUBLE, grid2_rank, nc_grid2size_id, 
+      ncstat = nf_def_var (nc_outfile_id, 'dst_error1a',                &
+     &                     NF_DOUBLE, grid2_rank, nc_grid2size_id,      &
      &                     nc_dsterror1a_id)
       call netcdf_error_handler(ncstat)
 
-      ncstat = nf_def_var (nc_outfile_id, 'dst_error2', 
-     &                     NF_DOUBLE, grid2_rank, nc_grid2size_id, 
+      ncstat = nf_def_var (nc_outfile_id, 'dst_error2',                 &
+     &                     NF_DOUBLE, grid2_rank, nc_grid2size_id,      &
      &                     nc_dsterror2_id)
       call netcdf_error_handler(ncstat)
 
@@ -375,11 +375,11 @@
       !*** write grid center latitude array
       !***
 
-      ncstat = nf_put_var_double(nc_outfile_id, nc_srcgrdcntrlat_id,
+      ncstat = nf_put_var_double(nc_outfile_id, nc_srcgrdcntrlat_id,    &
      &                           grid1_center_lat)
       call netcdf_error_handler(ncstat)
 
-      ncstat = nf_put_var_double(nc_outfile_id, nc_dstgrdcntrlat_id,
+      ncstat = nf_put_var_double(nc_outfile_id, nc_dstgrdcntrlat_id,    &
      &                           grid2_center_lat)
       call netcdf_error_handler(ncstat)
 
@@ -387,11 +387,11 @@
       !*** write grid center longitude array
       !***
 
-      ncstat = nf_put_var_double(nc_outfile_id, nc_srcgrdcntrlon_id,
+      ncstat = nf_put_var_double(nc_outfile_id, nc_srcgrdcntrlon_id,    &
      &                           grid1_center_lon)
       call netcdf_error_handler(ncstat)
 
-      ncstat = nf_put_var_double(nc_outfile_id, nc_dstgrdcntrlon_id,
+      ncstat = nf_put_var_double(nc_outfile_id, nc_dstgrdcntrlon_id,    &
      &                           grid2_center_lon)
       call netcdf_error_handler(ncstat)
 
@@ -399,11 +399,11 @@
       !*** write grid mask
       !***
 
-      ncstat = nf_put_var_int(nc_outfile_id, nc_srcgrdimask_id,
+      ncstat = nf_put_var_int(nc_outfile_id, nc_srcgrdimask_id,         &
      &                        grid1_imask)
       call netcdf_error_handler(ncstat)
 
-      ncstat = nf_put_var_int(nc_outfile_id, nc_dstgrdimask_id,
+      ncstat = nf_put_var_int(nc_outfile_id, nc_dstgrdimask_id,         &
      &                        grid2_imask)
       call netcdf_error_handler(ncstat)
 
@@ -411,11 +411,11 @@
       !*** define grid area arrays
       !***
 
-      ncstat = nf_put_var_double(nc_outfile_id, nc_srcgrdarea_id,
+      ncstat = nf_put_var_double(nc_outfile_id, nc_srcgrdarea_id,       &
      &                           grid1_area)
       call netcdf_error_handler(ncstat)
 
-      ncstat = nf_put_var_double(nc_outfile_id, nc_dstgrdarea_id,
+      ncstat = nf_put_var_double(nc_outfile_id, nc_dstgrdarea_id,       &
      &                           grid2_area)
       call netcdf_error_handler(ncstat)
 
@@ -423,11 +423,11 @@
       !*** define grid fraction arrays
       !***
 
-      ncstat = nf_put_var_double(nc_outfile_id, nc_srcgrdfrac_id,
+      ncstat = nf_put_var_double(nc_outfile_id, nc_srcgrdfrac_id,       &
      &                           grid1_frac)
       call netcdf_error_handler(ncstat)
 
-      ncstat = nf_put_var_double(nc_outfile_id, nc_dstgrdfrac_id,
+      ncstat = nf_put_var_double(nc_outfile_id, nc_dstgrdfrac_id,       &
      &                           grid2_frac)
       call netcdf_error_handler(ncstat)
 
@@ -449,11 +449,11 @@
         grid2_tmp = acos(-grid2_array)/length
 
         where (grid1_tmp <= one)
-          grad1_lat   = (pi/length)*sin(pi*grid1_tmp)*
-     &                  sin(grid1_center_lat)*cos(grid1_center_lon)/
+          grad1_lat   = (pi/length)*sin(pi*grid1_tmp)*                  &
+     &                  sin(grid1_center_lat)*cos(grid1_center_lon)/    &
      &                  sqrt(one-grid1_array**2)
-          grad1_lon   = (pi/length)*sin(pi*grid1_tmp)*
-     &                  sin(grid1_center_lon)/
+          grad1_lon   = (pi/length)*sin(pi*grid1_tmp)*                  &
+     &                  sin(grid1_center_lon)/                          &
      &                  sqrt(one-grid1_array**2)
           grid1_array = two + cos(pi*grid1_tmp)
         elsewhere
@@ -479,11 +479,11 @@
       case(2)  !*** pseudo-spherical harmonic l=2,m=2
 
         where (grid1_mask)
-          grid1_array = two + cos(grid1_center_lat)**2*
+          grid1_array = two + cos(grid1_center_lat)**2*                 &
      &                    cos(two*grid1_center_lon)
-          grad1_lat   = -sin(two*grid1_center_lat)*
+          grad1_lat   = -sin(two*grid1_center_lat)*                     &
      &                   cos(two*grid1_center_lon)
-          grad1_lon   = -two*cos(grid1_center_lat)*
+          grad1_lon   = -two*cos(grid1_center_lat)*                     &
      &                   sin(two*grid1_center_lon)
         elsewhere
           grid1_array = zero
@@ -492,7 +492,7 @@
         end where
 
         where (grid2_frac > .001) 
-          grid2_array = two + cos(grid2_center_lat)**2*
+          grid2_array = two + cos(grid2_center_lat)**2*                 &
      &                        cos(two*grid2_center_lon)
         elsewhere
           grid2_array = zero
@@ -501,13 +501,13 @@
       case(3)  !*** pseudo-spherical harmonic l=32, m=16
 
         where (grid1_mask)
-          grid1_array = two + sin(two*grid1_center_lat)**16*
+          grid1_array = two + sin(two*grid1_center_lat)**16*            &
      &                        cos(16.*grid1_center_lon)
-          grad1_lat   = 32.*sin(two*grid1_center_lat)**15*
-     &                      cos(two*grid1_center_lat)*
+          grad1_lat   = 32.*sin(two*grid1_center_lat)**15*              &
+     &                      cos(two*grid1_center_lat)*                  &
      &                      cos(16.*grid1_center_lon)
-          grad1_lon   = -32.*sin(two*grid1_center_lat)**15*
-     &                       sin(grid1_center_lat)*
+          grad1_lon   = -32.*sin(two*grid1_center_lat)**15*             &
+     &                       sin(grid1_center_lat)*                     &
      &                   sin(16.*grid1_center_lon)
         elsewhere
           grid1_array = zero
@@ -516,7 +516,7 @@
         end where
 
         where (grid2_frac > .001) 
-          grid2_array = two + sin(two*grid2_center_lat)**16*
+          grid2_array = two + sin(two*grid2_center_lat)**16*            &
      &                        cos(16.*grid2_center_lon)
         elsewhere
           grid2_array = zero
@@ -649,7 +649,7 @@
               endif
             endif
 
-            grad1_lat_zero(n) = delew*(grid1_array(ine) -
+            grad1_lat_zero(n) = delew*(grid1_array(ine) -               &
      &                                 grid1_array(inw))
 
             if (.not. grid1_mask(ise)) then
@@ -686,10 +686,10 @@
               endif
             endif
 
-            grad1_lon_zero(n) = delew*(grid1_array(ise) -
+            grad1_lon_zero(n) = delew*(grid1_array(ise) -               &
      &                                 grid1_array(isw))
 
-            grad1_latlon(n) = delns*(grad1_lat_zero(n) -
+            grad1_latlon(n) = delns*(grad1_lat_zero(n) -                &
      &                               grad1_lon_zero(n))
 
           endif
@@ -706,12 +706,12 @@
       grad1_lon_zero = zero
 
       if (map_type /= map_type_bicubic) then
-        call remap(grid2_tmp, wts_map1, grid2_add_map1, grid1_add_map1,
+        call remap(grid2_tmp, wts_map1, grid2_add_map1, grid1_add_map1, &
      &             grid1_array)
       else
-        call remap(grid2_tmp, wts_map1, grid2_add_map1, grid1_add_map1,
-     &             grid1_array, src_grad1=grad1_lat,
-     &                          src_grad2=grad1_lon,
+        call remap(grid2_tmp, wts_map1, grid2_add_map1, grid1_add_map1, &
+     &             grid1_array, src_grad1=grad1_lat,                    &
+     &                          src_grad2=grad1_lon,                    &
      &                          src_grad3=grad1_latlon)
       endif
 
@@ -745,7 +745,7 @@
       print *,'Grid1 min,max: ',minval(grid1_array),maxval(grid1_array)
       print *,'Grid2 min,max: ',minval(grid2_tmp  ),maxval(grid2_tmp  )
       print *,' Err2 min,max: ',minval(grid2_err),maxval(grid2_err)
-      print *,' Err2    mean: ',sum(abs(grid2_err))/
+      print *,' Err2    mean: ',sum(abs(grid2_err))/                    &
      &                          count(grid2_frac > .999)
 
       !***
@@ -762,15 +762,15 @@
 !
 !-----------------------------------------------------------------------
 
-      ncstat = nf_put_var_double(nc_outfile_id, nc_srcarray_id,
+      ncstat = nf_put_var_double(nc_outfile_id, nc_srcarray_id,         &
      &                           grid1_array)
       call netcdf_error_handler(ncstat)
 
-      ncstat = nf_put_var_double(nc_outfile_id, nc_dstarray1_id,
+      ncstat = nf_put_var_double(nc_outfile_id, nc_dstarray1_id,        &
      &                           grid2_tmp  )
       call netcdf_error_handler(ncstat)
 
-      ncstat = nf_put_var_double(nc_outfile_id, nc_dsterror1_id,
+      ncstat = nf_put_var_double(nc_outfile_id, nc_dsterror1_id,        &
      &                           grid2_err)
       call netcdf_error_handler(ncstat)
 
@@ -783,8 +783,8 @@
 
       if (map_type == map_type_conserv) then
 
-        call remap(grid2_tmp, wts_map1, grid2_add_map1, grid1_add_map1,
-     &             grid1_array, src_grad1=grad1_lat,
+        call remap(grid2_tmp, wts_map1, grid2_add_map1, grid1_add_map1, &
+     &             grid1_array, src_grad1=grad1_lat,                    &
      &                          src_grad2=grad1_lon_zero) 
 
         select case (norm_opt)
@@ -812,12 +812,12 @@
 
         print *,'Second order mapping from grid1 to grid2 (lat only):'
         print *,'----------------------------------------'
-        print *,'Grid1 min,max: ',minval(grid1_array),
+        print *,'Grid1 min,max: ',minval(grid1_array),                  &
      &                            maxval(grid1_array)
-        print *,'Grid2 min,max: ',minval(grid2_tmp  ),
+        print *,'Grid2 min,max: ',minval(grid2_tmp  ),                  &
      &                            maxval(grid2_tmp  )
         print *,' Err2 min,max: ',minval(grid2_err),maxval(grid2_err)
-        print *,' Err2    mean: ',sum(abs(grid2_err))/
+        print *,' Err2    mean: ',sum(abs(grid2_err))/                  &
      &                            count(grid2_frac > .999)
 
         !***
@@ -825,9 +825,9 @@
         !***
 
         print *,'Conservation:'
-        print *,'Grid1 Integral = ',
+        print *,'Grid1 Integral = ',                                    &
      &          sum(grid1_array*grid1_area*grid1_frac)
-        print *,'Grid2 Integral = ',
+        print *,'Grid2 Integral = ',                                    &
      &          sum(grid2_tmp  *grid2_area*grid2_frac)
 
 !-----------------------------------------------------------------------
@@ -836,15 +836,15 @@
 !
 !-----------------------------------------------------------------------
 
-        ncstat = nf_put_var_double(nc_outfile_id, nc_srcgradlat_id,
+        ncstat = nf_put_var_double(nc_outfile_id, nc_srcgradlat_id,     &
      &                             grad1_lat)
         call netcdf_error_handler(ncstat)
 
-        ncstat = nf_put_var_double(nc_outfile_id, nc_dstarray1a_id,
+        ncstat = nf_put_var_double(nc_outfile_id, nc_dstarray1a_id,     &
      &                             grid2_tmp  )
         call netcdf_error_handler(ncstat)
 
-        ncstat = nf_put_var_double(nc_outfile_id, nc_dsterror1a_id,
+        ncstat = nf_put_var_double(nc_outfile_id, nc_dsterror1a_id,     &
      &                             grid2_err)
         call netcdf_error_handler(ncstat)
 
@@ -855,8 +855,8 @@
 !
 !-----------------------------------------------------------------------
 
-        call remap(grid2_tmp,wts_map1,grid2_add_map1,grid1_add_map1,
-     &             grid1_array, src_grad1=grad1_lat,
+        call remap(grid2_tmp,wts_map1,grid2_add_map1,grid1_add_map1,    &
+     &             grid1_array, src_grad1=grad1_lat,                    &
      &                          src_grad2=grad1_lon) 
 
         select case (norm_opt)
@@ -884,12 +884,12 @@
 
         print *,'Second order mapping from grid1 to grid2:'
         print *,'-----------------------------------------'
-        print *,'Grid1 min,max: ',minval(grid1_array),
+        print *,'Grid1 min,max: ',minval(grid1_array),                  &
      &                            maxval(grid1_array)
-        print *,'Grid2 min,max: ',minval(grid2_tmp  ),
+        print *,'Grid2 min,max: ',minval(grid2_tmp  ),                  &
      &                            maxval(grid2_tmp  )
         print *,' Err2 min,max: ',minval(grid2_err),maxval(grid2_err)
-        print *,' Err2    mean: ',sum(abs(grid2_err))/
+        print *,' Err2    mean: ',sum(abs(grid2_err))/                  &
      &                            count(grid2_frac > .999)
 
         !***
@@ -897,9 +897,9 @@
         !***
 
         print *,'Conservation:'
-        print *,'Grid1 Integral = ',
+        print *,'Grid1 Integral = ',                                    &
      &           sum(grid1_array*grid1_area*grid1_frac)
-        print *,'Grid2 Integral = ',
+        print *,'Grid2 Integral = ',                                    &
      &           sum(grid2_tmp  *grid2_area*grid2_frac)
 
 !-----------------------------------------------------------------------
@@ -908,15 +908,15 @@
 !
 !-----------------------------------------------------------------------
 
-        ncstat = nf_put_var_double(nc_outfile_id, nc_srcgradlon_id,
+        ncstat = nf_put_var_double(nc_outfile_id, nc_srcgradlon_id,     &
      &                             grad1_lon)
         call netcdf_error_handler(ncstat)
 
-        ncstat = nf_put_var_double(nc_outfile_id, nc_dstarray2_id,
+        ncstat = nf_put_var_double(nc_outfile_id, nc_dstarray2_id,      &
      &                             grid2_tmp  )
         call netcdf_error_handler(ncstat)
 
-        ncstat = nf_put_var_double(nc_outfile_id, nc_dsterror2_id,
+        ncstat = nf_put_var_double(nc_outfile_id, nc_dsterror2_id,      &
      &                             grid2_err)
         call netcdf_error_handler(ncstat)
 
@@ -943,12 +943,12 @@
 
       print *,'number of sparse matrix entries ',num_links_map1
       do n=1,num_links_map1
-        grid2_count(grid2_add_map1(n)) = 
+        grid2_count(grid2_add_map1(n)) =                                &
      &  grid2_count(grid2_add_map1(n)) + 1
         if (wts_map1(1,n) > one .or. wts_map1(1,n) < zero) then
-          grid2_tmp(grid2_add_map1(n)) = 
+          grid2_tmp(grid2_add_map1(n)) =                                &
      &    grid2_tmp(grid2_add_map1(n)) + 1
-          grid2_err(grid2_add_map1(n)) = max(abs(wts_map1(1,n)),
+          grid2_err(grid2_add_map1(n)) = max(abs(wts_map1(1,n)),        &
      &    grid2_err(grid2_add_map1(n)) )
         endif
       end do
@@ -961,14 +961,14 @@
       imax = maxval(grid2_count)
       idiff =  (imax - imin)/10 + 1
       print *,'total number of dest cells ',grid2_size
-      print *,'number of cells participating in remap ',
+      print *,'number of cells participating in remap ',                &
      &   count(grid2_count > zero)
       print *,'min no of entries/row = ',imin
       print *,'max no of entries/row = ',imax
 
       imax = imin + idiff
       do n=1,10
-        print *,'num of rows with entries between ',imin,' - ',imax-1,
+        print *,'num of rows with entries between ',imin,' - ',imax-1,  &
      &     count(grid2_count >= imin .and. grid2_count < imax)
         imin = imin + idiff
         imax = imax + idiff
