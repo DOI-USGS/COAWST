@@ -68,8 +68,7 @@
      &                    WAVEP(ng) % Tr,                               &
      &                    WAVEP(ng) % kwc,                              &
      &                    WAVEP(ng) % cwc,                              &
-     &                    WAVEG(ng) % wd,                               &
-     &                    WAVEG(ng) % pd)
+     &                    WAVEG(ng) % wd)
 !# ifdef PROFILE
 !      CALL wclock_off (ng, iNLM, 35)
 !# endif
@@ -90,7 +89,7 @@
      &                          angler, pm, pn,                         &
      &                          h_tot,u_rho,v_rho,                      &
      &                          cx, cy, ct, Ta, Tr,                     &
-     &                          kwc, cwc, wd, pd)
+     &                          kwc, cwc, wd)
 !***********************************************************************
 !
       USE mod_param
@@ -140,7 +139,6 @@
       real(r8), intent(in) :: u_rho(LBi:,LBj:)
       real(r8), intent(in) :: v_rho(LBi:,LBj:)
       real(r8), intent(in) :: wd(:)
-      real(r8), intent(in) :: pd(:)
 # else
 #  ifdef MASKING
       real(r8), intent(in) :: rmask(LBi:UBi,LBj:UBj)
@@ -166,7 +164,6 @@
       real(r8), intent(in) :: u_rho(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: v_rho(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: wd(ND)
-      real(r8), intent(in) :: pd(ND)
 # endif
 !
 !  Local variable declarations.
@@ -186,7 +183,8 @@
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS,ND) :: cy_rho
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS,ND) :: ct_r
       real(r8), parameter:: Tamin=1.0_r8
-
+      real(r8), parameter:: Tamax=500000.0_r8
+!
 # include "set_bounds.h"
 !
       twopi=2.0_r8*pi
@@ -262,11 +260,8 @@
             ENDIF
           ENDDO
         ENDDO
-!      ENDDO
 
 # ifdef ACT_ADVECTION
-
-!      DO d=1,ND
         DO j=Jstr,Jend
           DO i=Istr,Iend
 
@@ -306,11 +301,6 @@
 #  endif
             dhdx=(pm(i+1,j)+pm(i,j))*(h_tot(i+1,j)-h_tot(i-1,j))
             dhdy=(pn(i,j+1)+pn(i,j))*(h_tot(i,j+1)-h_tot(i,j-1))
-
-!           if (i.eq.Iend)dhdx=(pm(i,j))*(h_tot(i,j)-h_tot(i-1,j))
-!           if (j.eq.Jend)dhdy=(pn(i,j))*(h_tot(i,j)-h_tot(i,j-1))
-!           if (i.eq.Istr)dhdx=(pm(i,j))*(h_tot(i+1,j)-h_tot(i,j))
-!           if (j.eq.Jstr)dhdy=(pn(i,j))*(h_tot(i,j+1)-h_tot(i,j))
             kh=kwc(i,j,d)*h_tot(i,j)
             ct_r(i,j,d)=twopi/(MAX(Tamin,Tr(i,j,d))*sinh(2.0_r8*kh))*   &
      &                 (sin(dir_edge)*dhdx-cos(dir_edge)*dhdy)
@@ -329,11 +319,7 @@
             ENDIF
           ENDDO
         ENDDO
-!       ENDDO
-
 # endif
-
-!      DO d=1,ND
         DO j=Jstr,Jend
           DO i=Istr,Iend
            wr=twopi/MAX(Tamin,Tr(i,j,d))
@@ -342,33 +328,23 @@
            wa=wa+kwc(i,j,d)*u_dir(i,j)
 #  endif
            Ta(i,j,d)=MAX(Tamin,twopi/wa)
-           Ta(i,j,d)=MIN(Ta(i,j,d),500000.0_r8)
-!          if (Ta(i,j,d).lt.minTa) Ta(i,j,d)=minTa
+           Ta(i,j,d)=MIN(Ta(i,j,d),Tamax)
           ENDDO
         ENDDO
       ENDDO
 
 !  Apply nonperiodic boundary conditions in xi and etai space.
-
-!      CALL Tr3dbc_tile (ng, tile,                                       &
-!     &                  LBi, UBi, LBj, UBj, ND,                         &
-!     &                  Tr)
+!
       CALL Tr3dbc_tile (ng, tile,                                       &
      &                  LBi, UBi, LBj, UBj, ND,                         &
      &                  Ta)
 # ifdef DISTRIBUTE
-!      CALL mp_exchange3d (ng, tile, iNLM, 1,                            &
-!     &                    LBi, UBi, LBj, UBj, 1, ND,                    &
-!     &                    NghostPoints,                                 &
-!     &                    EWperiodic(ng), NSperiodic(ng),               &
-!     &                    Tr)
       CALL mp_exchange3d (ng, tile, iNLM, 1,                            &
      &                    LBi, UBi, LBj, UBj, 1, ND,                    &
      &                    NghostPoints,                                 &
      &                    EWperiodic(ng), NSperiodic(ng),               &
      &                    Ta)
 # endif
-
 !
 !=======================================================================
 !  Interpolate cx and cy celerities to cell faces.
@@ -377,7 +353,6 @@
 # ifdef ACX_ADVECTION
       DO d=1,ND
         DO j=Jstr,Jend
-!         DO i=Istr,Iend+1
           DO i=IstrU,Iend
             cx(i,j,d)=0.5_r8*(cx_rho(i-1,j,d)+cx_rho(i,j,d))
 #  ifdef MASKING
@@ -422,7 +397,7 @@
           END DO
         END DO
       ENDDO
-      
+
       DO j=Jstr,Jend
         DO i=Istr,Iend
           ct(i,j,1)=ct_r(i,j,ND)
@@ -435,7 +410,7 @@
 #  endif
         END DO
       END DO
-     
+
       DO j=Jstr,Jend
         DO i=Istr,Iend
           ct(i,j,ND+1)=ct_r(i,j,ND)
