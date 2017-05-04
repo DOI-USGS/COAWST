@@ -29,7 +29,6 @@
 
       character (len=80), intent(in) :: nc_name
       real(r8), intent(inout) :: WD(ND)
-
 !
 !  Local variable declarations
 !
@@ -37,7 +36,6 @@
 
       integer, dimension(1) :: start, total
       integer, dimension(nf90_max_var_dims) :: dimIDs
-
 !
 !-----------------------------------------------------------------------
 !  Open grid NetCDF file for reading.
@@ -62,7 +60,6 @@
 ! Determine number of directions.
 !-----------------------------------------------------------------------
 !
-!!      status=nf90_inq_varid(ncSPSid,'energy_angle_c', varid)
       status=nf90_inq_varid(ncSPSid,'energy_angle', varid)
       status=nf90_inquire_variable(ncSPSid,varid,dimids = dimIDs)
       IF (status.ne.nf90_noerr) THEN
@@ -72,7 +69,7 @@
       END IF
       status=nf90_inquire_dimension(ncid, dimIDs(1), len=ndims)
       IF (ndims.ne.ND) THEN
-        WRITE (stdout,30) TRIM('num energy bins not same as in input file')
+        WRITE (stdout,35) TRIM('num energy bins not same as input file')
         exit_flag=4
         ioerror=status
       END IF
@@ -99,6 +96,7 @@
  20   FORMAT (/,' GET_INWAVE_GRID - error while inquiring attribute: ', &
      &        a,' for variable: ', a)
  30   FORMAT (/,' GET_INWAVE_GRID - cannot inquire ID for variable: ',a)
+ 35   FORMAT (/,' GET_INWAVE_GRID - wrong number of bins: ',a)
  40   FORMAT (/,' GET_INWAVE_GRID - error while inquiring dimensions',  &
      &          ' for variable: ', a)
  50   FORMAT (/,' GET_INWAVE_GRID - error while reading variable: ', a)

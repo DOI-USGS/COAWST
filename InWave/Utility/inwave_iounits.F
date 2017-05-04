@@ -19,11 +19,9 @@
       integer, parameter :: IOnamesize = 160
       integer  :: ncSPSid
 
-      integer, allocatable :: ncIWBRYid(:)     ! input boundary conditions for Ac
       integer, allocatable :: ncIWINIid(:)     ! input initial conditions for Ac,cx,cy,ct
       integer, allocatable :: ncIWSWNid(:)     ! input swan 2d spec file
 
-      character (len=IOnamesize), allocatable :: IWBNDname(:)
       character (len=IOnamesize), allocatable :: IWINIname(:)
       character (len=IOnamesize), allocatable :: IWSWNname(:)
 
@@ -38,17 +36,14 @@
       integer :: i,j
       character (len=1), parameter :: blank = ' '
 
-      allocate ( ncIWBRYid(Ngrids) )
       allocate ( ncIWINIid(Ngrids) )
       allocate ( ncIWSWNid(Ngrids) )
 
-      allocate ( IWBNDname(Ngrids) )
       allocate ( IWINIname(Ngrids) )
       allocate ( IWSWNname(Ngrids) )
 
       DO j=1,Ngrids
         DO i=1,IOnamesize
-          IWBNDname(j)(i:i)=blank
           IWINIname(j)(i:i)=blank
           IWSWNname(j)(i:i)=blank
         END DO

@@ -90,11 +90,11 @@
         IF (DOMAIN(ng)%Southern_Edge(tile)) THEN
           DO d=1,ND
             DO i=Istr,Iend
-!              Tr(i,Jstr-1,d)=Tr(i,Jstr,d)
-!#   ifdef MASKING
-!              Tr(i,Jstr-1,d)=Tr(i,Jstr-1,d)*                            &
-!     &                       GRID(ng)%rmask(i,Jstr-1)
-!#   endif
+              Tr(i,Jstr-1,d)=Tr(i,Jstr,d)
+#   ifdef MASKING
+              Tr(i,Jstr-1,d)=Tr(i,Jstr-1,d)*                            &
+     &                       GRID(ng)%rmask(i,Jstr-1)
+#   endif
             END DO
           END DO
         END IF

@@ -170,7 +170,7 @@
 #if defined INLET_TEST
       DO j=JstrT,JendT
         DO i=IstrT,IendT
-          zeta(i,j,1)=-3.0_r8
+          zeta(i,j,1)=0.0_r8
         END DO
       END DO
 #else

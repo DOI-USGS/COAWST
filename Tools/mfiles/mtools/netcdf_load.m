@@ -11,7 +11,8 @@ ncid = netcdf.open(ncfile,'NC_NOWRITE');
 for m=0:nvars-1
   [varname, xtype, dimids, numatts] = netcdf.inqVar(ncid,m);
 % eval([varname,' = netcdf.getVar(ncid,m);'])
-  val = netcdf.getVar(ncid,m);
+% val = netcdf.getVar(ncid,m);
+  val = ncread(ncfile,varname);
   assignin('base',varname,val);
 end
 

@@ -16,26 +16,25 @@
 #define ROMS_MODEL
 #define INWAVE_MODEL
 
-#define ACX_ADVECTION
-#define ACY_ADVECTION
-#define ACT_ADVECTION
-#undef DOPPLER
+#ifdef  INWAVE_MODEL
+# undef  INWAVE_SWAN_COUPLING
+# define ACX_ADVECTION
+# define ACY_ADVECTION
+# define ACT_ADVECTION
+# undef  DOPPLER
+# define WDISS_GAMMA
+# undef  WDISS_ROELVINK
+#endif
 
 #define WEC_VF
-#define ENERGY_DISSIPATION
-#define WDISS_INWAVE
-#undef ROELVINK
 
 #define UV_VIS2
 #define MIX_S_UV
 #undef DIAGNOSTICS_UV
 #undef AVERAGES
-#undef AVERAGES_WEC
 #define WET_DRY
 #define OUT_DOUBLE
 #define UV_ADV
-#define UV_C2ADVECTION
-#undef  TS_MPDATA
 #define TS_U3HADVECTION
 #define DJ_GRADPS
 #undef  SALINITY
@@ -44,10 +43,6 @@
 #define SPLINES_VVISC
 
 #define MASKING
-#ifdef MASKING
-# undef ANA_MASK
-#endif
-#undef ANA_GRID
 #define ANA_INITIAL
 #define ANA_FSOBC
 #define ANA_M2OBC
@@ -59,7 +54,6 @@
 # ifdef SSW_BBL
 #  define SSW_CALC_ZNOT
 #  define SSW_CALC_UB
-#  undef  SSW_LOGINT
 # endif
 
 # undef SEDIMENT
@@ -68,7 +62,6 @@
 #  define SUSPLOAD
 #  define BEDLOAD_MPM
 #  undef  BEDLOAD_SOULSBY
-#  define AVERAGES_BEDLOAD
 # endif
 # if defined SEDIMENT || defined SG_BBL || defined MB_BBL || defined SSW_BBL
 #  define ANA_SEDIMENT

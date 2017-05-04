@@ -2,7 +2,7 @@
 #ifdef INWAVE_MODEL
 !
 !************************************************************************
-      SUBROUTINE get_inwave_bnd_grid(ng, nc_name)
+      SUBROUTINE get_inwave_bnd_grid(ng, nfiles, S)
 !************************************************************************
 !
 !svn $Id: get_inwave_bnd_grid.F 1336 2008-01-24 02:45:56Z jcwarner $
@@ -27,90 +27,86 @@
 !
 !  Imported variable declarations.
 !
-      integer, intent(in) :: ng
-
-      character (len=80), intent(in) :: nc_name
-
+      integer, intent(in) :: ng, nfiles
+      TYPE(T_IO), intent(in) :: S(nfiles)
 !
 !  Local variable declarations
 !
-      integer :: i, ndims, status, varid, ncid, numelem
-
+      logical :: foundit
+      integer :: i, ndims, status, varid, ncid, ifile, NDmax, NDmin
+      integer :: nvatt, nvdim, Vid
       integer, dimension(1) :: start, total
       integer, dimension(nf90_max_var_dims) :: dimIDs
       real(r8) :: cnvrad
-
-!
-!-----------------------------------------------------------------------
-!  Open Boundary NetCDF file for reading.
-!-----------------------------------------------------------------------
-!
-
-!  Hard code this for now, since swan does not init it.
-
-      ncSPSid=-1
-      IF (ncSPSid.eq.-1) THEN
-        status=nf90_open(TRIM(nc_name), nf90_nowrite, ncSPSid)
-        IF (status.ne.nf90_noerr) THEN
-          WRITE (stdout,5) TRIM(nc_name)
-          exit_flag=2
-          ioerror=status
-          RETURN
-        END IF
-      END IF
-      ncid=ncSPSid
-
+      character (len=256) :: Fname
 !
 !-----------------------------------------------------------------------
 ! Determine number of directions.
 !-----------------------------------------------------------------------
 !
-      status=nf90_inq_varid(ncSPSid,'energy_angle_c', varid)
-      status=nf90_inquire_variable(ncSPSid,varid,dimids = dimIDs)
-      IF (status.ne.nf90_noerr) THEN
-        WRITE (stdout,30) TRIM('num energy bins at the boundary')
-        exit_flag=4
-        ioerror=status
-      END IF
-      status=nf90_inquire_dimension(ncid, dimIDs(1), len=ndims)
+      foundit=.FALSE.
+      QUERY: DO ifile=1,nfiles
+        Fname=S(ifile)%name
+!
+!  Inquire about requested variable.
+!
+        CALL netcdf_inq_var (ng, iNLM, Fname,                           &
+     &                       MyVarName = 'energy_angle_c',              &
+     &                       SearchVar = foundit,                       &
+     &                       VarID = Vid,                               &
+     &                       nVarDim = nvdim,                           &
+     &                       nVarAtt = nvatt)
+        IF (exit_flag.ne.NoError) RETURN
+!
+!  Determine if gridded or point data.  Set variable dimensions.
+!
+        IF (foundit) THEN
+          status=nf90_open(TRIM(Fname), nf90_nowrite, ncid)
+          IF (status.ne.nf90_noerr) THEN
+            WRITE (stdout,5) TRIM(Fname)
+            exit_flag=2
+            ioerror=status
+            RETURN
+          END IF
+          status=nf90_inq_varid(ncid,'energy_angle_c', Vid)
+          status=nf90_inquire_variable(ncid, Vid, dimids=dimIDs)
+          IF (status.ne.nf90_noerr) THEN
+            WRITE (stdout,40) TRIM('num energy bins at the boundary')
+            exit_flag=4
+            ioerror=status
+          END IF
 
-      WAVEB(ng) % ND_bnd = ndims
-
-      allocate(WAVEB(ng) % WD_bnd(ndims) )
-
+          status=nf90_inquire_dimension(ncid, dimIDs(1), len=ndims)
+          WAVEB(ng)%ND_bnd=ndims
+          allocate(WAVEB(ng)%WD_bnd(ndims))
 !
 !-----------------------------------------------------------------------
 ! Get the angles.
 !-----------------------------------------------------------------------
 !
-      start(1)=1
-      total(1)=ndims
-      status=nf90_get_var(ncid, varid, WAVEB(ng) % WD_BND, start, total)
-      
-      cnvrad=pi/180.0_r8
-      
-      DO i=1,ndims
-        WAVEB(ng) % WD_BND(i)=cnvrad*WAVEB(ng) % WD_BND(i)
-      ENDDO
-
+          CALL netcdf_get_fvar (ng, iNLM, Fname, 'energy_angle_c',      &
+     &                          WAVEB(ng)%WD_bnd,                       &
+     &                          ncid)
+          CALL netcdf_close (ng, iNLM, ncid, Fname, .FALSE.)
 !
-!-----------------------------------------------------------------------
-! Close BND NetCDF file.
-!-----------------------------------------------------------------------
+          cnvrad=pi/180.0_r8
+          DO i=1,ndims
+            WAVEB(ng) % WD_bnd(i)=cnvrad*WAVEB(ng) % WD_bnd(i)
+          ENDDO
+          EXIT QUERY
+        END IF
+      END DO QUERY
 !
-      status=nf90_close(ncSPSid)
-      ncSPSid=-1
-!
-
-  5   FORMAT (/,' GET_INWAVE_BND - error while opening file: ', a)
- 10   FORMAT (/,' GET_INWAVE_BND - error while reading attribute: ', a,&
+  5   FORMAT (/,'GET_INWAVE_BND_GRID - error while opening file: ', a)
+ 10   FORMAT (/,'GET_INWAVE_BND_GRID - error while reading attribute: ' &
+     &         , a, ' for variable: ', a)
+ 20   FORMAT (/,'GET_INWAVE_BND_GRID - error while inquiring attribute:'&
+     &         , a,' for variable: ', a)
+ 30   FORMAT (/,'GET_INWAVE_BND_GRID - cannot inquire ID for variable: '&
+     &         ,a)
+ 40   FORMAT (/,'GET_INWAVE_BND_GRID - error while inquiring dims',     &
      &          ' for variable: ', a)
- 20   FORMAT (/,' GET_INWAVE_BND - error while inquiring attribute: ', &
-     &        a,' for variable: ', a)
- 30   FORMAT (/,' GET_INWAVE_BND - cannot inquire ID for variable: ',a)
- 40   FORMAT (/,' GET_INWAVE_BND - error while inquiring dimensions',  &
-     &          ' for variable: ', a)
- 50   FORMAT (/,' GET_INWAVE_BND - error while reading variable: ', a)
+ 50   FORMAT (/,'GET_INWAVE_BND_GRID - error while reading var: ', a)
       RETURN
       END SUBROUTINE get_inwave_bnd_grid
 #else

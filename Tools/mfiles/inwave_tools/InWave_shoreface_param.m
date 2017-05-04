@@ -1,9 +1,9 @@
 % THIS FILE CONTAINS THE DEFINITIONS OF THE PARAMETERS NEEDED TO CREATE THE 
-% INPUT FILES FOR THE INWAVE MODEL:
+% INPUT FILES FOR THE INWAVE MODEL for the InWave_shoreface test case:
 %
-% InWave_grd.nc
-% InWave_ini.nc
-% InWave_bnd.nc
+% InWave_shoreface_grd.nc
+% InWave_shoreface_ini.nc
+% InWave_shoreface_bry.nc
 %
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -12,14 +12,14 @@
 
 make_InWave_grd=1;
 make_InWave_ini=1;
-make_InWave_bnd=1;
+make_InWave_bry=1;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%        GENERAL PARAMETERS: THESE NEED TO BE DEFINED ALWAYS       %%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-Lm= 122;                % number of total rho points in the xi direction
-Mm= 302;                % number of total rho points in the eta direction
+Lp= 122;                % number of total rho points in the xi direction
+Mp= 302;                % number of total rho points in the eta direction
 TA= 8.3;                % representative absolute wave period (sec)
 theta=261;
 
@@ -27,67 +27,71 @@ theta=261;
 %%%%%                GRID AND BATHYMETRY DEFINITION                   %%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-filepath='P:\INWAVE_020811\Projects\Inwave_tests\Inwave_shoreface\';
+filepath='Projects\InWave_shoreface\';
 
 if (make_InWave_grd)
-    
-  grd_file=strcat(filepath,'InWave_grd.nc');  % name of the grid file
-    
-  % Grid characteristics
-  x1=[1:Lm];
-  y1=[1:Mm];
-  dx=ones(size(x1));
-  dy=ones(size(y1));
+
+%  Need to define: 1) grid_name
+%                  2,3,4,5) x, y, dx, dy
+%                  6) depth
+%                  7) angle
+%                  8) mask
+%                  9) f
+%                  10) spherical
+
+%   1) grid_name
+ grd_file=strcat(filepath,'InWave_shoreface_grd.nc');  % name of the grid file
+
+% 2,3,4,5) x, y, dx, dy - Grid dimensions
+  x1=[1:Lp];
+  y1=[1:Mp];
+  dx=ones(size(x1));           % grid cell size in xi direction
+  dy=ones(size(y1));           % grid cell size in eta direction 
   dx(1:30)=20;
   dx(31:61)=20-((31:61)-30)./30*18;
   dx(62:end)=2;
   dy=20.*dy;
-%   dx=20;                % grid cell size in xi direction
-%   dy=20;                % grid cell size in eta direction 
-   count=0;
-   for ii=1:length(dx)
-       if ii>1
-           X(ii)= count+dx(ii);
-           count= X(ii);
-       else
-           X(ii)= count;
-           count= X(ii);
-       end
-   end
-  % enter x and y coordinates of rho points
+  count=0;
+  for ii=1:length(dx)
+      if ii>1
+          X(ii)= count+dx(ii);
+          count= X(ii);
+      else
+          X(ii)= count;
+          count= X(ii);
+      end
+  end
 
-%   X=[0:dx:dx*(Lm-1)];
-  Y=[0:dy:dy*(Mm-1)];
-
+% X=[0:dx:dx*(Lm-1)];
+  Y=[0:dy:dy*(Mp-1)];
   [x,y]=meshgrid(X,Y);
+  x=x.'; y=y.';
   [dx,dy]=meshgrid(dx,dy);
-  %x=repmat(x,length(y),1);
-  %y=repmat(y',1,length(x));
+  dx=dx.';
+  dy=dy.';
 
-  % Bathymetry characteristics
-  depth0= 11.75;            % water depth in the study domain (m)
-  slope=0.0125;
-%  slope=0.125;
-
-  % set depth 
-%   depth=zeros(size(x))+depth0;
-%   depth=depth0-slope.*x;
+% 6) depth - Bathymetry characteristics
+% depth0= 11.75;            % water depth in the study domain (m)
+% slope=0.0125;
   depth=0.125*(-(x-max(max(x)))).^(2/3)-3;
   depth(depth<-2)=-2;
-  %depth0-slope.*x;
-  % set grid angle
+
+% 7) angle - set grid angle
   roms_angle=zeros(size(depth));
 
-  % set masking
+% 8) mask - set masking
   mask_rho=ones(size(depth));
   dum=find(depth<-1.9);
   mask_rho(dum)=0;
   
-  % set coriolis f
+% 9) f - set coriolis f
   f=zeros(size(depth))+4.988e-5; %20N
+
+% 10) spherical - set if use spherical (F=no; T=yes)
+  spherical='F';
   
+% 11 - These are other fun things needed for the open boundary.
   % compute wave number
-  
   L0=(9.81*TA.^2)./(2*pi);
   L=zeros(size(L0));
   
@@ -113,7 +117,6 @@ if (make_InWave_grd)
   for yy=1:mm
       ang(yy,:)=asin(C(yy,:)./C(yy,1)*sin((theta-270)*pi/180));
   end
-  
   %ang=270+ang.*180/pi;
   
   % compute refraction coefficient
@@ -131,11 +134,9 @@ if (make_InWave_grd)
     Ks(yy,:)=(Cg(yy,1)./Cg(yy,:)).^0.5;
   end
   
-  pcolor(Ks)
-  shading flat
-  colorbar 'vertical'
-  
-  ang=270+ang.*180/pi;
+% pcolor(Ks)
+% shading flat
+% colorbar 'vertical'
 
 end
 
@@ -143,47 +144,41 @@ end
 %%%%%                 INITIAL CONDITION DEFINITION                    %%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-if (make_InWave_ini || make_InWave_bnd )  
+if (make_InWave_ini)
 
-  Nbins= 11;                               % number of directional bins considered in the simulation
-  Bindirs_c = [260:10/(Nbins-1):270];   % center angles of the directional bins.
-  Bindirs = [260-(10/(Nbins-1))/2:10/(Nbins-1):270+(10/(Nbins-1))/2];
-  pd=ones(size(Bindirs)).*180./(Nbins-1);
+  Nbins= 11;                                  % number of directional bins considered in the simulation
+  Bindirs_centers = [260:10/(Nbins-1):270];   % center angles of the directional bins.
+% Bindirs = [260-(10/(Nbins-1))/2:10/(Nbins-1):270+(10/(Nbins-1))/2];
   
-end  
+  ini_file=strcat(filepath,'InWave_shoreface_ini.nc');  % name of the initial file
 
-if (make_InWave_ini)  
-    
-  ini_file=strcat(filepath,'InWave_ini.nc');  % name of the initial file
-
-  Ac=ones(Lm,Mm,Nbins).*0;
-  Cx=ones(Lm-1,Mm,Nbins).*0;
-  Cy=ones(Lm,Mm-1,Nbins).*0;
-  Ct=ones(Lm,Mm,Nbins+1).*0;
+  Ac=ones(Lp  ,Mp  ,Nbins).*0;
+  Cx=ones(Lp-1,Mp  ,Nbins).*0;
+  Cy=ones(Lp  ,Mp-1,Nbins).*0;
+  Ct=ones(Lp  ,Mp  ,Nbins+1).*0;
 
 end
-
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%                 BOUNDARY CONDITION DEFINITION                   %%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-if (make_InWave_bnd)
+if (make_InWave_bry)
 
-  bnd_file=strcat(filepath,'InWave_bnd.nc');  % name of the boundary file
+  bry_file=strcat(filepath,'InWave_shoreface_bry.nc');  % name of the boundary file
 
   % Duration of the simulation and time increment for the boundaries
   
-  dt= 1;                % time increment for the boundaries (seconds)
-  drtn= 3600;         % total duration of the simulation (seconds)
+  dt= 1;             % time increment for the boundaries (seconds)
+  drtn= 200;         % total duration of the simulation (seconds)
 
   time=[0:dt:drtn];
   
   % Specify by 1 the open boundary: N E S W
   obc=[1 0 1 1];
 
-  Nbins_bnd= 11;         % number of directional bins with energy at the boundaries
-  dir_bnd= Bindirs_c;      % center angle (degrees of the bin containing energy at the boudaries
+  Nbins_bnd= 11;             % number of directional bins with energy at the boundaries
+  dir_bnd= Bindirs_centers;  % center angle (degrees of the bin containing energy at the boudaries
   dumd=find(dir_bnd==theta);
  
  % Specify number of directions at the boundaries (we have to specify at
@@ -192,7 +187,7 @@ if (make_InWave_bnd)
 %   Nbins_bnd= 1;         % number of directional bins with energy at the boundaries
 %   dir_bnd= 261;         % center angle (degrees of the bin containing energy at the boudaries)
 
-if sum(ismember(dir_bnd,Bindirs_c)) ~= Nbins_bnd; 
+if sum(ismember(dir_bnd,Bindirs_centers)) ~= Nbins_bnd; 
   bin_error=1;
 else
   bin_error=0;
@@ -212,9 +207,9 @@ TA=Tm;
 close all
 
  % if obc(4)==1
-      Ac_west=zeros(Mm,Nbins_bnd,length(time));
-      for i=1:Mm
-          time_r=time-((i-1)*20).*(tan(-(theta-270)*pi/180))./Cg(i,1);
+      Ac_west=zeros(Mp,Nbins_bnd,length(time));
+      for i=1:Mp
+          time_r=time-((i-1)*20).*(tan(-(theta-270)*pi/180))./Cg(1,i);
           eta=a1*cos(2*pi*f1*time_r)+a2*cos(2*pi*f2*time_r);
           E=1/8*1025*9.81*(2.*abs(hilbert(eta))).^2;
           Ac1=E./(2*pi/Tm);
@@ -223,19 +218,19 @@ close all
  % end
   
  % if obc(1)==1
-    Ac_north=zeros(Lm,Nbins_bnd,length(time));
+    Ac_north=zeros(Lp,Nbins_bnd,length(time));
     suma=0;
-      for i=1:Lm
-          suma=suma+((i-1)*20).*(tan(-(theta-270)*pi/180))/Cg(Mm,i);
-          time_r=time-(Mm-1)*20/Cg(Mm,1)-suma;
-          eta=Ks(Mm,i).*(a1*cos(2*pi*f1*time_r)+a2*cos(2*pi*f2*time_r));
+      for i=1:Lp
+          suma=suma+((i-1)*20).*(tan(-(theta-270)*pi/180))/Cg(i,Mp);
+          time_r=time-(Mp-1)*20/Cg(1,Mp)-suma;
+          eta=Ks(i,Mp).*(a1*cos(2*pi*f1*time_r)+a2*cos(2*pi*f2*time_r));
           HH=2.*abs(hilbert(eta));
-          HH(HH>0.78*depth(Mm,i))=0.78*depth(Mm,i);
+          HH(HH>0.78*depth(i,Mp))=0.78*depth(i,Mp);
           E=1/8*1025*9.81*(HH).^2;
           Ac1=E./(2*pi/Tm); 
-          if (ang(Mm,i)==ang(Mm,i))
-          dist=abs(dir_bnd-ang(Mm,i));
-          dumd=find(dist==min(dist));
+          if (ang(i,Mp)==ang(i,Mp))
+            dist=abs(dir_bnd-ang(i,Mp));
+            dumd=find(dist==min(dist));
           end
           Ac1(isnan(Ac1)==1)=0.0;
           Ac_north(i,dumd,:)=Ac1(:);
@@ -243,19 +238,19 @@ close all
  % end
 
  % if obc(3)==1
-      Ac_south=zeros(Lm,Nbins_bnd,length(time));
+      Ac_south=zeros(Lp,Nbins_bnd,length(time));
       suma=0;
-      for i=1:Lm
-          suma=suma+((i-1)*20).*(tan(-(theta-270)*pi/180))/Cg(1,i);
+      for i=1:Lp
+          suma=suma+((i-1)*20).*(tan(-(theta-270)*pi/180))/Cg(i,1);
           time_r=time-(1-1)*20/Cg(1,1)-suma;
-          eta=Ks(1,i).*(a1*cos(2*pi*f1*time_r)+a2*cos(2*pi*f2*time_r));
+          eta=Ks(i,1).*(a1*cos(2*pi*f1*time_r)+a2*cos(2*pi*f2*time_r));
           HH=2.*abs(hilbert(eta));
-          HH(HH>0.78*depth(1,i))=0.78*depth(1,i);
+          HH(HH>0.78*depth(i,1))=0.78*depth(i,1);
           E=1/8*1025*9.81*(2.*abs(hilbert(eta))).^2;
           Ac1=E./(2*pi/Tm); 
-          if (ang(1,i)==ang(1,i))
-          dist=abs(dir_bnd-ang(1,i));
-          dumd=find(dist==min(dist));
+          if (ang(i,1)==ang(i,1))
+            dist=abs(dir_bnd-ang(i,1));
+            dumd=find(dist==min(dist));
           end
           Ac1(isnan(Ac1)==1)=0.0;
           Ac_south(i,dumd,:)=Ac1(:);
@@ -263,7 +258,7 @@ close all
 %  end
     
 %  if obc(2)==1
-    Ac_east=zeros(length(time),Nbins_bnd,Mm);
+    Ac_east=zeros(length(time),Nbins_bnd,Mp);
 %  end
 
 

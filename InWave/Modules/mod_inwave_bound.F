@@ -59,7 +59,6 @@
       SUBROUTINE allocate_inwave_bound (ng)
 !***********************************************************************
 !
-!
 !=======================================================================
 !                                                                      !
 !  This routine allocates all variables in the module for all nested   !
@@ -71,6 +70,7 @@
       USE mod_ncparam
       USE mod_scalars
       USE inwave_iounits
+      USE mod_iounits
 !
 !  Imported variable declarations.
 !
@@ -81,7 +81,6 @@
       integer :: ND_bnd
       integer :: LBi, UBi, LBj, UBj
       integer :: my_tile
-      character (len=80) :: ncbnd_name
       integer :: ILB, IUB, JLB, JUB
 !
 !  Lower and upper bounds for nontiled boundary arrays.
@@ -103,8 +102,7 @@
 !-----------------------------------------------------------------------
 
 #if !defined INWAVE_SWAN_COUPLING
-      ncbnd_name=IWBNDname(ng)
-      call get_inwave_bnd_grid(ng, ncbnd_name)
+      call get_inwave_bnd_grid(ng, nBCfiles(ng), BRY(1,ng))
       ND_bnd=WAVEB(ng)%ND_bnd
 #else
       ND_bnd=ND

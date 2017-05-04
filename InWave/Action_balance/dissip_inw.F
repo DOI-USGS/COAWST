@@ -2,7 +2,7 @@
       MODULE dissip_inw_mod
 
 #if defined INWAVE_MODEL
-# if defined ENERGY_DISSIPATION
+# if defined WDISS_ROELVINK || defined WDISS_GAMMA
 !
 !=======================================================================
 !                                                                      !
@@ -54,10 +54,8 @@
      &                 GRID(ng) % umask_wet,                            &
      &                 GRID(ng) % vmask_wet,                            &
 # endif
-#  if defined WDISS_INWAVE
      &                 FORCES(ng) % Dissip_break,                       &
      &                 FORCES(ng) % Dissip_wcap,                        &
-#  endif
      &                 WAVEP(ng) % h_tot,                               &
      &                 WAVEP(ng) % AC, WAVEP(ng) % Tr, WAVEP(ng) % kwc)
 !#  ifdef PROFILE
@@ -77,10 +75,8 @@
 # ifdef WET_DRY
      &                       rmask_wet, umask_wet, vmask_wet,           &
 # endif
-#  if defined WDISS_INWAVE
      &                       Dissip_break,                              &
      &                       Dissip_wcap,                               &
-#  endif
      &                       h_tot,                                     &
      &                       AC, Tr, kwc)
 !***********************************************************************
@@ -113,10 +109,8 @@
       real(r8), intent(in) :: umask_wet(LBi:,LBj:)
       real(r8), intent(in) :: vmask_wet(LBi:,LBj:)
 #   endif
-#   if defined WDISS_INWAVE
       real(r8), intent(inout) :: Dissip_break(LBi:,LBj:)
       real(r8), intent(inout) :: Dissip_wcap(LBi:,LBj:)
-#   endif
       real(r8), intent(in) :: h_tot(LBi:,LBj:)
       real(r8), intent(inout) :: AC(LBi:,LBj:,:,:)
       real(r8), intent(in) :: Tr(LBi:,LBj:,:)
@@ -130,10 +124,8 @@
       real(r8), intent(in) :: umask_wet(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: vmask_wet(LBi:UBi,LBj:UBj)
 #   endif
-#   if defined WDISS_INWAVE
       real(r8), intent(inout) :: Dissip_break(LBi:UBi,LBj:UBj)
       real(r8), intent(inout) :: Dissip_wcap(LBi:UBi,LBj:UBj)
-#   endif
       real(r8), intent(in) :: h_tot(LBi:UBi,LBj:UBj)
       real(r8), intent(inout) :: AC(LBi:UBi,LBj:UBj,ND,3)
       real(r8), intent(in) :: Tr(LBi:UBi,LBj:UBj,ND)
@@ -144,10 +136,7 @@
 !
       integer :: i, j, d
       real(r8) :: EW, KM, TRM, H, Qb, Hmax_r, diff, Emax_r
-      real(r8) :: twopi, otwopi
-#   if !defined WDISS_INWAVE
-      real(r8) :: Db
-#   endif
+      real(r8) :: twopi, otwopi, ogrho0, cff
       real(r8), parameter :: Trmin=1.0_r8
       real(r8), parameter :: alfa=1.0_r8
       real(r8), parameter :: break=0.45_r8
@@ -159,6 +148,7 @@
 
       twopi=2.0_r8*pi
       otwopi=1.0_r8/twopi
+      ogrho0=1.0_r8/(g*rho0)
 !
       DO j=Jstr,Jend
         DO i=Istr,Iend
@@ -182,107 +172,59 @@
             KM=KM+kwc(i,j,d)*EN(d)
             TRM=TRM+Tr(i,j,d)*EN(d)
           ENDDO
-          KM=KM/(ND*max(EW,EWlim))
-          TRM=TRM/(ND*max(EW,EWlim))
-!         IF (EW.lt.0.0_r8)EW=0.0_r8
+          cff=1.0_r8/(ND*max(EW,EWlim))
+          KM=KM*cff
+          TRM=TRM*cff
           EW=MAX(EW,0.0_r8)
 !=======================================================================
-!  Compute the wave height
+!  Compute the wave height. This is based on Hrms.
 !=======================================================================
-!         H=(8.0_r8*EW/(g*rho0))**0.5_r8
-          H=(16.0_r8*EW/(g*rho0))**0.5_r8
+          H=(8.0_r8*EW*ogrho0)**0.5_r8
 !=======================================================================
 !  Compute the energy dissipation
 !=======================================================================
-#  ifdef ROELVINK
           IF (h_tot(i,j).ge.Dcrit(ng)) THEN
             Hmax_r=break*(MAX(h_tot(i,j),0.0_r8))
+#  ifdef WDISS_ROELVINK
             Qb=MIN(1.0_r8,1.0_r8-EXP(-(H/Hmax_r)**n_r))
-#   if defined WDISS_INWAVE
             IF (TRM.gt.0.0_r8) THEN
               Dissip_break(i,j)=2.0_r8*alfa*1./TRM*EW*Qb*dt(ng)
+            ELSE
+              Dissip_break(i,j)=0.0_r8
             END IF
-#    ifdef MASKING
-            Dissip_break(i,j)=Dissip_break(i,j)*rmask(i,j)
-#    endif
-#   else
-            IF (TRM.gt.0.0_r8) THEN
-              Db=2.0_r8*alfa*1./TRM*EW*Qb*dt(ng)
-            END IF
-#   endif
+#  elif defined WDISS_GAMMA
+            Emax_r=0.125_r8*g*rho0*Hmax_r**2.0_r8
+            diff=EW-Emax_r
+            Dissip_break(i,j)=MAX(0.0_r8,diff)
+#  endif
           ELSE
-#   if defined WDISS_INWAVE
             Dissip_break(i,j)=0.0_r8
-#   else
-            Db=0.0_r8
-#   endif
           END IF
-!=======================================================================
-!  Distribute dissipation over directions and recompute Ac
-!=======================================================================
-          DO d=1,ND
-#   if defined WDISS_INWAVE
-            IF (Dissip_break(i,j).gt.0.0_r8.and.EW.gt.0.0_r8) THEN
-#   else
-            IF (Db.gt.0.0_r8.and.EW.gt.0.0_r8) THEN
-#   endif
-#   if defined WDISS_INWAVE
-              EN(d)=EN(d)-Dissip_break(i,j)*EN(d)/EW
-#   else
-              EN(d)=EN(d)-Db*EN(d)/EW
-#   endif
-              AC(i,j,d,nout)=EN(d)*Tr(i,j,d)*otwopi
-#   ifdef MASKING
-              AC(i,j,d,nout)=AC(i,j,d,nout)*rmask(i,j)
-#   endif
-#   ifdef WET_DRY
-              AC(i,j,d,nout)=AC(i,j,d,nout)*rmask_wet(i,j)
-#   endif
-            ENDIF
-          ENDDO
-#  else
-          Hmax_r=break*(max(h_tot(i,j),0.0_r8))
-!         Emax_r=0.125_r8*g*rho0*Hmax_r**2.0_r8
-          Emax_r=0.0625_r8*g*rho0*Hmax_r**2.0_r8
-          diff=EW-Emax_r
-#   if defined WDISS_INWAVE
-          Dissip_break(i,j)=MAX(0.0_r8,diff)
-#    ifdef MASKING
+#  ifdef MASKING
           Dissip_break(i,j)=Dissip_break(i,j)*rmask(i,j)
-#    endif
-#    ifdef WET_DRY
+#  endif
+#  ifdef WET_DRY
           Dissip_break(i,j)=Dissip_break(i,j)*rmask_wet(i,j)
-#    endif
-          Dissip_wcap(i,j)=0.0_r8
-#   else
-          Db=MAX(0.0_r8,diff)
-#   endif
+#  endif
 !=======================================================================
 !  Distribute dissipation over directions and recompute Ac
 !=======================================================================
           DO d=1,ND
-            IF(H.gt.0.0_r8.and.EW.gt.0.0_r8)THEN
-#   if defined WDISS_INWAVE
+            IF (Dissip_break(i,j).gt.0.0_r8.and.EW.gt.0.0_r8) THEN
               EN(d)=EN(d)-Dissip_break(i,j)*EN(d)/EW
-#   else
-              EN(d)=EN(d)-Db*EN(d)/EW
-#   endif
               AC(i,j,d,nout)=EN(d)*Tr(i,j,d)*otwopi
-#   ifdef MASKING
+#  ifdef MASKING
               AC(i,j,d,nout)=AC(i,j,d,nout)*rmask(i,j)
-#   endif
-#   ifdef WET_DRY
+#  endif
+#  ifdef WET_DRY
               AC(i,j,d,nout)=AC(i,j,d,nout)*rmask_wet(i,j)
-#   endif
+#  endif
             ENDIF
           ENDDO
-#  endif
-#  if defined WDISS_INWAVE
+          Dissip_wcap(i,j)=0.0_r8
           Dissip_break(i,j)=Dissip_break(i,j)/(dt(ng)*rho0)
-#  endif
         ENDDO
       ENDDO
-# if defined WDISS_INWAVE
 !
 !  Apply boundary conditions.
 !
@@ -292,7 +234,6 @@
       CALL bc_r2d_tile (ng, tile,                                       &
      &                  LBi, UBi, LBj, UBj,                             &
      &                  Dissip_wcap)
-
 #  ifdef DISTRIBUTE
       CALL mp_exchange2d (ng, tile, iNLM, 2,                            &
      &                    LBi, UBi, LBj, UBj,                           &
@@ -300,11 +241,8 @@
      &                    EWperiodic(ng), NSperiodic(ng),               &
      &                    Dissip_break, Dissip_wcap)
 #  endif
-# endif
       RETURN
       END SUBROUTINE dissip_inw_tile
 # endif
 #endif
       END MODULE dissip_inw_mod
-
-

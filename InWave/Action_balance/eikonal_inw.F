@@ -43,20 +43,21 @@
       CALL eikonal_inw_tile(ng, tile,                                   &
      &                      LBi, UBi, LBj, UBj,                         &
      &                      IminS, ImaxS, JminS, JmaxS,                 &
+     &                      GRID(ng)%angler,                            &
      &                      GRID(ng) % pm,                              &
      &                      GRID(ng) % pn,                              &
-     &                      GRID(ng) % om_u,                            &
-     &                      GRID(ng) % on_v,                            &
 # ifdef MASKING
      &                      GRID(ng) % rmask,                           &
-     &                      GRID(ng) % umask_wet,                       &
-     &                      GRID(ng) % vmask_wet,                       &
+     &                      GRID(ng) % umask,                           &
+     &                      GRID(ng) % vmask,                           &
 # endif
+     &                      WAVEG(ng) % wd,                             &
      &                      WAVEP(ng) % cx,                             &
      &                      WAVEP(ng) % cy,                             &
-     &                      WAVEP(ng) % kwc, WAVEP(ng) % Ta,            &
-     &                            WAVEP(ng) % h_tot,                    &
-     &                      WAVEG(ng) % wd, GRID(ng)%angler)
+     &                      WAVEP(ng) % h_tot,                          &
+     &                      WAVEP(ng) % u_rho,                          &
+     &                      WAVEP(ng) % v_rho,                          &
+     &                      WAVEP(ng) % kwc)
 
 !#  ifdef PROFILE
 !      CALL wclock_off (ng, iNLM, 35)
@@ -69,13 +70,12 @@
       SUBROUTINE eikonal_inw_tile(ng, tile,                             &
      &                            LBi, UBi, LBj, UBj,                   &
      &                            IminS, ImaxS, JminS, JmaxS,           &
-     &                            pm, pn,                               &
-     &                            om_u, on_v,                           &
+     &                            angler, pm, pn,                       &
 # ifdef MASKING
      &                            rmask, umask, vmask,                  &
 # endif
-     &                            cx, cy, kwc, Ta, h_tot,               &
-     &                            wd, angler)
+     &                            wd, cx, cy, h_tot,                    &
+     &                            u_rho, v_rho, kwc)
 !***********************************************************************
 !
       USE mod_param
@@ -94,157 +94,86 @@
       integer, intent(in) :: ng, tile
       integer, intent(in) :: LBi, UBi, LBj, UBj
       integer, intent(in) :: IminS, ImaxS, JminS, JmaxS
-      real(r8), intent(inout) :: wd(ND)
 
 #  ifdef ASSUMED_SHAPE
+      real(r8), intent(in) :: angler(LBi:,LBj:)
       real(r8), intent(in) :: pm(LBi:,LBj:)
       real(r8), intent(in) :: pn(LBi:,LBj:)
-      real(r8), intent(in) :: om_u(LBi:,LBj:)
-      real(r8), intent(in) :: on_v(LBi:,LBj:)
 #   ifdef MASKING
       real(r8), intent(in) :: rmask(LBi:,LBj:)
       real(r8), intent(in) :: umask(LBi:,LBj:)
       real(r8), intent(in) :: vmask(LBi:,LBj:)
 #   endif
+      real(r8), intent(in) :: wd(:)
       real(r8), intent(in) :: cx(LBi:,LBj:,:)
       real(r8), intent(in) :: cy(LBi:,LBj:,:)
-      real(r8), intent(in) :: angler(LBi:,LBj:)
-      real(r8), intent(inout) :: kwc(LBi:,LBj:,:)
       real(r8), intent(in) :: h_tot(LBi:,LBj:)
-      real(r8), intent(in) :: Ta(LBi:,LBj:,:)
+      real(r8), intent(in) :: u_rho(LBi:,LBj:)
+      real(r8), intent(in) :: v_rho(LBi:,LBj:)
+      real(r8), intent(inout) :: kwc(LBi:,LBj:,:)
 #  else
+      real(r8), intent(in) :: angler(LBi:UBi,LBj:UBj,ND)
       real(r8), intent(in) :: pm(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: pn(LBi:UBi,LBj:UBj)
-      real(r8), intent(in) :: om_u(LBi:UBi,LBj:UBj)
-      real(r8), intent(in) :: on_v(LBi:UBi,LBj:UBj)
 #   ifdef MASKING
       real(r8), intent(in) :: rmask(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: umask(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: vmask(LBi:UBi,LBj:UBj)
 #   endif
+      real(r8), intent(in) :: wd(ND)
       real(r8), intent(in) :: cx(LBi:UBi,LBj:UBj,ND)
       real(r8), intent(in) :: cy(LBi:UBi,LBj:UBj,ND)
-      real(r8), intent(in) :: angler(LBi:UBi,LBj:UBj,ND)
       real(r8), intent(in) :: h_tot(LBi:UBi,LBj:UBj)
+      real(r8), intent(in) :: u_rho(LBi:UBi,LBj:UBj)
+      real(r8), intent(in) :: v_rho(LBi:UBi,LBj:UBj)
       real(r8), intent(inout) :: kwc(LBi:UBi,LBj:UBj,ND)
-      real(r8), intent(in) :: Ta(LBi:UBi,LBj:UBj,ND)
 #  endif
 !
 !  Local variable declarations.
 !
       integer :: i, j, k, d
 
-      real(r8) :: twopi, otwopi, Ta_min
-      real(r8) :: alfa_wave, kx, ky, cff, cff1, cff2, cff3
+      real(r8) :: alfa_wave, kx, ky, cff, cff1, cff2
       real(r8) :: crk, crx, cry, kh
 
-      real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: CF
-      real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: CF2
-      real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: mask_CF
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: FE
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: FX
 !
 #  include "set_bounds.h"
 !
-      twopi=2.0_r8*pi
-      otwopi=1.0_r8/twopi
-      Ta_min=1.0_r8
-!
-      DO d=1,ND
-        DO j=Jstr-1,Jend+1
-          DO i=Istr-1,Iend+1
-            IF ((Ta(i,j,d)-0.0001_r8).lt.(Ta_min)) THEN
-              mask_CF(i,j)=0.0_r8
-            ELSE
-              mask_CF(i,j)=1.0_r8
-            END IF
-            cff=MAX(Ta_min,Ta(i,j,d))
-            CF(i,j)=twopi/cff
-          END DO
-        END DO
-        DO j=Jstr,Jend
-          DO i=Istr,Iend
-!
 !=======================================================================
 ! Compute xi and etai components of the wave number
-!=======================================================================
-!
-!            alfa_wave=(1.5_r8*pi-wd(d))-angler(i,j)
-!            IF (cx(i,j,d).eq.0.0_r8) THEN
-!              alfa_wave=0.5_r8*pi*SIGN(1.0_r8,cy(i,j,d))
-!            ELSE
-!              alfa_wave=ATAN2(cy(i,j,d),cx(i,j,d))
-!            ENDIF
-!            kx=kwc(i,j,d)*COS(alfa_wave)
-!            ky=kwc(i,j,d)*SIN(alfa_wave)
-!
-!=======================================================================
 ! Compute the time change of xi and etai components of the wave number
 !=======================================================================
-!
-!  Mai
-!           kx=kx-pm(i,j)*dt(ng)*0.5_r8*                                &
-!    &         (twopi/Ta(i+1,j,d)-twopi/Ta(i-1,j,d))
-!           ky=ky-pn(i,j)*dt(ng)*0.5_r8*                                &
-!    &         (twopi/Ta(i,j+1,d)-twopi/Ta(i,j-1,d))
-!           kwc(i,j,d)=MAX(SQRT(kx*kx+ky*ky),0.000001_r8)
-!
-!  JCW 1
-!            cff=0.5_r8*pm(i,j)*dt(ng)*                                  &
-!     &          (CF(i+1,j)-CF(i-1,j))*mask_CF(i+1,j)*mask_CF(i-1,j)
-!            kx=kx-cff*mask_CF(i,j)
-!
-!            cff=0.5_r8*pn(i,j)*dt(ng)*                                  &
-!     &         (CF(i,j+1)-CF(i,j-1))*mask_CF(i,j+1)*mask_CF(i,j-1)
-!            ky=ky-cff*mask_CF(i,j)
-!
-!            kwc(i,j,d)=MAX(SQRT(kx*kx+ky*ky),0.000001_r8)
+      DO d=1,ND
+        DO j=Jstr,Jend
+          DO i=Istr,Iend+1
+            alfa_wave=(1.5_r8*pi-wd(d))-angler(i,j)
+            cff1=kwc(i-1,j,d)*h_tot(i-1,j)
+            cff2=kwc(i,j,d)*h_tot(i,j)
+            crk=0.5_r8*(sqrt(g/kwc(i-1,j,d)*tanh(cff1))+                &
+     &                  sqrt(g/kwc(i  ,j,d)*tanh(cff2)))
+            cff=crk*cos(alfa_wave)+u_rho(i,j)
+            cff1=MAX(cff,0.0_r8)
+            cff2=MIN(cff,0.0_r8)
+            FX(i,j)=cff1*kwc(i-1,j,d)+                                  &
+     &              cff2*kwc(i  ,j,d)
           END DO
         END DO
-
-
-
-!
-! JCW 2
-
-          DO j=Jstr,Jend
-            DO i=Istr,Iend+1
-              alfa_wave=(1.5_r8*pi-wd(d))-angler(i,j)
-!             IF (cx(i,j,d).eq.0.0_r8) THEN
-!               alfa_wave=0.5_r8*pi*SIGN(1.0_r8,cy(i,j,d))
-!             ELSE
-!               alfa_wave=ATAN2(cy(i,j,d),cx(i,j,d))
-!             ENDIF
-              cff1=kwc(i-1,j,d)*h_tot(i-1,j)
-              cff2=kwc(i,j,d)*h_tot(i,j)
-              crk=0.5_r8*(sqrt(g/kwc(i-1,j,d)*tanh(cff1))+          &
-     &                    sqrt(g/kwc(i  ,j,d)*tanh(cff2)))
-              cff=crk*cos(alfa_wave)
-              cff1=MAX(cff,0.0_r8)
-              cff2=MIN(cff,0.0_r8)
-              FX(i,j)=cff1*kwc(i-1,j,d)+                            &
-     &                cff2*kwc(i  ,j,d)
-            END DO
+        DO j=Jstr,Jend+1
+          DO i=Istr,Iend
+            alfa_wave=(1.5_r8*pi-wd(d))-angler(i,j)
+            cff1=kwc(i,j-1,d)*h_tot(i,j-1)
+            cff2=kwc(i,j  ,d)*h_tot(i,j)
+            crk=0.5_r8*(sqrt(g/kwc(i,j-1,d)*tanh(cff1))+                &
+     &                  sqrt(g/kwc(i,j  ,d)*tanh(cff2)))
+            cff=crk*sin(alfa_wave)+v_rho(i,j)
+            cff1=MAX(cff,0.0_r8)
+            cff2=MIN(cff,0.0_r8)
+            FE(i,j)=cff1*kwc(i,j-1,d)+                                  &
+     &              cff2*kwc(i,j  ,d)
           END DO
-          DO j=Jstr,Jend+1
-            DO i=Istr,Iend
-              alfa_wave=(1.5_r8*pi-wd(d))-angler(i,j)
-!             IF (cx(i,j,d).eq.0.0_r8) THEN
-!               alfa_wave=0.5_r8*pi*SIGN(1.0_r8,cy(i,j,d))
-!             ELSE
-!               alfa_wave=ATAN2(cy(i,j,d),cx(i,j,d))
-!             ENDIF
-              cff1=kwc(i,j-1,d)*h_tot(i,j-1)
-              cff2=kwc(i,j  ,d)*h_tot(i,j)
-              crk=0.5_r8*(sqrt(g/kwc(i,j-1,d)*tanh(cff1))+         &
-     &                    sqrt(g/kwc(i,j  ,d)*tanh(cff2)))
-              cff=crk*sin(alfa_wave)
-              cff1=MAX(cff,0.0_r8)
-              cff2=MIN(cff,0.0_r8)
-              FE(i,j)=cff1*kwc(i,j-1,d)+                            &
-     &                cff2*kwc(i,j  ,d)
-            END DO
-          END DO
+        END DO
 !
 !  Time-step horizontal advection.
 !
@@ -257,18 +186,11 @@
      &                   FE(i,j+1)-FE(i,j))
           END DO
         END DO
-
-
-
       END DO
 
       CALL Tr3dbc_tile (ng, tile,                                       &
      &                  LBi, UBi, LBj, UBj, ND,                         &
      &                  kwc)
-      
-!      CALL bc_r3d_tile (ng, tile,                                       &
-!     &                  LBi, UBi, LBj, UBj, 1, ND,                      &
-!     &                  kwc)
 !
 # ifdef DISTRIBUTE
 !

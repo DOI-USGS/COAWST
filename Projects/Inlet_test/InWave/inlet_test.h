@@ -6,27 +6,27 @@
 **   See License_ROMS.txt                                                    **
 *******************************************************************************
 **
-** Options for Inlet Test Case, waves-ocean (SWAN/ROMS) two-way coupling.
+** Options for Inlet Test Case, waves-ocean (INWAVE/ROMS) coupling.
 **
 ** Application flag:   INLET_TEST
 ** Input script:       ocean_inlet_test.in
-**                     coupling_inlet_test.in
 **                     sediment_inlet_test.in
 */
 
 #define ROMS_MODEL
 #define INWAVE_MODEL
-#define INWAVE_SWAN_COUPLING
 
-#define ACX_ADVECTION
-#define ACY_ADVECTION
-#define ACT_ADVECTION
-#undef DOPPLER
+#ifdef  INWAVE_MODEL
+# define INWAVE_SWAN_COUPLING
+# define ACX_ADVECTION
+# define ACY_ADVECTION
+# define ACT_ADVECTION
+# undef  DOPPLER
+# define WDISS_GAMMA
+# undef  WDISS_ROELVINK
+#endif
 
 #define WEC_VF
-#define ENERGY_DISSIPATION
-#define WDISS_INWAVE
-#undef ROELVINK
 
 #define UV_VIS2
 #define MIX_S_UV
@@ -45,7 +45,11 @@
 #define ANA_M2OBC
 
 /* define only one of the following 5 */
-#define UV_LOGDRAG
+#undef  UV_LOGDRAG
+#define SSW_BBL
+#ifdef SSW_BBL
+# define SSW_CALC_ZNOT
+#endif
 
 #ifdef SOLVE3D
 # define GLS_MIXING

@@ -103,45 +103,45 @@
       integer, intent(in) :: LBi, UBi, LBj, UBj
       integer, intent(in) :: IminS, ImaxS, JminS, JmaxS
 !
-# ifdef ASSUMED_SHAPE
+#  ifdef ASSUMED_SHAPE
       real(r8), intent(inout) :: Hwave(LBi:,LBj:)
       real(r8), intent(inout) :: Dwave(LBi:,LBj:)
       real(r8), intent(inout) :: Lwave(LBi:,LBj:)
-#  if defined WAVES_UB
+#   if defined WAVES_UB
       real(r8), intent(inout) :: Uwave_rms(LBi:,LBj:)
-#  endif
-#  if defined WAVES_TOP_PERIOD
+#   endif
+#   if defined WAVES_TOP_PERIOD
       real(r8), intent(inout) :: Pwave_top(LBi:,LBj:)
-#  endif
-#  if defined WAVES_BOT_PERIOD
+#   endif
+#   if defined WAVES_BOT_PERIOD
       real(r8), intent(inout) :: Pwave_bot(LBi:,LBj:)
-#  endif
+#   endif
       real(r8), intent(in) :: AC(LBi:,LBj:,:,:)
       real(r8), intent(in) :: Tr(LBi:,LBj:,:)
       real(r8), intent(in) :: Ta(LBi:,LBj:,:)
       real(r8), intent(in) :: kwc(LBi:,LBj:,:)
       real(r8), intent(in) :: WD(:)
       real(r8), intent(in) :: h_tot(LBi:,LBj:)
-# else
+#  else
       real(r8), intent(inout) :: Hwave(LBi:UBi,LBj:UBj)
       real(r8), intent(inout) :: Dwave(LBi:UBi,LBj:UBj)
       real(r8), intent(inout) :: Lwave(LBi:UBi,LBj:UBj)
-#  if defined WAVES_UB
+#   if defined WAVES_UB
       real(r8), intent(inout) :: Uwave_rms(LBi:UBi,LBj:UBj)
-#  endif
-#  if defined WAVES_TOP_PERIOD
+#   endif
+#   if defined WAVES_TOP_PERIOD
       real(r8), intent(inout) :: Pwave_top(LBi:UBi,LBj:UBj)
-#  endif
-#  if defined WAVES_BOT_PERIOD
+#   endif
+#   if defined WAVES_BOT_PERIOD
       real(r8), intent(inout) :: Pwave_bot(LBi:UBi,LBj:UBj)
-#  endif
+#   endif
       real(r8), intent(in) :: AC(LBi:UBi,LBj:UBj,ND,3)
       real(r8), intent(in) :: Tr(LBi:UBi,LBj:UBj,ND)
       real(r8), intent(in) :: Ta(LBi:UBi,LBj:UBj,ND)
       real(r8), intent(in) :: kwc(LBi:UBi,LBj:UBj,ND)
       real(r8), intent(in) :: WD(ND)
       real(r8), intent(in) :: h_tot(LBi:UBi,LBj:UBj)
-# endif
+#  endif
 !
 !  Local variable declarations.
 !
@@ -151,17 +151,24 @@
       real(r8), parameter :: Lmin=10.0_r8
       real(r8), parameter :: Pmin=2.0_r8
       real(r8), parameter :: Trmin=1.0_r8
-!
+#  if defined WAVES_UB
+      real(r8), parameter :: eps = 1.0E-10_r8
+      real(r8), parameter :: K1 = 0.6666666666_r8     ! Coefficients for
+      real(r8), parameter :: K2 = 0.3555555555_r8     ! explicit
+      real(r8), parameter :: K3 = 0.1608465608_r8     ! wavenumber
+      real(r8), parameter :: K4 = 0.0632098765_r8     ! calculation
+      real(r8), parameter :: K5 = 0.0217540484_r8     ! (Dean and
+      real(r8), parameter :: K6 = 0.0065407983_r8     !  Dalrymple, 1991)
+      real(r8) :: Kbh, Kbh2, Kdh
+      real(r8) :: Fwave_bot, Ab
+#  endif
 
-# include "set_bounds.h"
-
-!!!mai: BE CAREFUL WITH THE DIRECTIONS TALK TO JOHN!!!
+#  include "set_bounds.h"
 
       twopi=2.0_r8*pi
 
       DO j=Jstr,Jend
         DO i=Istr,Iend
-!         EW=0.000001_r8
           EW=0.0_r8
           KM=0.0_r8
           TRM=0.0_r8
@@ -191,18 +198,25 @@
               Lwave(i,j)=twopi/KM
               Dwave(i,j)=DIRM/EW
 !=======================================================================
-!  Compute the wave height
+!  Compute the wave height Hwave (Significant).
 !=======================================================================
 !             Hwave(i,j)=(8.0_r8*EW/(g*rho0))**0.5_r8
               Hwave(i,j)=(16.0_r8*EW/(g*rho0))**0.5_r8
-#  if defined WAVES_UB
-              Uwave_rms(i,j)=0.0_r8   !!!!We need to define this
-#  endif
 #  if defined WAVES_TOP_PERIOD
               Pwave_top(i,j)=TRM/EW
 #  endif
 #  if defined WAVES_BOT_PERIOD
               Pwave_bot(i,j)=TRM/EW
+#  endif
+#  if defined WAVES_UB
+              Fwave_bot=twopi/MAX(Pwave_bot(i,j),0.05_r8)
+              Kdh=h_tot(i,j)*Fwave_bot**2/g
+              Kbh2=Kdh*Kdh+                                             &
+     &             Kdh/(1.0_r8+Kdh*(K1+Kdh*(K2+Kdh*(K3+Kdh*(K4+         &
+     &             Kdh*(K5+K6*Kdh))))))
+              Kbh=SQRT(Kbh2)
+              Ab=0.5_r8*Hwave(i,j)/SINH(Kbh)+eps
+              Uwave_rms(i,j)=Fwave_bot*Ab+eps
 #  endif
             ELSE
               Hwave(i,j)=0.0_r8
@@ -221,7 +235,6 @@
           ENDIF
         ENDDO
       ENDDO
-# if defined WDISS_INWAVE
 !
 !  Apply boundary conditions.
 !
@@ -249,8 +262,6 @@
      &                  LBi, UBi, LBj, UBj,                             &
      &                  Pwave_bot)
 #  endif
-# endif
-
 #  ifdef DISTRIBUTE
 !
 !   Exchange boundary data.
@@ -260,28 +271,27 @@
      &                    NghostPoints,                                 &
      &                    EWperiodic(ng), NSperiodic(ng),               &
      &                    Hwave, Dwave, Lwave)
-#  if defined WAVES_UB
+#   if defined WAVES_UB
       CALL mp_exchange2d (ng, tile, iNLM, 1,                            &
      &                    LBi, UBi, LBj, UBj,                           &
      &                    NghostPoints,                                 &
      &                    EWperiodic(ng), NSperiodic(ng),               &
      &                    Uwave_rms)
-#  endif
-#  if defined WAVES_TOP_PERIOD
+#   endif
+#   if defined WAVES_TOP_PERIOD
       CALL mp_exchange2d (ng, tile, iNLM, 1,                            &
      &                    LBi, UBi, LBj, UBj,                           &
      &                    NghostPoints,                                 &
      &                    EWperiodic(ng), NSperiodic(ng),               &
      &                    Pwave_top)
-#  endif
-#  if defined WAVES_BOT_PERIOD
+#   endif
+#   if defined WAVES_BOT_PERIOD
       CALL mp_exchange2d (ng, tile, iNLM, 1,                            &
      &                    LBi, UBi, LBj, UBj,                           &
      &                    NghostPoints,                                 &
      &                    EWperiodic(ng), NSperiodic(ng),               &
      &                    Pwave_bot)
-#  endif
-!
+#   endif
 #  endif
 
       RETURN

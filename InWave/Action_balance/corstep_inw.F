@@ -528,14 +528,14 @@
 !
         DO d=1,ND
           DO i=Istr,Iend
-            cff=dt(ng)*pd(d)
+            cff=dt(ng)*pd
             AC(i,j,d,nnew)=AC(i,j,d,nnew)-                              &
      &                     cff*(FD(i,d+1)-FD(i,d))
             AC(i,j,d,nnew)=MAX(0.0_r8,AC(i,j,d,nnew))
           END DO
         END DO
       END DO J_LOOP
-# if defined ENERGY_DISSIPATION
+# if defined WDISS_ROELVINK || defined WDISS_GAMMA
       CALL dissip_inw_tile (ng, tile,                                   &
      &                      LBi, UBi, LBj, UBj,                         &
      &                      IminS, ImaxS, JminS, JmaxS,                 &
@@ -543,13 +543,11 @@
 #  ifdef MASKING
      &                      rmask,                                      &
 #  endif
-# ifdef WET_DRY
+#  ifdef WET_DRY
      &                      rmask_wet, umask_wet, vmask_wet,            &
-# endif
-#  if defined WDISS_INWAVE
+#  endif
      &                      FORCES(ng) % Dissip_break,                  &
      &                      FORCES(ng) % Dissip_wcap,                   &
-#  endif
      &                      WAVEP(ng) % h_tot,                          &
      &                      AC, Tr, kwc)
 # endif

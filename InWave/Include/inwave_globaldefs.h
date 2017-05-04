@@ -8,14 +8,14 @@ Global params file for InWave
 /***********************************   USER DEFINED OPTIONS   *******************************************/
 /********************************************************************************************************/
 
-*# define INWAVE_MODEL       use to turn ON or OFF InWave model
-*# define INWAVE_SWAN_COUPLING       use to turn ON or OFF InWave SWAN coupling
+*# define INWAVE_MODEL          use to turn ON or OFF InWave model
+*# define INWAVE_SWAN_COUPLING  use to turn ON or OFF InWave SWAN coupling
 *# define DOPPLER               use to turn ON or OFF the effect of currents on the dispersion relation
 *# define ACX_ADVECTION         use to turn ON or OFF advection of Ac in the xi direction
 *# define ACY_ADVECTION         use to turn ON or OFF advection of Ac in the etai direction
 *# define ACT_ADVECTION         use to turn ON or OFF advection of Ac in the directional direction
-*# define ENERGY_DISSIPATION    use to turn ON or OFF energy dissipation
-*# define ROELVINK              use to turn ON or OFF Roelvink energy dissipation
+*# define WDISS_ROELVINK        use to turn ON or OFF Roelvink energy dissipation
+*# define WDISS_GAMMA           use to turn ON or OFF gamma based energy dissipation
 
 
 /*****************************   BOUNDARY CONDITION OPTIONS   *******************************************/

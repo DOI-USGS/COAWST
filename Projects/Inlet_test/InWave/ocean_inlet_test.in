@@ -94,7 +94,8 @@ GridsInLayer =  1
           Lm == 75            ! Number of I-direction INTERIOR RHO-points
           Mm == 70            ! Number of J-direction INTERIOR RHO-points
            N == 8             ! Number of vertical levels
-          ND == 36             ! Number of wave directional bins
+!         ND == 36            ! Number of wave directional bins
+          ND == 20            ! Number of wave directional bins
 
         Nbed =  1             ! Number of sediment bed layers
 
@@ -213,8 +214,8 @@ ad_VolCons(north) ==  F                            ! northern boundary
 
 ! Time-Stepping parameters.
 
-      NTIMES == 3600
-          DT == 1.0d0
+      NTIMES == 36000
+          DT == 0.1d0
      NDTFAST == 20
 
 ! Model iteration loops parameters.
@@ -236,7 +237,7 @@ ad_VolCons(north) ==  F                            ! northern boundary
 
        NRREC == 0
    LcycleRST == T
-        NRST == 720
+        NRST == 600
         NSTA == 1
         NFLT == 1
        NINFO == 1
@@ -244,7 +245,7 @@ ad_VolCons(north) ==  F                            ! northern boundary
 ! Output history, average, diagnostic files parameters.
 
      LDEFOUT == T
-        NHIS == 60
+        NHIS == 600
      NDEFHIS == 0
         NQCK == 0
      NDEFQCK == 0
@@ -666,7 +667,7 @@ Qout(idVsur) == T       ! v_sur              surface V-velocity
 Qout(idUsuE) == T       ! u_sur_eastward     surface U-eastward  velocity
 Qout(idVsuN) == T       ! v_sur_northward    surface V-northward velocity
 
-Qout(idsurT) == T T     ! temp_sur, salt_sur surface temperature and salinity
+!Qout(idsurT) == T T     ! temp_sur, salt_sur surface temperature and salinity
 
 Qout(idpthR) == F       ! z_rho              time-varying depths of RHO-points
 Qout(idpthU) == F       ! z_u                time-varying depths of U-points
@@ -961,15 +962,14 @@ Dout(iTvdif) == F F     ! temp_vdiff, ...    vertical diffusion
 
 ! Input NetCDF file names, [1:Ngrids].
 
-     GRDNAME == Projects/Inlet_test/InWave/inlet_test_grid.nc 
+     GRDNAME == Projects/Inlet_test/InWave/InWave_inlet_test_grd.nc 
      ININAME == ocean_ini.nc
      ITLNAME == ocean_itl.nc
      IRPNAME == ocean_irp.nc
      IADNAME == ocean_iad.nc
      FWDNAME == ocean_fwd.nc
      ADSNAME == ocean_ads.nc
-     IWININAME == Projects/Inlet_test/InWave/InWave_ini.nc
-     IWBNDNAME == Projects/Inlet_test/InWave/InWave_inlet_test_bnd.nc
+     IWININAME == Projects/Inlet_test/InWave/InWave_inlet_test_ini.nc
      IWSWNNAME == Projects/Inlet_test/InWave/point1.spc2d
 
 ! Nesting grids connectivity data: contact points information. This
@@ -988,7 +988,7 @@ Dout(iTvdif) == F F     ! temp_vdiff, ...    vertical diffusion
      CLMNAME == ocean_clm.nc
 
      NBCFILES == 1                          ! number of boundary files
-     BRYNAME == Projects/Inlet_test/InWave/InWave_inlet_test_bnd.nc
+     BRYNAME == ocean_bry.nc
 
 ! Input climatology nudging coefficients file name.
 
@@ -1019,12 +1019,12 @@ Dout(iTvdif) == F F     ! temp_vdiff, ...    vertical diffusion
      DAINAME == ocean_dai.nc
      GSTNAME == ocean_gst.nc
      RSTNAME == ocean_rst.nc 
-     HISNAME == ocean_his_inlet_inwave.nc
+     HISNAME == ocean_inwave_inlet_his.nc
      QCKNAME == ocean_qck.nc
      TLMNAME == ocean_tlm.nc
      TLFNAME == ocean_tlf.nc
      ADJNAME == ocean_adj.nc
-     AVGNAME == ocean_avg_inlet_inwave.nc
+     AVGNAME == ocean_avg.nc
      DIANAME == ocean_dia.nc
      STANAME == ocean_sta.nc
      FLTNAME == ocean_flt.nc

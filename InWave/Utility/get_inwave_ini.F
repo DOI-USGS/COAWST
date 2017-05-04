@@ -117,14 +117,14 @@
 !  Read dimensions
 !-----------------------------------------------------------------------
 !
-      status=nf90_inq_dimid(ncIWINIid(ng),'xi_rho', varid)
-      status=nf90_inquire_dimension(ncIWINIid(ng), varid, len=nxnc)
-      status=nf90_inq_dimid(ncIWINIid(ng),'xi_u', varid)
-      status=nf90_inquire_dimension(ncIWINIid(ng), varid, len=nxunc)
-      status=nf90_inq_dimid(ncIWINIid(ng),'eta_rho', varid)
-      status=nf90_inquire_dimension(ncIWINIid(ng), varid, len=nync)
-      status=nf90_inq_dimid(ncIWINIid(ng),'eta_v', varid)
-      status=nf90_inquire_dimension(ncIWINIid(ng), varid, len=nyvnc)
+!     status=nf90_inq_dimid(ncIWINIid(ng),'xi_rho', varid)
+!     status=nf90_inquire_dimension(ncIWINIid(ng), varid, len=nxnc)
+!     status=nf90_inq_dimid(ncIWINIid(ng),'xi_u', varid)
+!     status=nf90_inquire_dimension(ncIWINIid(ng), varid, len=nxunc)
+!     status=nf90_inq_dimid(ncIWINIid(ng),'eta_rho', varid)
+!     status=nf90_inquire_dimension(ncIWINIid(ng), varid, len=nync)
+!     status=nf90_inq_dimid(ncIWINIid(ng),'eta_v', varid)
+!     status=nf90_inquire_dimension(ncIWINIid(ng), varid, len=nyvnc)
 !     status=nf90_inq_dimid(ncIWINIid(ng),'energy_angle_c', varid)
 !     write(*,*) 'status is  **** ', status
 !     status=nf90_inquire_dimension(ncIWINIid(ng), varid, len=ndnc)

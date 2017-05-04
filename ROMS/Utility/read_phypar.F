@@ -4379,11 +4379,6 @@
                 IWININAME(1)(i:i)=blank
               END DO
               IWININAME(1)=TRIM(ADJUSTL(Cval(Nval)))
-            CASE ('IWBNDNAME')
-              DO i=1,LEN(IWBNDNAME(1))
-                IWBNDNAME(1)(i:i)=blank
-              END DO
-              IWBNDNAME(1)=TRIM(ADJUSTL(Cval(Nval)))
             CASE ('IWSWNNAME')
               DO i=1,LEN(IWSWNNAME(1))
                 IWSWNNAME(1)(i:i)=blank
@@ -4768,7 +4763,9 @@
 #  endif
 # endif
 # ifdef INWAVE_MODEL
+#  if !defined INWAVE_SWAN_COUPLING
         ObcData(ng)=ObcData(ng).or.ANY(LBC(:,isAC3d,ng)%acquire)
+#  endif
 # endif
 #endif
       END DO

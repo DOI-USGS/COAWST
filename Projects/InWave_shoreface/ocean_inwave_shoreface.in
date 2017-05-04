@@ -64,7 +64,7 @@
 !
 ! Application title.
 
-       TITLE = Shore Face Planar Beach Test Case
+       TITLE = INWAVE Shore Face Planar Beach Test Case
 
 ! C-preprocessing Flag.
 
@@ -213,7 +213,7 @@ ad_VolCons(north) ==  F                            ! northern boundary
 
 ! Time-Stepping parameters.
 
-      NTIMES == 36000
+      NTIMES == 2000
           DT == 0.1d0
      NDTFAST == 20
 
@@ -666,7 +666,7 @@ Qout(idVsur) == T       ! v_sur              surface V-velocity
 Qout(idUsuE) == T       ! u_sur_eastward     surface U-eastward  velocity
 Qout(idVsuN) == T       ! v_sur_northward    surface V-northward velocity
 
-Qout(idsurT) == T T     ! temp_sur, salt_sur surface temperature and salinity
+!Qout(idsurT) == T T     ! temp_sur, salt_sur surface temperature and salinity
 
 Qout(idpthR) == F       ! z_rho              time-varying depths of RHO-points
 Qout(idpthU) == F       ! z_u                time-varying depths of U-points
@@ -961,15 +961,15 @@ Dout(iTvdif) == T T     ! temp_vdiff, ...    vertical diffusion
 
 ! Input NetCDF file names, [1:Ngrids].
 
-     GRDNAME == Projects/InWave_shoreface/InWave_grd.nc
+     GRDNAME == Projects/InWave_shoreface/InWave_shoreface_grd.nc
      ININAME == ocean_ini.nc
      ITLNAME == ocean_itl.nc
      IRPNAME == ocean_irp.nc
      IADNAME == ocean_iad.nc
      FWDNAME == ocean_fwd.nc
      ADSNAME == ocean_ads.nc
-     IWININAME == Projects/InWave_shoreface/InWave_ini.nc
-     IWBNDNAME == Projects/InWave_shoreface/InWave_bnd.nc
+     IWININAME == Projects/InWave_shoreface/InWave_shoreface_ini.nc
+     IWSWNNAME == iwswan_name.spc2d
 
 ! Nesting grids connectivity data: contact points information. This
 ! NetCDF file is special and complex. It is currently generated using
@@ -987,7 +987,7 @@ Dout(iTvdif) == T T     ! temp_vdiff, ...    vertical diffusion
      CLMNAME == ocean_clm.nc
 
      NBCFILES == 1                          ! number of boundary files
-     BRYNAME == Projects/InWave_shoreface/InWave_bnd.nc
+     BRYNAME == Projects/InWave_shoreface/InWave_shoreface_bry.nc
 
 ! Input climatology nudging coefficients file name.
 
@@ -1010,17 +1010,14 @@ Dout(iTvdif) == T T     ! temp_vdiff, ...    vertical diffusion
 ! entry, except the last one.
 
      NFFILES == 1                          ! number of unique forcing files
-
-!    FRCNAME == Data/ROMS/Forcing/swan_shoreface_angle_forc.nc
-!    FRCNAME == InWave_grd.nc       ! swan_shoreface_angle_forc.nc
-     FRCNAME == ocean_forc.nc       ! swan_shoreface_angle_forc.nc
+     FRCNAME == ocean_forc.nc
 
 ! Output NetCDF file names, [1:Ngrids].
 
      DAINAME == ocean_dai.nc
      GSTNAME == ocean_gst.nc
      RSTNAME == ocean_rst.nc
-     HISNAME == ocean_inlet_inwave_his.nc
+     HISNAME == ocean_inwave_shoreface_his.nc
      QCKNAME == ocean_qck.nc
      TLMNAME == ocean_tlm.nc
      TLFNAME == ocean_tlf.nc

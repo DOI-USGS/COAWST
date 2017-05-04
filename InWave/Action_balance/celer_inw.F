@@ -68,6 +68,7 @@
      &                    WAVEP(ng) % Tr,                               &
      &                    WAVEP(ng) % kwc,                              &
      &                    WAVEP(ng) % cwc,                              &
+     &                    WAVEG(ng) % Inwavecircle,                     &
      &                    WAVEG(ng) % wd)
 !# ifdef PROFILE
 !      CALL wclock_off (ng, iNLM, 35)
@@ -89,7 +90,7 @@
      &                          angler, pm, pn,                         &
      &                          h_tot,u_rho,v_rho,                      &
      &                          cx, cy, ct, Ta, Tr,                     &
-     &                          kwc, cwc, wd)
+     &                          kwc, cwc, Inwavecircle, wd)
 !***********************************************************************
 !
       USE mod_param
@@ -112,7 +113,7 @@
       integer, intent(in) :: ng, tile
       integer, intent(in) :: LBi, UBi, LBj, UBj
       integer, intent(in) :: IminS, ImaxS, JminS, JmaxS
-      integer, intent(in) :: nrhs, nstp, nnew
+      integer, intent(in) :: nrhs, nstp, nnew, Inwavecircle
 
 # ifdef ASSUMED_SHAPE
 #  ifdef MASKING
@@ -397,10 +398,14 @@
           END DO
         END DO
       ENDDO
-
+!
       DO j=Jstr,Jend
         DO i=Istr,Iend
-          ct(i,j,1)=ct_r(i,j,ND)
+          IF (Inwavecircle.eq.1) THEN
+            ct(i,j,1)=0.5_r8*(ct_r(i,j,ND)+ ct_r(i,j,1))
+          ELSE
+            ct(i,j,1)=0.0_r8
+          END IF
 #  ifdef MASKING
 !  Apply Land/Sea mask
           ct(i,j,1)=ct(i,j,1)*rmask(i,j)
@@ -408,12 +413,8 @@
 #  ifdef WET_DRY
           ct(i,j,1)=ct(i,j,1)*rmask_wet(i,j)
 #  endif
-        END DO
-      END DO
-
-      DO j=Jstr,Jend
-        DO i=Istr,Iend
-          ct(i,j,ND+1)=ct_r(i,j,ND)
+!
+          ct(i,j,ND+1)=ct(i,j,1)
 #  ifdef MASKING
 !  Apply Land/Sea mask
           ct(i,j,ND+1)=ct(i,j,ND+1)*rmask(i,j)

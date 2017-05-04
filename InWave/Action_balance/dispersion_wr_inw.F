@@ -125,7 +125,6 @@
       real(r8), parameter :: maxErr = 0.1_r8
       real(r8), parameter :: Trmin = 1.0_r8
 
-
 # include "set_bounds.h"
 !
       twopi=2.0_r8*pi
@@ -152,10 +151,8 @@
           DO i=Istr,Iend
             IF(h_tot(i,j).ge.Dcrit(ng))THEN
               wr=sqrt(g*kwc(i,j,d)*tanh(kwc(i,j,d)*h_tot(i,j)))
-!             Tr(i,j,d)=twopi/wr
               Tr(i,j,d)=MAX(twopi/wr,Trmin)
               Tr(i,j,d)=MIN(Tr(i,j,d),500000.0_r8)
-!             if (Tr(i,j,d).lt.Trmin) Tr(i,j,d)=Trmin
             ELSE
               Tr(i,j,d)=Trmin
             ENDIF
@@ -163,9 +160,6 @@
         END DO
       END DO
 
-!      CALL bc_r3d_tile (ng, tile,                                       &
-!     &                  LBi, UBi, LBj, UBj, 1, ND,                      &
-!     &                  Tr)
       CALL Tr3dbc_tile (ng, tile,                                       &
      &                  LBi, UBi, LBj, UBj, ND,                         &
      &                  Tr)
@@ -189,7 +183,6 @@
      &                    EWperiodic(ng), NSperiodic(ng),               &
      &                    Tr)
 # endif
-
 
       RETURN
       END SUBROUTINE dispersion_wr_inw_tile

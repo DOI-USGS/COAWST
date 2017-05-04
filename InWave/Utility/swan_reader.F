@@ -1,7 +1,7 @@
 #include "cppdefs.h"
 !
 !************************************************************************
-      SUBROUTINE swan_reader (ng, first)
+      SUBROUTINE swan_reader (ng, first, tile)
 !************************************************************************
 !
 #if defined INWAVE_MODEL & defined INWAVE_SWAN_COUPLING
@@ -17,14 +17,19 @@
 !
       USE inwave_iounits
       USE mod_inwave_swan
+      USE mod_inwave_vars
       USE mod_parallel
       USE mod_scalars
+      USE Tr3dbc_mod
+# ifdef DISTRIBUTE
+      USE mp_exchange_mod
+# endif
 !
       implicit none
 !
 !  Imported variable declarations.
 !
-      integer, intent(in) :: ng, first
+      integer, intent(in) :: ng, first, tile
 !
 !  Local variable declarations.
 !
@@ -32,10 +37,11 @@
       character(72)      :: rline
       real(r8)           :: factor, exc, m0, frep, cff, DTTIME
       integer            :: nfreq, ndir, switch
-      integer            :: i, j, inp
+      integer            :: i, j, d, inp
       integer            :: nfreqsw, ndirsw
       integer            :: minpos, readerr
-      INTEGER            :: INTTIM(6)
+      integer            :: INTTIM(6)
+      integer            :: LBi, UBi, LBj, UBj
       integer,allocatable       :: posang(:)
 
       real(r8), pointer  :: temp(:), findline(:)
@@ -46,6 +52,14 @@
       real(r8), parameter :: rad = pi/180.0_r8
       real(r8), parameter :: orad = 180.0_r8/pi
 
+# include "set_bounds.h"
+!
+!  Determine array lower and upper bounds in the I- and J-directions.
+!
+      LBi=BOUNDS(ng)%LBi(tile)
+      UBi=BOUNDS(ng)%UBi(tile)
+      LBj=BOUNDS(ng)%LBj(tile)
+      UBj=BOUNDS(ng)%UBj(tile)
 !
 !-----------------------------------------------------------------------
 ! Open the spectral file
@@ -124,6 +138,13 @@
       WAVES(ng)%dang=abs(theta1(2)-theta1(1))
       minpos=minloc(theta1, DIM = 1)
       allocate(posang(ndirsw))
+
+!     If swan was run on a full circle or just a sector.
+      IF (INT(2.0_r8*pi/WAVES(ng)%dang).eq.ndirsw) THEN
+        WAVES(ng)%Swancircle=1
+      ELSE
+        WAVES(ng)%Swancircle=0
+      END IF
 
       IF((theta1(minpos+1)-theta1(minpos)).lt.                          &
      &   (theta1(minpos-1)-theta1(minpos)))THEN
@@ -292,8 +313,7 @@
       DO j=1,ndirsw
         WAVES(ng)%theta(j)=theta1(posang(j))
         DO i=1,nfreqsw
-          WAVES(ng)%SDSW(i,j)=sdsw1(i,posang(j))/(rho0*g)
-!         WAVES(ng)%SDSW(i,j)=sdsw1(i,posang(j))
+         WAVES(ng)%SDSW(i,j)=sdsw1(i,posang(j))/(rho0*g)
         ENDDO
       ENDDO
 
@@ -355,8 +375,34 @@
       WAVES(ng)%Trep=1.0_r8/frep
       WAVES(ng)%fp=frep
       IF (Master) THEN
-        WRITE(stdout,*) 'frep is ... ',  WAVES(ng)%Trep, WAVES(ng)%fp
+        WRITE(stdout,*) 'Representative period is ',  WAVES(ng)%Trep
       END IF
+!
+      DO d=1,ND
+        DO j=Jstr,Jend
+          DO i=Istr,Iend
+            WAVEP(ng)%Ta(i,j,d)=WAVES(ng)%Trep
+            WAVEP(ng)%Tr(i,j,d)=WAVES(ng)%Trep
+          END DO
+        END DO
+      END DO
+!
+      CALL Tr3dbc_tile (ng, tile,                                       &
+     &                  LBi, UBi, LBj, UBj, ND,                         &
+     &                  WAVEP(ng)%Tr)
+      CALL Tr3dbc_tile (ng, tile,                                       &
+     &                  LBi, UBi, LBj, UBj, ND,                         &
+     &                  WAVEP(ng)%Ta)
+# ifdef DISTRIBUTE
+!
+!  Exchange boundary data.
+!
+      CALL mp_exchange3d (ng, tile, iNLM, 2,                            &
+     &                    LBi, UBi, LBj, UBj, 1, ND,                    &
+     &                    NghostPoints,                                 &
+     &                    EWperiodic(ng), NSperiodic(ng),               &
+     &                    WAVEP(ng)%Tr, WAVEP(ng)%Ta)
+# endif
 !
       GO TO 250
  215  IF (Master) THEN

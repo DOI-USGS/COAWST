@@ -62,10 +62,10 @@
 # if !defined INWAVE_SWAN_COUPLING
       CALL get_inwave_data (ng)
 # else
-      CALL inwave_swan_run (ng, 1)
+      CALL inwave_swan_run (ng, 1, tile)
       istp=NINT(WAVES(ng)%SpecTimedt/dt(ng))
       IF (iic(ng).ne.0) THEN
-         CALL inwave_swan_run (ng, 2)
+         CALL inwave_swan_run (ng, 2, tile)
       END IF
 # endif
 
@@ -108,25 +108,12 @@
 !
 !  Local variable declarations.
 !
-!     integer :: subs, thread
       integer :: istp
-!
-!-----------------------------------------------------------------------
-!  Time-step wave action balance equations.
-!-----------------------------------------------------------------------
-!
-!        nstp(ng)=1+MOD(iic(ng)-ntstart(ng),2)
-!        nnew(ng)=3-nstp(ng)
-!        nrhs(ng)=nstp(ng)
-!        time(ng)=time(ng)+dt(ng)
-!        tdays(ng)=time(ng)*sec2day
-!        CALL time_string (time(ng), time_code(ng))
 !
 !-----------------------------------------------------------------------
 !  Read in required data, if any, from input NetCDF files.
 !-----------------------------------------------------------------------
 !
-
 # if !defined INWAVE_SWAN_COUPLING
         CALL get_inwave_data (ng)
         IF (exit_flag.ne.NoError) RETURN
@@ -134,11 +121,10 @@
         IF(iic(ng).gt.ntstart(ng)) then
           istp=NINT(WAVES(ng)%SpecTimedt/dt(ng))
           IF (MOD(iic(ng),istp).eq.0) THEN
-             CALL inwave_swan_run (ng, iic(ng)/istp+1)
+             CALL inwave_swan_run (ng, iic(ng)/istp+1, tile)
           END IF
         END IF
 # endif
-
 !
 !-----------------------------------------------------------------------
 !  If applicable, process input data: time interpolate between data

@@ -153,7 +153,7 @@
         ELSE IF (LBC(iwest,isAC3d,ng)%clamped) THEN
           DO k=1,ND
             DO d_bnd=1,WAVEB(ng)%ND_bnd
-              IF(WAVEB(ng)%WD_BND(d_bnd).EQ.WAVEG(ng)%wd(k))then
+              IF(WAVEB(ng)%WD_bnd(d_bnd).EQ.WAVEG(ng)%wd(k))then
                 DO j=Jstr,Jend
                   IF (LBC_apply(ng)%west(j)) THEN
                     AC(Istr-1,j,k,nout)=WAVEB(ng)%AC_west(j,d_bnd)
@@ -175,7 +175,7 @@
               IF (LBC_apply(ng)%west(j)) THEN
                 AC(Istr-1,j,k,nout)=AC(Istr,j,k,nout)
 # ifdef MASKING
-                AC(Istr-1,j,k,nout)=AC(Istr-1,j,k,nout)*                  &
+                AC(Istr-1,j,k,nout)=AC(Istr-1,j,k,nout)*                &
      &                              GRID(ng)%rmask(Istr-1,j)
 # endif
               END IF
@@ -190,7 +190,7 @@
               IF (LBC_apply(ng)%west(j)) THEN
                 AC(Istr-1,j,k,nout)=AC(Istr,j,k,nout)
 # ifdef MASKING
-                AC(Istr-1,j,k,nout)=AC(Istr-1,j,k,nout)*                  &
+                AC(Istr-1,j,k,nout)=AC(Istr-1,j,k,nout)*                &
      &                              GRID(ng)%rmask(Istr-1,j)
 # endif
               END IF
@@ -257,7 +257,7 @@
         ELSE IF (LBC(ieast,isAC3d,ng)%clamped) THEN
           DO d_bnd=1,WAVEB(ng)%ND_bnd
             DO k=1,ND
-              IF(WAVEB(ng)%WD_BND(d_bnd).EQ.WAVEG(ng)%wd(k)) THEN
+              IF(WAVEB(ng)%WD_bnd(d_bnd).EQ.WAVEG(ng)%wd(k)) THEN
                 IF (LBC_apply(ng)%east(j)) THEN
                   DO j=Jstr,Jend
                     AC(Iend+1,j,k,nout)=WAVEB(ng)%AC_east(j,d_bnd)
@@ -360,7 +360,7 @@
         ELSE IF (LBC(isouth,isAC3d,ng)%clamped) THEN
           DO d_bnd=1,WAVEB(ng)%ND_bnd
             DO k=1,ND
-              IF(WAVEB(ng)%WD_BND(d_bnd).EQ.WAVEG(ng)%wd(k))then
+              IF(WAVEB(ng)%WD_bnd(d_bnd).EQ.WAVEG(ng)%wd(k))then
                 DO i=Istr,Iend
                   IF (LBC_apply(ng)%south(i)) THEN
                     AC(i,Jstr-1,k,nout)=WAVEB(ng)%AC_south(i,d_bnd)*ramp
@@ -463,7 +463,7 @@
         ELSE IF (LBC(inorth,isAC3d,ng)%clamped) THEN
           DO d_bnd=1,WAVEB(ng)%ND_bnd
             DO k=1,ND
-              IF(WAVEB(ng)%WD_BND(d_bnd).EQ.WAVEG(ng)%wd(k))then
+              IF(WAVEB(ng)%WD_bnd(d_bnd).EQ.WAVEG(ng)%wd(k))then
                 DO i=Istr,Iend
                   IF (LBC_apply(ng)%north(i)) THEN
                     AC(i,Jend+1,k,nout)=WAVEB(ng)%AC_north(i,d_bnd)

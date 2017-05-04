@@ -1,4 +1,4 @@
-function create_inwave_ini(LP,MP,Nbins,Bindir,Bindir_c,pd,Ac,Cx,Cy,Ct,TA,inifile)
+function create_inwave_ini(LP,MP,Nbins,Bindirs_centers,Ac,Cx,Cy,Ct,TA,inifile)
 
 disp(' ')
 disp(['## Creating the file : ',inifile])
@@ -34,8 +34,8 @@ eudimID = netcdf.defDim(nc_ini,'eu',MP);
 evdimID = netcdf.defDim(nc_ini,'ev',M);
 
 etime_dimID = netcdf.defDim(nc_ini,'energy_time',length(initime));
-eangle_dimID = netcdf.defDim(nc_ini,'energy_angle',Nbins+1);
-eanglec_dimID = netcdf.defDim(nc_ini,'energy_angle_c',Nbins);
+eanglec_dimID = netcdf.defDim(nc_ini,'energy_angle_centers',Nbins);
+eangle_dimID = netcdf.defDim(nc_ini,'energy_angle_faces',Nbins+1);
 TA_dimID = netcdf.defDim(nc_ini,'TA_dim',1);
 
 
@@ -51,11 +51,6 @@ eaID = netcdf.defVar(nc_ini,'energy_angle','double',eanglec_dimID);
 netcdf.putAtt(nc_ini,eaID,'long_name','direction respect to the north of the bin');
 netcdf.putAtt(nc_ini,eaID,'units','degrees');
 netcdf.putAtt(nc_ini,eaID,'field','energy_angle, scalar, series');
-
-ecID = netcdf.defVar(nc_ini,'energy_angle_c','double',eangle_dimID);
-netcdf.putAtt(nc_ini,ecID,'long_name','direction respect to the north of the bin');
-netcdf.putAtt(nc_ini,ecID,'units','degrees');
-netcdf.putAtt(nc_ini,ecID,'field','energy_angle_c, scalar, series');
 
 TAID = netcdf.defVar(nc_ini,'TA_dim','double',TA_dimID);
 netcdf.putAtt(nc_ini,TAID,'long_name','representative absolute peak period');
@@ -88,22 +83,18 @@ netcdf.putAtt(nc_ini,TaID,'units','seconds');
 netcdf.putAtt(nc_ini,TaID,'field','Ta, scalar, series');
 
 netcdf.close(nc_ini)
-
 %
 % Write variables
 %
-ncwrite(inifile,'energy_time',initime); 
-ncwrite(inifile,'energy_angle',Bindir_c); 
-ncwrite(inifile,'energy_angle_c',Bindir); 
-ncwrite(inifile,'TA_dim',1); 
+ncwrite(inifile,'energy_time',initime);
+ncwrite(inifile,'energy_angle',Bindirs_centers);
+ncwrite(inifile,'TA_dim',1);
 
 ncwrite(inifile,'AC',Ac);
-ncwrite(inifile,'Cx',Cx); 
-ncwrite(inifile,'Cy',Cy); 
-ncwrite(inifile,'Ct',Ct); 
+ncwrite(inifile,'Cx',Cx);
+ncwrite(inifile,'Cy',Cy);
+ncwrite(inifile,'Ct',Ct);
 ncwrite(inifile,'Ta',TA);
-
-
 
 disp(['Created initial file -->   ',inifile])
 

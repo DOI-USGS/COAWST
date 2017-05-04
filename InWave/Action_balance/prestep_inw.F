@@ -91,9 +91,6 @@
       USE mp_exchange_mod, ONLY : mp_exchange3d
 # endif
       USE AC3dbc_mod, ONLY : AC3dbc_tile
-# ifdef ENERGY_DISSIPATION
-      USE dissip_inw_mod, ONLY : dissip_inw_tile
-# endif
 !
 !  Imported variable declarations.
 !
@@ -120,7 +117,7 @@
       real(r8), intent(in) :: ct(LBi:,LBj:,:)
       real(r8), intent(in) :: Tr(LBi:,LBj:,:)
       real(r8), intent(in) :: kwc(LBi:,LBj:,:)
-      real(r8), intent(in) :: pd(:)
+      real(r8), intent(in) :: pd
 
 # else
 
@@ -141,7 +138,7 @@
       real(r8), intent(in) :: ct(LBi:UBi,LBj:UBj,ND+1)
       real(r8), intent(in) :: Tr(LBi:UBi,LBj:UBj,ND)
       real(r8), intent(in) :: kwc(LBi:UBi,LBj:UBj,ND)
-      real(r8), intent(in) :: pd(ND)
+      real(r8), intent(in) :: pd
 # endif
 !
 !  Local variable declarations.
@@ -155,7 +152,7 @@
 # endif
       real(r8), parameter :: eps = 1.0E-16_r8
 
-      real(r8) :: cff, cff1, cff2, cff3, cff4
+      real(r8) :: cff, cff1, cff2, cff3, cff4, opd
 
       real(r8), dimension(IminS:ImaxS,0:N(ng)) :: CF
       real(r8), dimension(IminS:ImaxS,0:N(ng)) :: DC
@@ -314,6 +311,7 @@
 ! Advection in theta space.
 ! Need to wrap around in theta dir. NOt always
 !
+      opd=1.0_r8/pd
       J_LOOP: DO j=Jstr,Jend
         DO i=Istr,Iend
 # if defined THETA_AC_PERIODIC
@@ -352,12 +350,12 @@
         DO i=Istr,Iend
           DO d=1,1
 # if defined THETA_AC_PERIODIC
-            cff=ct(i,j,d)/(0.5_r8*(pd(d)+pd(ND)))
+            cff=ct(i,j,d)*opd
 # else
 #  if defined THETA_AC_WALL
             cff=0.0_r8
 #  else
-            cff=ct(i,j,d)/(pd(d))
+            cff=ct(i,j,d)*opd
 #  endif
 # endif
             FD(i,d)=cff*0.5_r8*                                         &
@@ -372,7 +370,7 @@
      &                     curvd(i,d  )*MIN(cff,0.0_r8))
           END DO
           DO d=2,ND
-            cff=ct(i,j,d)/(0.5_r8*(pd(d)+pd(d-1)))
+            cff=ct(i,j,d)*opd
             FD(i,d)=cff*0.5_r8*                                         &
      &              (AC(i,j,d-1,nstp)+                                  &
      &               AC(i,j,d  ,nstp))-                                 &
@@ -381,12 +379,12 @@
           END DO
           DO d=ND+1,ND+1
 # if defined THETA_AC_PERIODIC
-            cff=ct(i,j,d)/(0.5_r8*(pd(1)+pd(ND)))
+            cff=ct(i,j,d)*opd
 # else
 #  if defined THETA_AC_WALL
             cff=0.0_r8
 #  else
-            cff=ct(i,j,d)/(pd(ND))
+            cff=ct(i,j,d)*opd
 #  endif
 # endif
             FD(i,d)=cff*0.5_r8*                                         &
@@ -412,7 +410,7 @@
         DO d=1,ND
           DO i=Istr,Iend
             AC(i,j,d,3)=AC(i,j,d,3)-                                    &
-     &                  cff*pd(d)*                                      &
+     &                  cff*pd*                                         &
      &                  (FD(i,d+1)-FD(i,d))
             AC(i,j,d,3)=MAX(0.0_r8,AC(i,j,d,3))
           END DO

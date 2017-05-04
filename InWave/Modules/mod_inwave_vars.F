@@ -15,7 +15,7 @@
 !  Ta        absolute short wave period                                !
 !  kwc       wave number in wave current flows                         !
 !  cwc       wave celerity in wave current flows                       !
-!  h_tot     total water depth at two diffeerent instants              !
+!  h_tot     total water depth at two different instants               !
 !  u_rho     xi component of the currents affecting waves              !
 !  v_rho     etai component of the currents affecting waves            !
 !  wd        wave directions                                           !
@@ -42,8 +42,10 @@
         TYPE (T_INWAVEP), allocatable :: WAVEP(:)
 !
         TYPE T_INWAVEG
+          integer, pointer :: Inwavecircle
           real(r8), pointer :: wd(:)
-          real(r8), pointer :: pd(:)
+          real(r8), pointer :: pd
+
         END TYPE T_INWAVEG
         TYPE (T_INWAVEG), allocatable :: WAVEG(:)
 
@@ -85,8 +87,9 @@
       allocate ( WAVEP(ng) % u_rho(LBi:UBi,LBj:UBj) )
       allocate ( WAVEP(ng) % v_rho(LBi:UBi,LBj:UBj) )
 
+      allocate ( WAVEG(ng) % Inwavecircle )
       allocate ( WAVEG(ng) % wd(ND) )
-      allocate ( WAVEG(ng) % pd(ND) )
+      allocate ( WAVEG(ng) % pd )
 
       RETURN
       END SUBROUTINE allocate_inwave_vars
@@ -95,16 +98,6 @@
       SUBROUTINE initialize_inwave_vars (ng, LBi, UBi, LBj, UBj, tile,  &
      &                                   IniRec)
 !***********************************************************************
-!
-!======================================================================!
-!                                                                      !
-!  This routine initializes all variables in the module using first    !
-!  touch distribution policy. In shared-memory configuration, this     !
-!  operation actually performs propagation of the  "shared arrays"     !
-!  across the cluster, unless another policy is specified to           !
-!  override the default.                                               !
-!                                                                      !
-!======================================================================!
 !
       USE mod_kinds
       USE mod_grid
@@ -117,6 +110,7 @@
 !  Imported variable declarations.
 !
       integer, intent(in) :: ng, tile, IniRec
+      integer, intent(in) :: LBi, UBi, LBj, UBj
 !
 !  Local variable declarations.
 !
@@ -139,43 +133,41 @@
       real(r8) :: end_ang
 
       character (len=80) :: ncini_name
+
+#include "set_bounds.h"
 !
-#include "tile.h"
-!
-!-----------------------------------------------------------------------
 !  Set array initialization range.
-!-----------------------------------------------------------------------
 !
-#ifdef _OPENMP
-      IF (WESTERN_EDGE) THEN
-        Imin=LBi
+#ifdef DISTRIBUTE
+      Imin=BOUNDS(ng)%LBi(tile)
+      Imax=BOUNDS(ng)%UBi(tile)
+      Jmin=BOUNDS(ng)%LBj(tile)
+      Jmax=BOUNDS(ng)%UBj(tile)
+#else
+      IF (DOMAIN(ng)%Western_Edge(tile)) THEN
+        Imin=BOUNDS(ng)%LBi(tile)
       ELSE
         Imin=Istr
       END IF
-      IF (EASTERN_EDGE) THEN
-        Imax=UBi
+      IF (DOMAIN(ng)%Eastern_Edge(tile)) THEN
+        Imax=BOUNDS(ng)%UBi(tile)
       ELSE
         Imax=Iend
       END IF
-      IF (SOUTHERN_EDGE) THEN
-        Jmin=LBj
+      IF (DOMAIN(ng)%Southern_Edge(tile)) THEN
+        Jmin=BOUNDS(ng)%LBj(tile)
       ELSE
         Jmin=Jstr
       END IF
-      IF (NORTHERN_EDGE) THEN
-        Jmax=UBj
+      IF (DOMAIN(ng)%Northern_Edge(tile)) THEN
+        Jmax=BOUNDS(ng)%UBj(tile)
       ELSE
         Jmax=Jend
       END IF
-#else
-      Imin=LBi
-      Imax=UBi
-      Jmin=LBj
-      Jmax=UBj
 #endif
 !
 !-----------------------------------------------------------------------
-! Compute degree bins. This may need to be moved.
+! Compute degree bins.
 !-----------------------------------------------------------------------
 !
       IF (.not.allocated(ndirs)) allocate (ndirs(ND))
@@ -196,20 +188,19 @@
 ! Compute the angle increment
 !-----------------------------------------------------------------------
 !
-      DO d=1,ND
-        IF(d.gt.1)THEN
-          cff=WAVEG(ng)%wd(d)-WAVEG(ng)%wd(d-1)
-        ELSE
-          cff=WAVEG(ng)%wd(ND)-WAVEG(ng)%wd(1)
-        ENDIF
-        IF (cff.lt.0.0_r8) THEN
-!  +2pi jcw?
-          cff=cff+pi
-        ENDIF
-        WAVEG(ng)%pd(d)=cff
-      END DO
-!  jcw check this
-      WAVEG(ng)%pd(1)=WAVEG(ng)%pd(2)
+      cff=WAVEG(ng)%wd(2)-WAVEG(ng)%wd(1)
+      IF (cff.lt.0.0_r8) THEN
+        cff=cff+2.0_r8*pi
+      ENDIF
+      WAVEG(ng)%pd=cff
+
+!     If user sets computational grid for a full circle or just a sector.
+      IF (INT(2.0_r8*pi/WAVEG(ng)%pd).eq.ND) THEN
+        WAVEG(ng)%Inwavecircle=1
+      ELSE
+        WAVEG(ng)%Inwavecircle=0
+      END IF
+
       
 #if defined THETA_AC_PERIODIC
 !
@@ -217,7 +208,7 @@
 ! check if we are working on a segment or if we have to wrap around
 !-----------------------------------------------------------------------
 !
-      end_ang=WAVEG(ng)%wd(ND)+WAVEG(ng)%pd(ND)
+      end_ang=WAVEG(ng)%wd(ND)+WAVEG(ng)%pd
       IF(end_ang.ge.twopi)end_ang=end_ang- twopi
       IF(end_ang.ne.WAVEG(ng)%wd(1))THEN
         write (stdout,30)
@@ -261,22 +252,15 @@
             WAVEP(ng) % cx(i,j,d)=IniVal
             WAVEP(ng) % cy(i,j,d)=IniVal
             WAVEP(ng) % ct(i,j,d)=IniVal
-!           WAVEP(ng) % Ta(i,j,d)=Ta_ini
-!           WAVEP(ng) % Tr(i,j,d)=Ta_ini
             WAVEP(ng) % Ta(i,j,d)=ta_ini(i,j,d)
             WAVEP(ng) % Tr(i,j,d)=ta_ini(i,j,d)
             WAVEP(ng) % kwc(i,j,d)=IniVal
             WAVEP(ng) % cwc(i,j,d)=IniVal
           END DO
-        END DO
-      END DO
-      
-      DO j=Jmin,Jmax
-        DO i=Imin,Imax
-!         WAVEP(ng) % ct(i,j,ND+1)=ct_ini(i,j,ND+1)
           WAVEP(ng) % ct(i,j,ND+1)=IniVal
         END DO
       END DO
+ 
       IF (allocated(ac_ini)) deallocate(ac_ini)
       IF (allocated(cx_ini)) deallocate(cx_ini)
       IF (allocated(cy_ini)) deallocate(cy_ini)
