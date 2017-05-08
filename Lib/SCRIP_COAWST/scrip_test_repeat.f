@@ -83,12 +83,15 @@
 !-----------------------------------------------------------------------
 
       integer (kind=int_kind) ::                                        &
-     &           field_choice, ! choice of field to be interpolated     &
+     &           field_choice,                                          &
+                               ! choice of field to be interpolated
      &           num_repeats   ! number of times to repeat remappings
 
       character (char_len) ::                                           &
-     &           interp_file1, ! filename containing remap data (map1)  &
-     &           interp_file2, ! filename containing remap data (map2)  &
+     &           interp_file1,                                          &
+                               ! filename containing remap data (map1)
+     &           interp_file2,                                          &
+                               ! filename containing remap data (map2)
      &           output_file   ! filename containing output test data
 
       namelist /remap_inputs/ field_choice, num_repeats,                &
@@ -101,10 +104,12 @@
 !-----------------------------------------------------------------------
 
       character (char_len) ::                                           &
-     &           map_name1,    ! name for mapping from grid1 to grid2   &
+     &           map_name1,                                             &
+                               ! name for mapping from grid1 to grid2
      &           map_name2     ! name for mapping from grid2 to grid1
 
-      integer (kind=int_kind) ::    ! netCDF ids for files and arrays   &
+      integer (kind=int_kind) ::                                        &
+                               ! netCDF ids for files and arrays
      &        n, ncstat, nc_outfile_id,                                 &
      &        nc_srcgrdcntrlat_id, nc_srcgrdcntrlon_id,                 &
      &        nc_dstgrdcntrlat_id, nc_dstgrdcntrlon_id,                 &

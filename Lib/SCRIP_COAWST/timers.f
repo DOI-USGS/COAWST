@@ -47,7 +47,8 @@
      &     cycles_max       ! max value of clock allowed by system
 
       integer (kind=int_kind), dimension(max_timers), save ::           &
-     &     cycles1,         ! cycle number at start for each timer      &
+     &     cycles1,                                                     &
+                            ! cycle number at start for each timer
      &     cycles2          ! cycle number at stop  for each timer
 
       real (kind=real_kind), save ::                                    &

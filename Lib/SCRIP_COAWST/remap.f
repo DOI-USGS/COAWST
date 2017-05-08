@@ -79,8 +79,10 @@
      &     src_array    ! array with source field to be remapped
 
       real (kind=dbl_kind), dimension(:), intent(in), optional ::       &
-     &     src_grad1    ! gradient arrays on source grid necessary for  &
-     &,    src_grad2    ! higher-order remappings
+     &     src_grad1                                                    &
+                        ! gradient arrays on source grid necessary for
+     &,    src_grad2                                                    &
+                        ! higher-order remappings
      &,    src_grad3
 
 !-----------------------------------------------------------------------
@@ -139,16 +141,16 @@
         if (size(map_wts,DIM=1) == 3) then
           do n=1,size(dst_add)
             dst_array(dst_add(n)) = dst_array(dst_add(n)) +             &
-     &                              src_array(src_add(n))*map_wts(1,n) +&
-     &                              src_grad1(src_add(n))*map_wts(2,n) +&
+     &                              src_array(src_add(n))*map_wts(1,n)+ &
+     &                              src_grad1(src_add(n))*map_wts(2,n)+ &
      &                              src_grad2(src_add(n))*map_wts(3,n)
           end do
         else if (size(map_wts,DIM=1) == 4) then
           do n=1,size(dst_add)
             dst_array(dst_add(n)) = dst_array(dst_add(n)) +
-     &                              src_array(src_add(n))*map_wts(1,n) +&
-     &                              src_grad1(src_add(n))*map_wts(2,n) +&
-     &                              src_grad2(src_add(n))*map_wts(3,n) +&
+     &                              src_array(src_add(n))*map_wts(1,n)+ &
+     &                              src_grad1(src_add(n))*map_wts(2,n)+ &
+     &                              src_grad2(src_add(n))*map_wts(3,n)+ &
      &                              src_grad3(src_add(n))*map_wts(4,n)
           end do
         endif

@@ -54,8 +54,10 @@
      &     num_neighbors=4  ! num nearest neighbors to interpolate from
 
       real (kind=dbl_kind), dimension(:), allocatable, save ::          &
-     &     coslat, sinlat, ! cosine, sine of grid lats (for distance)   &
-     &     coslon, sinlon, ! cosine, sine of grid lons (for distance)
+     &     coslat, sinlat,                                              &
+                           ! cosine, sine of grid lats (for distance)
+     &     coslon, sinlon,                                              &
+                           ! cosine, sine of grid lons (for distance)
      &     wgtstmp         ! an array to hold the link weight
 
 !***********************************************************************
@@ -83,7 +85,8 @@
      &     nbr_mask        ! mask at nearest neighbors
 
       integer (kind=int_kind) :: n,                                     &
-     &     dst_add,        ! destination address                        &
+     &     dst_add,                                                     &
+                           ! destination address
      &     nmap            ! index of current map being computed
 
       integer (kind=int_kind), dimension(num_neighbors) ::              &
@@ -93,11 +96,16 @@
      &     nbr_dist        ! angular distance four nearest neighbors
 
       real (kind=dbl_kind) ::                                           &
-     &     coslat_dst,     ! cos(lat) of destination grid point         &
-     &     coslon_dst,     ! cos(lon) of destination grid point         &
-     &     sinlat_dst,     ! sin(lat) of destination grid point         &
-     &     sinlon_dst,     ! sin(lon) of destination grid point         &
-     &     dist_tot        ! sum of neighbor distances (for normalizing)
+     &     coslat_dst,                                                  &
+                           ! cos(lat) of destination grid point
+     &     coslon_dst,                                                  &
+                           ! cos(lon) of destination grid point
+     &     sinlat_dst,                                                  &
+                           ! sin(lat) of destination grid point
+     &     sinlon_dst,                                                  &
+                           ! sin(lon) of destination grid point
+     &     dist_tot        
+                           ! sum of neighbor distances (for normalizing)
 
 !-----------------------------------------------------------------------
 !
@@ -307,15 +315,21 @@
 !-----------------------------------------------------------------------
 
       integer (kind=int_kind), dimension(:,:), intent(in) ::            &
-     &        src_bin_add, ! search bins for restricting search         &
+     &        src_bin_add,                                              &
+                            ! search bins for restricting search
      &        dst_bin_add   
 
       real (kind=dbl_kind), intent(in) ::                               &
-     &        plat,         ! latitude  of the search point             &
-     &        plon,         ! longitude of the search point             &
-     &        coslat_dst,   ! cos(lat)  of the search point             &
-     &        coslon_dst,   ! cos(lon)  of the search point             &
-     &        sinlat_dst,   ! sin(lat)  of the search point             &
+     &        plat,                                                     &
+                            ! latitude  of the search point
+     &        plon,                                                     &
+                            ! longitude of the search point
+     &        coslat_dst,                                               &
+                            ! cos(lat)  of the search point
+     &        coslon_dst,                                               &
+                            ! cos(lon)  of the search point
+     &        sinlat_dst,                                               &
+                            ! sin(lat)  of the search point
      &        sinlon_dst    ! sin(lon)  of the search point
 
 !-----------------------------------------------------------------------
@@ -324,7 +338,8 @@
 !
 !-----------------------------------------------------------------------
 
-      integer (kind=int_kind) :: n, nmax, nadd, nchk, ! dummy indices   &
+      integer (kind=int_kind) :: n, nmax, nadd, nchk,                   &
+                                                      ! dummy indices
      &        min_add, max_add, nm1, np1, i, j, ip1, im1, jp1, jm1
 
       real (kind=dbl_kind) ::                                           &
@@ -451,8 +466,10 @@
 !-----------------------------------------------------------------------
 
       integer (kind=int_kind), intent(in) ::                            &
-     &        add1,  ! address on grid1                                 &
-     &        add2,  ! address on grid2                                 &
+     &        add1,                                                     &
+                     ! address on grid1
+     &        add2,                                                     &
+                     ! address on grid2
      &        nmap   ! identifies which direction for mapping
 
       real (kind=dbl_kind), dimension(:), intent(in) ::                 &

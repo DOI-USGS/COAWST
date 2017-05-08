@@ -79,13 +79,20 @@
       implicit none 
 
       character (char_len), intent(in) ::                               &
-     &           grid1_file,   ! filename of grid file containing grid1 &
-     &           grid2_file,   ! filename of grid file containing grid2 &
-     &           interp_file1, ! filename for output remap data (map2)  &
-     &           interp_file2, ! filename for output remap data (map2)  &
-     &           map1_name,    ! name for mapping from grid1 to grid2   &
-     &           map2_name,    ! name for mapping from grid2 to grid1   &
-     &           output_ncfile ! name for output netcdf file
+     &           grid1_file,                                            &
+                               ! filename of grid file containing grid1
+     &           grid2_file,                                            &
+                               ! filename of grid file containing grid2
+     &           interp_file1,                                          &
+                               ! filename for output remap data (map2)
+     &           interp_file2,                                          &
+                               ! filename for output remap data (map2)
+     &           map1_name,                                             &
+                               ! name for mapping from grid1 to grid2
+     &           map2_name,                                             &
+                               ! name for mapping from grid2 to grid1
+     &           output_ncfile                                          
+                               ! name for output netcdf file
 
       integer (kind=int_kind), intent(in) :: grid1_xdim, grid1_ydim
       integer (kind=int_kind), intent(in) :: grid2_xdim, grid2_ydim
@@ -107,8 +114,10 @@
 !     local variables
 !-----------------------------------------------------------------------
       character (char_len) ::                                           &
-     &           map_method,   ! choice for mapping method              &
-     &           normalize_opt,! option for normalizing weights         &
+     &           map_method,                                            &
+                               ! choice for mapping method
+     &           normalize_opt,                                         &
+                               ! option for normalizing weights
      &           output_opt    ! option for output conventions
 
       integer (kind=int_kind) ::                                        &
@@ -120,7 +129,8 @@
 !     &                        luse_grid1_area, luse_grid2_area,
 !     &                        map_method, normalize_opt, output_opt,
 !     &                        restrict_type, num_srch_bins
-      integer (kind=int_kind) :: n,     ! dummy counter                 &
+      integer (kind=int_kind) :: n,                                     &
+                                        ! dummy counter
      &                           iunit  ! unit number for namelist file
 
 !-----------------------------------------------------------------------

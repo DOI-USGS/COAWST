@@ -47,9 +47,12 @@
      &    unit_free   ! flags to determine whether unit is free for use
 
       integer (kind=int_kind), parameter ::                             &
-     &    stdin  = 5, ! reserves unit for standard input                &
-     &    stdout = 6, ! reserves unit for standard output               &
-     &    stderr = 6  ! reserves unit for standard error
+     &    stdin  = 5,                                                   &
+                       ! reserves unit for standard input                
+     &    stdout = 6,                                                   &
+                       ! reserves unit for standard output
+     &    stderr = 6                                                    
+                       ! reserves unit for standard error
 
 !***********************************************************************
 

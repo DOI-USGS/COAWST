@@ -59,24 +59,36 @@
      &,     map_type_distwgt  = 4
 
       integer (kind=int_kind), save ::                                  &
-     &      max_links_map1  ! current size of link arrays               &
-     &,     num_links_map1  ! actual number of links for remapping      &
-     &,     max_links_map2  ! current size of link arrays               &
-     &,     num_links_map2  ! actual number of links for remapping      &
-     &,     num_maps        ! num of remappings for this grid pair      &
-     &,     num_wts         ! num of weights used in remapping          &
-     &,     map_type        ! identifier for remapping method           &
-     &,     norm_opt        ! option for normalization (conserv only)   &
+     &      max_links_map1                                              &
+                            ! current size of link arrays
+     &,     num_links_map1                                              &
+                            ! actual number of links for remapping
+     &,     max_links_map2                                              &
+                            ! current size of link arrays
+     &,     num_links_map2                                              &
+                            ! actual number of links for remapping
+     &,     num_maps                                                    &
+                            ! num of remappings for this grid pair
+     &,     num_wts                                                     &
+                            ! num of weights used in remapping
+     &,     map_type                                                    &
+                            ! identifier for remapping method
+     &,     norm_opt                                                    &
+                            ! option for normalization (conserv only)
      &,     resize_increment ! default amount to increase array size
 
       integer (kind=int_kind), dimension(:), allocatable, save ::       &
-     &      grid1_add_map1, ! grid1 address for each link in mapping 1  &
-     &      grid2_add_map1, ! grid2 address for each link in mapping 1  &
-     &      grid1_add_map2, ! grid1 address for each link in mapping 2  &
+     &      grid1_add_map1,                                             &
+                            ! grid1 address for each link in mapping 1
+     &      grid2_add_map1,                                             &
+                            ! grid2 address for each link in mapping 1
+     &      grid1_add_map2,                                             &
+                            ! grid1 address for each link in mapping 2
      &      grid2_add_map2  ! grid2 address for each link in mapping 2
 
       real (kind=dbl_kind), dimension(:,:), allocatable, save ::        &
-     &      wts_map1, ! map weights for each link (num_wts,max_links)   &
+     &      wts_map1,                                                   &
+                      ! map weights for each link (num_wts,max_links)
      &      wts_map2  ! map weights for each link (num_wts,max_links)
 
 !***********************************************************************
@@ -175,7 +187,8 @@
 !-----------------------------------------------------------------------
 
       integer (kind=int_kind), intent(in) ::                            &
-     &     nmap,      ! identifies which mapping array to resize        &
+     &     nmap,                                                        &
+                      ! identifies which mapping array to resize
      &     increment  ! the number of links to add(subtract) to arrays
 
 !-----------------------------------------------------------------------
@@ -185,11 +198,13 @@
 !-----------------------------------------------------------------------
 
       integer (kind=int_kind) ::                                        &
-     &   ierr,     ! error flag                                         &
+     &   ierr,                                                          &
+                   ! error flag
      &   mxlinks   ! size of link arrays
 
       integer (kind=int_kind), dimension(:), allocatable ::             &
-     &   add1_tmp, ! temp array for resizing address arrays             &
+     &   add1_tmp,                                                      &
+                   ! temp array for resizing address arrays
      &   add2_tmp  ! temp array for resizing address arrays
 
       real (kind=dbl_kind), dimension(:,:), allocatable ::              &

@@ -52,17 +52,23 @@
 !-----------------------------------------------------------------------
 
       character(char_len), private ::                                   &
-     &   map_method       ! character string for map_type               &
-     &,  normalize_opt    ! character string for normalization option   &
-     &,  history          ! character string for history information    &
-     &,  convention       ! character string for output convention      &
-     &,  group_name       ! character string for each group name
+     &   map_method                                                     &
+                          ! character string for map_type
+     &,  normalize_opt                                                  &
+                          ! character string for normalization option
+     &,  history                                                        &
+                          ! character string for history information
+     &,  convention                                                     &
+                          ! character string for output convention
+     &,  group_name        
+                          ! character string for each group name 
 
       character(8), private ::                                          &
      &   cdate            ! character date string
 
       integer (kind=int_kind), dimension(:), allocatable, private ::    &
-     &   src_mask_int     ! integer masks to determine                  &
+     &   src_mask_int                                                   &
+                          ! integer masks to determine
      &,  dst_mask_int     ! cells that participate in map
 
 !-----------------------------------------------------------------------
@@ -72,35 +78,64 @@
 !-----------------------------------------------------------------------
 
       integer (kind=int_kind), private ::                               &
-     &   ncstat               ! error flag for netCDF calls             &
-     &,  nc_file_id           ! id for netCDF file                      &
-     &,  nc_srcgrdsize_id     ! id for source grid size                 &
-     &,  nc_dstgrdsize_id     ! id for destination grid size            &
-     &,  nc_srcgrdcorn_id     ! id for number of source grid corners    &
-     &,  nc_dstgrdcorn_id     ! id for number of dest grid corners      &
-     &,  nc_srcgrdrank_id     ! id for source grid rank                 &
-     &,  nc_dstgrdrank_id     ! id for dest grid rank                   &
-     &,  nc_numlinks_id       ! id for number of links in mapping       &
-     &,  nc_numwgts_id        ! id for number of weights for mapping    &
-     &,  nc_srcgrddims_id     ! id for source grid dimensions           &
-     &,  nc_dstgrddims_id     ! id for dest grid dimensions             &
-     &,  nc_srcgrdcntrlat_id  ! id for source grid center latitude      &
-     &,  nc_dstgrdcntrlat_id  ! id for dest grid center latitude        &
-     &,  nc_srcgrdcntrlon_id  ! id for source grid center longitude     &
-     &,  nc_dstgrdcntrlon_id  ! id for dest grid center longitude       &
-     &,  nc_srcgrdimask_id    ! id for source grid mask                 &
-     &,  nc_dstgrdimask_id    ! id for dest grid mask                   &
-     &,  nc_srcgrdcrnrlat_id  ! id for latitude of source grid corners  &
-     &,  nc_srcgrdcrnrlon_id  ! id for longitude of source grid corners &
-     &,  nc_dstgrdcrnrlat_id  ! id for latitude of dest grid corners    &
-     &,  nc_dstgrdcrnrlon_id  ! id for longitude of dest grid corners   &
-     &,  nc_srcgrdarea_id     ! id for area of source grid cells        &
-     &,  nc_dstgrdarea_id     ! id for area of dest grid cells          &
-     &,  nc_srcgrdfrac_id     ! id for area fraction on source grid     &
-     &,  nc_dstgrdfrac_id     ! id for area fraction on dest grid       &
-     &,  nc_srcadd_id         ! id for map source address               &
-     &,  nc_dstadd_id         ! id for map destination address          &
-     &,  nc_rmpmatrix_id      ! id for remapping matrix                 &
+     &   ncstat                                                         &
+                              ! error flag for netCDF calls 
+     &,  nc_file_id                                                     &
+                              ! id for netCDF file
+     &,  nc_srcgrdsize_id                                               &
+                              ! id for source grid size
+     &,  nc_dstgrdsize_id                                               &
+                              ! id for destination grid size
+     &,  nc_srcgrdcorn_id                                               &
+                              ! id for number of source grid corners
+     &,  nc_dstgrdcorn_id                                               &
+                              ! id for number of dest grid corners
+     &,  nc_srcgrdrank_id                                               &
+                              ! id for source grid rank
+     &,  nc_dstgrdrank_id                                               &
+                              ! id for dest grid rank
+     &,  nc_numlinks_id                                                 &
+                              ! id for number of links in mapping
+     &,  nc_numwgts_id                                                  &
+                              ! id for number of weights for mapping
+     &,  nc_srcgrddims_id                                               &
+                              ! id for source grid dimensions
+     &,  nc_dstgrddims_id                                               &
+                              ! id for dest grid dimensions
+     &,  nc_srcgrdcntrlat_id                                            &
+                              ! id for source grid center latitude
+     &,  nc_dstgrdcntrlat_id                                            &
+                              ! id for dest grid center latitude
+     &,  nc_srcgrdcntrlon_id                                            &
+                              ! id for source grid center longitude
+     &,  nc_dstgrdcntrlon_id                                            &
+                              ! id for dest grid center longitude
+     &,  nc_srcgrdimask_id                                              &
+                              ! id for source grid mask
+     &,  nc_dstgrdimask_id                                              &
+                              ! id for dest grid mask
+     &,  nc_srcgrdcrnrlat_id                                            &
+                              ! id for latitude of source grid corners
+     &,  nc_srcgrdcrnrlon_id                                            &
+                              ! id for longitude of source grid corners
+     &,  nc_dstgrdcrnrlat_id                                            &
+                              ! id for latitude of dest grid corners
+     &,  nc_dstgrdcrnrlon_id                                            &
+                              ! id for longitude of dest grid corners
+     &,  nc_srcgrdarea_id                                               &
+                              ! id for area of source grid cells
+     &,  nc_dstgrdarea_id                                               &
+                              ! id for area of dest grid cells
+     &,  nc_srcgrdfrac_id                                               &
+                              ! id for area fraction on source grid
+     &,  nc_dstgrdfrac_id                                               &
+                              ! id for area fraction on dest grid
+     &,  nc_srcadd_id                                                   &
+                              ! id for map source address
+     &,  nc_dstadd_id                                                   &
+                              ! id for map destination address
+     &,  nc_rmpmatrix_id                                                &
+                              ! id for remapping matrix
      &,  grpid                ! id for each group 
    
       integer (kind=int_kind), dimension(2), private ::                 &
@@ -130,15 +165,21 @@
 !-----------------------------------------------------------------------
 
       character(char_len), intent(in) ::                                &
-     &            map1_name,    ! name for mapping grid1 to grid2       &
-     &            map2_name,    ! name for mapping grid2 to grid1       &
-     &            interp_file1, ! filename for map1 remap data          &
-     &            interp_file2, ! filename for map2 remap data          &
-     &            output_opt    ! option for output conventions         &
+     &            map1_name,                                            &
+                                ! name for mapping grid1 to grid2
+     &            map2_name,                                            &
+                                ! name for mapping grid2 to grid1
+     &            interp_file1,                                         &
+                                ! filename for map1 remap data
+     &            interp_file2,                                         &
+                                ! filename for map2 remap data
+     &            output_opt                                            &
+                                ! option for output conventions
      &,           output_ncfile ! filename for output netcdf file
    
       integer (kind=int_kind), intent(in) ::                            &
-     &            counter_grid  ! counter for writing netcdf outputfile &
+     &            counter_grid                                          &
+                                ! counter for writing netcdf outputfile
      &,      Ngrids_comb_total  ! Total number of outputfile 
                                 ! subgroups for netcdf file
 
@@ -250,15 +291,19 @@
 !-----------------------------------------------------------------------
 
       character(char_len), intent(in) ::                                &
-     &            map_name       ! name for mapping                     &
-     &,           interp_file    ! filename for remap data              &
+     &            map_name                                              &
+                                 ! name for mapping 
+     &,           interp_file                                           &
+                                 ! filename for remap data
      &,           output_ncfile  ! filename for output netcdf file
    
       integer (kind=int_kind), intent(in) ::                            &
-     &  direction              ! direction of map (1=grid1 to grid2     &
+     &  direction                                                       &
+                               ! direction of map (1=grid1 to grid2
                                !                   2=grid2 to grid1)
-     &, counter_grid           ! counter for writing netcdf outputfile  &
-     &, Ngrids_comb_total      ! Total number of outputfile             &
+     &, counter_grid                                                    &
+                               ! counter for writing netcdf outputfile
+     &, Ngrids_comb_total      ! Total number of outputfile 
                                ! subgroups for netcdf file
 !-----------------------------------------------------------------------
 !
@@ -267,14 +312,19 @@
 !----------------------------------------------------------------------- 
  
       character(char_len) ::                                            &
-     &  grid1_ctmp        ! character temp for grid1 names              &
-     &, grid2_ctmp        ! character temp for grid2 names              &
-     &, common_file
+     &  grid1_ctmp                                                      &
+                          ! character temp for grid1 names
+     &, grid2_ctmp                                                      &
+                          ! character temp for grid2 names
+     &, common_file                  
 
       integer (kind=int_kind) ::                                        &
-     &  itmp1             ! integer temp                                &
-     &, itmp2             ! integer temp                                &
-     &, itmp3             ! integer temp                                &
+     &  itmp1                                                           &
+                          ! integer temp
+     &, itmp2                                                           &
+                          ! integer temp
+     &, itmp3                                                           &
+                          ! integer temp
      &, itmp4             ! integer temp
 
 !-----------------------------------------------------------------------
@@ -817,7 +867,8 @@
 !-----------------------------------------------------------------------
 
       character(char_len), intent(in) ::                                &
-     &            map_name     ! name for mapping                       &
+     &            map_name                                              &
+                               ! name for mapping 
      &,           interp_file  ! filename for remap data
 
       integer (kind=int_kind), intent(in) ::                            &
@@ -831,19 +882,29 @@
 !-----------------------------------------------------------------------
 
       character(char_len) ::                                            &
-     &  grid1_ctmp        ! character temp for grid1 names              &
+     &  grid1_ctmp                                                      &
+                          ! character temp for grid1 names
      &, grid2_ctmp        ! character temp for grid2 names
 
       integer (kind=int_kind) ::                                        &
-     &  itmp1             ! integer temp                                &
-     &, itmp2             ! integer temp                                &
-     &, itmp3             ! integer temp                                &
-     &, itmp4             ! integer temp                                &
-     &, nc_numwgts1_id    ! extra netCDF id for additional weights      &
-     &, nc_src_isize_id   ! extra netCDF id for ni_a                    &
-     &, nc_src_jsize_id   ! extra netCDF id for nj_a                    &
-     &, nc_dst_isize_id   ! extra netCDF id for ni_b                    &
-     &, nc_dst_jsize_id   ! extra netCDF id for nj_b                    &
+     &  itmp1                                                           &
+                          ! integer temp
+     &, itmp2                                                           &
+                          ! integer temp
+     &, itmp3                                                           &
+                          ! integer temp
+     &, itmp4                                                           &
+                          ! integer temp
+     &, nc_numwgts1_id                                                  &
+                          ! extra netCDF id for additional weights
+     &, nc_src_isize_id                                                 &
+                          ! extra netCDF id for ni_a
+     &, nc_src_jsize_id                                                 &
+                          ! extra netCDF id for nj_a
+     &, nc_dst_isize_id                                                 &
+                          ! extra netCDF id for ni_b
+     &, nc_dst_jsize_id                                                 &
+                          ! extra netCDF id for nj_b
      &, nc_rmpmatrix2_id  ! extra netCDF id for high-order remap matrix
 
       real (kind=dbl_kind), dimension(:),allocatable ::                 &
@@ -1526,7 +1587,8 @@
 !-----------------------------------------------------------------------
 
       integer (kind=int_kind), intent(inout), dimension(:) ::           &
-     &        add1,       ! destination address array (num_links)       &
+     &        add1,                                                     &
+                          ! destination address array (num_links)
      &        add2        ! source      address array
 
       real (kind=dbl_kind), intent(inout), dimension(:,:) ::            &
@@ -1539,12 +1601,16 @@
 !-----------------------------------------------------------------------
 
       integer (kind=int_kind) ::                                        &
-     &          num_links,          ! num of links for this mapping     &
-     &          num_wts,            ! num of weights for this mapping   &
-     &          add1_tmp, add2_tmp, ! temp for addresses during swap    &
+     &          num_links,                                              &
+                                    ! num of links for this mapping
+     &          num_wts,                                                &
+                                    ! num of weights for this mapping
+     &          add1_tmp, add2_tmp,                                     &
+                                    ! temp for addresses during swap
      &          nwgt,                                                   &
-     &          lvl, final_lvl,     ! level indexes for heap sort levels&
-     &          chk_lvl1, chk_lvl2, max_lvl
+     &          lvl, final_lvl,                                         &
+                                    ! level indexes for heap sort levels
+     &          chk_lvl1, chk_lvl2, max_lvl                             
 
       real (kind=dbl_kind), dimension(SIZE(weights,DIM=1)) ::           &
      &          wgttmp              ! temp for holding wts during swap

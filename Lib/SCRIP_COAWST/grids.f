@@ -61,10 +61,13 @@
 !-----------------------------------------------------------------------
 
       integer (kind=int_kind), save ::                                  &
-     &             grid1_size, grid2_size, ! total points on each grid  &
-     &             grid1_rank, grid2_rank, ! rank of each grid          &
-     &             grid1_corners, grid2_corners ! number of corners     &
-     &                                          ! for each grid cell
+     &             grid1_size, grid2_size,                              &
+                                            ! total points on each grid
+     &             grid1_rank, grid2_rank,                              &
+                                            ! rank of each grid
+     &             grid1_corners, grid2_corners
+                                                ! number of corners
+                                                ! for each grid cell
 
       integer (kind=int_kind), dimension(:), allocatable, save ::       &
      &             grid1_dims, grid2_dims  ! size of each grid dimension
@@ -73,7 +76,8 @@
      &             grid1_name, grid2_name  ! name for each grid
 
       character (char_len), save ::                                     &
-     &             grid1_units, ! units for grid coords (degs/radians)  &
+     &             grid1_units,                                         &
+                                ! units for grid coords (degs/radians)
      &             grid2_units  ! units for grid coords
 
       real (kind=dbl_kind), parameter ::                                &
@@ -86,35 +90,52 @@
 !-----------------------------------------------------------------------
 
       logical (kind=log_kind), dimension(:), allocatable, save ::       &
-     &             grid1_mask,        ! flag which cells participate    &
-     &             grid2_mask         ! flag which cells participate
+     &             grid1_mask,                                          &
+                                      ! flag which cells participate
+     &             grid2_mask                                            
+                                      ! flag which cells participate
 
-      real (kind=dbl_kind), dimension(:), allocatable, save ::          &
-     &             grid1_center_lat,  ! lat/lon coordinates for         &
-     &             grid1_center_lon,  ! each grid center in radians     &
-     &             grid2_center_lat,                                    &
-     &             grid2_center_lon,                                    &
-     &             grid1_area,        ! tot area of each grid1 cell     &
-     &             grid2_area,        ! tot area of each grid2 cell     &
-     &             grid1_area_in,     ! area of grid1 cell from file    &
-     &             grid2_area_in,     ! area of grid2 cell from file    &
-     &             grid1_frac,        ! fractional area of grid cells   &
-     &             grid2_frac         ! participating in remapping
+      real (kind=dbl_kind), dimension(:), allocatable, save ::           &
+     &             grid1_center_lat,                                     &
+                                      ! lat/lon coordinates for
+     &             grid1_center_lon,                                     &
+                                      ! each grid center in radians
+     &             grid2_center_lat,                                     &
+     &             grid2_center_lon,                                     &
+     &             grid1_area,                                           &
+                                      ! tot area of each grid1 cell
+     &             grid2_area,                                           &
+                                      ! tot area of each grid2 cell
+     &             grid1_area_in,                                        &
+                                      ! area of grid1 cell from file
+     &             grid2_area_in,                                        &
+                                      ! area of grid2 cell from file
+     &             grid1_frac,                                           &
+                                      ! fractional area of grid cells
+     &             grid2_frac         
+                                      ! participating in remapping
 
-      real (kind=dbl_kind), dimension(:,:), allocatable, save ::        &
-     &             grid1_corner_lat,  ! lat/lon coordinates for         &
-     &             grid1_corner_lon,  ! each grid corner in radians     &
-     &             grid2_corner_lat, 
+      real (kind=dbl_kind), dimension(:,:), allocatable, save ::         &
+     &             grid1_corner_lat,                                     & 
+                                      ! lat/lon coordinates for
+     &             grid1_corner_lon,                                     &
+                                      ! each grid corner in radians
+     &             grid2_corner_lat,                                     &
      &             grid2_corner_lon
 
-      logical (kind=log_kind), save ::                                  &
-     &             luse_grid_centers ! use centers for bounding boxes   &
-     &,            luse_grid1_area   ! use area from grid file          &
-     &,            luse_grid2_area   ! use area from grid file
+      logical (kind=log_kind), save ::                                   &
+     &             luse_grid_centers                                     &
+                                     ! use centers for bounding boxes
+     &,            luse_grid1_area                                       & 
+                                     ! use area from grid file
+     &,            luse_grid2_area                                        
+                                     ! use area from grid file
 
-      real (kind=dbl_kind), dimension(:,:), allocatable, save ::        &
-     &             grid1_bound_box,  ! lat/lon bounding box for use     &
-     &             grid2_bound_box   ! in restricting grid searches
+      real (kind=dbl_kind), dimension(:,:), allocatable, save ::         &
+     &             grid1_bound_box,                                      &
+                                     ! lat/lon bounding box for use
+     &             grid2_bound_box                                       
+                                     ! in restricting grid searches
 
 !-----------------------------------------------------------------------
 !
@@ -126,14 +147,18 @@
      &        restrict_type  ! type of bins to use
 
       integer (kind=int_kind), save ::                                  &
-     &        num_srch_bins  ! num of bins for restricted srch
+     &        num_srch_bins                                              
+                              ! num of bins for restricted srch
 
       integer (kind=int_kind), dimension(:,:), allocatable, save ::     &
-     &        bin_addr1, ! min,max adds for grid1 cells in this lat bin &
-     &        bin_addr2  ! min,max adds for grid2 cells in this lat bin
+     &        bin_addr1,                                                &
+                         ! min,max adds for grid1 cells in this lat bin
+     &        bin_addr2  
+                         ! min,max adds for grid2 cells in this lat bin
 
       real(kind=dbl_kind), dimension(:,:), allocatable, save ::         &
-     &        bin_lats   ! min,max latitude for each search bin         &
+     &        bin_lats                                                  &
+                         ! min,max latitude for each search bin
      &,       bin_lons   ! min,max longitude for each search bin
 
 !***********************************************************************
@@ -174,15 +199,19 @@
 !-----------------------------------------------------------------------
 
       integer (kind=int_kind) ::                                        &
-     &  n      ! loop counter                                           &
-     &, nele   ! element loop counter                                   &
-     &, iunit  ! unit number for opening files                          &
-     &, i,j    ! logical 2d addresses                                   &
+     &  n                                                               &
+               ! loop counter
+     &, nele                                                            &
+               ! element loop counter
+     &, iunit                                                           &
+               ! unit number for opening files
+     &, i,j                                                             &
+               ! logical 2d addresses
      &, ip1,jp1                                                         &
      &, n_add, e_add, ne_add                                            &
      &, nx, ny                                                          &
      &, counter                                                         &
-     &, MP,LP 
+     &, MP,LP
 
       integer (kind=int_kind), dimension(:), allocatable ::             &
      &                            imask ! integer mask read from file

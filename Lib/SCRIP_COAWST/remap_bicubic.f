@@ -72,32 +72,46 @@
 !-----------------------------------------------------------------------
 
       integer (kind=int_kind) :: n,icount,                              &
-     &     dst_add,        ! destination address                        &
-     &     iter,           ! iteration counter                          &
+     &     dst_add,                                                     &
+                           ! destination address
+     &     iter,                                                        &
+                           ! iteration counter
      &     nmap            ! index of current map being computed
 
       integer (kind=int_kind), dimension(4) ::                          &
      &     src_add         ! address for the four source points
 
       real (kind=dbl_kind), dimension(4)  ::                            &
-     &     src_lats,       ! latitudes  of four bilinear corners        &
+     &     src_lats,                                                    &
+                           ! latitudes  of four bilinear corners
      &     src_lons        ! longitudes of four bilinear corners
 
       real (kind=dbl_kind), dimension(4,4)  ::                          &
      &     wgts            ! bicubic weights for four corners
 
       real (kind=dbl_kind) ::                                           &
-     &     plat, plon,       ! lat/lon coords of destination point      &
-     &     iguess, jguess,   ! current guess for bilinear coordinate    &
-     &     thguess, phguess, ! current guess for lat/lon coordinate     &
-     &     deli, delj,       ! corrections to i,j                       &
-     &     dth1, dth2, dth3, ! some latitude  differences               &
-     &     dph1, dph2, dph3, ! some longitude differences               &
-     &     dthp, dphp,       ! difference between point and sw corner   &
-     &     mat1, mat2, mat3, mat4, ! matrix elements                    &
-     &     determinant,      ! matrix determinant                       &
-     &     sum_wgts,         ! sum of weights for normalization         &
-     &     w1,w2,w3,w4,w5,w6,w7,w8, ! 16 bicubic weight functions       &
+     &     plat, plon,                                                  &    
+                             ! lat/lon coords of destination point
+     &     iguess, jguess,                                              &
+                             ! current guess for bilinear coordinate
+     &     thguess, phguess,                                            &
+                             ! current guess for lat/lon coordinate
+     &     deli, delj,                                                  &
+                             ! corrections to i,j
+     &     dth1, dth2, dth3,                                            &
+                             ! some latitude  differences
+     &     dph1, dph2, dph3,                                            &
+                             ! some longitude differences
+     &     dthp, dphp,                                                  &
+                             ! difference between point and sw corner
+     &     mat1, mat2, mat3, mat4,                                      &
+                             ! matrix elements
+     &     determinant,                                                 &
+                             ! matrix determinant
+     &     sum_wgts,                                                    &
+                             ! sum of weights for normalization
+     &     w1,w2,w3,w4,w5,w6,w7,w8,                                     &
+                             ! 16 bicubic weight functions
      &     w9,w10,w11,w12,w13,w14,w15,w16
 
 !-----------------------------------------------------------------------
@@ -518,21 +532,24 @@
 !-----------------------------------------------------------------------
 
       real (kind=dbl_kind), intent(in) ::                               &
-     &        plat,   ! latitude  of the search point
+     &        plat,                                                     &
+                      ! latitude  of the search point
      &        plon    ! longitude of the search point
 
       integer (kind=int_kind), dimension(2), intent(in) ::              &
      &        src_grid_dims  ! size of each src grid dimension
 
       real (kind=dbl_kind), dimension(:), intent(in) ::                 &
-     &        src_center_lat, ! latitude  of each src grid center       &
+     &        src_center_lat,                                           &
+                              ! latitude  of each src grid center 
      &        src_center_lon  ! longitude of each src grid center
 
       real (kind=dbl_kind), dimension(:,:), intent(in) ::               &
      &        src_bound_box   ! bounding box for src grid search
 
       integer (kind=int_kind), dimension(:,:), intent(in) ::            &
-     &        src_bin_add,    ! search bins for restricting
+     &        src_bin_add,                                              &
+                              ! search bins for restricting
      &        dst_bin_add     ! searches
 
 !-----------------------------------------------------------------------
@@ -541,9 +558,12 @@
 !
 !-----------------------------------------------------------------------
 
-      integer (kind=int_kind) :: n, next_n, srch_add,   ! dummy indices &
-     &    nx, ny,            ! dimensions of src grid                   &
-     &    min_add, max_add,  ! addresses for restricting search         &
+      integer (kind=int_kind) :: n, next_n, srch_add,                   &
+                                                     ! dummy indices
+     &    nx, ny,                                                       &
+                             ! dimensions of src grid
+     &    min_add, max_add,                                             &
+                             ! addresses for restricting search
      &    i, j, jp1, ip1, n_add, e_add, ne_add  ! addresses
 
       real (kind=dbl_kind) ::  ! vectors for cross-product check        &
@@ -776,7 +796,8 @@
 !-----------------------------------------------------------------------
 
       integer (kind=int_kind), intent(in) ::                            &
-     &        dst_add,  ! address on destination grid                   &
+     &        dst_add,                                                  &
+                        ! address on destination grid
      &        nmap      ! identifies which direction for mapping
 
       integer (kind=int_kind), dimension(4), intent(in) ::              &
@@ -791,7 +812,8 @@
 !
 !-----------------------------------------------------------------------
 
-      integer (kind=int_kind) :: n, ! dummy index                       &
+      integer (kind=int_kind) :: n,                                     &
+                                    ! dummy index
      &       num_links_old          ! placeholder for old link number
 
 !-----------------------------------------------------------------------

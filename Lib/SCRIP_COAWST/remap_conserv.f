@@ -75,16 +75,19 @@
      &        srch_add       ! global address of cells in srch arrays
 
       real (kind=dbl_kind), parameter ::                                &
-     &     north_thresh = 1.45_dbl_kind, ! threshold for coord transf.  &
+     &     north_thresh = 1.45_dbl_kind,                                &
+                                         ! threshold for coord transf.
      &     south_thresh =-2.00_dbl_kind  ! threshold for coord transf.
 
       real (kind=dbl_kind), dimension(:,:), allocatable, save ::        &
-     &     srch_corner_lat,  ! lat of each corner of srch cells         &
+     &     srch_corner_lat,                                             &
+                             ! lat of each corner of srch cells
      &     srch_corner_lon   ! lon of each corner of srch cells
 
 
       integer (kind=int_kind), dimension(:,:), allocatable, save ::     &
-     &        link_add1,  ! min,max link add to restrict search         &
+     &        link_add1,                                                &
+                          ! min,max link add to restrict search
      &        link_add2   ! min,max link add to restrict search
 !***********************************************************************
 
@@ -113,18 +116,27 @@
                                  ! to prevent infinite loop
 
       integer (kind=int_kind) ::                                        &
-     &        grid1_add,  ! current linear address for grid1 cell       &
-     &        grid2_add,  ! current linear address for grid2 cell       &
-     &        min_add,    ! addresses for restricting search of         &
-     &        max_add,    !   destination grid                          &
-     &        n, nwgt,    ! generic counters                            &
-     &        corner,     ! corner of cell that segment starts from     &
-     &        next_corn,  ! corner of cell that segment ends on         &
+     &        grid1_add,                                                &
+                          ! current linear address for grid1 cell
+     &        grid2_add,                                                &
+                          ! current linear address for grid2 cell
+     &        min_add,                                                  &
+                          ! addresses for restricting search of
+     &        max_add,                                                  &
+                          !   destination grid
+     &        n, nwgt,                                                  &
+                          ! generic counters
+     &        corner,                                                   &
+                          ! corner of cell that segment starts from
+     &        next_corn,                                                &
+                          ! corner of cell that segment ends on
      &        num_subseg  ! number of subsegments 
 
       logical (kind=log_kind) ::                                        &
-     &        lcoinc,  ! flag for coincident segments                   &
-     &        lrevers, ! flag for reversing direction of segment        &
+     &        lcoinc,                                                   &
+                       ! flag for coincident segments
+     &        lrevers,                                                  &
+                       ! flag for reversing direction of segment
      &        lbegin   ! flag for first integration of a segment
 
       logical (kind=log_kind) ::  first_call  ! First call is a flag
@@ -135,12 +147,15 @@
      &        srch_mask   ! mask for restricting searches
 
       real (kind=dbl_kind) ::                                           &
-     &     intrsct_lat, intrsct_lon,       ! lat/lon of next intersect  &
-     &     beglat, endlat, beglon, endlon, ! endpoints of current seg.  &
+     &     intrsct_lat, intrsct_lon,                                    &
+                                           ! lat/lon of next intersect
+     &     beglat, endlat, beglon, endlon,                              &
+                                           ! endpoints of current seg.
      &     norm_factor                     ! factor for normalizing wts
 
       real (kind=dbl_kind), dimension(:), allocatable ::                &
-     &       grid2_centroid_lat, grid2_centroid_lon, ! centroid coords  &
+     &       grid2_centroid_lat, grid2_centroid_lon,                    &
+                                                     ! centroid coords
      &       grid1_centroid_lat, grid1_centroid_lon  ! on each grid
 
       real (kind=dbl_kind), dimension(2) :: begseg ! begin lat/lon for
@@ -972,11 +987,13 @@
 !-----------------------------------------------------------------------
 
       logical (kind=log_kind), intent(in) ::                            &
-     &     lbegin, ! flag for first integration along this segment      &
+     &     lbegin,                                                      &
+                   ! flag for first integration along this segment
      &     lrevers ! flag whether segment integrated in reverse
 
       real (kind=dbl_kind), intent(in) ::                               &
-     &     beglat, beglon,  ! beginning lat/lon endpoints for segment   &
+     &     beglat, beglon,                                              &
+                            ! beginning lat/lon endpoints for segment
      &     endlat, endlon   ! ending    lat/lon endpoints for segment
 
       real (kind=dbl_kind), dimension(2), intent(inout) ::              &
@@ -1017,16 +1034,25 @@
      &     lthresh = .false.  ! flags segments crossing threshold bndy
 
       real (kind=dbl_kind) ::                                           &
-     &     lon1, lon2,       ! local longitude variables for segment    &
-     &     lat1, lat2,       ! local latitude  variables for segment    &
-     &     grdlon1, grdlon2, ! local longitude variables for grid cell  &
-     &     grdlat1, grdlat2, ! local latitude  variables for grid cell  &
-     &     vec1_lat, vec1_lon, ! vectors and cross products used        &
-     &     vec2_lat, vec2_lon, ! during grid search                     &
+     &     lon1, lon2,                                                  &       
+                             ! local longitude variables for segment
+     &     lat1, lat2,                                                  &
+                             ! local latitude  variables for segment
+     &     grdlon1, grdlon2,                                            &
+                             ! local longitude variables for grid cell
+     &     grdlat1, grdlat2,                                            &
+                             ! local latitude  variables for grid cell
+     &     vec1_lat, vec1_lon,                                          &
+                             ! vectors and cross products used
+     &     vec2_lat, vec2_lon,                                          &
+                             ! during grid search
      &     cross_product,                                               &
-     &     eps, offset,        ! small offset away from intersect       &
-     &     s1, s2, determ,     ! variables used for linear solve to     &
-     &     mat1, mat2, mat3, mat4, rhs1, rhs2  ! find intersection
+     &     eps, offset,                                                 &
+                             ! small offset away from intersect
+     &     s1, s2, determ,                                              &
+                             ! variables used for linear solve to
+     &     mat1, mat2, mat3, mat4, rhs1, rhs2                             
+                                              ! find intersection
 
       real (kind=dbl_kind), save ::                                     &
      &     intrsct_lat_off, intrsct_lon_off ! lat/lon coords offset 
@@ -1440,7 +1466,8 @@
 !-----------------------------------------------------------------------
 
       real (kind=dbl_kind), intent(in) ::                               &
-     &     beglat, beglon,  ! beginning lat/lon endpoints for segment   &
+     &     beglat, beglon,                                              &
+                            ! beginning lat/lon endpoints for segment
      &     endlat, endlon   ! ending    lat/lon endpoints for segment
 
       real (kind=dbl_kind), dimension(2), intent(inout) ::              &
@@ -1479,22 +1506,35 @@
 
       logical (kind=log_kind) :: loutside ! flags points outside grid
 
-      real (kind=dbl_kind) :: pi4, rns, ! north/south conversion        &
-     &     x1, x2,       ! local x variables for segment                &
-     &     y1, y2,       ! local y variables for segment                &
-     &     begx, begy,   ! beginning x,y variables for segment          &
-     &     endx, endy,   ! beginning x,y variables for segment          &
-     &     begsegx, begsegy,   ! beginning x,y variables for segment    &
-     &     grdx1, grdx2, ! local x variables for grid cell              &
-     &     grdy1, grdy2, ! local y variables for grid cell              &
-     &     vec1_y, vec1_x, ! vectors and cross products used            &
-     &     vec2_y, vec2_x, ! during grid search                         &
-     &     cross_product, eps, ! eps=small offset away from intersect   &
-     &     s1, s2, determ,     ! variables used for linear solve to     &
+      real (kind=dbl_kind) :: pi4, rns,                                 &
+                         ! north/south conversion
+     &     x1, x2,                                                      &
+                         ! local x variables for segment
+     &     y1, y2,                                                      &
+                         ! local y variables for segment
+     &     begx, begy,                                                  &
+                         ! beginning x,y variables for segment
+     &     endx, endy,                                                  &
+                         ! beginning x,y variables for segment
+     &     begsegx, begsegy,                                            &
+                         ! beginning x,y variables for segment
+     &     grdx1, grdx2,                                                &
+                         ! local x variables for grid cell
+     &     grdy1, grdy2,                                                &
+                         ! local y variables for grid cell
+     &     vec1_y, vec1_x,                                              &
+                         ! vectors and cross products used
+     &     vec2_y, vec2_x,                                              &
+                         ! during grid search
+     &     cross_product, eps,                                          &
+                         ! eps=small offset away from intersect
+     &     s1, s2, determ,                                              &
+                         ! variables used for linear solve to
      &     mat1, mat2, mat3, mat4, rhs1, rhs2  ! find intersection
 
       real (kind=dbl_kind), dimension(:,:), allocatable ::              &
-     &     srch_corner_x,  ! x of each corner of srch cells             &
+     &     srch_corner_x,                                               &
+                           ! x of each corner of srch cells
      &     srch_corner_y   ! y of each corner of srch cells
 
       !***
@@ -1972,9 +2012,12 @@
      &        num_wts  ! number of weights to compute
 
       real (kind=dbl_kind), intent(in) ::                               &
-     &     in_phi1, in_phi2,     ! longitude endpoints for the segment  &
-     &     theta1, theta2,       ! latitude  endpoints for the segment  &
-     &     grid1_lat, grid1_lon, ! reference coordinates for each       &
+     &     in_phi1, in_phi2,                                            &
+                                 ! longitude endpoints for the segment
+     &     theta1, theta2,                                              &
+                                 ! latitude  endpoints for the segment
+     &     grid1_lat, grid1_lon,                                        &
+                                 ! reference coordinates for each
      &     grid2_lat, grid2_lon  ! grid (to ensure correct 0,2pi interv.
 
 !-----------------------------------------------------------------------
@@ -2119,7 +2162,8 @@
 !-----------------------------------------------------------------------
 
       integer (kind=int_kind), intent(in) ::                            &
-     &        add1,  ! address on grid1                                 &
+     &        add1,                                                     &
+                     ! address on grid1
      &        add2   ! address on grid2
 
       logical (kind=log_kind), intent(inout) :: first_call

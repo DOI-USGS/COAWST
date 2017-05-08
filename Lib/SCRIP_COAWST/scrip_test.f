@@ -58,7 +58,8 @@
      &  field_choice   ! choice of field to be interpolated
 
       character (char_len) ::                                           &
-     &  interp_file,   ! filename containing remap data (map1)          &
+     &  interp_file,                                                    &
+                       ! filename containing remap data (map1)
      &  output_file    ! filename for test results
 
       namelist /remap_inputs/ field_choice, interp_file, output_file
@@ -72,8 +73,9 @@
       character (char_len) ::                                           &
      &        map_name      ! name for mapping from grid1 to grid2
 
-      integer (kind=int_kind) ::    ! netCDF ids for files and arrays   &
-     &        ncstat, nc_outfile_id,                                    &
+      integer (kind=int_kind) ::                                        &
+                            ! netCDF ids for files and arrays
+     &        ncstat, nc_outfile_id,                                    &    
      &        nc_srcgrdcntrlat_id, nc_srcgrdcntrlon_id,                 &
      &        nc_dstgrdcntrlat_id, nc_dstgrdcntrlon_id,                 &
      &        nc_srcgrdrank_id, nc_dstgrdrank_id,                       &
@@ -93,7 +95,8 @@
      &          dim_name    ! netCDF dimension name
 
       integer (kind=int_kind) :: i,j,n,imin,imax,idiff,                 &
-     &    ip1,im1,jp1,jm1,nx,ny, ! for computing bicub gradients        &
+     &    ip1,im1,jp1,jm1,nx,ny,                                        &
+                                 ! for computing bicub gradients
      &    in,is,ie,iw,ine,inw,ise,isw,                                  &
      &    iunit                  ! unit number for namelist file
 
@@ -101,7 +104,8 @@
      &    grid1_imask, grid2_imask, grid2_count
 
       real (kind=dbl_kind) ::                                           &
-     &    delew, delns,     ! variables for computing bicub gradients   &
+     &    delew, delns,                                                 &
+                            ! variables for computing bicub gradients
      &    length            ! length scale for cosine hill test field
 
       real (kind=dbl_kind), dimension(:), allocatable ::                &

@@ -60,7 +60,8 @@
 !
 !-----------------------------------------------------------------------
 
-      integer (kind=int_kind), private :: ! netCDF ids                  &
+      integer (kind=int_kind), private ::                               &
+                                                 ! netCDF ids
      &         ncstat, nc_file_id,                                      &
      &         nc_srcgrdsize_id, nc_dstgrdsize_id,                      &
      &         nc_srcgrdcorn_id, nc_dstgrdcorn_id,                      &
@@ -116,8 +117,10 @@
 !-----------------------------------------------------------------------
 
       character(char_len) ::                                            &
-     &   map_method       ! character string for map_type               &
-     &,  normalize_opt    ! character string for normalization option   &
+     &   map_method                                                     &
+                          ! character string for map_type
+     &,  normalize_opt                                                  &
+                          ! character string for normalization option
      &,  convention       ! character string for output convention
 
 !-----------------------------------------------------------------------
@@ -227,14 +230,16 @@
 !-----------------------------------------------------------------------
 
       character (char_len) ::                                           &
-     &  grid1_name           ! grid name for source grid                &
+     &  grid1_name                                                      &
+                             ! grid name for source grid
      &, grid2_name           ! grid name for dest   grid
 
       integer (kind=int_kind) ::                                        &
      &  n                    ! dummy index
 
       integer (kind=int_kind), dimension(:), allocatable ::             &
-     &  grid1_mask_int,      ! integer masks to determine               &
+     &  grid1_mask_int,                                                 &
+                             ! integer masks to determine
      &  grid2_mask_int       ! cells that participate in map
 
 !-----------------------------------------------------------------------
@@ -627,11 +632,13 @@
 !-----------------------------------------------------------------------
 
       character (char_len) ::                                           &
-     &  grid1_name           ! grid name for source grid                &
+     &  grid1_name                                                      &
+                             ! grid name for source grid
      &, grid2_name           ! grid name for dest   grid
 
       integer (kind=int_kind) ::                                        &
-     &  nc_numwgts1_id    ! extra netCDF id for num_wgts > 1            &
+     &  nc_numwgts1_id                                                  &
+                          ! extra netCDF id for num_wgts > 1 
      &, nc_rmpmatrix2_id  ! extra netCDF id for high-order remap matrix
 
       real (kind=dbl_kind), dimension(:),allocatable ::                 &
@@ -644,7 +651,8 @@
      &  n                    ! dummy index
 
       integer (kind=int_kind), dimension(:), allocatable ::             &
-     &  grid1_mask_int,      ! integer masks to determine               &
+     &  grid1_mask_int,                                                 &
+                             ! integer masks to determine
      &  grid2_mask_int       ! cells that participate in map
 
 !-----------------------------------------------------------------------
