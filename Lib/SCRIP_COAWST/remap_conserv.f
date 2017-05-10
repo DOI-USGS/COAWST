@@ -1340,7 +1340,7 @@
           s2 = (mat1*rhs2 - rhs1*mat3)/determ
 
           if (s2 >= zero .and. s2 <= one .and.                          &
-     &        s1 >  zero. and. s1 <= one) then
+     &        s1 >  zero .and. s1 <= one) then
 
             !***
             !*** recompute intersection based on full segment

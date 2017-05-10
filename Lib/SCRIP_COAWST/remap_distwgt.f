@@ -499,7 +499,7 @@
 
         num_links_map2  = num_links_map2 + 1
 
-        if (num_links_map2 > max_links_map2) 
+        if (num_links_map2 > max_links_map2)                            &
      &     call resize_remap_vars(2,resize_increment)
 
         grid1_add_map2(num_links_map2) = add1

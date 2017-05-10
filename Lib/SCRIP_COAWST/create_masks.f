@@ -543,7 +543,9 @@
         end do
       end if
 !  NOTICE piped wrf and roms loops to end
+      allocate(do_adjust(Ngrids_wrf))
       do ma=1,Ngrids_wrf
+        do_adjust(ma)=0
         do mo=1,Ngrids_roms
 !
 !  Allocate the destination mask
@@ -633,6 +635,51 @@
           enddo
           deallocate(XX, YY)
 !
+!  Compare src and dst lon points and see if points are coincident. 
+!  The test looks for less than 2.0e-7 rads =  1.1459e-05 degs =~ 1.3m
+!  If so, then offset the dst by 2.0e-7 rads
+!
+            tol=1.1459e-05
+            do i=1,ngrd_rm(mo)%xi_size
+              if (do_adjust(ma).eq.1) exit
+              do j=1,ngrd_rm(mo)%eta_size
+                if (do_adjust(ma).eq.1) exit
+                lons=ngrd_rm(mo)%lon_rho_o(i,j)
+                lats=ngrd_rm(mo)%lat_rho_o(i,j)
+                do nx=1,ngrd_wr(ma)%we_size
+                  if (do_adjust(ma).eq.1) exit
+                  do ny=1,ngrd_wr(ma)%sn_size
+                    lond=ngrd_wr(ma)%lon_rho_a(nx,ny)
+                    latd=ngrd_wr(ma)%lat_rho_a(nx,ny)
+                    cff=min(abs(lons-lond),abs(lats-latd))
+                    if (cff.le.tol) then
+                      do_adjust(ma)=1
+                  write(*,*) 'Do adjust for coincident points grid ', ma
+                      exit
+                    end if
+                  enddo
+                enddo
+              enddo
+            enddo
+            if (do_adjust(ma).eq.1) then
+              do nx=1,ngrd_wr(ma)%we_size
+                do ny=1,ngrd_wr(ma)%sn_size
+                  ngrd_wr(ma)%lon_rho_a(nx,ny)=                         &
+     &                                  ngrd_wr(ma)%lon_rho_a(nx,ny)+tol
+                  ngrd_wr(ma)%lat_rho_a(nx,ny)=                         &
+     &                                  ngrd_wr(ma)%lat_rho_a(nx,ny)+tol
+                enddo
+              enddo
+              do nx=1,ngrd_wr(ma)%we_size+1
+                do ny=1,ngrd_wr(ma)%sn_size+1
+                  ngrd_wr(ma)%x_full_grid(nx,ny)=                       &
+     &                                ngrd_wr(ma)%x_full_grid(nx,ny)+tol
+                  ngrd_wr(ma)%y_full_grid(nx,ny)=                       &
+     &                                ngrd_wr(ma)%y_full_grid(nx,ny)+tol
+                enddo
+              enddo
+            end if
+!
 !  Send the data to SCRIP routines
 !
           write(ma_string,'(i1)')ma
@@ -676,7 +723,28 @@
      &                       counter_grid,                              &
      &                       Ngrids_comb_total,                         &
      &                       output_ncfile)
-
+!
+!  Undo the grid adjust.
+          if ((do_adjust(ma).eq.1).and.(mo.lt.Ngrids_roms)) then
+            do nx=1,ngrd_wr(ma)%we_size
+              do ny=1,ngrd_wr(ma)%sn_size
+                ngrd_wr(ma)%lon_rho_a(nx,ny)=                           &
+     &                                ngrd_wr(ma)%lon_rho_a(nx,ny)-tol
+                ngrd_wr(ma)%lat_rho_a(nx,ny)=                           &
+     &                                ngrd_wr(ma)%lat_rho_a(nx,ny)-tol
+              enddo
+            enddo
+            do nx=1,ngrd_wr(ma)%we_size+1
+              do ny=1,ngrd_wr(ma)%sn_size+1
+                ngrd_wr(ma)%x_full_grid(nx,ny)=                         &
+     &                              ngrd_wr(ma)%x_full_grid(nx,ny)-tol
+                ngrd_wr(ma)%y_full_grid(nx,ny)=                         &
+     &                              ngrd_wr(ma)%y_full_grid(nx,ny)-tol
+              enddo
+            enddo
+          end if
+          do_adjust(ma)=0
+!
           deallocate(ngrd_wr(ma)%dst_mask)
           deallocate(dst_mask_unlim)
         end do

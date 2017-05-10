@@ -522,7 +522,8 @@
      &        src_add  ! address of each corner point enclosing P
 
       real (kind=dbl_kind), dimension(4), intent(out) ::                &
-     &        src_lats, ! latitudes  of the four corner points
+     &        src_lats,                                                 &
+                        ! latitudes  of the four corner points
      &        src_lons  ! longitudes of the four corner points
 
 !-----------------------------------------------------------------------
@@ -566,7 +567,8 @@
                              ! addresses for restricting search
      &    i, j, jp1, ip1, n_add, e_add, ne_add  ! addresses
 
-      real (kind=dbl_kind) ::  ! vectors for cross-product check        &
+      real (kind=dbl_kind) ::                                           &
+                             ! vectors for cross-product check
      &      vec1_lat, vec1_lon,                                         &
      &      vec2_lat, vec2_lon, cross_product, cross_product_last,      &
      &      coslat_dst, sinlat_dst, coslon_dst, sinlon_dst,             &
