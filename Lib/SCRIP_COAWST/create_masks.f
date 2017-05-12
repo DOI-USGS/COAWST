@@ -296,6 +296,7 @@
           deallocate(dst_mask_unlim)
         end do
       end do
+      deallocate(do_adjust)
       do mo=1,Ngrids_roms
         deallocate(ngrd_rm(mo)%src_mask)
       end do
@@ -749,6 +750,7 @@
           deallocate(dst_mask_unlim)
         end do
       end do
+      deallocate(do_adjust)
       do mo=1,Ngrids_roms
         deallocate(ngrd_rm(mo)%src_mask)
       end do
