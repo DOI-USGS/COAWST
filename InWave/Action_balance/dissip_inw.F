@@ -213,13 +213,13 @@
             IF (Dissip_break(i,j).gt.0.0_r8.and.EW.gt.0.0_r8) THEN
               EN(d)=EN(d)-Dissip_break(i,j)*EN(d)/EW
               AC(i,j,d,nout)=EN(d)*Tr(i,j,d)*otwopi
+            ENDIF
 #  ifdef MASKING
-              AC(i,j,d,nout)=AC(i,j,d,nout)*rmask(i,j)
+            AC(i,j,d,nout)=AC(i,j,d,nout)*rmask(i,j)
 #  endif
 #  ifdef WET_DRY
-              AC(i,j,d,nout)=AC(i,j,d,nout)*rmask_wet(i,j)
+            AC(i,j,d,nout)=AC(i,j,d,nout)*rmask_wet(i,j)
 #  endif
-            ENDIF
           ENDDO
           Dissip_wcap(i,j)=0.0_r8
           Dissip_break(i,j)=Dissip_break(i,j)/(dt(ng)*rho0)
