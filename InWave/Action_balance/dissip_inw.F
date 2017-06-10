@@ -153,8 +153,10 @@
       DO j=Jstr,Jend
         DO i=Istr,Iend
           EW=0.0_r8
-          KM=0.0_r8
+!         KM=0.0_r8
+#  ifdef WDISS_ROELVINK
           TRM=0.0_r8
+#  endif
           DO d=1,ND
 !=======================================================================
 !  Compute the energy from action balance and wave heigth
@@ -169,17 +171,24 @@
 !  What we do is give more importance to those wave 
 !  numbers with more energy
 !=======================================================================
-            KM=KM+kwc(i,j,d)*EN(d)
+!           KM=KM+kwc(i,j,d)*EN(d)
+#  ifdef WDISS_ROELVINK
             TRM=TRM+Tr(i,j,d)*EN(d)
+#  endif
           ENDDO
+!         KM=KM*cff
+#  ifdef WDISS_ROELVINK
           cff=1.0_r8/(ND*max(EW,EWlim))
-          KM=KM*cff
           TRM=TRM*cff
-          EW=MAX(EW,0.0_r8)
+#  endif
+!        EW=MAX(EW,EWlim)
+         EW=MAX(EW,0.0_r8)  !this was needed
+#  ifdef WDISS_ROELVINK
 !=======================================================================
 !  Compute the wave height. This is based on Hrms.
 !=======================================================================
           H=(8.0_r8*EW*ogrho0)**0.5_r8
+#  endif
 !=======================================================================
 !  Compute the energy dissipation
 !=======================================================================
@@ -213,6 +222,8 @@
             IF (Dissip_break(i,j).gt.0.0_r8.and.EW.gt.0.0_r8) THEN
               EN(d)=EN(d)-Dissip_break(i,j)*EN(d)/EW
               AC(i,j,d,nout)=EN(d)*Tr(i,j,d)*otwopi
+            ELSE
+                AC(i,j,d,nout)=0.0_r8
             ENDIF
 #  ifdef MASKING
             AC(i,j,d,nout)=AC(i,j,d,nout)*rmask(i,j)

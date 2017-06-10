@@ -149,6 +149,7 @@
       real(r8) :: EW, KM, TRM, H, DIRM, twopi
       real(r8) :: EN
       real(r8), parameter :: Lmin=10.0_r8
+      real(r8), parameter :: Lmax=1000.0_r8
       real(r8), parameter :: Pmin=2.0_r8
       real(r8), parameter :: Trmin=1.0_r8
 #  if defined WAVES_UB
@@ -195,7 +196,7 @@
             ENDDO
             IF (EW.ge.0.001_r8) THEN
               KM=KM/EW
-              Lwave(i,j)=twopi/KM
+              Lwave(i,j)=MIN(twopi/KM,Lmax)
               Dwave(i,j)=DIRM/EW
 !=======================================================================
 !  Compute the wave height Hwave (Significant).

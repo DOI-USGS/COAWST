@@ -201,8 +201,7 @@
         WAVEG(ng)%Inwavecircle=0
       END IF
 
-      
-#if defined THETA_AC_PERIODIC
+#if defined THETA_AC_PERIODIC_NOUSE
 !
 !-----------------------------------------------------------------------
 ! check if we are working on a segment or if we have to wrap around

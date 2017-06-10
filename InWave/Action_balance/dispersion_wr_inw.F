@@ -152,7 +152,7 @@
             IF(h_tot(i,j).ge.Dcrit(ng))THEN
               wr=sqrt(g*kwc(i,j,d)*tanh(kwc(i,j,d)*h_tot(i,j)))
               Tr(i,j,d)=MAX(twopi/wr,Trmin)
-              Tr(i,j,d)=MIN(Tr(i,j,d),500000.0_r8)
+              Tr(i,j,d)=MIN(Tr(i,j,d),5000.0_r8)
             ELSE
               Tr(i,j,d)=Trmin
             ENDIF

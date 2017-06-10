@@ -182,7 +182,9 @@
 
 !  Local variable declarations.
 
-      integer :: i, dir_index
+      integer :: i, dir_index, numavg
+      real(r8) :: cff
+      real(r8), allocatable :: zeta_filt(:)
 !
 !-----------------------------------------------------------------------
 ! Read swan output spectra
@@ -229,14 +231,27 @@
 ! Compute the wave energy, scale for each direction
 !-----------------------------------------------------------------------
 !
+      allocate (zeta_filt(WAVES(ng)%Insteps))
       DO dir_index=1,ND
         DO i=1,WAVES(ng)%Insteps
           WAVES(ng)%Ampzeta(i,dir_index)=0.5_r8*g*rho0*                 &
      &                                   (WAVES(ng)%Ampzeta_tot(i)*     &
      &                                   WAVES(ng)%SDD(dir_index)/      &
      &                                   WAVES(ng)%int)**2.0_r8
+          zeta_filt(i)=WAVES(ng)%Ampzeta(i,dir_index)
+        ENDDO
+! do a filter on ampzeta
+        cff=0.0_r8
+        numavg=50
+        DO i=1,numavg
+          cff=cff+zeta_filt(i)
+        ENDDO
+        DO i=numavg/2+1,WAVES(ng)%Insteps-numavg/2
+          WAVES(ng)%Ampzeta(i,dir_index)=cff/REAL(numavg,r8)
+          cff=cff-zeta_filt(i-numavg/2)+zeta_filt(i+numavg/2)
         ENDDO
       ENDDO
+      deallocate (zeta_filt)
 
       RETURN
 
