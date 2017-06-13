@@ -185,6 +185,7 @@
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS,ND) :: ct_r
       real(r8), parameter:: Tamin=1.0_r8
       real(r8), parameter:: Tamax=500000.0_r8
+      real(r8), parameter :: kDmax = 200.0_r8
 !
 # include "set_bounds.h"
 !
@@ -212,51 +213,50 @@
             ELSE
               theta_cur=ATAN2(v_rho(i,j),u_rho(i,j))
             ENDIF
-            u_dir(i,j)=SQRT(u_rho(i,j)**2+v_rho(i,j)**2)*              &
+            u_dir(i,j)=SQRT(u_rho(i,j)**2+v_rho(i,j)**2)*               &
      &                 COS(alfa_wave-theta_cur)
             u_block(i,j) = -(twopi/MAX(Tamin,Tr(i,j,d)))/(kwc(i,j,d))
 # endif
 # ifdef DOPPLER
-           IF((h_tot(i,j).le.Dcrit(ng))                                 &
-     &        .or.((u_dir(i,j).lt.0.0_r8)                               &
-     &        .and.(u_dir(i,j).le.u_block(i,j))))                       &
-     &     THEN
+            IF((h_tot(i,j).le.Dcrit(ng))                                &
+     &         .or.((u_dir(i,j).lt.0.0_r8)                              &
+     &         .and.(u_dir(i,j).le.u_block(i,j)))) THEN
 # else
-           IF(h_tot(i,j).le.Dcrit(ng)) THEN
+            IF(h_tot(i,j).le.Dcrit(ng)) THEN
 # endif
 !
 !======================================================================!
 !          If dry or waves are blocked set celerities to zero          !
 !======================================================================!
 !
-             cx_rho(i,j,d)=0.0_r8
-             cy_rho(i,j,d)=0.0_r8
-           ELSE
+              cx_rho(i,j,d)=0.0_r8
+              cy_rho(i,j,d)=0.0_r8
+            ELSE
 !
 !=======================================================================!
 !          Compute the relative group velocities                        !
 !=======================================================================!
 !
-             kh=kwc(i,j,d)*h_tot(i,j)
-             cr=sqrt(g/kwc(i,j,d)*tanh(kh))
-             G1=2.0_r8*kh/sinh(2.0_r8*kh)
-             cgr=0.5_r8*cr*(1.0_r8+G1)
+              kh=MIN(kwc(i,j,d)*h_tot(i,j),kDmax)
+              cr=sqrt(g/kwc(i,j,d)*tanh(kh))
+              G1=2.0_r8*kh/sinh(2.0_r8*kh)
+              cgr=0.5_r8*cr*(1.0_r8+G1)
 !
 ! These angles are refered to the local grid
 !
-             cgrx=cgr*cos(alfa_wave)
-             cgry=cgr*sin(alfa_wave)
+              cgrx=cgr*cos(alfa_wave)
+              cgry=cgr*sin(alfa_wave)
 !
 !========================================================================
 !  Compute the absolute group velocities in space direction (Xi and ETAi)
 !========================================================================
 !
 # ifdef DOPPLER
-             cx_rho(i,j,d)=cgrx+u_rho(i,j)
-             cy_rho(i,j,d)=cgry+v_rho(i,j)
+              cx_rho(i,j,d)=cgrx+u_rho(i,j)
+              cy_rho(i,j,d)=cgry+v_rho(i,j)
 # else
-             cx_rho(i,j,d)=cgrx
-             cy_rho(i,j,d)=cgry
+              cx_rho(i,j,d)=cgrx
+              cy_rho(i,j,d)=cgry
 # endif
             ENDIF
           ENDDO
@@ -267,55 +267,55 @@
           DO i=Istr,Iend
 
 #  ifdef DOPPLER
-          IF((h_tot(i,j).le.Dcrit(ng))                                  &
-     &        .or.((u_dir(i,j).lt.0.0_r8)                               &
-     &        .and.(u_dir(i,j).le.u_block(i,j))))                       &
-     &     THEN
+            IF((h_tot(i,j).le.Dcrit(ng))                                &
+     &          .or.((u_dir(i,j).lt.0.0_r8)                             &
+     &          .and.(u_dir(i,j).le.u_block(i,j)))) THEN
 #  else
-           IF(h_tot(i,j).le.Dcrit(ng)) THEN
+            IF(h_tot(i,j).le.Dcrit(ng)) THEN
 #  endif
 !
 !======================================================================!
 !          If dry or waves are blocked set celerities to zero          !
 !======================================================================!
 !
-             ct_r(i,j,d)=0.0_r8
-           ELSE
+              ct_r(i,j,d)=0.0_r8
+            ELSE
 
 !  Note: change in angle convention to solve blah blah blah.
 
-             dir_edge=-(wd(d)-halfpi)
+              dir_edge=-(wd(d)-halfpi)
+              dhdx=(pm(i+1,j)+pm(i,j))*(h_tot(i+1,j)-h_tot(i-1,j))
+              dhdy=(pn(i,j+1)+pn(i,j))*(h_tot(i,j+1)-h_tot(i,j-1))
+              kh=MIN(kwc(i,j,d)*h_tot(i,j),kDmax)
+              ct_r(i,j,d)=twopi/(MAX(Tamin,Tr(i,j,d))*sinh(2.0_r8*kh))* &
+     &                   (sin(dir_edge)*dhdx-cos(dir_edge)*dhdy)
 
+              !jcw test
+!             ct_r(i,j,d)=0.0_r8
 #  ifdef DOPPLER
-             dudx=pm(i,j)*(u_rho(i+1,j)-u_rho(i-1,j))/2.0_r8
-             dudy=0.5_r8*                                               &
-     &            (0.5_r8*pn(i+1,j)*                                    &
-     &             (u_rho(i+1,j+1)-u_rho(i+1,j-1))+                     &
-     &             0.5_r8*pn(i,j)*                                      &
-     &             (u_rho(i,j+1)-u_rho(i,j-1)))
-             dvdx=0.5_r8*                                               &
-     &            (0.5_r8*pm(i,j+1)*                                    &
-     &             (v_rho(i+1,j+1)-v_rho(i-1,j+1))+                     &
-     &             0.5_r8*pm(i,j)*                                      &
-     &             (v_rho(i+1,j)-v_rho(i-1,j)))
-             dvdy=pn(i,j)*(v_rho(i,j+1)-v_rho(i,j))
-#  endif
-            dhdx=(pm(i+1,j)+pm(i,j))*(h_tot(i+1,j)-h_tot(i-1,j))
-            dhdy=(pn(i,j+1)+pn(i,j))*(h_tot(i,j+1)-h_tot(i,j-1))
-            kh=kwc(i,j,d)*h_tot(i,j)
-            ct_r(i,j,d)=twopi/(MAX(Tamin,Tr(i,j,d))*sinh(2.0_r8*kh))*   &
-     &                 (sin(dir_edge)*dhdx-cos(dir_edge)*dhdy)
-
-#  ifdef DOPPLER
-             cosde=cos(dir_edge)
-             sinde=sin(dir_edge)
-             cff=cosde*                                                 &
-     &           (sinde*pm(i,j)*dudx-                                   &
-     &            cosde*pn(i,j)*dudy)+                                  &
-     &           sinde*                                                 &
-     &           (sinde*pm(i,j)*dvdx-                                   &
-     &            cosde*pn(i,j)*dvdy)
-             ct_r(i,j,d)=ct_r(i,j,d)+cff
+              dudx=pm(i,j)*(u_rho(i+1,j)-u_rho(i,j))
+              dudy=0.5_r8*                                              &
+     &             (0.5_r8*pn(i+1,j)*                                   &
+     &              (u_rho(i+1,j+1)-u_rho(i+1,j-1))+                    &
+     &              0.5_r8*pn(i,j)*                                     &
+     &              (u_rho(i,j+1)-u_rho(i,j-1)))
+              dvdx=0.5_r8*                                              &
+     &             (0.5_r8*pm(i,j+1)*                                   &
+     &              (v_rho(i+1,j+1)-v_rho(i-1,j+1))+                    &
+     &              0.5_r8*pm(i,j)*                                     &
+     &              (v_rho(i+1,j)-v_rho(i-1,j)))
+              dvdy=pn(i,j)*(v_rho(i,j+1)-v_rho(i,j))
+!
+              cosde=cos(dir_edge)
+              sinde=sin(dir_edge)
+              cff=cosde*                                                &
+     &            (sinde*pm(i,j)*dudx-                                  &
+     &             cosde*pn(i,j)*dudy)+                                 &
+     &            sinde*                                                &
+     &            (sinde*pm(i,j)*dvdx-                                  &
+     &             cosde*pn(i,j)*dvdy)
+            !jcw test
+              ct_r(i,j,d)=ct_r(i,j,d)+cff
 #  endif
             ENDIF
           ENDDO
@@ -323,13 +323,13 @@
 # endif
         DO j=Jstr,Jend
           DO i=Istr,Iend
-           wr=twopi/MAX(Tamin,Tr(i,j,d))
-           wa=wr
+            wr=twopi/MAX(Tamin,Tr(i,j,d))
+            wa=wr
 #  ifdef DOPPLER
-           wa=wa+kwc(i,j,d)*u_dir(i,j)
+            wa=wa+kwc(i,j,d)*u_dir(i,j)
 #  endif
-           Ta(i,j,d)=MAX(Tamin,twopi/wa)
-           Ta(i,j,d)=MIN(Ta(i,j,d),Tamax)
+            Ta(i,j,d)=MAX(Tamin,twopi/wa)
+            Ta(i,j,d)=MIN(Ta(i,j,d),Tamax)
           ENDDO
         ENDDO
       ENDDO
