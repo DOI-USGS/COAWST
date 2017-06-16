@@ -183,9 +183,9 @@
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS,ND) :: cx_rho
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS,ND) :: cy_rho
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS,ND) :: ct_r
-      real(r8), parameter:: Tamin=1.0_r8
-      real(r8), parameter:: Tamax=500000.0_r8
-      real(r8), parameter :: kDmax = 200.0_r8
+      real(r8), parameter :: Tamin=1.0_r8
+      real(r8), parameter :: Tamax=5000.0_r8
+      real(r8), parameter :: kDmax = 100.0_r8
 !
 # include "set_bounds.h"
 !

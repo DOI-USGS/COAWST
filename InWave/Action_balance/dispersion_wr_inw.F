@@ -124,6 +124,7 @@
       real(r8) :: tanhkh, sinhtkh, o2aa, Vcur, cosde, sinde
       real(r8), parameter :: maxErr = 0.1_r8
       real(r8), parameter :: Trmin = 1.0_r8
+      real(r8), parameter :: Trmax=5000.0_r8
 
 # include "set_bounds.h"
 !
@@ -152,7 +153,7 @@
             IF(h_tot(i,j).ge.Dcrit(ng))THEN
               wr=sqrt(g*kwc(i,j,d)*tanh(kwc(i,j,d)*h_tot(i,j)))
               Tr(i,j,d)=MAX(twopi/wr,Trmin)
-              Tr(i,j,d)=MIN(Tr(i,j,d),5000.0_r8)
+              Tr(i,j,d)=MIN(Tr(i,j,d),Trmax)
             ELSE
               Tr(i,j,d)=Trmin
             ENDIF
