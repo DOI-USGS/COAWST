@@ -242,7 +242,7 @@
         ENDDO
 ! do a filter on ampzeta
         cff=0.0_r8
-        numavg=50
+        numavg=INT(5.0_r8/dt(ng))
         DO i=1,numavg
           cff=cff+zeta_filt(i)
         ENDDO
