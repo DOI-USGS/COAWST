@@ -182,7 +182,7 @@
 
 !  Local variable declarations.
 
-      integer :: i, dir_index, numavg
+      integer :: i, dir_index, numavg, numavgh
       real(r8) :: cff
       real(r8), allocatable :: zeta_filt(:)
 !
@@ -243,12 +243,14 @@
 ! do a filter on ampzeta
         cff=0.0_r8
         numavg=INT(5.0_r8/dt(ng))
+        numavg=numavg-1*(1-MOD(numavg,2)) !force odd
         DO i=1,numavg
           cff=cff+zeta_filt(i)
         ENDDO
-        DO i=numavg/2+1,WAVES(ng)%Insteps-numavg/2
+        numavgh=(numavg-1)/2
+        DO i=numavgh+1,WAVES(ng)%Insteps-numavgh
           WAVES(ng)%Ampzeta(i,dir_index)=cff/REAL(numavg,r8)
-          cff=cff-zeta_filt(i-numavg/2)+zeta_filt(i+numavg/2)
+          cff=cff-zeta_filt(i-numavgh)+zeta_filt(i+numavgh)
         ENDDO
       ENDDO
       deallocate (zeta_filt)
