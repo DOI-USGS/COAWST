@@ -219,7 +219,7 @@
 !  Distribute dissipation over directions and recompute Ac
 !=======================================================================
           DO d=1,ND
-            IF (Dissip_break(i,j).gt.0.0_r8.and.EW.gt.0.0_r8) THEN
+            IF ((h_tot(i,j).ge.Dcrit(ng)).and.(EW.gt.EWlim)) THEN
               EN(d)=EN(d)-Dissip_break(i,j)*EN(d)/EW
               AC(i,j,d,nout)=EN(d)*Tr(i,j,d)*otwopi
             ELSE
