@@ -1076,11 +1076,6 @@
         END DO
       END DO
 #endif
-#ifdef INWAVE_MODEL
-        DO ng=1,Ngrids
-          CALL inwave_init (ng, MyRank, IniRec(ng))
-        END DO
-#endif
 !
 !-----------------------------------------------------------------------
 !  Initialize time-stepping counter and clock.
@@ -1093,6 +1088,12 @@
         iic(ng)=ntstart(ng)-1
         time(ng)=time(ng)-dt(ng)
       END DO
+
+#ifdef INWAVE_MODEL
+        DO ng=1,Ngrids
+          CALL inwave_init (ng, MyRank, IniRec(ng))
+        END DO
+#endif
 
 #ifdef CICE_MODEL
 !
