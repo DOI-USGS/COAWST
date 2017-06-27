@@ -265,7 +265,7 @@
             END IF
           ELSE
 !  If not first, then keep reading until we get the next time stamp.
-            IF ((time(ng)-dstart*24.0_r8*3600.0_r8).gt.                 &
+            IF ((time(ng)-dstart*24.0_r8*3600.0_r8+dt(ng)).gt.          &
      &          (WAVES(ng)%SpecTime(2)-WAVES(ng)%SpecTime(1))) THEN
               read(inp,'(a)')rtext
               IF (rtext == 'ZERO  ') THEN
