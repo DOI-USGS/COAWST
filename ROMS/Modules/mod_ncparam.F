@@ -1178,6 +1178,10 @@
               idOvel=varid
             CASE ('idDano')
               idDano=varid
+            CASE ('idsurT(itemp)')
+              idsurT(itemp)=varid
+            CASE ('idsurT(isalt)')
+              idsurT(isalt)=varid
             CASE ('idTvar(itemp)')
               idTvar(itemp)=varid
             CASE ('idTvar(isalt)')
