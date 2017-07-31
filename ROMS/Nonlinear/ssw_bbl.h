@@ -326,7 +326,7 @@
 !  from wave models (SWAN) or use Dean and Dalrymple (1991) 6th-degree
 !  polynomial to approximate wave number on shoaling water.
 
-          Fwave_bot(i,j)=twopi/MAX(Pwave_bot(i,j),0.05_r8)
+          Fwave_bot(i,j)=twopi/MAX(Pwave_bot(i,j),1.0_r8)
 #ifdef SSW_CALC_UB
           Kdh=h(i,j)*Fwave_bot(i,j)**2/g
           Kbh2=Kdh*Kdh+                                                 &

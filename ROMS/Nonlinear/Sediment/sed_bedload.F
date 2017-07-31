@@ -420,9 +420,9 @@
             waven=2.0_r8*pi/(Lwave(i,j)+eps)
             wavec=SQRT(g/waven*tanh(waven*Dstp))
             cff4=MIN(waven*Dstp,kdmax)
-            cff1=-0.1875_r8*wavec*(waven*Dstp)**2/(SINH(cff4))**4
-            cff2=0.125_r8*g*Hwave(i,j)**2/(wavec*Dstp+eps)
-            cff3=pi*Hwave(i,j)/(Pwave_bot(i,j)*SINH(cff4)+eps)
+!           cff1=-0.1875_r8*wavec*(waven*Dstp)**2/(SINH(cff4))**4
+!           cff2=0.125_r8*g*Hwave(i,j)**2/(wavec*Dstp+eps)
+!           cff3=pi*Hwave(i,j)/(Pwave_bot(i,j)*SINH(cff4)+eps)
 !
 ! Compute wave asymmetry factor, based on the note of Soulsby
 !
@@ -586,6 +586,36 @@
 #   endif
           END DO
         END DO
+#  ifdef SED_SLUMP
+        cff1=180.0_r8/pi
+        sed_angle=10.0_r8
+        a_slopex=1.0_r8
+        a_slopey=1.0_r8
+        DO j=Jstrm1,Jendp1
+          DO i=Istrm1,Iendp1
+!
+            dzdx=DTAN((h(i,j)-h(i-1,j))/om_u(i,j))*cff1
+            cff=MAX(ABS(dzdx)-sed_angle,0.0_r8)
+            FX_r(i,j)=FX_r(i,j)+cff*a_slopex*SIGN(1.0_r8,dzdx)
+#  ifdef MASKING
+            FX_r(i,j)=FX_r(i,j)*rmask(i,j)
+#   ifdef WET_DRY
+            FX_r(i,j)=FX_r(i,j)*rmask_wet(i,j)
+#   endif
+#  endif
+!
+            dzdy=DTAN((h(i,j)-h(i,j-1))/on_v(i,j))*cff1
+            cff=MAX(ABS(dzdy)-sed_angle,0.0_r8)
+            FE_r(i,j)=FE_r(i,j)+cff*a_slopey*SIGN(1.0_r8,dzdy)
+#  ifdef MASKING
+            FE_r(i,j)=FE_r(i,j)*rmask(i,j)
+#   ifdef WET_DRY
+            FE_r(i,j)=FE_r(i,j)*rmask_wet(i,j)
+#   endif
+#  endif
+          END DO
+        END DO
+#  endif
 !
 !  Apply boundary conditions (gradient).
 !
@@ -665,7 +695,7 @@
 !
 ! Compute face fluxes at u and v points before taking divergence.
 !
-        DO j=Jstr,Jend
+        DO j=JstrR,JendR
           DO i=Istr,Iend+1
 !           FX(i,j)=0.5_r8*(FX_r(i-1,j)+FX_r(i,j))
             cff1=0.5_r8*(1.0_r8+SIGN(1.0_r8,FX_r(i,j)))
@@ -698,7 +728,7 @@
           END DO
         END DO
         DO j=Jstr,Jend+1
-          DO i=Istr,Iend
+          DO i=IstrR,IendR
 !           FE(i,j)=0.5_r8*(FE_r(i,j-1)+FE_r(i,j))
             cff1=0.5_r8*(1.0_r8+SIGN(1.0_r8,FE_r(i,j)))
             cff2=0.5_r8*(1.0_r8-SIGN(1.0_r8,FE_r(i,j)))
