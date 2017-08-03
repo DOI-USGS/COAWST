@@ -1,5 +1,5 @@
 #include "cppdefs.h"
-#define SLOPE_NEMETH
+#undef  SLOPE_NEMETH
 #undef  SLOPE_LESSER
 #define BSTRESS_UPWIND
 #ifdef BBL_MODEL
@@ -390,8 +390,8 @@
 !
           tau_cur=SQRT(bustrc(i,j)*bustrc(i,j)+                         &
      &                 bvstrc(i,j)*bvstrc(i,j))
-          tau_wav(i,j)=SQRT(bustrw(i,j)*bustrw(i,j)+                    &
-     &                      bvstrw(i,j)*bvstrw(i,j))
+          tau_wav(i,j)=MIN(SQRT(bustrw(i,j)*bustrw(i,j)+                &
+     &                          bvstrw(i,j)*bvstrw(i,j)),20.0_r8)
           tau_mean(i,j)=tau_cur*(1.0_r8+1.2_r8*((tau_wav(i,j)/          &
      &                  (tau_cur+tau_wav(i,j)+eps))**3.2_r8))
 !
@@ -418,7 +418,7 @@
 !
             Dstp=z_w(i,j,N(ng))+h(i,j)
             waven=2.0_r8*pi/(Lwave(i,j)+eps)
-            wavec=SQRT(g/waven*tanh(waven*Dstp))
+!           wavec=SQRT(g/waven*tanh(waven*Dstp))
             cff4=MIN(waven*Dstp,kdmax)
 !           cff1=-0.1875_r8*wavec*(waven*Dstp)**2/(SINH(cff4))**4
 !           cff2=0.125_r8*g*Hwave(i,j)**2/(wavec*Dstp+eps)
@@ -586,7 +586,8 @@
 #   endif
           END DO
         END DO
-#  ifdef SED_SLUMP
+
+#  ifdef SED_SLUMP_nouse
         cff1=180.0_r8/pi
         sed_angle=10.0_r8
         a_slopex=1.0_r8
@@ -594,9 +595,10 @@
         DO j=Jstrm1,Jendp1
           DO i=Istrm1,Iendp1
 !
-            dzdx=DTAN((h(i,j)-h(i-1,j))/om_u(i,j))*cff1
+            dzdx=DATAN((h(i,j)-h(i-1,j))*pm(i,j))*cff1
             cff=MAX(ABS(dzdx)-sed_angle,0.0_r8)
-            FX_r(i,j)=FX_r(i,j)+cff*a_slopex*SIGN(1.0_r8,dzdx)
+            cff2=MIN(cff*a_slopex,2.0_r8)*SIGN(1.0_r8,dzdx)
+            FX_r(i,j)=FX_r(i,j)+cff2
 #  ifdef MASKING
             FX_r(i,j)=FX_r(i,j)*rmask(i,j)
 #   ifdef WET_DRY
@@ -604,9 +606,10 @@
 #   endif
 #  endif
 !
-            dzdy=DTAN((h(i,j)-h(i,j-1))/on_v(i,j))*cff1
+            dzdy=DATAN((h(i,j)-h(i,j-1))*pn(i,j))*cff1
             cff=MAX(ABS(dzdy)-sed_angle,0.0_r8)
-            FE_r(i,j)=FE_r(i,j)+cff*a_slopey*SIGN(1.0_r8,dzdy)
+            cff2=MIN(cff*a_slopey,2.0_r8)*SIGN(1.0_r8,dzdy)
+            FE_r(i,j)=FE_r(i,j)+cff2
 #  ifdef MASKING
             FE_r(i,j)=FE_r(i,j)*rmask(i,j)
 #   ifdef WET_DRY
@@ -760,21 +763,34 @@
           END DO
         END DO
 #  ifdef SED_SLUMP
-        sed_angle=DTAN(10.0_r8*pi/180.0_r8)
+        cff1=180.0_r8/pi
+        sed_angle=10.0_r8
+        a_slopex=10.0_r8
+        a_slopey=10.0_r8
         DO j=Jstr,Jend
           DO i=Istr,Iend+1
-             dzdx=(h(i,j)-h(i-1,j))/om_u(i,j)
-             cff=MAX(ABS(dzdx-sed_angle),0.0_r8)
-!            FX(i,j)=FX(i,j)+cff*(dzdx-sed_angle)
-             FX(i,j)=cff*(dzdx-sed_angle)
+            dzdx=DATAN((h(i,j)-h(i-1,j))/om_u(i,j))*cff1
+            cff=MAX(ABS(dzdx)-sed_angle,0.0_r8)
+            FX(i,j)=FX(i,j)+cff*a_slopex*SIGN(1.0_r8,dzdx)
+#  ifdef MASKING
+            FX(i,j)=FX(i,j)*umask(i,j)
+#   ifdef WET_DRY
+            FX(i,j)=FX(i,j)*rmask_wet(i-1,j)*rmask_wet(i,j)
+#   endif
+#  endif
           END DO
         END DO
         DO j=Jstr,Jend+1
           DO i=Istr,Iend
-             dzdy=(h(i,j)-h(i,j-1))/on_v(i,j)
-             cff=MAX(ABS(dzdy-sed_angle),0.0_r8)
-!            FE(i,j)=FE(i,j)+cff*(dzdy-sed_angle)
-             FE(i,j)=cff*(dzdy-sed_angle)
+            dzdy=DATAN((h(i,j)-h(i,j-1))/on_v(i,j))*cff1
+            cff=MAX(ABS(dzdy)-sed_angle,0.0_r8)
+            FE(i,j)=FE(i,j)+cff*a_slopey*SIGN(1.0_r8,dzdy)
+#  ifdef MASKING
+            FE(i,j)=FE(i,j)*vmask(i,j)
+#   ifdef WET_DRY
+            FE(i,j)=FE(i,j)*rmask_wet(i,j-1)*rmask_wet(i,j)
+#   endif
+#  endif
           END DO
         END DO
 #  endif
@@ -860,9 +876,6 @@
      &                           cff/(Srho(ised,ng)*                    &
      &                                (1.0_r8-bed(i,j,1,iporo))),       &
      &                           0.0_r8)
-!#  ifdef MASKING
-!            bed(i,j,1,ithck)=bed(i,j,1,ithck)*rmask(i,j)
-!#  endif
           END DO
         END DO
 !
