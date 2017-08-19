@@ -83,6 +83,8 @@
 # endif
 # ifdef WET_DRY
      &                       GRID(ng) % rmask_wet,                      &
+     &                       GRID(ng) % umask_wet,                      &
+     &                       GRID(ng) % vmask_wet,                      &
 # endif
      &                       GRID(ng) % z_w,                            &
 # ifdef BBL_MODEL
@@ -97,13 +99,17 @@
 # endif
      &                       FORCES(ng) % bustr,                        &
      &                       FORCES(ng) % bvstr,                        &
+# ifdef SED_DUNEFACE
+     &                       FORCES(ng) % rollA,                        &
+     &                       GRID(ng) % on_u,                           &
+     &                       GRID(ng) % om_v,                           &
+     &                       OCEAN(ng) % ubar,                          &
+     &                       OCEAN(ng) % vbar,                          &
+# endif
 # if defined BEDLOAD_SOULSBY
      &                       FORCES(ng) % Hwave,                        &
      &                       FORCES(ng) % Lwave,                        &
      &                       GRID(ng) % angler,                         &
-# endif
-# if defined SED_MORPH
-     &                       SEDBED(ng) % bed_thick,                    &
 # endif
 # if defined BEDLOAD_MPM || defined BEDLOAD_SOULSBY
      &                       GRID(ng) % h,                              &
@@ -113,6 +119,9 @@
      &                       GRID(ng) % on_v,                           &
      &                       SEDBED(ng) % bedldu,                       &
      &                       SEDBED(ng) % bedldv,                       &
+# endif
+# if defined SED_MORPH
+     &                       SEDBED(ng) % bed_thick,                    &
 # endif
      &                       SEDBED(ng) % bed,                          &
      &                       SEDBED(ng) % bed_frac,                     &
@@ -134,7 +143,7 @@
      &                             rmask, umask, vmask,                 &
 # endif
 # ifdef WET_DRY
-     &                             rmask_wet,                           &
+     &                             rmask_wet, umask_wet, vmask_wet,     &
 # endif
      &                             z_w,                                 &
 # ifdef BBL_MODEL
@@ -144,16 +153,21 @@
      &                             Dwave, Pwave_bot,                    &
 # endif
      &                             bustr, bvstr,                        &
+# ifdef SED_DUNEFACE
+     &                             rollA,                               &
+     &                             on_u, om_v,                          &
+     &                             ubar, vbar,                          &
+# endif
 # if defined BEDLOAD_SOULSBY
      &                             Hwave, Lwave,                        &
      &                             angler,                              &
 # endif
-# if defined SED_MORPH
-     &                             bed_thick,                           &
-# endif
 # if defined BEDLOAD_MPM || defined BEDLOAD_SOULSBY
      &                             h, om_r, om_u, on_r, on_v,           &
      &                             bedldu, bedldv,                      &
+# endif
+# if defined SED_MORPH
+     &                             bed_thick,                           &
 # endif
      &                             bed, bed_frac, bed_mass,             &
      &                             bottom)
@@ -189,6 +203,8 @@
 #  endif
 #  ifdef WET_DRY
       real(r8), intent(in) :: rmask_wet(LBi:,LBj:)
+      real(r8), intent(in) :: umask_wet(LBi:,LBj:)
+      real(r8), intent(in) :: vmask_wet(LBi:,LBj:)
 #  endif
       real(r8), intent(in) :: z_w(LBi:,LBj:,0:)
 #  ifdef BBL_MODEL
@@ -203,13 +219,17 @@
 #  endif
       real(r8), intent(in) :: bustr(LBi:,LBj:)
       real(r8), intent(in) :: bvstr(LBi:,LBj:)
+#  ifdef SED_DUNEFACE
+      real(r8), intent(in) :: rollA(LBi:,LBj:)
+      real(r8), intent(in) :: on_u(LBi:,LBj:)
+      real(r8), intent(in) :: om_v(LBi:,LBj:)
+      real(r8), intent(in) :: ubar(LBi:,LBj:,:)
+      real(r8), intent(in) :: vbar(LBi:,LBj:,:)
+#  endif
 #  if defined BEDLOAD_SOULSBY
       real(r8), intent(in) :: Hwave(LBi:,LBj:)
       real(r8), intent(in) :: Lwave(LBi:,LBj:)
       real(r8), intent(in) :: angler(LBi:,LBj:)
-#  endif
-#  if defined SED_MORPH
-      real(r8), intent(inout):: bed_thick(LBi:,LBj:,:)
 #  endif
 #  if defined BEDLOAD_MPM || defined BEDLOAD_SOULSBY
       real(r8), intent(in) :: h(LBi:,LBj:)
@@ -219,6 +239,9 @@
       real(r8), intent(in) :: on_v(LBi:,LBj:)
       real(r8), intent(inout) :: bedldu(LBi:,LBj:,:)
       real(r8), intent(inout) :: bedldv(LBi:,LBj:,:)
+#  endif
+#  if defined SED_MORPH
+      real(r8), intent(inout):: bed_thick(LBi:,LBj:,:)
 #  endif
       real(r8), intent(inout) :: bed(LBi:,LBj:,:,:)
       real(r8), intent(inout) :: bed_frac(LBi:,LBj:,:,:)
@@ -234,6 +257,8 @@
 #  endif
 #  ifdef WET_DRY
       real(r8), intent(in) :: rmask_wet(LBi:UBi,LBj:UBj)
+      real(r8), intent(in) :: umask_wet(LBi:UBi,LBj:UBj)
+      real(r8), intent(in) :: vmask_wet(LBi:UBi,LBj:UBj)
 #  endif
       real(r8), intent(in) :: z_w(LBi:UBi,LBj:UBj,0:N(ng))
 #  ifdef BBL_MODEL
@@ -248,13 +273,17 @@
 #  endif
       real(r8), intent(in) :: bustr(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: bvstr(LBi:UBi,LBj:UBj)
+#  ifdef SED_DUNEFACE
+      real(r8), intent(in) :: rollA(LBi:UBi,LBj:UBj)
+      real(r8), intent(in) :: on_u(LBi:UBi,LBj:UBj)
+      real(r8), intent(in) :: om_v(LBi:UBi,LBj:UBj)
+      real(r8), intent(in) :: ubar(LBi:UBi,LBj:UBj,3)
+      real(r8), intent(in) :: vbar(LBi:UBi,LBj:UBj,3)
+#  endif
 #  if defined BEDLOAD_SOULSBY
       real(r8), intent(in) :: Hwave(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: Lwave(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: angler(LBi:UBi,LBj:UBj)
-#  endif
-#  if defined SED_MORPH
-      real(r8), intent(inout):: bed_thick(LBi:UBi,LBj:UBj,2)
 #  endif
 #  if defined BEDLOAD_MPM || defined BEDLOAD_SOULSBY
       real(r8), intent(in) :: h(LBi:UBi,LBj:UBj)
@@ -264,6 +293,9 @@
       real(r8), intent(in) :: on_v(LBi:UBi,LBj:UBj)
       real(r8), intent(inout) :: bedldu(LBi:UBi,LBj:UBj,NST)
       real(r8), intent(inout) :: bedldv(LBi:UBi,LBj:UBj,NST)
+#  endif
+#  if defined SED_MORPH
+      real(r8), intent(inout):: bed_thick(LBi:UBi,LBj:UBj,2)
 #  endif
       real(r8), intent(inout) :: bed(LBi:UBi,LBj:UBj,Nbed,MBEDP)
       real(r8), intent(inout) :: bed_frac(LBi:UBi,LBj:UBj,Nbed,NST)
@@ -277,8 +309,8 @@
 
       real(r8), parameter :: eps = 1.0E-14_r8
 
-      real(r8) :: cff, cff1, cff2, cff3, cff4, cff5
-      real(r8) :: Dstp, bed_change
+      real(r8) :: cff, cff1, cff2, cff3, cff4, cff5, fac1, fac2
+      real(r8) :: Dstp, bed_change, dz, roll
 
 # if defined BEDLOAD_MPM
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: tau_w
@@ -716,9 +748,11 @@
 #   endif
 #  endif
 #  ifdef SLOPE_KIRWAN
+!           cff1=0.5_r8   !0.1_r8
+            cff1=0.0_r8   !0.1_r8
             dzdx=(h(i,j)-h(i-1  ,j))/om_u(i,j)
             a_slopex=(MAX(0.0_r8,abs(dzdx)-0.01_r8)                     &
-     &               *SIGN(1.0_r8,dzdx)*0.1_r8)                         &
+     &               *SIGN(1.0_r8,dzdx)*cff1)                           &
      &               *om_r(i,j)*dt(ng)
 #   ifdef SED_MORPH
             a_slopex=a_slopex*morph_fac(ised,ng)
@@ -748,9 +782,11 @@
 #   endif
 #  endif
 #  ifdef SLOPE_KIRWAN
+!           cff1=0.5_r8   !0.1_r8
+            cff1=0.0_r8   !0.1_r8
             dzdy=(h(i,j)-h(i  ,j-1))/on_v(i,j)
             a_slopey=(MAX(0.0_r8,abs(dzdy)-0.01_r8)                     &
-     &               *SIGN(1.0_r8,dzdy)*0.1_r8)                         &
+     &               *SIGN(1.0_r8,dzdy)*cff1)                           &
      &               *on_r(i,j)*dt(ng)
 #   ifdef SED_MORPH
             a_slopey=a_slopey*morph_fac(ised,ng)
@@ -794,6 +830,58 @@
           END DO
         END DO
 #  endif
+
+#  ifdef SED_DUNEFACE
+!       fac1=-2.0e-4_r8/g**2
+!       fac1=-2.0e-2_r8/g**2
+!       fac1=2.0e+2_r8/g**2
+        fac1=2.0e+4_r8/g**2
+        DO j=Jstr,Jend
+          DO i=Istr,Iend+1
+            fac2=1.0_r8/MAX(2.0_r8,Pwave_bot(i,j))
+            dz=SIGN(1.0_r8,h(i,j)-h(i-1,j))
+            roll=0.5_r8*(rollA(i-1,j)+rollA(i,j))
+            roll=MIN(roll,0.00001_r8)*100000.0_r8
+!           cff1=MAX(ubar(i,j,nstp)*ubar(i,j,nstp)-2.0_r8*g*dz,0.0_r8)
+            cff1=ubar(i,j,nstp)*ubar(i,j,nstp)*roll
+            cff2=Srho(ised,ng)*(1.0_r8-bed(i,j,1,iporo))
+            cff3=fac1*fac2*cff1*cff1*cff2*on_u(i,j)*dt(ng)*dz
+#   ifdef MASKING
+#    ifdef WET_DRY
+            cff3=cff3*(1.0_r8-umask_wet(i-1,j))*(0.5_r8*(1.0_r8+dz))+   &
+     &           cff3*(1.0_r8-umask_wet(i+1,j))*(0.5_r8*(1.0_r8-dz))
+            cff3=cff3*umask_wet(i,j)
+#    endif
+#   endif
+!           FX(i,j)=FX(i,j)+MAX(cff3,-10000.0_r8)
+!           if (abs(cff3).gt.0.0_r8) write(*,*) 'fx ',i,j,cff3
+            FX(i,j)=FX(i,j)+cff3
+          END DO
+        END DO
+        DO j=Jstr,Jend+1
+          DO i=Istr,Iend
+            fac2=1.0_r8/MAX(2.0_r8,Pwave_bot(i,j))
+            dz=SIGN(1.0_r8,h(i,j)-h(i,j-1))
+            roll=0.5_r8*(rollA(i,j-1)+rollA(i,j))
+            roll=MIN(roll,0.00001_r8)*100000.0_r8
+!           cff1=MAX(vbar(i,j,nstp)*vbar(i,j,nstp)-2.0_r8*g*dz,0.0_r8)
+            cff1=vbar(i,j,nstp)*vbar(i,j,nstp)*roll
+            cff2=Srho(ised,ng)*(1.0_r8-bed(i,j,1,iporo))
+            cff3=fac1*fac2*cff1*cff1*cff2*om_v(i,j)*dt(ng)*dz
+#   ifdef MASKING
+#    ifdef WET_DRY
+            cff3=cff3*(1.0_r8-vmask_wet(i,j-1))*(0.5_r8*(1.0_r8+dz))+   &
+     &           cff3*(1.0_r8-vmask_wet(i,j+1))*(0.5_r8*(1.0_r8-dz))
+            cff3=cff3*vmask_wet(i,j)
+#    endif
+#   endif
+!           if (abs(cff3).gt.0.0_r8) write(*,*) 'fe ',i,j,cff3
+!           FE(i,j)=FE(i,j)+MAX(cff3,-10000.0_r8)
+            FE(i,j)=FE(i,j)+cff3
+          END DO
+        END DO
+#  endif
+
 !
 ! Limit fluxes to prevent bottom from breaking thru water surface.
 !
