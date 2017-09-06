@@ -400,10 +400,10 @@
           area_east=buffer(1)
 # endif
           DO is=1,Nsrc(ng)/2
-            SOURCES(ng)%Qbar(is)=Qbar(is)/area_west
+            SOURCES(ng)%Qbar(is)=Sources(ng)%Qbar(is)/area_west
           END DO
           DO is=Nsrc(ng)/2+1,Nsrc(ng)
-            SOURCES(ng)%Qbar(is)=Qbar(is)/area_east
+            SOURCES(ng)%Qbar(is)=Sources(ng)%Qbar(is)/area_east
           END DO
         END IF
 !$OMP END CRITICAL (PSOURCE)
