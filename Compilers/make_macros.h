@@ -91,6 +91,16 @@
 #endif
 
 /*
+** Process WW3 wave model.
+*/
+
+#ifdef WW3_MODEL
+  USE_WW3 := on
+#else
+  USE_WW3 :=
+#endif
+
+/*
 ** Process REFDIF wave model.
 */
 

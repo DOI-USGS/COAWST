@@ -103,11 +103,12 @@ ifdef USE_MCT
 endif
 
 ifdef USE_ESMF
+          ESMF_OS ?= $(OS)
       ESMF_SUBDIR := $(ESMF_OS).$(ESMF_COMPILER).$(ESMF_ABI).$(ESMF_COMM).$(ESMF_SITE)
       ESMF_MK_DIR ?= $(ESMF_DIR)/lib/lib$(ESMF_BOPT)/$(ESMF_SUBDIR)
                      include $(ESMF_MK_DIR)/esmf.mk
            FFLAGS += $(ESMF_F90COMPILEPATHS)
-             LIBS += $(ESMF_F90LINKPATHS) -lesmf -lC
+             LIBS += $(ESMF_F90LINKPATHS) $(ESMF_F90ESMFLINKLIBS)
 endif
 
 ifdef USE_CXX
@@ -128,6 +129,11 @@ ifdef USE_WRF
              LIBS += WRF/frame/pack_utils.o
              LIBS += WRF/external/io_netcdf/libwrfio_nf.a
 #            LIBS += WRF/external/io_netcdf/wrf_io.o
+endif
+
+ifdef USE_WW3
+             FFLAGS += -I${COAWST_WW3_DIR}/mod_DIST/
+             LIBS += WW3/obj/libWW3.a
 endif
 
 #
@@ -162,9 +168,9 @@ endif
 
 ifdef USE_SWAN
 
-$(SCRATCH_DIR)/ocpcre.o: FFLAGS += -f fixed
-$(SCRATCH_DIR)/ocpids.o: FFLAGS += -f fixed
-$(SCRATCH_DIR)/ocpmix.o: FFLAGS += -f fixed
+$(SCRATCH_DIR)/ocpcre.o:   FFLAGS += -f fixed
+$(SCRATCH_DIR)/ocpids.o:   FFLAGS += -f fixed
+$(SCRATCH_DIR)/ocpmix.o:   FFLAGS += -f fixed
 $(SCRATCH_DIR)/swancom1.o: FFLAGS += -f fixed
 $(SCRATCH_DIR)/swancom2.o: FFLAGS += -f fixed
 $(SCRATCH_DIR)/swancom3.o: FFLAGS += -f fixed
@@ -173,15 +179,13 @@ $(SCRATCH_DIR)/swancom5.o: FFLAGS += -f fixed
 $(SCRATCH_DIR)/swanmain.o: FFLAGS += -f fixed
 $(SCRATCH_DIR)/swanout1.o: FFLAGS += -f fixed
 $(SCRATCH_DIR)/swanout2.o: FFLAGS += -f fixed
-$(SCRATCH_DIR)/swanparll.o: FFLAGS += -f fixed
+$(SCRATCH_DIR)/swanparll.o:FFLAGS += -f fixed
 $(SCRATCH_DIR)/swanpre1.o: FFLAGS += -f fixed
 $(SCRATCH_DIR)/swanpre2.o: FFLAGS += -f fixed
-$(SCRATCH_DIR)/swanser.o: FFLAGS += -f fixed
-$(SCRATCH_DIR)/swmod1.o: FFLAGS += -f fixed
-$(SCRATCH_DIR)/swmod2.o: FFLAGS += -f fixed
-
-$(SCRATCH_DIR)/SwanCompdata.o: FFLAGS += -f free
-$(SCRATCH_DIR)/SwanGriddata.o: FFLAGS += -f free
+$(SCRATCH_DIR)/swanser.o:  FFLAGS += -f fixed
+$(SCRATCH_DIR)/swmod1.o:   FFLAGS += -f fixed
+$(SCRATCH_DIR)/swmod2.o:       FFLAGS += -f fixed
+$(SCRATCH_DIR)/SwanSpectPart.o:FFLAGS += -f fixed
 $(SCRATCH_DIR)/m_constants.o:  FFLAGS += -f free
 $(SCRATCH_DIR)/m_fileio.o:     FFLAGS += -f free
 $(SCRATCH_DIR)/mod_xnl4v5.o:   FFLAGS += -f free
@@ -189,5 +193,47 @@ $(SCRATCH_DIR)/serv_xnl4v5.o:  FFLAGS += -f free
 $(SCRATCH_DIR)/nctablemd.o:    FFLAGS += -f free
 $(SCRATCH_DIR)/agioncmd.o:     FFLAGS += -f free
 $(SCRATCH_DIR)/swn_outnc.o:    FFLAGS += -f free
+$(SCRATCH_DIR)/SdsBabanin.o:   FFLAGS += -f free
+$(SCRATCH_DIR)/SwanBpntlist.o: FFLAGS += -f free
+$(SCRATCH_DIR)/SwanCheckGrid.o:FFLAGS += -f free
+$(SCRATCH_DIR)/SwanCompdata.o: FFLAGS += -f free
+$(SCRATCH_DIR)/SwanCompUnstruc.o:       FFLAGS += -f free
+$(SCRATCH_DIR)/SwanComputeForce.o:      FFLAGS += -f free
+$(SCRATCH_DIR)/SwanConvAccur.o:         FFLAGS += -f free
+$(SCRATCH_DIR)/SwanConvStopc.o:         FFLAGS += -f free
+$(SCRATCH_DIR)/SwanCreateEdges.o:       FFLAGS += -f free
+$(SCRATCH_DIR)/SwanCrossObstacle.o:     FFLAGS += -f free
+$(SCRATCH_DIR)/SwanDiffPar.o:           FFLAGS += -f free
+$(SCRATCH_DIR)/SwanDispParm.o:          FFLAGS += -f free
+$(SCRATCH_DIR)/SwanFindObstacles.o:     FFLAGS += -f free
+$(SCRATCH_DIR)/SwanFindPoint.o:         FFLAGS += -f free
+$(SCRATCH_DIR)/SwanGridCell.o:          FFLAGS += -f free
+$(SCRATCH_DIR)/SwanGriddata.o:          FFLAGS += -f free
+$(SCRATCH_DIR)/SwanGridFace.o:          FFLAGS += -f free
+$(SCRATCH_DIR)/SwanGridobjects.o:       FFLAGS += -f free
+$(SCRATCH_DIR)/SwanGridTopology.o:      FFLAGS += -f free
+$(SCRATCH_DIR)/SwanGridVert.o:          FFLAGS += -f free
+$(SCRATCH_DIR)/SwanGSECorr.o:           FFLAGS += -f free
+$(SCRATCH_DIR)/SwanInitCompGrid.o:      FFLAGS += -f free
+$(SCRATCH_DIR)/SwanInterpolateAc.o:     FFLAGS += -f free
+$(SCRATCH_DIR)/SwanInterpolateOutput.o: FFLAGS += -f free
+$(SCRATCH_DIR)/SwanInterpolatePoint.o:  FFLAGS += -f free
+$(SCRATCH_DIR)/SwanIntgratSpc.o:        FFLAGS += -f free
+$(SCRATCH_DIR)/SwanPointinMesh.o:       FFLAGS += -f free
+$(SCRATCH_DIR)/SwanPrepComp.o:          FFLAGS += -f free
+$(SCRATCH_DIR)/SwanPrintGridInfo.o:     FFLAGS += -f free
+$(SCRATCH_DIR)/SwanPropvelS.o:          FFLAGS += -f free
+$(SCRATCH_DIR)/SwanPropvelX.o:          FFLAGS += -f free
+$(SCRATCH_DIR)/SwanReadADCGrid.o:       FFLAGS += -f free
+$(SCRATCH_DIR)/SwanReadEasymeshGrid.o:  FFLAGS += -f free
+$(SCRATCH_DIR)/SwanReadGrid.o:          FFLAGS += -f free
+$(SCRATCH_DIR)/SwanReadTriangleGrid.o:  FFLAGS += -f free
+$(SCRATCH_DIR)/SwanSweepSel.o:          FFLAGS += -f free
+$(SCRATCH_DIR)/SwanThreadBounds.o:      FFLAGS += -f free
+$(SCRATCH_DIR)/SwanTranspAc.o:          FFLAGS += -f free
+$(SCRATCH_DIR)/SwanTranspX.o:           FFLAGS += -f free
+$(SCRATCH_DIR)/SwanVertlist.o:  FFLAGS += -f free
+$(SCRATCH_DIR)/waves_control.o: FFLAGS += -f free
+$(SCRATCH_DIR)/waves_coupler.o: FFLAGS += -f free
 
 endif
