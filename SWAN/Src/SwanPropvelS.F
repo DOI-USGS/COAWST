@@ -3,7 +3,8 @@ subroutine SwanPropvelS ( cad   , cas   , ux2   , uy2   , &
                           kwave , cgo   , spcsig, iddlow, &
                           iddtop, ecos  , esin  , coscos, &
                           sincos, sinsin, rdx   , rdy   , &
-                          dhdx  , dhdy  , dkdx  , dkdy  )
+                          dhdx  , dhdy  , dkdx  , dkdy  , &
+                          duxdx , duxdy , duydx , duydy )
 !
 !   --|-----------------------------------------------------------|--
 !     | Delft University of Technology                            |
@@ -16,7 +17,7 @@ subroutine SwanPropvelS ( cad   , cas   , ux2   , uy2   , &
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2015  Delft University of Technology
+!     Copyright (C) 1993-2017  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -43,6 +44,7 @@ subroutine SwanPropvelS ( cad   , cas   , ux2   , uy2   , &
 !   41.07: Marcel Zijlema
 !   41.35: Casey Dietrich
 !   41.60: Marcel Zijlema
+!   41.67: Marcel Zijlema
 !
 !   Updates
 !
@@ -56,6 +58,7 @@ subroutine SwanPropvelS ( cad   , cas   , ux2   , uy2   , &
 !                         (see Holthuijsen (2007), page 210, footnote 4)
 !   41.35,    March 2012: add option of limitation on csigma and ctheta
 !   41.60,     July 2015: more accurate computation of gradients of depth or wave number for turning rate
+!   41.67,   August 2017: more accurate computation of gradients of ambient currents for transport velocities
 !
 !   Purpose
 !
@@ -91,6 +94,10 @@ subroutine SwanPropvelS ( cad   , cas   , ux2   , uy2   , &
     real, intent(in)                           :: dhdy   ! derivative of depth in y-direction
     real, dimension(MSC), intent(in)           :: dkdx   ! derivative of wave number in x-direction
     real, dimension(MSC), intent(in)           :: dkdy   ! derivative of wave number in y-direction
+    real, intent(in)                           :: duxdx  ! derivative of ux2 to x
+    real, intent(in)                           :: duxdy  ! derivative of ux2 to y
+    real, intent(in)                           :: duydx  ! derivative of uy2 to x
+    real, intent(in)                           :: duydy  ! derivative of uy2 to y
     real, dimension(MDC), intent(in)           :: ecos   ! help array containing cosine of spectral directions
     real, dimension(MDC), intent(in)           :: esin   ! help array containing sine of spectral directions
     real, dimension(MSC,ICMAX), intent(in)     :: kwave  ! wave number
@@ -117,10 +124,6 @@ subroutine SwanPropvelS ( cad   , cas   , ux2   , uy2   , &
     real, dimension(3)                    :: cd       ! coefficients for computing cad
     real, dimension(10)                   :: cs       ! coefficients for computing cas
     real, dimension(3)                    :: dloc     ! local depth at vertices
-    real                                  :: duxdx    ! derivative of ux2 to x
-    real                                  :: duxdy    ! derivative of ux2 to y
-    real                                  :: duydx    ! derivative of uy2 to x
-    real                                  :: duydy    ! derivative of uy2 to y
     real                                  :: fac      ! a factor
     real                                  :: fac2     ! another factor
     real                                  :: frlim    ! frequency range in which limit on velocity in theta-direction is applied
@@ -168,17 +171,6 @@ subroutine SwanPropvelS ( cad   , cas   , ux2   , uy2   , &
     ! if at least one vertex is dry, return
     !
     if ( dloc(1) <= DEPMIN .or. dloc(2) <= DEPMIN .or. dloc(3) <= DEPMIN ) return
-    !
-    ! compute the derivatives of the ambient current
-    !
-    if ( ICUR /= 0 ) then
-       !
-       duxdx = rdx(1) * (ux2(iv1) - ux2(iv2)) + rdx(2) * (ux2(iv1) - ux2(iv3))
-       duxdy = rdy(1) * (ux2(iv1) - ux2(iv2)) + rdy(2) * (ux2(iv1) - ux2(iv3))
-       duydx = rdx(1) * (uy2(iv1) - uy2(iv2)) + rdx(2) * (uy2(iv1) - uy2(iv3))
-       duydy = rdy(1) * (uy2(iv1) - uy2(iv2)) + rdy(2) * (uy2(iv1) - uy2(iv3))
-       !
-    endif
     !
     ! compute wave transport velocity in sigma-direction
     !

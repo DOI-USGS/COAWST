@@ -1,5 +1,5 @@
-Instructions for quick installation of SWAN
--------------------------------------------
+Instructions for fast installation of SWAN
+------------------------------------------
 
 Full automatic installation of SWAN can be done by means of
 the make and perl utilities. Please carry out the following
@@ -37,6 +37,8 @@ tasks:
       Intel Pentium (64-bit) PC           MS Windows     Intel
       Intel Pentium (32-bit) PC           MS Windows     Compaq Visual
       Power Mac G4                        Mac OS X       IBM
+      MacBook                             macOS          gfortran
+      MacBook                             macOS          Intel
 
    3) Compilation of the SWAN source code for sequential runs can
       be done by typing 'make ser' or 'nmake ser' (in case of
@@ -48,8 +50,4 @@ tasks:
       mesh simulation on a distributed memory system, type 'make punswan'.
       NOTE: One of these commands must be preceded once by 'make config'.
 
-   4) SWAN documents in PDF format can be created by typing 'make doc'.
-      This command must be preceded by 'make config'. For creating the
-      documents, LaTeX must be available.
-
-   5) For more information, please consult the Implementation Manual.
+   4) For more information, please consult the Implementation Manual.

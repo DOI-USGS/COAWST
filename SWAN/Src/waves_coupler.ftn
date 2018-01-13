@@ -93,8 +93,6 @@
       PUBLIC :: wavfatm_coupling
 # endif
       PUBLIC :: finalize_wav_coupling
-
-!      include 'mpif.h'
 !
 !  Declarations.
 !
@@ -189,7 +187,7 @@
 
       real :: cff
 
-      integer, dimension(2) :: src_grid_dims, dst_grid_dims
+!      integer, dimension(2) :: src_grid_dims, dst_grid_dims
       integer, allocatable :: start(:), length(:)
 !
 !-----------------------------------------------------------------------
@@ -270,13 +268,18 @@
 !  If wave grid and atm grids are different sizes, then
 !  develop sparse matrices for interpolation.
 !
+  35  FORMAT(a3,i1,a7,i1,a11)
       DO ia=1,Natm_grids
 !!!!!!!!!!!!!!!!!!!!!!
 ! First work on atm to wave.
 !!!!!!!!!!!!!!!!!!!!!!
 !
         IF (INODE.eq.MASTER) THEN
-          nc_name=A2Wname(ia,ng)
+          IF (scrip_opt.eq.1) THEN
+            write(nc_name,35) 'atm',ia,'_to_wav',ng,'_weights.nc'
+          ELSE
+            nc_name=A2Wname(ia,ng)
+          END IF
           call get_sparse_matrix (ng, nc_name, num_sparse_elems,        &
      &                            src_grid_dims, dst_grid_dims)
 !
@@ -315,7 +318,11 @@
 ! Second work on waves to atm.
 !!!!!!!!!!!!!!!!!!!!!!
 !
-          nc_name=W2Aname(ng,ia)
+          IF (scrip_opt.eq.1) THEN
+            write(nc_name,35) 'wav',ng,'_to_atm',ia,'_weights.nc'
+          ELSE
+            nc_name=W2Aname(ng,ia)
+          END IF
           call get_sparse_matrix (ng, nc_name, num_sparse_elems,        &
      &                            src_grid_dims, dst_grid_dims)
 !
@@ -837,7 +844,7 @@
           CALL MCT_isend (AttrVect_G(ng)%wav2ocn_AV,                    &
      &                   Router_O(ng,io)%SWANtoROMS, Tag)
           CALL MCT_waits (Router_O(ng,io)%SWANtoROMS)
-          IF (MYRANK.EQ.0) THEN
+          IF (MyRank.EQ.0) THEN
             WRITE (SCREEN,36)' == SWAN grid ',ng,                        &
      &                       ' sent wave data to ROMS grid ', io
  36         FORMAT (a14,i2,a29,i2)
@@ -968,7 +975,7 @@
 !  Send wave fields bundle to atm model.
 !-----------------------------------------------------------------------
 !
- 35     FORMAT (a14,i2,a21,i5)
+ 35     FORMAT (a14,i2,a23,i5)
 !
 !  Send fields to atmosphere model.
 !
@@ -1006,7 +1013,7 @@
      &                  Router_A(ng,ia)%SWANtoWRF, Tag)
 #  endif
         CALL MCT_waits (Router_A(ng,ia)%SWANtoWRF)
-        IF (MYRANK.EQ.0) THEN
+        IF (MyRank.EQ.0) THEN
           WRITE (SCREEN,35) '== SWAN grid ',ng,' sent data to WRF grid '&
      &                      ,ia
         END IF
@@ -1087,13 +1094,15 @@
       integer :: WHICHWAY, GDEST, GSRC, TAGT, TAGB, TAGR, TAGL
       integer :: TREQUEST,BREQUEST,RREQUEST,LREQUEST,MSIZE
       integer :: iddep, idwlv, idvlx, idvly, idveg
-      integer :: idruf, idice, idu10, idv10
+      integer :: idruf, idice
       integer, dimension(MPI_STATUS_SIZE,4) :: status
 
       real :: cff
 # if !defined BBL_MODEL
       real :: cff2
 # endif
+      real, parameter ::  Large = 1.0E+20
+      real, dimension(2) :: range
       real(m8), pointer :: avdata(:)
 
       real, pointer :: TEMPMCT(:,:)
@@ -1134,7 +1143,7 @@
       CALL MCT_waitr (AttrVect_G(ng)%ocn2wav_AV,                        &
      &                 Router_O(ng,io)%SWANtoROMS)
 !
-      IF (MYRANK.EQ.0) THEN
+      IF (MyRank.EQ.0) THEN
         WRITE (SCREEN,35) ' == SWAN grid ',ng,                          &
      &                    ' recv data from ROMS grid ', io
       END IF
@@ -1147,7 +1156,7 @@
 ! Pass the non-halo data from MCT into tempmct array.
 !
         NNEIGH = IBLKAD(1)
-        IF (nprocs.eq.1) THEN
+        IF (NPROCS.eq.1) THEN
           Istr=1
           Iend=MXC
           Jstr=1
@@ -1209,6 +1218,7 @@
 # endif
         NUMTRANSFER=IP
 !
+ 40     FORMAT (a36,1x,2(1pe14.6))
         allocate ( TEMPMCT(MXC*MYC,NUMTRANSFER),stat=ierr )
         TEMPMCT=0.0
 # ifdef WAVES_OCEAN
@@ -1217,97 +1227,165 @@
 !
         CALL AttrVect_exportRAttr (AttrVect_G(ng)%ocn2wav_AV,           &
      &                             "DEPTH",avdata,gsmsize)
+        range(1)= Large
+        range(2)=-Large
         IP=0
         DO IY=Jstr,Jend
           DO IX=Istr,Iend
             IP=IP+1
             INDXG=(IY-1)*MXC+IX
             TEMPMCT(INDXG,iddep)=avdata(IP)
+            range(1)=MIN(range(1),REAL(avdata(IP)))
+            range(2)=MAX(range(2),REAL(avdata(IP)))
           END DO
         END DO
+        CALL SWREDUCE(range(1),1,SWREAL,SWMIN)
+        CALL SWREDUCE(range(2),1,SWREAL,SWMAX)
+        IF (MyRank.eq.0) THEN
+          write(SCREEN,40) 'ROMStoSWAN Min/Max DEPTH   (m):     ',      &
+     &                      range(1),range(2)
+        END IF
 !
 !  Water surface elevation.
 !
         CALL AttrVect_exportRAttr (AttrVect_G(ng)%ocn2wav_AV,           &
      &                             "WLEV",avdata,gsmsize)
+        range(1)= Large
+        range(2)=-Large
         IP=0
         DO IY=Jstr,Jend
           DO IX=Istr,Iend
             IP=IP+1
             INDXG=(IY-1)*MXC+IX
             TEMPMCT(INDXG,idwlv)=avdata(IP)
+            range(1)=MIN(range(1),REAL(avdata(IP)))
+            range(2)=MAX(range(2),REAL(avdata(IP)))
           END DO
         END DO
+        CALL SWREDUCE(range(1),1,SWREAL,SWMIN)
+        CALL SWREDUCE(range(2),1,SWREAL,SWMAX)
+        IF (MyRank.eq.0) THEN
+          write(SCREEN,40) 'ROMStoSWAN Min/Max WLEV    (m):     ',      &
+     &                      range(1),range(2)
+        END IF
 !
 !  Depth-integrated u-velocity.
 !
         CALL AttrVect_exportRAttr(AttrVect_G(ng)%ocn2wav_AV,           &
      &                             "VELX",avdata,gsmsize)
+        range(1)= Large
+        range(2)=-Large
         IP=0
         DO IY=Jstr,Jend
           DO IX=Istr,Iend
             IP=IP+1
             INDXG=(IY-1)*MXC+IX
             TEMPMCT(INDXG,idvlx)=avdata(IP)
+            range(1)=MIN(range(1),REAL(avdata(IP)))
+            range(2)=MAX(range(2),REAL(avdata(IP)))
           END DO
         END DO
+        CALL SWREDUCE(range(1),1,SWREAL,SWMIN)
+        CALL SWREDUCE(range(2),1,SWREAL,SWMAX)
+        IF (MyRank.eq.0) THEN
+          write(SCREEN,40) 'ROMStoSWAN Min/Max VELX    (ms-1):  ',      &
+     &                      range(1),range(2)
+        END IF
 !
 !  Depth-integrated v-velocity.
 !
-        CALL AttrVect_exportRAttr(AttrVect_G(ng)%ocn2wav_AV,           &
+        CALL AttrVect_exportRAttr(AttrVect_G(ng)%ocn2wav_AV,            &
      &                            "VELY",avdata,gsmsize)
+        range(1)= Large
+        range(2)=-Large
         IP=0
         DO IY=Jstr,Jend
           DO IX=Istr,Iend
             IP=IP+1
             INDXG=(IY-1)*MXC+IX
             TEMPMCT(INDXG,idvly)=avdata(IP)
+            range(1)=MIN(range(1),REAL(avdata(IP)))
+            range(2)=MAX(range(2),REAL(avdata(IP)))
           END DO
         END DO
+        CALL SWREDUCE(range(1),1,SWREAL,SWMIN)
+        CALL SWREDUCE(range(2),1,SWREAL,SWMAX)
+        IF (MyRank.eq.0) THEN
+          write(SCREEN,40) 'ROMStoSWAN Min/Max VELY    (ms-1):  ',      &
+     &                      range(1),range(2)
+        END IF
 !
 !  Bottom roughness.
 !
         CALL AttrVect_exportRAttr(AttrVect_G(ng)%ocn2wav_AV,           &
      &                            "ZO",avdata,gsmsize)
+        range(1)= Large
+        range(2)=-Large
         IP=0
         DO IY=Jstr,Jend
           DO IX=Istr,Iend
             IP=IP+1
             INDXG=(IY-1)*MXC+IX
             TEMPMCT(INDXG,idruf)=avdata(IP)
+            range(1)=MIN(range(1),REAL(avdata(IP)))
+            range(2)=MAX(range(2),REAL(avdata(IP)))
           END DO
         END DO
-
+        CALL SWREDUCE(range(1),1,SWREAL,SWMIN)
+        CALL SWREDUCE(range(2),1,SWREAL,SWMAX)
+        IF (MyRank.eq.0) THEN
+          write(SCREEN,40) 'ROMStoSWAN Min/Max ZO      (m):      ',    &
+     &                      range(1),range(2)
+        END IF
 #  if defined VEGETATION && defined VEG_SWAN_COUPLING
 !
 !  Vegetation density.
 !
         CALL AttrVect_exportRAttr(AttrVect_G(ng)%ocn2wav_AV,           &
      &                            "VEGDENS",avdata,gsmsize)
+        range(1)= Large
+        range(2)=-Large
         IP=0
         DO IY=Jstr,Jend
           DO IX=Istr,Iend
             IP=IP+1
             INDXG=(IY-1)*MXC+IX
             TEMPMCT(INDXG,idveg)=avdata(IP)                     
+            range(1)=MIN(range(1),REAL(avdata(IP)))
+            range(2)=MAX(range(2),REAL(avdata(IP)))
           END DO
         END DO
+        CALL SWREDUCE(range(1),1,SWREAL,SWMIN)
+        CALL SWREDUCE(range(2),1,SWREAL,SWMAX)
+        IF (MyRank.eq.0) THEN
+          write(SCREEN,40) 'ROMStoSWAN Min/Max VEGDENS (indv/m-2): ',   &
+     &                      range(1),range(2)
+        END IF
 #  endif
-
 #  ifdef ICE_MODEL
 !
 !  sea ice fraction.
 !
         CALL AttrVect_exportRAttr(AttrVect_G(ng)%ocn2wav_AV,           &
      &                            "SEAICE",avdata,gsmsize)
+        range(1)= Large
+        range(2)=-Large
         IP=0
         DO IY=Jstr,Jend
           DO IX=Istr,Iend
             IP=IP+1
             INDXG=(IY-1)*MXC+IX
             TEMPMCT(INDXG,idice)=avdata(IP)
+            range(1)=MIN(range(1),REAL(avdata(IP)))
+            range(2)=MAX(range(2),REAL(avdata(IP)))
           END DO
         END DO
+        CALL SWREDUCE(range(1),1,SWREAL,SWMIN)
+        CALL SWREDUCE(range(2),1,SWREAL,SWMAX)
+        IF (MyRank.eq.0) THEN
+          write(SCREEN,40) 'ROMStoSWAN Min/Max DEPTH   (-):     ',      &
+     &                      range(1),range(2)
+        END IF
 #  endif
 # endif
 !
@@ -1658,22 +1736,23 @@
       integer :: NUMTRANSFER, NNEIGH, HALOSIZE, NUMSENT, INB
       integer :: WHICHWAY, GDEST, GSRC, TAGT, TAGB, TAGR, TAGL
       integer :: TREQUEST,BREQUEST,RREQUEST,LREQUEST,MSIZE
-      integer :: iddep, idwlv, idvlx, idvly, idveg
-      integer :: idruf, idice, idu10, idv10
+      integer :: iddep, idwlv, idvlx, idvly
+      integer :: idu10, idv10
       integer, dimension(MPI_STATUS_SIZE,4) :: status
+# ifdef MCT_INTERP_WV2AT
+      integer, pointer :: indices(:)
+# endif
 
       real :: cff
 # if !defined BBL_MODEL
       real :: cff2
 # endif
-      real(m8), pointer :: avdata(:)
-
       real, pointer :: TEMPMCT(:,:)
       real, pointer :: GRECVT(:), GRECVB(:), GRECVR(:), GRECVL(:)
       real, pointer :: GSENDT(:), GSENDB(:), GSENDR(:), GSENDL(:)
-# ifdef MCT_INTERP_WV2AT
-      integer, pointer :: indices(:)
-# endif
+      real(m8), pointer :: avdata(:)
+      real, parameter ::  Large = 1.0E+20
+      real, dimension(2) :: range
 
       character (len=40) :: code
 !
@@ -1699,7 +1778,7 @@
 !  Send wave fields bundle to ocean model, ROMS.
 !-----------------------------------------------------------------------
 !
- 35   FORMAT (a14,i2,a26,i2)
+ 35   FORMAT (a14,i2,a24,i2)
 !
 !  Receive fields from atmosphere model.
 !
@@ -1720,7 +1799,7 @@
       CALL MCT_waitr (AttrVect_G(ng)%atm2wav_AV,                        &
      &                Router_A(ng,ia)%SWANtoWRF)
 # endif
-        IF (MYRANK.EQ.0) THEN
+        IF (MyRank.EQ.0) THEN
           WRITE (SCREEN,35)'== SWAN grid ',ng,' recv data from WRF grid'&
      &                     ,ia
         END IF
@@ -1732,7 +1811,7 @@
 ! Pass the non-halo data from MCT into tempmct array.
 !
         NNEIGH = IBLKAD(1)
-        IF (nprocs.eq.1) THEN
+        IF (NPROCS.eq.1) THEN
           Istr=1
           Iend=MXC
           Jstr=1
@@ -1773,6 +1852,7 @@
         idv10=IP
         NUMTRANSFER=IP
 !
+ 40     FORMAT (a36,1x,2(1pe14.6))
         allocate ( TEMPMCT(MXC*MYC,NUMTRANSFER),stat=ierr )
         TEMPMCT=0.0
 # ifdef AIR_WAVES
@@ -1781,27 +1861,47 @@
 !
         CALL AttrVect_exportRAttr(AttrVect_G(ng)%atm2wav_AV,"U10",      &
      &                            avdata,gsmsize)
+        range(1)= Large
+        range(2)=-Large
         IP=0
         DO IY=Jstr,Jend
           DO IX=Istr,Iend
             IP=IP+1
             INDXG=(IY-1)*MXC+IX
             TEMPMCT(INDXG,idu10)=avdata(IP)
+            range(1)=MIN(range(1),REAL(avdata(IP)))
+            range(2)=MAX(range(2),REAL(avdata(IP)))
           END DO
         END DO
+        CALL SWREDUCE(range(1),1,SWREAL,SWMIN)
+        CALL SWREDUCE(range(2),1,SWREAL,SWMAX)
+        IF (MyRank.eq.0) THEN
+          write(SCREEN,40) 'WRFtoSWAN Min/Max  U10     (ms-1):  ',      &
+     &                      range(1),range(2)
+        END IF
 !
 !  V-wind.
 !
         CALL AttrVect_exportRAttr(AttrVect_G(ng)%atm2wav_AV,"V10",      &
      &                            avdata,gsmsize)
+        range(1)= Large
+        range(2)=-Large
         IP=0
         DO IY=Jstr,Jend
           DO IX=Istr,Iend
             IP=IP+1
             INDXG=(IY-1)*MXC+IX
             TEMPMCT(INDXG,idv10)=avdata(IP)
+            range(1)=MIN(range(1),REAL(avdata(IP)))
+            range(2)=MAX(range(2),REAL(avdata(IP)))
           END DO
         END DO
+        CALL SWREDUCE(range(1),1,SWREAL,SWMIN)
+        CALL SWREDUCE(range(2),1,SWREAL,SWMAX)
+        IF (MyRank.eq.0) THEN
+          write(SCREEN,40) 'WRFtoSWAN Min/Max  V10     (ms-1):  ',      &
+     &                      range(1),range(2)
+        END IF
 # endif
 !
 !  Pack and send halo regions to be exchanged with adjacent tiles.

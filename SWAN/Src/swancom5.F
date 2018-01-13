@@ -56,7 +56,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2015  Delft University of Technology
+!     Copyright (C) 1993-2017  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -275,7 +275,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2015  Delft University of Technology
+!     Copyright (C) 1993-2017  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -893,7 +893,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2015  Delft University of Technology
+!     Copyright (C) 1993-2017  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -1178,7 +1178,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2015  Delft University of Technology
+!     Copyright (C) 1993-2017  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -1797,7 +1797,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2015  Delft University of Technology
+!     Copyright (C) 1993-2017  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -1970,7 +1970,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2015  Delft University of Technology
+!     Copyright (C) 1993-2017  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -2202,6 +2202,7 @@
             ENDIF
             IMATRA(ID,IS) = IMATRA(ID,IS) + FXY2 + ACOLD*RDTIM            33.09
             IMATDA(ID,IS) = IMATDA(ID,IS) + FXY1 + RDTIM                  33.09
+!           TRACx represent material derivative of action density
             TRAC0(ID,IS,1) = TRAC0(ID,IS,1) - FXY2 - ACOLD*RDTIM          40.85
             TRAC1(ID,IS,1) = TRAC1(ID,IS,1) + FXY1 + RDTIM                40.85
           ELSE
@@ -2278,7 +2279,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2015  Delft University of Technology
+!     Copyright (C) 1993-2017  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -2612,7 +2613,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2015  Delft University of Technology
+!     Copyright (C) 1993-2017  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -2656,26 +2657,32 @@
 !     3. METHOD
 !
 !        References:
-!        W.E. Rogers,  J.M. Kaihatu, N. Booij and L.H. Holthuijsen,
+!     1) Rogers, W.E., J.M. Kaihatu, N. Booij and L.H. Holthuijsen,
 !        "Improving the numerics of a third-generation wave action
 !        model", Naval Research Laboratory, NRL/FR/7320-99-9695, 79p.
+!     2) Rogers, W.E., J.M. Kaihatu, N. Booij, L.H. Holthuijsen,
+!        and H. Petit, 2002: "Diffusion Reduction in an Arbitrary
+!        Scale Wave Action Model", Ocean Eng, 29, 1357-1390.
 !
-!        computational stencil:                                           40.03
+!        computational stencil:                                     40.03
+!                                                                   33.08
+!      IY+1                 o 11 o 4  o 12                          33.08
+!                           |    |    |                             33.08
+!                 8    6    | 2  | 1  | 5                           33.08
+!      IY         o----o----o----*----o                             33.08
+!                           |    |    |                             33.08
+!                           10   | 3  | 13                          33.08
+!      IY-1                 o----o----o                             33.08
+!                                |                                  33.08
+!                                |                                  33.08
+!      IY-2                      o 7                                33.08
+!                                |                                  33.08
+!                                |                                  33.08
+!      IY-3                      o 9                                33.08
 !
-!                              4
-!                             X
-!                             |
-!               8    6    2   |1    5
-!              X----X----X----X----X
-!                        |    |
-!                        |    |3
-!                        X----X
-!                      10     |
-!                             |7
-!                             X
-!                             |
-!                             |9
-!                             X
+!                 ^    ^    ^    ^    ^
+!                 |    |    |    |    |                             33.08
+!               IX-3 IX-2 IX-1  IX  IX+1
 !
 !        Compute the derivative in x-direction:
 !        The nearby points are indicated with the index IC (see
@@ -2715,6 +2722,8 @@
 !                  +(0.25*RDY(2))*(CAY1(ID,IS,3)*AC1(ID,IS,KCGRD(3))                 33.08
 !                  -               CAY1(ID,IS,4)*AC1(ID,IS,KCGRD(4)))                33.08
 !
+!        Anti-GSE correction:
+!        reference: Booij and Holthuijsen (JCP 1987) equations 32-35.
 !        To produce anisotrophic diffusion, we add to the r.h.s.:
 !
 !                  +RDX**2                                                           33.08
@@ -2726,9 +2735,35 @@
 !                  +(2.*DXY(1)*RDX*RDY)                                              33.08
 !                           *(+AC1(ID,IS,IND1)-AC1(ID,IS,IND2)                       33.08
 !                             -AC1(ID,IS,IND3)+AC1(ID,IS,IND10))                     33.08
+!        note: factor 2 here since we have @@xy and @@yx
 !
 !                  Where DXX, DYY, and DXY are diffusion coefficients.               33.08
 !
+!         Notes (Rogers, Jan 10 2013) : I noticed a few years ago that there is
+!            some asymmetry to this anti-GSE implementation that can be removed.
+!            In some tests, the asymmetry results in something that looks like a lima bean
+!            where we would expect an ellipsoid.
+!            If we do this, it may make some swell dispersion look a bit more "natural"
+!            Good news: the change is to the variable "D12AC", which means that it is not complicated by RDX RDY
+!            Bad news: the change requires 3 new points in our stencil.
+!
+!         Notes (Rogers, Feb 21 2013) : this is now done.
+!            from ./RDX_FD_NOSUBS/swan_clone.f90 :
+!         < !            D12AC = 1.00*(QDENS(IX  ,JY  ) -     QDENS(IX-1,JY  ) - QDENS(IX  ,JY-1) + QDENS(IX-1,JY-1)) ! lima bean
+!         <              D12AC = 0.25*(QDENS(IX+1,JY+1) -     QDENS(IX-1,JY+1) - QDENS(IX+1,JY-1) + QDENS(IX-1,JY-1)) ! corrected
+!                        thus indices are :   + IND12              -IND11              -IND13            +IND10
+!
+!        The finite difference scheme for @^2/@x^2 is created by taking this relation:
+!          @A/@x=(A(i+0.5)-A(i-0.5))/dx
+!        ...and applying it twice, @(@A/@x)/@x=(A(i+1)-2*A(i)+A(i-1))/(dx^2)
+!
+!        The OLD finite difference scheme for @(@A/@x)/@y is mentioned in our paper, Rogers et al. (2002)
+!          However, I don't know the origins of this scheme.
+!
+!        The NEW finite difference scheme for @(@A/@x)/@y is created by using these relations:
+!          @A/@x=(A(i+1)-A(i-1))/(2*dx) @A/@y=(A(j+1)-A(j-1))/(2*dy)
+!        ...and applying it together, giving @(@A/@x)/@y =
+!           [A(i+1,j+1)-A(i-1,j+1)-A(i+1,j-1)+A(i-1,j-1)]/[4*dx*dy]
 !
 !     4. PARAMETERLIST
 !
@@ -2781,7 +2816,8 @@
 !   ------------------------------------------------------------
 !
       INTEGER  IS      ,ID      ,IDDUM   ,ISSTOP  ,IC    ,
-     &         IND1,IND2,IND3,IND4,IND5,IND6,IND7,IND8,IND9,IND10         33.08
+     &         IND1,IND2,IND3,IND4,IND5,IND6,IND7,IND8,IND9,IND10,        33.08
+     &         IND11,IND12,IND13
 !
       REAL     FXY1 ,FXY2, ACOLD,                                         33.08
      &         DSS, DNN, D11AC, D12AC, D22AC                              33.08
@@ -2817,16 +2853,19 @@
         ENDDO
       END IF
 
-      IND1 = KCGRD(1)                                                     33.08
-      IND2 = KCGRD(2)
-      IND3 = KCGRD(3)
-      IND4 = KCGRD(4)                                                     33.08
-      IND5 = KCGRD(5)                                                     33.08
-      IND6 = KCGRD(6)                                                     33.08
-      IND7 = KCGRD(7)                                                     33.08
-      IND8 = KCGRD(8)                                                     33.08
-      IND9 = KCGRD(9)                                                     33.08
+      IND1  = KCGRD(1)                                                    33.08
+      IND2  = KCGRD(2)
+      IND3  = KCGRD(3)
+      IND4  = KCGRD(4)                                                    33.08
+      IND5  = KCGRD(5)                                                    33.08
+      IND6  = KCGRD(6)                                                    33.08
+      IND7  = KCGRD(7)                                                    33.08
+      IND8  = KCGRD(8)                                                    33.08
+      IND9  = KCGRD(9)                                                    33.08
       IND10 = KCGRD(10)                                                   33.08
+      IND11 = KCGRD(11)
+      IND12 = KCGRD(12)
+      IND13 = KCGRD(13)
 
       IF (TESTFL .AND. KSPHER.GT.0 .AND. ITEST.GE.60) THEN
          WRITE (PRTEST, 92) (COSLAT(IC), IC=1, 10)
@@ -2983,8 +3022,12 @@
           IF (WAVAGE.GT.0.0) THEN      ! add the anti-GSE stuff           33.08
             D11AC = AC1(ID,IS,IND5) - 2.*AC1(ID,IS,IND1) +                33.08
      &              AC1(ID,IS,IND2)                                       33.08
-            D12AC = AC1(ID,IS,IND1) - AC1(ID,IS,IND2) -                   33.08
-     &              AC1(ID,IS,IND3) + AC1(ID,IS,IND10)                    33.08
+!           old method
+!           D12AC = AC1(ID,IS,IND1) - AC1(ID,IS,IND2) -                   33.08
+!    &              AC1(ID,IS,IND3) + AC1(ID,IS,IND10)                    33.08
+!           new method
+            D12AC = 0.25*(AC1(ID,IS,IND12) - AC1(ID,IS,IND11)
+     &                   -AC1(ID,IS,IND13) + AC1(ID,IS,IND10))
             D22AC = AC1(ID,IS,IND4) - 2.*AC1(ID,IS,IND1) +                33.08
      &              AC1(ID,IS,IND3)                                       33.08
             FXY2 = FXY2 +                                                 33.08
@@ -3011,6 +3054,7 @@
           ENDIF                                                           40.08
           IMATRA(ID,IS) = IMATRA(ID,IS) + FXY2 + ACOLD*RDTIM              33.08
           IMATDA(ID,IS) = IMATDA(ID,IS) + FXY1 + RDTIM                    33.08
+!         TRACx represent material derivative of action density
           TRAC0(ID,IS,1) = TRAC0(ID,IS,1) - FXY2 - ACOLD*RDTIM            40.85
           TRAC1(ID,IS,1) = TRAC1(ID,IS,1) + FXY1 + RDTIM                  40.85
 !
@@ -3066,7 +3110,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2015  Delft University of Technology
+!     Copyright (C) 1993-2017  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -3386,7 +3430,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2015  Delft University of Technology
+!     Copyright (C) 1993-2017  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -3778,7 +3822,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2015  Delft University of Technology
+!     Copyright (C) 1993-2017  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -4038,6 +4082,257 @@
 !
 !****************************************************************
 !
+      SUBROUTINE STRSDFV (DD      ,IDCMIN  ,
+     &                    IDCMAX  ,CAD     ,IMATLA  ,IMATDA  ,IMATUA  ,
+     &                    IMATRA  ,AC2     ,ISSTOP  ,
+     &                    ANYBIN  ,LEAKC1  ,TRAC0   ,TRAC1            )   40.85
+!
+!****************************************************************
+!
+      USE SWCOMM3                                                         40.41
+      USE SWCOMM4                                                         40.41
+      USE OCPCOMM4                                                        40.41
+!
+      IMPLICIT NONE
+!
+!
+!   --|-----------------------------------------------------------|--
+!     | Delft University of Technology                            |
+!     | Faculty of Civil Engineering and Geosciences              |
+!     | Environmental Fluid Mechanics Section                     |
+!     | P.O. Box 5048, 2600 GA  Delft, The Netherlands            |
+!     |                                                           |
+!     | Programmer: Marcel Zijlema                                |
+!   --|-----------------------------------------------------------|--
+!
+!
+!     SWAN (Simulating WAves Nearshore); a third generation wave model
+!     Copyright (C) 1993-2017  Delft University of Technology
+!
+!     This program is free software; you can redistribute it and/or
+!     modify it under the terms of the GNU General Public License as
+!     published by the Free Software Foundation; either version 2 of
+!     the License, or (at your option) any later version.
+!
+!     This program is distributed in the hope that it will be useful,
+!     but WITHOUT ANY WARRANTY; without even the implied warranty of
+!     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+!     GNU General Public License for more details.
+!
+!     A copy of the GNU General Public License is available at
+!     http://www.gnu.org/copyleft/gpl.html#SEC3
+!     or by writing to the Free Software Foundation, Inc.,
+!     59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+!
+!
+!  0. Authors
+!
+!     40.23: Marcel Zijlema
+!     40.41: Marcel Zijlema
+!     40.85: Marcel Zijlema
+!
+!  1. Updates
+!
+!     40.23, Nov. 02: New subroutine
+!     40.41, Oct. 04: common blocks replaced by modules, include files removed
+!     40.85, Aug. 08: store theta-propagation for output purposes
+!
+!  2. Purpose
+!
+!     computation of @[CAD AC2]/@D based on finite volume method
+!
+!  4. Argument variables
+!
+!     AC2         action density
+!     ANYBIN      logical: indicate whether current bin is selected
+!     CAD         wave transport velocity in D-direction
+!     DD          width of spectral direction band
+!     IDCMAX      frequency dependent counter
+!     IDCMIN      frequency dependent counter
+!     IMATDA      coefficients of diagonal of matrix
+!     IMATLA      coefficients of lower diagonal of matrix
+!     IMATRA      coefficients of right hand side
+!     IMATUA      coefficients of upper diagonal of matrix
+!     ISSTOP      maximum frequency counter in a sweep
+!     LEAKC1      leak coefficient
+!     TRAC0       transport coefficient for output
+!     TRAC1       transport coefficient for output
+!
+      INTEGER ISSTOP
+      INTEGER IDCMIN(MSC), IDCMAX(MSC)
+      REAL    DD
+      REAL    AC2(MDC,MSC,MCGRD),
+     &        CAD(MDC,MSC,ICMAX),
+     &        IMATLA(MDC,MSC)   ,
+     &        IMATDA(MDC,MSC)   ,
+     &        IMATUA(MDC,MSC)   ,
+     &        IMATRA(MDC,MSC)   ,
+     &        LEAKC1(MDC,MSC)
+      REAL    TRAC0(MDC,MSC,MTRNP)
+      REAL    TRAC1(MDC,MSC,MTRNP)
+      LOGICAL ANYBIN(MDC,MSC)
+!
+!  6. Local variables
+!
+!     ACM   :     lower action
+!     ACP   :     upper action
+!     BINM  :     indicate whether lower bin is selected
+!     BINP  :     indicate whether upper bin is selected
+!     CADM  :     lower wave transport velocity
+!     CADP  :     upper wave transport velocity
+!     CAN   :     negative wave transport velocity
+!     CAP   :     positive wave transport velocity
+!     CAV   :     averaged wave transport velocity; may be
+!                 regarded as flux velocity
+!     DDI   :     inverse of width of spectral direction band
+!     ID    :     counter
+!     IDDUM :     loop counter
+!     IDM   :     index of point ID-1
+!     IDP   :     index of point ID+1
+!     IENT  :     number of entries
+!     IS    :     loop counter
+!     MU    :     blending parameter in between 0 and 1
+!                 =0; central differences
+!                 =1; first order upwind
+!
+      INTEGER IENT, ID, IDM, IDP, IDDUM, IS
+      REAL    ACM, ACP, CADM, CADP,
+     &        CAN, CAP, CAV, DDI, MU
+      LOGICAL BINM, BINP
+!
+!  8. Subroutines used
+!
+!     STRACE           Tracing routine for debugging
+!
+!  9. Subroutines calling
+!
+!     ACTION (in SWANCOM1)
+!
+! 12. Structure
+!
+!     For every S and D-direction in direction of sweep do
+!
+!        Compute the derivative in D-direction and
+!        store the results of this calculation in the
+!        arrays IMATDA, IMATLA, IMATUA and IMATRA
+!
+! 13. Source text
+!
+      SAVE IENT
+      DATA IENT/0/
+      IF (LTRACE) CALL STRACE (IENT,'STRSDFV')
+
+      DDI = 1./DD
+      MU  = PNUMS(6)
+
+      DO 20 IS = 1, ISSTOP
+
+         DO 10 IDDUM = IDCMIN(IS), IDCMAX(IS)
+            ID = MOD (IDDUM-1+MDC, MDC) + 1
+
+            IF ( ANYBIN(ID,IS) ) THEN
+
+               IF ( IDDUM.EQ.IDCMIN(IS) ) THEN
+
+                  IF ( FULCIR .OR. ID.GT.1 ) THEN
+                     IDM  = MOD (IDDUM-2+MDC, MDC) + 1
+                     CADM = CAD(IDM,IS,1)
+                     BINM = ANYBIN(IDM,IS)
+                     IF (.NOT.BINM) ACM = AC2(IDM,IS,KCGRD(1))
+                  ELSE
+                     IDM  = 0
+                     CADM = CAD(ID,IS,1)
+                     BINM = .FALSE.
+                     ACM  = 0.
+                  END IF
+
+                  CAV = 0.5*(CAD(ID,IS,1) + CADM)
+                  CAP = 0.5*(CAV + ABS(CAV))
+                  CAN = 0.5*(CAV - ABS(CAV))
+!
+!                 put them in blended form
+                  CAP = CAP*MU + 0.5*CAV*(1.-MU)
+                  CAN = CAN*MU + 0.5*CAV*(1.-MU)
+
+                  IF ( .NOT.BINM ) THEN
+                     IMATDA(ID,IS) = IMATDA(ID,IS)  - DDI * CAN
+                     IMATRA(ID,IS) = IMATRA(ID,IS)  + DDI * CAP * ACM
+                     TRAC0(ID,IS,2) = TRAC0(ID,IS,2) - DDI * CAP * ACM    40.85
+                     TRAC1(ID,IS,2) = TRAC1(ID,IS,2) - DDI * CAN          40.85
+                  END IF
+
+                  IF ( IDM.EQ.0 ) LEAKC1(ID,IS) = -CAN
+
+               END IF
+
+               IF ( FULCIR .OR. ID.LT.MDC ) THEN
+                  IDP  = MOD (IDDUM+MDC, MDC) + 1
+                  CADP = CAD(IDP,IS,1)
+                  BINP = ANYBIN(IDP,IS)
+                  IF (.NOT.BINP) ACP = AC2(IDP,IS,KCGRD(1))
+               ELSE
+                  IDP  = 0
+                  CADP = CAD(ID,IS,1)
+                  BINP = .FALSE.
+                  ACP  = 0.
+               END IF
+
+               CAV = 0.5*(CAD(ID,IS,1) + CADP)
+               CAP = 0.5*(CAV + ABS(CAV))
+               CAN = 0.5*(CAV - ABS(CAV))
+!
+!              put them in blended form
+               CAP = CAP*MU + 0.5*CAV*(1.-MU)
+               CAN = CAN*MU + 0.5*CAV*(1.-MU)
+
+               IF ( BINP ) THEN
+                  IMATDA(ID ,IS) = IMATDA(ID ,IS) + DDI * CAP
+                  IMATUA(ID ,IS) = IMATUA(ID ,IS) + DDI * CAN
+                  IMATDA(IDP,IS) = IMATDA(IDP,IS) - DDI * CAN
+                  IMATLA(IDP,IS) = IMATLA(IDP,IS) - DDI * CAP
+                  TRAC1(ID ,IS,2) = TRAC1(ID ,IS,2) + DDI * CAP           40.85
+                  TRAC1(IDP,IS,2) = TRAC1(IDP,IS,2) - DDI * CAN           40.85
+               ELSE
+                  IMATDA(ID,IS) = IMATDA(ID,IS) + DDI * CAP
+                  IMATRA(ID,IS) = IMATRA(ID,IS) - DDI * CAN * ACP
+                  TRAC0(ID,IS,2) = TRAC0(ID,IS,2) + DDI * CAN * ACP       40.85
+                  TRAC1(ID,IS,2) = TRAC1(ID,IS,2) + DDI * CAP             40.85
+               END IF
+
+               IF ( IDP.EQ.0 ) LEAKC1(ID,IS) = CAP
+
+            END IF
+
+ 10      CONTINUE
+ 20   CONTINUE
+!
+!     --- test output
+!
+      IF ( TESTFL .AND. ITEST.GE.80 ) THEN
+         WRITE(PRINTF,111) KCGRD(1), ISSTOP
+111      FORMAT(' STRSDFV: POINT  ISSTOP  :',2I5)
+         WRITE(PRINTF,222) PNUMS(6)
+222      FORMAT(' STRSDFV: CDD            :',E12.4)
+         WRITE(PRINTF,*)
+         WRITE(PRINTF,*) ' matrix coefficients in STRSDFV'
+         WRITE(PRINTF,*)
+         WRITE(PRINTF,*)
+     &'   IS ID      IMATLA      IMATDA      IMATUA      IMATRA     CAD'
+         DO IS = 1, ISSTOP
+            DO IDDUM = IDCMIN(IS), IDCMAX(IS)
+               ID = MOD (IDDUM-1+MDC, MDC) + 1
+               WRITE(PRINTF,333) IS, ID, IMATLA(ID,IS),IMATDA(ID,IS),
+     &                          IMATUA(ID,IS),IMATRA(ID,IS),CAD(ID,IS,1)
+333            FORMAT(1X,2I4,4X,4E12.4,E10.2)
+            END DO
+         END DO
+      END IF
+
+      RETURN
+      END
+!
+!****************************************************************
+!
       SUBROUTINE SPREDT (SWPDIR     ,AC2        ,CAX       ,
      &                   CAY        ,IDCMIN     ,IDCMAX    ,
      &                   ISSTOP     ,ANYBIN     ,
@@ -4065,7 +4360,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2015  Delft University of Technology
+!     Copyright (C) 1993-2017  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -4382,7 +4677,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2015  Delft University of Technology
+!     Copyright (C) 1993-2017  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -4587,6 +4882,7 @@
      &                   DSXWCP     ,                                     40.67 40.61
      &                   DSXVEG     ,DSXTUR     ,                         40.35 40.67 40.61
      &                   DSXMUD     ,                                     40.67 40.61
+     &                   DSXSWL     ,                                     40.88
      &                   GSXWND     ,GENRXY     ,                         40.85
      &                   RSXQUA     ,RSXTRI     ,                         40.85
      &                   REDSXY     ,                                     40.85
@@ -4612,7 +4908,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2015  Delft University of Technology
+!     Copyright (C) 1993-2017  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -4694,6 +4990,18 @@
 !     The same holds for DISBOT, DISSRF and DISWCP for bottom friction-,
 !     surf- and whitecapping dissipation, respectively
 !
+!     Note on different source terms and transport terms for output purposing:
+!     these terms in absolute value are integrated over the spectral space for
+!     each grid point. In this way we can estimate the associated time scale.
+!     Besides these terms we may also compute energy transfer between waves
+!     and currents due to radiation stress.
+!
+!     Further details can be found in the ICCE paper of
+!     Holthuijsen, L.H., Zijlema, M. and Van der Ham, P.J. (2009)
+!     Wave physics in a tidal inlet, in: J.M. Smith (Ed.),
+!     Proc. 31st Int. Conf. on Coast. Engng.,
+!     ASCE, World Scientific Publishing, Singapore, pp. 437-448
+!
 ! 12. Structure
 !
 !     -------------------------------------------------------------
@@ -4713,6 +5021,7 @@
      &         DSXMUD(MCGRD)      ,                                       40.67 40.61
      &         DSXVEG(MCGRD)      ,                                       40.67 40.61
      &         DSXTUR(MCGRD)      ,                                       40.35
+     &         DSXSWL(MCGRD)      ,                                       40.88
      &         GSXWND(MCGRD)      ,                                       40.85
      &         RSXQUA(MCGRD)      ,                                       40.85
      &         RSXTRI(MCGRD)      ,                                       40.85
@@ -4838,6 +5147,7 @@
       DSXWCP(KCGRD(1)) = DSXWCP(KCGRD(1)) + ADISSIP(1)     ! whitecapping         40.67
       DSXSRF(KCGRD(1)) = DSXSRF(KCGRD(1)) + ADISSIP(2)     ! surf break           40.67
       DSXBOT(KCGRD(1)) = DSXBOT(KCGRD(1)) + ADISSIP(3)     ! bottom fric          40.67
+      DSXSWL(KCGRD(1)) = DSXSWL(KCGRD(1)) + ADISSIP(4)     ! swell dissip         40.88
       DSXVEG(KCGRD(1)) = DSXVEG(KCGRD(1)) + ADISSIP(5)     ! vegetation           40.67
       DSXTUR(KCGRD(1)) = DSXTUR(KCGRD(1)) + ADISSIP(6)     ! turbulence           40.35
       DSXMUD(KCGRD(1)) = DSXMUD(KCGRD(1)) + ADISSIP(7)     ! mud dissip           40.67
@@ -4857,8 +5167,8 @@
 !
 !       energy transfer between waves and currents due to radiation stress, see page 439 of
 !       the ICCE paper of Holthuijsen, L.H., Zijlema, M. and Van der Ham, P.J. (2009)
-!       Wave physics in a tidal inlet, in: J.M. Smith (Ed.), Proc. 31st Int. Conf. on Coast. Engng.
-!       ASCE, World Scientific Publishing, Singapore, 437-448
+!       Wave physics in a tidal inlet, in: J.M. Smith (Ed.), Proc. 31st Int. Conf. on Coast. Engng.,
+!       ASCE, World Scientific Publishing, Singapore, pp. 437-448
 !
       RADSXY(KCGRD(1)) = RADSXY(KCGRD(1)) + ARADSTR                       40.85
 !
@@ -4868,7 +5178,7 @@
       IMAT6U = 0.
 !
       RETURN
-      END
+      END SUBROUTINE ADDDIS
 !
 !****************************************************************
 !
@@ -4897,7 +5207,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2015  Delft University of Technology
+!     Copyright (C) 1993-2017  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -5207,7 +5517,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2015  Delft University of Technology
+!     Copyright (C) 1993-2017  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -5487,6 +5797,7 @@
             END DO                                                        40.41
          END DO                                                           40.41
          CALL SWEXCHG(EN,KGRPNT)                                          40.41
+!JAC         CALL SWEXCHG(EN,0,KGRPNT)                                        40.41
          IF (STPNOW()) RETURN                                             40.41
       END DO                                                              40.41
 
@@ -5612,6 +5923,7 @@
          END IF
       END DO
       CALL SWEXCHG(DIFPARAM(:),KGRPNT)                                    40.41
+!JAC      CALL SWEXCHG(DIFPARAM(:),0,KGRPNT)                                  40.41
       IF (STPNOW()) RETURN                                                40.41
 
 !     --- calculate spatial derivatives of DIFPARAM

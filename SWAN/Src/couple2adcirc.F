@@ -15,7 +15,8 @@
       REAL   , ALLOCATABLE :: BSPECS(:,:,:,:)
       REAL   , ALLOCATABLE :: AC1(:,:,:), COMPDA(:,:)
 
-      REAL, ALLOCATABLE    :: BLKND(:), BLKNDC(:), OURQT(:)
+      REAL, ALLOCATABLE    :: BLKND(:), BLKNDC(:)
+      REAL*8, ALLOCATABLE  :: OURQT(:)
 
       CONTAINS
 

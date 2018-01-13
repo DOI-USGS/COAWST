@@ -13,7 +13,7 @@ subroutine SwanBpntlist
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2015  Delft University of Technology
+!     Copyright (C) 1993-2017  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -156,7 +156,7 @@ subroutine SwanBpntlist
     !
     nbptot = count(mask=vert(:)%atti(VMARKER)==1)
     !
-    allocate(blistot(nbptot))
+    allocate(blistot(0:nbptot))
     blistot = 0
     !
     ! determine first boundary vertex nearest to the origin

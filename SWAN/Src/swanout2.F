@@ -6,6 +6,7 @@
 !     SWBLOK
 !     SBLKPT
 !     SWBLKP
+!     SRAWPT
 !     SWTABP
 !     SUHEAD
 !     SWSPEC
@@ -27,6 +28,8 @@
       USE OCPCOMM2                                                        40.41
       USE OCPCOMM4                                                        40.41
       USE SWCOMM1                                                         40.41
+      USE SWCOMM3, ONLY: NSTATM                                           41.62
+      USE SWCOMM4, ONLY: KSPHER                                           41.62
       USE OUTP_DATA                                                       40.13
       USE swn_outnc                                                       41.40
 !
@@ -43,7 +46,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2015  Delft University of Technology
+!     Copyright (C) 1993-2017  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -69,6 +72,7 @@
 !     40.30: Marcel Zijlema
 !     40.31: Marcel Zijlema
 !     40.41: Marcel Zijlema
+!     41.62: Andre van der Westhuysen
 !
 !  1. UPDATE
 !
@@ -84,6 +88,7 @@
 !     40.31, Dec. 03: removing POOL construction
 !     40.41, Jun. 04: some improvements with respect to MATLAB
 !     40.41, Oct. 04: common blocks replaced by modules, include files removed
+!     41.62, Nov. 15: included wave partitioning output (raw partition file)
 !
 !  2. PURPOSE
 !
@@ -141,23 +146,30 @@
 !
 ! 10. SOURCE TEXT
 !                                                                             30.81
+#ifdef SWAN_MODEL
+      INTEGER, intent(in) :: ng
+#endif
       CHARACTER (LEN=8) :: PSNAME       ! name of output locations        40.13
       CHARACTER (LEN=4) :: RTYPE        ! output type                     40.13
       INTEGER   VOQR(*), IPD
 #ifdef SWAN_MODEL
-      INTEGER, intent(in) :: OQI3, ng
+      INTEGER, intent(in) :: OQI3
       INTEGER   OQI(4), IVTYP(OQI3)                                       40.31
-      REAL      OQR(2), VOQ(MXK*MYK,*), FAC(OQI3)                         41.40 40.31
+      REAL*8    OQR(2)                                                    41.40 40.31
+      REAL      VOQ(MXK*MYK,*), FAC(OQI3)                                 41.40 40.31
 #else
       INTEGER   OQI(4), IVTYP(OQI(3))                                     40.31
-      REAL      OQR(2), VOQ(MXK*MYK,*), FAC(OQI(3))                       41.40 40.31
+      REAL*8    OQR(2)                                                    41.40 40.31
+      REAL      VOQ(MXK*MYK,*), FAC(OQI(3))                               41.40 40.31
 #endif
       INTEGER IF, IL                                                      40.41 40.30
       LOGICAL, SAVE :: MATLAB=.FALSE.                                     40.41 40.30
       LOGICAL, SAVE :: NCF   =.FALSE.                                     41.40
       LOGICAL       :: EXIST = .FALSE.                                    41.43
+      LOGICAL, SAVE :: RAWPRT=.FALSE.                                     41.62
       CHARACTER (LEN=20) :: CTIM                                          40.41
       CHARACTER (LEN=30) :: NAMVAR                                        40.41
+      CHARACTER (LEN=80) :: HTXT(3)                                       41.62
 
       INTEGER, SAVE :: IENT=0                                             40.13
 #ifdef SWAN_MODEL
@@ -187,6 +199,8 @@
      &         INDEX (FILENM, '.mat' ).NE.0                               40.41 40.30
       NCF    = INDEX( FILENM, '.NC'  ).NE.0 .OR.                          41.40
      &         INDEX (FILENM, '.nc'  ).NE.0                               41.40
+      RAWPRT = INDEX( FILENM, '.RAW' ).NE.0 .OR.                          41.62
+     &         INDEX (FILENM, '.raw' ).NE.0                               41.62
 !NNCF      IF (NREF.EQ.0) THEN
       IF (.NOT.NCF .AND. NREF.EQ.0) THEN                                  41.40
         IOSTAT = -1                                                       20.75
@@ -201,6 +215,26 @@
 !MatL4     &          ACCESS='DIRECT', RECL=1)                                  40.30
      &          ACCESS='DIRECT', RECL=4)                                  41.08 40.30
            IREC(IRQ) = 1                                                  40.51
+        END IF
+        IF (RAWPRT.AND.IPD.EQ.1) THEN                                     41.62
+           IF (NSTATM.EQ.1) THEN
+              WRITE (HTXT(1),'(a)') ' yyyymmdd hhmmss'
+           ELSE
+              WRITE (HTXT(1),'(a)') ''
+           ENDIF
+           IF (KSPHER.EQ.0) THEN
+              WRITE (HTXT(2),'(a)') '         x             y'
+           ELSE
+              WRITE (HTXT(2),'(a)') '       lat           lon'
+           ENDIF
+           WRITE (HTXT(3),'(a)')
+     &              '       name       nprt depth uabs  udir cabs  cdir'
+!
+           WRITE(NREF,'(A26)') 'SWAN PARTITIONED DATA FILE'
+           WRITE(NREF,'(A16,A24,A50)')  TRIM(HTXT(1)), TRIM(HTXT(2)),
+     &                                  TRIM(HTXT(3))
+           WRITE(NREF,'(A31,A20)') '        hs     tp     lp       ',
+     &                             'theta     sp      wf'
         END IF
       ELSE IF (NCF .AND. NREF.EQ.0) THEN                                  41.40
         ! reserve free unit number
@@ -225,7 +259,13 @@
       CALL TXPBLA(CTIM,IF,IL)                                             40.41
       CTIM(9:9)='_'                                                       40.41
 !
-      DO  800  JVAR=1,NVAR
+      IF (RAWPRT) THEN                                                    41.62
+!        generate a dump of the raw partition data
+         CALL SRAWPT ( NREF, VOQR, VOQ, MXK, MYK )
+         GOTO 900
+      END IF
+!
+      DO JVAR = 1, NVAR
         IVTYPE = IVTYP(JVAR)                                              40.31 30.00
         DFAC   = FAC(JVAR)                                                40.31 30.00
 !
@@ -328,7 +368,8 @@
           END IF
         ENDIF
 !
-  800 CONTINUE
+      END DO
+  900 CONTINUE
       IF ( NCF ) CALL swn_outnc_close_on_end(OQI(1), IRQ)                 41.40
       IF (IPD.EQ.1 .AND. NREF.EQ.PRINTF) WRITE (PRINTF, 6030)
  6030 FORMAT (///)
@@ -362,7 +403,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2015  Delft University of Technology
+!     Copyright (C) 1993-2017  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -589,7 +630,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2015  Delft University of Technology
+!     Copyright (C) 1993-2017  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -712,6 +753,196 @@
 
       RETURN
       END
+!****************************************************************
+!
+      SUBROUTINE SRAWPT ( NREF, VOQR, VOQ, MXK, MYK )
+!
+!****************************************************************
+!
+      USE SWCOMM1
+      USE SWCOMM3, ONLY: BNAUT, NSTATM, PI
+      USE SWCOMM4, ONLY: KSPHER
+      USE OCPCOMM4
+!
+      IMPLICIT NONE
+!
+!
+!   --|-----------------------------------------------------------|--
+!     | Delft University of Technology                            |
+!     | Faculty of Civil Engineering                              |
+!     | Environmental Fluid Mechanics Section                     |
+!     | P.O. Box 5048, 2600 GA  Delft, The Netherlands            |
+!     |                                                           |
+!     | Programmers: The SWAN team                                |
+!   --|-----------------------------------------------------------|--
+!
+!
+!     SWAN (Simulating WAves Nearshore); a third generation wave model
+!     Copyright (C) 1993-2017  Delft University of Technology
+!
+!     This program is free software; you can redistribute it and/or
+!     modify it under the terms of the GNU General Public License as
+!     published by the Free Software Foundation; either version 2 of
+!     the License, or (at your option) any later version.
+!
+!     This program is distributed in the hope that it will be useful,
+!     but WITHOUT ANY WARRANTY; without even the implied warranty of
+!     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+!     GNU General Public License for more details.
+!
+!     A copy of the GNU General Public License is available at
+!     http://www.gnu.org/copyleft/gpl.html#SEC3
+!     or by writing to the Free Software Foundation, Inc.,
+!     59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+!
+!
+!  0. Authors
+!
+!     41.62: Andre van der Westhuysen
+!
+!  1. Updates
+!
+!     41.62, Nov. 15: New subroutine
+!
+!  2. Purpose
+!
+!     Generates a dump of the raw partition data at all grid points
+!
+!  4. Argument variables
+!
+!     MXK     int    input    number of points in x-direction of frame
+!     MYK     int    input    number of points in y-direction of frame
+!     NREF    int    input    unit reference number of output file
+!     VOQR
+!     VOQ
+!
+      INTEGER NREF, MXK, MYK
+      INTEGER VOQR(*)
+      REAL    VOQ(MXK*MYK,*)
+!
+!  6. Local variables
+!
+!     CABS    :     magnitude of current
+!     CDIR    :     direction of current
+!     IP      :     pointer
+!     IXK     :     counter in x-direction
+!     IYK     :     counter in y-direction
+!     NPT     :     actual number of partitions
+!     UABS    :     magnitude of wind
+!     UDIR    :     direction of wind
+!
+      INTEGER IENT, II, IP, IXK, IYK
+      INTEGER NPT
+      REAL    UABS, UDIR, CABS, CDIR
+      REAL    HS, TP, DIR, XP, YP, DEP, DSPR, WL
+!
+      REAL    HSPT(10), TPPT(10), WLPT(10), DIRPT(10),
+     &        DSPT(10), WFPT(10), STPT(10)
+!
+      REAL    DEGCNV
+!
+!  9. Subroutines calling
+!
+!     SWBLOK
+!
+! 13. Source text
+!
+      SAVE IENT
+      DATA IENT/0/
+      IF (LTRACE) CALL STRACE (IENT,'SRAWPT')
+!
+      DO IYK = MYK, 1, -1
+         DO IXK = 1, MXK
+            IP = (IYK-1)*MXK+IXK
+!
+            HS  = VOQ(IP,VOQR(10))
+            TP  = VOQ(IP,VOQR(12))
+            DIR = VOQ(IP,VOQR(13))
+!
+!           --- if not an exception value of wave height, peak period
+!               and wave direction, write values to file
+!
+            IF ( (HS  .NE. OVEXCV(10)) .AND.
+     &           (TP  .NE. OVEXCV(12)) .AND.
+     &           (DIR .NE. OVEXCV(13))      ) THEN
+!
+               XP   = VOQ(IP,VOQR(1))
+               YP   = VOQ(IP,VOQR(2))
+               DEP  = VOQ(IP,VOQR(4))
+               DSPR = VOQ(IP,VOQR(16))
+               WL   = VOQ(IP,VOQR(17))
+!
+               NPT = INT(VOQ(IP,VOQR(171)))
+!
+!              --- compute magnitude and direction of wind and ambient current
+!
+               UABS = SQRT(VOQ(IP,VOQR(26))**2+VOQ(IP,VOQR(26)+1)**2)
+               UDIR = ATAN2(VOQ(IP,VOQR(26)+1),VOQ(IP,VOQR(26)))*180./PI
+               IF (.NOT.BNAUT) UDIR = UDIR + ALCQ * 180./PI
+               IF (UDIR.LT.0.) UDIR = UDIR + 360.
+               UDIR = DEGCNV(UDIR)
+!
+               CABS = SQRT(VOQ(IP,VOQR(5))**2+VOQ(IP,VOQR(5)+1)**2)
+               CDIR = ATAN2(VOQ(IP,VOQR(5)+1),VOQ(IP,VOQR(5)))*180./PI
+               IF (CDIR.GT.360.) CDIR = CDIR - 360.
+               IF (CDIR.LT.0.  ) CDIR = CDIR + 360.
+!
+!              store partition parameters per grid point
+!
+               DO II = 0, 9
+                  HSPT (II+1) = VOQ(IP,VOQR(100+II))
+                  TPPT (II+1) = VOQ(IP,VOQR(110+II))
+                  WLPT (II+1) = VOQ(IP,VOQR(120+II))
+                  DIRPT(II+1) = VOQ(IP,VOQR(130+II))
+                  DSPT (II+1) = VOQ(IP,VOQR(140+II))
+                  WFPT (II+1) = VOQ(IP,VOQR(150+II))
+!                  STPT (II+1) = VOQ(IP,VOQR(160+II))
+               END DO
+!
+!              write the partition data
+!
+               IF (NSTATM.EQ.1) THEN
+                  IF (KSPHER.EQ.0) THEN
+                     WRITE(NREF,'(A9,X,A6,2F14.4,A14,I3,F7.1,
+     &                 F5.1,F6.1,F5.1,F6.1)')
+     &                 CHTIME(1:8),CHTIME(10:16),YP,XP,'''grid_point''',
+     &                 NPT, DEP, UABS, UDIR, CABS, CDIR
+                  ELSE
+                     WRITE(NREF,'(A9,X,A6,2F12.6,A14,I3,F7.1,
+     &                 F5.1,F6.1,F5.1,F6.1)')
+     &                 CHTIME(1:8),CHTIME(10:16),YP,XP,'''grid_point''',
+     &                 NPT, DEP, UABS, UDIR, CABS, CDIR
+                  ENDIF
+               ELSE
+                  IF (KSPHER.EQ.0) THEN
+                     WRITE(NREF,'(16X,2F14.4,A14,I3,F7.1,
+     &                 F5.1,F6.1,F5.1,F6.1)')
+     &                 YP,XP,'''grid_point''',
+     &                 NPT, DEP, UABS, UDIR, CABS, CDIR
+                  ELSE
+                     WRITE(NREF,'(16X,2F12.6,A14,I3,F7.1,
+     &                 F5.1,F6.1,F5.1,F6.1)')
+     &                 YP,XP,'''grid_point''',
+     &                 NPT, DEP, UABS, UDIR, CABS, CDIR
+                  ENDIF
+               ENDIF
+!
+               WRITE(NREF,'(I3,F8.2,F8.2,F8.2,F9.2,F9.2,F7.2)')
+     &                 0, HS, TP, WL, DIR, DSPR, 999.99
+!
+               DO II = 1, NPT
+                  WRITE(NREF,'(I3,F8.2,F8.2,F8.2,F9.2,F9.2,F7.2)')
+     &                 II       , HSPT(II), TPPT(II), WLPT(II),
+     &                 DIRPT(II), DSPT(II), WFPT(II)
+               END DO
+!
+            END IF
+!
+         END DO
+      END DO
+!
+      RETURN
+      END
 !***********************************************************************
 !                                                                      *
       SUBROUTINE SWTABP (RTYPE , OQI  , OQR , IVTYP, PSNAME, MIP, VOQR,
@@ -746,7 +977,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2015  Delft University of Technology
+!     Copyright (C) 1993-2017  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -838,7 +1069,7 @@
 !     VOQ
 !
       REAL      VOQ(MIP,*)
-      REAL      OQR(2)
+      REAL*8    OQR(2)
 !
 !  5. Parameter variables
 !
@@ -1169,7 +1400,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2015  Delft University of Technology
+!     Copyright (C) 1993-2017  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -1293,7 +1524,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2015  Delft University of Technology
+!     Copyright (C) 1993-2017  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -1415,7 +1646,8 @@
       INTEGER       :: VOQR(*), OQI(4), OTYPE, KGRPNT(MXC,MYC)            40.31 40.13
       INTEGER       :: IONOD(*)                                           40.31
       INTEGER, SAVE :: IVERF = 1                                          40.13
-      REAL      OQR(2), VOQ(MIP,*), AC2(MDC,MSC,MCGRD),
+      REAL*8    OQR(2)
+      REAL      VOQ(MIP,*), AC2(MDC,MSC,MCGRD),
      &          ACLOC(*), DEP2(MCGRD)                                     40.00
       LOGICAL   EQREAL
       LOGICAL, SAVE :: NCF =.FALSE.                                       41.40
@@ -1658,7 +1890,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2015  Delft University of Technology
+!     Copyright (C) 1993-2017  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -1992,7 +2224,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2015  Delft University of Technology
+!     Copyright (C) 1993-2017  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -2238,10 +2470,12 @@
 !MatL4            ELSE
 !MatL4               J = (N-1)*NCOLS + M
 !MatL4            END IF
-!MatL4            IF (RDATA(J).EQ.DUMVAL ) THEN
-!MatL4               CALL SWI2B ( NANVAL, BVAL )
-!MatL4            ELSE
+!MatL4            IF (RDATA(J).NE.DUMVAL ) THEN
 !MatL4               CALL SWR2B ( RDATA(J), BVAL )
+!MatL4            ELSE IF (.NOT. DUMVAL.NE.0. ) THEN
+!MatL4               CALL SWR2B ( RDATA(J), BVAL )
+!MatL4            ELSE
+!MatL4               CALL SWI2B ( NANVAL, BVAL )
 !MatL4            END IF
 !MatL4            DO I = 1, 4
 !MatL4              IF (IOS.EQ.0)
@@ -2288,7 +2522,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2015  Delft University of Technology
+!     Copyright (C) 1993-2017  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -2580,6 +2814,8 @@
                J = (N-1)*NCOLS + M
             END IF
             IF (RDATA(J).NE.DUMVAL ) THEN
+               WRITE (IOUTMA,REC=IREC) RDATA(J)
+            ELSE IF (.NOT. DUMVAL.NE.0. ) THEN
                WRITE (IOUTMA,REC=IREC) RDATA(J)
             ELSE
                WRITE (IOUTMA,REC=IREC) NANVAL

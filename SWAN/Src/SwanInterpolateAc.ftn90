@@ -11,7 +11,7 @@ subroutine SwanInterpolateAc ( acintp, x, y, ac2, excpt )
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2015  Delft University of Technology
+!     Copyright (C) 1993-2017  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -288,10 +288,8 @@ subroutine SwanInterpolateAc ( acintp, x, y, ac2, excpt )
     ! use weighting coefficients to determine interpolated action density
     !
     do k = 1, 3
-       if ( ww(k) > 1.e-10 ) then
-          if (obstcell) ww(k) = ww(k) / sumww
-          acintp(:,:) = acintp(:,:) + ww(k) * ac2(:,:,v(k))
-       endif
+       if (obstcell) ww(k) = ww(k) / sumww
+       acintp(:,:) = acintp(:,:) + ww(k) * ac2(:,:,v(k))
     enddo
     !
  10 format (' Obstacle number : ', i4,'  has ', i4, ' corners')

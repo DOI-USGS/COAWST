@@ -11,7 +11,7 @@ subroutine SwanGradDepthorK ( dep2, mudl2, spcsig, dhdx, dhdy, dkdx, dkdy, ivert
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2015  Delft University of Technology
+!     Copyright (C) 1993-2017  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -82,8 +82,13 @@ subroutine SwanGradDepthorK ( dep2, mudl2, spcsig, dhdx, dhdy, dkdx, dkdy, ivert
     double precision                      :: area     ! twices the area of centroid dual around present vertex
     real, dimension(MSC)                  :: arr      ! auxiliary array
     real                                  :: cslat    ! cosine of latitude
+    real                                  :: dpmax    ! maximum depth found in centroid dual
+    real                                  :: dpmin    ! minimum depth found in centroid dual
     real, dimension(3)                    :: dloc     ! local depth at vertices
     real, dimension(3)                    :: dm       ! local mud layer at vertices
+    real                                  :: dmaxc    ! maximum depth found per cell of centroid dual
+    real                                  :: dminc    ! minimum depth found per cell of centroid dual
+    real, parameter                       :: drat= 5. ! ratio between maximum and minimum depths in centroid dual
     real                                  :: h0       ! depth in centroid of present cell
     real                                  :: h1       ! depth in centroid of next cell
     real, dimension(MSC)                  :: k0       ! wave number in centroid of present cell
@@ -122,11 +127,13 @@ subroutine SwanGradDepthorK ( dep2, mudl2, spcsig, dhdx, dhdy, dkdx, dkdy, ivert
     vert => gridobject%vert_grid
     cell => gridobject%cell_grid
     !
+    if ( vert(ivert)%atti(VMARKER) == 1 ) return    ! boundary vertex
+    !
     if ( (IREFR /= 0 .and. int(PNUMS(32)) == 0) .or. (ITFRE /= 0 .and. ICUR /= 0) ) then
        !
-       if ( vert(ivert)%atti(VMARKER) == 1 ) return    ! boundary vertex
-       !
-       area = 0d0
+       area  =  0d0
+       dpmax = -99999.
+       dpmin =  99999.
        !
        ! loop over cells around considered vertex
        !
@@ -145,6 +152,12 @@ subroutine SwanGradDepthorK ( dep2, mudl2, spcsig, dhdx, dhdy, dkdx, dkdy, ivert
           dloc(3) = dep2(v(3))
           !
           if ( dloc(1) <= DEPMIN .or. dloc(2) <= DEPMIN .or. dloc(3) <= DEPMIN ) goto 10
+          !
+          dminc = min ( min( dloc(1), dloc(2) ), dloc(3) )
+          if ( dminc < dpmin ) dpmin = dminc
+          !
+          dmaxc = max ( max( dloc(1), dloc(2) ), dloc(3) )
+          if ( dmaxc > dpmax ) dpmax = dmaxc
           !
           ! determine centroid of present cell
           !
@@ -192,6 +205,10 @@ subroutine SwanGradDepthorK ( dep2, mudl2, spcsig, dhdx, dhdy, dkdx, dkdy, ivert
           !
        enddo
        !
+       ! if ratio between max and min depth is too large, set gradients to zero and skip to next vertex
+       !
+       !if ( dpmax > drat * dpmin ) goto 10
+       !
        ! if area is non-positive, give error and go to next vertex
        !
        if ( .not. area > 0d0 ) then
@@ -214,17 +231,17 @@ subroutine SwanGradDepthorK ( dep2, mudl2, spcsig, dhdx, dhdy, dkdx, dkdy, ivert
           !
        endif
        !
-       return
+       goto 20
  10    dhdx = 0.
        dhdy = 0.
        !
     endif
     !
-    if ( IREFR /= 0 .and. int(PNUMS(32)) == 1 ) then
+ 20 if ( IREFR /= 0 .and. int(PNUMS(32)) == 1 ) then
        !
-       if ( vert(ivert)%atti(VMARKER) == 1 ) return    ! boundary vertex
-       !
-       area = 0d0
+       area  =  0d0
+       dpmax = -99999.
+       dpmin =  99999.
        !
        ! loop over cells around considered vertex
        !
@@ -242,7 +259,13 @@ subroutine SwanGradDepthorK ( dep2, mudl2, spcsig, dhdx, dhdy, dkdx, dkdy, ivert
           dloc(2) = dep2(v(2))
           dloc(3) = dep2(v(3))
           !
-          if ( dloc(1) <= DEPMIN .or. dloc(2) <= DEPMIN .or. dloc(3) <= DEPMIN ) goto 20
+          if ( dloc(1) <= DEPMIN .or. dloc(2) <= DEPMIN .or. dloc(3) <= DEPMIN ) goto 30
+          !
+          dminc = min ( min( dloc(1), dloc(2) ), dloc(3) )
+          if ( dminc < dpmin ) dpmin = dminc
+          !
+          dmaxc = max ( max( dloc(1), dloc(2) ), dloc(3) )
+          if ( dmaxc > dpmax ) dpmax = dmaxc
           !
           ! determine centroid of present cell
           !
@@ -289,7 +312,7 @@ subroutine SwanGradDepthorK ( dep2, mudl2, spcsig, dhdx, dhdy, dkdx, dkdy, ivert
           dloc(2) = dep2(v(2))
           dloc(3) = dep2(v(3))
           !
-          if ( dloc(1) <= DEPMIN .or. dloc(2) <= DEPMIN .or. dloc(3) <= DEPMIN ) goto 20
+          if ( dloc(1) <= DEPMIN .or. dloc(2) <= DEPMIN .or. dloc(3) <= DEPMIN ) goto 30
           !
           ! determine centroid of next cell
           !
@@ -334,6 +357,10 @@ subroutine SwanGradDepthorK ( dep2, mudl2, spcsig, dhdx, dhdy, dkdx, dkdy, ivert
           !
        enddo
        !
+       ! if ratio between max and min depth is too large, set gradients to zero and skip to next vertex
+       !
+       !if ( dpmax > drat * dpmin ) goto 30
+       !
        ! if area is non-positive, give error and go to next vertex
        !
        if ( .not. area > 0d0 ) then
@@ -357,7 +384,7 @@ subroutine SwanGradDepthorK ( dep2, mudl2, spcsig, dhdx, dhdy, dkdx, dkdy, ivert
        endif
        !
        return
- 20    dkdx = 0.
+ 30    dkdx = 0.
        dkdy = 0.
        !
     endif

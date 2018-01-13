@@ -11,7 +11,7 @@ module swn_outnc
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2015  Delft University of Technology
+!     Copyright (C) 1993-2017  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -113,7 +113,7 @@ contains
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2015  Delft University of Technology
+!     Copyright (C) 1993-2017  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -177,7 +177,7 @@ contains
                                              KGRPNT(MXC,MYC), IONOD(*), &
                                              MIP
       integer,              intent(inout) :: OQI(4)
-      real,                 intent(   in) :: OQR(2)
+      real*8,               intent(   in) :: OQR(2)
       real,                 intent(   in) :: VOQ(MIP,*), AC2(MDC,MSC,MCGRD), &
                                              DEP2(MCGRD)
 !
@@ -262,7 +262,7 @@ contains
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2015  Delft University of Technology
+!     Copyright (C) 1993-2017  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -297,7 +297,7 @@ contains
 !  4. Argument variables
       character (len=*),    intent(   in) :: RTYPE * 4
       integer,              intent(inout) :: OQI(4)
-      real,                 intent(   in) :: OQR(2)
+      real*8,               intent(   in) :: OQR(2)
       integer,              intent(   in) :: MIP, KGRPGL(MXCGL,MYCGL)
 !
 ! IO..name....type...size.......description
@@ -507,7 +507,7 @@ contains
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2015  Delft University of Technology
+!     Copyright (C) 1993-2017  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -899,7 +899,7 @@ contains
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2015  Delft University of Technology
+!     Copyright (C) 1993-2017  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -1107,7 +1107,7 @@ contains
         character*80,                  intent(   in) :: ncfile
         type(spcaux_type), target,     intent(   in) :: spcaux
         integer,                       intent(   in) :: oqi(4)
-        real,                          intent(   in) :: oqr(2)
+        real*8,                        intent(   in) :: oqr(2)
 !
 ! 2) local variables
 !
@@ -1474,7 +1474,7 @@ contains
         character*80,           intent(   in) :: ncfile
         integer,                intent(   in) :: myk, mxk, irq
         integer, dimension(:),  intent(   in) :: oqi, ivtyp
-        real,    dimension(:),  intent(   in) :: oqr
+        real*8,  dimension(:),  intent(   in) :: oqr
         character*40,           intent(   in) :: ovlnam(:)
         real,                   intent(   in) :: xgrdgl(mxk, myk), &
                                                  ygrdgl(mxk, myk)

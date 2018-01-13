@@ -1,8 +1,8 @@
 Instructions for running a SWAN model
 -------------------------------------
 
-Windows XP/Vista/7
-------------------
+Windows 7/8.1/10
+----------------
 
 *) Before running, first adapt the environment
    variable PATH by including the pathname of the
@@ -12,8 +12,8 @@ Windows XP/Vista/7
    click Environment Variables.
 
 *) You may also need to add the directory path where
-   bin of MPICH2 is resided to PATH to have access
-   to the command mpiexec.exe.
+   bin of MPI is resided to PATH to have access to
+   the command mpiexec.exe or mpirun.
 
 *) Open a command prompt and change to the directory
    where your application is resided.
@@ -35,7 +35,6 @@ Windows XP/Vista/7
    This script is also suited for multi-core PC provided
    that SWAN source code with OpenMP directives is
    compiled. The parameter 'nprocs' must be set to 1.
-
 
 
 UNIX or Linux

@@ -40,6 +40,7 @@
 !     *** nonlinear 3 wave-wave interactions ***
 !
 !     TCOEF  (compute coupling coefficients for SPB of Becq-Girard et al, 1999)
+!     COAPP  (interpolation of energy densities at sum and diff freqs for triads)
 !     SWLTA  (triad-wave interactions calculated with the Lumped Triad
 !             Approximation of Eldeberky, 1996)
 !     SWSPB  (triad-wave interactions calculated with the Stochastic
@@ -72,7 +73,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2015  Delft University of Technology
+!     Copyright (C) 1993-2017  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -514,7 +515,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2015  Delft University of Technology
+!     Copyright (C) 1993-2017  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -707,7 +708,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2015  Delft University of Technology
+!     Copyright (C) 1993-2017  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -1205,7 +1206,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2015  Delft University of Technology
+!     Copyright (C) 1993-2017  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -1607,7 +1608,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2015  Delft University of Technology
+!     Copyright (C) 1993-2017  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -2001,7 +2002,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2015  Delft University of Technology
+!     Copyright (C) 1993-2017  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -2407,7 +2408,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2015  Delft University of Technology
+!     Copyright (C) 1993-2017  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -2695,7 +2696,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2015  Delft University of Technology
+!     Copyright (C) 1993-2017  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -2824,7 +2825,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2015  Delft University of Technology
+!     Copyright (C) 1993-2017  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -3028,7 +3029,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2015  Delft University of Technology
+!     Copyright (C) 1993-2017  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -3056,7 +3057,7 @@
 
 !  2. Purpose
 !
-!     Calculates coupling coefficients for SPB
+!     Calculates coupling coefficients
 !
 !  3. Method
 !
@@ -3092,6 +3093,7 @@
 !
       REAL :: DEP , DEP_2, DEP_3
       REAL :: B   , B2   , B3
+      REAL :: KPROD
 !
 !  7. SUBROUTINES USED
 
@@ -3128,7 +3130,9 @@
           S = -DEP * SQRT(GRAV*DEP)
 !
       ELSEIF (ICC .EQ. 2) THEN !Deterministic Boussinesq
-          R     =  (0.5 + ((W2*W12)/(GRAV*DEP*K2*K12))) * (K2 + K12)**2
+!         to avoid NaN when W2*W12=0=K2*K12, adapt product of K2 and K12
+          KPROD = SIGN(MAX(1.E-20, ABS(K2*K12)),K2*K12)
+          R     =  (0.5 + ((W2*W12)/(GRAV*DEP*KPROD))) * (K2 + K12)**2
 !
           S     = (-2./GRAV) * (  (GRAV*DEP*K1)
      &                          + (B2*GRAV*DEP_3*K1**3)
@@ -3138,6 +3142,352 @@
 !
       RETURN
       END subroutine TCOEF
+!
+!********************************************************************
+!
+      SUBROUTINE COAPP (AC2, SPCSIG, DEP2, IDCMIN, IDCMAX, INTPL, SX,
+     &                  KX , CX, CGX, E  , EI    , EX    , EIX  , WX)
+!
+!********************************************************************
+!
+      USE OCPCOMM4
+      USE SWCOMM3
+      USE SWCOMM4
+
+      IMPLICIT NONE
+!
+!
+!   --|-----------------------------------------------------------|--
+!     | Delft University of Technology                            |
+!     | Faculty of Civil Engineering                              |
+!     | Environmental Fluid Mechanics Section                     |
+!     | P.O. Box 5048, 2600 GA  Delft, The Netherlands            |
+!     |                                                           |
+!     | Programmers: The SWAN team                                |
+!   --|-----------------------------------------------------------|--
+!
+!
+!     SWAN (Simulating WAves Nearshore); a third generation wave model
+!     Copyright (C) 1993-2017  Delft University of Technology
+!
+!     This program is free software; you can redistribute it and/or
+!     modify it under the terms of the GNU General Public License as
+!     published by the Free Software Foundation; either version 2 of
+!     the License, or (at your option) any later version.
+!
+!     This program is distributed in the hope that it will be useful,
+!     but WITHOUT ANY WARRANTY; without even the implied warranty of
+!     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+!     GNU General Public License for more details.
+!
+!     A copy of the GNU General Public License is available at
+!     http://www.gnu.org/copyleft/gpl.html#SEC3
+!     or by writing to the Free Software Foundation, Inc.,
+!     59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+!
+!
+!  0. Authors
+
+!     41.46: James Salmon
+
+!  1. Updates
+
+!     41.46, Nov 2014: new subroutine
+
+!  2. Purpose
+!
+!     Pre-calculate directional integrations for symmetric subst.
+!     Interpolates energy densities and integrated energy densities at
+!      interacting frequencies
+!     Calculates corresponding wave numbers and phase velocities
+!
+!  3. Method
+!
+!     Use technique from SWLTA that due to logarithmic distribution, a given factor between two freq.
+!      is the same number of freq. bins
+!
+!  4. Argument variables
+!
+!     AC2         action density
+!     SPCSIG      relative frequencies in computational domain in sigma-space
+!     IDCMIN      minimum counter in directional space
+!     IDCMAX      maximum counter in directional space
+!     INTPL       Switch to control the interpolation
+!                    0 = use lumping i.e. sum at half; dif. at double
+!                    1 = use correct terms i.e. sum with p-m; dif. with p+m
+!
+      REAL    :: AC2(MDC,MSC,MCGRD)
+      REAL    :: SPCSIG(MSC)
+      REAL    :: DEP2(MCGRD)
+      INTEGER :: IDCMIN(MSC), IDCMAX(MSC)
+      INTEGER :: INTPL
+!
+!     SX     relative frequencies at sum and difference frequencies
+!     KX     wave number at sum and difference frequencies
+!     CGX    group velocity at sum and difference velocities
+!     CX     phase velocity at sum and difference velocities
+!     E      energy density as function of frequency and direction
+!     EI     integrated E over PWDTH as funct. of dir. and freq..
+!     EX     E at sum and difference frequencies SX
+!     EIX    EI densities at sum and dif. freq. SX
+!     WX     weights for logarithmic interpolation
+!
+      REAL, INTENT(OUT) :: SX(MSC,MSC,2)
+      REAL, INTENT(OUT) :: KX(MSC,MSC,2)
+      REAL, INTENT(OUT) :: CGX(MSC,MSC,2)
+      REAL, INTENT(OUT) :: CX(MSC,MSC,2)
+      REAL, INTENT(OUT) :: E(MDC,MSC)
+      REAL, INTENT(OUT) :: EI(MDC,MSC)
+      REAL, INTENT(OUT) :: EX(MDC,MSC,MSC,2)
+      REAL, INTENT(OUT) :: EIX(MDC,MSC,MSC,2)
+      REAL, INTENT(OUT) :: WX(MSC,MSC,2)
+!
+!     Values from common
+!
+!     MDC       : Size of array in theta-direction
+!     MSC       : Size of array in sigma-direction
+!     PI        : Circular constant Pi
+!     PTRIAD(8) : range to integrate over (in degrees)
+!
+!  6. Local variables
+!
+!     B     :     interger inteval of bins for interpolation
+!     DUMMY :     dummy variable
+!     FX    :     factors for interpolation to sum and dif.  freqencies
+!     I1    :     auxiliary integer
+!     I2    :     auxiliary integer
+!     ID    :     counter
+!     II    :     loop counter
+!     IS    :     loop counter in frequency space
+!     PAVL  :     integration over PINT using sector
+!     PEXC  :     fraction of excess at outermost directional bins
+!     PFAC  :     correction using PEXC using sector
+!     PINT  :     outermost directional bin for integration
+!     PLIM  :     relative indices for directional bin limits
+!     PSUM  :     sum of E(tht,f) over PWDTH
+!     PWDTH :     integral range in rad. / 2
+!     XIS   :     rate between two succeeding frequency counters
+!     XISLN :     log of XIS
+!
+      INTEGER ID, II, IS, I1, I2
+      INTEGER PINT, PLIM(2), B(2)
+      REAL    PEXC, PSUM   , PWDTH  , PAVL(2), PFAC(2)
+      REAL    XIS , XISLN
+      REAL    FX(MSC,MSC,2)
+      REAL    D   , TMP(4)
+!
+!
+!  7. SUBROUTINES USED
+
+
+!  8. SUBROUTINES CALLING
+
+!     SWSPB
+
+!  9. ERROR MESSAGES
+
+!     ---
+
+! 10. REMARKS
+
+!     ---
+
+! 11. STRUCTURE
+
+!     -----------------------------------------------------------------
+
+!     -----------------------------------------------------------------
+
+! 13. Source text
+!
+      D = DEP2(KCGRD(1))
+!
+!     --- convert from AC(tht,f) to E(tht,f)
+!
+      E = 0.
+      DO II = 1, MDC
+         DO IS = 1, MSC
+            E(II,IS) = AC2(II,IS,KCGRD(1)) * 2. * PI * SPCSIG(IS)
+         ENDDO
+      ENDDO
+!
+!     --- integrate over range dir0-(p) <= tht < dir+(p)
+!
+      EI = 0.
+      PWDTH = PTRIAD(8) * PI/180.
+      !IF (PWDTH.EQ.0. .OR. PWDTH.GE.DDIR*MDC) THEN
+      IF (.NOT.PWDTH.NE.0.) THEN
+         ! --- Full circle integration
+         DO IS = 1, MSC
+            DO II = IDCMIN(IS), IDCMAX(IS)
+               ID = MOD(II - 1 + MDC, MDC) + 1
+               EI(ID,IS) = SUM(E(:,IS), DIM=1) * DDIR
+            ENDDO
+         ENDDO
+      ELSE
+         ! --- integrate over range PWDTH
+         PINT = INT((PWDTH/DDIR) - 0.5) + 1
+         PEXC = (((PINT + 0.5) * DDIR) - PWDTH) / DDIR
+         IF (FULCIR) THEN
+            ! --- integration over circle
+            DO IS = 1, MSC
+               DO II = IDCMIN(IS), IDCMAX(IS)
+                  ID = MOD(II - 1 + MDC, MDC) + 1
+                  PSUM = 0.
+                  PLIM = 0
+                  ! --- define integration limits
+                  PLIM(1) = MOD(ID - PINT + MDC - 1, MDC) + 1
+                  PLIM(2) = MAX(MOD(ID + PINT      , MDC),  1)
+                  ! --- sum values by full int.&subtract or zero and adding
+                  PSUM    = SUM(E(:,IS), DIM=1)
+     &                    * MIN(MAX(REAL(PLIM(1) - PLIM(2)), 0.), 1.)
+                  PSUM    = PSUM - SUM(E(1:PLIM(1),IS), DIM=1)
+     &                           + SUM(E(1:PLIM(2),IS), DIM=1)
+                  PSUM    = PSUM - ( (E(PLIM(1),IS)
+     &                              + E(PLIM(2),IS)) * PEXC)
+                  !
+                  EI(ID,IS) = PSUM * DDIR
+               ENDDO
+            ENDDO
+         ELSE
+            ! --- integration over a sector
+            DO IS = 1, MSC
+               DO II = IDCMIN(IS), IDCMAX(IS)
+                  ID = MOD(II - 1 + MDC, MDC) + 1
+                  PSUM = 0.
+                  PLIM = 0
+                  ! --- define integration limits
+                  PLIM(1) = MAX(ID - PINT, 1)
+                  PLIM(2) = MIN(ID + PINT, MDC)
+                  PSUM    = SUM(E(ID-PINT:ID+PINT,IS), DIM=1)
+                  ! --- determine range covered
+                  PAVL(1) = (ID       - 0.5) * DDIR
+                  PAVL(2) = (MDC - ID + 0.5) * DDIR
+                  PFAC(1) = MIN(MAX(PAVL(1) - PWDTH, 0.), 1.) * PEXC
+                  PFAC(2) = MIN(MAX(PAVL(2) - PWDTH, 0.), 1.) * PEXC
+                  ! --- remove excess
+                  PSUM    = PSUM - ( E(PLIM(1),IS) * PFAC(1)
+     &                              +E(PLIM(2),IS) * PFAC(2))
+                  !
+                  EI(ID,IS) = PSUM*DDIR
+               ENDDO
+            ENDDO
+         ENDIF
+      ENDIF
+!
+!     --- compute some indices in sigma space
+!     --- generate factors for logarithmic interpolation
+!     --- interpolate E and EI
+!
+      I2    = INT(FLOAT(MSC) / 2.)
+      I1    = I2-1
+      XIS   = SPCSIG(I2) / SPCSIG(I1)        !=1 + df/f
+      XISLN = LOG(XIS)
+!
+      FX  = 0.
+      SX  = 0.
+      KX  = 0.
+      CGX = 0.
+      CX  = 0.
+      EX  = 0.
+      EIX = 0.
+      WX  = 0.
+      IF (INTPL .EQ. 0) THEN
+         ! --- compute only self-self interactions
+         ! --- factors for lumping
+         FX(:,:,1) = 0.5
+         FX(:,:,2) = 2.
+         DO IS = 1, MSC
+            DO ID = 1, 2
+               ! --- determine # freq. bins to either side of target
+               TMP  = 0.
+               B    = 0
+               B(1) = INT(LOG(FX(IS,1,ID)) / XISLN)
+               B(2) = B(1) + SIGN(1, B(1))
+               ! --- determine interpolation weight
+               WX(IS,1,ID)    = (FX(IS,1,ID) - XIS**B(2))
+     &                        / (XIS**B(1)   - XIS**B(2))
+               ! --- interpolation
+!              --- !Check if diff. freq. >= min(freq.) and sum < 2*max*freq(
+               IF (IS .GT. -B(2) .AND. MSC .GT. IS+B(2)+1) THEN
+                  SX(IS,:,ID)  = (SPCSIG(IS+B(2))*(1.-WX(IS,1,ID)))
+     &                         + (SPCSIG(IS+B(1))*    WX(IS,1,ID) )
+                  TMP(1)       =  SX(IS,1,ID)
+                  CALL KSCIP1(1,TMP(1),D,TMP(2),TMP(3),TMP(4),TMP(4))
+                  KX(IS,:,ID)  = TMP(2)
+                  CGX(IS,:,ID) = TMP(3)
+                  CX(IS,:,ID)  = SX(IS,:,ID) / KX(IS,:,ID)
+                  EX(:,IS,IS,ID)  = (E(:,IS+B(2))*(1.-WX(IS,1,ID)))
+     &                           + (E(:,IS+B(1)) *    WX(IS,1,ID) )
+                  EIX(:,IS,IS,ID) = (EI(:,IS+B(2))*(1.-WX(IS,1,ID)))
+     &                           + (EI(:,IS+B(1)) *    WX(IS,1,ID) )
+               ELSE
+                  SX(IS,:,ID)    =  ( (SPCSIG(IS)*XIS**B(2)) *
+     &                                      (1.-WX(IS,II,ID))  )
+     &                             + ( (SPCSIG(IS)*XIS**B(1)) *
+     &                                         (WX(IS,II,ID))  )
+                  TMP(1)        =  SX(IS,1,ID)
+                  CALL KSCIP1(1,TMP(1),D,TMP(2),TMP(3),TMP(4),TMP(4))
+                  KX(IS,:,ID)    = TMP(2)
+                  CGX(IS,:,ID)   = TMP(3)
+                  CX(IS,:,ID)    = SX(IS,1,ID) / KX(IS,1,ID)
+                  EX(:,IS,IS,ID)  = 0.
+                  EIX(:,IS,IS,ID) = 0.
+               ENDIF
+            ENDDO
+         ENDDO
+      ELSEIF (INTPL .EQ. 1) THEN
+         ! --- compute all interacting frequencies
+         DO IS = 1, MSC
+            DO II = 1, MSC
+               ! --- factors for all sum and diff. interactions
+               FX(IS,II,1) = MAX((SPCSIG(IS) - SPCSIG(II))
+     &                                       / SPCSIG(IS), 1.E-20)
+               FX(IS,II,2) =  (SPCSIG(IS) + SPCSIG(II)) / SPCSIG(IS)
+               !
+               DO ID = 1, 2
+                  ! --- determine # freq. bins to either side of target
+                  TMP  = 0.
+                  B    = 0
+                  B(1) = INT(LOG(FX(IS,II,ID)) / XISLN)
+                  B(2) = B(1) + SIGN(1, B(1))
+                  ! --- determine interpolation weight
+                  WX(IS,II,ID) = (FX(IS,II,ID) - XIS**B(2))
+     &                         / (XIS**B(1)    - XIS**B(2))
+                  ! --- interpolation
+!                 --- !Check if diff. freq. >= min(freq.) and sum < 2*max*freq(
+                  IF (IS .GT. -B(2) .AND. MSC .GT. IS+B(2)+1) THEN
+                     SX(IS,II,ID)  = (SPCSIG(IS+B(2))*(1.-WX(IS,II,ID)))
+     &                             + (SPCSIG(IS+B(1))*    WX(IS,II,ID) )
+                     TMP(1)        =  SX(IS,II,ID)
+                     CALL KSCIP1(1,TMP(1),D,TMP(2),TMP(3),TMP(4),TMP(4))
+                     KX(IS,II,ID)  = TMP(2)
+                     CGX(IS,II,ID) = TMP(3)
+                     CX(IS,II,ID)  = SX(IS,II,ID) / KX(IS,II,ID)
+                     EX(:,IS,II,ID)  = (E(:,IS+B(2)) *(1.-WX(IS,II,ID)))
+     &                              + (E(:,IS+B(1)) *    WX(IS,II,ID))
+                     EIX(:,IS,II,ID) = (EI(:,IS+B(2))*(1.-WX(IS,II,ID)))
+     &                              + (EI(:,IS+B(1))*    WX(IS,II,ID))
+                  ELSE
+                     SX(IS,II,ID)    =  ( (SPCSIG(IS)*XIS**B(2)) *
+     &                                         (1.-WX(IS,II,ID))  )
+     &                                + ( (SPCSIG(IS)*XIS**B(1)) *
+     &                                            (WX(IS,II,ID))  )
+                     TMP(1)        =  SX(IS,II,ID)
+                     CALL KSCIP1(1,TMP(1),D,TMP(2),TMP(3),TMP(4),TMP(4))
+                     KX(IS,II,ID)    = TMP(2)
+                     CGX(IS,II,ID)   = TMP(3)
+                     CX(IS,II,ID)    = SX(IS,II,ID) / KX(IS,II,ID)
+                     EX(:,IS,II,ID)  = 0.
+                     EIX(:,IS,II,ID) = 0.
+                  ENDIF
+               ENDDO
+            ENDDO
+         ENDDO
+      ENDIF
+!
+      RETURN
+      END subroutine COAPP
 !
 !****************************************************************
 !
@@ -3167,7 +3517,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2015  Delft University of Technology
+!     Copyright (C) 1993-2017  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -3524,7 +3874,7 @@
       SUBROUTINE SWSPB ( AC2   , DEP2  , CGO   , SPCSIG,
      &                   KWAVE , IMATRA, IMATDA, REDC0 , REDC1 ,
      &                   IDDLOW, IDDTOP, ISSTOP, IDCMIN, IDCMAX,
-     &                   KMESPC, SMEBRK, ETOT  , PLTRI )
+     &                   PLTRI )
 !
 !********************************************************************
 !
@@ -3533,7 +3883,6 @@
       USE SWCOMM4
 
       IMPLICIT NONE
-!
 !
 !
 !   --|-----------------------------------------------------------|--
@@ -3547,7 +3896,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2015  Delft University of Technology
+!     Copyright (C) 1993-2017  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -3571,7 +3920,7 @@
 
 !  1. Updates
 
-!     41.46, October 2013: new subroutine
+!     41.46, Nov 2014: new subroutine
 
 !  2. Purpose
 !
@@ -3641,9 +3990,6 @@
       INTEGER IDDLOW, IDDTOP, ISSTOP
       INTEGER IDCMIN(MSC), IDCMAX(MSC)
 !
-      REAL :: SMEBRK
-      REAL :: KMESPC
-      REAL :: ETOT
       REAL :: AC2(MDC,MSC,MCGRD)
 !
       REAL :: CGO(MSC,MICMAX)
@@ -3666,32 +4012,36 @@
 !
 !  6. Local variables
 !
-      INTEGER ICC !Formulation for coupling coefficients (see TCOEF)
-      INTEGER IB  !Switch between mu of SPB or sin(beta) of LTA
-!
-      INTEGER IS, ID, ISIGM, II
+      INTEGER IS, ID, II
       INTEGER IP ,IM, IT
 !
-      REAL :: EMAX, ETD
       REAL :: KP, K
-      REAL :: DEPLOC, URSLOC, BIPH, SINABS, BETA
 !
       REAL :: K1, K2, K12, W1, W2, W12, C1, C2, C12
       REAL :: V0, R0, S0 , MU, DK
       REAL :: R1, R2, R3 , S1, S2, S3
-      REAL :: I1, I2, I3 , EE1, EE2, EE3
+      REAL :: I1, I2, I3 , EE1, EE2, EE3, CC1, CC2, CC3
 !
       REAL :: SIGPI, STRI
 !
-      REAL :: DUMMY, ET
+!     --- for use of COAPP
+      REAL, ALLOCATABLE :: SX(:,:,:)
+      REAL, ALLOCATABLE :: KX(:,:,:)
+      REAL, ALLOCATABLE :: CGX(:,:,:)
+      REAL, ALLOCATABLE :: CX(:,:,:)
+      REAL, ALLOCATABLE :: E2(:,:)
+      REAL, ALLOCATABLE :: EI(:,:)
+      REAL, ALLOCATABLE :: EX(:,:,:,:)
+      REAL, ALLOCATABLE :: EIX(:,:,:,:)
+      REAL, ALLOCATABLE :: WX(:,:,:)
 !
-      REAL, ALLOCATABLE :: E(:)         !E(f) in direction
-      REAL, ALLOCATABLE :: CONTS(:,:)   !Sum contribution
-      REAL, ALLOCATABLE :: CONTD(:,:)   !Diff. contribution
+      REAL, ALLOCATABLE :: CONTS(:,:)   !sum contribution
+      REAL, ALLOCATABLE :: CONTD(:,:)   !difference contribution
 !
 !  7. SUBROUTINES USED
 !
-!     Interaction coefficients are calculated in subroutine TCOEF
+!     interaction coefficients are calculated in subroutine TCOEF
+!     interpolation and integration of energy densities in subroutine COAPP
 
 !  8. SUBROUTINES CALLING
 
@@ -3713,182 +4063,126 @@
 
 ! 13. Source text
 !
-      ICC   = 2 ! 1 uses Boussinesq coupling coefficients
-                ! 2 uses Determisistic Boussinesq coupling coefficients
-      IB    = 1 ! 1 uses mu of SPB
-                ! 2 uses sin(beta) of LTA
+!     --- allocate and initialize
 !
-      DEPLOC = DEP2(KCGRD(1))
+      ALLOCATE (SX(MSC,MSC,2))
+      ALLOCATE (KX(MSC,MSC,2))
+      ALLOCATE (CGX(MSC,MSC,2))
+      ALLOCATE (CX(MSC,MSC,2))
+      ALLOCATE (E2(MDC,MSC))
+      ALLOCATE (EI(MDC,MSC))
+      ALLOCATE (EX(MDC,MSC,MSC,2))
+      ALLOCATE (EIX(MDC,MSC,MSC,2))
+      ALLOCATE (WX(MSC,MSC,2))
 !
-      URSLOC = (GRAV*2.*SQRT(ETOT))/(SQRT(2.)*SMEBRK**2*DEPLOC**2)
-      BIPH   = 0.5 * PI * (TANH(PTRIAD(4)/URSLOC) - 1.)
-      SINABS = ABS(SIN(BIPH))
-!      BETA   = PTRIAD(1) / DEPLOC / DEPLOC * SINABS *
-!     &         KMESPC**(1.-PTRIAD(2))
-!
-! --- Determine k_p (peak wavenumber) and K
-!
-      EMAX  = 0.
-      ISIGM = -1
-      DO IS = 1, MSC
-          ETD = 0.
-          DO ID = 1, MDC
-              ETD = ETD + SPCSIG(IS)*AC2(ID,IS,KCGRD(1))*DDIR
-          ENDDO
-          IF (ETD .GT. EMAX) THEN
-              EMAX = ETD
-              ISIGM = IS
-          ENDIF
-      ENDDO
-      IF (ISIGM .GT. 0) THEN
-          KP = KWAVE(ISIGM,1)
-      ELSE
-          KP = 0.
-      ENDIF
-!
-      K = (PTRIAD(6) * KP) + PTRIAD(7)
-      !CALL KSCIP1(1,2.*PI*0.395,0.61,KP,DUMMY,DUMMY,DUMMY)
-      !K = (0.95 * KP) - 0.75
-!
-!     --- Allocate and initialize
-!
-      ALLOCATE (E(1:MSC))
       ALLOCATE (CONTS(1:MDC,1:MSC))
       ALLOCATE (CONTD(1:MDC,1:MSC))
 !
-      E     = 0.
       CONTS = 0.
       CONTD = 0.
 !
-! --- Start code to compute source term
+!     --- call COAPP for interpolation and integration of energy densities
+      CALL COAPP(AC2,SPCSIG,DEP2,IDCMIN,IDCMAX,1,SX,
+     &           KX,CX,CGX,E2,EI,EX,EIX,WX)
 !
-! --- Loop over directions propagated within sweep
+!     --- loop over directions propagated within sweep
       DO II = IDDLOW, IDDTOP
-          ID = MOD ( II - 1 + MDC , MDC ) + 1
-          ! initialize array with E(f) for given direction
-          DO IS = 1, MSC
-              E(IS) = AC2(ID,IS,KCGRD(1)) * SPCSIG(IS) * 2. * PI !Factor J
-          ENDDO
-          !
-          DO IP = 1, MSC
-              W1  = SPCSIG(IP)
-              K1  = KWAVE(IP,1)
-              C1  = CGO(IP,1)
-              !
-              ! --- Compute sum cont. (m, p - m)
-              !
-              IF (IP .GT. 1) THEN
-              DO IM = 1, IP-1 ! Eq. m
-                  ! --- Values for computation
+         ID = MOD ( II - 1 + MDC , MDC ) + 1
+         DO IP = 1, MSC
+!           --- define properties at IP
+            W1 = SPCSIG(IP)
+            K1 = KWAVE(IP,1)
+            C1 = CGO(IP,1)
+!
+!           --- sum contribution (m, p - m)
+!
+            IF (IP.GT.1) THEN
+               DO IM = 1, IP-1 !Eq. m
+!                 --- define remaining properties in sum triad
                   W2  = SPCSIG(IM)
                   K2  = KWAVE(IM,1)
                   C2  = CGO(IM,1)
-                  W12 = W1 - W2     ! Eq. p - m
-                  ! --- Compute outer coeffieicents
-                  CALL KSCIP1(1,W12,DEPLOC,K12,C12,DUMMY,DUMMY)
-                  !V0 = SQRT(C1 / C2 / C12)
-                  CALL TCOEF(W1,W2,W12,K1,K2,K12,DEP2,R0,S0,ICC)
-                  ! --- Compute imaginary part
+                  W12 = SX(IP,IM,1)   !Eq. W1 - W2
+                  K12 = KX(IP,IM,1)
+                  C12 = CGX(IP,IM,1)
+                  KP  = MIN(K1,K2,K12)
+                  K   = (PTRIAD(6)*KP) + PTRIAD(7)
+!                 --- SPB vars.
+!                 DK = (p - m) + m - p
                   DK = K12 + K2 - K1
-                  IF (IB .EQ. 1) THEN
-                    MU = K / ((DK**2) + (K**2))
-                  ELSEIF (IB .EQ. 2) THEN
-                    MU = SINABS * (FRINTF*W2/(2.*PI)) / DK
-                  ENDIF
-                  !
-                  !I1 = SQRT(C1/C2/C12) * R0 / S0
-                  CALL TCOEF(W1,W2,W12,K1,K2,K12,DEP2,R1,S1,ICC)
-                  I1 = R1 / S1
-                  CALL TCOEF(W12,W1,-W2,K12,K1,-K2,DEP2,R2,S2,ICC)
-                  !I2 = SQRT(C12/C1/C2) * R2 / S2
-                  I2 = R2 / S2
-                  CALL TCOEF(W2,W1,-W12,K2,K1,-K12,DEP2,R3,S3,ICC)
-                  !I3 = SQRT(C2/C1/C12) * R3 / S3
-                  I3 = R3 / S3
-                  ! --- Compute energy products via interpolation
-                  EE1 = 0.
-                  EE2 = E(IP) * E(IM)
-                  EE3 = 0.
-                  IF (W12 .GT. SPCSIG(1)) THEN
-                      IT    = 0
-                      DUMMY = 0.
-                      DO WHILE (DUMMY .LT. W12)
-                          IT    = IT + 1
-                          DUMMY = SPCSIG(IT)
-                      ENDDO
-                      ET = E(IT-1)+((E(IT)-E(IT-1))*(W12-SPCSIG(IT-1))
-     &                              /(SPCSIG(IT)-SPCSIG(IT-1)) )
-                      EE1    = E(IM) * ET
-                      EE3    = E(IP) * ET
-                  ENDIF
-                  !
-                  EE1=EE1 * (FRINTF*(W2)/(2.*PI))
-                  EE2=EE2 * (FRINTF*(W2)/(2.*PI))
-                  EE3=EE3 * (FRINTF*(W2)/(2.*PI))
-                  !EE1=EE1 * (FRINTF*(W2*W12/W1)/(2.*PI))
-                  !EE2=EE2 * (FRINTF*(W2)/(2.*PI))
-                  !EE3=EE3 * (FRINTF*(W12)/(2.*PI))
-                  !
-                  CONTS(ID,IP) = CONTS(ID,IP) + 0.5 * MU * (R0/S0) *
-     &                 (I1*EE1 - I2*EE2 - I3*EE3) * C1 * PTRIAD(1)
-              ENDDO
-              ENDIF
-              !
-              ! --- Compute diff. cont. (p + m, m)
-              !
-              DO IM = 1, MSC  ! Eq. m
-                  W2 = SPCSIG(IM)
-                  K2 = KWAVE(IM,1)
-                  C2 = CGO(IM,1)
-                  W12 = W1 + W2
-                  !
-                  CALL KSCIP1(1,W12,DEPLOC,K12,C12,DUMMY,DUMMY)
-                  CALL TCOEF(W1,-W2,W12,K1,-K2,K12,DEP2,R0,S0,ICC)
-                  !
-                  DK = K12 - K2 - K1
-                  IF (IB .EQ. 1) THEN
-                    MU = K / ((DK**2) + (K**2))
-                  ELSEIF (IB .EQ. 2) THEN
-                    MU = SINABS * (FRINTF*W2/(2.*PI)) / DK
-                  ENDIF
-                  !
-                  CALL TCOEF(W12,W1,W2,K12,K1,K2,DEP2,R1,S1,ICC)
-                  I1 = R1 / S1
-                  CALL TCOEF(W2,-W1,W12,K2,-K1,K12,DEP2,R2,S2,ICC)
-                  I2 = R2 / S2
-                  CALL TCOEF(W1,-W2,W12,K1,-K2,K12,DEP2,R3,S3,ICC)
-                  I3 = R3 / S3
-                  !
-                  EE1 = E(IP) * E(IM)
-                  EE2 = 0.
-                  EE3 = 0.
-                  IF (W12 .LT. SPCSIG(MSC)) THEN
-                      IT = 0
-                      DUMMY = 0.
-                      DO WHILE (DUMMY .LT. W12)
-                          IT = IT + 1
-                          DUMMY = SPCSIG(IT)
-                      ENDDO
-                      ET = E(IT-1)+((E(IT)-E(IT-1))*(W12-SPCSIG(IT-1))
-     &                              /(SPCSIG(IT)-SPCSIG(IT-1)) )
-                      EE2    = E(IP) * ET
-                      EE3    = E(IM) * ET
-                  ENDIF
-                  !
-                  EE1=EE1 * (FRINTF*(W2)/(2.*PI))
-                  EE2=EE2 * (FRINTF*(W2)/(2.*PI))
-                  EE3=EE3 * (FRINTF*(W2)/(2.*PI))
-                  !EE1=EE1 * (FRINTF*(W2)/(2.*PI))
-                  !EE2=EE2 * (FRINTF*(W12)/(2.*PI))
-                  !EE3=EE3 * (FRINTF*(W2*W12/W1)/(2.*PI))
-                  !
-                  CONTD(ID,IP) = CONTD(ID,IP) + 0.5 * MU * (R0/S0) *
-     &                 (I1*EE1 - I2*EE2 - I3*EE3) * C1 * PTRIAD(1)
-              ENDDO
-          ENDDO
+                  MU = K / ((DK**2) + (K**2))
+!                 --- coupling coefficients
+                  CALL TCOEF(W1 ,W2, W12,K1 ,K2, K12,DEP2,R0,S0,2)
+                  CALL TCOEF(W12,W1,-W2 ,K12,K1,-K2 ,DEP2,R2,S2,2)
+                  CALL TCOEF(W2 ,W1,-W12,K2 ,K1,-K12,DEP2,R3,S3,2)
+                  CC1 = R0 / S0
+                  CC2 = R2 / S2
+                  CC3 = R3 / S3
+!
+!                 --- compute energy products
+!                     (improved collinear approximation)
+!
+                  EE1 = 0.5 * (  E2(ID,IM) * EIX(ID,IP,IM,1)
+     &                         + EI(ID,IM) *  EX(ID,IP,IM,1))
+                  EE2 = 0.5 * (  E2(ID,IP) * EI(ID,IM)
+     &                         + EI(ID,IP) * E2(ID,IM))
+                  EE3 = 0.5 * (  E2(ID,IP) * EIX(ID,IP,IM,1)
+     &                         + EI(ID,IP) *  EX(ID,IP,IM,1))
+!
+!                 --- compute contribution
+!
+                  CONTS(ID,IP) = CONTS(ID,IP) + 0.5 * C1 * MU *
+     &                         (R0/S0) * (CC1*EE1 - CC2*EE2 - CC3*EE3) *
+     &                                 PTRIAD(1) * ((FRINTF*W2)/(2.*PI))
+
+               ENDDO
+            ENDIF
+!
+!           --- difference contribution (p + m, m)
+!
+            DO IM = 1, MSC !Eq. m
+!              --- define rem. properties in diff. triad
+               W2 = SPCSIG(IM)
+               K2 = KWAVE(IM,1)
+               C2 = CGO(IM,1)
+               W12 = SX(IP,IM,2)   !Eq. W1 + W2
+               K12 = KX(IP,IM,2)
+               C12 = CGX(IP,IM,2)
+               KP  = MIN(K1,K2,K12)
+               K   = (PTRIAD(6)*KP) + PTRIAD(7)
+!              --- SPB vars.
+!              DK = (p + m) - m - p
+               DK = K12 - K2 - K1
+               MU = K / ((DK**2) + (K**2))
+!              --- coupling coefficients
+               CALL TCOEF(W12,W1,W2,K12,K1,K2,DEP2,R1,S1,2)
+               CALL TCOEF(W2,-W1,W12,K2,-K1,K12,DEP2,R2,S2,2)
+               CALL TCOEF(W1,-W2,W12,K1,-K2,K12,DEP2,R0,S0,2)
+               CC1 = R1 / S1
+               CC2 = R2 / S2
+               CC3 = R0 / S0
+!
+!              --- compute energy products
+!                  (improved collinear approximation)
+!
+               EE1 = 0.5 * (  E2(ID,IP) * EI(ID,IM)
+     &                      + EI(ID,IP) * E2(ID,IM))
+               EE2 = 0.5 * (  E2(ID,IP) * EIX(ID,IP,IM,2)
+     &                      + EI(ID,IP) *  EX(ID,IP,IM,2))
+               EE3 = 0.5 * (  E2(ID,IM) * EIX(ID,IP,IM,2)
+     &                      + EI(ID,IM) *  EX(ID,IP,IM,2))
+!
+!              --- compute contributions
+!
+               CONTD(ID,IP) = CONTD(ID,IP) + 0.5 * C1 * MU *
+     &                        (R0/S0) * (CC1*EE1 - CC2*EE2 - CC3*EE3) *
+     &                                PTRIAD(1) * ((FRINTF*W2)/(2.*PI))
+
+            ENDDO
+         ENDDO
       ENDDO
 !
-!     --- Compute total contribution
+!     --- compute total contribution
 !
       DO IS = 1, ISSTOP
           SIGPI = SPCSIG(IS) * 2. * PI ! Factor to convert back to N(sigma)
@@ -3914,7 +4208,7 @@
           ENDDO
       ENDDO
 !
-      DEALLOCATE(E,CONTS,CONTD)
+      DEALLOCATE(SX,KX,CGX,CX,E2,EI,EX,EIX,WX,CONTS,CONTD)
 !
       RETURN
       END subroutine SWSPB
@@ -3946,7 +4240,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2015  Delft University of Technology
+!     Copyright (C) 1993-2017  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as

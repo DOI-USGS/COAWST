@@ -61,7 +61,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2015  Delft University of Technology
+!     Copyright (C) 1993-2017  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -148,7 +148,7 @@
 ! i   XCGRID: Coordinates of computational grid in x-direction            30.72
 ! i   YCGRID: Coordinates of computational grid in y-direction            30.72
 !
-      REAL    OURQT(MAX_OUTP_REQ)                                         40.51 40.30
+      REAL*8  OURQT(MAX_OUTP_REQ)                                         40.51 40.30
       REAL    SPCDIR(MDC,6)                                               30.82
       REAL    SPCSIG(MSC)                                                 30.72
       REAL    XCGRID(MXC,MYC),    YCGRID(MXC,MYC)                         30.72
@@ -350,6 +350,7 @@
 !       assign memory to array VOQ (contains output quantities for all
 !                                   output points)
         ALLOCATE(VOQ(MIP*NVOQP))                                          40.31
+!       VOQ = 0.
 !
 !       assign memory to array CROSS (indicates crossing of obstacles     40.86
 !                                     in between output and grid points)  40.86
@@ -809,11 +810,11 @@
 
       INTEGER, intent(in) :: ng, io, first
 
-      REAL    OURQT
+      REAL*8  OURQT(MAX_OUTP_REQ)                                         40.51 40.30
       INTEGER :: MXK, MYK, MIP
       LOGICAL cplout, userout
       INTEGER offset
-      REAL    CouplingTime
+      REAL*8  CouplingTime
 !
 !     AC2     real arr input  action density in all computational points
 !     SPCDIR  real arr input  spectral directions, cosines and sines
@@ -917,7 +918,7 @@
       INTEGER :: Numcouple, IVTYP
       INTEGER, ALLOCATABLE :: CplType(:)
       INTEGER, ALLOCATABLE :: OQI(:)
-      REAL, ALLOCATABLE :: OQR(:)
+      REAL*8, ALLOCATABLE :: OQR(:)
 !      LOGICAL, ALLOCATABLE :: OQPROC(:)
 
       INTEGER, ALLOCATABLE :: IONOD(:)                                    40.51
@@ -971,7 +972,7 @@
       DO 70 IRQ = 1, Numcouple
 !
         IF (first.eq.0) THEN
-          OQR(1) = 0.0
+          OQR(1) = 0.0D0
         ELSE
           OQR(1) = CouplingTime
         END IF
@@ -1004,6 +1005,7 @@
 !       assign memory to array VOQ (contains output quantities for all
 !                                   output points)
         ALLOCATE(VOQ(MIP*NVOQP))                                          40.31
+!       VOQ = 0.
 !
 !       assign memory to array CROSS (indicates crossing of obstacles     40.86
 !                                     in between output and grid points)  40.86
@@ -1097,6 +1099,7 @@
       USE M_PARALL                                                        40.31
       USE SwanGriddata                                                    40.80
       USE M_MPI
+!PUN      USE SIZES, ONLY: MNPROC
 #  ifdef AIR_WAVES
       USE WAVES_COUPLER_MOD, ONLY: WAV2ATM_COUPLING
 #  endif
@@ -1112,7 +1115,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2015  Delft University of Technology
+!     Copyright (C) 1993-2017  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -1205,11 +1208,11 @@
 
       INTEGER, intent(in) :: ng, ia, first
 
-      REAL    OURQT
+      REAL*8  OURQT(MAX_OUTP_REQ)                                         40.51 40.30
       INTEGER :: MXK, MYK, MIP
       LOGICAL cplout, userout
       INTEGER offset
-      REAL    CouplingTime
+      REAL*8  CouplingTime
 !
 !     AC2     real arr input  action density in all computational points
 !     SPCDIR  real arr input  spectral directions, cosines and sines
@@ -1313,7 +1316,7 @@
       INTEGER :: Numcouple, IVTYP
       INTEGER, ALLOCATABLE :: CplType(:)
       INTEGER, ALLOCATABLE :: OQI(:)
-      REAL, ALLOCATABLE :: OQR(:)
+      REAL*8, ALLOCATABLE :: OQR(:)
 !      LOGICAL, ALLOCATABLE :: OQPROC(:)
 
       INTEGER, ALLOCATABLE :: IONOD(:)                                    40.51
@@ -1366,7 +1369,7 @@
       DO 70 IRQ = 1, Numcouple
 !
         IF (first.eq.0) THEN
-          OQR(1) = 0.0
+          OQR(1) = 0.0D0
         ELSE
           OQR(1) = CouplingTime
         END IF
@@ -1399,6 +1402,7 @@
 !       assign memory to array VOQ (contains output quantities for all
 !                                   output points)
         ALLOCATE(VOQ(MIP*NVOQP))                                          40.31
+!       VOQ = 0.
 !
 !       assign memory to array CROSS (indicates crossing of obstacles     40.86
 !                                     in between output and grid points)  40.86
@@ -1468,7 +1472,6 @@
   200 RETURN
       END SUBROUTINE SWOUTA
 #endif
-
 !***********************************************************************
 !                                                                      *
       SUBROUTINE SWORDC (OUTI, OUTR, IVTYP, RTYPE, PSNAME, NVOQP,         40.31
@@ -1499,7 +1502,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2015  Delft University of Technology
+!     Copyright (C) 1993-2017  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -1525,6 +1528,7 @@
 !     40.30: Marcel Zijlema
 !     40.31: Marcel Zijlema
 !     40.41: Marcel Zijlema
+!     41.62: Andre van der Westhuysen
 !
 !  1. Update
 !
@@ -1537,6 +1541,7 @@
 !     40.30, May  03: introduction distributed-memory approach using MPI
 !     40.31, Nov. 03: removing HPGL-functionality
 !     40.41, Oct. 04: common blocks replaced by modules, include files removed
+!     41.62, Nov. 15: included fields required for partitioning output
 !
 !  2. Purpose
 !
@@ -1614,8 +1619,9 @@
 !
       INTEGER    VOQR(*), OUTI(*), BKC                                    30.00
       INTEGER    IVTYP(*)                                                 40.31
-      REAL       OUTR(*)                                                  30.00
-      REAL       OURQT                                                    40.51
+      REAL*8     OUTR(*)                                                  30.00
+      REAL*8     OURQT                                                    40.51
+      REAL*8     DIF, TNEXT
       LOGICAL    OQPROC(NMOVAR), LOGACT                                   30.00
       LOGICAL    NCF                                                      41.40
       CHARACTER  PSNAME *(*), RTYPE *(*)                                  40.31 30.81
@@ -1727,6 +1733,25 @@
            ENDIF
          ENDIF
 !
+!        include depth and wind required for partitioning output          41.62
+!
+         IF ((IVTYPE.EQ.100).OR.(IVTYPE.EQ.110).OR.                       41.62
+     &       (IVTYPE.EQ.120).OR.(IVTYPE.EQ.130).OR.                       41.62
+     &       (IVTYPE.EQ.140).OR.(IVTYPE.EQ.150).OR.                       41.62
+     &       (IVTYPE.EQ.160)) THEN                                        41.62
+           IF (.NOT.OQPROC(4)) THEN                                       41.62
+             NVOQP = NVOQP + 1                                            41.62
+             VOQR(4) = NVOQP                                              41.62
+             OQPROC(4) = .TRUE.                                           41.62
+           ENDIF                                                          41.62
+           IF (.NOT.OQPROC(26)) THEN                                      41.62
+             ! increment by two because wind is a vector
+             NVOQP = NVOQP + 2                                            41.62
+             VOQR(26) = NVOQP-1                                           41.62
+             OQPROC(26) = .TRUE.                                          41.62
+           ENDIF                                                          41.62
+         ENDIF                                                            41.62
+!
 !        for some quantities compute action densities
 !
          IF (IVTYPE.EQ.10 .OR. IVTYPE.EQ.11 .OR. IVTYPE.EQ.12 .OR.
@@ -1759,6 +1784,14 @@
                OQPROC(5)=.TRUE.
             ENDIF
          ENDIF
+!
+!        for partitioning output compute A, depth, current, K and Cg
+!
+         IF (IVTYPE.EQ.100 .OR. IVTYPE.EQ.110 .OR. IVTYPE.EQ.120 .OR.     41.62
+     &       IVTYPE.EQ.130 .OR. IVTYPE.EQ.140 .OR. IVTYPE.EQ.150 .OR.     41.62
+     &       IVTYPE.EQ.160)                                               41.62
+     &   BKC = 2                                                          41.62
+!
   20  CONTINUE
 !
 !     in case of print of spectrum Ux and Uy have to be computed          20.28
@@ -1827,7 +1860,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2015  Delft University of Technology
+!     Copyright (C) 1993-2017  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -2096,7 +2129,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2015  Delft University of Technology
+!     Copyright (C) 1993-2017  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -2383,7 +2416,8 @@
 !
 !     find crossings of obstacles between output and grid points          40.86
 !
-  85  CALL SWOBSTO (XCGRID, YCGRID, XP, YP, XC, YC, KGRPNT, CROSS, MIP)   40.86
+  85  IF (OPTG.NE.5)
+     &   CALL SWOBSTO (XCGRID,YCGRID,XP,YP,XC,YC,KGRPNT,CROSS,MIP)        40.86
 !
       RETURN
       END
@@ -2411,7 +2445,7 @@
       USE SwanGridobjects                                                 40.91
 !PUN      USE SIZES
 !
-!     IMPLICIT NONE
+      IMPLICIT NONE
 !
 !
 !   --|-----------------------------------------------------------|--
@@ -2425,7 +2459,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2015  Delft University of Technology
+!     Copyright (C) 1993-2017  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -2518,6 +2552,7 @@
       REAL       FORCE(nverts,2)                                          40.80
 #ifdef SWAN_MODEL
       REAL       UIN(MCGRD), VIN(MCGRD), UOUT(MIP), VOUT(MIP)             !PSD 09/26/2011 
+      REAL DEGCNV
 #endif
       INTEGER    VOQR(*), KGRPNT(MXC,MYC)
       INTEGER    IONOD(*)                                                 40.31
@@ -2697,44 +2732,44 @@
 !
 !     DirBot                                                              !PSD 09/22/2001
 !
-      IF (OQPROC(75)) THEN                                                !PSD
-        IF (ITEST.GE.50 .OR. IOUTES .GE. 10) WRITE (PRTEST, 121) 75,
-     &  VOQR(75), JDBOT
+      IF (OQPROC(76)) THEN                                                !PSD
+        IF (ITEST.GE.50 .OR. IOUTES .GE. 10) WRITE (PRTEST, 121) 76,
+     &  VOQR(76), JDBOT
         IF (JDBOT.GT.1) THEN                                              !PSD
            UIN = COS(COMPDA(:,JDBOT));
            VIN = SIN(COMPDA(:,JDBOT));
-           WHERE (COMPDA(:,JDBOT) .EQ. OVEXCV(75)) UIN = OVEXCV(75)
-           WHERE (COMPDA(:,JDBOT) .EQ. OVEXCV(75)) VIN = OVEXCV(75)
+           WHERE (COMPDA(:,JDBOT) .EQ. OVEXCV(76)) UIN = OVEXCV(76)
+           WHERE (COMPDA(:,JDBOT) .EQ. OVEXCV(76)) VIN = OVEXCV(76)
            IF (OPTG.NE.5) THEN                                            !PSD
-              CALL SWIPOL(UIN,OVEXCV(75),XC, YC, MIP, CROSS,
+              CALL SWIPOL(UIN,OVEXCV(76),XC, YC, MIP, CROSS,
      &                    UOUT(1) ,KGRPNT, COMPDA(1,JDP2))
-              CALL SWIPOL(VIN,OVEXCV(75),XC, YC, MIP, CROSS,
+              CALL SWIPOL(VIN,OVEXCV(76),XC, YC, MIP, CROSS,
      &                    VOUT(1) ,KGRPNT, COMPDA(1,JDP2))
            ELSE                                                           !PSD
            !PSD TESTED FOR UNSTRUCTURED
               CALL SwanInterpolateOutput ( UOUT(1), VOQ(1,1),             !PSD
      &                                     VOQ(1,2), UIN,                 !PSD
-     &                                     MIP, KVERT, OVEXCV(75) )       !PSD
+     &                                     MIP, KVERT, OVEXCV(76) )       !PSD
               CALL SwanInterpolateOutput ( VOUT(1), VOQ(1,1),             !PSD
      &                                     VOQ(1,2), VIN,                 !PSD
-     &                                     MIP, KVERT, OVEXCV(75) )       !PSD
+     &                                     MIP, KVERT, OVEXCV(76) )       !PSD
            ENDIF                                                          !PSD
            !Put in the proper convention...calculated in cartesian radians
            DO IP = 1, MIP
-              VOQ(IP,VOQR(75)) = ATAN2(VOUT(IP),UOUT(IP))
+              VOQ(IP,VOQR(76)) = ATAN2(VOUT(IP),UOUT(IP))
 	      IF (BNAUT) THEN
-                VOQ(IP,VOQR(75)) = VOQ(IP,VOQR(75)) * 180./PI
+                VOQ(IP,VOQR(76)) = VOQ(IP,VOQR(76)) * 180./PI
               ELSE
-                VOQ(IP,VOQR(75)) = (ALCQ + VOQ(IP,VOQR(75))) * 180./PI
+                VOQ(IP,VOQR(76)) = (ALCQ + VOQ(IP,VOQR(76))) * 180./PI
               ENDIF
-              IF (VOQ(IP,VOQR(75)).LT.0) THEN
-                 VOQ(IP,VOQR(75)) = VOQ(IP,VOQR(75)) + 360.
+              IF (VOQ(IP,VOQR(76)).LT.0) THEN
+                 VOQ(IP,VOQR(76)) = VOQ(IP,VOQR(76)) + 360.
               ENDIF
-              VOQ(IP,VOQR(75)) = DEGCNV( VOQ(IP,VOQR(75)))
+              VOQ(IP,VOQR(76)) = DEGCNV(VOQ(IP,VOQR(76)))
            ENDDO
         ELSE
            DO IP = 1, MIP                                                 !PSD
-             VOQ(IP,VOQR(75)) = OVEXCV(75)                                !PSD
+             VOQ(IP,VOQR(76)) = OVEXCV(76)                                !PSD
            ENDDO                                                          !PSD
         ENDIF
       ENDIF
@@ -2919,6 +2954,33 @@
           DO IP = 1, MIP
             F1 = VOQ(IP,VOQR(74))
             IF (.NOT.EQREAL(F1,OVEXCV(74))) VOQ(IP,VOQR(74))=F1*RHO*GRAV
+          END DO
+        ENDIF
+      ENDIF
+!
+!     swell dissipation
+!
+      IF (OQPROC(75)) THEN                                                40.88
+        IF (ITEST.GE.50 .OR. IOUTES .GE. 10) WRITE (PRTEST, 121) 75,
+     &  VOQR(75), JDSXL
+        IF (JDSXL.GT.1) THEN
+           IF (OPTG.NE.5) THEN
+              CALL SWIPOL(COMPDA(1,JDSXL),OVEXCV(75),XC, YC, MIP, CROSS,
+     &                    VOQ(1,VOQR(75)) ,KGRPNT, COMPDA(1,JDP2))
+           ELSE
+              CALL SwanInterpolateOutput ( VOQ(1,VOQR(75)), VOQ(1,1),
+     &                                     VOQ(1,2), COMPDA(1,JDSXL),
+     &                                     MIP, KVERT, OVEXCV(75) )
+           ENDIF
+        ELSE
+           DO IP = 1, MIP
+             VOQ(IP,VOQR(75)) = OVEXCV(75)
+           ENDDO
+        ENDIF
+        IF (INRHOG.EQ.1) THEN
+          DO IP = 1, MIP
+            F1 = VOQ(IP,VOQR(75))
+            IF (.NOT.EQREAL(F1,OVEXCV(75))) VOQ(IP,VOQR(75))=F1*RHO*GRAV
           END DO
         ENDIF
       ENDIF
@@ -3515,7 +3577,7 @@
 !
       IF (OQPROC(41)) THEN
         DO IP = 1, MIP
-          VOQ(IP,VOQR(41)) = TIMCO - OUTPAR(1)                            40.00
+          VOQ(IP,VOQR(41)) = REAL(TIMCO) - OUTPAR(1)                      40.00
         ENDDO
       ENDIF
 !
@@ -3706,7 +3768,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2015  Delft University of Technology
+!     Copyright (C) 1993-2017  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -3957,6 +4019,7 @@
       USE SWCOMM3                                                         40.41
       USE SWCOMM4                                                         40.41
       USE OUTP_DATA
+      USE SWPARTMD                                                        41.62
 !
 !
 !   --|-----------------------------------------------------------|--
@@ -3970,7 +4033,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2015  Delft University of Technology
+!     Copyright (C) 1993-2017  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -4001,6 +4064,7 @@
 !     40.80: Marcel Zijlema
 !     40.86: Nico Booij
 !     40.87: Marcel Zijlema
+!     41.62: Andre van der Westhuysen
 !
 !  1. Updates
 !
@@ -4028,6 +4092,7 @@
 !     40.80, Sep. 07: extension to unstructured grids
 !     40.86, Feb. 08: modification to prevent interpolation over an obstacle
 !     40.87, Apr. 08: integration over [fmin,fmax] added
+!     41.62, Nov. 15: included interface for computing wave partitions
 !
 !  2. Purpose
 !
@@ -4100,7 +4165,7 @@
 !
 ! 13. Source text
 !
-      PARAMETER  (NVOTP=22)                                               41.15 40.64 40.51 40.41 40.00
+      PARAMETER  (NVOTP=93)                                               41.62 41.15 40.64 40.51 40.41 40.00
       REAL       XC(MIP)        ,YC(MIP)       ,AC2(MDC,MSC,MCGRD),
      &           VOQ(MIP,*)     ,
      &           WK(*)          ,
@@ -4111,6 +4176,10 @@
       INTEGER    VOQR(*)        ,BKC           ,IVOTP(NVOTP)      ,
      &           KGRPNT(MXC,MYC)                                          30.21
 !
+      INTEGER    NP             ,DIMXPT                                   41.62
+      REAL       UABS           ,UDIR                                     41.62
+      REAL, ALLOCATABLE :: XPT(:,:)                                       41.62
+!
       REAL, ALLOCATABLE :: FLUX(:,:,:), FLOC(:,:)
 !
       LOGICAL    OQPROC(*), EQREAL                                        30.72
@@ -4118,6 +4187,13 @@
       SAVE IENT, IVOTP
       DATA IENT /0/
       DATA IVOTP /10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 28, 32, 33,     20.61
+     &            100, 101, 102, 103, 104, 105, 106, 107, 108, 109,       41.62
+     &            110, 111, 112, 113, 114, 115, 116, 117, 118, 119,       41.62
+     &            120, 121, 122, 123, 124, 125, 126, 127, 128, 129,       41.62
+     &            130, 131, 132, 133, 134, 135, 136, 137, 138, 139,       41.62
+     &            140, 141, 142, 143, 144, 145, 146, 147, 148, 149,       41.62
+     &            150, 151, 152, 153, 154, 155, 156, 157, 158, 159,       41.62
+     &            160, 161, 162, 163, 164, 165, 166, 167, 168, 169, 171,  41.62
      &            42, 43, 44, 47, 48, 53, 58, 59, 71/                     41.15 40.64 40.51 40.41 40.00
       CALL STRACE (IENT, 'SWOEXA')
 !
@@ -5479,6 +5555,82 @@
            ENDIF
         ENDIF
 !
+!       partitioning output according to Hanson and Phillips (2001)
+!
+        IF ( OQPROC(100).OR.OQPROC(110).OR.OQPROC(120).OR.                41.62
+     &       OQPROC(130).OR.OQPROC(140).OR.OQPROC(150).OR.                41.62
+     &       OQPROC(160) ) THEN                                           41.62
+!         to achieve minimum storage but guaranteed storage of all        41.62
+!         partitions DIMXPT = ((MSC+1)/2) * ((MDC-1)/2)                   41.62
+          DIMXPT = ((MSC+1)/2) * ((MDC-1)/2)                              41.62
+          ALLOCATE (XPT(7,0:DIMXPT))                                      41.62
+          XPT = 0.                                                        41.62
+!         compute wind parameters, for partitioning routine               41.62
+          UABS = SQRT(VOQ(IP,VOQR(26))**2+VOQ(IP,VOQR(26)+1)**2)          41.62
+          UDIR = ATAN2(VOQ(IP,VOQR(26)+1),VOQ(IP,VOQR(26)))*180./PI       41.62
+!          IF (UDIR.LT.360.) UDIR = UDIR + 360.                            41.62   !Check the computation of UDIR. does this work only if comp is NAUT??
+!
+!         compute partitioning and integral parameters per partition      41.62
+          CALL SWPART (TRANSPOSE(ACLOC), UABS, UDIR, VOQ(IP,VOQR(4)),     41.62
+     &                 WK, SPCSIG, SPCDIR, NP, XPT, DIMXPT)               41.62
+!
+          IF (OQPROC(171)) VOQ(IP,VOQR(171))     = 0.                     41.62
+          IF (OQPROC(100)) VOQ(IP,VOQR(100:109)) = 0.                     41.62
+          IF (OQPROC(110)) VOQ(IP,VOQR(110:119)) = 0.                     41.62
+          IF (OQPROC(120)) VOQ(IP,VOQR(120:129)) = 0.                     41.62
+          IF (OQPROC(130)) VOQ(IP,VOQR(130:139)) = 0.                     41.62
+          IF (OQPROC(140)) VOQ(IP,VOQR(140:149)) = 0.                     41.62
+          IF (OQPROC(150)) VOQ(IP,VOQR(150:159)) = 0.                     41.62
+          IF (OQPROC(160)) VOQ(IP,VOQR(160:169)) = 0.                     41.62
+!
+!         limit number of partitions in output to 10                      41.62
+          NP = MIN(NP,10)                                                 41.62
+          IF (NP.GT.0) THEN                                               41.62
+            IF (OQPROC(171)) VOQ(IP,VOQR(171)) = NINT(REAL(NP))           41.62
+            IF (OQPROC(100)) THEN                                         41.62
+!              XPT(:,0) are values for the total wave field, not required 41.62
+               DO IPT = 1, NP                                             41.62
+                  IF ( XPT(1,IPT).GE.0. ) THEN                            41.62
+                     VOQ(IP,VOQR(99+IPT)) = XPT(1,IPT)                    41.62
+                  ELSE                                                    41.62
+                     VOQ(IP,VOQR(99+IPT)) = 0.                            41.62
+                  ENDIF                                                   41.62
+               ENDDO                                                      41.62
+            ENDIF                                                         41.62
+            IF (OQPROC(110)) THEN                                         41.62
+               DO IPT = 1, NP                                             41.62
+                  VOQ(IP,VOQR(109+IPT)) = XPT(2,IPT)                      41.62
+               ENDDO                                                      41.62
+            ENDIF                                                         41.62
+            IF (OQPROC(120)) THEN                                         41.62
+               DO IPT = 1, NP                                             41.62
+                  VOQ(IP,VOQR(119+IPT)) = XPT(3,IPT)                      41.62
+               ENDDO                                                      41.62
+            ENDIF                                                         41.62
+            IF (OQPROC(130)) THEN                                         41.62
+               DO IPT = 1, NP                                             41.62
+                  VOQ(IP,VOQR(129+IPT)) = XPT(4,IPT)                      41.62
+               ENDDO                                                      41.62
+            ENDIF                                                         41.62
+            IF (OQPROC(140)) THEN                                         41.62
+               DO IPT = 1, NP                                             41.62
+                  VOQ(IP,VOQR(139+IPT)) = XPT(5,IPT)                      41.62
+               ENDDO                                                      41.62
+            ENDIF                                                         41.62
+            IF (OQPROC(150)) THEN                                         41.62
+               DO IPT = 1, NP                                             41.62
+                  VOQ(IP,VOQR(149+IPT)) = XPT(6,IPT)                      41.62
+               ENDDO                                                      41.62
+            ENDIF                                                         41.62
+            IF (OQPROC(160)) THEN                                         41.62
+               DO IPT = 1, NP                                             41.62
+                  VOQ(IP,VOQR(159+IPT)) = XPT(7,IPT)                      41.62
+               ENDDO                                                      41.62
+            ENDIF                                                         41.62
+          ENDIF                                                           41.62
+          DEALLOCATE (XPT)                                                41.62
+        ENDIF                                                             41.62
+!
         GOTO 800
 !
 !       points on land: assign exception value
@@ -5522,7 +5674,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2015  Delft University of Technology
+!     Copyright (C) 1993-2017  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -5742,7 +5894,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2015  Delft University of Technology
+!     Copyright (C) 1993-2017  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -5995,6 +6147,7 @@
             DO IS = 1, MSC                                                40.31
                AC2LOC(:) = AC2(ID,IS,:)                                   40.31
                CALL SWEXCHG( AC2LOC, KGRPNT )                             40.31
+!JAC               CALL SWEXCHG( AC2LOC, 0, KGRPNT )                          40.31
                AC2(ID,IS,:) = AC2LOC(:)                                   40.31
             END DO                                                        40.31
          END DO                                                           40.31

@@ -207,7 +207,7 @@
      &           ALLOCATE (IFLNDS_G(Numgrids,NUMGRD))
         IF (.not.allocated(IFLNDF_G))                                   &
      &           ALLOCATE (IFLNDF_G(Numgrids,NUMGRD))
-
+        IFLNDF_G=0
         IF (.not.allocated(IFLBEG_G))                                   &
      &           ALLOCATE (IFLBEG_G(Numgrids,NUMGRD))
         IF (.not.allocated(IFLINT_G))                                   &

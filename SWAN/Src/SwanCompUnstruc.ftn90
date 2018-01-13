@@ -11,7 +11,7 @@ subroutine SwanCompUnstruc ( ac2, ac1, compda, spcsig, spcdir, xytst, cross, it 
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2015  Delft University of Technology
+!     Copyright (C) 1993-2017  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -39,6 +39,8 @@ subroutine SwanCompUnstruc ( ac2, ac1, compda, spcsig, spcdir, xytst, cross, it 
 !   41.10: Marcel Zijlema
 !   41.20: Casey Dietrich
 !   41.60: Marcel Zijlema
+!   41.63: Marcel Zijlema
+!   41.67: Marcel Zijlema
 !
 !   Updates
 !
@@ -50,6 +52,8 @@ subroutine SwanCompUnstruc ( ac2, ac1, compda, spcsig, spcdir, xytst, cross, it 
 !   41.10,   August 2009: parallelization using OpenMP directives
 !   41.20,     June 2010: extension to tightly coupled ADCIRC+SWAN model
 !   41.60,     July 2015: more accurate computation of gradients of depth or wave number for turning rate
+!   41.63,   August 2015: efficiency UnSWAN algorithm further improved; now one sweep per iteration
+!   41.67,   August 2017: more accurate computation of gradients of ambient currents for transport velocities
 !
 !   Purpose
 !
@@ -65,12 +69,10 @@ subroutine SwanCompUnstruc ( ac2, ac1, compda, spcsig, spcdir, xytst, cross, it 
 !
 !   The wave action equation is solved iteratively
 !   A number of iterations are carried out until convergence is reached
-!   In each iteration, a number of sweeps are carried out
-!   Per sweep, a loop over all vertices is executed
+!   In each iteration, a sweep through the vertices is executed
 !   The solution of each vertex must be updated geographically before proceeding to the next one
 !   The two upwave faces connecting the vertex to be updated enclose those wave directions that can be processed in the spectral space
 !   A sweep is complete when all vertices are updated geographically (but not necessarily in whole spectral space)
-!   The process continues by sweeping through the vertices in a reverse manner, allowing waves to propagate from other directions
 !   An iteration is complete when all vertices are updated in both geographic and spectral spaces
 !
 !   Modules used
@@ -137,20 +139,13 @@ subroutine SwanCompUnstruc ( ac2, ac1, compda, spcsig, spcdir, xytst, cross, it 
     integer                               :: j         ! loop counter
     integer                               :: jc        ! loop counter
     integer                               :: k         ! loop counter
-    integer                               :: kend      ! last index in range of vertices
-    integer                               :: kstart    ! first index in range of vertices
-    integer                               :: kstep     ! step through range of vertices depending on sweep direction
     integer                               :: kvert     ! loop counter over vertices
-    integer                               :: l         ! counter
     integer, dimension(2)                 :: link      ! local face connected to considered vertex where an obstacle crossed
     integer                               :: mnisl     ! minimum sigma-index occured in applying limiter
     integer                               :: mxnfl     ! maximum number of use of limiter in spectral space
     integer                               :: mxnfr     ! maximum number of use of rescaling in spectral space
     integer                               :: npfl      ! number of vertices in which limiter is used
     integer                               :: npfr      ! number of vertices in which rescaling is used
-    integer                               :: nupdv     ! number of updates of present vertex (based on surrounding cells)
-    integer                               :: swpcol    ! own sweep color (0/1=black/white) in calling thread
-    integer                               :: swpdir    ! sweep counter
     integer                               :: swpnr     ! sweep number
     integer                               :: tid       ! thread number
     integer, dimension(3)                 :: v         ! vertices in present cell
@@ -180,6 +175,10 @@ subroutine SwanCompUnstruc ( ac2, ac1, compda, spcsig, spcdir, xytst, cross, it 
 !PUN    real(SZ), dimension(1)                :: dum1      ! a dummy real meant for UPDATER
 !PUN    real(SZ), dimension(1)                :: dum2      ! a dummy real meant for UPDATER
     real                                  :: dummy     ! dummy variable (to be used in existing SWAN routine call)
+    real                                  :: duxdx     ! derivative of ux2 to x
+    real                                  :: duxdy     ! derivative of ux2 to y
+    real                                  :: duydx     ! derivative of uy2 to x
+    real                                  :: duydy     ! derivative of uy2 to y
     real                                  :: etot      ! total wave energy density
     real                                  :: fpm       ! Pierson Moskowitz frequency
     real                                  :: frac      ! fraction of total active vertices
@@ -199,6 +198,7 @@ subroutine SwanCompUnstruc ( ac2, ac1, compda, spcsig, spcdir, xytst, cross, it 
     real                                  :: stopcr    ! stopping criterion for stationary solution
     real                                  :: thetaw    ! mean direction of the wind speed vector with respect to ambient current
     real                                  :: ufric     ! wind friction velocity
+    real, dimension(nverts)               :: urmstop
     real, dimension(5)                    :: usrset    ! auxiliary array to store user-defined settings of 3rd generation mode
     real                                  :: wind10    ! magnitude of the wind speed vector with respect to ambient current
     real, dimension(8)                    :: wwawg     ! weight coefficients for the 4 wave-wave interactions (see routine FAC4WW)
@@ -236,6 +236,8 @@ subroutine SwanCompUnstruc ( ac2, ac1, compda, spcsig, spcdir, xytst, cross, it 
     real, dimension(:,:), allocatable     :: kwave     ! wave number
     real, dimension(:,:), allocatable     :: leakcf    ! leak coefficient in present vertex for output purposes
     real, dimension(:,:,:), allocatable   :: memnl4    ! auxiliary array to store results of 4 wave-wave interactions in full spectral space
+    real, dimension(:,:,:), allocatable   :: memsina   ! auxiliary array to store results of linear wind input in full spectral space
+    real, dimension(:,:,:), allocatable   :: memsinb   ! auxiliary array to store results of exponential wind input in full spectral space
     real, dimension(:,:,:), allocatable   :: obredf    ! action reduction coefficient based on transmission
     real, dimension(:,:,:), allocatable   :: redc0     ! explicit part of redistribution in present vertex for output purposes
     real, dimension(:,:,:), allocatable   :: redc1     ! implicit part of redistribution in present vertex for output purposes
@@ -332,6 +334,19 @@ subroutine SwanCompUnstruc ( ac2, ac1, compda, spcsig, spcdir, xytst, cross, it 
        allocate(memnl4(0,0,0))
     endif
     !
+    if ( IWIND == 8 ) then
+       istat = 0
+       allocate(memsina(MDC,MSC,nverts), stat = istat)
+       if ( istat == 0 ) allocate(memsinb(MDC,MSC,nverts), stat = istat)
+       if ( istat /= 0 ) then
+          call msgerr ( 4, 'Allocation problem in SwanCompUnstruc: array memsin ' )
+          return
+       endif
+    else
+       allocate(memsina(0,0,0))
+       allocate(memsinb(0,0,0))
+    endif
+    !
     !$ allocate(tlist(nverts))
 !TIMG    call SWTSTO(101)
     !
@@ -356,12 +371,12 @@ subroutine SwanCompUnstruc ( ac2, ac1, compda, spcsig, spcdir, xytst, cross, it 
     !$omp private(disc0, disc1, genc0, genc1, redc0, redc1, trac0, trac1, leakcf) &
     !$omp private(ue, sa1, sa2, sfnl) &
     !$omp private(da1c, da1p, da1m, da2c, da2p, da2m, dsnl) &
-    !$omp private(tid, ivlow, ivup, iter, swpcol, kvert, kstart, kend, kstep) &
-    !$omp private(ivert, nupdv, jc, k, j, icell, v, vu, l, swpnr, rdx, rdy, lpredt, vb, ve, iface, link, inocnt) &
+    !$omp private(tid, ivlow, ivup, iter, kvert) &
+    !$omp private(ivert, jc, k, j, icell, v, vu, swpnr, rdx, rdy, lpredt, vb, ve, iface, link, inocnt) &
     !$omp private(iddlow, iddtop, idtot, isslow, isstop, istot) &
-    !$omp private(abrbot, kmespc, idwmin, idwmax, hs, etot, qbloc, ufric, fpm, thetaw, hm, wind10, smebrk) &
+    !$omp private(abrbot, kmespc, idwmin, idwmax, hs, etot, qbloc, ufric, fpm, thetaw, hm, wind10, smebrk, kteta) &
     !$omp private(dhdx, dhdy, dkdx, dkdy) &
-    !$omp copyin(ICMAX, COSLAT, IPTST, TESTFL)
+    !$omp copyin(ICMAX, COSLAT, IPTST, TESTFL, RDFSIN)
     !
     ! print number of threads set by environment
     !
@@ -495,6 +510,8 @@ subroutine SwanCompUnstruc ( ac2, ac1, compda, spcsig, spcdir, xytst, cross, it 
        ! some initializations
        !
        if ( IQUAD  > 2 ) memnl4(1:MDC,1:MSC,ivlow:ivup) = 0.
+       if ( IWIND == 8 ) memsina(1:MDC,1:MSC,ivlow:ivup) = 0.
+       if ( IWIND == 8 ) memsinb(1:MDC,1:MSC,ivlow:ivup) = 0.
        if ( ITRIAD > 0 &
                        ) compda(ivlow:ivup,JURSEL) = 0.
        !
@@ -506,6 +523,7 @@ subroutine SwanCompUnstruc ( ac2, ac1, compda, spcsig, spcdir, xytst, cross, it 
        compda(ivlow:ivup,JDSXM) = 0.
        compda(ivlow:ivup,JDSXV) = 0.
        compda(ivlow:ivup,JDSXT) = 0.
+       compda(ivlow:ivup,JDSXL) = 0.
        compda(ivlow:ivup,JGENR) = 0.
        compda(ivlow:ivup,JGSXW) = 0.
        compda(ivlow:ivup,JREDS) = 0.
@@ -519,6 +537,9 @@ subroutine SwanCompUnstruc ( ac2, ac1, compda, spcsig, spcdir, xytst, cross, it 
        compda(ivlow:ivup,JQB  ) = 0.
        !
        inocnt = 0
+       !
+       ! synchronize threads
+       !$omp barrier
        !
        !$omp master
        inocnv = 0
@@ -586,8 +607,6 @@ subroutine SwanCompUnstruc ( ac2, ac1, compda, spcsig, spcdir, xytst, cross, it 
        !
        ! all vertices are set untagged except non-active ones
        !
-       vert(:)%fullupdated = .false.
-       !
        do kvert = 1, nverts
           do jc = 1, vert(kvert)%noc         ! all cells around vertex
              vert(kvert)%updated(jc) = 0
@@ -600,8 +619,6 @@ subroutine SwanCompUnstruc ( ac2, ac1, compda, spcsig, spcdir, xytst, cross, it 
           !
           if ( .not.vert(kvert)%active ) then
              !
-             vert(kvert)%fullupdated = .true.
-             !
              do jc = 1, vert(kvert)%noc
                 icell = vert(kvert)%cell(jc)%atti(CELLID)
                 vert(kvert)%updated(jc) = icell
@@ -612,467 +629,420 @@ subroutine SwanCompUnstruc ( ac2, ac1, compda, spcsig, spcdir, xytst, cross, it 
           endif
           !
        enddo
-       !
-       swpdir = 0
        !$omp end master
        !
-       ! synchronize threads before loop over sweep directions
+       ! synchronize threads
        !$omp barrier
        !
-       ! loop over a number of sweeps through grid
-       !
-       sweeploop: do
-          !
-          ! check whether all vertices in grid are completely updated (in both geographic and spectral spaces)
-          !
-          !$omp single
-          swpfull = .true.
-          do kvert = 1, nverts
-             if ( .not.vert(kvert)%fullupdated ) then
-                swpfull = .false.
-                exit
-             endif
-          enddo
-          !$omp end single
-          !
-          if ( swpfull ) exit sweeploop
-          !
-          !$omp single
-          swpdir = swpdir + 1
-          !
-          if ( SCREEN /= PRINTF ) then
-             if ( NSTATC == 1 ) then
-                if ( IAMMASTER ) write (SCREEN,110) CHTIME, it, iter, swpdir
-             else
-                write (PRINTF,120) iter, swpdir
-                if ( IAMMASTER ) then
-                   if ( swpdir == 1 ) then
-                      write (SCREEN,120) iter, swpdir
-                   else
-                      write (SCREEN,130) iter, swpdir
-                   endif
-                endif
-             endif
-          endif
-          !$omp end single
-          !
-          ! loop over vertices in the grid (depending on sweep direction)
-          !
-          swpcol = mod(swpdir,2)
-          !
-          if ( mod(tid,2) == swpcol ) then
-             kstart = ivlow
-             kend   = ivup
-             kstep  = 1
+       !$omp single
+       if ( SCREEN /= PRINTF ) then
+          if ( NSTATC == 1 ) then
+             if ( IAMMASTER ) write (SCREEN,110) CHTIME, it, iter
           else
-             kstart = ivup
-             kend   = ivlow
-             kstep  = -1
+             write (PRINTF,120) iter
+             if ( IAMMASTER ) write (SCREEN,120) iter
           endif
-          !
-          vertloop: do kvert = kstart, kend, kstep
+       endif
+       !$omp end single
+       !
+       ! loop over vertices in the grid
+       !
+       vertloop: do kvert = ivlow, ivup
+         !
+         ivert = vlist(kvert)
+         !$ ivert = tlist(kvert)
+!ADC         !
+!ADC         ! allow SWAN to handle wave refraction as a nodal attribute
+!ADC         if ( LoadSwanWaveRefrac .and. FoundSwanWaveRefrac ) then
+!ADC            IREFR = nint(SwanWaveRefrac(ivert))
+!ADC         endif
+         !
+         if ( vert(ivert)%active ) then   ! this active vertex needs to be updated
             !
-            ivert = vlist(kvert)
-            !$ ivert = tlist(kvert)
-!ADC            !
-!ADC            ! allow SWAN to handle wave refraction as a nodal attribute
-!ADC            if ( LoadSwanWaveRefrac .and. FoundSwanWaveRefrac ) then
-!ADC               IREFR = nint(SwanWaveRefrac(ivert))
-!ADC            endif
+            ! determine whether the present vertex is a test point
             !
-            if ( vert(ivert)%active ) then   ! this active vertex needs to be updated
+            IPTST  = 0
+            TESTFL = .false.
+            if ( NPTST > 0 ) then
+               do j = 1, NPTST
+                  if ( ivert /= xytst(j) ) cycle
+                  IPTST  = j
+                  TESTFL = .true.
+               enddo
+            endif
+            !
+            ! compute gradients of depth or wave number in present vertex meant for computing turning rate
+            !
+            call SwanGradDepthorK ( compda(1,JDP2), compda(1,JMUDL2), spcsig, dhdx, dhdy, dkdx, dkdy, ivert )
+            !
+            ! compute the derivatives of the ambient current for computing transport velocities in spectral space
+            !
+            if ( ICUR /= 0 ) then
                !
-               ! determine whether the present vertex is a test point
-               !
-               IPTST  = 0
-               TESTFL = .false.
-               if ( NPTST > 0 ) then
-                  do j = 1, NPTST
-                     if ( ivert /= xytst(j) ) cycle
-                     IPTST  = j
-                     TESTFL = .true.
-                  enddo
-               endif
-               !
-               ! compute gradients of depth or wave number in present vertex meant for computing turning rate
-               !
-               call SwanGradDepthorK ( compda(1,JDP2), compda(1,JMUDL2), spcsig, dhdx, dhdy, dkdx, dkdy, ivert )
-               !
-               nupdv = 0
-               !
-               celloop: do jc = 1, vert(ivert)%noc
-                  !
-                  icell = vert(ivert)%cell(jc)%atti(CELLID)
-                  !
-                  if ( vert(ivert)%updated(jc) == icell ) then   ! this vertex in present cell is already updated
-                     nupdv = nupdv + 1
-                     cycle celloop
-                  endif
-                  !
-                  v(1) = cell(icell)%atti(CELLV1)
-                  v(2) = cell(icell)%atti(CELLV2)
-                  v(3) = cell(icell)%atti(CELLV3)
-                  !
-                  ! pick up two upwave vertices
-                  !
-                  do k = 1, 3
-                     if ( v(k) == ivert ) then
-                        vu(1) = v(mod(k  ,3)+1)
-                        vu(2) = v(mod(k+1,3)+1)
-                        exit
-                     endif
-                  enddo
-                  !
-                  l = 0
-                  do k = 1, 2
-                     do j = 1, vert(vu(k))%noc
-                        if ( vert(vu(k))%updated(j) /= 0 .or. vert(vu(k))%atti(VMARKER) /= 0 ) then   ! this upwave vertex is geographically updated or known
-                           l = l + 1
-                           exit
-                        endif
-                     enddo
-                  enddo
-                  !
-                  if ( l /= 2 ) cycle celloop   ! the present vertex cannot be updated
-                  !
-                  ! stores vertices of computational stencil
-                  !
-                  vs(1) = ivert
-                  vs(2) = vu(1)
-                  vs(3) = vu(2)
-                  !
-                  KCGRD = vs    ! to be used in some original SWAN routines
-                  !
-                  swpnr = 0                                              ! this trick assures to calculate Ursell number and
-                  if ( all(mask=vert(ivert)%updated(:)==0) ) swpnr = 1   ! quadruplets only once in each vertex during an iteration
-                  !
-                  ! compute wavenumber and group velocity in points of stencil
-                  !
-!TIMG                  call SWTSTA(110)
-                  call SwanDispParm ( kwave, cgo, dmw, compda(1,JDP2), compda(1,JMUDL2), spcsig )
-!TIMG                  call SWTSTO(110)
-                  !
-                  ! compute wave transport velocities in points of stencil for all directions
-                  !
-!TIMG                  call SWTSTA(111)
-                  call SwanPropvelX ( cax, cay, compda(1,JVX2), compda(1,JVY2), cgo, spcdir(1,2), spcdir(1,3) )
-!TIMG                  call SWTSTO(111)
-                  !
-                  ! compute local contravariant base vectors at present vertex
-                  !
-                  do k = 1, 3
-                     if ( v(k) == ivert ) then
-                        rdx(1) = cell(icell)%geom(k)%rdx1
-                        rdx(2) = cell(icell)%geom(k)%rdx2
-                        rdy(1) = cell(icell)%geom(k)%rdy1
-                        rdy(2) = cell(icell)%geom(k)%rdy2
-                        exit
-                     endif
-                  enddo
-                  !
-                  ! in case of spherical coordinates determine cosine of latitude (in degrees)
-                  ! and recalculate local contravariant base vectors
-                  !
-                  if ( KSPHER > 0 ) then
-                     do k = 1, ICMAX
-                        COSLAT(k) = cos(DEGRAD*(vert(vs(k))%attr(VERTY) + YOFFS))
-                     enddo
-                     do j = 1, 2
-                        rdx(j) = rdx(j) / (COSLAT(1) * LENDEG)
-                        rdy(j) = rdy(j) / LENDEG
-                     enddo
-                  endif
-                  !
-                  ! compute spectral directions for the considered sweep in present vertex
-                  !
-!TIMG                  call SWTSTA(112)
-                  call SwanSweepSel ( idcmin, idcmax, anybin, iscmin, iscmax, &
-                                      iddlow, iddtop, idtot , isslow, isstop, &
-                                      istot , cax   , cay   , rdx   , rdy   , &
-                                      spcsig)
-!TIMG                  call SWTSTO(112)
-                  !
-                  if ( idtot > 0 ) then
-                     !
-                     ! compute propagation velocities in spectral space for the considered sweep in present vertex
-                     !
-!TIMG                     call SWTSTA(113)
-                     call SwanPropvelS ( cad             , cas           , compda(1,JVX2), compda(1,JVY2), &
-                                         compda(1,JDP1)  , compda(1,JDP2), cax           , cay           , &
-                                         kwave           , cgo           , spcsig        , iddlow        , &
-                                         iddtop          , spcdir(1,2)   , spcdir(1,3)   , spcdir(1,4)   , &
-                                         spcdir(1,5)     , spcdir(1,6)   , rdx           , rdy           , &
-                                         dhdx            , dhdy          , dkdx          , dkdy          )
-!TIMG                     call SWTSTO(113)
-                     !
-                     ! estimate action density in case of first iteration at cold start in stationary mode
-                     ! (since it is zero in first stationary run)
-                     !
-                     lpredt = .false.
-                     if ( iter == 1 .and. ICOND /= 4 .and. NSTATC == 0 ) then
-                        lpredt = .true.
-                        compda(ivert,JHS) = 0.
-                        goto 20
-                     endif
- 10                  if ( lpredt ) then
-                        call SPREDT (swpdir, ac2   , cax  , cay  , idcmin, idcmax,        &
-                                     isstop, anybin, dummy, dummy, rdx   , rdy   , obredf)
-                        lpredt = .false.
-                     endif
-                     !
-                     ! calculate various integral parameters
-                     !
-!TIMG                     call SWTSTA(116)
-                     call SINTGRL (spcdir          , kwave           , ac2  , compda(1,JDP2), qbloc , compda(1,JURSEL), &
-                                   rdx             , rdy             , dummy, etot          , abrbot, compda(1,JUBOT) , &
-                                   hs              , compda(1,JQB)   , hm   , kmespc        , smebrk, kteta           , &
-                                   compda(1,JPBOT) , compda(1,JBOTLV), compda(1,JGAMMA), compda(1,JRESPL)     , swpnr , &
-                                   iddlow          , iddtop          )
-!TIMG                     call SWTSTO(116)
-                     !
-                     compda(ivert,JHS) = hs
- 20                  continue
-                     !
-                     ! compute transmission and/or reflection if obstacle is present in computational stencil
-                     !
-                     obredf = 1.
-                     reflso = 0.
-                     !
-!TIMG                     call SWTSTA(136)
-                     if ( NUMOBS > 0 ) then
-                        !
-                        ! determine obstacle for the link(s) in the computational stencil
-                        !
-                        do j = 1, cell(icell)%nof
-                           !
-                           ! determine vertices of the local face
-                           !
-                           vb = cell(icell)%face(j)%atti(FACEV1)
-                           ve = cell(icell)%face(j)%atti(FACEV2)
-                           !
-                           if ( vb==ivert .or. ve==ivert ) then
-                              !
-                              if ( vb==vu(1) .or. ve==vu(1) ) then
-                                 !
-                                 iface = cell(icell)%face(j)%atti(FACEID)
-                                 link(1) = cross(iface)
-                                 !
-                              elseif ( vb==vu(2) .or. ve==vu(2) ) then
-                                 !
-                                 iface = cell(icell)%face(j)%atti(FACEID)
-                                 link(2) = cross(iface)
-                                 !
-                              endif
-                              !
-                           endif
-                           !
-                        enddo
-                        !
-                        if ( link(1)/=0 .or. link(2)/=0 ) then
-                           !
-                           call SWTRCF ( compda(1,JWLV2), compda(1,JHS), link, obredf, ac2, reflso, dummy , dummy  , &
-                                         dummy          , cax          , cay , rdx   , rdy, anybin, spcsig, spcdir )
-                           !
-                        endif
-                        !
-                     endif
-!TIMG                     call SWTSTO(136)
-                     if (lpredt) goto 10
-                     !
-                     ! compute the transport part of the action balance equation
-                     !
-!TIMG                     call SWTSTA(118)
-                     call SwanTranspAc ( amat  , rhs   , leakcf, ac2   , ac1   , &
-                                         cgo   , cax   , cay   , cad   , cas   , &
-                                         anybin, rdx   , rdy   , spcsig, spcdir, &
-                                         obredf, idcmin, idcmax, iscmin, iscmax, &
-                                         iddlow, iddtop, isslow, isstop, anyblk, &
-                                         trac0 , trac1 )
-!TIMG                     call SWTSTO(118)
-                     !
-                     ! compute the source part of the action balance equation
-                     !
-                     if ( .not.OFFSRC ) then
-                        !
-                        ! initialize wind friction velocity and Pierson Moskowitz frequency
-                        !
-                        ufric = 1.e-15
-                        fpm   = 1.e-15
-                        !
-                        ! compute the wind speed, mean wind direction, the PM frequency,
-                        ! wind friction velocity and the minimum and maximum counters for
-                        ! active wind input
-                        !
-!TIMG                        call SWTSTA(115)
-                        if ( IWIND > 0 ) call WINDP1 ( wind10, thetaw, idwmin        , idwmax        , &
-                                                       fpm   , ufric , compda(1,JWX2), compda(1,JWY2), &
-                                                       anywnd, spcdir, compda(1,JVX2), compda(1,JVY2), &
-                                                       spcsig, ac2                                     &
-!ADC                                                      ,ivert                                           &
-                                                     )
-!TIMG                        call SWTSTO(115)
-                        !
-                        ! compute the source terms
-                        !
-!TIMG                        call SWTSTA(117)
-                        call SOURCE ( iter                , IXCGRD(1)           , IYCGRD(1)           , swpnr               , &
-                                      kwave               , spcsig              , spcdir(1,2)         , spcdir(1,3)         , &
-                                      ac2                 , compda(1,JDP2)      , amat(1,1,1)         , rhs                 , &
-                                      abrbot              , kmespc              , dummy               , compda(1,JUBOT)     , &
-                                      ufric               , compda(1,JVX2)      , compda(1,JVY2)      , idcmin              , &
-                                      idcmax              , iddlow              , iddtop              , idwmin              , &
-                                      idwmax              , isstop              ,                                             &
-                                      swtsda(1,1,1,JPWNDA), swtsda(1,1,1,JPWNDB), swtsda(1,1,1,JPWCAP), swtsda(1,1,1,JPBTFR), &
-                                      swtsda(1,1,1,JPWBRK), swtsda(1,1,1,JP4S)  , swtsda(1,1,1,JP4D)  ,                       &
-                                      swtsda(1,1,1,JPVEGT), swtsda(1,1,1,JPTURB), swtsda(1,1,1,JPMUD) , swtsda(1,1,1,JPTRI) , &
-                                      hs                  , etot                , qbloc               , thetaw              , &
-                                      hm                  , fpm                 , wind10              , dummy               , &
-                                      groww               , alimw               , smebrk              , kteta               , &
-                                      snlc1               ,                                                                   &
-                                      dal1                , dal2                , dal3                , ue                  , &
-                                      sa1                 , sa2                 , da1c                , da1p                , &
-                                      da1m                , da2c                , da2p                , da2m                , &
-                                      sfnl                , dsnl                , memnl4              , wwint               , &
-                                      wwawg               , wwswg               , cgo                 , compda(1,JUSTAR)    , &
-                                      compda(1,JZEL)      , spcdir              , anywnd              , dmw                 , &
-                                      disc0               ,                                                                   &
-                                      disc1               , genc0               , genc1               , redc0               , &
-                                      redc1               , xis                 , compda(1,JFRC2)     , it                  , &
-                                      compda(1,JNPLA2)    , compda(1,JTURB2)    , compda(1,JMUDL2)    ,                       &
-                                      compda(1,JURSEL)    , anybin              , reflso                                      &
-                                                                                                                            )
-!TIMG                        call SWTSTO(117)
-                        !
-                     endif
-                     !
-                     ! update action density by means of solving the action balance equation
-                     !
-                     if ( ACUPDA ) then
-                        !
-                        ! preparatory steps before solving system of equations
-                        !
-!TIMG                        call SWTSTA(119)
-                        call SOLPRE(ac2        , ac2old     , rhs        , amat(1,1,4), &
-                                    amat(1,1,1), amat(1,1,5), amat(1,1,2), amat(1,1,3), &
-                                    idcmin     , idcmax     , anybin     , idtot      , &
-                                    istot      , iddlow     , iddtop     , isstop     , &
-                                    spcsig     )
-!TIMG                        call SWTSTO(119)
-                        !
-                        if ( .not.DYNDEP .and. ICUR == 0 ) then
-                           !
-                           ! propagation in theta space only
-                           ! solve tridiagonal system of equations using Thomas' algorithm
-                           !
-!TIMG                           call SWTSTA(120)
-                           call SOLMAT ( idcmin     , idcmax     , ac2        , rhs, &
-                                         amat(1,1,1), amat(1,1,5), amat(1,1,4)     )
-!TIMG                           call SWTSTO(120)
-                           !
-                        else
-                           !
-                           ! propagation in both sigma and theta spaces
-                           !
-                           if ( int(PNUMS(8)) == 1 ) then
-                              !
-                              ! implicit scheme in sigma space
-                              ! solve pentadiagonal system of equations using SIP solver
-                              !
-!TIMG                              call SWTSTA(120)
-                              call SWSIP ( ac2        , amat(1,1,1)    , rhs            , amat(1,1,4), &
-                                           amat(1,1,5), amat(1,1,2)    , amat(1,1,3)    , ac2old     , &
-                                           PNUMS(12)  , nint(PNUMS(14)), nint(PNUMS(13)), inocnt     , &
-                                           iddlow     , iddtop         , isstop         , idcmin     , &
-                                           idcmax     )
-!TIMG                              call SWTSTO(120)
-                              !
-                           elseif (int(PNUMS(8)) == 2 ) then
-                              !
-                              ! explicit scheme in sigma space
-                              ! solve tridiagonal system of equations using Thomas' algorithm
-                              !
-!TIMG                              call SWTSTA(120)
-                              call SOLMT1  ( idcmin     , idcmax     , ac2        , rhs    , &
-                                             amat(1,1,1), amat(1,1,5), amat(1,1,4),          &
-                                             isstop     , anyblk     , iddlow     , iddtop )
-!TIMG                              call SWTSTO(120)
-                              !
-                           endif
-                           !
-                        endif
-                        !
-                        ! if negative action density occur rescale with a factor
-                        !
-!TIMG                        call SWTSTA(121)
-                        if ( BRESCL ) call RESCALE ( ac2, isstop, idcmin, idcmax, nrscal )
-!TIMG                        call SWTSTO(121)
-                        !
-                        ! store propagation, generation, dissipation, redistribution, leak and radiation stress in present vertex
-                        !
-!TIMG                        call SWTSTA(124)
-                        if ( LADDS )                                                        &
-                           call ADDDIS ( compda(1,JDISS), compda(1,JLEAK), ac2   , anybin , &
-                                         disc0          , disc1          ,                  &
-                                         genc0          , genc1          ,                  &
-                                         redc0          , redc1          ,                  &
-                                         trac0          , trac1          ,                  &
-                                         amat(1,1,4)    , amat(1,1,5)    ,                  &
-                                         amat(1,1,2)    , amat(1,1,3)    ,                  &
-                                         compda(1,JDSXB), compda(1,JDSXS), compda(1,JDSXW), &
-                                         compda(1,JDSXV), compda(1,JDSXT), compda(1,JDSXM), &
-                                         compda(1,JGSXW), compda(1,JGENR),                  &
-                                         compda(1,JRSXQ), compda(1,JRSXT),                  &
-                                         compda(1,JREDS),                                   &
-                                         compda(1,JTSXG), compda(1,JTSXT),                  &
-                                         compda(1,JTSXS), compda(1,JTRAN),                  &
-                                         leakcf         , compda(1,JRADS), spcsig           )
-!TIMG                        call SWTSTO(124)
-                        !
-                        ! limit the change of the spectrum
-                        !
-!TIMG                        call SWTSTA(122)
-                        if ( PNUMS(20) < 100. ) call PHILIM ( ac2, ac2old, cgo, kwave, spcsig, anybin, islmin, nflim, qbloc )
-!TIMG                        call SWTSTO(122)
-                        !
-                        ! reduce the computed energy density if the value is larger then the limit value
-                        ! as computed in SOURCE in case of first or second generation mode
-                        !
-!TIMG                        call SWTSTA(123)
-                        if ( IWIND == 1 .or. IWIND == 2 ) call WINDP3 ( isstop, alimw, ac2, groww, idcmin, idcmax )
-!TIMG                        call SWTSTO(123)
-                        !
-                        ! store some infinity norms meant for convergence check
-                        !
-                        if ( PNUMS(21) == 2. ) call SWACC ( ac2, ac2old, acnrms, isstop, idcmin, idcmax )
-                        !
-                     endif
-                     !
-                  endif
-                  !
-                  ! tag updated vertex in present cell
-                  !
-                  vert(ivert)%updated(jc) = icell
-                  nupdv = nupdv + 1
-                  !
-               enddo celloop
-               !
-               if ( nupdv == vert(ivert)%noc ) vert(ivert)%fullupdated = .true.
-!ADC               !
-!ADC               ! make boundaries reflective
-!ADC               if ( .false. ) then
-!ADC                  !
-!ADC                  if ( vert(ivert)%atti(VMARKER)==1 .and. vert(ivert)%atti(VBC)==0 ) call MakeBoundariesReflective( ivert, ac2 )
-!ADC                  !
-!ADC               endif
+               call SwanGradVel ( compda(1,JDP2), compda(1,JVX2), compda(1,JVY2), duxdx, duxdy, duydx, duydy, ivert )
                !
             endif
             !
-          enddo vertloop
-          !
-          ! synchronize threads before starting next sweep
-          !$omp barrier
-          !
-       enddo sweeploop
+            celloop: do jc = 1, vert(ivert)%noc
+               !
+               icell = vert(ivert)%cell(jc)%atti(CELLID)
+               !
+               if ( vert(ivert)%updated(jc) == icell ) cycle celloop   ! this vertex in present cell is already updated
+               !
+               v(1) = cell(icell)%atti(CELLV1)
+               v(2) = cell(icell)%atti(CELLV2)
+               v(3) = cell(icell)%atti(CELLV3)
+               !
+               ! pick up two upwave vertices
+               !
+               do k = 1, 3
+                  if ( v(k) == ivert ) then
+                     vu(1) = v(mod(k  ,3)+1)
+                     vu(2) = v(mod(k+1,3)+1)
+                     exit
+                  endif
+               enddo
+               !
+               ! stores vertices of computational stencil
+               !
+               vs(1) = ivert
+               vs(2) = vu(1)
+               vs(3) = vu(2)
+               !
+               KCGRD = vs    ! to be used in some original SWAN routines
+               !
+               swpnr = 0                                              ! this trick assures to calculate Ursell number and
+               if ( all(mask=vert(ivert)%updated(:)==0) ) swpnr = 1   ! quadruplets only once in each vertex during an iteration
+               !
+               ! compute wavenumber and group velocity in points of stencil
+               !
+!TIMG               call SWTSTA(110)
+               call SwanDispParm ( kwave, cgo, dmw, compda(1,JDP2), compda(1,JMUDL2), spcsig )
+!TIMG               call SWTSTO(110)
+               !
+               ! compute wave transport velocities in points of stencil for all directions
+               !
+!TIMG               call SWTSTA(111)
+               call SwanPropvelX ( cax, cay, compda(1,JVX2), compda(1,JVY2), cgo, spcdir(1,2), spcdir(1,3) )
+!TIMG               call SWTSTO(111)
+               !
+               ! compute local contravariant base vectors at present vertex
+               !
+               do k = 1, 3
+                  if ( v(k) == ivert ) then
+                     rdx(1) = cell(icell)%geom(k)%rdx1
+                     rdx(2) = cell(icell)%geom(k)%rdx2
+                     rdy(1) = cell(icell)%geom(k)%rdy1
+                     rdy(2) = cell(icell)%geom(k)%rdy2
+                     exit
+                  endif
+               enddo
+               !
+               ! in case of spherical coordinates determine cosine of latitude (in degrees)
+               ! and recalculate local contravariant base vectors
+               !
+               if ( KSPHER > 0 ) then
+                  do k = 1, ICMAX
+                     COSLAT(k) = cos(DEGRAD*(vert(vs(k))%attr(VERTY) + YOFFS))
+                  enddo
+                  do j = 1, 2
+                     rdx(j) = rdx(j) / (COSLAT(1) * LENDEG)
+                     rdy(j) = rdy(j) / LENDEG
+                  enddo
+               endif
+               !
+               ! compute spectral directions for the considered sweep in present vertex
+               !
+!TIMG               call SWTSTA(112)
+               call SwanSweepSel ( idcmin, idcmax, anybin, iscmin, iscmax, &
+                                   iddlow, iddtop, idtot , isslow, isstop, &
+                                   istot , cax   , cay   , rdx   , rdy   , &
+                                   spcsig)
+!TIMG               call SWTSTO(112)
+               !
+               if ( idtot > 0 ) then
+                  !
+                  ! compute propagation velocities in spectral space for the considered sweep in present vertex
+                  !
+!TIMG                  call SWTSTA(113)
+                  call SwanPropvelS ( cad             , cas           , compda(1,JVX2), compda(1,JVY2), &
+                                      compda(1,JDP1)  , compda(1,JDP2), cax           , cay           , &
+                                      kwave           , cgo           , spcsig        , iddlow        , &
+                                      iddtop          , spcdir(1,2)   , spcdir(1,3)   , spcdir(1,4)   , &
+                                      spcdir(1,5)     , spcdir(1,6)   , rdx           , rdy           , &
+                                      dhdx            , dhdy          , dkdx          , dkdy          , &
+                                      duxdx           , duxdy         , duydx         , duydy         )
+!TIMG                  call SWTSTO(113)
+                  !
+                  ! estimate action density in case of first iteration at cold start in stationary mode
+                  ! (since it is zero in first stationary run)
+                  !
+                  lpredt = .false.
+                  if ( iter == 1 .and. ICOND /= 4 .and. NSTATC == 0 ) then
+                     lpredt = .true.
+                     compda(ivert,JHS) = 0.
+                     goto 20
+                  endif
+ 10               if ( lpredt ) then
+                     call SPREDT (swpnr , ac2   , cax  , cay  , idcmin, idcmax,        &
+                                  isstop, anybin, dummy, dummy, rdx   , rdy   , obredf)
+                     lpredt = .false.
+                  endif
+                  !
+                  ! calculate various integral parameters
+                  !
+!TIMG                  call SWTSTA(116)
+                  call SINTGRL (spcdir          , kwave           , ac2  , compda(1,JDP2), qbloc , compda(1,JURSEL), &
+                                rdx             , rdy             , dummy, etot          , abrbot, compda(1,JUBOT) , &
+                                hs              , compda(1,JQB)   , hm   , kmespc        , smebrk, kteta           , &
+                                compda(1,JPBOT) , compda(1,JBOTLV), compda(1,JGAMMA), compda(1,JRESPL)     , swpnr , &
+                                urmstop         ,                                                                    &
+                                iddlow          , iddtop          )
+!TIMG                  call SWTSTO(116)
+                  !
+                  compda(ivert,JHS) = hs
+ 20               continue
+                  !
+                  ! compute transmission and/or reflection if obstacle is present in computational stencil
+                  !
+                  obredf = 1.
+                  reflso = 0.
+                  !
+!TIMG                  call SWTSTA(136)
+                  if ( NUMOBS > 0 ) then
+                     !
+                     ! determine obstacle for the link(s) in the computational stencil
+                     !
+                     do j = 1, cell(icell)%nof
+                        !
+                        ! determine vertices of the local face
+                        !
+                        vb = cell(icell)%face(j)%atti(FACEV1)
+                        ve = cell(icell)%face(j)%atti(FACEV2)
+                        !
+                        if ( vb==ivert .or. ve==ivert ) then
+                           !
+                           if ( vb==vu(1) .or. ve==vu(1) ) then
+                              !
+                              iface = cell(icell)%face(j)%atti(FACEID)
+                              link(1) = cross(iface)
+                              !
+                           elseif ( vb==vu(2) .or. ve==vu(2) ) then
+                              !
+                              iface = cell(icell)%face(j)%atti(FACEID)
+                              link(2) = cross(iface)
+                              !
+                           endif
+                           !
+                        endif
+                        !
+                     enddo
+                     !
+                     if ( link(1)/=0 .or. link(2)/=0 ) then
+                        !
+                        call SWTRCF ( compda(1,JWLV2), compda(1,JHS), link, obredf, ac2, reflso, dummy , dummy  , &
+                                      dummy          , cax          , cay , rdx   , rdy, anybin, spcsig, spcdir )
+                        !
+                     endif
+                     !
+                  endif
+!TIMG                  call SWTSTO(136)
+                  if (lpredt) goto 10
+                  !
+                  ! compute the transport part of the action balance equation
+                  !
+!TIMG                  call SWTSTA(118)
+                  call SwanTranspAc ( amat  , rhs   , leakcf, ac2   , ac1   , &
+                                      cgo   , cax   , cay   , cad   , cas   , &
+                                      anybin, rdx   , rdy   , spcsig, spcdir, &
+                                      obredf, idcmin, idcmax, iscmin, iscmax, &
+                                      iddlow, iddtop, isslow, isstop, anyblk, &
+                                      trac0 , trac1 )
+!TIMG                  call SWTSTO(118)
+                  !
+                  ! compute the source part of the action balance equation
+                  !
+                  if ( .not.OFFSRC ) then
+                     !
+                     ! initialize wind friction velocity and Pierson Moskowitz frequency
+                     !
+                     ufric = 1.e-15
+                     fpm   = 1.e-15
+                     !
+                     ! compute the wind speed, mean wind direction, the PM frequency,
+                     ! wind friction velocity and the minimum and maximum counters for
+                     ! active wind input
+                     !
+!TIMG                     call SWTSTA(115)
+                     if ( IWIND > 0 ) call WINDP1 ( wind10, thetaw, idwmin        , idwmax        , &
+                                                    fpm   , ufric , compda(1,JWX2), compda(1,JWY2), &
+                                                    anywnd, spcdir, compda(1,JVX2), compda(1,JVY2), &
+                                                    spcsig, ac2                                     &
+!ADC                                                   ,ivert                                           &
+                                                   ,genc0 , kwave                                   &
+                                                  )
+!TIMG                     call SWTSTO(115)
+                     !
+                     ! compute the source terms
+                     !
+!TIMG                     call SWTSTA(117)
+                     call SOURCE ( iter                , IXCGRD(1)           , IYCGRD(1)           , swpnr               , &
+                                   kwave               , spcsig              , spcdir(1,2)         , spcdir(1,3)         , &
+                                   ac2                 , compda(1,JDP2)      , amat(1,1,1)         , rhs                 , &
+                                   abrbot              , kmespc              , dummy               , compda(1,JUBOT)     , &
+                                   ufric               , compda(1,JVX2)      , compda(1,JVY2)      , idcmin              , &
+                                   idcmax              , iddlow              , iddtop              , idwmin              , &
+                                   idwmax              , isstop              ,                                             &
+                                   swtsda(1,1,1,JPWNDS), swtsda(1,1,1,JPWNDD), swtsda(1,1,1,JPWCAP), swtsda(1,1,1,JPBTFR), &
+                                   swtsda(1,1,1,JPSWEL),                                                                   &
+                                   swtsda(1,1,1,JPWBRK), swtsda(1,1,1,JP4S)  , swtsda(1,1,1,JP4D)  ,                       &
+                                   swtsda(1,1,1,JPVEGT), swtsda(1,1,1,JPTURB), swtsda(1,1,1,JPMUD) , swtsda(1,1,1,JPTRI) , &
+                                   hs                  , etot                , qbloc               , thetaw              , &
+                                   hm                  , fpm                 , wind10              , dummy               , &
+                                   groww               , alimw               , smebrk              , kteta               , &
+                                   snlc1               ,                                                                   &
+                                   dal1                , dal2                , dal3                , ue                  , &
+                                   sa1                 , sa2                 , da1c                , da1p                , &
+                                   da1m                , da2c                , da2p                , da2m                , &
+                                   sfnl                , dsnl                , memnl4              , wwint               , &
+                                   wwawg               , wwswg               , cgo                 , compda(1,JUSTAR)    , &
+                                   compda(1,JZEL)      , spcdir              , anywnd              , dmw                 , &
+                                   memsina             , memsinb             ,                                             &
+                                   disc0               ,                                                                   &
+                                   disc1               , genc0               , genc1               , redc0               , &
+                                   redc1               , xis                 , compda(1,JFRC2)     , it                  , &
+                                   compda(1,JNPLA2)    , compda(1,JTURB2)    , compda(1,JMUDL2)    ,                       &
+                                   compda(1,JURSEL)    , anybin              , reflso              , compda(1,JTAUW)       &
+                                  ,urmstop                                                                                 &
+                                                                                                                         )
+!TIMG                     call SWTSTO(117)
+                     !
+                  endif
+                  !
+                  ! update action density by means of solving the action balance equation
+                  !
+                  if ( ACUPDA ) then
+                     !
+                     ! preparatory steps before solving system of equations
+                     !
+!TIMG                     call SWTSTA(119)
+                     call SOLPRE(ac2        , ac2old     , rhs        , amat(1,1,4), &
+                                 amat(1,1,1), amat(1,1,5), amat(1,1,2), amat(1,1,3), &
+                                 idcmin     , idcmax     , anybin     , idtot      , &
+                                 istot      , iddlow     , iddtop     , isstop     , &
+                                 spcsig     )
+!TIMG                     call SWTSTO(119)
+                     !
+                     if ( .not.DYNDEP .and. ICUR == 0 ) then
+                        !
+                        ! propagation in theta space only
+                        ! solve tridiagonal system of equations using Thomas' algorithm
+                        !
+!TIMG                        call SWTSTA(120)
+                        call SOLMAT ( idcmin     , idcmax     , ac2        , rhs, &
+                                      amat(1,1,1), amat(1,1,5), amat(1,1,4)     )
+!TIMG                        call SWTSTO(120)
+                        !
+                     else
+                        !
+                        ! propagation in both sigma and theta spaces
+                        !
+                        if ( int(PNUMS(8)) == 1 ) then
+                           !
+                           ! implicit scheme in sigma space
+                           ! solve pentadiagonal system of equations using SIP solver
+                           !
+!TIMG                           call SWTSTA(120)
+                           call SWSIP ( ac2        , amat(1,1,1)    , rhs            , amat(1,1,4), &
+                                        amat(1,1,5), amat(1,1,2)    , amat(1,1,3)    , ac2old     , &
+                                        PNUMS(12)  , nint(PNUMS(14)), nint(PNUMS(13)), inocnt     , &
+                                        iddlow     , iddtop         , isstop         , idcmin     , &
+                                        idcmax     )
+!TIMG                           call SWTSTO(120)
+                           !
+                        elseif (int(PNUMS(8)) == 2 ) then
+                           !
+                           ! explicit scheme in sigma space
+                           ! solve tridiagonal system of equations using Thomas' algorithm
+                           !
+!TIMG                           call SWTSTA(120)
+                           call SOLMT1  ( idcmin     , idcmax     , ac2        , rhs    , &
+                                          amat(1,1,1), amat(1,1,5), amat(1,1,4),          &
+                                          isstop     , anyblk     , iddlow     , iddtop )
+!TIMG                           call SWTSTO(120)
+                           !
+                        endif
+                        !
+                     endif
+                     !
+                     ! if negative action density occur rescale with a factor
+                     !
+!TIMG                     call SWTSTA(121)
+                     if ( BRESCL ) call RESCALE ( ac2, isstop, idcmin, idcmax, nrscal )
+!TIMG                     call SWTSTO(121)
+                     !
+                     ! store propagation, generation, dissipation, redistribution, leak and radiation stress in present vertex
+                     !
+!TIMG                     call SWTSTA(124)
+                     if ( LADDS )                                                        &
+                        call ADDDIS ( compda(1,JDISS), compda(1,JLEAK), ac2   , anybin , &
+                                      disc0          , disc1          ,                  &
+                                      genc0          , genc1          ,                  &
+                                      redc0          , redc1          ,                  &
+                                      trac0          , trac1          ,                  &
+                                      amat(1,1,4)    , amat(1,1,5)    ,                  &
+                                      amat(1,1,2)    , amat(1,1,3)    ,                  &
+                                      compda(1,JDSXB), compda(1,JDSXS), compda(1,JDSXW), &
+                                      compda(1,JDSXV), compda(1,JDSXT), compda(1,JDSXM), &
+                                      compda(1,JDSXL),                                   &
+                                      compda(1,JGSXW), compda(1,JGENR),                  &
+                                      compda(1,JRSXQ), compda(1,JRSXT),                  &
+                                      compda(1,JREDS),                                   &
+                                      compda(1,JTSXG), compda(1,JTSXT),                  &
+                                      compda(1,JTSXS), compda(1,JTRAN),                  &
+                                      leakcf         , compda(1,JRADS), spcsig           )
+!TIMG                     call SWTSTO(124)
+                     !
+                     ! limit the change of the spectrum
+                     !
+!TIMG                     call SWTSTA(122)
+                     if ( PNUMS(20) < 100. ) call PHILIM ( ac2, ac2old, cgo, kwave, spcsig, anybin, islmin, nflim, qbloc )
+!TIMG                     call SWTSTO(122)
+                     !
+                     ! reduce the computed energy density if the value is larger then the limit value
+                     ! as computed in SOURCE in case of first or second generation mode
+                     !
+!TIMG                     call SWTSTA(123)
+                     if ( IWIND == 1 .or. IWIND == 2 ) call WINDP3 ( isstop, alimw, ac2, groww, idcmin, idcmax )
+!TIMG                     call SWTSTO(123)
+                     !
+                     ! store some infinity norms meant for convergence check
+                     !
+                     if ( PNUMS(21) == 2. ) call SWACC ( ac2, ac2old, acnrms, isstop, idcmin, idcmax )
+                     !
+                  endif
+                  !
+               endif
+               !
+               ! tag updated vertex in present cell
+               !
+               vert(ivert)%updated(jc) = icell
+               !
+            enddo celloop
+!ADC            !
+!ADC            ! make boundaries reflective
+!ADC            if ( .false. ) then
+!ADC               !
+!ADC               if ( vert(ivert)%atti(VMARKER)==1 .and. vert(ivert)%atti(VBC)==0 ) call MakeBoundariesReflective( ivert, ac2 )
+!ADC               !
+!ADC            endif
+            !
+         endif
+         !
+       enddo vertloop
+       !
+       ! synchronize threads
+       !$omp barrier
        !
        ! global sum to inocnv counter
        !
@@ -1104,9 +1074,10 @@ subroutine SwanCompUnstruc ( ac2, ac1, compda, spcsig, spcdir, xytst, cross, it 
           if ( IFPAR > 0 ) write (IFPAR,151) iter
           if ( IFS1D > 0 ) write (IFS1D,151) iter
           if ( IFS2D > 0 ) write (IFS2D,151) iter
-          call PLTSRC ( swtsda(1,1,1,JPWNDA), swtsda(1,1,1,JPWNDB), swtsda(1,1,1,JPWCAP), swtsda(1,1,1,JPBTFR), &
+          call PLTSRC ( swtsda(1,1,1,JPWNDS), swtsda(1,1,1,JPWNDD), swtsda(1,1,1,JPWCAP), swtsda(1,1,1,JPBTFR), &
                         swtsda(1,1,1,JPWBRK), swtsda(1,1,1,JP4S)  , swtsda(1,1,1,JP4D)  , swtsda(1,1,1,JPTRI) , &
                         swtsda(1,1,1,JPVEGT), swtsda(1,1,1,JPTURB), swtsda(1,1,1,JPMUD) ,                       &
+                        swtsda(1,1,1,JPSWEL),                                                                   &
                         ac2                 , spcsig              , compda(1,JDP2)      , xytst               , &
                         dummy               )
        endif
@@ -1138,8 +1109,8 @@ subroutine SwanCompUnstruc ( ac2, ac1, compda, spcsig, spcdir, xytst, cross, it 
 !PUN          mxnfr = nint(rval2)
 !PUN          !
           frac = real(npfr)*100./nwetp
-          if ( npfr > 0 ) write (PRINTF,134) 'rescaling', frac, mxnfr
-          if ( NSTATC == 0 .and. npfr > 0 .and. IAMMASTER ) write (SCREEN,134) 'rescaling', frac, mxnfr
+          if ( npfr > 0 ) write (PRINTF,130) 'rescaling', frac, mxnfr
+          if ( NSTATC == 0 .and. npfr > 0 .and. IAMMASTER ) write (SCREEN,130) 'rescaling', frac, mxnfr
           !
        endif
        !
@@ -1169,8 +1140,8 @@ subroutine SwanCompUnstruc ( ac2, ac1, compda, spcsig, spcdir, xytst, cross, it 
 !PUN          mxnfl = nint(rval2)
 !PUN          !
           frac = real(npfl)*100./nwetp
-          if ( npfl > 0 ) write (PRINTF,134) 'limiter', frac, mxnfl
-          if ( NSTATC == 0 .and. npfl > 0 .and. IAMMASTER ) write (SCREEN,134) 'limiter', frac, mxnfl
+          if ( npfl > 0 ) write (PRINTF,130) 'limiter', frac, mxnfl
+          if ( NSTATC == 0 .and. npfl > 0 .and. IAMMASTER ) write (SCREEN,130) 'limiter', frac, mxnfl
           !
           mnisl = minval(islmin)
           !
@@ -1195,6 +1166,9 @@ subroutine SwanCompUnstruc ( ac2, ac1, compda, spcsig, spcdir, xytst, cross, it 
           endif
        endif
        !$omp end master
+       !
+       ! synchronize threads
+       !$omp barrier
        !
 !PUN       ! exchange array COMPDA with neighbours in parallel run
 !PUN       !
@@ -1344,9 +1318,10 @@ subroutine SwanCompUnstruc ( ac2, ac1, compda, spcsig, spcdir, xytst, cross, it 
        if ( IFPAR > 0 ) write (IFPAR,152) CHTIME
        if ( IFS1D > 0 ) write (IFS1D,152) CHTIME
        if ( IFS2D > 0 ) write (IFS2D,152) CHTIME
-       call PLTSRC ( swtsda(1,1,1,JPWNDA), swtsda(1,1,1,JPWNDB), swtsda(1,1,1,JPWCAP), swtsda(1,1,1,JPBTFR), &
+       call PLTSRC ( swtsda(1,1,1,JPWNDS), swtsda(1,1,1,JPWNDD), swtsda(1,1,1,JPWCAP), swtsda(1,1,1,JPBTFR), &
                      swtsda(1,1,1,JPWBRK), swtsda(1,1,1,JP4S)  , swtsda(1,1,1,JP4D)  , swtsda(1,1,1,JPTRI) , &
                      swtsda(1,1,1,JPVEGT), swtsda(1,1,1,JPTURB), swtsda(1,1,1,JPMUD) ,                       &
+                     swtsda(1,1,1,JPSWEL),                                                                   &
                      ac2                 , spcsig              , compda(1,JDP2)      , xytst               , &
                      dummy               )
     endif
@@ -1370,6 +1345,8 @@ subroutine SwanCompUnstruc ( ac2, ac1, compda, spcsig, spcdir, xytst, cross, it 
     deallocate(swtsda)
     !
     deallocate(memnl4)
+    deallocate(memsina)
+    deallocate(memsinb)
     !
 !$  deallocate(tlist)
 !TIMG    call SWTSTO(101)
@@ -1382,10 +1359,9 @@ subroutine SwanCompUnstruc ( ac2, ac1, compda, spcsig, spcdir, xytst, cross, it 
  106 format (' IVEG  ',i4,'    ITURBV',i4   ,'            IMUD   ',i4,/)
  107 format (' Test points :',2i5)
  108 format (' Number of active points = ',i6,' (fillings-degree: ',f6.2,' %)')
- 110 format ('+time ', a18, ', step ',i6, '; iteration ',i4, '; sweep ',i3)
- 120 format (' iteration ', i4, '; sweep ', i3)
- 130 format ('+iteration ', i4, '; sweep ', i3)
- 134 format (1x,'use of ',a9,' in ',f6.2,' % of active vertices with maximum in spectral space = ',i4)
+ 110 format ('+time ', a18, ', step ',i6, '; iteration ',i4)
+ 120 format (' iteration ', i4)
+ 130 format (1x,'use of ',a9,' in ',f6.2,' % of active vertices with maximum in spectral space = ',i4)
  135 format (1x,'lowest frequency occured above which limiter is applied = ',f7.4,' Hz')
  136 format (2x,'SIP solver: no convergence in ',i4,' vertices')
  140 format (' accuracy OK in ',f6.2,' % of wet grid points (',f6.2,' % required)',/ )

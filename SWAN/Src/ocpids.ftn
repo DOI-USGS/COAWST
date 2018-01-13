@@ -33,7 +33,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2015  Delft University of Technology
+!     Copyright (C) 1993-2017  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -106,6 +106,7 @@
 #endif
      &           PLTOPT *4, TIMSTR *24,
      &           INPFO *40, OUTFO *40, TSTFO *40, TXT*120
+      CHARACTER (LEN=LENFNM) SCRFIL
       INTEGER    PRCTIM(6), INIVER, INIVEF
       INTEGER    PFROPT                                                   40.31
       REAL       PLPARM(10)                                               40.31
@@ -349,14 +350,20 @@
         WRITE (PRINTF, 12) TIMSTR
    12   FORMAT ('1',//,20X, 'Execution started at ',A, //)
       ENDIF
-      IF (PRTEST.NE.PRINTF) OPEN (UNIT=PRTEST, FILE=TSTFIL, ERR=922)
-      IF (SCREEN.NE.6) OPEN(UNIT=SCREEN, FILE='screen',ERR=960)           34.01
+      IF (PRTEST.NE.PRINTF) THEN
+         OPEN (UNIT=PRTEST, FILE=TSTFIL, ERR=922)
+      ENDIF
+      IF (SCREEN.NE.6) THEN
+         SCRFIL = 'screen'
+         OPEN (UNIT=SCREEN, FILE=SCRFIL, ERR=960)                         34.01
+      ENDIF
       IF (LREAD) THEN
-        IF (INPFIL.NE.'    ')
-     &  OPEN (UNIT=INPUTF, FILE=INPFIL, STATUS='OLD',                     40.41
-!CVIS     &        SHARED,                                                     40.41
-     &        ERR=910)                                                    40.41
-        CALL RDINIT
+         IF (INPFIL.NE.'    ') THEN
+            OPEN (UNIT=INPUTF, FILE=INPFIL, STATUS='OLD',                 40.41
+!CVIS     &            SHARED,                                                 40.41
+     &            ERR=910)                                                40.41
+         ENDIF
+         CALL RDINIT
       ENDIF
 !
       RETURN
@@ -408,7 +415,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2015  Delft University of Technology
+!     Copyright (C) 1993-2017  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -507,7 +514,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2015  Delft University of Technology
+!     Copyright (C) 1993-2017  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -637,7 +644,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2015  Delft University of Technology
+!     Copyright (C) 1993-2017  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as

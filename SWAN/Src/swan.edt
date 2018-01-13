@@ -4,7 +4,7 @@
 !            'title3'
 !
 !   SET  [level]  [nor]  [depmin]  [maxmes]                                 &
-!        [maxerr]  [grav]  [rho] [cdcap] [inrhog]                           &
+!        [maxerr]  [grav]  [rho] [cdcap] [uscap] [inrhog]                   &
 !        [hsrerr]  CARTesian|NAUTical  [pwtail]                             &
 !        [froudmax]  [sort]  CURV  [printf]  [prtest]
 !
@@ -67,7 +67,9 @@
 !   BOUndnest2  WAMNest 'fname' / UNFormatted CRAY|WKstat \
 !                               \ FREE                    / [xgc] [ygc] [lwdate]
 !
-!   BOUndnest3  WWIII 'fname'  CLOSed|OPEN  [xgc] [ygc]
+!                            | UNFormatted |   | -> CLOS |
+!   BOUndnest3  WW3 'fname' <               > <           > [xgc] [ygc]
+!                            | FREe        |   |    OPEN |
 !
 !             | -> DEFault
 !             |
@@ -83,13 +85,32 @@
 !
 !   GEN2  [cf10] [cf20] [cf30] [cf40] [cf50] [cf60] [edmlpm] [cdrag] [umin]
 !
-!         | JANSSEN  [cds1] [delta]     |
-!         |                             |
-!         | -> KOMEN [cds2] [stpm]      |
-!   GEN3 <                               >    (AGROW [a])
-!         | YAN                         |
-!         |                             |
-!         | WESTHuysen                  |
+!            |    JANSsen [cds1] [delta]                               |
+!            |                                                         |
+!            | -> KOMen   [cds2] [stpm]                                |
+!            |                                                         |
+!            |    YAN                                                  |
+!            |                                                         |
+!            |    WESTHuysen [cds2] [br] [p0] [powst] [powk]           |
+!            |                                                         |
+!            |    BABANIN [a1sds] [a2sds] [p1sds] [p2sds] [cdsv]    &  |
+!            |                  | -> UP |                              |
+!   GEN3    <        [feswell] <         > VECTAU  TRUE10               > (AGROW [a])
+!            |                  | DOWN  |                              |
+!            |                                                         |
+!            |    ST6     [a1sds] [a2sds] [p1sds] [p2sds]           &  |
+!            |        | -> UP |    | -> HWANG |                        |
+!            |       <         >  <     FAN    >  VECTAU|SCATAU     &  |
+!            |        | DOWN  |    |    ECMWF |                        |
+!            |        |    TRUE10                 |                    |
+!            |       <                             >  DEBias [cdfac]   |
+!            |        | -> U10Proxy [windscaling] |                    |
+!
+!           |    ROGers  [cdsv] [feswell]
+!   SSWELL <  -> ARDhuin [cdsv]
+!           |    ZIEger  [b1]
+!
+!   NEGatinp  [rdcoef]
 !
 !
 !         | -> KOMen   [cds2] [stpm] [powst] [delta] [powk]
@@ -135,7 +156,7 @@
 !              |
 !              |    RIPples [S] [D]
 !
-!   TRIad [itriad] [trfac] [cutfr] [a] [b] [urcrit] [urslim]
+!   TRIad [itriad] [trfac] [cutfr] [a] [b] [p] [urcrit] [urslim]
 !
 !   VEGEtation  < [height] [diamtr] [nstems] [drag] >
 !
@@ -146,8 +167,10 @@
 !   LIMiter [ursell] [qb]
 !
 !               | -> TRANSm [trcoef]                        |
-!   OBSTacle   <                                            |
-!               |       | -> GODA [hgt] [alpha] [beta]       >              &
+!               |  TRANS1d < [trcoef] >                     |
+!               |  TRANS2d < [trcoef] >                     |
+!   OBSTacle   <                                             >              &
+!               |       | -> GODA [hgt] [alpha] [beta]      |
 !               |  DAM <                                    |
 !                       |    DANGremond [hgt] [slope] [Bk]  |
 !
@@ -224,7 +247,8 @@
 !             DHSIGN|DRTM01|LEAK|TSEC|XP|YP|DIST|SETUP|TMM10|RTMM10|DEPTH|  &
 !             TMBOT|QP|BFI|NPLANT|WATLEV|BOTLEV|TPS|DISBOT|DISSURF|DISWCAP| &
 !             GENE|GENW|REDI|REDQ|REDT|PROPA|PROPX|PROPT|PROPS|RADS|LWAVP|  &
-!             DISTUR|TURB|DISMUD >                                          &
+!             DISTUR|TURB|DISMUD|DISSWELL|                                  &
+!             PTHSIGN|PTRTP|PTWLEN|PTDIR|PTDSPR|PTWFRAC|PTSTEEP|PARTIT >    &
 !             ([unit]) (OUTPUT [tbegblk] [deltblk] SEC|MIN|HR|DAY)
 !
 !   TABLE   'sname'  HEADER | NOHEADER | INDEXED 'fname'                    &
@@ -233,7 +257,8 @@
 !             DHSIGN|DRTM01|LEAK|TIME|TSEC|XP|YP|DIST|SETUP|TMM10|RTMM10|   &
 !             DEPTH|TMBOT|QP|BFI|WATLEV|BOTLEV|TPS|DISBOT|DISSURF|DISWCAP|  &
 !             GENE|GENW|REDI|REDQ|REDT|PROPA|PROPX|PROPT|PROPS|RADS|LWAVP|  &
-!             DISTUR|TURB|DISMUD >                                          &
+!             DISTUR|TURB|DISMUD|DISSWELL|                                  &
+!             PTHSIGN|PTRTP|PTWLEN|PTDIR|PTDSPR|PTWFRAC|PTSTEEP >           &
 !             ([unit]) (OUTPUT [tbegtbl] [delttbl] SEC|MIN|HR|DAY)
 !
 !   SPECout 'sname'  SPEC1D|SPEC2D  ABS|REL   'fname'                       &

@@ -34,7 +34,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2015  Delft University of Technology
+!     Copyright (C) 1993-2017  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -157,7 +157,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2015  Delft University of Technology
+!     Copyright (C) 1993-2017  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -275,7 +275,7 @@
          CHARACTER (LEN=4)      :: RQTYPE   ! type (BLK, TAB, SPC ...)
          CHARACTER (LEN=8)      :: PSNAME   ! name of point set
          INTEGER                :: OQI(4)   ! integer coefficients
-         REAL                   :: OQR(2)   ! real coefficients
+         REAL*8                 :: OQR(2)   ! real coefficients
          INTEGER, POINTER       :: IVTYP(:) ! type of output variable
          REAL, POINTER          :: FAC(:)   ! multiplication factor of block output
          TYPE(ORQDAT), POINTER  :: NEXTORQ
@@ -315,7 +315,7 @@
          CHARACTER (LEN=4)      :: RQTYPE   ! type (BLK, TAB, SPC ...)
          CHARACTER (LEN=8)      :: PSNAME   ! name of point set
          INTEGER                :: OQI(4)   ! integer coefficients
-         REAL                   :: OQR(2)   ! real coefficients
+         REAL*8                 :: OQR(2)   ! real coefficients
          INTEGER, POINTER       :: IVTYP(:) ! type of output variable
          REAL, POINTER          :: FAC(:)   ! multiplication factor of block output
          TYPE(ORQDAT), POINTER  :: NEXTORQ
@@ -364,7 +364,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2015  Delft University of Technology
+!     Copyright (C) 1993-2017  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -466,7 +466,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2015  Delft University of Technology
+!     Copyright (C) 1993-2017  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -630,7 +630,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2015  Delft University of Technology
+!     Copyright (C) 1993-2017  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -687,6 +687,8 @@
 !     RFTYP1  : reflection type: standard (REFL)
 !     RFTYP2  : reflection type: diffusive/specular (RDIFF/RSPEC)
 !     RFTYP3  : reflection type: frequency-dependent (RFD)
+!     TRCF1D  : frequency dependent transmission coefficients
+!     TRCF2D  : frequency and direction dependent transmission coefficients
 !     TRCOEF  : transmission coefficients
 !     TRTYPE  : transmission type
 !     XCRP    : x-coordinate of corner point
@@ -695,6 +697,7 @@
       TYPE OBSTDAT
          INTEGER                :: TRTYPE
          REAL                   :: TRCOEF(3)
+         REAL, POINTER          :: TRCF1D(:), TRCF2D(:,:)
          INTEGER                :: RFTYP1, RFTYP2, RFTYP3
          REAL                   :: RFCOEF(6)
          INTEGER                :: NCRPTS
@@ -742,7 +745,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2015  Delft University of Technology
+!     Copyright (C) 1993-2017  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -900,6 +903,10 @@
 #endif
       REAL   , SAVE, ALLOCATABLE :: LAYH(:), VEGDIL(:), VEGDRL(:),
      &                              VEGNSL(:)
+!ESMF!
+!ESMF!     added to save Sin exponential growth term for coupling
+!ESMF      LOGICAL, SAVE :: SAVE_SINBAC
+!ESMF      REAL   , SAVE, ALLOCATABLE :: SINBAC(:,:,:)
 
 !  8. Subroutines and functions used
 !
@@ -939,7 +946,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2015  Delft University of Technology
+!     Copyright (C) 1993-2017  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -988,14 +995,27 @@
 !
 !  6. Parameter variables
 !
+!JAC!     IBLACK  : integer used to colour subdomains 'black' for
+!JAC!               determining sequence of sweeps (=4,1,2,3)
+!JAC!     IGREEN  : integer used to colour subdomains 'green' for
+!JAC!               determining sequence of sweeps (=3,4,1,2)
 !     IHALOX  : width of halo area in x-direction
 !     IHALOY  : width of halo area in y-direction
+!JAC!     IRED    : integer used to colour subdomains 'red' for
+!JAC!               determining sequence of sweeps (=1,2,3,4)
+!JAC!     IYELOW  : integer used to colour subdomains 'yellow' for
+!JAC!               determining sequence of sweeps (=2,3,4,1)
 !     MASTER  : rank of master process
 !
       INTEGER MASTER
+!JAC      INTEGER IRED, IYELOW, IGREEN, IBLACK
       INTEGER IHALOX, IHALOY
-      PARAMETER (MASTER = 1,
-     &           IHALOX = 3, IHALOY = 3)
+      PARAMETER (MASTER = 1
+!JAC     &          ,IRED   = 1, IYELOW = 2,
+!JAC     &           IGREEN = 3, IBLACK = 4,
+!JAC     &           IHALOX = 1, IHALOY = 1
+!WFR     &          ,IHALOX = 3, IHALOY = 3
+     &          )
 !
 !  7. Local variables
 !
@@ -1016,8 +1036,15 @@
       INTEGER SWMAX, SWMIN, SWSUM
       LOGICAL IAMMASTER, PARLL
 !
+!COH!     *** variables for coupling with COHERENS
+!COH!
+!COH!     COMM    : communicator for the wave subgroup
+!COH!
+!COH      INTEGER COMM
+!COH!
 !     *** information related to global domain and subdomains
 !
+!JAC!     IBCOL   : integer indicating the color of own subdomain
 !     IBLKAD  : administration array for subdomain interfaces
 !               contents:
 !               pos. 1                     number of neighbouring subdomains
@@ -1067,6 +1094,7 @@
 !     XGRDGL  : x-coordinate of computational grid in global domain
 !     YGRDGL  : y-coordinate of computational grid in global domain
 !
+!JAC      INTEGER IBCOL
 
 #ifdef SWAN_MODEL
 ! Mine
@@ -1321,7 +1349,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2015  Delft University of Technology
+!     Copyright (C) 1993-2017  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as

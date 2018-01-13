@@ -27,7 +27,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2015  Delft University of Technology
+!     Copyright (C) 1993-2017  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -73,10 +73,10 @@
 !
 !  6. Parameter variables
 !
-!     LINELN [ 120]  max length of input lines (in command file)
+!     LINELN [ 180]  max length of input lines (in command file)
 !
       INTEGER LINELN
-      PARAMETER  (LINELN=120)
+      PARAMETER  (LINELN=180)
 !
 !  7. Local variables
 !
@@ -185,7 +185,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2015  Delft University of Technology
+!     Copyright (C) 1993-2017  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -231,10 +231,10 @@
 !
 !  6. Parameter variables
 !
-!     LENFNM [  80]  length of file names
+!     LENFNM [ 140]  length of file names (including path)
 !
       INTEGER LENFNM
-      PARAMETER (LENFNM=80)
+      PARAMETER (LENFNM=140)
 !
 !  7. Local variables
 !
@@ -307,7 +307,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2015  Delft University of Technology
+!     Copyright (C) 1993-2017  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -410,7 +410,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2015  Delft University of Technology
+!     Copyright (C) 1993-2017  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -569,7 +569,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2015  Delft University of Technology
+!     Copyright (C) 1993-2017  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -638,19 +638,15 @@
 !
 !  6. Parameter variables
 !
-#ifdef SWAN_MODEL
-!     NMOVAR [  75]  maximum number of output variables                   40.85 40.64 40.61 40.51 40.21 40.41
-#else
-!     NMOVAR [  74]  maximum number of output variables                   40.85 40.64 40.61 40.51 40.21 40.41
-#endif
+!     NMOVAR [ 171]  maximum number of output variables                   41.62 40.85 40.64 40.61 40.51 40.21 40.41
 !     MOUTPA [  50]  number of output parameters                          40.87
 !
       INTEGER NMOVAR, MOUTPA
-#ifdef SWAN_MODEL
-      PARAMETER (NMOVAR = 75, MOUTPA=50)                                  40.85 40.87 40.64 40.61 40.51 40.21 40.41
-#else
-      PARAMETER (NMOVAR = 74, MOUTPA=50)                                  40.35 41.15 40.85 40.87 40.64 40.61 40.51 40.21 40.41
-#endif
+!#ifdef SWAN_MODEL
+!      PARAMETER (NMOVAR = 75, MOUTPA=50)                                  40.85 40.87 40.64 40.61 40.51 40.21 40.41
+!#else
+      PARAMETER (NMOVAR = 171, MOUTPA=50)                                 41.62 40.35 41.15 40.85 40.87 40.64 40.61 40.51 40.21 40.41
+!#endif
 !
 !  7. Local variables
 !
@@ -728,8 +724,9 @@
 !  (72) [  'DISTU']
 !  (73) [  'TURB']
 !  (74) [  'DISM']
+!  (75) [ 'DISSL']
 #ifdef SWAN_MODEL
-!  (75) ['DIRBOT']
+!  (76) ['DIRBOT']
 #endif
 ! OVSNAM(NMOVAR)   short name of output quantity
 !  ( 1) [    'Xp']
@@ -801,8 +798,9 @@
 !  (72) [  'Stur']
 !  (73) [  'Turb']
 !  (74) [  'Smud']
+!  (75) ['Sswell']
 #ifdef SWAN_MODEL
-!  (75) ['Dirbot']
+!  (76) ['Dirbot']
 #endif
 ! OVLNAM(NMOVAR)   long name of output quantity
 !  ( 1) [                        'X user coordinate']
@@ -874,8 +872,9 @@
 !  (72) [                    'Turbulent dissipation']
 !  (73) [                      'Turbulent viscosity']
 !  (74) [                    'Fluid mud dissipation']
+!  (75) [                        'Swell dissipation']
 #ifdef SWAN_MODEL
-!  (75) [            'Average bottom wave direction']
+!  (76) [            'Average bottom wave direction']
 #endif
 ! OVUNIT(NMOVAR)   unit of of output quantity
 !  ( 1) [CALCULAT] =UL
@@ -947,8 +946,9 @@
 !  (72) [  'm2/s'] change to UDL ???, changed to 'W/m2', if INRHOG=1
 !  (73) [  'm2/s'] change to UDL ???, changed to 'W/m2', if INRHOG=1
 !  (74) [  'm2/s'] change to UDL ???, changed to 'W/m2', if INRHOG=1
+!  (75) [  'm2/s'] change to UDL ???, changed to 'W/m2', if INRHOG=1
 #ifdef SWAN_MODEL
-!  (75) [CALCULAT] =UDI
+!  (76) [CALCULAT] =UDI
 #endif
 ! SNAME [        ] name of output point set
 ! UAP   [  'W/m2'] unit of dissipation
@@ -1077,8 +1077,9 @@
 !  (72)  [  1]   Stur
 !  (73)  [  1]   Turb
 !  (74)  [  1]   Smud
+!  (75)  [  1]   Sswell
 #ifdef SWAN_MODEL
-!  (75)  [  2]   DirBot
+!  (76)  [  2]   DirBot
 #endif
 ! OVEXCV(NMOVAR)   exception value for output quantity
 !  ( 1)  [ -1.E10] Xp
@@ -1148,8 +1149,9 @@
 !  (72)  [    -9.] Stur
 !  (73)  [   -99.] Turb
 !  (74)  [    -9.] Smud
+!  (75)  [    -9.] Sswell
 #ifdef SWAN_MODEL
-!  (75)  [  -999.] DirBot
+!  (76)  [  -999.] DirBot
 #endif
 ! OVLEXP(NMOVAR)   lower expected limit of output quantity
 !  ( 1)  [ -1.E10] Xp
@@ -1219,8 +1221,9 @@
 !  (72)  [     0.] Stur
 !  (73)  [     0.] Turb
 !  (74)  [     0.] Smud
+!  (75)  [     0.] Sswell
 #ifdef SWAN_MODEL
-!  (75)  [     0.] DirBot
+!  (76)  [     0.] DirBot
 #endif
 ! OVLLIM(NMOVAR)   lower limit of validity of output quantity
 !  ( 1)  [ -1.E10] Xp
@@ -1290,8 +1293,9 @@
 !  (72)  [     0.] Stur
 !  (73)  [     0.] Turb
 !  (74)  [     0.] Smud
+!  (75)  [     0.] Sswell
 #ifdef SWAN_MODEL
-!  (75)  [     0.] DirBot
+!  (76)  [     0.] DirBot
 #endif
 ! OVHEXP(NMOVAR)   upper expected limit of output quantity
 !  ( 1)  [  1.E10] Xp
@@ -1361,8 +1365,9 @@
 !  (72)  [    0.1] Stur
 !  (73)  [   100.] Turb
 !  (74)  [    0.1] Smud
+!  (75)  [    0.1] Sswell
 #ifdef SWAN_MODEL
-!  (75)  [   360.] DirBot
+!  (76)  [   360.] DirBot
 #endif
 ! OVULIM(NMOVAR)   upper limit of validity
 !  ( 1)  [  1.E10] Xp
@@ -1432,8 +1437,9 @@
 !  (72)  [  1000.] Stur
 !  (73)  [    10.] Turb
 !  (74)  [  1000.] Smud
+!  (75)  [  1000.] Sswell
 #ifdef SWAN_MODEL
-!  (75)  [   360.] DirBot
+!  (76)  [   360.] DirBot
 #endif
 ! SINCQ  [       ] sin of ALCQ
 ! SINPQ  [       ] sin of ALPQ
@@ -1493,7 +1499,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2015  Delft University of Technology
+!     Copyright (C) 1993-2017  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -1640,6 +1646,7 @@
       LOGICAL, SAVE, TARGET, ALLOCATABLE :: VARAST_G(:)
       LOGICAL VARNPL, VARMUD, CCURV, VARTUR
       INTEGER LWDATE
+
       INTEGER, POINTER :: ICOND
       INTEGER, SAVE, TARGET, ALLOCATABLE :: ICOND_G(:)
       INTEGER, POINTER :: NWAMN
@@ -1666,8 +1673,8 @@
       REAL, SAVE, TARGET, ALLOCATABLE :: COSVC_G(:)
       REAL, POINTER :: COSWC
       REAL, SAVE, TARGET, ALLOCATABLE :: COSWC_G(:)
-      REAL, POINTER :: RDTIM
-      REAL, SAVE, TARGET, ALLOCATABLE :: RDTIM_G(:)
+      REAL*8, POINTER :: RDTIM
+      REAL*8, SAVE, TARGET, ALLOCATABLE :: RDTIM_G(:)
       REAL, POINTER :: SINVC
       REAL, SAVE, TARGET, ALLOCATABLE :: SINVC_G(:)
       REAL, POINTER :: SINWC
@@ -1702,10 +1709,11 @@
       INTEGER IGTYPE(NUMGRD),           LEDS(NUMGRD)
       INTEGER MXG(NUMGRD), MYG(NUMGRD), LWDATE
       INTEGER OPTG,        NBFILS,      NBSPEC,      NBGRPT
+      REAL*8  RDTIM
       REAL    ALPG(NUMGRD),             COSPG(NUMGRD)
       REAL    COSVC,       COSWC,       DXG(NUMGRD)
       REAL    DYG(NUMGRD), EXCFLD(NUMGRD)
-      REAL    RDTIM,       SINPG(NUMGRD)
+      REAL    SINPG(NUMGRD)
       REAL    SINVC,       SINWC,       STAGX(NUMGRD)
       REAL    STAGY(NUMGRD),            XOFFS
       REAL    XPG(NUMGRD), YOFFS,       YPG(NUMGRD)
@@ -1748,14 +1756,14 @@
       INTEGER, POINTER :: IFLNDF(:)
       INTEGER, SAVE, TARGET, ALLOCATABLE :: IFLNDF_G(:,:)
 
-      REAL, POINTER :: IFLBEG(:)
-      REAL, SAVE, TARGET, ALLOCATABLE :: IFLBEG_G(:,:)
-      REAL, POINTER :: IFLINT(:)
-      REAL, SAVE, TARGET, ALLOCATABLE :: IFLINT_G(:,:)
-      REAL, POINTER :: IFLEND(:)
-      REAL, SAVE, TARGET, ALLOCATABLE :: IFLEND_G(:,:)
-      REAL, POINTER :: IFLTIM(:)
-      REAL, SAVE, TARGET, ALLOCATABLE :: IFLTIM_G(:,:)
+      REAL*8, POINTER :: IFLBEG(:)
+      REAL*8, SAVE, TARGET, ALLOCATABLE :: IFLBEG_G(:,:)
+      REAL*8, POINTER :: IFLINT(:)
+      REAL*8, SAVE, TARGET, ALLOCATABLE :: IFLINT_G(:,:)
+      REAL*8, POINTER :: IFLEND(:)
+      REAL*8, SAVE, TARGET, ALLOCATABLE :: IFLEND_G(:,:)
+      REAL*8, POINTER :: IFLTIM(:)
+      REAL*8, SAVE, TARGET, ALLOCATABLE :: IFLTIM_G(:,:)
       REAL, POINTER :: IFLFAC(:)
       REAL, SAVE, TARGET, ALLOCATABLE :: IFLFAC_G(:,:)
 
@@ -1764,8 +1772,8 @@
       INTEGER      IFLDYN(NUMGRD)
       INTEGER      IFLIDL(NUMGRD), IFLIFM(NUMGRD), IFLNHF(NUMGRD),
      &             IFLNHD(NUMGRD), IFLNDS(NUMGRD), IFLNDF(NUMGRD)
-      REAL         IFLBEG(NUMGRD), IFLINT(NUMGRD), IFLEND(NUMGRD),
-     &             IFLTIM(NUMGRD)
+      REAL*8       IFLBEG(NUMGRD), IFLINT(NUMGRD), IFLEND(NUMGRD)
+      REAL*8       IFLTIM(NUMGRD)
       REAL         IFLFAC(NUMGRD)
       CHARACTER*40 IFLFRM(NUMGRD)
 #endif
@@ -1808,7 +1816,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2015  Delft University of Technology
+!     Copyright (C) 1993-2017  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -1858,7 +1866,7 @@
 !     MDIFFR [  10] dimension of array PDIFFR                             40.21
 !     MDISP  [   7] dimension for dissipation arrays                      40.59 40.35 40.67
 !     MGENR  [   1] dimension for generation arrays                       40.85
-!     MICMAX [  10] max. number of points in comput. stencil
+!     MICMAX [  13] max. number of points in comput. stencil
 !     MMUD   [  10] dimension of array PMUD
 !     MNUMS  [  40] dimension of array PNUMS
 !     MQUAD  [  10] dimension of array PQUAD
@@ -1888,7 +1896,7 @@
       PARAMETER           (MGENR  =  1)                                   40.85
       PARAMETER           (MREDS  =  2)                                   40.85
       PARAMETER           (MTRNP  =  3)                                   40.85
-      PARAMETER           (MICMAX = 10)
+      PARAMETER           (MICMAX = 13)
       PARAMETER           (MMUD   = 10)
       PARAMETER           (MNUMS  = 40)
       PARAMETER           (MQUAD  = 10)
@@ -1923,6 +1931,8 @@
 ! JDP2   [  8] new depth within array COMPDA
 ! JDP3   [ 15] last read depth within array COMPDA
 ! JDSXB  [  1] bottom friction dissipation within array COMPDA
+!              set by command TABLE/BLOCK
+! JDSXL  [  1] swell dissipation within array COMPDA
 !              set by command TABLE/BLOCK
 ! JDSXM  [  1] fluid mud dissipation within array COMPDA
 !              set by command TABLE/BLOCK
@@ -1966,8 +1976,8 @@
 ! JNPLA3 [   ] last read number of plants / m2 within array COMPDA
 ! JTURB2 [   ] new turbulent viscosity within array COMPDA                40.35
 ! JTURB3 [   ] last read turbulent viscosity within array COMPDA          40.35
-! JP4D   [  7] within array SWTSDA, quadruplet interactions
-! JP4S   [  6] within array SWTSDA, quadruplet interactions
+! JP4D   [  7] within array SWTSDA, quadruplet interactions (implicit part)
+! JP4S   [  6] within array SWTSDA, quadruplet interactions (explicit part)
 ! JPBOT  [  1] bottom wave period within array COMPDA
 !              set by command TABLE/BLOCK
 #ifdef SWAN_MODEL
@@ -1980,8 +1990,9 @@
 ! JPMUD  [ 11] within array SWTSDA, fluid mud dissipation
 ! JPWBRK [  5] within array SWTSDA, surf breaking
 ! JPWCAP [  3] within array SWTSDA, white capping
-! JPWNDA [  1] within array SWTSDA, wind source term part A
-! JPWNDB [  2] within array SWTSDA, wind source term part B
+! JPWNDD [  2] within array SWTSDA, wind input term (implicit part)
+! JPWNDS [  1] within array SWTSDA, wind input term (explicit part)
+! JPSWEL [ 12] within array SWTSDA, swell dissipation
 ! JQB    [  4] fraction of breaking waves within array COMPDA
 ! JRADS  [  1] radiation stress within array COMPDA
 !              set by command TABLE/BLOCK
@@ -2042,6 +2053,7 @@
 !              =MCMVAR+1, for command TABLE/BLOCK DISM (add JDSXM)
 !              =MCMVAR+1, for command TABLE/BLOCK DISV (add JDSXV)
 !              =MCMVAR+1, for command TABLE/BLOCK DISTU (add JDSXT)
+!              =MCMVAR+1, for command TABLE/BLOCK DISSL (add JDSXL)
 !              =MCMVAR+1, for command TABLE/BLOCK GENE (add JGENR)
 !              =MCMVAR+1, for command TABLE/BLOCK GENW (add JGSXW)
 !              =MCMVAR+1, for command TABLE/BLOCK REDI (add JREDS)
@@ -2065,6 +2077,7 @@
       INTEGER             JGEN0,       JGEN1,       JRED0,       JRED1
       INTEGER             JTRA0,       JTRA1
       INTEGER             JDSXB
+      INTEGER             JDSXL
       INTEGER             JDSXS
       INTEGER             JDSXW
       INTEGER             JDSXM
@@ -2076,7 +2089,7 @@
       INTEGER             JLEK1,       JMAT5,       JMAT6,       JMATD
       INTEGER             JMATL,       JMATR,       JMATU
       INTEGER             JP4D,        JP4S,        JPBTFR,      JPTRI
-      INTEGER             JPWBRK,      JPWCAP,      JPWNDA,      JPWNDB
+      INTEGER             JPWBRK,      JPWCAP,      JPWNDD,      JPWNDS
       INTEGER             JPMUD,       JMUDL1,      JMUDL2,      JMUDL3
       INTEGER             JPVEGT,      JNPLA2,      JNPLA3
       INTEGER             JPTURB,      JTURB2,      JTURB3
@@ -2091,6 +2104,7 @@
 #endif
       INTEGER             MCMVAR,                   MTSVAR,      JURSEL
       INTEGER             JBOTLV,      MSWMATR,     MLSWMAT
+      INTEGER             JPSWEL
 !
 !     *** location and dimensions of computational grid ***
 !
@@ -2116,6 +2130,8 @@
 ! IXCGRD [      ]  IX of points of computational stencil
 ! IYCGRD [      ]  IY of points of computational stencil
 ! KCGRD  [      ]  grid address of points of computational stencil
+! RDFSIN [   100] reduction factor as function of frequency for wind input term
+!                 (will be assigned to LFACTOR in SdsBabanin.f90)
 ! MCGRD  [     1]  number of wet grid points of the computational grid
 ! MDC    [     0]  grid points in theta-direction of computational grid
 ! MDC4MA [CALCUL] =IDHGH; some counter for quadruplet interactions. Stored in WWINT(18)
@@ -2180,6 +2196,7 @@
       INTEGER             NX,          NY
       INTEGER             ILMAX
       REAL                COSLAT(MICMAX)
+      REAL                RDFSIN(100)
       REAL                ALCP,        ALPC,        COSPC,       DDIR
       REAL                DX,          DXRP,        DY,          DYRP
       REAL                FRINTF,      FRINTH,      SHIG,        SINPC
@@ -2196,6 +2213,7 @@
       INTEGER             NGRBND
       INTEGER             ILMAX
       REAL                COSLAT(MICMAX)
+      REAL                RDFSIN(100)
       REAL                ALCP,        ALPC,        COSPC,       DDIR
       REAL                DX,          DXRP,        DY,          DYRP
       REAL                FRINTF,      FRINTH,      SHIG,        SINPC
@@ -2207,6 +2225,7 @@
 #endif
       LOGICAL ::          ALOCMP = .FALSE.                                40.97
 !$OMP THREADPRIVATE(IXCGRD,IYCGRD,KCGRD,COSLAT)
+!$OMP THREADPRIVATE(RDFSIN)
 !
 !     *** physical parameters ***
 !
@@ -2240,10 +2259,11 @@
 !                 tail factor for the second moment of energy
 ! RHO    [ 1025.] density of the water
 !                 =rho; set by command SET ... [rho] ...
+! USCAP  [99999.] maximum ustar
 ! WLEV   [    0.] water level
 !                 =level; set by command SET [level] ...
 !
-      REAL CASTD,       CDCAP
+      REAL CASTD,       CDCAP,       USCAP
       REAL DEGRAD,      DNORTH,      GRAV,        PI
       REAL PI2,         PWTAIL(10),  RHO,         WLEV
 !
@@ -2262,6 +2282,7 @@
 !                 in the spectrum (boundary spectra etc.)
 !                 =1: directional spread in degrees is given
 !                 =2: power of COS is given
+! FPI    [   ---] wind sea part of peak frequency
 ! FSHAPE [     2] indicates option for computation of frequency distribution
 !                 in the spectrum (boundary spectra etc.)
 !                 =2: Jonswap(default set by subr SWINIT),
@@ -2292,6 +2313,9 @@
 !                 1=Wu (1982)                                             41.33
 !                 2=2nd order polynomial fit (see CE publication, 2012)   41.33
 !                 3=Cd based on cross swell                               41.33
+!                 4=Hwang (2011)                                          40.88
+!                 5=Fan (2012)                                            40.88
+!                 6=ECMWF                                                 40.88
 ! IFRSRF [     0] indicates frequency dependent surf breaking             41.06
 !                 0=no frequency dependency                               41.06
 !                 1=frequency dependency                                  41.06
@@ -2392,6 +2416,7 @@
 !                 =1; setup is calculated
 !                 =2; setup is calculated with the boundary conditions from
 !                     a nest file
+! LSPNAR [.fals.] indicates whether directional spread is too narrow or not
 ! MXITST [    50] max. number of iterations in stationary computations
 ! MXITNS [     1] max. number of iterations in nonstationary computations
 ! NCOR   [     1] not used
@@ -2721,7 +2746,7 @@
       REAL                WDIC,          WDIP,      HSRERR
       REAL                PQUAD(MQUAD)
 #if !defined SWAN_MODEL
-      REAL                RCOMPT(50,5)
+      REAL*8              RCOMPT(300,5)
 #endif
       REAL                PDIFFR(MDIFFR)                                  40.21
       REAL                PMUD(MMUD)                                      40.59
@@ -2733,14 +2758,21 @@
       LOGICAL             OFFSRC                                          40.80
       LOGICAL             LADDS                                           40.85
       LOGICAL             CSETUP
+      LOGICAL             LSPNAR
+! parameters for Babanin physics and swell, see Rogers et al (JTECH, 2012)
+      REAL                A1SDS, A2SDS, P1SDS, P2SDS, CDSV, FESWELL       40.88
+      REAL                RDCOEF, B1Z, WNDSCL, CDFAC                      40.88
+      LOGICAL             UPWARDS, VECTOR_TAU, TRUE_U10                   40.88
+      LOGICAL             ROGERS, ZIEGER, ARDHUIN                         40.88
+      REAL                FPI                                             40.88
 #ifdef SWAN_MODEL
       TYPE COMPT
         INTEGER, POINTER :: NCOMPT_G
-        REAL, POINTER :: RCOMPT_G(:,:)
+        REAL*8, POINTER :: RCOMPT_G(:,:)
       END TYPE COMPT
       TYPE (COMPT), ALLOCATABLE :: COMPT_MOD(:)
       INTEGER, POINTER :: NCOMPT
-      REAL, POINTER :: RCOMPT(:,:)
+      REAL*8, POINTER :: RCOMPT(:,:)
 #endif
 
 !$OMP THREADPRIVATE(ICMAX,CSETUP)
@@ -2783,7 +2815,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2015  Delft University of Technology
+!     Copyright (C) 1993-2017  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -2937,7 +2969,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2015  Delft University of Technology
+!     Copyright (C) 1993-2017  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -3008,17 +3040,21 @@
 !                  seconds since the reference day (REFDAY))
 !
 #ifdef SWAN_MODEL
-      REAL, POINTER :: TINIC
-      REAL, SAVE, TARGET, ALLOCATABLE :: TINIC_G(:)
-      REAL, POINTER :: DT
-      REAL, SAVE, TARGET, ALLOCATABLE :: DT_G(:)
-      REAL, POINTER :: TFINC
-      REAL, SAVE, TARGET, ALLOCATABLE :: TFINC_G(:)
-      REAL, POINTER :: TIMCO
-      REAL, SAVE, TARGET, ALLOCATABLE :: TIMCO_G(:)
+      REAL*8, POINTER :: TINIC
+      REAL*8, SAVE, TARGET, ALLOCATABLE :: TINIC_G(:)
+      REAL*8, POINTER :: DT
+      REAL*8, SAVE, TARGET, ALLOCATABLE :: DT_G(:)
+      REAL*8, POINTER :: TFINC
+      REAL*8, SAVE, TARGET, ALLOCATABLE :: TFINC_G(:)
+      REAL*8, POINTER :: TIMCO
+      REAL*8, SAVE, TARGET, ALLOCATABLE :: TIMCO_G(:)
 #else
-      REAL TINIC, DT, TFINC, TIMCO
+      REAL*8 TINIC, DT, TFINC, TIMCO
 #endif
+!COH!
+!COH! COH_TINIC [   6] Start date and time in vector format (year,month,day,hour,min,sec)
+!COH! COH_TFINC [   6] End date and time in vector format (year,month,day,hour,min,sec)
+!COH      INTEGER COH_TINIC(6), COH_TFINC(6)
 !
 !     *** Time related variables for nested runs ***
 !

@@ -1,6 +1,7 @@
 # --- parsing arguments
 $esmf = "FALSE";
 $tim = "FALSE";
+$jac = "FALSE";
 $mpi = "FALSE";
 $pun = "FALSE";
 $f95 = "FALSE";
@@ -18,6 +19,7 @@ while ( $ARGV[0]=~/-.*/ )
    {
    if ($ARGV[0]=~/-esmf/) {$esmf="TRUE";shift;}
    if ($ARGV[0]=~/-timg/) {$tim="TRUE";shift;}
+   if ($ARGV[0]=~/-jac/) {$jac="TRUE";shift;}
    if ($ARGV[0]=~/-mpi/) {$mpi="TRUE";shift;}
    if ($ARGV[0]=~/-pun/) {$pun="TRUE";shift;}
    if ($ARGV[0]=~/-f95/) {$f95="TRUE";shift;}
@@ -46,7 +48,7 @@ foreach $file (@files)
   if ($unx=~/TRUE/)
   {
     ($tempf)=split(/.ftn/, $file);
-    $ext = ($file =~ m/ftn90/) ? "f90" : "f";
+    $ext = ($file =~ m/ftn90/) ? "F" : "F";
     $outfile = join(".",$tempf,$ext);
   }
   else
@@ -68,8 +70,9 @@ foreach $file (@files)
       if ($esmf=~/TRUE/) {$newline=~s/^!ESMF//;}
       else               {$newline=~s/^!!ESMF//;} #second "!" is negation
       if ($tim=~/TRUE/) {$newline=~s/^!TIMG//;}
+      if ($jac=~/TRUE/) {$newline=~s/^!JAC//;}
+      else              {$newline=~s/^!WFR//;}
       if ($mpi=~/TRUE/) {$newline=~s/^!MPI//;}
-      if ($coh=~/TRUE/) {$newline=~s/^!MPI//;}
       if ($pun=~/TRUE/) {$newline=~s/^!PUN//;}
       if ($pun=~/FALSE/) {$newline=~s/^!NPUN//;}
       if ($f95=~/TRUE/) {$newline=~s/^!F95//;}

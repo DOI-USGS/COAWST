@@ -11,9 +11,10 @@
 !     MSGERR
 !     TABHED
 !     FOR
-!     logical function EQREAL /* Checks whether REAL1 is appr.            30.72
-!                                equal to REAL2                 */        30.72
-!     LSPLIT            /* splits an input line into data items */        40.00
+!     logical function EQREAL  ( Checks whether REAL1 is appr.            30.72
+!                                equal to REAL2                 )         30.72
+!     logical function EQDBLE
+!     LSPLIT             ( splits an input line into data items )         40.00
 !     BUGFIX                                                              40.03
 !     COPYCH (copied from file OCPDPN)                                    40.31
 !
@@ -42,7 +43,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2015  Delft University of Technology
+!     Copyright (C) 1993-2017  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -182,7 +183,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2015  Delft University of Technology
+!     Copyright (C) 1993-2017  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -235,7 +236,7 @@
 !
 !     TIMESC : input  time in seconds from given reference day REFDAY
 !
-      REAL TIMESC
+      REAL*8 TIMESC
 !
 !  5. PARAMETER VARIABLES
 !
@@ -272,7 +273,7 @@
 !
 !     TT     : time in seconds since begin of the same day
 !
-      REAL    TT
+      REAL*8  TT
 !
 !     LEAPYR : logical for yes or no leap-year
 !
@@ -294,7 +295,7 @@
       DATA IDYMON /31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31/
 !
       NDAY = INT((TIMESC+0.4)/(24*3600))                                  30.70
-  10  TT   = TIMESC - REAL(NDAY)*24.*3600.
+  10  TT   = TIMESC - DBLE(NDAY)*24.*3600.
       IF (TT.LT.-0.4) THEN                                                30.70
         NDAY = NDAY - 1
         GOTO 10
@@ -355,9 +356,9 @@
 !        get time of day
 !
       INTTIM(4) = INT(TT/3600.)
-      TT        = TT - 3600.*REAL(INTTIM(4))
+      TT        = TT - 3600.*DBLE(INTTIM(4))
       INTTIM(5) = INT(TT/60.)
-      TT        = TT - 60.*REAL(INTTIM(5))
+      TT        = TT - 60.*DBLE(INTTIM(5))
       INTTIM(6) = INT(TT)
       RETURN
       END
@@ -381,7 +382,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2015  Delft University of Technology
+!     Copyright (C) 1993-2017  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -415,7 +416,7 @@
 !
 !     TIMESC : output   time in seconds from given reference day REFDAY
 !
-      REAL    TIMESC
+      REAL*8  TIMESC
 !
 !     TSTRNG : input    time string
 !
@@ -428,6 +429,8 @@
 !     ITIME  : ??
 !
       INTEGER ITIME(6)
+!
+      REAL    RTMP
 !
 !     DTTIME : Gives time in seconds from a reference day it also initialises the
 !              reference day
@@ -449,7 +452,8 @@
 ! 13. SOURCE TEXT
 !
       CALL DTSTTI (IOPT, TSTRNG, ITIME)
-      TIMESC = DTTIME (ITIME)
+      RTMP   = DTTIME (ITIME)
+      TIMESC = DBLE(RTMP)
       RETURN
       END
 !*****************************************************************
@@ -472,7 +476,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2015  Delft University of Technology
+!     Copyright (C) 1993-2017  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -511,7 +515,7 @@
 !
 !     TIMESC : output   time in seconds from given reference day REFDAY
 !
-      REAL       TIMESC
+      REAL*8     TIMESC
 !
 !     TSTRNG : input    time string
 !
@@ -570,7 +574,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2015  Delft University of Technology
+!     Copyright (C) 1993-2017  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -803,7 +807,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2015  Delft University of Technology
+!     Copyright (C) 1993-2017  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -1099,7 +1103,7 @@
 !
 !     --- initialize FILENM so that previous value is not used            40.08
 !         in case unit NDSD does not exist                                40.08
- 911  FILENM='DUMMY'
+ 911  FILENM='UNKNOWN_FILE'
 !     --------------------------------------------------------------------40.08
 !     THIS INQUIRE STATEMENT IS PROBLEMATIC, SINCE (AT LEAST              40.08
 !     SOMETIMES) NDSD HAS ALREADY BEEN CLOSED, SO THE INQUIRE             40.08
@@ -1115,7 +1119,7 @@
       GOTO 900
 !
 !     --- initialize FILENM                                               40.08
- 920  FILENM='DUMMY'                                                      40.08
+ 920  FILENM='UNKNOWN_FILE'                                               40.08
       INQUIRE (UNIT=NDSD, NAME=FILENM)                                    30.82 40.08
       CALL MSGERR (2, 'Error while reading file '//TRIM(FILENM))          40.13
       WRITE (PRINTF, 922) IERR                                            40.02
@@ -1141,7 +1145,7 @@
 
 !     No more files in NDSL:
 !     --- initialize FILENM                                               40.08
- 930  FILENM='DUMMY'                                                      40.08
+ 930  FILENM='UNKNOWN_FILE'                                               40.08
       INQUIRE (UNIT=NDSL, NAME=FILENM)                                    40.13 40.08
       CALL MSGERR (2, 'Series of input files ended in '//TRIM(FILENM))    40.13
       RETURN                                                              40.13
@@ -1173,7 +1177,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2015  Delft University of Technology
+!     Copyright (C) 1993-2017  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -1289,7 +1293,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2015  Delft University of Technology
+!     Copyright (C) 1993-2017  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -1445,7 +1449,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2015  Delft University of Technology
+!     Copyright (C) 1993-2017  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -1546,7 +1550,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2015  Delft University of Technology
+!     Copyright (C) 1993-2017  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -1645,7 +1649,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2015  Delft University of Technology
+!     Copyright (C) 1993-2017  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -1882,18 +1886,38 @@
                IUNIT = IUTTM
                RETURN
             ENDIF
-!ADC  60        CONTINUE                                                      41.20
+  60        CONTINUE
 !           Assign free unit number
             IF (IFUN.EQ.0) THEN
                IFUN = FUNLO
             ELSE
                IFUN = IFUN + 1
             ENDIF
-!ADC!           the following unit numbers are reserved for ADCIRC            41.20
-!ADC            IF ( IFUN.EQ.13 ) GOTO 60                                     41.20
-!ADC            IF ( IFUN.EQ.14 ) GOTO 60                                     41.20
-!ADC            IF ( IFUN.EQ.15 ) GOTO 60                                     41.20
-!ADC            IF ( IFUN.EQ.22 ) GOTO 60                                     41.20
+!Casey 160728: Merging the changes from Jason in an earlier version of SWAN.
+!ADC            ! jgf52.30.05: Provide a more comprehensive workaround for    41.20
+!ADC            ! the issue where ADCIRC opens a file using a unit number     41.20
+!ADC            ! that SWAN is already using. The long term solution here     41.20
+!ADC            ! is to have ADCIRC check the unit numbers it is opening      41.20
+!ADC            ! to see if they are already in use.                          41.20
+!ADC            !                                                             41.20
+!ADC            ! FIXME: We still might collide with NWS11, if anyone         41.20
+!ADC            ! still uses that.                                            41.20
+!ADC            SELECT CASE(IFUN)                                             41.20
+!ADC            CASE(10:93,98,101,102,111,141,151,164,199,200)                41.20
+!ADC               GOTO 60                                                    41.20
+!ADC            CASE(221:224,225,227,301:307,311:322,323,333,400:404,667)     41.20
+!ADC               GOTO 60                                                    41.20
+!ADC            CASE(1019:1021,1065:1067)                                     41.20
+!ADC               GOTO 60                                                    41.20
+!ADC            CASE DEFAULT                                                  41.20
+!ADC               CONTINUE                                                   41.20
+!ADC            END SELECT                                                    41.20
+            SELECT CASE(IFUN)                                             40.88
+            CASE(411:417)                                                 40.88
+               GOTO 60                                                    40.88
+            CASE DEFAULT                                                  40.88
+               CONTINUE                                                   40.88
+            END SELECT                                                    40.88
             IUNIT = IFUN
             IF (IUNIT .GT. FUNHI) THEN
                IF (IOSTAT.GT.-2) CALL MSGERR (3, 'All free units used')
@@ -1995,7 +2019,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2015  Delft University of Technology
+!     Copyright (C) 1993-2017  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -2097,6 +2121,94 @@
       RETURN
 !     end of subroutine EQREAL
       END
+!***********************************************************************
+!                                                                      *
+      LOGICAL FUNCTION EQDBLE (DBLE1, DBLE2)
+!                                                                      *
+!***********************************************************************
+!
+      USE OCPCOMM4
+!
+      IMPLICIT NONE
+!
+!
+!   --|-----------------------------------------------------------|--
+!     | Delft University of Technology                            |
+!     | Faculty of Civil Engineering                              |
+!     | Environmental Fluid Mechanics Section                     |
+!     | P.O. Box 5048, 2600 GA  Delft, The Netherlands            |
+!     |                                                           |
+!     | Programmers: The SWAN team                                |
+!   --|-----------------------------------------------------------|--
+!
+!
+!     SWAN (Simulating WAves Nearshore); a third generation wave model
+!     Copyright (C) 1993-2017  Delft University of Technology
+!
+!     This program is free software; you can redistribute it and/or
+!     modify it under the terms of the GNU General Public License as
+!     published by the Free Software Foundation; either version 2 of
+!     the License, or (at your option) any later version.
+!
+!     This program is distributed in the hope that it will be useful,
+!     but WITHOUT ANY WARRANTY; without even the implied warranty of
+!     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+!     GNU General Public License for more details.
+!
+!     A copy of the GNU General Public License is available at
+!     http://www.gnu.org/copyleft/gpl.html#SEC3
+!     or by writing to the Free Software Foundation, Inc.,
+!     59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+!
+!
+!  0. Authors
+!
+!     Marcel Zijlema
+!
+!  1. Updates
+!
+!     July 2015: copied from EQREAL, adapted to double precision
+!
+!  2. Purpose
+!
+!     to determine whether a value is an exception value or not
+!
+!  4. Argument variables
+!
+!     DBLE1  : input    value that is to be tested
+!     DBLE2  : input    given exception value
+!
+      REAL*8    DBLE1, DBLE2
+!
+!  5. Parameter variables
+!
+!  6. Local variables
+!
+!     IENT   : Number of entries into this subroutine
+!
+      INTEGER   IENT
+!
+!  8. Subroutines used
+!
+!  9. Subroutines calling
+!
+! 10. Error messages
+!
+! 11. Remarks
+!
+! 12. Structure
+!
+! 13. Source text
+!
+      SAVE IENT
+      DATA IENT/0/
+      CALL STRACE(IENT,'EQDBLE')
+      EQDBLE = .FALSE.
+!
+      IF ( .NOT. DBLE1 /= DBLE2 ) EQDBLE = .TRUE.
+      RETURN
+!     end of subroutine EQDBLE
+      END
 !*******************************************************************
 !                                                                  *
       SUBROUTINE LSPLIT(RELINE, DATITM, NUMITM)
@@ -2122,7 +2234,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2015  Delft University of Technology
+!     Copyright (C) 1993-2017  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -2316,7 +2428,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2015  Delft University of Technology
+!     Copyright (C) 1993-2017  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -2412,7 +2524,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2015  Delft University of Technology
+!     Copyright (C) 1993-2017  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as

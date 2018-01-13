@@ -11,7 +11,7 @@ subroutine SwanInterpolateOutput ( foutp, x, y, finp, mip, kvert, excval )
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2015  Delft University of Technology
+!     Copyright (C) 1993-2017  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -305,9 +305,7 @@ subroutine SwanInterpolateOutput ( foutp, x, y, finp, mip, kvert, excval )
           ! use weighting coefficients to determine interpolated output quantity
           !
           do k = 1, 3
-             if ( ww(k) > 1.e-10 ) then
-                if (obstcell) ww(k) = ww(k) / sumww
-             endif
+             if (obstcell) ww(k) = ww(k) / sumww
           enddo
           foutp(ip) = sum (ww(:) * finp(v(:)))
           !
