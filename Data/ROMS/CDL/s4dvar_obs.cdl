@@ -50,6 +50,9 @@ variables:
 	double obs_value(datum) ;
 		obs_value:long_name = "observation value" ;
 		obs_value:units = "state variable units" ;
+	double obs_meta(datum) ;
+		obs_meta:long_name = "observation meta value" ;
+		obs_meta:units = "associated state variable units" ;
 
 // global attributes:
 		:type = "ROMS Observations" ;

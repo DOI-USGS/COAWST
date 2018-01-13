@@ -30,15 +30,15 @@ variables:
 		river_time:long_name = "river runoff time" ;
 		river_time:units = "days since 1992-01-01 00:00:00" ;
 		river_time:add_offset = 2448623. ;
-	double river_transport(river_time river) ;
+	double river_transport(river_time, river) ;
 		river_transport:long_name = "river runoff vertically integrated mass transport" ;
 		river_transport:units = "meter3 second-1" ;
 		river_transport:time = "river_time" ;
-	double river_temp(river_time s_rho, river) ;
+	double river_temp(river_time, s_rho, river) ;
 		river_temp:long_name = "river runoff potential temperature" ;
 		river_temp:units = "Celsius" ;
 		river_temp:time = "river_time" ;
-	double river_salt(river_time s_rho, river) ;
+	double river_salt(river_time, s_rho, river) ;
 		river_salt:long_name = "river runoff salinity" ;
 		river_salt:time = "river_time" ;
 
