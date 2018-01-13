@@ -1,6 +1,6 @@
       SUBROUTINE biology (ng,tile)
 !
-!svn $Id: nemuro.h 830 2017-01-24 21:21:11Z arango $
+!svn $Id: nemuro.h 854 2017-07-18 23:28:45Z arango $
 !************************************************** Hernan G. Arango ***
 !  Copyright (c) 2002-2017 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
@@ -60,7 +60,7 @@
       END IF
 !
 #ifdef PROFILE
-      CALL wclock_on (ng, iNLM, 15)
+      CALL wclock_on (ng, iNLM, 15, __LINE__, __FILE__)
 #endif
       CALL biology_tile (ng, tile,                                      &
      &                   LBi, UBi, LBj, UBj, N(ng), NT(ng),             &
@@ -89,7 +89,7 @@
      &                   OCEAN(ng) % t)
 
 #ifdef PROFILE
-      CALL wclock_off (ng, iNLM, 15)
+      CALL wclock_off (ng, iNLM, 15, __LINE__, __FILE__)
 #endif
       RETURN
       END SUBROUTINE biology
@@ -215,6 +215,7 @@
       real(r8), dimension(IminS:ImaxS) :: PARsur
 
       real(r8), dimension(NT(ng),2) :: BioTrc
+
       real(r8), dimension(IminS:ImaxS,N(ng),NT(ng)) :: Bio
       real(r8), dimension(IminS:ImaxS,N(ng),NT(ng)) :: Bio_old
 
@@ -237,7 +238,6 @@
       real(r8), dimension(IminS:ImaxS) :: frac_buried
 
 #include "set_bounds.h"
-
 !
 !-----------------------------------------------------------------------
 !  Add biological Source/Sink terms.

@@ -1,6 +1,6 @@
       MODULE ocean_control_mod
 !
-!svn $Id: optobs_ocean.h 830 2017-01-24 21:21:11Z arango $
+!svn $Id: optobs_ocean.h 858 2017-07-31 23:02:30Z arango $
 !================================================== Hernan G. Arango ===
 !  Copyright (c) 2002-2017 The ROMS/TOMS Group           W. G. Zhang   !
 !    Licensed under a MIT/X style license                              !
@@ -60,16 +60,16 @@
       USE mod_fourdvar
       USE mod_iounits
       USE mod_scalars
-
-#ifdef MCT_LIB
 !
-# ifdef AIR_OCEAN
+#ifdef MCT_LIB
+# ifdef ATM_COUPLING
       USE ocean_coupler_mod, ONLY : initialize_ocn2atm_coupling
 # endif
-# ifdef WAVES_OCEAN
+# ifdef WAV_COUPLING
       USE ocean_coupler_mod, ONLY : initialize_ocn2wav_coupling
 # endif
 #endif
+      USE strings_mod,       ONLY : FoundError
 !
 !  Imported variable declarations.
 !
@@ -125,7 +125,8 @@
 !  grids and dimension parameters are known.
 !
         CALL inp_par (iADM)
-        IF (exit_flag.ne.NoError) RETURN
+        IF (FoundError(exit_flag, NoError, __LINE__,                    &
+     &                 __FILE__)) RETURN
 !
 !  Set domain decomposition tile partition range.  This range is
 !  computed only once since the "first_tile" and "last_tile" values
@@ -158,7 +159,7 @@
         DO ng=1,Ngrids
 !$OMP PARALLEL
           DO thread=THREAD_RANGE
-            CALL wclock_on (ng, iADM, 0)
+            CALL wclock_on (ng, iADM, 0, __LINE__, __FILE__)
           END DO
 !$OMP END PARALLEL
         END DO
@@ -175,17 +176,17 @@
 
       END IF
 
-#if defined MCT_LIB && (defined AIR_OCEAN || defined WAVES_OCEAN)
+#if defined MCT_LIB && (defined ATM_COUPLING || defined WAV_COUPLING)
 !
 !-----------------------------------------------------------------------
 !  Initialize coupling streams between model(s).
 !-----------------------------------------------------------------------
 !
       DO ng=1,Ngrids
-# ifdef AIR_OCEAN
+# ifdef ATM_COUPLING
         CALL initialize_ocn2atm_coupling (ng, MyRank)
 # endif
-# ifdef WAVES_OCEAN
+# ifdef WAV_COUPLING
         CALL initialize_ocn2wav_coupling (ng, MyRank)
 # endif
       END DO
@@ -202,7 +203,8 @@
         Tindex=1
         DO ng=1,Ngrids
           CALL get_state (ng, 6, 6, STD(1,ng)%name, STDrec, Tindex)
-          IF (exit_flag.ne.NoError) RETURN
+          IF (FoundError(exit_flag, NoError, __LINE__,                  &
+     &                   __FILE__)) RETURN
         END DO
 !
 !  Model error standard deviation. They are loaded in Tindex=2
@@ -213,7 +215,8 @@
         DO ng=1,Ngrids
           IF (NSA.eq.2) THEN
             CALL get_state (ng, 6, 6, STD(2,ng)%name, STDrec, Tindex)
-            IF (exit_flag.ne.NoError) RETURN
+            IF (FoundError(exit_flag, NoError, __LINE__,                &
+     &                     __FILE__)) RETURN
           END IF
         END DO
 
@@ -225,7 +228,8 @@
         Tindex=1
         DO ng=1,Ngrids
           CALL get_state (ng, 8, 8, STD(3,ng)%name, STDrec, Tindex)
-          IF (exit_flag.ne.NoError) RETURN
+          IF (FoundError(exit_flag, NoError, __LINE__,                  &
+     &                   __FILE__)) RETURN
         END DO
 #endif
 #if defined ADJUST_WSTRESS || defined ADJUST_STFLUX
@@ -236,7 +240,8 @@
         Tindex=1
         DO ng=1,Ngrids
           CALL get_state (ng, 9, 9, STD(4,ng)%name, STDrec, Tindex)
-          IF (exit_flag.ne.NoError) RETURN
+          IF (FoundError(exit_flag, NoError, __LINE__,                  &
+     &                   __FILE__)) RETURN
         END DO
 #endif
       END IF
@@ -263,11 +268,12 @@
       USE mod_scalars
       USE mod_stepping
 !
-      USE convolve_mod, ONLY : error_covariance
+      USE convolve_mod,      ONLY : error_covariance
       USE normalization_mod, ONLY : normalization
 #if defined BALANCE_OPERATOR && defined ZETA_ELLIPTIC
-      USE zeta_balance_mod, ONLY: balance_ref, biconj
+      USE zeta_balance_mod,  ONLY : balance_ref, biconj
 #endif
+      USE strings_mod,       ONLY : FoundError
 !
 !  Imported variable declarations
 !
@@ -328,7 +334,8 @@
       IF (balance(isFsur)) THEN
         DO ng=1,Ngrids
           CALL get_state (ng, iNLM, 2, INI(ng)%name, Lini, Lini)
-          IF (exit_flag.ne.NoError) RETURN
+          IF (FoundError(exit_flag, NoError, __LINE__,                  &
+     &                   __FILE__)) RETURN
 !
 !$OMP PARALLEL
           DO tile=first_tile(ng),last_tile(ng),+1
@@ -351,7 +358,8 @@
 !$OMP PARALLEL
         CALL ad_initial (ng)
 !$OMP END PARALLEL
-        IF (exit_flag.ne.NoError) RETURN
+        IF (FoundError(exit_flag, NoError, __LINE__,                    &
+     &                 __FILE__)) RETURN
       END DO
 !
 !  Activate adjoint output.
@@ -368,7 +376,8 @@
         LdefITL(ng)=.TRUE.
         CALL tl_def_ini (ng)
         LdefITL(ng)=.FALSE.
-        IF (exit_flag.ne.NoError) RETURN
+        IF (FoundError(exit_flag, NoError, __LINE__,                    &
+     &                 __FILE__)) RETURN
       END DO
 !
 !-----------------------------------------------------------------------
@@ -383,21 +392,25 @@
       DO ng=1,Ngrids
         IF (ANY(LwrtNRM(:,ng))) THEN
           CALL def_norm (ng, iNLM, 1)
-          IF (exit_flag.ne.NoError) RETURN
+          IF (FoundError(exit_flag, NoError, __LINE__,                  &
+     &                   __FILE__)) RETURN
 
           IF (NSA.eq.2) THEN
             CALL def_norm (ng, iNLM, 2)
-          IF (exit_flag.ne.NoError) RETURN
+          IF (FoundError(exit_flag, NoError, __LINE__,                  &
+     &                   __FILE__)) RETURN
           END IF
 
 #ifdef ADJUST_BOUNDARY
           CALL def_norm (ng, iNLM, 3)
-          IF (exit_flag.ne.NoError) RETURN
+          IF (FoundError(exit_flag, NoError, __LINE__,                  &
+     &                   __FILE__)) RETURN
 #endif
 
 #if defined ADJUST_WSTRESS || defined ADJUST_STFLUX
           CALL def_norm (ng, iNLM, 4)
-          IF (exit_flag.ne.NoError) RETURN
+          IF (FoundError(exit_flag, NoError, __LINE__,                  &
+     &                   __FILE__)) RETURN
 #endif
 
 !$OMP PARALLEL
@@ -410,21 +423,25 @@
         ELSE
           NRMrec=1
           CALL get_state (ng, 5, 5, NRM(1,ng)%name, NRMrec, 1)
-          IF (exit_flag.ne.NoError) RETURN
+          IF (FoundError(exit_flag, NoError, __LINE__,                  &
+     &                   __FILE__)) RETURN
 
           IF (NSA.eq.2) THEN
             CALL get_state (ng, 5, 5, NRM(2,ng)%name, NRMrec, 2)
-            IF (exit_flag.ne.NoError) RETURN
+            IF (FoundError(exit_flag, NoError, __LINE__,                &
+     &                     __FILE__)) RETURN
           END IF
 
 #ifdef ADJUST_BOUNDARY
           CALL get_state (ng, 10, 10, NRM(3,ng)%name, NRMrec, 1)
-          IF (exit_flag.ne.NoError) RETURN
+          IF (FoundError(exit_flag, NoError, __LINE__,                  &
+     &                   __FILE__)) RETURN
 #endif
 
 #if defined ADJUST_WSTRESS || defined ADJUST_STFLUX
           CALL get_state (ng, 11, 11, NRM(3,ng)%name, NRMrec, 1)
-          IF (exit_flag.ne.NoError) RETURN
+          IF (FoundError(exit_flag, NoError, __LINE__,                  &
+     &                   __FILE__)) RETURN
 #endif
         END IF
       END DO
@@ -472,7 +489,8 @@
       CALL ad_main2d (RunInterval)
 #endif
 !$OMP END PARALLEL
-      IF (exit_flag.ne.NoError) RETURN
+      IF (FoundError(exit_flag, NoError, __LINE__,                      &
+     &               __FILE__)) RETURN
 !
 !  Convolve adjoint trajectory with error covariances and write
 !  TLM initial conditions.
@@ -481,7 +499,8 @@
       CALL error_covariance (iTLM, driver, -1, -1,                      &
      &                       Lbck, Lini, Lold, Lnew,                    &
      &                       Rec1, Rec2, Lposterior)
-      IF (exit_flag.ne.NoError) RETURN
+      IF (FoundError(exit_flag, NoError, __LINE__,                      &
+     &               __FILE__)) RETURN
 !
 !-----------------------------------------------------------------------
 !  Run tangent linear model for all nested grids, if any.
@@ -493,7 +512,8 @@
 !$OMP PARALLEL
         CALL tl_initial (ng)
 !$OMP END PARALLEL
-        IF (exit_flag.ne.NoError) RETURN
+        IF (FoundError(exit_flag, NoError, __LINE__,                    &
+     &                 __FILE__)) RETURN
       END DO
 !
 !  Activate tangent linear output.
@@ -519,7 +539,8 @@
       CALL tl_main2d (RunInterval)
 #endif
 !$OMP END PARALLEL
-      IF (exit_flag.ne.NoError) RETURN
+      IF (FoundError(exit_flag, NoError, __LINE__,                      &
+     &               __FILE__)) RETURN
 !
  10   FORMAT (/,'AD ROMS/TOMS: adjoint forcing time range: ',           &
      &        f12.4,' - ',f12.4 ,/)
@@ -586,7 +607,7 @@
       DO ng=1,Ngrids
 !$OMP PARALLEL
         DO thread=THREAD_RANGE
-          CALL wclock_off (ng, iADM, 0)
+          CALL wclock_off (ng, iADM, 0, __LINE__, __FILE__)
         END DO
 !$OMP END PARALLEL
       END DO

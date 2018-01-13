@@ -29,7 +29,8 @@
      &                       GRID(ng) % rmask,                          &
 #  endif
      &                       VEG(ng) % plant(:,:,:,i))
-          IF (status.ne.nf90_noerr) THEN 
+          IF (FoundError(status, nf90_noerr, __LINE__,                  &
+     &                   __FILE__)) THEN
             IF (Master) THEN 
               WRITE (stdout,10) TRIM(Vname(1,idvprp(i))), RST(ng)%Rindex
             END IF
@@ -53,7 +54,8 @@
      &                     GRID(ng) % rmask,                            &
 # endif
      &                     VEG(ng)%Dissip_veg )
-        IF (status.ne.nf90_noerr) THEN 
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+     &                 __FILE__)) THEN
           IF (Master) THEN 
             WRITE (stdout,10) TRIM(Vname(1,idWdvg)), RST(ng)%Rindex
           END IF
@@ -76,7 +78,8 @@
      &                     GRID(ng) % rmask,                            &
 # endif
      &                     VEG(ng)%marsh_mask)
-        IF (status.ne.nf90_noerr) THEN 
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+     &                 __FILE__)) THEN
           IF (Master) THEN 
             WRITE (stdout,10) TRIM(Vname(1,idTims)), RST(ng)%Rindex
           END IF
@@ -96,7 +99,8 @@
      &                     GRID(ng) % rmask,                            &
 # endif
      &                     VEG(ng)%mask_thrust)
-        IF (status.ne.nf90_noerr) THEN 
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+     &                 __FILE__)) THEN
           IF (Master) THEN 
             WRITE (stdout,10) TRIM(Vname(1,idTmsk)), RST(ng)%Rindex
           END IF
@@ -116,7 +120,8 @@
      &                     GRID(ng) % rmask,                            &
 # endif
      &                     VEG(ng)%Thrust_max)
-        IF (status.ne.nf90_noerr) THEN
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+     &                 __FILE__)) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idTmax)), RST(ng)%Rindex
           END IF
@@ -136,7 +141,8 @@
      &                     GRID(ng) % rmask,                            &
 # endif
      &                     VEG(ng)%Thrust_max)
-        IF (status.ne.nf90_noerr) THEN
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+     &                 __FILE__)) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idTmax)), RST(ng)%Rindex
           END IF
@@ -156,7 +162,8 @@
      &                     GRID(ng) % rmask,                            &
 # endif
      &                     VEG(ng)%Thrust_tonelli)
-        IF (status.ne.nf90_noerr) THEN
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+     &                 __FILE__)) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idTton)), RST(ng)%Rindex
           END IF

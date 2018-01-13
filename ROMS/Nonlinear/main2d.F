@@ -29,32 +29,33 @@
       USE mod_scalars
       USE mod_stepping
 !
-      USE diag_mod, ONLY : diag
+      USE dateclock_mod,        ONLY : time_string
+      USE diag_mod,             ONLY : diag
 # ifdef TLM_CHECK
-      USE dotproduct_mod, ONLY : nl_dotproduct
+      USE dotproduct_mod,       ONLY : nl_dotproduct
 # endif
 # if defined W4DPSAS || defined NLM_OUTER || \
      defined W4DPSAS_SENSITIVITY
-      USE forcing_mod, ONLY : forcing
+      USE forcing_mod,          ONLY : forcing
 # endif
 # ifdef ADJUST_WSTRESS
-      USE frc_adjust_mod, ONLY : frc_adjust
+      USE frc_adjust_mod,       ONLY : frc_adjust
 # endif
-      USE ini_fields_mod, ONLY : ini_fields, ini_zeta
+      USE ini_fields_mod,       ONLY : ini_fields, ini_zeta
 # ifdef NESTING
-      USE nesting_mod, ONLY : nesting
+      USE nesting_mod,          ONLY : nesting
 #  ifndef ONE_WAY
-      USE nesting_mod, ONLY : do_twoway
+      USE nesting_mod,          ONLY : do_twoway
 #  endif
 # endif
 # if defined ADJUST_BOUNDARY
-      USE obc_adjust_mod, ONLY : obc_adjust, load_obc
+      USE obc_adjust_mod,       ONLY : obc_adjust, load_obc
 # endif
 # ifdef AIR_OCEAN
-      USE ocean_coupler_mod, ONLY : ocn2atm_coupling
+      USE ocean_coupler_mod,    ONLY : ocn2atm_coupling
 # endif
 # ifdef WAVES_OCEAN
-      USE ocean_coupler_mod, ONLY : ocn2wav_coupling
+      USE ocean_coupler_mod,    ONLY : ocn2wav_coupling
 # endif
 # ifdef WEC_MELLOR
       USE radiation_stress_mod, ONLY : radiation_stress
@@ -67,16 +68,17 @@
 #  endif
 # endif
 # ifdef AVERAGES
-      USE set_avg_mod, ONLY : set_avg
+      USE set_avg_mod,          ONLY : set_avg
 # endif
 # if defined SSH_TIDES || defined UV_TIDES
-      USE set_tides_mod, ONLY : set_tides
+      USE set_tides_mod,        ONLY : set_tides
 # endif
-      USE set_vbc_mod, ONLY: set_vbc
-      USE step2d_mod, ONLY : step2d
+      USE set_vbc_mod,          ONLY : set_vbc
+      USE step2d_mod,           ONLY : step2d
 # ifdef FLOATS
-      USE step_floats_mod, ONLY : step_floats
+      USE step_floats_mod,      ONLY : step_floats
 # endif
+      USE strings_mod,          ONLY : FoundError
 !
       implicit none
 !
@@ -127,7 +129,8 @@
 !  step.
 !
           CALL ntimesteps (iNLM, RunInterval, nl, Nsteps, Rsteps)
-          IF (exit_flag.ne.NoError) RETURN
+          IF (FoundError(exit_flag, NoError, __LINE__,                  &
+     &                   __FILE__)) RETURN
           IF ((nl.le.0).or.(nl.gt.NestLayers)) EXIT
 !
 !  Time-step governing equations for Nsteps.
@@ -177,7 +180,8 @@
               CALL get_data (ng)
 !$OMP END MASTER
 !$OMP BARRIER
-              IF (exit_flag.ne.NoError) RETURN
+              IF (FoundError(exit_flag, NoError, __LINE__,              &
+     &                       __FILE__)) RETURN
             END DO
 !
 !-----------------------------------------------------------------------
@@ -192,7 +196,8 @@
               END DO
 !$OMP BARRIER
             END DO
-            IF (exit_flag.ne.NoError) RETURN
+            IF (FoundError(exit_flag, NoError, __LINE__,                &
+     &                     __FILE__)) RETURN
 !
 !-----------------------------------------------------------------------
 !  Initialize all time levels and compute other initial fields.
@@ -254,7 +259,8 @@
               END DO
 !$OMP BARRIER
             END DO
-            IF (exit_flag.ne.NoError) RETURN
+            IF (FoundError(exit_flag, NoError, __LINE__,                &
+     &                     __FILE__)) RETURN
 
 # ifdef AIR_OCEAN
 !
@@ -394,7 +400,8 @@
               CALL output (ng)
 !$OMP END MASTER
 !$OMP BARRIER
-              IF ((exit_flag.ne.NoError).or.                            &
+              IF ((FoundError(exit_flag, NoError, __LINE__,             &
+     &                        __FILE__)).or.                            &
      &            ((iic(ng).eq.(ntend(ng)+1)).and.(ng.eq.Ngrids))) THEN
                 RETURN
               END IF

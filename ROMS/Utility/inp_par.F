@@ -1,7 +1,7 @@
 #include "cppdefs.h"
       SUBROUTINE inp_par (model)
 !
-!svn $Id: inp_par.F 830 2017-01-24 21:21:11Z arango $
+!svn $Id: inp_par.F 885 2017-12-27 23:18:30Z arango $
 !================================================== Hernan G. Arango ===
 !  Copyright (c) 2002-2017 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
@@ -28,10 +28,12 @@
       USE mod_tides, ONLY : nstep_hour
 # endif
 !
+      USE dateclock_mod,  ONLY : get_date
 #ifdef DISTRIBUTE
       USE distribute_mod, ONLY : mp_bcasti, mp_bcasts
 #endif
-      USE ran_state, ONLY: ran_seed
+      USE ran_state,      ONLY : ran_seed
+      USE strings_mod,    ONLY : FoundError
 !
       implicit none
 !
@@ -89,8 +91,9 @@
 !-----------------------------------------------------------------------
 !
       IF (Lwrite) WRITE (out,10) version, TRIM(date_str)
- 10   FORMAT (/,' Model Input Parameters:  ROMS/TOMS version ',a,/,     &
-     &       26x,a,/,1x,77('-'))
+ 10   FORMAT (80('-'),/,                                                &
+              ' Model Input Parameters:  ROMS/TOMS version ',a,/,       &
+     &        26x,a,/,1x,80('-'))
 
 #ifdef COAWST_COUPLING
 !
@@ -142,14 +145,16 @@
 #ifdef DISTRIBUTE
       CALL mp_bcasti (1, model, exit_flag)
 #endif
-      IF (exit_flag.ne.NoError) RETURN
+      IF (FoundError(exit_flag, NoError, __LINE__,                      &
+     &               __FILE__)) RETURN
 #ifdef NESTING
 !
 !  Read in nesting contact points NetCDF file and allocate and
 !  initialize several structures and variables.
 !
       CALL set_contact (1, model)
-      IF (exit_flag.ne.NoError) RETURN
+      IF (FoundError(exit_flag, NoError, __LINE__,                      &
+     &               __FILE__)) RETURN
 #endif
 !
 !-----------------------------------------------------------------------
@@ -167,6 +172,32 @@
       IF (ANY(CompositeGrid).or.ANY(RefinedGrid)) THEN
         NghostPoints=MAX(3,NghostPoints)
       END IF
+!
+!  Determine the switch to process input open boundary conditions data.
+!
+!  In nesting applications, the lateral boundary conditions data is
+!  is needed only by the main coarser grid (RefineScale(ng)=0).
+!
+      DO ng=1,Ngrids
+        IF (.not.(RefinedGrid(ng).and.RefineScale(ng).gt.0)) THEN
+          LprocessOBC(ng)=.TRUE.
+        END IF
+      END DO
+
+#if defined SSH_TIDES || defined UV_TIDES
+!
+!  Determine the switch to process input tidal forcing data.
+!
+!  In nesting applications, the tides are processed only by the main
+!  coarser grid (RefineScale(ng)=0) and the other grids get tidal
+!  forcing from the contact areas.
+!
+      DO ng=1,Ngrids
+        IF (.not.(RefinedGrid(ng).and.RefineScale(ng).gt.0)) THEN
+          LprocessTides(ng)=.TRUE.
+        END IF
+      END DO
+#endif
 !
 !  Set boundary edge I- or J-indices for each variable type.
 !
@@ -629,7 +660,8 @@
 #ifdef DISTRIBUTE
       CALL mp_bcasti (1, model, exit_flag)
 #endif
-      IF (exit_flag.ne.NoError) RETURN
+      IF (FoundError(exit_flag, NoError, __LINE__,                      &
+     &               __FILE__)) RETURN
 !
 !  Report tile minimum and maximum fractional grid coordinates.
 !
@@ -817,7 +849,8 @@
         END DO
 #endif
       END IF
-      IF (exit_flag.ne.NoError) RETURN
+      IF (FoundError(exit_flag, NoError, __LINE__,                      &
+     &               __FILE__)) RETURN
 !
 !-----------------------------------------------------------------------
 !  Compute various constants.
@@ -938,7 +971,7 @@
 !  Set internal switch for processing climatology data.
 !
 #ifdef SOLVE3D
-# if defined CLIMA_TS_MIX && (defined TS_DIF2 || defined TS_DIF4)
+# if defined TS_MIX_CLIMA && (defined TS_DIF2 || defined TS_DIF4)
         Lclimatology(ng)=.TRUE.
 # endif
         IF (LsshCLM(ng).or.                                             &
@@ -1192,7 +1225,8 @@
       CALL mp_bcasti (1, model, exit_flag)
       CALL mp_bcasts (1, model, Coptions)
 #endif
-      IF (exit_flag.ne.NoError) RETURN
+      IF (FoundError(exit_flag, NoError, __LINE__,                      &
+     &               __FILE__)) RETURN
 !
 !-----------------------------------------------------------------------
 !  Initialize random number sequence so we can get identical results
@@ -1209,7 +1243,16 @@
 !
 !=======================================================================
 !                                                                      !
-!  This function decodes lines of text from input script files.        !
+!  This function decodes lines of text from input script files. It is  !
+!  to evaluate ROMS unique namelist parameters.                        !
+!                                                                      !
+!  Arguments:                                                          !
+!                                                                      !
+!    line_text      Input scripts lines as text (string)               !
+!    KeyWord        Input parameter keyword (string)                   !
+!    Nval           Number of values processed (integer)               !
+!    Cval           Input values as characters (string array)          !
+!    Rval           Input values as mumbers (real array)               !
 !                                                                      !
 !=======================================================================
 !
@@ -1444,6 +1487,8 @@
       USE mod_netcdf
       USE mod_scalars
 !
+      USE strings_mod,   ONLY : FoundError
+!
       implicit none
 !
 !  Imported variable declarations.
@@ -1457,9 +1502,9 @@
 !
       logical :: foundit, isURL
 
-      integer :: ncid
+      integer :: lstr, ncid
 !
-      SourceFile='inp_par.F, find_file'
+      SourceFile=__FILE__ // ", find_file"
 !
 !-----------------------------------------------------------------------
 !  Check if the file exit.
@@ -1469,13 +1514,16 @@
 !
 !  Check for empty file name string.
 !
-      IF (LEN_TRIM(fname).eq.0) THEN
+      lstr=LEN_TRIM(fname)
+      IF (lstr.eq.0) THEN
         IF (Master) THEN
           WRITE (stdout,10) TRIM(KeyWord)
- 10       FORMAT (/,' INP_PAR - empty file name string for ',           &
-     &            'input script KeyWord: ',a)
+ 10       FORMAT (/,' INP_PAR:FIND_FILE - empty file name string ',     &
+     &            'for standard input script KeyWord: ',a)
         END IF
         exit_flag=5
+        IF (FoundError(exit_flag, NoError, __LINE__,                    &
+     &                 __FILE__)) RETURN
       END IF
 !
 !  Check if provided file is a URL.  This implies the file is a NetCDF

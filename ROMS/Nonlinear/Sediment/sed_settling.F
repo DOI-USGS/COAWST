@@ -60,7 +60,7 @@
 # include "tile.h"
 !
 # ifdef PROFILE
-      CALL wclock_on (ng, iNLM, 16)
+      CALL wclock_on (ng, iNLM, 16, __LINE__, __FILE__)
 # endif
       CALL sed_settling_tile (ng, tile,                                 &
      &                        LBi, UBi, LBj, UBj,                       &
@@ -71,7 +71,7 @@
      &                        SEDBED(ng) % settling_flux,               &
      &                        OCEAN(ng) % t)
 # ifdef PROFILE
-      CALL wclock_off (ng, iNLM, 16)
+      CALL wclock_off (ng, iNLM, 16, __LINE__, __FILE__)
 # endif
       RETURN
       END SUBROUTINE sed_settling

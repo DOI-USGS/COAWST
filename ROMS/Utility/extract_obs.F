@@ -2,7 +2,7 @@
       MODULE extract_obs_mod
 #if defined FOUR_DVAR || defined VERIFICATION
 !
-!svn $Id: extract_obs.F 830 2017-01-24 21:21:11Z arango $
+!svn $Id: extract_obs.F 880 2017-11-15 22:04:38Z arango $
 !================================================== Hernan G. Arango ===
 !  Copyright (c) 2002-2017 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
@@ -137,6 +137,9 @@
      &                          Aobs)
 !***********************************************************************
 !
+      USE mod_ncparam,  ONLY : isUbar, isVbar
+      USE mod_fourdvar, ONLY : ObsState2Type
+!
 !  Imported variable declarations.
 !
       integer, intent(in) :: ng, Imin, Imax, Jmin, Jmax
@@ -193,10 +196,10 @@
      &      ((TimeLB.le.Tobs(iobs)).and.(Tobs(iobs).lt.TimeUB)).and.    &
      &      ((Xmin.le.Xobs(iobs)).and.(Xobs(iobs).lt.Xmax)).and.        &
      &      ((Ymin.le.Yobs(iobs)).and.(Yobs(iobs).lt.Ymax))) THEN
-          IF (ObsType(iobs).eq.2) THEN
+          IF (ObsType(iobs).eq.ObsState2Type(isUbar)) THEN
             i1=INT(Xobs(iobs)+0.5_r8)        ! 2D U-grid type variable
             j1=INT(Yobs(iobs))
-          ELSE IF (ObsType(iobs).eq.3) THEN
+          ELSE IF (ObsType(iobs).eq.ObsState2Type(isVbar)) THEN
             i1=INT(Xobs(iobs))               ! 2D V-grid type variable
             j1=INT(Yobs(iobs)+0.5_r8)
           ELSE
@@ -269,6 +272,9 @@
 !
       USE mod_param
 !
+      USE mod_ncparam,  ONLY : isUvel, isVvel
+      USE mod_fourdvar, ONLY : ObsState2Type
+!
 !  Imported variable declarations.
 !
       integer, intent(in) :: ng, Imin, Imax, Jmin, Jmax
@@ -329,10 +335,10 @@
      &      ((TimeLB.le.Tobs(iobs)).and.(Tobs(iobs).lt.TimeUB)).and.    &
      &      ((Xmin.le.Xobs(iobs)).and.(Xobs(iobs).lt.Xmax)).and.        &
      &      ((Ymin.le.Yobs(iobs)).and.(Yobs(iobs).lt.Ymax))) THEN
-          IF (ObsType(iobs).eq.4) THEN
+          IF (ObsType(iobs).eq.ObsState2Type(isUvel)) THEN
             i1=INT(Xobs(iobs)+0.5_r8)        ! 3D U-grid type variable
             j1=INT(Yobs(iobs))
-          ELSE IF (ObsType(iobs).eq.5) THEN
+          ELSE IF (ObsType(iobs).eq.ObsState2Type(isVvel)) THEN
             i1=INT(Xobs(iobs))               ! 3D V-grid type variable
             j1=INT(Yobs(iobs)+0.5_r8)
           ELSE

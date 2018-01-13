@@ -19,6 +19,12 @@
 !  Wave current interacation in an oceanic circulation model with a    !
 !  vortex-force formalism: Applications to surf zone, Ocean Modeling,  !
 !  34, 16-35.                                                          !
+!                                                                      !
+!  Kumar, N., Voulgaris, G., Warner, J.C., and M., Olabarrieta (2012). !
+!  Implementation of a vortex force formalism in the coupled           !
+!  ocean-atmosphere-wave-sediment transport (COAWST) modeling system   !
+!  for inner-shelf and surf-zone applications.                         !
+!  Ocean Modeling 47, pp 65-95.                                        !
 !=======================================================================
 !
       implicit none

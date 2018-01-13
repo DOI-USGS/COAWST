@@ -2,7 +2,7 @@
       MODULE ad_ini_fields_mod
 #ifdef ADJOINT
 !
-!svn $Id: ad_ini_fields.F 830 2017-01-24 21:21:11Z arango $
+!svn $Id: ad_ini_fields.F 854 2017-07-18 23:28:45Z arango $
 !================================================== Hernan G. Arango ===
 !  Copyright (c) 2002-2017 The ROMS/TOMS Group       Andrew M. Moore   !
 !    Licensed under a MIT/X style license                              !
@@ -50,7 +50,7 @@
 # include "tile.h"
 !
 # ifdef PROFILE
-      CALL wclock_on (ng, iADM, 2)
+      CALL wclock_on (ng, iADM, 2, __LINE__, __FILE__)
 # endif
       CALL ad_ini_fields_tile (ng, tile, model,                         &
      &                         LBi, UBi, LBj, UBj,                      &
@@ -82,7 +82,7 @@
      &                         OCEAN(ng) % zeta,                        &
      &                         OCEAN(ng) % ad_zeta)
 # ifdef PROFILE
-      CALL wclock_off (ng, iADM, 2)
+      CALL wclock_off (ng, iADM, 2, __LINE__, __FILE__)
 # endif
 
       RETURN
@@ -927,7 +927,7 @@
 # include "tile.h"
 !
 # ifdef PROFILE
-      CALL wclock_on (ng, iADM, 2)
+      CALL wclock_on (ng, iADM, 2, __LINE__, __FILE__)
 # endif
       CALL ad_ini_zeta_tile (ng, tile, model,                           &
      &                       LBi, UBi, LBj, UBj,                        &
@@ -951,7 +951,7 @@
      &                       OCEAN(ng) % ad_zeta_sol,                   &
      &                       OCEAN(ng) % ad_zeta)
 # ifdef PROFILE
-      CALL wclock_off (ng, iADM, 2)
+      CALL wclock_off (ng, iADM, 2, __LINE__, __FILE__)
 # endif
       RETURN
       END SUBROUTINE ad_ini_zeta
@@ -1361,7 +1361,7 @@
 # include "tile.h"
 !
 # ifdef PROFILE
-      CALL wclock_on (ng, iADM, 2)
+      CALL wclock_on (ng, iADM, 2, __LINE__, __FILE__)
 # endif
       CALL ad_out_fields_tile (ng, tile, model,                         &
      &                         LBi, UBi, LBj, UBj,                      &
@@ -1390,7 +1390,7 @@
      &                         OCEAN(ng) % ad_vbar,                     &
      &                         OCEAN(ng) % ad_zeta)
 # ifdef PROFILE
-      CALL wclock_off (ng, iADM, 2)
+      CALL wclock_off (ng, iADM, 2, __LINE__, __FILE__)
 # endif
 
       RETURN
@@ -1777,7 +1777,7 @@
 # include "tile.h"
 !
 # ifdef PROFILE
-      CALL wclock_on (ng, iADM, 2)
+      CALL wclock_on (ng, iADM, 2, __LINE__, __FILE__)
 # endif
       CALL ad_out_zeta_tile (ng, tile, model,                           &
      &                       LBi, UBi, LBj, UBj,                        &
@@ -1801,7 +1801,7 @@
      &                       OCEAN(ng) % ad_zeta_sol,                   &
      &                       OCEAN(ng) % ad_zeta)
 # ifdef PROFILE
-      CALL wclock_off (ng, iADM, 2)
+      CALL wclock_off (ng, iADM, 2, __LINE__, __FILE__)
 # endif
 
       RETURN

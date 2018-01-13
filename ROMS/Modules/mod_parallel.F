@@ -1,7 +1,7 @@
 #include "cppdefs.h"
       MODULE mod_parallel
 !
-!svn $Id: mod_parallel.F 830 2017-01-24 21:21:11Z arango $
+!svn $Id: mod_parallel.F 875 2017-11-03 01:10:02Z arango $
 !================================================== Hernan G. Arango ===
 !  Copyright (c) 2002-2017 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
@@ -32,6 +32,8 @@
 !
       logical :: InpThread
       logical :: OutThread
+
+!$OMP THREADPRIVATE (InpThread, OutThread)
 !
 !  Number of shared-memory parallel threads or distributed-memory
 !  parallel nodes.
@@ -77,8 +79,12 @@
 !    Cstr          Starting time for program region.
 !    Cend          Ending time for program region.
 !    Csum          Accumulated time for progam region.
+!    Ctotal        Total time profiled
+!    total_cpu     Total elapsed CPU
 !
       integer, allocatable :: proc(:,:,:)
+
+      real(r8) :: Ctotal, total_cpu, total_model(4)
 
       real(r8), allocatable :: Cstr(:,:,:)
       real(r8), allocatable :: Cend(:,:,:)
@@ -170,6 +176,12 @@
 !$OMP END PARALLEL
       allocate ( Csum(0:Nregion,4,Ngrids) )
       Csum(0:Nregion,1:4,1:Ngrids)=0.0_r8
+!
+! Initialize other profiling variables.
+!
+      Ctotal=0.0_r8
+      total_cpu=0.0_r8
+      total_model=0.0_r8
 
 #if defined DISTRIBUTE && defined PROFILE
 !
@@ -201,30 +213,34 @@
 #ifdef DISTRIBUTE
       integer :: MyError
 #else
-      integer :: my_numthreads
+      integer :: my_numthreads, my_threadnum
 #endif
+
+#if defined _OPENMP
 !
 !-----------------------------------------------------------------------
-!  Initialize shared-memory (OpenMP) or serial configuration.
+!  Initialize shared-memory (OpenMP) configuration.
 !-----------------------------------------------------------------------
-
-#ifdef _OPENMP
 !
 !  Disable dynamic adjustment, by the run-time environment, of the
 !  number of threads available to execute parallel regions.
 !
       CALL omp_set_dynamic (.FALSE.)
-#endif
-#ifndef DISTRIBUTE
 !
-!  Inquire number of threads in parallel region.
+!  Inquire number of threads in parallel region.  Set master and I/O
+!  switches.
 !
       numthreads=my_numthreads()
+      IF (my_threadnum().eq.0) THEN
+        InpThread=.TRUE.
+        OutThread=.TRUE.
+      ELSE
+        InpThread=.FALSE.
+        OutThread=.FALSE.
+      END IF
       Master=.TRUE.
-      InpThread=.TRUE.
-      OutThread=.TRUE.
-#endif
-#ifdef DISTRIBUTE
+
+#elif defined DISTRIBUTE
 # ifdef MPI
 !
 !-----------------------------------------------------------------------
@@ -245,27 +261,34 @@
 !
 !  Identify master, input and output threads.
 !
-#  ifdef PARALLEL_IN
-      InpThread=.TRUE.
-#  else
-      InpThread=.FALSE.
-      IF (MyRank.eq.MyMaster) THEN
-        InpThread=.TRUE.
-      END IF
-#  endif
-#  ifdef PARALLEL_OUT
-      OutThread=.TRUE.
-#  else
-      OutThread=.FALSE.
-      IF (MyRank.eq.MyMaster) THEN
-        OutThread=.TRUE.
-      END IF
-#  endif
+#  ifdef PARALLEL_IO
       Master=.FALSE.
+      InpThread=.TRUE.
+      OutThread=.TRUE.
       IF (MyRank.eq.MyMaster) THEN
         Master=.TRUE.
       END IF
+#  else
+      Master=.FALSE.
+      InpThread=.FALSE.
+      OutThread=.FALSE.
+      IF (MyRank.eq.MyMaster) THEN
+        Master=.TRUE.
+        InpThread=.TRUE.
+        OutThread=.TRUE.
+      END IF
+#  endif
 # endif
+#else
+!
+!-----------------------------------------------------------------------
+!  Initialize serial configuration.
+!-----------------------------------------------------------------------
+!
+      numthreads=my_numthreads()
+      Master=.TRUE.
+      InpThread=.TRUE.
+      OutThread=.TRUE.
 #endif
 
       RETURN

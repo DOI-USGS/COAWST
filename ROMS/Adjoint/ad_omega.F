@@ -2,7 +2,7 @@
       MODULE ad_omega_mod
 #if defined ADJOINT && defined SOLVE3D
 !
-!svn $Id: ad_omega.F 830 2017-01-24 21:21:11Z arango $
+!svn $Id: ad_omega.F 854 2017-07-18 23:28:45Z arango $
 !================================================== Hernan G. Arango ===
 !  Copyright (c) 2002-2017 The ROMS/TOMS Group       Andrew M. Moore   !
 !    Licensed under a MIT/X style license                              !
@@ -27,7 +27,7 @@
       CONTAINS
 !
 !***********************************************************************
-      SUBROUTINE ad_omega (ng, tile)
+      SUBROUTINE ad_omega (ng, tile, model)
 !***********************************************************************
 !
       USE mod_param
@@ -40,16 +40,16 @@
 !
 !  Imported variable declarations.
 !
-      integer, intent(in) :: ng, tile
+      integer, intent(in) :: ng, tile, model
 !
 !  Local variable declarations.
 !
 # include "tile.h"
 !
 # ifdef PROFILE
-      CALL wclock_on (ng, iADM, 13)
+      CALL wclock_on (ng, model, 13, __LINE__, __FILE__)
 # endif
-      CALL ad_omega_tile (ng, tile,                                     &
+      CALL ad_omega_tile (ng, tile, model,                              &
      &                    LBi, UBi, LBj, UBj,                           &
      &                    IminS, ImaxS, JminS, JmaxS,                   &
 # if defined SEDIMENT_NOT_YET && defined SED_MORPH_NOT_YET
@@ -67,13 +67,13 @@
      &                    OCEAN(ng) % W,                                &
      &                    OCEAN(ng) % ad_W)
 # ifdef PROFILE
-      CALL wclock_off (ng, iADM, 13)
+      CALL wclock_off (ng, model, 13, __LINE__, __FILE__)
 # endif
       RETURN
       END SUBROUTINE ad_omega
 !
 !***********************************************************************
-      SUBROUTINE ad_omega_tile (ng, tile,                               &
+      SUBROUTINE ad_omega_tile (ng, tile, model,                        &
      &                          LBi, UBi, LBj, UBj,                     &
      &                          IminS, ImaxS, JminS, JmaxS,             &
 # if defined SEDIMENT_NOT_YET && defined SED_MORPH_NOT_YET
@@ -99,7 +99,7 @@
 !
 !  Imported variable declarations.
 !
-      integer, intent(in) :: ng, tile
+      integer, intent(in) :: ng, tile, model
       integer, intent(in) :: LBi, UBi, LBj, UBj
       integer, intent(in) :: IminS, ImaxS, JminS, JmaxS
 # if defined SEDIMENT_NOT_YET && defined SED_MORPH_NOT_YET
@@ -169,13 +169,13 @@
 !  Set lateral boundary conditions.
 !
 # ifdef DISTRIBUTE
-!>    CALL mp_exchange3d (ng, tile, iTLM, 1,                            &
+!>    CALL mp_exchange3d (ng, tile, model, 1,                           &
 !>   &                    LBi, UBi, LBj, UBj, 0, N(ng),                 &
 !>   &                    NghostPoints,                                 &
 !>   &                    EWperiodic(ng), NSperiodic(ng),               &
 !>   &                    tl_W)
 !>
-      CALL ad_mp_exchange3d (ng, tile, iADM, 1,                         &
+      CALL ad_mp_exchange3d (ng, tile, model, 1,                        &
      &                       LBi, UBi, LBj, UBj, 0, N(ng),              &
      &                       NghostPoints,                              &
      &                       EWperiodic(ng), NSperiodic(ng),            &
@@ -356,7 +356,7 @@
      &                  LBi, UBi, LBj, UBj, 0, N(ng),                   &
      &                  W)
 # ifdef DISTRIBUTE
-      CALL mp_exchange3d (ng, tile, iADM, 1,                            &
+      CALL mp_exchange3d (ng, tile, model, 1,                           &
      &                    LBi, UBi, LBj, UBj, 0, N(ng),                 &
      &                    NghostPoints,                                 &
      &                    EWperiodic(ng), NSperiodic(ng),               &

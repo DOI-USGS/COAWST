@@ -1,7 +1,7 @@
 /*
 ** Include file "globaldef.h"
 **
-** svn $Id: globaldefs.h 830 2017-01-24 21:21:11Z arango $
+** svn $Id: globaldefs.h 876 2017-11-13 23:24:37Z arango $
 ********************************************************** Hernan G. Arango ***
 ** Copyright (c) 2002-2017 The ROMS/TOMS Group     Alexander F. Shchepetkin  **
 **   Licensed under a MIT/X style license                                    **
@@ -45,6 +45,17 @@
 
 #if defined MPI
 # define DISTRIBUTE
+#endif
+
+/*
+** Make sure that either "mpi_allgather" or "mpi_allreduce" is used
+** in mp_reduce.  Low-level routines give an error.
+*/
+
+#ifdef DISTRIBUTE
+# if !(defined REDUCE_ALLGATHER || defined REDUCE_ALLREDUCE)
+#  define REDUCE_ALLGATHER
+# endif
 #endif
 
 /*
@@ -539,7 +550,7 @@
 
 #if defined BIO_FENNEL  || defined ECOSIM      || \
     defined ESTUARYBGC  || defined NEMURO      || \
-    defined NPZD_FRANKS ||                        \
+    defined HYPOXIA_SRM || defined NPZD_FRANKS || \
     defined NPZD_IRON   || defined NPZD_POWELL || \
     defined BIO_UMAINE  || defined BEST_NPZ    || \
     defined RED_TIDE
@@ -569,13 +580,18 @@
 **
 */
 
-#if defined ROMS_MODEL && (defined SWAN_MODEL || defined WRF_MODEL)
+#if defined ROMS_MODEL && (defined SWAN_MODEL || defined WRF_MODEL || \
+                           defined WW3_MODEL)
 # define ROMS_COUPLING
 #endif
 #if defined SWAN_MODEL && (defined ROMS_MODEL || defined WRF_MODEL)
 # define SWAN_COUPLING
 #endif
-#if defined WRF_MODEL && (defined SWAN_MODEL || defined ROMS_MODEL)
+#if defined WW3_MODEL && (defined ROMS_MODEL || defined WRF_MODEL)
+# define WW3_COUPLING
+#endif
+#if defined WRF_MODEL && (defined SWAN_MODEL || defined WW3_MODEL || \
+                          defined ROMS_MODEL)
 # define WRF_COUPLING
 #endif
 
@@ -583,11 +599,11 @@
 # define AIR_OCEAN
 #endif
 
-#if defined WRF_COUPLING && defined SWAN_COUPLING
+#if defined WRF_COUPLING && (defined SWAN_COUPLING || defined WW3_COUPLING)
 # define AIR_WAVES
 #endif
 
-#if (defined REFDIF_COUPLING || defined SWAN_COUPLING) && \
+#if (defined WW3_COUPLING || defined SWAN_COUPLING) && \
      defined ROMS_COUPLING
 # define WAVES_OCEAN
 #endif
@@ -737,7 +753,6 @@
     ( defined SALINITY     && !defined ANA_SSFLUX    && \
      (defined BULK_FLUXES  && !defined EMINUSP))     || \
     ( defined SOLAR_SOURCE && (!defined ANA_SRFLUX   && !defined AIR_OCEAN)) || \
-    ( defined  SSH_TIDES   || defined UV_TIDES)      || \
     ( defined BBL_MODEL    && (!defined ANA_WWAVE  && !defined WAVES_OCEAN && \
                                !defined INWAVE_MODEL)) || \
     ( defined SEDIMENT     && !defined ANA_SPFLUX)   || \
@@ -748,7 +763,6 @@
 # endif
 #else
 # if !defined ANA_SMFLUX   || \
-    ( defined  SSH_TIDES   || defined UV_TIDES)
 #  define FRC_FILE
 # endif
 #endif

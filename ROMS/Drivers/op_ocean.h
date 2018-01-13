@@ -1,6 +1,6 @@
       MODULE ocean_control_mod
 !
-!svn $Id: op_ocean.h 830 2017-01-24 21:21:11Z arango $
+!svn $Id: op_ocean.h 858 2017-07-31 23:02:30Z arango $
 !================================================== Hernan G. Arango ===
 !  Copyright (c) 2002-2017 The ROMS/TOMS Group       Andrew M. Moore   !
 !    Licensed under a MIT/X style license                              !
@@ -53,16 +53,16 @@
       USE mod_iounits
       USE mod_scalars
       USE mod_storage
-
-#ifdef MCT_LIB
 !
-# ifdef AIR_OCEAN
+#ifdef MCT_LIB
+# ifdef ATM_COUPLING
       USE ocean_coupler_mod, ONLY : initialize_ocn2atm_coupling
 # endif
-# ifdef WAVES_OCEAN
+# ifdef WAV_COUPLING
       USE ocean_coupler_mod, ONLY : initialize_ocn2wav_coupling
 # endif
 #endif
+      USE strings_mod,       ONLY : FoundError
 !
 !  Imported variable declarations.
 !
@@ -117,7 +117,8 @@
 !  grids and dimension parameters are known.
 !
         CALL inp_par (iTLM)
-        IF (exit_flag.ne.NoError) RETURN
+        IF (FoundError(exit_flag, NoError, __LINE__,                    &
+     &                 __FILE__)) RETURN
 !
 !  Set domain decomposition tile partition range.  This range is
 !  computed only once since the "first_tile" and "last_tile" values
@@ -150,7 +151,7 @@
         DO ng=1,Ngrids
 !$OMP PARALLEL
           DO thread=THREAD_RANGE
-            CALL wclock_on (ng, iTLM, 0)
+            CALL wclock_on (ng, iTLM, 0, __LINE__, __FILE__)
           END DO
 !$OMP END PARALLEL
         END DO
@@ -163,17 +164,17 @@
 
       END IF
 
-#if defined MCT_LIB && (defined AIR_OCEAN || defined WAVES_OCEAN)
+#if defined MCT_LIB && (defined ATM_COUPLING || defined WAV_COUPLING)
 !
 !-----------------------------------------------------------------------
 !  Initialize coupling streams between model(s).
 !-----------------------------------------------------------------------
 !
       DO ng=1,Ngrids
-# ifdef AIR_OCEAN
+# ifdef ATM_COUPLING
         CALL initialize_ocn2atm_coupling (ng, MyRank)
 # endif
-# ifdef WAVES_OCEAN
+# ifdef WAV_COUPLING
         CALL initialize_ocn2wav_coupling (ng, MyRank)
 # endif
       END DO
@@ -192,7 +193,8 @@
 !$OMP PARALLEL
         CALL tl_initial (ng)
 !$OMP END PARALLEL
-        IF (exit_flag.ne.NoError) RETURN
+        IF (FoundError(exit_flag, NoError, __LINE__,                    &
+     &                 __FILE__)) RETURN
       END DO
 !
 !  Allocate arrays associated with Generalized Stability Theory (GST)
@@ -267,7 +269,8 @@
         ELSE
           CALL def_gst (ng, iTLM)
         END IF
-        IF (exit_flag.ne.NoError) RETURN
+        IF (FoundError(exit_flag, NoError, __LINE__,                    &
+     &                 __FILE__)) RETURN
       END DO
 #endif
 
@@ -306,7 +309,8 @@
       USE mod_storage
 !
       USE propagator_mod
-      USE packing_mod, ONLY : r_norm2
+      USE packing_mod,   ONLY : r_norm2
+      USE strings_mod,   ONLY : FoundError
 !
 !  Imported variable declarations
 !
@@ -361,7 +365,7 @@
 !
         DO ng=1,Ngrids
 #ifdef PROFILE
-          CALL wclock_on (ng, iTLM, 38)
+          CALL wclock_on (ng, iTLM, 38, __LINE__, __FILE__)
 #endif
 #ifdef DISTRIBUTE
           CALL pdsaupd (OCN_COMM_WORLD,                                 &
@@ -383,7 +387,7 @@
 #endif
           Nconv(ng)=iaup2(4)
 #ifdef PROFILE
-          CALL wclock_off (ng, iTLM, 38)
+          CALL wclock_off (ng, iTLM, 38, __LINE__, __FILE__)
 #endif
 #ifdef CHECKPOINTING
 !
@@ -395,7 +399,8 @@
           IF ((MOD(iter,nGST).eq.0).or.(iter.ge.MaxIterGST).or.         &
      &        (ANY(ido.eq.99))) THEN
             CALL wrt_gst (ng, iTLM)
-            IF (exit_flag.ne.NoError) RETURN
+            IF (FoundError(exit_flag, NoError, __LINE__,                &
+     &                     __FILE__)) RETURN
           END IF
 #endif
         END DO
@@ -443,7 +448,8 @@
 !$OMP PARALLEL
           CALL propagator (RunInterval, state, ad_state)
 !$OMP END PARALLEL
-          IF (exit_flag.ne.NoError) RETURN
+          IF (FoundError(exit_flag, NoError, __LINE__,                  &
+     &                   __FILE__)) RETURN
         ELSE
           IF (ANY(info.ne.0)) THEN
             DO ng=1,Ngrids
@@ -471,7 +477,7 @@
      &                            iparam(3,ng)
               END IF
 #ifdef PROFILE
-              CALL wclock_on (ng, iTLM, 38)
+              CALL wclock_on (ng, iTLM, 38, __LINE__, __FILE__)
 #endif
 #ifdef DISTRIBUTE
               CALL pdseupd (OCN_COMM_WORLD,                             &
@@ -497,7 +503,7 @@
      &                     SworkL(1,ng), LworkL, info(ng))
 #endif
 #ifdef PROFILE
-              CALL wclock_off (ng, iTLM, 38)
+              CALL wclock_off (ng, iTLM, 38, __LINE__, __FILE__)
 #endif
             END DO
 
@@ -557,7 +563,8 @@
 !$OMP PARALLEL
                 CALL propagator (RunInterval, state, ad_state)
 !$OMP END PARALLEL
-                IF (exit_flag.ne.NoError) RETURN
+                IF (FoundError(exit_flag, NoError, __LINE__,            &
+     &                         __FILE__)) RETURN
 !
                 DO ng=1,Ngrids
                   CALL r_norm2 (ng, iTLM, Nstr(ng), Nend(ng),           &
@@ -575,8 +582,8 @@
 !  twice in the TLM file for the initial and final perturbation of
 !  the eigenvector.
 !
+                SourceFile=__FILE__ // ", ROMS_run"
                 DO ng=1,Ngrids
-                  SourceFile='op_ocean.h, ROMS_run'
                   my_norm(1)=norm(i,ng)
                   my_norm(2)=my_norm(1)
                   my_value(1)=RvalueR(i,ng)
@@ -589,7 +596,8 @@
      &                                    start = (/TLM(ng)%Rindex-1/), &
      &                                    total = (/2/),                &
      &                                    ncid = TLM(ng)%ncid)
-                    IF (exit_flag.ne. NoError) RETURN
+                    IF (FoundError(exit_flag, NoError, __LINE__,        &
+     &                             __FILE__)) RETURN
 
                     CALL netcdf_put_fvar (ng, iTLM, TLM(ng)%name,       &
      &                                    'Ritz_norm',                  &
@@ -597,12 +605,14 @@
      &                                    start = (/TLM(ng)%Rindex-1/), &
      &                                    total = (/2/),                &
      &                                    ncid = TLM(ng)%ncid)
-                    IF (exit_flag.ne. NoError) RETURN
+                    IF (FoundError(exit_flag, NoError, __LINE__,        &
+     &                             __FILE__)) RETURN
 
                     IF (LmultiGST) THEN
                       CALL netcdf_close (ng, iTLM, TLM(ng)%ncid,        &
      &                                   TLM(ng)%name)
-                      IF (exit_flag.ne.NoError) RETURN
+                      IF (FoundError(exit_flag, NoError, __LINE__,      &
+     &                               __FILE__)) RETURN
                     END IF
                   END IF
                   IF (LwrtADJ(ng)) THEN
@@ -612,7 +622,8 @@
      &                                    start = (/ADM(ng)%Rindex/),   &
      &                                    total = (/1/),                &
      &                                    ncid = ADM(ng)%ncid)
-                    IF (exit_flag.ne. NoError) RETURN
+                    IF (FoundError(exit_flag, NoError, __LINE__,        &
+     &                             __FILE__)) RETURN
 
                     CALL netcdf_put_fvar (ng, iADM, ADM(ng)%name,       &
      &                                    'Ritz_norm',                  &
@@ -620,12 +631,14 @@
      &                                    start = (/ADM(ng)%Rindex/),   &
      &                                    total = (/1/),                &
      &                                    ncid = ADM(ng)%ncid)
-                    IF (exit_flag.ne. NoError) RETURN
+                    IF (FoundError(exit_flag, NoError, __LINE__,        &
+     &                             __FILE__)) RETURN
 
                     IF (LmultiGST) THEN
                       CALL netcdf_close (ng, iADM, ADM(ng)%ncid,        &
      &                                   ADM(ng)%name)
-                      IF (exit_flag.ne.NoError) RETURN
+                      IF (FoundError(exit_flag, NoError, __LINE__,      &
+     &                               __FILE__)) RETURN
                     END IF
                   END IF
                 END DO
@@ -703,7 +716,7 @@
       DO ng=1,Ngrids
 !$OMP PARALLEL
         DO thread=THREAD_RANGE
-          CALL wclock_off (ng, iTLM, 0)
+          CALL wclock_off (ng, iTLM, 0, __LINE__, __FILE__)
         END DO
 !$OMP END PARALLEL
       END DO

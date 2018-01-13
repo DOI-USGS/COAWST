@@ -90,8 +90,13 @@
       fac1=ANINT(Tintrp(it2,ifield,ng)-time(ng))
       fac2=ANINT(time(ng)-Tintrp(it1,ifield,ng))
 #else
+# ifdef INWAVE_MODEL
+      fac1=ANINT((Tintrp(it2,ifield,ng)-time(ng))*100.0_r8,r8)/100.0_r8
+      fac2=ANINT((time(ng)-Tintrp(it1,ifield,ng))*100.0_r8,r8)/100.0_r8
+# else
       fac1=ANINT(Tintrp(it2,ifield,ng)-time(ng),r8)
       fac2=ANINT(time(ng)-Tintrp(it1,ifield,ng),r8)
+# endif
 #endif
 !
 !  Load time-invariant data. Time interpolation is not necessary.

@@ -4,7 +4,7 @@
       SUBROUTINE congrad (ng, model, outLoop, innLoop, NinnLoop,        &
      &                    Lcgini)
 !
-!svn $Id: congrad.F 830 2017-01-24 21:21:11Z arango $
+!svn $Id: congrad.F 857 2017-07-29 04:05:27Z arango $
 !================================================== Hernan G. Arango ===
 !  Copyright (c) 2002-2017 The ROMS/TOMS Group       Andrew M. Moore   !
 !    Licensed under a MIT/X style license                              !
@@ -118,11 +118,12 @@
       USE mod_fourdvar
       USE mod_iounits
       USE mod_scalars
-
-# ifdef DISTRIBUTE
 !
+# ifdef DISTRIBUTE
       USE distribute_mod, ONLY : mp_bcastf, mp_bcasti, mp_bcastl
 # endif
+      USE strings_mod,    ONLY : FoundError
+!
       implicit none
 !
 !  Imported variable declarations
@@ -155,9 +156,18 @@
 
       character (len=13) :: string
 !
+      SourceFile=__FILE__
+!
 !=======================================================================
 !  Weak constraint 4DVar conjugate gradient, Lanczos-based algorithm.
 !=======================================================================
+
+# ifdef PROFILE
+!
+!  Turn on time clock.
+!
+      CALL wclock_on (ng, model, 43, __LINE__, __FILE__)
+# endif
 !
 !  This conjugate gradient algorithm is not run in parallel since the
 !  weak constraint is done in observation space. Mostly all the
@@ -1130,7 +1140,8 @@
 # ifdef DISTRIBUTE
       CALL mp_bcasti (ng, model, exit_flag)
 # endif
-      IF (exit_flag.ne.NoError) RETURN
+      IF (FoundError(exit_flag, NoError, __LINE__,                      &
+     &               __FILE__)) RETURN
 
 # ifdef DISTRIBUTE
 !
@@ -1170,6 +1181,13 @@
       CALL cg_write (ng, model, innLoop, outLoop,                       &
      &               Jf, Jdata, Jmod, Jopt, Jb, Jobs, Jact,             &
      &               preducv, preducy)
+
+# ifdef PROFILE
+!
+!  Turn off time clock.
+!
+      CALL wclock_off (ng, model, 43, __LINE__, __FILE__)
+# endif
 !
  20   FORMAT (/,' CONGRAD - Fatal error, not possitive definite',       &
      &        ' algorithm:',/,                                          &
@@ -1476,6 +1494,8 @@
       USE mod_netcdf
       USE mod_scalars
 !
+      USE strings_mod, ONLY : FoundError
+!
       implicit none
 !
 !  Imported variable declarations
@@ -1489,7 +1509,7 @@
 !
       integer :: status
 !
-      SourceFile='congrad.F, cg_write'
+      SourceFile=__FILE__ // ", cg_write"
 !
 !-----------------------------------------------------------------------
 !  Write out conjugate gradient variables.
@@ -1500,12 +1520,14 @@
       CALL netcdf_put_ivar (ng, model, DAV(ng)%name, 'outer',           &
      &                      outer, (/0/), (/0/),                        &
      &                      ncid = DAV(ng)%ncid)
-      IF (exit_flag.ne.NoError) RETURN
+      IF (FoundError(exit_flag, NoError, __LINE__,                      &
+     &               __FILE__)) RETURN
 
       CALL netcdf_put_ivar (ng, model, DAV(ng)%name, 'inner',           &
      &                      inner, (/0/), (/0/),                        &
      &                      ncid = DAV(ng)%ncid)
-      IF (exit_flag.ne.NoError) RETURN
+      IF (FoundError(exit_flag, NoError, __LINE__,                      &
+     &               __FILE__)) RETURN
 !
 !  Write out number of converged Ritz eigenvalues.
 !
@@ -1513,7 +1535,8 @@
         CALL netcdf_put_ivar (ng, model, DAV(ng)%name, 'nConvRitz',     &
      &                        nConvRitz, (/outLoop/), (/1/),            &
      &                        ncid = DAV(ng)%ncid)
-        IF (exit_flag.ne.NoError) RETURN
+        IF (FoundError(exit_flag, NoError, __LINE__,                    &
+     &                 __FILE__)) RETURN
       END IF
 !
 !  Write out converged Ritz eigenvalues.
@@ -1522,7 +1545,8 @@
         CALL netcdf_put_fvar (ng, model, DAV(ng)%name, 'Ritz',          &
      &                        Ritz, (/1,outLoop/), (/nConvRitz,1/),     &
      &                        ncid = DAV(ng)%ncid)
-        IF (exit_flag.ne.NoError) RETURN
+        IF (FoundError(exit_flag, NoError, __LINE__,                    &
+     &                 __FILE__)) RETURN
       END IF
 !
 !  Write out conjugate gradient norm.
@@ -1531,7 +1555,8 @@
         CALL netcdf_put_fvar (ng, model, DAV(ng)%name, 'cg_beta',       &
      &                        cg_beta, (/1,1/), (/Ninner+1,Nouter/),    &
      &                        ncid = DAV(ng)%ncid)
-        IF (exit_flag.ne.NoError) RETURN
+        IF (FoundError(exit_flag, NoError, __LINE__,                    &
+     &                 __FILE__)) RETURN
       END IF
 !
 !  Write out Lanczos algorithm coefficients.
@@ -1540,7 +1565,8 @@
         CALL netcdf_put_fvar (ng, model, DAV(ng)%name, 'cg_delta',      &
      &                        cg_delta, (/1,1/), (/Ninner,Nouter/),     &
      &                        ncid = DAV(ng)%ncid)
-        IF (exit_flag.ne.NoError) RETURN
+        IF (FoundError(exit_flag, NoError, __LINE__,                    &
+     &                 __FILE__)) RETURN
       END IF
 !
 !  Write normalization coefficients for Lanczos vectos.
@@ -1549,7 +1575,8 @@
         CALL netcdf_put_fvar (ng, model, DAV(ng)%name, 'cg_dla',        &
      &                        cg_dla, (/1,1/), (/Ninner,Nouter/),       &
      &                        ncid = DAV(ng)%ncid)
-        IF (exit_flag.ne.NoError) RETURN
+        IF (FoundError(exit_flag, NoError, __LINE__,                    &
+     &                 __FILE__)) RETURN
       END IF
 !
 !  Initial gradient normalization factor.
@@ -1558,12 +1585,14 @@
         CALL netcdf_put_fvar (ng, model, DAV(ng)%name, 'cg_Gnorm_y',    &
      &                        cg_Gnorm_y, (/1/), (/Nouter/),            &
      &                        ncid = DAV(ng)%ncid)
-        IF (exit_flag.ne.NoError) RETURN
+        IF (FoundError(exit_flag, NoError, __LINE__,                    &
+     &                 __FILE__)) RETURN
 
         CALL netcdf_put_fvar (ng, model, DAV(ng)%name, 'cg_Gnorm_v',    &
      &                        cg_Gnorm_v, (/1/), (/Nouter/),            &
      &                        ncid = DAV(ng)%ncid)
-        IF (exit_flag.ne.NoError) RETURN
+        IF (FoundError(exit_flag, NoError, __LINE__,                    &
+     &                 __FILE__)) RETURN
       END IF
 !
 !  Lanczos vector normalization factor.
@@ -1572,7 +1601,8 @@
         CALL netcdf_put_fvar (ng, model, DAV(ng)%name, 'cg_QG',         &
      &                        cg_QG, (/1,1/), (/Ninner+1,Nouter/),      &
      &                        ncid = DAV(ng)%ncid)
-        IF (exit_flag.ne.NoError) RETURN
+        IF (FoundError(exit_flag, NoError, __LINE__,                    &
+     &                 __FILE__)) RETURN
       END IF
 !
 !  Reduction in the gradient norm.
@@ -1581,12 +1611,14 @@
         CALL netcdf_put_fvar (ng, model, DAV(ng)%name, 'cg_Greduc_y',   &
      &                        preducy, (/innLoop,outLoop/), (/1,1/),    &
      &                        ncid = DAV(ng)%ncid)
-        IF (exit_flag.ne.NoError) RETURN
+        IF (FoundError(exit_flag, NoError, __LINE__,                    &
+     &                 __FILE__)) RETURN
 
         CALL netcdf_put_fvar (ng, model, DAV(ng)%name, 'cg_Greduc_v',   &
      &                        preducv, (/innLoop,outLoop/), (/1,1/),    &
      &                        ncid = DAV(ng)%ncid)
-        IF (exit_flag.ne.NoError) RETURN
+        IF (FoundError(exit_flag, NoError, __LINE__,                    &
+     &                 __FILE__)) RETURN
       END IF
 !
 !  Eigenvalues of Lanczos recurrence relationship.
@@ -1595,7 +1627,8 @@
         CALL netcdf_put_fvar (ng, model, DAV(ng)%name, 'cg_Ritz',       &
      &                        cg_Ritz, (/1,1/), (/Ninner,Nouter/),      &
      &                        ncid = DAV(ng)%ncid)
-        IF (exit_flag.ne.NoError) RETURN
+        IF (FoundError(exit_flag, NoError, __LINE__,                    &
+     &                 __FILE__)) RETURN
       END IF
 !
 !  Eigenvalues relative error.
@@ -1604,7 +1637,8 @@
         CALL netcdf_put_fvar (ng, model, DAV(ng)%name, 'cg_RitzErr',    &
      &                        cg_RitzErr, (/1,1/), (/Ninner,Nouter/),   &
      &                        ncid = DAV(ng)%ncid)
-        IF (exit_flag.ne.NoError) RETURN
+        IF (FoundError(exit_flag, NoError, __LINE__,                    &
+     &                 __FILE__)) RETURN
       END IF
 !
 !  Eigenvectors of Lanczos recurrence relationship.
@@ -1614,7 +1648,8 @@
      &                        cg_zv(:,:,outLoop),                       &
      &                        (/1,1,outLoop/), (/Ninner,Ninner,1/),     &
      &                        ncid = DAV(ng)%ncid)
-        IF (exit_flag.ne.NoError) RETURN
+        IF (FoundError(exit_flag, NoError, __LINE__,                    &
+     &                 __FILE__)) RETURN
       END IF
 !
 !  First guess initial data misfit.
@@ -1622,49 +1657,56 @@
       CALL netcdf_put_fvar (ng, model, DAV(ng)%name, 'Jf',              &
      &                      Jf, (/innLoop+1,outLoop/), (/1,1/),         &
      &                      ncid = DAV(ng)%ncid)
-      IF (exit_flag.ne.NoError) RETURN
+      IF (FoundError(exit_flag, NoError, __LINE__,                      &
+     &               __FILE__)) RETURN
 !
 !  State estimate data misfit.
 !
       CALL netcdf_put_fvar (ng, model, DAV(ng)%name, 'Jdata',           &
      &                      Jdata, (/innLoop+1,outLoop/), (/1,1/),      &
      &                      ncid = DAV(ng)%ncid)
-      IF (exit_flag.ne.NoError) RETURN
+      IF (FoundError(exit_flag, NoError, __LINE__,                      &
+     &               __FILE__)) RETURN
 !
 !  Model penalty function.
 !
       CALL netcdf_put_fvar (ng, model, DAV(ng)%name, 'Jmod',            &
      &                      Jmod, (/innLoop+1,outLoop/), (/1,1/),       &
      &                      ncid = DAV(ng)%ncid)
-      IF (exit_flag.ne.NoError) RETURN
+      IF (FoundError(exit_flag, NoError, __LINE__,                      &
+     &               __FILE__)) RETURN
 !
 !  Optimal penalty function.
 !
       CALL netcdf_put_fvar (ng, model, DAV(ng)%name, 'Jopt',            &
      &                      Jopt, (/innLoop+1,outLoop/), (/1,1/),       &
      &                      ncid = DAV(ng)%ncid)
-      IF (exit_flag.ne.NoError) RETURN
+      IF (FoundError(exit_flag, NoError, __LINE__,                      &
+     &               __FILE__)) RETURN
 !
 !  Actual model penalty function.
 !
       CALL netcdf_put_fvar (ng, model, DAV(ng)%name, 'Jb',              &
      &                      Jb, (/innLoop+1,outLoop/), (/1,1/),         &
      &                      ncid = DAV(ng)%ncid)
-      IF (exit_flag.ne.NoError) RETURN
+      IF (FoundError(exit_flag, NoError, __LINE__,                      &
+     &               __FILE__)) RETURN
 !
 !  Actual data penalty function.
 !
       CALL netcdf_put_fvar (ng, model, DAV(ng)%name, 'Jobs',            &
      &                      Jobs, (/innLoop+1,outLoop/), (/1,1/),       &
      &                      ncid = DAV(ng)%ncid)
-      IF (exit_flag.ne.NoError) RETURN
+      IF (FoundError(exit_flag, NoError, __LINE__,                      &
+     &               __FILE__)) RETURN
 !
 !  Actual total penalty function.
 !
       CALL netcdf_put_fvar (ng, model, DAV(ng)%name, 'Jact',            &
      &                      Jact, (/innLoop+1,outLoop/), (/1,1/),       &
      &                      ncid = DAV(ng)%ncid)
-      IF (exit_flag.ne.NoError) RETURN
+      IF (FoundError(exit_flag, NoError, __LINE__,                      &
+     &               __FILE__)) RETURN
 !
 !  Initial gradient for minimization.
 !
@@ -1673,7 +1715,8 @@
      &                        zgrad0(:,outLoop),                        &
      &                        (/1,outLoop/), (/Ndatum(ng),1/),          &
      &                        ncid = DAV(ng)%ncid)
-        IF (exit_flag.ne.NoError) RETURN
+        IF (FoundError(exit_flag, NoError, __LINE__,                    &
+     &                 __FILE__)) RETURN
       END IF
 !
 !  Lanczos vectors.
@@ -1682,7 +1725,8 @@
      &                      zcglwk(:,innLoop+1,outLoop),                &
      &                      (/1,innLoop+1,outLoop/), (/Ndatum(ng),1,1/),&
      &                      ncid = DAV(ng)%ncid)
-      IF (exit_flag.ne.NoError) RETURN
+      IF (FoundError(exit_flag, NoError, __LINE__,                      &
+     &               __FILE__)) RETURN
 !
 !  Saved TLmodVal_S.
 !
@@ -1691,7 +1735,8 @@
      &                        TLmodVal_S(:,innLoop,outLoop),            &
      &                        (/1,innLoop,outLoop/), (/Ndatum(ng),1,1/),&
      &                        ncid = DAV(ng)%ncid)
-        IF (exit_flag.ne.NoError) RETURN
+        IF (FoundError(exit_flag, NoError, __LINE__,                    &
+     &                 __FILE__)) RETURN
       END IF
 !
 !-----------------------------------------------------------------------

@@ -1,7 +1,7 @@
 #include "cppdefs.h"
       MODULE diag_mod
 !
-!svn $Id: diag.F 830 2017-01-24 21:21:11Z arango $
+!svn $Id: diag.F 875 2017-11-03 01:10:02Z arango $
 !================================================== Hernan G. Arango ===
 !  Copyright (c) 2002-2017 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
@@ -41,7 +41,7 @@
 #include "tile.h"
 !
 #ifdef PROFILE
-      CALL wclock_on (ng, iNLM, 7)
+      CALL wclock_on (ng, iNLM, 7, __LINE__, __FILE__)
 #endif
       CALL diag_tile (ng, tile,                                         &
      &                LBi, UBi, LBj, UBj,                               &
@@ -71,7 +71,7 @@
       CALL ana_diag (ng, tile, iNLM)
 #endif
 #ifdef PROFILE
-      CALL wclock_off (ng, iNLM, 7)
+      CALL wclock_off (ng, iNLM, 7, __LINE__, __FILE__)
 #endif
       RETURN
       END SUBROUTINE diag
@@ -101,6 +101,7 @@
 #endif
 
 #ifdef DISTRIBUTE
+!
       USE distribute_mod, ONLY : mp_reduce
       USE distribute_mod, ONLY : mp_reduce2
 #endif
@@ -177,10 +178,10 @@
       integer, parameter :: Nreduce = 4
       integer, parameter :: Ncourant = 5
 # endif
-      real(r8), allocatable           :: buffer(:)
-      character (len=3), allocatable  :: op_handle(:)
-      character (len=6), allocatable  :: C_handle(:)
+      real(r8), dimension(Nreduce) :: buffer
       real(r8), dimension(Ncourant) :: Courant
+      character (len=3), dimension(Nreduce) :: op_handle
+      character (len=6), dimension(Nreduce) :: C_handle
 #else
       integer :: my_threadnum
 #endif
@@ -218,9 +219,9 @@
 # ifdef BIOLOGY
       Nreduce = 5 + NBT
 # endif
-      IF (.not. allocated(buffer))    allocate (buffer(Nreduce))
-      IF (.not. allocated(op_handle)) allocate (op_handle(Nreduce))
-      IF (.not. allocated(C_handle))  allocate (C_handle(Nreduce))
+!     IF (.not. allocated(buffer))    allocate (buffer(Nreduce))
+!     IF (.not. allocated(op_handle)) allocate (op_handle(Nreduce))
+!     IF (.not. allocated(C_handle))  allocate (C_handle(Nreduce))
 #endif
 
       IF (MOD(iic(ng)-1,ninfo(ng)).eq.0) THEN
@@ -379,31 +380,31 @@
         END IF
 #endif
 !$OMP CRITICAL (NL_DIAGNOSTICS)
-        IF (tile_count.eq.0) THEN
-          volume=my_volume
-          avgke=my_avgke
-          avgpe=my_avgpe
-          maxspeed(ng)=my_maxspeed
+!!        IF (tile_count.eq.0) THEN
+!!          volume=my_volume
+!!          avgke=my_avgke
+!!          avgpe=my_avgpe
+!!          maxspeed(ng)=my_maxspeed
 #ifdef SOLVE3D
-          maxrho(ng)=my_maxrho
+!!          maxrho(ng)=my_maxrho
 # ifdef BIOLOGY
           DO ibt=1,NBT
             maxbio(ibt,ng)=0.0_r8
           END DO
 # endif
 #endif
-          max_C =my_max_C
-          max_Cu=my_max_Cu
-          max_Cv=my_max_Cv
+!!          max_C =my_max_C
+!!          max_Cu=my_max_Cu
+!!          max_Cv=my_max_Cv
 #ifdef SOLVE3D
-          max_Cw=my_max_Cw
+!!          max_Cw=my_max_Cw
 #endif
-          max_Ci=my_max_Ci
-          max_Cj=my_max_Cj
+!!          max_Ci=my_max_Ci
+!!          max_Cj=my_max_Cj
 #ifdef SOLVE3D
-          max_Ck=my_max_Ck
+!!          max_Ck=my_max_Ck
 #endif
-        ELSE
+!!        ELSE
           volume=volume+my_volume
           avgke=avgke+my_avgke
           avgpe=avgpe+my_avgpe
@@ -434,7 +435,7 @@
 #ifdef SOLVE3D
             max_Ck=my_max_Ck
 #endif
-          END IF
+!!          END IF
         END IF
         tile_count=tile_count+1
         IF (tile_count.eq.NSUB) THEN
@@ -509,7 +510,7 @@
           IF (first_time(ng).eq.0) THEN
             first_time(ng)=1
             IF (Master.and.(ng.eq.1)) THEN
-              WRITE (stdout,10) 'STEP', 'Day HH:MM:SS',                 &
+              WRITE (stdout,10) 'TIME-STEP', 'YYYY-MM-DD hh:mm:ss.ss',  &
      &                          'KINETIC_ENRG', 'POTEN_ENRG',           &
 #ifdef NESTING
      &                          'TOTAL_ENRG', 'NET_VOLUME', 'Grid'
@@ -524,22 +525,23 @@
      &                          ' C Max', 'Max Speed'
 #endif
 #ifdef NESTING
- 10           FORMAT (/,3x,a,3x,a,2x,a,3x,a,4x,a,4x,a,2x,a)
+ 10           FORMAT (/,1x,a,1x,a,2x,a,3x,a,4x,a,4x,a,2x,a)
 #else
- 10           FORMAT (/,3x,a,3x,a,2x,a,3x,a,4x,a,4x,a)
+ 10           FORMAT (/,1x,a,1x,a,2x,a,3x,a,4x,a,4x,a)
 #endif
- 20           FORMAT (10x,a,7x,a,12x,a,10x,a,7x,a,/)
+ 20           FORMAT (21x,a,7x,a,12x,a,10x,a,7x,a,/)
             END IF
           END IF
-          IF (Master) THEN
-            WRITE (stdout,30) iic(ng)-1, time_code(ng),                 &
+          IF (Master) THEN    ! restart counter after 10 billion steps
+            WRITE (stdout,30) INT(MOD(REAL(iic(ng)-1,r8),1.0E+10_r8)),  &
+                              time_code(ng),                            &
 #ifdef NESTING
      &                        avgke, avgpe, avgkp, volume, ng
 #else
      &                        avgke, avgpe, avgkp, volume
 #endif
 #ifdef SOLVE3D
-            ispace=24-(6+Idigits(ng)+Jdigits(ng)+Kdigits(ng))
+            ispace=35-(6+Idigits(ng)+Jdigits(ng)+Kdigits(ng))
             WRITE (frmt,40) ispace,                                     &
      &                      '"("', Idigits(ng), Idigits(ng),            &
      &                      '","', Jdigits(ng), Jdigits(ng),            &
@@ -548,7 +550,7 @@
      &                          max_Ck, max_Cu, max_Cv, max_Cw,         &
      &                          maxspeed(ng)
 #else
-            ispace=24-(5+Idigits(ng)+Jdigits(ng))
+            ispace=35-(5+Idigits(ng)+Jdigits(ng))
             WRITE (frmt,40) ispace,                                     &
      &                      '"("', Idigits(ng), Idigits(ng),            &
      &                      '","', Jdigits(ng), Jdigits(ng), '")"'
@@ -558,16 +560,16 @@
 #endif
             CALL my_flush (stdout)
 #ifdef NESTING
- 30         FORMAT (i8,1x,a,4(1pe14.6),2x,i2.2)
+ 30         FORMAT (i10,1x,a,4(1pe14.6),2x,i2.2)
 #else
- 30         FORMAT (i8,1x,a,4(1pe14.6))
+ 30         FORMAT (i10,1x,a,4(1pe14.6))
 #endif
  40         FORMAT ('(',i2.2,'x,',a,',i',i1,'.',i1,',',                 &
      &                            a,',i',i1,'.',i1,',',                 &
 #ifdef SOLVE3D
      &                            a,',i',i1,'.',i1,',',                 &
 #endif
-     &                            a,',t24,4(1pe13.6,1x))')
+     &                            a,',t35,4(1pe13.6,1x))')
           END IF
 !
 !  If blowing-up, set exit_flag to stop computations.
@@ -644,7 +646,27 @@
           END DO
 # endif
 #endif
-
+!
+!  Reset global reduction variables for the next call.
+!
+          volume=0.0_r8
+          avgke=0.0_r8
+          avgpe=0.0_r8
+          maxspeed(ng)=-Large
+#ifdef SOLVE3D
+          maxrho(ng)=-Large
+#endif
+          max_C =0.0_r8
+          max_Cu=0.0_r8
+          max_Cv=0.0_r8
+#ifdef SOLVE3D
+          max_Cw=0.0_r8
+#endif
+          max_Ci=0
+          max_Cj=0
+#ifdef SOLVE3D
+          max_Ck=0
+#endif
         END IF
 !$OMP END CRITICAL (NL_DIAGNOSTICS)
       END IF

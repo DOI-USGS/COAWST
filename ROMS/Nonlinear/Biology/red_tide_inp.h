@@ -1,6 +1,6 @@
       SUBROUTINE read_BioPar (model, inp, out, Lwrite)
 !
-!svn $Id: red_tide_inp.h 830 2017-01-24 21:21:11Z arango $
+!svn $Id: red_tide_inp.h 859 2017-08-02 01:45:30Z arango $
 !================================================== Hernan G. Arango ===
 !  Copyright (c) 2002-2017 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
@@ -77,8 +77,6 @@
               Npts=load_r(Nval, Rval, Ngrids, Dg)
             CASE ('Kn')
               Npts=load_r(Nval, Rval, Ngrids, Kn)
-            CASE ('Mor')
-              Npts=load_r(Nval, Rval, Ngrids, Mor)
             CASE ('G_eff')
               Npts=load_r(Nval, Rval, Ngrids, G_eff)
             CASE ('G_r')
@@ -99,6 +97,14 @@
               Npts=load_r(Nval, Rval, Ngrids, DIN_Cdepth)
             CASE ('wDino')
               Npts=load_r(Nval, Rval, Ngrids, wDino)
+            CASE ('MOR_a')
+              Npts=load_r(Nval, Rval, Ngrids, Mor_a)
+            CASE ('MOR_b')
+              Npts=load_r(Nval, Rval, Ngrids, Mor_b)
+            CASE ('MOR_Q10')
+              Npts=load_r(Nval, Rval, Ngrids, Mor_Q10)
+            CASE ('MOR_T0')
+              Npts=load_r(Nval, Rval, Ngrids, Mor_T0)
             CASE ('TNU2')
               Npts=load_r(Nval, Rval, NBT*Ngrids, Rbio)
               DO ng=1,Ngrids
@@ -434,8 +440,6 @@
             WRITE (out,80) Kn(ng), 'Kn',                                &
      &            'Half-saturation for nutrient limited growth',        &
      &            '(millimole/m3).'
-            WRITE (out,70) Mor(ng), 'Mor',                              &
-     &            'Averaged mortality rate (1/day).'
             WRITE (out,70) G_eff(ng), 'G_eff',                          &
      &            'Growth efficiency (m2/Watts/day).'
             WRITE (out,70) G_r(ng), 'G_r',                              &
@@ -464,6 +468,18 @@
             WRITE (out,80) wDino(ng), 'wDino',                          &
      &            'Dinoflagellate upward swimming/migration rate',      &
      &            '(positive, m/day).'
+            WRITE (out,80) Mor_a(ng), 'Mor_a',                          &
+     &            'Mortality rate equation, Q10 amplitude term',        &
+     &            '(1/day).'
+            WRITE (out,80) Mor_b(ng), 'Mor_b',                          &
+     &            'Mortality rate equation, Q10 intercept term',        &
+     &            '(1/day).'
+            WRITE (out,80) Mor_Q10(ng), 'Mor_Q10',                      &
+     &            'Mortality rate equation, Q10 reaction rate base',    &
+     &            '(nondimensional).'
+            WRITE (out,80) Mor_T0(ng), 'Mor_T0',                        &
+     &            'Mortality rate equation, background temperature',    &
+     &            '(Celsius).'
 #ifdef TS_DIF2
             DO itrc=1,NBT
               i=idbio(itrc)
@@ -784,8 +800,8 @@
   30  FORMAT (/,' read_BioPar - variable info not yet loaded, ',        &
      &        a,i2.2,a)
   40  FORMAT (/,' read_BioPar - Error while processing line: ',/,a)
-  50  FORMAT (/,/,' NPZD-IRON Model Parameters, Grid: ',i2.2,           &
-     &        /,  ' ====================================',/)
+  50  FORMAT (/,/,' RED-TIDE Model Parameters, Grid: ',i2.2,            &
+     &        /,  ' ===================================',/)
   60  FORMAT (1x,i10,2x,a,t32,a)
   70  FORMAT (1p,e11.4,2x,a,t32,a)
   80  FORMAT (1p,e11.4,2x,a,t32,a,/,t34,a)

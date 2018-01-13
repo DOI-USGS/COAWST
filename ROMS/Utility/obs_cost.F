@@ -2,7 +2,7 @@
 #if defined FOUR_DVAR && defined OBSERVATIONS
       SUBROUTINE obs_cost (ng, model)
 !
-!svn $Id: obs_cost.F 830 2017-01-24 21:21:11Z arango $
+!svn $Id: obs_cost.F 880 2017-11-15 22:04:38Z arango $
 !================================================== Hernan G. Arango ===
 !  Copyright (c) 2002-2017 The ROMS/TOMS Group       Andrew M. Moore   !
 !    Licensed under a MIT/X style license                              !
@@ -72,10 +72,10 @@
 
       real(r8) ::  cff, cff1
 
-      real(r8), dimension(0:NstateVar(ng)) :: my_ObsCost
+      real(r8), dimension(0:NobsVar(ng)) :: my_ObsCost
 # if defined DATALESS_LOOPS && \
     (defined TL_W4DVAR || defined W4DVAR || defined W4DVAR_SENSITIVITY)
-      real(r8), dimension(0:NstateVar(ng)) :: my_ObsCost1
+      real(r8), dimension(0:NobsVar(ng)) :: my_ObsCost1
 # endif
 !
 !-----------------------------------------------------------------------
@@ -87,28 +87,29 @@
 !  Compute data penalty function.
 !
       IF (model.eq.iRPM) THEN
-        DO ivar=0,NstateVar(ng)
+        DO ivar=0,NobsVar(ng)
           my_ObsCost(ivar)=0.0_r8
 #  ifdef DATALESS_LOOPS
           my_ObsCost1(ivar)=0.0_r8
 #  endif
         END DO
         DO iobs=NstrObs(ng),NendObs(ng)
-          ivar=ObsType(iobs)
-          IF (ObsErr(iobs).ne.0.0_r8) THEN
+          ivar=ObsType2State(ObsType(iobs))
+          IF ((ivar.gt.0).and.(ObsScale(iobs).gt.0.0_r8).and.           &
+     &        (ObsErr(iobs).ne.0.0_r8)) THEN
             cff=ObsScale(iobs)*(TLmodVal(iobs)-ObsVal(iobs))**2/        &
      &          ObsErr(iobs)
 #  ifdef DATALESS_LOOPS
             cff1=ObsScale(iobs)*(NLmodVal(iobs)-ObsVal(iobs))**2/       &
      &           ObsErr(iobs)
 #  endif
-          END IF
-          my_ObsCost(0)=my_ObsCost(0)+cff
-          my_ObsCost(ivar)=my_ObsCost(ivar)+cff
+            my_ObsCost(0)=my_ObsCost(0)+cff
+            my_ObsCost(ivar)=my_ObsCost(ivar)+cff
 #  ifdef DATALESS_LOOPS
-          my_ObsCost1(0)=my_ObsCost1(0)+cff1
-          my_ObsCost1(ivar)=my_ObsCost1(ivar)+cff1
+            my_ObsCost1(0)=my_ObsCost1(0)+cff1
+            my_ObsCost1(ivar)=my_ObsCost1(ivar)+cff1
 #  endif
+          END IF
         END DO
       END IF
 
@@ -118,17 +119,18 @@
 !  Compute nonlinear model data penalty function.
 !
       IF (model.eq.iNLM) THEN
-        DO ivar=0,NstateVar(ng)
+        DO ivar=0,NobsVar(ng)
           my_ObsCost(ivar)=0.0_r8
         END DO
         DO iobs=NstrObs(ng),NendObs(ng)
-          ivar=ObsType(iobs)
-          IF (ObsErr(iobs).NE.0.0_r8) THEN
+          ivar=ObsType2State(ObsType(iobs))
+          IF ((ivar.gt.0).and.(ObsScale(iobs).gt.0.0_r8).and.           &
+     &        (ObsErr(iobs).ne.0.0_r8)) THEN
             cff=ObsScale(iobs)*(NLmodVal(iobs)-ObsVal(iobs))**2/        &
      &          ObsErr(iobs)
+            my_ObsCost(0)=my_ObsCost(0)+cff
+            my_ObsCost(ivar)=my_ObsCost(ivar)+cff
           END IF
-          my_ObsCost(0)=my_ObsCost(0)+cff
-          my_ObsCost(ivar)=my_ObsCost(ivar)+cff
         END DO
       END IF
 # else
@@ -136,29 +138,33 @@
 !  Compute tangent linear model cost function.
 !
       IF (model.eq.iTLM) THEN
-        DO ivar=0,NstateVar(ng)
+        DO ivar=0,NobsVar(ng)
           my_ObsCost(ivar)=0.0_r8
         END DO
         DO iobs=1,Nobs(ng)
-          ivar=ObsType(iobs)
-          cff=0.5_r8*ObsScale(iobs)*ObsErr(iobs)*                       &
-     &        (NLmodVal(iobs)+TLmodVal(iobs)-ObsVal(iobs))**2
-          my_ObsCost(0)=my_ObsCost(0)+cff
-          my_ObsCost(ivar)=my_ObsCost(ivar)+cff
+          ivar=ObsType2State(ObsType(iobs))
+          IF ((ivar.gt.0).and.(ObsScale(iobs).gt.0.0_r8)) THEN
+            cff=0.5_r8*ObsScale(iobs)*ObsErr(iobs)*                       &
+     &          (NLmodVal(iobs)+TLmodVal(iobs)-ObsVal(iobs))**2
+            my_ObsCost(0)=my_ObsCost(0)+cff
+            my_ObsCost(ivar)=my_ObsCost(ivar)+cff
+          END IF
         END DO
 !
 !  Compute nonlinear model cost function.
 !
       ELSE IF (model.eq.iNLM) THEN
-        DO ivar=0,NstateVar(ng)
+        DO ivar=0,NobsVar(ng)
           my_ObsCost(ivar)=0.0_r8
         END DO
         DO iobs=1,Nobs(ng)
-          ivar=ObsType(iobs)
-          cff=0.5_r8*ObsScale(iobs)*ObsErr(iobs)*                       &
-     &        (NLmodVal(iobs)-ObsVal(iobs))**2
-          my_ObsCost(0)=my_ObsCost(0)+cff
-          my_ObsCost(ivar)=my_ObsCost(ivar)+cff
+          ivar=ObsType2State(ObsType(iobs))
+          IF ((ivar.gt.0).and.(ObsScale(iobs).gt.0.0_r8)) THEN
+            cff=0.5_r8*ObsScale(iobs)*ObsErr(iobs)*                       &
+     &          (NLmodVal(iobs)-ObsVal(iobs))**2
+            my_ObsCost(0)=my_ObsCost(0)+cff
+            my_ObsCost(ivar)=my_ObsCost(ivar)+cff
+          END IF
         END DO
       END IF
 # endif
@@ -180,7 +186,7 @@
         tile_count=0
 # if defined TL_W4DVAR || defined W4DVAR || defined W4DVAR_SENSITIVITY
         IF (model.eq.iRPM) THEN
-          DO ivar=0,NstateVar(ng)
+          DO ivar=0,NobsVar(ng)
             FOURDVAR(ng)%DataPenalty(ivar)=my_ObsCost(ivar)+            &
      &                                    FOURDVAR(ng)%DataPenalty(ivar)
 #  ifdef DATALESS_LOOPS
@@ -192,19 +198,19 @@
 # elif defined TL_W4DPSAS          || defined W4DPSAS || \
        defined W4DPSAS_SENSITIVITY
         IF (model.eq.iNLM) THEN
-          DO ivar=0,NstateVar(ng)
+          DO ivar=0,NobsVar(ng)
             FOURDVAR(ng)%NLPenalty(ivar)=my_ObsCost(ivar)+              &
      &                                   FOURDVAR(ng)%NLPenalty(ivar)
           END DO
         END IF
 # else
         IF (model.eq.iTLM) THEN
-          DO ivar=0,NstateVar(ng)
+          DO ivar=0,NobsVar(ng)
             FOURDVAR(ng)%ObsCost(ivar)=FOURDVAR(ng)%ObsCost(ivar)+      &
      &                                 my_ObsCost(ivar)
           END DO
         ELSE IF (model.eq.iNLM) THEN
-          DO ivar=0,NstateVar(ng)
+          DO ivar=0,NobsVar(ng)
             FOURDVAR(ng)%NLobsCost(ivar)=FOURDVAR(ng)%NLobsCost(ivar)+  &
      &                                   my_ObsCost(ivar)
           END DO
@@ -219,7 +225,7 @@
 !  normalized values.
 !
       IF ((Nrun.eq.1).and.(model.eq.iTLM)) THEN
-        DO ivar=0,NstateVar(ng)
+        DO ivar=0,NobsVar(ng)
           FOURDVAR(ng)%CostNorm(ivar)=FOURDVAR(ng)%ObsCost(ivar)
         END DO
       END IF

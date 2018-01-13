@@ -7,7 +7,7 @@
 # endif
      &                       Fout)
 !
-!svn $Id: get_2dfldr.F 830 2017-01-24 21:21:11Z arango $
+!svn $Id: get_2dfldr.F 884 2017-12-06 01:59:26Z arango $
 !================================================== Hernan G. Arango ===
 !  Copyright (c) 2002-2017 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
@@ -49,8 +49,10 @@
       USE mod_netcdf
       USE mod_scalars
 !
+      USE dateclock_mod,  ONLY : time_string
       USE nf_fread2d_mod, ONLY : nf_fread2d
       USE nf_fread3d_mod, ONLY : nf_fread3d
+      USE strings_mod,    ONLY : FoundError
 !
       implicit none
 !
@@ -71,7 +73,7 @@
 !
 !  Local variable declarations.
 !
-      logical :: Lgridded, Linquire, Liocycle, Lmulti, Lonerec
+      logical :: Lgridded, Linquire, Liocycle, Lmulti, Lonerec, Lregrid
       logical :: special
 
       integer :: Nrec, Tid, Tindex, Trec, Vid, Vtype
@@ -80,17 +82,19 @@
 
       real(r8) :: Clength, Fmax, Fmin, Tdelta, Tend
       real(r8) :: Tmax, Tmin, Tmono, Tscale, Tstr
-      real(r8) :: Fval, Tval
+      real(r8) :: Fval, Tsec, Tval
 
-      character (len=14) :: t_code
+      character (len= 1) :: Rswitch
+      character (len=22) :: t_code
 !
-      SourceFile='get_2dfldr.F'
+      SourceFile=__FILE__
 !
 !-----------------------------------------------------------------------
 !  Initialize.
 !-----------------------------------------------------------------------
 !
-      IF (exit_flag.ne.NoError) RETURN
+      IF (FoundError(exit_flag, NoError, __LINE__,                      &
+     &               __FILE__)) RETURN
 !
 !  Determine if inquiring about the field to process in input NetCDF
 !  file(s).  This usually happens on first call or when the field
@@ -101,7 +105,8 @@
       IF (iic(ng).eq.0) Linquire=.TRUE.
       IF (.not.Linquire.and.                                            &
      &    ((Iinfo(10,ifield,ng).gt.1).and.                              &
-     &     (Finfo( 1,ifield,ng)*day2sec.gt.time(ng)))) THEN
+     &     (Linfo( 5,ifield,ng).or.                                     &
+     &     (Finfo( 1,ifield,ng)*day2sec.gt.time(ng))))) THEN
         Linquire=.TRUE.
         Lmulti=.TRUE.
       END IF
@@ -109,41 +114,54 @@
 !  If appropriate, inquire about the contents of input NetCDF file and
 !  fill information arrays.
 !
+!  Also, if appropriate, deactivate the Linfo(5,ifield,ng) switch after
+!  the query for the LOWER snapshot interpolant from previous multifile
+!  in the list. The switch was activated previously to indicate the
+!  processing of the FIRST record of the file for the UPPER snapshot
+!  interpolant.
+!
       IF (Linquire) THEN
         job=-2
-        CALL inquire (ng, model, job, Iout, Irec, 1, ifield, ncid,      &
+        CALL inquiry (ng, model, job, Iout, Irec, 1, ifield, ncid,      &
      &                Lmulti, nfiles, S)
-        IF (exit_flag.ne.NoError) RETURN
+        IF (FoundError(exit_flag, NoError, __LINE__,                    &
+     &                 __FILE__)) RETURN
+        IF (Linfo(5,ifield,ng)) THEN
+          Linfo(5,ifield,ng)=.FALSE.
+        END IF
       END IF
-!
-!  Load properties for requested field from information arrays.
-!
-      Lgridded=Linfo(1,ifield,ng)
-      Liocycle=Linfo(2,ifield,ng)
-      Lonerec =Linfo(3,ifield,ng)
-      special =Linfo(4,ifield,ng)
-      Vtype   =Iinfo(1,ifield,ng)
-      Vid     =Iinfo(2,ifield,ng)
-      Tid     =Iinfo(3,ifield,ng)
-      Nrec    =Iinfo(4,ifield,ng)
-      Vsize(1)=Iinfo(5,ifield,ng)
-      Vsize(2)=Iinfo(6,ifield,ng)
-      Tindex  =Iinfo(8,ifield,ng)
-      Trec    =Iinfo(9,ifield,ng)
-      Tmin    =Finfo(1,ifield,ng)
-      Tmax    =Finfo(2,ifield,ng)
-      Clength =Finfo(5,ifield,ng)
-      Tscale  =Finfo(6,ifield,ng)
-      Tmono   =Finfo(7,ifield,ng)
-      ncfile  =Cinfo(ifield,ng)
 !
 !-----------------------------------------------------------------------
 !  If appropriate, read in new data.
 !-----------------------------------------------------------------------
 !
       update=.FALSE.
+      Lregrid=.FALSE.
+      Tmono=Finfo(7,ifield,ng)
+!
       IF ((Tmono.gt.time(ng)).or.(iic(ng).eq.0).or.                     &
      &    (iic(ng).eq.ntstart(ng))) THEN
+!
+!  Load properties for requested field from information arrays.
+!
+        Lgridded=Linfo(1,ifield,ng)
+        Liocycle=Linfo(2,ifield,ng)
+        Lonerec =Linfo(3,ifield,ng)
+        special =Linfo(4,ifield,ng)
+        Vtype   =Iinfo(1,ifield,ng)
+        Vid     =Iinfo(2,ifield,ng)
+        Tid     =Iinfo(3,ifield,ng)
+        Nrec    =Iinfo(4,ifield,ng)
+        Vsize(1)=Iinfo(5,ifield,ng)
+        Vsize(2)=Iinfo(6,ifield,ng)
+        Tindex  =Iinfo(8,ifield,ng)
+        Trec    =Iinfo(9,ifield,ng)
+        Tmin    =Finfo(1,ifield,ng)
+        Tmax    =Finfo(2,ifield,ng)
+        Clength =Finfo(5,ifield,ng)
+        Tscale  =Finfo(6,ifield,ng)
+        ncfile  =Cinfo(ifield,ng)
+!
         IF (Liocycle) THEN
           Trec=MOD(Trec,Nrec)-1
           IF (Trec.le.0) Trec=Nrec+Trec
@@ -151,7 +169,7 @@
           Trec=Trec-1
         END IF
         Iinfo(9,ifield,ng)=Trec
-
+!
         IF ((1.le.Trec).and.(Trec.le.Nrec)) THEN
 !
 !  Set rolling index for two-time record storage of input data.  If
@@ -176,13 +194,22 @@
      &                            ncid = ncid,                          &
      &                            start = (/Trec/),                     &
      &                            total = (/1/))
-            IF (exit_flag.ne.NoError) THEN
+            IF (FoundError(exit_flag, NoError, __LINE__,                &
+     &                     __FILE__)) THEN
               IF (Master) WRITE (stdout,40) TRIM(Tname(ifield)), Trec
               RETURN
             END IF
           END IF
           Tval=Tval*Tscale
           Vtime(Tindex,ifield,ng)=Tval
+!
+!  Activate switch Linfo(5,ifield,ng) if processing the FIRST record of
+!  the file for the UPPER time snapshot. We need to get the LOWER time
+!  snapshot from previous multifile.
+!
+          IF ((Trec.eq.1).and.(Tval*day2sec.ge.time(ng))) THEN
+            Linfo(5,ifield,ng)=.TRUE.
+          END IF
 !
 !  Read in 2D-grided or point data. Notice for special 2D fields, Vtype
 !  is augmented by four indicating reading a 3D field. This rational is
@@ -213,7 +240,7 @@
 # ifdef MASKING
      &                            Fmask,                                &
 # endif
-     &                            Fout(:,:,Tindex))
+     &                            Fout(:,:,Tindex), Lregrid)
               END IF
             ELSE
               CALL netcdf_get_fvar (ng, model, ncfile, Vname(1,ifield), &
@@ -226,7 +253,8 @@
               Fmin=Fval
               Fmax=Fval
             END IF
-            IF (exit_flag.ne.NoError) THEN
+            IF (FoundError(exit_flag, NoError, __LINE__,                &
+     &                     __FILE__)) THEN
               IF (Master) WRITE (stdout,40) TRIM(Vname(1,ifield)), Trec
               RETURN
             END IF
@@ -234,16 +262,21 @@
             Finfo(9,ifield,ng)=Fmax
             IF (Master) THEN
               IF (special) THEN
-                WRITE (stdout,50) TRIM(Vname(2,ifield)), Fmin, Fmax
+                WRITE (stdout,50) TRIM(Vname(2,ifield)), ng, Fmin, Fmax
               ELSE
                 lstr=SCAN(ncfile,'/',BACK=.TRUE.)+1
                 lend=LEN_TRIM(ncfile)
                 lvar=MIN(43,LEN_TRIM(Vname(2,ifield)))
-                Tval=Tval*day2sec
-                CALL time_string (Tval, t_code)
+                Tsec=Tval*day2sec
+                CALL time_string (Tsec, t_code)
+                IF (Lregrid) THEN
+                  Rswitch='T'
+                ELSE
+                  Rswitch='F'
+                END IF
                 WRITE (stdout,60) Vname(2,ifield)(1:lvar), t_code,      &
-     &                            Trec, Tindex, ncfile(lstr:lend),      &
-     &                            Tmin, Tmax, Fmin, Fmax
+     &                            ng, Trec, Tindex, ncfile(lstr:lend),  &
+     &                            Tmin, Tmax, Tval, Fmin, Fmax, Rswitch
               END IF
             END IF
             update=.TRUE.
@@ -274,12 +307,15 @@
   30  FORMAT (/,' GET_2DFLDR  - unable to open input NetCDF file: ',a)
   40  FORMAT (/,' GET_2DFLDR  - error while reading variable: ',a,2x,   &
      &        ' at TIME index = ',i7)
-  50  FORMAT (3x,' GET_2DFLDR  - ',a,/,19x,'(Min = ',1p,e15.8,0p,       &
-     &        ' Max = ',1p,e15.8,0p,')')
-  60  FORMAT (3x,' GET_2DFLDR  - ',a,',',t62,'t = ',a,/,19x,            &
-     &        '(Rec=',i7.7,', Index=',i1,', File: ',a,')',/,19x,        &
-     &        '(Tmin= ', f15.4, ' Tmax= ', f15.4,')',/, 19x,            &
-     &        '(Min = ', 1p,e15.8,0p,' Max = ',1p,e15.8,0p,')')
+  50  FORMAT (3x,' GET_2DFLDR  - ',a,/,19x,'(Grid = ',                  &
+     &        ', Min = ',1p,e15.8,0p,' Max = ',1p,e15.8,0p,')')
+  60  FORMAT (3x,' GET_2DFLDR  - ',a,',',t68,a,/,19x,                   &
+     &        '(Grid=',i2.2,', Rec=',i7.7,', Index=',i1,                &
+     &        ', File: ',a,')',/,19x,                                   &
+     &        '(Tmin= ', f15.4, ' Tmax= ', f15.4,')',                   &
+     &        t71, 't = ', f15.4 ,/, 19x,                               &
+     &        '(Min = ', 1p,e15.8,0p,' Max = ',1p,e15.8,0p,')',         &
+     &        t71, 'regrid = ',a)
 
       RETURN
       END SUBROUTINE get_2dfldr

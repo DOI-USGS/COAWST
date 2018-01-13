@@ -2,7 +2,7 @@
       MODULE tl_rhs3d_mod
 #if defined TANGENT && defined SOLVE3D
 !
-!svn $Id: tl_rhs3d.F 830 2017-01-24 21:21:11Z arango $
+!svn $Id: tl_rhs3d.F 854 2017-07-18 23:28:45Z arango $
 !================================================== Hernan G. Arango ===
 !  Copyright (c) 2002-2017 The ROMS/TOMS Group       Andrew M. Moore   !
 !    Licensed under a MIT/X style license                              !
@@ -121,7 +121,7 @@
 !-----------------------------------------------------------------------
 !
 # ifdef PROFILE
-      CALL wclock_on (ng, iTLM, 21)
+      CALL wclock_on (ng, iTLM, 21, __LINE__, __FILE__)
 # endif
       CALL tl_rhs3d_tile (ng, tile,                                     &
      &                    LBi, UBi, LBj, UBj,                           &
@@ -179,7 +179,7 @@
      &                    OCEAN(ng) % tl_ru,                            &
      &                    OCEAN(ng) % tl_rv)
 # ifdef PROFILE
-      CALL wclock_off (ng, iTLM, 21)
+      CALL wclock_off (ng, iTLM, 21, __LINE__, __FILE__)
 # endif
 # ifdef UV_VIS2
 !

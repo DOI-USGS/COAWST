@@ -4,7 +4,7 @@
 
       SUBROUTINE bblm (ng, tile)
 !
-!svn $Id: ssw_bbl.h 830 2017-01-24 21:21:11Z arango $
+!svn $Id: ssw_bbl.h 854 2017-07-18 23:28:45Z arango $
 !================================================== Hernan G. Arango ===
 !  Copyright (c) 2002-2017 The ROMS/TOMS Group        Chris Sherwood   !
 !    Licensed under a MIT/X style license               Rich Signell   !
@@ -41,7 +41,7 @@
 #include "tile.h"
 !
 #ifdef PROFILE
-      CALL wclock_on (ng, iNLM, 37)
+      CALL wclock_on (ng, iNLM, 37, __LINE__, __FILE__)
 #endif
       CALL bblm_tile (ng, tile,                                         &
      &                LBi, UBi, LBj, UBj,                               &
@@ -67,6 +67,9 @@
      &                OCEAN(ng) % rho,                                  &
      &                OCEAN(ng) % u,                                    &
      &                OCEAN(ng) % v,                                    &
+#if defined SSW_CALC_UB
+     &                OCEAN(ng) % zeta,                                 &
+#endif
      &                BBL(ng) % Iconv,                                  &
      &                BBL(ng) % Ubot,                                   &
      &                BBL(ng) % Vbot,                                   &
@@ -81,7 +84,7 @@
      &                FORCES(ng) % bustr,                               &
      &                FORCES(ng) % bvstr)
 #ifdef PROFILE
-      CALL wclock_off (ng, iNLM, 37)
+      CALL wclock_off (ng, iNLM, 37, __LINE__, __FILE__)
 #endif
       RETURN
       END SUBROUTINE bblm
@@ -102,6 +105,9 @@
      &                      bedldu, bedldv,                             &
 #endif
      &                      bottom, rho, u, v,                          &
+#if defined SSW_CALC_UB
+     &                      zeta,                                       &
+#endif
      &                      Iconv,                                      &
      &                      Ubot, Vbot, Ur, Vr,                         &
      &                      bustrc, bvstrc,                             &
@@ -151,6 +157,9 @@
       real(r8), intent(in) :: rho(LBi:,LBj:,:)
       real(r8), intent(in) :: u(LBi:,LBj:,:,:)
       real(r8), intent(in) :: v(LBi:,LBj:,:,:)
+#if defined SSW_CALC_UB
+      real(r8), intent(in) :: zeta(LBi:,LBj:,:)
+#endif
       real(r8), intent(out) :: Ubot(LBi:,LBj:)
       real(r8), intent(out) :: Vbot(LBi:,LBj:)
       real(r8), intent(out) :: Ur(LBi:,LBj:)
@@ -186,6 +195,9 @@
       real(r8), intent(in) :: rho(LBi:UBi,LBj:UBj,N(ng))
       real(r8), intent(in) :: u(LBi:UBi,LBj:UBj,N(ng),2)
       real(r8), intent(in) :: v(LBi:UBi,LBj:UBj,N(ng),2)
+#if defined SSW_CALC_UB
+      real(r8), intent(in) :: zeta(LBi:UBi,LBj:UBj,3)
+#endif
       real(r8), intent(out) :: Ubot(LBi:UBi,LBj:UBj)
       real(r8), intent(out) :: Vbot(LBi:UBi,LBj:UBj)
       real(r8), intent(out) :: Ur(LBi:UBi,LBj:UBj)
@@ -328,7 +340,7 @@
 
           Fwave_bot(i,j)=twopi/MAX(Pwave_bot(i,j),1.0_r8)
 #ifdef SSW_CALC_UB
-          Kdh=h(i,j)*Fwave_bot(i,j)**2/g
+          Kdh=(h(i,j)+zeta(i,j,nrhs))*Fwave_bot(i,j)**2/g
           Kbh2=Kdh*Kdh+                                                 &
      &         Kdh/(1.0_r8+Kdh*(K1+Kdh*(K2+Kdh*(K3+Kdh*(K4+             &
      &              Kdh*(K5+K6*Kdh))))))

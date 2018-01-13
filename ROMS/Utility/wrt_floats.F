@@ -2,7 +2,7 @@
 #ifdef FLOATS
       SUBROUTINE wrt_floats (ng)
 !
-!svn $Id: wrt_floats.F 830 2017-01-24 21:21:11Z arango $
+!svn $Id: wrt_floats.F 857 2017-07-29 04:05:27Z arango $
 !================================================== Hernan G. Arango ===
 !  Copyright (c) 2002-2017 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
@@ -23,6 +23,8 @@
       USE mod_scalars
       USE mod_stepping
 !
+      USE strings_mod, ONLY : FoundError
+!
       implicit none
 !
 !  Imported variable declarations.
@@ -35,13 +37,14 @@
 
       real(r8), dimension(Nfloats(ng)) :: Tout
 !
-      SourceFile='wrt_floats.F'
+      SourceFile=__FILE__
 !
 !-----------------------------------------------------------------------
 !  Write out station data at RHO-points.
 !-----------------------------------------------------------------------
 !
-      IF (exit_flag.ne.NoError) RETURN
+      IF (FoundError(exit_flag, NoError, __LINE__,                      &
+     &               __FILE__)) RETURN
 !
 !  Set time record index.
 !
@@ -56,7 +59,8 @@
      &                      (/FLT(ng)%Rindex/), (/1/),                  &
      &                      ncid = FLT(ng)%ncid,                        &
      &                      varid = FLT(ng)%Vid(idtime))
-      IF (exit_flag.ne.NoError) RETURN
+      IF (FoundError(exit_flag, NoError, __LINE__,                      &
+     &               __FILE__)) RETURN
 !
 !  Write out floats X-grid locations.
 !
@@ -72,7 +76,8 @@
      &                      (/1,FLT(ng)%Rindex/), (/Nfloats(ng),1/),    &
      &                      ncid = FLT(ng)%ncid,                        &
      &                      varid = FLT(ng)%Vid(idXgrd))
-      IF (exit_flag.ne.NoError) RETURN
+      IF (FoundError(exit_flag, NoError, __LINE__,                      &
+     &               __FILE__)) RETURN
 !
 !  Write out floats Y-grid locations.
 !
@@ -88,7 +93,8 @@
      &                      (/1,FLT(ng)%Rindex/), (/Nfloats(ng),1/),    &
      &                      ncid = FLT(ng)%ncid,                        &
      &                      varid = FLT(ng)%Vid(idYgrd))
-      IF (exit_flag.ne.NoError) RETURN
+      IF (FoundError(exit_flag, NoError, __LINE__,                      &
+     &               __FILE__)) RETURN
 
 # ifdef SOLVE3D
 !
@@ -106,7 +112,8 @@
      &                      (/1,FLT(ng)%Rindex/), (/Nfloats(ng),1/),    &
      &                      ncid = FLT(ng)%ncid,                        &
      &                      varid = FLT(ng)%Vid(idZgrd))
-      IF (exit_flag.ne.NoError) RETURN
+      IF (FoundError(exit_flag, NoError, __LINE__,                      &
+     &               __FILE__)) RETURN
 # endif
 
 # ifdef OFFLINE_FLOATS_LATLON
@@ -145,8 +152,8 @@
      &                        (/1,tFLTindx(ng)/), (/Nfloats(ng),1/),    &
      &                        ncid = ncFLTid(ng),                       &
      &                        varid = fltVid(idxspc,ng))
-      IF (exit_flag.ne.NoError) RETURN
-
+      IF (FoundError(exit_flag, NoError, __LINE__,                      &
+     &               __FILE__)) RETURN
       DO l=1,Nfloats(ng)
         IF (FLT(ng)%bounded(l)) THEN
           Tout(l)=FLT(ng)%track(iflat,nf(ng),l)
@@ -159,8 +166,8 @@
      &                        (/1,tFLTindx(ng)/), (/Nfloats(ng),1/),    &
      &                        ncid = ncFLTid(ng),                       &
      &                        varid = fltVid(idglat,ng))
-      IF (exit_flag.ne.NoError) RETURN
-
+      IF (FoundError(exit_flag, NoError, __LINE__,                      &
+     &               __FILE__)) RETURN
       DO l=1,Nfloats(ng)
         IF (FLT(ng)%bounded(l)) THEN
           Tout(l)=FLT(ng)%track(iyspc,nf(ng),l)
@@ -173,8 +180,8 @@
      &                        (/1,tFLTindx(ng)/), (/Nfloats(ng),1/),    &
      &                        ncid = ncFLTid(ng),                       &
      &                        varid = fltVid(idyspc,ng))
-      IF (exit_flag.ne.NoError) RETURN
-
+      IF (FoundError(exit_flag, NoError, __LINE__,                      &
+     &               __FILE__)) RETURN
      DO l=1,Nfloats(ng)
         IF (FLT(ng)%bounded(l)) THEN
           Tout(l)=FLT(ng)%track(iwdph,nf(ng),l)
@@ -187,7 +194,8 @@
      &                        (/1,tFLTindx(ng)/), (/Nfloats(ng),1/),    &
      &                        ncid = ncFLTid(ng),                       &
      &                        varid = fltVid(idwdph,ng))
-      IF (exit_flag.ne.NoError) RETURN
+      IF (FoundError(exit_flag, NoError, __LINE__,                      &
+     &               __FILE__)) RETURN
      END IF
 # else
 !
@@ -213,7 +221,8 @@
      &                        ncid = FLT(ng)%ncid,                      &
      &                        varid = FLT(ng)%Vid(idglon))
       END IF
-      IF (exit_flag.ne.NoError) RETURN
+      IF (FoundError(exit_flag, NoError, __LINE__,                      &
+     &               __FILE__)) RETURN
 !
       DO l=1,Nfloats(ng)
         IF (DRIFTER(ng)%bounded(l)) THEN
@@ -235,7 +244,8 @@
      &                        ncid = FLT(ng)%ncid,                      &
      &                        varid = FLT(ng)%Vid(idglat))
       END IF
-      IF (exit_flag.ne.NoError) RETURN
+      IF (FoundError(exit_flag, NoError, __LINE__,                      &
+     &               __FILE__)) RETURN
 # endif
 
 # ifdef SOLVE3D
@@ -254,7 +264,8 @@
      &                      (/1,FLT(ng)%Rindex/), (/Nfloats(ng),1/),    &
      &                      ncid = FLT(ng)%ncid,                        &
      &                      varid = FLT(ng)%Vid(iddpth))
-      IF (exit_flag.ne.NoError) RETURN
+      IF (FoundError(exit_flag, NoError, __LINE__,                      &
+     &               __FILE__)) RETURN
 !
 !  Write out density anomaly.
 !
@@ -270,7 +281,8 @@
      &                      (/1,FLT(ng)%Rindex/), (/Nfloats(ng),1/),    &
      &                      ncid = FLT(ng)%ncid,                        &
      &                      varid = FLT(ng)%Vid(idDano))
-      IF (exit_flag.ne.NoError) RETURN
+      IF (FoundError(exit_flag, NoError, __LINE__,                      &
+     &               __FILE__)) RETURN
 !
 !  Write out tracer type variables.
 !
@@ -291,7 +303,8 @@
      &                        (/1,FLT(ng)%Rindex/), (/Nfloats(ng),1/),  &
      &                        ncid = FLT(ng)%ncid,                      &
      &                        varid = FLT(ng)%Tid(itrc))
-        IF (exit_flag.ne.NoError) RETURN
+        IF (FoundError(exit_flag, NoError, __LINE__,                    &
+     &                 __FILE__)) RETURN
       END DO
 
 #  ifdef OFFLINE_FLOATS
@@ -315,7 +328,8 @@
      &                      (/1,FLT(ng)%Rindex/), (/Nfloats(ng),1/),    &
      &                      ncid = FLT(ng)%ncid,                        &
      &                      varid = Flt(ng)%Vid(idswim))
-      IF (exit_flag.ne.NoError) RETURN
+      IF (FoundError(exit_flag, NoError, __LINE__,                      &
+     &               __FILE__)) RETURN
 !
 !  Write out biological float vertical velocity.
 !
@@ -331,7 +345,8 @@
      &                      (/1,FLT(ng)%Rindex/), (/Nfloats(ng),1/),    &
      &                      ncid = FLT(ng)%ncid,                        &
      &                      varid = FLT(ng)%Vid(idwbio))
-      IF (exit_flag.ne.NoError) RETURN
+      IF (FoundError(exit_flag, NoError, __LINE__,                      &
+     &               __FILE__)) RETURN
 !
 !  Write out biological float size (length).
 !
@@ -347,7 +362,8 @@
      &                      (/1,FLT(ng)%Rindex/), (/Nfloats(ng),1/),    &
      &                      ncid = FLT(ng)%ncid,                        &
      &                      varid = FLT(ng)%Vid(idsize))
-      IF (exit_flag.ne.NoError) RETURN
+      IF (FoundError(exit_flag, NoError, __LINE__,                      &
+     &               __FILE__)) RETURN
 !
 !  Write out biological float sinking velocity.
 !
@@ -363,7 +379,8 @@
      &                      (/1,FLT(ng)%Rindex/), (/Nfloats(ng),1/),    &
      &                      ncid = FLT(ng)%ncid,                        &
      &                      varid = FLT(ng)%Vid(idwsin))
-      IF (exit_flag.ne.NoError) RETURN
+      IF (FoundError(exit_flag, NoError, __LINE__,                      &
+     &               __FILE__)) RETURN
 # endif
 !
 !-----------------------------------------------------------------------

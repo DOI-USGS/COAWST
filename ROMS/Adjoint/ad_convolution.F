@@ -2,7 +2,7 @@
       MODULE ad_convolution_mod
 #if defined ADJOINT && defined FOUR_DVAR
 !
-!svn $Id: ad_convolution.F 830 2017-01-24 21:21:11Z arango $
+!svn $Id: ad_convolution.F 854 2017-07-18 23:28:45Z arango $
 !================================================== Hernan G. Arango ===
 !  Copyright (c) 2002-2017 The ROMS/TOMS Group       Andrew M. Moore   !
 !    Licensed under a MIT/X style license                              !
@@ -524,7 +524,7 @@
         END DO
       END DO
 
-      CALL set_depth_tile (ng, tile,                                    &
+      CALL set_depth_tile (ng, tile, iADM,                              &
      &                     LBi, UBi, LBj, UBj,                          &
      &                     IminS, ImaxS, JminS, JmaxS,                  &
      &                     nstp, nnew,                                  &

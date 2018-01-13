@@ -2,7 +2,7 @@
       MODULE tl_ini_fields_mod
 #ifdef TANGENT
 !
-!svn $Id: tl_ini_fields.F 830 2017-01-24 21:21:11Z arango $
+!svn $Id: tl_ini_fields.F 854 2017-07-18 23:28:45Z arango $
 !================================================== Hernan G. Arango ===
 !  Copyright (c) 2002-2017 The ROMS/TOMS Group       Andrew M. Moore   !
 !    Licensed under a MIT/X style license                              !
@@ -45,7 +45,7 @@
 # include "tile.h"
 !
 # ifdef PROFILE
-      CALL wclock_on (ng, iTLM, 2)
+      CALL wclock_on (ng, iTLM, 2, __LINE__, __FILE__)
 # endif
       CALL tl_ini_fields_tile (ng, tile, model,                         &
      &                         LBi, UBi, LBj, UBj,                      &
@@ -75,7 +75,7 @@
      &                         OCEAN(ng) % zeta,                        &
      &                         OCEAN(ng) % tl_zeta)
 # ifdef PROFILE
-      CALL wclock_off (ng, iTLM, 2)
+      CALL wclock_off (ng, iTLM, 2, __LINE__, __FILE__)
 # endif
 
       RETURN
@@ -810,7 +810,7 @@
 # include "tile.h"
 !
 # ifdef PROFILE
-      CALL wclock_on (ng, iTLM, 2)
+      CALL wclock_on (ng, iTLM, 2, __LINE__, __FILE__)
 # endif
       CALL tl_ini_zeta_tile (ng, tile, model,                           &
      &                       LBi, UBi, LBj, UBj,                        &
@@ -833,7 +833,7 @@
      &                       OCEAN(ng) % zeta,                          &
      &                       OCEAN(ng) % tl_zeta)
 # ifdef PROFILE
-      CALL wclock_off (ng, iTLM, 2)
+      CALL wclock_off (ng, iTLM, 2, __LINE__, __FILE__)
 # endif
 
       RETURN

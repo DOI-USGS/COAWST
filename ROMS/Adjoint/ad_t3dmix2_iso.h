@@ -1,6 +1,6 @@
       SUBROUTINE ad_t3dmix2 (ng, tile)
 !
-!svn $Id: ad_t3dmix2_iso.h 830 2017-01-24 21:21:11Z arango $
+!svn $Id: ad_t3dmix2_iso.h 854 2017-07-18 23:28:45Z arango $
 !************************************************** Hernan G. Arango ***
 !  Copyright (c) 2002-2017 The ROMS/TOMS Group       Andrew M. Moore   !
 !    Licensed under a MIT/X style license                              !
@@ -35,7 +35,7 @@
 #include "tile.h"
 !
 #ifdef PROFILE
-      CALL wclock_on (ng, iADM, 26)
+      CALL wclock_on (ng, iADM, 26, __LINE__, __FILE__)
 #endif
       CALL ad_t3dmix2_tile (ng, tile,                                   &
      &                      LBi, UBi, LBj, UBj,                         &
@@ -54,8 +54,8 @@
      &                      GRID(ng) % z_r,                             &
      &                      GRID(ng) % ad_z_r,                          &
      &                      MIXING(ng) % diff2,                         &
-     &                      OCEAN(ng) % rho,                            &
-     &                      OCEAN(ng) % ad_rho,                         &
+     &                      OCEAN(ng) % pden,                           &
+     &                      OCEAN(ng) % ad_pden,                        &
 #ifdef TS_MIX_CLIMA
      &                      CLIMA(ng) % tclm,                           &
 #endif
@@ -65,7 +65,7 @@
      &                      OCEAN(ng) % t,                              &
      &                      OCEAN(ng) % ad_t)
 #ifdef PROFILE
-      CALL wclock_off (ng, iADM, 26)
+      CALL wclock_off (ng, iADM, 26, __LINE__, __FILE__)
 #endif
       RETURN
       END SUBROUTINE ad_t3dmix2
@@ -82,7 +82,7 @@
      &                            Hz, ad_Hz,                            &
      &                            z_r, ad_z_r,                          &
      &                            diff2,                                &
-     &                            rho, ad_rho,                          &
+     &                            pden, ad_pden,                        &
 #ifdef TS_MIX_CLIMA
      &                            tclm,                                 &
 #endif
@@ -114,7 +114,7 @@
       real(r8), intent(in) :: pn(LBi:,LBj:)
       real(r8), intent(in) :: Hz(LBi:,LBj:,:)
       real(r8), intent(in) :: z_r(LBi:,LBj:,:)
-      real(r8), intent(in) :: rho(LBi:,LBj:,:)
+      real(r8), intent(in) :: pden(LBi:,LBj:,:)
       real(r8), intent(in) :: t(LBi:,LBj:,:,:,:)
 # ifdef TS_MIX_CLIMA
       real(r8), intent(in) :: tclm(LBi:,LBj:,:,:)
@@ -124,7 +124,7 @@
 # endif
       real(r8), intent(inout) :: ad_Hz(LBi:,LBj:,:)
       real(r8), intent(inout) :: ad_z_r(LBi:,LBj:,:)
-      real(r8), intent(inout) :: ad_rho(LBi:,LBj:,:)
+      real(r8), intent(inout) :: ad_pden(LBi:,LBj:,:)
       real(r8), intent(inout) :: ad_t(LBi:,LBj:,:,:,:)
 #else
 # ifdef MASKING
@@ -138,7 +138,7 @@
       real(r8), intent(in) :: pn(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: Hz(LBi:UBi,LBj:UBj,N(ng))
       real(r8), intent(in) :: z_r(LBi:UBi,LBj:UBj,N(ng))
-      real(r8), intent(in) :: rho(LBi:UBi,LBj:UBj,N(ng))
+      real(r8), intent(in) :: pden(LBi:UBi,LBj:UBj,N(ng))
       real(r8), intent(in) :: t(LBi:UBi,LBj:UBj,N(ng),3,NT(ng))
 # ifdef TS_MIX_CLIMA
       real(r8), intent(in) :: tclm(LBi:UBi,LBj:UBj,N(ng),NT(ng))
@@ -149,7 +149,7 @@
 # endif
       real(r8), intent(inout) :: ad_Hz(LBi:UBi,LBj:UBj,N(ng))
       real(r8), intent(inout) :: ad_z_r(LBi:UBi,LBj:UBj,N(ng))
-      real(r8), intent(inout) :: ad_rho(LBi:UBi,LBj:UBj,N(ng))
+      real(r8), intent(inout) :: ad_pden(LBi:UBi,LBj:UBj,N(ng))
       real(r8), intent(inout) :: ad_t(LBi:UBi,LBj:UBj,N(ng),3,NT(ng))
 #endif
 !
@@ -256,8 +256,8 @@
 #ifdef MASKING
                   cff=cff*umask(i,j)
 #endif
-                  dRdx(i,j,k2b)=cff*(rho(i  ,j,kk+1)-                   &
-     &                               rho(i-1,j,kk+1))
+                  dRdx(i,j,k2b)=cff*(pden(i  ,j,kk+1)-                  &
+     &                               pden(i-1,j,kk+1))
 #ifdef TS_MIX_CLIMA
                   dTdx(i,j,k2b)=cff*((t(i  ,j,k+1,nrhs,itrc)-           &
      &                                tclm(i  ,j,k+1,itrc))-            &
@@ -283,8 +283,8 @@
 #ifdef MASKING
                   cff=cff*vmask(i,j)
 #endif
-                  dRde(i,j,k2b)=cff*(rho(i,j  ,kk+1)-                   &
-     &                               rho(i,j-1,kk+1))
+                  dRde(i,j,k2b)=cff*(pden(i,j  ,kk+1)-                  &
+     &                               pden(i,j-1,kk+1))
 #ifdef TS_MIX_CLIMA
                   dTde(i,j,k2b)=cff*((t(i,j  ,k+1,nrhs,itrc)-           &
      &                                tclm(i,j  ,k+1,itrc))-            &
@@ -330,15 +330,15 @@
      &                      dRde(i,j,k1b)**2+dRde(i,j+1,k1b)**2)
                   cff2=0.25_r8*slope_max*                               &
      &                 (z_r(i,j,kk+1)-z_r(i,j,kk))*cff1
-                  cff3=MAX(rho(i,j,kk)-rho(i,j,kk+1),small)
+                  cff3=MAX(pden(i,j,kk)-pden(i,j,kk+1),small)
                   cff4=MAX(cff2,cff3)
                   cff=-1.0_r8/cff4
 #elif defined TS_MIX_MIN_STRAT
-                  cff1=MAX(rho(i,j,kk)-rho(i,j,kk+1),                   &
+                  cff1=MAX(pden(i,j,kk)-pden(i,j,kk+1),                 &
      &                     strat_min*(z_r(i,j,kk+1)-z_r(i,j,kk)))
                   cff=-1.0_r8/cff1
 #else
-                  cff1=MAX(rho(i,j,kk)-rho(i,j,kk+1),eps)
+                  cff1=MAX(pden(i,j,kk)-pden(i,j,kk+1),eps)
                   cff=-1.0_r8/cff1
 #endif
 #ifdef TS_MIX_CLIMA
@@ -709,15 +709,15 @@
      &                    dRde(i,j,k1)**2+dRde(i,j+1,k1)**2)
                 cff2=0.25_r8*slope_max*                                 &
      &               (z_r(i,j,k+1)-z_r(i,j,k))*cff1
-                cff3=MAX(rho(i,j,k)-rho(i,j,k+1),small)
+                cff3=MAX(pden(i,j,k)-pden(i,j,k+1),small)
                 cff4=MAX(cff2,cff3)
                 cff=-1.0_r8/cff4
 #elif defined TS_MIX_MIN_STRAT
-                cff1=MAX(rho(i,j,k)-rho(i,j,k+1),                       &
+                cff1=MAX(pden(i,j,k)-pden(i,j,k+1),                     &
      &                   strat_min*(z_r(i,j,k+1)-z_r(i,j,k)))
                 cff=-1.0_r8/cff1
 #else
-                cff1=MAX(rho(i,j,k)-rho(i,j,k+1),eps)
+                cff1=MAX(pden(i,j,k)-pden(i,j,k+1),eps)
                 cff=-1.0_r8/cff1
 #endif
 !>              tl_FS(i,j,k2)=tl_cff*(z_r(i,j,k+1)-z_r(i,j,k))+         &
@@ -769,14 +769,14 @@
                 ad_cff2=ad_cff2+                                        &
      &                  (0.5_r8+SIGN(0.5_r8,cff2-cff3))*ad_cff4
                 ad_cff4=0.0_r8
-!>              tl_cff3=(0.5_r8+SIGN(0.5_r8,rho(i,j,k)-rho(i,j,k+1)-    &
+!>              tl_cff3=(0.5_r8+SIGN(0.5_r8,pden(i,j,k)-pden(i,j,k+1)-  &
 !>   &                                      small))*                    &
-!>   &                  (tl_rho(i,j,k)-tl_rho(i,j,k+1))
+!>   &                  (tl_pden(i,j,k)-tl_pden(i,j,k+1))
 !>
-                adfac=(0.5_r8+SIGN(0.5_r8,rho(i,j,k)-rho(i,j,k+1)-      &
+                adfac=(0.5_r8+SIGN(0.5_r8,pden(i,j,k)-pden(i,j,k+1)-    &
      &                                    small))*ad_cff3
-                ad_rho(i,j,k  )=ad_rho(i,j,k  )+adfac
-                ad_rho(i,j,k+1)=ad_rho(i,j,k+1)-adfac
+                ad_pden(i,j,k  )=ad_pden(i,j,k  )+adfac
+                ad_pden(i,j,k+1)=ad_pden(i,j,k+1)-adfac
                 ad_cff3=0.0_r8
 !>              tl_cff2=0.25_r8*slope_max*                              &
 !>   &                  ((tl_z_r(i,j,k+1)-tl_z_r(i,j,k))*cff1+          &
@@ -827,28 +827,28 @@
                 ad_cff1=ad_cff1+cff*cff*ad_cff
                 ad_cff=0.0_r8
 !>              tl_cff1=(0.5_r8+SIGN(0.5_r8,                            &
-!>   &                               rho(i,j,k)-rho(i,j,k+1)-           &
+!>   &                               pden(i,j,k)-pden(i,j,k+1)-         &
 !>   &                               strat_min*(z_r(i,j,k+1)-           &
 !>   &                                          z_r(i,j,k  ))))*        &
-!>   &                  (tl_rho(i,j,k)-tl_rho(i,j,k+1))+                &
+!>   &                  (tl_pden(i,j,k)-tl_pden(i,j,k+1))+              &
 !>   &                  (0.5_r8-SIGN(0.5_r8,                            &
-!>   &                               rho(i,j,k)-rho(i,j,k+1)-           &
+!>   &                               pden(i,j,k)-pden(i,j,k+1)-         &
 !>   &                               strat_min*(z_r(i,j,k+1)-           &
 !>   &                                          z_r(i,j,k  ))))*        &
 !>   &                  (strat_min*(tl_z_r(i,j,k+1)-tl_z_r(i,j,k  )))
 !>
                 adfac1=(0.5_r8+SIGN(0.5_r8,                             &
-     &                              rho(i,j,k)-rho(i,j,k+1)-            &
+     &                              pden(i,j,k)-pden(i,j,k+1)-          &
      &                              strat_min*(z_r(i,j,k+1)-            &
      &                                         z_r(i,j,k  ))))*         &
      &                 ad_cff1
                 adfac2=(0.5_r8-SIGN(0.5_r8,                             &
-     &                              rho(i,j,k)-rho(i,j,k+1)-            &
+     &                              pden(i,j,k)-pden(i,j,k+1)-          &
      &                              strat_min*(z_r(i,j,k+1)-            &
      &                                         z_r(i,j,k  ))))*         &
      &                 strat_min*ad_cff1
-                ad_rho(i,j,k  )=ad_rho(i,j,k  )+adfac1
-                ad_rho(i,j,k+1)=ad_rho(i,j,k+1)-adfac1
+                ad_pden(i,j,k  )=ad_pden(i,j,k  )+adfac1
+                ad_pden(i,j,k+1)=ad_pden(i,j,k+1)-adfac1
                 ad_z_r(i,j,k  )=ad_z_r(i,j,k  )-adfac2
                 ad_z_r(i,j,k+1)=ad_z_r(i,j,k+1)+adfac2
                 ad_cff1=0.0_r8
@@ -858,14 +858,14 @@
                 ad_cff1=ad_cff1+cff*cff*ad_cff
                 ad_cff=0.0_r8
 !>              tl_cff1=(0.5_r8+SIGN(0.5_r8,                            &
-!>   &                               rho(i,j,k)-rho(i,j,k+1)-eps))*     &
-!>   &                  (tl_rho(i,j,k)-tl_rho(i,j,k+1))
+!>   &                               pden(i,j,k)-pden(i,j,k+1)-eps))*   &
+!>   &                  (tl_pden(i,j,k)-tl_pden(i,j,k+1))
 !>
                 adfac=(0.5_r8+SIGN(0.5_r8,                              &
-     &                             rho(i,j,k)-rho(i,j,k+1)-eps))*       &
+     &                             pden(i,j,k)-pden(i,j,k+1)-eps))*     &
      &                ad_cff1
-                ad_rho(i,j,k  )=ad_rho(i,j,k  )+adfac
-                ad_rho(i,j,k+1)=ad_rho(i,j,k+1)-adfac
+                ad_pden(i,j,k  )=ad_pden(i,j,k  )+adfac
+                ad_pden(i,j,k+1)=ad_pden(i,j,k+1)-adfac
                 ad_cff1=0.0_r8
 #endif
               END DO
@@ -887,12 +887,12 @@
                 ad_t(i,j  ,k+1,nrhs,itrc)=ad_t(i,j  ,k+1,nrhs,itrc)+    &
      &                                    adfac
                 ad_dTde(i,j,k2)=0.0_r8
-!>              tl_dRde(i,j,k2)=cff*(tl_rho(i,j  ,k+1)-                 &
-!>   &                               tl_rho(i,j-1,k+1))
+!>              tl_dRde(i,j,k2)=cff*(tl_pden(i,j  ,k+1)-                &
+!>   &                               tl_pden(i,j-1,k+1))
 !>
                 adfac=cff*ad_dRde(i,j,k2)
-                ad_rho(i,j-1,k+1)=ad_rho(i,j-1,k+1)-adfac
-                ad_rho(i,j  ,k+1)=ad_rho(i,j  ,k+1)+adfac
+                ad_pden(i,j-1,k+1)=ad_pden(i,j-1,k+1)-adfac
+                ad_pden(i,j  ,k+1)=ad_pden(i,j  ,k+1)+adfac
                 ad_dRde(i,j,k2)=0.0_r8
               END DO
             END DO
@@ -911,12 +911,12 @@
                 ad_t(i  ,j,k+1,nrhs,itrc)=ad_t(i  ,j,k+1,nrhs,itrc)+    &
      &                                    adfac
                 ad_dTdx(i,j,k2)=0.0_r8
-!>              tl_dRdx(i,j,k2)=cff*(tl_rho(i  ,j,k+1)-                 &
-!>   &                               tl_rho(i-1,j,k+1))
+!>              tl_dRdx(i,j,k2)=cff*(tl_pden(i  ,j,k+1)-                &
+!>   &                               tl_pden(i-1,j,k+1))
 !>
                 adfac=cff*ad_dRdx(i,j,k2)
-                ad_rho(i-1,j,k+1)=ad_rho(i-1,j,k+1)-adfac
-                ad_rho(i  ,j,k+1)=ad_rho(i  ,j,k+1)+adfac
+                ad_pden(i-1,j,k+1)=ad_pden(i-1,j,k+1)-adfac
+                ad_pden(i  ,j,k+1)=ad_pden(i  ,j,k+1)+adfac
                 ad_dRdx(i,j,k2)=0.0_r8
               END DO
             END DO

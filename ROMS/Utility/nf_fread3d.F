@@ -1,7 +1,7 @@
 #include "cppdefs.h"
       MODULE nf_fread3d_mod
 !
-!svn $Id: nf_fread3d.F 830 2017-01-24 21:21:11Z arango $
+!svn $Id: nf_fread3d.F 857 2017-07-29 04:05:27Z arango $
 !================================================== Hernan G. Arango ===
 !  Copyright (c) 2002-2017 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
@@ -69,6 +69,7 @@
 # if defined MASKING && defined READ_WATER
       USE distribute_mod, ONLY : mp_collect
 # endif
+      USE strings_mod,    ONLY : FoundError
 !
       implicit none
 !
@@ -205,7 +206,8 @@
       CALL netcdf_get_fatt (ng, model, ncname, ncvarid, AttName,        &
      &                      AttValue, foundit,                          &
      &                      ncid = ncid)
-      IF (exit_flag.ne.NoError) THEN
+      IF (FoundError(exit_flag, NoError, __LINE__,                      &
+     &               __FILE__)) THEN
         nf_fread3d=ioerror
         RETURN
       END IF
@@ -486,9 +488,8 @@
       USE mod_ncparam
       USE mod_netcdf
       USE mod_scalars
-
-# ifdef DISTRIBUTE
 !
+# ifdef DISTRIBUTE
       USE distribute_mod, ONLY : mp_bcasti
 #  ifdef INLINE_2DIO
       USE distribute_mod, ONLY : mp_scatter2d
@@ -496,6 +497,7 @@
       USE distribute_mod, ONLY : mp_scatter3d
 #  endif
 # endif
+      USE strings_mod,    ONLY : FoundError
 !
       implicit none
 !
@@ -617,7 +619,8 @@
       CALL netcdf_get_fatt (ng, model, ncname, ncvarid, AttName,        &
      &                      AttValue, foundit,                          &
      &                      ncid = ncid)
-      IF (exit_flag.ne.NoError) THEN
+      IF (FoundError(exit_flag, NoError, __LINE__,                      &
+     &               __FILE__)) THEN
         nf_fread3d=ioerror
         RETURN
       END IF
@@ -748,7 +751,8 @@
 # ifdef DISTRIBUTE
         CALL mp_bcasti (ng, model, status)
 # endif
-        IF (status.ne.nf90_noerr) THEN
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+     &                 __FILE__)) THEN
           exit_flag=2
           ioerror=status
           nf_fread3d=status

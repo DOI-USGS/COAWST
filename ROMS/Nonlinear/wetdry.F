@@ -248,14 +248,14 @@
      &                            rmask_wet_avg)
         END IF
 
-#  ifdef DISTRIBUTE
+# ifdef DISTRIBUTE
 !
         CALL mp_exchange2d (ng, tile, iNLM, 1,                          &
      &                      LBi, UBi, LBj, UBj,                         &
      &                      NghostPoints,                               &
      &                      EWperiodic(ng), NSperiodic(ng),             &
      &                      rmask_wet_avg)
-#  endif
+# endif
 !
 !  If done witn 2D fast time-stepping, scale time-averaged mask by
 !  the inverse of fast time-step (2*nfast).

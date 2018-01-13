@@ -2,7 +2,7 @@
       MODULE tl_set_depth_mod
 #ifdef TANGENT
 !
-!svn $Id: tl_set_depth.F 830 2017-01-24 21:21:11Z arango $
+!svn $Id: tl_set_depth.F 854 2017-07-18 23:28:45Z arango $
 !================================================== Hernan G. Arango ===
 !  Copyright (c) 2002-2017 The ROMS/TOMS Group       Andrew M. Moore   !
 !    Licensed under a MIT/X style license                              !
@@ -37,7 +37,7 @@
 # ifdef SOLVE3D
 !
 !***********************************************************************
-      SUBROUTINE tl_set_depth (ng, tile)
+      SUBROUTINE tl_set_depth (ng, tile, model)
 !***********************************************************************
 !
       USE mod_param
@@ -51,16 +51,16 @@
 !
 !  Imported variable declarations.
 !
-      integer, intent(in) :: ng, tile
+      integer, intent(in) :: ng, tile, model
 !
 !  Local variable declarations.
 !
 #  include "tile.h"
 !
 #  ifdef PROFILE
-      CALL wclock_on (ng, iTLM, 12)
+      CALL wclock_on (ng, model, 12, __LINE__, __FILE__)
 #  endif
-      CALL tl_set_depth_tile (ng, tile,                                 &
+      CALL tl_set_depth_tile (ng, tile, model,                          &
      &                        LBi, UBi, LBj, UBj,                       &
      &                        IminS, ImaxS, JminS, JmaxS,               &
      &                        nstp(ng), nnew(ng),                       &
@@ -78,14 +78,14 @@
      &                        GRID(ng) % tl_z_r,                        &
      &                        GRID(ng) % tl_z_w)
 #  ifdef PROFILE
-      CALL wclock_off (ng, iTLM, 12)
+      CALL wclock_off (ng, model, 12, __LINE__, __FILE__)
 #  endif
 
       RETURN
       END SUBROUTINE tl_set_depth
 !
 !***********************************************************************
-      SUBROUTINE tl_set_depth_tile (ng, tile,                           &
+      SUBROUTINE tl_set_depth_tile (ng, tile, model,                    &
      &                              LBi, UBi, LBj, UBj,                 &
      &                              IminS, ImaxS, JminS, JmaxS,         &
      &                              nstp, nnew,                         &
@@ -111,7 +111,7 @@
 !
 !  Imported variable declarations.
 !
-      integer, intent(in) :: ng, tile
+      integer, intent(in) :: ng, tile, model
       integer, intent(in) :: LBi, UBi, LBj, UBj
       integer, intent(in) :: IminS, ImaxS, JminS, JmaxS
       integer, intent(in) :: nstp, nnew
@@ -351,35 +351,35 @@
       END IF
 
 #  ifdef DISTRIBUTE
-!>    CALL mp_exchange2d (ng, tile, iNLM, 1,                            &
+!>    CALL mp_exchange2d (ng, tile, model, 1,                           &
 !>   &                    LBi, UBi, LBj, UBj,                           &
 !>   &                    NghostPoints,                                 &
 !>   &                    EWperiodic(ng), NSperiodic(ng),               &
 !>   &                    h)
 !>
-      CALL mp_exchange2d (ng, tile, iTLM, 1,                            &
+      CALL mp_exchange2d (ng, tile, model, 1,                           &
      &                    LBi, UBi, LBj, UBj,                           &
      &                    NghostPoints,                                 &
      &                    EWperiodic(ng), NSperiodic(ng),               &
      &                    tl_h)
-!>    CALL mp_exchange3d (ng, tile, iNLM, 1,                            &
+!>    CALL mp_exchange3d (ng, tile, model, 1,                           &
 !>   &                    LBi, UBi, LBj, UBj, 0, N(ng),                 &
 !>   &                    NghostPoints,                                 &
 !>   &                    EWperiodic(ng), NSperiodic(ng),               &
 !>   &                    z_w)
 !>
-      CALL mp_exchange3d (ng, tile, iTLM, 1,                            &
+      CALL mp_exchange3d (ng, tile, model, 1,                           &
      &                    LBi, UBi, LBj, UBj, 0, N(ng),                 &
      &                    NghostPoints,                                 &
      &                    EWperiodic(ng), NSperiodic(ng),               &
      &                    tl_z_w)
-!>    CALL mp_exchange3d (ng, tile, iNLM, 2,                            &
+!>    CALL mp_exchange3d (ng, tile, model, 2,                           &
 !>   &                    LBi, UBi, LBj, UBj, 1, N(ng),                 &
 !>   &                    NghostPoints,                                 &
 !>   &                    EWperiodic(ng), NSperiodic(ng),               &
 !>   &                    z_r, Hz)
 !>
-      CALL mp_exchange3d (ng, tile, iTLM, 2,                            &
+      CALL mp_exchange3d (ng, tile, model, 2,                           &
      &                    LBi, UBi, LBj, UBj, 1, N(ng),                 &
      &                    NghostPoints,                                 &
      &                    EWperiodic(ng), NSperiodic(ng),               &
@@ -392,7 +392,7 @@
 #  ifdef ADJUST_BOUNDARY
 !
 !***********************************************************************
-      SUBROUTINE tl_set_depth_bry (ng, tile)
+      SUBROUTINE tl_set_depth_bry (ng, tile, model)
 !***********************************************************************
 !
       USE mod_param
@@ -400,16 +400,16 @@
 !
 !  Imported variable declarations.
 !
-      integer, intent(in) :: ng, tile
+      integer, intent(in) :: ng, tile, model
 !
 !  Local variable declarations.
 !
 #   include "tile.h"
 !
 #   ifdef PROFILE
-      CALL wclock_on (ng, iTLM, 12)
+      CALL wclock_on (ng, model, 12, __LINE__, __FILE__)
 #   endif
-      CALL tl_set_depth_bry_tile (ng, tile,                             &
+      CALL tl_set_depth_bry_tile (ng, tile, model,                      &
      &                            LBi, UBi, LBj, UBj, LBij, UBij,       &
      &                            IminS, ImaxS, JminS, JmaxS,           &
      &                            GRID(ng) % h,                         &
@@ -419,14 +419,14 @@
 #   endif
      &                            GRID(ng) % tl_Hz_bry)
 #   ifdef PROFILE
-      CALL wclock_off (ng, iTLM, 12)
+      CALL wclock_off (ng, model, 12, __LINE__, __FILE__)
 #   endif
 
       RETURN
       END SUBROUTINE tl_set_depth_bry
 !
 !***********************************************************************
-      SUBROUTINE tl_set_depth_bry_tile (ng, tile,                       &
+      SUBROUTINE tl_set_depth_bry_tile (ng, tile, model,                &
      &                                  LBi, UBi, LBj, UBj, LBij, UBij, &
      &                                  IminS, ImaxS, JminS, JmaxS,     &
      &                                  h, tl_h,                        &
@@ -447,7 +447,7 @@
 !
 !  Imported variable declarations.
 !
-      integer, intent(in) :: ng, tile
+      integer, intent(in) :: ng, tile, model
       integer, intent(in) :: LBi, UBi, LBj, UBj, LBij, UBij
       integer, intent(in) :: IminS, ImaxS, JminS, JmaxS
 !
@@ -809,13 +809,13 @@
 !-----------------------------------------------------------------------
 !
       DO ibry=1,4
-!>      CALL mp_exchange3d_bry (ng, tile, iNLM, 1, ibry,                &
+!>      CALL mp_exchange3d_bry (ng, tile, model, 1, ibry,               &
 !>   &                          LBij, UBij, 1, N(ng),                   &
 !>   &                          NghostPoints,                           &
 !>   &                          EWperiodic(ng), NSperiodic(ng),         &
 !>   &                          Hz_bry(:,:,ibry))
 !>
-        CALL mp_exchange3d_bry (ng, tile, iTLM, 1, ibry,                &
+        CALL mp_exchange3d_bry (ng, tile, model, 1, ibry,               &
      &                          LBij, UBij, 1, N(ng),                   &
      &                          NghostPoints,                           &
      &                          EWperiodic(ng), NSperiodic(ng),         &
@@ -844,14 +844,14 @@
 # include "tile.h"
 !
 # ifdef PROFILE
-      CALL wclock_on (ng, iTLM, 12)
+      CALL wclock_on (ng, iTLM, 12, __LINE__, __FILE__)
 # endif
       CALL tl_bath_tile (ng, tile,                                      &
      &                   LBi, UBi, LBj, UBj,                            &
      &                   IminS, ImaxS, JminS, JmaxS,                    &
      &                   GRID(ng) % tl_h)
 # ifdef PROFILE
-      CALL wclock_off (ng, iTLM, 12)
+      CALL wclock_off (ng, iTLM, 12, __LINE__, __FILE__)
 # endif
 
       RETURN

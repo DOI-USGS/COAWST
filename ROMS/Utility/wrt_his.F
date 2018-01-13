@@ -1,7 +1,7 @@
 #include "cppdefs.h"
       SUBROUTINE wrt_his (ng, tile)
 !
-!svn $Id: wrt_his.F 830 2017-01-24 21:21:11Z arango $
+!svn $Id: wrt_his.F 858 2017-07-31 23:02:30Z arango $
 !================================================== Hernan G. Arango ===
 !  Copyright (c) 2002-2017 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
@@ -52,21 +52,22 @@
 #endif
       USE mod_stepping
 !
-      USE nf_fwrite2d_mod, ONLY : nf_fwrite2d
+      USE nf_fwrite2d_mod,     ONLY : nf_fwrite2d
 #ifdef ADJUST_BOUNDARY
       USE nf_fwrite2d_bry_mod, ONLY : nf_fwrite2d_bry
 #endif
 #ifdef SOLVE3D
-      USE nf_fwrite3d_mod, ONLY : nf_fwrite3d
+      USE nf_fwrite3d_mod,     ONLY : nf_fwrite3d
 # ifdef ADJUST_BOUNDARY
       USE nf_fwrite3d_bry_mod, ONLY : nf_fwrite3d_bry
 # endif
-      USE omega_mod, ONLY : scale_omega
+      USE omega_mod,           ONLY : scale_omega
 #endif
-      USE uv_rotate_mod, ONLY : uv_rotate2d
+      USE uv_rotate_mod,       ONLY : uv_rotate2d
 #ifdef SOLVE3D
-      USE uv_rotate_mod, ONLY : uv_rotate3d
+      USE uv_rotate_mod,       ONLY : uv_rotate3d
 #endif
+      USE strings_mod,         ONLY : FoundError
 #ifdef INWAVE_MODEL
       USE mod_inwave_params
       USE mod_inwave_vars
@@ -102,7 +103,7 @@
 #endif
 # include "set_bounds.h"
 !
-      SourceFile='wrt_his.F'
+      SourceFile=__FILE__
 !
       LBi=LBOUND(GRID(ng)%h,DIM=1)
       UBi=UBOUND(GRID(ng)%h,DIM=1)
@@ -117,7 +118,8 @@
 !  Write out history fields.
 !-----------------------------------------------------------------------
 !
-      IF (exit_flag.ne.NoError) RETURN
+      IF (FoundError(exit_flag, NoError, __LINE__,                      &
+     &               __FILE__)) RETURN
 !
 !  Set grid type factor to write full (gfactor=1) fields or water
 !  points (gfactor=-1) fields only.
@@ -141,7 +143,8 @@
      &                      (/HIS(ng)%Rindex/), (/1/),                  &
      &                      ncid = HIS(ng)%ncid,                        &
      &                      varid = HIS(ng)%Vid(idtime))
-      IF (exit_flag.ne.NoError) RETURN
+      IF (FoundError(exit_flag, NoError, __LINE__,                      &
+     &               __FILE__)) RETURN
 
 #if defined SEDIMENT && defined SED_MORPH
 !
@@ -158,7 +161,8 @@
 # endif
      &                     GRID(ng) % h,                                &
      &                     SetFillVal = .FALSE.)
-        IF (status.ne.nf90_noerr) THEN
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+     &                 __FILE__)) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idbath)), HIS(ng)%Rindex
           END IF
@@ -182,7 +186,8 @@
 # endif
      &                   GRID(ng) % pmask_wet,                          &
      &                   SetFillVal = .FALSE.)
-      IF (status.ne.nf90_noerr) THEN
+      IF (FoundError(status, nf90_noerr, __LINE__,                      &
+     &               __FILE__)) THEN
         IF (Master) THEN
           WRITE (stdout,10) TRIM(Vname(1,idPwet)), HIS(ng)%Rindex
         END IF
@@ -203,7 +208,8 @@
 # endif
      &                   GRID(ng) % rmask_wet,                          &
      &                   SetFillVal = .FALSE.)
-      IF (status.ne.nf90_noerr) THEN
+      IF (FoundError(status, nf90_noerr, __LINE__,                      &
+     &               __FILE__)) THEN
         IF (Master) THEN
           WRITE (stdout,10) TRIM(Vname(1,idRwet)), HIS(ng)%Rindex
         END IF
@@ -224,7 +230,8 @@
 # endif
      &                   GRID(ng) % umask_wet,                          &
      &                   SetFillVal = .FALSE.)
-      IF (status.ne.nf90_noerr) THEN
+      IF (FoundError(status, nf90_noerr, __LINE__,                      &
+     &               __FILE__)) THEN
         IF (Master) THEN
           WRITE (stdout,10) TRIM(Vname(1,idUwet)), HIS(ng)%Rindex
         END IF
@@ -245,7 +252,8 @@
 # endif
      &                   GRID(ng) % vmask_wet,                          &
      &                   SetFillVal = .FALSE.)
-      IF (status.ne.nf90_noerr) THEN
+      IF (FoundError(status, nf90_noerr, __LINE__,                      &
+     &               __FILE__)) THEN
         IF (Master) THEN
           WRITE (stdout,10) TRIM(Vname(1,idVwet)), HIS(ng)%Rindex
         END IF
@@ -268,7 +276,8 @@
      &                     GRID(ng) % rmask,                            &
 # endif
      &                     GRID(ng) % z_r)
-        IF (status.ne.nf90_noerr) THEN
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+     &                 __FILE__)) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idpthR)), HIS(ng)%Rindex
           END IF
@@ -298,7 +307,8 @@
      &                     GRID(ng) % umask,                            &
 # endif
      &                     GRID(ng) % z_v)
-        IF (status.ne.nf90_noerr) THEN
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+     &                 __FILE__)) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idpthU)), HIS(ng)%Rindex
           END IF
@@ -328,7 +338,8 @@
      &                     GRID(ng) % vmask,                            &
 # endif
      &                     GRID(ng) % z_v)
-        IF (status.ne.nf90_noerr) THEN
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+     &                 __FILE__)) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idpthV)), HIS(ng)%Rindex
           END IF
@@ -350,7 +361,8 @@
      &                     GRID(ng) % rmask,                            &
 # endif
      &                     GRID(ng) % z_w)
-        IF (status.ne.nf90_noerr) THEN
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+     &                 __FILE__)) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idpthW)), HIS(ng)%Rindex
           END IF
@@ -378,7 +390,8 @@
 #else
      &                     OCEAN(ng) % zeta(:,:,KOUT))
 #endif
-        IF (status.ne.nf90_noerr) THEN
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+     &                 __FILE__)) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idFsur)), HIS(ng)%Rindex
           END IF
@@ -394,7 +407,8 @@
      &                     GRID(ng) % rmask,                            &
 # endif
      &                     OCEAN(ng) % rzeta(:,:,KOUT))
-        IF (status.ne.nf90_noerr) THEN
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+     &                 __FILE__)) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idRzet)), HIS(ng)%Rindex
           END IF
@@ -417,7 +431,8 @@
      &                          LBij, UBij, Nbrec(ng), scale,           &
      &                          BOUNDARY(ng) % zeta_obc(LBij:,:,:,      &
      &                                                  Lbout(ng)))
-        IF (status.ne.nf90_noerr) THEN
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+     &                 __FILE__)) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idSbry(isFsur))),            &
      &                        HIS(ng)%Rindex
@@ -441,7 +456,8 @@
      &                     GRID(ng) % umask_full,                       &
 #endif
      &                     OCEAN(ng) % ubar(:,:,KOUT))
-        IF (status.ne.nf90_noerr) THEN
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+     &                 __FILE__)) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idUbar)), HIS(ng)%Rindex
           END IF
@@ -458,7 +474,8 @@
      &                     GRID(ng) % umask_full,                       &
 #  endif
      &                     OCEAN(ng) % rubar(:,:,KOUT))
-        IF (status.ne.nf90_noerr) THEN
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+     &                 __FILE__)) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idRu2d)), HIS(ng)%Rindex
           END IF
@@ -476,7 +493,8 @@
      &                     GRID(ng) % umask_full,                       &
 #   endif
      &                     COUPLING(ng) % rufrc)
-        IF (status.ne.nf90_noerr) THEN
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+     &                 __FILE__)) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idRuct)), HIS(ng)%Rindex
           END IF
@@ -492,7 +510,8 @@
      &                     GRID(ng) % umask_full,                       &
 #  endif
      &                     COUPLING(ng) % DU_avg1)
-        IF (status.ne.nf90_noerr) THEN
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+     &                 __FILE__)) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idUfx1)), HIS(ng)%Rindex
           END IF
@@ -507,7 +526,8 @@
      &                     GRID(ng) % umask_full,                       &
 #  endif
      &                     COUPLING(ng) % DU_avg2)
-        IF (status.ne.nf90_noerr) THEN
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+     &                 __FILE__)) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idUfx2)), HIS(ng)%Rindex
           END IF
@@ -531,7 +551,8 @@
      &                          LBij, UBij, Nbrec(ng), scale,           &
      &                          BOUNDARY(ng) % ubar_obc(LBij:,:,:,      &
      &                                                  Lbout(ng)))
-        IF (status.ne.nf90_noerr) THEN
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+     &                 __FILE__)) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idSbry(isUbar))),            &
      &                        HIS(ng)%Rindex
@@ -555,7 +576,8 @@
      &                     GRID(ng) % vmask_full,                       &
 #endif
      &                     OCEAN(ng) % vbar(:,:,KOUT))
-        IF (status.ne.nf90_noerr) THEN
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+     &                 __FILE__)) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idVbar)), HIS(ng)%Rindex
           END IF
@@ -572,7 +594,8 @@
      &                     GRID(ng) % vmask_full,                       &
 #  endif
      &                     OCEAN(ng) % rvbar(:,:,KOUT))
-        IF (status.ne.nf90_noerr) THEN
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+     &                 __FILE__)) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idRv2d)), HIS(ng)%Rindex
           END IF
@@ -590,7 +613,8 @@
      &                     GRID(ng) % vmask_full,                       &
 #   endif
      &                     COUPLING(ng) % rvfrc)
-        IF (status.ne.nf90_noerr) THEN
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+     &                 __FILE__)) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idRvct)), HIS(ng)%Rindex
           END IF
@@ -606,7 +630,8 @@
      &                     GRID(ng) % vmask_full,                       &
 #  endif
      &                     COUPLING(ng) % DV_avg1)
-        IF (status.ne.nf90_noerr) THEN
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+     &                 __FILE__)) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idVfx1)), HIS(ng)%Rindex
           END IF
@@ -621,7 +646,8 @@
      &                     GRID(ng) % vmask_full,                       &
 #  endif
      &                     COUPLING(ng) % DV_avg2)
-        IF (status.ne.nf90_noerr) THEN
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+     &                 __FILE__)) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idVfx2)), HIS(ng)%Rindex
           END IF
@@ -645,7 +671,8 @@
      &                          LBij, UBij, Nbrec(ng), scale,           &
      &                          BOUNDARY(ng) % vbar_obc(LBij:,:,:,      &
      &                                                  Lbout(ng)))
-        IF (status.ne.nf90_noerr) THEN
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+     &                 __FILE__)) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idSbry(isVbar))),            &
      &                        HIS(ng)%Rindex
@@ -689,7 +716,8 @@
      &                     GRID(ng) % rmask_full,                       &
 #endif
      &                     Ur2d)
-        IF (status.ne.nf90_noerr) THEN
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+     &                 __FILE__)) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idu2dE)), HIS(ng)%Rindex
           END IF
@@ -705,7 +733,8 @@
      &                     GRID(ng) % rmask_full,                       &
 #endif
      &                     Vr2d)
-        IF (status.ne.nf90_noerr) THEN
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+     &                 __FILE__)) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idv2dN)), HIS(ng)%Rindex
           END IF
@@ -731,7 +760,8 @@
      &                     GRID(ng) % umask_full,                       &
 # endif
      &                     OCEAN(ng) % u(:,:,:,NOUT))
-        IF (status.ne.nf90_noerr) THEN
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+     &                 __FILE__)) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idUvel)), HIS(ng)%Rindex
           END IF
@@ -747,7 +777,8 @@
      &                     GRID(ng) % umask_full,                       &
 #  endif
      &                     OCEAN(ng) % ru(:,:,:,NOUT))
-        IF (status.ne.nf90_noerr) THEN
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+     &                 __FILE__)) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idRu3d)), HIS(ng)%Rindex
           END IF
@@ -770,7 +801,8 @@
      &                          LBij, UBij, 1, N(ng), Nbrec(ng), scale, &
      &                          BOUNDARY(ng) % u_obc(LBij:,:,:,:,       &
      &                                               Lbout(ng)))
-        IF (status.ne.nf90_noerr) THEN
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+     &                 __FILE__)) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idSbry(isUvel))),            &
      &                        HIS(ng)%Rindex
@@ -794,7 +826,8 @@
      &                     GRID(ng) % vmask_full,                       &
 # endif
      &                     OCEAN(ng) % v(:,:,:,NOUT))
-        IF (status.ne.nf90_noerr) THEN
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+     &                 __FILE__)) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idVvel)), HIS(ng)%Rindex
           END IF
@@ -810,7 +843,8 @@
      &                     GRID(ng) % vmask_full,                       &
 #  endif
      &                     OCEAN(ng) % rv(:,:,:,NOUT))
-        IF (status.ne.nf90_noerr) THEN
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+     &                 __FILE__)) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idRv3d)), HIS(ng)%Rindex
           END IF
@@ -833,7 +867,8 @@
      &                          LBij, UBij, 1, N(ng), Nbrec(ng), scale, &
      &                          BOUNDARY(ng) % v_obc(LBij:,:,:,:,       &
      &                                               Lbout(ng)))
-        IF (status.ne.nf90_noerr) THEN
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+     &                 __FILE__)) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idSbry(isVvel))),            &
      &                        HIS(ng)%Rindex
@@ -877,7 +912,8 @@
      &                     GRID(ng) % rmask_full,                       &
 # endif
      &                     Ur3d)
-        IF (status.ne.nf90_noerr) THEN
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+     &                 __FILE__)) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idu3dE)), HIS(ng)%Rindex
           END IF
@@ -893,7 +929,8 @@
      &                     GRID(ng) % rmask_full,                       &
 # endif
      &                     Vr3d)
-        IF (status.ne.nf90_noerr) THEN
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+     &                 __FILE__)) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idv3dN)), HIS(ng)%Rindex
           END IF
@@ -926,7 +963,8 @@
      &                     GRID(ng) % rmask,                            &
 # endif
      &                     Wr3d)
-        IF (status.ne.nf90_noerr) THEN
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+     &                 __FILE__)) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idOvel)), HIS(ng)%Rindex
           END IF
@@ -949,7 +987,8 @@
      &                     GRID(ng) % rmask,                            &
 # endif
      &                     OCEAN(ng) % wvel)
-        IF (status.ne.nf90_noerr) THEN
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+     &                 __FILE__)) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idWvel)), HIS(ng)%Rindex
           END IF
@@ -972,7 +1011,8 @@
      &                       GRID(ng) % rmask,                          &
 # endif
      &                       OCEAN(ng) % t(:,:,:,NOUT,itrc))
-          IF (status.ne.nf90_noerr) THEN
+          IF (FoundError(status, nf90_noerr, __LINE__,                  &
+     &                   __FILE__)) THEN
             IF (Master) THEN
               WRITE (stdout,10) TRIM(Vname(1,idTvar(itrc))),            &
      &                          HIS(ng)%Rindex
@@ -998,7 +1038,8 @@
      &                            scale,                                &
      &                            BOUNDARY(ng) % t_obc(LBij:,:,:,:,     &
      &                                                 Lbout(ng),itrc))
-          IF (status.ne.nf90_noerr) THEN
+          IF (FoundError(status, nf90_noerr, __LINE__,                  &
+     &                   __FILE__)) THEN
             IF (Master) THEN
               WRITE (stdout,10) TRIM(Vname(1,idSbry(isTvar(itrc)))),    &
      &                          HIS(ng)%Rindex
@@ -1038,7 +1079,8 @@
 !           print *,'itrc=',itrc
 
           OCEAN(ng) % st(:,:,:,NOUT,itrc) = 0.0_r8
-          IF (status.ne.nf90_noerr) THEN
+          IF (FoundError(status, nf90_noerr, __LINE__,                  &
+     &                   __FILE__)) THEN
             IF (Master) THEN
 
               WRITE (stdout,10) TRIM(Vname(1,idTSvar(itrc))),           &
@@ -1073,7 +1115,8 @@
           !Zero the output array
           !---------------------
           OCEAN(ng) % st2(:,:,NOUT,itrc) = 0.0_r8
-          IF (status.ne.nf90_noerr) THEN
+          IF (FoundError(status, nf90_noerr, __LINE__,                  &
+     &                   __FILE__)) THEN
             IF (Master) THEN
               WRITE (stdout,10) TRIM(Vname(1,idTS2var(itrc))),          &
      &                          HIS(ng)%Rindex
@@ -1108,7 +1151,8 @@
           !Zero the output array
           !---------------------
           OCEAN(ng) % pt2(:,:,NOUT,itrc) = 0.0_r8
-          IF (status.ne.nf90_noerr) THEN
+          IF (FoundError(status, nf90_noerr, __LINE__,                  &
+     &                   __FILE__)) THEN
             IF (Master) THEN
               WRITE (stdout,10) TRIM(Vname(1,idPT2var(itrc))),          &
      &                          HIS(ng)%Rindex
@@ -1142,7 +1186,8 @@
           !Zero the output array
           !---------------------
           OCEAN(ng) % pt3(:,:,:,NOUT,itrc) = 0.0_r8
-          IF (status.ne.nf90_noerr) THEN
+          IF (FoundError(status, nf90_noerr, __LINE__,                  &
+     &                   __FILE__)) THEN
             IF (Master) THEN
               WRITE (stdout,10) TRIM(Vname(1,idPT3var(itrc))),          &
      &                          HIS(ng)%Rindex
@@ -1180,7 +1225,8 @@
 !             print *,OCEAN(ng) % bt(LBi,LBj,1,NOUT,itrc)
 !             print *, 'LBi=',LBi,'LBj=',LBj,'NOUT=',NOUT,'itrc=',itrc
 
-           IF (status.ne.nf90_noerr) THEN
+          IF (FoundError(status, nf90_noerr, __LINE__,                  &
+     &                   __FILE__)) THEN
            IF (Master) THEN
             WRITE (stdout,10)TRIM(Vname(1,idBeTvar(itrc))),             &
      &                       HIS(ng)%Rindex
@@ -1217,7 +1263,8 @@
      &                       GRID(ng) % rmask_full,                     &
 #   endif
      &                       OCEAN(ng) % it(:,:,NOUT,itrc))
-          IF (status.ne.nf90_noerr) THEN
+          IF (FoundError(status, nf90_noerr, __LINE__,                  &
+     &                   __FILE__)) THEN
             IF (Master) THEN
               WRITE (stdout,10)TRIM(Vname(1,idIceBvar(itrc))),          &
      &                       HIS(ng)%Rindex
@@ -1243,7 +1290,8 @@
      &                     GRID(ng) % rmask_full,                       &
 #  endif
      &                     ICE(ng) % IcePhL(:,:,IUOUT))
-        IF (status.ne.nf90_noerr) THEN
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+     &                 __FILE__)) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idIcePhL)),                  &
      &                        HIS(ng)%Rindex
@@ -1254,7 +1302,7 @@
         END IF
       END IF
 
-      !
+!
 !  Write out Ice Nitrate
 !
       IF (Hout(idIceNO3,ng)) THEN
@@ -1268,7 +1316,8 @@
      &                     GRID(ng) % rmask_full,                       &
 #  endif
      &                     ICE(ng) % IceNO3(:,:,IUOUT))
-        IF (status.ne.nf90_noerr) THEN
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+     &                 __FILE__)) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idIceNO3)),                  &
      &                        HIS(ng)%Rindex
@@ -1293,7 +1342,8 @@
      &                     GRID(ng) % rmask_full,                       &
 #  endif
      &                     ICE(ng) % IceNH4(:,:,IUOUT))
-        IF (status.ne.nf90_noerr) THEN
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+     &                 __FILE__)) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idIceNH4)),                  &
      &                        HIS(ng)%Rindex
@@ -1318,7 +1368,8 @@
      &                     GRID(ng) % rmask_full,                       &
 #  endif
      &                     ICE(ng) % IceLog(:,:,IUOUT))
-        IF (status.ne.nf90_noerr) THEN
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+     &                 __FILE__)) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idIceLog)),                  &
      &                        HIS(ng)%Rindex
@@ -1345,7 +1396,8 @@
      &                     GRID(ng) % rmask_full,                       &
 # endif
      &                     OCEAN(ng) % rho)
-        IF (status.ne.nf90_noerr) THEN
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+     &                 __FILE__)) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idDano)), HIS(ng)%Rindex
           END IF
@@ -1369,7 +1421,8 @@
      &                     GRID(ng) % rmask_full,                       &
 #  endif
      &                     OCEAN(ng) % PONsed)
-        IF (status.ne.nf90_noerr) THEN
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+     &                 __FILE__)) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idPONsed)), HIS(ng)%Rindex
           END IF
@@ -1392,7 +1445,8 @@
      &                     GRID(ng) % rmask_full,                       &
 #  endif
      &                     OCEAN(ng) % OPALsed)
-        IF (status.ne.nf90_noerr) THEN
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+     &                 __FILE__)) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idOPALsed)), HIS(ng)%Rindex
           END IF
@@ -1415,7 +1469,8 @@
      &                     GRID(ng) % rmask_full,                       &
 #  endif
      &                     OCEAN(ng) % DENITsed)
-        IF (status.ne.nf90_noerr) THEN
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+     &                 __FILE__)) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idDENITsed)), HIS(ng)%Rindex
           END IF
@@ -1438,7 +1493,8 @@
      &                     GRID(ng) % rmask_full,                       &
 #  endif
      &                     OCEAN(ng) % PON_burial)
-        IF (status.ne.nf90_noerr) THEN
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+     &                 __FILE__)) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idPONbur)), HIS(ng)%Rindex
           END IF
@@ -1461,7 +1517,8 @@
      &                     GRID(ng) % rmask_full,                       &
 #  endif
      &                     OCEAN(ng) % OPAL_burial)
-        IF (status.ne.nf90_noerr) THEN
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+     &                 __FILE__)) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idOPALbur)), HIS(ng)%Rindex
           END IF
@@ -1486,7 +1543,8 @@
      &                     GRID(ng) % rmask_full,                       &
 #  endif
      &                     OCEAN(ng) % Bio_NPP)
-        IF (status.ne.nf90_noerr) THEN
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+     &                 __FILE__)) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idNPP)), HIS(ng)%Rindex
           END IF
@@ -1510,7 +1568,8 @@
      &                     GRID(ng) % rmask_full,                       &
 #  endif
      &                     MIXING(ng) % hsbl)
-        IF (status.ne.nf90_noerr) THEN
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+     &                 __FILE__)) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idHsbl)), HIS(ng)%Rindex
           END IF
@@ -1534,7 +1593,8 @@
      &                     GRID(ng) % rmask_full,                       &
 #  endif
      &                     MIXING(ng) % hbbl)
-        IF (status.ne.nf90_noerr) THEN
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+     &                 __FILE__)) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idHbbl)), HIS(ng)%Rindex
           END IF
@@ -1558,7 +1618,8 @@
      &                     GRID(ng) % rmask_full,                       &
 #  endif
      &                     FORCES(ng) % sssflx)
-        IF (status.ne.nf90_noerr) THEN
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+     &                 __FILE__)) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idSSSf)), HIS(ng)%Rindex
           END IF
@@ -1585,7 +1646,8 @@
      &                       GRID(ng) % rmask_full,                     &
 #  endif
      &                       MIXING(ng) % ghats(:,:,:,i))
-          IF (status.ne.nf90_noerr) THEN
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+     &                 __FILE__)) THEN
             IF (Master) THEN
               WRITE (stdout,10) TRIM(Vname(1,idGhat(i))), HIS(ng)%Rindex
             END IF
@@ -1610,7 +1672,8 @@
 # endif
      &                     MIXING(ng) % Akv,                            &
      &                     SetFillVal = .FALSE.)
-        IF (status.ne.nf90_noerr) THEN
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+     &                 __FILE__)) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idVvis)), HIS(ng)%Rindex
           END IF
@@ -1633,7 +1696,8 @@
 # endif
      &                     MIXING(ng) % Akt(:,:,:,itemp),               &
      &                     SetFillVal = .FALSE.)
-        IF (status.ne.nf90_noerr) THEN
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+     &                 __FILE__)) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idTdif)), HIS(ng)%Rindex
           END IF
@@ -1657,7 +1721,8 @@
 #  endif
      &                     MIXING(ng) % Akt(:,:,:,isalt),               &
      &                     SetFillVal = .FALSE.)
-        IF (status.ne.nf90_noerr) THEN
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+     &                 __FILE__)) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idSdif)), HIS(ng)%Rindex
           END IF
@@ -1682,7 +1747,8 @@
 #  endif
      &                     MIXING(ng) % tke(:,:,:,NOUT),                &
      &                     SetFillVal = .FALSE.)
-        IF (status.ne.nf90_noerr) THEN
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+     &                 __FILE__)) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idMtke)), HIS(ng)%Rindex
           END IF
@@ -1700,7 +1766,8 @@
      &                     GRID(ng) % rmask_full,                       &
 #  endif
      &                     MIXING(ng) % Akk)
-        IF (status.ne.nf90_noerr) THEN
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+     &                 __FILE__)) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idVmKK)), HIS(ng)%Rindex
           END IF
@@ -1724,7 +1791,8 @@
 #  endif
      &                     MIXING(ng) % gls(:,:,:,NOUT),                &
      &                     SetFillVal = .FALSE.)
-        IF (status.ne.nf90_noerr) THEN
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+     &                 __FILE__)) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idMtls)), HIS(ng)%Rindex
           END IF
@@ -1742,7 +1810,8 @@
      &                     GRID(ng) % rmask_full,                       &
 #  endif
      &                     MIXING(ng) % Lscale)
-        IF (status.ne.nf90_noerr) THEN
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+     &                 __FILE__)) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idVmLS)), HIS(ng)%Rindex
           END IF
@@ -1761,7 +1830,8 @@
      &                     GRID(ng) % rmask_full,                       &
 #   endif
      &                     MIXING(ng) % Akp)
-        IF (status.ne.nf90_noerr) THEN
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+     &                 __FILE__)) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idVmKP)), HIS(ng)%Rindex
           END IF
@@ -1787,7 +1857,8 @@
      &                     GRID(ng) % umask_full,                       &
 #  endif
      &                     ICE(ng) % ui(:,:,IUOUT))
-        IF (status.ne.nf90_noerr) THEN
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+     &                 __FILE__)) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idUice)),                    &
      &                        HIS(ng)%Rindex
@@ -1811,7 +1882,8 @@
      &                     GRID(ng) % vmask_full,                       &
 #  endif
      &                     ICE(ng) % vi(:,:,IUOUT))
-        IF (status.ne.nf90_noerr) THEN
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+     &                 __FILE__)) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idVice)),                    &
      &                        HIS(ng)%Rindex
@@ -1854,7 +1926,8 @@
      &                     GRID(ng) % rmask_full,                       &
 #endif
      &                     Ur2d)
-        IF (status.ne.nf90_noerr) THEN
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+     &                 __FILE__)) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idUiceE)), HIS(ng)%Rindex
           END IF
@@ -1870,7 +1943,8 @@
      &                     GRID(ng) % rmask_full,                       &
 #endif
      &                     Vr2d)
-        IF (status.ne.nf90_noerr) THEN
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+     &                 __FILE__)) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idViceN)), HIS(ng)%Rindex
           END IF
@@ -1895,7 +1969,8 @@
      &                     GRID(ng) % rmask_full,                       &
 #  endif
      &                     ICE(ng) % ai(:,:,IUOUT))
-        IF (status.ne.nf90_noerr) THEN
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+     &                 __FILE__)) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idAice)),                    &
      &                        HIS(ng)%Rindex
@@ -1919,7 +1994,8 @@
      &                     GRID(ng) % rmask_full,                       &
 #  endif
      &                     ICE(ng) % hi(:,:,IUOUT))
-        IF (status.ne.nf90_noerr) THEN
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+     &                 __FILE__)) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idHice)),                    &
      &                        HIS(ng)%Rindex
@@ -1943,7 +2019,8 @@
      &                     GRID(ng) % rmask_full,                       &
 #  endif
      &                     ICE(ng) % hsn(:,:,IUOUT))
-        IF (status.ne.nf90_noerr) THEN
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+     &                 __FILE__)) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idHsno)),                    &
      &                        HIS(ng)%Rindex
@@ -1968,7 +2045,8 @@
      &                     GRID(ng) % rmask_full,                       &
 #  endif
      &                     ICE(ng) % apond(:,:,IUOUT))
-        IF (status.ne.nf90_noerr) THEN
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+     &                 __FILE__)) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idApond)),                   &
      &                        HIS(ng)%Rindex
@@ -1992,7 +2070,8 @@
      &                     GRID(ng) % rmask_full,                       &
 #  endif
      &                     ICE(ng) % hpond(:,:,IUOUT))
-        IF (status.ne.nf90_noerr) THEN
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+     &                 __FILE__)) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idHpond)),                   &
      &                        HIS(ng)%Rindex
@@ -2017,7 +2096,8 @@
      &                     GRID(ng) % rmask_full,                       &
 #  endif
      &                     ICE(ng) % ageice(:,:,IUOUT))
-        IF (status.ne.nf90_noerr) THEN
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+     &                 __FILE__)) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idAgeice)),                  &
      &                        HIS(ng)%Rindex
@@ -2041,7 +2121,8 @@
      &                     GRID(ng) % rmask_full,                       &
 #  endif
      &                     ICE(ng) % io_mflux)
-        IF (status.ne.nf90_noerr) THEN
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+     &                 __FILE__)) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idIomflx)),                  &
      &                        HIS(ng)%Rindex
@@ -2065,7 +2146,8 @@
      &                     GRID(ng) % rmask_full,                       &
 #  endif
      &                     ICE(ng) % tis)
-        IF (status.ne.nf90_noerr) THEN
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+     &                 __FILE__)) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idTice)),                    &
      &                        HIS(ng)%Rindex
@@ -2089,7 +2171,8 @@
      &                     GRID(ng) % rmask_full,                       &
 #  endif
      &                     ICE(ng) % ti(:,:,IUOUT))
-        IF (status.ne.nf90_noerr) THEN
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+     &                 __FILE__)) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idTimid)),                   &
      &                        HIS(ng)%Rindex
@@ -2113,7 +2196,8 @@
      &                     GRID(ng) % rmask,                            &
 #  endif
      &                     ICE(ng) % sig11(:,:,IUOUT))
-        IF (status.ne.nf90_noerr) THEN
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+     &                 __FILE__)) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idSig11)),                   &
      &                        HIS(ng)%Rindex
@@ -2137,7 +2221,8 @@
      &                     GRID(ng) % rmask,                            &
 #  endif
      &                     ICE(ng) % sig12(:,:,IUOUT))
-        IF (status.ne.nf90_noerr) THEN
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+     &                 __FILE__)) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idSig12)),                   &
      &                        HIS(ng)%Rindex
@@ -2161,7 +2246,8 @@
      &                     GRID(ng) % rmask_full,                       &
 #  endif
      &                     ICE(ng) % sig22(:,:,IUOUT))
-        IF (status.ne.nf90_noerr) THEN
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+     &                 __FILE__)) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idSig22)),                   &
      &                        HIS(ng)%Rindex
@@ -2185,7 +2271,8 @@
      &                     GRID(ng) % rmask_full,                       &
 #  endif
      &                     ICE(ng) % utau_iw)
-        IF (status.ne.nf90_noerr) THEN
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+     &                 __FILE__)) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idTauiw)),                   &
      &                        HIS(ng)%Rindex
@@ -2209,7 +2296,8 @@
      &                     GRID(ng) % rmask_full,                       &
 #  endif
      &                     ICE(ng) % chu_iw)
-        IF (status.ne.nf90_noerr) THEN
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+     &                 __FILE__)) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idChuiw)),                   &
      &                        HIS(ng)%Rindex
@@ -2233,7 +2321,8 @@
      &                     GRID(ng) % rmask,                            &
 #  endif
      &                     ICE(ng) % t0mk)
-        IF (status.ne.nf90_noerr) THEN
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+     &                 __FILE__)) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idT0mk)),                    &
      &                        HIS(ng)%Rindex
@@ -2257,7 +2346,8 @@
      &                     GRID(ng) % rmask,                            &
 #  endif
      &                     ICE(ng) % s0mk)
-        IF (status.ne.nf90_noerr) THEN
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+     &                 __FILE__)) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idS0mk)),                    &
      &                        HIS(ng)%Rindex
@@ -2281,7 +2371,8 @@
      &                     GRID(ng) % rmask,                            &
 #  endif
      &                     ICE(ng) % wfr)
-        IF (status.ne.nf90_noerr) THEN
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+     &                 __FILE__)) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idWfr)),                     &
      &                        HIS(ng)%Rindex
@@ -2305,7 +2396,8 @@
      &                     GRID(ng) % rmask,                            &
 #  endif
      &                     ICE(ng) % wai)
-        IF (status.ne.nf90_noerr) THEN
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+     &                 __FILE__)) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idWai)),                     &
      &                        HIS(ng)%Rindex
@@ -2329,7 +2421,8 @@
      &                     GRID(ng) % rmask,                            &
 #  endif
      &                     ICE(ng) % wao)
-        IF (status.ne.nf90_noerr) THEN
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+     &                 __FILE__)) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idWao)),                     &
      &                        HIS(ng)%Rindex
@@ -2353,7 +2446,8 @@
      &                     GRID(ng) % rmask,                            &
 #  endif
      &                     ICE(ng) % wio)
-        IF (status.ne.nf90_noerr) THEN
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+     &                 __FILE__)) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idWio)),                     &
      &                        HIS(ng)%Rindex
@@ -2377,7 +2471,8 @@
      &                     GRID(ng) % rmask,                            &
 #  endif
      &                     ICE(ng) % wro)
-        IF (status.ne.nf90_noerr) THEN
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+     &                 __FILE__)) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idWro)),                     &
      &                        HIS(ng)%Rindex
@@ -2401,7 +2496,8 @@
      &                     GRID(ng) % rmask,                            &
 #  endif
      &                     ICE(ng) % wdiv)
-        IF (status.ne.nf90_noerr) THEN
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+     &                 __FILE__)) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idWdiv)),                    &
      &                        HIS(ng)%Rindex
@@ -2427,7 +2523,8 @@
      &                     GRID(ng) % rmask_full,                       &
 #  endif
      &                     FORCES(ng) % Runoff)
-        IF (status.ne.nf90_noerr) THEN
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+     &                 __FILE__)) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idRunoff)), HIS(ng)%Rindex
           END IF
@@ -2452,7 +2549,8 @@
      &                     GRID(ng) % rmask,                            &
 #  endif
      &                     FORCES(ng) % Pair)
-        IF (status.ne.nf90_noerr) THEN
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+     &                 __FILE__)) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idPair)), HIS(ng)%Rindex
           END IF
@@ -2462,7 +2560,7 @@
         END IF
       END IF
 # endif
-# if defined BULK_FLUXES || defined ATM2OCN_FLUXES || defined ECOSIM
+# if defined BULK_FLUXES || defined AIR_OCEAN || defined ECOSIM
 !
 !  Write out surface winds.
 !
@@ -2476,7 +2574,8 @@
      &                     GRID(ng) % rmask,                            &
 #  endif
      &                     FORCES(ng) % Uwind)
-        IF (status.ne.nf90_noerr) THEN
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+     &                 __FILE__)) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idUair)), HIS(ng)%Rindex
           END IF
@@ -2496,7 +2595,8 @@
      &                     GRID(ng) % rmask,                            &
 #  endif
      &                     FORCES(ng) % Vwind)
-        IF (status.ne.nf90_noerr) THEN
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+     &                 __FILE__)) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idVair)), HIS(ng)%Rindex
           END IF
@@ -2538,7 +2638,8 @@
      &                     GRID(ng) % rmask_full,                       &
 #endif
      &                     Ur2d)
-        IF (status.ne.nf90_noerr) THEN
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+     &                 __FILE__)) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idUairE)), HIS(ng)%Rindex
           END IF
@@ -2554,7 +2655,8 @@
      &                     GRID(ng) % rmask_full,                       &
 #endif
      &                     Vr2d)
-        IF (status.ne.nf90_noerr) THEN
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+     &                 __FILE__)) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idVairN)), HIS(ng)%Rindex
           END IF
@@ -2590,7 +2692,8 @@
      &                       GRID(ng) % rmask,                          &
 # endif
      &                       FORCES(ng) % stflx(:,:,itrc))
-          IF (status.ne.nf90_noerr) THEN
+          IF (FoundError(status, nf90_noerr, __LINE__,                  &
+     &                   __FILE__)) THEN
             IF (Master) THEN
               WRITE (stdout,10) TRIM(Vname(1,idTsur(itrc))),            &
      &                          HIS(ng)%Rindex
@@ -2601,7 +2704,7 @@
           END IF
         END IF
       END DO
-# if defined BULK_FLUXES || defined ATM2OCN_FLUXES
+# if defined BULK_FLUXES || defined AIR_OCEAN
 !
 !  Write out latent heat flux.
 !
@@ -2615,7 +2718,8 @@
      &                     GRID(ng) % rmask,                            &
 #  endif
      &                     FORCES(ng) % lhflx)
-        IF (status.ne.nf90_noerr) THEN
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+     &                 __FILE__)) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idLhea)), HIS(ng)%Rindex
           END IF
@@ -2637,7 +2741,8 @@
      &                     GRID(ng) % rmask,                            &
 #  endif
      &                     FORCES(ng) % shflx)
-        IF (status.ne.nf90_noerr) THEN
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+     &                 __FILE__)) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idShea)), HIS(ng)%Rindex
           END IF
@@ -2659,7 +2764,8 @@
      &                     GRID(ng) % rmask,                            &
 #  endif
      &                     FORCES(ng) % lrflx)
-        IF (status.ne.nf90_noerr) THEN
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+     &                 __FILE__)) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idLrad)), HIS(ng)%Rindex
           END IF
@@ -2682,7 +2788,8 @@
      &                     GRID(ng) % rmask,                            &
 #   endif
      &                     FORCES(ng) % EminusP)
-        IF (status.ne.nf90_noerr) THEN
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+     &                 __FILE__)) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idEmPf)), HIS(ng)%Rindex
           END IF
@@ -2704,7 +2811,8 @@
      &                     GRID(ng) % rmask,                            &
 #   endif
      &                     FORCES(ng) % evap)
-        IF (status.ne.nf90_noerr) THEN
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+     &                 __FILE__)) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idevap)), HIS(ng)%Rindex
           END IF
@@ -2726,7 +2834,8 @@
      &                     GRID(ng) % rmask,                            &
 #   endif
      &                     FORCES(ng) % rain)
-        IF (status.ne.nf90_noerr) THEN
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+     &                 __FILE__)) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idrain)), HIS(ng)%Rindex
           END IF
@@ -2751,7 +2860,8 @@
      &                     GRID(ng) % rmask,                            &
 #  endif
      &                     FORCES(ng) % srflx)
-        IF (status.ne.nf90_noerr) THEN
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+     &                 __FILE__)) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idSrad)), HIS(ng)%Rindex
           END IF
@@ -2780,7 +2890,8 @@
 #  endif
 # endif
      &                     OCEAN(ng) % PARout)
-        IF (status.ne.nf90_noerr) THEN
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+     &                 __FILE__)) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idPARo)), HIS(ng)%Rindex
           END IF
@@ -2806,7 +2917,8 @@
 #  endif
 # endif
      &                     OCEAN(ng) % PARs)
-        IF (status.ne.nf90_noerr) THEN
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+     &                 __FILE__)) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idPARs)), HIS(ng)%Rindex
           END IF
@@ -2831,7 +2943,8 @@
 #  endif
 # endif
      &                     OCEAN(ng) % SpKd)
-        IF (status.ne.nf90_noerr) THEN
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+     &                 __FILE__)) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idSpKd)), HIS(ng)%Rindex
           END IF
@@ -2860,7 +2973,8 @@
 #  endif
 # endif
      &                     OCEAN(ng) % DINwcr)
-        IF (status.ne.nf90_noerr) THEN 
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+     &                 __FILE__)) THEN
           IF (Master) THEN 
             WRITE (stdout,10) TRIM(Vname(1,iddinw)), HIS(ng)%Rindex
           END IF
@@ -2886,7 +3000,8 @@
 #  endif
 # endif
      &                     OCEAN(ng) % DINsed)
-        IF (status.ne.nf90_noerr) THEN
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+     &                 __FILE__)) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,iddins)), HIS(ng)%Rindex
           END IF
@@ -2912,7 +3027,8 @@
 #  endif
 # endif
      &                     OCEAN(ng) % DOwcr)
-        IF (status.ne.nf90_noerr) THEN
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+     &                 __FILE__)) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,iddowc)), HIS(ng)%Rindex
           END IF
@@ -2938,7 +3054,8 @@
 #  endif
 # endif
      &                     OCEAN(ng) % DINwcr_sav)
-        IF (status.ne.nf90_noerr) THEN
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+     &                 __FILE__)) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idwsvl)), HIS(ng)%Rindex
           END IF
@@ -2964,7 +3081,8 @@
 #  endif
 # endif
      &                     OCEAN(ng) % AGB)
-        IF (status.ne.nf90_noerr) THEN
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+     &                 __FILE__)) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idsagb)), HIS(ng)%Rindex
           END IF
@@ -2990,7 +3108,8 @@
 #  endif
 # endif
      &                     OCEAN(ng) % BGB)
-        IF (status.ne.nf90_noerr) THEN
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+     &                 __FILE__)) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idsbgb)), HIS(ng)%Rindex
           END IF
@@ -3016,7 +3135,8 @@
 #  endif
 # endif
      &                     OCEAN(ng) % PP)
-        IF (status.ne.nf90_noerr) THEN
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+     &                 __FILE__)) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idsvpp)), HIS(ng)%Rindex
           END IF
@@ -3042,7 +3162,8 @@
 #  endif
 # endif
      &                     OCEAN(ng) % AGM)
-        IF (status.ne.nf90_noerr) THEN
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+     &                 __FILE__)) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idsvam)), HIS(ng)%Rindex
           END IF
@@ -3068,7 +3189,8 @@
 #  endif
 # endif
      &                     OCEAN(ng) % AGAR)
-        IF (status.ne.nf90_noerr) THEN
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+     &                 __FILE__)) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idsgar)), HIS(ng)%Rindex
           END IF
@@ -3094,7 +3216,8 @@
 #  endif
 # endif
      &                     OCEAN(ng) % AGBR)
-        IF (status.ne.nf90_noerr) THEN
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+     &                 __FILE__)) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idsvbr)), HIS(ng)%Rindex
           END IF
@@ -3120,7 +3243,8 @@
 #  endif
 # endif
      &                     OCEAN(ng) % SEARS)
-        IF (status.ne.nf90_noerr) THEN
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+     &                 __FILE__)) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idsvrs)), HIS(ng)%Rindex
           END IF
@@ -3146,7 +3270,8 @@
 #  endif
 # endif
      &                     OCEAN(ng) % AGBG)
-        IF (status.ne.nf90_noerr) THEN
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+     &                 __FILE__)) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idsvbg)), HIS(ng)%Rindex
           END IF
@@ -3172,7 +3297,8 @@
 #  endif
 # endif
      &                     OCEAN(ng) % BGAG)
-        IF (status.ne.nf90_noerr) THEN
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+     &                 __FILE__)) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idsvag)), HIS(ng)%Rindex
           END IF
@@ -3181,8 +3307,6 @@
           RETURN
         END IF
       END IF
-!
-! .
 !
       IF (Hout(idsbgr,ng)) THEN
         scale=1.0_r8
@@ -3198,7 +3322,8 @@
 #  endif
 # endif
      &                     OCEAN(ng) % BGR)
-        IF (status.ne.nf90_noerr) THEN
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+     &                 __FILE__)) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idsbgr)), HIS(ng)%Rindex
           END IF
@@ -3224,7 +3349,8 @@
 #  endif
 # endif
      &                     OCEAN(ng) % BGM)
-        IF (status.ne.nf90_noerr) THEN
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+     &                 __FILE__)) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idsbgm)), HIS(ng)%Rindex
           END IF
@@ -3251,7 +3377,8 @@
      &                     GRID(ng) % umask,                            &
 #endif
      &                     FORCES(ng) % sustr)
-        IF (status.ne.nf90_noerr) THEN
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+     &                 __FILE__)) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idUsms)), HIS(ng)%Rindex
           END IF
@@ -3277,7 +3404,8 @@
      &                     GRID(ng) % vmask,                            &
 #endif
      &                     FORCES(ng) % svstr)
-        IF (status.ne.nf90_noerr) THEN
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+     &                 __FILE__)) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idVsms)), HIS(ng)%Rindex
           END IF
@@ -3299,7 +3427,8 @@
      &                     GRID(ng) % umask,                            &
 #endif
      &                     FORCES(ng) % bustr)
-        IF (status.ne.nf90_noerr) THEN
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+     &                 __FILE__)) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idUbms)), HIS(ng)%Rindex
           END IF
@@ -3321,7 +3450,8 @@
      &                     GRID(ng) % vmask,                            &
 #endif
      &                     FORCES(ng) % bvstr)
-        IF (status.ne.nf90_noerr) THEN
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+     &                 __FILE__)) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idVbms)), HIS(ng)%Rindex
           END IF
@@ -3345,7 +3475,8 @@
      &                     GRID(ng) % rmask,                            &
 #  endif
      &                     BBL(ng) % bustrc)
-        IF (status.ne.nf90_noerr) THEN
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+     &                 __FILE__)) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idUbrs)), HIS(ng)%Rindex
           END IF
@@ -3367,7 +3498,8 @@
      &                     GRID(ng) % rmask,                            &
 #  endif
      &                     BBL(ng) % bvstrc)
-        IF (status.ne.nf90_noerr) THEN
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+     &                 __FILE__)) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idVbrs)), HIS(ng)%Rindex
           END IF
@@ -3389,7 +3521,8 @@
      &                     GRID(ng) % rmask,                            &
 #  endif
      &                     BBL(ng) % bustrw)
-        IF (status.ne.nf90_noerr) THEN
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+     &                 __FILE__)) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idUbws)), HIS(ng)%Rindex
           END IF
@@ -3411,7 +3544,8 @@
      &                     GRID(ng) % rmask,                            &
 #  endif
      &                     BBL(ng) % bvstrw)
-        IF (status.ne.nf90_noerr) THEN
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+     &                 __FILE__)) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idVbws)), HIS(ng)%Rindex
           END IF
@@ -3433,7 +3567,8 @@
      &                     GRID(ng) % rmask,                            &
 #  endif
      &                     BBL(ng) % bustrcwmax)
-        IF (status.ne.nf90_noerr) THEN
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+     &                 __FILE__)) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idUbcs)), HIS(ng)%Rindex
           END IF
@@ -3455,7 +3590,8 @@
      &                     GRID(ng) % rmask,                            &
 #  endif
      &                     BBL(ng) % bvstrcwmax)
-        IF (status.ne.nf90_noerr) THEN
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+     &                 __FILE__)) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idVbcs)), HIS(ng)%Rindex
           END IF
@@ -3481,7 +3617,8 @@
      &                     GRID(ng) % rmask,                            &
 #  endif
      &                     wrk2(LBi:UBi,LBj:UBj))
-        IF (status.ne.nf90_noerr) THEN
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+     &                 __FILE__)) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idUVwc)), HIS(ng)%Rindex
           END IF
@@ -3504,7 +3641,8 @@
      &                     GRID(ng) % rmask,                            &
 #  endif
      &                     BBL(ng) % Ubot)
-        IF (status.ne.nf90_noerr) THEN
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+     &                 __FILE__)) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idUbot)), HIS(ng)%Rindex
           END IF
@@ -3526,7 +3664,8 @@
      &                     GRID(ng) % rmask,                            &
 #  endif
      &                     BBL(ng) % Vbot)
-        IF (status.ne.nf90_noerr) THEN
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+     &                 __FILE__)) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idVbot)), HIS(ng)%Rindex
           END IF
@@ -3548,7 +3687,8 @@
      &                     GRID(ng) % rmask,                            &
 #  endif
      &                     BBL(ng) % Ur)
-        IF (status.ne.nf90_noerr) THEN
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+     &                 __FILE__)) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idUbur)), HIS(ng)%Rindex
           END IF
@@ -3570,7 +3710,8 @@
      &                     GRID(ng) % rmask,                            &
 #  endif
      &                     BBL(ng) % Vr)
-        IF (status.ne.nf90_noerr) THEN
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+     &                 __FILE__)) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idVbvr)), HIS(ng)%Rindex
           END IF
@@ -3597,7 +3738,8 @@
      &                       GRID(ng) % umask,                          &
 #   endif
      &                       SEDBED(ng) % bedldu(:,:,i))
-          IF (status.ne.nf90_noerr) THEN
+          IF (FoundError(status, nf90_noerr, __LINE__,                  &
+     &                   __FILE__)) THEN
             IF (Master) THEN
               WRITE (stdout,10) TRIM(Vname(1,idUbld(i))), HIS(ng)%Rindex
             END IF
@@ -3620,7 +3762,8 @@
      &                       GRID(ng) % vmask,                          &
 #   endif
      &                       SEDBED(ng) % bedldv(:,:,i))
-          IF (status.ne.nf90_noerr) THEN
+          IF (FoundError(status, nf90_noerr, __LINE__,                  &
+     &                   __FILE__)) THEN
             IF (Master) THEN
               WRITE (stdout,10) TRIM(Vname(1,idVbld(i))), HIS(ng)%Rindex
             END IF
@@ -3646,7 +3789,8 @@
      &                       GRID(ng) % rmask,                          &
 #  endif
      &                       SEDBED(ng) % bed_frac(:,:,:,i))
-          IF (status.ne.nf90_noerr) THEN
+          IF (FoundError(status, nf90_noerr, __LINE__,                  &
+     &                   __FILE__)) THEN
             IF (Master) THEN
               WRITE (stdout,10) TRIM(Vname(1,idfrac(i))), HIS(ng)%Rindex
             END IF
@@ -3671,7 +3815,8 @@
      &                       GRID(ng) % rmask,                          &
 #  endif
      &                       SEDBED(ng) % bed_mass(:,:,:,NOUT,i))
-          IF (status.ne.nf90_noerr) THEN
+          IF (FoundError(status, nf90_noerr, __LINE__,                  &
+     &                   __FILE__)) THEN
             IF (Master) THEN
               WRITE (stdout,10) TRIM(Vname(1,idBmas(i))), HIS(ng)%Rindex
             END IF
@@ -3696,7 +3841,8 @@
      &                       GRID(ng) % rmask,                          &
 #  endif
      &                       SEDBED(ng) % bed(:,:,:,i))
-          IF (status.ne.nf90_noerr) THEN
+          IF (FoundError(status, nf90_noerr, __LINE__,                  &
+     &                   __FILE__)) THEN
             IF (Master) THEN
               WRITE (stdout,10) TRIM(Vname(1,idSbed(i))), HIS(ng)%Rindex
             END IF
@@ -3727,7 +3873,8 @@
      &                       GRID(ng) % rmask,                          &
 #  endif
      &                       SEDBED(ng) % bottom(:,:,i))
-          IF (status.ne.nf90_noerr) THEN
+          IF (FoundError(status, nf90_noerr, __LINE__,                  &
+     &                   __FILE__)) THEN
             IF (Master) THEN
               WRITE (stdout,10) TRIM(Vname(1,idBott(i))), HIS(ng)%Rindex
             END IF
@@ -3757,7 +3904,8 @@
 #  endif
 # endif
      &                     WAVEP(ng) % AC(:,:,:,NOUT))
-        IF (status.ne.nf90_noerr) THEN
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+     &                 __FILE__)) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idACen)), HIS(ng)%Rindex
           END IF
@@ -3783,7 +3931,8 @@
 #  endif
 # endif
      &                     WAVEP(ng) % cx)
-        IF (status.ne.nf90_noerr) THEN
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+     &                 __FILE__)) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idACcx)), HIS(ng)%Rindex
           END IF
@@ -3810,7 +3959,8 @@
 #  endif
 # endif
      &                     WAVEP(ng) % cy)
-        IF (status.ne.nf90_noerr) THEN
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+     &                 __FILE__)) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idACcy)), HIS(ng)%Rindex
           END IF
@@ -3836,7 +3986,8 @@
 #  endif
 # endif
      &                     WAVEP(ng) % ct)
-        IF (status.ne.nf90_noerr) THEN
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+     &                 __FILE__)) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idACct)), HIS(ng)%Rindex
           END IF
@@ -3862,7 +4013,8 @@
 #  endif
 # endif
      &                     WAVEP(ng) % Ta)
-        IF (status.ne.nf90_noerr) THEN
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+     &                 __FILE__)) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idACtp)), HIS(ng)%Rindex
           END IF
@@ -3890,7 +4042,8 @@
      &                     GRID(ng) % rmask,                            &
 # endif
      &                     MIXING(ng) % Sxx_bar)
-        IF (status.ne.nf90_noerr) THEN
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+     &                 __FILE__)) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idW2xx)), HIS(ng)%Rindex
           END IF
@@ -3912,7 +4065,8 @@
      &                     GRID(ng) % rmask,                            &
 # endif
      &                     MIXING(ng) % Sxy_bar)
-        IF (status.ne.nf90_noerr) THEN
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+     &                 __FILE__)) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idW2xy)), HIS(ng)%Rindex
           END IF
@@ -3934,7 +4088,8 @@
      &                     GRID(ng) % rmask,                            &
 # endif
      &                     MIXING(ng) % Syy_bar)
-        IF (status.ne.nf90_noerr) THEN
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+     &                 __FILE__)) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idW2yy)), HIS(ng)%Rindex
           END IF
@@ -3957,7 +4112,8 @@
      &                     GRID(ng) % rmask,                            &
 # endif
      &                     MIXING(ng) % Sxx)
-        IF (status.ne.nf90_noerr) THEN
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+     &                 __FILE__)) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idW3xx)), HIS(ng)%Rindex
           END IF
@@ -3979,7 +4135,8 @@
      &                     GRID(ng) % rmask,                            &
 # endif
      &                     MIXING(ng) % Sxy)
-        IF (status.ne.nf90_noerr) THEN
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+     &                 __FILE__)) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idW3xy)), HIS(ng)%Rindex
           END IF
@@ -4001,7 +4158,8 @@
      &                     GRID(ng) % rmask,                            &
 # endif
      &                     MIXING(ng) % Syy)
-        IF (status.ne.nf90_noerr) THEN
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+     &                 __FILE__)) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idW3yy)), HIS(ng)%Rindex
           END IF
@@ -4023,7 +4181,8 @@
      &                     GRID(ng) % rmask,                            &
 #  endif
      &                     MIXING(ng) % Szx)
-        IF (status.ne.nf90_noerr) THEN
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+     &                 __FILE__)) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idW3zx)), HIS(ng)%Rindex
           END IF
@@ -4045,7 +4204,8 @@
      &                     GRID(ng) % rmask,                            &
 #  endif
      &                     MIXING(ng) % Szy)
-        IF (status.ne.nf90_noerr) THEN
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+     &                 __FILE__)) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idW3zy)), HIS(ng)%Rindex
           END IF
@@ -4070,7 +4230,8 @@
      &                     GRID(ng) % umask,                            &
 # endif
      &                     MIXING(ng) % rustr2d)
-        IF (status.ne.nf90_noerr) THEN
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+     &                 __FILE__)) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idU2rs)), HIS(ng)%Rindex
           END IF
@@ -4092,7 +4253,8 @@
      &                     GRID(ng) % vmask,                               &
 # endif
      &                     MIXING(ng) % rvstr2d)
-        IF (status.ne.nf90_noerr) THEN
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+     &                 __FILE__)) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idV2rs)), HIS(ng)%Rindex
           END IF
@@ -4114,7 +4276,8 @@
      &                     GRID(ng) % umask,                               &
 # endif
      &                     OCEAN(ng) % ubar_stokes)
-        IF (status.ne.nf90_noerr) THEN
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+     &                 __FILE__)) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idU2Sd)), HIS(ng)%Rindex
           END IF
@@ -4136,7 +4299,8 @@
      &                     GRID(ng) % vmask,                               &
 # endif
      &                     OCEAN(ng) % vbar_stokes)
-        IF (status.ne.nf90_noerr) THEN
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+     &                 __FILE__)) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idV2Sd)), HIS(ng)%Rindex
           END IF
@@ -4159,7 +4323,8 @@
      &                     GRID(ng) % umask,                            &
 #  endif
      &                     MIXING(ng) % rustr3d)
-        IF (status.ne.nf90_noerr) THEN
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+     &                 __FILE__)) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idU3rs)), HIS(ng)%Rindex
           END IF
@@ -4181,7 +4346,8 @@
      &                     GRID(ng) % vmask,                            &
 #  endif
      &                     MIXING(ng) % rvstr3d)
-        IF (status.ne.nf90_noerr) THEN
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+     &                 __FILE__)) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idV3rs)), HIS(ng)%Rindex
           END IF
@@ -4203,7 +4369,8 @@
      &                     GRID(ng) % umask,                            &
 #  endif
      &                     OCEAN(ng) % u_stokes)
-        IF (status.ne.nf90_noerr) THEN
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+     &                 __FILE__)) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idU3Sd)), HIS(ng)%Rindex
           END IF
@@ -4225,7 +4392,8 @@
      &                     GRID(ng) % vmask,                            &
 #  endif
      &                     OCEAN(ng) % v_stokes)
-        IF (status.ne.nf90_noerr) THEN
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+     &                 __FILE__)) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idV3Sd)), HIS(ng)%Rindex
           END IF
@@ -4256,7 +4424,8 @@
                          GRID(ng) % rmask,                            &
 # endif
      &                     Wr3d)
-        IF (status.ne.nf90_noerr) THEN
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+     &                 __FILE__)) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idW3Sd)), HIS(ng)%Rindex
           END IF
@@ -4279,7 +4448,8 @@
      &                     GRID(ng) % rmask,                            &
 # endif
      &                     OCEAN(ng) % wstvel)
-        IF (status.ne.nf90_noerr) THEN
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+     &                 __FILE__)) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idW3St)), HIS(ng)%Rindex
           END IF
@@ -4304,7 +4474,8 @@
      &                     GRID(ng) % rmask,                            &
 # endif
      &                     FORCES(ng) % Hwave)
-        IF (status.ne.nf90_noerr) THEN
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+     &                 __FILE__)) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idWamp)), HIS(ng)%Rindex
           END IF
@@ -4328,7 +4499,8 @@
      &                     GRID(ng) % rmask,                            &
 # endif
      &                     FORCES(ng) % Lwave)
-        IF (status.ne.nf90_noerr) THEN
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+     &                 __FILE__)) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idWlen)), HIS(ng)%Rindex
           END IF
@@ -4352,7 +4524,8 @@
      &                     GRID(ng) % rmask,                            &
 # endif
      &                     FORCES(ng) % Lwavep)
-        IF (status.ne.nf90_noerr) THEN
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+     &                 __FILE__)) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idWlen)), HIS(ng)%Rindex
           END IF
@@ -4376,7 +4549,8 @@
      &                     GRID(ng) % rmask,                            &
 # endif
      &                     FORCES(ng) % Dwave)
-        IF (status.ne.nf90_noerr) THEN
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+     &                 __FILE__)) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idWdir)), HIS(ng)%Rindex
           END IF
@@ -4400,7 +4574,8 @@
      &                     GRID(ng) % rmask,                            &
 # endif
      &                     FORCES(ng) % Pwave_top)
-        IF (status.ne.nf90_noerr) THEN
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+     &                 __FILE__)) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idWptp)), HIS(ng)%Rindex
           END IF
@@ -4424,7 +4599,8 @@
      &                     GRID(ng) % rmask,                            &
 # endif
      &                     FORCES(ng) % Pwave_bot)
-        IF (status.ne.nf90_noerr) THEN
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+     &                 __FILE__)) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idWpbt)), HIS(ng)%Rindex
           END IF
@@ -4448,7 +4624,8 @@
      &                     GRID(ng) % rmask,                            &
 # endif
      &                     FORCES(ng) % Uwave_rms)
-        IF (status.ne.nf90_noerr) THEN
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+     &                 __FILE__)) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idWorb)), HIS(ng)%Rindex
           END IF
@@ -4472,7 +4649,8 @@
      &                     GRID(ng) % rmask,                               &
 # endif
      &                     FORCES(ng) % Dissip_fric)
-        IF (status.ne.nf90_noerr) THEN
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+     &                 __FILE__)) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idWdif)), HIS(ng)%Rindex
           END IF
@@ -4498,7 +4676,8 @@
      &                     GRID(ng) % rmask,                            &
 # endif
      &                     FORCES(ng) % Dissip_break)
-        IF (status.ne.nf90_noerr) THEN
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+     &                 __FILE__)) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idWdib)), HIS(ng)%Rindex
           END IF
@@ -4520,7 +4699,8 @@
      &                     GRID(ng) % rmask,                            &
 # endif
      &                     FORCES(ng) % Dissip_wcap)
-        IF (status.ne.nf90_noerr) THEN
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+     &                 __FILE__)) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idWdiw)), HIS(ng)%Rindex
           END IF
@@ -4544,7 +4724,8 @@
      &                     GRID(ng) % rmask,                            &
 # endif
      &                     FORCES(ng) % Wave_break)
-        IF (status.ne.nf90_noerr) THEN
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+     &                 __FILE__)) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idWbrk)), HIS(ng)%Rindex
           END IF
@@ -4568,7 +4749,8 @@
      &                     GRID(ng) % rmask,                            &
 # endif
      &                     FORCES(ng) % Dissip_roller)
-        IF (status.ne.nf90_noerr) THEN
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+     &                 __FILE__)) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idWdis)), HIS(ng)%Rindex
           END IF
@@ -4592,7 +4774,8 @@
      &                     GRID(ng) % rmask,                            &
 # endif
      &                     FORCES(ng) % rollA)
-        IF (status.ne.nf90_noerr) THEN
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+     &                 __FILE__)) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idWrol)), HIS(ng)%Rindex
           END IF
@@ -4616,7 +4799,8 @@
      &                     GRID(ng) % rmask,                            &
 # endif
      &                     FORCES(ng) % Wave_ds)
-        IF (status.ne.nf90_noerr) THEN
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+     &                 __FILE__)) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idWvds)), HIS(ng)%Rindex
           END IF
@@ -4638,7 +4822,8 @@
      &                     GRID(ng) % rmask,                            &
 # endif
      &                     FORCES(ng) % Wave_qp)
-        IF (status.ne.nf90_noerr) THEN
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+     &                 __FILE__)) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idWvqp)), HIS(ng)%Rindex
           END IF
@@ -4662,7 +4847,8 @@
      &                     GRID(ng) % rmask,                            &
 # endif
      &                     OCEAN(ng) % zetaw)
-        IF (status.ne.nf90_noerr) THEN
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+     &                 __FILE__)) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idWztw)), HIS(ng)%Rindex
           END IF
@@ -4684,7 +4870,8 @@
      &                     GRID(ng) % rmask,                            &
 # endif
      &                     OCEAN(ng) % qsp)
-        IF (status.ne.nf90_noerr) THEN
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+     &                 __FILE__)) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idWqsp)), HIS(ng)%Rindex
           END IF
@@ -4706,7 +4893,8 @@
      &                     GRID(ng) % rmask,                            &
 # endif
      &                     OCEAN(ng) % bh)
-        IF (status.ne.nf90_noerr) THEN
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+     &                 __FILE__)) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idWbeh)), HIS(ng)%Rindex
           END IF
@@ -4731,7 +4919,8 @@
      &                     GRID(ng) % rmask,                            &
 #  endif
      &                     OCEAN(ng) % uwave)
-        IF (status.ne.nf90_noerr) THEN
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+     &                 __FILE__)) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idUwav)), HIS(ng)%Rindex
           END IF
@@ -4753,7 +4942,8 @@
      &                     GRID(ng) % rmask,                            &
 #  endif
      &                     OCEAN(ng) % vwave)
-        IF (status.ne.nf90_noerr) THEN
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+     &                 __FILE__)) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idVwav)), HIS(ng)%Rindex
 
@@ -4772,7 +4962,8 @@
 !-----------------------------------------------------------------------
 !
       CALL netcdf_sync (ng, iNLM, HIS(ng)%name, HIS(ng)%ncid)
-      IF (exit_flag.ne.NoError) RETURN
+      IF (FoundError(exit_flag, NoError, __LINE__,                      &
+     &               __FILE__)) RETURN
 
 #ifdef SOLVE3D
 # ifdef NESTING
@@ -4796,14 +4987,14 @@
 #ifdef SOLVE3D
   20  FORMAT (6x,'WRT_HIS     - wrote history', t39,                    &
 # ifdef NESTING
-     &        'fields (Index=',i1,',',i1,') in record = ',i7.7,2x,i2.2)
+     &        'fields (Index=',i1,',',i1,') in record = ',i7.7,t92,i2.2)
 # else
      &        'fields (Index=',i1,',',i1,') in record = ',i7.7)
 # endif
 #else
   20  FORMAT (6x,'WRT_HIS     - wrote history', t39,                    &
 # ifdef NESTING
-     &        'fields (Index=',i1,')   in record = ',i7.7,2x,i2.2)
+     &        'fields (Index=',i1,')   in record = ',i7.7,t92,i2.2)
 # else
      &        'fields (Index=',i1,')   in record = ',i7.7)
 # endif

@@ -1,7 +1,7 @@
 #include "cppdefs.h"
       SUBROUTINE mod_arrays (allocate_vars)
 !
-!svn $Id: mod_arrays.F 830 2017-01-24 21:21:11Z arango $
+!svn $Id: mod_arrays.F 854 2017-07-18 23:28:45Z arango $
 !================================================== Hernan G. Arango ===
 !  Copyright (c) 2002-2017 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
@@ -91,12 +91,12 @@
 !  Turn on allocation time wall clock.
 !-----------------------------------------------------------------------
 !
-        DO ng=1,Ngrids
-          DO thread=THREAD_RANGE
-            CALL wclock_on (ng, iNLM, 1)
-          END DO
-!$OMP BARRIER
+      DO ng=1,Ngrids
+        DO thread=THREAD_RANGE
+          CALL wclock_on (ng, iNLM, 1, __LINE__, __FILE__)
         END DO
+!$OMP BARRIER
+      END DO
 #endif
 !
 !-----------------------------------------------------------------------
@@ -266,7 +266,7 @@
 !
       DO ng=1,Ngrids
         DO thread=THREAD_RANGE
-          CALL wclock_off (ng, iNLM, 1)
+          CALL wclock_off (ng, iNLM, 1, __LINE__, __FILE__)
         END DO
 !$OMP BARRIER
       END DO

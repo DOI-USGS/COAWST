@@ -2,7 +2,7 @@
       MODULE mp_exchange_mod
 #ifdef DISTRIBUTE
 !
-!svn $Id: mp_exchange.F 830 2017-01-24 21:21:11Z arango $
+!svn $Id: mp_exchange.F 857 2017-07-29 04:05:27Z arango $
 !================================================== Hernan G. Arango ===
 !  Copyright (c) 2002-2017 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
@@ -356,7 +356,8 @@
 !  Turn on time clocks.
 !-----------------------------------------------------------------------
 !
-      CALL wclock_on (ng, model, 40)
+      CALL wclock_on (ng, model, 60, __LINE__,                          &
+     &                __FILE__//":mp_exchange2d")
 # endif
 !
 !-----------------------------------------------------------------------
@@ -886,7 +887,8 @@
 !  Turn off time clocks.
 !-----------------------------------------------------------------------
 !
-      CALL wclock_off (ng, model, 40)
+      CALL wclock_off (ng, model, 60, __LINE__,                         &
+     &                 __FILE__//":mp_exchange2d")
 # endif
 
       RETURN
@@ -962,7 +964,8 @@
 !  Turn on time clocks.
 !-----------------------------------------------------------------------
 !
-      CALL wclock_on (ng, model, 43)
+      CALL wclock_on (ng, model, 63, __LINE__,                          &
+     &                __FILE__//":mp_exchange2d_bry")
 # endif
 !
 !-----------------------------------------------------------------------
@@ -1386,7 +1389,8 @@
 !  Turn off time clocks.
 !-----------------------------------------------------------------------
 !
-      CALL wclock_off (ng, model, 43)
+      CALL wclock_off (ng, model, 63, __LINE__,                         &
+     &                 __FILE__//":mp_exchange2d_bry")
 # endif
 
       RETURN
@@ -1466,7 +1470,8 @@
 !  Turn on time clocks.
 !-----------------------------------------------------------------------
 !
-      CALL wclock_on (ng, model, 41)
+      CALL wclock_on (ng, model, 61, __LINE__,                          &
+     &                __FILE__//":mp_exchange3d")
 # endif
 !
 !-----------------------------------------------------------------------
@@ -2095,7 +2100,8 @@
 !  Turn off time clocks.
 !-----------------------------------------------------------------------
 !
-      CALL wclock_off (ng, model, 41)
+      CALL wclock_off (ng, model, 61, __LINE__,                         &
+     &                 __FILE__//":mp_exchange3d")
 # endif
 
       RETURN
@@ -2171,7 +2177,8 @@
 !  Turn on time clocks.
 !-----------------------------------------------------------------------
 !
-      CALL wclock_on (ng, model, 43)
+      CALL wclock_on (ng, model, 63, __LINE__,                          &
+     &                __FILE__//":mp_exchange3d_bry")
 # endif
 !
 !-----------------------------------------------------------------------
@@ -2708,7 +2715,8 @@
 !  Turn off time clocks.
 !-----------------------------------------------------------------------
 !
-      CALL wclock_off (ng, model, 43)
+      CALL wclock_off (ng, model, 63, __LINE__,                         &
+     &                 __FILE__//":mp_exchange3d_bry")
 # endif
 
       RETURN
@@ -2791,7 +2799,8 @@
 !  Turn on time clocks.
 !-----------------------------------------------------------------------
 !
-      CALL wclock_on (ng, model, 42)
+      CALL wclock_on (ng, model, 62, __LINE__,                          &
+     &                __FILE__//":mp_exchange4d")
 # endif
 !
 !-----------------------------------------------------------------------
@@ -3379,7 +3388,8 @@
 !  Turn off time clocks.
 !-----------------------------------------------------------------------
 !
-      CALL wclock_off (ng, model, 42)
+      CALL wclock_off (ng, model, 62, __LINE__,                         &
+     &                 __FILE__//":mp_exchange4d")
 # endif
 
       RETURN
@@ -3456,7 +3466,8 @@
 !  Turn on time clocks.
 !-----------------------------------------------------------------------
 !
-      CALL wclock_on (ng, model, 40)
+      CALL wclock_on (ng, model, 60, __LINE__,                          &
+     &                __FILE__//":ad_mp_exchange2d")
 #  endif
 !
 !-----------------------------------------------------------------------
@@ -4120,7 +4131,8 @@
 !  Turn off time clocks.
 !-----------------------------------------------------------------------
 !
-      CALL wclock_off (ng, model, 40)
+      CALL wclock_off (ng, model, 60, __LINE__,                         &
+     &                 __FILE__//":ad_mp_exchange2d")
 #  endif
 
       RETURN
@@ -4196,7 +4208,8 @@
 !  Turn on time clocks.
 !-----------------------------------------------------------------------
 !
-      CALL wclock_on (ng, model, 43)
+      CALL wclock_on (ng, model, 63, __LINE__,                          &
+     &                __FILE__//":ad_mp_exchange2d_bry")
 #  endif
 !
 !-----------------------------------------------------------------------
@@ -4754,7 +4767,8 @@
 !  Turn off time clocks.
 !-----------------------------------------------------------------------
 !
-      CALL wclock_off (ng, model, 43)
+      CALL wclock_off (ng, model, 63, __LINE__,                         &
+     &                 __FILE__//":ad_mp_exchange2d_bry")
 #  endif
 
       RETURN
@@ -4834,7 +4848,8 @@
 !  Turn on time clocks.
 !-----------------------------------------------------------------------
 !
-      CALL wclock_on (ng, model, 41)
+      CALL wclock_on (ng, model, 61, __LINE__,                          &
+     &                __FILE__//":ad_mp_exchange3d")
 #  endif
 !
 !-----------------------------------------------------------------------
@@ -5597,7 +5612,8 @@
 !  Turn off time clocks.
 !-----------------------------------------------------------------------
 !
-      CALL wclock_off (ng, model, 41)
+      CALL wclock_off (ng, model, 61, __LINE__,                         &
+     &                 __FILE__//":ad_mp_exchange3d")
 #  endif
 
       RETURN
@@ -5672,7 +5688,8 @@
 !  Turn on time clocks.
 !-----------------------------------------------------------------------
 !
-      CALL wclock_on (ng, model, 43)
+      CALL wclock_on (ng, model, 63, __LINE__,                          &
+     &                __FILE__//":ad_mp_exchange3d_bry")
 #  endif
 !
 !-----------------------------------------------------------------------
@@ -6343,7 +6360,8 @@
 !  Turn off time clocks.
 !-----------------------------------------------------------------------
 !
-      CALL wclock_off (ng, model, 43)
+      CALL wclock_off (ng, model, 63, __LINE__,                         &
+     &                 __FILE__//":ad_mp_exchange3d_bry")
 #  endif
 
       RETURN
@@ -6424,7 +6442,8 @@
 !  Turn on time clocks.
 !-----------------------------------------------------------------------
 !
-      CALL wclock_on (ng, model, 42)
+      CALL wclock_on (ng, model, 62, __LINE__,                          &
+     &                __FILE__//":ad_mp_exchange4d")
 #  endif
 !
 !-----------------------------------------------------------------------
@@ -7122,7 +7141,8 @@
 !  Turn off time clocks.
 !-----------------------------------------------------------------------
 !
-      CALL wclock_off (ng, model, 42)
+      CALL wclock_off (ng, model, 62, __LINE__,                         &
+     &                __FILE__//":ad_mp_exchange4d")
 #  endif
 
       RETURN

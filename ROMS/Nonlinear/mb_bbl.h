@@ -60,7 +60,7 @@
 # include "tile.h"
 !
 # ifdef PROFILE
-      CALL wclock_on (ng, iNLM, 37)
+      CALL wclock_on (ng, iNLM, 37, __LINE__, __FILE__)
 # endif
       CALL bblm_tile (ng, tile,                                         &
      &                LBi, UBi, LBj, UBj,                               &
@@ -95,7 +95,7 @@
      &                FORCES(ng) % bustr,                               &
      &                FORCES(ng) % bvstr)
 # ifdef PROFILE
-      CALL wclock_off (ng, iNLM, 37)
+      CALL wclock_off (ng, iNLM, 37, __LINE__, __FILE__)
 # endif
       RETURN
       END SUBROUTINE bblm

@@ -3,7 +3,7 @@
 
       SUBROUTINE biology (ng,tile)
 !
-!svn $Id: red_tide.h 830 2017-01-24 21:21:11Z arango $
+!svn $Id: red_tide.h 859 2017-08-02 01:45:30Z arango $
 !******************************************************** Ruoying He ***
 !  Copyright (c) 2002-2017 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
@@ -57,7 +57,7 @@
       END IF
 !
 #ifdef PROFILE
-      CALL wclock_on (ng, iNLM, 15)
+      CALL wclock_on (ng, iNLM, 15, __LINE__, __FILE__)
 #endif
       CALL biology_tile (ng, tile,                                      &
      &                   LBi, UBi, LBj, UBj, N(ng), NT(ng),             &
@@ -78,7 +78,7 @@
      &                   OCEAN(ng) % t)
 
 #ifdef PROFILE
-      CALL wclock_off (ng, iNLM, 15)
+      CALL wclock_off (ng, iNLM, 15, __LINE__, __FILE__)
 #endif
       RETURN
       END SUBROUTINE biology
@@ -103,6 +103,8 @@
       USE mod_biology
       USE mod_ncparam
       USE mod_scalars
+!
+      USE dateclock_mod, ONLY : caldate
 !
 !  Imported variable declarations.
 !
@@ -148,7 +150,6 @@
       integer, parameter :: NsedLayers = 10
 
       integer :: Iter, i, ibio, iswim, itrc, j, k, ks, ksed
-      integer :: iday, month, year
 
       integer, dimension(Nswim) :: idswim
 
@@ -157,7 +158,7 @@
       real(r8) :: GermD, GermL, G_DIN, G_light, G_rate, M_rate
       real(r8) :: G_fac, S_fac, T_fac
       real(r8) :: dtdays, oNsedLayers, salt, temp, wmig
-      real(r8) :: hour, yday
+      real(r8) :: yday
 
       real(r8) :: alpha, cff, cffL, cffR, deltaL, deltaR, dz, wdt
 
@@ -280,7 +281,7 @@
 !  term. The cysts germination rates are regulated by an endogenous
 !  circannual clock.
 !
-        CALL caldate (r_date, tdays(ng), year, yday, month, iday, hour)
+        CALL caldate (tdays(ng), yd_r8=yday)
 !
         IF (yday.lt.Month_MidDay(1)) THEN
           cff=(365.0_r8-Month_MidDay(12)+yday)/                         &
@@ -362,9 +363,10 @@
             END DO
 !
 !  Multiply by endogenous clock factor. The cyst germination are
-!  regulated by an endogenous circannual clock.
+!  regulated by an endogenous circannual clock.  The 100 factor here
+!  is because "Dg" is meters and we need centimeters.
 !
-            Germ(i)=Germ(i)*EndoScale
+            Germ(i)=Germ(i)*Dg(ng)*100.0_r8*EndoScale
 !
 !  Convert percentage cysts/day into decimal fraction of cysts.
 !
@@ -459,14 +461,14 @@
 !-----------------------------------------------------------------------
 !
 !  The mortality is modeled as function dependent on temperature
-!  (implicit).  The simple input mortality rate is not used.
+!  (implicit).  Use a Q10 mortality rate equation.
 !
           DO k=1,N(ng)
             DO i=Istr,Iend
               temp=Bio(i,k,itemp)
-!!            M_rate=Mor(ng)
-              M_rate=0.019_r8+                                          &
-     &               0.066_r8*21.76_r8**((temp-10.35_r8)*0.1_r8)
+              M_rate=Mor_a(ng)*                                         &
+     &               Mor_Q10(ng)**((temp-Mor_T0(ng))*0.1_r8)+           &
+     &               Mor_b(ng)
               Bio(i,k,iDino)=Bio(i,k,iDino)/(1.0_r8+M_rate*dtdays)
             END DO
           END DO

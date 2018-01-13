@@ -3,7 +3,7 @@
 
 #ifdef ADJUST_BOUNDARY
 !
-!svn $Id: obc_adjust.F 830 2017-01-24 21:21:11Z arango $
+!svn $Id: obc_adjust.F 854 2017-07-18 23:28:45Z arango $
 !================================================== Hernan G. Arango ===
 !  Copyright (c) 2002-2017 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
@@ -46,14 +46,14 @@
 # include "tile.h"
 !
 # ifdef PROFILE
-      CALL wclock_on (ng, iNLM, 7)
+      CALL wclock_on (ng, iNLM, 7, __LINE__, __FILE__)
 # endif
       CALL obc_adjust_tile (ng, tile,                                   &
      &                      LBi, UBi, LBj, UBj, LBij, UBij,             &
      &                      IminS, ImaxS, JminS, JmaxS,                 &
      &                      Linp)
 # ifdef PROFILE
-      CALL wclock_off (ng, iNLM, 7)
+      CALL wclock_off (ng, iNLM, 7, __LINE__, __FILE__)
 # endif
       RETURN
       END SUBROUTINE obc_adjust
@@ -519,14 +519,14 @@
 # include "tile.h"
 !
 # ifdef PROFILE
-      CALL wclock_on (ng, iNLM, 8)
+      CALL wclock_on (ng, iNLM, 8, __LINE__, __FILE__)
 # endif
       CALL load_obc_tile (ng, tile,                                     &
      &                    LBi, UBi, LBj, UBj, LBij, UBij,               &
      &                    IminS, ImaxS, JminS, JmaxS,                   &
      &                    Lout)
 # ifdef PROFILE
-      CALL wclock_off (ng, iNLM, 8)
+      CALL wclock_off (ng, iNLM, 8, __LINE__, __FILE__)
 # endif
 
       RETURN

@@ -2,7 +2,7 @@
 #if (defined FOUR_DVAR || defined VERIFICATION) && defined OBSERVATIONS
       SUBROUTINE obs_initial (ng, model, backward)
 !
-!svn $Id: obs_initial.F 830 2017-01-24 21:21:11Z arango $
+!svn $Id: obs_initial.F 880 2017-11-15 22:04:38Z arango $
 !================================================== Hernan G. Arango ===
 !  Copyright (c) 2002-2017 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
@@ -22,6 +22,8 @@
       USE mod_ncparam
       USE mod_netcdf
       USE mod_scalars
+!
+      USE strings_mod, ONLY : FoundError
 !
       implicit none
 !
@@ -43,7 +45,7 @@
 # endif
       real(r8) :: tend
 !
-      SourceFile='obs_initial.F'
+      SourceFile=__FILE__
 !
 !-----------------------------------------------------------------------
 !  Inquire about the contents of observation NetCDF file:  Inquire about
@@ -52,10 +54,21 @@
 !
       QUERY : IF (OBS(ng)%ncid.eq.-1) THEN
 !
+!  Open observations NetCDF file.
+!
+        CALL netcdf_open (ng, model, OBS(ng)%name, 1, OBS(ng)%ncid)
+        IF (FoundError(exit_flag, NoError, __LINE__,                    &
+     &                 __FILE__)) THEN
+          WRITE (stdout,10) TRIM(OBS(ng)%name)
+          RETURN
+        END IF
+!
 !  Inquire about the variables.
 !
-        CALL netcdf_inq_var (ng, model, OBS(ng)%name)
-        IF (exit_flag.ne.NoError) RETURN
+        CALL netcdf_inq_var (ng, model, OBS(ng)%name,                   &
+     &                       OBS(ng)%ncid)
+        IF (FoundError(exit_flag, NoError, __LINE__,                    &
+     &                 __FILE__)) RETURN
 !
 !  Initialize logical switches.
 !
@@ -104,90 +117,85 @@
           ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idOval))) THEN
             got_var(idOval)=.TRUE.
             OBS(ng)%Vid(idOval)=var_id(i)
+          ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idOmet))) THEN
+            got_var(idOmet)=.TRUE.
+            haveObsMeta(ng)=.TRUE.
+            OBS(ng)%Vid(idOmet)=var_id(i)
           END IF
         END DO
 !
 !  Check if needed obsrvation variables are available.
 !
         IF (.not.got_var(idOday)) THEN
-          IF (Master) WRITE (stdout,10) TRIM(Vname(1,idOday)),          &
+          IF (Master) WRITE (stdout,20) TRIM(Vname(1,idOday)),          &
      &                                  TRIM(OBS(ng)%name)
           exit_flag=2
           RETURN
         END IF
         IF (.not.got_var(idNobs)) THEN
-          IF (Master) WRITE (stdout,10) TRIM(Vname(1,idNobs)),          &
+          IF (Master) WRITE (stdout,20) TRIM(Vname(1,idNobs)),          &
      &                                  TRIM(OBS(ng)%name)
           exit_flag=2
           RETURN
         END IF
         IF (.not.got_var(idOtyp)) THEN
-          IF (Master) WRITE (stdout,10) TRIM(Vname(1,idOtyp)),          &
+          IF (Master) WRITE (stdout,20) TRIM(Vname(1,idOtyp)),          &
      &                                  TRIM(OBS(ng)%name)
           exit_flag=2
           RETURN
         END IF
         IF (.not.got_var(idObsT)) THEN
-          IF (Master) WRITE (stdout,10) TRIM(Vname(1,idObsT)),          &
+          IF (Master) WRITE (stdout,20) TRIM(Vname(1,idObsT)),          &
      &                                  TRIM(OBS(ng)%name)
           exit_flag=2
           RETURN
         END IF
 #  ifdef SOLVE3D
         IF (.not.got_var(idObsD)) THEN
-          IF (Master) WRITE (stdout,10) TRIM(Vname(1,idObsD)),          &
+          IF (Master) WRITE (stdout,20) TRIM(Vname(1,idObsD)),          &
      &                                  TRIM(OBS(ng)%name)
           exit_flag=2
           RETURN
         END IF
 #  endif
         IF (.not.got_var(idObsX)) THEN
-          IF (Master) WRITE (stdout,10) TRIM(Vname(1,idObsX)),          &
+          IF (Master) WRITE (stdout,20) TRIM(Vname(1,idObsX)),          &
      &                                  TRIM(OBS(ng)%name)
           exit_flag=2
           RETURN
         END IF
         IF (.not.got_var(idObsY)) THEN
-          IF (Master) WRITE (stdout,10) TRIM(Vname(1,idObsY)),          &
+          IF (Master) WRITE (stdout,20) TRIM(Vname(1,idObsY)),          &
      &                                  TRIM(OBS(ng)%name)
           exit_flag=2
           RETURN
         END IF
 #  ifdef SOLVE3D
         IF (.not.got_var(idObsZ)) THEN
-          IF (Master) WRITE (stdout,10) TRIM(Vname(1,idObsZ)),          &
+          IF (Master) WRITE (stdout,20) TRIM(Vname(1,idObsZ)),          &
      &                                  TRIM(OBS(ng)%name)
           exit_flag=2
           RETURN
         END IF
 #  endif
         IF (.not.got_var(idOvar)) THEN
-          IF (Master) WRITE (stdout,10) TRIM(Vname(1,idOvar)),          &
+          IF (Master) WRITE (stdout,20) TRIM(Vname(1,idOvar)),          &
      &                                  TRIM(OBS(ng)%name)
           exit_flag=2
           RETURN
         END IF
         IF (.not.got_var(idOerr)) THEN
-          IF (Master) WRITE (stdout,10) TRIM(Vname(1,idOerr)),          &
+          IF (Master) WRITE (stdout,20) TRIM(Vname(1,idOerr)),          &
      &                                  TRIM(OBS(ng)%name)
           exit_flag=2
           RETURN
         END IF
         IF (.not.got_var(idOval)) THEN
-          IF (Master) WRITE (stdout,10) TRIM(Vname(1,idOval)),          &
+          IF (Master) WRITE (stdout,20) TRIM(Vname(1,idOval)),          &
      &                                  TRIM(OBS(ng)%name)
           exit_flag=2
           RETURN
         END IF
-!
-!  Open observations NetCDF file.
-!
-        CALL netcdf_open (ng, model, OBS(ng)%name, 1, OBS(ng)%ncid)
-        IF (exit_flag.ne.NoError) THEN
-          WRITE (stdout,20) TRIM(OBS(ng)%name)
-          RETURN
-        END IF
-
       END IF QUERY
 !
 !-----------------------------------------------------------------------
@@ -212,7 +220,7 @@
         END IF
       ELSE
         Ifirst=Nsurvey(ng)
-        tend=(time(ng)+ntend(ng)*dt(ng))*sec2day
+        tend=(time(ng)+ntimes(ng)*dt(ng))*sec2day
         DO i=1,Nsurvey(ng)
           IF ((tdays(ng).le.FOURDVAR(ng)%SurveyTime(i)).and.            &
      &        (FOURDVAR(ng)%SurveyTime(i).le.tend)) THEN
@@ -248,7 +256,7 @@
 !  written into the initial NetCDF file.
 !
       IF (.not.backward) THEN
-        DO i=0,NstateVar(ng)
+        DO i=0,NobsVar(ng)
           FOURDVAR(ng)%ObsCost(i)=0.0_r8
         END DO
       END IF
@@ -293,9 +301,9 @@
       END DO
 # endif
 !
+  20  FORMAT (/,' OBS_INITIAL - unable to open input NetCDF file: ',a)
   10  FORMAT (/,' OBS_INITIAL - unable to find model variable: ',a,     &
      &        /,12x,'in input NetCDF file: ',a)
-  20  FORMAT (/,' OBS_INITIAL - unable to open input NetCDF file: ',a)
   30  FORMAT (/,' OBS_INITIAL - No are observations available for',     &
      &          ' time window (days): ',/,12x,f12.4,' - ',f12.4,/)
       RETURN

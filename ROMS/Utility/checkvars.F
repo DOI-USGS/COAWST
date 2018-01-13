@@ -1,8 +1,8 @@
 #include "cppdefs.h"
-      SUBROUTINE checkvars (ng, model, ncname, string, Nrec, Nvar,      &
-     &                      tvarnam, get_var, have_var)
+      SUBROUTINE checkvars (ng, model, ncname, ncid, string, Nrec,      &
+     &                      Nvar,tvarnam, get_var, have_var)
 !
-!svn $Id: checkvars.F 830 2017-01-24 21:21:11Z arango $
+!svn $Id: checkvars.F 883 2017-12-05 22:24:46Z arango $
 !================================================== Hernan G. Arango ===
 !  Copyright (c) 2002-2017 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
@@ -17,6 +17,7 @@
 !     ng         Nested grid number.                                   !
 !     model      Calling model identifier.                             !
 !     ncname     NetCDF file name.                                     !
+!     ncid       NetCDF file ID.                                       !
 !     string     Identification string.                                !
 !     Nvar       Size of logical switches arrays.                      !
 !                                                                      !
@@ -49,9 +50,11 @@
 #endif 
       USE mod_scalars
 !
+      USE strings_mod, ONLY : FoundError
+!
 !  Imported variable declarations.
 !
-      integer, intent(in) :: ng, model, Nvar
+      integer, intent(in) :: ng, model, ncid, Nvar
       integer, intent(inout) :: Nrec
 
       character (len=*), intent(in) :: ncname
@@ -66,7 +69,7 @@
 !
       integer :: IDmod, i, itrc, ivpr 
 !
-      SourceFile='checkvars.F'
+      SourceFile=__FILE__
 !
 !-----------------------------------------------------------------------
 !  Determine state variables needed and check if they are available in
@@ -84,14 +87,18 @@
 !
 !  Inquire about the dimensions and check for consistency.
 !
-      CALL netcdf_check_dim (ng, IDmod, ncname)
-      IF (exit_flag.ne.NoError) RETURN
+      CALL netcdf_check_dim (ng, IDmod, ncname,                         &
+     &                       ncid = ncid)
+      IF (FoundError(exit_flag, NoError, __LINE__,                      &
+     &               __FILE__)) RETURN
       Nrec=rec_size
 !
 !  Inquire about the variables.
 !
-      CALL netcdf_check_var (ng, model, ncname)
-      IF (exit_flag.ne.NoError) RETURN
+      CALL netcdf_check_var (ng, IDmod, ncname,                         &
+     &                       ncid = ncid)
+      IF (FoundError(exit_flag, NoError, __LINE__,                      &
+     &               __FILE__)) RETURN
 !
 !  Initialize logical switches.
 !
@@ -105,7 +112,7 @@
 !  Higher values are used to process only boundary condition or
 !  surface forcing in the variational data assimilation algorithms.
 !
-      IF (model.lt.8) THEN
+      IF (model.lt.8.or.model.eq.14) THEN
 #ifdef ANA_INITIAL
         IF (nrrec(ng).ne.0) THEN
           get_var(idFsur)=.TRUE.

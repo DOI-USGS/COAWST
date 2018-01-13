@@ -1,6 +1,6 @@
 #include "cppdefs.h"
 !
-!svn $Id: lbc.F 830 2017-01-24 21:21:11Z arango $
+!svn $Id: lbc.F 857 2017-07-29 04:05:27Z arango $
 !================================================== Hernan G. Arango ===
 !  Copyright (c) 2002-2017 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
@@ -55,9 +55,10 @@
       USE mod_netcdf
       USE mod_scalars
 !
-#if !defined PARALLEL_IN  && defined DISTRIBUTE
+#if !defined PARALLEL_IO  && defined DISTRIBUTE
       USE distribute_mod, ONLY : mp_bcasti, mp_bcasts
 #endif
+      USE strings_mod,    ONLY : FoundError
 !
       implicit none
 !
@@ -72,7 +73,7 @@
 ! Local variable declarations
 !
       integer :: i, ibry, ie, ifield, is, ne, lstr, lvar, status
-#if !defined PARALLEL_IN  && defined DISTRIBUTE
+#if !defined PARALLEL_IO  && defined DISTRIBUTE
       integer, dimension(2) :: ibuffer
 #endif
 
@@ -91,7 +92,8 @@
 !
       IF (InpThread) THEN
         status=nf90_get_att(ncid, nf90_global, TRIM(aname), lbc_att)
-        IF (status.ne.nf90_noerr) THEN
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+     &                 __FILE__)) THEN
           WRITE (stdout,10) TRIM(aname), TRIM(ncname),                  &
      &                      TRIM(SourceFile)
           exit_flag=3
@@ -99,7 +101,7 @@
         END IF
       END IF
 
-#if !defined PARALLEL_IN  && defined DISTRIBUTE
+#if !defined PARALLEL_IO  && defined DISTRIBUTE
 !
 !  Broadcast error flags to all processors in the group.
 !
@@ -221,18 +223,6 @@
      &                    'S(',ibry,ifield,ng,')%gradient',             &
      &                    S(ibry,ifield,ng)%gradient,                   &
      &                    TRIM(ncname)
-                  END IF
-                  exit_flag=5
-                END IF
-              CASE ('Mix')
-                IF (.not.S(ibry,ifield,ng)%mixed) THEN
-                  IF (Master) THEN
-                    WRITE (stdout,20) B(ibry),                          &
-     &                                TRIM(Vname(1,idBvar(ifield))),    &
-     &                                TRIM(string(ibry)),               &
-     &                                'S(',ibry,ifield,ng,')%mixed',    &
-     &                                S(ibry,ifield,ng)%mixed,          &
-     &                                TRIM(ncname)
                   END IF
                   exit_flag=5
                 END IF
@@ -458,8 +448,6 @@
             string(ibry)='Fla    '
           ELSE IF (S(ibry,ifield,ng)%gradient) THEN
             string(ibry)='Gra    '
-          ELSE IF (S(ibry,ifield,ng)%mixed) THEN
-            string(ibry)='Mix    '
           ELSE IF (S(ibry,ifield,ng)%nested) THEN
             string(ibry)='Nes    '
           ELSE IF (S(ibry,ifield,ng)%periodic) THEN
@@ -550,8 +538,6 @@
             string(ibry,ng)='Flather    '
           ELSE IF (S(ibry,ifield,ng)%gradient) THEN
             string(ibry,ng)='Gradient   '
-          ELSE IF (S(ibry,ifield,ng)%mixed) THEN
-            string(ibry,ng)='Mixed      '
           ELSE IF (S(ibry,ifield,ng)%nested) THEN
             string(ibry,ng)='Nested     '
           ELSE IF (S(ibry,ifield,ng)%periodic) THEN

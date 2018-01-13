@@ -1,6 +1,6 @@
       MODULE ocean_control_mod
 !
-!svn $Id: tl_ocean.h 830 2017-01-24 21:21:11Z arango $
+!svn $Id: tl_ocean.h 858 2017-07-31 23:02:30Z arango $
 !================================================== Hernan G. Arango ===
 !  Copyright (c) 2002-2017 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
@@ -41,16 +41,16 @@
       USE mod_parallel
       USE mod_iounits
       USE mod_scalars
-
-#ifdef MCT_LIB
 !
-# ifdef AIR_OCEAN
+#ifdef MCT_LIB
+# ifdef ATM_COUPLING
       USE ocean_coupler_mod, ONLY : initialize_ocn2atm_coupling
 # endif
-# ifdef WAVES_OCEAN
+# ifdef WAV_COUPLING
       USE ocean_coupler_mod, ONLY : initialize_ocn2wav_coupling
 # endif
 #endif
+      USE strings_mod,       ONLY : FoundError
 !
 !  Imported variable declarations.
 !
@@ -105,7 +105,8 @@
 !  grids and dimension parameters are known.
 !
         CALL inp_par (iTLM)
-        IF (exit_flag.ne.NoError) RETURN
+        IF (FoundError(exit_flag, NoError, __LINE__,                    &
+     &                 __FILE__)) RETURN
 !
 !  Set domain decomposition tile partition range.  This range is
 !  computed only once since the "first_tile" and "last_tile" values
@@ -138,7 +139,7 @@
         DO ng=1,Ngrids
 !$OMP PARALLEL
           DO thread=THREAD_RANGE
-            CALL wclock_on (ng, iTLM, 0)
+            CALL wclock_on (ng, iTLM, 0, __LINE__, __FILE__)
           END DO
 !$OMP END PARALLEL
         END DO
@@ -151,17 +152,17 @@
 
       END IF
 
-#if defined MCT_LIB && (defined AIR_OCEAN || defined WAVES_OCEAN)
+#if defined MCT_LIB && (defined ATM_COUPLING || defined WAV_COUPLING)
 !
 !-----------------------------------------------------------------------
 !  Initialize coupling streams between model(s).
 !-----------------------------------------------------------------------
 !
       DO ng=1,Ngrids
-# ifdef AIR_OCEAN
+# ifdef ATM_COUPLING
         CALL initialize_ocn2atm_coupling (ng, MyRank)
 # endif
-# ifdef WAVES_OCEAN
+# ifdef WAV_COUPLING
         CALL initialize_ocn2wav_coupling (ng, MyRank)
 # endif
       END DO
@@ -177,7 +178,8 @@
 !$OMP PARALLEL
         CALL tl_initial (ng, .TRUE.)
 !$OMP END PARALLEL
-        IF (exit_flag.ne.NoError) RETURN
+        IF (FoundError(exit_flag, NoError, __LINE__,                    &
+     &                 __FILE__)) RETURN
       END DO
 !
 !  Initialize run or ensemble counter.
@@ -209,6 +211,8 @@
       USE mod_iounits
       USE mod_scalars
 !
+      USE strings_mod, ONLY : FoundError
+!
 !  Imported variable declarations.
 !
       real(r8), intent(in) :: RunInterval            ! seconds
@@ -235,7 +239,8 @@
 #endif
 !$OMP END PARALLEL
 
-      IF (exit_flag.ne.NoError) RETURN
+      IF (FoundError(exit_flag, NoError, __LINE__,                      &
+     &               __FILE__)) RETURN
 !
  10   FORMAT (/,1x,a,1x,'ROMS/TOMS: started time-stepping:',            &
      &        ' (Grid: ',i2.2,' TimeSteps: ',i8.8,' - ',i8.8,')',/)
@@ -298,7 +303,7 @@
       DO ng=1,Ngrids
 !$OMP PARALLEL
         DO thread=THREAD_RANGE
-          CALL wclock_off (ng, iTLM, 0)
+          CALL wclock_off (ng, iTLM, 0, __LINE__, __FILE__)
         END DO
 !$OMP END PARALLEL
       END DO

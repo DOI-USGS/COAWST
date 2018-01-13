@@ -3,7 +3,7 @@
 
 #ifdef IS4DVAR_SENSITIVITY
 !
-!svn $Id: ini_lanczos.F 830 2017-01-24 21:21:11Z arango $
+!svn $Id: ini_lanczos.F 857 2017-07-29 04:05:27Z arango $
 !================================================== Hernan G. Arango ===
 !  Copyright (c) 2002-2017 The ROMS/TOMS Group       Andrew M. Moore   !
 !    Licensed under a MIT/X style license                              !
@@ -61,7 +61,7 @@
 # include "tile.h"
 !
 # ifdef PROFILE
-      CALL wclock_on (ng, iTLM, 2)
+      CALL wclock_on (ng, iTLM, 2, __LINE__, __FILE__)
 # endif
       CALL ini_lanczos_tile (ng, tile,                                  &
      &                       LBi, UBi, LBj, UBj, LBij, UBij,            &
@@ -125,7 +125,7 @@
 # endif
      &                       OCEAN(ng) % tl_zeta)
 # ifdef PROFILE
-      CALL wclock_off (ng, iTLM, 2)
+      CALL wclock_off (ng, iTLM, 2, __LINE__, __FILE__)
 # endif
 
       RETURN
@@ -187,10 +187,11 @@
       USE mod_netcdf
       USE mod_scalars
 !
-      USE state_addition_mod, ONLY : state_addition
-      USE state_dotprod_mod, ONLY : state_dotprod
+      USE state_addition_mod,   ONLY : state_addition
+      USE state_dotprod_mod,    ONLY : state_dotprod
       USE state_initialize_mod, ONLY : state_initialize
-      USE state_scale_mod, ONLY : state_scale
+      USE state_scale_mod,      ONLY : state_scale
+      USE strings_mod,          ONLY : FoundError
 !
 !  Imported variable declarations.
 !
@@ -339,7 +340,7 @@
 
 # include "set_bounds.h"
 !
-      SourceFile='ini_lanczos.F, ini_lanczos_tile'
+      SourceFile=__FILE__ // ", ini_lanczos_tile"
 !
 !-----------------------------------------------------------------------
 !  Compute tangent linear model initial conditions from the weighted
@@ -350,7 +351,8 @@
 !
       CALL netcdf_get_ivar (ng, iADM, TRIM(LCZ(ng)%name), 'ndefADJ',    &
      &                      ndefLCZ)
-      IF (exit_flag.ne.NoError) RETURN
+      IF (FoundError(exit_flag, NoError, __LINE__,                      &
+     &               __FILE__)) RETURN
 !
       Lwrk=1
       DO inner=1,Ninner                 ! last record ignored
@@ -400,7 +402,8 @@
      &                   tl_ubar, tl_vbar,                              &
 # endif
      &                   tl_zeta)
-        IF (exit_flag.ne.NoError) RETURN
+        IF (FoundError(exit_flag, NoError, __LINE__,                    &
+     &                 __FILE__)) RETURN
 !
 !  Compute dot product between the adjoint sensitivity solution, x(0),
 !  and Lanczos vectors, q_i. The x(0) solution is assumed to be in
@@ -561,7 +564,8 @@
      &                   ad_ubar, ad_vbar,                              &
 # endif
      &                   ad_zeta)
-        IF (exit_flag.ne.NoError) RETURN
+        IF (FoundError(exit_flag, NoError, __LINE__,                    &
+     &                 __FILE__)) RETURN
 !
 !  Sum over all Lanczos vectors:
 !
@@ -647,7 +651,7 @@
       USE mod_scalars
 !
 # ifdef DISTRIBUTE
-      USE distribute_mod, ONLY : mp_bcasti
+      USE distribute_mod,     ONLY : mp_bcasti
 # endif
 #ifdef ADJUST_BOUNDARY
       USE nf_fread2d_bry_mod, ONLY : nf_fread2d_bry
@@ -655,10 +659,11 @@
       USE nf_fread3d_bry_mod, ONLY : nf_fread3d_bry
 # endif
 #endif
-      USE nf_fread2d_mod, ONLY : nf_fread2d
+      USE nf_fread2d_mod,     ONLY : nf_fread2d
 # ifdef SOLVE3D
-      USE nf_fread3d_mod, ONLY : nf_fread3d
+      USE nf_fread3d_mod,     ONLY : nf_fread3d
 # endif
+      USE strings_mod,        ONLY : FoundError
 !
 !  Imported variable declarations.
 !
@@ -753,7 +758,7 @@
 
 # include "set_bounds.h"
 !
-      SourceFile='ini_lanczos.F, read_state'
+      SourceFile=__FILE__ // ", read_state"
 !
 !-----------------------------------------------------------------------
 !  Read in requested model state record. Load data into state array
@@ -764,7 +769,8 @@
 !
       IF ((ndef.gt.0).or.(ncfileid.eq.-1)) THEN
         CALL netcdf_open (ng, model, ncname, 0, ncid)
-        IF (exit_flag.ne.NoError) THEN
+        IF (FoundError(exit_flag, NoError, __LINE__,                    &
+     &                 __FILE__)) THEN
           WRITE (stdout,10) TRIM(ncname)
           RETURN
         END IF
@@ -783,7 +789,8 @@
       scale=1.0_r8
       CALL netcdf_inq_varid (ng, model, ncname, Vname(1,idFsur),        &
      &                       ncid, varid)
-      IF (exit_flag.ne.NoError) RETURN
+      IF (FoundError(exit_flag, NoError, __LINE__,                      &
+     &               __FILE__)) RETURN
 
       status=nf_fread2d(ng, model, ncname, ncid,                        &
      &                  Vname(1,idFsur), varid,                         &
@@ -794,7 +801,8 @@
      &                  rmask,                                          &
 # endif
      &                  s_zeta(:,:,Lwrk))
-      IF (status.ne.nf90_noerr) THEN
+      IF (FoundError(status, nf90_noerr, __LINE__,                      &
+     &               __FILE__)) THEN
         IF (Master) THEN
           WRITE (stdout,20) TRIM(Vname(1,idFsur)), rec, TRIM(ncname)
         END IF
@@ -813,7 +821,8 @@
         scale=1.0_r8
         CALL netcdf_inq_varid (ng, model, ncname, Vname(1,ifield),      &
      &                         ncid, varid)
-        IF (exit_flag.ne.NoError) RETURN
+        IF (FoundError(exit_flag, NoError, __LINE__,                    &
+     &                 __FILE__)) RETURN
 
         status=nf_fread2d_bry (ng, model, ncname, ncid,                 &
      &                         Vname(1,ifield), varid,                  &
@@ -821,7 +830,8 @@
      &                         LBij, UBij, Nbrec(ng),                   &
      &                         scale, Fmin, Fmax,                       &
      &                         s_zeta_obc(:,:,:,Lwrk))
-        IF (status.ne.nf90_noerr) THEN
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+     &                 __FILE__)) THEN
           IF (Master) THEN
             WRITE (stdout,20) TRIM(Vname(1,ifield)), rec, TRIM(ncname)
           END IF
@@ -839,7 +849,8 @@
       scale=1.0_r8
       CALL netcdf_inq_varid (ng, model, ncname, Vname(1,idUbar),        &
      &                       ncid, varid)
-      IF (exit_flag.ne.NoError) RETURN
+      IF (FoundError(exit_flag, NoError, __LINE__,                      &
+     &               __FILE__)) RETURN
 
       status=nf_fread2d(ng, model, ncname, ncid,                        &
      &                  Vname(1,idUbar), varid,                         &
@@ -850,7 +861,8 @@
      &                  umask,                                          &
 #  endif
      &                  s_ubar(:,:,Lwrk))
-      IF (status.ne.nf90_noerr) THEN
+      IF (FoundError(status, nf90_noerr, __LINE__,                      &
+     &               __FILE__)) THEN
         IF (Master) THEN
           WRITE (stdout,20) TRIM(Vname(1,idUbar)), rec, TRIM(ncname)
         END IF
@@ -865,7 +877,8 @@
       scale=1.0_r8
       CALL netcdf_inq_varid (ng, model, ncname, Vname(1,idVbar),        &
      &                       ncid, varid)
-      IF (exit_flag.ne.NoError) RETURN
+      IF (FoundError(exit_flag, NoError, __LINE__,                      &
+     &               __FILE__)) RETURN
 
       status=nf_fread2d(ng, model, ncname, ncid,                        &
      &                  Vname(1,idVbar), varid,                         &
@@ -876,7 +889,8 @@
      &                  vmask,                                          &
 #  endif
      &                  s_vbar(:,:,Lwrk))
-      IF (status.ne.nf90_noerr) THEN
+      IF (FoundError(status, nf90_noerr, __LINE__,                      &
+     &               __FILE__)) THEN
         IF (Master) THEN
           WRITE (stdout,20) TRIM(Vname(1,idVbar)), rec, TRIM(ncname)
         END IF
@@ -895,7 +909,8 @@
         scale=1.0_r8
         CALL netcdf_inq_varid (ng, model, ncname, Vname(1,ifield),      &
      &                         ncid, varid)
-        IF (exit_flag.ne.NoError) RETURN
+        IF (FoundError(exit_flag, NoError, __LINE__,                    &
+     &                 __FILE__)) RETURN
 
         status=nf_fread2d_bry (ng, model, ncname, ncid,                 &
      &                         Vname(1,ifield), varid,                  &
@@ -903,7 +918,8 @@
      &                         LBij, UBij, Nbrec(ng),                   &
      &                         scale, Fmin, Fmax,                       &
      &                         s_ubar_obc(:,:,:,Lwrk))
-        IF (status.ne.nf90_noerr) THEN
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+     &                 __FILE__)) THEN
           IF (Master) THEN
             WRITE (stdout,20) TRIM(Vname(1,ifield)), rec, TRIM(ncname)
           END IF
@@ -921,7 +937,8 @@
         scale=1.0_r8
         CALL netcdf_inq_varid (ng, model, ncname, Vname(1,ifield),      &
      &                         ncid, varid)
-        IF (exit_flag.ne.NoError) RETURN
+        IF (FoundError(exit_flag, NoError, __LINE__,                    &
+     &                 __FILE__)) RETURN
 
         status=nf_fread2d_bry (ng, model, ncname, ncid,                 &
      &                         Vname(1,ifield), varid,                  &
@@ -929,7 +946,8 @@
      &                         LBij, UBij, Nbrec(ng),                   &
      &                         scale, Fmin, Fmax,                       &
      &                         s_vbar_obc(:,:,:,Lwrk))
-        IF (status.ne.nf90_noerr) THEN
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+     &                 __FILE__)) THEN
           IF (Master) THEN
             WRITE (stdout,20) TRIM(Vname(1,ifield)), rec, TRIM(ncname)
           END IF
@@ -947,7 +965,8 @@
       scale=1.0_r8
       CALL netcdf_inq_varid (ng, model, ncname, Vname(1,idUsms),        &
      &                       ncid, varid)
-      IF (exit_flag.ne.NoError) RETURN
+      IF (FoundError(exit_flag, NoError, __LINE__,                      &
+     &               __FILE__)) RETURN
 
       status=nf_fread3d(ng, model, ncname, ncid,                        &
      &                  Vname(1,idUsms), varid,                         &
@@ -958,7 +977,8 @@
      &                  umask,                                          &
 #  endif
      &                  s_ustr(:,:,:,Lwrk))
-      IF (status.ne.nf90_noerr) THEN
+      IF (FoundError(status, nf90_noerr, __LINE__,                      &
+     &               __FILE__)) THEN
         IF (Master) THEN
           WRITE (stdout,20) TRIM(Vname(1,idUsms)), rec, TRIM(ncname)
         END IF
@@ -971,7 +991,8 @@
       scale=1.0_r8
       CALL netcdf_inq_varid (ng, model, ncname, Vname(1,idVsms),        &
      &                       ncid, varid)
-      IF (exit_flag.ne.NoError) RETURN
+      IF (FoundError(exit_flag, NoError, __LINE__,                      &
+     &               __FILE__)) RETURN
 
       status=nf_fread3d(ng, model, ncname, ncid,                        &
      &                  Vname(1,idVsms), varid,                         &
@@ -982,7 +1003,8 @@
      &                  vmask,                                          &
 #  endif
      &                  s_vstr(:,:,:,Lwrk))
-      IF (status.ne.nf90_noerr) THEN
+      IF (FoundError(status, nf90_noerr, __LINE__,                      &
+     &               __FILE__)) THEN
         IF (Master) THEN
           WRITE (stdout,20) TRIM(Vname(1,idVsms)), rec, TRIM(ncname)
         END IF
@@ -999,7 +1021,8 @@
       scale=1.0_r8
       CALL netcdf_inq_varid (ng, model, ncname, Vname(1,idUvel),        &
      &                       ncid, varid)
-      IF (exit_flag.ne.NoError) RETURN
+      IF (FoundError(exit_flag, NoError, __LINE__,                      &
+     &               __FILE__)) RETURN
 
       status=nf_fread3d(ng, model, ncname, ncid,                        &
      &                  Vname(1,idUvel), varid,                         &
@@ -1010,7 +1033,8 @@
      &                  umask,                                          &
 #  endif
      &                  s_u(:,:,:,Lwrk))
-      IF (status.ne.nf90_noerr) THEN
+      IF (FoundError(status, nf90_noerr, __LINE__,                      &
+     &               __FILE__)) THEN
         IF (Master) THEN
           WRITE (stdout,20) TRIM(Vname(1,idUvel)), rec, TRIM(ncname)
         END IF
@@ -1029,7 +1053,8 @@
         scale=1.0_r8
         CALL netcdf_inq_varid (ng, model, ncname, Vname(1,ifield),      &
      &                         ncid, varid)
-        IF (exit_flag.ne.NoError) RETURN
+        IF (FoundError(exit_flag, NoError, __LINE__,                    &
+     &                 __FILE__)) RETURN
 
         status=nf_fread3d_bry (ng, model, ncname, ncid,                 &
      &                         Vname(1,ifield), varid,                  &
@@ -1037,7 +1062,8 @@
      &                         LBij, UBij, 1, N(ng), Nbrec(ng),         &
      &                         scale, Fmin, Fmax,                       &
      &                         s_u_obc(:,:,:,:,Lwrk))
-        IF (status.ne.nf90_noerr) THEN
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+     &                 __FILE__)) THEN
           IF (Master) THEN
             WRITE (stdout,20) TRIM(Vname(1,ifield)), rec, TRIM(ncname)
           END IF
@@ -1054,7 +1080,8 @@
       scale=1.0_r8
       CALL netcdf_inq_varid (ng, model, ncname, Vname(1,idVvel),        &
      &                       ncid, varid)
-      IF (exit_flag.ne.NoError) RETURN
+      IF (FoundError(exit_flag, NoError, __LINE__,                      &
+     &               __FILE__)) RETURN
 
       status=nf_fread3d(ng, model, ncname, ncid,                        &
      &                  Vname(1,idVvel), varid,                         &
@@ -1065,7 +1092,8 @@
      &                  vmask,                                          &
 #  endif
      &                  s_v(:,:,:,Lwrk))
-      IF (status.ne.nf90_noerr) THEN
+      IF (FoundError(status, nf90_noerr, __LINE__,                      &
+     &               __FILE__)) THEN
         IF (Master) THEN
           WRITE (stdout,20) TRIM(Vname(1,idVvel)), rec, TRIM(ncname)
         END IF
@@ -1084,7 +1112,8 @@
         scale=1.0_r8
         CALL netcdf_inq_varid (ng, model, ncname, Vname(1,ifield),      &
      &                         ncid, varid)
-        IF (exit_flag.ne.NoError) RETURN
+        IF (FoundError(exit_flag, NoError, __LINE__,                    &
+     &                 __FILE__)) RETURN
 
         status=nf_fread3d_bry (ng, model, ncname, ncid,                 &
      &                         Vname(1,ifield), varid,                  &
@@ -1092,7 +1121,8 @@
      &                         LBij, UBij, 1, N(ng), Nbrec(ng),         &
      &                         scale, Fmin, Fmax,                       &
      &                         s_v_obc(:,:,:,:,Lwrk))
-        IF (status.ne.nf90_noerr) THEN
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+     &                 __FILE__)) THEN
           IF (Master) THEN
             WRITE (stdout,20) TRIM(Vname(1,ifield)), rec, TRIM(ncname)
           END IF
@@ -1110,7 +1140,8 @@
       DO itrc=1,NT(ng)
         CALL netcdf_inq_varid (ng, model, ncname,                       &
      &                         Vname(1,idTvar(itrc)), ncid, varid)
-        IF (exit_flag.ne.NoError) RETURN
+        IF (FoundError(exit_flag, NoError, __LINE__,                    &
+     &                 __FILE__)) RETURN
 
         status=nf_fread3d(ng, model, ncname, ncid,                      &
      &                    Vname(1,idTvar(itrc)), varid,                 &
@@ -1121,7 +1152,8 @@
      &                    rmask,                                        &
 #  endif
      &                    s_t(:,:,:,Lwrk,itrc))
-        IF (status.ne.nf90_noerr) THEN
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+     &                 __FILE__)) THEN
           IF (Master) THEN
             WRITE (stdout,20) TRIM(Vname(1,idTvar(itrc))), rec,         &
      &                        TRIM(ncname)
@@ -1143,7 +1175,8 @@
           scale=1.0_r8
           CALL netcdf_inq_varid (ng, model, ncname, Vname(1,ifield),    &
      &                           ncid, varid)
-          IF (exit_flag.ne.NoError) RETURN
+          IF (FoundError(exit_flag, NoError, __LINE__,                  &
+     &                   __FILE__)) RETURN
 
           status=nf_fread3d_bry (ng, model, ncname, ncid,               &
      &                           Vname(1,ifield), varid,                &
@@ -1151,7 +1184,8 @@
      &                           LBij, UBij, 1, N(ng), Nbrec(ng),       &
      &                           scale, Fmin, Fmax,                     &
      &                           s_t_obc(:,:,:,:,Lwrk,itrc))
-          IF (status.ne.nf90_noerr) THEN
+          IF (FoundError(status, nf90_noerr, __LINE__,                  &
+     &                   __FILE__)) THEN
             IF (Master) THEN
               WRITE (stdout,20) TRIM(Vname(1,ifield)), rec, TRIM(ncname)
             END IF
@@ -1172,7 +1206,8 @@
         IF (Lstflux(itrc,ng)) THEN
           CALL netcdf_inq_varid (ng, model, ncname,                     &
      &                           Vname(1,idTsur(itrc)), ncid, varid)
-          IF (exit_flag.ne.NoError) RETURN
+          IF (FoundError(exit_flag, NoError, __LINE__,                  &
+     &                   __FILE__)) RETURN
 
           status=nf_fread3d(ng, model, ncname, ncid,                    &
      &                      Vname(1,idTsur(itrc)), varid,               &
@@ -1183,7 +1218,8 @@
      &                      rmask,                                      &
 #   endif
      &                      s_tflux(:,:,:,Lwrk,itrc))
-          IF (status.ne.nf90_noerr) THEN
+          IF (FoundError(status, nf90_noerr, __LINE__,                  &
+     &                   __FILE__)) THEN
             IF (Master) THEN
               WRITE (stdout,20) TRIM(Vname(1,idTsur(itrc))), rec,       &
      &                          TRIM(ncname)

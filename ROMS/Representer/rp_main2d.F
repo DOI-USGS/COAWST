@@ -2,7 +2,7 @@
 #if defined TL_IOMS && !defined SOLVE3D
       SUBROUTINE rp_main2d (RunInterval)
 !
-!svn $Id: rp_main2d.F 830 2017-01-24 21:21:11Z arango $
+!svn $Id: rp_main2d.F 858 2017-07-31 23:02:30Z arango $
 !================================================== Hernan G. Arango ===
 !  Copyright (c) 2002-2017 The ROMS/TOMS Group       Andrew M. Moore   !
 !    Licensed under a MIT/X style license                              !
@@ -19,47 +19,49 @@
 !
       USE mod_param
       USE mod_parallel
-# ifdef MODEL_COUPLING
+# if defined MODEL_COUPLING && defined MCT_LIB
       USE mod_coupler
 # endif
       USE mod_iounits
       USE mod_scalars
       USE mod_stepping
 !
-# ifdef AIR_OCEAN_NOT_YET
-      USE ocean_coupler_mod, ONLY : atmos_coupling
+      USE dateclock_mod,           ONLY : time_string
+# if defined ATM_COUPLING_NOT_YET && defined MCT_LIB
+      USE ocean_coupler_mod,       ONLY : atmos_coupling
 # endif
-# ifdef WAVES_OCEAN_NOT_YET
-      USE ocean_coupler_mod, ONLY : waves_coupling
+# if defined WAV_COUPLING_NOT_YET && defined MCT_LIB
+      USE ocean_coupler_mod,       ONLY : waves_coupling
 # endif
-      USE rp_diag_mod, ONLY : rp_diag
+      USE strings_mod,             ONLY : FoundError
+      USE rp_diag_mod,             ONLY : rp_diag
 # ifdef defined ADJUST_WSTRESS
-      USE rp_frc_adjust_mod, ONLY : rp_frc_adjust
+      USE rp_frc_adjust_mod,       ONLY : rp_frc_adjust
 # endif
-      USE rp_ini_fields_mod, ONLY : rp_ini_fields, rp_ini_zeta
+      USE rp_ini_fields_mod,       ONLY : rp_ini_fields, rp_ini_zeta
 # ifdef ADJUST_BOUNDARY
-      USE rp_obc_adjust_mod, ONLY : rp_obc_adjust
+      USE rp_obc_adjust_mod,       ONLY : rp_obc_adjust
 # endif
 # ifdef NEARSHORE_MELLOR_NOT_YET
 !!    USE rp_radiation_stress_mod, ONLY : rp_radiation_stress
 # endif
 # if defined SSH_TIDES_NOT_YET || defined UV_TIDES_NOT_YET
-!!    USE rp_set_tides_mod, ONLY : rp_set_tides
+!!    USE rp_set_tides_mod,        ONLY : rp_set_tides
 # endif
-      USE rp_set_vbc_mod, ONLY: rp_set_vbc
-      USE rp_step2d_mod, ONLY : rp_step2d
+      USE rp_set_vbc_mod,          ONLY : rp_set_vbc
+      USE rp_step2d_mod,           ONLY : rp_step2d
 # ifdef FLOATS_NOT_YET
-!!    USE rp_step_floats_mod, ONLY : rp_step_floats
+!!    USE rp_step_floats_mod,      ONLY : rp_step_floats
 # endif
 # ifdef WEAK_CONSTRAINT
-      USE tl_forcing_mod, ONLY : tl_forcing
+      USE tl_forcing_mod,          ONLY : tl_forcing
 # endif
 # ifdef RP_AVERAGES
-      USE rp_set_avg_mod, ONLY : tl_set_avg
+      USE rp_set_avg_mod,          ONLY : tl_set_avg
 # endif
 # if defined PROPAGATOR || \
     (defined MASKING    && (defined READ_WATER || defined WRITE_WATER))
-      USE wpoints_mod, ONLY : wpoints
+      USE wpoints_mod,             ONLY : wpoints
 # endif
 !
       implicit none
@@ -109,7 +111,8 @@
           CALL rp_get_data (ng)
 !$OMP END MASTER
 !$OMP BARRIER
-          IF (exit_flag.ne.NoError) RETURN
+          IF (FoundError(exit_flag, NoError, __LINE__,                  &
+     &                   __FILE__)) RETURN
         END DO
 !
 !-----------------------------------------------------------------------
@@ -123,7 +126,8 @@
           END DO
 !$OMP BARRIER
         END DO
-        IF (exit_flag.ne.NoError) RETURN
+        IF (FoundError(exit_flag, NoError, __LINE__,                    &
+     &                 __FILE__)) RETURN
 
 # ifdef WEAK_CONSTRAINT
 !
@@ -188,7 +192,7 @@
 !$OMP BARRIER
         END DO
 
-# ifdef AIR_OCEAN_NOT_YET
+# if defined ATM_COUPLING_NOT_YET && defined MCT_LIB
 !
 !-----------------------------------------------------------------------
 !  Couple to atmospheric model every CoupleSteps(Iatmos) timesteps: get
@@ -206,7 +210,7 @@
         END DO
 # endif
 
-# ifdef WAVES_OCEAN_NOT_YET
+# if defined WAV_COUPLING_NOT_YET && defined MCT_LIB
 !
 !-----------------------------------------------------------------------
 !  Couple to waves model every CoupleSteps(Iwaves) timesteps: get
@@ -297,7 +301,8 @@
           CALL rp_output (ng)
 !$OMP END MASTER
 !$OMP BARRIER
-          IF ((exit_flag.ne.NoError).or.                                &
+          IF ((FoundError(exit_flag, NoError, __LINE__,                 &
+     &                    __FILE__)).or.                                &
      &        ((iic(ng).eq.(ntend(ng)+1)).and.(ng.eq.Ngrids))) RETURN
         END DO
 !

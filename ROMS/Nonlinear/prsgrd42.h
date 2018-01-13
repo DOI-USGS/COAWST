@@ -1,7 +1,7 @@
 #undef NEUMANN
       SUBROUTINE prsgrd (ng, tile)
 !
-!svn $Id: prsgrd42.h 830 2017-01-24 21:21:11Z arango $
+!svn $Id: prsgrd42.h 854 2017-07-18 23:28:45Z arango $
 !***********************************************************************
 !  Copyright (c) 2002-2017 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
@@ -29,12 +29,12 @@
 !***********************************************************************
 !
       USE mod_param
-# ifdef DIAGNOSTICS
+#ifdef DIAGNOSTICS
       USE mod_diags
-# endif
-# ifdef ATM_PRESS
+#endif
+#ifdef ATM_PRESS
       USE mod_forces
-# endif
+#endif
       USE mod_grid
       USE mod_ocean
       USE mod_stepping
@@ -45,23 +45,23 @@
 !
 !  Local variable declarations.
 !
-# include "tile.h"
+#include "tile.h"
 !
-# ifdef PROFILE
-      CALL wclock_on (ng, iNLM, 23)
-# endif
+#ifdef PROFILE
+      CALL wclock_on (ng, iNLM, 23, __LINE__, __FILE__)
+#endif
       CALL prsgrd_tile (ng, tile,                                       &
      &                  LBi, UBi, LBj, UBj,                             &
      &                  IminS, ImaxS, JminS, JmaxS,                     &
      &                  nrhs(ng),                                       &
-# ifdef MASKING
+#ifdef MASKING
      &                  GRID(ng) % umask,                               &
      &                  GRID(ng) % vmask,                               &
-# endif
-# ifdef WET_DRY
+#endif
+#ifdef WET_DRY
      &                  GRID(ng)%umask_wet,                             &
      &                  GRID(ng)%vmask_wet,                             &
-# endif
+#endif
      &                  GRID(ng) % Hz,                                  &
      &                  GRID(ng) % om_v,                                &
      &                  GRID(ng) % on_u,                                &
@@ -70,18 +70,18 @@
 #ifdef WEC_VF
      &                  OCEAN(ng) % zetat,                              &
 #endif
-# ifdef ATM_PRESS
+#ifdef ATM_PRESS
      &                  FORCES(ng) % Pair,                              &
-# endif
-# ifdef DIAGNOSTICS_UV
+#endif
+#ifdef DIAGNOSTICS_UV
      &                  DIAGS(ng) % DiaRU,                              &
      &                  DIAGS(ng) % DiaRV,                              &
-# endif
+#endif
      &                  OCEAN(ng) % ru,                                 &
      &                  OCEAN(ng) % rv)
-# ifdef PROFILE
-      CALL wclock_off (ng, iNLM, 23)
-# endif
+#ifdef PROFILE
+      CALL wclock_off (ng, iNLM, 23, __LINE__, __FILE__)
+#endif
       RETURN
       END SUBROUTINE prsgrd
 !
@@ -90,23 +90,23 @@
      &                        LBi, UBi, LBj, UBj,                       &
      &                        IminS, ImaxS, JminS, JmaxS,               &
      &                        nrhs,                                     &
-# ifdef MASKING
+#ifdef MASKING
      &                        umask, vmask,                             &
-# endif
-# ifdef WET_DRY
+#endif
+#ifdef WET_DRY
      &                        umask_wet, vmask_wet,                     &
-# endif
+#endif
      &                        Hz, om_v, on_u, z_w,                      &
      &                        rho,                                      &
 #ifdef WEC_VF
      &                        zetat,                                    &
 #endif
-# ifdef ATM_PRESS
+#ifdef ATM_PRESS
      &                        Pair,                                     &
-# endif
-# ifdef DIAGNOSTICS_UV
+#endif
+#ifdef DIAGNOSTICS_UV
      &                        DiaRU, DiaRV,                             &
-# endif
+#endif
      &                        ru, rv)
 !***********************************************************************
 !
@@ -120,59 +120,59 @@
       integer, intent(in) :: IminS, ImaxS, JminS, JmaxS
       integer, intent(in) :: nrhs
 !
-# ifdef ASSUMED_SHAPE
-#  ifdef MASKING
+#ifdef ASSUMED_SHAPE
+# ifdef MASKING
       real(r8), intent(in) :: umask(LBi:,LBj:)
       real(r8), intent(in) :: vmask(LBi:,LBj:)
-#  endif
-#  ifdef WET_DRY
+# endif
+# ifdef WET_DRY
       real(r8), intent(in) :: umask_wet(LBi:,LBj:)
       real(r8), intent(in) :: vmask_wet(LBi:,LBj:)
-#  endif
+# endif
       real(r8), intent(in) :: Hz(LBi:,LBj:,:)
       real(r8), intent(in) :: om_v(LBi:,LBj:)
       real(r8), intent(in) :: on_u(LBi:,LBj:)
       real(r8), intent(in) :: z_w(LBi:,LBj:,0:)
       real(r8), intent(in) :: rho(LBi:,LBj:,:)
-#  ifdef WEC_VF
+# ifdef WEC_VF
       real(r8), intent(in) :: zetat(LBi:,LBj:)
-#  endif
-#  ifdef ATM_PRESS
+# endif
+# ifdef ATM_PRESS
       real(r8), intent(in) :: Pair(LBi:,LBj:)
-#  endif
-#  ifdef DIAGNOSTICS_UV
+# endif
+# ifdef DIAGNOSTICS_UV
       real(r8), intent(inout) :: DiaRU(LBi:,LBj:,:,:,:)
       real(r8), intent(inout) :: DiaRV(LBi:,LBj:,:,:,:)
-#  endif
+# endif
       real(r8), intent(inout) :: ru(LBi:,LBj:,0:,:)
       real(r8), intent(inout) :: rv(LBi:,LBj:,0:,:)
-# else
-#  ifdef MASKING
+#else
+# ifdef MASKING
       real(r8), intent(in) :: umask(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: vmask(LBi:UBi,LBj:UBj)
-#  endif
-#  ifdef WET_DRY
+# endif
+# ifdef WET_DRY
       real(r8), intent(in) :: umask_wet(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: vmask_wet(LBi:UBi,LBj:UBj)
-#  endif
+# endif
       real(r8), intent(in) :: Hz(LBi:UBi,LBj:UBj,N(ng))
       real(r8), intent(in) :: om_v(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: on_u(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: z_w(LBi:UBi,LBj:UBj,0:N(ng))
       real(r8), intent(in) :: rho(LBi:UBi,LBj:UBj,N(ng))
-#  ifdef WEC_VF
+# ifdef WEC_VF
       real(r8), intent(in) :: zetat(LBi:UBi,LBj:UBj)
-#  endif
-#  ifdef ATM_PRESS
+# endif
+# ifdef ATM_PRESS
       real(r8), intent(in) :: Pair(LBi:UBi,LBj:UBj)
-#  endif
-#  ifdef DIAGNOSTICS_UV
+# endif
+# ifdef DIAGNOSTICS_UV
       real(r8), intent(inout) :: DiaRU(LBi:UBi,LBj:UBj,N(ng),2,NDrhs)
       real(r8), intent(inout) :: DiaRV(LBi:UBi,LBj:UBj,N(ng),2,NDrhs)
-#  endif
+# endif
       real(r8), intent(inout) :: ru(LBi:UBi,LBj:UBj,0:N(ng),2)
       real(r8), intent(inout) :: rv(LBi:UBi,LBj:UBj,0:N(ng),2)
-# endif
+#endif
 !
 !  Local variable declarations.
 !
@@ -195,16 +195,16 @@
       real(r8), dimension(IminS:ImaxS,0:N(ng)) :: dL
       real(r8), dimension(IminS:ImaxS,0:N(ng)) :: dR
 
-# include "set_bounds.h"
+#include "set_bounds.h"
 !
 !---------------------------------------------------------------------
 !  Finite-volume pressure gradient force algorithm.
 !---------------------------------------------------------------------
 !
-# ifdef ATM_PRESS
+#ifdef ATM_PRESS
       OneAtm=1013.25_r8                  ! 1 atm = 1013.25 mb
       fac=100.0_r8/g
-# endif
+#endif
       cff2=1.0_r8/6.0_r8
       DO j=JstrV-2,Jend+1
         DO k=N(ng)-1,1,-1
@@ -265,13 +265,13 @@
         END DO
 !
         DO i=IstrU-2,Iend+1
-# ifdef NEUMANN
+#ifdef NEUMANN
           r(i,j,N(ng))=1.5_r8*rho(i,j,N(ng))-0.5_r8*r(i,j,N(ng)-1)
           r(i,j,0)=1.5_r8*rho(i,j,1)-0.5_r8*r(i,j,1  )
-# else
+#else
           r(i,j,N(ng))=2.0_r8*rho(i,j,N(ng))-r(i,j,N(ng)-1)
           r(i,j,0)=2.0_r8*rho(i,j,1)-r(i,j,1  )
-# endif
+#endif
         END DO
 !
 !  Compute pressure (P) and lateral pressure force (FX). Initialize
@@ -331,12 +331,12 @@
               ru(i,j,k,nrhs)=2.0_r8*(FX(i-1,j,k)-FX(i,j,k)+             &
      &                               FC(i,k)-FC(i,k-1))/                &
      &                       (Hz(i-1,j,k)+Hz(i,j,k))
-# ifdef MASKING
+#ifdef MASKING
               ru(i,j,k,nrhs)=ru(i,j,k,nrhs)*umask(i,j)
-# endif
-# ifdef WET_DRY
+#endif
+#ifdef WET_DRY
               ru(i,j,k,nrhs)=ru(i,j,k,nrhs)*umask_wet(i,j)
-# endif
+#endif
             END DO
           END DO
         END IF
@@ -367,12 +367,12 @@
               rv(i,j,k,nrhs)=2.0_r8*(FX(i,j-1,k)-FX(i,j,k)+             &
      &                               FC(i,k)-FC(i,k-1))/                &
      &                       (Hz(i,j-1,k)+Hz(i,j,k))
-# ifdef MASKING
+#ifdef MASKING
               rv(i,j,k,nrhs)=rv(i,j,k,nrhs)*vmask(i,j)
-# endif
-# ifdef WET_DRY
+#endif
+#ifdef WET_DRY
               rv(i,j,k,nrhs)=rv(i,j,k,nrhs)*vmask_wet(i,j)
-# endif
+#endif
             END DO
           END DO
         END IF
@@ -407,9 +407,9 @@
      &                      cff1*ru(i,j,k,nrhs))*                       &
      &                     (Hz(i-1,j,k)+Hz(i,j,k))*on_u(i,j)+           &
      &                     (FC(i,k)-FC(i,k-1))*on_u(i,j)
-# ifdef DIAGNOSTICS_UV
+#ifdef DIAGNOSTICS_UV
             DiaRU(i,j,k,nrhs,M3pgrd)=ru(i,j,k,nrhs)
-# endif
+#endif
           END DO
         END DO
       END DO
@@ -442,9 +442,9 @@
      &                      cff1*rv(i,j,k,nrhs))*                       &
      &                     (Hz(i,j-1,k)+Hz(i,j,k))*om_v(i,j)+           &
      &                     (FX(i,j,k)-FX(i,j,k-1))*om_v(i,j)
-# ifdef DIAGNOSTICS_UV
+#ifdef DIAGNOSTICS_UV
             DiaRV(i,j,k,nrhs,M3pgrd)=rv(i,j,k,nrhs)
-# endif
+#endif
           END DO
         END DO
       END DO

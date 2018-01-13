@@ -1,6 +1,6 @@
       SUBROUTINE bblm (ng, tile)
 !
-!svn $Id: sg_bbl.h 830 2017-01-24 21:21:11Z arango $
+!svn $Id: sg_bbl.h 854 2017-07-18 23:28:45Z arango $
 !================================================== Hernan G. Arango ===
 !  Copyright (c) 2002-2017 The ROMS/TOMS Group        Richard Styles   !
 !    Licensed under a MIT/X style license                              !
@@ -34,11 +34,11 @@
 !
 !  Local variable declarations.
 !
-# include "tile.h"
+#include "tile.h"
 !
-# ifdef PROFILE
-      CALL wclock_on (ng, iNLM, 37)
-# endif
+#ifdef PROFILE
+      CALL wclock_on (ng, iNLM, 37, __LINE__, __FILE__)
+#endif
       CALL bblm_tile (ng, tile,                                         &
      &                LBi, UBi, LBj, UBj,                               &
      &                IminS, ImaxS, JminS, JmaxS,                       &
@@ -72,9 +72,9 @@
      &                BBL(ng) % bvstrcwmax,                             &
      &                FORCES(ng) % bustr,                               &
      &                FORCES(ng) % bvstr)
-# ifdef PROFILE
-      CALL wclock_off (ng, iNLM, 37)
-# endif
+#ifdef PROFILE
+      CALL wclock_off (ng, iNLM, 37, __LINE__, __FILE__)
+#endif
 
       RETURN
       END SUBROUTINE bblm
@@ -106,9 +106,9 @@
       USE mod_sediment
 !
       USE bc_2d_mod
-# ifdef DISTRIBUTE
+#ifdef DISTRIBUTE
       USE mp_exchange_mod, ONLY : mp_exchange2d
-# endif
+#endif
 !
 !  Imported variable declarations.
 !
@@ -117,7 +117,7 @@
       integer, intent(in) :: IminS, ImaxS, JminS, JmaxS
       integer, intent(in) :: nrhs
 !
-# ifdef ASSUMED_SHAPE
+#ifdef ASSUMED_SHAPE
       integer, intent(inout) :: Iconv(LBi:,LBj:)
 
       real(r8), intent(in) :: h(LBi:,LBj:)
@@ -125,11 +125,11 @@
       real(r8), intent(in) :: z_w(LBi:,LBj:,0:)
       real(r8), intent(in) :: angler(LBi:,LBj:)
       real(r8), intent(in) :: ZoBot(LBi:,LBj:)
-#  if defined SG_CALC_UB
+# if defined SG_CALC_UB
       real(r8), intent(in) :: Hwave(LBi:,LBj:)
-#  else
+# else
       real(r8), intent(in) :: Uwave_rms(LBi:,LBj:)
-#  endif
+# endif
       real(r8), intent(in) :: Dwave(LBi:,LBj:)
       real(r8), intent(in) :: Pwave_bot(LBi:,LBj:)
       real(r8), intent(in) :: rho(LBi:,LBj:,:)
@@ -150,7 +150,7 @@
       real(r8), intent(out) :: bvstrcwmax(LBi:,LBj:)
       real(r8), intent(out) :: bustr(LBi:,LBj:)
       real(r8), intent(out) :: bvstr(LBi:,LBj:)
-# else
+#else
       integer, intent(inout) :: Iconv(LBi:UBi,LBj:UBj)
 
       real(r8), intent(in) :: h(LBi:UBi,LBj:UBj)
@@ -158,11 +158,11 @@
       real(r8), intent(in) :: z_w(LBi:UBi,LBj:UBj,0:N(ng))
       real(r8), intent(in) :: angler(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: ZoBot(LBi:UBi,LBj:UBj)
-#  if defined SG_CALC_UB
+# if defined SG_CALC_UB
       real(r8), intent(in) :: Hwave(LBi:UBi,LBj:UBj)
-#  else
+# else
       real(r8), intent(in) :: Uwave_rms(LBi:UBi,LBj:UBj)
-#  endif
+# endif
       real(r8), intent(in) :: Dwave(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: Pwave_bot(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: rho(LBi:UBi,LBj:UBj,N(ng))
@@ -183,7 +183,7 @@
       real(r8), intent(out) :: bvstrcwmax(LBi:UBi,LBj:UBj)
       real(r8), intent(out) :: bustr(LBi:UBi,LBj:UBj)
       real(r8), intent(out) :: bvstr(LBi:UBi,LBj:UBj)
-# endif
+#endif
 !
 !  Local variable declarations.
 !
@@ -251,7 +251,7 @@
           Zr(i,j)=z_r(i,j,1)-z_w(i,j,0)
           Ur_sg(i,j)=u(i,j,1,nrhs)
           Vr_sg(i,j)=v(i,j,1,nrhs)
-# ifdef SG_LOGINT
+#ifdef SG_LOGINT
 !
 !  If current height is less than z1ur, interpolate logarithmically
 !  to z1ur.
@@ -270,7 +270,7 @@
               END IF
             END DO
           END IF
-# endif
+#endif
         END DO
       END DO
 !
@@ -292,7 +292,7 @@
 !
 !  Compute bed wave orbital velocity and excursion amplitude.
 !
-# ifdef SG_CALC_UB
+#ifdef SG_CALC_UB
           Kb0=Fwave_bot*Fwave_bot*og
           IF (Kb0*h(i,j).ge.1.0_r8) THEN
             Kb=Kb0
@@ -315,10 +315,10 @@
           END DO
           Ab(i,j)=0.5_r8*Hwave(i,j)/SINH(Kb*h(i,j))+eps
           Ub(i,j)=Fwave_bot*Ab(i,j)+eps
-# else
+#else
           Ub(i,j)=ABS(Uwave_rms(i,j))+eps
           Ab(i,j)=Ub(i,j)/Fwave_bot+eps
-# endif
+#endif
 !
 !  Compute bottom current magnitude at RHO-points.
 !
@@ -371,7 +371,7 @@
 !  Compute hydraulic roughness "Znot" (m), ripple height "eta" (m),
 !  and ripple length "lambda" (m).
 !
-# ifdef SG_CALC_ZNOT
+#ifdef SG_CALC_ZNOT
           sg_star=sg_dd/(4.0_r8*sg_nu)*SQRT((sg_ss-1.0_r8)*sg_g*sg_dd)
 !
 !  Compute critical shield parameter based on grain diameter.
@@ -429,7 +429,7 @@
      &             (sg_ub*sg_ub/((sg_ss-1.0_r8)*sg_g*sg_ab))**1.4_r8
             sg_znot=(sg_dd+2.3_r8*sg_eta+sg_kbs)/30.0_r8
           END IF
-# else
+#else
           sg_znot=ZoBot(i,j)
           sg_chi=4.0_r8*sg_nu*sg_ub*sg_ub/                              &
      &           (sg_dd*((sg_ss-1.0_r8)*sg_g*sg_dd)**1.5_r8)
@@ -440,7 +440,7 @@
             sg_eta=sg_ab*0.52_r8*sg_chi**(-1.01_r8)
             sg_lambda=sg_ab*2.7_r8*sg_chi**(-0.78_r8)
           END IF
-# endif
+#endif
           znot(i,j)=sg_znot
           rheight(i,j)=sg_eta
           rlength(i,j)=sg_lambda

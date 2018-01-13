@@ -4,7 +4,7 @@
      &                          Xmin, Xmax, X, Ymin, Ymax, Y,           &
      &                          rectangular)
 !
-!svn $Id: get_varcoords.F 830 2017-01-24 21:21:11Z arango $
+!svn $Id: get_varcoords.F 857 2017-07-29 04:05:27Z arango $
 !================================================== Hernan G. Arango ===
 !  Copyright (c) 2002-2017 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
@@ -45,6 +45,8 @@
       USE mod_netcdf
       USE mod_scalars
 !
+      USE strings_mod, ONLY : FoundError
+!
       implicit none
 !
 !  Imported variable declarations.
@@ -74,7 +76,7 @@
 
       character (len=20) :: Xname, Yname
 !
-      SourceFile='get_varcoords.F'
+      SourceFile=__FILE__
 !
 !-----------------------------------------------------------------------
 !  Get coarse variable coordinates.
@@ -85,7 +87,8 @@
       CALL netcdf_inq_var (ng, model, ncname,                           &
      &                     ncid = ncid,                                 &
      &                     myVarName = ncvname)
-      IF (exit_flag.ne.NoError) RETURN
+      IF (FoundError(exit_flag, NoError, __LINE__,                      &
+     &               __FILE__)) RETURN
 !
 !  Get names of variable coordinates.
 !
@@ -122,7 +125,8 @@
      &                     ncid = ncid,                                 &
      &                     myVarName = Xname,                           &
      &                     VarID= varid)
-      IF (exit_flag.ne.NoError) RETURN
+      IF (FoundError(exit_flag, NoError, __LINE__,                      &
+     &               __FILE__)) RETURN
 !
       IF (n_vdim.eq.1) THEN
         CALL netcdf_get_fvar (ng, model, ncname, Xname,                 &
@@ -134,7 +138,8 @@
 #else
      &                        total = (/Nx/))
 #endif
-        IF (exit_flag.ne.NoError) RETURN
+        IF (FoundError(exit_flag, NoError, __LINE__,                    &
+     &                 __FILE__)) RETURN
 
         rectangular=.TRUE.
         jc=0
@@ -162,7 +167,8 @@
      &                        ncid = ncid,                              &
      &                        start = (/1,1/),                          &
      &                        total = (/Nx,Ny/))
-        IF (exit_flag.ne.NoError) RETURN
+        IF (FoundError(exit_flag, NoError, __LINE__,                    &
+     &                 __FILE__)) RETURN
 
         jc=1
         DO j=2,Ny
@@ -178,7 +184,8 @@
      &                     ncid = ncid,                                 &
      &                     myVarName = Yname,                           &
      &                     VarID= varid)
-      IF (exit_flag.ne.NoError) RETURN
+      IF (FoundError(exit_flag, NoError, __LINE__,                      &
+     &               __FILE__)) RETURN
 !
       IF (n_vdim.eq.1) THEN
         CALL netcdf_get_fvar (ng, model, ncname, Yname,                 &
@@ -190,7 +197,8 @@
 #else
      &                        total = (/Ny/))
 #endif
-        IF (exit_flag.ne.NoError) RETURN
+        IF (FoundError(exit_flag, NoError, __LINE__,                    &
+     &                 __FILE__)) RETURN
 
         rectangular=.TRUE.
         ic=0
@@ -216,7 +224,8 @@
      &                        ncid = ncid,                              &
      &                        start = (/1,1/),                          &
      &                        total = (/Nx,Ny/))
-        IF (exit_flag.ne.NoError) RETURN
+        IF (FoundError(exit_flag, NoError, __LINE__,                    &
+     &                 __FILE__)) RETURN
 
         ic=1
         DO i=2,Nx

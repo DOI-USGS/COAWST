@@ -4,7 +4,7 @@
      &                       LBi, UBi, UBj, Istr, Iend, Jrec,           &
      &                       Finp, Fout, update)
 !
-!svn $Id: set_ngfldr.F 830 2017-01-24 21:21:11Z arango $
+!svn $Id: set_ngfldr.F 884 2017-12-06 01:59:26Z arango $
 !================================================== Hernan G. Arango ===
 !  Copyright (c) 2002-2017 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
@@ -93,7 +93,6 @@
             Fout(i,j)=Finp(i,j,Tindex)
           END DO
         END DO
-
 !
 !  Time-interpolate.
 !

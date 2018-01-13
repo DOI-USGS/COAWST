@@ -1,5 +1,5 @@
 !
-!svn $Id: red_tide_mod.h 830 2017-01-24 21:21:11Z arango $
+!svn $Id: red_tide_mod.h 859 2017-08-02 01:45:30Z arango $
 !================================================== Hernan G. Arango ===
 !  Copyright (c) 2002-2017 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
@@ -27,8 +27,10 @@
 !  G_r          Maintanenance respiration rate (1/day)                 !
 !  Kn           Half-saturation constant for nutrient limited growth   !
 !                 (millimoles/m3)                                      !
-!  Mor          Spatially and temporarily averaged mortality rate      !
-!                 (1/day)                                              !
+!  Mor_a        Mortality rate equation, Q10 amplitude term (1/day)    !
+!  Mor_b        Mortality rate equation, Q10 intercept term (1/day)    !
+!  Mor_Q10      Mortality rate equation, Q10 reaction rate base        !
+!  Mor_T0       Mortality rate equation, Q10 background temperature (C)!
 !  Tmin_growth  Coldest temperature limit used to compute temperature- !
 !                 dependent growth factor from cubic polynomial fit    !
 !                 based on available data (Celsius)                    !
@@ -66,7 +68,10 @@
       real(r8), allocatable :: G_eff(:)        ! m2/Watts/day
       real(r8), allocatable :: G_r(:)          ! 1/day
       real(r8), allocatable :: Kn(:)           ! millimoles/m3
-      real(r8), allocatable :: Mor(:)          ! 1/day
+      real(r8), allocatable :: Mor_a(:)        ! 1/day
+      real(r8), allocatable :: Mor_b(:)        ! 1/day
+      real(r8), allocatable :: Mor_Q10(:)      ! nondimensional
+      real(r8), allocatable :: Mor_T0(:)       ! Celsius
       real(r8), allocatable :: Tmin_growth(:)  ! Celsius
       real(r8), allocatable :: srad_Cdepth(:)  ! Watts/m2
       real(r8), allocatable :: wDino(:)        ! m/day
@@ -149,9 +154,6 @@
       IF (.not.allocated(Kn)) THEN
         allocate ( Kn(Ngrids) )
       END IF
-      IF (.not.allocated(Mor)) THEN
-        allocate ( Mor(Ngrids) )
-      END IF
       IF (.not.allocated(Tmin_growth)) THEN
         allocate ( Tmin_growth(Ngrids) )
       END IF
@@ -160,6 +162,18 @@
       END IF
       IF (.not.allocated(wDino)) THEN
         allocate ( wDino(Ngrids) )
+      END IF
+      IF (.not.allocated(Mor_a)) THEN
+        allocate ( Mor_a(Ngrids) )
+      END IF
+      IF (.not.allocated(Mor_b)) THEN
+        allocate ( Mor_b(Ngrids) )
+      END IF
+      IF (.not.allocated(Mor_Q10)) THEN
+        allocate ( Mor_Q10(Ngrids) )
+      END IF
+      IF (.not.allocated(Mor_T0)) THEN
+        allocate ( Mor_T0(Ngrids) )
       END IF
 #ifdef TANGENT
       IF (.not.allocated(tl_wDino)) THEN

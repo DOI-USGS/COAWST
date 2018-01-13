@@ -3,7 +3,7 @@
 
 #if defined ADJOINT && defined SOLVE3D
 !
-!svn $Id: ad_set_massflux.F 830 2017-01-24 21:21:11Z arango $
+!svn $Id: ad_set_massflux.F 854 2017-07-18 23:28:45Z arango $
 !================================================== Hernan G. Arango ===
 !  Copyright (c) 2002-2017 The ROMS/TOMS Group       Andrew M. Moore   !
 !    Licensed under a MIT/X style license                              !
@@ -27,7 +27,7 @@
       CONTAINS
 !
 !***********************************************************************
-      SUBROUTINE ad_set_massflux (ng, tile)
+      SUBROUTINE ad_set_massflux (ng, tile, model)
 !***********************************************************************
 !
       USE mod_param
@@ -37,16 +37,16 @@
 !
 !  Imported variable declarations.
 !
-      integer, intent(in) :: ng, tile
+      integer, intent(in) :: ng, tile, model
 !
 !  Local variable declarations.
 !
 # include "tile.h"
 !
 # ifdef PROFILE
-      CALL wclock_on (ng, iADM, 12)
+      CALL wclock_on (ng, model, 12, __LINE__, __FILE__)
 # endif
-      CALL ad_set_massflux_tile (ng, tile,                              &
+      CALL ad_set_massflux_tile (ng, tile, model,                       &
      &                           LBi, UBi, LBj, UBj,                    &
      &                           IminS, ImaxS, JminS, JmaxS,            &
      &                           nrhs(ng),                              &
@@ -67,14 +67,14 @@
      &                           GRID(ng) % ad_Huon,                    &
      &                           GRID(ng) % ad_Hvom)
 # ifdef PROFILE
-      CALL wclock_off (ng, iADM, 12)
+      CALL wclock_off (ng, model, 12, __LINE__, __FILE__)
 # endif
       RETURN
       END SUBROUTINE ad_set_massflux
 
 !
 !***********************************************************************
-      SUBROUTINE ad_set_massflux_tile (ng, tile,                        &
+      SUBROUTINE ad_set_massflux_tile (ng, tile, model,                 &
      &                                 LBi, UBi, LBj, UBj,              &
      &                                 IminS, ImaxS, JminS, JmaxS,      &
      &                                 nrhs,                            &
@@ -99,7 +99,7 @@
 !
 !  Imported variable declarations.
 !
-      integer, intent(in) :: ng, tile
+      integer, intent(in) :: ng, tile, model
       integer, intent(in) :: LBi, UBi, LBj, UBj
       integer, intent(in) :: IminS, ImaxS, JminS, JmaxS
       integer, intent(in) :: nrhs
@@ -163,13 +163,13 @@
 !  Exchange boundary information.
 !
 # ifdef DISTRIBUTE
-!>    CALL mp_exchange3d (ng, tile, iTLM, 2,                            &
+!>    CALL mp_exchange3d (ng, tile, model, 2,                           &
 !>   &                    LBi, UBi, LBj, UBj, 1, N(ng),                 &
 !>   &                    NghostPoints,                                 &
 !>   &                    EWperiodic(ng), NSperiodic(ng),               &
 !>   &                    tl_Huon, tl_Hvom)
 !>
-      CALL ad_mp_exchange3d (ng, tile, iADM, 2,                         &
+      CALL ad_mp_exchange3d (ng, tile, model, 2,                        &
      &                       LBi, UBi, LBj, UBj, 1, N(ng),              &
      &                       NghostPoints,                              &
      &                       EWperiodic(ng), NSperiodic(ng),            &

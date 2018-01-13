@@ -51,7 +51,7 @@
 # include "tile.h"
 !
 # ifdef PROFILE
-      CALL wclock_on (ng, iNLM, 16)
+      CALL wclock_on (ng, iNLM, 16, __LINE__, __FILE__)
 # endif
       CALL sed_fluxes_tile (ng, tile,                                   &
      &                      LBi, UBi, LBj, UBj,                         &
@@ -81,7 +81,7 @@
      &                      SEDBED(ng) % bed_mass,                      &
      &                      SEDBED(ng) % bottom)
 # ifdef PROFILE
-      CALL wclock_off (ng, iNLM, 16)
+      CALL wclock_off (ng, iNLM, 16, __LINE__, __FILE__)
 # endif
       RETURN
       END SUBROUTINE sed_fluxes

@@ -1,7 +1,7 @@
 #include "cppdefs.h"
       MODULE mod_scalars
 !
-!svn $Id: mod_scalars.F 830 2017-01-24 21:21:11Z arango $
+!svn $Id: mod_scalars.F 875 2017-11-03 01:10:02Z arango $
 !================================================== Hernan G. Arango ===
 !  Copyright (c) 2002-2017 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
@@ -16,7 +16,7 @@
         implicit none
 !
 !-----------------------------------------------------------------------
-! Multiple grid structure.
+!  Multiple grid structure.
 !-----------------------------------------------------------------------
 !
 #if defined READ_WATER && defined MASKING && defined DISTRIBUTE
@@ -43,7 +43,6 @@
 !                    vertical W-points.
 !
         TYPE T_SCALARS
-
           logical, pointer :: Fstate(:)
           logical, pointer :: Lstate(:)
 #if defined READ_WATER && defined MASKING && defined DISTRIBUTE
@@ -59,10 +58,63 @@
           real(r8), pointer :: Cs_w(:)
           real(r8), pointer :: sc_r(:)
           real(r8), pointer :: sc_w(:)
-
         END TYPE T_SCALARS
-
+!
         TYPE (T_SCALARS), allocatable :: SCALARS(:)
+!
+!-----------------------------------------------------------------------
+!  Time clock structure.
+!-----------------------------------------------------------------------
+!
+!  Reference time (yyyymmdd.f) used to compute relative time. The
+!  application date clock is measured ad elapsed time interval since
+!  reference-time. This parameter also provides information about the
+!  calendar used:
+!
+!    If TIME_REF = -2, the model time and DSTART are in modified Julian
+!                  days units.  The time "units" attribute is:
+!
+!                  'time-units since 1968-05-23 00:00:00 GMT'
+!
+!    If TIME_REF = -1, the model time and DSTART are in a calendar
+!                  with 360 days in every year (30 days each month).
+!                  The time "units" attribute is:
+!
+!                  'time-units since 0001-01-01 00:00:00'
+!
+!    If TIME_REF = 0, the model time and DSTART are in a common year
+!                  calendar with 365.2524 days.  The "units" attribute
+!                  is:
+!
+!                  'time-units since 0001-01-01 00:00:00'
+!
+!    If TIME_REF > 0, the model time and DSTART are the elapsed time
+!                  units since specified reference time.  For example,
+!                  TIME_REF=20020115.5 will yield the following
+!                  time "units" attribute:
+!
+!                  'time-units since 2002-01-15 12:00:00'
+!
+        real(r8) :: time_ref = 0.0_r8                    ! YYYYMMDD.dd
+!
+      TYPE T_CLOCK
+        integer :: yday                ! day of the year
+        integer :: year                ! year including century (YYYY)
+        integer :: month               ! month of the year (1,...,12)
+        integer :: day                 ! day of the month
+        integer :: hour                ! hour of the day (1,...,23)
+        integer :: minutes             ! minutes of the hour
+
+        real(r8) :: seconds            ! frational seconds of the minute
+        real(r8) :: base               ! reference date (YYYYMMDD.dd)
+        real(r8) :: Dnumber            ! date number, fractional days
+        real(r8) :: Snumber            ! date number, fractional seconds
+
+        character (len=22) :: string   ! YYYY-MM-DD hh:mm:ss.ss
+        character (len=25) :: calendar ! date calendar
+      END TYPE T_CLOCK
+!
+        TYPE (T_CLOCK) :: Rclock       ! reference/base date
 !
 !-----------------------------------------------------------------------
 !  Tracer identification indices.
@@ -173,27 +225,16 @@
 !    io_time       Current I/O time (s) processed in "get_state".
 !    tdays         Model time clock (days).
 !    time          Model time clock (s).
-!    time_code     Model time clock (string, Day HH:MM:SS)
+!    time_code     Model time clock (string, YYYY-MM-DD hh:mm:ss.ss)
 !    AVGtime       Model time clock for averages output (s).
 !    AVG2time      Model time clock for averages output (s).
 !    DIAtime       Model time clock for diagnostics output (s).
 !    IMPtime       Impulse forcing time (s) to process.
 !    ObsTime       Observation time (s) to process.
 !    FrcTime       Adjoint or tangent linear Impulse forcing time (s).
-!    r_date        Model initialization reference date (vector):
-!                    r_date(1) => reference date (YYYYMMDD.dd).
-!                    r_date(2) => year.
-!                    r_date(3) => year day.
-!                    r_date(4) => month.
-!                    r_date(5) => day.
-!                    r_date(6) => hour.
-!                    r_date(7) => minute.
-!                    r_date(8) => second.
 !    dstart        Time stamp assigned to model initialization (usually
 !                    a Calendar day, like modified Julian Day).
 !    tide_start    Reference time for tidal forcing (days).
-!    time_ref      Reference time for "units" attribute (YYYYMMDD.dd).
-!    r_text        Model initialization reference text (string).
 #ifdef CICE_MODEL
 !    tspy          timesteps per year
 !    tspd          timesteps per day
@@ -234,13 +275,10 @@
         real(r8), allocatable :: dtau(:)              ! seconds
 #endif
 
-        real(r8), dimension(8) :: r_date
         real(r8) :: dstart = 0.0_r8                      ! days
         real(r8) :: io_time = 0.0_r8                     ! seconds
         real(r8) :: run_time = 0.0_r8                    ! seconds
         real(r8) :: tide_start = 0.0_r8                  ! days
-        real(r8) :: time_ref = 0.0_r8                    ! YYYYMMDD.dd
-        real(r8) :: days_year = 365.25_r8                ! days per year
 #ifdef CICE_MODEL
         real(r8), allocatable :: tspy(:)                 ! timesteps
         real(r8), allocatable :: tspd(:)                 ! timesteps
@@ -261,10 +299,8 @@
         real(r8), allocatable :: min_a(:)
 #endif
 
-        character (len=14), allocatable :: time_code(:)  ! DD HH:MM:SS
+        character (len=22), allocatable :: time_code(:)  ! date string
 !$OMP THREADPRIVATE (time_code)
-
-        character (len=19) :: r_text
 
 #if defined POWER_LAW && defined SOLVE3D
 !
@@ -604,10 +640,11 @@
         real(r8) :: avgpe = 0.0_r8              ! Potential energy
         real(r8) :: avgkp = 0.0_r8              ! Total energy
         real(r8) :: volume = 0.0_r8             ! diagnostics volume
-        real(r8) :: ad_volume                   ! adjoint volume
-        real(r8) :: TotVolume                   ! Total volume
-        real(r8) :: MaxVolume                   ! Minimum cell volume
-        real(r8) :: MinVolume                   ! Maximum cell volume
+        real(r8) :: ad_volume = 0.0_r8          ! adjoint volume
+
+        real(r8), allocatable :: TotVolume(:)   ! Total volume
+        real(r8), allocatable :: MinVolume(:)   ! Minimum cell volume
+        real(r8), allocatable :: MaxVolume(:)   ! Maximum cell volume
 !
 !  Minimun and maximum grid spacing
 !
@@ -618,10 +655,6 @@
 #ifdef SOLVE3D
         real(r8), allocatable :: DZmin(:)
         real(r8), allocatable :: DZmax(:)
-#endif
-!$OMP THREADPRIVATE (DXmin, DXmax, DYmin, DYmax)
-#ifdef SOLVE3D
-!$OMP THREADPRIVATE (DZmin, DZmax)
 #endif
 !
 !  Maximum size of a grid node (m) over the whole curvilinear grid
@@ -639,19 +672,21 @@
 !
 !  Courant Numbers due to gravity wave speed limits.
 !
-        real(r8) :: Cg_min                      ! Minimun barotropic
-        real(r8) :: Cg_max                      ! Maximun barotropic
-        real(r8) :: Cg_Cor                      ! Maximun Coriolis
+        real(r8), allocatable :: Cg_min(:)      ! Minimun barotropic
+        real(r8), allocatable :: Cg_max(:)      ! Maximun barotropic
+        real(r8), allocatable :: Cg_Cor(:)      ! Maximun Coriolis
 !
 !  Time dependent Counrant Numbers due to velocity components and
 !  indices location of maximum value.
 !
-        integer :: max_Ci, max_Cj, max_Ck       ! maximum location
-        real(r8) :: max_C                       ! maximum total
-        real(r8) :: max_Cu                      ! maximum I-component
-        real(r8) :: max_Cv                      ! maximum J-component
+        integer :: max_Ci = 0                   ! maximum I-location
+        integer :: max_Cj = 0                   ! maximum J-location
+        integer :: max_Ck = 0                   ! maximum K-location
+        real(r8) :: max_C = 0.0_r8              ! maximum total
+        real(r8) :: max_Cu = 0.0_r8             ! maximum I-component
+        real(r8) :: max_Cv = 0.0_r8             ! maximum J-component
 #ifdef SOLVE3D
-        real(r8) :: max_Cw                      ! maximum K-component
+        real(r8) :: max_Cw = 0.0_r8             ! maximum K-component
 #endif
 !
 !  Linear equation of state parameters.
@@ -691,8 +726,8 @@
 !
 !  Grid r-factor (non-dimensional).
 !
-        real(r8) :: rx0 = 0.0_r8                ! Beckmann and Haidvogel
-        real(r8) :: rx1 = 0.0_r8                ! Haney
+        real(r8), allocatable :: rx0(:)         ! Beckmann and Haidvogel
+        real(r8), allocatable :: rx1(:)         ! Haney
 !
 !  Linear (m/s) and quadratic (nondimensional) bottom drag coefficients.
 !
@@ -752,6 +787,7 @@
 #else
         real(r8), parameter :: spval = 1.0E+37_r8
 #endif
+        real(r8), parameter :: Large = 1.0E+20_r8
         real(r8), parameter :: jul_off = 2440000.0_r8
 !
 !  Set special check value.  Notice that a smaller value is assigned
@@ -774,6 +810,10 @@
 !                    tracers.
 !    Akv_bak       Background vertical mixing coefficient (m2/s) for
 !                    momentum.
+!    Akt_limit     Upper threshold vertical mixing coefficient (m2/s)
+!                    for tracers.
+!    Akv_limit     Upper threshold vertical mixing coefficient (m2/s)
+!                    for momentum.
 !    Kdiff         Isopycnal mixing thickness diffusivity (m2/s) for
 !                    tracers.
 !    ad_visc2      ADM lateral harmonic constant mixing coefficient
@@ -816,6 +856,7 @@
         real(r8), allocatable :: Akk_bak(:)          ! m2/s
         real(r8), allocatable :: Akp_bak(:)          ! m2/s
         real(r8), allocatable :: Akv_bak(:)          ! m2/s
+        real(r8), allocatable :: Akv_limit(:)        ! m2/s
 
         real(r8), allocatable :: ad_visc2(:)         ! m2/s
         real(r8), allocatable :: nl_visc2(:)         ! m2/s
@@ -831,6 +872,7 @@
         real(r8), allocatable :: tkenu4(:)           ! m2 s-1/2
 
         real(r8), allocatable :: Akt_bak(:,:)        ! m2/s
+        real(r8), allocatable :: Akt_limit(:,:)      ! m2/s
         real(r8), allocatable :: Kdiff(:,:)          ! m2/s
 
         real(r8), allocatable :: ad_tnu2(:,:)        ! m2/s
@@ -929,6 +971,14 @@
 !  4DVAR algorithms.
 !
         logical, allocatable :: Ladjusted(:)
+!
+!  Switch to read input open boundary conditions data.
+!
+        logical, allocatable :: LprocessOBC(:)
+!
+!  Switch to read input tidal forcing data.
+!
+        logical, allocatable :: LprocessTides(:)
 !
 !  Switch to write application set-up information to standard output.
 !
@@ -1071,7 +1121,8 @@
         logical, allocatable :: LcycleRST(:)
         logical, allocatable :: LcycleTLM(:)
 
-#if defined AVERAGES_DETIDE && (defined SSH_TIDES || defined UV_TIDES)
+#if defined AVERAGES  && defined AVERAGES_DETIDE && \
+   (defined SSH_TIDES || defined UV_TIDES)
 !
 !  Counter storing the number of accumulated harmonic records used
 !  for detiding.
@@ -1291,8 +1342,6 @@
         real(r8), allocatable :: M2nudg(:)         ! 2D momentum
         real(r8), allocatable :: M3nudg(:)         ! 3D momentum
         real(r8), allocatable :: Tnudg(:,:)        ! Tracers
-        real(r8), allocatable :: Tnudg_SSS(:)      ! Sea surface salinity
-        real(r8), allocatable :: sss_mismatch_threshold(:)! Sea surface salinity
 !
 !  Variables used to impose mass flux conservation in open boundary
 !  configurations.
@@ -1860,15 +1909,6 @@
       allocate ( iic(Ngrids) )
       allocate ( iif(Ngrids) )
 
-      allocate ( DXmin(Ngrids) )
-      allocate ( DXmax(Ngrids) )
-      allocate ( DYmin(Ngrids) )
-      allocate ( DYmax(Ngrids) )
-#ifdef SOLVE3D
-      allocate ( DZmin(Ngrids) )
-      allocate ( DZmax(Ngrids) )
-#endif
-
       allocate ( FrcRec(Ngrids) )
       allocate ( SOrec(Ngrids) )
 !$OMP END PARALLEL
@@ -2010,6 +2050,18 @@
 #ifdef SOLVE3D
       allocate ( Kdigits(Ngrids) )
 #endif
+      allocate ( TotVolume(Ngrids) )
+      allocate ( MinVolume(Ngrids) )
+      allocate ( MaxVolume(Ngrids) )
+
+      allocate ( DXmin(Ngrids) )
+      allocate ( DXmax(Ngrids) )
+      allocate ( DYmin(Ngrids) )
+      allocate ( DYmax(Ngrids) )
+#ifdef SOLVE3D
+      allocate ( DZmin(Ngrids) )
+      allocate ( DZmax(Ngrids) )
+#endif
 
       allocate ( grdmax(Ngrids) )
 
@@ -2017,6 +2069,10 @@
       allocate ( DiffMin(Ngrids) )
       allocate ( DiffMax(Ngrids) )
 #endif
+
+      allocate ( Cg_min(Ngrids) )
+      allocate ( Cg_max(Ngrids) )
+      allocate ( Cg_Cor(Ngrids) )
 
 #ifdef VISC_3DCOEF
       allocate ( ViscMin(Ngrids) )
@@ -2033,6 +2089,9 @@
       allocate ( gamma2(Ngrids) )
 
       allocate ( lmd_Jwt(Ngrids) )
+
+      allocate ( rx0(Ngrids) )
+      allocate ( rx1(Ngrids) )
 
       allocate ( rdrg(Ngrids) )
       allocate ( rdrg2(Ngrids) )
@@ -2051,6 +2110,7 @@
       allocate ( Akk_bak(Ngrids) )
       allocate ( Akp_bak(Ngrids) )
       allocate ( Akv_bak(Ngrids) )
+      allocate ( Akv_limit(Ngrids) )
 
       allocate ( ad_visc2(Ngrids) )
       allocate ( nl_visc2(Ngrids) )
@@ -2066,6 +2126,7 @@
       allocate ( tkenu4(Ngrids) )
 
       allocate ( Akt_bak(MT,Ngrids) )
+      allocate ( Akt_limit(NAT,Ngrids) )
       allocate ( Kdiff(MT,Ngrids) )
 
       allocate ( ad_tnu2(MT,Ngrids) )
@@ -2136,6 +2197,9 @@
 
       allocate ( Ladjusted(Ngrids) )
 
+      allocate ( LprocessOBC(Ngrids) )
+      allocate ( LprocessTides(Ngrids) )
+
       allocate ( LwrtInfo(Ngrids) )
 
       allocate ( ldefout(Ngrids) )
@@ -2191,7 +2255,8 @@
       allocate ( LcycleRST(Ngrids) )
       allocate ( LcycleTLM(Ngrids) )
 
-#if defined AVERAGES_DETIDE && (defined SSH_TIDES || defined UV_TIDES)
+#if defined AVERAGES  && defined AVERAGES_DETIDE && \
+   (defined SSH_TIDES || defined UV_TIDES)
       allocate ( Hcount(Ngrids) )
 #endif
 
@@ -2254,8 +2319,6 @@
       allocate ( M2nudg(Ngrids) )
       allocate ( M3nudg(Ngrids) )
       allocate ( Tnudg(MT,Ngrids) )
-      allocate ( Tnudg_SSS(Ngrids) )
-      allocate ( sss_mismatch_threshold(Ngrids) )
 
 #if defined BULK_FLUXES || defined BULK_FLUXES2D
       allocate ( blk_ZQ(Ngrids) )
@@ -2583,7 +2646,8 @@
         gamma2(ng)=-1.0_r8
         Vtransform(ng)=1
         Vstretching(ng)=1
-#if defined AVERAGES_DETIDE && (defined SSH_TIDES || defined UV_TIDES)
+#if defined AVERAGES  && defined AVERAGES_DETIDE && \
+   (defined SSH_TIDES || defined UV_TIDES)
         Hcount(ng)=0
 #endif
 #ifdef ADJUST_BOUNDARY
@@ -2598,6 +2662,33 @@
 #ifdef SOLVE3D
         Kdigits(ng)=INT(LOG10(REAL(N (ng),r8)))+1
 #endif
+        maxspeed(ng)=-Large
+        maxrho(ng)=-Large
+        TotVolume(ng)=0.0_r8
+        MinVolume(ng)= Large
+        MaxVolume(ng)=-Large
+        DXmin(ng)= Large
+        DXmax(ng)=-Large
+        DYmin(ng)= Large
+        DYmax(ng)=-Large
+#ifdef SOLVE3D
+        DZmin(ng)= Large
+        DZmax(ng)=-Large
+#endif
+        grdmax(ng)=-Large
+#ifdef DIFF_3DCOEF
+        DiffMin(ng)= Large
+        DiffMax(ng)=-Large
+#endif
+        Cg_min(ng)= Large
+        Cg_max(ng)=-Large
+        Cg_Cor(ng)=-Large
+#ifdef VISC_3DCOEF
+        ViscMin(ng)= Large
+        ViscMax(ng)= Large
+#endif
+        rx0(ng)=-Large
+        rx1(ng)=-Large
         CLM_FILE(ng)=.FALSE.
         Lnudging(ng)=.FALSE.
         LnudgeM2CLM(ng)=.FALSE.
@@ -2626,6 +2717,10 @@
           tl_tnu4(itrc,ng)=IniVal
           tnu4(itrc,ng)=IniVal
         END DO
+        DO itrc=1,NAT
+          Akt_limit(itrc,ng)=1.0E-3_r8
+        END DO
+        Akv_limit(ng)=1.0E-3_r8
         ad_Akv_fac(ng)=1.0_r8
         tl_Akv_fac(ng)=1.0_r8
         ad_visc2(ng)=IniVal
@@ -2709,6 +2804,9 @@
 
         Ladjusted(ng)=.FALSE.
 
+        LprocessOBC(ng)=.FALSE.
+        LprocessTides(ng)=.FALSE.
+
         LdefADJ(ng)=.FALSE.
         LdefAVG(ng)=.TRUE.
         LdefDAI(ng)=.FALSE.
@@ -2728,8 +2826,11 @@
         LdefRST(ng)=.TRUE.
         LdefSTA(ng)=.TRUE.
         LdefTLM(ng)=.FALSE.
-#if defined AVERAGES_DETIDE && (defined SSH_TIDES || defined UV_TIDES)
+#if defined AVERAGES  && defined AVERAGES_DETIDE && \
+   (defined SSH_TIDES || defined UV_TIDES)
         LdefTIDE(ng)=.TRUE.
+#else
+        LdefTIDE(ng)=.FALSE.
 #endif
         LwrtADJ(ng)=.FALSE.
         LwrtAVG(ng)=.FALSE.

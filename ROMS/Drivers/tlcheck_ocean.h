@@ -1,6 +1,6 @@
       MODULE ocean_control_mod
 !
-!svn $Id: tlcheck_ocean.h 830 2017-01-24 21:21:11Z arango $
+!svn $Id: tlcheck_ocean.h 858 2017-07-31 23:02:30Z arango $
 !================================================== Hernan G. Arango ===
 !  Copyright (c) 2002-2017 The ROMS/TOMS Group       Andrew M. Moore   !
 !    Licensed under a MIT/X style license                              !
@@ -45,16 +45,16 @@
       USE mod_fourdvar
       USE mod_iounits
       USE mod_scalars
-
-#ifdef MCT_LIB
 !
-# ifdef AIR_OCEAN
+#ifdef MCT_LIB
+# ifdef ATM_COUPLING
       USE ocean_coupler_mod, ONLY : initialize_ocn2atm_coupling
 # endif
-# ifdef WAVES_OCEAN
+# ifdef WAV_COUPLING
       USE ocean_coupler_mod, ONLY : initialize_ocn2wav_coupling
 # endif
 #endif
+      USE strings_mod,       ONLY : FoundError
 !
 !  Imported variable declarations.
 !
@@ -106,7 +106,8 @@
 !  grids and dimension parameters are known.
 !
         CALL inp_par (iNLM)
-        IF (exit_flag.ne.NoError) RETURN
+        IF (FoundError(exit_flag, NoError, __LINE__,                    &
+     &                 __FILE__)) RETURN
 !
 !  Set domain decomposition tile partition range.  This range is
 !  computed only once since the "first_tile" and "last_tile" values
@@ -139,7 +140,7 @@
         DO ng=1,Ngrids
 !$OMP PARALLEL
           DO thread=THREAD_RANGE
-            CALL wclock_on (ng, iNLM, 0)
+            CALL wclock_on (ng, iNLM, 0, __LINE__, __FILE__)
           END DO
 !$OMP END PARALLEL
         END DO
@@ -156,17 +157,17 @@
 
       END IF
 
-#if defined MCT_LIB && (defined AIR_OCEAN || defined WAVES_OCEAN)
+#if defined MCT_LIB && (defined ATM_COUPLING || defined WAV_COUPLING)
 !
 !-----------------------------------------------------------------------
 !  Initialize coupling streams between model(s).
 !-----------------------------------------------------------------------
 !
       DO ng=1,Ngrids
-# ifdef AIR_OCEAN
+# ifdef ATM_COUPLING
         CALL initialize_ocn2atm_coupling (ng, MyRank)
 # endif
-# ifdef WAVES_OCEAN
+# ifdef WAV_COUPLING
         CALL initialize_ocn2wav_coupling (ng, MyRank)
 # endif
       END DO
@@ -194,6 +195,7 @@
       USE mod_stepping
 !
       USE dotproduct_mod, ONLY : ad_dotproduct
+      USE strings_mod,    ONLY : FoundError
 !
 !  Imported variable declarations
 !
@@ -240,7 +242,8 @@
 !$OMP PARALLEL
       CALL initial
 !$OMP END PARALLEL
-      IF (exit_flag.ne.NoError) RETURN
+      IF (FoundError(exit_flag, NoError, __LINE__,                      &
+     &               __FILE__)) RETURN
 !
 !  Run nonlinear model. Extract and store nonlinear model values at
 !  observation locations.
@@ -260,14 +263,16 @@
       CALL main2d (RunInterval)
 #endif
 !$OMP END PARALLEL
-      IF (exit_flag.ne.NoError) RETURN
+      IF (FoundError(exit_flag, NoError, __LINE__,                      &
+     &               __FILE__)) RETURN
 !
 !  Close current nonlinear model history file.
 !
-      SourceFile='tlcheck_ocean.h, ROMS_run'
+      SourceFile=__FILE__ // ", ROMS_run"
       DO ng=1,Ngrids
         CALL netcdf_close (ng, iNLM, HIS(ng)%ncid)
-        IF (exit_flag.ne.NoError) RETURN
+        IF (FoundError(exit_flag, NoError, __LINE__,                    &
+     &                 __FILE__)) RETURN
         wrtNLmod(ng)=.FALSE.
         wrtTLmod(ng)=.TRUE.
       END DO
@@ -301,7 +306,8 @@
 !$OMP PARALLEL
         CALL ad_initial (ng, .TRUE.)
 !$OMP END PARALLEL
-        IF (exit_flag.ne.NoError) RETURN
+        IF (FoundError(exit_flag, NoError, __LINE__,                    &
+     &                 __FILE__)) RETURN
       END DO
 !
 !  Time-step adjoint model: Compute model state gradient, GRAD(J).
@@ -321,7 +327,8 @@
       CALL ad_main2d (RunInterval)
 #endif
 !$OMP END PARALLEL
-      IF (exit_flag.ne.NoError) RETURN
+      IF (FoundError(exit_flag, NoError, __LINE__,                      &
+     &               __FILE__)) RETURN
 !
 !-----------------------------------------------------------------------
 !  Perturb each tangent linear state variable using the steepest decent
@@ -334,7 +341,8 @@
       DO ng=1,Ngrids
         CALL get_state (ng, iADM, 3, ADM(ng)%name, ADM(ng)%Rindex,      &
      &                  Lnew(ng))
-        IF (exit_flag.ne.NoError) RETURN
+        IF (FoundError(exit_flag, NoError, __LINE__,                    &
+     &                 __FILE__)) RETURN
       END DO
 !
 !  Compute adjoint solution dot product for scaling purposes.
@@ -364,7 +372,8 @@
 
         DO ng=1,Ngrids
           CALL get_state (ng, iNLM, 1, FWD(ng)%name, IniRec, Lnew(ng))
-          IF (exit_flag.ne.NoError) RETURN
+          IF (FoundError(exit_flag, NoError, __LINE__,                  &
+     &                   __FILE__)) RETURN
         END DO
 !
 !  INNER LOOP: scale perturbation amplitude by selecting "p" scalar,
@@ -381,7 +390,8 @@
 !$OMP PARALLEL
           CALL initial (.FALSE.)
 !$OMP END PARALLEL
-          IF (exit_flag.ne.NoError) RETURN
+          IF (FoundError(exit_flag, NoError, __LINE__,                  &
+     &                   __FILE__)) RETURN
 
           DO ng=1,Ngrids
             WRITE (HIS(ng)%name,70) TRIM(HIS(ng)%base), Nrun
@@ -411,14 +421,16 @@
           CALL main2d (RunInterval)
 #endif
 !$OMP END PARALLEL
-          IF (exit_flag.ne.NoError) RETURN
+          IF (FoundError(exit_flag, NoError, __LINE__,                  &
+     &                   __FILE__)) RETURN
 !
 !  Get current nonlinear model trajectory.
 !
           DO ng=1,Ngrids
             FWD(ng)%name=TRIM(HIS(ng)%base)//'.nc'
             CALL get_state (ng, iNLM, 1, FWD(ng)%name, IniRec, Lnew(ng))
-            IF (exit_flag.ne.NoError) RETURN
+            IF (FoundError(exit_flag, NoError, __LINE__,                &
+     &                     __FILE__)) RETURN
           END DO
 !
 !  Initialize tangent linear with the steepest decent direction
@@ -428,7 +440,8 @@
 !$OMP PARALLEL
             CALL tl_initial (ng, .FALSE.)
 !$OMP END PARALLEL
-            IF (exit_flag.ne.NoError) RETURN
+            IF (FoundError(exit_flag, NoError, __LINE__,                &
+     &                     __FILE__)) RETURN
 
             WRITE (TLM(ng)%name,70) TRIM(TLM(ng)%base), Nrun
 
@@ -456,14 +469,16 @@
           CALL tl_main2d (RunInterval)
 #endif
 !$OMP END PARALLEL
-          IF (exit_flag.ne.NoError) RETURN
+          IF (FoundError(exit_flag, NoError, __LINE__,                  &
+     &                   __FILE__)) RETURN
 !
 !  Close current tangent linear model history file.
 !
-          SourceFile='tlcheck_ocean.h, ROMS_run'
+          SourceFile=__FILE__ // ", ROMS_run"
           DO ng=1,Ngrids
             CALL netcdf_close (ng, iTLM, TLM(ng)%ncid)
-            IF (exit_flag.ne.NoError) RETURN
+            IF (FoundError(exit_flag, NoError, __LINE__,                &
+     &                     __FILE__)) RETURN
           END DO
 !
 !  Advance model run counter.
@@ -568,7 +583,7 @@
       DO ng=1,Ngrids
 !$OMP PARALLEL
         DO thread=THREAD_RANGE
-          CALL wclock_off (ng, iNLM, 0)
+          CALL wclock_off (ng, iNLM, 0, __LINE__, __FILE__)
         END DO
 !$OMP END PARALLEL
       END DO

@@ -55,7 +55,7 @@
 # include "tile.h"
 !
 # ifdef PROFILE
-      CALL wclock_on (ng, model, 36)
+      CALL wclock_on (ng, model, 45, __LINE__, __FILE__)
 # endif
 !
       CALL random_ic_tile (ng, tile,                                    &
@@ -94,7 +94,7 @@
 # endif
      &                     OCEAN(ng) % tl_zeta)
 # ifdef PROFILE
-      CALL wclock_on (ng, model, 36)
+      CALL wclock_off (ng, model, 45, __LINE__, __FILE__)
 # endif
       RETURN
       END SUBROUTINE random_ic
@@ -251,7 +251,7 @@
 
 # include "set_bounds.h"
 !
-      SourceFile='random_ic.F, random_ic_tile'
+      SourceFile=__FILE__
 !
 !-----------------------------------------------------------------------
 !  Generates random initial vectors for computation of the posterior

@@ -1,7 +1,7 @@
 #include "cppdefs.h"
       MODULE stiffness_mod
 !
-!svn $Id: stiffness.F 830 2017-01-24 21:21:11Z arango $
+!svn $Id: stiffness.F 875 2017-11-03 01:10:02Z arango $
 !=======================================================================
 !  Copyright (c) 2002-2017 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
@@ -267,33 +267,23 @@
       END IF
 #endif
 !$OMP CRITICAL (R_FACTOR)
-      IF (tile_count.eq.0) THEN
-        TotVolume=my_volume0
-        MinVolume=my_volume1
-        MaxVolume=my_volume2
+      TotVolume(ng)=TotVolume(ng)+my_volume0
+      MinVolume(ng)=MIN(MinVolume(ng),my_volume1)
+      MaxVolume(ng)=MAX(MaxVolume(ng),my_volume2)
 #ifdef SOLVE3D
-        rx0=my_rx0
-        rx1=my_rx1
+      rx0(ng)=MAX(rx0(ng),my_rx0)
+      rx1(ng)=MAX(rx1(ng),my_rx1)
 #endif
-      ELSE
-        TotVolume=TotVolume+my_volume0
-        MinVolume=MIN(MinVolume,my_volume1)
-        MaxVolume=MAX(MaxVolume,my_volume2)
-#ifdef SOLVE3D
-        rx0=MAX(rx0,my_rx0)
-        rx1=MAX(rx1,my_rx1)
-#endif
-      END IF
       tile_count=tile_count+1
       IF (tile_count.eq.NSUB) THEN
         tile_count=0
 #ifdef DISTRIBUTE
-        buffer(1)=TotVolume
-        buffer(2)=MinVolume
-        buffer(3)=MaxVolume
+        buffer(1)=TotVolume(ng)
+        buffer(2)=MinVolume(ng)
+        buffer(3)=MaxVolume(ng)
 # ifdef SOLVE3D
-        buffer(4)=rx0
-        buffer(5)=rx1
+        buffer(4)=rx0(ng)
+        buffer(5)=rx1(ng)
 # endif
         op_handle(1)='SUM'
         op_handle(2)='MIN'
@@ -307,33 +297,34 @@
 # else
         CALL mp_reduce (ng, model, 3, buffer, op_handle)
 # endif
-        TotVolume=buffer(1)
-        MinVolume=buffer(2)
-        MaxVolume=buffer(3)
+        TotVolume(ng)=buffer(1)
+        MinVolume(ng)=buffer(2)
+        MaxVolume(ng)=buffer(3)
 # ifdef SOLVE3D
-        rx0=buffer(4)
-        rx1=buffer(5)
+        rx0(ng)=buffer(4)
+        rx1(ng)=buffer(5)
 # endif
 #endif
         IF (Master) THEN
           WRITE (stdout,10) ng
   10      FORMAT (/,' Basin information for Grid ',i2.2,':',/)
 #ifdef SOLVE3D
-          WRITE (stdout,20) rx0, rx1
+          WRITE (stdout,20) rx0(ng), rx1(ng)
   20      FORMAT (' Maximum grid stiffness ratios:  rx0 = ',1pe14.6,    &
      &            ' (Beckmann and Haidvogel)',/,t34,'rx1 = ',1pe14.6,   &
      &            ' (Haney)')
 #endif
-          IF (MinVolume.ne.0.0_r8) THEN
-            ratio=MaxVolume/MinVolume
+          IF (MinVolume(ng).ne.0.0_r8) THEN
+            ratio=MaxVolume(ng)/MinVolume(ng)
           ELSE
             ratio=0.0_r8
           END IF
-          WRITE (stdout,30) TotVolume, MinVolume, MaxVolume, ratio
-  30      FORMAT (/,' Initial basin volumes: TotVolume = ',1p,e17.10,   &
-     &            0p,' m3',/,t25,'MinVolume = ',1p,e17.10,0p,' m3',     &
-     &            /,t25,'MaxVolume = ',1p,e17.10,0p,' m3',              &
-     &            /,t25,'  Max/Min = ',1p,e17.10,0p)
+          WRITE (stdout,30) TotVolume(ng), MinVolume(ng),               &
+     &                      MaxVolume(ng), ratio
+  30      FORMAT (/,' Initial domain volumes:  TotVolume = ',1p,e17.10, &
+     &            0p,' m3',/,t26,'MinCellVol = ',1p,e17.10,0p,' m3',    &
+     &            /,t26, 'MaxCellVol = ',1p,e17.10,0p,' m3',            &
+     &            /,t26, '   Max/Min = ',1p,e17.10,0p)
         END IF
       END IF
 !$OMP END CRITICAL (R_FACTOR)

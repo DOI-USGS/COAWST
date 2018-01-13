@@ -6,7 +6,7 @@
      &                   Imin, Imax, Jmin, Jmax,                        &
      &                   Xout, Yout, Fout)
 !
-!svn $Id: regrid.F 830 2017-01-24 21:21:11Z arango $
+!svn $Id: regrid.F 857 2017-07-29 04:05:27Z arango $
 !================================================== Hernan G. Arango ===
 !  Copyright (c) 2002-2017 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
@@ -58,6 +58,7 @@
 #ifdef DISTRIBUTE
       USE distribute_mod, ONLY : mp_reduce
 #endif
+      USE strings_mod, ONLY : FoundError
 !
       implicit none
 !
@@ -103,7 +104,6 @@
       real(r8), dimension(2) :: buffer
       character (len=3), dimension(2) :: op_handle
 #endif
-
 !
 !-----------------------------------------------------------------------
 !  Get input variable coordinates.
@@ -113,7 +113,8 @@
      &                    ncvname, ncvarid, Nx, Ny,                     &
      &                    Xmin, Xmax, Xinp, Ymin, Ymax, Yinp,           &
      &                    rectangular)
-      IF (exit_flag.ne.NoError) RETURN
+      IF (FoundError(exit_flag, NoError, __LINE__,                      &
+     &               __FILE__)) RETURN
 !
 !  Set input gridded data rotation angle.
 !

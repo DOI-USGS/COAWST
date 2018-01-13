@@ -1,7 +1,7 @@
 #include "cppdefs.h"
       MODULE mod_param
 !
-!svn $Id: mod_param.F 830 2017-01-24 21:21:11Z arango $
+!svn $Id: mod_param.F 875 2017-11-03 01:10:02Z arango $
 !================================================== Hernan G. Arango ===
 !  Copyright (c) 2002-2017 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
@@ -372,6 +372,18 @@
       TYPE (T_LBC), allocatable :: ad_LBC(:,:,:)
       TYPE (T_LBC), allocatable :: tl_LBC(:,:,:)
 #endif
+!
+!-----------------------------------------------------------------------
+!  Field statistics STATS structure.
+!-----------------------------------------------------------------------
+!
+      TYPE T_STATS
+        real(r8) :: count         ! processed values count
+        real(r8) :: min           ! minimum value
+        real(r8) :: max           ! maximum value
+        real(r8) :: avg           ! arithmetic mean
+        real(r8) :: rms           ! root mean square
+      END TYPE T_STATS
 
 #ifdef PROPAGATOR
 !
@@ -480,7 +492,7 @@
 #ifdef FLOATS
 !
 !-----------------------------------------------------------------------
-!  Floats trajectories parameters.
+!  Floats tracjectories parameters.
 !-----------------------------------------------------------------------
 !
 !  Number of trajectory time-stepping levels, [0:NFT].

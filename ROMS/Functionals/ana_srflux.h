@@ -1,6 +1,6 @@
       SUBROUTINE ana_srflux (ng, tile, model)
 !
-!! svn $Id: ana_srflux.h 830 2017-01-24 21:21:11Z arango $
+!! svn $Id: ana_srflux.h 841 2017-04-19 21:42:22Z arango $
 !!======================================================================
 !! Copyright (c) 2002-2017 The ROMS/TOMS Group                         !
 !!   Licensed under a MIT/X style license                              !
@@ -63,6 +63,7 @@
       USE mod_param
       USE mod_scalars
 !
+      USE dateclock_mod,   ONLY : caldate
       USE exchange_2d_mod, ONLY : exchange_r2d_tile
 #ifdef DISTRIBUTE
       USE mp_exchange_mod, ONLY : mp_exchange2d
@@ -100,7 +101,6 @@
 !
       integer :: i, j
 #if defined ALBEDO_CLOUD || defined DIURNAL_SRFLUX
-      integer :: iday, month, year
       real(r8) :: Dangle, Hangle, LatRad
       real(r8) :: cff1, cff2, hour, yday
 # ifdef ALBEDO_CLOUD
@@ -138,9 +138,9 @@
 !
 !-----------------------------------------------------------------------
 !
-!  Assume time is in modified Julian day.  Get hour and year day.
+!  Get time clock day-of-year and hour.
 !
-      CALL caldate (r_date, tdays(ng), year, yday, month, iday, hour)
+      CALL caldate (tdays(ng), yd_r8=yday, h_r8=hour)
 !
 !  Estimate solar declination angle (radians).
 !
@@ -158,7 +158,8 @@
         DO i=IstrT,IendT
 !
 !  Local daylight is a function of the declination (Dangle) and hour
-!  angle adjusted for the local meridian (Hangle-lonr(i,j)).
+!  angle adjusted for the local meridian (Hangle-lonr(i,j)/15.0).
+!  The 15.0 factor is because the sun moves 15 degrees every hour.
 !
           LatRad=latr(i,j)*deg2rad
           cff1=SIN(LatRad)*SIN(Dangle)
@@ -174,7 +175,7 @@
 !  Ocean Dynamics, pp 606).
 !
           srflx(i,j)=0.0_r8
-          zenith=cff1+cff2*COS(Hangle-lonr(i,j)*deg2rad)
+          zenith=cff1+cff2*COS(Hangle-lonr(i,j)*deg2rad/15.0_r8)
           IF (zenith.gt.0.0_r8) THEN
             cff=(0.7859_r8+0.03477_r8*Tair(i,j))/                       &
      &          (1.0_r8+0.00412_r8*Tair(i,j))

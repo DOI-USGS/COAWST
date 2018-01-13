@@ -97,7 +97,7 @@
 !
 !  Local variable declarations.
 !
-      integer  :: i, is, j, k
+      integer  :: i, is, j, k, ii, jj
       real(r8) :: cc1, cc2, cc3
       real(r8) :: sw_xi, rl, rkal, a1, b1, betal, rt, rkar, betar
       real(r8) :: sw_eta, rd, rkad, betad, ru, rkau, betau
@@ -163,7 +163,8 @@
             cff=0.5_r8*max(0.0_r8,min(2.0_r8,2.0_r8*rl*rkal,betal))*    &
      &                                  grad_x(i)*kax(i)
 # ifdef MASKING
-            cff=cff*rmask(i-2,j)
+            ii=MAX(i-2,0)
+            cff=cff*rmask(ii,j)
 # endif
             sw_xi=t_k(i-1,j)+cff
           ELSE
@@ -239,7 +240,8 @@
             cff=0.5_r8*max(0.0_r8,min(2.0_r8,2.0_r8*rd*rkad,betad))*    &
      &                              grad_y(j)*kay(j)
 # ifdef MASKING
-            cff=cff*rmask(i,j-2)
+            jj=MAX(j-2,0)
+            cff=cff*rmask(i,jj)
 # endif
             sw_eta=t_k(i,j-1)+cff
           ELSE

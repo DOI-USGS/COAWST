@@ -3,7 +3,7 @@
 
 #if defined FOUR_DVAR
 !
-!svn $Id: normalization.F 830 2017-01-24 21:21:11Z arango $
+!svn $Id: normalization.F 857 2017-07-29 04:05:27Z arango $
 !================================================== Hernan G. Arango ===
 !  Copyright (c) 2002-2017 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
@@ -315,6 +315,7 @@
 #  endif
       USE distribute_mod, ONLY : mp_reduce
 # endif
+      USE strings_mod,    ONLY : FoundError
 !
 !  Imported variable declarations.
 !
@@ -503,7 +504,7 @@
 
 # include "set_bounds.h"
 !
-      SourceFile='normalization.F, normalization_tile'
+      SourceFile=__FILE__ // ", normalization_tile"
 
       my_time=tdays(ng)*day2sec
 
@@ -519,7 +520,7 @@
         END DO
       END DO
 
-      CALL set_depth_tile (ng, tile,                                    &
+      CALL set_depth_tile (ng, tile, iNLM,                              &
      &                     LBi, UBi, LBj, UBj,                          &
      &                     IminS, ImaxS, JminS, JmaxS,                  &
      &                     nstp, nnew,                                  &
@@ -568,7 +569,8 @@
      &                          total = (/1/),                          &
      &                          ncid = NRM(ifile,ng)%ncid,              &
      &                          varid = NRM(ifile,ng)%Vid(idtime))
-          IF (exit_flag.ne.NoError) RETURN
+          IF (FoundError(exit_flag, NoError, __LINE__,                  &
+     &                   __FILE__)) RETURN
 !
 !  2D norm at RHO-points.
 !
@@ -692,7 +694,8 @@
      &                       rmask,                                     &
 # endif
      &                       HnormR(:,:,ifile))
-            IF (exit_flag.ne.NoError) RETURN
+            IF (FoundError(exit_flag, NoError, __LINE__,                &
+     &                     __FILE__)) RETURN
           END IF
 !
 !  2D norm at U-points.
@@ -825,7 +828,8 @@
      &                       umask,                                     &
 # endif
      &                       HnormU(:,:,ifile))
-            IF (exit_flag.ne.NoError) RETURN
+            IF (FoundError(exit_flag, NoError, __LINE__,                &
+     &                     __FILE__)) RETURN
           END IF
 !
 !  2D norm at V-points.
@@ -957,7 +961,8 @@
      &                       vmask,                                     &
 # endif
      &                       HnormV(:,:,ifile))
-            IF (exit_flag.ne.NoError) RETURN
+            IF (FoundError(exit_flag, NoError, __LINE__,                &
+     &                     __FILE__)) RETURN
           END IF
 
 # ifdef SOLVE3D
@@ -1115,7 +1120,8 @@
      &                       umask,                                     &
 #  endif
      &                       VnormU(:,:,:,ifile))
-            IF (exit_flag.ne.NoError) RETURN
+            IF (FoundError(exit_flag, NoError, __LINE__,                &
+     &                     __FILE__)) RETURN
           END IF
 !
 !  3D norm at V-points.
@@ -1271,7 +1277,8 @@
      &                       vmask,                                     &
 #  endif
      &                       VnormV(:,:,:,ifile))
-            IF (exit_flag.ne.NoError) RETURN
+            IF (FoundError(exit_flag, NoError, __LINE__,                &
+     &                     __FILE__)) RETURN
           END IF
 !
 !  3D norm at RHO-points.
@@ -1459,7 +1466,8 @@
      &                         rmask,                                   &
 #  endif
      &                         VnormR(:,:,:,ifile,itrc))
-              IF (exit_flag.ne.NoError) RETURN
+              IF (FoundError(exit_flag, NoError, __LINE__,              &
+     &                       __FILE__)) RETURN
             END IF
           END DO
 # endif
@@ -1501,7 +1509,8 @@
      &                        total = (/1/),                            &
      &                        ncid = NRM(ifile,ng)%ncid,                &
      &                        varid = NRM(ifile,ng)%Vid(idtime))
-        IF (exit_flag.ne.NoError) RETURN
+        IF (FoundError(exit_flag, NoError, __LINE__,                    &
+     &                 __FILE__)) RETURN
 !
 !  2D boundary norm at RHO-points.
 !
@@ -1639,7 +1648,8 @@
      &                          total = (/IJlen,4,1/),                  &
      &                          ncid = NRM(ifile,ng)%ncid,              &
      &                          varid = NRM(ifile,ng)%Vid(ifield))
-          IF (exit_flag.ne.NoError) RETURN
+          IF (FoundError(exit_flag, NoError, __LINE__,                  &
+     &                   __FILE__)) RETURN
         END IF
 !
 !  2D boundary norm at U-points.
@@ -1783,7 +1793,8 @@
      &                          total = (/IJlen,4,1/),                  &
      &                          ncid = NRM(ifile,ng)%ncid,              &
      &                          varid = NRM(ifile,ng)%Vid(ifield))
-          IF (exit_flag.ne.NoError) RETURN
+          IF (FoundError(exit_flag, NoError, __LINE__,                  &
+     &                   __FILE__)) RETURN
         END IF
 !
 !  2D boundary norm at V-points.
@@ -1927,7 +1938,8 @@
      &                          total = (/IJlen,4,1/),                  &
      &                          ncid = NRM(ifile,ng)%ncid,              &
      &                          varid = NRM(ifile,ng)%Vid(ifield))
-          IF (exit_flag.ne.NoError) RETURN
+          IF (FoundError(exit_flag, NoError, __LINE__,                  &
+     &                   __FILE__)) RETURN
         END IF
 
 #  ifdef SOLVE3D
@@ -2106,7 +2118,8 @@
      &                          total = (/IJlen,N(ng),4,1/),            &
      &                          ncid = NRM(ifile,ng)%ncid,              &
      &                          varid = NRM(ifile,ng)%Vid(ifield))
-          IF (exit_flag.ne.NoError) RETURN
+          IF (FoundError(exit_flag, NoError, __LINE__,                  &
+     &                   __FILE__)) RETURN
         END IF
 !
 !  3D boundary norm at V-points.
@@ -2283,7 +2296,8 @@
      &                          total = (/IJlen,N(ng),4,1/),            &
      &                          ncid = NRM(ifile,ng)%ncid,              &
      &                          varid = NRM(ifile,ng)%Vid(ifield))
-          IF (exit_flag.ne.NoError) RETURN
+          IF (FoundError(exit_flag, NoError, __LINE__,                  &
+     &                   __FILE__)) RETURN
         END IF
 !
 !  3D boundary norm at RHO-points.
@@ -2466,7 +2480,8 @@
      &                            total = (/IJlen,N(ng),4,1/),          &
      &                            ncid = NRM(ifile,ng)%ncid,            &
      &                            varid = NRM(ifile,ng)%Vid(ifield))
-            IF (exit_flag.ne.NoError) RETURN
+            IF (FoundError(exit_flag, NoError, __LINE__,                &
+     &                     __FILE__)) RETURN
           END IF
         END DO
 #  endif
@@ -2476,7 +2491,8 @@
 !  written.
 !
         CALL netcdf_sync (ng, iTLM, ncname, NRM(ifile,ng)%ncid)
-        IF (exit_flag.ne.NoError) RETURN
+        IF (FoundError(exit_flag, NoError, __LINE__,                    &
+     &                 __FILE__)) RETURN
       END IF
 # endif
 
@@ -2508,7 +2524,8 @@
      &                        total = (/1/),                            &
      &                        ncid = NRM(ifile,ng)%ncid,                &
      &                        varid = NRM(ifile,ng)%Vid(idtime))
-        IF (exit_flag.ne.NoError) RETURN
+        IF (FoundError(exit_flag, NoError, __LINE__,                    &
+     &                 __FILE__)) RETURN
 
 #  ifdef ADJUST_WSTRESS
 !
@@ -2641,7 +2658,8 @@
      &                     umask,                                       &
 #   endif
      &                     HnormSUS)
-          IF (exit_flag.ne.NoError) RETURN
+          IF (FoundError(exit_flag, NoError, __LINE__,                  &
+     &                   __FILE__)) RETURN
         END IF
 !
 !  2D norm at V-stress points.
@@ -2773,7 +2791,8 @@
      &                     vmask,                                       &
 #   endif
      &                     HnormSVS)
-          IF (exit_flag.ne.NoError) RETURN
+          IF (FoundError(exit_flag, NoError, __LINE__,                  &
+     &                   __FILE__)) RETURN
         END IF
 #  endif
 #  if defined ADJUST_STFLUX && defined SOLVE3D
@@ -2947,7 +2966,8 @@
      &                         rmask,                                   &
 #   endif
      &                         HnormSTF(:,:,itrc))
-              IF (exit_flag.ne.NoError) RETURN
+              IF (FoundError(exit_flag, NoError, __LINE__,              &
+     &                       __FILE__)) RETURN
             END IF
           END IF
         END DO
@@ -3045,6 +3065,7 @@
       USE distribute_mod, ONLY : mp_collect
 #  endif
 # endif
+      USE strings_mod,    ONLY : FoundError
 !
 !  Imported variable declarations.
 !
@@ -3240,7 +3261,7 @@
 
 # include "set_bounds.h"
 !
-      SourceFile='normalization.F, randomization_tile'
+      SourceFile=__FILE__ // ", randomization_tile"
 
       my_time=tdays(ng)*day2sec
 
@@ -3256,7 +3277,7 @@
         END DO
       END DO
 
-      CALL set_depth_tile (ng, tile,                                    &
+      CALL set_depth_tile (ng, tile, iNLM,                              &
      &                     LBi, UBi, LBj, UBj,                          &
      &                     IminS, ImaxS, JminS, JmaxS,                  &
      &                     nstp, nnew,                                  &
@@ -3316,7 +3337,8 @@
      &                          total = (/1/),                          &
      &                          ncid = NRM(ifile,ng)%ncid,              &
      &                          varid = NRM(ifile,ng)%Vid(idtime))
-          IF (exit_flag.ne.NoError) RETURN
+          IF (FoundError(exit_flag, NoError, __LINE__,                  &
+     &                   __FILE__)) RETURN
 !
 !  2D norm at RHO-points.
 !
@@ -3955,7 +3977,8 @@
      &                        total = (/1/),                            &
      &                        ncid = NRM(ifile,ng)%ncid,                &
      &                        varid = NRM(ifile,ng)%Vid(idtime))
-        IF (exit_flag.ne.NoError) RETURN
+        IF (FoundError(exit_flag, NoError, __LINE__,                    &
+     &                 __FILE__)) RETURN
 !
 !  2D boundary norm at RHO-points.
 !
@@ -4084,7 +4107,8 @@
      &                          total = (/IJlen,4,1/),                  &
      &                          ncid = NRM(ifile,ng)%ncid,              &
      &                          varid = NRM(ifile,ng)%Vid(ifield))
-          IF (exit_flag.ne.NoError) RETURN
+          IF (FoundError(exit_flag, NoError, __LINE__,                  &
+     &                   __FILE__)) RETURN
         END IF
 !
 !  2D boundary norm at U-points.
@@ -4214,7 +4238,8 @@
      &                          total = (/IJlen,4,1/),                  &
      &                          ncid = NRM(ifile,ng)%ncid,              &
      &                          varid = NRM(ifile,ng)%Vid(ifield))
-          IF (exit_flag.ne.NoError) RETURN
+          IF (FoundError(exit_flag, NoError, __LINE__,                  &
+     &                   __FILE__)) RETURN
         END IF
 !
 !  2D boundary norm at V-points.
@@ -4344,7 +4369,8 @@
      &                          total = (/IJlen,4,1/),                  &
      &                          ncid = NRM(ifile,ng)%ncid,              &
      &                          varid = NRM(ifile,ng)%Vid(ifield))
-          IF (exit_flag.ne.NoError) RETURN
+          IF (FoundError(exit_flag, NoError, __LINE__,                  &
+     &                   __FILE__)) RETURN
         END IF
 
 #  ifdef SOLVE3D
@@ -4507,7 +4533,8 @@
      &                          total = (/IJlen,N(ng),4,1/),            &
      &                          ncid = NRM(ifile,ng)%ncid,              &
      &                          varid = NRM(ifile,ng)%Vid(ifield))
-          IF (exit_flag.ne.NoError) RETURN
+          IF (FoundError(exit_flag, NoError, __LINE__,                  &
+     &                   __FILE__)) RETURN
         END IF
 !
 !  3D boundary norm at V-points.
@@ -4668,7 +4695,8 @@
      &                          total = (/IJlen,N(ng),4,1/),            &
      &                          ncid = NRM(ifile,ng)%ncid,              &
      &                          varid = NRM(ifile,ng)%Vid(ifield))
-          IF (exit_flag.ne.NoError) RETURN
+          IF (FoundError(exit_flag, NoError, __LINE__,                  &
+     &                   __FILE__)) RETURN
         END IF
 !
 !  3D boundary norm at RHO-points.
@@ -4838,7 +4866,8 @@
      &                            total = (/IJlen,N(ng),4,1/),          &
      &                            ncid = NRM(ifile,ng)%ncid,            &
      &                            varid = NRM(ifile,ng)%Vid(ifield))
-            IF (exit_flag.ne.NoError) RETURN
+            IF (FoundError(exit_flag, NoError, __LINE__,                &
+     &                     __FILE__)) RETURN
           END IF
         END DO
 #  endif
@@ -4848,7 +4877,8 @@
 !  written.
 !
         CALL netcdf_sync (ng, iTLM, ncname, NRM(ifile,ng)%ncid)
-        IF (exit_flag.ne.NoError) RETURN
+        IF (FoundError(exit_flag, NoError, __LINE__,                    &
+     &                 __FILE__)) RETURN
       END IF
 # endif
 
@@ -4883,7 +4913,8 @@
      &                        total = (/1/),                            &
      &                        ncid = NRM(ifile,ng)%ncid,                &
      &                        varid = NRM(ifile,ng)%Vid(idtime))
-        IF (exit_flag.ne.NoError) RETURN
+        IF (FoundError(exit_flag, NoError, __LINE__,                    &
+     &                 __FILE__)) RETURN
 
 #  ifdef ADJUST_WSTRESS
 !
@@ -5219,6 +5250,7 @@
       USE mod_scalars
 !
       USE nf_fwrite2d_mod, ONLY : nf_fwrite2d
+      USE strings_mod,     ONLY : FoundError
 !
 !  Imported variable declarations.
 !
@@ -5254,7 +5286,8 @@
 !  computation, synchronize file to disk.
 !-----------------------------------------------------------------------
 !
-      IF (exit_flag.ne.NoError) RETURN
+      IF (FoundError(exit_flag, NoError, __LINE__,                      &
+     &               __FILE__)) RETURN
 !
 !  Set grid type factor to write full (gfactor=1) fields or water
 !  points (gfactor=-1) fields only.
@@ -5275,7 +5308,8 @@
      &                   Amask,                                         &
 # endif
      &                   A)
-      IF (status.ne.nf90_noerr) THEN
+      IF (FoundError(status, nf90_noerr, __LINE__,                      &
+     &               __FILE__)) THEN
         IF (Master) THEN
           WRITE (stdout,10) TRIM(Vname(1,ifield)), tindex
         END IF
@@ -5288,7 +5322,8 @@
 !  processes to access data immediately after it is written.
 !
       CALL netcdf_sync (ng, model, ncname, ncid)
-      IF (exit_flag.ne.NoError) RETURN
+      IF (FoundError(exit_flag, NoError, __LINE__,                      &
+     &               __FILE__)) RETURN
 
       IF (Master) WRITE (stdout,20) TRIM(Vname(1,ifield)), tindex
       CALL my_flush (stdout)
@@ -5319,6 +5354,7 @@
       USE mod_scalars
 !
       USE nf_fwrite3d_mod, ONLY : nf_fwrite3d
+      USE strings_mod,     ONLY : FoundError
 !
 !  Imported variable declarations.
 !
@@ -5354,7 +5390,8 @@
 !  computation, synchronize file to disk.
 !-----------------------------------------------------------------------
 !
-      IF (exit_flag.ne.NoError) RETURN
+      IF (FoundError(exit_flag, NoError, __LINE__,                      &
+     &               __FILE__)) RETURN
 !
 !  Set grid type factor to write full (gfactor=1) fields or water
 !  points (gfactor=-1) fields only.
@@ -5375,7 +5412,8 @@
      &                   Amask,                                         &
 # endif
      &                   A)
-      IF (status.ne.nf90_noerr) THEN
+      IF (FoundError(status, nf90_noerr, __LINE__,                      &
+     &               __FILE__)) THEN
         IF (Master) THEN
           WRITE (stdout,10) TRIM(Vname(1,ifield)), tindex
         END IF
@@ -5388,7 +5426,8 @@
 !  processes to access data immediately after it is written.
 !
       CALL netcdf_sync (ng, model, ncname, ncid)
-      IF (exit_flag.ne.NoError) RETURN
+      IF (FoundError(exit_flag, NoError, __LINE__,                      &
+     &               __FILE__)) RETURN
 
       IF (Master) WRITE (stdout,20) TRIM(Vname(1,ifield)), tindex
       CALL my_flush (stdout)

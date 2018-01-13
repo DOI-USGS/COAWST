@@ -4,7 +4,7 @@
 #if defined ADJOINT && defined SOLVE3D
 # define NEUMANN
 !
-!svn $Id: ad_pre_step3d.F 830 2017-01-24 21:21:11Z arango $
+!svn $Id: ad_pre_step3d.F 854 2017-07-18 23:28:45Z arango $
 !================================================== Hernan G. Arango ===
 !  Copyright (c) 2002-2017 The ROMS/TOMS Group       Andrew M. Moore   !
 !    Licensed under a MIT/X style license                              !
@@ -63,7 +63,7 @@
 # include "tile.h"
 !
 # ifdef PROFILE
-      CALL wclock_on (ng, iADM, 22)
+      CALL wclock_on (ng, iADM, 22, __LINE__, __FILE__)
 # endif
       CALL ad_pre_step3d_tile (ng, tile,                                &
      &                         LBi, UBi, LBj, UBj,                      &
@@ -76,6 +76,9 @@
      &                         GRID(ng) % rmask,                        &
      &                         GRID(ng) % umask,                        &
      &                         GRID(ng) % vmask,                        &
+#  if defined SOLAR_SOURCE && defined WET_DRY
+     &                         GRID(ng) % rmask_wet,                    &
+#  endif
 # endif
 # ifdef FOUR_DVAR
      &                         GRID(ng) % om_v,                         &
@@ -133,7 +136,7 @@
      &                         OCEAN(ng) % v,                           &
      &                         OCEAN(ng) % ad_v)
 # ifdef PROFILE
-      CALL wclock_off (ng, iADM, 22)
+      CALL wclock_off (ng, iADM, 22, __LINE__, __FILE__)
 # endif
       RETURN
       END SUBROUTINE ad_pre_step3d
@@ -148,6 +151,9 @@
      &                               nrhs, nstp, nnew,                  &
 # ifdef MASKING
      &                               rmask, umask, vmask,               &
+#  if defined SOLAR_SOURCE && defined WET_DRY
+     &                               rmask_wet,                         &
+#  endif
 # endif
 # ifdef FOUR_DVAR
      &                               om_v, on_u,                        &
@@ -210,6 +216,9 @@
       real(r8), intent(in) :: rmask(LBi:,LBj:)
       real(r8), intent(in) :: umask(LBi:,LBj:)
       real(r8), intent(in) :: vmask(LBi:,LBj:)
+#   if defined SOLAR_SOURCE && defined WET_DRY
+      real(r8), intent(in) :: rmask_wet(LBi:,LBj:)
+#   endif
 #  endif
 #  ifdef FOUR_DVAR
       real(r8), intent(in) :: om_v(LBi:,LBj:)
@@ -290,6 +299,9 @@
       real(r8), intent(in) :: rmask(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: umask(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: vmask(LBi:UBi,LBj:UBj)
+#   if defined SOLAR_SOURCE && defined WET_DRY
+      real(r8), intent(in) :: rmask_wet(LBi:UBi,LBj:UBj)
+#   endif
 #  endif
 #  ifdef FOUR_DVAR
       real(r8), intent(in) :: om_v(LBi:UBi,LBj:UBj)
@@ -958,10 +970,19 @@
           IF (itrc.eq.itemp) THEN
             DO k=1,N(ng)-1
               DO i=Istr,Iend
-!>              tl_FC(i,k)=tl_FC(i,k)+dt(ng)*srflx(i,j)*tl_swdk(i,j,k)
+!>              tl_FC(i,k)=tl_FC(i,k)+                                  &
+!>   &                     dt(ng)*srflx(i,j)*                           &
+#   ifdef WET_DRY_NOT_YET
+!>   &                     rmask_wet(i,j)*                              &
+#   endif
+!>   &                     tl_swdk(i,j,k)
 !>
                 ad_swdk(i,j,k)=ad_swdk(i,j,k)+                          &
-     &                         dt(ng)*srflx(i,j)*ad_FC(i,k)
+     &                         dt(ng)*srflx(i,j)*                       &
+#   ifdef WET_DRY_NOT_YET
+     &                         rmask_wet(i,j)*                          &
+#   endif
+     &                         ad_FC(i,k)
               END DO
             END DO
           END IF

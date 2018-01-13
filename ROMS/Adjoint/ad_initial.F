@@ -2,7 +2,7 @@
 #ifdef ADJOINT
       SUBROUTINE ad_initial (ng)
 !
-!svn $Id: ad_initial.F 830 2017-01-24 21:21:11Z arango $
+!svn $Id: ad_initial.F 882 2017-11-23 05:41:19Z arango $
 !================================================== Hernan G. Arango ===
 !  Copyright (c) 2002-2017 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
@@ -39,35 +39,37 @@
       USE mod_stepping
 !
       USE analytical_mod
+      USE dateclock_mod,     ONLY : time_string
 # ifdef DISTRIBUTE
-      USE distribute_mod, ONLY : mp_bcasti
+      USE distribute_mod,    ONLY : mp_bcasti
 # endif
 # if defined AD_SENSITIVITY   || defined IS4DVAR_SENSITIVITY || \
      defined OPT_OBSERVATIONS || defined SENSITIVITY_4DVAR   || \
      defined SO_SEMI
       USE adsen_initial_mod, ONLY : adsen_initial
 # endif
-      USE ini_hmixcoef_mod, ONLY : ini_hmixcoef
-      USE metrics_mod, ONLY : metrics
+      USE ini_hmixcoef_mod,  ONLY : ini_hmixcoef
+      USE metrics_mod,       ONLY : metrics
 # ifdef SOLVE3D
-      USE set_depth_mod, ONLY : set_depth
-      USE omega_mod, ONLY : omega
-      USE rho_eos_mod, ONLY : rho_eos
-      USE set_massflux_mod, ONLY : set_massflux
+      USE set_depth_mod,     ONLY : set_depth
+      USE omega_mod,         ONLY : omega
+      USE rho_eos_mod,       ONLY : rho_eos
+      USE set_massflux_mod,  ONLY : set_massflux
 # endif
 # ifdef MASKING
-      USE set_masks_mod, ONLY : set_masks
+      USE set_masks_mod,     ONLY : set_masks
 # endif
-      USE stiffness_mod, ONLY : stiffness
-# ifdef WAVES_OCEAN
-      USE ocean_coupler_mod, ONLY : waves_coupling
+      USE stiffness_mod,     ONLY : stiffness
+# if defined WAV_COUPLING_NOT_YET && defined MCT_LIB
+      USE ocean_coupler_mod, ONLY : ocn2wav_coupling
 # endif
+      USE strings_mod,       ONLY : FoundError
 # ifdef WET_DRY
-      USE wetdry_mod, ONLY : wetdry
+      USE wetdry_mod,        ONLY : wetdry
 # endif
 # if defined PROPAGATOR || \
     (defined MASKING    && (defined READ_WATER || defined WRITE_WATER))
-      USE wpoints_mod, ONLY : wpoints
+      USE wpoints_mod,       ONLY : wpoints
 # endif
 !
       implicit none
@@ -159,7 +161,7 @@
 !-----------------------------------------------------------------------
 !
       DO thread=THREAD_RANGE
-        CALL wclock_on (ng, iADM, 2)
+        CALL wclock_on (ng, iADM, 2, __LINE__, __FILE__)
       END DO
 !$OMP BARRIER
 # endif
@@ -247,7 +249,8 @@
 #  ifdef DISTRIBUTE
         CALL mp_bcasti (ng, iADM, exit_flag)
 #  endif
-        IF (exit_flag.ne.NoError) RETURN
+        IF (FoundError(exit_flag, NoError, __LINE__,                    &
+     &                 __FILE__)) RETURN
 # endif
 
 # ifdef SOLVE3D
@@ -291,7 +294,7 @@
 !-----------------------------------------------------------------------
 !
         DO tile=first_tile(ng),last_tile(ng),+1
-          CALL ana_wtype (ng, tile, iTLM)
+          CALL ana_wtype (ng, tile, iADM)
         END DO
 !$OMP BARRIER
 # endif
@@ -317,7 +320,8 @@
           CALL mp_bcasti (ng, iADM, exit_flag)
 #  endif
 !$OMP BARRIER
-          IF (exit_flag.ne.NoError) RETURN
+          IF (FoundError(exit_flag, NoError, __LINE__,                  &
+     &                   __FILE__)) RETURN
         END IF
 # endif
       END IF
@@ -411,7 +415,7 @@
 !-----------------------------------------------------------------------
 !
       DO tile=first_tile(ng),last_tile(ng),+1
-        CALL set_depth (ng, tile)
+        CALL set_depth (ng, tile, iADM)
       END DO
 !$OMP BARRIER
 #  endif
@@ -479,7 +483,8 @@
 #   ifdef DISTRIBUTE
       CALL mp_bcasti (ng, iADM, exit_flag)
 #   endif
-      IF (exit_flag.ne.NoError) RETURN
+      IF (FoundError(exit_flag, NoError, __LINE__,                      &
+     &               __FILE__)) RETURN
 #  else
       IF (nrrec(ng).ne.0) THEN
 !$OMP MASTER
@@ -490,7 +495,8 @@
 #   ifdef DISTRIBUTE
         CALL mp_bcasti (ng, iADM, exit_flag)
 #   endif
-        IF (exit_flag.ne.NoError) RETURN
+        IF (FoundError(exit_flag, NoError, __LINE__,                    &
+     &                 __FILE__)) RETURN
       END IF
 #  endif
 # endif
@@ -511,7 +517,8 @@
         CALL mp_bcasti (ng, iADM, exit_flag)
 #  endif
 !$OMP BARRIER
-        IF (exit_flag.ne.NoError) RETURN
+        IF (FoundError(exit_flag, NoError, __LINE__,                    &
+     &                 __FILE__)) RETURN
       ELSE
         DO tile=first_tile(ng),last_tile(ng),+1
           CALL wetdry (ng, tile, Tindex(ng), .TRUE.)
@@ -531,9 +538,10 @@
 !
 !$OMP MASTER
       CALL obs_initial (ng, iADM, .TRUE.)
-!$OMP MASTER
+!$OMP END MASTER
 !$OMP BARRIER
-      IF (exit_flag.ne.NoError) RETURN
+      IF (FoundError(exit_flag, NoError, __LINE__,                      &
+     &               __FILE__)) RETURN
 # endif
 
 # if defined ANA_PERTURB  && \
@@ -556,7 +564,7 @@
 !!----------------------------------------------------------------------
 !!
 !!    DO tile=first_tile(ng),last_tile(ng),+1
-!!      CALL ad_set_depth (ng, tile)
+!!      CALL ad_set_depth (ng, tile, iADM)
 !!    END DO
 !!$OMP BARRIER
 !!
@@ -565,7 +573,7 @@
 !!----------------------------------------------------------------------
 !!
 !!    DO tile=first_tile(ng),last_tile(ng),+1
-!!      CALL ad_set_massflux (ng, tile)
+!!      CALL ad_set_massflux (ng, tile, iADM)
 !!    END DO
 !!$OMP BARRIER
 !!
@@ -577,8 +585,8 @@
 !!----------------------------------------------------------------------
 !!
 !!    DO tile=first_tile(ng),last_tile(ng),+1
-!!      CALL ad_omega (ng, tile)
-!!      CALL ad_rho_eos (ng, tile)
+!!      CALL ad_omega (ng, tile, iADM)
+!!      CALL ad_rho_eos (ng, tile, iADM)
 !!    END DO
 !!!$OMP BARRIER
 # endif
@@ -601,20 +609,24 @@
 #endif
 !
 !-----------------------------------------------------------------------
-!  If applicable, check input multi-files where the time records for
-!  a particular field are split into several NetCDF files.  Initialize
-!  several parameters in the file structure so the appropriate input
-!  file is selected during initialization/restart.
+!  If applicable, close all input boundary, climatology, and forcing
+!  NetCDF files and set associated parameters to the closed state. This
+!  step is essential in iterative algorithms that run the full TLM
+!  repetitively. Then, Initialize several parameters in their file
+!  structure, so the appropriate input single or multi-file is selected
+!  during initialization/restart.
 !-----------------------------------------------------------------------
 !
 !$OMP MASTER
+      CALL close_inp (ng, iADM)
       CALL check_multifile (ng, iADM)
 !$OMP END MASTER
 # ifdef DISTRIBUTE
       CALL mp_bcasti (ng, iADM, exit_flag)
 # endif
 !$OMP BARRIER
-      IF (exit_flag.ne.NoError) RETURN
+      IF (FoundError(exit_flag, NoError, __LINE__,                      &
+     &               __FILE__)) RETURN
 !
 !-----------------------------------------------------------------------
 !  Read in initial forcing, climatology and assimilation data from
@@ -623,7 +635,6 @@
 !-----------------------------------------------------------------------
 !
 !$OMP MASTER
-      CALL close_inp (ng, iADM)
       CALL ad_get_idata (ng)
       CALL ad_get_data (ng)
 !$OMP END MASTER
@@ -631,7 +642,8 @@
 # ifdef DISTRIBUTE
       CALL mp_bcasti (ng, iADM, exit_flag)
 # endif
-      IF (exit_flag.ne.NoError) RETURN
+      IF (FoundError(exit_flag, NoError, __LINE__,                      &
+     &               __FILE__)) RETURN
 
 # ifdef MASKING
 !
@@ -721,14 +733,14 @@
 !$OMP BARRIER
 # endif
 
-# ifdef WAVES_OCEAN_NOT_YET
+# if defined WAV_COUPLING_NOT_YET && defined MCT_LIB
 !
 !-----------------------------------------------------------------------
 !  Read in initial forcing from coupled wave model.
 !-----------------------------------------------------------------------
 !
       DO tile=first_tile(ng),last_tile(ng),+1
-        CALL waves_coupling (ng, tile)
+        CALL ocn2wav_coupling (ng, tile)
       END DO
 !$OMP BARRIER
 # endif
@@ -753,7 +765,7 @@
 !-----------------------------------------------------------------------
 !
       DO thread=THREAD_RANGE
-        CALL wclock_off (ng, iADM, 2)
+        CALL wclock_off (ng, iADM, 2, __LINE__, __FILE__)
       END DO
 !$OMP BARRIER
 # endif

@@ -2,7 +2,7 @@
 #if defined FOUR_DVAR || defined ENKF_RESTART
       SUBROUTINE wrt_dai (ng, tile)
 !
-!svn $Id: wrt_dai.F 830 2017-01-24 21:21:11Z arango $
+!svn $Id: wrt_dai.F 857 2017-07-29 04:05:27Z arango $
 !================================================== Hernan G. Arango ===
 !  Copyright (c) 2002-2017 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
@@ -29,6 +29,8 @@
 # ifdef SOLVE3D
       USE nf_fwrite3d_mod, ONLY : nf_fwrite3d
 # endif
+      USE strings_mod,     ONLY : FoundError
+!
       implicit none
 !
 !  Imported variable declarations.
@@ -49,13 +51,14 @@
       LBj=LBOUND(GRID(ng)%h,DIM=2)
       UBj=UBOUND(GRID(ng)%h,DIM=2)
 !
-      SourceFile='wrt_dai.F'
+      SourceFile=__FILE__
 !
 !-----------------------------------------------------------------------
 !  Write out Data Assimilation initial/restart fields.
 !-----------------------------------------------------------------------
 !
-      IF (exit_flag.ne.NoError) RETURN
+      IF (FoundError(exit_flag, NoError, __LINE__,                      &
+     &               __FILE__)) RETURN
 !
 !  Set grid type factor to write full (gfactor=1) fields.
 !
@@ -86,7 +89,8 @@
 #  endif
      &                   GRID(ng) % z0_r,                               &
      &                   SetFillVal = .FALSE.)
-      IF (status.ne.nf90_noerr) THEN
+      IF (FoundError(status, nf90_noerr, __LINE__,                      &
+     &               __FILE__)) THEN
         IF (Master) THEN
           WRITE (stdout,10) TRIM(Vname(1,idpthR))
         END IF
@@ -115,7 +119,8 @@
 #  endif
      &                   GRID(ng) % z_v,                                &
      &                   SetFillVal = .FALSE.)
-      IF (status.ne.nf90_noerr) THEN
+      IF (FoundError(status, nf90_noerr, __LINE__,                      &
+     &               __FILE__)) THEN
         IF (Master) THEN
           WRITE (stdout,10) TRIM(Vname(1,idpthU))
         END IF
@@ -144,7 +149,8 @@
 #  endif
      &                   GRID(ng) % z_v,                                &
      &                   SetFillVal = .FALSE.)
-      IF (status.ne.nf90_noerr) THEN
+      IF (FoundError(status, nf90_noerr, __LINE__,                      &
+     &               __FILE__)) THEN
         IF (Master) THEN
           WRITE (stdout,10) TRIM(Vname(1,idpthV))
         END IF
@@ -165,7 +171,8 @@
 #  endif
      &                   GRID(ng) % z0_w,                               &
      &                   SetFillVal = .FALSE.)
-      IF (status.ne.nf90_noerr) THEN
+      IF (FoundError(status, nf90_noerr, __LINE__,                      &
+     &               __FILE__)) THEN
         IF (Master) THEN
           WRITE (stdout,10) TRIM(Vname(1,idpthW))
         END IF
@@ -182,7 +189,8 @@
      &                      (/DAI(ng)%Rindex/), (/1/),                  &
      &                      ncid = DAI(ng)%ncid,                        &
      &                      varid = DAI(ng)%Vid(idtime))
-      IF (exit_flag.ne.NoError) RETURN
+      IF (FoundError(exit_flag, NoError, __LINE__,                      &
+     &               __FILE__)) RETURN
 !
 !  Write out free-surface (m).
 !
@@ -200,7 +208,8 @@
 # else
      &                   OCEAN(ng) % zeta(:,:,KOUT))
 # endif
-      IF (status.ne.nf90_noerr) THEN
+      IF (FoundError(status, nf90_noerr, __LINE__,                      &
+     &               __FILE__)) THEN
         IF (Master) THEN
           WRITE (stdout,20) TRIM(Vname(1,idFsur)), DAI(ng)%Rindex
         END IF
@@ -220,7 +229,8 @@
      &                   GRID(ng) % umask_full,                         &
 # endif
      &                   OCEAN(ng) % ubar(:,:,KOUT))
-      IF (status.ne.nf90_noerr) THEN
+      IF (FoundError(status, nf90_noerr, __LINE__,                      &
+     &               __FILE__)) THEN
         IF (Master) THEN
           WRITE (stdout,20) TRIM(Vname(1,idUbar)), DAI(ng)%Rindex
         END IF
@@ -240,7 +250,8 @@
      &                   GRID(ng) % vmask_full,                         &
 # endif
      &                   OCEAN(ng) % vbar(:,:,KOUT))
-      IF (status.ne.nf90_noerr) THEN
+      IF (FoundError(status, nf90_noerr, __LINE__,                      &
+     &               __FILE__)) THEN
         IF (Master) THEN
           WRITE (stdout,20) TRIM(Vname(1,idVbar)), DAI(ng)%Rindex
         END IF
@@ -262,7 +273,8 @@
      &                   GRID(ng) % umask_full,                         &
 #  endif
      &                   OCEAN(ng) % u(:,:,:,NOUT))
-      IF (status.ne.nf90_noerr) THEN
+      IF (FoundError(status, nf90_noerr, __LINE__,                      &
+     &               __FILE__)) THEN
         IF (Master) THEN
           WRITE (stdout,20) TRIM(Vname(1,idUvel)), DAI(ng)%Rindex
         END IF
@@ -282,7 +294,8 @@
      &                   GRID(ng) % vmask_full,                         &
 #  endif
      &                   OCEAN(ng) % v(:,:,:,NOUT))
-      IF (status.ne.nf90_noerr) THEN
+      IF (FoundError(status, nf90_noerr, __LINE__,                      &
+     &               __FILE__)) THEN
         IF (Master) THEN
           WRITE (stdout,20) TRIM(Vname(1,idVvel)), DAI(ng)%Rindex
         END IF
@@ -303,7 +316,8 @@
      &                     GRID(ng) % rmask,                            &
 #  endif
      &                     OCEAN(ng) % t(:,:,:,NOUT,itrc))
-        IF (status.ne.nf90_noerr) THEN
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+     &                 __FILE__)) THEN
           IF (Master) THEN
             WRITE (stdout,20) TRIM(Vname(1,idTvar(itrc))), DAI(ng)%Rindex
           END IF
@@ -325,7 +339,8 @@
 #  endif
      &                   MIXING(ng) % Akv,                              &
      &                   SetFillVal = .FALSE.)
-      IF (status.ne.nf90_noerr) THEN
+      IF (FoundError(status, nf90_noerr, __LINE__,                      &
+     &               __FILE__)) THEN
         IF (Master) THEN
           WRITE (stdout,20) TRIM(Vname(1,idVvis)), DAI(ng)%Rindex
         END IF
@@ -346,7 +361,8 @@
 #  endif
      &                   MIXING(ng) % Akt(:,:,:,itemp),                 &
      &                   SetFillVal = .FALSE.)
-      IF (status.ne.nf90_noerr) THEN
+      IF (FoundError(status, nf90_noerr, __LINE__,                      &
+     &               __FILE__)) THEN
         IF (Master) THEN
           WRITE (stdout,20) TRIM(Vname(1,idTdif)), DAI(ng)%Rindex
         END IF
@@ -360,15 +376,16 @@
 !
       scale=1.0_r8
       gtype=gfactor*w3dvar
-      status=nf_fwrite3d(ng, iNLM, DAI(ng)%ncid, DAI(ng)%Vid(idSdif), &
-     &                   DAI(ng)%Rindex, gtype,                       &
-     &                   LBi, UBi, LBj, UBj, 0, N(ng), scale,         &
+      status=nf_fwrite3d(ng, iNLM, DAI(ng)%ncid, DAI(ng)%Vid(idSdif),   &
+     &                   DAI(ng)%Rindex, gtype,                         &
+     &                   LBi, UBi, LBj, UBj, 0, N(ng), scale,           &
 #   ifdef MASKING
-     &                   GRID(ng) % rmask,                            &
+     &                   GRID(ng) % rmask,                              &
 #   endif
-     &                   MIXING(ng) % Akt(:,:,:,isalt),               &
+     &                   MIXING(ng) % Akt(:,:,:,isalt),                 &
      &                   SetFillVal = .FALSE.)
-      IF (status.ne.nf90_noerr) THEN
+      IF (FoundError(status, nf90_noerr, __LINE__,                      &
+     &               __FILE__)) THEN
         IF (Master) THEN
           WRITE (stdout,20) TRIM(Vname(1,idSdif)), DAI(ng)%Rindex
         END IF
@@ -384,7 +401,8 @@
 !-----------------------------------------------------------------------
 !
       CALL netcdf_sync (ng, iNLM, DAI(ng)%name, DAI(ng)%ncid)
-      IF (exit_flag.ne.NoError) RETURN
+      IF (FoundError(exit_flag, NoError, __LINE__,                      &
+     &               __FILE__)) RETURN
 
 # ifdef SOLVE3D
 #  ifdef NESTING
@@ -407,14 +425,14 @@
 # ifdef SOLVE3D
   30  FORMAT (6x,'WRT_DAI     - wrote DA INI/RST', t39,                 &
 #  ifdef NESTING
-     &        'fields (Index=',i1,',',i1,') in record = ',i7.7,2x,i2.2)
+     &        'fields (Index=',i1,',',i1,') in record = ',i7.7,t92,i2.2)
 #  else
      &        'fields (Index=',i1,',',i1,') in record = ',i7.7)
 #  endif
 # else
   30  FORMAT (6x,'WRT_DAI     - wrote DA INI/RST', t39,                 &
 #  ifdef NESTING
-     &        'fields (Index=',i1,')   in record = ',i7.7,2x,i2.2)
+     &        'fields (Index=',i1,')   in record = ',i7.7,t92,i2.2)
 #  else
      &        'fields (Index=',i1,')   in record = ',i7.7)
 #  endif

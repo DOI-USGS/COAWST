@@ -3,7 +3,7 @@
 
 #ifdef SOLVE3D
 !
-!svn $Id: set_massflux.F 830 2017-01-24 21:21:11Z arango $
+!svn $Id: set_massflux.F 854 2017-07-18 23:28:45Z arango $
 !=======================================================================
 !  Copyright (c) 2002-2017 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
@@ -25,7 +25,7 @@
       CONTAINS
 !
 !***********************************************************************
-      SUBROUTINE set_massflux (ng, tile)
+      SUBROUTINE set_massflux (ng, tile, model)
 !***********************************************************************
 !
       USE mod_param
@@ -35,16 +35,16 @@
 !
 !  Imported variable declarations.
 !
-      integer, intent(in) :: ng, tile
+      integer, intent(in) :: ng, tile, model
 !
 !  Local variable declarations.
 !
 # include "tile.h"
 !
 # ifdef PROFILE
-      CALL wclock_on (ng, iNLM, 12)
+      CALL wclock_on (ng, model, 12, __LINE__, __FILE__)
 # endif
-      CALL set_massflux_tile (ng, tile,                                 &
+      CALL set_massflux_tile (ng, tile, model,                          &
      &                        LBi, UBi, LBj, UBj,                       &
      &                        IminS, ImaxS, JminS, JmaxS,               &
      &                        nrhs(ng),                                 &
@@ -60,14 +60,14 @@
      &                        GRID(ng) % Huon,                          &
      &                        GRID(ng) % Hvom)
 # ifdef PROFILE
-      CALL wclock_off (ng, iNLM, 12)
+      CALL wclock_off (ng, model, 12, __LINE__, __FILE__)
 # endif
 
       RETURN
       END SUBROUTINE set_massflux
 !
 !***********************************************************************
-      SUBROUTINE set_massflux_tile (ng, tile,                           &
+      SUBROUTINE set_massflux_tile (ng, tile, model,                    &
      &                              LBi, UBi, LBj, UBj,                 &
      &                              IminS, ImaxS, JminS, JmaxS,         &
      &                              nrhs,                               &
@@ -89,7 +89,7 @@
 !
 !  Imported variable declarations.
 !
-      integer, intent(in) :: ng, tile
+      integer, intent(in) :: ng, tile, model
       integer, intent(in) :: LBi, UBi, LBj, UBj
       integer, intent(in) :: IminS, ImaxS, JminS, JmaxS
       integer, intent(in) :: nrhs
@@ -171,7 +171,7 @@
       END IF
 
 # ifdef DISTRIBUTE
-      CALL mp_exchange3d (ng, tile, iNLM, 2,                            &
+      CALL mp_exchange3d (ng, tile, model, 2,                           &
      &                    LBi, UBi, LBj, UBj, 1, N(ng),                 &
      &                    NghostPoints,                                 &
      &                    EWperiodic(ng), NSperiodic(ng),               &
@@ -184,7 +184,7 @@
 # ifdef ADJOINT
 !
 !***********************************************************************
-      SUBROUTINE reset_massflux (ng, tile)
+      SUBROUTINE reset_massflux (ng, tile, model)
 !***********************************************************************
 !
       USE mod_param
@@ -195,16 +195,16 @@
 !
 !  Imported variable declarations.
 !
-      integer, intent(in) :: ng, tile
+      integer, intent(in) :: ng, tile, model
 !
 !  Local variable declarations.
 !
 #  include "tile.h"
 !
 #  ifdef PROFILE
-      CALL wclock_on (ng, iADM, 12)
+      CALL wclock_on (ng, model, 12, __LINE__, __FILE__)
 #  endif
-      CALL reset_massflux_tile (ng, tile,                               &
+      CALL reset_massflux_tile (ng, tile, model,                        &
      &                          LBi, UBi, LBj, UBj,                     &
      &                          IminS, ImaxS, JminS, JmaxS,             &
      &                          nnew(ng),                               &
@@ -222,14 +222,14 @@
      &                          GRID(ng) % Huon,                        &
      &                          GRID(ng) % Hvom)
 #  ifdef PROFILE
-      CALL wclock_off (ng, iADM, 12)
+      CALL wclock_off (ng, model, 12, __LINE__, __FILE__)
 #  endif
 
       RETURN
       END SUBROUTINE reset_massflux
 !
 !***********************************************************************
-      SUBROUTINE reset_massflux_tile (ng, tile,                         &
+      SUBROUTINE reset_massflux_tile (ng, tile, model,                  &
      &                                LBi, UBi, LBj, UBj,               &
      &                                IminS, ImaxS, JminS, JmaxS,       &
      &                                nnew,                             &
@@ -252,7 +252,7 @@
 !
 !  Imported variable declarations.
 !
-      integer, intent(in) :: ng, tile
+      integer, intent(in) :: ng, tile, model
       integer, intent(in) :: LBi, UBi, LBj, UBj
       integer, intent(in) :: IminS, ImaxS, JminS, JmaxS
 
@@ -389,7 +389,7 @@
       END IF
 
 #  ifdef DISTRIBUTE
-      CALL mp_exchange3d (ng, tile, iNLM, 2,                            &
+      CALL mp_exchange3d (ng, tile, model, 2,                           &
      &                    LBi, UBi, LBj, UBj, 1, N(ng),                 &
      &                    NghostPoints,                                 &
      &                    EWperiodic(ng), NSperiodic(ng),               &

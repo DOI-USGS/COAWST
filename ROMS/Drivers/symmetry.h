@@ -1,6 +1,6 @@
       MODULE ocean_control_mod
 !
-!svn $Id: symmetry.h 830 2017-01-24 21:21:11Z arango $
+!svn $Id: symmetry.h 857 2017-07-29 04:05:27Z arango $
 !================================================== Hernan G. Arango ===
 !  Copyright (c) 2002-2017 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
@@ -47,6 +47,8 @@
       USE mod_fourdvar
       USE mod_iounits
       USE mod_scalars
+!
+      USE strings_mod, ONLY : FoundError
 !
 !  Imported variable declarations.
 !
@@ -102,7 +104,8 @@
 !  grids and dimension parameters are known.
 !
         CALL inp_par (iNLM)
-        IF (exit_flag.ne.NoError) RETURN
+        IF (FoundError(exit_flag, NoError, __LINE__,                    &
+     &                 __FILE__)) RETURN
 !
 !  Set domain decomposition tile partition range.  This range is
 !  computed only once since the "first_tile" and "last_tile" values
@@ -135,7 +138,7 @@
         DO ng=1,Ngrids
 !$OMP PARALLEL
           DO thread=THREAD_RANGE
-            CALL wclock_on (ng, iNLM, 0)
+            CALL wclock_on (ng, iNLM, 0, __LINE__, __FILE__)
           END DO
 !$OMP END PARALLEL
         END DO
@@ -163,7 +166,8 @@
       Tindex=1
       DO ng=1,Ngrids
         CALL get_state (ng, 6, 6, STD(1,ng)%name, STDrec, Tindex)
-        IF (exit_flag.ne.NoError) RETURN
+        IF (FoundError(exit_flag, NoError, __LINE__,                    &
+     &                 __FILE__)) RETURN
       END DO
 !
 !  Model error standard deviation. They are loaded in Tindex=2
@@ -174,7 +178,8 @@
       IF (NSA.eq.2) THEN
         DO ng=1,Ngrids
           CALL get_state (ng, 6, 6, STD(2,ng)%name, STDrec, Tindex)
-          IF (exit_flag.ne.NoError) RETURN
+          IF (FoundError(exit_flag, NoError, __LINE__,                  &
+     &                   __FILE__)) RETURN
         END DO
       END IF
 
@@ -186,7 +191,8 @@
       Tindex=1
       DO ng=1,Ngrids
         CALL get_state (ng, 8, 8, STD(3,ng)%name, STDrec, Tindex)
-        IF (exit_flag.ne.NoError) RETURN
+        IF (FoundError(exit_flag, NoError, __LINE__,                    &
+     &                 __FILE__)) RETURN
       END DO
 #endif
 #if defined ADJUST_WSTRESS || defined ADJUST_STFLUX
@@ -197,7 +203,8 @@
       Tindex=1
       DO ng=1,Ngrids
         CALL get_state (ng, 9, 9, STD(4,ng)%name, STDrec, Tindex)
-        IF (exit_flag.ne.NoError) RETURN
+        IF (FoundError(exit_flag, NoError, __LINE__,                    &
+     &                 __FILE__)) RETURN
       END DO
 #endif
 
@@ -221,11 +228,12 @@
       USE mod_scalars
       USE mod_stepping
 !
-      USE convolve_mod, ONLY : error_covariance
+      USE convolve_mod,      ONLY : error_covariance
 #ifdef DISTRIBUTE
-      USE distribute_mod, ONLY : mp_bcastf
+      USE distribute_mod,    ONLY : mp_bcastf
 #endif
       USE normalization_mod, ONLY : normalization
+      USE strings_mod,       ONLY : FoundError
 !
 !  Imported variable declarations
 !
@@ -272,7 +280,8 @@
 !$OMP PARALLEL
       CALL initial
 !$OMP END PARALLEL
-      IF (exit_flag.ne.NoError) RETURN
+      IF (FoundError(exit_flag, NoError, __LINE__,                      &
+     &               __FILE__)) RETURN
 !
 !  Run nonlinear model and compute basic state trajectory.
 !
@@ -289,7 +298,8 @@
       CALL main2d (RunInterval)
 #endif
 !$OMP END PARALLEL
-      IF (exit_flag.ne.NoError) RETURN
+      IF (FoundError(exit_flag, NoError, __LINE__,                      &
+     &               __FILE__)) RETURN
 !
 !  Set forward file trajectory.
 !
@@ -320,19 +330,23 @@
       DO ng=1,Ngrids
         IF (ANY(LwrtNRM(:,ng))) THEN
           CALL def_norm (ng, iNLM, 1)
-          IF (exit_flag.ne.NoError) RETURN
+          IF (FoundError(exit_flag, NoError, __LINE__,                  &
+     &                   __FILE__)) RETURN
 
           IF (NSA.eq.2) THEN
             CALL def_norm (ng, iNLM, 2)
-          IF (exit_flag.ne.NoError) RETURN
+          IF (FoundError(exit_flag, NoError, __LINE__,                  &
+     &                   __FILE__)) RETURN
           END IF
 #ifdef ADJUST_BOUNDARY
           CALL def_norm (ng, iNLM, 3)
-          IF (exit_flag.ne.NoError) RETURN
+          IF (FoundError(exit_flag, NoError, __LINE__,                  &
+     &                   __FILE__)) RETURN
 #endif
 #if defined ADJUST_WSTRESS || defined ADJUST_STFLUX
           CALL def_norm (ng, iNLM, 4)
-          IF (exit_flag.ne.NoError) RETURN
+          IF (FoundError(exit_flag, NoError, __LINE__,                  &
+     &                   __FILE__)) RETURN
 #endif
 !$OMP PARALLEL
           DO tile=first_tile(ng),last_tile(ng),+1
@@ -344,19 +358,23 @@
         ELSE
           NRMrec=1
           CALL get_state (ng, 5, 5, NRM(1,ng)%name, NRMrec, 1)
-          IF (exit_flag.ne.NoError) RETURN
+          IF (FoundError(exit_flag, NoError, __LINE__,                  &
+     &                   __FILE__)) RETURN
 
           IF (NSA.eq.2) THEN
             CALL get_state (ng, 5, 5, NRM(2,ng)%name, NRMrec, 2)
-            IF (exit_flag.ne.NoError) RETURN
+            IF (FoundError(exit_flag, NoError, __LINE__,                &
+     &                     __FILE__)) RETURN
           END IF
 #ifdef ADJUST_BOUNDARY
           CALL get_state (ng, 10, 10, NRM(3,ng)%name, NRMrec, 1)
-          IF (exit_flag.ne.NoError) RETURN
+          IF (FoundError(exit_flag, NoError, __LINE__,                  &
+     &                   __FILE__)) RETURN
 #endif
 #if defined ADJUST_WSTRESS || defined ADJUST_STFLUX
           CALL get_state (ng, 11, 11, NRM(4,ng)%name, NRMrec, 1)
-          IF (exit_flag.ne.NoError) RETURN
+          IF (FoundError(exit_flag, NoError, __LINE__,                  &
+     &                   __FILE__)) RETURN
 #endif
         END IF
       END DO
@@ -366,7 +384,8 @@
       DO ng=1,Ngrids
         LdefTLF(ng)=.TRUE.
         CALL def_impulse (ng)
-        IF (exit_flag.ne.NoError) RETURN
+        IF (FoundError(exit_flag, NoError, __LINE__,                    &
+     &                 __FILE__)) RETURN
       END DO
 !
 !=======================================================================
@@ -438,7 +457,8 @@
 !$OMP PARALLEL
           CALL ad_initial (ng)
 !$OMP END PARALLEL
-          IF (exit_flag.ne.NoError) RETURN
+          IF (FoundError(exit_flag, NoError, __LINE__,                  &
+     &                   __FILE__)) RETURN
           Fcount=ADM(ng)%Fcount
           ADM(ng)%Nrec(Fcount)=0
           ADM(ng)%Rindex=0
@@ -459,7 +479,8 @@
         CALL ad_main2d (RunInterval)
 #endif
 !$OMP END PARALLEL
-        IF (exit_flag.ne.NoError) RETURN
+        IF (FoundError(exit_flag, NoError, __LINE__,                    &
+     &                 __FILE__)) RETURN
 !
 !-----------------------------------------------------------------------
 !  Convolve adjoint trajectory with model-error covariance and convert
@@ -470,7 +491,8 @@
         CALL error_covariance (iTLM, driver, -1, -1,                    &
      &                         Lbck, Lini, Lold, Lnew,                  &
      &                         Rec1, Rec2, Lposterior)
-        IF (exit_flag.ne.NoError) RETURN
+        IF (FoundError(exit_flag, NoError, __LINE__,                    &
+     &                 __FILE__)) RETURN
 !
 !  Convert convolved adjoint solution to impulse forcing. Write out
 !  impulse forcing into TLF(ng)%name NetCDF file. To facilitate the
@@ -485,7 +507,8 @@
           tile=-1
 #endif
           CALL wrt_impulse (ng, tile, iADM, ADM(ng)%name)
-          IF (exit_flag.ne.NoError) RETURN
+          IF (FoundError(exit_flag, NoError, __LINE__,                  &
+     &                   __FILE__)) RETURN
         END DO
 !
 !-----------------------------------------------------------------------
@@ -505,7 +528,8 @@
 !$OMP PARALLEL
           CALL tl_initial (ng)
 !$OMP END PARALLEL
-          IF (exit_flag.ne.NoError) RETURN
+          IF (FoundError(exit_flag, NoError, __LINE__,                  &
+     &                   __FILE__)) RETURN
         END DO
 !
 !  Run tangent linear model forward and force with convolved adjoint
@@ -525,7 +549,8 @@
         CALL tl_main2d (RunInterval)
 #endif
 !$OMP END PARALLEL
-        IF (exit_flag.ne.NoError) RETURN
+        IF (FoundError(exit_flag, NoError, __LINE__,                    &
+     &                 __FILE__)) RETURN
 !
 !  Extract solution at requested points.
 !
@@ -664,7 +689,7 @@
       DO ng=1,Ngrids
 !$OMP PARALLEL
         DO thread=THREAD_RANGE
-          CALL wclock_off (ng, iNLM, 0)
+          CALL wclock_off (ng, iNLM, 0, __LINE__, __FILE__)
         END DO
 !$OMP END PARALLEL
       END DO

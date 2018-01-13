@@ -2,7 +2,7 @@
 #ifdef SOLVE3D
       SUBROUTINE set_scoord (ng)
 !
-!svn $Id: set_scoord.F 830 2017-01-24 21:21:11Z arango $
+!svn $Id: set_scoord.F 877 2017-11-15 04:04:42Z arango $
 !=======================================================================
 !  Copyright (c) 2002-2017 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
@@ -153,7 +153,7 @@
       integer :: k
 
       real(r8) :: Aweight, Bweight, Cweight, Cbot, Csur, Hscale
-      real(r8) :: ds, exp_bot, exp_sur, sc_r, sc_w
+      real(r8) :: ds, exp_bot, exp_sur, rk, rN, sc_r, sc_w
       real(r8) :: cff, cff1, cff2
       real(r8) :: zhc, z1, z2, z3
 !
@@ -456,6 +456,64 @@
 !
         DO k=1,N(ng)
           sc_r=ds*(REAL(k-N(ng),r8)-0.5_r8)
+          SCALARS(ng)%sc_r(k)=sc_r
+          IF (theta_s(ng).gt.0.0_r8) THEN
+            Csur=(1.0_r8-COSH(theta_s(ng)*sc_r))/                       &
+     &           (COSH(theta_s(ng))-1.0_r8)
+          ELSE
+            Csur=-sc_r**2
+          END IF
+          IF (theta_b(ng).gt.0.0_r8) THEN
+            Cbot=(EXP(theta_b(ng)*Csur)-1.0_r8)/                        &
+     &           (1.0_r8-EXP(-theta_b(ng)))
+            SCALARS(ng)%Cs_r(k)=Cbot
+          ELSE
+            SCALARS(ng)%Cs_r(k)=Csur
+          END IF
+        END DO
+!
+!----------------------------------------------------------------------
+! Stretching 5 case using a quadratic Legendre polynomial function
+! aproach for the s-coordinate to enhance the surface exchange layer.
+!
+! J. Souza, B.S. Powell, A.C. Castillo-Trujillo, and P. Flament, 2015:
+!   The Vorticity Balance of the Ocean Surface in Hawaii from a
+!   Regional Reanalysis.'' J. Phys. Oceanogr., 45, 424-440.
+!
+! Added by Joao Marcos Souza - SOEST - 05/07/2012.
+!-----------------------------------------------------------------------
+!
+      ELSE IF (Vstretching(ng).eq.5) THEN
+        SCALARS(ng)%sc_w(N(ng))=0.0_r8
+        SCALARS(ng)%Cs_w(N(ng))=0.0_r8
+        DO k=N(ng)-1,1,-1
+          rk=REAL(k,r8)
+          rN=REAL(N(ng),r8)
+          sc_w=-(rk*rk - 2.0_r8*rk*rN + rk + rN*rN - rN)/(rN*rN - rN)-  &
+               0.01_r8*(rk*rk - rk*rN)/(1.0_r8 - rN)
+          SCALARS(ng)%sc_w(k)=sc_w
+          IF (theta_s(ng).gt.0.0_r8) THEN
+            Csur=(1.0_r8-COSH(theta_s(ng)*sc_w))/                       &
+     &           (COSH(theta_s(ng))-1.0_r8)
+          ELSE
+            Csur=-sc_w**2
+          END IF
+          IF (theta_b(ng).gt.0.0_r8) THEN
+            Cbot=(EXP(theta_b(ng)*Csur)-1.0_r8)/                        &
+     &           (1.0_r8-EXP(-theta_b(ng)))
+            SCALARS(ng)%Cs_w(k)=Cbot
+          ELSE
+            SCALARS(ng)%Cs_w(k)=Csur
+          END IF
+        END DO
+        SCALARS(ng)%sc_w(0)=-1.0_r8
+        SCALARS(ng)%Cs_w(0)=-1.0_r8
+!
+        DO k=1,N(ng)
+          rk=REAL(k,r8)-0.5_r8
+          rN=REAL(N(ng),r8)
+          sc_r=-(rk*rk - 2.0_r8*rk*rN + rk + rN*rN - rN)/(rN*rN - rN)-  &
+               0.01_r8*(rk*rk - rk*rN)/(1.0_r8 - rN)
           SCALARS(ng)%sc_r(k)=sc_r
           IF (theta_s(ng).gt.0.0_r8) THEN
             Csur=(1.0_r8-COSH(theta_s(ng)*sc_r))/                       &

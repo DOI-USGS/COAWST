@@ -67,7 +67,7 @@
 # endif
 
 # ifdef PROFILE
-      CALL wclock_on (ng, iNLM, 19)
+      CALL wclock_on (ng, iNLM, 19, __LINE__, __FILE__)
 # endif
       CALL gls_corstep_tile (ng, tile,                                  &
      &                       LBi, UBi, LBj, UBj,                        &
@@ -115,7 +115,7 @@
      &                       MIXING(ng) % gls,                          &
      &                       MIXING(ng) % tke)
 # ifdef PROFILE
-      CALL wclock_off (ng, iNLM, 19)
+      CALL wclock_off (ng, iNLM, 19, __LINE__, __FILE__)
 # endif
       RETURN
       END SUBROUTINE gls_corstep
@@ -149,6 +149,7 @@
 !***********************************************************************
 !
       USE mod_param
+      USE mod_ncparam
       USE mod_scalars
 !
       USE exchange_3d_mod, ONLY : exchange_w3d_tile
@@ -1109,14 +1110,8 @@
             ql=sqrt2*0.5_r8*(Ls_lmt*SQRT(tke(i,j,k,nnew))+              &
      &                       Lscale(i,j,k)*SQRT(tke(i,j,k,nstp)))
             Akv(i,j,k)=Akv_bak(ng)+Sm*ql
-#ifdef AKLIMIT
-            Akv(i,j,k)=MIN(Ak_max,Akv(i,j,k))
-#endif
             DO itrc=1,NAT
               Akt(i,j,k,itrc)=Akt_bak(itrc,ng)+Sh*ql
-#ifdef AKLIMIT
-              Akt(i,j,k,itrc)=MIN(Ak_max,Akt(i,j,k,itrc))
-#endif
             END DO
 !
 !  Compute vertical mixing (m2/s) coefficents of turbulent kinetic
@@ -1150,14 +1145,8 @@
 !
           Akv(i,j,N(ng))=Akv_bak(ng)+L_sft*Zos_eff(i)*gls_cmu0(ng)*     &
      &                   SQRT(tke(i,j,N(ng),nnew))
-#ifdef AKLIMIT
-          Akv(i,j,N(ng))=MIN(Ak_max,Akv(i,j,N(ng)))
-#endif
           Akv(i,j,0)=Akv_bak(ng)+vonKar*Zob_min(i,j)*gls_cmu0(ng)*      &
      &               SQRT(tke(i,j,0,nnew))
-#ifdef AKLIMIT
-          Akv(i,j,0)=MIN(Ak_max,Akv(i,j,0))
-#endif
 !
           Akk(i,j,N(ng))=Akk_bak(ng)+Akv(i,j,N(ng))/gls_sigk(ng)
           Akk(i,j,0)=Akk_bak(ng)+Akv(i,j,0)/gls_sigk(ng)
@@ -1168,6 +1157,25 @@
             Akt(i,j,N(ng),itrc)=Akt_bak(itrc,ng)
             Akt(i,j,0,itrc)=Akt_bak(itrc,ng)
           END DO
+
+# if defined LIMIT_VDIFF || defined LIMIT_VVISC
+!
+!  Limit vertical mixing coefficients with the upper threshold value.
+!  This is an engineering fix but it can be based on the fact that
+!  vertical mixing in the ocean from indirect observations are not
+!  higher than the threshold value.
+!
+          DO k=0,N(ng)
+#  ifdef LIMIT_VDIFF
+            DO itrc=1,NAT
+              Akt(i,j,k,itrc)=MIN(Akt_limit(itrc,ng), Akt(i,j,k,itrc))
+            END DO
+#  endif
+#  ifdef LIMIT_VVISC
+            Akv(i,j,k)=MIN(Akv_limit(ng), Akv(i,j,k))
+#  endif
+          END DO
+# endif
         END DO
       END DO
 !

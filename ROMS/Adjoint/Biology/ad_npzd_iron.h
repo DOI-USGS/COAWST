@@ -1,6 +1,6 @@
       SUBROUTINE ad_biology (ng,tile)
 !
-!svn $Id: ad_npzd_iron.h 830 2017-01-24 21:21:11Z arango $
+!svn $Id: ad_npzd_iron.h 854 2017-07-18 23:28:45Z arango $
 !************************************************** Hernan G. Arango ***
 !  Copyright (c) 2002-2017 The ROMS/TOMS Group       Andrew M. Moore   !
 !    Licensed under a MIT/X style license                              !
@@ -49,7 +49,7 @@
       END IF
 !
 #ifdef PROFILE
-      CALL wclock_on (ng, iADM, 15)
+      CALL wclock_on (ng, iADM, 15, __LINE__, __FILE__)
 #endif
       CALL ad_biology_tile (ng, tile,                                   &
      &                      LBi, UBi, LBj, UBj, N(ng), NT(ng),          &
@@ -73,7 +73,7 @@
      &                      OCEAN(ng) % ad_t)
 
 #ifdef PROFILE
-      CALL wclock_off (ng, iADM, 15)
+      CALL wclock_off (ng, iADM, 15, __LINE__, __FILE__)
 #endif
       RETURN
       END SUBROUTINE ad_biology

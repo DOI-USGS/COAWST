@@ -1,6 +1,6 @@
         MODULE nrutil
 !
-!svn $Id: nrutil.F 830 2017-01-24 21:21:11Z arango $
+!svn $Id: nrutil.F 844 2017-04-29 05:30:54Z arango $
 !================================================== Hernan G. Arango ===
 !  Copyright (c) 2002-2017 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
@@ -23,8 +23,8 @@
 
       PUBLIC
 
-      integer(i4b), parameter :: NPAR_ARTH = 16
-      integer(i4b), parameter :: NPAR2_ARTH = 8
+      integer(i8b), parameter :: NPAR_ARTH = 16
+      integer(i8b), parameter :: NPAR2_ARTH = 8
 
       INTERFACE array_copy
         MODULE PROCEDURE array_copy_r, array_copy_d, array_copy_i
@@ -80,7 +80,7 @@
       real(r4), intent(in) :: src(:)
       real(r4), intent(out) :: dest(:)
 
-      integer(i4b), intent(out) :: n_copied, n_not_copied
+      integer(i8b), intent(out) :: n_copied, n_not_copied
 !
 !-----------------------------------------------------------------------
 !  Copy single precision array.
@@ -107,7 +107,7 @@
       real(r8), intent(in) :: src(:)
       real(r8), intent(out) :: dest(:)
 
-      integer(i4b), intent(out) :: n_copied, n_not_copied
+      integer(i8b), intent(out) :: n_copied, n_not_copied
 !
 !-----------------------------------------------------------------------
 !  Copy double precision array.
@@ -130,10 +130,10 @@
 !
 !  Imported variable declarations.
 !
-      integer(i4b), intent(in) :: src(:)
-      integer(i4b), intent(out) :: dest(:)
+      integer(i8b), intent(in) :: src(:)
+      integer(i8b), intent(out) :: dest(:)
 
-      integer(i4b), intent(out) :: n_copied, n_not_copied
+      integer(i8b), intent(out) :: n_copied, n_not_copied
 !
 !-----------------------------------------------------------------------
 !  Copy integer array.
@@ -157,14 +157,14 @@
 !
 !  Imported variable declarations.
 !
-      integer(i4b), intent(in) :: n
+      integer(i8b), intent(in) :: n
 
       real(r4), intent(in) :: first, increment
       real(r4), dimension(n) :: arth_r
 !
 !  Local variable declarations.
 !
-      integer(i4b) :: k, k2
+      integer(i8b) :: k, k2
 
       real(r4) :: temp
 !
@@ -206,14 +206,14 @@
 !
 !  Imported variable declarations.
 !
-      integer(i4b), intent(in) :: n
+      integer(i8b), intent(in) :: n
 
       real(r8), intent(in) :: first, increment
       real(r8), dimension(n) :: arth_d
 !
 !  Local variable declarations.
 !
-      integer(i4b) :: k, k2
+      integer(i8b) :: k, k2
       real(r8) :: temp
 !
 !----------------------------------------------------------------------
@@ -253,12 +253,12 @@
 !
 !  Imported variable declarations.
 !
-      integer(i4b), intent(in) :: first, increment, n
-      integer(i4b), dimension(n) :: arth_i
+      integer(i8b), intent(in) :: first, increment, n
+      integer(i8b), dimension(n) :: arth_i
 !
 !  Local variable declarations.
 !
-      integer(i4b) :: k, k2, temp
+      integer(i8b) :: k, k2, temp
 !
 !----------------------------------------------------------------------
 !  Set arithmetic progression.
@@ -323,11 +323,11 @@
       real(r4), pointer :: p(:)
       real(r4), pointer :: reallocate_rv(:)
 
-      integer(i4b), intent(in) :: n
+      integer(i8b), intent(in) :: n
 !
 !  Local variable declarations.
 !
-      integer(i4b) :: nold, ierr
+      integer(i8b) :: nold, ierr
 !
 !-----------------------------------------------------------------------
 !  Reallocate pointer for a single precision vector.
@@ -355,14 +355,14 @@
 !
 !  Imported variable declarations.
 !
-      integer(i4b), pointer :: p(:)
-      integer(i4b), pointer :: reallocate_iv(:)
+      integer(i8b), pointer :: p(:)
+      integer(i8b), pointer :: reallocate_iv(:)
 
-      integer(i4b), intent(in) :: n
+      integer(i8b), intent(in) :: n
 !
 !  Local variable declarations.
 !
-      integer(i4b) :: nold, ierr
+      integer(i8b) :: nold, ierr
 !
 !-----------------------------------------------------------------------
 !  Reallocate pointer for a integer vector.
@@ -393,11 +393,11 @@
       character (len=1), pointer :: p(:)
       character (len=1), pointer :: reallocate_hv(:)
 
-      integer(i4b), intent(in) :: n
+      integer(i8b), intent(in) :: n
 !
 !  Local variable declarations.
 !
-      integer(i4b) :: nold, ierr
+      integer(i8b) :: nold, ierr
 !
 !-----------------------------------------------------------------------
 !  Reallocate pointer for a integer vector.
@@ -428,11 +428,11 @@
       real(r4), pointer :: p(:,:)
       real(r4), pointer :: reallocate_rm(:,:)
 
-      integer(i4b), intent(in) :: n, m
+      integer(i8b), intent(in) :: n, m
 !
 !  Local variable declarations.
 !
-      integer(i4b) :: nold, mold, ierr
+      integer(i8b) :: nold, mold, ierr
 !
 !-----------------------------------------------------------------------
 !  Reallocate pointer for a single precision matrix.
@@ -462,14 +462,14 @@
 !
 !  Imported variable declarations.
 !
-      integer(i4b), pointer :: p(:,:)
-      integer(i4b), pointer :: reallocate_im(:,:)
+      integer(i8b), pointer :: p(:,:)
+      integer(i8b), pointer :: reallocate_im(:,:)
 
-      integer(i4b), intent(in) :: n, m
+      integer(i8b), intent(in) :: n, m
 !
 !  Local variable declarations.
 !
-      integer(i4b) :: nold, mold, ierr
+      integer(i8b) :: nold, mold, ierr
 !
 !-----------------------------------------------------------------------
 !  Reallocate pointer for a integer matrix.

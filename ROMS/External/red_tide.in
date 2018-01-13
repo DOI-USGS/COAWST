@@ -1,6 +1,6 @@
 !  Red Tide (Alexandrium fundyense) Biological Model Parameters.
 !
-!svn $Id: red_tide.in 830 2017-01-24 21:21:11Z arango $
+!svn $Id: red_tide.in 859 2017-08-02 01:45:30Z arango $
 !========================================================= Hernan G. Arango ===
 !  Copyright (c) 2002-2017 The ROMS/TOMS Group                                !
 !    Licensed under a MIT/X style license                                     !
@@ -48,21 +48,17 @@
 
        BioIter == 1
 
-! Maximum growth rate at optimal temperature and salinty [1/day]
+! Maximum growth rate at optimal temperature and salinity [1/day]
 
-          Gmax == 0.575d0                        ! Gmax
+          Gmax == 1.05d0                        ! Gmax
 
 ! Germination depth [cm]
 
-            Dg == 1.25d0                         ! Dg
+            Dg == 0.18d0                         ! Dg
 
 ! Nutrient half-saturation constant [millimoles/m3]
 
             Kn == 3.0d0                          ! Kn
-
-! Mortality rate [1/day]
-
-           Mor == 0.0250d0                       ! Mor
 
 ! Growth efficiency [m2/(Watts*day)]
 
@@ -110,6 +106,18 @@
 ! downward vertical motion (sinking) is negative.
 
          wDino == 10.0d0                         ! Wa
+
+! Mortality rate Q10 equation parameters, as a function of temperature:
+!
+!   M_rate = Mor_a * Mor_Q10^[(temperature-MOR_To)/10] + Mor_b
+
+         MOR_a == 0.04d0                         ! amplitude, 1/day
+
+         MOR_b == 0.03d0                         ! intercept, 1/day
+
+       MOR_Q10 == 10.0d0                         ! reaction rate base
+
+        MOR_T0 == 15.0d0                         ! background temperature (C)
 
 ! Harmonic/biharmonic horizontal diffusion of biological tracer for
 ! nonlinear model and adjoint-based algorithms: [1:NBT,Ngrids].
@@ -174,7 +182,7 @@
 !
 !                   1       2       3       4
 
-   LBC(isTvar) ==   Per     Per     Per     Per     ! idbio(1), dinoflagellate
+   LBC(isTvar) ==   Gra     Gra    Gra    Clo     ! idbio(1), dinoflagellate
 
 ! Adjoint-based algorithms can have different lateral boundary
 ! conditions keywords.
@@ -268,7 +276,7 @@ Dout(iTvdif) == T       ! ..., DINO_vdiff         vertical diffusion
 !                   the nonlinear implicit solution.
 !
 !
-!  Gmax           Maximum growth rate at optimal temperature and salinty
+!  Gmax           Maximum growth rate at optimal temperature and salinity
 !                   (1/day)
 !
 !  Dg             Mean depth (cm) of sediment over which cysts are able to
@@ -276,8 +284,6 @@ Dout(iTvdif) == T       ! ..., DINO_vdiff         vertical diffusion
 !
 !  Kn             Half-saturation constant for nutrient limited growth
 !                   (millimoles/m3)
-!
-!  Mor            Spatially and temporarily averaged mortality rate (1/day)
 !
 !  G_eff          Growth efficiency (m2/Watts/day)
 !
@@ -315,6 +321,21 @@ Dout(iTvdif) == T       ! ..., DINO_vdiff         vertical diffusion
 !                   flux semi-Lagrangian algorithm is upward vertical motion
 !                   (swimming, floating) is positive whereas downward vertical
 !                   motion (sinking) is negative.
+!
+!------------------------------------------------------------------------------
+! Dinoflagellate (Alexandrium Fundyense) mortality rate Q10 equation
+! parameters, as a function of temperature:
+!
+!   M_rate = Mor_a * Mor_Q10^[(temperature-Mor_To)/10] + Mor_b
+!------------------------------------------------------------------------------
+!
+!  MOR_a          Mortality rate equation, Q10 amplitude term (1/day)
+!
+!  MOR_b          Mortality rate equation, Q10 intercept term (1/day)
+!
+!  MOR_Q10        Mortality rate equation, Q10 reaction rate base (unitless)
+!
+!  MOR_T0         Mortality rate equation, background temperature (Celsius)
 !
 !------------------------------------------------------------------------------
 ! Physical Parameters, [1:NBT,1:Ngrids] values are expected.

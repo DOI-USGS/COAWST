@@ -2,7 +2,7 @@
 #ifdef FLOATS
       SUBROUTINE read_FltPar (model, inp, out, Lwrite)
 !
-!svn $Id: read_fltpar.F 830 2017-01-24 21:21:11Z arango $
+!svn $Id: read_fltpar.F 875 2017-11-03 01:10:02Z arango $
 !================================================== Hernan G. Arango ===
 !  Copyright (c) 2002-2017 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
@@ -19,6 +19,8 @@
       USE mod_iounits
       USE mod_ncparam
       USE mod_scalars
+!
+      USE strings_mod, ONLY : FoundError
 !
       implicit none
 !
@@ -42,7 +44,7 @@
 
       real(r8) :: xfloat, yfloat, zfloat
 
-      real(r8), dimension(200) :: Rval
+      real(r8), dimension(100) :: Rval
 
       real(r8), allocatable :: Ft0(:,:), Fx0(:,:), Fy0(:,:), Fz0(:,:)
       real(r8), allocatable :: Fdt(:,:), Fdx(:,:), Fdy(:,:), Fdz(:,:)
@@ -199,9 +201,17 @@
       fname=fbionam
       IF (.not.find_file(1, fname, 'FBIONAM')) GO TO 40
       GO TO 50
- 40   IF (Master) WRITE (out,110) TRIM(fname)
+ 40   IF (Master) THEN
+        IF (LEN_TRIM(fname).eq.0) THEN
+          WRITE (out,110) ng, 'Oops unassigned file name. '//           &
+     &                        'Check assimilation input script...'
+        ELSE
+          WRITE (out,110) ng, TRIM(fname)
+        END IF
+      END IF
       exit_flag=4
-      RETURN
+      IF (FoundError(exit_flag, NoError, __LINE__,                       &
+     &               __FILE__)) RETURN
  50   CONTINUE
       IF (Lwrite) WRITE (out,120) 'biological floats behavior File:  ', &
      &                            TRIM(fname)
@@ -313,7 +323,8 @@
      &        15x,'Ft0',5x,'Fx0',5x,'Fy0',5x,'Fz0',                     &
      &        6x,'Fdt',6x,'Fdx',6x,'Fdy',6x,'Fdz',/)
  100  FORMAT (/,1x,i10,2x,a,t30,a)
- 110  FORMAT (/,' READ_FltPar - could not find input file: ', a)
+ 110  FORMAT (/,' READ_FltPar - Grid ', i2.2,                           &
+     &        ', could not find input file: ', a)
  120  FORMAT (/,2x,a,a)
 
       RETURN

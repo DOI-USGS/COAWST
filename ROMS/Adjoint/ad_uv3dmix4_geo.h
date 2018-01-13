@@ -1,6 +1,6 @@
       SUBROUTINE ad_uv3dmix4 (ng, tile)
 !
-!svn $Id: ad_uv3dmix4_geo.h 830 2017-01-24 21:21:11Z arango $
+!svn $Id: ad_uv3dmix4_geo.h 854 2017-07-18 23:28:45Z arango $
 !************************************************** Hernan G. Arango ***
 !  Copyright (c) 2002-2017 The ROMS/TOMS Group       Andrew M. Moore   !
 !    Licensed under a MIT/X style license                              !
@@ -51,7 +51,7 @@
 #include "tile.h"
 !
 #ifdef PROFILE
-      CALL wclock_on (ng, iADM, 33)
+      CALL wclock_on (ng, iADM, 33, __LINE__, __FILE__)
 #endif
       CALL ad_uv3dmix4_tile (ng, tile,                                  &
      &                       LBi, UBi, LBj, UBj,                        &
@@ -104,7 +104,7 @@
      &                       COUPLING(ng) % ad_rufrc,                   &
      &                       COUPLING(ng) % ad_rvfrc)
 #ifdef PROFILE
-      CALL wclock_off (ng, iADM, 33)
+      CALL wclock_off (ng, iADM, 33, __LINE__, __FILE__)
 #endif
       RETURN
       END SUBROUTINE ad_uv3dmix4

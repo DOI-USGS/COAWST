@@ -2,7 +2,7 @@
 #ifdef FOUR_DVAR
       SUBROUTINE def_ini (ng)
 !
-!svn $Id: def_ini.F 830 2017-01-24 21:21:11Z arango $
+!svn $Id: def_ini.F 873 2017-10-05 20:27:10Z arango $
 !================================================== Hernan G. Arango ===
 !  Copyright (c) 2002-2017 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
@@ -22,6 +22,7 @@
       USE mod_scalars
 !
       USE def_var_mod, ONLY : def_var
+      USE strings_mod, ONLY : FoundError
 !
       implicit none
 !
@@ -67,7 +68,7 @@
       character (len=120) :: Vinfo(Natt)
       character (len=256) :: ncname
 !
-      SourceFile='def_ini.F'
+      SourceFile=__FILE__
 
 # if defined ADJUST_BOUNDARY || \
      defined ADJUST_STFLUX   || defined ADJUST_WSTRESS
@@ -77,18 +78,32 @@
 !  variables.
 !=======================================================================
 !
-      IF (exit_flag.ne.NoError) RETURN
+      IF (FoundError(exit_flag, NoError, __LINE__,                      &
+     &               __FILE__)) RETURN
       ncname=INI(ng)%name
+!
+!  Open initialization file for read/write.
+!
+      CALL netcdf_open (ng, iNLM, ncname, 1, INI(ng)%ncid)
+      IF (FoundError(exit_flag, NoError, __LINE__,                      &
+     &               __FILE__)) THEN
+        IF (Master) WRITE (stdout,10) TRIM(ncname)
+        RETURN
+      END IF
 !
 !  Inquire about the dimensions and check for consistency.
 !
-      CALL netcdf_check_dim (ng, iNLM, ncname)
-      IF (exit_flag.ne.NoError) RETURN
+      CALL netcdf_check_dim (ng, iNLM, ncname,                          &
+     &                       ncid = INI(ng)%ncid)
+      IF (FoundError(exit_flag, NoError, __LINE__,                      &
+     &               __FILE__)) RETURN
 !
 !  Inquire about the variables.
 !
-      CALL netcdf_inq_var (ng, iNLM, ncname)
-      IF (exit_flag.ne.NoError) RETURN
+      CALL netcdf_inq_var (ng, iNLM, ncname,                            &
+     &                     ncid = INI(ng)%ncid)
+      IF (FoundError(exit_flag, NoError, __LINE__,                      &
+     &               __FILE__)) RETURN
 !
 !  Check if surface forcing variables have been already defined.
 !
@@ -176,19 +191,12 @@
       END DO
 #  endif
 !
-!  Open initialization file for read/write.
-!
-      CALL netcdf_open (ng, iNLM, ncname, 1, INI(ng)%ncid)
-      IF (exit_flag.ne.NoError) THEN
-        IF (Master) WRITE (stdout,10) TRIM(ncname)
-        RETURN
-      END IF
-!
 !  Put existing file into define mode so new variables can be added.
 !
       IF (Ldefine) THEN
         CALL netcdf_redef (ng, iNLM, ncname, INI(ng)%ncid)
-        IF (exit_flag.ne.NoError) THEN
+        IF (FoundError(exit_flag, NoError, __LINE__,                    &
+     &                 __FILE__)) THEN
           IF (Master) WRITE (stdout,20) TRIM(ncname)
           RETURN
         END IF
@@ -254,26 +262,30 @@
         IF (.not.got_boundary) THEN
           status=def_dim(ng, iNLM, INI(ng)%ncid, ncname, 'boundary',    &
      &                   4, DimIDs(14))
-          IF (exit_flag.ne.NoError) RETURN
+          IF (FoundError(exit_flag, NoError, __LINE__,                  &
+     &                   __FILE__)) RETURN
         END IF
         IF (.not.got_IorJ) THEN
           status=def_dim(ng, iNLM, INI(ng)%ncid, ncname, 'IorJ',        &
      &                   IOBOUNDS(ng)%IorJ, IorJdim)
-          IF (exit_flag.ne.NoError) RETURN
+          IF (FoundError(exit_flag, NoError, __LINE__,                  &
+     &                   __FILE__)) RETURN
         END IF
 #  endif
 #  if defined ADJUST_STFLUX || defined ADJUST_WSTRESS
         IF (.not.got_frc_adjust) THEN
           status=def_dim(ng, iNLM, INI(ng)%ncid, ncname, 'frc_adjust',  &
      &                   Nfrec(ng), frecdim)
-          IF (exit_flag.ne.NoError) RETURN
+          IF (FoundError(exit_flag, NoError, __LINE__,                  &
+     &                   __FILE__)) RETURN
         END IF
 #  endif
 #  ifdef ADJUST_BOUNDARY
         IF (.not.got_obc_adjust) THEN
           status=def_dim(ng, iNLM, INI(ng)%ncid, ncname, 'obc_adjust',  &
      &                   Nbrec(ng), brecdim)
-          IF (exit_flag.ne.NoError) RETURN
+          IF (FoundError(exit_flag, NoError, __LINE__,                  &
+     &                   __FILE__)) RETURN
         END IF
 #  endif
 !
@@ -349,7 +361,8 @@
           status=def_var(ng, iNLM, INI(ng)%ncid, INI(ng)%Vid(ifield),   &
      &                   NF_FOUT, 4, t2dobc, Aval, Vinfo, ncname,       &
      &                   SetFillVal = .FALSE.)
-          IF (exit_flag.ne.NoError) RETURN
+          IF (FoundError(exit_flag, NoError, __LINE__,                  &
+     &                   __FILE__)) RETURN
         END IF
 !
 !  Define 2D U-momentum component open boundaries.
@@ -365,7 +378,8 @@
           status=def_var(ng, iNLM, INI(ng)%ncid, INI(ng)%Vid(ifield),   &
      &                   NF_FOUT, 4, t2dobc, Aval, Vinfo, ncname,       &
      &                   SetFillVal = .FALSE.)
-          IF (exit_flag.ne.NoError) RETURN
+          IF (FoundError(exit_flag, NoError, __LINE__,                  &
+     &                   __FILE__)) RETURN
         END IF
 !
 !  Define 2D V-momentum component open boundaries.
@@ -381,7 +395,8 @@
           status=def_var(ng, iNLM, INI(ng)%ncid, INI(ng)%Vid(ifield),   &
      &                   NF_FOUT, 4, t2dobc, Aval, Vinfo, ncname,       &
      &                   SetFillVal = .FALSE.)
-          IF (exit_flag.ne.NoError) RETURN
+          IF (FoundError(exit_flag, NoError, __LINE__,                  &
+     &                   __FILE__)) RETURN
         END IF
 
 #   ifdef SOLVE3D
@@ -399,7 +414,8 @@
           status=def_var(ng, iNLM, INI(ng)%ncid, INI(ng)%Vid(ifield),   &
      &                   NF_FOUT, 5, t3dobc, Aval, Vinfo, ncname,       &
      &                   SetFillVal = .FALSE.)
-          IF (exit_flag.ne.NoError) RETURN
+          IF (FoundError(exit_flag, NoError, __LINE__,                  &
+     &                   __FILE__)) RETURN
         END IF
 !
 !  Define 3D V-momentum component open boundaries.
@@ -415,7 +431,8 @@
           status=def_var(ng, iNLM, INI(ng)%ncid, INI(ng)%Vid(ifield),   &
      &                   NF_FOUT, 5, t3dobc, Aval, Vinfo, ncname,       &
      &                   SetFillVal = .FALSE.)
-          IF (exit_flag.ne.NoError) RETURN
+          IF (FoundError(exit_flag, NoError, __LINE__,                  &
+     &                   __FILE__)) RETURN
         END IF
 !
 !  Define tracer type variables open boundaries.
@@ -432,7 +449,8 @@
             status=def_var(ng, iNLM, INI(ng)%ncid, INI(ng)%Vid(ifield), &
      &                     NF_FOUT, 5, t3dobc, Aval, Vinfo, ncname,     &
      &                     SetFillVal = .FALSE.)
-            IF (exit_flag.ne.NoError) RETURN
+            IF (FoundError(exit_flag, NoError, __LINE__,                &
+     &                     __FILE__)) RETURN
           END IF
         END DO
 #   endif
@@ -452,7 +470,8 @@
           Aval(5)=REAL(u2dvar,r8)
           status=def_var(ng, iNLM, INI(ng)%ncid, INI(ng)%Vid(idUsms),   &
      &                   NF_FOUT, 4, u4dfrc, Aval, Vinfo, ncname)
-          IF (exit_flag.ne.NoError) RETURN
+          IF (FoundError(exit_flag, NoError, __LINE__,                  &
+     &                   __FILE__)) RETURN
         END IF
 !
 !  Define surface V-momentum stress.
@@ -468,7 +487,8 @@
           Aval(5)=REAL(v2dvar,r8)
           status=def_var(ng, iNLM, INI(ng)%ncid, INI(ng)%Vid(idVsms),   &
      &                   NF_FOUT, 4, v4dfrc, Aval, Vinfo, ncname)
-          IF (exit_flag.ne.NoError) RETURN
+          IF (FoundError(exit_flag, NoError, __LINE__,                  &
+     &                   __FILE__)) RETURN
         END IF
 #  endif
 #  if defined ADJUST_STFLUX && defined SOLVE3D
@@ -495,7 +515,8 @@
             status=def_var(ng, iNLM, INI(ng)%ncid,                      &
      &                     INI(ng)%Vid(idTsur(itrc)), NF_FOUT,          &
      &                     4, t4dfrc, Aval, Vinfo, ncname)
-            IF (exit_flag.ne.NoError) RETURN
+            IF (FoundError(exit_flag, NoError, __LINE__,                &
+     &                     __FILE__)) RETURN
           END IF
         END DO
 #  endif
@@ -505,7 +526,8 @@
 !-----------------------------------------------------------------------
 !
         CALL netcdf_enddef (ng, iNLM, ncname, INI(ng)%ncid)
-        IF (exit_flag.ne.NoError) RETURN
+        IF (FoundError(exit_flag, NoError, __LINE__,                    &
+     &                 __FILE__)) RETURN
 
       END IF DEFINE
 # endif
@@ -520,23 +542,28 @@
 
 # if !(defined ADJUST_STFLUX || defined ADJUST_WSTRESS)
 !
-!  Inquire about the dimensions and check for consistency.
-!
-        CALL netcdf_check_dim (ng, iNLM, ncname)
-        IF (exit_flag.ne.NoError) RETURN
-!
-!  Inquire about the variables.
-!
-        CALL netcdf_inq_var (ng, iNLM, ncname)
-        IF (exit_flag.ne.NoError) RETURN
-!
 !  Open initialization file for read/write.
 !
         CALL netcdf_open (ng, iNLM, ncname, 1, INI(ng)%ncid)
-        IF (exit_flag.ne.NoError) THEN
+        IF (FoundError(exit_flag, NoError, __LINE__,                    &
+     &                 __FILE__)) THEN
           WRITE (stdout,10) TRIM(ncname)
           RETURN
         END IF
+!
+!  Inquire about the dimensions and check for consistency.
+!
+        CALL netcdf_check_dim (ng, iNLM, ncname,                        &
+     &                         ncid = INI(ng)%ncid)
+        IF (FoundError(exit_flag, NoError, __LINE__,                    &
+     &                 __FILE__)) RETURN
+!
+!  Inquire about the variables.
+!
+        CALL netcdf_inq_var (ng, iNLM, ncname,                          &
+     &                       ncid = INI(ng)%ncid)
+        IF (FoundError(exit_flag, NoError, __LINE__,                    &
+     &                 __FILE__)) RETURN
 !
 !  Initialize logical switches.
 !

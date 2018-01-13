@@ -1,7 +1,7 @@
 #include "cppdefs.h"
       SUBROUTINE read_PhyPar (model, inp, out, Lwrite)
 !
-!svn $Id: read_phypar.F 830 2017-01-24 21:21:11Z arango $
+!svn $Id: read_phypar.F 877 2017-11-15 04:04:42Z arango $
 !================================================== Hernan G. Arango ===
 !  Copyright (c) 2002-2017 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
@@ -48,6 +48,9 @@
       USE mod_storage
 #endif
       USE mod_strings
+!
+      USE dateclock_mod, ONLY : ref_clock
+      USE strings_mod,   ONLY : FoundError
 !
       implicit none
 !
@@ -98,7 +101,9 @@
 
       real(r8), allocatable :: Rtracer(:,:)
       real(r8), allocatable :: tracer(:,:)
-
+#ifdef NESTING
+      real(r8), allocatable :: RunTimeDay(:), RunTimeSec(:)
+#endif
       real(r8) :: Rvalue(1)
 
       real(r8), dimension(200) :: Rval
@@ -852,6 +857,13 @@
                 END DO
 # endif
               END DO
+            CASE ('AKT_LIMIT')
+              Npts=load_r(Nval, Rval, NAT*Ngrids, Rtracer)
+              DO ng=1,Ngrids
+                DO itrc=1,NAT
+                  Akt_limit(itrc,ng)=Rtracer(itrc,ng)
+                END DO
+              END DO
             CASE ('ad_AKT_fac')
               Npts=load_r(Nval, Rval, (NAT+NPT)*Ngrids, Rtracer)
               DO ng=1,Ngrids
@@ -869,6 +881,8 @@
               END DO
             CASE ('AKV_BAK')
               Npts=load_r(Nval, Rval, Ngrids, Akv_bak)
+            CASE ('AKV_LIMIT')
+              Npts=load_r(Nval, Rval, Ngrids, Akv_limit)
             CASE ('ad_AKV_fac')
               Npts=load_r(Nval, Rval, Ngrids, ad_Akv_fac)
               DO ng=1,Ngrids
@@ -956,10 +970,10 @@
               Npts=load_i(Nval, Rval, Ngrids, Vstretching)
               DO ng=1,Ngrids
                 IF ((Vstretching(ng).lt.0).or.                          &
-     &              (Vstretching(ng).gt.4)) THEN
+     &              (Vstretching(ng).gt.5)) THEN
                   IF (Master) WRITE (out,260) 'Vstretching = ',         &
      &                                        Vstretching(ng),          &
-     &                                        'Must between 1 and 4'
+     &                                        'Must between 1 and 5'
                   exit_flag=5
                   RETURN
                 END IF
@@ -988,7 +1002,7 @@
             CASE ('TIME_REF')
               Npts=load_r(Nval, Rval, 1, Rvalue)
               time_ref=Rvalue(1)
-              r_text=ref_att(time_ref,r_date)
+              CALL ref_clock (time_ref)
             CASE ('TNUDG')
               Npts=load_r(Nval, Rval, (NAT+NPT)*Ngrids, Rtracer)
               DO ng=1,Ngrids
@@ -1008,10 +1022,6 @@
               Npts=load_r(Nval, Rval, Ngrids, M2nudg)
             CASE ('M3NUDG')
               Npts=load_r(Nval, Rval, Ngrids, M3nudg)
-            CASE ('TNUDG_SSS')
-              Npts=load_r(Nval, Rval, Ngrids, Tnudg_SSS)
-            CASE ('SSS_MISMATCH_THRESHOLD')
-              Npts=load_r(Nval, Rval, Ngrids, sss_mismatch_threshold)
             CASE ('OBCFAC')
               Npts=load_r(Nval, Rval, Ngrids, obcfac)
             CASE ('R0')
@@ -2908,7 +2918,8 @@
                 RETURN
               END IF
               Npts=load_l(Nval, Cval, Ngrids, Aout(id3dPV,:))
-# if defined AVERAGES_DETIDE && (defined SSH_TIDES || defined UV_TIDES)
+# if defined AVERAGES  && defined AVERAGES_DETIDE && \
+    (defined SSH_TIDES || defined UV_TIDES)
             CASE ('Aout(idFsuD)')
               IF (idFsuD.eq.0) THEN
                 IF (Master) WRITE (out,280) 'idFsuD'
@@ -4219,6 +4230,10 @@
               label='AVG2 - time-averaged history fields'
               Npts=load_s1d(Nval, Cval, Cdim, line, label, igrid,       &
      &                      Nfiles, AVG2)
+            CASE ('HARNAME')
+              label='HAR - least-squares detiding harmonics'
+              Npts=load_s1d(Nval, Cval, Cdim, line, label, igrid,       &
+     &                      Nfiles, HAR)
             CASE ('DIANAME')
               label='DIA - time-averaged diagnostics fields'
               Npts=load_s1d(Nval, Cval, Cdim, line, label, igrid,       &
@@ -4313,6 +4328,12 @@
               label='SSF - Sources/Sinks forcing fields'
               Npts=load_s1d(Nval, Cval, Cdim, line, label, igrid,       &
      &                      Nfiles, SSF)
+# if defined SSH_TIDES || defined UV_TIDES
+            CASE ('TIDENAME')
+              label='TIDE - Tidal forcing fields'
+              Npts=load_s1d(Nval, Cval, Cdim, line, label, igrid,       &
+     &                      Nfiles, TIDE)
+# endif
             CASE ('NFFILES')
               Npts=load_i(Nval, Rval, Ngrids, nFfiles)
               DO ng=1,Ngrids
@@ -4386,7 +4407,8 @@
               IWSWNNAME(1)=TRIM(ADJUSTL(Cval(Nval)))
 #endif
           END SELECT
-          IF (exit_flag.ne.NoError) RETURN
+          IF (FoundError(exit_flag, NoError, __LINE__,                  &
+     &                   __FILE__)) RETURN
         END IF
       END DO
   10  IF (Master) WRITE (out,50) line
@@ -4559,7 +4581,7 @@
 !
       DO ng=1,Ngrids
 !
-!  Set switch to craeate NetCDF file.
+!  Set switch to create history NetCDF file.
 !
         IF ((nHIS(ng).gt.0).and.ANY(Hout(:,ng))) THEN
           LdefHIS(ng)=.TRUE.
@@ -4570,6 +4592,17 @@
         IF ((nQCK(ng).gt.0).and.ANY(Qout(:,ng))) THEN
           LdefQCK(ng)=.TRUE.
         END IF
+
+# if defined AVERAGES  && defined AVERAGES_DETIDE && \
+    (defined SSH_TIDES || defined UV_TIDES)
+!
+!  If restart, turn off definition of detide harmonics NetCDF file
+!  since we only need to update time-averaged accumulated harmonics.
+!
+        IF (nrrec(ng).ne.0) THEN
+          LdefTIDE(ng)=.FALSE.
+        END IF
+# endif
 !
 !  Set switch to process climatology file.
 !
@@ -4586,7 +4619,7 @@
 # ifndef ANA_TCLIMA
         IF (ANY(LtracerCLM(:,ng))) CLM_FILE(ng)=.TRUE.
 # endif
-# if defined CLIMA_TS_MIX && (defined TS_DIF2 || defined TS_DIF4)
+# if defined TS_MIX_CLIMA && (defined TS_DIF2 || defined TS_DIF4)
         CLM_FILE(ng)=.TRUE.
 # endif
 #endif
@@ -4597,7 +4630,9 @@
 !
         LcycleADJ(ng)=.FALSE.
 #endif
-#if defined AVERAGES_DETIDE && (defined SSH_TIDES || defined UV_TIDES)
+
+#if defined AVERAGES  && defined AVERAGES_DETIDE && \
+   (defined SSH_TIDES || defined UV_TIDES)
 !
 !  If computing time-averaged detided fields, make sure the the regular
 !  time-averaged switches are activated for such variables.
@@ -5112,9 +5147,23 @@
      &            'Background vertical mixing coefficient (m2/s)',      &
      &            'for tracer ', itrc, TRIM(Vname(1,idTvar(itrc)))
           END DO
+# if defined LIMIT_VDIFF && \
+    (defined GLS_MIXING  || defined LMD_MIXING || defined MY25_MIXING)
+          DO itrc=1,NAT
+            WRITE (out,190) Akt_limit(itrc,ng), 'Akt_limit', itrc,      &
+     &            'Vertical diffusion upper threshold (m2/s)',          &
+     &            'for tracer ', itrc, TRIM(Vname(1,idTvar(itrc)))
+          END DO
+# endif
           WRITE (out,210) Akv_bak(ng), 'Akv_bak',                       &
      &          'Background vertical mixing coefficient (m2/s)',        &
      &          'for momentum.'
+# if defined LIMIT_VVISC && \
+    (defined GLS_MIXING  || defined LMD_MIXING || defined MY25_MIXING)
+          WRITE (out,210) Akv_limit(ng), 'Akv_limit',                   &
+     &          'Vertical viscosity upper threshold (m2/s)',            &
+     &          'for momentum.'
+# endif
 # if defined MY25_MIXING || defined GLS_MIXING
           WRITE (out,210) Akk_bak(ng), 'Akk_bak',                       &
      &          'Background vertical mixing coefficient (m2/s)',        &
@@ -5323,22 +5372,13 @@
      &            'Nudging/relaxation time scale (days)',               &
      &            'for tracer ', itrc, TRIM(Vname(1,idTvar(itrc)))
           END DO
-          WRITE (out,210) Tnudg_SSS(ng), 'Tnudg_SSS',                   &
-     &          'Nudging/relaxation time scale (days)',                 &
-     &          'for sea surface salinity.'
 # ifdef SCORRECTION
-          IF (Tnudg_SSS(ng).le.0.0_r8) THEN
-            WRITE (out,265) 'Tnudg_SSS = ', Tnudg_SSS(ng),              &
+          IF (Tnudg(isalt,ng).le.0.0_r8) THEN
+            WRITE (out,265) 'Tnudg(isalt) = ', Tnudg(isalt,ng),         &
      &            'Must be greater than zero for salt flux correction.'
             exit_flag=5
             RETURN
           END IF
-#  ifdef SSSC_THRESHOLD
-          WRITE (out,210) sss_mismatch_threshold(ng),                   &
-     &          'sss_mismatch_threshold',                               &
-     &          'difference in SSS that triggers correction',           &
-     &          'for sea surface salinity.'
-#  endif
 # endif
 #endif
           WRITE (out,210) Znudg(ng), 'Znudg',                           &
@@ -7697,6 +7737,14 @@
      &                      TRIM(fname)
           END IF
 #endif
+#if defined SSH_TIDES || defined UV_TIDES
+          IF (ng.eq.1) THEN               ! only tidal forcing on grid 1
+            fname=TIDE(ng)%name
+            IF (.not.find_file(ng, fname, 'TIDENAME')) GO TO 30
+            WRITE (out,230) '            Tidal Forcing File:  ',        &
+     &                      TRIM(fname)
+          END IF
+#endif
 #ifdef FRC_FILE
           DO i=1,nFfiles(ng)
             DO ifile=1,FRC(i,ng)%Nfiles
@@ -7802,9 +7850,17 @@
           fname=varname
           IF (.not.find_file(ng, fname, 'VARNAME')) GO TO 30
           GO TO 40
-  30      IF (Master) WRITE (out,270) TRIM(fname)
+  30      IF (Master) THEN
+            IF (LEN_TRIM(fname).eq.0) THEN
+              WRITE (out,270) ng, 'Oops unassigned file name. '//       &
+     &                            'Check standard input script...'
+            ELSE
+              WRITE (out,270) ng, TRIM(fname)
+            END IF
+          END IF
           exit_flag=4
-          RETURN
+          IF (FoundError(exit_flag, NoError, __LINE__,                  &
+     &                   __FILE__)) RETURN
   40      CONTINUE
         END DO
         IF (Nuser.gt.0) THEN
@@ -7844,6 +7900,34 @@
       END IF
 #endif
 
+#ifdef NESTING
+!
+!-----------------------------------------------------------------------
+!  If nesting, make sure that all grids are computing solutions for the
+!  same amount of time (seconds).
+!-----------------------------------------------------------------------
+!
+      IF (.not.allocated(RunTimeDay)) THEN
+        allocate ( RunTimeDay(Ngrids) )
+      END IF
+      IF (.not.allocated(RunTimeSec)) THEN
+        allocate ( RunTimeSec(Ngrids) )
+      END IF
+      DO ng=1,Ngrids
+        RunTimeSec(ng)=REAL(ntimes(ng),r8)*dt(ng)
+        RunTimeDay(ng)=RunTimeSec(ng)*sec2day
+      END DO
+      DO ng=2,Ngrids
+        IF (ABS(RunTimeSec(1)-RunTimeSec(ng)).ne.0.0_r8) THEN
+          IF (Master) THEN
+            WRITE (out,340)  1, RunTimeSec( 1), RunTimeDay( 1),         &
+    &                       ng, RunTimeSec(ng), RunTimeDay(ng)
+          END IF
+          exit_flag=5
+          RETURN
+        END IF
+      END DO
+#endif
 #ifdef SOLVE3D
 !
 !-----------------------------------------------------------------------
@@ -7876,9 +7960,6 @@
             Tnudg(itrc,ng)=0.0_r8
           END IF
         END DO
-        IF (Tnudg_SSS(ng).gt.0.0_r8) THEN
-          Tnudg_SSS(ng)=1.0_r8/(Tnudg_SSS(ng)*86400.0_r8)
-        END IF
       END DO
 #endif
 
@@ -7952,16 +8033,22 @@
      &        i4,/,15x,a)
  265  FORMAT (/,' READ_PHYPAR - Invalid input parameter, ',a,           &
      &        1p,e11.4,/,15x,a)
- 270  FORMAT (/,' READ_PHYPAR - could not find input file:  ',a)
- 280  FORMAT (/,' READ_PHYPAR - variable info not yet loaded, ', a)
+ 270  FORMAT (/,' READ_PHYPAR - Grid ',i2.2,                            &
+     &        ', could not find input file:  ',a)
+ 280  FORMAT (/,' READ_PHYPAR - Variable index not yet loaded, ', a)
  290  FORMAT (/,' READ_PHYPAR - Invalid dimension parameter, ',a,i4,    &
      &        /,15x,a)
  300  FORMAT (/,' READ_PHYPAR - Invalid dimension parameter, ',a,'(',   &
      &        i2.2,')',/,15x,a)
  310  FORMAT (2x,a,i2.2,a,a)
- 320  FORMAT (/,' READ_PHYPAR - could not find input parameter: ', a,   &
+ 320  FORMAT (/,' READ_PHYPAR - Could not find input parameter: ', a,   &
      &        /,15x,'in ROMS standard input script.',/,15x,a)
  330  FORMAT (/,' READ_PHYPAR - Invalid input parameter, ',a,i4,/,15x,a)
+ 340  FORMAT (/,' READ_PHYPAR - Inconsistent time-stepping period:',    &
+     &        /,15x,'Grid ',i2.2,':',f14.1,' (sec)',2x,f14.2,' (days)', &
+     &        /,15x,'Grid ',i2.2,':',f14.1,' (sec)',2x,f14.2,' (days)', &
+     &        /,15x,'Adjust standard input parameter NTIMES in ',       &
+     &              '''ocean.in''.'/)
 
       RETURN
       END SUBROUTINE read_PhyPar

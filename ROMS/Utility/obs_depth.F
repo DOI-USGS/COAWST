@@ -4,7 +4,7 @@
      defined DISTRIBUTE   && defined SOLVE3D
       SUBROUTINE obs_depth (ng, tile, model)
 !
-!svn $Id: obs_depth.F 830 2017-01-24 21:21:11Z arango $
+!svn $Id: obs_depth.F 880 2017-11-15 22:04:38Z arango $
 !================================================== Hernan G. Arango ===
 !  Copyright (c) 2002-2017 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
@@ -74,17 +74,17 @@
      &             (Xobs(iobs).lt.vXmax(ng))).and.                      &
      &            ((vYmin(ng) .le.Yobs(iobs)).and.                      &
      &             (Yobs(iobs).lt.vYmax(ng)))
-          IF (ObsType(iobs).eq.isUvel) THEN
+          IF (ObsType(iobs).eq.ObsState2Type(isUvel)) THEN
             IF (.not.u_bound) THEN
               Zobs(iobs)=IniVal
             END IF
-          ELSE IF (ObsType(iobs).eq.isVvel) THEN
+          ELSE IF (ObsType(iobs).eq.ObsState2Type(isVvel)) THEN
             IF (.not.v_bound) THEN
               Zobs(iobs)=IniVal
             END IF
           ELSE
             DO itrc=1,NT(ng)
-              IF (ObsType(iobs).eq.isTvar(itrc)) THEN
+              IF (ObsType(iobs).eq.ObsState2Type(isTvar(itrc))) THEN
                 IF (.not.r_bound) THEN
                   Zobs(iobs)=IniVal
                 END IF

@@ -1,7 +1,7 @@
 #include "cppdefs.h"
       SUBROUTINE ran1_s (harvest)
 !
-!svn $Id: ran1.F 830 2017-01-24 21:21:11Z arango $
+!svn $Id: ran1.F 844 2017-04-29 05:30:54Z arango $
 !================================================== Hernan G. Arango ===
 !  Copyright (c) 2002-2017 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
@@ -40,12 +40,12 @@
 !
 !  Initialize.
 !
-      IF (lenran.lt.1) CALL ran_init (1_i4b)
+      IF (lenran.lt.1) CALL ran_init (1_i8b)
 !
 !  Update Fibonacci generator, which has a period p*p+p+1 (p=2^(31)-69).
 !
       rans=iran0-kran0
-      IF (rans.lt.0) rans=rans+2147483579_i4b
+      IF (rans.lt.0) rans=rans+2147483579_i8b
       iran0=jran0
       jran0=kran0
       kran0=rans
@@ -59,7 +59,7 @@
 !  Once only per cycle, advance sequence by 1, shortening its period to
 !  2^(32)-2.
 !
-      IF (nran0.eq.1) nran0=270369_i4b
+      IF (nran0.eq.1) nran0=270369_i8b
 !
 !  Update Marsaglia shift sequence with perios 2^(32)-1.
 !
@@ -110,7 +110,7 @@
 !
 !  Local variable declarations.
 !
-      integer(i4b) :: n
+      integer(i8b) :: n
 !
 !-----------------------------------------------------------------------
 !  Compute an uniform random deviate (scalar version).
@@ -119,13 +119,13 @@
 !  Initialize.
 !
       n=SIZE(harvest)
-      IF (lenran.lt.n+1) CALL ran_init (n+1_i4b)
+      IF (lenran.lt.n+1) CALL ran_init (n+1_i8b)
 !
 !  Update Fibonacci generator, which has a period p*p+p+1 (p=2^(31)-69).
 !
       ranv(1:n)=iran(1:n)-kran(1:n)
       WHERE (ranv(1:n).lt.0)                                            &
-     &  ranv(1:n)=ranv(1:n)+2147483579_i4b
+     &  ranv(1:n)=ranv(1:n)+2147483579_i8b
       iran(1:n)=jran(1:n)
       jran(1:n)=kran(1:n)
       kran(1:n)=ranv(1:n)
@@ -140,7 +140,7 @@
 !  2^(32)-2.
 !
       WHERE (nran(1:n).eq.1)                                            &
-     &  nran(1:n)=270369_i4b
+     &  nran(1:n)=270369_i8b
 !
 !  Update Marsaglia shift sequence with perios 2^(32)-1.
 !

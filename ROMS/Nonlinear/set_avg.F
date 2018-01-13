@@ -2,7 +2,7 @@
       MODULE set_avg_mod
 #ifdef AVERAGES
 !
-!svn $Id: set_avg.F 830 2017-01-24 21:21:11Z arango $
+!svn $Id: set_avg.F 855 2017-07-29 03:10:57Z arango $
 !================================================== Hernan G. Arango ===
 !  Copyright (c) 2002-2017 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
@@ -15,7 +15,7 @@
 !  beggining of the next time-step.                                    !
 !                                                                      !
 # if defined AVERAGES_DETIDE && (defined SSH_TIDES || defined UV_TIDES)
-!  It computes leas-squares coefficients to detide time-averaged       !
+!  It computes least-squares coefficients to detide time-averaged      !
 !  fields. Notice that "set_detide" is called last since we need       !
 !  the regular time-averages for those fields to detide.               !
 !                                                                      !
@@ -41,6 +41,7 @@
 # if defined AVERAGES_DETIDE && (defined SSH_TIDES || defined UV_TIDES)
       USE mod_tides
 # endif
+
 # ifdef WET_DRY
 !
       USE set_masks_mod, ONLY : set_avg_masks
@@ -55,7 +56,7 @@
 # include "tile.h"
 !
 # ifdef PROFILE
-      CALL wclock_on (ng, iNLM, 5)
+      CALL wclock_on (ng, iNLM, 5, __LINE__, __FILE__)
 # endif
       CALL set_avg_tile (ng, tile,                                      &
      &                   LBi, UBi, LBj, UBj,                            &
@@ -98,7 +99,7 @@
 # endif
 
 # ifdef PROFILE
-      CALL wclock_off (ng, iNLM, 5)
+      CALL wclock_off (ng, iNLM, 5, __LINE__, __FILE__)
 # endif
       RETURN
       END SUBROUTINE set_avg
@@ -167,6 +168,7 @@
 #  endif
       integer, intent(in) :: Nout
 # endif
+!
 !
 !  Local variable declarations.
 !

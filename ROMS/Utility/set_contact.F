@@ -2,7 +2,7 @@
 #ifdef NESTING
       SUBROUTINE set_contact (ng, model)
 !
-!svn $Id: set_contact.F 830 2017-01-24 21:21:11Z arango $
+!svn $Id: set_contact.F 873 2017-10-05 20:27:10Z arango $
 !================================================== Hernan G. Arango ===
 !  Copyright (c) 2002-2017 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
@@ -22,7 +22,7 @@
       USE mod_netcdf
       USE mod_scalars
 !
-      USE strings_mod, ONLY : find_string
+      USE strings_mod, ONLY : FoundError, find_string
 !
       implicit none
 !
@@ -41,6 +41,7 @@
 !
       integer :: cr, dg, ibry, ic, ig, ip,  m, rg, vindex
       integer :: my_Ncontact, my_Ngrids, my_nLweights, my_nQweights
+      integer :: NGCid
 
       integer, dimension(Ngrids) :: my_Lm, my_Mm
       integer, dimension(Ngrids) :: refine_factor
@@ -66,16 +67,32 @@
 !  arrays.
 !-----------------------------------------------------------------------
 !
+!  Open contact points NetCDF file for reading.
+!
+      CALL netcdf_open (ng, model, NGCname, 0, NGCid)
+      IF (FoundError(exit_flag, NoError, __LINE__,                      &
+     &               __FILE__)) THEN
+        WRITE (stdout,20) TRIM(NGCname)
+  20    FORMAT (/,' READ_CONTACT - unable to open contact points ',     &
+     &            ' NetCDF file: ',a)
+        RETURN
+      END IF
+!
 !  Inquire about the variables.
 !
-      CALL netcdf_inq_var (ng, model, NGCname)
-      IF (exit_flag.ne.NoError) RETURN
+      CALL netcdf_inq_var (ng, model, NGCname,                          &
+     &                     ncid = NGCid)
+      IF (FoundError(exit_flag, NoError, __LINE__,                      &
+     &               __FILE__)) RETURN
 !
 !  Check if the number of nested grids is correct.
 !
-      CALL netcdf_get_dim (ng, model, NGCname, 'Ngrids',                &
-     &                     my_Ngrids)
-      IF (exit_flag.ne.NoError) RETURN
+      CALL netcdf_get_dim (ng, model, NGCname,                          &
+     &                     ncid = NGCid,                                &
+     &                     DimName = 'Ngrids',                          &
+     &                     DimSize = my_Ngrids)
+      IF (FoundError(exit_flag, NoError, __LINE__,                      &
+     &               __FILE__)) RETURN
 
       IF (my_Ngrids.ne.Ngrids) THEN
         IF (Master) THEN
@@ -90,9 +107,12 @@
 !
 !  Check number of contact regions, Ncontact = (Ngrids-1)*2.
 !
-      CALL netcdf_get_dim (ng, model, NGCname, 'Ncontact',              &
-     &                     my_Ncontact)
-      IF (exit_flag.ne.NoError) RETURN
+      CALL netcdf_get_dim (ng, model, NGCname,                          &
+     &                     ncid = NGCid,                                &
+     &                     DimName = 'Ncontact',                        &
+     &                     DimSize = my_Ncontact)
+      IF (FoundError(exit_flag, NoError, __LINE__,                      &
+     &               __FILE__)) RETURN
 
       IF (my_Ncontact.ne.(Ngrids-1)*2) THEN
         IF (Master) THEN
@@ -106,9 +126,12 @@
 !
 !  Check number of contact points for bilinear interpolation weights.
 !
-      CALL netcdf_get_dim (ng, model, NGCname, 'nLweights',             &
-     &                     my_nLweights)
-      IF (exit_flag.ne.NoError) RETURN
+      CALL netcdf_get_dim (ng, model, NGCname,                          &
+     &                     ncid = NGCid,                                &
+     &                     DimName = 'nLweights',                       &
+     &                     DimSize = my_nLweights)
+      IF (FoundError(exit_flag, NoError, __LINE__,                      &
+     &               __FILE__)) RETURN
 
       IF (my_nLweights.ne.4) THEN
         IF (Master) THEN
@@ -123,9 +146,12 @@
 !
 !  Check number of contact points for quadratic interpolation weights.
 !
-      CALL netcdf_get_dim (ng, model, NGCname, 'nQweights',             &
-     &                     my_nQweights)
-      IF (exit_flag.ne.NoError) RETURN
+      CALL netcdf_get_dim (ng, model, NGCname,                          &
+     &                     ncid = NGCid,                                &
+     &                     DimName = 'nQweights',                       &
+     &                     DimSize = my_nQweights)
+      IF (FoundError(exit_flag, NoError, __LINE__,                      &
+     &               __FILE__)) RETURN
 
       IF (my_nQweights.ne.9) THEN
         IF (Master) THEN
@@ -140,18 +166,27 @@
 !  Get number of contact points in input NetCDF file.  It may include
 !  or not contact point over land when land/sea masking is activated.
 !
-      CALL netcdf_get_dim (ng, model, NGCname, 'datum',                 &
-     &                     NCdatum)
-      IF (exit_flag.ne.NoError) RETURN
+      CALL netcdf_get_dim (ng, model, NGCname,                          &
+     &                     ncid = NGCid,                                &
+     &                     DimName = 'datum',                           &
+     &                     DimSize = NCdatum)
+      IF (FoundError(exit_flag, NoError, __LINE__,                      &
+     &               __FILE__)) RETURN
 !
 !  Read in grid dimensions and if the grid order is correct.  The order
 !  of the grids is important in nesting.
 !
-      CALL netcdf_get_ivar (ng, model, NGCname, 'Lm', my_Lm)
-      IF (exit_flag.ne.NoError) RETURN
+      CALL netcdf_get_ivar (ng, model, NGCname, 'Lm',                   &
+     &                      my_Lm,                                      &
+     &                      ncid = NGCid)
+      IF (FoundError(exit_flag, NoError, __LINE__,                      &
+     &               __FILE__)) RETURN
 
-      CALL netcdf_get_ivar (ng, model, NGCname, 'Mm', my_Mm)
-      IF (exit_flag.ne.NoError) RETURN
+      CALL netcdf_get_ivar (ng, model, NGCname, 'Mm',                   &
+     &                      my_Mm,                                      &
+     &                      ncid = NGCid)
+      IF (FoundError(exit_flag, NoError, __LINE__,                      &
+     &               __FILE__)) RETURN
 
       DO ig=1,Ngrids
         IF (my_Lm(ig).ne.Lm(ig)) THEN
@@ -175,32 +210,44 @@
 !  Read in nesting types logical switches, 1:Ngrids.
 !
       CALL netcdf_get_lvar (ng, model, NGCname, 'coincident',           &
-     &                      Lcoincident)
-      IF (exit_flag.ne.NoError) RETURN
+     &                      Lcoincident,                                &
+     &                      ncid = NGCid)
+      IF (FoundError(exit_flag, NoError, __LINE__,                      &
+     &               __FILE__)) RETURN
 
       CALL netcdf_get_lvar (ng, model, NGCname, 'composite',            &
-     &                      Lcomposite)
-      IF (exit_flag.ne.NoError) RETURN
+     &                      Lcomposite,                                 &
+     &                      ncid = NGCid)
+      IF (FoundError(exit_flag, NoError, __LINE__,                      &
+     &               __FILE__)) RETURN
 
       CALL netcdf_get_lvar (ng, model, NGCname, 'mosaic',               &
-     &                      Lmosaic)
-      IF (exit_flag.ne.NoError) RETURN
+     &                      Lmosaic,                                    &
+     &                      ncid = NGCid)
+      IF (FoundError(exit_flag, NoError, __LINE__,                      &
+     &               __FILE__)) RETURN
 
       CALL netcdf_get_lvar (ng, model, NGCname, 'refinement',           &
-     &                      Lrefinement)
-      IF (exit_flag.ne.NoError) RETURN
+     &                      Lrefinement,                                &
+     &                      ncid = NGCid)
+      IF (FoundError(exit_flag, NoError, __LINE__,                      &
+     &               __FILE__)) RETURN
 !
 !  Read in refinement factor from donor grid, 1:Ngrids.
 !
       CALL netcdf_get_ivar (ng, model, NGCname, 'refine_factor',        &
-     &                      refine_factor)
-      IF (exit_flag.ne.NoError) RETURN
+     &                      refine_factor,                              &
+     &                      ncid = NGCid)
+      IF (FoundError(exit_flag, NoError, __LINE__,                      &
+     &               __FILE__)) RETURN
 !
 !  Read in vertical interpolation at contact points switch, 1:Ncontact.
 !
       CALL netcdf_get_lvar (ng, model, NGCname, 'interpolate',          &
-     &                      Linterpolate)
-      IF (exit_flag.ne.NoError) RETURN
+     &                      Linterpolate,                               &
+     &                      ncid = NGCid)
+      IF (FoundError(exit_flag, NoError, __LINE__,                      &
+     &               __FILE__)) RETURN
 !
 !  Read in data donor and data receiver grid number, 1:Ncontact.
 !
@@ -208,15 +255,19 @@
         allocate ( donor_grid((Ngrids-1)*2) )
       END IF
       CALL netcdf_get_ivar (ng, model, NGCname, 'donor_grid',           &
-     &                      donor_grid)
-      IF (exit_flag.ne.NoError) RETURN
+     &                      donor_grid,                                 &
+     &                      ncid = NGCid)
+      IF (FoundError(exit_flag, NoError, __LINE__,                      &
+     &               __FILE__)) RETURN
 
       IF (.not.allocated(receiver_grid)) THEN
         allocate ( receiver_grid((Ngrids-1)*2) )
       END IF
       CALL netcdf_get_ivar (ng, model, NGCname, 'receiver_grid',        &
-     &                      receiver_grid)
-      IF (exit_flag.ne.NoError) RETURN
+     &                      receiver_grid,                              &
+     &                      ncid = NGCid)
+      IF (FoundError(exit_flag, NoError, __LINE__,                      &
+     &               __FILE__)) RETURN
 !
 !  Read in donor grid (I,J) indices at PSI points used to extract
 !  refined grid. Values have a fill value of -999 if not applicable.
@@ -225,29 +276,37 @@
         allocate ( I_left(Ngrids) )
       END IF
       CALL netcdf_get_ivar (ng, model, NGCname, 'I_left',               &
-     &                      I_left)
-      IF (exit_flag.ne.NoError) RETURN
+     &                      I_left,                                     &
+     &                      ncid = NGCid)
+      IF (FoundError(exit_flag, NoError, __LINE__,                      &
+     &               __FILE__)) RETURN
 !
       IF (.not.allocated(I_right)) THEN
         allocate ( I_right(Ngrids) )
       END IF
       CALL netcdf_get_ivar (ng, model, NGCname, 'I_right',              &
-     &                      I_right)
-      IF (exit_flag.ne.NoError) RETURN
+     &                      I_right,                                    &
+     &                      ncid = NGCid)
+      IF (FoundError(exit_flag, NoError, __LINE__,                      &
+     &               __FILE__)) RETURN
 !
       IF (.not.allocated(J_bottom)) THEN
         allocate ( J_bottom(Ngrids) )
       END IF
       CALL netcdf_get_ivar (ng, model, NGCname, 'J_bottom',             &
-     &                      J_bottom)
-      IF (exit_flag.ne.NoError) RETURN
+     &                      J_bottom,                                   &
+     &                      ncid = NGCid)
+      IF (FoundError(exit_flag, NoError, __LINE__,                      &
+     &               __FILE__)) RETURN
 !
       IF (.not.allocated(J_top)) THEN
         allocate ( J_top(Ngrids) )
       END IF
       CALL netcdf_get_ivar (ng, model, NGCname, 'J_top',                &
-     &                      J_top)
-      IF (exit_flag.ne.NoError) RETURN
+     &                      J_top,                                      &
+     &                      ncid = NGCid)
+      IF (FoundError(exit_flag, NoError, __LINE__,                      &
+     &               __FILE__)) RETURN
 !
 !  Read in starting and ending contact points (RHO-, U-, V-) index in
 !  packed data vectors for each contact region, 1:Ncontact.
@@ -255,38 +314,56 @@
       IF (.not.allocated(NstrR)) THEN
         allocate ( NstrR((Ngrids-1)*2) )
       END IF
-      CALL netcdf_get_ivar (ng, model, NGCname, 'NstrR', NstrR)
-      IF (exit_flag.ne.NoError) RETURN
+      CALL netcdf_get_ivar (ng, model, NGCname, 'NstrR',                &
+     &                      NstrR,                                      &
+     &                      ncid = NGCid)
+      IF (FoundError(exit_flag, NoError, __LINE__,                      &
+     &               __FILE__)) RETURN
 !
       IF (.not.allocated(NendR)) THEN
         allocate ( NendR((Ngrids-1)*2) )
       END IF
-      CALL netcdf_get_ivar (ng, model, NGCname, 'NendR', NendR)
-      IF (exit_flag.ne.NoError) RETURN
+      CALL netcdf_get_ivar (ng, model, NGCname, 'NendR',                &
+     &                      NendR,                                      &
+     &                      ncid = NGCid)
+      IF (FoundError(exit_flag, NoError, __LINE__,                      &
+     &               __FILE__)) RETURN
 !
       IF (.not.allocated(NstrU)) THEN
         allocate ( NstrU((Ngrids-1)*2) )
       END IF
-      CALL netcdf_get_ivar (ng, model, NGCname, 'NstrU', NstrU)
-      IF (exit_flag.ne.NoError) RETURN
+      CALL netcdf_get_ivar (ng, model, NGCname, 'NstrU',                &
+     &                      NstrU,                                      &
+     &                      ncid = NGCid)
+      IF (FoundError(exit_flag, NoError, __LINE__,                      &
+     &               __FILE__)) RETURN
 !
       IF (.not.allocated(NendU)) THEN
         allocate ( NendU((Ngrids-1)*2) )
       END IF
-      CALL netcdf_get_ivar (ng, model, NGCname, 'NendU', NendU)
-      IF (exit_flag.ne.NoError) RETURN
+      CALL netcdf_get_ivar (ng, model, NGCname, 'NendU',                &
+     &                      NendU,                                      &
+     &                      ncid = NGCid)
+      IF (FoundError(exit_flag, NoError, __LINE__,                      &
+     &               __FILE__)) RETURN
 !
       IF (.not.allocated(NstrV)) THEN
         allocate ( NstrV((Ngrids-1)*2) )
       END IF
-      CALL netcdf_get_ivar (ng, model, NGCname, 'NstrV', NstrV)
-      IF (exit_flag.ne.NoError) RETURN
+      CALL netcdf_get_ivar (ng, model, NGCname, 'NstrV',                &
+     &                      NstrV,                                      &
+     &                      ncid = NGCid)
+      IF (FoundError(exit_flag, NoError, __LINE__,                      &
+     &               __FILE__)) RETURN
 !
       IF (.not.allocated(NendV)) THEN
         allocate ( NendV((Ngrids-1)*2) )
       END IF
-      CALL netcdf_get_ivar (ng, model, NGCname, 'NendV', NendV)
-      IF (exit_flag.ne.NoError) RETURN
+      CALL netcdf_get_ivar (ng, model, NGCname, 'NendV',                &
+     &                      NendV,                                      &
+     &                      ncid = NGCid)
+      IF (FoundError(exit_flag, NoError, __LINE__,                      &
+     &               __FILE__)) RETURN
 !
 !  Read in contact region number for each contact point, 1:NCdatum.
 !
@@ -294,8 +371,10 @@
         allocate ( contact_region(NCdatum) )
       END IF
       CALL netcdf_get_ivar (ng, model, NGCname, 'contact_region',       &
-     &                      contact_region)
-      IF (exit_flag.ne.NoError) RETURN
+     &                      contact_region,                             &
+     &                      ncid = NGCid)
+      IF (FoundError(exit_flag, NoError, __LINE__,                      &
+     &               __FILE__)) RETURN
 !
 !  Read in flag (1:NCdatum) to determine if the contact point is at
 !  receiver grid interior (zero value) or on the boundary (1:western,
@@ -305,8 +384,10 @@
         allocate ( on_boundary(NCdatum) )
       END IF
       CALL netcdf_get_ivar (ng, model, NGCname, 'on_boundary',          &
-     &                      on_boundary)
-      IF (exit_flag.ne.NoError) RETURN
+     &                      on_boundary,                                &
+     &                      ncid = NGCid)
+      IF (FoundError(exit_flag, NoError, __LINE__,                      &
+     &               __FILE__)) RETURN
 !
 !  Read in I-left and J-bottom indices of donor cell containing contact
 !  point, 1:NCdatum.
@@ -314,42 +395,60 @@
       IF (.not.allocated(Idg_cp)) THEN
         allocate ( Idg_cp(NCdatum) )
       END IF
-      CALL netcdf_get_ivar (ng, model, NGCname, 'Idg', Idg_cp)
-      IF (exit_flag.ne.NoError) RETURN
+      CALL netcdf_get_ivar (ng, model, NGCname, 'Idg',                  &
+     &                      Idg_cp,                                     &
+     &                      ncid = NGCid)
+      IF (FoundError(exit_flag, NoError, __LINE__,                      &
+     &               __FILE__)) RETURN
 
       IF (.not.allocated(Jdg_cp)) THEN
         allocate ( Jdg_cp(NCdatum) )
       END IF
-      CALL netcdf_get_ivar (ng, model, NGCname, 'Jdg', Jdg_cp)
-      IF (exit_flag.ne.NoError) RETURN
+      CALL netcdf_get_ivar (ng, model, NGCname, 'Jdg',                  &
+     &                      Jdg_cp,                                     &
+     &                      ncid = NGCid)
+      IF (FoundError(exit_flag, NoError, __LINE__,                      &
+     &               __FILE__)) RETURN
 !
 !  Read in I- and J-indices of receiver grid contact point, 1:NCdatum.
 !
       IF (.not.allocated(Irg_cp)) THEN
         allocate ( Irg_cp(NCdatum) )
       END IF
-      CALL netcdf_get_ivar (ng, model, NGCname, 'Irg', Irg_cp)
-      IF (exit_flag.ne.NoError) RETURN
+      CALL netcdf_get_ivar (ng, model, NGCname, 'Irg',                  &
+     &                      Irg_cp,                                     &
+     &                      ncid = NGCid)
+      IF (FoundError(exit_flag, NoError, __LINE__,                      &
+     &               __FILE__)) RETURN
 
       IF (.not.allocated(Jrg_cp)) THEN
         allocate ( Jrg_cp(NCdatum) )
       END IF
-      CALL netcdf_get_ivar (ng, model, NGCname, 'Jrg', Jrg_cp)
-      IF (exit_flag.ne.NoError) RETURN
+      CALL netcdf_get_ivar (ng, model, NGCname, 'Jrg',                  &
+     &                      Jrg_cp,                                     &
+     &                      ncid = NGCid)
+      IF (FoundError(exit_flag, NoError, __LINE__,                      &
+     &               __FILE__)) RETURN
 !
 !  Read in X- and Y-location of receiver grid contact point, 1:NCdatum.
 !
       IF (.not.allocated(Xrg)) THEN
         allocate ( Xrg(NCdatum) )
       END IF
-      CALL netcdf_get_fvar (ng, model, NGCname, 'Xrg', Xrg)
-      IF (exit_flag.ne.NoError) RETURN
+      CALL netcdf_get_fvar (ng, model, NGCname, 'Xrg',                  &
+     &                      Xrg,                                        &
+     &                      ncid = NGCid)
+      IF (FoundError(exit_flag, NoError, __LINE__,                      &
+     &               __FILE__)) RETURN
 
       IF (.not.allocated(Yrg)) THEN
         allocate ( Yrg(NCdatum) )
       END IF
-      CALL netcdf_get_fvar (ng, model, NGCname, 'Yrg', Yrg)
-      IF (exit_flag.ne.NoError) RETURN
+      CALL netcdf_get_fvar (ng, model, NGCname, 'Yrg',                  &
+     &                      Yrg,                                        &
+     &                      ncid = NGCid)
+      IF (FoundError(exit_flag, NoError, __LINE__,                      &
+     &               __FILE__)) RETURN
 !
 !  Read in contact point horizontal linear interpolation weights,
 !  1:NCdatum.
@@ -357,8 +456,11 @@
       IF (.not.allocated(Lweight)) THEN
         allocate ( Lweight(my_nLweights,NCdatum) )
       END IF
-      CALL netcdf_get_fvar (ng, model, NGCname, 'Lweight', Lweight)
-      IF (exit_flag.ne.NoError) RETURN
+      CALL netcdf_get_fvar (ng, model, NGCname, 'Lweight',              &
+     &                      Lweight,                                    &
+     &                      ncid = NGCid)
+      IF (FoundError(exit_flag, NoError, __LINE__,                      &
+     &               __FILE__)) RETURN
 
 # ifdef QUADRATIC_WEIGHTS
 !
@@ -368,8 +470,11 @@
       IF (.not.allocated(Qweight)) THEN
         allocate ( Qweight(my_nQweights,NCdatum) )
       END IF
-      CALL netcdf_get_fvar (ng, model, NGCname, 'Qweight', Qweight)
-      IF (exit_flag.ne.NoError) RETURN
+      CALL netcdf_get_fvar (ng, model, NGCname, 'Qweight',              &
+     &                      Qweight,                                    &
+     &                      ncid = NGCid)
+      IF (FoundError(exit_flag, NoError, __LINE__,                      &
+     &               __FILE__)) RETURN
 # endif
 !
 !  Read in contact point bathymetry at RHO-points, 1:NCdatum.
@@ -377,16 +482,22 @@
       IF (.not.allocated(h)) THEN
         allocate ( h(NCdatum) )
       END IF
-      CALL netcdf_get_fvar (ng, model, NGCname, 'h', h)
-      IF (exit_flag.ne.NoError) RETURN
+      CALL netcdf_get_fvar (ng, model, NGCname, 'h',                    &
+     &                      h,                                          &
+     &                      ncid = NGCid)
+      IF (FoundError(exit_flag, NoError, __LINE__,                      &
+     &               __FILE__)) RETURN
 !
 !  Read in contact point Coriolis parameter at RHO-points, 1:NCdatum.
 !
       IF (.not.allocated(f)) THEN
         allocate ( f(NCdatum) )
       END IF
-      CALL netcdf_get_fvar (ng, model, NGCname, 'f', f)
-      IF (exit_flag.ne.NoError) RETURN
+      CALL netcdf_get_fvar (ng, model, NGCname, 'f',                    &
+     &                      f,                                          &
+     &                      ncid = NGCid)
+      IF (FoundError(exit_flag, NoError, __LINE__,                      &
+     &               __FILE__)) RETURN
 !
 !  Read in contact point curvilinar coordinates in XI- and ETA-direction
 !  at RHO-points, 1:NCdatum.
@@ -394,14 +505,20 @@
       IF (.not.allocated(pm)) THEN
         allocate ( pm(NCdatum) )
       END IF
-      CALL netcdf_get_fvar (ng, model, NGCname, 'pm', pm)
-      IF (exit_flag.ne.NoError) RETURN
+      CALL netcdf_get_fvar (ng, model, NGCname, 'pm',                   &
+     &                      pm,                                         &
+     &                      ncid = NGCid)
+      IF (FoundError(exit_flag, NoError, __LINE__,                      &
+     &               __FILE__)) RETURN
 
       IF (.not.allocated(pn)) THEN
         allocate ( pn(NCdatum) )
       END IF
-      CALL netcdf_get_fvar (ng, model, NGCname, 'pn', pn)
-      IF (exit_flag.ne.NoError) RETURN
+      CALL netcdf_get_fvar (ng, model, NGCname, 'pn',                   &
+     &                      pn,                                         &
+     &                      ncid = NGCid)
+      IF (FoundError(exit_flag, NoError, __LINE__,                      &
+     &               __FILE__)) RETURN
 !
 !  Read in contact point inverse metric factor in XI- and ETA-direction,
 !  1:NCdatum.
@@ -409,30 +526,48 @@
       IF (.not.allocated(dndx)) THEN
         allocate ( dndx(NCdatum) )
       END IF
-      CALL netcdf_get_fvar (ng, model, NGCname, 'dndx', dndx)
-      IF (exit_flag.ne.NoError) RETURN
+      CALL netcdf_get_fvar (ng, model, NGCname, 'dndx',                 &
+     &                      dndx,                                       &
+     &                      ncid = NGCid)
+      IF (FoundError(exit_flag, NoError, __LINE__,                      &
+     &               __FILE__)) RETURN
 
       IF (.not.allocated(dmde)) THEN
         allocate ( dmde(NCdatum) )
       END IF
-      CALL netcdf_get_fvar (ng, model, NGCname, 'dmde', dmde)
-      IF (exit_flag.ne.NoError) RETURN
+      CALL netcdf_get_fvar (ng, model, NGCname, 'dmde',                 &
+     &                      dmde,                                       &
+     &                      ncid = NGCid)
+      IF (FoundError(exit_flag, NoError, __LINE__,                      &
+     &               __FILE__)) RETURN
 !
 !  Read in contact point angle between XI-axis and EAST, 1:NCdatum.
 !
       IF (.not.allocated(angle)) THEN
         allocate ( angle(NCdatum) )
       END IF
-      CALL netcdf_get_fvar (ng, model, NGCname, 'angle', angle)
-      IF (exit_flag.ne.NoError) RETURN
+      CALL netcdf_get_fvar (ng, model, NGCname, 'angle',                &
+     &                      angle,                                      &
+     &                      ncid = NGCid)
+      IF (FoundError(exit_flag, NoError, __LINE__,                      &
+     &               __FILE__)) RETURN
 !
 !  Read in contact point land/sea mask, 1:NCdatum.
 !
       IF (.not.allocated(mask)) THEN
         allocate ( mask(NCdatum) )
       END IF
-      CALL netcdf_get_fvar (ng, model, NGCname, 'mask', mask)
-      IF (exit_flag.ne.NoError) RETURN
+      CALL netcdf_get_fvar (ng, model, NGCname, 'mask',                 &
+     &                      mask,                                       &
+     &                      ncid = NGCid)
+      IF (FoundError(exit_flag, NoError, __LINE__,                      &
+     &               __FILE__)) RETURN
+!
+!  Close contact points NetCDF file.
+!
+      CALL netcdf_close (ng, model, NGCid, NGCname, .FALSE.)
+      IF (FoundError(exit_flag, NoError, __LINE__,                      &
+     &               __FILE__)) RETURN
 !
 !-----------------------------------------------------------------------
 !  Unpack contact point data into nesting structures (type T_NGC).

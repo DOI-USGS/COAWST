@@ -2,7 +2,7 @@
       MODULE tl_rho_eos_mod
 #if defined TANGENT && defined SOLVE3D
 !
-!svn $Id: tl_rho_eos.F 830 2017-01-24 21:21:11Z arango $
+!svn $Id: tl_rho_eos.F 854 2017-07-18 23:28:45Z arango $
 !================================================== Hernan G. Arango ===
 !  Copyright (c) 2002-2017 The ROMS/TOMS Group       Andrew M. Moore   !
 !    Licensed under a MIT/X style license                              !
@@ -44,7 +44,7 @@
       CONTAINS
 !
 !***********************************************************************
-      SUBROUTINE tl_rho_eos (ng, tile)
+      SUBROUTINE tl_rho_eos (ng, tile, model)
 !***********************************************************************
 !
       USE mod_param
@@ -56,16 +56,16 @@
 !
 !  Imported variable declarations.
 !
-      integer, intent(in) :: ng, tile
+      integer, intent(in) :: ng, tile, model
 !
 !  Local variable declarations.
 !
 # include "tile.h"
 !
 # ifdef PROFILE
-      CALL wclock_on (ng, iTLM, 14)
+      CALL wclock_on (ng, model, 14, __LINE__, __FILE__)
 # endif
-      CALL tl_rho_eos_tile (ng, tile,                                   &
+      CALL tl_rho_eos_tile (ng, tile, model,                            &
      &                      LBi, UBi, LBj, UBj,                         &
      &                      IminS, ImaxS, JminS, JmaxS,                 &
      &                      nrhs(ng),                                   &
@@ -107,7 +107,7 @@
      &                     OCEAN(ng) % rho,                             &
      &                     OCEAN(ng) % tl_rho)
 # ifdef PROFILE
-      CALL wclock_off (ng, iTLM, 14)
+      CALL wclock_off (ng, model, 14, __LINE__, __FILE__)
 # endif
 
       RETURN
@@ -116,7 +116,7 @@
 # ifdef NONLIN_EOS
 !
 !***********************************************************************
-      SUBROUTINE tl_rho_eos_tile (ng, tile,                             &
+      SUBROUTINE tl_rho_eos_tile (ng, tile, model,                      &
      &                            LBi, UBi, LBj, UBj,                   &
      &                            IminS, ImaxS, JminS, JmaxS,           &
      &                            nrhs,                                 &
@@ -165,7 +165,7 @@
 !
 !  Imported variable declarations.
 !
-      integer, intent(in) :: ng, tile
+      integer, intent(in) :: ng, tile, model
       integer, intent(in) :: LBi, UBi, LBj, UBj
       integer, intent(in) :: IminS, ImaxS, JminS, JmaxS
       integer, intent(in) :: nrhs
@@ -812,25 +812,25 @@
 
 #  ifdef DISTRIBUTE
 !
-      CALL mp_exchange3d (ng, tile, iTLM, 1,                            &
+      CALL mp_exchange3d (ng, tile, model, 1,                           &
      &                    LBi, UBi, LBj, UBj, 1, N(ng),                 &
      &                    NghostPoints,                                 &
      &                    EWperiodic(ng), NSperiodic(ng),               &
      &                    rho)
-      CALL mp_exchange3d (ng, tile, iTLM, 1,                            &
+      CALL mp_exchange3d (ng, tile, model, 1,                           &
      &                    LBi, UBi, LBj, UBj, 1, N(ng),                 &
      &                    NghostPoints,                                 &
      &                    EWperiodic(ng), NSperiodic(ng),               &
      &                    tl_rho)
 
 #   if defined LMD_SKPP_NOT_YET || defined LMD_BKPP_NOT_YET
-!>    CALL mp_exchange3d (ng, tile, iNLM, 1,                            &
+!>    CALL mp_exchange3d (ng, tile, model, 1,                           &
 !>   &                    LBi, UBi, LBj, UBj, 1, N(ng),                 &
 !>   &                    NghostPoints,                                 &
 !>   &                    EWperiodic(ng), NSperiodic(ng),               &
 !>   &                    pden)
 !>
-      CALL mp_exchange3d (ng, tile, iTLM, 1,                            &
+      CALL mp_exchange3d (ng, tile, model, 1,                           &
      &                    LBi, UBi, LBj, UBj, 1, N(ng),                 &
      &                    NghostPoints,                                 &
      &                    EWperiodic(ng), NSperiodic(ng),               &
@@ -840,24 +840,24 @@
 #   if defined LMD_SKPP_NOT_YET || defined LMD_BKPP_NOT_YET || \
        defined BULK_FLUXES
 #    ifdef LMD_DDMIX_NOT_YET
-!>    CALL mp_exchange3d (ng, tile, iNLM, 1,                            &
+!>    CALL mp_exchange3d (ng, tile, model, 1,                           &
 !>   &                    LBi, UBi, LBj, UBj, 0, N(ng),                 &
 !>   &                    NghostPoints,                                 &
 !>   &                    EWperiodic(ng), NSperiodic(ng),               &
 !>   &                    alfaobeta)
 !>
-      CALL mp_exchange3d (ng, tile, iTLM, 1,                            &
+      CALL mp_exchange3d (ng, tile, model, 1,                           &
      &                    LBi, UBi, LBj, UBj, 0, N(ng),                 &
      &                    NghostPoints,                                 &
      &                    EWperiodic(ng), NSperiodic(ng),               &
      &                    tl_alfaobeta)
 #    endif
-      CALL mp_exchange2d (ng, tile, iTLM, 2,                            &
+      CALL mp_exchange2d (ng, tile, model, 2,                           &
      &                    LBi, UBi, LBj, UBj,                           &
      &                    NghostPoints,                                 &
      &                    EWperiodic(ng), NSperiodic(ng),               &
      &                    alpha, beta)
-      CALL mp_exchange2d (ng, tile, iTLM, 2,                            &
+      CALL mp_exchange2d (ng, tile, model, 2,                           &
      &                    LBi, UBi, LBj, UBj,                           &
      &                    NghostPoints,                                 &
      &                    EWperiodic(ng), NSperiodic(ng),               &
@@ -865,12 +865,12 @@
 #   endif
 
 #   ifdef VAR_RHO_2D
-      CALL mp_exchange2d (ng, tile, iTLM, 2,                            &
+      CALL mp_exchange2d (ng, tile, model, 2,                           &
      &                    LBi, UBi, LBj, UBj,                           &
      &                    NghostPoints,                                 &
      &                    EWperiodic(ng), NSperiodic(ng),               &
      &                    rhoA, rhoS)
-      CALL mp_exchange2d (ng, tile, iTLM, 2,                            &
+      CALL mp_exchange2d (ng, tile, model, 2,                           &
      &                    LBi, UBi, LBj, UBj,                           &
      &                    NghostPoints,                                 &
      &                    EWperiodic(ng), NSperiodic(ng),               &
@@ -878,13 +878,13 @@
 #   endif
 
 #   ifdef BV_FREQUENCY_NOT_YET
-!>    CALL mp_exchange3d (ng, tile, iNLM, 1,                            &
+!>    CALL mp_exchange3d (ng, tile, model, 1,                           &
 !>   &                    LBi, UBi, LBj, UBj, 0, N(ng),                 &
 !>   &                    NghostPoints,                                 &
 !>   &                    EWperiodic(ng), NSperiodic(ng),               &
 !>   &                    bvf)
 !>
-      CALL mp_exchange3d (ng, tile, iTLM, 1,                            &
+      CALL mp_exchange3d (ng, tile, model, 1,                           &
      &                    LBi, UBi, LBj, UBj, 0, N(ng),                 &
      &                    NghostPoints,                                 &
      &                    EWperiodic(ng), NSperiodic(ng),               &
@@ -899,7 +899,7 @@
 # ifndef NONLIN_EOS
 !
 !***********************************************************************
-      SUBROUTINE tl_rho_eos_tile (ng, tile,                             &
+      SUBROUTINE tl_rho_eos_tile (ng, tile, model,                      &
      &                            LBi, UBi, LBj, UBj,                   &
      &                            IminS, ImaxS, JminS, JmaxS,           &
      &                            nrhs,                                 &
@@ -947,7 +947,7 @@
 !
 !  Imported variable declarations.
 !
-      integer, intent(in) :: ng, tile
+      integer, intent(in) :: ng, tile, model
       integer, intent(in) :: LBi, UBi, LBj, UBj
       integer, intent(in) :: IminS, ImaxS, JminS, JmaxS
       integer, intent(in) :: nrhs
@@ -1285,25 +1285,25 @@
 
 #  ifdef DISTRIBUTE
 !
-      CALL mp_exchange3d (ng, tile, iTLM, 1,                            &
+      CALL mp_exchange3d (ng, tile, model, 1,                           &
      &                    LBi, UBi, LBj, UBj, 1, N(ng),                 &
      &                    NghostPoints,                                 &
      &                    EWperiodic(ng), NSperiodic(ng),               &
      &                    rho)
-      CALL mp_exchange3d (ng, tile, iTLM, 1,                            &
+      CALL mp_exchange3d (ng, tile, model, 1,                           &
      &                    LBi, UBi, LBj, UBj, 1, N(ng),                 &
      &                    NghostPoints,                                 &
      &                    EWperiodic(ng), NSperiodic(ng),               &
      &                    tl_rho)
 
 #   if defined LMD_SKPP_NOT_YET || defined LMD_BKPP_NOT_YET
-!>    CALL mp_exchange3d (ng, tile, iNLM, 1,                            &
+!>    CALL mp_exchange3d (ng, tile, model, 1,                           &
 !>   &                    LBi, UBi, LBj, UBj, 1, N(ng),                 &
 !>   &                    NghostPoints,                                 &
 !>   &                    EWperiodic(ng), NSperiodic(ng),               &
 !>   &                    pden)
 !>
-      CALL mp_exchange3d (ng, tile, iTLM, 1,                            &
+      CALL mp_exchange3d (ng, tile, model, 1,                           &
      &                    LBi, UBi, LBj, UBj, 1, N(ng),                 &
      &                    NghostPoints,                                 &
      &                    EWperiodic(ng), NSperiodic(ng),               &
@@ -1313,24 +1313,24 @@
 #   if defined LMD_SKPP_NOT_YET || defined LMD_BKPP_NOT_YET || \
        defined BULK_FLUXES
 #    ifdef LMD_DDMIX_NOT_YET
-!>    CALL mp_exchange3d (ng, tile, iNLM, 1,                            &
+!>    CALL mp_exchange3d (ng, tile, model, 1,                           &
 !>   &                    LBi, UBi, LBj, UBj, 0, N(ng),                 &
 !>   &                    NghostPoints,                                 &
 !>   &                    EWperiodic(ng), NSperiodic(ng),               &
 !>   &                    alfaobeta)
 !>
-      CALL mp_exchange3d (ng, tile, iTLM, 1,                            &
+      CALL mp_exchange3d (ng, tile, model, 1,                           &
      &                    LBi, UBi, LBj, UBj, 0, N(ng),                 &
      &                    NghostPoints,                                 &
      &                    EWperiodic(ng), NSperiodic(ng),               &
      &                    tl_alfaobeta)
 #    endif
-      CALL mp_exchange2d (ng, tile, iTLM, 2,                            &
+      CALL mp_exchange2d (ng, tile, model, 2,                           &
      &                    LBi, UBi, LBj, UBj,                           &
      &                    NghostPoints,                                 &
      &                    EWperiodic(ng), NSperiodic(ng),               &
      &                    alpha, beta)
-      CALL mp_exchange2d (ng, tile, iTLM, 2,                            &
+      CALL mp_exchange2d (ng, tile, model, 2,                           &
      &                    LBi, UBi, LBj, UBj,                           &
      &                    NghostPoints,                                 &
      &                    EWperiodic(ng), NSperiodic(ng),               &
@@ -1338,12 +1338,12 @@
 #   endif
 
 #   ifdef VAR_RHO_2D
-      CALL mp_exchange2d (ng, tile, iTLM, 2,                            &
+      CALL mp_exchange2d (ng, tile, model, 2,                           &
      &                    LBi, UBi, LBj, UBj,                           &
      &                    NghostPoints,                                 &
      &                    EWperiodic(ng), NSperiodic(ng),               &
      &                    rhoA, rhoS)
-      CALL mp_exchange2d (ng, tile, iTLM, 2,                            &
+      CALL mp_exchange2d (ng, tile, model, 2,                           &
      &                    LBi, UBi, LBj, UBj,                           &
      &                    NghostPoints,                                 &
      &                    EWperiodic(ng), NSperiodic(ng),               &
@@ -1351,13 +1351,13 @@
 #   endif
 
 #   ifdef BV_FREQUENCY_NOT_YET
-!>    CALL mp_exchange3d (ng, tile, iNLM, 1,                            &
+!>    CALL mp_exchange3d (ng, tile, model, 1,                           &
 !>   &                    LBi, UBi, LBj, UBj, 0, N(ng),                 &
 !>   &                    NghostPoints,                                 &
 !>   &                    EWperiodic(ng), NSperiodic(ng),               &
 !>   &                    bvf)
 !>
-      CALL mp_exchange3d (ng, tile, iTLM, 1,                            &
+      CALL mp_exchange3d (ng, tile, model, 1,                           &
      &                    LBi, UBi, LBj, UBj, 0, N(ng),                 &
      &                    NghostPoints,                                 &
      &                    EWperiodic(ng), NSperiodic(ng),               &

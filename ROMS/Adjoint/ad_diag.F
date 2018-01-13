@@ -2,7 +2,7 @@
       MODULE ad_diag_mod
 #ifdef ADJOINT
 !
-!svn $Id: ad_diag.F 830 2017-01-24 21:21:11Z arango $
+!svn $Id: ad_diag.F 854 2017-07-18 23:28:45Z arango $
 !================================================== Hernan G. Arango ===
 !  Copyright (c) 2002-2017 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
@@ -38,7 +38,7 @@
 # include "tile.h"
 !
 # ifdef PROFILE
-      CALL wclock_on (ng, iADM, 7)
+      CALL wclock_on (ng, iADM, 7, __LINE__, __FILE__)
 # endif
       CALL ad_diag_tile (ng, tile,                                      &
      &                   LBi, UBi, LBj, UBj,                            &
@@ -58,7 +58,7 @@
      &                   OCEAN(ng) % ad_vbar,                           &
      &                   OCEAN(ng) % ad_zeta)
 # ifdef PROFILE
-      CALL wclock_off (ng, iADM, 7)
+      CALL wclock_off (ng, iADM, 7, __LINE__, __FILE__)
 # endif
       RETURN
       END SUBROUTINE ad_diag
@@ -269,7 +269,7 @@
           IF (first_time(ng).eq.0) THEN
             first_time(ng)=1
             IF (Master.and.(ng.eq.1)) THEN
-              WRITE (stdout,10) 'STEP', 'Day HH:MM:SS',                 &
+              WRITE (stdout,10) 'TIME-STEP', 'YYYY-MM-DD hh:mm:ss.ss',  &
      &                          'KINETIC_ENRG', 'POTEN_ENRG',           &
 # ifdef NESTING
      &                          'TOTAL_ENRG', 'NET_VOLUME', 'Grid'
@@ -277,23 +277,24 @@
      &                          'TOTAL_ENRG', 'NET_VOLUME'
 # endif
 # ifdef NESTING
- 10           FORMAT (/,3x,a,3x,a,2x,a,3x,a,4x,a,4x,a,2x,a)
+ 10           FORMAT (/,1x,a,1x,a,2x,a,3x,a,4x,a,4x,a,2x,a)
 # else
- 10           FORMAT (/,3x,a,3x,a,2x,a,3x,a,4x,a,4x,a)
+ 10           FORMAT (/,1x,a,1x,a,2x,a,3x,a,4x,a,4x,a)
 # endif
             END IF
           END IF
-          IF (Master) THEN
-            WRITE (stdout,20) iic(ng)-1, time_code(ng),                 &
+          IF (Master) THEN    ! restart counter after 10 billion steps
+            WRITE (stdout,20) INT(MOD(REAL(iic(ng)-1,r8),1.0E+10_r8)),  &
+     &                        time_code(ng),                            &
 # ifdef NESTING
      &                        avgke, avgpe, avgkp, volume, ng
 # else
      &                        avgke, avgpe, avgkp, volume
 # endif
 # ifdef NESTING
- 20         FORMAT (i7,1x,a,4(1pe14.6),2x,i2.2)
+ 20         FORMAT (i10,1x,a,4(1pe14.6),2x,i2.2)
 # else
- 20         FORMAT (i7,1x,a,4(1pe14.6))
+ 20         FORMAT (i10,1x,a,4(1pe14.6))
 # endif
             CALL my_flush (stdout)
           END IF

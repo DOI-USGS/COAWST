@@ -4,7 +4,7 @@
 #if defined TL_IOMS && defined RPM_RELAXATION && defined SOLVE3D && \
     defined W4DVAR_SENSITIVITY
 !
-!svn $Id: tl_t3drelax.F 830 2017-01-24 21:21:11Z arango $
+!svn $Id: tl_t3drelax.F 854 2017-07-18 23:28:45Z arango $
 !=================================================== Andrew M. Moore ===
 !  Copyright (c) 2002-2017 The ROMS/TOMS Group      Hernan G. Arango   !
 !    Licensed under a MIT/X style license                              !
@@ -38,7 +38,7 @@
 # include "tile.h"
 !
 # ifdef PROFILE
-      CALL wclock_on (ng, iTLM, 24)
+      CALL wclock_on (ng, iTLM, 24, __LINE__, __FILE__)
 # endif
       CALL tl_t3drelax_tile (ng, tile,                                  &
      &                       LBi, UBi, LBj, UBj,                        &
@@ -55,7 +55,7 @@
      &                       GRID(ng) % pn,                             &
      &                       OCEAN(ng) % tl_t)
 # ifdef PROFILE
-      CALL wclock_off (ng, iTLM, 24)
+      CALL wclock_off (ng, iTLM, 24, __LINE__, __FILE__)
 # endif
       RETURN
       END SUBROUTINE tl_t3drelax

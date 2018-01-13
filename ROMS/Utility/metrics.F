@@ -1,7 +1,7 @@
 #include "cppdefs.h"
       MODULE metrics_mod
 !
-!svn $Id: metrics.F 830 2017-01-24 21:21:11Z arango $
+!svn $Id: metrics.F 875 2017-11-03 01:10:02Z arango $
 !=======================================================================
 !  Copyright (c) 2002-2017 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
@@ -283,7 +283,7 @@
 #ifdef NESTING
       integer :: cr, dg, ig, rg
 #endif
-      real(r8), parameter :: Large = 1.0E+20_r8
+!     real(r8), parameter :: Large = 1.0E+20_r8
 #if defined DIFF_3DCOEF || defined VISC_3DCOEF
       real(r8), parameter :: PecletCoef = 1.0_r8 / 12.0_r8
       real(r8), parameter :: Uscale = 0.1_r8
@@ -724,7 +724,7 @@
         END DO
       END DO
 
-      CALL set_depth_tile (ng, tile,                                    &
+      CALL set_depth_tile (ng, tile, iNLM,                              &
      &                     LBi, UBi, LBj, UBj,                          &
      &                     IminS, ImaxS, JminS, JmaxS,                  &
      &                     nstp, nnew,                                  &
@@ -826,58 +826,35 @@
       END IF
 #endif
 !$OMP CRITICAL (REDUCTIONS)
-      IF (tile_count.eq.0) THEN
-        Cg_min=my_Cg_min
-        Cg_max=my_Cg_max
-        Cg_Cor=my_Cg_Cor
-        grdmax(ng)=my_grdmax
-        DXmin(ng)=my_DXmin
-        DXmax(ng)=my_DXmax
-        DYmin(ng)=my_DYmin
-        DYmax(ng)=my_DYmax
+      Cg_min(ng)=MIN(Cg_min(ng),my_Cg_min)
+      Cg_max(ng)=MAX(Cg_max(ng),my_Cg_max)
+      Cg_Cor(ng)=MAX(Cg_Cor(ng),my_Cg_Cor)
+      grdmax(ng)=MAX(grdmax(ng),my_grdmax)
+      DXmin(ng)=MIN(DXmin(ng),my_DXmin)
+      DXmax(ng)=MAX(DXmax(ng),my_DXmax)
+      DYmin(ng)=MIN(DYmin(ng),my_DYmin)
+      DYmax(ng)=MAX(DYmax(ng),my_DYmax)
 #ifdef SOLVE3D
-        DZmin(ng)=my_DZmin
-        DZmax(ng)=my_DZmax
+      DZmin(ng)=MIN(DZmin(ng),my_DZmin)
+      DZmax(ng)=MAX(DZmax(ng),my_DZmax)
 #endif
 #ifdef DIFF_3DCOEF
-        DiffMin(ng)=my_DiffMin
-        DiffMax(ng)=my_DiffMax
+      DiffMin(ng)=MIN(DiffMin(ng),my_DiffMin)
+      DiffMax(ng)=MAX(DiffMax(ng),my_DiffMax)
 #endif
 #ifdef VISC_3DCOEF
-        ViscMin(ng)=my_ViscMin
-        ViscMax(ng)=my_ViscMax
+      ViscMin(ng)=MIN(ViscMin(ng),my_ViscMin)
+      ViscMax(ng)=MAX(ViscMax(ng),my_ViscMax)
 #endif
-      ELSE
-        Cg_min=MIN(Cg_min,my_Cg_min)
-        Cg_max=MAX(Cg_max,my_Cg_max)
-        Cg_Cor=MAX(Cg_Cor,my_Cg_Cor)
-        grdmax(ng)=MAX(grdmax(ng),my_grdmax)
-        DXmin(ng)=MIN(DXmin(ng),my_DXmin)
-        DXmax(ng)=MAX(DXmax(ng),my_DXmax)
-        DYmin(ng)=MIN(DYmin(ng),my_DYmin)
-        DYmax(ng)=MAX(DYmax(ng),my_DYmax)
-#ifdef SOLVE3D
-        DZmin(ng)=MIN(DZmin(ng),my_DZmin)
-        DZmax(ng)=MAX(DZmax(ng),my_DZmax)
-#endif
-#ifdef DIFF_3DCOEF
-        DiffMin(ng)=MIN(DiffMin(ng),my_DiffMin)
-        DiffMax(ng)=MAX(DiffMax(ng),my_DiffMax)
-#endif
-#ifdef VISC_3DCOEF
-        ViscMin(ng)=MIN(ViscMin(ng),my_ViscMin)
-        ViscMax(ng)=MAX(ViscMax(ng),my_ViscMax)
-#endif
-      END IF
       tile_count=tile_count+1
       IF (tile_count.eq.NSUB) THEN
         tile_count=0
 #ifdef DISTRIBUTE
-        buffer(1)=Cg_min
+        buffer(1)=Cg_min(ng)
         op_handle(1)='MIN'
-        buffer(2)=Cg_max
+        buffer(2)=Cg_max(ng)
         op_handle(2)='MAX'
-        buffer(3)=Cg_Cor
+        buffer(3)=Cg_Cor(ng)
         op_handle(3)='MAX'
         buffer(4)=grdmax(ng)
         op_handle(4)='MAX'
@@ -923,9 +900,9 @@
         op_handle(14)='MAX'
 # endif
         CALL mp_reduce (ng, model, 14, buffer, op_handle)
-        Cg_min=buffer(1)
-        Cg_max=buffer(2)
-        Cg_Cor=buffer(3)
+        Cg_min(ng)=buffer(1)
+        Cg_max(ng)=buffer(2)
+        Cg_Cor(ng)=buffer(3)
         grdmax(ng)=buffer(4)
         DXmin(ng)=buffer(5)
         DXmax(ng)=buffer(6)
@@ -959,7 +936,7 @@
   20      FORMAT (' Minimum Z-grid spacing, DZmin = ',1pe15.8,' m',/,   &
      &            ' Maximum Z-grid spacing, DZmax = ',1pe15.8,' m')
 #endif
-          WRITE (stdout,30) Cg_min, Cg_max, Cg_Cor
+          WRITE (stdout,30) Cg_min(ng), Cg_max(ng), Cg_Cor(ng)
   30      FORMAT (/,' Minimum barotropic Courant Number = ', 1pe15.8,/, &
      &              ' Maximum barotropic Courant Number = ', 1pe15.8,/, &
      &              ' Maximum Coriolis   Courant Number = ', 1pe15.8,/)

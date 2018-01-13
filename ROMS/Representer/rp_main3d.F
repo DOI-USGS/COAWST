@@ -2,7 +2,7 @@
 #if defined TL_IOMS && defined SOLVE3D
       SUBROUTINE rp_main3d (RunInterval)
 !
-!svn $Id: rp_main3d.F 830 2017-01-24 21:21:11Z arango $
+!svn $Id: rp_main3d.F 858 2017-07-31 23:02:30Z arango $
 !================================================== Hernan G. Arango ===
 !  Copyright (c) 2002-2017 The ROMS/TOMS Group       Andrew M. Moore   !
 !    Licensed under a MIT/X style license                              !
@@ -19,7 +19,7 @@
 !
       USE mod_param
       USE mod_parallel
-# ifdef MODEL_COUPLING
+# if defined MODEL_COUPLING && defined MCT_LIB
       USE mod_coupler
 # endif
       USE mod_iounits
@@ -27,85 +27,87 @@
       USE mod_stepping
 !
 # ifdef ANA_VMIX
-      USE analytical_mod, ONLY : ana_vmix
+      USE analytical_mod,          ONLY : ana_vmix
 # endif
-# ifdef AIR_OCEAN_NOT_YET
-      USE ocean_coupler_mod, ONLY : atmos_coupling
+      USE dateclock_mod,           ONLY : time_string
+# if defined ATM_COUPLING_NOT_YET && defined MCT_LIB
+      USE ocean_coupler_mod,       ONLY : atmos_coupling
 # endif
-# ifdef WAVES_OCEAN_NOT_YET
-      USE ocean_coupler_mod, ONLY : waves_coupling
+# if defined WAV_COUPLING_NOT_YET && defined MCT_LIB
+      USE ocean_coupler_mod,       ONLY : waves_coupling
 # endif
 # ifdef FORWARD_READ
-      USE omega_mod, ONLY : omega
-      USE set_depth_mod, ONLY : set_depth
-      USE set_massflux_mod, ONLY : set_massflux
+      USE omega_mod,               ONLY : omega
+      USE set_depth_mod,           ONLY : set_depth
+      USE set_massflux_mod,        ONLY : set_massflux
 # endif
+      USE strings_mod,             ONLY : FoundError
 # ifdef BIOLOGY
-      USE rp_biology_mod, ONLY : rp_biology
+      USE rp_biology_mod,          ONLY : rp_biology
 # endif
 # ifdef BBL_MODEL_NOT_YET
-!!    USE rp_bbl_mod, ONLY : rp_bblm
+!!    USE rp_bbl_mod,              ONLY : rp_bblm
 # endif
 # if defined BULK_FLUXES && !defined NL_BULK_FLUXES
-      USE rp_bulk_flux_mod, ONLY : rp_bulk_flux
+      USE rp_bulk_flux_mod,        ONLY : rp_bulk_flux
 # endif
 # ifdef BVF_MIXING_NOT_YET
-!!    USE rp_bvf_mix_mod, ONLY : rp_bvf_mix
+!!    USE rp_bvf_mix_mod,          ONLY : rp_bvf_mix
 # endif
-      USE rp_diag_mod, ONLY : rp_diag
+      USE rp_diag_mod,             ONLY : rp_diag
 # if defined ADJUST_STFLUX || defined ADJUST_WSTRESS
-      USE rp_frc_adjust_mod, ONLY : rp_frc_adjust
+      USE rp_frc_adjust_mod,       ONLY : rp_frc_adjust
 # endif
 # ifdef GLS_MIXING_NOT_YET
-!!    USE rp_gls_corstep_mod, ONLY : rp_gls_corstep
-!!    USE rp_gls_prestep_mod, ONLY : rp_gls_prestep
+!!    USE rp_gls_corstep_mod,      ONLY : rp_gls_corstep
+!!    USE rp_gls_prestep_mod,      ONLY : rp_gls_prestep
 # endif
-      USE rp_ini_fields_mod, ONLY : rp_ini_fields, rp_ini_zeta
+      USE rp_ini_fields_mod,       ONLY : rp_ini_fields, rp_ini_zeta
 # ifdef LMD_MIXING_NOT_YET
-!!    USE rp_lmd_vmix_mod, ONLY : rp_lmd_vmix
+!!    USE rp_lmd_vmix_mod,         ONLY : rp_lmd_vmix
 # endif
 # ifdef MY25_MIXING
-!!    USE rp_my25_corstep_mod, ONLY : rp_my25_corstep
-!!    USE rp_my25_prestep_mod, ONLY : rp_my25_prestep
+!!    USE rp_my25_corstep_mod,     ONLY : rp_my25_corstep
+!!    USE rp_my25_prestep_mod,     ONLY : rp_my25_prestep
 # endif
 # ifdef ADJUST_BOUNDARY
-      USE rp_obc_adjust_mod, ONLY : rp_obc_adjust
-      USE rp_obc_adjust_mod, ONLY : rp_obc2d_adjust
-      USE rp_set_depth_mod, ONLY : rp_set_depth_bry
+      USE rp_obc_adjust_mod,       ONLY : rp_obc_adjust
+      USE rp_obc_adjust_mod,       ONLY : rp_obc2d_adjust
+      USE rp_set_depth_mod,        ONLY : rp_set_depth_bry
 # endif
-      USE rp_omega_mod, ONLY : rp_omega
+      USE rp_omega_mod,            ONLY : rp_omega
 # ifdef NEARSHORE_MELLOR_NOT_YET
 !!    USE rp_radiation_stress_mod, ONLY : rp_radiation_stress
 # endif
 # ifndef TS_FIXED
-      USE rp_rho_eos_mod, ONLY : rp_rho_eos
+      USE rp_rho_eos_mod,          ONLY : rp_rho_eos
 # endif
-      USE rp_rhs3d_mod, ONLY : rp_rhs3d
+      USE rp_rhs3d_mod,            ONLY : rp_rhs3d
 # ifdef SEDIMENT_NOT_YET
-!!    USE rp_sediment_mod, ONLY : rp_sediment
+!!    USE rp_sediment_mod,         ONLY : rp_sediment
 # endif
-      USE rp_set_depth_mod, ONLY : rp_set_depth
-      USE rp_set_massflux_mod, ONLY : rp_set_massflux
+      USE rp_set_depth_mod,        ONLY : rp_set_depth
+      USE rp_set_massflux_mod,     ONLY : rp_set_massflux
 # if defined SSH_TIDES_NOT_YET || defined UV_TIDES_NOT_YET
-!!    USE rp_set_tides_mod, ONLY : rp_set_tides
+!!    USE rp_set_tides_mod,        ONLY : rp_set_tides
 # endif
-      USE rp_set_vbc_mod, ONLY : rp_set_vbc
-      USE rp_set_zeta_mod, ONLY : rp_set_zeta
-      USE rp_step2d_mod, ONLY : rp_step2d
+      USE rp_set_vbc_mod,          ONLY : rp_set_vbc
+      USE rp_set_zeta_mod,         ONLY : rp_set_zeta
+      USE rp_step2d_mod,           ONLY : rp_step2d
 # ifndef TS_FIXED
-      USE rp_step3d_t_mod, ONLY : rp_step3d_t
+      USE rp_step3d_t_mod,         ONLY : rp_step3d_t
 # endif
-      USE rp_step3d_uv_mod, ONLY : rp_step3d_uv
+      USE rp_step3d_uv_mod,        ONLY : rp_step3d_uv
 # ifdef FLOATS_NOT_YET
-!!    USE rp_step_floats_mod, ONLY : rp_step_floats
+!!    USE rp_step_floats_mod,      ONLY : rp_step_floats
 # endif
 # ifdef WEAK_CONSTRAINT
-      USE tl_forcing_mod, ONLY : tl_forcing
+      USE tl_forcing_mod,          ONLY : tl_forcing
 # endif
 # ifdef RP_AVERAGES
-      USE tl_set_avg_mod, ONLY : tl_set_avg
+      USE tl_set_avg_mod,          ONLY : tl_set_avg
 # endif
-!!    USE wvelocity_mod, ONLY : wvelocity
+!!    USE wvelocity_mod,           ONLY : wvelocity
 !
       implicit none
 !
@@ -157,7 +159,8 @@
           CALL rp_get_data (ng)
 !$OMP END MASTER
 !$OMP BARRIER
-          IF (exit_flag.ne.NoError) RETURN
+          IF (FoundError(exit_flag, NoError, __LINE__,                  &
+     &                   __FILE__)) RETURN
         END DO
 !
 !-----------------------------------------------------------------------
@@ -169,12 +172,13 @@
           DO tile=first_tile(ng),last_tile(ng),+1
             CALL rp_set_data (ng, tile)
 # ifdef FORWARD_READ
-            CALL set_depth (ng, tile)
+            CALL set_depth (ng, tile, iRPM)
 # endif
           END DO
 !$OMP BARRIER
         END DO
-        IF (exit_flag.ne.NoError) RETURN
+        IF (FoundError(exit_flag, NoError, __LINE__,                    &
+     &                 __FILE__)) RETURN
 
 # ifdef FORWARD_READ
 !
@@ -184,7 +188,7 @@
 !
         DO ng=1,Ngrids
           DO tile=last_tile(ng),first_tile(ng),-1
-            CALL set_massflux (ng, tile)
+            CALL set_massflux (ng, tile, iRPM)
           END DO
 !$OMP BARRIER
         END DO
@@ -222,7 +226,7 @@
 !
             DO tile=first_tile(ng),last_tile(ng),+1
               CALL rp_ini_zeta (ng, tile, iRPM)
-              CALL rp_set_depth (ng, tile)
+              CALL rp_set_depth (ng, tile, iRPM)
             END DO
 !$OMP BARRIER
 !
@@ -243,20 +247,21 @@
 !
         DO ng=1,Ngrids
           DO tile=first_tile(ng),last_tile(ng),+1
-            CALL rp_set_massflux (ng, tile)
+            CALL rp_set_massflux (ng, tile, iRPM)
 # ifndef TS_FIXED
-            CALL rp_rho_eos (ng, tile)
+            CALL rp_rho_eos (ng, tile, iRPM)
 # endif
             CALL rp_diag (ng, tile)
 # ifdef FORWARD_READ
-            CALL omega (ng, tile)
+            CALL omega (ng, tile, iRPM)
 # endif
           END DO
 !$OMP BARRIER
         END DO
-        IF (exit_flag.ne.NoError) RETURN
+        IF (FoundError(exit_flag, NoError, __LINE__,                    &
+     &                 __FILE__)) RETURN
 
-# ifdef AIR_OCEAN_NOT_YET
+# if defined ATM_COUPLING_NOT_YET && defined MCT_LIB
 !
 !-----------------------------------------------------------------------
 !  Couple to atmospheric model every CoupleSteps(Iatmos) timesteps: get
@@ -274,7 +279,7 @@
         END DO
 # endif
 
-# ifdef WAVES_OCEAN_NOT_YET
+# if defined WAV_COUPLING_NOT_YET && defined MCT_LIB
 !
 !-----------------------------------------------------------------------
 !  Couple to waves model every CoupleSteps(Iwaves) timesteps: get
@@ -338,7 +343,7 @@
           IF ((Nrun.ne.1).and.(iic(ng).lt.(ntend(ng)+1))) THEN
             DO tile=first_tile(ng),last_tile(ng),+1
               CALL rp_obc_adjust (ng, tile, Lbinp(ng))
-              CALL rp_set_depth_bry (ng, tile)
+              CALL rp_set_depth_bry (ng, tile, iRPM)
               CALL rp_obc2d_adjust (ng, tile, Lbinp(ng))
             END DO
 !$OMP BARRIER
@@ -378,7 +383,7 @@
 # elif defined BVF_MIXING_NOT_YET
             CALL rp_bvf_mix (ng, tile)
 # endif
-            CALL rp_omega (ng, tile)
+            CALL rp_omega (ng, tile, iRPM)
 !!          CALL wvelocity (ng, tile, nstp(ng))
           END DO
 !$OMP BARRIER
@@ -414,7 +419,8 @@
           CALL rp_output (ng)
 !$OMP END MASTER
 !$OMP BARRIER
-          IF ((exit_flag.ne.NoError).or.                                &
+          IF ((FoundError(exit_flag, NoError, __LINE__,                 &
+     &                    __FILE__)).or.                                &
      &        ((iic(ng).eq.(ntend(ng)+1)).and.(ng.eq.Ngrids))) RETURN
         END DO
 !
@@ -505,7 +511,7 @@
 !
         DO ng=1,Ngrids
           DO tile=first_tile(ng),last_tile(ng),+1
-            CALL rp_set_depth (ng, tile)
+            CALL rp_set_depth (ng, tile, iRPM)
           END DO
 !$OMP BARRIER
         END DO
@@ -531,7 +537,7 @@
 !
         DO ng=1,Ngrids
           DO tile=first_tile(ng),last_tile(ng),+1
-            CALL rp_omega (ng, tile)
+            CALL rp_omega (ng, tile, iRPM)
 # ifdef MY25_MIXING_NOT_YET
             CALL rp_my25_corstep (ng, tile)
 # elif defined GLS_MIXING_NOT_YET

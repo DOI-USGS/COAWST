@@ -6,7 +6,7 @@
    (defined RP_AVERAGES && defined TL_IOMS) || \
    (defined TL_AVERAGES && defined TANGENT)
 !
-!svn $Id: vorticity.F 830 2017-01-24 21:21:11Z arango $
+!svn $Id: vorticity.F 854 2017-07-18 23:28:45Z arango $
 !=======================================================================
 !  Copyright (c) 2002-2017 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
@@ -73,7 +73,7 @@
 # include "tile.h"
 !
 # ifdef PROFILE
-      CALL wclock_on (ng, iNLM, 5)
+      CALL wclock_on (ng, iNLM, 5, __LINE__, __FILE__)
 # endif
       CALL vorticity_tile (ng, tile,                                    &
      &                     LBi, UBi, LBj, UBj,                          &
@@ -111,7 +111,7 @@
      &                     AVERAGE(ng) % avgrvor2d)
 
 # ifdef PROFILE
-      CALL wclock_off (ng, iNLM, 5)
+      CALL wclock_off (ng, iNLM, 5, __LINE__, __FILE__)
 # endif
       RETURN
       END SUBROUTINE vorticity

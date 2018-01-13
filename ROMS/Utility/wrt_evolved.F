@@ -29,16 +29,17 @@
       USE mod_scalars
       USE mod_stepping
 !
-      USE nf_fwrite2d_mod, ONLY : nf_fwrite2d
+      USE nf_fwrite2d_mod,     ONLY : nf_fwrite2d
 # ifdef ADJUST_BOUNDARY
       USE nf_fwrite2d_bry_mod, ONLY : nf_fwrite2d_bry
 # endif
 # ifdef SOLVE3D
-      USE nf_fwrite3d_mod, ONLY : nf_fwrite3d
+      USE nf_fwrite3d_mod,     ONLY : nf_fwrite3d
 #  ifdef ADJUST_BOUNDARY
       USE nf_fwrite3d_bry_mod, ONLY : nf_fwrite3d_bry
 #  endif
 # endif
+      USE strings_mod,         ONLY : FoundError
 !
       implicit none
 !
@@ -58,7 +59,7 @@
 # endif
       real(r8) :: scale
 !
-      SourceFile='wrt_evolved.F'
+      SourceFile=__FILE__
 !
       LBi=LBOUND(GRID(ng)%h,DIM=1)
       UBi=UBOUND(GRID(ng)%h,DIM=1)
@@ -73,7 +74,8 @@
 !  Write out evolved Lanczos vectors.
 !-----------------------------------------------------------------------
 !
-      IF (exit_flag.ne.NoError) RETURN
+      IF (FoundError(exit_flag, NoError, __LINE__,                      &
+     &               __FILE__)) RETURN
 !
 !  Set grid type factor to write full (gfactor=1) fields or water
 !  points (gfactor=-1) fields only.
@@ -97,7 +99,8 @@
      &                      (/LZE(ng)%Rindex/), (/1/),                  &
      &                      ncid = LZE(ng)%ncid,                        &
      &                      varid = LZE(ng)%Vid(idtime))
-      IF (exit_flag.ne.NoError) RETURN
+      IF (FoundError(exit_flag, NoError, __LINE__,                      &
+     &               __FILE__)) RETURN
 !
 !  Write out free-surface.
 !
@@ -110,7 +113,8 @@
      &                   GRID(ng) % rmask,                              &
 # endif
      &                   OCEAN(ng)% tl_zeta(:,:,kout))
-      IF (status.ne.nf90_noerr) THEN
+      IF (FoundError(status, nf90_noerr, __LINE__,                      &
+     &               __FILE__)) THEN
         IF (Master) THEN
           WRITE (stdout,10) TRIM(Vname(1,idFsur)), LZE(ng)%Rindex
         END IF
@@ -132,7 +136,8 @@
      &                          LBij, UBij, Nbrec(ng), scale,           &
      &                          BOUNDARY(ng) % tl_zeta_obc(LBij:,:,:,   &
      &                                                     kout))
-        IF (status.ne.nf90_noerr) THEN
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+     &                 __FILE__)) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idSbry(isFsur))),            &
      &                        LZE(ng)%Rindex
@@ -155,7 +160,8 @@
      &                   GRID(ng) % umask_full,                         &
 # endif
      &                   OCEAN(ng) % tl_ubar(:,:,kout))
-      IF (status.ne.nf90_noerr) THEN
+      IF (FoundError(status, nf90_noerr, __LINE__,                      &
+     &               __FILE__)) THEN
         IF (Master) THEN
           WRITE (stdout,10) TRIM(Vname(1,idUbar)), LZE(ng)%Rindex
         END IF
@@ -177,7 +183,8 @@
      &                          LBij, UBij, Nbrec(ng), scale,           &
      &                          BOUNDARY(ng) % tl_ubar_obc(LBij:,:,:,   &
      &                                                     kout))
-        IF (status.ne.nf90_noerr) THEN
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+     &                 __FILE__)) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idSbry(isUbar))),            &
      &                        LZE(ng)%Rindex
@@ -200,7 +207,8 @@
      &                   GRID(ng) % vmask_full,                         &
 # endif
      &                   OCEAN(ng) % tl_vbar(:,:,kout))
-      IF (status.ne.nf90_noerr) THEN
+      IF (FoundError(status, nf90_noerr, __LINE__,                      &
+     &               __FILE__)) THEN
         IF (Master) THEN
           WRITE (stdout,10) TRIM(Vname(1,idVbar)), LZE(ng)%Rindex
         END IF
@@ -222,7 +230,8 @@
      &                          LBij, UBij, Nbrec(ng), scale,           &
      &                          BOUNDARY(ng) % tl_vbar_obc(LBij:,:,:,   &
      &                                                     kout))
-        IF (status.ne.nf90_noerr) THEN
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+     &                 __FILE__)) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idSbry(isVbar))),            &
      &                        LZE(ng)%Rindex
@@ -247,7 +256,8 @@
      &                   GRID(ng) % umask_full,                         &
 #  endif
      &                   OCEAN(ng) % tl_u(:,:,:,nout))
-      IF (status.ne.nf90_noerr) THEN
+      IF (FoundError(status, nf90_noerr, __LINE__,                      &
+     &               __FILE__)) THEN
         IF (Master) THEN
           WRITE (stdout,10) TRIM(Vname(1,idUvel)), LZE(ng)%Rindex
         END IF
@@ -269,7 +279,8 @@
      &                          LBij, UBij, 1, N(ng), Nbrec(ng), scale, &
      &                          BOUNDARY(ng) % tl_u_obc(LBij:,:,:,:,    &
      &                                                  nout))
-        IF (status.ne.nf90_noerr) THEN
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+     &                 __FILE__)) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idSbry(isUvel))),            &
      &                        LZE(ng)%Rindex
@@ -292,7 +303,8 @@
      &                   GRID(ng) % vmask_full,                         &
 #  endif
      &                   OCEAN(ng) % tl_v(:,:,:,nout))
-      IF (status.ne.nf90_noerr) THEN
+      IF (FoundError(status, nf90_noerr, __LINE__,                      &
+     &               __FILE__)) THEN
         IF (Master) THEN
           WRITE (stdout,10) TRIM(Vname(1,idVvel)), LZE(ng)%Rindex
         END IF
@@ -314,7 +326,8 @@
      &                          LBij, UBij, 1, N(ng), Nbrec(ng), scale, &
      &                          BOUNDARY(ng) % tl_v_obc(LBij:,:,:,:,    &
      &                                                  nout))
-        IF (status.ne.nf90_noerr) THEN
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+     &                 __FILE__)) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idSbry(isVvel))),            &
      &                        LZE(ng)%Rindex
@@ -338,7 +351,8 @@
      &                     GRID(ng) % rmask,                            &
 #  endif
      &                     OCEAN(ng) % tl_t(:,:,:,nout,itrc))
-        IF (status.ne.nf90_noerr) THEN
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+     &                 __FILE__)) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idTvar(itrc))),              &
      &                        LZE(ng)%Rindex
@@ -364,7 +378,8 @@
      &                            scale,                                &
      &                            BOUNDARY(ng) % tl_t_obc(LBij:,:,:,:,  &
      &                                                    nout,itrc))
-          IF (status.ne.nf90_noerr) THEN
+          IF (FoundError(status, nf90_noerr, __LINE__,                  &
+     &                   __FILE__)) THEN
             IF (Master) THEN
               WRITE (stdout,10) TRIM(Vname(1,idSbry(isTvar(itrc)))),    &
      &                          LZE(ng)%Rindex
@@ -395,7 +410,8 @@
      &                       GRID(ng) % rmask,                          &
 #   endif
      &                       FORCES(ng) % tl_tflux(:,:,:,kout,itrc))
-          IF (status.ne.nf90_noerr) THEN
+          IF (FoundError(status, nf90_noerr, __LINE__,                  &
+     &                   __FILE__)) THEN
             IF (Master) THEN
               WRITE (stdout,10) TRIM(Vname(1,idTsur(itrc))),            &
      &                          LZE(ng)%Rindex
@@ -423,7 +439,8 @@
      &                   GRID(ng) % umask_full,                         &
 #  endif
      &                   FORCES(ng) % tl_ustr(:,:,:,kout))
-      IF (status.ne.nf90_noerr) THEN
+      IF (FoundError(status, nf90_noerr, __LINE__,                      &
+     &               __FILE__)) THEN
         IF (Master) THEN
           WRITE (stdout,10) TRIM(Vname(1,idUsms)), LZE(ng)%Rindex
         END IF
@@ -443,7 +460,8 @@
      &                   GRID(ng) % vmask_full,                         &
 #  endif
      &                   FORCES(ng) % tl_vstr(:,:,:,kout))
-      IF (status.ne.nf90_noerr) THEN
+      IF (FoundError(status, nf90_noerr, __LINE__,                      &
+     &               __FILE__)) THEN
         IF (Master) THEN
           WRITE (stdout,10) TRIM(Vname(1,idVsms)), LZE(ng)%Rindex
         END IF
@@ -459,7 +477,8 @@
 !-----------------------------------------------------------------------
 !
       CALL netcdf_sync (ng, iADM, LZE(ng)%name, LZE(ng)%ncid)
-      IF (exit_flag.ne.NoError) RETURN
+      IF (FoundError(exit_flag, NoError, __LINE__,                      &
+     &               __FILE__)) RETURN
 
 # ifdef SOLVE3D
 #  ifdef NESTING
@@ -480,14 +499,14 @@
 # ifdef SOLVE3D
   20  FORMAT (6x,'WRT_EVOLVED - wrote evolved LCZ',t39,                 &
 #  ifdef NESTING
-     &        'fields (Index=',i1,',',i1,') in record = ',i7.7,2x,i2.2)
+     &        'fields (Index=',i1,',',i1,') in record = ',i7.7,t92,i2.2)
 #  else
      &        'fields (Index=',i1,',',i1,') in record = ',i7.7)
 #  endif
 # else
   20  FORMAT (6x,'WRT_EVOLVED - wrote evolved LCS',t39,                 &
 #  ifdef NESTING
-     &        'fields (Index=',i1,')   in record = ',i7.7,2x,i2.2)
+     &        'fields (Index=',i1,')   in record = ',i7.7,t92,i2.2)
 #  else
      &        'fields (Index=',i1,')   in record = ',i7.7)
 #  endif

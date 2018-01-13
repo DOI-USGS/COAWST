@@ -2,7 +2,7 @@
 #ifndef ANA_GRID
       SUBROUTINE get_grid (ng, model)
 !
-!svn $Id: get_grid.F 830 2017-01-24 21:21:11Z arango $
+!svn $Id: get_grid.F 884 2017-12-06 01:59:26Z arango $
 !================================================== Hernan G. Arango ===
 !  Copyright (c) 2002-2017 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
@@ -24,19 +24,16 @@
 # endif
       USE mod_netcdf
       USE mod_scalars
-# ifdef WTYPE_GRID
-      USE mod_mixing
-# endif
 !
       USE exchange_2d_mod
 # ifdef DISTRIBUTE
       USE mp_exchange_mod, ONLY : mp_exchange2d
 # endif
 # ifdef NESTING
-      USE nesting_mod, ONLY : fill_contact
+      USE nesting_mod,     ONLY : fill_contact
 # endif
-      USE nf_fread2d_mod, ONLY : nf_fread2d
-      USE strings_mod, ONLY : find_string
+      USE nf_fread2d_mod,  ONLY : nf_fread2d
+      USE strings_mod,     ONLY : FoundError, find_string
 !
       implicit none
 !
@@ -67,25 +64,41 @@
 
       character (len=256) :: ncname
 !
-      SourceFile='get_grid.F'
+      SourceFile=__FILE__
 !
 !-----------------------------------------------------------------------
 !  Inquire about the contents of grid NetCDF file:  Inquire about
 !  the dimensions and variables.  Check for consistency.
 !-----------------------------------------------------------------------
 !
-      IF (exit_flag.ne.NoError) RETURN
+      IF (FoundError(exit_flag, NoError, __LINE__,                      &
+     &               __FILE__)) RETURN
       ncname=GRD(ng)%name
 !
-!  Check grid file dimensions for consitency
+!  Open grid NetCDF file for reading.
 !
-      CALL netcdf_check_dim (ng, model, ncname)
-      IF (exit_flag.ne.NoError) RETURN
+      IF (GRD(ng)%ncid.eq.-1) THEN
+        CALL netcdf_open (ng, model, ncname, 0, GRD(ng)%ncid)
+        IF (FoundError(exit_flag, NoError, __LINE__,                    &
+     &                 __FILE__)) THEN
+          WRITE (stdout,10) TRIM(ncname)
+          RETURN
+        END IF
+      END IF
+!
+!  Check grid file dimensions for consitency.
+!
+      CALL netcdf_check_dim (ng, model, ncname,                         &
+     &                       ncid = GRD(ng)%ncid)
+      IF (FoundError(exit_flag, NoError, __LINE__,                      &
+     &               __FILE__)) RETURN
 !
 !  Inquire about the variables.
 !
-      CALL netcdf_inq_var (ng, model, ncname)
-      IF (exit_flag.ne.NoError) RETURN
+      CALL netcdf_inq_var (ng, model, ncname,                           &
+     &                     ncid = GRD(ng)%ncid)
+      IF (FoundError(exit_flag, NoError, __LINE__,                      &
+     &               __FILE__)) RETURN
 
 # ifdef NESTING
 !
@@ -105,91 +118,84 @@
 !-----------------------------------------------------------------------
 !
       IF (.not.find_string(var_name,n_var,'xl',vindex)) THEN
-        IF (Master) WRITE (stdout,10) 'xl', TRIM(ncname)
+        IF (Master) WRITE (stdout,20) 'xl', TRIM(ncname)
         exit_flag=2
         RETURN
       END IF
       IF (.not.find_string(var_name,n_var,'el',vindex)) THEN
-        IF (Master) WRITE (stdout,10) 'el', TRIM(ncname)
+        IF (Master) WRITE (stdout,20) 'el', TRIM(ncname)
         exit_flag=2
         RETURN
       END IF
       IF (.not.find_string(var_name,n_var,'spherical',vindex)) THEN
-        IF (Master) WRITE (stdout,10) 'spherical', TRIM(ncname)
+        IF (Master) WRITE (stdout,20) 'spherical', TRIM(ncname)
         exit_flag=2
         RETURN
       END IF
       IF (.not.find_string(var_name,n_var,'h',vindex)) THEN
-        IF (Master) WRITE (stdout,10) 'h', TRIM(ncname)
+        IF (Master) WRITE (stdout,20) 'h', TRIM(ncname)
         exit_flag=2
         RETURN
       END IF
 # ifdef ICESHELF
       IF (.not.find_string(var_name,n_var,'zice',vindex)) THEN
-        IF (Master) WRITE (stdout,10) 'zice', TRIM(ncname)
-        exit_flag=2
-        RETURN
-      END IF
-# endif
-# ifdef WTYPE_GRID
-      IF (.not.find_string(var_name,n_var,'wtype_grid',vindex)) THEN
-        IF (Master) WRITE (stdout,10) 'wtype_grid', TRIM(ncname)
+        IF (Master) WRITE (stdout,20) 'zice', TRIM(ncname)
         exit_flag=2
         RETURN
       END IF
 # endif
       IF (.not.find_string(var_name,n_var,'f',vindex)) THEN
-        IF (Master) WRITE (stdout,10) 'f', TRIM(ncname)
+        IF (Master) WRITE (stdout,20) 'f', TRIM(ncname)
         exit_flag=2
         RETURN
       END IF
       IF (.not.find_string(var_name,n_var,'pm',vindex)) THEN
-        IF (Master) WRITE (stdout,10) 'pm', TRIM(ncname)
+        IF (Master) WRITE (stdout,20) 'pm', TRIM(ncname)
         exit_flag=2
         RETURN
       END IF
       IF (.not.find_string(var_name,n_var,'pn',vindex)) THEN
-        IF (Master) WRITE (stdout,10) 'pn', TRIM(ncname)
+        IF (Master) WRITE (stdout,20) 'pn', TRIM(ncname)
         exit_flag=2
         RETURN
       END IF
 # if (defined CURVGRID && defined UV_ADV)
       IF (.not.find_string(var_name,n_var,'dndx',vindex)) THEN
-        IF (Master) WRITE (stdout,10) 'dndx', TRIM(ncname)
+        IF (Master) WRITE (stdout,20) 'dndx', TRIM(ncname)
         exit_flag=2
         RETURN
       END IF
       IF (.not.find_string(var_name,n_var,'dmde',vindex)) THEN
-        IF (Master) WRITE (stdout,10) 'dmde', TRIM(ncname)
+        IF (Master) WRITE (stdout,20) 'dmde', TRIM(ncname)
         exit_flag=2
         RETURN
       END IF
 # endif
 # ifdef CURVGRID
       IF (.not.find_string(var_name,n_var,'angle',vindex)) THEN
-        IF (Master) WRITE (stdout,10) 'angle', TRIM(ncname)
+        IF (Master) WRITE (stdout,20) 'angle', TRIM(ncname)
         exit_flag=2
         RETURN
       END IF
 # endif
 # ifdef MASKING
       IF (.not.find_string(var_name,n_var,'mask_rho',vindex)) THEN
-        IF (Master) WRITE (stdout,10) 'mask_rho', TRIM(ncname)
+        IF (Master) WRITE (stdout,20) 'mask_rho', TRIM(ncname)
         exit_flag=2
         RETURN
       END IF
       IF (.not.find_string(var_name,n_var,'mask_u',vindex)) THEN
-        IF (Master) WRITE (stdout,10) 'mask_u', TRIM(ncname)
+        IF (Master) WRITE (stdout,20) 'mask_u', TRIM(ncname)
         exit_flag=2
         RETURN
       END IF
       IF (.not.find_string(var_name,n_var,'mask_v',vindex)) THEN
-        IF (Master) WRITE (stdout,10) 'mask_v', TRIM(ncname)
+        IF (Master) WRITE (stdout,20) 'mask_v', TRIM(ncname)
         exit_flag=2
         RETURN
       END IF
       IF (.not.find_string(var_name,n_var,'mask_psi',vindex)) THEN
-        IF (Master) WRITE (stdout,10) 'mask_psi', TRIM(ncname)
+        IF (Master) WRITE (stdout,20) 'mask_psi', TRIM(ncname)
         exit_flag=2
         RETURN
       END IF
@@ -198,7 +204,7 @@
     (defined LMD_SKPP   || defined SOLAR_SOURCE) && \
     !defined ANA_WTYPE
       IF (.not.find_string(var_name,n_var,'wtype_grid',vindex)) THEN
-        IF (Master) WRITE (stdout,10) 'wtype_grid', TRIM(ncname)
+        IF (Master) WRITE (stdout,20) 'wtype_grid', TRIM(ncname)
         exit_flag=2
         RETURN
       END IF
@@ -206,7 +212,7 @@
 # ifndef ANA_SPONGE
       IF (LuvSponge(ng)) THEN
         IF (.not.find_string(var_name,n_var,'visc_factor',vindex)) THEN
-          IF (Master) WRITE (stdout,10) 'visc_factor', TRIM(ncname)
+          IF (Master) WRITE (stdout,20) 'visc_factor', TRIM(ncname)
           exit_flag=2
           RETURN
         END IF
@@ -214,7 +220,7 @@
 #  ifdef SOLVE3D
       IF (ANY(LtracerSponge(:,ng))) THEN
         IF (.not.find_string(var_name,n_var,'diff_factor',vindex)) THEN
-          IF (Master) WRITE (stdout,10) 'diff_factor', TRIM(ncname)
+          IF (Master) WRITE (stdout,20) 'diff_factor', TRIM(ncname)
           exit_flag=2
           RETURN
         END IF
@@ -225,7 +231,7 @@
 #  ifdef UV_LOGDRAG
       IF (.not.find_string(var_name,n_var,TRIM(Vname(1,idZoBL)),        &
      &                     varid_ZoBL)) THEN
-        IF (Master) WRITE (stdout,10) TRIM(Vname(1,idZoBL)),            &
+        IF (Master) WRITE (stdout,20) TRIM(Vname(1,idZoBL)),            &
      &                                TRIM(ncname)
         exit_flag=2
         RETURN
@@ -234,7 +240,7 @@
 #  ifdef UV_LDRAG
       IF (.not.find_string(var_name,n_var,TRIM(Vname(1,idragL)),        &
      &                     varid_dragL)) THEN
-        IF (Master) WRITE (stdout,10) TRIM(Vname(1,idragL)),            &
+        IF (Master) WRITE (stdout,20) TRIM(Vname(1,idragL)),            &
      &                                TRIM(ncname)
         exit_flag=2
         RETURN
@@ -243,23 +249,13 @@
 #  ifdef UV_QDRAG
       IF (.not.find_string(var_name,n_var,TRIM(Vname(1,idragQ)),        &
      &                     varid_dragQ)) THEN
-        IF (Master) WRITE (stdout,10) TRIM(Vname(1,idragQ)),            &
+        IF (Master) WRITE (stdout,20) TRIM(Vname(1,idragQ)),            &
      &                                TRIM(ncname)
         exit_flag=2
         RETURN
       END IF
 #  endif
 # endif
-!
-!  Open grid NetCDF file for reading.
-!
-      IF (GRD(ng)%ncid.eq.-1) THEN
-        CALL netcdf_open (ng, model, ncname, 0, GRD(ng)%ncid)
-        IF (exit_flag.ne.NoError) THEN
-          WRITE (stdout,20) TRIM(ncname)
-          RETURN
-        END IF
-      END IF
 !
 !  Read in logical switch for spherical grid configuration.
 !
@@ -268,7 +264,8 @@
         CALL netcdf_get_lvar (ng, model, ncname, 'spherical',           &
      &                        spherical,                                &
      &                        ncid = GRD(ng)%ncid)
-        IF (exit_flag.ne.NoError) RETURN
+        IF (FoundError(exit_flag, NoError, __LINE__,                    &
+     &                 __FILE__)) RETURN
       END IF
 !
 !-----------------------------------------------------------------------
@@ -296,6 +293,8 @@
 !
 !  Scan the variable list and read in needed variables.
 !
+      IF (Master) WRITE (stdout,'(1x)')
+!
       DO i=1,n_var
 
         SELECT CASE (TRIM(ADJUSTL(var_name(i))))
@@ -306,7 +305,8 @@
             CALL netcdf_get_fvar (ng, model, ncname, 'xl',              &
      &                            xl(ng),                               &
      &                            ncid = GRD(ng)%ncid)
-            IF (exit_flag.ne.NoError) EXIT
+            IF (FoundError(exit_flag, NoError, __LINE__,                &
+     &                     __FILE__)) EXIT
 !
 !  Read in basin Y-length.
 !
@@ -314,7 +314,8 @@
             CALL netcdf_get_fvar (ng, model, ncname, 'el',              &
      &                            el(ng),                               &
      &                            ncid = GRD(ng)%ncid)
-            IF (exit_flag.ne.NoError) EXIT
+            IF (FoundError(exit_flag, NoError, __LINE__,                &
+     &                     __FILE__)) EXIT
 !
 !  Read in bathymetry.
 !
@@ -329,13 +330,16 @@
      &                        GRID(ng) % rmask,                         &
 # endif
      &                        GRID(ng) % h)
-            IF (status.ne.nf90_noerr) THEN
-              IF (Master) THEN
-                WRITE (stdout,30) 'h', TRIM(ncname)
-              END IF
+            IF (FoundError(status, nf90_noerr, __LINE__,                &
+     &                     __FILE__)) THEN
               exit_flag=2
               ioerror=status
               EXIT
+            ELSE
+              IF (Master) THEN
+                WRITE (stdout,30) 'bathymetry at RHO-points: h',        &
+     &                            ng, TRIM(ncname), hmin(ng), hmax(ng)
+              END IF
             END IF
 # ifdef NESTING
             CALL fill_contact(ng, model, tile,                          &
@@ -344,7 +348,8 @@
      &                        LBi, UBi, LBj, UBj,                       &
      &                        CONTACT_METRIC(cr) % h,                   &
      &                        GRID(ng) % h)
-            IF (exit_flag.ne.NoError) RETURN
+            IF (FoundError(exit_flag, NoError, __LINE__,                &
+     &                     __FILE__)) RETURN
 # endif
             IF (EWperiodic(ng).or.NSperiodic(ng)) THEN
               CALL exchange_r2d_tile (ng, tile,                         &
@@ -371,10 +376,16 @@
      &                        Fscl, Fmin, Fmax,                         &
      &                        GRID(ng) % rmask,                         &
      &                        GRID(ng) % rmask)
-            IF (status.ne.nf90_noerr) THEN
+            IF (FoundError(status, nf90_noerr, __LINE__,                &
+     &                     __FILE__)) THEN
               exit_flag=2
               ioerror=status
               EXIT
+            ELSE
+              IF (Master) THEN
+                WRITE (stdout,30) 'mask on RHO-points: mask_rho',       &
+     &                            ng, TRIM(ncname), Fmin, Fmax
+              END IF
             END IF
 #  ifdef NESTING
             CALL fill_contact(ng, model, tile,                          &
@@ -383,7 +394,8 @@
      &                        LBi, UBi, LBj, UBj,                       &
      &                        CONTACT_METRIC(cr) % rmask,               &
      &                        GRID(ng) % rmask)
-            IF (exit_flag.ne.NoError) RETURN
+            IF (FoundError(exit_flag, NoError, __LINE__,                &
+     &                     __FILE__)) RETURN
 #  endif
             IF (EWperiodic(ng).or.NSperiodic(ng)) THEN
               CALL exchange_r2d_tile (ng, tile,                         &
@@ -409,10 +421,16 @@
      &                        Fscl, Fmin, Fmax,                         &
      &                        GRID(ng) % umask,                         &
      &                        GRID(ng) % umask)
-            IF (status.ne.nf90_noerr) THEN
+            IF (FoundError(status, nf90_noerr, __LINE__,                &
+     &                     __FILE__)) THEN
               exit_flag=2
               ioerror=status
               EXIT
+            ELSE
+              IF (Master) THEN
+                WRITE (stdout,30) 'mask on U-points: mask_u',           &
+     &                            ng, TRIM(ncname), Fmin, Fmax
+              END IF
             END IF
 #  ifdef NESTING
             CALL fill_contact(ng, model, tile,                          &
@@ -421,7 +439,8 @@
      &                        LBi, UBi, LBj, UBj,                       &
      &                        CONTACT_METRIC(cr) % umask,               &
      &                        GRID(ng) % umask)
-            IF (exit_flag.ne.NoError) RETURN
+            IF (FoundError(exit_flag, NoError, __LINE__,                &
+     &                     __FILE__)) RETURN
 #  endif
             IF (EWperiodic(ng).or.NSperiodic(ng)) THEN
               CALL exchange_u2d_tile (ng, tile,                         &
@@ -447,10 +466,16 @@
      &                        Fscl, Fmin, Fmax,                         &
      &                        GRID(ng) % vmask,                         &
      &                        GRID(ng) % vmask)
-            IF (status.ne.nf90_noerr) THEN
+            IF (FoundError(status, nf90_noerr, __LINE__,                &
+     &                     __FILE__)) THEN
               exit_flag=2
               ioerror=status
               EXIT
+            ELSE
+              IF (Master) THEN
+                WRITE (stdout,30) 'mask on V-points: mask_v',           &
+     &                            ng, TRIM(ncname), Fmin, Fmax
+              END IF
             END IF
 #  ifdef NESTING
             CALL fill_contact(ng, model, tile,                          &
@@ -459,7 +484,8 @@
      &                        LBi, UBi, LBj, UBj,                       &
      &                        CONTACT_METRIC(cr) % vmask,               &
      &                        GRID(ng) % vmask)
-            IF (exit_flag.ne.NoError) RETURN
+            IF (FoundError(exit_flag, NoError, __LINE__,                &
+     &                     __FILE__)) RETURN
 #  endif
             IF (EWperiodic(ng).or.NSperiodic(ng)) THEN
               CALL exchange_v2d_tile (ng, tile,                         &
@@ -485,10 +511,16 @@
      &                        Fscl, Fmin, Fmax,                         &
      &                        GRID(ng) % pmask,                         &
      &                        GRID(ng) % pmask)
-            IF (status.ne.nf90_noerr) THEN
+            IF (FoundError(status, nf90_noerr, __LINE__,                &
+     &                     __FILE__)) THEN
               exit_flag=2
               ioerror=status
               EXIT
+            ELSE
+              IF (Master) THEN
+                WRITE (stdout,30) 'mask on PSI-points: mask_psi',       &
+     &                            ng, TRIM(ncname), Fmin, Fmax
+              END IF
             END IF
             IF (EWperiodic(ng).or.NSperiodic(ng)) THEN
               CALL exchange_p2d_tile (ng, tile,                         &
@@ -505,7 +537,7 @@
 # endif
 # ifdef ICESHELF
 !
-!  Read in ice shelf thicknesses.
+!  Read in ice shelf thickness.
 !
           CASE ('zice')
             gtype=r2dvar
@@ -518,10 +550,16 @@
      &                        GRID(ng) % rmask,                         &
 #  endif
      &                        GRID(ng) % zice)
-            IF (status.ne.nf90_noerr) THEN
+            IF (FoundError(status, nf90_noerr, __LINE__,                &
+     &                     __FILE__)) THEN
               exit_flag=2
               ioerror=status
               EXIT
+            ELSE
+              IF (Master) THEN
+                WRITE (stdout,30) 'ice shelf thickness: zice',          &
+     &                            ng, TRIM(ncname), Fmin, Fmax
+              END IF
             END IF
             IF (EWperiodic(ng).or.NSperiodic(ng)) THEN
               CALL exchange_r2d_tile (ng, tile,                         &
@@ -552,10 +590,16 @@
      &                        GRID(ng) % rmask,                         &
 #  endif
      &                        MIXING(ng) % Jwtype)
-            IF (status.ne.nf90_noerr) THEN
+            IF (FoundError(status, nf90_noerr, __LINE__,                &
+     &                     __FILE__)) THEN
               exit_flag=2
               ioerror=status
               EXIT
+            ELSE
+              IF (Master) THEN
+                WRITE (stdout,30) 'Jerlov water type: wtype_grid',      &
+     &                            ng, TRIM(ncname), Fmin, Fmax
+              END IF
             END IF
             IF (EWperiodic(ng).or.NSperiodic(ng)) THEN
               CALL exchange_r2d_tile (ng, tile,                         &
@@ -586,10 +630,17 @@
      &                          GRID(ng) % rmask,                       &
 #  endif
      &                          MIXING(ng) % visc_factor)
-              IF (status.ne.nf90_noerr) THEN
+              IF (FoundError(status, nf90_noerr, __LINE__,              &
+     &                       __FILE__)) THEN
                 exit_flag=2
                 ioerror=status
                 EXIT
+              ELSE
+                IF (Master) THEN
+                  WRITE (stdout,30) 'horizontal viscosity sponge '//    &
+     &                              'factor: visc_factor',              &
+     &                              ng, TRIM(ncname), Fmin, Fmax
+                END IF
               END IF
               IF (EWperiodic(ng).or.NSperiodic(ng)) THEN
                 CALL exchange_r2d_tile (ng, tile,                       &
@@ -621,10 +672,17 @@
      &                          GRID(ng) % rmask,                       &
 #   endif
      &                          MIXING(ng) % diff_factor)
-              IF (status.ne.nf90_noerr) THEN
+              IF (FoundError(status, nf90_noerr, __LINE__,              &
+     &                       __FILE__)) THEN
                 exit_flag=2
                 ioerror=status
                 EXIT
+              ELSE
+                IF (Master) THEN
+                  WRITE (stdout,30) 'horizontal diffusivity sponge '//  &
+     &                              'factor: diff_factor',              &
+     &                              ng, TRIM(ncname), Fmin, Fmax
+                END IF
               END IF
               IF (EWperiodic(ng).or.NSperiodic(ng)) THEN
                 CALL exchange_r2d_tile (ng, tile,                       &
@@ -655,10 +713,16 @@
      &                        GRID(ng) % rmask,                         &
 # endif
      &                        GRID(ng) % f)
-            IF (status.ne.nf90_noerr) THEN
+            IF (FoundError(status, nf90_noerr, __LINE__,                &
+     &                     __FILE__)) THEN
               exit_flag=2
               ioerror=status
               EXIT
+            ELSE
+              IF (Master) THEN
+                WRITE (stdout,30) 'Coriolis parameter at RHO-points: f',&
+     &                            ng, TRIM(ncname), Fmin, Fmax
+              END IF
             END IF
 # ifdef NESTING
             CALL fill_contact(ng, model, tile,                          &
@@ -667,7 +731,8 @@
      &                        LBi, UBi, LBj, UBj,                       &
      &                        CONTACT_METRIC(cr) % f,                   &
      &                        GRID(ng) % f)
-            IF (exit_flag.ne.NoError) RETURN
+            IF (FoundError(exit_flag, NoError, __LINE__,                &
+     &                     __FILE__)) RETURN
 # endif
             IF (EWperiodic(ng).or.NSperiodic(ng)) THEN
               CALL exchange_r2d_tile (ng, tile,                         &
@@ -696,10 +761,16 @@
      &                        GRID(ng) % rmask,                         &
 # endif
      &                        GRID(ng) % pm)
-            IF (status.ne.nf90_noerr) THEN
+            IF (FoundError(status, nf90_noerr, __LINE__,                &
+     &                     __FILE__)) THEN
               exit_flag=2
               ioerror=status
               EXIT
+            ELSE
+              IF (Master) THEN
+                WRITE (stdout,30) 'reciprocal XI-grid spacing: pm',     &
+     &                            ng, TRIM(ncname), Fmin, Fmax
+              END IF
             END IF
 # ifdef NESTING
             CALL fill_contact(ng, model, tile,                          &
@@ -708,7 +779,8 @@
      &                        LBi, UBi, LBj, UBj,                       &
      &                        CONTACT_METRIC(cr) % pm,                  &
      &                        GRID(ng) % pm)
-            IF (exit_flag.ne.NoError) RETURN
+            IF (FoundError(exit_flag, NoError, __LINE__,                &
+     &                     __FILE__)) RETURN
 # endif
             IF (EWperiodic(ng).or.NSperiodic(ng)) THEN
               CALL exchange_r2d_tile (ng, tile,                         &
@@ -737,10 +809,16 @@
      &                        GRID(ng) % rmask,                         &
 # endif
      &                        GRID(ng) % pn)
-            IF (status.ne.nf90_noerr) THEN
+            IF (FoundError(status, nf90_noerr, __LINE__,                &
+     &                     __FILE__)) THEN
               exit_flag=2
               ioerror=status
               EXIT
+            ELSE
+              IF (Master) THEN
+                WRITE (stdout,30) 'reciprocal ETA-grid spacing: pn',    &
+     &                            ng, TRIM(ncname), Fmin, Fmax
+              END IF
             END IF
 # ifdef NESTING
             CALL fill_contact(ng, model, tile,                          &
@@ -749,7 +827,8 @@
      &                        LBi, UBi, LBj, UBj,                       &
      &                        CONTACT_METRIC(cr) % pn,                  &
      &                        GRID(ng) % pn)
-            IF (exit_flag.ne.NoError) RETURN
+            IF (FoundError(exit_flag, NoError, __LINE__,                &
+     &                     __FILE__)) RETURN
 # endif
             IF (EWperiodic(ng).or.NSperiodic(ng)) THEN
               CALL exchange_r2d_tile (ng, tile,                         &
@@ -778,10 +857,17 @@
      &                        GRID(ng) % rmask,                         &
 #  endif
      &                        GRID(ng) % dmde)
-            IF (status.ne.nf90_noerr) THEN
+            IF (FoundError(status, nf90_noerr, __LINE__,                &
+     &                     __FILE__)) THEN
               exit_flag=2
               ioerror=status
               EXIT
+            ELSE
+              IF (Master) THEN
+                WRITE (stdout,30) 'ETA-derivative of inverse metric '// &
+     &                            'factor pm: dmde',                    &
+     &                            ng, TRIM(ncname), Fmin, Fmax
+              END IF
             END IF
 #  ifdef NESTING
             CALL fill_contact(ng, model, tile,                          &
@@ -790,7 +876,8 @@
      &                        LBi, UBi, LBj, UBj,                       &
      &                        CONTACT_METRIC(cr) % dmde,                &
      &                        GRID(ng) % dmde)
-            IF (exit_flag.ne.NoError) RETURN
+            IF (FoundError(exit_flag, NoError, __LINE__,                &
+     &                     __FILE__)) RETURN
 #  endif
             IF (EWperiodic(ng).or.NSperiodic(ng)) THEN
               CALL exchange_r2d_tile (ng, tile,                         &
@@ -818,10 +905,17 @@
      &                        GRID(ng) % rmask,                         &
 #  endif
      &                        GRID(ng) % dndx)
-            IF (status.ne.nf90_noerr) THEN
+            IF (FoundError(status, nf90_noerr, __LINE__,                &
+     &                     __FILE__)) THEN
               exit_flag=2
               ioerror=status
               EXIT
+            ELSE
+              IF (Master) THEN
+                WRITE (stdout,30) 'XI-derivative of inverse metric '//  &
+     &                            'factor pn: dndx',                    &
+     &                            ng, TRIM(ncname), Fmin, Fmax
+              END IF
             END IF
 #  ifdef NESTING
             CALL fill_contact(ng, model, tile,                          &
@@ -830,7 +924,8 @@
      &                        LBi, UBi, LBj, UBj,                       &
      &                        CONTACT_METRIC(cr) % dndx,                &
      &                        GRID(ng) % dndx)
-            IF (exit_flag.ne.NoError) RETURN
+            IF (FoundError(exit_flag, NoError, __LINE__,                &
+     &                     __FILE__)) RETURN
 #  endif
             IF (EWperiodic(ng).or.NSperiodic(ng)) THEN
               CALL exchange_r2d_tile (ng, tile,                         &
@@ -859,10 +954,16 @@
      &                        GRID(ng) % pmask,                         &
 # endif
      &                        GRID(ng) % xp)
-            IF (status.ne.nf90_noerr) THEN
+            IF (FoundError(status, nf90_noerr, __LINE__,                &
+     &                     __FILE__)) THEN
               exit_flag=2
               ioerror=status
               EXIT
+            ELSE
+              IF (Master) THEN
+                WRITE (stdout,30) 'x-location of PSI-points: x_psi',    &
+     &                            ng, TRIM(ncname), Fmin, Fmax
+              END IF
             END IF
 # ifdef DISTRIBUTE
             CALL mp_exchange2d (ng, tile, model, 1,                     &
@@ -885,10 +986,16 @@
      &                        GRID(ng) % pmask,                         &
 # endif
      &                        GRID(ng) % yp)
-            IF (status.ne.nf90_noerr) THEN
+            IF (FoundError(status, nf90_noerr, __LINE__,                &
+     &                     __FILE__)) THEN
               exit_flag=2
               ioerror=status
               EXIT
+            ELSE
+              IF (Master) THEN
+                WRITE (stdout,30) 'y-location of PSI-points: y-psi',    &
+     &                            ng, TRIM(ncname), Fmin, Fmax
+              END IF
             END IF
 # ifdef DISTRIBUTE
             CALL mp_exchange2d (ng, tile, model, 1,                     &
@@ -911,10 +1018,16 @@
      &                        GRID(ng) % rmask,                         &
 # endif
      &                        GRID(ng) % xr)
-            IF (status.ne.nf90_noerr) THEN
+            IF (FoundError(status, nf90_noerr, __LINE__,                &
+     &                     __FILE__)) THEN
               exit_flag=2
               ioerror=status
               EXIT
+            ELSE
+              IF (Master) THEN
+                WRITE (stdout,30) 'x-location of RHO-points: x-rho',    &
+     &                            ng, TRIM(ncname), Fmin, Fmax
+              END IF
             END IF
 # ifdef NESTING
             IF (.not.spherical) THEN
@@ -924,7 +1037,8 @@
      &                          LBi, UBi, LBj, UBj,                     &
      &                          CONTACT_METRIC(cr) % Xr,                &
      &                          GRID(ng) % xr)
-              IF (exit_flag.ne.NoError) RETURN
+              IF (FoundError(exit_flag, NoError, __LINE__,              &
+     &                       __FILE__)) RETURN
             END IF
 # endif
 # ifdef DISTRIBUTE
@@ -948,10 +1062,16 @@
      &                        GRID(ng) % rmask,                         &
 # endif
      &                        GRID(ng) % yr)
-            IF (status.ne.nf90_noerr) THEN
+            IF (FoundError(status, nf90_noerr, __LINE__,                &
+     &                     __FILE__)) THEN
               exit_flag=2
               ioerror=status
               EXIT
+            ELSE
+              IF (Master) THEN
+                WRITE (stdout,30) 'y-location of RHO-points: y_rho',    &
+     &                            ng, TRIM(ncname), Fmin, Fmax
+              END IF
             END IF
 # ifdef NESTING
             IF (.not.spherical) THEN
@@ -961,7 +1081,8 @@
      &                          LBi, UBi, LBj, UBj,                     &
      &                          CONTACT_METRIC(cr) % Yr,                &
      &                          GRID(ng) % yr)
-              IF (exit_flag.ne.NoError) RETURN
+              IF (FoundError(exit_flag, NoError, __LINE__,              &
+     &                       __FILE__)) RETURN
             END IF
 # endif
 # ifdef DISTRIBUTE
@@ -985,10 +1106,16 @@
      &                        GRID(ng) % umask,                         &
 # endif
      &                        GRID(ng) % xu)
-            IF (status.ne.nf90_noerr) THEN
+            IF (FoundError(status, nf90_noerr, __LINE__,                &
+     &                     __FILE__)) THEN
               exit_flag=2
               ioerror=status
               EXIT
+            ELSE
+              IF (Master) THEN
+                WRITE (stdout,30) 'x-location of U-points: x_u',        &
+     &                            ng, TRIM(ncname), Fmin, Fmax
+              END IF
             END IF
 # ifdef NESTING
             IF (.not.spherical) THEN
@@ -998,7 +1125,8 @@
      &                          LBi, UBi, LBj, UBj,                     &
      &                          CONTACT_METRIC(cr) % Xu,                &
      &                          GRID(ng) % xu)
-              IF (exit_flag.ne.NoError) RETURN
+              IF (FoundError(exit_flag, NoError, __LINE__,              &
+     &                       __FILE__)) RETURN
             END IF
 # endif
 # ifdef DISTRIBUTE
@@ -1022,10 +1150,16 @@
      &                        GRID(ng) % umask,                         &
 # endif
      &                        GRID(ng) % yu)
-            IF (status.ne.nf90_noerr) THEN
+            IF (FoundError(status, nf90_noerr, __LINE__,                &
+     &                     __FILE__)) THEN
               exit_flag=2
               ioerror=status
               EXIT
+            ELSE
+              IF (Master) THEN
+                WRITE (stdout,30) 'y-location of U-points: y_u',        &
+     &                            ng, TRIM(ncname), Fmin, Fmax
+              END IF
             END IF
 # ifdef NESTING
             IF (.not.spherical) THEN
@@ -1035,7 +1169,8 @@
      &                          LBi, UBi, LBj, UBj,                     &
      &                          CONTACT_METRIC(cr) % Yu,                &
      &                          GRID(ng) % yu)
-              IF (exit_flag.ne.NoError) RETURN
+              IF (FoundError(exit_flag, NoError, __LINE__,              &
+     &                       __FILE__)) RETURN
             END IF
 # endif
 # ifdef DISTRIBUTE
@@ -1059,6 +1194,17 @@
      &                        GRID(ng) % vmask,                         &
 # endif
      &                        GRID(ng) % xv)
+            IF (FoundError(status, nf90_noerr, __LINE__,                &
+     &                     __FILE__)) THEN
+              exit_flag=2
+              ioerror=status
+              EXIT
+            ELSE
+              IF (Master) THEN
+                WRITE (stdout,30) 'x-location of V-points: x_v',        &
+     &                            ng, TRIM(ncname), Fmin, Fmax
+              END IF
+            END IF
 # ifdef NESTING
             IF (.not.spherical) THEN
               CALL fill_contact(ng, model, tile,                        &
@@ -1067,14 +1213,10 @@
      &                          LBi, UBi, LBj, UBj,                     &
      &                          CONTACT_METRIC(cr) % Xv,                &
      &                          GRID(ng) % xv)
-              IF (exit_flag.ne.NoError) RETURN
+              IF (FoundError(exit_flag, NoError, __LINE__,              &
+     &                       __FILE__)) RETURN
             END IF
 # endif
-            IF (status.ne.nf90_noerr) THEN
-              exit_flag=2
-              ioerror=status
-              EXIT
-            END IF
 # ifdef DISTRIBUTE
             CALL mp_exchange2d (ng, tile, model, 1,                     &
      &                          LBi, UBi, LBj, UBj,                     &
@@ -1096,10 +1238,16 @@
      &                        GRID(ng) % vmask,                         &
 # endif
      &                        GRID(ng) % yv)
-            IF (status.ne.nf90_noerr) THEN
+            IF (FoundError(status, nf90_noerr, __LINE__,                &
+     &                     __FILE__)) THEN
               exit_flag=2
               ioerror=status
               EXIT
+            ELSE
+              IF (Master) THEN
+                WRITE (stdout,30) 'y-location of V-points: y_v',        &
+     &                            ng, TRIM(ncname), Fmin, Fmax
+              END IF
             END IF
 # ifdef NESTING
             IF (.not.spherical) THEN
@@ -1109,7 +1257,8 @@
      &                          LBi, UBi, LBj, UBj,                     &
      &                          CONTACT_METRIC(cr) % Yv,                &
      &                          GRID(ng) % yv)
-              IF (exit_flag.ne.NoError) RETURN
+              IF (FoundError(exit_flag, NoError, __LINE__,              &
+     &                       __FILE__)) RETURN
             END IF
 # endif
 # ifdef DISTRIBUTE
@@ -1134,10 +1283,16 @@
      &                          GRID(ng) % pmask,                       &
 # endif
      &                          GRID(ng) % lonp)
-              IF (status.ne.nf90_noerr) THEN
+              IF (FoundError(status, nf90_noerr, __LINE__,              &
+     &                       __FILE__)) THEN
                 exit_flag=2
                 ioerror=status
                 EXIT
+              ELSE
+                IF (Master) THEN
+                  WRITE (stdout,30) 'longitude of PSI-points: lon_psi', &
+     &                              ng, TRIM(ncname), Fmin, Fmax
+                END IF
               END IF
 # ifdef DISTRIBUTE
               CALL mp_exchange2d (ng, tile, model, 1,                   &
@@ -1162,10 +1317,16 @@
      &                          GRID(ng) % pmask,                       &
 # endif
      &                          GRID(ng) % latp)
-              IF (status.ne.nf90_noerr) THEN
+              IF (FoundError(status, nf90_noerr, __LINE__,              &
+     &                       __FILE__)) THEN
                 exit_flag=2
                 ioerror=status
                 EXIT
+              ELSE
+                IF (Master) THEN
+                  WRITE (stdout,30) 'latitude of PSI-points lat_psi',   &
+     &                              ng, TRIM(ncname), Fmin, Fmax
+                END IF
               END IF
 # ifdef DISTRIBUTE
               CALL mp_exchange2d (ng, tile, model, 1,                   &
@@ -1190,10 +1351,16 @@
      &                          GRID(ng) % rmask,                       &
 # endif
      &                          GRID(ng) % lonr)
-              IF (status.ne.nf90_noerr) THEN
+              IF (FoundError(status, nf90_noerr, __LINE__,              &
+     &                       __FILE__)) THEN
                 exit_flag=2
                 ioerror=status
                 EXIT
+              ELSE
+                IF (Master) THEN
+                  WRITE (stdout,30) 'longitude of RHO-points: lon_rho', &
+     &                              ng, TRIM(ncname), Fmin, Fmax
+                END IF
               END IF
 # ifdef NESTING
               CALL fill_contact(ng, model, tile,                        &
@@ -1202,7 +1369,8 @@
      &                          LBi, UBi, LBj, UBj,                     &
      &                          CONTACT_METRIC(cr) % Xr,                &
      &                          GRID(ng) % lonr)
-              IF (exit_flag.ne.NoError) RETURN
+              IF (FoundError(exit_flag, NoError, __LINE__,              &
+     &                       __FILE__)) RETURN
 # endif
 # ifdef DISTRIBUTE
               CALL mp_exchange2d (ng, tile, model, 1,                   &
@@ -1227,10 +1395,16 @@
      &                          GRID(ng) % rmask,                       &
 # endif
      &                          GRID(ng) % latr)
-              IF (status.ne.nf90_noerr) THEN
+              IF (FoundError(status, nf90_noerr, __LINE__,              &
+     &                       __FILE__)) THEN
                 exit_flag=2
                 ioerror=status
                 EXIT
+              ELSE
+                IF (Master) THEN
+                  WRITE (stdout,30) 'latitude of RHO-points lat_rho',   &
+     &                              ng, TRIM(ncname), Fmin, Fmax
+                END IF
               END IF
 # ifdef NESTING
               CALL fill_contact(ng, model, tile,                        &
@@ -1239,7 +1413,8 @@
      &                          LBi, UBi, LBj, UBj,                     &
      &                          CONTACT_METRIC(cr) % Yr,                &
      &                          GRID(ng) % latr)
-              IF (exit_flag.ne.NoError) RETURN
+              IF (FoundError(exit_flag, NoError, __LINE__,              &
+     &                       __FILE__)) RETURN
 # endif
 # ifdef DISTRIBUTE
               CALL mp_exchange2d (ng, tile, model, 1,                   &
@@ -1264,10 +1439,16 @@
      &                          GRID(ng) % umask,                       &
 # endif
      &                          GRID(ng) % lonu)
-              IF (status.ne.nf90_noerr) THEN
+              IF (FoundError(status, nf90_noerr, __LINE__,              &
+     &                       __FILE__)) THEN
                 exit_flag=2
                 ioerror=status
                 EXIT
+              ELSE
+                IF (Master) THEN
+                  WRITE (stdout,30) 'longitude of U-points: lon_u',     &
+     &                              ng, TRIM(ncname), Fmin, Fmax
+                END IF
               END IF
 # ifdef NESTING
               CALL fill_contact(ng, model, tile,                        &
@@ -1276,7 +1457,8 @@
      &                          LBi, UBi, LBj, UBj,                     &
      &                          CONTACT_METRIC(cr) % Xu,                &
      &                          GRID(ng) % lonu)
-              IF (exit_flag.ne.NoError) RETURN
+              IF (FoundError(exit_flag, NoError, __LINE__,              &
+     &                       __FILE__)) RETURN
 # endif
 # ifdef DISTRIBUTE
               CALL mp_exchange2d (ng, tile, model, 1,                   &
@@ -1301,10 +1483,16 @@
      &                          GRID(ng) % umask,                       &
 # endif
      &                          GRID(ng) % latu)
-              IF (status.ne.nf90_noerr) THEN
+              IF (FoundError(status, nf90_noerr, __LINE__,              &
+     &                       __FILE__)) THEN
                 exit_flag=2
                 ioerror=status
                 EXIT
+              ELSE
+                IF (Master) THEN
+                  WRITE (stdout,30) 'latitude of U-points: lat_u',      &
+     &                              ng, TRIM(ncname), Fmin, Fmax
+                END IF
               END IF
 # ifdef NESTING
               CALL fill_contact(ng, model, tile,                        &
@@ -1313,7 +1501,8 @@
      &                          LBi, UBi, LBj, UBj,                     &
      &                          CONTACT_METRIC(cr) % Yu,                &
      &                          GRID(ng) % latu)
-              IF (exit_flag.ne.NoError) RETURN
+              IF (FoundError(exit_flag, NoError, __LINE__,              &
+     &                       __FILE__)) RETURN
 # endif
 # ifdef DISTRIBUTE
               CALL mp_exchange2d (ng, tile, model, 1,                   &
@@ -1338,10 +1527,16 @@
      &                          GRID(ng) % vmask,                       &
 # endif
      &                          GRID(ng) % lonv)
-              IF (status.ne.nf90_noerr) THEN
+              IF (FoundError(status, nf90_noerr, __LINE__,              &
+     &                       __FILE__)) THEN
                 exit_flag=2
                 ioerror=status
                 EXIT
+              ELSE
+                IF (Master) THEN
+                  WRITE (stdout,30) 'longitude of V-points: lon_v',     &
+     &                              ng, TRIM(ncname), Fmin, Fmax
+                END IF
               END IF
 # ifdef NESTING
               CALL fill_contact(ng, model, tile,                        &
@@ -1350,7 +1545,8 @@
      &                          LBi, UBi, LBj, UBj,                     &
      &                          CONTACT_METRIC(cr) % Xv,                &
      &                          GRID(ng) % lonv)
-              IF (exit_flag.ne.NoError) RETURN
+              IF (FoundError(exit_flag, NoError, __LINE__,              &
+     &                       __FILE__)) RETURN
 # endif
 # ifdef DISTRIBUTE
               CALL mp_exchange2d (ng, tile, model, 1,                   &
@@ -1375,10 +1571,16 @@
      &                          GRID(ng) % vmask,                       &
 # endif
      &                          GRID(ng) % latv)
-              IF (status.ne.nf90_noerr) THEN
+              IF (FoundError(status, nf90_noerr, __LINE__,              &
+     &                       __FILE__)) THEN
                 exit_flag=2
                 ioerror=status
                 EXIT
+              ELSE
+                IF (Master) THEN
+                  WRITE (stdout,30) 'latitude of V-points: lat_v',      &
+     &                              ng, TRIM(ncname), Fmin, Fmax
+                END IF
               END IF
 # ifdef NESTING
               CALL fill_contact(ng, model, tile,                        &
@@ -1387,7 +1589,8 @@
      &                          LBi, UBi, LBj, UBj,                     &
      &                          CONTACT_METRIC(cr) % Yv,                &
      &                          GRID(ng) % latv)
-              IF (exit_flag.ne.NoError) RETURN
+              IF (FoundError(exit_flag, NoError, __LINE__,              &
+     &                       __FILE__)) RETURN
 # endif
 # ifdef DISTRIBUTE
               CALL mp_exchange2d (ng, tile, model, 1,                   &
@@ -1411,10 +1614,17 @@
      &                        GRID(ng) % rmask,                         &
 # endif
      &                        GRID(ng) % angler)
-            IF (status.ne.nf90_noerr) THEN
+            IF (FoundError(status, nf90_noerr, __LINE__,                &
+     &                     __FILE__)) THEN
               exit_flag=2
               ioerror=status
               EXIT
+            ELSE
+              IF (Master) THEN
+                WRITE (stdout,30) 'angle between XI-axis and EAST: '//  &
+     &                            'angler',                             &
+     &                            ng, TRIM(ncname), Fmin, Fmax
+              END IF
             END IF
 #  ifdef NESTING
             CALL fill_contact(ng, model, tile,                          &
@@ -1423,7 +1633,8 @@
      &                        LBi, UBi, LBj, UBj,                       &
      &                        CONTACT_METRIC(cr) % angler,              &
      &                        GRID(ng) % angler)
-            IF (exit_flag.ne.NoError) RETURN
+            IF (FoundError(exit_flag, NoError, __LINE__,                &
+     &                     __FILE__)) RETURN
 #  endif
             IF (EWperiodic(ng).or.NSperiodic(ng)) THEN
               CALL exchange_r2d_tile (ng, tile,                         &
@@ -1454,10 +1665,17 @@
      &                        GRID(ng) % rmask,                         &
 #  endif
      &                        GRID(ng) % Rscope)
-            IF (status.ne.nf90_noerr) THEN
+            IF (FoundError(status, nf90_noerr, __LINE__,                &
+     &                     __FILE__)) THEN
               exit_flag=2
               ioerror=status
               EXIT
+            ELSE
+              IF (Master) THEN
+                WRITE (stdout,30) 'adjoint sensitivity spatial '//      &
+     &                            'scope on RHO-points: scope_rho',     &
+     &                            ng, TRIM(ncname), Fmin, Fmax
+              END IF
             END IF
             GotScope(1)=.TRUE.
             IF (EWperiodic(ng).or.NSperiodic(ng)) THEN
@@ -1486,10 +1704,17 @@
      &                        GRID(ng) % umask,                         &
 #  endif
      &                        GRID(ng) % Uscope)
-            IF (status.ne.nf90_noerr) THEN
+            IF (FoundError(status, nf90_noerr, __LINE__,                &
+     &                     __FILE__)) THEN
               exit_flag=2
               ioerror=status
               EXIT
+            ELSE
+              IF (Master) THEN
+                WRITE (stdout,30) 'adjoint sensitivity spatial '//      &
+     &                            'scope on U-points: scope_u',         &
+     &                            ng, TRIM(ncname), Fmin, Fmax
+              END IF
             END IF
             GotScope(2)=.TRUE.
             IF (EWperiodic(ng).or.NSperiodic(ng)) THEN
@@ -1518,10 +1743,17 @@
      &                        GRID(ng) % vmask,                         &
 #  endif
      &                        GRID(ng) % Vscope)
-            IF (status.ne.nf90_noerr) THEN
+            IF (FoundError(status, nf90_noerr, __LINE__,                &
+     &                     __FILE__)) THEN
               exit_flag=2
               ioerror=status
               EXIT
+            ELSE
+              IF (Master) THEN
+                WRITE (stdout,30) 'adjoint sensitivity spatial '//      &
+     &                            'scope on V-points: scope_v',         &
+     &                            ng, TRIM(ncname), Fmin, Fmax
+              END IF
             END IF
             GotScope(3)=.TRUE.
             IF (EWperiodic(ng).or.NSperiodic(ng)) THEN
@@ -1539,8 +1771,9 @@
 # endif
         END SELECT
       END DO
-      IF (exit_flag.ne.NoError) THEN
-        IF (Master) WRITE (stdout,30) TRIM(var_name(i)), TRIM(ncname)
+      IF (FoundError(exit_flag, NoError, __LINE__,                      &
+     &               __FILE__)) THEN
+        IF (Master) WRITE (stdout,40) TRIM(var_name(i)), TRIM(ncname)
         RETURN
       END IF
 
@@ -1559,12 +1792,19 @@
      &                  GRID(ng) % rmask,                               &
 #   endif
      &                  GRID(ng) % ZoBot)
-      IF (status.ne.nf90_noerr) THEN
-        IF (Master) WRITE (stdout,30) TRIM(Vname(1,idZoBL)),            &
+      IF (FoundError(status, nf90_noerr, __LINE__,                      &
+     &               __FILE__)) THEN
+        IF (Master) WRITE (stdout,40) TRIM(Vname(1,idZoBL)),            &
      &                                TRIM(ncname)
         exit_flag=2
         ioerror=status
         RETURN
+      ELSE
+        IF (Master) THEN
+          WRITE (stdout,30) 'time invariant, bottom roughness '//       &
+     &                      'length scale: ZoBot',                      &
+     &                      ng, TRIM(ncname), Fmin, Fmax
+        END IF
       END IF
       IF (EWperiodic(ng).or.NSperiodic(ng)) THEN
         CALL exchange_r2d_tile (ng, tile,                               &
@@ -1593,12 +1833,18 @@
      &                  GRID(ng) % rmask,                               &
 #   endif
      &                  GRID(ng) % rdrag)
-      IF (status.ne.nf90_noerr) THEN
-        IF (Master) WRITE (stdout,30) TRIM(Vname(1,idragL)),            &
+      IF (FoundError(status, nf90_noerr, __LINE__,                      &
+     &               __FILE__)) THEN
+        IF (Master) WRITE (stdout,40) TRIM(Vname(1,idragL)),            &
      &                                TRIM(ncname)
         exit_flag=2
         ioerror=status
         RETURN
+      ELSE
+        IF (Master) THEN
+          WRITE (stdout,30) 'linear bottom drag coefficient: rdrag',    &
+     &                      ng, TRIM(ncname), Fmin, Fmax
+        END IF
       END IF
       IF (EWperiodic(ng).or.NSperiodic(ng)) THEN
         CALL exchange_r2d_tile (ng, tile,                               &
@@ -1627,12 +1873,18 @@
      &                  GRID(ng) % rmask,                               &
 #   endif
      &                  GRID(ng) % rdrag2)
-      IF (status.ne.nf90_noerr) THEN
-        IF (Master) WRITE (stdout,30) TRIM(Vname(1,idragQ)),            &
+      IF (FoundError(status, nf90_noerr, __LINE__,                      &
+     &               __FILE__)) THEN
+        IF (Master) WRITE (stdout,40) TRIM(Vname(1,idragQ)),            &
      &                                TRIM(ncname)
         exit_flag=2
         ioerror=status
         RETURN
+      ELSE
+        IF (Master) THEN
+          WRITE (stdout,30) 'quadratic bottom drag coefficient: rdrag2',&
+     &                      ng, TRIM(ncname), Fmin, Fmax
+        END IF
       END IF
       IF (EWperiodic(ng).or.NSperiodic(ng)) THEN
         CALL exchange_r2d_tile (ng, tile,                               &
@@ -1662,7 +1914,8 @@
      &                  GRID(ng) % rmask,                               &
 # endif
      &                  GRID(ng) % wavedrag)
-          IF (status.ne.nf90_noerr) THEN
+            IF (FoundError(status, nf90_noerr, __LINE__,                &
+     &                     __FILE__)) THEN
             IF (Master) WRITE (stdout,30) TRIM(Vname(1,idragW)),        &
      &                                TRIM(ncname)
             exit_flag=2
@@ -1686,7 +1939,8 @@
 ! Close GRID NetCDF file.
 !
       CALL netcdf_close (ng, model, GRD(ng)%ncid, ncname, .FALSE.)
-      IF (exit_flag.ne.NoError) RETURN
+      IF (FoundError(exit_flag, NoError, __LINE__,                      &
+     &               __FILE__)) RETURN
 
 # if defined AD_SENSITIVITY   || defined IS4DVAR_SENSITIVITY || \
      defined OPT_OBSERVATIONS || defined SENSITIVITY_4DVAR   || \
@@ -1699,15 +1953,30 @@
 !
       ncname=ADS(ng)%name
 !
+!  Open adjoint sensitivity NetCDF file for reading.
+!
+      IF (GotScope(4).and.(ADS(ng)%ncid.eq.-1)) THEN
+        CALL netcdf_open (ng, model, ncname, 0, ADS(ng)%ncid)
+        IF (FoundError(exit_flag, NoError, __LINE__,                    &
+     &                 __FILE__)) THEN
+          WRITE (stdout,10) TRIM(ncname)
+          RETURN
+        END IF
+      END IF
+!
 !  Check grid file dimensions for consitency
 !
-      CALL netcdf_check_dim (ng, model, ncname)
-      IF (exit_flag.ne.NoError) RETURN
+      CALL netcdf_check_dim (ng, model, ncname,                         &
+     &                       ncid = ADS(ng)%ncid)
+      IF (FoundError(exit_flag, NoError, __LINE__,                      &
+     &               __FILE__)) RETURN
 !
 !  Inquire about the variables.
 !
-      CALL netcdf_inq_var (ng, model, ncname)
-      IF (exit_flag.ne.NoError) RETURN
+      CALL netcdf_inq_var (ng, model, ncname,                           &
+     &                     ncid = ADS(ng)%ncid)
+      IF (FoundError(exit_flag, NoError, __LINE__,                      &
+     &               __FILE__)) RETURN
 !
 !  Check if the adjoint sensitivity scope arrays are available.
 !
@@ -1716,35 +1985,25 @@
       GotScope(6)=find_string(var_name,n_var,'scope_v',vindex)
 !
       IF ((.not.GotScope(1)).and.(.not.GotScope(4))) THEN
-        IF (Master) WRITE (stdout,10) 'scope_rho', TRIM(ncname)
+        IF (Master) WRITE (stdout,20) 'scope_rho', TRIM(ncname)
         exit_flag=2
         RETURN
       END IF
       IF ((.not.GotScope(2)).and.(.not.GotScope(5))) THEN
-        IF (Master) WRITE (stdout,10) 'scope_u', TRIM(ncname)
+        IF (Master) WRITE (stdout,20) 'scope_u', TRIM(ncname)
         exit_flag=2
         RETURN
       END IF
       IF ((.not.GotScope(3)).and.(.not.GotScope(6))) THEN
-        IF (Master) WRITE (stdout,10) 'scope_v', TRIM(ncname)
+        IF (Master) WRITE (stdout,20) 'scope_v', TRIM(ncname)
         exit_flag=2
         RETURN
       END IF
       IF (Master) THEN
         IF (GotScope(4)) THEN
-          WRITE (stdout,40) TRIM(ADS(ng)%name)
+          WRITE (stdout,50) TRIM(ADS(ng)%name)
         ELSE
-          WRITE (stdout,40) TRIM(GRD(ng)%name)
-        END IF
-      END IF
-!
-!  Open adjoint sensitivity NetCDF file for reading.
-!
-      IF (GotScope(4).and.(ADS(ng)%ncid.eq.-1)) THEN
-        CALL netcdf_open (ng, model, ncname, 0, ADS(ng)%ncid)
-        IF (exit_flag.ne.NoError) THEN
-          WRITE (stdout,20) TRIM(ncname)
-          RETURN
+          WRITE (stdout,50) TRIM(GRD(ng)%name)
         END IF
       END IF
 !
@@ -1767,10 +2026,17 @@
      &                        GRID(ng) % rmask,                         &
 #  endif
      &                        GRID(ng) % Rscope)
-            IF (status.ne.nf90_noerr) THEN
+            IF (FoundError(status, nf90_noerr, __LINE__,                &
+     &                     __FILE__)) THEN
               exit_flag=2
               ioerror=status
               EXIT
+            ELSE
+              IF (Master) THEN
+                WRITE (stdout,30) 'adjoint sensitivity spatial '//      &
+     &                            'scope on RHO-points: scope_rho',     &
+     &                            ng, TRIM(ncname), Fmin, Fmax
+              END IF
             END IF
             IF (EWperiodic(ng).or.NSperiodic(ng)) THEN
               CALL exchange_r2d_tile (ng, tile,                         &
@@ -1798,10 +2064,17 @@
      &                        GRID(ng) % umask,                         &
 #  endif
      &                        GRID(ng) % Uscope)
-            IF (status.ne.nf90_noerr) THEN
+            IF (FoundError(status, nf90_noerr, __LINE__,                &
+     &                     __FILE__)) THEN
               exit_flag=2
               ioerror=status
               EXIT
+            ELSE
+              IF (Master) THEN
+                WRITE (stdout,30) 'adjoint sensitivity spatial '//      &
+     &                            'scope on U-points: scope_u',         &
+     &                            ng, TRIM(ncname), Fmin, Fmax
+              END IF
             END IF
             IF (EWperiodic(ng).or.NSperiodic(ng)) THEN
               CALL exchange_u2d_tile (ng, tile,                         &
@@ -1829,10 +2102,17 @@
      &                        GRID(ng) % vmask,                         &
 #  endif
      &                        GRID(ng) % Vscope)
-            IF (status.ne.nf90_noerr) THEN
+            IF (FoundError(status, nf90_noerr, __LINE__,                &
+     &                     __FILE__)) THEN
               exit_flag=2
               ioerror=status
               EXIT
+            ELSE
+              IF (Master) THEN
+                WRITE (stdout,30) 'adjoint sensitivity spatial '//      &
+     &                            'scope on V-points: scope_v',         &
+     &                            ng, TRIM(ncname), Fmin, Fmax
+              END IF
             END IF
             IF (EWperiodic(ng).or.NSperiodic(ng)) THEN
               CALL exchange_v2d_tile (ng, tile,                         &
@@ -1848,18 +2128,22 @@
 #  endif
         END SELECT
       END DO
-      IF (exit_flag.ne.NoError) THEN
-        IF (Master) WRITE (stdout,30) TRIM(var_name(i)), TRIM(ncname)
+      IF (FoundError(exit_flag, NoError, __LINE__,                      &
+     &               __FILE__)) THEN
+        IF (Master) WRITE (stdout,40) TRIM(var_name(i)), TRIM(ncname)
         RETURN
       END IF
 # endif
 !
-  10  FORMAT (/,' GET_GRID - unable to find grid variable: ',a,         &
+  10  FORMAT (/,' GET_GRID - unable to open grid NetCDF file: ',a)
+  20  FORMAT (/,' GET_GRID - unable to find grid variable: ',a,         &
      &        /,12x,'in grid NetCDF file: ',a)
-  20  FORMAT (/,' GET_GRID - unable to open grid NetCDF file: ',a)
-  30  FORMAT (/,' GET_GRID - error while reading variable: ',a,         &
+  30  FORMAT (3x,' GET_GRID    - ',a,/,19x,                             &
+     &        '(Grid = ',i2.2,', File: ',a,')',/,19x,                   &
+     &        '(Min = ', 1p,e15.8,0p,' Max = ',1p,e15.8,0p,')')
+  40  FORMAT (/,' GET_GRID - error while reading variable: ',a,         &
      &        /,12x,'in grid NetCDF file: ',a)
-  40  FORMAT (/,' GET_GRID - Reading adjoint sensitivity scope arrays', &
+  50  FORMAT (/,' GET_GRID - Reading adjoint sensitivity scope arrays', &
      &        ' from file:',/12x,a)
 #else
       SUBROUTINE get_grid

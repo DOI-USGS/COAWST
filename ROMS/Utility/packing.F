@@ -25,7 +25,7 @@
 
 #ifdef PROPAGATOR
 !
-!svn $Id: packing.F 830 2017-01-24 21:21:11Z arango $
+!svn $Id: packing.F 857 2017-07-29 04:05:27Z arango $
 !================================================== Hernan G. Arango ===
 !  Copyright (c) 2002-2017 The ROMS/TOMS Group       Andrew M. Moore   !
 !    Licensed under a MIT/X style license                              !
@@ -374,7 +374,7 @@
 #  include "tile.h"
 !
 #  ifdef PROFILE
-      CALL wclock_on (ng, iADM, 2)
+      CALL wclock_on (ng, iADM, 2, __LINE__, __FILE__)
 #  endif
 
       CALL ad_pack_tile (ng, tile,                                      &
@@ -412,7 +412,7 @@
      &                   FORCES(ng) % ad_svstr)
 
 #  ifdef PROFILE
-      CALL wclock_off (ng, iADM, 2)
+      CALL wclock_off (ng, iADM, 2, __LINE__, __FILE__)
 #  endif
 
 #  ifdef DISTRIBUTE
@@ -1301,7 +1301,7 @@
 #  include "tile.h"
 !
 #  ifdef PROFILE
-      CALL wclock_on (ng, iADM, 2)
+      CALL wclock_on (ng, iADM, 2, __LINE__, __FILE__)
 #  endif
 
       CALL ad_so_pack_tile (ng, tile,                                   &
@@ -1341,7 +1341,7 @@
      &                      FORCES(ng) % ad_svstr)
 
 #  ifdef PROFILE
-      CALL wclock_off (ng, iADM, 2)
+      CALL wclock_off (ng, iADM, 2, __LINE__, __FILE__)
 #  endif
 
 #  ifdef DISTRIBUTE
@@ -2138,7 +2138,7 @@
 #  include "tile.h"
 !
 #  ifdef PROFILE
-      CALL wclock_on (ng, iADM, 2)
+      CALL wclock_on (ng, iADM, 2, __LINE__, __FILE__)
 #  endif
 
       CALL ad_so_pack_red_tile (ng, tile,                               &
@@ -2178,7 +2178,7 @@
      &                          FORCES(ng) % ad_svstr)
 
 #  ifdef PROFILE
-      CALL wclock_off (ng, iADM, 2)
+      CALL wclock_off (ng, iADM, 2, __LINE__, __FILE__)
 #  endif
 
 #  ifdef DISTRIBUTE
@@ -2232,6 +2232,7 @@
 # ifdef SOLVE3D
       USE nf_fread3d_mod, ONLY : nf_fread3d
 # endif
+      USE strings_mod,    ONLY : FoundError
 !
 !  Imported variable declarations.
 !
@@ -2569,7 +2570,8 @@
      &                      GRID(ng) % rmask,                           &
 # endif
      &                      ad_zeta(:,:,Iinp))
-          IF (status.ne.nf90_noerr) THEN
+          IF (FoundError(status, nf90_noerr, __LINE__,                  &
+     &                   __FILE__)) THEN
             IF (Master) THEN
               WRITE (stdout,10) TRIM(Vname(1,idFsur)), Irec,            &
      &                          TRIM(ADM(ng)%name)
@@ -2630,7 +2632,8 @@
      &                      GRID(ng) % umask,                           &
 #  endif
      &                      ad_ubar(:,:,Iinp))
-          IF (status.ne.nf90_noerr) THEN
+          IF (FoundError(status, nf90_noerr, __LINE__,                  &
+     &                   __FILE__)) THEN
             IF (Master) THEN
               WRITE (stdout,10) TRIM(Vname(1,idUbar)), Irec,            &
      &                          TRIM(ADM(ng)%name)
@@ -2693,7 +2696,8 @@
      &                      GRID(ng) % vmask,                           &
 #  endif
      &                      ad_vbar(:,:,Iinp))
-          IF (status.ne.nf90_noerr) THEN
+          IF (FoundError(status, nf90_noerr, __LINE__,                  &
+     &                   __FILE__)) THEN
             IF (Master) THEN
               WRITE (stdout,10) TRIM(Vname(1,idVbar)), Irec,            &
      &                          TRIM(ADM(ng)%name)
@@ -2758,7 +2762,8 @@
      &                      GRID(ng) % umask,                           &
 #  endif
      &                      ad_u(:,:,:,Iinp))
-          IF (status.ne.nf90_noerr) THEN
+          IF (FoundError(status, nf90_noerr, __LINE__,                  &
+     &                   __FILE__)) THEN
             IF (Master) THEN
               WRITE (stdout,10) TRIM(Vname(1,idUvel)), Irec,            &
      &                          TRIM(ADM(ng)%name)
@@ -2835,7 +2840,8 @@
      &                      GRID(ng) % vmask,                           &
 #  endif
      &                      ad_v(:,:,:,Iinp))
-          IF (status.ne.nf90_noerr) THEN
+          IF (FoundError(status, nf90_noerr, __LINE__,                  &
+     &                   __FILE__)) THEN
             IF (Master) THEN
               WRITE (stdout,10) TRIM(Vname(1,idVvel)), Irec,            &
      &                          TRIM(ADM(ng)%name)
@@ -2913,7 +2919,8 @@
      &                        GRID(ng) % rmask,                         &
 #  endif
      &                        ad_t(:,:,:,Iinp,itrc))
-            IF (status.ne.nf90_noerr) THEN
+            IF (FoundError(status, nf90_noerr, __LINE__,                &
+     &                     __FILE__)) THEN
               IF (Master) THEN
                 WRITE (stdout,10) TRIM(Vname(1,idTvar(itrc))), Irec,    &
      &                            TRIM(ADM(ng)%name)
@@ -2998,7 +3005,8 @@
      &                      GRID(ng) % umask,                           &
 #  endif
      &                      ad_sustr(:,:))
-          IF (status.ne.nf90_noerr) THEN
+          IF (FoundError(status, nf90_noerr, __LINE__,                  &
+     &                   __FILE__)) THEN
             IF (Master) THEN
               WRITE (stdout,10) TRIM(Vname(1,idUsms)), Irec,            &
      &                          TRIM(ADM(ng)%name)
@@ -3053,7 +3061,8 @@
      &                      GRID(ng) % vmask,                           &
 #  endif
      &                      ad_svstr(:,:))
-          IF (status.ne.nf90_noerr) THEN
+          IF (FoundError(status, nf90_noerr, __LINE__,                  &
+     &                   __FILE__)) THEN
             IF (Master) THEN
               WRITE (stdout,10) TRIM(Vname(1,idVsms)), Irec,            &
      &                          TRIM(ADM(ng)%name)
@@ -3112,7 +3121,8 @@
      &                        GRID(ng) % rmask,                         &
 # endif
      &                        ad_stflx(:,:,itrc))
-            IF (status.ne.nf90_noerr) THEN
+            IF (FoundError(status, nf90_noerr, __LINE__,                &
+     &                     __FILE__)) THEN
               IF (Master) THEN
                 WRITE (stdout,10) TRIM(Vname(1,idTsur(itrc))), Irec,    &
      &                            TRIM(ADM(ng)%name)
@@ -3205,7 +3215,7 @@
 #  include "tile.h"
 !
 #  ifdef PROFILE
-      CALL wclock_on (ng, iADM, 2)
+      CALL wclock_on (ng, iADM, 2, __LINE__, __FILE__)
 #  endif
 
       CALL ad_pack_tile (ng, tile,                                      &
@@ -3241,7 +3251,7 @@
      &                   OCEAN(ng) % ad_zeta)
 
 #  ifdef PROFILE
-      CALL wclock_off (ng, iADM, 2)
+      CALL wclock_off (ng, iADM, 2, __LINE__, __FILE__)
 #  endif
 
 #  ifdef DISTRIBUTE
@@ -3757,7 +3767,7 @@
 #  endif
 
 #  ifdef PROFILE
-      CALL wclock_on (ng, iADM, 2)
+      CALL wclock_on (ng, iADM, 2, __LINE__, __FILE__)
 #  endif
 
       CALL ad_unpack_tile (ng, tile,                                    &
@@ -3792,7 +3802,7 @@
 #  endif
 
 #  ifdef PROFILE
-      CALL wclock_off (ng, iADM, 2)
+      CALL wclock_off (ng, iADM, 2, __LINE__, __FILE__)
 #  endif
 
       RETURN
@@ -4491,7 +4501,6 @@
 !
       USE distribute_mod, ONLY : mp_gather_state
 #  endif
-
 !
 !  Imported variable declarations.
 !
@@ -4508,7 +4517,7 @@
 #  include "tile.h"
 !
 #  ifdef PROFILE
-      CALL wclock_on (ng, iADM, 2)
+      CALL wclock_on (ng, iADM, 2, __LINE__, __FILE__)
 #  endif
 
 #  ifdef DISTRIBUTE
@@ -4552,7 +4561,7 @@
 #  endif
      &                     OCEAN(ng) % ad_zeta)
 #  ifdef PROFILE
-      CALL wclock_off (ng, iADM, 2)
+      CALL wclock_off (ng, iADM, 2, __LINE__, __FILE__)
 #  endif
       RETURN
       END SUBROUTINE ad_unpack
@@ -5043,7 +5052,7 @@
 #  include "tile.h"
 !
 #  ifdef PROFILE
-      CALL wclock_on (ng, iTLM, 2)
+      CALL wclock_on (ng, iTLM, 2, __LINE__, __FILE__)
 #  endif
       CALL tl_pack_tile (ng, tile,                                      &
      &                   LBi, UBi, LBj, UBj,                            &
@@ -5087,7 +5096,7 @@
 #  endif
 
 #  ifdef PROFILE
-      CALL wclock_off (ng, iTLM, 2)
+      CALL wclock_off (ng, iTLM, 2, __LINE__, __FILE__)
 #  endif
       RETURN
       END SUBROUTINE tl_pack
@@ -5587,7 +5596,7 @@
 #  include "tile.h"
 !
 #  ifdef PROFILE
-      CALL wclock_on (ng, iTLM, 2)
+      CALL wclock_on (ng, iTLM, 2, __LINE__, __FILE__)
 #  endif
 
 #  ifdef DISTRIBUTE
@@ -5637,7 +5646,7 @@
      &                     FORCES(ng) % tl_svstr)
 
 #  ifdef PROFILE
-      CALL wclock_off (ng, iTLM, 2)
+      CALL wclock_off (ng, iTLM, 2, __LINE__, __FILE__)
 #  endif
 
       RETURN
@@ -6373,7 +6382,7 @@
 #  include "tile.h"
 !
 #  ifdef PROFILE
-      CALL wclock_on (ng, iTLM, 2)
+      CALL wclock_on (ng, iTLM, 2, __LINE__, __FILE__)
 #  endif
 
 #  ifdef DISTRIBUTE
@@ -6422,7 +6431,7 @@
      &                     FORCES(ng) % tl_svstr)
 
 #  ifdef PROFILE
-      CALL wclock_off (ng, iTLM, 2)
+      CALL wclock_off (ng, iTLM, 2, __LINE__, __FILE__)
 #  endif
 
       RETURN
@@ -7264,7 +7273,7 @@
 #  include "tile.h"
 !
 #  ifdef PROFILE
-      CALL wclock_on (ng, iTLM, 2)
+      CALL wclock_on (ng, iTLM, 2, __LINE__, __FILE__)
 #  endif
 
 #  ifdef DISTRIBUTE
@@ -7308,7 +7317,7 @@
 #  endif
      &                     OCEAN(ng) % tl_zeta)
 #  ifdef PROFILE
-      CALL wclock_off (ng, iTLM, 2)
+      CALL wclock_off (ng, iTLM, 2, __LINE__, __FILE__)
 #  endif
       RETURN
       END SUBROUTINE tl_unpack

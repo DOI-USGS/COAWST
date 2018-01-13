@@ -2,7 +2,7 @@
 #ifdef TANGENT
       SUBROUTINE tl_output (ng)
 !
-!svn $Id: tl_output.F 830 2017-01-24 21:21:11Z arango $
+!svn $Id: tl_output.F 857 2017-07-29 04:05:27Z arango $
 !================================================== Hernan G. Arango ===
 !  Copyright (c) 2002-2017 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
@@ -25,11 +25,11 @@
       USE mod_ncparam
       USE mod_netcdf
       USE mod_scalars
-
-# ifdef DISTRIBUTE
 !
+# ifdef DISTRIBUTE
       USE distribute_mod, ONLY : mp_bcasts
 # endif
+      USE strings_mod,    ONLY : FoundError
 !
       implicit none
 !
@@ -42,6 +42,8 @@
       logical :: Ldefine, NewFile
 
       integer :: Fcount, ifile, status, tile
+!
+      SourceFile=__FILE__
 
 # ifdef PROFILE
 !
@@ -49,7 +51,7 @@
 !  Turn on output data time wall clock.
 !-----------------------------------------------------------------------
 !
-      CALL wclock_on (ng, iTLM, 8)
+      CALL wclock_on (ng, iTLM, 8, __LINE__, __FILE__)
 # endif
 !
 !-----------------------------------------------------------------------
@@ -107,7 +109,8 @@
               CALL netcdf_close (ng, iTLM, TLM(ng)%ncid)
             END IF
             CALL tl_def_his (ng, NewFile)
-            IF (exit_flag.ne.NoError) RETURN
+            IF (FoundError(exit_flag, NoError, __LINE__,                &
+     &                     __FILE__)) RETURN
           END IF
           IF ((iic(ng).eq.ntstart(ng)).and.(nrrec(ng).ne.0)) THEN
             LwrtTLM(ng)=.FALSE.                 ! avoid writing initial
@@ -117,7 +120,8 @@
         ELSE
           IF (iic(ng).eq.ntstart(ng)) THEN
             CALL tl_def_his (ng, ldefout(ng))
-            IF (exit_flag.ne.NoError) RETURN
+            IF (FoundError(exit_flag, NoError, __LINE__,                &
+     &                     __FILE__)) RETURN
             LwrtTLM(ng)=.TRUE.
             LdefTLM(ng)=.FALSE.
           END IF
@@ -135,20 +139,23 @@
 !
         IF (iic(ng).eq.1) THEN
           CALL tl_wrt_his (ng)
-          IF (exit_flag.ne.NoError) RETURN
+          IF (FoundError(exit_flag, NoError, __LINE__,                  &
+     &                   __FILE__)) RETURN
         END IF
 # else
         IF (LwrtPER(ng)) THEN
           IF ((iic(ng).gt.ntstart(ng)).and.                             &
      &        (MOD(iic(ng)-1,nTLM(ng)).eq.0)) THEN
             CALL tl_wrt_his (ng)
-            IF (exit_flag.ne.NoError) RETURN
+            IF (FoundError(exit_flag, NoError, __LINE__,                &
+     &                     __FILE__)) RETURN
           END IF
         ELSE
           IF ((MOD(iic(ng)-1,nTLM(ng)).eq.0).and.                       &
      &        ((nrrec(ng).eq.0).or.(iic(ng).ne.ntstart(ng)))) THEN
             CALL tl_wrt_his (ng)
-            IF (exit_flag.ne.NoError) RETURN
+            IF (FoundError(exit_flag, NoError, __LINE__,                &
+     &                     __FILE__)) RETURN
           END IF
         END IF
 # endif
@@ -205,19 +212,21 @@
   20          FORMAT (a,'_',i4.4,'.nc')
             END IF
 #  ifdef DISTRIBUTE
-            CALL mp_bcasts (ng, iNLM, AVG(ng)%name)
+            CALL mp_bcasts (ng, iTLM, AVG(ng)%name)
 #  endif
             IF (AVG(ng)%ncid.ne.-1) THEN
-              CALL netcdf_close (ng, iNLM, AVG(ng)%ncid)
+              CALL netcdf_close (ng, iTLM, AVG(ng)%ncid)
             END IF
             CALL def_avg (ng, Newfile)
-            IF (exit_flag.ne.NoError) RETURN
+            IF (FoundError(exit_flag, NoError, __LINE__,                &
+     &                     __FILE__)) RETURN
             LwrtAVG(ng)=.TRUE.
           END IF
         ELSE
           IF (iic(ng).eq.ntstart(ng)) THEN
             CALL def_avg (ng, ldefout(ng))
-            IF (exit_flag.ne.NoError) RETURN
+            IF (FoundError(exit_flag, NoError, __LINE__,                &
+     &               __FILE__)) RETURN
             LwrtAVG(ng)=.TRUE.
             LdefAVG(ng)=.FALSE.
           END IF
@@ -230,7 +239,8 @@
         IF ((iic(ng).gt.ntstart(ng)).and.                               &
      &      (MOD(iic(ng)-1,nAVG(ng)).eq.0)) THEN
           CALL wrt_avg (ng)
-          IF (exit_flag.ne.NoError) RETURN
+          IF (FoundError(exit_flag, NoError, __LINE__,                  &
+     &                   __FILE__)) RETURN
         END IF
       END IF
 # endif
@@ -267,7 +277,7 @@
 !  Turn off output data time wall clock.
 !-----------------------------------------------------------------------
 !
-      CALL wclock_off (ng, iTLM, 8)
+      CALL wclock_off (ng, iTLM, 8, __LINE__, __FILE__)
 # endif
       RETURN
       END SUBROUTINE tl_output

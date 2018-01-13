@@ -1,7 +1,7 @@
 #include "cppdefs.h"
       MODULE mod_biology
 /*
-** svn $Id: mod_biology.F 830 2017-01-24 21:21:11Z arango $
+** svn $Id: mod_biology.F 851 2017-06-23 23:22:54Z arango $
 *************************************************** Hernan G. Arango ***
 ** Copyright (c) 2002-2017 The ROMS/TOMS Group                        **
 **   Licensed under a MIT/X style license                             **
@@ -20,6 +20,7 @@
 **                                                                    **
 **         ecosim.h           ECOSIM                                  **
 **         fennel.h           BIO_FENNEL                              **
+**         hypoxia_srm.h      HYPOXIA_SRM                             **
 **         nemuro.h           NEMURO                                  **
 **         npzd_Franks.h      NPZD_FRANKS                             **
 **         npzd_iron.h        NPZD_IRON                               **
@@ -32,6 +33,7 @@
 **                                                                    **
 **         ecosim_mod.h                                               **
 **         fennel_mod.h                                               **
+**         hypoxia_srm_mod.h                                          **
 **         nemuro_mod.h                                               **
 **         npzd_Franks_mod.h                                          **
 **         npzd_iron_mod.h                                            **
@@ -44,6 +46,7 @@
 **                                                                    **
 **         ecosim.in                                                  **
 **         bio_Fennel.in                                              **
+**         hypoxia_srm.in                                             **
 **         nemuro.in                                                  **
 **         npzd_Franks.in                                             **
 **         npzd_iron.in                                               **
@@ -54,6 +57,7 @@
 **                                                                    **
 **         ecosim_inp.h                                               **
 **         fennel_inp.h                                               **
+**         hypoxia_srm_inp.h                                          **
 **         nemuro_inp.h                                               **
 **         npzd_Franks_inp.h                                          **
 **         npzd_iron_inp.h                                            **
@@ -67,6 +71,7 @@
 **                                                                    **
 **         ecosim_var.h                                               **
 **         fennel_var.h                                               **
+**         hypoxia_srm_var.h                                          **
 **         nemuro_var.h                                               **
 **         npzd_Franks_var.h                                          **
 **         npzd_iron_var.h                                            **
@@ -80,6 +85,7 @@
 **                                                                    **
 **         ecosim_def.h                                               **
 **         fennel_def.h                                               **
+**         hypoxia_srm_def.h                                          **
 **         nemuro_def.h                                               **
 **         npzd_Franks_def.h                                          **
 **         npzd_iron_def.h                                            **
@@ -93,6 +99,7 @@
 **                                                                    **
 **         ecosim_wrt.h                                               **
 **         fennel_wrt.h                                               **
+**         hypoxia_srm_wrt.h                                          **
 **         nemuro_wrt.h                                               **
 **         npzd_Franks_wrt.h                                          **
 **         npzd_iron_wrt.h                                            **
@@ -117,6 +124,8 @@
 #  include <estuarybgc_mod.h>
 # elif defined ECOSIM
 #  include <ecosim_mod.h>
+# elif defined HYPOXIA_SRM
+#  include <hypoxia_srm_mod.h>
 # elif defined NEMURO
 #  include <nemuro_mod.h>
 # elif defined NPZD_FRANKS

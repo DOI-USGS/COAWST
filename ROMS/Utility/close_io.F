@@ -1,7 +1,7 @@
 #include "cppdefs.h"
       SUBROUTINE close_inp (ng, model)
 !
-!svn $Id: close_io.F 830 2017-01-24 21:21:11Z arango $
+!svn $Id: close_io.F 882 2017-11-23 05:41:19Z arango $
 !================================================== Hernan G. Arango ===
 !  Copyright (c) 2002-2017 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
@@ -21,6 +21,8 @@
       USE mod_netcdf
       USE mod_scalars
 !
+      USE strings_mod, ONLY : FoundError
+!
       implicit none
 !
 !  Imported variable declarations.
@@ -31,7 +33,7 @@
 !
       integer :: Fcount, i, j, lstr
 !
-      SourceFile='close_inp, close_io.F'
+      SourceFile=__FILE__ // ", close_io.F"
 !
 !-----------------------------------------------------------------------
 !  If multi-file input fields, close several input files.
@@ -66,8 +68,9 @@
           lstr=LEN_TRIM(FRC(i,ng)%name)
           FRC(i,ng)%base=FRC(i,ng)%name(1:lstr-3)
           CALL netcdf_close (ng, model, FRC(i,ng)%ncid,                 &
-     &                       FRC(i,ng)%files(i), .FALSE.)
-          IF (exit_flag.ne.NoError) RETURN
+     &                       FRC(i,ng)%name, .FALSE.)
+          IF (FoundError(exit_flag, NoError, __LINE__,                  &
+     &                   __FILE__)) RETURN
         END IF
       END DO
 #endif
@@ -94,7 +97,8 @@
             BRY(i,ng)%base=BRY(i,ng)%name(1:lstr-3)
             CALL netcdf_close (ng, model, BRY(i,ng)%ncid,               &
      &                         BRY(i,ng)%files(i),  .FALSE.)
-            IF (exit_flag.ne.NoError) RETURN
+            IF (FoundError(exit_flag, NoError, __LINE__,                &
+     &                   __FILE__)) RETURN
           END IF
         END DO
       END IF
@@ -121,11 +125,12 @@
             CLM(i,ng)%base=CLM(i,ng)%name(1:lstr-3)
             CALL netcdf_close (ng, model, CLM(i,ng)%ncid,                 &
      &                     CLM(i,ng)%files(i),  .FALSE.)
-            IF (exit_flag.ne.NoError) RETURN
+            IF (FoundError(exit_flag, NoError, __LINE__,                  &
+     &                   __FILE__)) RETURN
           END IF
         END DO
       END IF
-!
+
       RETURN
       END SUBROUTINE close_inp
 !
@@ -146,6 +151,9 @@
 #if defined BIOFLUX
       USE mod_biology
 #endif
+      USE strings_mod, ONLY : FoundError
+!
+      USE dateclock_mod, ONLY : get_date
 !
       implicit none
 !
@@ -205,7 +213,7 @@
       END DO
 #endif
 !
-      SourceFile='close_out, close_io.F'
+      SourceFile=__FILE__ // ", close_out"
 !
 !-----------------------------------------------------------------------
 !  Close output NetCDF files. Set file indices to closed state.
@@ -445,7 +453,8 @@
 !  If applicable, report internal exit errors.
 !-----------------------------------------------------------------------
 !
-      IF (Master.and.(exit_flag.ne.NoError)) THEN
+      IF (Master.and.(FoundError(exit_flag, NoError, __LINE__,          &
+     &               __FILE__))) THEN
         WRITE (stdout,40) Rerror(exit_flag), exit_flag
       END IF
       IF (exit_flag.eq.NoError) THEN

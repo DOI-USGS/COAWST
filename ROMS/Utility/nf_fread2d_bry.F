@@ -1,7 +1,7 @@
 #include "cppdefs.h"
       MODULE nf_fread2d_bry_mod
 !
-!svn $Id: nf_fread2d_bry.F 830 2017-01-24 21:21:11Z arango $
+!svn $Id: nf_fread2d_bry.F 857 2017-07-29 04:05:27Z arango $
 !================================================== Hernan G. Arango ===
 !  Copyright (c) 2002-2017 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
@@ -55,11 +55,11 @@
       USE mod_ncparam
       USE mod_netcdf
       USE mod_scalars
-
-#if !defined PARALLEL_IN && defined DISTRIBUTE
 !
+#if !defined PARALLEL_IN && defined DISTRIBUTE
       USE distribute_mod, ONLY : mp_bcastf
 #endif
+      USE strings_mod,    ONLY : FoundError
 !
 !  Imported variable declarations.
 !
@@ -195,7 +195,8 @@
       CALL netcdf_get_fatt (ng, model, ncname, ncvarid, AttName,        &
      &                      AttValue, foundit,                          &
      &                      ncid = ncid)
-      IF (exit_flag.ne.NoError) THEN
+      IF (FoundError(exit_flag, NoError, __LINE__,                      &
+     &               __FILE__)) THEN
         status=ioerror
         RETURN
       END IF
@@ -250,7 +251,8 @@
       Amax=buffer(3)
 #endif
 
-      IF (status.ne.nf90_noerr) THEN
+      IF (FoundError(status, nf90_noerr, __LINE__,                      &
+     &               __FILE__)) THEN
         exit_flag=2
         ioerror=status
         RETURN

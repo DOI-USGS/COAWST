@@ -1,6 +1,6 @@
       SUBROUTINE ana_initial (ng, tile, model)
 !
-!! svn $Id: ana_initial.h 830 2017-01-24 21:21:11Z arango $
+!! svn $Id: ana_initial.h 875 2017-11-03 01:10:02Z arango $
 !!======================================================================
 !! Copyright (c) 2002-2017 The ROMS/TOMS Group                         !
 !!   Licensed under a MIT/X style license                              !
@@ -110,15 +110,21 @@
 !***********************************************************************
 !
       USE mod_param
+      USE mod_parallel
       USE mod_grid
+      USE mod_ncparam
+      USE mod_iounits
       USE mod_scalars
-
-#ifdef CHANNEL
 !
+#ifdef CHANNEL
 # ifdef DISTRIBUTE
       USE distribute_mod, ONLY : mp_bcasti
 # endif
       USE erf_mod, ONLY : ERF
+#endif
+      USE stats_mod, ONLY : stats_2dfld
+#ifdef SOLVE3D
+      USE stats_mod, ONLY : stats_3dfld
 #endif
 !
 !  Imported variable declarations.
@@ -169,6 +175,8 @@
 !
 !  Local variable declarations.
 !
+      logical, save :: first = .TRUE.
+
       integer :: Iless, Iplus, i, itrc, j, k
 
 #ifdef CHANNEL
@@ -177,7 +185,24 @@
 #endif
       real(r8) :: depth, dx, val1, val2, val3, val4, x, x0, y, y0
 
+      TYPE (T_STATS), save :: Stats(7)   ! ubar, vbar, zeta, u, v, t, s
+
 #include "set_bounds.h"
+!
+!-----------------------------------------------------------------------
+!  Initialize field statistics structure.
+!-----------------------------------------------------------------------
+!
+      IF (first) THEN
+        first=.FALSE.
+        DO i=1,SIZE(Stats,1)
+          Stats(i) % count=0.0_r8
+          Stats(i) % min=Large
+          Stats(i) % max=-Large
+          Stats(i) % avg=0.0_r8
+          Stats(i) % rms=0.0_r8
+        END DO
+      END IF
 !
 !-----------------------------------------------------------------------
 !  Initial conditions for 2D momentum (m/s) components.
@@ -280,6 +305,23 @@
       END DO
 #endif
 !
+!  Report statistics.
+!
+      CALL stats_2dfld (ng, tile, iNLM, u2dvar, Stats(1),               &
+     &                  LBi, UBi, LBj, UBj, ubar(:,:,1))
+      IF (DOMAIN(ng)%NorthEast_Corner(tile)) THEN
+        WRITE (stdout,10) TRIM(Vname(2,idUbar))//': '//                 &
+     &                    TRIM(Vname(1,idUbar)),                        &
+     &                     ng, Stats(1)%min, Stats(1)%max
+      END IF
+      CALL stats_2dfld (ng, tile, iNLM, v2dvar, Stats(2),               &
+     &                  LBi, UBi, LBj, UBj, vbar(:,:,1))
+      IF (DOMAIN(ng)%NorthEast_Corner(tile)) THEN
+        WRITE (stdout,10) TRIM(Vname(2,idVbar))//': '//                 &
+     &                    TRIM(Vname(1,idVbar)),                        &
+     &                     ng, Stats(2)%min, Stats(2)%max
+      END IF
+!
 !-----------------------------------------------------------------------
 !  Initial conditions for free-surface (m).
 !-----------------------------------------------------------------------
@@ -354,6 +396,16 @@
         END DO
       END DO
 #endif
+!
+!  Report statistics.
+!
+      CALL stats_2dfld (ng, tile, iNLM, r2dvar, Stats(3),               &
+     &                  LBi, UBi, LBj, UBj, zeta(:,:,1))
+      IF (DOMAIN(ng)%NorthEast_Corner(tile)) THEN
+        WRITE (stdout,10) TRIM(Vname(2,idFsur))//': '//                 &
+     &                    TRIM(Vname(1,idFsur)),                        &
+     &                     ng, Stats(3)%min, Stats(3)%max
+      END IF
 
 #ifdef SOLVE3D
 !
@@ -437,6 +489,23 @@
         END DO
       END DO
 # endif
+!
+!  Report statistics.
+!
+      CALL stats_3dfld (ng, tile, iNLM, u3dvar, Stats(4),               &
+     &                  LBi, UBi, LBj, UBj, 1, N(ng), u(:,:,:,1))
+      IF (DOMAIN(ng)%NorthEast_Corner(tile)) THEN
+        WRITE (stdout,10) TRIM(Vname(2,idUvel))//': '//                 &
+     &                    TRIM(Vname(1,idUvel)),                        &
+     &                    ng, Stats(4)%min, Stats(4)%max
+      END IF
+      CALL stats_3dfld (ng, tile, iNLM, v3dvar, Stats(5),               &
+     &                  LBi, UBi, LBj, UBj, 1, N(ng), v(:,:,:,1))
+      IF (DOMAIN(ng)%NorthEast_Corner(tile)) THEN
+        WRITE (stdout,10) TRIM(Vname(2,idVvel))//': '//                 &
+     &                    TRIM(Vname(1,idVvel)),                        &
+     &                    ng, Stats(5)%min, Stats(5)%max
+      END IF
 !
 !-----------------------------------------------------------------------
 !  Initial conditions for tracer type variables.
@@ -742,7 +811,24 @@
         END DO
       END DO
 # endif
+!
+!  Report statistics.
+!
+      DO itrc=1,NAT
+        CALL stats_3dfld (ng, tile, iNLM, u3dvar, Stats(itrc+5),        &
+     &                    LBi, UBi, LBj, UBj, 1, N(ng), t(:,:,:,1,itrc))
+        IF (DOMAIN(ng)%NorthEast_Corner(tile)) THEN
+          WRITE (stdout,10) TRIM(Vname(2,idTvar(itrc)))//': '//         &
+     &                      TRIM(Vname(1,idTvar(itrc))),                &
+     &                      ng, Stats(itrc+5)%min, Stats(itrc+5)%max
+        END IF
+      END DO
 #endif
+!
+  10  FORMAT (3x,' ANA_INITIAL - ',a,/,19x,                             &
+     &        '(Grid = ',i2.2,', Min = ',1p,e15.8,0p,                   &
+     &                         ' Max = ',1p,e15.8,0p,')')
+
       RETURN
       END SUBROUTINE ana_NLMinitial_tile
 

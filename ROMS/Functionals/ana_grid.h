@@ -1,6 +1,6 @@
       SUBROUTINE ana_grid (ng, tile, model)
 !
-!! svn $Id: ana_grid.h 830 2017-01-24 21:21:11Z arango $
+!! svn $Id: ana_grid.h 875 2017-11-03 01:10:02Z arango $
 !!======================================================================
 !! Copyright (c) 2002-2017 The ROMS/TOMS Group                         !
 !!   Licensed under a MIT/X style license                              !
@@ -114,6 +114,8 @@
 !
       USE mod_param
       USE mod_parallel
+      USE mod_ncparam
+      USE mod_iounits
       USE mod_scalars
 !
 #ifdef DISTRIBUTE
@@ -123,6 +125,7 @@
 #ifdef DISTRIBUTE
       USE mp_exchange_mod, ONLY : mp_exchange2d
 #endif
+      USE stats_mod, ONLY : stats_2dfld
 !
 !  Imported variable declarations.
 !
@@ -198,13 +201,15 @@
 !
 !  Local variable declarations.
 !
+      logical, save :: first = .TRUE.
+
       integer :: Imin, Imax, Jmin, Jmax
       integer :: NSUB, i, ival, j, k
 
       real(r8), parameter :: twopi = 2.0_r8*pi
 
       real(r8) :: Esize, Xsize, beta, cff, depth, dth
-      real(r8) :: dx, dy, f0, my_min, my_max, r, theta, val1, val2
+      real(r8) :: dx, dy, f0, r, theta, val1, val2
 
 #ifdef DISTRIBUTE
       real(r8), dimension(2) :: buffer
@@ -215,6 +220,8 @@
 #endif
       real(r8) :: wrkX(IminS:ImaxS,JminS:JmaxS)
       real(r8) :: wrkY(IminS:ImaxS,JminS:JmaxS)
+
+      TYPE (T_STATS), save :: Stats(16)
 
 #include "set_bounds.h"
 !
@@ -399,10 +406,26 @@
 !
 !  Load grid parameters to global storage.
 !
-      IF (DOMAIN(ng)%SouthWest_Test(tile)) THEN
+      IF (DOMAIN(ng)%NorthEast_Test(tile)) THEN
         xl(ng)=Xsize
         el(ng)=Esize
       END IF
+!
+!-----------------------------------------------------------------------
+!  Initialize field statistics structure.
+!-----------------------------------------------------------------------
+!
+      IF (first) THEN
+        first=.FALSE.
+        DO i=1,SIZE(Stats,1)
+          Stats(i) % count=0.0_r8
+          Stats(i) % min=Large
+          Stats(i) % max=-Large
+          Stats(i) % avg=0.0_r8
+          Stats(i) % rms=0.0_r8
+        END DO
+      END IF
+      IF (DOMAIN(ng)%NorthEast_Corner(tile)) WRITE (stdout,'(1x)')
 !
 !-----------------------------------------------------------------------
 !  Compute the (XI,ETA) coordinates at PSI- and RHO-points.
@@ -506,6 +529,114 @@
         END DO
       END DO
 #endif
+!
+!  Report statistics.
+!
+#ifdef SPHERICAL
+      CALL stats_2dfld (ng, tile, iNLM, p2dvar, Stats(1),               &
+     &                  LBi, UBi, LBj, UBj, lonp)
+      IF (DOMAIN(ng)%NorthEast_Corner(tile)) THEN
+        WRITE (stdout,10) 'longitude of PSI-points: lon_psi',           &
+     &                     ng, Stats(1)%min, Stats(1)%max
+      END IF
+      CALL stats_2dfld (ng, tile, iNLM, p2dvar, Stats(2),               &
+     &                  LBi, UBi, LBj, UBj, latp)
+      IF (DOMAIN(ng)%NorthEast_Corner(tile)) THEN
+        WRITE (stdout,10) 'latitude of PSI-points: lat_psi',            &
+     &                     ng, Stats(2)%min, Stats(2)%max
+      END IF
+
+      CALL stats_2dfld (ng, tile, iNLM, r2dvar, Stats(3),               &
+     &                  LBi, UBi, LBj, UBj, lonr)
+      IF (DOMAIN(ng)%NorthEast_Corner(tile)) THEN
+        WRITE (stdout,10) 'longitude of RHO-points: lon_rho',           &
+     &                     ng, Stats(3)%min, Stats(3)%max
+      END IF
+      CALL stats_2dfld (ng, tile, iNLM, r2dvar, Stats(4),               &
+     &                  LBi, UBi, LBj, UBj, latr)
+      IF (DOMAIN(ng)%NorthEast_Corner(tile)) THEN
+        WRITE (stdout,10) 'latitude of RHO-points: lat_rho',            &
+     &                     ng, Stats(4)%min, Stats(4)%max
+      END IF
+
+      CALL stats_2dfld (ng, tile, iNLM, u2dvar, Stats(5),               &
+     &                  LBi, UBi, LBj, UBj, lonu)
+      IF (DOMAIN(ng)%NorthEast_Corner(tile)) THEN
+        WRITE (stdout,10) 'longitude of U-points: lon_u',               &
+     &                     ng, Stats(5)%min, Stats(5)%max
+      END IF
+      CALL stats_2dfld (ng, tile, iNLM, u2dvar, Stats(6),               &
+     &                  LBi, UBi, LBj, UBj, latu)
+      IF (DOMAIN(ng)%NorthEast_Corner(tile)) THEN
+        WRITE (stdout,10) 'latitude of U-points: lat_u',                &
+     &                     ng, Stats(6)%min, Stats(6)%max
+      END IF
+
+      CALL stats_2dfld (ng, tile, iNLM, v2dvar, Stats(7),               &
+     &                  LBi, UBi, LBj, UBj, lonv)
+      IF (DOMAIN(ng)%NorthEast_Corner(tile)) THEN
+        WRITE (stdout,10) 'longitude of V-points: lon_v',               &
+     &                     ng, Stats(7)%min, Stats(7)%max
+      END IF
+      CALL stats_2dfld (ng, tile, iNLM, v2dvar, Stats(8),               &
+     &                  LBi, UBi, LBj, UBj, latv)
+      IF (DOMAIN(ng)%NorthEast_Corner(tile)) THEN
+        WRITE (stdout,10) 'latitude of V-points: lat_v',                &
+     &                     ng, Stats(8)%min, Stats(8)%max
+      END IF
+#else
+      CALL stats_2dfld (ng, tile, iNLM, p2dvar, Stats(1),               &
+     &                  LBi, UBi, LBj, UBj, xp)
+      IF (DOMAIN(ng)%NorthEast_Corner(tile)) THEN
+        WRITE (stdout,10) 'x-location of PSI-points: x_psi',            &
+     &                     ng, Stats(1)%min, Stats(1)%max
+      END IF
+      CALL stats_2dfld (ng, tile, iNLM, p2dvar, Stats(2),               &
+     &                  LBi, UBi, LBj, UBj, yp)
+      IF (DOMAIN(ng)%NorthEast_Corner(tile)) THEN
+        WRITE (stdout,10) 'y-location of PSI-points: y_psi',            &
+     &                     ng, Stats(2)%min, Stats(2)%max
+      END IF
+
+      CALL stats_2dfld (ng, tile, iNLM, r2dvar, Stats(3),               &
+     &                  LBi, UBi, LBj, UBj, xr)
+      IF (DOMAIN(ng)%NorthEast_Corner(tile)) THEN
+        WRITE (stdout,10) 'x-location of RHO-points: x_rho',            &
+     &                     ng, Stats(3)%min, Stats(3)%max
+      END IF
+      CALL stats_2dfld (ng, tile, iNLM, r2dvar, Stats(4),               &
+     &                  LBi, UBi, LBj, UBj, yr)
+      IF (DOMAIN(ng)%NorthEast_Corner(tile)) THEN
+        WRITE (stdout,10) 'y-location of RHO-points: y_rho',            &
+     &                     ng, Stats(4)%min, Stats(4)%max
+      END IF
+
+      CALL stats_2dfld (ng, tile, iNLM, u2dvar, Stats(5),               &
+     &                  LBi, UBi, LBj, UBj, xu)
+      IF (DOMAIN(ng)%NorthEast_Corner(tile)) THEN
+        WRITE (stdout,10) 'x-location of U-points: x_u',                &
+     &                     ng, Stats(5)%min, Stats(5)%max
+      END IF
+      CALL stats_2dfld (ng, tile, iNLM, u2dvar, Stats(6),               &
+     &                  LBi, UBi, LBj, UBj, yu)
+      IF (DOMAIN(ng)%NorthEast_Corner(tile)) THEN
+        WRITE (stdout,10) 'y-location of U-points: y_u',                &
+     &                     ng, Stats(6)%min, Stats(6)%max
+      END IF
+
+      CALL stats_2dfld (ng, tile, iNLM, v2dvar, Stats(7),               &
+     &                  LBi, UBi, LBj, UBj, xv)
+      IF (DOMAIN(ng)%NorthEast_Corner(tile)) THEN
+        WRITE (stdout,10) 'x-location of V-points: x_v',                &
+     &                     ng, Stats(7)%min, Stats(7)%max
+      END IF
+      CALL stats_2dfld (ng, tile, iNLM, v2dvar, Stats(8),               &
+     &                  LBi, UBi, LBj, UBj, yv)
+      IF (DOMAIN(ng)%NorthEast_Corner(tile)) THEN
+        WRITE (stdout,10) 'y-location of V-points: y_v',                &
+     &                     ng, Stats(8)%min, Stats(8)%max
+      END IF
+#endif
 
 #ifdef DISTRIBUTE
 !
@@ -588,6 +719,21 @@
         END DO
       END DO
 !
+!  Report statistics.
+!
+      CALL stats_2dfld (ng, tile, iNLM, r2dvar, Stats(9),               &
+     &                  LBi, UBi, LBj, UBj, pm)
+      IF (DOMAIN(ng)%NorthEast_Corner(tile)) THEN
+        WRITE (stdout,10) 'reciprocal XI-grid spacing: pm',             &
+     &                     ng, Stats(9)%min, Stats(9)%max
+      END IF
+      CALL stats_2dfld (ng, tile, iNLM, r2dvar, Stats(10),              &
+     &                  LBi, UBi, LBj, UBj, pn)
+      IF (DOMAIN(ng)%NorthEast_Corner(tile)) THEN
+        WRITE (stdout,10) 'reciprocal ETA-grid spacing: pn',            &
+     &                     ng, Stats(10)%min, Stats(10)%max
+      END IF
+!
 !  Exchange boundary data.
 !
       IF (EWperiodic(ng).or.NSperiodic(ng)) THEN
@@ -621,6 +767,23 @@
      &                      (1.0_r8/wrkX(i  ,j-1)))
         END DO
       END DO
+!
+!  Report statistics.
+!
+      CALL stats_2dfld (ng, tile, iNLM, r2dvar, Stats(11),              &
+     &                  LBi, UBi, LBj, UBj, dmde)
+      IF (DOMAIN(ng)%NorthEast_Corner(tile)) THEN
+        WRITE (stdout,10) 'ETA-derivative of inverse metric '//         &
+     &                    'factor pm: dmde',                            &
+     &                     ng, Stats(11)%min, Stats(11)%max
+      END IF
+      CALL stats_2dfld (ng, tile, iNLM, r2dvar, Stats(12),              &
+     &                  LBi, UBi, LBj, UBj, dndx)
+      IF (DOMAIN(ng)%NorthEast_Corner(tile)) THEN
+        WRITE (stdout,10) 'XI-derivative of inverse metric '//          &
+     &                    'factor pn: dndx',                            &
+     &                     ng, Stats(12)%min, Stats(12)%max
+      END IF
 !
 !  Exchange boundary data.
 !
@@ -672,6 +835,16 @@
       END DO
 #endif
 !
+!  Report Statistics.
+!
+      CALL stats_2dfld (ng, tile, iNLM, r2dvar, Stats(13),              &
+     &                  LBi, UBi, LBj, UBj, angler)
+      IF (DOMAIN(ng)%NorthEast_Corner(tile)) THEN
+        WRITE (stdout,10) 'angle between XI-axis and EAST: '//          &
+     &                    'angler',                                     &
+     &                     ng, Stats(13)%min, Stats(13)%max
+      END IF
+!
 !  Exchange boundary data.
 !
       IF (EWperiodic(ng).or.NSperiodic(ng)) THEN
@@ -715,6 +888,15 @@
         END DO
       END DO
 #endif
+!
+!  Report Statistics.
+!
+      CALL stats_2dfld (ng, tile, iNLM, r2dvar, Stats(14),              &
+     &                  LBi, UBi, LBj, UBj, f)
+      IF (DOMAIN(ng)%NorthEast_Corner(tile)) THEN
+        WRITE (stdout,10) 'Coriolis parameter at RHO-points: f',        &
+     &                     ng, Stats(14)%min, Stats(14)%max
+      END IF
 !
 !  Exchange boundary data.
 !
@@ -941,6 +1123,17 @@
       END DO
 #endif
 !
+!  Report Statistics.
+!
+      CALL stats_2dfld (ng, tile, iNLM, r2dvar, Stats(15),              &
+     &                  LBi, UBi, LBj, UBj, h)
+      IF (DOMAIN(ng)%NorthEast_Corner(tile)) THEN
+        WRITE (stdout,10) 'bathymetry at RHO-points: h',                &
+     &                     ng, Stats(15)%min, Stats(15)%max
+      END IF
+      hmin(ng)=Stats(15)%min
+      hmax(ng)=Stats(15)%max
+!
 !  Exchange boundary data.
 !
       IF (EWperiodic(ng).or.NSperiodic(ng)) THEN
@@ -1029,6 +1222,15 @@
       END DO
 # endif
 !
+!  Report Statistics.
+!
+      CALL stats_2dfld (ng, tile, iNLM, r2dvar, Stats(16),              &
+     &                  LBi, UBi, LBj, UBj, zice)
+      IF (DOMAIN(ng)%NorthEast_Corner(tile)) THEN
+        WRITE (stdout,10) 'ice shelf thickness: zice',                  &
+     &                     ng, Stats(16)%min, Stats(16)%max
+      END IF
+!
 !  Exchange boundary data.
 !
       IF (EWperiodic(ng).or.NSperiodic(ng)) THEN
@@ -1045,6 +1247,10 @@
      &                    zice)
 # endif
 #endif
+!
+  10  FORMAT (3x,' ANA_GRID    - ',a,/,19x,                             &
+     &        '(Grid = ',i2.2,', Min = ',1p,e15.8,0p,                   &
+     &                         ' Max = ',1p,e15.8,0p,')')
 
       RETURN
       END SUBROUTINE ana_grid_tile

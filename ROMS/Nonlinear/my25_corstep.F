@@ -51,7 +51,7 @@
 # include "tile.h"
 !
 # ifdef PROFILE
-      CALL wclock_on (ng, iNLM, 20)
+      CALL wclock_on (ng, iNLM, 20, __LINE__, __FILE__)
 # endif
       CALL my25_corstep_tile (ng, tile,                                 &
      &                        LBi, UBi, LBj, UBj,                       &
@@ -83,7 +83,7 @@
      &                        MIXING(ng) % gls,                         &
      &                        MIXING(ng) % tke)
 # ifdef PROFILE
-      CALL wclock_off (ng, iNLM, 20)
+      CALL wclock_off (ng, iNLM, 20, __LINE__, __FILE__)
 # endif
       RETURN
       END SUBROUTINE my25_corstep
@@ -745,6 +745,23 @@
 !  Save limited length scale.
 !
             Lscale(i,j,k)=Ls_lmt
+
+# if defined LIMIT_VDIFF || defined LIMIT_VVISC
+!
+!  Limit vertical mixing coefficients with the upper threshold value.
+!  This is an engineering fix but it can be based on the fact that
+!  vertical mixing in the ocean from indirect observations are not
+!  higher than the threshold value.
+!
+#  ifdef LIMIT_VDIFF
+            DO itrc=1,NAT
+              Akt(i,j,k,itrc)=MIN(Akt_limit(itrc,ng), Akt(i,j,k,itrc))
+            END DO
+#  endif
+#  ifdef LIMIT_VVISC
+            Akv(i,j,k)=MIN(Akv_limit(ng), Akv(i,j,k))
+#  endif
+# endif
           END DO
         END DO
       END DO

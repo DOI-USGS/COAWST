@@ -3,7 +3,7 @@
 
 #if defined TANGENT && defined FOUR_DVAR
 !
-!svn $Id: tl_variability.F 830 2017-01-24 21:21:11Z arango $
+!svn $Id: tl_variability.F 854 2017-07-18 23:28:45Z arango $
 !================================================== Hernan G. Arango ===
 !  Copyright (c) 2002-2017 The ROMS/TOMS Group       Andrew M. Moore   !
 !    Licensed under a MIT/X style license                              !
@@ -711,7 +711,7 @@
 #   ifdef DISTRIBUTE
           DO ib=1,4
             IF (Lobc(ib,isVvel,ng)) THEN
-              CALL mp_exchange3d_bry (ng, tile, iADM, 1, ib,            &
+              CALL mp_exchange3d_bry (ng, tile, iTLM, 1, ib,            &
      &                                LBij, UBij, 1, N(ng),             &
      &                                NghostPoints,                     &
      &                                EWperiodic(ng), NSperiodic(ng),   &
@@ -774,7 +774,7 @@
 #   ifdef DISTRIBUTE
             DO ib=1,4
               IF (Lobc(ib,isTvar(it),ng)) THEN
-                CALL mp_exchange3d_bry (ng, tile, iADM, 1, ib,          &
+                CALL mp_exchange3d_bry (ng, tile, iTLM, 1, ib,          &
      &                                  LBij, UBij, 1, N(ng),           &
      &                                  NghostPoints,                   &
      &                                  EWperiodic(ng), NSperiodic(ng), &

@@ -2,7 +2,7 @@
 #if defined PROPAGATOR && defined CHECKPOINTING
       SUBROUTINE wrt_gst (ng, model)
 !
-!svn $Id: wrt_gst.F 830 2017-01-24 21:21:11Z arango $
+!svn $Id: wrt_gst.F 857 2017-07-29 04:05:27Z arango $
 !================================================== Hernan G. Arango ===
 !  Copyright (c) 2002-2017 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
@@ -21,13 +21,13 @@
       USE mod_netcdf
       USE mod_scalars
       USE mod_storage
-
-#ifdef DISTRIBUTE
 !
+#ifdef DISTRIBUTE
       USE distribute_mod, ONLY : mp_bcasti
       USE distribute_mod, ONLY : mp_ncwrite1d
       USE distribute_mod, ONLY : mp_ncwrite2d
 #endif
+      USE strings_mod,    ONLY : FoundError
 !
       implicit none
 !
@@ -45,146 +45,166 @@
 
       real(r8) :: scale = 1.0_r8
 # endif
-      SourceFile='wrt_gst.F'
+      SourceFile=__FILE__
 !
 !-----------------------------------------------------------------------
 !  Write out checkpointing information variables.
 !-----------------------------------------------------------------------
 !
-      IF (exit_flag.ne.NoError) RETURN
+      IF (FoundError(exit_flag, NoError, __LINE__,                      &
+     &               __FILE__)) RETURN
 !
 !  Write out number of eigenvalues to compute.
 !
       CALL netcdf_put_ivar (ng, model, GST(ng)%name, 'NEV',             &
      &                      NEV, (/0/), (/0/),                          &
      &                      ncid = GST(ng)%ncid)
-      IF (exit_flag.ne.NoError) RETURN
+      IF (FoundError(exit_flag, NoError, __LINE__,                      &
+     &               __FILE__)) RETURN
 !
 !  Write out number of Lanczos vectors to compute.
 !
       CALL netcdf_put_ivar (ng, model, GST(ng)%name, 'NCV',             &
      &                      NCV, (/0/), (/0/),                          &
      &                      ncid = GST(ng)%ncid)
-      IF (exit_flag.ne.NoError) RETURN
+      IF (FoundError(exit_flag, NoError, __LINE__,                      &
+     &               __FILE__)) RETURN
 !
 !  Write out size of the eigenvalue problem.
 !
       CALL netcdf_put_ivar (ng, model, GST(ng)%name, 'Mstate',          &
      &                      Mstate(ng), (/0/), (/0/),                   &
      &                      ncid = GST(ng)%ncid)
-      IF (exit_flag.ne.NoError) RETURN
+      IF (FoundError(exit_flag, NoError, __LINE__,                      &
+     &               __FILE__)) RETURN
 !
 !  Write out iteration number.
 !
       CALL netcdf_put_ivar (ng, model, GST(ng)%name, 'iter',            &
      &                      Nrun, (/0/), (/0/),                         &
      &                      ncid = GST(ng)%ncid)
-      IF (exit_flag.ne.NoError) RETURN
+      IF (FoundError(exit_flag, NoError, __LINE__,                      &
+     &               __FILE__)) RETURN
 !
 !  Write out reverse communications flag.
 !
       CALL netcdf_put_ivar (ng, model, GST(ng)%name, 'ido',             &
      &                      ido(ng), (/0/), (/0/),                      &
      &                      ncid = GST(ng)%ncid)
-      IF (exit_flag.ne.NoError) RETURN
+      IF (FoundError(exit_flag, NoError, __LINE__,                      &
+     &               __FILE__)) RETURN
 !
 !  Write out information and error flag.
 !
       CALL netcdf_put_ivar (ng, model, GST(ng)%name, 'info',            &
      &                      info(ng), (/0/), (/0/),                     &
      &                      ncid = GST(ng)%ncid)
-      IF (exit_flag.ne.NoError) RETURN
+      IF (FoundError(exit_flag, NoError, __LINE__,                      &
+     &               __FILE__)) RETURN
 !
 !  Write out eigenvalue problem type.
 !
       CALL netcdf_put_svar (ng, model, GST(ng)%name, 'bmat',            &
      &                      bmat, (/1/), (/1/),                         &
      &                      ncid = GST(ng)%ncid)
-      IF (exit_flag.ne.NoError) RETURN
+      IF (FoundError(exit_flag, NoError, __LINE__,                      &
+     &               __FILE__)) RETURN
 !
 !  Write out Ritz eigenvalues to compute.
 !
       CALL netcdf_put_svar (ng, model, GST(ng)%name, 'which',           &
      &                      which, (/1/), (/2/),                        &
      &                      ncid = GST(ng)%ncid)
-      IF (exit_flag.ne.NoError) RETURN
+      IF (FoundError(exit_flag, NoError, __LINE__,                      &
+     &               __FILE__)) RETURN
 !
 !  Write out form of basis function.
 !
       CALL netcdf_put_svar (ng, model, GST(ng)%name, 'howmany',         &
      &                      howmany, (/1/), (/1/),                      &
      &                      ncid = GST(ng)%ncid)
-      IF (exit_flag.ne.NoError) RETURN
+      IF (FoundError(exit_flag, NoError, __LINE__,                      &
+     &               __FILE__)) RETURN
 !
 !  Write out relative accuracy of computed Ritz values.
 !
       CALL netcdf_put_fvar (ng, model, GST(ng)%name, 'Ritz_tol',        &
      &                      Ritz_tol, (/0/), (/0/),                     &
      &                      ncid = GST(ng)%ncid)
-      IF (exit_flag.ne.NoError) RETURN
+      IF (FoundError(exit_flag, NoError, __LINE__,                      &
+     &               __FILE__)) RETURN
 !
 !  Write out eigenproblem parameters.
 !
       CALL netcdf_put_ivar (ng, model, GST(ng)%name, 'iparam',          &
      &                      iparam(:,ng), (/1/), (/SIZE(iparam)/),      &
      &                      ncid = GST(ng)%ncid)
-      IF (exit_flag.ne.NoError) RETURN
+      IF (FoundError(exit_flag, NoError, __LINE__,                      &
+     &               __FILE__)) RETURN
 !
 !  Write out pointers to mark starting location in work arrays.
 !
       CALL netcdf_put_ivar (ng, model, GST(ng)%name, 'ipntr',           &
      &                      ipntr(:,ng), (/1/), (/SIZE(ipntr)/),        &
      &                      ncid = GST(ng)%ncid)
-      IF (exit_flag.ne.NoError) RETURN
+      IF (FoundError(exit_flag, NoError, __LINE__,                      &
+     &               __FILE__)) RETURN
 !
 !  Write ARPACK internal integer parameters to _aupd routines.
 !
       CALL netcdf_put_ivar (ng, model, GST(ng)%name, 'iaupd',           &
      &                      iaupd, (/1/), (/SIZE(iaupd)/),              &
      &                      ncid = GST(ng)%ncid)
-      IF (exit_flag.ne.NoError) RETURN
+      IF (FoundError(exit_flag, NoError, __LINE__,                      &
+     &               __FILE__)) RETURN
 !
 !  Write ARPACK internal integer parameters to _aitr routines.
 !
       CALL netcdf_put_ivar (ng, model, GST(ng)%name, 'iaitr',           &
      &                      iaitr, (/1/), (/SIZE(iaitr)/),              &
      &                      ncid = GST(ng)%ncid)
-      IF (exit_flag.ne.NoError) RETURN
+      IF (FoundError(exit_flag, NoError, __LINE__,                      &
+     &               __FILE__)) RETURN
 !
 !  Write ARPACK internal integer parameters to _aup2 routines.
 !
       CALL netcdf_put_ivar (ng, model, GST(ng)%name, 'iaup2',           &
      &                      iaup2, (/1/), (/SIZE(iaup2)/),              &
      &                      ncid = GST(ng)%ncid)
-      IF (exit_flag.ne.NoError) RETURN
+      IF (FoundError(exit_flag, NoError, __LINE__,                      &
+     &               __FILE__)) RETURN
 !
 !  Write ARPACK internal logical parameters to _aitr routines.
 !
       CALL netcdf_put_lvar (ng, model, GST(ng)%name, 'laitr',           &
      &                      laitr, (/1/), (/SIZE(laitr)/),              &
      &                      ncid = GST(ng)%ncid)
-      IF (exit_flag.ne.NoError) RETURN
+      IF (FoundError(exit_flag, NoError, __LINE__,                      &
+     &               __FILE__)) RETURN
 !
 !  Write ARPACK internal logical parameters to _aupd routines.
 !
       CALL netcdf_put_lvar (ng, model, GST(ng)%name, 'laup2',           &
      &                      laup2, (/1/), (/SIZE(laup2)/),              &
      &                      ncid = GST(ng)%ncid)
-      IF (exit_flag.ne.NoError) RETURN
+      IF (FoundError(exit_flag, NoError, __LINE__,                      &
+     &               __FILE__)) RETURN
 !
 !  Define ARPACK internal real parameters to _aitr routines.
 !
       CALL netcdf_put_fvar (ng, model, GST(ng)%name, 'raitr',           &
      &                      raitr, (/1/), (/SIZE(raitr)/),              &
      &                      ncid = GST(ng)%ncid)
-      IF (exit_flag.ne.NoError) RETURN
+      IF (FoundError(exit_flag, NoError, __LINE__,                      &
+     &               __FILE__)) RETURN
 !
 !  Define ARPACK internal real parameters to _aup2 routines.
 !
       CALL netcdf_put_fvar (ng, model, GST(ng)%name, 'raup2',           &
      &                      raup2, (/1/), (/SIZE(raup2)/),              &
      &                      ncid = GST(ng)%ncid)
-      IF (exit_flag.ne.NoError) RETURN
+      IF (FoundError(exit_flag, NoError, __LINE__,                      &
+     &               __FILE__)) RETURN
 !
 !-----------------------------------------------------------------------
 !  Write out checkpointing variables associated with the state vector.
@@ -204,7 +224,8 @@
      &                      (/Nend(ng)-Nstr(ng)+1,NCV/),                &
      &                      ncid = GST(ng)%ncid)
 # endif
-      IF (exit_flag.ne.NoError) RETURN
+      IF (FoundError(exit_flag, NoError, __LINE__,                      &
+     &               __FILE__)) RETURN
 !
 !  Write out eigenproblem residual vector.
 !
@@ -219,7 +240,8 @@
      &                      (/Nstr(ng)/), (/Nend(ng)-Nstr(ng)+1/),      &
      &                      ncid = GST(ng)%ncid)
 # endif
-      IF (exit_flag.ne.NoError) RETURN
+      IF (FoundError(exit_flag, NoError, __LINE__,                      &
+     &               __FILE__)) RETURN
 !
 !  Write out state reverse communication work array.
 !
@@ -236,7 +258,8 @@
      &                      (/1/), (/3*Nstate(ng)/),                    &
      &                      ncid = GST(ng)%ncid)
 # endif
-      IF (exit_flag.ne.NoError) RETURN
+      IF (FoundError(exit_flag, NoError, __LINE__,                      &
+     &               __FILE__)) RETURN
 !
 !  Write out eigenproblem work array.  In distributed-memory
 !  applications, this array is identical in all the nodes.
@@ -244,7 +267,8 @@
       CALL netcdf_put_fvar (ng, model, GST(ng)%name, 'SworkL',          &
      &                      SworkL, (/1/), (/LworkL/),                  &
      &                      ncid = GST(ng)%ncid)
-      IF (exit_flag.ne.NoError) RETURN
+      IF (FoundError(exit_flag, NoError, __LINE__,                      &
+     &               __FILE__)) RETURN
 !
 !-----------------------------------------------------------------------
 !  Synchronize GST checkpointing NetCDF file to disk so the file
@@ -252,7 +276,8 @@
 !-----------------------------------------------------------------------
 !
       CALL netcdf_sync (ng, model, GST(ng)%name, GST(ng)%ncid)
-      IF (exit_flag.ne.NoError) RETURN
+      IF (FoundError(exit_flag, NoError, __LINE__,                      &
+     &               __FILE__)) RETURN
 
       IF (Master) WRITE (stdout,10) Nrun+1
 !

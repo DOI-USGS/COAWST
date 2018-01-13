@@ -35,7 +35,7 @@
 !                 (m/s) at RHO-points.                                 !
 !  UV_Tphase    Tidal current phase (degrees/360) at RHO-points.       !
 !                                                                      !
-# if defined AVERAGES_DETIDE && defined AVERAGES
+# if defined AVERAGES && defined AVERAGES_DETIDE
 !                                                                      !
 !  Detided time-averaged fields via least-squares fitting. Notice that !
 !  the harmonics for the state variable have an extra dimension of     !
@@ -90,7 +90,7 @@
         TYPE T_TIDES
 
           real(r8), pointer :: Tperiod(:)
-# if defined AVERAGES_DETIDE && defined AVERAGES
+# if defined AVERAGES && defined AVERAGES_DETIDE
           real(r8), pointer :: CosOmega(:)
           real(r8), pointer :: SinOmega(:)
           real(r8), pointer :: CosW_avg(:)
@@ -120,7 +120,7 @@
           real(r8), pointer :: Vu_sat(:,:,:)
           real(r8), pointer :: f_sat(:,:,:)
 # endif
-# if defined AVERAGES_DETIDE && defined AVERAGES
+# if defined AVERAGES && defined AVERAGES_DETIDE
           real(r8), pointer :: ubar_detided(:,:)
           real(r8), pointer :: ubar_tide(:,:,:)
 
@@ -186,6 +186,8 @@
       USE mod_scalars
       USE mod_stepping
 !
+      USE strings_mod, ONLY : FoundError
+!
 ! Inported variable declarations.
 !
       integer, intent(in) :: ng, LBi, UBi, LBj, UBj
@@ -200,66 +202,65 @@
 !  Allocate module variables.
 !-----------------------------------------------------------------------
 !
-!  Inquire about the maximum number of tidal components.
+!  Inquire about the maximum number of tidal components. Notice that
+!  currently we only support nested applications where the tidal
+!  forcing is applied to the main coarser grid (RefineScale(ng)=0)
+!  and the other grids get the tidal forcing from the contact areas.
 !
-      IF (ng.eq.1) THEN
+      IF (LprocessTides(ng)) THEN
         MTC=0
-        DO mg=1,Ngrids
-          IF (.not.(RefinedGrid(ng).and.RefineScale(ng).gt.0)) THEN
-            foundit=.FALSE.
-
-            QUERY : DO ifile=1,nFfiles(mg)
-              CALL netcdf_inq_var (ng, iNLM, FRC(ifile,mg)%name,        &
-     &                             MyVarName = TRIM(Vname(1,idTper)),   &
-     &                             SearchVar = foundit,                 &
-     &                             VarID = Vid,                         &
-     &                             nVardim = nvdim,                     &
-     &                             nVarAtt = nvatt)
-              IF (exit_flag.ne.NoError) RETURN
+        foundit=.FALSE.
+        CALL netcdf_inq_var (ng, iNLM, TIDE(ng)%name,                   &
+     &                       MyVarName = TRIM(Vname(1,idTper)),         &
+     &                       SearchVar = foundit,                       &
+     &                       VarID = Vid,                               &
+     &                       nVardim = nvdim,                           &
+     &                       nVarAtt = nvatt)
+        IF (FoundError(exit_flag, NoError, __LINE__,                    &
+     &                 __FILE__//", allocate_tides")) RETURN
 
 # if defined AVERAGES_DETIDE && defined AVERAGES
 !
 !  Check if detiding variables are available and set definition switch.
 !
-              IF (foundit) THEN
-                DO i=1,n_var
-                  IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idFsuH))) THEN
-                    LdefTIDE(ng)=.FALSE.
-                  END IF
-                END DO
-              END IF
+        IF (foundit) THEN
+          DO i=1,n_var
+            IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idFsuH))) THEN
+              LdefTIDE(ng)=.FALSE.
+            END IF
+          END DO
+        END IF
 # endif
 !
 !  Set maximum number of tidal components.  Allocate and initialize
-!  TIDE I/O structure.
+!  TIDE I/O structure. Notice that in nested applications, all the
+!  nested grids need to have the same number of tidal component.
 !
-              IF (foundit) THEN
-                MTC=MAX(MTC,var_Dsize(1))            ! first dimension
-                NTC(mg)=var_Dsize(1)
+        IF (foundit) THEN
+          MTC=MAX(MTC,var_Dsize(1))            ! first dimension
+          DO mg=1,Ngrids
+            NTC(mg)=var_Dsize(1)
+          END DO
 !
-                Nfiles=FRC(ifile,mg)%Nfiles
-                allocate ( TIDE(ng)%Nrec(Nfiles) )
-                allocate ( TIDE(ng)%time_min(Nfiles) )
-                allocate ( TIDE(ng)%time_max(Nfiles) )
-                allocate ( TIDE(ng)%Vid(NV) )
-                allocate ( TIDE(ng)%Tid(MT) )
-                allocate ( TIDE(ng)%files(Nfiles) )
-                TIDE(ng)%Nfiles=Nfiles
-                TIDE(ng)%Fcount=1
-                TIDE(ng)%Rindex=0
-                TIDE(ng)%ncid=-1
-                TIDE(ng)%Vid=-1
-                TIDE(ng)%Tid=-1
-                TIDE(ng)%Nrec(1:Nfiles)=0
-                TIDE(ng)%time_min(1:Nfiles)=0.0_r8
-                TIDE(ng)%time_max(1:Nfiles)=0.0_r8
-                TIDE(ng)%name=TRIM(FRC(ifile,mg)%name)
-                TIDE(ng)%label='TIDE - tidal forcing'
-                EXIT QUERY
-              END IF
-            END DO QUERY
-          END IF
-        END DO
+!          Nfiles=FRC(ifile,mg)%Nfiles
+!          allocate ( TIDE(ng)%Nrec(Nfiles) )
+!          allocate ( TIDE(ng)%time_min(Nfiles) )
+!          allocate ( TIDE(ng)%time_max(Nfiles) )
+!          allocate ( TIDE(ng)%Vid(NV) )
+!          allocate ( TIDE(ng)%Tid(MT) )
+!          allocate ( TIDE(ng)%files(Nfiles) )
+!          TIDE(ng)%Nfiles=Nfiles
+!          TIDE(ng)%Fcount=1
+!          TIDE(ng)%Rindex=0
+!          TIDE(ng)%ncid=-1
+!          TIDE(ng)%Vid=-1
+!          TIDE(ng)%Tid=-1
+!          TIDE(ng)%Nrec(1:Nfiles)=0
+!          TIDE(ng)%time_min(1:Nfiles)=0.0_r8
+!          TIDE(ng)%time_max(1:Nfiles)=0.0_r8
+!          TIDE(ng)%name=TRIM(FRC(ifile,mg)%name)
+!          TIDE(ng)%label='TIDE - tidal forcing'
+        END IF
       END IF
 !
 !  Allocate structure.
@@ -303,7 +304,7 @@
        allocate ( sat_flag(MAX_SAT,MTC) )
 # endif
 
-# if defined AVERAGES_DETIDE && defined AVERAGES
+# if defined AVERAGES && defined AVERAGES_DETIDE
 !
 !  Allocate variables used for the least-squares detiding of
 !  time-averaged fields.
@@ -452,7 +453,7 @@
 # endif
       END DO
 
-# if defined AVERAGES_DETIDE && defined AVERAGES
+# if defined AVERAGES && defined AVERAGES_DETIDE
 !
 !  Initialize cariables used for the least-squares detiding of
 !  time-averaged fields.

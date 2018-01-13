@@ -4,7 +4,7 @@
       MODULE mpdata_adiff_mod
 #if defined NONLINEAR && defined TS_MPDATA && defined SOLVE3D
 !
-!svn $Id: mpdata_adiff.F 830 2017-01-24 21:21:11Z arango $
+!svn $Id: mpdata_adiff.F 875 2017-11-03 01:10:02Z arango $
 !================================================== Hernan G. Arango ===
 !  Copyright (c) 2002-2017 The ROMS/TOMS Group        John C. Warner   !
 !    Licensed under a MIT/X style license                              !
@@ -46,7 +46,7 @@
 # endif
      &                              pm, pn, omn, om_u, on_v,            &
      &                              z_r, oHz,                           &
-     &                              Huon, Hvom, w,                      &
+     &                              Huon, Hvom, W,                      &
 # ifdef WEC_VF
      &                              W_stokes,                           &
 # endif
@@ -129,17 +129,23 @@
 !
       integer :: i, is, j, k
 
-      real(r8), parameter :: Large = 1.0E+20_r8
-      real(r8), parameter :: eps = 1.0E-18_r8
-      real(r8), parameter :: eps2= 1.0E-10_r8
+!     real(r8), parameter :: Large = 1.0E+20_r8
+      real(r8), parameter :: eps  = 1.0E-18_r8
+      real(r8), parameter :: eps2 = 1.0E-10_r8
 
       real(r8) :: A, B, Tmax, Tmin, Um, Vm, X, Y, Z
-      real(r8) :: cff, cff1, cff2, sig_alfa, fac
+      real(r8) :: cff, cff1, cff2, sig_alfa
 # ifdef MPDATA_HOT
       real(r8) :: AA, BB, CC, AB, AC, BC
       real(r8) :: XX, YY, ZZ, XY, XZ, YZ
       real(r8) :: sig_beta, sig_gama
       real(r8) :: sig_a, sig_b, sig_c, sig_d, sig_e, sig_f
+# endif
+
+# ifdef TS_MPDATA_LIMIT
+      real(r8), parameter :: fac = 0.25_r8
+# else
+      real(r8), parameter :: fac = 1.0_r8
 # endif
 
       real(r8), dimension(IminS:ImaxS,N(ng)) :: C
@@ -153,11 +159,6 @@
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS,N(ng)) :: odz
 
 # include "set_bounds.h"
-# ifdef TS_MPDATA_LIMIT
-      fac=0.25_r8
-# else
-      fac=1.0_r8
-# endif
 !
 !-----------------------------------------------------------------------
 !  Compute anti-diffusive MPDATA velocities (Ua,Va,Wa).
@@ -250,8 +251,8 @@
      &            z_r(i-1,j,k+1)-z_r(i-1,j,k))/                         &
      &           (Ta(i-1,j,k)+Ta(i,j,k)+eps)
           Wm(i,k)=0.25_r8*dt(ng)*                                       &
-     &            (w(i-1,j,k  )*odz(i-1,j,k)*pm(i-1,j)*pn(i-1,j)+       &
-     &             w(i  ,j,k  )*odz(i  ,j,k)*pm(i  ,j)*pn(i  ,j))
+     &            (W(i-1,j,k  )*odz(i-1,j,k)*pm(i-1,j)*pn(i-1,j)+       &
+     &             W(i  ,j,k  )*odz(i  ,j,k)*pm(i  ,j)*pn(i  ,j))
 # ifdef WEC_VF
           Wm(i,k)=Wm(i,k)+                                              &
      &            0.25_r8*dt(ng)*                                       &
@@ -270,10 +271,10 @@
      &              z_r(i-1,j,k+1)-z_r(i-1,j,k-1))/                     &
      &             (Ta(i-1,j,k)+Ta(i,j,k)+eps)
             Wm(i,k)=0.25_r8*dt(ng)*                                     &
-     &              ((w(i-1,j,k-1)*odz(i-1,j,k-1)+                      &
-     &                w(i-1,j,k  )*odz(i-1,j,k  ))*pm(i-1,j)*pn(i-1,j)+ &
-     &               (w(i  ,j,k  )*odz(i  ,j,k  )+                      &
-     &                w(i  ,j,k-1)*odz(i  ,j,k-1))*pm(i  ,j)*pn(i  ,j))
+     &              ((W(i-1,j,k-1)*odz(i-1,j,k-1)+                      &
+     &                W(i-1,j,k  )*odz(i-1,j,k  ))*pm(i-1,j)*pn(i-1,j)+ &
+     &               (W(i  ,j,k  )*odz(i  ,j,k  )+                      &
+     &                W(i  ,j,k-1)*odz(i  ,j,k-1))*pm(i  ,j)*pn(i  ,j))
 # ifdef WEC_VF
             Wm(i,k)=Wm(i,k)+                                            &
      &              0.25_r8*dt(ng)*                                     &
@@ -295,8 +296,8 @@
      &            z_r(i-1,j,k  )-z_r(i-1,j,k-1))/                       &
      &           (Ta(i-1,j,k)+Ta(i,j,k)+eps)
           Wm(i,k)=0.25_r8*dt(ng)*                                       &
-     &            (w(i-1,j,k-1)*odz(i-1,j,k-1)*pm(i-1,j)*pn(i-1,j)+     &
-     &             w(i  ,j,k-1)*odz(i  ,j,k-1)*pm(i  ,j)*pn(i  ,j))
+     &            (W(i-1,j,k-1)*odz(i-1,j,k-1)*pm(i-1,j)*pn(i-1,j)+     &
+     &             W(i  ,j,k-1)*odz(i  ,j,k-1)*pm(i  ,j)*pn(i  ,j))
 # ifdef WEC_VF
             Wm(i,k)=Wm(i,k)+                                            &
      &              0.25_r8*dt(ng)*                                     &
@@ -446,8 +447,8 @@
      &            z_r(i,j-1,k+1)-z_r(i,j-1,k))/                         &
      &           (Ta(i,j-1,k)+Ta(i,j,k)+eps)
           Wm(i,k)=0.25_r8*dt(ng)*                                       &
-     &            (w(i,j-1,k  )*odz(i,j-1,k  )*pm(i,j-1)*pn(i,j-1)+     &
-     &             w(i,j  ,k  )*odz(i,j  ,k  )*pm(i,j  )*pn(i,j  ))
+     &            (W(i,j-1,k  )*odz(i,j-1,k  )*pm(i,j-1)*pn(i,j-1)+     &
+     &             W(i,j  ,k  )*odz(i,j  ,k  )*pm(i,j  )*pn(i,j  ))
 # ifdef WEC_VF
           Wm(i,k)=Wm(i,k)+                                              &
      &            0.25_r8*dt(ng)*                                       &
@@ -466,10 +467,10 @@
      &              z_r(i,j-1,k+1)-z_r(i,j-1,k-1))/                     &
      &             (Ta(i,j-1,k)+Ta(i,j,k)+eps)
             Wm(i,k)=0.25_r8*dt(ng)*                                     &
-     &              ((w(i,j-1,k-1)*odz(i,j-1,k-1)+                      &
-     &                w(i,j-1,k  )*odz(i,j-1,k  ))*pm(i,j-1)*pn(i,j-1)+ &
-     &               (w(i,j  ,k  )*odz(i,j  ,k  )+                      &
-     &                w(i,j  ,k-1)*odz(i,j  ,k-1))*pm(i,j  )*pn(i,j  ))
+     &              ((W(i,j-1,k-1)*odz(i,j-1,k-1)+                      &
+     &                W(i,j-1,k  )*odz(i,j-1,k  ))*pm(i,j-1)*pn(i,j-1)+ &
+     &               (W(i,j  ,k  )*odz(i,j  ,k  )+                      &
+     &                W(i,j  ,k-1)*odz(i,j  ,k-1))*pm(i,j  )*pn(i,j  ))
 # ifdef WEC_VF
           Wm(i,k)=Wm(i,k)+                                              &
      &            0.25_r8*dt(ng)*                                       &
@@ -491,8 +492,8 @@
      &            z_r(i,j-1,k  )-z_r(i,j-1,k-1))/                       &
      &           (Ta(i,j-1,k)+Ta(i,j,k)+eps)
           Wm(i,k)=0.25_r8*dt(ng)*                                       &
-     &            (w(i,j-1,k-1)*odz(i,j-1,k-1)*pm(i,j-1)*pn(i,j-1)+     &
-     &             w(i,j  ,k-1)*odz(i,j  ,k-1)*pm(i,j  )*pn(i,j  ))
+     &            (W(i,j-1,k-1)*odz(i,j-1,k-1)*pm(i,j-1)*pn(i,j-1)+     &
+     &             W(i,j  ,k-1)*odz(i,j  ,k-1)*pm(i,j  )*pn(i,j  ))
 # ifdef WEC_VF
           Wm(i,k)=Wm(i,k)+                                              &
      &            0.25_r8*dt(ng)*                                       &
@@ -784,7 +785,7 @@
      &                             (pn(i,j)+pn(i,j+1))*                 &
      &                             (oHz(i,j,k+1)+oHz(i,j+1,k+1)))
 
-              Wm(i,k)=w(i,j,k)*odz(i,j,k)*pm(i,j)*pn(i,j)*dt(ng)
+              Wm(i,k)=W(i,j,k)*odz(i,j,k)*pm(i,j)*pn(i,j)*dt(ng)
 # ifdef WEC_VF
               Wm(i,k)=Wm(i,k)+W_stokes(i,j,k)*odz(i,j,k)*               &
      &                pm(i,j)*pn(i,j)*dt(ng)

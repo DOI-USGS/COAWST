@@ -2,7 +2,7 @@
 #if (defined TANGENT || defined TL_IOMS) && defined FOUR_DVAR
       SUBROUTINE tl_def_ini (ng)
 !
-!svn $Id: tl_def_ini.F 830 2017-01-24 21:21:11Z arango $
+!svn $Id: tl_def_ini.F 873 2017-10-05 20:27:10Z arango $
 !================================================== Hernan G. Arango ===
 !  Copyright (c) 2002-2017 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
@@ -24,6 +24,7 @@
       USE mod_scalars
 !
       USE def_var_mod, ONLY : def_var
+      USE strings_mod, ONLY : FoundError
 !
       implicit none
 !
@@ -71,13 +72,14 @@
       character (len=120) :: Vinfo(Natt)
       character (len=256) :: ncname
 !
-      SourceFile='tl_def_ini.F'
+      SourceFile=__FILE__
 !
 !-----------------------------------------------------------------------
 !  Set and report file name.
 !-----------------------------------------------------------------------
 !
-      IF (exit_flag.ne.NoError) RETURN
+      IF (FoundError(exit_flag, NoError, __LINE__,                      &
+     &               __FILE__)) RETURN
       ncname=ITL(ng)%name
 !
       IF (Master) THEN
@@ -94,7 +96,8 @@
 !
       DEFINE : IF (LdefITL(ng)) THEN
         CALL netcdf_create (ng, iTLM, TRIM(ncname), ITL(ng)%ncid)
-        IF (exit_flag.ne.NoError) THEN
+        IF (FoundError(exit_flag, NoError, __LINE__,                    &
+     &                 __FILE__)) THEN
           IF (Master) WRITE (stdout,30) TRIM(ncname)
           RETURN
         END IF
@@ -107,134 +110,162 @@
 !
         status=def_dim(ng, iTLM, ITL(ng)%ncid, ncname, 'xi_rho',        &
      &                 IOBOUNDS(ng)%xi_rho, DimIDs( 1))
-        IF (exit_flag.ne.NoError) RETURN
+        IF (FoundError(exit_flag, NoError, __LINE__,                    &
+     &                 __FILE__)) RETURN
 
         status=def_dim(ng, iTLM, ITL(ng)%ncid, ncname, 'xi_u',          &
      &                 IOBOUNDS(ng)%xi_u, DimIDs( 2))
-        IF (exit_flag.ne.NoError) RETURN
+        IF (FoundError(exit_flag, NoError, __LINE__,                    &
+     &                 __FILE__)) RETURN
 
         status=def_dim(ng, iTLM, ITL(ng)%ncid, ncname, 'xi_v',          &
      &                 IOBOUNDS(ng)%xi_v, DimIDs( 3))
-        IF (exit_flag.ne.NoError) RETURN
+        IF (FoundError(exit_flag, NoError, __LINE__,                    &
+     &                 __FILE__)) RETURN
 
         status=def_dim(ng, iTLM, ITL(ng)%ncid, ncname, 'xi_psi',        &
      &                 IOBOUNDS(ng)%xi_psi, DimIDs( 4))
-        IF (exit_flag.ne.NoError) RETURN
+        IF (FoundError(exit_flag, NoError, __LINE__,                    &
+     &                 __FILE__)) RETURN
 
         status=def_dim(ng, iTLM, ITL(ng)%ncid, ncname, 'eta_rho',       &
      &                 IOBOUNDS(ng)%eta_rho, DimIDs( 5))
-        IF (exit_flag.ne.NoError) RETURN
+        IF (FoundError(exit_flag, NoError, __LINE__,                    &
+     &                 __FILE__)) RETURN
 
         status=def_dim(ng, iTLM, ITL(ng)%ncid, ncname, 'eta_u',         &
      &                 IOBOUNDS(ng)%eta_u, DimIDs( 6))
-        IF (exit_flag.ne.NoError) RETURN
+        IF (FoundError(exit_flag, NoError, __LINE__,                    &
+     &                 __FILE__)) RETURN
 
         status=def_dim(ng, iTLM, ITL(ng)%ncid, ncname, 'eta_v',         &
      &                 IOBOUNDS(ng)%eta_v, DimIDs( 7))
-        IF (exit_flag.ne.NoError) RETURN
+        IF (FoundError(exit_flag, NoError, __LINE__,                    &
+     &                 __FILE__)) RETURN
 
         status=def_dim(ng, iTLM, ITL(ng)%ncid, ncname, 'eta_psi',       &
      &                 IOBOUNDS(ng)%eta_psi, DimIDs( 8))
-        IF (exit_flag.ne.NoError) RETURN
+        IF (FoundError(exit_flag, NoError, __LINE__,                    &
+     &                 __FILE__)) RETURN
 
 # ifdef ADJUST_BOUNDARY
         status=def_dim(ng, iTLM, ITL(ng)%ncid, ncname, 'IorJ',          &
      &                 IOBOUNDS(ng)%IorJ, IorJdim)
-        IF (exit_flag.ne.NoError) RETURN
+        IF (FoundError(exit_flag, NoError, __LINE__,                    &
+     &                 __FILE__)) RETURN
 # endif
 
 # if defined WRITE_WATER && defined MASKING
         status=def_dim(ng, iTLM, ITL(ng)%ncid, ncname, 'xy_rho',        &
      &                 IOBOUNDS(ng)%xy_rho, DimIDs(17))
-        IF (exit_flag.ne.NoError) RETURN
+        IF (FoundError(exit_flag, NoError, __LINE__,                    &
+     &                 __FILE__)) RETURN
 
         status=def_dim(ng, iTLM, ITL(ng)%ncid, ncname, 'xy_u',          &
      &                 IOBOUNDS(ng)%xy_u, DimIDs(18))
-        IF (exit_flag.ne.NoError) RETURN
+        IF (FoundError(exit_flag, NoError, __LINE__,                    &
+     &                 __FILE__)) RETURN
 
         status=def_dim(ng, iTLM, ITL(ng)%ncid, ncname, 'xy_v',          &
      &                 IOBOUNDS(ng)%xy_v, DimIDs(19))
-        IF (exit_flag.ne.NoError) RETURN
+        IF (FoundError(exit_flag, NoError, __LINE__,                    &
+     &                 __FILE__)) RETURN
 # endif
 
 # ifdef SOLVE3D
 #  if defined WRITE_WATER && defined MASKING
         status=def_dim(ng, iTLM, ITL(ng)%ncid, ncname, 'xyz_rho',       &
      &                 IOBOUNDS(ng)%xy_rho*N(ng), DimIDs(20))
-        IF (exit_flag.ne.NoError) RETURN
+        IF (FoundError(exit_flag, NoError, __LINE__,                    &
+     &                 __FILE__)) RETURN
 
         status=def_dim(ng, iTLM, ITL(ng)%ncid, ncname, 'xyz_u',         &
      &                 IOBOUNDS(ng)%xy_u*N(ng), DimIDs(21))
-        IF (exit_flag.ne.NoError) RETURN
+        IF (FoundError(exit_flag, NoError, __LINE__,                    &
+     &                 __FILE__)) RETURN
 
         status=def_dim(ng, iTLM, ITL(ng)%ncid, ncname, 'xyz_v',         &
      &                 IOBOUNDS(ng)%xy_v*N(ng), DimIDs(22))
-        IF (exit_flag.ne.NoError) RETURN
+        IF (FoundError(exit_flag, NoError, __LINE__,                    &
+     &                 __FILE__)) RETURN
 
         status=def_dim(ng, iTLM, ITL(ng)%ncid, ncname, 'xyz_w',         &
      &                 IOBOUNDS(ng)%xy_rho*(N(ng)+1), DimIDs(23))
-        IF (exit_flag.ne.NoError) RETURN
+        IF (FoundError(exit_flag, NoError, __LINE__,                    &
+     &                 __FILE__)) RETURN
 #  endif
 
         status=def_dim(ng, iTLM, ITL(ng)%ncid, ncname, 'N',             &
      &                 N(ng), DimIDs( 9))
-        IF (exit_flag.ne.NoError) RETURN
+        IF (FoundError(exit_flag, NoError, __LINE__,                    &
+     &                 __FILE__)) RETURN
 
         status=def_dim(ng, iTLM, ITL(ng)%ncid, ncname, 's_rho',         &
      &                 N(ng), DimIDs( 9))
-        IF (exit_flag.ne.NoError) RETURN
+        IF (FoundError(exit_flag, NoError, __LINE__,                    &
+     &                 __FILE__)) RETURN
 
         status=def_dim(ng, iTLM, ITL(ng)%ncid, ncname, 's_w',           &
      &                 N(ng)+1, DimIDs(10))
-        IF (exit_flag.ne.NoError) RETURN
+        IF (FoundError(exit_flag, NoError, __LINE__,                    &
+     &                 __FILE__)) RETURN
 
         status=def_dim(ng, iTLM, ITL(ng)%ncid, ncname, 'tracer',        &
      &                 NT(ng), DimIDs(11))
-        IF (exit_flag.ne.NoError) RETURN
+        IF (FoundError(exit_flag, NoError, __LINE__,                    &
+     &                 __FILE__)) RETURN
 
 #  ifdef SEDIMENT
         status=def_dim(ng, iTLM, ITL(ng)%ncid, ncname, 'NST',           &
      &                 NST, DimIDs(32))
-        IF (exit_flag.ne.NoError) RETURN
+        IF (FoundError(exit_flag, NoError, __LINE__,                    &
+     &                 __FILE__)) RETURN
 
         status=def_dim(ng, iTLM, ITL(ng)%ncid, ncname, 'Nbed',          &
      &                 Nbed, DimIDs(16))
-        IF (exit_flag.ne.NoError) RETURN
+        IF (FoundError(exit_flag, NoError, __LINE__,                    &
+     &                 __FILE__)) RETURN
 
 #   if defined WRITE_WATER && defined MASKING
         status=def_dim(ng, iTLM, ITL(ng)%ncid, ncname, 'xybed',         &
      &                 IOBOUNDS(ng)%xy_rho*Nbed, DimIDs(24))
-        IF (exit_flag.ne.NoError) RETURN
+        IF (FoundError(exit_flag, NoError, __LINE__,                    &
+     &                 __FILE__)) RETURN
 #   endif
 #  endif
 # endif
 
         status=def_dim(ng, iTLM, ITL(ng)%ncid, ncname, 'boundary',      &
      &                 4, DimIDs(14))
-        IF (exit_flag.ne.NoError) RETURN
+        IF (FoundError(exit_flag, NoError, __LINE__,                    &
+     &                 __FILE__)) RETURN
 
 # ifdef FOUR_DVAR
         status=def_dim(ng, iTLM, ITL(ng)%ncid, ncname, 'Nstate',        &
      &                 NstateVar(ng), DimIDs(29))
-        IF (exit_flag.ne.NoError) RETURN
+        IF (FoundError(exit_flag, NoError, __LINE__,                    &
+     &                 __FILE__)) RETURN
 # endif
 
 # if defined ADJUST_STFLUX || defined ADJUST_WSTRESS
         status=def_dim(ng, iTLM, ITL(ng)%ncid, ncname, 'frc_adjust',    &
      &                 Nfrec(ng), DimIDs(30))
-        IF (exit_flag.ne.NoError) RETURN
+        IF (FoundError(exit_flag, NoError, __LINE__,                    &
+     &                 __FILE__)) RETURN
 # endif
 
 # ifdef ADJUST_BOUNDARY
         status=def_dim(ng, iTLM, ITL(ng)%ncid, ncname, 'obc_adjust',    &
      &                 Nbrec(ng), DimIDs(31))
-        IF (exit_flag.ne.NoError) RETURN
+        IF (FoundError(exit_flag, NoError, __LINE__,                    &
+     &                 __FILE__)) RETURN
 # endif
 
         status=def_dim(ng, iTLM, ITL(ng)%ncid, ncname,                  &
      &                 TRIM(ADJUSTL(Vname(5,idtime))),                  &
      &                 nf90_unlimited, DimIDs(12))
-        IF (exit_flag.ne.NoError) RETURN
+        IF (FoundError(exit_flag, NoError, __LINE__,                    &
+     &                 __FILE__)) RETURN
 
         recdim=DimIDs(12)
 # if defined ADJUST_STFLUX || defined ADJUST_WSTRESS
@@ -378,7 +409,8 @@
 !-----------------------------------------------------------------------
 !
         CALL def_info (ng, iTLM, ITL(ng)%ncid, ncname, DimIDs)
-        IF (exit_flag.ne.NoError) RETURN
+        IF (FoundError(exit_flag, NoError, __LINE__,                    &
+     &                 __FILE__)) RETURN
 !
 !-----------------------------------------------------------------------
 !  Define time-varying variables.
@@ -388,24 +420,14 @@
 !
         Vinfo( 1)=Vname(1,idtime)
         Vinfo( 2)=Vname(2,idtime)
-        IF (INT(time_ref).eq.-2) THEN
-          Vinfo( 3)='seconds since 1968-05-23 00:00:00 GMT'
-          Vinfo( 4)='gregorian'
-        ELSE IF (INT(time_ref).eq.-1) THEN
-          Vinfo( 3)='seconds since 0001-01-01 00:00:00'
-          Vinfo( 4)='360_day'
-        ELSE IF (INT(time_ref).eq.0) THEN
-          Vinfo( 3)='seconds since 0001-01-01 00:00:00'
-          Vinfo( 4)='julian'
-        ELSE IF (time_ref.gt.0.0_r8) THEN
-          WRITE (Vinfo( 3),'(a,1x,a)') 'seconds since', TRIM(r_text)
-          Vinfo( 4)='gregorian'
-        END IF
+        WRITE (Vinfo( 3),'(a,a)') 'seconds since ', TRIM(Rclock%string)
+        Vinfo( 4)=TRIM(Rclock%calendar)
         Vinfo(14)=Vname(4,idtime)
         status=def_var(ng, iTLM, ITL(ng)%ncid, ITL(ng)%Vid(idtime),     &
      &                 NF_TYPE, 1, (/recdim/), Aval, Vinfo, ncname,     &
      &                 SetParAccess = .FALSE.)
-        IF (exit_flag.ne.NoError) RETURN
+        IF (FoundError(exit_flag, NoError, __LINE__,                    &
+     &                 __FILE__)) RETURN
 !
 !  Define free-surface.
 !
@@ -426,7 +448,8 @@
 # else
      &                 NF_FOUT, nvd3, t2dgrd, Aval, Vinfo, ncname)
 # endif
-        IF (exit_flag.ne.NoError) RETURN
+        IF (FoundError(exit_flag, NoError, __LINE__,                    &
+     &                 __FILE__)) RETURN
 
 # ifdef ADJUST_BOUNDARY
 !
@@ -443,7 +466,8 @@
           status=def_var(ng, iTLM, ITL(ng)%ncid, ITL(ng)%Vid(ifield),   &
      &                   NF_FOUT, 4, t2dobc, Aval, Vinfo, ncname,       &
      &                   SetFillVal = .FALSE.)
-          IF (exit_flag.ne.NoError) RETURN
+          IF (FoundError(exit_flag, NoError, __LINE__,                  &
+     &                   __FILE__)) RETURN
         END IF
 # endif
 !
@@ -461,7 +485,8 @@
         Aval(5)=REAL(Iinfo(1,idUbar,ng),r8)
         status=def_var(ng, iTLM, ITL(ng)%ncid, ITL(ng)%Vid(idUbar),     &
      &                 NF_FOUT, nvd3, u2dgrd, Aval, Vinfo, ncname)
-        IF (exit_flag.ne.NoError) RETURN
+        IF (FoundError(exit_flag, NoError, __LINE__,                    &
+     &                 __FILE__)) RETURN
 
 # ifdef ADJUST_BOUNDARY
 !
@@ -478,7 +503,8 @@
           status=def_var(ng, iTLM, ITL(ng)%ncid, ITL(ng)%Vid(ifield),   &
      &                   NF_FOUT, 4, t2dobc, Aval, Vinfo, ncname,       &
      &                   SetFillVal = .FALSE.)
-          IF (exit_flag.ne.NoError) RETURN
+          IF (FoundError(exit_flag, NoError, __LINE__,                  &
+     &                   __FILE__)) RETURN
         END IF
 # endif
 !
@@ -496,7 +522,8 @@
         Aval(5)=REAL(Iinfo(1,idVbar,ng),r8)
         status=def_var(ng, iTLM, ITL(ng)%ncid, ITL(ng)%Vid(idVbar),     &
      &                 NF_FOUT, nvd3, v2dgrd, Aval, Vinfo, ncname)
-        IF (exit_flag.ne.NoError) RETURN
+        IF (FoundError(exit_flag, NoError, __LINE__,                    &
+     &                 __FILE__)) RETURN
 
 # ifdef ADJUST_BOUNDARY
 !
@@ -513,7 +540,8 @@
           status=def_var(ng, iTLM, ITL(ng)%ncid, ITL(ng)%Vid(ifield),   &
      &                   NF_FOUT, 4, t2dobc, Aval, Vinfo, ncname,       &
      &                   SetFillVal = .FALSE.)
-          IF (exit_flag.ne.NoError) RETURN
+          IF (FoundError(exit_flag, NoError, __LINE__,                  &
+     &                   __FILE__)) RETURN
         END IF
 # endif
 # ifdef ADJUST_WSTRESS
@@ -532,7 +560,8 @@
         Aval(5)=REAL(u2dvar,r8)
         status=def_var(ng, iTLM, ITL(ng)%ncid, ITL(ng)%Vid(idUsms),     &
      &                 NF_FOUT, nvd4, u3dfrc, Aval, Vinfo, ncname)
-        IF (exit_flag.ne.NoError) RETURN
+        IF (FoundError(exit_flag, NoError, __LINE__,                    &
+     &                 __FILE__)) RETURN
 !
 !  Define surface V-momentum stress.
 !
@@ -549,7 +578,8 @@
         Aval(5)=REAL(v2dvar,r8)
         status=def_var(ng, iTLM, ITL(ng)%ncid, ITL(ng)%Vid(idVsms),     &
      &                 NF_FOUT, nvd4, v3dfrc, Aval, Vinfo, ncname)
-        IF (exit_flag.ne.NoError) RETURN
+        IF (FoundError(exit_flag, NoError, __LINE__,                    &
+     &                 __FILE__)) RETURN
 # endif
 # ifdef SOLVE3D
 !
@@ -567,7 +597,8 @@
         Aval(5)=REAL(Iinfo(1,idUvel,ng),r8)
         status=def_var(ng, iTLM, ITL(ng)%ncid, ITL(ng)%Vid(idUvel),     &
      &                 NF_FOUT, nvd4, u3dgrd, Aval, Vinfo, ncname)
-        IF (exit_flag.ne.NoError) RETURN
+        IF (FoundError(exit_flag, NoError, __LINE__,                    &
+     &                 __FILE__)) RETURN
 
 #  ifdef ADJUST_BOUNDARY
 !
@@ -584,7 +615,8 @@
           status=def_var(ng, iTLM, ITL(ng)%ncid, ITL(ng)%Vid(ifield),   &
      &                   NF_FOUT, 5, t3dobc, Aval, Vinfo, ncname,       &
      &                   SetFillVal = .FALSE.)
-          IF (exit_flag.ne.NoError) RETURN
+          IF (FoundError(exit_flag, NoError, __LINE__,                  &
+     &                   __FILE__)) RETURN
         END IF
 #  endif
 !
@@ -602,7 +634,8 @@
         Aval(5)=REAL(Iinfo(1,idVvel,ng),r8)
         status=def_var(ng, iTLM, ITL(ng)%ncid, ITL(ng)%Vid(idVvel),     &
      &                 NF_FOUT, nvd4, v3dgrd, Aval, Vinfo, ncname)
-        IF (exit_flag.ne.NoError) RETURN
+        IF (FoundError(exit_flag, NoError, __LINE__,                    &
+     &                 __FILE__)) RETURN
 
 #  ifdef ADJUST_BOUNDARY
 !
@@ -619,7 +652,8 @@
           status=def_var(ng, iTLM, ITL(ng)%ncid, ITL(ng)%Vid(ifield),   &
      &                   NF_FOUT, 5, t3dobc, Aval, Vinfo, ncname,       &
      &                   SetFillVal = .FALSE.)
-          IF (exit_flag.ne.NoError) RETURN
+          IF (FoundError(exit_flag, NoError, __LINE__,                  &
+     &                   __FILE__)) RETURN
         END IF
 #  endif
 !
@@ -645,7 +679,8 @@
           Aval(5)=REAL(r3dvar,r8)
           status=def_var(ng, iTLM, ITL(ng)%ncid, ITL(ng)%Tid(itrc),     &
      &                   NF_FOUT, nvd4, t3dgrd, Aval, Vinfo, ncname)
-          IF (exit_flag.ne.NoError) RETURN
+          IF (FoundError(exit_flag, NoError, __LINE__,                  &
+     &                   __FILE__)) RETURN
         END DO
 
 #  ifdef ADJUST_BOUNDARY
@@ -671,7 +706,8 @@
             status=def_var(ng, iTLM, ITL(ng)%ncid, ITL(ng)%Vid(ifield), &
      &                     NF_FOUT, 5, t3dobc, Aval, Vinfo, ncname,     &
                            SetFillVal = .FALSE.)
-            IF (exit_flag.ne.NoError) RETURN
+            IF (FoundError(exit_flag, NoError, __LINE__,                &
+     &                     __FILE__)) RETURN
           END IF
         END DO
 #  endif
@@ -701,7 +737,8 @@
             status=def_var(ng, iTLM, ITL(ng)%ncid,                      &
      &                     ITL(ng)%Vid(idTsur(itrc)), NF_FOUT,          &
      &                     nvd4, t3dfrc, Aval, Vinfo, ncname)
-            IF (exit_flag.ne.NoError) RETURN
+            IF (FoundError(exit_flag, NoError, __LINE__,                &
+     &                     __FILE__)) RETURN
           END IF
         END DO
 #  endif
@@ -712,14 +749,16 @@
 !-----------------------------------------------------------------------
 !
         CALL netcdf_enddef (ng, iTLM, ncname, ITL(ng)%ncid)
-        IF (exit_flag.ne.NoError) RETURN
+        IF (FoundError(exit_flag, NoError, __LINE__,                    &
+     &                 __FILE__)) RETURN
 !
 !-----------------------------------------------------------------------
 !  Write out time-recordless, information variables.
 !-----------------------------------------------------------------------
 !
         CALL wrt_info (ng, iTLM, ITL(ng)%ncid, ncname)
-        IF (exit_flag.ne.NoError) RETURN
+        IF (FoundError(exit_flag, NoError, __LINE__,                    &
+     &                 __FILE__)) RETURN
       END IF DEFINE
 !
 !=======================================================================
@@ -730,23 +769,28 @@
       QUERY : IF (.not.LdefITL(ng)) THEN
         ncname=ITL(ng)%name
 !
-!  Inquire about the dimensions and check for consistency.
-!
-        CALL netcdf_check_dim (ng, iTLM, ncname)
-        IF (exit_flag.ne.NoError) RETURN
-!
-!  Inquire about the variables.
-!
-        CALL netcdf_inq_var (ng, iTLM, ncname)
-        IF (exit_flag.ne.NoError) RETURN
-!
 !  Open tangent linear initialization file for read/write.
 !
         CALL netcdf_open (ng, iTLM, ncname, 1, ITL(ng)%ncid)
-        IF (exit_flag.ne.NoError) THEN
+        IF (FoundError(exit_flag, NoError, __LINE__,                    &
+     &                 __FILE__)) THEN
           WRITE (stdout,60) TRIM(ncname)
           RETURN
         END IF
+!
+!  Inquire about the dimensions and check for consistency.
+!
+        CALL netcdf_check_dim (ng, iTLM, ncname,                        &
+     &                         ncid = ITL(ng)%ncid)
+        IF (FoundError(exit_flag, NoError, __LINE__,                    &
+     &                 __FILE__)) RETURN
+!
+!  Inquire about the variables.
+!
+        CALL netcdf_inq_var (ng, iTLM, ncname,                          &
+     &                       ncid = ITL(ng)%ncid)
+        IF (FoundError(exit_flag, NoError, __LINE__,                    &
+     &                 __FILE__)) RETURN
 !
 !  Initialize logical switches.
 !

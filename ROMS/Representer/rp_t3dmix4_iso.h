@@ -1,6 +1,6 @@
       SUBROUTINE rp_t3dmix4 (ng, tile)
 !
-!svn $Id: rp_t3dmix4_iso.h 830 2017-01-24 21:21:11Z arango $
+!svn $Id: rp_t3dmix4_iso.h 854 2017-07-18 23:28:45Z arango $
 !************************************************** Hernan G. Arango ***
 !  Copyright (c) 2002-2017 The ROMS/TOMS Group       Andrew M. Moore   !
 !    Licensed under a MIT/X style license                              !
@@ -35,7 +35,7 @@
 #include "tile.h"
 !
 #ifdef PROFILE
-      CALL wclock_on (ng, iRPM, 29)
+      CALL wclock_on (ng, iRPM, 29, __LINE__, __FILE__)
 #endif
       CALL rp_t3dmix4_tile (ng, tile,                                   &
      &                      LBi, UBi, LBj, UBj,                         &
@@ -67,8 +67,8 @@
 #else
      &                      MIXING(ng) % diff4,                         &
 #endif
-     &                      OCEAN(ng) % rho,                            &
-     &                      OCEAN(ng) % tl_rho,                         &
+     &                      OCEAN(ng) % pden,                           &
+     &                      OCEAN(ng) % tl_pden,                        &
 #ifdef TS_MIX_CLIMA
      &                      CLIMA(ng) % tclm,                           &
 #endif
@@ -78,7 +78,7 @@
      &                      OCEAN(ng) % t,                              &
      &                      OCEAN(ng) % tl_t)
 #ifdef PROFILE
-      CALL wclock_off (ng, iRPM, 29)
+      CALL wclock_off (ng, iRPM, 29, __LINE__, __FILE__)
 #endif
 
       RETURN
@@ -107,7 +107,7 @@
 #else
      &                            diff4,                                &
 #endif
-     &                            rho, tl_rho,                          &
+     &                            pden, tl_pden,                        &
 #ifdef TS_MIX_CLIMA
      &                            tclm,                                 &
 #endif
@@ -153,14 +153,14 @@
       real(r8), intent(in) :: pn(LBi:,LBj:)
       real(r8), intent(in) :: Hz(LBi:,LBj:,:)
       real(r8), intent(in) :: z_r(LBi:,LBj:,:)
-      real(r8), intent(in) :: rho(LBi:,LBj:,:)
+      real(r8), intent(in) :: pden(LBi:,LBj:,:)
       real(r8), intent(in) :: t(LBi:,LBj:,:,:,:)
 # ifdef TS_MIX_CLIMA
       real(r8), intent(in) :: tclm(LBi:,LBj:,:,:)
 # endif
       real(r8), intent(in) :: tl_Hz(LBi:,LBj:,:)
       real(r8), intent(in) :: tl_z_r(LBi:,LBj:,:)
-      real(r8), intent(in) :: tl_rho(LBi:,LBj:,:)
+      real(r8), intent(in) :: tl_pden(LBi:,LBj:,:)
 # ifdef DIAGNOSTICS_TS
       real(r8), intent(inout) :: DiaTwrk(LBi:,LBj:,:,:,:)
 # endif
@@ -191,14 +191,14 @@
       real(r8), intent(in) :: pn(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: Hz(LBi:UBi,LBj:UBj,N(ng))
       real(r8), intent(in) :: z_r(LBi:UBi,LBj:UBj,N(ng))
-      real(r8), intent(in) :: rho(LBi:UBi,LBj:UBj,N(ng))
+      real(r8), intent(in) :: pden(LBi:UBi,LBj:UBj,N(ng))
       real(r8), intent(in) :: t(LBi:UBi,LBj:UBj,N(ng),3,NT(ng))
 # ifdef TS_MIX_CLIMA
       real(r8), intent(in) :: tclm(LBi:UBi,LBj:UBj,N(ng),NT(ng))
 # endif
       real(r8), intent(in) :: tl_Hz(LBi:UBi,LBj:UBj,N(ng))
       real(r8), intent(in) :: tl_z_r(LBi:UBi,LBj:UBj,N(ng))
-      real(r8), intent(in) :: tl_rho(LBi:UBi,LBj:UBj,N(ng))
+      real(r8), intent(in) :: tl_pden(LBi:UBi,LBj:UBj,N(ng))
 # ifdef DIAGNOSTICS_TS
 !!    real(r8), intent(inout) :: DiaTwrk(LBi:UBi,LBj:UBj,N(ng),NT(ng),  &
 !!   &                                   NDT)
@@ -297,10 +297,10 @@
 #ifdef WET_DRY_NOT_YET
                 cff=cff*umask_wet(i,j)
 #endif
-                dRdx(i,j,k2)=cff*(rho(i  ,j,k+1)-                       &
-     &                            rho(i-1,j,k+1))
-                tl_dRdx(i,j,k2)=cff*(tl_rho(i  ,j,k+1)-                 &
-     &                               tl_rho(i-1,j,k+1))
+                dRdx(i,j,k2)=cff*(pden(i  ,j,k+1)-                      &
+     &                            pden(i-1,j,k+1))
+                tl_dRdx(i,j,k2)=cff*(tl_pden(i  ,j,k+1)-                &
+     &                               tl_pden(i-1,j,k+1))
 #if defined TS_MIX_STABILITY
                 dTdx(i,j,k2)=cff*(0.75_r8*(t(i  ,j,k+1,nrhs,itrc)-      &
      &                                     t(i-1,j,k+1,nrhs,itrc))+     &
@@ -340,10 +340,10 @@
 #ifdef WET_DRY_NOT_YET
                 cff=cff*vmask_wet(i,j)
 #endif
-                dRde(i,j,k2)=cff*(rho(i,j  ,k+1)-                       &
-     &                            rho(i,j-1,k+1))
-                tl_dRde(i,j,k2)=cff*(tl_rho(i,j  ,k+1)-                 &
-     &                               tl_rho(i,j-1,k+1))
+                dRde(i,j,k2)=cff*(pden(i,j  ,k+1)-                      &
+     &                            pden(i,j-1,k+1))
+                tl_dRde(i,j,k2)=cff*(tl_pden(i,j  ,k+1)-                &
+     &                               tl_pden(i,j-1,k+1))
 #if defined TS_MIX_STABILITY
                 dTde(i,j,k2)=cff*(0.75_r8*(t(i,j  ,k+1,nrhs,itrc)-      &
      &                                     t(i,j-1,k+1,nrhs,itrc))+     &
@@ -412,13 +412,13 @@
 # ifdef TL_IOMS
      &                  cff2
 # endif
-                cff3=MAX(rho(i,j,k)-rho(i,j,k+1),small)
-                tl_cff3=(0.5_r8+SIGN(0.5_r8,rho(i,j,k)-rho(i,j,k+1)-    &
+                cff3=MAX(pden(i,j,k)-pden(i,j,k+1),small)
+                tl_cff3=(0.5_r8+SIGN(0.5_r8,pden(i,j,k)-pden(i,j,k+1)-  &
      &                                      small))*                    &
-     &                  (tl_rho(i,j,k)-tl_rho(i,j,k+1))+                &
+     &                  (tl_pden(i,j,k)-tl_pden(i,j,k+1))+              &
 # ifdef TL_IOMS
      &                  (0.5_r8-SIGN(0.5_r8,                            &
-     &                               rho(i,j,k)-rho(i,j,k+1)-small))*   &
+     &                               pden(i,j,k)-pden(i,j,k+1)-small))* &
      &                  small
 # endif
                 cff4=MAX(cff2,cff3)
@@ -430,15 +430,15 @@
      &                 2.0_r8*cff
 # endif
 #elif defined TS_MIX_MIN_STRAT
-                cff1=MAX(rho(i,j,k)-rho(i,j,k+1),                       &
+                cff1=MAX(pden(i,j,k)-pden(i,j,k+1),                     &
      &                   strat_min*(z_r(i,j,k+1)-z_r(i,j,k)))
                 tl_cff1=(0.5_r8+SIGN(0.5_r8,                            &
-     &                               rho(i,j,k)-rho(i,j,k+1)-           &
+     &                               pden(i,j,k)-pden(i,j,k+1)-         &
      &                               strat_min*(z_r(i,j,k+1)-           &
      &                                          z_r(i,j,k  ))))*        &
-     &                  (tl_rho(i,j,k)-tl_rho(i,j,k+1))+                &
+     &                  (tl_pden(i,j,k)-tl_pden(i,j,k+1))+              &
      &                  (0.5_r8-SIGN(0.5_r8,                            &
-     &                               rho(i,j,k)-rho(i,j,k+1)-           &
+     &                               pden(i,j,k)-pden(i,j,k+1)-         &
      &                               strat_min*(z_r(i,j,k+1)-           &
      &                                          z_r(i,j,k  ))))*        &
      &                  (strat_min*(tl_z_r(i,j,k+1)-tl_z_r(i,j,k  )))
@@ -448,13 +448,13 @@
      &                 2.0_r8*cff
 # endif
 #else
-                cff1=MAX(rho(i,j,k)-rho(i,j,k+1),eps)
+                cff1=MAX(pden(i,j,k)-pden(i,j,k+1),eps)
                 tl_cff1=(0.5_r8+SIGN(0.5_r8,                            &
-     &                               rho(i,j,k)-rho(i,j,k+1)-eps))*     &
-     &                  (tl_rho(i,j,k)-tl_rho(i,j,k+1))+                &
+     &                               pden(i,j,k)-pden(i,j,k+1)-eps))*   &
+     &                  (tl_pden(i,j,k)-tl_pden(i,j,k+1))+              &
 # ifdef TL_IOMS
      &                  (0.5_r8-SIGN(0.5_r8,                            &
-     &                               rho(i,j,k)-rho(i,j,k+1)-eps))*eps
+     &                               pden(i,j,k)-pden(i,j,k+1)-eps))*eps
 # endif
                 cff=-1.0_r8/cff1
                 tl_cff=cff*cff*tl_cff1+                                 &
@@ -969,10 +969,10 @@
 #ifdef WET_DRY_NOT_YET
                 cff=cff*umask_wet(i,j)
 #endif
-                dRdx(i,j,k2)=cff*(rho(i  ,j,k+1)-                       &
-     &                            rho(i-1,j,k+1))
-                tl_dRdx(i,j,k2)=cff*(tl_rho(i  ,j,k+1)-                 &
-     &                               tl_rho(i-1,j,k+1))
+                dRdx(i,j,k2)=cff*(pden(i  ,j,k+1)-                      &
+     &                            pden(i-1,j,k+1))
+                tl_dRdx(i,j,k2)=cff*(tl_pden(i  ,j,k+1)-                &
+     &                               tl_pden(i-1,j,k+1))
                 dTdx(i,j,k2)=cff*(LapT(i  ,j,k+1)-                      &
      &                            LapT(i-1,j,k+1))
                 tl_dTdx(i,j,k2)=cff*(tl_LapT(i  ,j,k+1)-                &
@@ -988,10 +988,10 @@
 #ifdef WET_DRY_NOT_YET
                 cff=cff*vmask_wet(i,j)
 #endif
-                dRde(i,j,k2)=cff*(rho(i,j  ,k+1)-                       &
-     &                            rho(i,j-1,k+1))
-                tl_dRde(i,j,k2)=cff*(tl_rho(i,j  ,k+1)-                 &
-     &                               tl_rho(i,j-1,k+1))
+                dRde(i,j,k2)=cff*(pden(i,j  ,k+1)-                      &
+     &                            pden(i,j-1,k+1))
+                tl_dRde(i,j,k2)=cff*(tl_pden(i,j  ,k+1)-                &
+     &                               tl_pden(i,j-1,k+1))
                 dTde(i,j,k2)=cff*(LapT(i,j  ,k+1)-                      &
      &                            LapT(i,j-1,k+1))
                 tl_dTde(i,j,k2)=cff*(tl_LapT(i,j  ,k+1)-                &
@@ -1036,13 +1036,13 @@
 # ifdef TL_IOMS
      &                  cff2
 # endif
-                cff3=MAX(rho(i,j,k)-rho(i,j,k+1),small)
-                tl_cff3=(0.5_r8+SIGN(0.5_r8,rho(i,j,k)-rho(i,j,k+1)-    &
+                cff3=MAX(pden(i,j,k)-pden(i,j,k+1),small)
+                tl_cff3=(0.5_r8+SIGN(0.5_r8,pden(i,j,k)-pden(i,j,k+1)-  &
      &                                      small))*                    &
-     &                  (tl_rho(i,j,k)-tl_rho(i,j,k+1))+                &
+     &                  (tl_pden(i,j,k)-tl_pden(i,j,k+1))+              &
 # ifdef TL_IOMS
      &                  (0.5_r8-SIGN(0.5_r8,                            &
-     &                               rho(i,j,k)-rho(i,j,k+1)-small))*   &
+     &                               pden(i,j,k)-pden(i,j,k+1)-small))* &
      &                  small
 # endif
                 cff4=MAX(cff2,cff3)
@@ -1054,15 +1054,15 @@
      &                 2.0_r8*cff
 # endif
 #elif defined TS_MIX_MIN_STRAT
-                cff1=MAX(rho(i,j,k)-rho(i,j,k+1),                       &
+                cff1=MAX(pden(i,j,k)-pden(i,j,k+1),                     &
      &                   strat_min*(z_r(i,j,k+1)-z_r(i,j,k)))
                 tl_cff1=(0.5_r8+SIGN(0.5_r8,                            &
-     &                               rho(i,j,k)-rho(i,j,k+1)-           &
+     &                               pden(i,j,k)-pden(i,j,k+1)-         &
      &                               strat_min*(z_r(i,j,k+1)-           &
      &                                          z_r(i,j,k  ))))*        &
-     &                  (tl_rho(i,j,k)-tl_rho(i,j,k+1))+                &
+     &                  (tl_pden(i,j,k)-tl_pden(i,j,k+1))+              &
      &                  (0.5_r8-SIGN(0.5_r8,                            &
-     &                               rho(i,j,k)-rho(i,j,k+1)-           &
+     &                               pden(i,j,k)-pden(i,j,k+1)-         &
      &                               strat_min*(z_r(i,j,k+1)-           &
      &                                          z_r(i,j,k  ))))*        &
      &                  (strat_min*(tl_z_r(i,j,k+1)-tl_z_r(i,j,k  )))
@@ -1072,13 +1072,13 @@
      &                 2.0_r8*cff
 # endif
 #else
-                cff1=MAX(rho(i,j,k)-rho(i,j,k+1),eps)
+                cff1=MAX(pden(i,j,k)-pden(i,j,k+1),eps)
                 tl_cff1=(0.5_r8+SIGN(0.5_r8,                            &
-     &                               rho(i,j,k)-rho(i,j,k+1)-eps))*     &
-     &                  (tl_rho(i,j,k)-tl_rho(i,j,k+1))+                &
+     &                               pden(i,j,k)-pden(i,j,k+1)-eps))*   &
+     &                  (tl_pden(i,j,k)-tl_pden(i,j,k+1))+              &
 # ifdef TL_IOMS
      &                  (0.5_r8-SIGN(0.5_r8,                            &
-     &                               rho(i,j,k)-rho(i,j,k+1)-eps))*eps
+     &                               pden(i,j,k)-pden(i,j,k+1)-eps))*eps
 # endif
                 cff=-1.0_r8/cff1
                 tl_cff=cff*cff*tl_cff1+                                 &

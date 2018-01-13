@@ -2,7 +2,7 @@
 #ifdef DIAGNOSTICS
       SUBROUTINE set_diags (ng, tile)
 !
-!svn $Id: set_diags.F 830 2017-01-24 21:21:11Z arango $
+!svn $Id: set_diags.F 864 2017-08-10 04:11:10Z arango $
 !================================================== Hernan G. Arango ===
 !  Copyright (c) 2002-2017 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
@@ -31,7 +31,7 @@
 # include "tile.h"
 !
 # ifdef PROFILE
-      CALL wclock_on (ng, iNLM, 5)
+      CALL wclock_on (ng, iNLM, 5, __LINE__, __FILE__)
 # endif
       CALL set_diags_tile (ng, tile,                                    &
      &                     LBi, UBi, LBj, UBj,                          &
@@ -43,7 +43,7 @@
 # endif
      &                     nrhs(ng))
 # ifdef PROFILE
-      CALL wclock_off (ng, iNLM, 5)
+      CALL wclock_off (ng, iNLM, 5, __LINE__, __FILE__)
 # endif
       RETURN
       END SUBROUTINE set_diags
@@ -56,7 +56,7 @@
 !***********************************************************************
 !
       USE mod_param
-# if defined DIAGNOSTICS_BIO
+# ifdef DIAGNOSTICS_BIO
       USE mod_biology
 # endif
       USE mod_diags

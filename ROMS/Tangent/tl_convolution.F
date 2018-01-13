@@ -3,7 +3,7 @@
 
 #if defined TANGENT && defined FOUR_DVAR
 !
-!svn $Id: tl_convolution.F 830 2017-01-24 21:21:11Z arango $
+!svn $Id: tl_convolution.F 854 2017-07-18 23:28:45Z arango $
 !================================================== Hernan G. Arango ===
 !  Copyright (c) 2002-2017 The ROMS/TOMS Group       Andrew M. Moore   !
 !    Licensed under a MIT/X style license                              !
@@ -527,7 +527,7 @@
         END DO
       END DO
 
-      CALL set_depth_tile (ng, tile,                                    &
+      CALL set_depth_tile (ng, tile, iTLM,                              &
      &                     LBi, UBi, LBj, UBj,                          &
      &                     IminS, ImaxS, JminS, JmaxS,                  &
      &                     nstp, nnew,                                  &

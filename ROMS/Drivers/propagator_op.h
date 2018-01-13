@@ -1,6 +1,6 @@
       SUBROUTINE propagator (RunInterval, state, ad_state)
 !
-!svn $Id: propagator_op.h 830 2017-01-24 21:21:11Z arango $
+!svn $Id: propagator_op.h 857 2017-07-29 04:05:27Z arango $
 !************************************************** Hernan G. Arango ***
 !  Copyright (c) 2002-2017 The ROMS/TOMS Group       Andrew M. Moore   !
 !    Licensed under a MIT/X style license                              !
@@ -36,10 +36,11 @@
 !
       USE dotproduct_mod, ONLY : tl_statenorm
       USE ini_adjust_mod, ONLY : ad_ini_perturb
-      USE packing_mod, ONLY : tl_unpack, ad_pack
+      USE packing_mod,    ONLY : tl_unpack, ad_pack
 #ifdef SOLVE3D
-      USE set_depth_mod, ONLY: set_depth
+      USE set_depth_mod,  ONLY : set_depth
 #endif
+      USE strings_mod,    ONLY : FoundError
 !
 !  Imported variable declarations.
 !
@@ -120,7 +121,7 @@
 !
       DO ng=1,Ngrids
         DO tile=last_tile(ng),first_tile(ng),-1
-          CALL set_depth (ng, tile)
+          CALL set_depth (ng, tile, iTLM)
         END DO
 !$OMP BARRIER
       END DO
@@ -166,13 +167,16 @@
       DO ng=1,Ngrids
 !$OMP MASTER
         CALL close_inp (ng, iTLM)
-        IF (exit_flag.ne.NoError) RETURN
+        IF (FoundError(exit_flag, NoError, __LINE__,                    &
+     &                 __FILE__)) RETURN
         CALL tl_get_idata (ng)
-        IF (exit_flag.ne.NoError) RETURN
+        IF (FoundError(exit_flag, NoError, __LINE__,                    &
+     &                 __FILE__)) RETURN
         CALL tl_get_data (ng)
 !$OMP END MASTER
 !$OMP BARRIER
-        IF (exit_flag.ne.NoError) RETURN
+        IF (FoundError(exit_flag, NoError, __LINE__,                    &
+     &                 __FILE__)) RETURN
       END DO
 !
 !-----------------------------------------------------------------------
@@ -196,7 +200,8 @@
       CALL tl_main2d (RunInterval)
 #endif
 !$OMP BARRIER
-      IF (exit_flag.ne.NoError) RETURN
+      IF (FoundError(exit_flag, NoError, __LINE__,                      &
+     &               __FILE__)) RETURN
 !
 !-----------------------------------------------------------------------
 !  Clear nonlinear (basic state) and adjoint state variables.
@@ -223,7 +228,7 @@
 !
       DO ng=1,Ngrids
         DO tile=last_tile(ng),first_tile(ng),-1
-          CALL set_depth (ng, tile)
+          CALL set_depth (ng, tile, iTLM)
         END DO
 !$OMP BARRIER
       END DO
@@ -302,12 +307,15 @@
       DO ng=1,Ngrids
 !$OMP MASTER
         CALL close_inp (ng, iADM)
-        IF (exit_flag.ne.NoError) RETURN
+        IF (FoundError(exit_flag, NoError, __LINE__,                    &
+     &                 __FILE__)) RETURN
         CALL ad_get_idata (ng)
-        IF (exit_flag.ne.NoError) RETURN
+        IF (FoundError(exit_flag, NoError, __LINE__,                    &
+     &                 __FILE__)) RETURN
         CALL ad_get_data (ng)
 !$OMP END MASTER
-        IF (exit_flag.ne.NoError) RETURN
+        IF (FoundError(exit_flag, NoError, __LINE__,                    &
+     &                 __FILE__)) RETURN
       END DO
 !$OMP BARRIER
 !
@@ -332,7 +340,8 @@
       CALL ad_main2d (RunInterval)
 #endif
 !$OMP BARRIER
-      IF (exit_flag.ne.NoError) RETURN
+      IF (FoundError(exit_flag, NoError, __LINE__,                      &
+     &               __FILE__)) RETURN
 !
 !-----------------------------------------------------------------------
 !  Clear nonlinear state (basic state) variables for next iteration
@@ -360,7 +369,7 @@
 !
       DO ng=1,Ngrids
         DO tile=last_tile(ng),first_tile(ng),-1
-          CALL set_depth (ng, tile)
+          CALL set_depth (ng, tile, iADM)
         END DO
 !$OMP BARRIER
       END DO

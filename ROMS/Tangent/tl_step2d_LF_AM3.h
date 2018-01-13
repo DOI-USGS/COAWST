@@ -2,7 +2,7 @@
 #ifdef TANGENT
       SUBROUTINE tl_step2d (ng, tile)
 !
-!svn $Id: tl_step2d_LF_AM3.h 830 2017-01-24 21:21:11Z arango $
+!svn $Id: tl_step2d_LF_AM3.h 854 2017-07-18 23:28:45Z arango $
 !=======================================================================
 !                                                                      !
 !  Tangent linear model shallow-water primitive equations predictor    !
@@ -37,7 +37,7 @@
 # include "tile.h"
 !
 # ifdef PROFILE
-      CALL wclock_on (ng, iTLM, 9)
+      CALL wclock_on (ng, iTLM, 9, __LINE__, __FILE__)
 # endif
       CALL tl_step2d_tile (ng, tile,                                    &
      &                     LBi, UBi, LBj, UBj, N(ng),                   &
@@ -129,7 +129,7 @@
      &                     OCEAN(ng) % vbar,       OCEAN(ng) % tl_vbar, &
      &                     OCEAN(ng) % zeta,       OCEAN(ng) % tl_zeta)
 # ifdef PROFILE
-      CALL wclock_off (ng, iTLM, 9)
+      CALL wclock_off (ng, iTLM, 9, __LINE__, __FILE__)
 # endif
 
       RETURN

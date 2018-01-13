@@ -2,7 +2,7 @@
 #ifdef TL_IOMS
       SUBROUTINE rp_initial (ng)
 !
-!svn $Id: rp_initial.F 830 2017-01-24 21:21:11Z arango $
+!svn $Id: rp_initial.F 882 2017-11-23 05:41:19Z arango $
 !================================================== Hernan G. Arango ===
 !  Copyright (c) 2002-2017 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
@@ -36,40 +36,42 @@
       USE mod_stepping
 !
       USE analytical_mod
+      USE dateclock_mod,       ONLY : time_string
 # ifdef DISTRIBUTE
-      USE distribute_mod, ONLY : mp_bcasti
+      USE distribute_mod,      ONLY : mp_bcasti
 # endif
 # ifdef TLM_CHECK
-      USE ini_adjust_mod, ONLY : tl_ini_perturb
+      USE ini_adjust_mod,      ONLY : tl_ini_perturb
 # endif
-      USE ini_hmixcoef_mod, ONLY : ini_hmixcoef
-      USE metrics_mod, ONLY : metrics
+      USE ini_hmixcoef_mod,    ONLY : ini_hmixcoef
+      USE metrics_mod,         ONLY : metrics
 # if !(defined SEDIMENT_NOT_YET && defined SED_MORPH_NOT_YET)
-      USE rp_set_depth_mod, ONLY : rp_bath
+      USE rp_set_depth_mod,    ONLY : rp_bath
 # endif
 # ifdef SOLVE3D
-      USE rp_set_depth_mod, ONLY : rp_set_depth
-      USE rp_omega_mod, ONLY : rp_omega
-      USE rp_rho_eos_mod, ONLY : rp_rho_eos
+      USE rp_set_depth_mod,    ONLY : rp_set_depth
+      USE rp_omega_mod,        ONLY : rp_omega
+      USE rp_rho_eos_mod,      ONLY : rp_rho_eos
       USE rp_set_massflux_mod, ONLY : rp_set_massflux
-      USE set_depth_mod, ONLY : set_depth
-      USE omega_mod, ONLY : omega
-      USE rho_eos_mod, ONLY : rho_eos
-      USE set_massflux_mod, ONLY : set_massflux
+      USE set_depth_mod,       ONLY : set_depth
+      USE omega_mod,           ONLY : omega
+      USE rho_eos_mod,         ONLY : rho_eos
+      USE set_massflux_mod,    ONLY : set_massflux
 # endif
 # ifdef MASKING
-      USE set_masks_mod, ONLY : set_masks
+      USE set_masks_mod,       ONLY : set_masks
 # endif
-      USE stiffness_mod, ONLY : stiffness
-# ifdef WAVES_OCEAN
-      USE ocean_coupler_mod, ONLY : waves_coupling
+      USE stiffness_mod,       ONLY : stiffness
+      USE strings_mod,         ONLY : FoundError
+# if defined WAV_COUPLING_NOT_YET && defined MCT_LIB
+      USE ocean_coupler_mod,   ONLY : ocn2wav_coupling
 # endif
 # ifdef WET_DRY
-      USE wetdry_mod, ONLY : wetdry
+      USE wetdry_mod,          ONLY : wetdry
 # endif
 # if defined PROPAGATOR || \
     (defined MASKING    && (defined READ_WATER || defined WRITE_WATER))
-      USE wpoints_mod, ONLY : wpoints
+      USE wpoints_mod,         ONLY : wpoints
 # endif
 !
       implicit none
@@ -135,7 +137,7 @@
       time(ng)=tdays(ng)*day2sec
 !$OMP MASTER
       ntstart(ng)=INT((time(ng)-dstart*day2sec)/dt(ng))+1
-      ntend(ng)=ntimes(ng)
+      ntend(ng)=ntstart(ng)+ntimes(ng)-1
       ntfirst(ng)=ntstart(ng)
 !$OMP END MASTER
 !$OMP BARRIER
@@ -157,7 +159,7 @@
 !-----------------------------------------------------------------------
 !
       DO thread=THREAD_RANGE
-        CALL wclock_on (ng, iRPM, 2)
+        CALL wclock_on (ng, iRPM, 2, __LINE__, __FILE__)
       END DO
 !$OMP BARRIER
 # endif
@@ -172,13 +174,13 @@
 !  Set switch to create (TRUE) representer model initial conditions
 !  NetCDF file or append (FALSE) to existing NetCDF files.
 !
-!$OMP MASTER
       IF (Nrun.eq.ERstr) THEN
 #  ifdef ANA_INITIAL
         LdefIRP(ng)=.TRUE.
 #  endif
         CALL rp_def_ini (ng)
-        IF (exit_flag.ne.NoError) RETURN
+        IF (FoundError(exit_flag, NoError, __LINE__,                    &
+     &                 __FILE__)) RETURN
       ELSE
       END IF
       IniRec=IRP(ng)%Rindex
@@ -204,7 +206,6 @@
       TLM(ng)%Rindex=0
       Fcount=TLM(ng)%Fcount
       TLM(ng)%Nrec(Fcount)=0
-!$OMP END MASTER
 !$OMP BARRIER
 # endif
 !
@@ -232,7 +233,8 @@
         CALL get_grid (ng, iRPM)
 !$OMP END MASTER
 !$OMP BARRIER
-        if (exit_flag.ne.NoError) RETURN
+        if (FoundError(exit_flag, NoError, __LINE__,                    &
+     &                 __FILE__)) RETURN
 # endif
 
 # ifdef SOLVE3D
@@ -293,7 +295,8 @@
           CALL mp_bcasti (ng, iRPM, exit_flag)
 #  endif
 !$OMP BARRIER
-          IF (exit_flag.ne.NoError) RETURN
+          IF (FoundError(exit_flag, NoError, __LINE__,                  &
+     &                   __FILE__)) RETURN
         END IF
 # endif
       END IF
@@ -368,7 +371,7 @@
 !-----------------------------------------------------------------------
 !
       DO tile=first_tile(ng),last_tile(ng),+1
-        CALL set_depth (ng, tile)
+        CALL set_depth (ng, tile, iRPM)
       END DO
 !$OMP BARRIER
 # endif
@@ -456,7 +459,8 @@
 # endif
       END IF
 # endif
-      IF (exit_flag.ne.NoError) RETURN
+      IF (FoundError(exit_flag, NoError, __LINE__,                      &
+     &               __FILE__)) RETURN
 
 # ifdef WET_DRY
 !
@@ -474,7 +478,8 @@
         CALL mp_bcasti (ng, iRPM, exit_flag)
 #  endif
 !$OMP BARRIER
-        IF (exit_flag.ne.NoError) RETURN
+        IF (FoundError(exit_flag, NoError, __LINE__,                    &
+     &                 __FILE__)) RETURN
       ELSE
         DO tile=first_tile(ng),last_tile(ng),+1
           CALL wetdry (ng, tile, Tindex(ng), .TRUE.)
@@ -495,9 +500,10 @@
 !
 !$OMP MASTER
       CALL obs_initial (ng, iRPM, .FALSE.)
-!$OMP MASTER
+!$OMP END MASTER
 !$OMP BARRIER
-      IF (exit_flag.ne.NoError) RETURN
+      IF (FoundError(exit_flag, NoError, __LINE__,                      &
+     &               __FILE__)) RETURN
 # endif
 
 # if defined ANA_PERTURB && defined SANITY_CHECK
@@ -520,8 +526,8 @@
 !-----------------------------------------------------------------------
 !
       DO tile=first_tile(ng),last_tile(ng),+1
-        CALL set_depth (ng, tile)
-        CALL rp_set_depth (ng, tile)
+        CALL set_depth (ng, tile, iRPM)
+        CALL rp_set_depth (ng, tile, iRPM)
       END DO
 !$OMP BARRIER
 !
@@ -530,8 +536,8 @@
 !-----------------------------------------------------------------------
 !
       DO tile=first_tile(ng),last_tile(ng),+1
-        CALL rp_set_massflux (ng, tile)
-        CALL set_massflux (ng, tile)
+        CALL rp_set_massflux (ng, tile, iRPM)
+        CALL set_massflux (ng, tile, iRPM)
       END DO
 !$OMP BARRIER
 !
@@ -541,8 +547,8 @@
 !-----------------------------------------------------------------------
 !
       DO tile=first_tile(ng),last_tile(ng),+1
-        CALL rp_omega (ng, tile)
-        CALL omega (ng, tile)
+        CALL rp_omega (ng, tile, iRPM)
+        CALL omega (ng, tile, iRPM)
       END DO
 !$OMP BARRIER
 # endif
@@ -565,20 +571,24 @@
 #endif
 !
 !-----------------------------------------------------------------------
-!  If applicable, check input multi-files where the time records for
-!  a particular field are split into several NetCDF files.  Initialize
-!  several parameters in the file structure so the appropriate input
-!  file is selected during initialization/restart.
+!  If applicable, close all input boundary, climatology, and forcing
+!  NetCDF files and set associated parameters to the closed state. This
+!  step is essential in iterative algorithms that run the full TLM
+!  repetitively. Then, Initialize several parameters in their file
+!  structure, so the appropriate input single or multi-file is selected
+!  during initialization/restart.
 !-----------------------------------------------------------------------
 !
 !$OMP MASTER
+      CALL close_inp (ng, iRPM)
       CALL check_multifile (ng, iRPM)
 !$OMP END MASTER
 # ifdef DISTRIBUTE
       CALL mp_bcasti (ng, iRPM, exit_flag)
 # endif
 !$OMP BARRIER
-      IF (exit_flag.ne.NoError) RETURN
+      IF (FoundError(exit_flag, NoError, __LINE__,                      &
+     &               __FILE__)) RETURN
 !
 !-----------------------------------------------------------------------
 !  Read in initial forcing, climatology and assimilation data from
@@ -587,12 +597,12 @@
 !-----------------------------------------------------------------------
 !
 !$OMP MASTER
-      CALL close_inp (ng, iRPM)
       CALL rp_get_idata (ng)
       CALL rp_get_data (ng)
 !$OMP END MASTER
 !$OMP BARRIER
-      IF (exit_flag.ne.NoError) RETURN
+      IF (FoundError(exit_flag, NoError, __LINE__,                      &
+     &               __FILE__)) RETURN
 
 # ifdef MASKING
 !
@@ -627,8 +637,8 @@
 !-----------------------------------------------------------------------
 !
       DO tile=first_tile(ng),last_tile(ng),+1
-        CALL rp_rho_eos (ng, tile)
-        CALL rho_eos (ng, tile)
+        CALL rp_rho_eos (ng, tile, iRPM)
+        CALL rho_eos (ng, tile, iRPM)
       END DO
 !$OMP BARRIER
 # endif
@@ -672,14 +682,14 @@
 !$OMP BARRIER
 # endif
 
-# ifdef WAVES_OCEAN_NOT_YET
+# if defined WAV_COUPLING_NOT_YET && defined MCT_LIB
 !
 !-----------------------------------------------------------------------
 !  Read in initial forcing from coupled wave model.
 !-----------------------------------------------------------------------
 !
       DO tile=first_tile(ng),last_tile(ng),+1
-        CALL waves_coupling (ng, tile)
+        CALL ocn2wav_coupling (ng, tile)
       END DO
 !$OMP BARRIER
 # endif
@@ -704,7 +714,7 @@
 !-----------------------------------------------------------------------
 !
       DO thread=THREAD_RANGE
-        CALL wclock_off (ng, iRPM, 2)
+        CALL wclock_off (ng, iRPM, 2, __LINE__, __FILE__)
       END DO
 !$OMP BARRIER
 # endif

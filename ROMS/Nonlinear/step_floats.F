@@ -51,7 +51,7 @@
       integer, intent(in) :: ng, Lstr, Lend
 !
 # ifdef PROFILE
-      CALL wclock_on (ng, iNLM, 10)
+      CALL wclock_on (ng, iNLM, 10, __LINE__, __FILE__)
 # endif
       CALL step_floats_tile (ng, Lstr, Lend,                            &
      &                       knew(ng), nnew(ng), nfm3(ng), nfm2(ng),    &
@@ -65,7 +65,7 @@
 # endif
      &                       DRIFTER(ng) % track)
 # ifdef PROFILE
-      CALL wclock_off (ng, iNLM, 10)
+      CALL wclock_off (ng, iNLM, 10, __LINE__, __FILE__)
 # endif
       RETURN
       END SUBROUTINE step_floats
@@ -558,7 +558,6 @@
 !                  Hamming time-stepping scheme.
 !-----------------------------------------------------------------------
 !
-
       cff1=9.0_r8/8.0_r8
       cff2=1.0_r8/8.0_r8
       cff3=3.0_r8/8.0_r8
@@ -577,11 +576,9 @@
      &                                cff3*track(iyrhs,nfm1,l))
 
 # if defined SOLVE3D && !defined FLOAT_VWALK
-
 !
 !  Compute vertical position (grid units) 3D Lagrangian floats.
 !
-
           IF (Ftype(l).eq.flt_Lagran) THEN
 #  if defined FLOAT_BIOLOGY
             track(izgrd,nfp1,l)=cff1*track(izgrd,nf  ,l)-               &
@@ -807,6 +804,7 @@
 !-----------------------------------------------------------------------
 !
       HalfDT=0.5_r8*dt(ng)
+
       DO l=Lstr,Lend
         IF (.not.bounded(l).and.                                        &
      &      (time(ng)-HalfDT.le.Tinfo(itstr,l).and.                     &
@@ -832,7 +830,6 @@
 #  ifdef SOLVE3D
               track(izgrd,j,l)=Tinfo(izgrd,l)
 #  endif
-
             END DO
             my_thread(l)=.TRUE.
           ELSE

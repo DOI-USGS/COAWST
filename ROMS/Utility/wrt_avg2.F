@@ -103,7 +103,8 @@
      &                     GRID(ng) % rmask_avg2,                       &
 # endif
      &                     AVERAGE2(ng) % avgzeta)
-        IF (status.ne.nf90_noerr) THEN
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+    &                  __FILE__)) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idFsur)), AVG2(ng)%Rindex
           END IF
@@ -127,7 +128,8 @@
      &                   GRID(ng) % rmask_avg2,                         &
 #  endif
      &                   TIDES(ng) % zeta_detided)
-      IF (status.ne.nf90_noerr) THEN
+      IF (FoundError(status, nf90_noerr, __LINE__,                      &
+    &                __FILE__)) THEN
         IF (Master) THEN
           WRITE (stdout,10) TRIM(Vname(1,idFsuD)), AVG2(ng)%Rindex
         END IF
@@ -150,7 +152,8 @@
      &                     GRID(ng) % umask_avg2,                       &
 # endif
      &                     AVERAGE2(ng) % avgu2d)
-        IF (status.ne.nf90_noerr) THEN
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+    &                  __FILE__)) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idUbar)), AVG2(ng)%Rindex
           END IF
@@ -174,7 +177,8 @@
      &                   GRID(ng) % umask_avg2,                         &
 #  endif
      &                   TIDES(ng) % ubar_detided)
-      IF (status.ne.nf90_noerr) THEN
+      IF (FoundError(status, nf90_noerr, __LINE__,                      &
+    &                __FILE__)) THEN
         IF (Master) THEN
           WRITE (stdout,10) TRIM(Vname(1,idu2dD)), AVG2(ng)%Rindex
         END IF
@@ -197,7 +201,8 @@
      &                     GRID(ng) % vmask_avg2,                       &
 # endif
      &                     AVERAGE2(ng) % avgv2d)
-        IF (status.ne.nf90_noerr) THEN
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+    &                  __FILE__)) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idVbar)), AVG2(ng)%Rindex
           END IF
@@ -220,7 +225,8 @@
      &                   GRID(ng) % vmask_avg2,                         &
 #  endif
      &                   TIDES(ng) % vbar_detided)
-      IF (status.ne.nf90_noerr) THEN
+      IF (FoundError(status, nf90_noerr, __LINE__,                      &
+    &                __FILE__)) THEN
         IF (Master) THEN
           WRITE (stdout,10) TRIM(Vname(1,idv2dD)), AVG2(ng)%Rindex
         END IF
@@ -243,7 +249,8 @@
      &                     GRID(ng) % rmask_avg2,                       &
 # endif
      &                     AVERAGE2(ng) % avgu2dE)
-        IF (status.ne.nf90_noerr) THEN
+        IF (FoundError(status, nf90_noerr, __LINE__,                   &
+    &                  __FILE__)) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idu2dE)), AVG2(ng)%Rindex
           END IF
@@ -266,7 +273,8 @@
      &                     GRID(ng) % rmask_avg2,                       &
 # endif
      &                     AVERAGE2(ng) % avgv2dN)
-        IF (status.ne.nf90_noerr) THEN
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+    &                  __FILE__)) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idv2dN)), AVG2(ng)%Rindex
           END IF
@@ -289,7 +297,8 @@
      &                   GRID(ng) % umask_avg2,                         &
 #  endif
      &                   AVERAGE2(ng) % avgDU_avg1)
-      IF (status.ne.nf90_noerr) THEN
+      IF (FoundError(status, nf90_noerr, __LINE__,                      &
+    &                __FILE__)) THEN
         IF (Master) THEN
           WRITE (stdout,10) TRIM(Vname(1,idUfx1)), AVG2(ng)%Rindex
         END IF
@@ -306,7 +315,8 @@
      &                   GRID(ng) % umask_avg2,                         &
 #  endif
      &                   AVERAGE2(ng) % avgDU_avg2)
-      IF (status.ne.nf90_noerr) THEN
+      IF (FoundError(status, nf90_noerr, __LINE__,                      &
+    &                __FILE__)) THEN
         IF (Master) THEN
           WRITE (stdout,10) TRIM(Vname(1,idUfx2)), AVG2(ng)%Rindex
         END IF
@@ -323,7 +333,8 @@
      &                   GRID(ng) % vmask_avg2,                         &
 #  endif
      &                   AVERAGE2(ng) % avgDV_avg1)
-      IF (status.ne.nf90_noerr) THEN
+      IF (FoundError(status, nf90_noerr, __LINE__,                      &
+    &                __FILE__)) THEN
         IF (Master) THEN
           WRITE (stdout,10) TRIM(Vname(1,idVfx1)), AVG2(ng)%Rindex
         END IF
@@ -340,7 +351,8 @@
      &                   GRID(ng) % umask_avg2,                         &
 #  endif
      &                   AVERAGE2(ng) % avgDV_avg2)
-      IF (status.ne.nf90_noerr) THEN
+      IF (FoundError(status, nf90_noerr, __LINE__,                      &
+    &                __FILE__)) THEN
         IF (Master) THEN
           WRITE (stdout,10) TRIM(Vname(1,idVfx2)), AVG2(ng)%Rindex
         END IF
@@ -364,7 +376,8 @@
      &                     GRID(ng) % rmask_avg2,                       &
 #  endif
      &                     AVERAGE2(ng) % avgSxx2d)
-        IF (status.ne.nf90_noerr) THEN
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+    &                 __FILE__)) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idW2xx)), AVG2(ng)%Rindex
           END IF
@@ -387,7 +400,8 @@
      &                     GRID(ng) % rmask_avg2,                       &
 #  endif
      &                     AVERAGE2(ng) % avgSxy2d)
-        IF (status.ne.nf90_noerr) THEN
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+    &                  __FILE__)) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idW2xy)), AVG2(ng)%Rindex
           END IF
@@ -410,7 +424,8 @@
      &                     GRID(ng) % rmask_avg2,                       &
 #  endif
      &                     AVERAGE2(ng) % avgSyy2d)
-        IF (status.ne.nf90_noerr) THEN
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+    &                  __FILE__)) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idW2yy)), AVG2(ng)%Rindex
           END IF
@@ -433,7 +448,8 @@
      &                     GRID(ng) % umask_avg2,                       &
 #  endif
      &                     AVERAGE2(ng) % avgu2RS)
-        IF (status.ne.nf90_noerr) THEN
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+    &                  __FILE__)) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idU2rs)), AVG2(ng)%Rindex
           END IF
@@ -456,7 +472,8 @@
      &                     GRID(ng) % vmask_avg2,                       &
 #  endif
      &                     AVERAGE2(ng) % avgv2RS)
-        IF (status.ne.nf90_noerr) THEN
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+    &                  __FILE__)) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idV2rs)), AVG2(ng)%Rindex
           END IF
@@ -479,7 +496,8 @@
      &                     GRID(ng) % umask_avg2,                       &
 #  endif
      &                     AVERAGE2(ng) % avgu2Sd)
-        IF (status.ne.nf90_noerr) THEN
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+    &                  __FILE__)) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idU2Sd)), AVG2(ng)%Rindex
           END IF
@@ -502,7 +520,8 @@
      &                     GRID(ng) % vmask_avg2,                       &
 #  endif
      &                     AVERAGE2(ng) % avgv2Sd)
-        IF (status.ne.nf90_noerr) THEN
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+    &                  __FILE__)) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idV2Sd)), AVG2(ng)%Rindex
           END IF
@@ -527,7 +546,8 @@
      &                     GRID(ng) % umask_avg2,                       &
 #  endif
      &                     AVERAGE2(ng) % avgu3d)
-        IF (status.ne.nf90_noerr) THEN
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+    &                  __FILE__)) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idUvel)), AVG2(ng)%Rindex
           END IF
@@ -550,7 +570,8 @@
      &                   GRID(ng) % umask_avg2,                         &
 #   endif
      &                   TIDES(ng) % u_detided)
-      IF (status.ne.nf90_noerr) THEN
+      IF (FoundError(status, nf90_noerr, __LINE__,                      &
+    &                __FILE__)) THEN
         IF (Master) THEN
           WRITE (stdout,10) TRIM(Vname(1,idu3dD)), AVG2(ng)%Rindex
         END IF
@@ -573,7 +594,8 @@
      &                     GRID(ng) % vmask_avg2,                       &
 #  endif
      &                     AVERAGE2(ng) % avgv3d)
-        IF (status.ne.nf90_noerr) THEN
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+    &                  __FILE__)) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idVvel)), AVG2(ng)%Rindex
           END IF
@@ -596,7 +618,8 @@
      &                     GRID(ng) % rmask_avg2,                       &
 # endif
      &                     AVERAGE2(ng) % avgu3dE)
-        IF (status.ne.nf90_noerr) THEN
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+    &                  __FILE__)) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idu3dE)), AVG2(ng)%Rindex
           END IF
@@ -619,7 +642,8 @@
      &                     GRID(ng) % rmask_avg2,                       &
 # endif
      &                     AVERAGE2(ng) % avgv3dN)
-        IF (status.ne.nf90_noerr) THEN
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+    &                  __FILE__)) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idv3dN)), AVG2(ng)%Rindex
           END IF
@@ -644,7 +668,8 @@
      &                       GRID(ng) % rmask_avg2,                     &
 #  endif
      &                       AVERAGE2(ng) % avgt(:,:,itrc))
-          IF (status.ne.nf90_noerr) THEN
+          IF (FoundError(status, nf90_noerr, __LINE__,                  &
+    &                    __FILE__)) THEN
             IF (Master) THEN
               WRITE (stdout,10) TRIM(Vname(1,idTvar(itrc))),            &
      &                        AVG2(ng)%Rindex
@@ -674,7 +699,8 @@
      &                       GRID(ng) % rmask_avg2,                     &
 #  endif
      &                       AVERAGE2(ng) % avgst(:,:,1,itrc))
-          IF (status.ne.nf90_noerr) THEN
+          IF (FoundError(status, nf90_noerr, __LINE__,                  &
+    &                    __FILE__)) THEN
             IF (Master) THEN
               WRITE (stdout,10) TRIM(Vname(1,idTSvar(itrc))),           &
      &                        AVG2(ng)%Rindex
@@ -700,7 +726,8 @@
      &                     GRID(ng) % rmask_avg2,                       &
 #  endif
      &                     AVERAGE2(ng) % avgrho)
-        IF (status.ne.nf90_noerr) THEN
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+    &                  __FILE__)) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idDano)), AVG2(ng)%Rindex
           END IF
@@ -724,7 +751,8 @@
      &                     GRID(ng) % rmask_avg2,                       &
 #   endif
      &                     AVERAGE2(ng) % avghsbl)
-        IF (status.ne.nf90_noerr) THEN
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+    &                  __FILE__)) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idHsbl)), AVG2(ng)%Rindex
           END IF
@@ -749,7 +777,8 @@
      &                     GRID(ng) % rmask_avg2,                       &
 #   endif
      &                     AVERAGE2(ng) % avghbbl)
-        IF (status.ne.nf90_noerr) THEN
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+    &                  __FILE__)) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idHbbl)), AVG2(ng)%Rindex
           END IF
@@ -774,7 +803,8 @@
      &                     GRID(ng) % umask_avg2,                       &
 #   endif
      &                     AVERAGE2(ng) % avguice)
-        IF (status.ne.nf90_noerr) THEN
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+    &                  __FILE__)) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idUice)), AVG2(ng)%Rindex
           END IF
@@ -796,7 +826,8 @@
      &                     GRID(ng) % vmask_avg2,                       &
 #   endif
      &                     AVERAGE2(ng) % avgvice)
-       IF (status.ne.nf90_noerr) THEN
+      IF (FoundError(status, nf90_noerr, __LINE__,                      &
+    &                __FILE__)) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idVice)), AVG2(ng)%Rindex
           END IF
@@ -818,7 +849,8 @@
      &                     GRID(ng) % rmask_avg2,                       &
 # endif
      &                     AVERAGE2(ng) % avguiceE)
-        IF (status.ne.nf90_noerr) THEN
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+    &                  __FILE__)) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idUiceE)), AVG2(ng)%Rindex
           END IF
@@ -841,7 +873,8 @@
      &                     GRID(ng) % rmask_avg2,                       &
 # endif
      &                     AVERAGE2(ng) % avgviceN)
-        IF (status.ne.nf90_noerr) THEN
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+    &                  __FILE__)) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idViceN)), AVG2(ng)%Rindex
           END IF
@@ -865,7 +898,8 @@
      &                     GRID(ng) % rmask_avg2,                       &
 #   endif
      &                     AVERAGE2(ng) % avgaice)
-        IF (status.ne.nf90_noerr) THEN
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+    &                  __FILE__)) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idAice)), AVG2(ng)%Rindex
           END IF
@@ -887,7 +921,8 @@
      &                     GRID(ng) % rmask_avg2,                       &
 #   endif
      &                     AVERAGE2(ng) % avghice)
-        IF (status.ne.nf90_noerr) THEN
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+    &                  __FILE__)) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idHice)), AVG2(ng)%Rindex
           END IF
@@ -909,7 +944,8 @@
      &                     GRID(ng) % rmask_avg2,                       &
 #   endif
      &                     AVERAGE2(ng) % avgtice)
-        IF (status.ne.nf90_noerr) THEN
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+    &                  __FILE__)) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idTice)), AVG2(ng)%Rindex
           END IF
@@ -931,7 +967,8 @@
      &                     GRID(ng) % rmask_avg2,                       &
 #   endif
      &                     AVERAGE2(ng) % avgtimid)
-        IF (status.ne.nf90_noerr) THEN
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+    &                  __FILE__)) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idTimid)), AVG2(ng)%Rindex
           END IF
@@ -953,7 +990,8 @@
      &                     GRID(ng) % rmask_avg2,                       &
 #   endif
      &                     AVERAGE2(ng) % avghsno)
-        IF (status.ne.nf90_noerr) THEN
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+    &                  __FILE__)) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idHsno)), AVG2(ng)%Rindex
           END IF
@@ -976,7 +1014,8 @@
      &                     GRID(ng) % rmask_avg2,                       &
 #   endif
      &                     AVERAGE2(ng) % avgapond)
-        IF (status.ne.nf90_noerr) THEN
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+    &                  __FILE__)) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idApond)), AVG2(ng)%Rindex
           END IF
@@ -998,7 +1037,8 @@
      &                     GRID(ng) % rmask_avg2,                       &
 #   endif
      &                     AVERAGE2(ng) % avghpond)
-        IF (status.ne.nf90_noerr) THEN
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+    &                  __FILE__)) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idHpond)), AVG2(ng)%Rindex
           END IF
@@ -1021,7 +1061,8 @@
      &                     GRID(ng) % rmask_avg2,                       &
 #   endif
      &                     AVERAGE2(ng) % avgageice)
-        IF (status.ne.nf90_noerr) THEN
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+    &                  __FILE__)) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idAgeice)), AVG2(ng)%Rindex
           END IF
@@ -1043,7 +1084,8 @@
      &                     GRID(ng) % rmask_avg2,                       &
 #   endif
      &                     AVERAGE2(ng) % avgiomflx)
-        IF (status.ne.nf90_noerr) THEN
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+    &                  __FILE__)) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idIomflx)), AVG2(ng)%Rindex
           END IF
@@ -1065,7 +1107,8 @@
      &                     GRID(ng) % rmask_avg2,                       &
 #   endif
      &                     AVERAGE2(ng) % avgsig11)
-        IF (status.ne.nf90_noerr) THEN
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+    &                  __FILE__)) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idSig11)), AVG2(ng)%Rindex
           END IF
@@ -1087,7 +1130,8 @@
      &                     GRID(ng) % rmask_avg2,                       &
 #   endif
      &                     AVERAGE2(ng) % avgsig12)
-        IF (status.ne.nf90_noerr) THEN
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+    &                  __FILE__)) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idSig12)), AVG2(ng)%Rindex
           END IF
@@ -1109,7 +1153,8 @@
      &                     GRID(ng) % rmask_avg2,                       &
 #   endif
      &                   AVERAGE2(ng) % avgsig22)
-        IF (status.ne.nf90_noerr) THEN
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+    &                  __FILE__)) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idSig22)), AVG2(ng)%Rindex
           END IF
@@ -1131,7 +1176,8 @@
      &                     GRID(ng) % rmask_avg2,                       &
 #   endif
      &                     AVERAGE2(ng) % avgT0mk)
-        IF (status.ne.nf90_noerr) THEN
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+    &                  __FILE__)) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idT0mk)), AVG2(ng)%Rindex
           END IF
@@ -1153,7 +1199,8 @@
      &                     GRID(ng) % rmask_avg2,                       &
 #   endif
      &                     AVERAGE2(ng) % avgS0mk)
-        IF (status.ne.nf90_noerr) THEN
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+    &                  __FILE__)) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idS0mk)), AVG2(ng)%Rindex
           END IF
@@ -1175,7 +1222,8 @@
      &                     GRID(ng) % rmask_avg2,                       &
 #   endif
      &                     AVERAGE2(ng) % avgutau_iw)
-        IF (status.ne.nf90_noerr) THEN
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+    &                  __FILE__)) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idTauiw)), AVG2(ng)%Rindex
           END IF
@@ -1197,7 +1245,8 @@
      &                     GRID(ng) % rmask_avg2,                       &
 #   endif
      &                     AVERAGE2(ng) % avgchu_iw)
-        IF (status.ne.nf90_noerr) THEN
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+    &                  __FILE__)) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idChuiw)), AVG2(ng)%Rindex
           END IF
@@ -1231,7 +1280,8 @@
      &                     GRID(ng) % rmask_avg2,                       &
 #  endif
      &                     AVERAGE2(ng) % avgstf)
-        IF (status.ne.nf90_noerr) THEN
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+    &                  __FILE__)) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idTsur(itemp))),             &
      &                        AVG2(ng)%Rindex
@@ -1255,7 +1305,8 @@
      &                     GRID(ng) % rmask_avg2,                       &
 #  endif
      &                     AVERAGE2(ng) % avgswf)
-        IF (status.ne.nf90_noerr) THEN
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+    &                  __FILE__)) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idTsur(isalt))),             &
      &                        AVG2(ng)%Rindex
@@ -1284,7 +1335,8 @@
      &                     GRID(ng) % rmask_avg2,                       &
 #   endif
      &                     AVERAGE2(ng) % avglhf)
-        IF (status.ne.nf90_noerr) THEN
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+    &                  __FILE__)) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idLhea)), AVG2(ng)%Rindex
           END IF
@@ -1311,7 +1363,8 @@
      &                     GRID(ng) % rmask_avg2,                       &
 #   endif
      &                     AVERAGE2(ng) % avgshf)
-        IF (status.ne.nf90_noerr) THEN
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+    &                  __FILE__)) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idShea)), AVG2(ng)%Rindex
           END IF
@@ -1338,7 +1391,8 @@
      &                     GRID(ng) % rmask_avg2,                       &
 #   endif
      &                     AVERAGE2(ng) % avglrf)
-        IF (status.ne.nf90_noerr) THEN
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+    &                  __FILE__)) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idLrad)), AVG2(ng)%Rindex
           END IF
@@ -1361,7 +1415,8 @@
      &                     GRID(ng) % rmask_avg2,                       &
 #  endif
      &                     AVERAGE2(ng) % avguwind)
-        IF (status.ne.nf90_noerr) THEN
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+    &                  __FILE__)) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idUair)), AVG2(ng)%Rindex
           END IF
@@ -1384,7 +1439,8 @@
      &                     GRID(ng) % rmask_avg2,                       &
 #  endif
      &                     AVERAGE2(ng) % avgvwind)
-        IF (status.ne.nf90_noerr) THEN
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+    &                  __FILE__)) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idVair)), AVG2(ng)%Rindex
           END IF
@@ -1407,7 +1463,8 @@
      &                     GRID(ng) % rmask_avg2,                       &
 # endif
      &                     AVERAGE2(ng) % avguwindE)
-        IF (status.ne.nf90_noerr) THEN
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+    &                  __FILE__)) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idUairE)), AVG2(ng)%Rindex
           END IF
@@ -1430,7 +1487,8 @@
      &                     GRID(ng) % rmask_avg2,                       &
 # endif
      &                     AVERAGE2(ng) % avgvwindN)
-        IF (status.ne.nf90_noerr) THEN
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+    &                  __FILE__)) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idVairN)), AVG2(ng)%Rindex
           END IF
@@ -1455,7 +1513,8 @@
      &                     GRID(ng) % rmask_avg2,                       &
 #    endif
      &                     AVERAGE2(ng) % avgevap)
-        IF (status.ne.nf90_noerr) THEN
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+    &                  __FILE__)) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idevap)), AVG2(ng)%Rindex
           END IF
@@ -1478,7 +1537,8 @@
      &                     GRID(ng) % rmask_avg2,                       &
 #    endif
      &                     AVERAGE2(ng) % avgrain)
-        IF (status.ne.nf90_noerr) THEN
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+    &                  __FILE__)) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idrain)), AVG2(ng)%Rindex
           END IF
@@ -1508,7 +1568,8 @@
      &                     GRID(ng) % rmask_avg2,                       &
 #   endif
      &                     AVERAGE2(ng) % avgsrf)
-        IF (status.ne.nf90_noerr) THEN
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+    &                  __FILE__)) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idSrad)), AVG2(ng)%Rindex
           END IF
@@ -1542,7 +1603,8 @@
      &                     GRID(ng) % umask_avg2,                       &
 # endif
      &                     AVERAGE2(ng) % avgsus)
-        IF (status.ne.nf90_noerr) THEN
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+    &                  __FILE__)) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idUsms)), AVG2(ng)%Rindex
           END IF
@@ -1574,7 +1636,8 @@
      &                     GRID(ng) % vmask_avg2,                       &
 # endif
      &                     AVERAGE2(ng) % avgsvs)
-        IF (status.ne.nf90_noerr) THEN
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+    &                  __FILE__)) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idVsms)), AVG2(ng)%Rindex
           END IF
@@ -1606,7 +1669,8 @@
      &                     GRID(ng) % umask_avg2,                       &
 # endif
      &                     AVERAGE2(ng) % avgbus)
-        IF (status.ne.nf90_noerr) THEN
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+    &                  __FILE__)) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idUbms)), AVG2(ng)%Rindex
           END IF
@@ -1638,7 +1702,8 @@
      &                     GRID(ng) % vmask_avg2,                       &
 # endif
      &                     AVERAGE2(ng) % avgbvs)
-        IF (status.ne.nf90_noerr) THEN
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+    &                  __FILE__)) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idVbms)), AVG2(ng)%Rindex
           END IF
@@ -1663,7 +1728,8 @@
      &                       GRID(ng) % umask_avg2,                     &
 #  endif
      &                       AVERAGE2(ng) % avgbedldu(:,:,itrc))
-          IF (status.ne.nf90_noerr) THEN
+          IF (FoundError(status, nf90_noerr, __LINE__,                  &
+    &                    __FILE__)) THEN
             IF (Master) THEN
               WRITE (stdout,10) TRIM(Vname(1,idUbld(itrc))),            &
      &                          AVG2(ng)%Rindex
@@ -1687,7 +1753,8 @@
      &                       GRID(ng) % vmask_avg2,                     &
 #  endif
      &                       AVERAGE2(ng) % avgbedldv(:,:,itrc))
-          IF (status.ne.nf90_noerr) THEN
+          IF (FoundError(status, nf90_noerr, __LINE__,                  &
+    &                    __FILE__)) THEN
             IF (Master) THEN
               WRITE (stdout,10) TRIM(Vname(1,idVbld(itrc))),            &
      &                          AVG2(ng)%Rindex

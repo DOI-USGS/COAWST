@@ -1,6 +1,6 @@
         MODULE ran_state
 !
-!svn $Id: ran_state.F 830 2017-01-24 21:21:11Z arango $
+!svn $Id: ran_state.F 843 2017-04-27 20:26:57Z arango $
 !================================================== Hernan G. Arango ===
 !  Copyright (c) 2002-2017 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
@@ -31,27 +31,27 @@
 
       PUBLIC
 
-      integer(i4b), parameter :: hg = HUGE(1_i4b)
-      integer(i4b), parameter :: hgm = -hg
-      integer(i4b), parameter :: hgng = hgm - 1
+      integer(i8b), parameter :: hg = HUGE(1_i8b)
+      integer(i8b), parameter :: hgm = -hg
+      integer(i8b), parameter :: hgng = hgm - 1
 
-      integer(i4b), save :: lenran = 0
-      integer(i4b), save :: seq = 0
-      integer(i4b), save :: iran0
-      integer(i4b), save :: jran0
-      integer(i4b), save :: kran0
-      integer(i4b), save :: nran0
-      integer(i4b), save :: mran0
-      integer(i4b), save :: rans
+      integer(i8b), save :: lenran = 0
+      integer(i8b), save :: seq = 0
+      integer(i8b), save :: iran0
+      integer(i8b), save :: jran0
+      integer(i8b), save :: kran0
+      integer(i8b), save :: nran0
+      integer(i8b), save :: mran0
+      integer(i8b), save :: rans
 
-      integer(i4b), pointer, save :: iran(:)
-      integer(i4b), pointer, save :: jran(:)
-      integer(i4b), pointer, save :: kran(:)
-      integer(i4b), pointer, save :: nran(:)
-      integer(i4b), pointer, save :: mran(:)
-      integer(i4b), pointer, save :: ranv(:)
+      integer(i8b), pointer, save :: iran(:)
+      integer(i8b), pointer, save :: jran(:)
+      integer(i8b), pointer, save :: kran(:)
+      integer(i8b), pointer, save :: nran(:)
+      integer(i8b), pointer, save :: mran(:)
+      integer(i8b), pointer, save :: ranv(:)
 
-      integer(i4b), pointer, save :: ranseeds(:,:)
+      integer(i8b), pointer, save :: ranseeds(:,:)
 
       real(r8), save :: amm
 !
@@ -76,11 +76,11 @@
 !
 !  Imported variable declarations.
 !
-      integer(i4b), intent(in) :: length
+      integer(i8b), intent(in) :: length
 !
 !  Local variable declarations.
 !
-      integer(i4b) :: hgt, j, new, sz
+      integer(i8b) :: hgt, j, new, sz
 !
 !-----------------------------------------------------------------------
 !  Initialize randon number generator vectors.
@@ -89,7 +89,7 @@
       IF (length.lt.lenran) RETURN
       hgt=hg
 !
-!  Check that kind value I4B is in fact a 32-bit integer with the usual
+!  Check that kind value I8B is in fact a 32-bit integer with the usual
 !  properties that we expect it to have (under negation and wrap-around
 !  addition). If all these test are satisfied, then the routines that
 !  use this module are portable, even though they go beyond F90 integer
@@ -107,18 +107,18 @@
      &  CALL nrerror ('RAN_INIT: arith assump 5 fails')
       IF ((hg+hgng).ge.0)                                               &
      &  CALL nrerror ('RAN_INIT: arith assump 6 fails')
-      IF (NOT(-1_i4b).lt.0)                                             &
+      IF (NOT(-1_i8b).lt.0)                                             &
      &  CALL nrerror ('RAN_INIT: arith assump 7 fails')
-      IF (NOT(0_i4b).ge.0)                                              &
+      IF (NOT(0_i8b).ge.0)                                              &
      &  CALL nrerror ('RAN_INIT: arith assump 8 fails')
-      IF (NOT(1_i4b).ge.0)                                              &
+      IF (NOT(1_i8b).ge.0)                                              &
      &  CALL nrerror ('RAN_INIT: arith assump 9 fails')
 !
 !  Reallocate or allocate state space.
 !
       IF (lenran.gt.0) THEN
-        ranseeds => reallocate (ranseeds, length, 5_i4b)
-        ranv => reallocate (ranv, length-1_i4b)
+        ranseeds => reallocate (ranseeds, length, 5_i8b)
+        ranv => reallocate (ranv, length-1_i8b)
         new=lenran+1
       ELSE
         ALLOCATE (ranseeds(length,5))
@@ -133,7 +133,7 @@
 !
       ranseeds(new:,1)=seq
       sz=SIZE(ranseeds(new:,1))
-      ranseeds(new:,2:5)=SPREAD(arth(new,1_i4b,sz),2,4)
+      ranseeds(new:,2:5)=SPREAD(arth(new,1_i8b,sz),2,4)
 !
 !  Hash them.
 !
@@ -252,11 +252,11 @@
 !
 !  Imported variable declarations.
 !
-      integer(i4b), intent(inout) :: il, ir
+      integer(i8b), intent(inout) :: il, ir
 !
 !  Local variable declarations.
 !
-      integer(i4b) :: is, j
+      integer(i8b) :: is, j
 !
 !-----------------------------------------------------------------------
 !  Bit mixing. The various constants should not be changed.
@@ -285,13 +285,13 @@
 !
 !  Imported variable declarations.
 !
-      integer(i4b), intent(inout) :: il(:)
-      integer(i4b), intent(inout) :: ir(:)
+      integer(i8b), intent(inout) :: il(:)
+      integer(i8b), intent(inout) :: ir(:)
 !
 !  Local variable declarations.
 !
-      integer(i4b) :: j
-      integer(i4b), dimension(SIZE(il)) :: is
+      integer(i8b) :: j
+      integer(i8b), dimension(SIZE(il)) :: is
 !
 !-----------------------------------------------------------------------
 !  Bit mixing. The various constants should not be changed.

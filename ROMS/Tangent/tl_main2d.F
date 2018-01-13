@@ -2,7 +2,7 @@
 #if defined TANGENT && !defined SOLVE3D
       SUBROUTINE tl_main2d (RunInterval)
 !
-!svn $Id: tl_main2d.F 830 2017-01-24 21:21:11Z arango $
+!svn $Id: tl_main2d.F 858 2017-07-31 23:02:30Z arango $
 !================================================== Hernan G. Arango ===
 !  Copyright (c) 2002-2017 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
@@ -18,44 +18,46 @@
 !
       USE mod_param
       USE mod_parallel
-# ifdef MODEL_COUPLING
+# if defined MODEL_COUPLING && defined MCT_LIB
       USE mod_coupler
 # endif
       USE mod_iounits
       USE mod_scalars
       USE mod_stepping
 !
+      USE dateclock_mod,      ONLY : time_string
 # ifdef TLM_CHECK
-      USE dotproduct_mod, ONLY : tl_dotproduct
+      USE dotproduct_mod,     ONLY : tl_dotproduct
 # endif
-# ifdef AIR_OCEAN_NOT_YET
-      USE ocean_coupler_mod, ONLY : atmos_coupling
+# if defined ATM_COUPLING_NOT_YET && defined MCT_LIB
+      USE ocean_coupler_mod,  ONLY : atmos_coupling
 # endif
-# ifdef WAVES_OCEAN_NOT_YET
-      USE ocean_coupler_mod, ONLY : waves_coupling
+# if defined WAV_COUPLING_NOT_YET && defined MCT_LIB
+      USE ocean_coupler_mod,  ONLY : waves_coupling
 # endif
-      USE tl_diag_mod, ONLY : tl_diag
+      USE strings_mod,        ONLY : FoundError
+      USE tl_diag_mod,        ONLY : tl_diag
 # if defined WEAK_CONSTRAINT || defined FORCING_SV
-      USE tl_forcing_mod, ONLY : tl_forcing
+      USE tl_forcing_mod,     ONLY : tl_forcing
 # endif
 # ifdef ADJUST_WSTRESS
-      USE tl_frc_adjust_mod, ONLY : tl_frc_adjust
+      USE tl_frc_adjust_mod,  ONLY : tl_frc_adjust
 # endif
-      USE tl_ini_fields_mod, ONLY : tl_ini_fields, tl_ini_zeta
+      USE tl_ini_fields_mod,  ONLY : tl_ini_fields, tl_ini_zeta
 # ifdef ADJUST_BOUNDARY
-      USE tl_obc_adjust_mod, ONLY : tl_obc_adjust
+      USE tl_obc_adjust_mod,  ONLY : tl_obc_adjust
 # endif
 # ifdef NEARSHORE_MELLOR_NOT_YET
 !!    USE tl_radiation_stress_mod, ONLY : tl_radiation_stress
 # endif
 # ifdef TL_AVERAGES
-      USE tl_set_avg_mod, ONLY : tl_set_avg
+      USE tl_set_avg_mod,     ONLY : tl_set_avg
 # endif
 # if defined SSH_TIDES_NOT_YET || defined UV_TIDES_NOT_YET
 !!    USE tl_set_tides_mod, ONLY : tl_set_tides
 # endif
-      USE tl_set_vbc_mod, ONLY: tl_set_vbc
-      USE tl_step2d_mod, ONLY : tl_step2d
+      USE tl_set_vbc_mod,     ONLY : tl_set_vbc
+      USE tl_step2d_mod,      ONLY : tl_step2d
 # ifdef FLOATS_NOT_YET
 !!    USE tl_step_floats_mod, ONLY : tl_step_floats
 # endif
@@ -107,7 +109,8 @@
           CALL tl_get_data (ng)
 !$OMP END MASTER
 !$OMP BARRIER
-          IF (exit_flag.ne.NoError) RETURN
+          IF (FoundError(exit_flag, NoError, __LINE__,                  &
+     &                   __FILE__)) RETURN
         END DO
 !
 !-----------------------------------------------------------------------
@@ -121,7 +124,8 @@
           END DO
 !$OMP BARRIER
         END DO
-        IF (exit_flag.ne.NoError) RETURN
+        IF (FoundError(exit_flag, NoError, __LINE__,                    &
+     &                 __FILE__)) RETURN
 
 # if defined WEAK_CONSTRAINT || defined FORCING_SV
 !
@@ -196,7 +200,7 @@
 !$OMP BARRIER
         END DO
 
-# ifdef AIR_OCEAN_NOT_YET
+# if defined ATM_COUPLING_NOT_YET && defined MCT_LIB
 !
 !-----------------------------------------------------------------------
 !  Couple to atmospheric model every CoupleSteps(Iatmos) timesteps: get
@@ -248,7 +252,7 @@
         END DO
 # endif
 
-# ifdef WAVES_OCEAN_NOT_YET
+# if defined WAV_COUPLING_NOT_YET && defined MCT_LIB
 !
 !-----------------------------------------------------------------------
 !  Couple to waves model every CoupleSteps(Iwaves) timesteps: get
@@ -305,7 +309,8 @@
           CALL tl_output (ng)
 !$OMP END MASTER
 !$OMP BARRIER
-          IF ((exit_flag.ne.NoError).or.                                &
+          IF ((FoundError(exit_flag, NoError, __LINE__,                 &
+     &                    __FILE__)).or.                                &
      &        ((iic(ng).eq.(ntend(ng)+1)).and.(ng.eq.Ngrids))) RETURN
         END DO
 !

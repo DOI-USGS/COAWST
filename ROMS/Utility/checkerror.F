@@ -1,7 +1,7 @@
 #include "cppdefs.h"
       FUNCTION CheckError (ErrorFlag, source, routine, message)
 !
-!svn $Id: checkerror.F 830 2017-01-24 21:21:11Z arango $
+!svn $Id: checkerror.F 858 2017-07-31 23:02:30Z arango $
 !================================================== Hernan G. Arango ===
 !  Copyright (c) 2002-2017 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
@@ -14,7 +14,7 @@
 !=======================================================================
 !
 #ifdef ESMF_LIB
-      USE ESMF_Mod
+      USE ESMF
 #endif
       USE mod_param
       USE mod_parallel

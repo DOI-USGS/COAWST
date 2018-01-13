@@ -4,7 +4,7 @@
 #if defined NONLINEAR && defined FLOATS && defined FLOAT_VWALK && \
     defined SOLVE3D
 !
-!svn $Id: vwalk_floats.F 830 2017-01-24 21:21:11Z arango $
+!svn $Id: vwalk_floats.F 854 2017-07-18 23:28:45Z arango $
 !================================================== Hernan G. Arango ===
 !  Copyright (c) 2002-2017 The ROMS/TOMS Group         Mark Hadfield   !
 !    Licensed under a MIT/X style license                              !
@@ -54,7 +54,7 @@
 
 !
 # ifdef PROFILE
-      CALL wclock_on (ng, iNLM, 10)
+      CALL wclock_on (ng, iNLM, 10, __LINE__, __FILE__)
 # endif
       CALL vwalk_floats_tile (ng, Lstr, Lend,                           &
      &                        nfm3(ng), nfm2(ng), nfm1(ng), nf(ng),     &
@@ -66,7 +66,7 @@
      &                        nudg,                                     &
      &                        DRIFTER(ng) % track)
 # ifdef PROFILE
-      CALL wclock_off (ng, iNLM, 10)
+      CALL wclock_off (ng, iNLM, 10, __LINE__, __FILE__)
 # endif
 
       RETURN
