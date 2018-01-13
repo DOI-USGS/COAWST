@@ -12,11 +12,12 @@ CONTAINS
                  ,rublten,rvblten,rthblten                         &
                  ,tsk,xland,znt                                    &
 #if (HWRF==1)
+                 ,msang,scurx,scury,iwavecpl,lcurr_sf              &
                  ,mznt                                             &
 #endif
                  ,ht                                               &   
                  ,ust,pblh,hfx,qfx,grdflx                          &
-                 ,u_phy,v_phy,th_phy,rho                           &
+                 ,u_phy,v_phy,w,th_phy,rho                         &
                  ,p_phy,pi_phy,p8w,t_phy,dz8w,z                    &
                  ,exch_h,exch_m,akhs,akms                          &
                  ,thz0,qz0,uz0,vz0,qsfc,f                          &
@@ -41,19 +42,28 @@ CONTAINS
                  ,qke,Sh3d                                         &
                  ,qke_adv,bl_mynn_tkeadvect                        & !ACF for QKE advection
                  ,tsq,qsq,cov,rmol,ch,qcg,grav_settling            & 
-                 ,dqke,qWT,qSHEAR,qBUOY,qDISS,bl_mynn_tkebudget    & ! JOE - MYNN TKE budget
-                 ,bl_mynn_cloudpdf                                 & ! JOE - cloud PDF tests
-                 ,vdfg                                             & ! Katata- fog deposition
+                 ,dqke,qWT,qSHEAR,qBUOY,qDISS,bl_mynn_tkebudget    &
+                 ,bl_mynn_cloudpdf                                 &
+                 ,bl_mynn_mixlength                                &
+                 ,icloud_bl,qc_bl,cldfra_bl                        &
+                 ,bl_mynn_edmf,bl_mynn_edmf_mom,bl_mynn_edmf_tke   &
+                 ,bl_mynn_edmf_part                                &
+                 ,bl_mynn_cloudmix,bl_mynn_mixqt                   &
+                 ,edmf_a,edmf_w,edmf_thl                           &
+                 ,edmf_qt,edmf_ent,edmf_qc                         &
+                 ,vdfg                                             &
+                 ,spp_pbl,pattern_spp_pbl                          &
 #if (NMM_CORE==1)
                  ,DISHEAT                                          &
                  ,HPBL2D, EVAP2D, HEAT2D, RC2D                     &   !Kwon FOR SHAL. CON.
-#ifdef HWRF
+#if ( HWRF == 1 )
                  ,VAR_RIC                                          &   !Kwon for Variable Ric
 #endif
                  ,DKU3D,DKT3D                                      &
 #endif
 #if (HWRF==1)
                  ,coef_ric_l,coef_ric_s,gfs_alpha                  &
+                 ,pert_pbl, ens_random_seed, ens_pblamp            &
 #endif
                  ,ids,ide, jds,jde, kds,kde                        &
                  ,ims,ime, jms,jme, kms,kme                        &
@@ -109,7 +119,15 @@ CONTAINS
 #if (WRF_CHEM == 1)
                ,chem,vd,nchem,kdvel,ndvel,num_vert_mix             &
 #endif
-                                                                     )       
+!
+! FASDAS
+!
+              ,QNORM, fasdas           &
+!
+! END FASDAS
+!
+                                                                     )
+       
 !------------------------------------------------------------------
 #if (EM_CORE==1)
    USE module_state_description, ONLY :                            &
@@ -123,7 +141,7 @@ CONTAINS
    USE module_state_description, ONLY :                            &
                    YSUSCHEME,MRFSCHEME,GFSSCHEME,MYJPBLSCHEME,ACMPBLSCHEME &
                    , QNSEPBLSCHEME, p_qi,param_first_scalar &
-                   , TEMFPBLSCHEME, GFS2011SCHEME                         &
+                   , TEMFPBLSCHEME, GFSEDMFSCHEME           &
                    , CAMUWPBLSCHEME                                       &
                    , FITCHSCHEME, SHINHONGSCHEME                          &
                    , GBMPBLSCHEME, MYJSFCSCHEME
@@ -139,7 +157,9 @@ CONTAINS
    USE module_bl_shinhong
    USE module_bl_mrf
    USE module_bl_gfs
-   USE module_bl_gfs2011, only: bl_gfs2011
+#if (HWRF==1)
+   USE module_bl_gfsedmf, only: bl_gfsedmf
+#endif
    USE module_bl_acm
    USE module_bl_gwdo
    USE module_bl_myjurb
@@ -367,6 +387,10 @@ CONTAINS
 !
    LOGICAL,      INTENT(IN   )    ::   warm_rain
    LOGICAL,      INTENT(IN   )    ::   is_CAMMGMP_used !BSINGH:01/31/2013: Added for CAMUWPBL
+#if (HWRF==1)
+   INTEGER,      INTENT(IN   )    ::   iwavecpl
+   LOGICAL,      INTENT(IN   )    ::   lcurr_sf
+#endif
 #if (NMM_CORE==1)
    LOGICAL,      INTENT(IN   )    ::   DISHEAT ! (for HWRF)
    REAL, DIMENSION( ims:ime , jms:jme ),                         &
@@ -375,11 +399,11 @@ CONTAINS
    REAL, DIMENSION( ims:ime , jms:jme , kms:kme ),                         &
                    INTENT(OUT) ::  DKU3D,DKT3D                      !Kwon duffusivity
 #endif
-#ifdef HWRF
+#if ( HWRF == 1 )
    REAL,       INTENT(IN)         ::   VAR_RIC                       !Kwon for variable Ric
-
-#endif
-#if defined(HWRF)
+   integer,intent(in) :: ens_random_seed
+   real,intent(in) :: ens_pblamp
+   logical,intent(in) :: pert_pbl
    REAL,       INTENT(IN)         ::   gfs_alpha,coef_ric_l,coef_ric_s
 #endif
 
@@ -399,6 +423,8 @@ CONTAINS
    REAL, DIMENSION( ims:ime, jms:jme ), &
          INTENT(IN), OPTIONAL    :: xlat_u,xlong_u,xlat_v,xlong_v
 
+   REAL,       DIMENSION( ims:ime, kms:kme ,jms:jme ),            &
+               INTENT(IN), OPTIONAL    :: w
 !
    REAL,       DIMENSION( ims:ime, kms:kme, jms:jme ),            &
                INTENT(IN   )    ::                         p_phy, &
@@ -411,6 +437,7 @@ CONTAINS
                                                             dz8w, &
                                                                z, &
                                                           th_phy
+
 !1D variables required for CAMUWPBL scheme
    REAL , DIMENSION( kms:kme ) ,                                      &
         INTENT(IN   ) , OPTIONAL ::                                        fnm,  & !Factors for interpolation at "w" grid (interfaces)
@@ -456,6 +483,13 @@ CONTAINS
                                                               BR, &
                                                                F, &
                                                          CHKLOWQ
+#if (HWRF==1)
+   REAL,       DIMENSION( ims:ime , jms:jme ),                    &
+               INTENT(IN   )    ::                         SCURX, &
+                                                           SCURY, &
+                                                           MSANG
+#endif
+
 !
    REAL,       DIMENSION( ims:ime, jms:jme )                    , &
                INTENT(INOUT)    ::                           TSK, &
@@ -502,16 +536,31 @@ CONTAINS
    REAL, OPTIONAL, DIMENSION( ims:ime, kms:kme, jms:jme ),     &
           INTENT(INOUT) ::        tsq,qsq,cov, & !,k_m,k_h,k_q &
                                   qke,Sh3d,                    &
-                                  dqke,qWT,qSHEAR,qBUOY,qDISS 
+                                  dqke,qWT,qSHEAR,qBUOY,qDISS, &
+                                  qc_bl,cldfra_bl
+
+   REAL, OPTIONAL, DIMENSION( ims:ime, kms:kme, jms:jme ),     &
+          INTENT(INOUT) ::         edmf_a,edmf_w,edmf_thl,     & !JOE- MYNN edmf
+                                   edmf_qt,edmf_ent,edmf_qc      !JOE- MYNN edmf
+
    INTEGER, OPTIONAL, INTENT(IN)  :: bl_mynn_tkebudget,        &
                                      grav_settling,            &
-                                     bl_mynn_cloudpdf
+                                     bl_mynn_cloudpdf,         &
+                                     bl_mynn_mixlength,        &
+                                     bl_mynn_edmf,             &
+                                     bl_mynn_edmf_mom,         &
+                                     bl_mynn_edmf_tke,         &
+                                     bl_mynn_edmf_part,        &
+                                     bl_mynn_cloudmix,         &
+                                     bl_mynn_mixqt,            &
+                                     icloud_bl
+
 !ACF-QKE advection start
    REAL, OPTIONAL, DIMENSION( ims:ime, kms:kme, jms:jme ), &
         & INTENT(INOUT) :: qke_adv
    LOGICAL, OPTIONAL, INTENT(IN) :: bl_mynn_tkeadvect
 !ACF-QKE advection end
-! Katata-added -                                                                                                                                                                             
+! Katata-added -
    REAL, DIMENSION( ims:ime , jms:jme ), OPTIONAL,              &
         &    INTENT(INOUT)::                               vdfg
 ! Katata-end
@@ -524,7 +573,9 @@ CONTAINS
 
    REAL,    DIMENSION( ims:ime , jms:jme ), &
         &OPTIONAL, INTENT(IN) ::  &
-        & qcg, rmol, ch
+        & qcg,  ch
+   REAL,    DIMENSION( ims:ime , jms:jme ), &
+        &OPTIONAL, INTENT(INOUT) ::  rmol
    
 
 
@@ -541,6 +592,10 @@ CONTAINS
 
    REAL,       DIMENSION( ims:ime , jms:jme ),                    &
                INTENT(IN)    :: XICE, SNOW, LH
+
+   ! Stochastic parameter perturbations
+   INTEGER,    INTENT(IN), OPTIONAL              ::             spp_pbl
+   REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),INTENT(IN),OPTIONAL ::pattern_spp_pbl
 
 ! Bep changes: variable added for urban
    real, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) ::FRC_URB2D   ! URBAN Landuse fraction
@@ -714,7 +769,15 @@ CONTAINS
    integer iu_bep,iurb,idiff
    real seamask,thsk,zzz,unew,vnew,tnew,qnew,umom,vmom
    REAL :: z0,z1,z2,w1,w2
-
+!
+! FASDAS
+!
+   REAL, DIMENSION( ims:ime, jms:jme ) , INTENT(  OUT) , OPTIONAL ::   QNORM
+   INTEGER, INTENT(IN   )                                         ::   fasdas
+   REAL                                                           ::   scrp1
+!
+! END FASDAS
+!
 !------------------------------------------------------------------
 !
 !!!!!!!if using BEP set flag_bep to true
@@ -1054,7 +1117,7 @@ CONTAINS
               ,FLAG_QI=flag_qi                                      &
               ,g=g,cp=cp,rcp=rcp,r_d=r_d,r_v=r_v,cpv=cpv                    &
               ,Z=z,XLV=XLV,PSFC=PSFC               &
-              ,MUT=mut,P_TOP=p_top                  &
+              ,P_TOP=p_top                                          &
               ,ZNT=znt,HT=ht,UST=ust,ZOL=zol,HOL=hol,HPBL=pblh      &
               ,PSIM=psim,PSIH=psih,XLAND=xland                      &
               ,HFX=hfx,QFX=qfx,TSK=tskold,QSFC=qsfc,GZ1OZ0=gz1oz0   &
@@ -1098,7 +1161,7 @@ CONTAINS
               ,FLAG_QI=flag_qi                                      &
               ,CP=cp,G=g,ROVCP=rcp,RD=r_D,ROVG=rovg                 &
               ,DZ8W=dz8w,XLV=XLV,RV=r_v,PSFC=PSFC                   &
-              ,ZNU=znu,ZNW=znw,MUT=mut,P_TOP=p_top                  &
+              ,ZNU=znu,ZNW=znw,P_TOP=p_top                          &
               ,ZNT=znt,UST=ust,HPBL=pblh                            &
               ,PSIM=fm,PSIH=fhh,XLAND=xland                         &
               ,HFX=hfx,QFX=qfx                                      &
@@ -1117,6 +1180,25 @@ CONTAINS
               ,IMS=ims,IME=ime,JMS=jms,JME=jme,KMS=kms,KME=kme      &
               ,ITS=its,ITE=ite,JTS=jts,JTE=jte,KTS=kts,KTE=kte      &
                                                                     )
+!
+! FASDAS
+!
+              IF( fasdas == 1 ) THEN
+                  DO j=j_start(ij),j_end(ij)
+                  DO i=i_start(ij),i_end(ij)
+                     scrp1 = rqvblten(i,1,j)
+                     scrp1 = scrp1*(2.0*DT)/qv_curr(i,1,j)
+                     scrp1 = scrp1*100.0
+                     scrp1 = amax1(0.0,scrp1)
+                     scrp1 = amin1(5.0,scrp1)
+                     QNORM(I,J)= scrp1/100.0
+                  ENDDO
+                  ENDDO
+              ENDIF
+!
+! END FASDAS
+!
+
            ELSE
                WRITE ( message , FMT = '(A,7(L1,1X))' )             &
                  'present: '//                                      &
@@ -1156,7 +1238,7 @@ CONTAINS
               ,FLAG_QI=flag_qi                                      &
               ,CP=cp,G=g,ROVCP=rcp,RD=r_D,ROVG=rovg                 &
               ,DZ8W=dz8w,XLV=XLV,RV=r_v,PSFC=PSFC                   &
-              ,ZNU=znu,ZNW=znw,MUT=mut,P_TOP=p_top                  &
+              ,ZNU=znu,ZNW=znw,P_TOP=p_top                          &
               ,ZNT=znt,UST=ust,HPBL=pblh                            &
               ,PSIM=fm,PSIH=fhh,XLAND=xland                         &
               ,HFX=hfx,QFX=qfx                                      &
@@ -1267,13 +1349,17 @@ CONTAINS
 #if (NMM_CORE==1)
               ,DISHEAT=DISHEAT                                      &
 #endif
-#if defined(HWRF)
+#if ( HWRF == 1 )
               ,ALPHA=gfs_alpha                                      &
               ,HPBL2D=HPBL2D, EVAP2D=EVAP2D, HEAT2D=HEAT2D          &   !Kwon add FOR SHAL. CON.
               ,VAR_RIC=VAR_RIC                                      &   !Kwon for variable Ric
               ,U10=U10,V10=V10,ZNT=ZNT,MZNT=MZNT,RC2D=RC2D          &   !Kwon for variable Ric
               ,DKU3D=DKU3D,DKT3D=DKT3D                              &
               ,coef_ric_l=coef_ric_l,coef_ric_s=coef_ric_s,xland=xland    &
+              ,MSANG=MSANG,SCURX=SCURX,SCURY=SCURY,IWAVECPL=IWAVECPL,LCURR_SF=LCURR_SF &
+              ,pert_pbl=pert_pbl                                    &
+              ,ens_random_seed=ens_random_seed                      &
+              ,ens_pblamp=ens_pblamp                                &
 #endif
               ,P_QI=p_qi,P_FIRST_SCALAR=param_first_scalar          &
               ,IDS=ids,IDE=ide,JDS=jds,JDE=jde,KDS=kds,KDE=kde      &
@@ -1295,13 +1381,13 @@ CONTAINS
                CALL wrf_error_fatal('Lack arguments to call GFS pbl')
            ENDIF
 
-#if (NMM_CORE==1)
-      CASE (GFS2011SCHEME)
+#if (HWRF==1)
+      CASE (GFSEDMFSCHEME)
            IF ( PRESENT( qv_curr )  .AND. PRESENT( qc_curr )  .AND. &
                 PRESENT( rqvblten ) .AND. PRESENT( rqcblten ) .AND. &
                                                         .TRUE.  ) THEN
              CALL wrf_debug(100,'in GFS')
-             CALL bl_gfs2011(                                       &
+             CALL bl_gfsedmf(                                       &
                U3D=u_phytmp,V3D=v_phytmp                            &
               ,TH3D=th_phy,T3D=t_phy                                &
               ,QV3D=qv_curr,QC3D=qc_curr,QI3D=qi_curr               &
@@ -1310,17 +1396,21 @@ CONTAINS
               ,RQVBLTEN=rqvblten,RQCBLTEN=rqcblten                  &
               ,RQIBLTEN=rqiblten                                    &
               ,CP=cp,G=g,ROVCP=rcp,R=r_d,ROVG=rovg                  &
+              ,P_QI=p_qi,P_FIRST_SCALAR=param_first_scalar          &
               ,DZ8W=dz8w,z=z,PSFC=psfc                              &
               ,UST=ust,PBL=pblh,PSIM=psim,PSIH=psih                 &
               ,HFX=hfx,QFX=qfx,TSK=tskold,GZ1OZ0=gz1oz0             &
               ,WSPD=wspd,BR=br                                      &
               ,DT=dtbl,KPBL2D=kpbl,EP1=ep_1,KARMAN=karman           &
-#if (NMM_CORE==1)
               ,DISHEAT=DISHEAT                                      &
-#endif
               ,RTHRATEN=RTHRATEN                    &
-              ,HPBL2D=HPBL2D, EVAP2D=EVAP2D, HEAT2D=HEAT2D          &   !Kwon add FOR SHAL. CON.
-              ,P_QI=p_qi,P_FIRST_SCALAR=param_first_scalar          &
+              ,HPBL2D=HPBL2D, EVAP2D=EVAP2D, HEAT2D=HEAT2D          &
+              ,U10=u10,V10=v10,ZNT=mznt                             &
+              ,DKU3D=dku3d,DKT3D=dkt3d                             &
+              ,VAR_RIC=VAR_RIC                                      &
+              ,coef_ric_l=coef_ric_l,coef_ric_s=coef_ric_s          &
+              ,ALPHA=gfs_alpha                                      &
+              ,xland=xland                                          &
               ,IDS=ids,IDE=ide,JDS=jds,JDE=jde,KDS=kds,KDE=kde      &
               ,IMS=ims,IME=ime,JMS=jms,JME=jme,KMS=kms,KME=kme      &
               ,ITS=its,ITE=ite,JTS=jts,JTE=jte,KTS=kts,KTE=kte      &
@@ -1337,10 +1427,9 @@ CONTAINS
                   PRESENT( rqvblten ) ,                             &
                   PRESENT( rqcblten )
                CALL wrf_debug(0,message)
-               CALL wrf_error_fatal('Lack arguments to call GFS pbl')
+               CALL wrf_error_fatal('Lack arguments to call GFS edmf pbl')
            ENDIF
 #endif
-
       CASE (MYJPBLSCHEME)
            IF ( PRESENT( qv_curr )  .AND. PRESENT( qc_curr )  .AND. &
                 PRESENT( rqvblten ) .AND. PRESENT( rqcblten ) .AND. &
@@ -1505,7 +1594,7 @@ CONTAINS
               ,UST=UST, HFX=HFX, QFX=QFX, TSK=tsk                               &
               ,PSFC=PSFC, EP1=EP_1, G=g, ROVCP=rcp,RD=r_D,CPD=cp                 &
               ,PBLH=pblh, KPBL2D=kpbl, EXCH_H=exch_h, REGIME=regime              &
-              ,GZ1OZ0=gz1oz0,WSPD=wspd,PSIM=psim, MUT=mut                        &
+              ,GZ1OZ0=gz1oz0,WSPD=wspd,PSIM=psim, MUT=mut, RMOL=rmol             &
               ,RUBLTEN=rublten,RVBLTEN=rvblten,RTHBLTEN=rthblten                 &
               ,RQVBLTEN=rqvblten,RQCBLTEN=rqcblten,RQIBLTEN=rqiblten             &
               ,IDS=ids,IDE=ide,JDS=jds,JDE=jde,KDS=kds,KDE=kde                   &
@@ -1534,8 +1623,7 @@ CONTAINS
            IF ( PRESENT( qv_curr )  .AND. PRESENT( qc_curr )  .AND. &
                 PRESENT( rqvblten ) .AND. PRESENT( rqcblten ) .AND. &
                 PRESENT( qi_curr ) .AND. PRESENT( rqiblten ) .AND.  &
-                PRESENT( rqniblten ) .AND. & !PRESENT( rqncblten ) .AND. &
-                PRESENT( qni_curr ) .AND. & !PRESENT( qnc_curr ) .AND. &
+                PRESENT( rqniblten ) .AND. PRESENT( qni_curr ) .AND.&
                 PRESENT(qke) .AND. PRESENT(tsq) .AND.               &
                 PRESENT(qsq) .AND. PRESENT(cov) .AND.               &
                 PRESENT(rmol) .AND.                                 &
@@ -1556,36 +1644,46 @@ CONTAINS
               ENDIF
               
               CALL  mynn_bl_driver(&
-                   &initflag=initflag,&
-                   &grav_settling=grav_settling,&
-                   &delt=dtbl,&
-                   &dz=dz8w,&
-                   &u=u_phy,v=v_phy,th=th_phy,qv=qv_curr,qc=qc_curr,&
-                   &qi=qi_curr,qni=qni_curr,& !qnc=qnc_curr,&
-                   &p=p_phy,exner=pi_phy,rho=rho,&
-                   &xland=xland,ts=tsk,qsfc=qsfc,qcg=qcg,ps=psfc,&
-                   &ust=ust,ch=ch,hfx=hfx,qfx=qfx,rmol=rmol,wspd=wspd,&
-                   &uoce=uoce,voce=voce,&           !Ocean currents
-                   &vdfg=vdfg,&                     !Katata -added 
-                   &Qke=qke,TKE_PBL=tke_pbl,&       !JOE-for CAMUW shcu
-                   &Sh3d=Sh3d,&
-!ACF for QKE advection
-                   &qke_adv=qke_adv,bl_mynn_tkeadvect=bl_mynn_tkeadvect,&
-!ACF-end
-                   &Tsq=tsq,Qsq=qsq,Cov=cov,&
-                   &Du=rublten,Dv=rvblten,Dth=rthblten,&
-                   &Dqv=rqvblten,Dqc=rqcblten,Dqi=rqiblten,&
-                   !&Dqnc=rqncblten,&
-                   &Dqni=rqniblten,&
-                   &k_h=exch_h,k_m=exch_m,&
-                   &pblh=pblh,KPBL=KPBL&
+                   &initflag=initflag,grav_settling=grav_settling,       &
+                   &delt=dtbl,dz=dz8w,dx=dx,znt=znt,                     &
+                   &u=u_phy,v=v_phy,w=w,th=th_phy,qv=qv_curr,qc=qc_curr, &
+                   &qi=qi_curr,qni=qni_curr,qnc=qnc_curr,                &
+                   &p=p_phy,exner=pi_phy,rho=rho,T3D=t_phy,              &
+                   &xland=xland,ts=tsk,qsfc=qsfc,qcg=qcg,ps=psfc,        &
+                   &ust=ust,ch=ch,hfx=hfx,qfx=qfx,rmol=rmol,wspd=wspd,   &
+                   &uoce=uoce,voce=voce,                                 & !Ocean currents
+                   &vdfg=vdfg,                                           & !Katata -added
+                   &Qke=qke,TKE_PBL=tke_pbl,                             &
+                   &Sh3d=Sh3d,                                           &
+                   &qke_adv=qke_adv,bl_mynn_tkeadvect=bl_mynn_tkeadvect, &
+#if (WRF_CHEM == 1)
+                   &chem3d=chem,vd3d=vd,nchem=nchem,kdvel=kdvel,         & ! WA 7/31/15
+                   &ndvel=ndvel,num_vert_mix=num_vert_mix,               &
+#endif
+                   &Tsq=tsq,Qsq=qsq,Cov=cov,                             &
+                   &RUBLTEN=rublten,RVBLTEN=rvblten,RTHBLTEN=rthblten,   &
+                   &RQVBLTEN=rqvblten,RQCBLTEN=rqcblten,RQIBLTEN=rqiblten,&
+                   &RQNIBLTEN=rqniblten,                                 &
+                   &EXCH_H=exch_h,EXCH_M=exch_m,                         &
+                   &pblh=pblh,KPBL=KPBL                                  &
                    &,el_pbl=el_pbl                                       &
                    &,dqke=dqke                                           &
                    &,qWT=qWT,qSHEAR=qSHEAR,qBUOY=qBUOY,qDISS=qDISS       &
-! for grims shallow convection                                            
-                   &,WSTAR=wstar,DELTA=delta                             &
+                   &,WSTAR=wstar,DELTA=delta                             & ! for grims shallow-cu
                    &,bl_mynn_tkebudget=bl_mynn_tkebudget                 &
                    &,bl_mynn_cloudpdf=bl_mynn_cloudpdf                   &
+                   &,bl_mynn_mixlength=bl_mynn_mixlength                 &
+                   &,icloud_bl=icloud_bl,qc_bl=qc_bl                     &
+                   &,cldfra_bl=cldfra_bl                                 &
+                   &,bl_mynn_edmf=bl_mynn_edmf                           &
+                   &,bl_mynn_edmf_mom=bl_mynn_edmf_mom                   &
+                   &,bl_mynn_edmf_tke=bl_mynn_edmf_tke                   &
+                   &,bl_mynn_edmf_part=bl_mynn_edmf_part                 &
+                   &,bl_mynn_cloudmix=bl_mynn_cloudmix                   &
+                   &,bl_mynn_mixqt=bl_mynn_mixqt                         &
+                   &,edmf_a=edmf_a,edmf_w=edmf_w,edmf_qt=edmf_qt         &
+                   &,edmf_thl=edmf_thl,edmf_ent=edmf_ent,edmf_qc=edmf_qc &
+                   &,spp_pbl=spp_pbl,pattern_spp_pbl=pattern_spp_pbl     &
                    &,FLAG_QI=flag_qi,FLAG_QNI=flag_qni                   &
                    &,FLAG_QC=flag_qc,FLAG_QNC=flag_qnc                   &
                    ,IDS=ids,IDE=ide,JDS=jds,JDE=jde,KDS=kds,KDE=kde      &
@@ -1598,12 +1696,10 @@ CONTAINS
                  'qv_curr, '//                                      &
                  'qc_curr, '//                                      &
                  'qi_curr, '//                                      &
-!                 'qnc_curr, '//                                     &
                  'qni_curr, '//                                     &
                  'rqvblten, '//                                     &
                  'rqcblten, '//                                     &
                  'rqiblten, '//                                     &
-!                 'rqncblten, '//                                    &
                  'rqniblten, '//                                    &
                  'qke, '//                                          &
                  'tsq, '//                                          &
@@ -1620,12 +1716,10 @@ CONTAINS
                   PRESENT( qv_curr ) ,                              &
                   PRESENT( qc_curr ) ,                              &
                   PRESENT( qi_curr ) ,                              &
-!                  PRESENT( qnc_curr ) ,                             &
                   PRESENT( qni_curr ) ,                             &
                   PRESENT( rqvblten ) ,                             &
                   PRESENT( rqcblten ) ,                             &
                   PRESENT( rqiblten ) ,                             &
-!                  PRESENT( rqncblten ) ,                            &
                   PRESENT( rqniblten ) ,                            &
                   PRESENT( qke      ) ,                             &
                   PRESENT( tsq      ) ,                             &
@@ -1817,7 +1911,7 @@ CONTAINS
               ,VAR2D=var2d,OC12D=oc12d     &
               ,OA2D1=oa1,OA2D2=oa2,OA2D3=oa3,OA2D4=oa4  &
               ,OL2D1=ol1,OL2D2=ol2,OL2D3=ol3,OL2D4=ol4  &
-              ,ZNU=znu,ZNW=znw,MUT=mut,P_TOP=p_top                  &
+              ,ZNU=znu,ZNW=znw,P_TOP=p_top                &
               ,CP=cp,G=g,RD=r_d                           &
               ,RV=r_v,EP1=ep_1,PI=3.141592653                        &
               ,DT=dtbl,DX=dx,KPBL2D=kpbl,ITIMESTEP=itimestep      &

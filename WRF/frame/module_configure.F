@@ -5,12 +5,12 @@ MODULE module_scalar_tables
   USE module_driver_constants
   USE module_state_description
   USE module_domain_type, ONLY : streamrec
-#include <scalar_tables.inc>
+#include "scalar_tables.inc"
 CONTAINS
   SUBROUTINE init_module_scalar_tables
      INTEGER i , j
      DO j = 1, max_domains
-#include <scalar_tables_init.inc>
+#include "scalar_tables_init.inc"
      END DO
   END SUBROUTINE init_module_scalar_tables
 END MODULE module_scalar_tables
@@ -28,16 +28,16 @@ MODULE module_configure
 ! integer, first_item_in_struct and the last is an integer last_item_in_struct
 ! this provides a way of converting this to a buffer for passing to and from
 ! the driver.
-#include <namelist_defines.inc>
+#include "namelist_defines.inc"
    END TYPE model_config_rec_type
 
    TYPE grid_config_rec_type
-#include <namelist_defines2.inc>
+#include "namelist_defines2.inc"
    END TYPE grid_config_rec_type
 
    TYPE(model_config_rec_type) :: model_config_rec
 
-!#include <scalar_tables.inc>
+!#include "scalar_tables.inc"
 
 ! special entries (put here but not enshrined in Registry for one reason or other)
 
@@ -102,10 +102,10 @@ CONTAINS
 
 
 ! define as temporaries
-#include <namelist_defines.inc>
+#include "namelist_defines.inc"
 
 ! Statements that specify the namelists
-#include <namelist_statements.inc>
+#include "namelist_statements.inc"
 
       OPEN ( UNIT   = nml_read_unit    ,      &
              FILE   = "namelist.input" ,      &
@@ -138,7 +138,7 @@ CONTAINS
 #endif
 
 ! Statements that set the namelist vars to default vals
-#  include <namelist_defaults.inc>
+#  include "namelist_defaults.inc"
 
 #if (DA_CORE == 1)
 ! Override the default values, because we can not assigned a arrary with different values in registry.
@@ -151,7 +151,7 @@ CONTAINS
 #endif
 
 ! Statements that read the namelist are in this file
-#  include <config_reads.inc>
+#  include "config_reads.inc"
 
 ! 2004/04/28  JM (with consensus by the group of developers)
 ! This is needed to ensure that nesting will work, since
@@ -173,7 +173,7 @@ CONTAINS
 #define SOURCE_RECORD
 #define DEST_RECORD model_config_rec %
 #define SOURCE_REC_DEX
-#include <config_assigns.inc>
+#include "config_assigns.inc"
 
 
       CLOSE ( UNIT = nml_read_unit , IOSTAT = io_status )
@@ -311,7 +311,7 @@ CONTAINS
 #define SOURCE_RECORD model_config_rec %
 #define SOURCE_REC_DEX (id_id)
 #define DEST_RECORD   grid_config_rec %
-#include <config_assigns.inc>
+#include "config_assigns.inc"
    END SUBROUTINE model_to_grid_config_rec
 
 
@@ -324,20 +324,58 @@ CONTAINS
      uses = 0
      in_use = .TRUE.
 
-     IF      ( vname(1:1) .GE. 'x' ) THEN
-#  include <in_use_for_config_xz.inc>
-     ELSE IF ( vname(1:1) .GE. 't' ) THEN
-#  include <in_use_for_config_tw.inc>
-     ELSE IF ( vname(1:1) .GE. 'o' ) THEN
-#  include <in_use_for_config_os.inc>
-     ELSE IF ( vname(1:1) .GE. 'l' ) THEN
-#  include <in_use_for_config_ln.inc>
-     ELSE IF ( vname(1:1) .GE. 'g' ) THEN
-#  include <in_use_for_config_gk.inc>
-     ELSE IF ( vname(1:1) .GE. 'd' ) THEN
-#  include <in_use_for_config_df.inc>
-     ELSE 
-#  include <in_use_for_config_ac.inc>
+     IF      ( vname(1:1) .EQ. 'a' ) THEN
+#    include "in_use_for_config_a.inc"
+     ELSE IF ( vname(1:1) .EQ. 'b' ) THEN
+#    include "in_use_for_config_b.inc"
+     ELSE IF ( vname(1:1) .EQ. 'c' ) THEN
+#    include "in_use_for_config_c.inc"
+     ELSE IF ( vname(1:1) .EQ. 'd' ) THEN
+#    include "in_use_for_config_d.inc"
+     ELSE IF ( vname(1:1) .EQ. 'e' ) THEN
+#    include "in_use_for_config_e.inc"
+     ELSE IF ( vname(1:1) .EQ. 'f' ) THEN
+#    include "in_use_for_config_f.inc"
+     ELSE IF ( vname(1:1) .EQ. 'g' ) THEN
+#    include "in_use_for_config_g.inc"
+     ELSE IF ( vname(1:1) .EQ. 'h' ) THEN
+#    include "in_use_for_config_h.inc"
+     ELSE IF ( vname(1:1) .EQ. 'i' ) THEN
+#    include "in_use_for_config_i.inc"
+     ELSE IF ( vname(1:1) .EQ. 'j' ) THEN
+#    include "in_use_for_config_j.inc"
+     ELSE IF ( vname(1:1) .EQ. 'k' ) THEN
+#    include "in_use_for_config_k.inc"
+     ELSE IF ( vname(1:1) .EQ. 'l' ) THEN
+#    include "in_use_for_config_l.inc"
+     ELSE IF ( vname(1:1) .EQ. 'm' ) THEN
+#    include "in_use_for_config_m.inc"
+     ELSE IF ( vname(1:1) .EQ. 'n' ) THEN
+#    include "in_use_for_config_n.inc"
+     ELSE IF ( vname(1:1) .EQ. 'o' ) THEN
+#    include "in_use_for_config_o.inc"
+     ELSE IF ( vname(1:1) .EQ. 'p' ) THEN
+#    include "in_use_for_config_p.inc"
+     ELSE IF ( vname(1:1) .EQ. 'q' ) THEN
+#    include "in_use_for_config_q.inc"
+     ELSE IF ( vname(1:1) .EQ. 'r' ) THEN
+#    include "in_use_for_config_r.inc"
+     ELSE IF ( vname(1:1) .EQ. 's' ) THEN
+#    include "in_use_for_config_s.inc"
+     ELSE IF ( vname(1:1) .EQ. 't' ) THEN
+#    include "in_use_for_config_t.inc"
+     ELSE IF ( vname(1:1) .EQ. 'u' ) THEN
+#    include "in_use_for_config_u.inc"
+     ELSE IF ( vname(1:1) .EQ. 'v' ) THEN
+#    include "in_use_for_config_v.inc"
+     ELSE IF ( vname(1:1) .EQ. 'w' ) THEN
+#    include "in_use_for_config_w.inc"
+     ELSE IF ( vname(1:1) .EQ. 'x' ) THEN
+#    include "in_use_for_config_x.inc"
+     ELSE IF ( vname(1:1) .EQ. 'y' ) THEN
+#    include "in_use_for_config_y.inc"
+     ELSE IF ( vname(1:1) .EQ. 'z' ) THEN
+#    include "in_use_for_config_z.inc"
      ENDIF
 
      RETURN
@@ -368,8 +406,8 @@ CONTAINS
      CHARACTER*(*), INTENT(IN) :: nml_name
      INTEGER                   :: nml_error
 
-#include <namelist_defines.inc>
-#include <namelist_statements.inc>
+#include "namelist_defines.inc"
+#include "namelist_statements.inc"
 
 ! These are the variables that have been removed
      logical , DIMENSION(max_domains) :: pd_moist, pd_chem, pd_tke, pd_scalar
@@ -389,8 +427,8 @@ CONTAINS
      LOGICAL ::          write_qgr, write_filtered_obs
      NAMELIST /wrfvar2/  write_qgr, write_filtered_obs
 
-     LOGICAL ::         use_eos_radobs
-     NAMELIST /wrfvar4/ use_eos_radobs
+     LOGICAL ::         use_eos_radobs, use_3dvar_phy
+     NAMELIST /wrfvar4/ use_eos_radobs, use_3dvar_phy
 
      LOGICAL             :: use_crtm_kmatrix_fast
      NAMELIST /wrfvar14/    use_crtm_kmatrix_fast
@@ -470,9 +508,9 @@ CONTAINS
         READ   ( UNIT = nml_read_unit , NML = wrfvar4 , iostat=nml_error )
 
         IF ( nml_error .EQ. 0 ) then    ! Successul, rm variables must be problem
-           CALL wrf_debug(0, "-- Is use_eos_radobs still in your "// &
+           CALL wrf_debug(0, "-- Is use_3dvar_phy or use_eos_radobs still in your "// &
                               TRIM(nml_name)//" namelist?")
-           CALL wrf_debug(0, "-- Remove use_eos_radobs as it is obsolete.")
+           CALL wrf_debug(0, "-- Remove use_3dvar_phy, use_eos_radobs as they are obsolete.")
         ENDIF
 
 !---------------------------------- wrfvar14 -----------------------------
@@ -543,8 +581,8 @@ SUBROUTINE set_scalar_indices_from_config ( idomain , dummy2, dummy1 )
 !
 !</DESCRIPTION>
 
-#include <scalar_indices.inc>
-#include <scalar_indices_init.inc>
+#include "scalar_indices.inc"
+#include "scalar_indices_init.inc"
   RETURN
 END SUBROUTINE set_scalar_indices_from_config
 

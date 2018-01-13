@@ -33,6 +33,34 @@
 !
 !-----------------------------------------------------------------------
 !***********************************************************************
+      SUBROUTINE QITEND_FER_HIRES_ADVECT(QI,QRIMEF,QITEND)
+        IMPLICIT NONE
+        REAL, INTENT(INOUT) :: QI, QRIMEF
+        REAL, INTENT(IN) :: QITEND
+        REAL :: F_RIMEF
+        real, parameter :: max_f_rimef = 60.0, min_f_rimef=1.0
+
+        ! For the advected Ferrier-Aligo, we have to handle the QRIMEF
+        ! during tendency updates.
+
+        ! Determine old rime factor from old QI and old QRIMEF:
+        IF(QI<EPSQ) THEN
+           F_RIMEF=1.
+        ELSE
+           F_RIMEF=max(min_f_rimef,min(max_f_rimef,QRIMEF/QI))
+        ENDIF
+
+        ! Decide new QI and new QRIMEF based on QC and RQIBLTEN:
+        QI=QI+QITEND
+        IF(QI<EPSQ) THEN
+           QRIMEF=QI
+        ELSE
+           QRIMEF=QI*F_RIMEF
+        ENDIF
+      END SUBROUTINE QITEND_FER_HIRES_ADVECT
+
+!***********************************************************************
+
       SUBROUTINE RADIATION(NTSD,DT,JULDAY,JULYR,XTIME,JULIAN            &
      &                    ,IHRST,NPHS,GLAT,GLON                         &
      &                    ,NRADS,NRADL                                  &
@@ -46,8 +74,8 @@
      &                    ,CFRACL,CFRACM,CFRACH,SIGT4                   &
      &                    ,ACFRST,NCFRST,ACFRCV,NCFRCV                  &
      &                    ,CUPPT,VEGFRC,SNOW,HTOP,HBOT                  &
-     &                    ,Z,SICE,NUM_AEROSOLC,NUM_OZMIXM               &
-     &                    ,GRID,CONFIG_FLAGS                            &
+     &                    ,Z,SICE,NUM_AEROSOLC,NUM_OZMIXM,OZMIXM,PIN    &
+     &                    ,LEVSIZ,GRID,CONFIG_FLAGS                     &
      &                    ,RTHRATEN                                     &
      &                    ,re_cloud,re_ice,re_snow                      & ! G. Thompson
      &                    ,has_reqc,has_reqi,has_reqs                   & ! G. Thompson
@@ -101,7 +129,8 @@
      &                     ,ITS,ITE,JTS,JTE,KTS,KTE                     &
      &                     ,IHRST,JULDAY,JULYR                          &
      &                     ,N_MOIST,NPHS,NRADL,NRADS,NTSD               &
-     &                     ,NUM_AEROSOLC,NUM_OZMIXM
+     &                     ,NUM_AEROSOLC,NUM_OZMIXM,LEVSIZ
+      REAL, INTENT(IN) :: OZMIXM(ims:ime,LEVSIZ,jms:jme,num_ozmixm), PIN(LEVSIZ)
 !
       INTEGER,DIMENSION(IMS:IME,JMS:JME),INTENT(INOUT) :: NCFRCV,NCFRST
 !
@@ -213,6 +242,8 @@
       LOGICAL :: WARM_RAIN
       LOGICAL :: IS_CAMMGMP_USED=.FALSE.
 
+      REAL :: DXKM, DYKM
+
 !
 !-----------------------------------------------------------------------
 !***********************************************************************
@@ -233,6 +264,9 @@
 !-----------------------------------------------------------------------
 !
       CAPA=R_D/CP
+
+      DXKM=grid%dlmd*0.01745329*6371200. ! numbers from module_initialize_real.F
+      DYKM=grid%dy_nmm
 !
 !-----------------------------------------------------------------------
 !
@@ -243,8 +277,6 @@
 !
         PDSL(I,J)=PD(I,J)*RES(I,J)
         P8W(I,KTE+1,J)=PT
-        XLAT(I,J)=GLAT(I,J)/DEGRAD
-        XLON(I,J)=GLON(I,J)/DEGRAD
         XLAND(I,J)=SM(I,J)+1.
         PSFC=PD(I,J)+PDTOP+PT
         REXNSFC(I,J)=(PSFC*1.E-5)**CAPA
@@ -374,6 +406,8 @@
      &                 ,ITIMESTEP=NTSD,DT=DT                            &
      &                 ,ICLOUD_CU=config_flags%ICLOUD_CU                &
      &                 ,QC_CU=GRID%QC_CU,QI_CU=GRID%QI_CU               &
+     &                 ,DX=DXKM,DY=DYKM          &
+     &                 ,DXKM=dxkm                                       &
 ! WRF-Solar variables
                        ,swint_opt=config_flags%swint_opt                &   
      &       ,SWDDIR=grid%swddir,SWDDNI=grid%swddni,SWDDIF=grid%swddif     & ! jararias
@@ -392,7 +426,7 @@
      &                 ,RTHRATEN=RTHRATEN                               &
      &                 ,CEN_LAT=grid%cen_lat                            &
      &                 ,GLW=TOTLWDN,GSW=SWNETDN,SWDOWN=TOTSWDN          &
-     &                 ,XLAT=XLAT,XLONG=XLON,ALBEDO=ALBEDO,EMISS=EPSR   &
+     &                 ,XLAT=grid%HLAT,XLONG=grid%HLON,ALBEDO=ALBEDO,EMISS=EPSR   &
      &                 ,XICE=SICE,XLAND=XLAND,Z=Z,TSK=TSFC              &
      &                 ,N_AEROSOLC=NUM_AEROSOLC,PAERLEV=GRID%PAERLEV    &
      &                 ,ID=grid%id                                      &
@@ -400,7 +434,8 @@
      &                 ,CAM_ABS_DIM2=GRID%CAM_ABS_DIM2                  &
      &                 ,CAM_ABS_FREQ_S=GRID%CAM_ABS_FREQ_S              &
      &                 ,ALEVSIZ=grid%alevsiz,no_src_types=grid%no_src_types   &
-     &                 ,LEVSIZ=GRID%LEVSIZ,N_OZMIXM=NUM_OZMIXM          &
+     &                 ,LEVSIZ=LEVSIZ,N_OZMIXM=NUM_OZMIXM               &
+     &                 ,OZMIXM=OZMIXM,PIN=PIN                           &
      &                 ,HTOP=HTOP,HBOT=HBOT,CUPPT=CUPPTR                &
      &                 ,HTOPR=HTOPR,HBOTR=HBOTR                         &
      &                 ,VEGFRA=VEGFRC,SNOW=SNOW                         &
@@ -462,7 +497,7 @@
      &                 ,ACFRCV=ACFRCV,NCFRCV=NCFRCV                     &
      &                 ,F_ICE_PHY=F_ICE,F_RAIN_PHY=F_RAIN               &
      &                 ,LWCF=LWCF,SWCF=SWCF                             &
-     &                 ,O3INPUT=config_flags%O3INPUT,AER_OPT=config_flags%AER_OPT  &
+     & ,O3INPUT=config_flags%O3INPUT,AER_OPT=config_flags%AER_OPT,O3RAD=grid%o3rad  &
      &                 ,SF_SURFACE_PHYSICS=CONFIG_FLAGS%SF_SURFACE_PHYSICS &
      &                 ,QV=MOIST_TRANS(IMS,KMS,JMS,P_QV),F_QV=F_QV      &
      &                 ,QC=MOIST_TRANS(IMS,KMS,JMS,P_QC),F_QC=F_QC      &
@@ -471,7 +506,9 @@
      &                 ,QS=MOIST_TRANS(IMS,KMS,JMS,P_QS),F_QS=F_QS      &
      &                 ,QG=MOIST_TRANS(IMS,KMS,JMS,P_QG),F_QG=F_QG      &
      &                 ,IS_CAMMGMP_USED=IS_CAMMGMP_USED                 &
-     &                 ,EXPLICIT_CONVECTION=config_flags%cu_physics==0)
+     &                 ,EXPLICIT_CONVECTION=config_flags%cu_physics==0  &
+     &                 ,CU_PHYSICS=config_flags%cu_physics              &
+     &                 ,MP_PHYSICS=CONFIG_FLAGS%MP_PHYSICS)
 
 
 !
@@ -710,15 +747,16 @@
 !***********************************************************************
 !-----------------------------------------------------------------------
       SUBROUTINE TURBL(NTSD,DT,NPHS,RESTRT                              &
-     &                ,N_MOIST,NSOIL,SLDPTH,DZSOIL                      &
+     &                ,N_MOIST,N_SCALAR,NSOIL,SLDPTH,DZSOIL             &
      &                ,DETA1,DETA2,AETA1,AETA2,ETA1,ETA2,PDTOP,PT       &
      &                ,SM,HBM2,VBM2,DX_ARRAY,DFRLG                      &
      &                ,CZEN,CZMEAN,SIGT4,RLWIN,RSWIN,RADOT              &
 !- RLWIN/RSWIN - downward longwave/shortwave at the surface (also TOTLWDN/TOTSWDN in RADIATION)
      &                ,PD,RES,PINT,T,Q,CWM,F_ICE,F_RAIN,SR              &
      &                ,Q2,U,V,THS,TSFC,SST,PREC,SNO                     &
+     &                ,SCURX,SCURY                                      &
      &                ,FIS,Z0,MZ0,Z0BASE,USTAR,MIXHT,PBLH,LPBL,EL_MYJ   &   !MZ0: MOMENTUM Z0 (KWON)
-     &                ,MOIST,RMOL,MOL                                   &
+     &                ,MOIST,SCALAR,RMOL,MOL                            &
      &                ,EXCH_H,EXCH_M,F,AKHS,AKMS,AKHS_OUT,AKMS_OUT      &
      &                ,THZ0,QZ0,UZ0,VZ0,QS,MAVAIL                       &
      &                ,STC,SMC,CMC,SMSTAV,SMSTOT,SSROFF,BGROFF          &
@@ -727,14 +765,14 @@
      &                ,SFCEXC,ACSNOW,ACSNOM,SNOPCX,SICE,TG,SOILTB       &
      &                ,ALBSI,ICEDEPTH,SNOWSI                            &
      &                ,ALBASE,MXSNAL,ALBEDO,SH2O,SI,EPSR,EMBCK          &
-     &                ,U10,V10,UOCE,VOCE,TH10,Q10,TSHLTR,QSHLTR,PSHLTR            &
+     &                ,U10,V10,UOCE,VOCE,TH10,Q10,TSHLTR,QSHLTR,PSHLTR  &
      &                ,T2,QSG,QVG,QCG,SOILT1,TSNAV,SMFR3D,KEEPFR3DFLAG  &
      &                ,TWBS,QWBS,TAUX,TAUY,SFCSHX,SFCLHX,SFCEVP,RTHRATEN&
      &                ,POTEVP,POTFLX,SUBSHX                             &
      &                ,APHTIM,ARDSW,ARDLW,ASRFC                         &
      &                ,RSWOUT,RSWTOA,RLWTOA                             &
      &                ,ASWIN,ASWOUT,ASWTOA,ALWIN,ALWOUT,ALWTOA          &
-     &                ,UZ0H,VZ0H,DUDT,DVDT,UGWDsfc,VGWDsfc,SFENTH              & ! GWD
+     &                ,UZ0H,VZ0H,DUDT,DVDT,UGWDsfc,VGWDsfc,SFENTH       & ! GWD
      &                ,RTHBLTEN,RQVBLTEN                                &
      &                ,PCPFLG,DDATA                                     & ! PRECIP ASSIM
      &                ,HSTDV,HCNVX,HASYW,HASYS,HASYSW,HASYNW,HLENW      & ! GWD
@@ -747,6 +785,11 @@
      &                ,DISHEAT,DKU3D,DKT3D                              &
      &                ,HPBL2D, EVAP2D, HEAT2D,RC2D                      &  !Kwon S&P
      &                ,SFCHEADRT,INFXSRT,SOLDRAIN                       &  !Hydrology, no-op right now
+     &                ,cd_out,ch_out                                    &
+     &                ,ulowl, vlowl                                     &
+     &                ,zkmax, ribn                                      &
+     &                ,charn, msang                                     &
+     &                ,DUBLDT,DVBLDT,DTHBLDT,DQVBLDT                    & !wang added PBL tendency output
      &                ,IDS,IDE,JDS,JDE,KDS,KDE                          &
      &                ,IMS,IME,JMS,JME,KMS,KME                          &
      &                ,IPS,IPE,JPS,JPE,KPS,KPE                          &
@@ -796,7 +839,7 @@
      &                     ,IMS,IME,JMS,JME,KMS,KME                     &
      &                     ,IPS,IPE,JPS,JPE,KPS,KPE                     &
      &                     ,ITS,ITE,JTS,JTE,KTS,KTE                     &
-     &                     ,N_MOIST,NPHS,NSOIL,NTSD
+     &                     ,N_MOIST,NPHS,NSOIL,NTSD,N_SCALAR
 !
       INTEGER, DIMENSION(JMS:JME),INTENT(IN) :: IHE,IHW,IVE,IVW
 !
@@ -881,8 +924,18 @@
                                                     ,SFCEXC,SMSTAV      &
                                                     ,SOILTB,TWBS
 !
+      REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(IN)  :: scurx, scury
+
+      REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(INOUT) :: cd_out,ch_out
+      REAL,DIMENSION(IMS:IME,JMS:JME,KMS:KME),INTENT(INOUT) :: &
+                                                       DTHBLDT         &
+                                                      ,DQVBLDT         &
+                                                      ,DUBLDT          &
+                                                      ,DVBLDT
 
       REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(OUT) :: taux, tauy
+      REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(INOUT) :: zkmax, ribn
+      REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(IN) :: charn, msang
       REAL,DIMENSION(IMS:IME,JMS:JME,KMS:KME),INTENT(IN) :: PINT
 !
       REAL,DIMENSION(IMS:IME,JMS:JME,KMS:KME),INTENT(INOUT) :: CWM      &
@@ -912,6 +965,9 @@
       REAL,DIMENSION(IMS:IME,JMS:JME,KMS:KME,N_MOIST)                   &
      &                                           ,INTENT(INOUT) :: MOIST
 !
+      REAL,DIMENSION(IMS:IME,JMS:JME,KMS:KME,N_SCALAR)                  &
+     &                                           ,INTENT(INOUT) :: SCALAR
+!
       LOGICAL,INTENT(IN) :: RESTRT
 !
       TYPE(DOMAIN),TARGET :: GRID
@@ -932,6 +988,7 @@
 !-----------------------------------------------------------------------
       INTEGER :: I,I_M,IDUMMY,IEND,ISFFLX,ISTAT,ISTR,J,K,KOUNT_ALL      &
      &          ,LENGTH_ROW,LLIJ,LLYR,N,SST_UPDATE,SF_URBAN_PHYSICS,NUM_URBAN_LAYERS
+      INTEGER :: FASDAS
 !
       INTEGER,DIMENSION(IMS:IME,JMS:JME) :: KPBL,LOWLYR
 !
@@ -964,6 +1021,8 @@
      &                                          ,T_PHY,TH_PHY,TKE       &
      &                                          ,DUDT_GWD,DVDT_GWD      & ! GWD
      &                                          ,U_PHY,V_PHY,Z
+!
+      REAL,DIMENSION(IMS:IME,JMS:JME), INTENT(OUT) :: ULOWL, VLOWL
 !
       REAL,DIMENSION(:,:,:,:),ALLOCATABLE :: MOIST_TRANS
 !
@@ -1010,6 +1069,7 @@
       ALLOCATE(MOIST_TRANS(IMS:IME,KMS:KME,JMS:JME,N_MOIST),STAT=ISTAT)
 !
       SF_URBAN_PHYSICS=CONFIG_FLAGS%SF_URBAN_PHYSICS
+      FASDAS=0
 
       if ( config_flags%bl_pbl_physics == BOULACSCHEME ) then
          call wrf_error_fatal("Cannot use BOULAC PBL with NMM")
@@ -1028,6 +1088,7 @@
       IFNDALBSI = 0
       IFNDSNOWSI = 0
       IFNDICEDEPTH = 0
+      BR=10
 
       SEAICE_ALBEDO_DEFAULT = CONFIG_FLAGS%SEAICE_ALBEDO_DEFAULT
       SEAICE_THICKNESS_OPT = CONFIG_FLAGS%SEAICE_THICKNESS_OPT
@@ -1254,6 +1315,10 @@
             V_PHY(I,K,J)=(V(I+IHE(J),J,K)+V(I+IHW(J),J,K)               &
      &                   +V(I,J+1,K)+V(I,J-1,K))                        &
      &                   *0.25
+          IF ( K == KTS ) THEN
+             ULOWL(I,J) = U_PHY(I,K,J)
+             VLOWL(I,J) = V_PHY(I,K,J)
+          ENDIF
           ENDDO
         ENDDO
       ENDDO
@@ -1366,7 +1431,19 @@
      &          ,NUM_SOIL_LAYERS=NSOIL,P8W=P8W                          &
      &          ,PBLH=PBLH,PI_PHY=PI_PHY,PSHLTR=PSHLTR,PSIH=PSIH        &
      &          ,PSIM=PSIM,P_PHY=P_PHY,Q10=Q10,Q2=Q2X,QFX=QWBS,TAUX=TAUX,TAUY=TAUY,QSFC=QS  &
-     &          ,QSHLTR=QSHLTR,QZ0=QZ0,RAINCV=RAIN                      &
+     &          ,QSHLTR=QSHLTR,QZ0=QZ0                                  &
+     &          ,ICOEF_SF=CONFIG_FLAGS%ICOEF_SF                         &
+     &          ,LCURR_SF=CONFIG_FLAGS%LCURR_SF                         &!for gfdl-sf drag
+     &          ,ZKMAX=ZKMAX,RIBN=RIBN                                  &
+     &          ,CHARN=CHARN,MSANG=MSANG,SCURX=SCURX,SCURY=SCURY        &
+     &          ,IWAVECPL=CONFIG_FLAGS%IWAVECPL                         &
+#if (HWRF==1)
+     &          ,pert_Cd=config_flags%pert_Cd                           &
+     &          ,ens_random_seed=config_flags%ens_random_seed           &
+     &          ,ens_Cdamp=config_flags%ens_Cdamp                       &
+#endif
+     &          ,cd_out=grid%cd_out,ch_out=grid%ch_out                  &
+     &          ,RAINCV=RAIN                                            &
      &          ,RHO=RR,SFCEVP=SFCEVPX,SFCEXC=SFCEXC,SFCRUNOFF=SSROFF   &
      &          ,SMOIS=SMC,SMSTAV=SMSTAV,SMSTOT=SMSTOT,SNOALB=MXSNAL    &
      &          ,SNOW=SNOW,SNOWC=SNOWC,SNOWH=SNOWH,STEPBL=NPHS          &
@@ -1382,7 +1459,7 @@
      &          ,ALBSI=albsi,ICEDEPTH=icedepth,SNOWSI=snowsi            &
      &          ,ISICE=GRID%LANDUSE_ISICE,ISWATER=GRID%ISWATER          &
      &          ,XLAND=XLAND,Z=Z,ZNT=Z0                                 &
-#ifdef HWRF
+#if ( HWRF == 1 )
      &          ,MZNT=MZ0                                               &
 #endif
      &          ,ZS=SLDPTH,CT=CT,TKE_PBL=TKE,SFENTH=SFENTH              &   !KWON
@@ -1418,7 +1495,7 @@
      &          ,QSG=QSG,QVG=QVG,QCG=QCG,SOILT1=SOILT1                  &
      &          ,TSNAV=TSNAV,SMFR3D=SMFR3D,KEEPFR3DFLAG=KEEPFR3DFLAG    &
      &          ,POTEVP=POTEVP,SNOPCX=SNOPCX,SOILTB=SOILTB,SR=SR        &
-     &          ,DEW=DEW                                                &
+     &          ,DEW=DEW,ACRUNOFF=grid%ACRUNOFF                         &
      &          ,MOSAIC_LU=CONFIG_FLAGS%MOSAIC_LU                       &
      &          ,MOSAIC_SOIL=CONFIG_FLAGS%MOSAIC_SOIL                   &
      &          ,LANDUSEF=grid%landusef                                 &
@@ -1438,6 +1515,7 @@
      &        ,RDLAI2D=config_flags%rdlai2d                                   &
      &        ,usemonalb=config_flags%usemonalb                           &
      &        ,NOAHRES=grid%noahres                                       &
+     &        ,opt_thcnd=config_flags%opt_thcnd       &
 ! for Noah UA changes
      &        ,ua_phys=config_flags%ua_phys,flx4=grid%flx4,fvb=grid%fvb       &
      &        ,fbur=grid%fbur,fgsn=grid%fgsn                                  &
@@ -1451,6 +1529,7 @@
      &        ,iopt_inf=config_flags%opt_inf,   iopt_rad=config_flags%opt_rad &
      &        ,iopt_alb=config_flags%opt_alb,   iopt_snf=config_flags%opt_snf &
      &        ,iopt_tbot=config_flags%opt_tbot, iopt_stc=config_flags%opt_stc & 
+     &        ,iopt_gla=config_flags%opt_gla,   iopt_rsf=config_flags%opt_rsf & 
      &        , isnowxy=grid%isnowxy  ,    tvxy=grid%tvxy    ,    tgxy=grid%tgxy     &
      &        ,canicexy=grid%canicexy ,canliqxy=grid%canliqxy,   eahxy=grid%eahxy    &
      &        ,   tahxy=grid%tahxy    ,    cmxy=grid%cmxy    ,    chxy=grid%chxy     &
@@ -1460,6 +1539,9 @@
      &        , zsnsoxy=grid%zsnsoxy  , snicexy=grid%snicexy , snliqxy=grid%snliqxy  &
      &        ,lfmassxy=grid%lfmassxy ,rtmassxy=grid%rtmassxy,stmassxy=grid%stmassxy &
      &        ,  woodxy=grid%woodxy   ,stblcpxy=grid%stblcpxy,fastcpxy=grid%fastcpxy &
+     &        , grainxy=grid%grainxy  ,   gddxy=grid%gddxy   ,   pgsxy=grid%pgsxy    &
+     &        , cropcat=grid%cropcat                                                 &
+     &        ,planting=grid%planting , harvest=grid%harvest ,season_gdd=grid%season_gdd  &
      &        ,  xsaixy=grid%xsaixy   , taussxy=grid%taussxy                         &
      &        ,  t2mvxy=grid%t2mvxy   ,  t2mbxy=grid%t2mbxy                          &
      &        ,  q2mvxy=grid%q2mvxy   ,  q2mbxy=grid%q2mbxy                          & 
@@ -1479,7 +1561,8 @@
      &        ,  chv2xy=grid%chv2xy   ,  chb2xy=grid%chb2xy , chstarxy=grid%chstarxy &                       
      &        ,  smoiseq=grid%smoiseq, smcwtdxy=grid%smcwtdxy, rechxy=grid%rechxy    &                       
      &        ,  deeprechxy=grid%deeprechxy                                          &                       
-     &        ,coszen=grid%czen,xlat_urb2d=grid%xlat                                 &
+     &        ,coszen=grid%czen,xlat_urb2d=grid%hlat                                 &
+
 ! mosaic tiling for Noah
      &        ,sf_surface_mosaic=config_flags%sf_surface_mosaic,  mosaic_cat=config_flags%mosaic_cat      &
 ! lake module
@@ -1491,7 +1574,7 @@
      &        ,tkdry3d=grid%tkdry3d,tksatu3d=grid%tksatu3d, LakeModel=grid%sf_lake_physics,  lake_min_elev=grid%lake_min_elev  &
 ! end lake module
      &        ,maxpatch=1,inest=1,history_interval=config_flags%history_interval  & !clm
-
+     &        ,fasdas=fasdas
      &                                                          )
 !
 !-----------------------------------------------------------------------
@@ -1530,7 +1613,7 @@
 !
       ETAMP_Regional=.FALSE.
       IF (CONFIG_FLAGS%MP_PHYSICS==ETAMPNEW .OR.                        &
-     &    CONFIG_FLAGS%MP_PHYSICS==ETAMP_HR) ETAMP_Regional=.TRUE.
+     &    CONFIG_FLAGS%MP_PHYSICS==FER_MP_HIRES) ETAMP_Regional=.TRUE.
 !
       IF(ETAMP_Regional) THEN
 !-- Logical FQ_I and index PQ_I are set to values associated with snow
@@ -1557,7 +1640,11 @@
 !BSF &               ,RQRBLTEN=RQRBLTEN,RQSBLTEN=RQSBLTEN             & !BSF
 !BSF &               ,RQGBLTEN=RQGBLTEN                               & !BSF
      &               ,TSK=TSFC,XLAND=XLAND,ZNT=Z0                     &
-#ifdef HWRF
+#if ( HWRF == 1 )
+     &               ,MSANG=MSANG,SCURX=SCURX,SCURY=SCURY             &
+     &               ,IWAVECPL=CONFIG_FLAGS%IWAVECPL                  &
+     &               ,LCURR_SF=CONFIG_FLAGS%LCURR_SF                  &
+
      &               ,MZNT=MZ0                                        &
 #endif
      &               ,HT=SFCZ                                         &   !KWON
@@ -1605,6 +1692,9 @@
      &               ,DKU3D=DKU3D,DKT3D=DKT3D 
 #if HWRF==1
      &               ,coef_ric_l=coef_ric_l,coef_ric_s=coef_ric_s     &    !Kwon for Ric
+     &          ,pert_pbl=config_flags%pert_pbl                       &
+     &          ,ens_random_seed=config_flags%ens_random_seed         &
+     &          ,ens_pblamp=config_flags%ens_pblamp                   &
 #endif
      &               ,QV_CURR=MOIST_TRANS(IMS,KMS,JMS,P_QV),F_QV=F_QV &
      &               ,QC_CURR=MOIST_TRANS(IMS,KMS,JMS,P_QC),F_QC=F_QC &
@@ -1615,8 +1705,25 @@
      &               ,HOL=HOL,sf_sfclay_physics=CONFIG_FLAGS%SF_SFCLAY_PHYSICS &
      &               ,IS_CAMMGMP_USED=IS_CAMMGMP_USED                 &
      &               ,wstar=wstar_ysu,delta=delta_ysu                 &
+     &               ,fasdas=fasdas                                   &
      &               ,sf_urban_physics=CONFIG_FLAGS%SF_URBAN_PHYSICS)
 !
+!output PBL tendency
+!
+!$omp parallel do                                                       &
+!$omp& private(i,j,k)
+      DO J=JMS,JME
+      DO K=KMS,KME
+      DO I=IMS,IME
+        DUBLDT(I,J,K)=DUDT_PHY(I,K,J)
+        DVBLDT(I,J,K)=DVDT_PHY(I,K,J)
+        DTHBLDT(I,J,K)=RTHBLTEN(I,K,J)
+        DQVBLDT(I,J,K)=RQVBLTEN(I,K,J)
+      ENDDO
+      ENDDO
+      ENDDO
+!
+
 !***  NOTE THAT THE EXCHANGE COEFFICIENTS FOR HEAT EXCH_H COMING OUT OF
 !***  PBL_DRIVER ARE DEFINED AT THE TOPS OF THE LAYERS KTS TO KTE-1
 !***  IF MODULE_BL_MYJPBL WAS INVOKED.
@@ -1679,7 +1786,7 @@
         ENDDO
       ENDIF
 !
-#ifdef HWRF
+#if ( HWRF == 1 )
       if(size(grid%windsq_swath)>1) then
          do j=max(jts,jds),min(jte,jde-1)
             do i=max(its,ids),min(ite,ide-1)
@@ -1799,7 +1906,7 @@
 !125   FORMAT(1X,'grid%id  module_PHYSICS.F :  gwd_opt  ',I2,2X,I2)
 
 
-#ifdef HWRF
+#if ( HWRF == 1 )
       IF (grid%gwd_opt .eq. 2 .AND. grid%id.eq.1) THEN                                        !Kwon's doing for parent only now
 #else
       IF (grid%gwd_opt .eq. 2) THEN
@@ -1929,18 +2036,22 @@
           MOIST(I,J,K,P_QV)=MAX(EPSQ,(MOIST(I,J,K,P_QV)+RQVBLTEN(I,K,J)*DTPHS) )
           CWM(I,J,K)=0.
 !
-          pbl_check1: IF (.NOT.ETAMP_PHYSICS) THEN
+          pbl_check1:  IF(config_flags%mp_physics==fer_mp_hires_advect) then
+             ! Update QI and QRIMEF:
+             call QITEND_FER_HIRES_ADVECT( &
+                  MOIST(I,J,K,P_QI), &
+                  SCALAR(I,J,K,P_QRIMEF), &
+                  RQIBLTEN(I,K,J)*DTPHS)
+
+             ! Update QC:
+             MOIST(I,J,K,P_QC)=MAX(EPSQ,(MOIST(I,J,K,P_QC)+RQCBLTEN(I,K,J)*DTPHS))
+          ELSEIF (.NOT.ETAMP_PHYSICS) THEN
+
             DO I_M=1,N_MOIST
               IF(I_M==P_QC) THEN
                 MOIST(I,J,K,I_M)=MAX(EPSQ,(MOIST(I,J,K,I_M)+RQCBLTEN(I,K,J)*DTPHS) )
               ELSE IF(I_M==P_QI) THEN
                 MOIST(I,J,K,I_M)=MAX(EPSQ,(MOIST(I,J,K,I_M)+RQIBLTEN(I,K,J)*DTPHS) )
-!BSF              ELSE IF(I_M==P_QS) THEN
-!BSF                MOIST(I,J,K,I_M)=MAX(EPSQ,(MOIST(I,J,K,I_M)+RQSBLTEN(I,K,J)*DTPHS) )
-!BSF              ELSE IF(I_M==P_QR) THEN
-!BSF                MOIST(I,J,K,I_M)=MAX(EPSQ,(MOIST(I,J,K,I_M)+RQRBLTEN(I,K,J)*DTPHS) )
-!BSF              ELSE IF(I_M==P_QG) THEN
-!BSF                MOIST(I,J,K,I_M)=MAX(EPSQ,(MOIST(I,J,K,I_M)+RQGBLTEN(I,K,J)*DTPHS) )
               ENDIF
               IF(I_M/=P_QV) CWM(I,J,K)=CWM(I,J,K)+MOIST(I,J,K,I_M)
             ENDDO
@@ -2147,8 +2258,8 @@
 !-----------------------------------------------------------------------
       SUBROUTINE CUCNVC(NTSD,DT,NCNVC,NRADS,NRADL                       &
      &                 ,GPS,RESTRT,HYDRO                                &
-     &                 ,CLDEFI,N_MOIST,ENSDIM                           &
-     &                 ,MOIST                                           &
+     &                 ,CLDEFI,N_MOIST,N_SCALAR,ENSDIM                  &
+     &                 ,MOIST,SCALAR                                    &
      &                 ,DETA1,DETA2,AETA1,AETA2,ETA1,ETA2               &
      &                 ,F_ICE,F_RAIN                                    &
 !***  Changes for other cu-schemes, most for gd scheme
@@ -2166,9 +2277,15 @@
      &                 ,RTHBLTEN,RQVBLTEN,RTHRATEN                      &
 #if (NMM_CORE==1)    
      &                 ,TWBS,QWBS                                       &
-     &                 ,DUCUDT, DVCUDT, MOMMIX, store_rand               &                  
+     &                 ,DUCUDT, DVCUDT, MOMMIX, store_rand              &                  
+     &                 ,DTHCUDT,DQVCUDT,DQRCUDT,DQCCUDT,DQICUDT         &! added output CU tendency
+     &                 ,DQSCUDT                                         &! added output CU tendency
+
 #endif
      &                 ,HPBL2D,EVAP2D,HEAT2D                            &     !Kwon S&P
+     &                 ,DX2D,DYNMM                                      & ! Scale-aware sas
+     &                 ,SCALEFUN, SCALEFUN1                             & !scale functions
+     &                 ,SIGMU, SIGMU1                                   & !updraft fraction
      &                 ,AVCNVC,ACUTIM,IHE,IHW                           &
      &                 ,GRID,CONFIG_FLAGS                               &
      &                 ,IDS,IDE,JDS,JDE,KDS,KDE                         &
@@ -2206,14 +2323,22 @@
      &                     ,IMS,IME,JMS,JME,KMS,KME                     &
      &                     ,IPS,IPE,JPS,JPE,KPS,KPE                     &
      &                     ,ITS,ITE,JTS,JTE,KTS,KTE                     &
-     &                     ,N_MOIST,NCNVC,NTSD,NRADS,NRADL
+     &                     ,N_MOIST,NCNVC,NTSD,NRADS,NRADL,N_SCALAR
 !
       INTEGER, DIMENSION(JMS:JME),INTENT(IN) :: IHE,IHW
 !
       INTEGER,DIMENSION(IMS:IME,JMS:JME),INTENT(IN) :: LPBL
+      REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(IN) :: DX2D ! scale-sware sas
+      REAL,INTENT(IN) :: DYNMM                           ! Delt_Y 
+      REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(INOUT) :: SCALEFUN,SCALEFUN1 !  scale-sware sas
+                                                                     ! scale functions
+       REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(INOUT) :: SIGMU,SIGMU1 ! updraft fractional area
+
 !
       REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(INOUT) :: HPBL2D,EVAP2D,HEAT2D     !Kwon S&P
-!`
+
+      REAL,DIMENSION(IMS:IME,JMS:JME)               :: SHALL
+! 
       REAL,INTENT(IN) :: DT,GPS,PDTOP,PT
 !
       REAL,INTENT(INOUT) :: ACUTIM,AVCNVC
@@ -2260,6 +2385,14 @@
 #if (NMM_CORE==1)
       REAL, INTENT(INOUT)::MOMMIX
       REAL,DIMENSION(IMS:IME,JMS:JME,KMS:KME),INTENT(INOUT):: DUCUDT, DVCUDT 
+! 2015-12-14 added output tendency from CU
+      REAL,DIMENSION(IMS:IME,JMS:JME,KMS:KME),INTENT(INOUT):: DTHCUDT   &
+     &                                                      , DQVCUDT   &
+     &                                                      , DQRCUDT   &
+     &                                                      , DQCCUDT   &
+     &                                                      , DQICUDT   &
+     &                                                      , DQSCUDT
+!
       REAL,DIMENSION(IDS:IDE,JDS:JDE)               :: DATA1 
       LOGICAL, EXTERNAL::wrf_dm_on_monitor
 #endif
@@ -2280,6 +2413,10 @@
       REAL,DIMENSION(IMS:IME,JMS:JME,KMS:KME,N_MOIST)                   &
      &                                           ,INTENT(INOUT) :: MOIST
 !
+      REAL,DIMENSION(IMS:IME,JMS:JME,KMS:KME,N_SCALAR)                  &
+     &                                           ,INTENT(INOUT) :: SCALAR
+!
+
       REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME),INTENT(INOUT) :: GD_CLOUD &
      &                                                        ,GD_CLOUD2
       INTEGER,DIMENSION(IMS:IME,JMS:JME),INTENT(INOUT) :: KTOP_DEEP
@@ -2388,7 +2525,7 @@
       IF(MOD(NTSD,NCNVC)/=0.AND.                                      &
      &   CONFIG_FLAGS%CU_PHYSICS==SASSCHEME)RETURN
       IF(MOD(NTSD,NCNVC)/=0.AND.                                      &
-     &   CONFIG_FLAGS%CU_PHYSICS==MESO_SAS)RETURN             !Kwon
+     &   CONFIG_FLAGS%CU_PHYSICS==SCALESASSCHEME)RETURN 
       
 !-----------------------------------------------------------------------
       NSTEP_CNV=NCNVC
@@ -2475,6 +2612,16 @@
           P_PHY(I,K,J)=PLYR
           PI_PHY(I,K,J)=(PLYR*1.E-5)**CAPA
 !
+        ENDDO
+!
+      ENDDO
+      ENDDO
+
+!$omp parallel do                                                       &
+!$omp& private(i,j,k)
+      DO J=JTS,JTE
+        DO K=KTS,KTE
+        DO I=ITS,ITE
           RTHCUTEN(I,K,J)=0.
           RQVCUTEN(I,K,J)=0.
           RQCCUTEN(I,K,J)=0.
@@ -2482,7 +2629,6 @@
           RQICUTEN(I,K,J)=0.
           RQSCUTEN(I,K,J)=0.
         ENDDO
-!
       ENDDO
       ENDDO
 !
@@ -2626,6 +2772,12 @@
         DO I=IMS,IME
            DUCUDT(i,j,k)=0.0
            DVCUDT(i,j,k)=0.0
+           DTHCUDT(i,j,k)=0.0
+           DQVCUDT(i,j,k)=0.0
+           DQRCUDT(i,j,k)=0.0
+           DQCCUDT(i,j,k)=0.0
+           DQICUDT(i,j,k)=0.0
+           DQSCUDT(i,j,k)=0.0
         ENDDO
         ENDDO
         ENDDO
@@ -2648,6 +2800,11 @@
      &                 ,DZ8W=DZ,P8W=P8W,FORCET=TTEN,FORCEQ=QTEN         &
      &                 ,CLDEFI=CLDEFI,LOWLYR=LOWLYR,XLAND=XLAND         &
      &                 ,CU_ACT_FLAG=CU_ACT_FLAG,WARM_RAIN=WARM_RAIN     &
+! kf_edrates
+     &                 ,UDR_KF=grid%udr_kf,DDR_KF=grid%ddr_kf           &
+     &                 ,UER_KF=grid%uer_kf,DER_KF=grid%der_kf           &
+     &                 ,TIMEC_KF=grid%timec_kf                          &
+     &                 ,KF_EDRATES=config_flags%kf_edrates              &
 !Biswas
      &                 ,HFX=HFX,QFX=QFX,PBLH=PBLH                       &
      &                 ,ZNU=ZNU                                         &
@@ -2671,8 +2828,18 @@
 #if (NMM_CORE==1)
      &                 ,RUCUTEN=DUCUDT, RVCUTEN=DVCUDT, MOMMIX=MOMMIX   &
                        ,store_rand=store_rand                           &
+#if (HWRF==1)
+     &                 ,pert_sas=config_flags%pert_sas                  &
+     &                 ,ens_random_seed=config_flags%ens_random_seed    &
+     &                 ,ens_sasamp=config_flags%ens_sasamp              &
 #endif
-     &                 ,HPBL2D=HPBL2D,EVAP2D=EVAP2D,HEAT2D=HEAT2D       &     !Kwon S&P
+#endif
+     &                 ,SHALL=grid%shall                                &
+     &                 ,HPBL2D=HPBL2D,EVAP2D=EVAP2D,HEAT2D=HEAT2D       & 
+     &                 ,DX2D=DX2D,DYNMM=DYNMM                           & ! scale-sware SAS 
+     &                 ,SCALEFUN=SCALEFUN, SCALEFUN1=SCALEFUN1          & !  scale function
+     &                 ,SIGMU=SIGMU, SIGMU1=SIGMU1                      & !  updraft fraction
+
      &                 ,pgcon=config_flags%sas_pgcon                    &
      &                 ,sas_mass_flux=config_flags%sas_mass_flux        &
      &                 ,shalconv=config_flags%sas_shal_conv             &
@@ -2689,6 +2856,23 @@
      &                 ,QS_CURR=MOIST_TRANS(IMS,KMS,JMS,P_QS),F_QS=F_QS &
      &                 ,QG_CURR=MOIST_TRANS(IMS,KMS,JMS,P_QG),F_QG=F_QG)
 !
+#if (NMM_CORE==1)
+!$omp parallel do                                                       &
+!$omp& private(i,j,k)
+        DO K=KMS,KME
+        DO J=JMS,JME
+        DO I=IMS,IME
+           DTHCUDT(i,j,k)=RTHCUTEN(i,k,j)
+           DQVCUDT(i,j,k)=RQVCUTEN(i,k,j)
+           DQRCUDT(i,j,k)=RQRCUTEN(i,k,j)
+           DQCCUDT(i,j,k)=RQCCUTEN(i,k,j)
+           DQICUDT(i,j,k)=RQICUTEN(i,k,j)
+           DQSCUDT(i,j,k)=RQSCUTEN(i,k,j)
+        ENDDO
+        ENDDO
+        ENDDO
+#endif
+
 !-----------------------------------------------------------------------
 !
 !***  CNVTOP/CNVBOT HOLD THE MAXIMUM VERTICAL LIMITS OF CONVECTIVE CLOUD
@@ -2706,7 +2890,7 @@
       endif
 
       N_TIMSTPS_OUTPUT=NINT(60.*CF_HI/DT)
-      MNTO=MOD(NTSD,N_TIMSTPS_OUTPUT)
+      MNTO=MOD(NTSD,max(1,N_TIMSTPS_OUTPUT))
 !
       IF(MNTO>0.AND.MNTO<=NCNVC)THEN
         DO J=MYJS2,MYJE2
@@ -2729,7 +2913,7 @@
       have_tg_tp = .false.
       have_swath = .false.
       have_tg_tp = (size(grid%tg_total_precip)>1)
-#ifdef HWRF
+#if ( HWRF == 1 )
       have_swath = ( size(grid%precip_swath)>1 )
 #endif
 !$omp parallel do                                                       &
@@ -2750,10 +2934,14 @@
           if(have_tg_tp) then
              grid%tg_total_precip(i,j) = grid%tg_total_precip(i,j) + PCPCOL
           endif
-#ifdef HWRF
+#if ( HWRF == 1 )
           if(have_swath) then
-             if(grid%interesting(i,j)/=0) &
-                  grid%precip_swath(i,j) = grid%precip_swath(i,j) + PCPCOL
+             if(grid%interesting(i,j)/=0) then
+                grid%precip_swath(i,j) = grid%precip_swath(i,j) + PCPCOL
+                if(size(grid%cuprecip_swath)>0) then
+                   grid%cuprecip_swath(i,j) = grid%cuprecip_swath(i,j) + PCPCOL
+                endif
+             endif
           endif
 #endif
 !
@@ -2800,7 +2988,7 @@
 !
       ETAMP_Regional=.FALSE.
       IF (CONFIG_FLAGS%MP_PHYSICS==ETAMPNEW .OR.                        &
-     &    CONFIG_FLAGS%MP_PHYSICS==ETAMP_HR) ETAMP_Regional=.TRUE.
+     &    CONFIG_FLAGS%MP_PHYSICS==FER_MP_HIRES) ETAMP_Regional=.TRUE.
 !
 !$omp parallel do                                                       &
 !$omp& private(dqdt,dtdt,i,iendx,j,k,tchange)
@@ -2825,8 +3013,14 @@
 !
           cps_select: SELECT CASE(config_flags%cu_physics)
 !
-          CASE (KFSCHEME,KFETASCHEME,GDSCHEME,SASSCHEME,MESO_SAS,OSASSCHEME,NSASSCHEME,TIEDTKESCHEME)
-            IF (ETAMP_Regional) THEN
+          CASE (KFSCHEME,KFETASCHEME,GDSCHEME,SASSCHEME,SCALESASSCHEME,OSASSCHEME,NSASSCHEME,TIEDTKESCHEME)
+           IF(config_flags%mp_physics==fer_mp_hires_advect) THEN
+             ! Update QI and QRIMEF:
+             call QITEND_FER_HIRES_ADVECT( &
+                  MOIST_TRANS(I,K,J,P_QI), &
+                  SCALAR(I,J,K,P_QRIMEF), &
+                  RQICUTEN(I,K,J)*DTCNVC)
+            ELSEIF (ETAMP_Regional) THEN
               MOIST_TRANS(I,K,J,P_QS)=MAX(0.,MOIST_TRANS(I,K,J,P_QS)+RQICUTEN(I,K,J)*DTCNVC+RQSCUTEN(I,K,J)*DTCNVC)
             ELSE
               MOIST_TRANS(I,K,J,P_QI)=MAX(0.,MOIST_TRANS(I,K,J,P_QI)+RQICUTEN(I,K,J)*DTCNVC)
@@ -2998,7 +3192,7 @@
 !***  TRANSPOSE THE MOIST ARRAY (IJK) FOR THE PHYSICS (IKJ).
 !-----------------------------------------------------------------------
 !
-      DO N=1,N_MOIST
+      DO N=2,N_MOIST
 !$omp parallel do                                                       &
 !$omp& private(i,j,k)
         DO K=KMS,KME
@@ -3024,11 +3218,11 @@
 !
       QT_PRESENT=.FALSE.
       IF (CONFIG_FLAGS%MP_PHYSICS==ETAMPNEW .OR.                        &
-     &    CONFIG_FLAGS%MP_PHYSICS==ETAMP_HR .OR.                        &
+     &    CONFIG_FLAGS%MP_PHYSICS==FER_MP_HIRES .OR.                        &
      &    CONFIG_FLAGS%MP_PHYSICS==ETAMP_HWRF) QT_PRESENT=.TRUE.
 !
       micro_check1: IF(.NOT.QT_PRESENT) THEN
-        DO N=1,N_SCALAR
+        DO N=2,N_SCALAR
 !$omp parallel do                                                       &
 !$omp& private(i,j,k)
           DO K=KMS,KME
@@ -3128,8 +3322,18 @@
      &                 ,QI_CURR=MOIST_TRANS(IMS,KMS,JMS,P_QI),F_QI=F_QI &
      &                 ,QS_CURR=MOIST_TRANS(IMS,KMS,JMS,P_QS),F_QS=F_QS &
      &                 ,QG_CURR=MOIST_TRANS(IMS,KMS,JMS,P_QG),F_QG=F_QG &
-     &                 ,QNI_CURR=SCALAR_TRANS(IMS,KMS,JMS,P_QNI),F_QNI=F_QNI  &
-     &                 ,QNR_CURR=SCALAR_TRANS(IMS,KMS,JMS,P_QNR),F_QNR=F_QNR  &
+     &                 ,QH_CURR=MOIST_TRANS(IMS,KMS,JMS,P_QH),F_QH=F_QH &
+     &        , QNN_CURR=SCALAR_TRANS(ims,kms,jms,P_QNN), F_QNN=F_QNN          &
+     &        , QNDROP_CURR=SCALAR_TRANS(ims,kms,jms,P_QNDROP), F_QNDROP=F_QNDROP &
+     &        , QNI_CURR=SCALAR_TRANS(ims,kms,jms,P_QNI), F_QNI=F_QNI          &
+     &        , QNC_CURR=SCALAR_TRANS(ims,kms,jms,P_QNC), F_QNC=F_QNC          &
+     &        , QNR_CURR=SCALAR_TRANS(ims,kms,jms,P_QNR), F_QNR=F_QNR          &
+     &        , QNS_CURR=SCALAR_TRANS(ims,kms,jms,P_QNS), F_QNS=F_QNS          &
+     &        , QNG_CURR=SCALAR_TRANS(ims,kms,jms,P_QNG), F_QNG=F_QNG          &
+     &        , QNH_CURR=SCALAR_TRANS(ims,kms,jms,P_QNH), F_QNH=F_QNH          & ! for milbrandt2mom and nssl_2mom
+     &        , QVOLG_CURR=SCALAR_TRANS(ims,kms,jms,P_QVOLG), F_QVOLG=F_QVOLG    & ! for nssl_2mom
+     &        , QVOLH_CURR=SCALAR_TRANS(ims,kms,jms,P_QVOLH), F_QVOLH=F_QVOLH    & ! for nssl_2mom
+     &                 ,QRIMEF_CURR=SCALAR_TRANS(IMS,KMS,JMS,P_QRIMEF),F_QRIMEF=F_QRIMEF &
      &                 ,QT_CURR=CWM_PHY,F_QT=QT_PRESENT                 &
      &                 ,MP_RESTART_STATE=MP_RESTART_STATE               &
      &                 ,TBPVS_STATE=TBPVS_STATE                         &
@@ -3197,7 +3401,7 @@
 !***  OUT ABOVE SINCE IT IS ONLY A LOCAL ARRAY FOR NOW.
 !-----------------------------------------------------------------------
 !
-#ifdef HWRF
+#if ( HWRF == 1 )
       have_swath = ( size(grid%precip_swath)>1 )
 #endif
       have_tg_tp = (size(grid%tg_total_precip)>1)
@@ -3213,7 +3417,7 @@
           if(have_tg_tp) then
              grid%tg_total_precip(i,j) = grid%tg_total_precip(i,j) + PCPCOL
           endif
-#ifdef HWRF
+#if ( HWRF == 1 )
           if(have_swath) then
              if(grid%interesting(i,j)/=0) &
                   grid%precip_swath(i,j) = grid%precip_swath(i,j) + PCPCOL
@@ -3226,7 +3430,7 @@
 !***  REFILL THE MOIST ARRAY.
 !-----------------------------------------------------------------------
 !
-      DO N=1,N_MOIST
+      DO N=2,N_MOIST
 !$omp parallel do                                                       &
 !$omp& private(i,j,k)
         DO J=JMS,JME
@@ -3241,7 +3445,7 @@
 !-----------------------------------------------------------------------
 !
       micro_check2: IF (.NOT.QT_PRESENT) THEN
-        DO N=1,N_SCALAR
+        DO N=2,N_SCALAR
 !$omp parallel do                                                       &
 !$omp& private(i,j,k)
           DO J=JMS,JME

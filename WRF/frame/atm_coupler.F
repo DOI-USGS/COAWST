@@ -96,7 +96,7 @@
       PUBLIC :: atmfocn_coupling
       PUBLIC :: atm_coupling_aux4
 # endif
-# ifdef SWAN_COUPLING
+# if defined SWAN_COUPLING || defined WW3_COUPLING
       PUBLIC :: atm2wav_coupling
       PUBLIC :: atmfwav_coupling
 # endif
@@ -139,7 +139,7 @@
       END TYPE T_AttrVect_O
       TYPE (T_AttrVect_O), ALLOCATABLE :: AttrVect_O(:,:)
 # endif
-# if defined SWAN_COUPLING
+# if defined SWAN_COUPLING || defined WW3_COUPLING
       TYPE T_AttrVect_W
        TYPE(AttrVect) :: atm2wav_AV            ! AttrVect variables
        TYPE(AttrVect) :: wav2atm_AV            ! AttrVect variables
@@ -153,7 +153,7 @@
       END TYPE T_Router_O
       TYPE (T_Router_O), ALLOCATABLE :: Router_O(:,:)
 # endif
-# if defined SWAN_COUPLING
+# if defined SWAN_COUPLING || defined WW3_COUPLING
       TYPE T_Router_W
         type(Router)   :: WRFtoSWAN           ! Router variables
       END TYPE T_Router_W
@@ -270,7 +270,7 @@
 !       ALLOCATE(GSMapInterp_O(Natm_grids,Nocn_grids))
 !#  endif
 # endif
-# if defined SWAN_COUPLING
+# if defined SWAN_COUPLING || defined WW3_COUPLING
         ALLOCATE(AttrVect_W(Natm_grids,Nwav_grids))
 !#  ifdef MCT_INTERP_WV2AT
 !       ALLOCATE(SMPlus_W(Natm_grids,Nwav_grids))
@@ -639,7 +639,7 @@
 #  endif
       END DO
 # endif
-# ifdef SWAN_COUPLING
+# if defined SWAN_COUPLING || defined WW3_COUPLING
       DO iw=1,Nwav_grids
         WAVid=wavids(iw)
 !
@@ -727,7 +727,7 @@
         END DO
       END DO
 # endif
-# ifdef SWAN_COUPLING
+# if defined SWAN_COUPLING || defined WW3_COUPLING
       ALLOCATE(Router_W(Natm_grids,Nwav_grids))
 !
 !  Initialize a router to the wav model component.
@@ -807,7 +807,7 @@
         END DO
       END IF
 # endif
-# ifdef SWAN_COUPLING
+# if defined SWAN_COUPLING || defined WW3_COUPLING
       IF (MOD(num_steps+offset, nATM2WAV(1,1)).eq.0) THEN
         DO iw=1,Nwav_grids
           ia=1
@@ -1394,7 +1394,7 @@
       END SUBROUTINE atm2ocn_coupling
 # endif
 
-# ifdef SWAN_COUPLING
+# if defined SWAN_COUPLING || defined WW3_COUPLING
       SUBROUTINE atm2wav_coupling (grid, ia, iw)
 !
 !=======================================================================
@@ -1849,7 +1849,7 @@
       END SUBROUTINE atmfocn_coupling
 # endif
 
-# ifdef SWAN_COUPLING
+# if defined SWAN_COUPLING || defined WW3_COUPLING
       SUBROUTINE atmfwav_coupling (grid, ia, iw)
 !
 !=======================================================================
@@ -2125,7 +2125,7 @@
           CALL AttrVect_clean (AttrVect_O(ia,io)%ocn2atm_AV)
         END DO
 # endif
-# ifdef SWAN_COUPLING
+# if defined SWAN_COUPLING || defined WW3_COUPLING
         DO iw=1,Nwav_grids
           CALL AttrVect_clean (AttrVect_W(ia,iw)%atm2wav_AV)
           CALL AttrVect_clean (AttrVect_W(ia,iw)%wav2atm_AV)

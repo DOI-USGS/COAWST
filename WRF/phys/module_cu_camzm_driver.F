@@ -263,7 +263,8 @@ SUBROUTINE camzm_driver(                                      &
                             ntsnprd, & !evap outfld: net snow production in layer (kg/kg/s)
                               pdel8, & !pressure thickness of layer (between interfaces, Pa)
                               pmid8, & !pressure at layer middle (Pa)
-                                ql8, & !cloud liquid water (~units?)
+                                ql8, & !in cloud liquid water (~units?)
+                             ql8prm, & !cloud liquid water (~units?)
                                 qi8, & !cloud ice (~units?)
                                  t8, & !temperature (K)
                                 zm8, & !height above ground at mid-level (m)
@@ -426,9 +427,9 @@ SUBROUTINE camzm_driver(                                      &
            pmid8(1,kflip) = p(i,k,j)
            qh8(1,kflip,1) = max( qv(i,k,j)/(1.+qv(i,k,j)), 1e-30 ) !values of 0 cause a crash in entropy
            if( present(qc) ) then
-              ql8(1,kflip) = qc(i,k,j)/(1.+qv(i,k,j)) !Convert to moist mix ratio
+              ql8prm(1,kflip) = qc(i,k,j)/(1.+qv(i,k,j)) !Convert to moist mix ratio
            else
-              ql8(1,kflip) = 0.
+              ql8prm(1,kflip) = 0.
            end if
            if( present(qi) ) then
               qi8(1,kflip) = qi(i,k,j)/(1.+qv(i,k,j)) !Used in convtran, ditto for conversion
@@ -541,7 +542,7 @@ SUBROUTINE camzm_driver(                                      &
            !Convert temperature to potential temperature and
            !specific humidity to water vapor mixing ratio
            rthcuten(i,k,j) = zmdt(i,k,j)/pi_phy(i,k,j)
-           rqvcuten(i,k,j) = zmdq(i,k,j)/(1._r8 - zmdq(i,k,j))
+           rqvcuten(i,k,j) = zmdq(i,k,j)*(1._r8 + qv(i,k,j))**2
 
            t8(1,kflip)    = t8(1,kflip) + zmdt(i,k,j)*cudts   !PMA
            qh8(1,kflip,1) = qh8(1,kflip,1) + zmdq(i,k,j)*cudts   !PMA
@@ -579,7 +580,7 @@ SUBROUTINE camzm_driver(                                      &
            preccdzm(i,j)   = prec(1)       !Rain rate from just deep
            precz(i,j)      = prec(1)       !Rain rate for total convection (just deep right now)
            pratec(i,j)     = prec(1)*1e3   !Rain rate used in WRF for accumulation (mm/s)
-           raincv(i,j)     = pratec(i,j)*cudts !Rain amount for time step returned back to WRF   !PMA
+           raincv(i,j)     = pratec(i,j)*dt !Rain amount for dynamic time step returned back to WRF   !wig: fixed wrong timestep usage 3-Jun-2016
         end do
 
         !BSINGH - storing quantities at interfaces
@@ -602,7 +603,7 @@ SUBROUTINE camzm_driver(                                      &
            rthcuten(i,k,j) = rthcuten(i,k,j) + &
                              evaptzm(i,k,j)/pi_phy(i,k,j)
            rqvcuten(i,k,j) = rqvcuten(i,k,j) + &
-                             evapqzm(i,k,j)/(1. - qv(i,k,j))
+                             evapqzm(i,k,j)*(1. + qv(i,k,j))**2
 
            t8(1,kflip)    = t8(1,kflip) + evaptzm(i,k,j)*cudts    !PMA
            qh8(1,kflip,1) = qh8(1,kflip,1) + evapqzm(i,k,j)*cudts !PMA
@@ -683,7 +684,7 @@ SUBROUTINE camzm_driver(                                      &
            kflip = kte-k+1
 
            cloud(1,kflip,1) = qh8(1,kflip,1)  !We can either use moist mix ratios, as is
-           cloud(1,kflip,2) = ql8(1,kflip)    !done here, or else use dry mix ratios, send
+           cloud(1,kflip,2) = ql8prm(1,kflip)    !done here, or else use dry mix ratios, send
            cloud(1,kflip,3) = qi8(1,kflip)    !in appropriate dpdry values, and return the
                                               !approp. response from cnst_get_type_byind
         end do
@@ -728,16 +729,16 @@ SUBROUTINE camzm_driver(                                      &
 
            !Convert cloud tendencies from wet to dry mix ratios
            if( present(rqccuten) ) then
-              rqccuten(i,k,j) = (cloudtnd(1,kflip,2)+qcten_det(1,kflip))/(1. - qv(i,k,j))
+              rqccuten(i,k,j) = (cloudtnd(1,kflip,2)+qcten_det(1,kflip))*(1. + qv(i,k,j))
            end if
            if( present(rqicuten) ) then
-              rqicuten(i,k,j) = (cloudtnd(1,kflip,3)+qiten_det(1,kflip))/(1. - qv(i,k,j))
+              rqicuten(i,k,j) = (cloudtnd(1,kflip,3)+qiten_det(1,kflip))*(1. + qv(i,k,j))
            end if
            if( present(rqcncuten) ) then
-              rqcncuten(i,k,j) = qcnten_det(1,kflip)/(1. - qv(i,k,j)) !BSINGH - Added the denominator following qiten_det
+              rqcncuten(i,k,j) = qcnten_det(1,kflip)*(1. + qv(i,k,j)) !BSINGH - Added the denominator following qiten_det
            end if
            if( present(rqincuten) ) then
-              rqincuten(i,k,j) = qinten_det(1,kflip)/(1. - qv(i,k,j)) !BSINGH - Added the denominator following qiten_det
+              rqincuten(i,k,j) = qinten_det(1,kflip)*(1. + qv(i,k,j)) !BSINGH - Added the denominator following qiten_det
            end if
            !Variables required by zm_conv_tend_2 call
            dp3d(i,k,j) = dp(1,kflip,lchnk)

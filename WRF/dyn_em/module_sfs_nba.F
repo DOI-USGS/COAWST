@@ -2,7 +2,7 @@
 
 !==============================================================================
 !
-! © 2009. Lawrence Livermore National Security, LLC. All rights reserved.
+! Copyright 2009. Lawrence Livermore National Security, LLC. All rights reserved.
 ! This work was produced at the Lawrence Livermore National Laboratory (LLNL) under
 ! contract no. DE-AC52-07NA27344 (Contract 44) between the U.S. Department of Energy (DOE)
 ! and Lawrence Livermore National Security, LLC (LLNS) for the operation of LLNL. Copyright
@@ -71,7 +71,7 @@ SUBROUTINE calc_mij_constants( )
 
   cs = ( ( 8.0*( 1.0+cb ) )/( 27.0*pi**2 ) )**0.5
   c1 = ( ( 960.0**0.5 )*cb )/( 7.0*( 1.0+cb )*sk )
-  c2 = c1
+  c2 = -c1
   ce = ( ( 8.0*pi/27.0 )**( 1.0/3.0 ) )*cs**( 4.0/3.0 )
   c3 = ( ( 27.0/( 8.0*pi ) )**( 1.0/3.0 ) )*cs**( 2.0/3.0 )
 

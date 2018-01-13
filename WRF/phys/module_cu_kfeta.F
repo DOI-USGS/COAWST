@@ -15,7 +15,7 @@ MODULE module_cu_kfeta
 !
 !--------------------------------------------------------------------
 ! Lookup table variables:
-      INTEGER, PARAMETER :: KFNT=250,KFNP=220
+      INTEGER, PARAMETER, PRIVATE :: KFNT=250,KFNP=220!wig, 24-Aug-2006: added private to prevent CuP conflicts !BSINGH - For WRFCuP scheme
       REAL, DIMENSION(KFNT,KFNP),PRIVATE, SAVE :: TTAB,QSTAB
       REAL, DIMENSION(KFNP),PRIVATE, SAVE :: THE0K
       REAL, DIMENSION(200),PRIVATE, SAVE :: ALU
@@ -38,6 +38,7 @@ CONTAINS
              ,EP2,SVP1,SVP2,SVP3,SVPT0                       &
              ,STEPCU,CU_ACT_FLAG,warm_rain,CUTOP,CUBOT       &
              ,QV                                             &
+             ,shall                                          & !BSINGH - For WRFCuP scheme added "shall"
             ! optionals
              ,F_QV    ,F_QC    ,F_QR    ,F_QI    ,F_QS       &
              ,RTHCUTEN,RQVCUTEN,RQCCUTEN,RQRCUTEN            &
@@ -45,6 +46,10 @@ CONTAINS
 !ckay
              ,cldfra_dp_KF,cldfra_sh_KF                      &
              ,qc_KF,qi_KF                                    &
+!kf_edrates
+             ,UDR_KF,DDR_KF                                  &
+             ,UER_KF,DER_KF                                  &
+             ,TIMEC_KF,KF_EDRATES                            &
                                                              )
 !
 !-------------------------------------------------------------
@@ -95,6 +100,9 @@ CONTAINS
    REAL,    DIMENSION( ims:ime , jms:jme ),                  &
             INTENT(INOUT) ::                            NCA
 
+   REAL,    DIMENSION( ims:ime , jms:jme ), OPTIONAL,        &
+        INTENT(INOUT) ::                            SHALL !BSINGH -  For WRFCuP scheme
+   
    REAL, DIMENSION( ims:ime , jms:jme ),                     &
           INTENT(OUT) ::                              CUBOT, &
                                                       CUTOP    
@@ -138,6 +146,20 @@ CONTAINS
                                                       qc_KF, &
                                                       qi_KF
 
+!kf_edrates
+   REAL,  DIMENSION( ims:ime , kms:kme , jms:jme )         , &
+          INTENT(INOUT) ::                         &
+                                                     UDR_KF, &
+                                                     DDR_KF, &
+                                                     UER_KF, &
+                                                     DER_KF
+
+   REAL,  DIMENSION( ims:ime , jms:jme )                   , &
+          INTENT(INOUT) ::                         &
+                                                   TIMEC_KF
+
+   INTEGER, INTENT(IN) ::              KF_EDRATES
+
 ! LOCAL VARS
 
    LOGICAL :: flag_qr, flag_qi, flag_qs
@@ -176,6 +198,7 @@ CONTAINS
    integer :: ibegh,iendh,jbegh,jendh
    integer :: istart,iend,jstart,jend
    INTEGER :: i,j,k,NTST
+   INTEGER :: ishall !BSINGH -  For WRFCuP Scheme
    REAL    :: lastdt = -1.0
    REAL    :: W0AVGfctr, W0fctr, W0den
    
@@ -401,6 +424,16 @@ CONTAINS
                qc_KF(I,k,J)=0.
                qi_KF(I,k,J)=0.
             ENDDO
+!kf_edrates
+            IF (KF_EDRATES == 1) THEN
+               DO k=kts,kte
+                  UDR_KF(I,k,J)=0.
+                  DDR_KF(I,k,J)=0.
+                  UER_KF(I,k,J)=0.
+                  DER_KF(I,k,J)=0.
+               ENDDO
+               TIMEC_KF(I,J)=0.
+            ENDIF
             RAINCV(I,J)=0.
             CUTOP(I,J)=KTS
             CUBOT(I,J)=KTE+1
@@ -435,13 +468,20 @@ CONTAINS
                  DQDT,DQIDT,DQCDT,DQRDT,DQSDT,DTDT, &
                  RAINCV,PRATEC,NCA,                 &
                  flag_QI,flag_QS,warm_rain,         &
-                 CUTOP,CUBOT,CUDT,                  &
+                 CUTOP,CUBOT,ishall,CUDT,           & !BSINGH -  Added ishall as arg for WRFCuP
                  ids,ide, jds,jde, kds,kde,         &
                  ims,ime, jms,jme, kms,kme,         &
                  its,ite, jts,jte, kts,kte,         &
 !ckay
                  cldfra_dp_KF,cldfra_sh_KF,         &
-                 qc_KF,qi_KF                        )
+                 qc_KF,qi_KF,                       &
+!kf_edrates
+                 UDR_KF,DDR_KF,                     &
+                 UER_KF,DER_KF,                     &
+                 TIMEC_KF,KF_EDRATES                )
+            if(present(shall))shall(i,j) = ishall !,BSINGH -  For WRFCuP scheme
+
+
             IF(PRESENT(rthcuten).AND.PRESENT(rqvcuten)) THEN
               DO K=kts,kte
                  RTHCUTEN(I,K,J)=DTDT(K)/pi(I,K,J)
@@ -500,13 +540,17 @@ CONTAINS
                       DQDT,DQIDT,DQCDT,DQRDT,DQSDT,DTDT,   &
                       RAINCV,PRATEC,NCA,                   &
                       F_QI,F_QS,warm_rain,                 &
-                      CUTOP,CUBOT,CUDT,                    &
+                      CUTOP,CUBOT,ishall,CUDT,             & !BSINGH - For WRFCuP scheme
                       ids,ide, jds,jde, kds,kde,           &
                       ims,ime, jms,jme, kms,kme,           &
                       its,ite, jts,jte, kts,kte,           &
 !ckay
                       cldfra_dp_KF,cldfra_sh_KF,           &
-                      qc_KF,qi_KF                          )
+                      qc_KF,qi_KF,                         &
+!kf_edrates
+                      UDR_KF,DDR_KF,                       &
+                      UER_KF,DER_KF,                       &
+                      TIMEC_KF,KF_EDRATES                  )
 !-----------------------------------------------------------
 !***** The KF scheme that is currently used in experimental runs of EMCs 
 !***** Eta model....jsk 8/00
@@ -543,6 +587,7 @@ CONTAINS
       REAL,  INTENT(IN   ) :: EP2,SVP1,SVP2,SVP3,SVPT0
 
 !
+      INTEGER, INTENT(INOUT) :: ISHALL
       REAL, DIMENSION( kts:kte ), INTENT(INOUT) ::         &
                                                      DQDT, &
                                                     DQIDT, &
@@ -560,6 +605,17 @@ CONTAINS
                                              cldfra_sh_KF, &
                                                     qc_KF, &
                                                     qi_KF
+!kf_edrates
+      REAL, DIMENSION( ims:ime , kms:kme , jms:jme ),      &
+            INTENT(INOUT) ::       UDR_KF,       &
+                                             DDR_KF,       &
+                                             UER_KF,       &
+                                             DER_KF
+
+      REAL, DIMENSION( ims:ime , jms:jme ),                &
+            INTENT(INOUT) ::     TIMEC_KF
+
+      INTEGER, INTENT(IN) ::         KF_EDRATES
 
       REAL, DIMENSION( ims:ime , jms:jme ),                &
             INTENT(INOUT) ::                       RAINCV
@@ -647,7 +703,7 @@ CONTAINS
                  LTOPM1,LVF,KSTART,KMIN,LFS,               &
                  ND,NIC,LDB,LDT,ND1,NDK,                   &
                  NM,LMAX,NCOUNT,NOITR,                     &
-                 NSTEP,NTC,NCHM,ISHALL,NSHALL
+                 NSTEP,NTC,NCHM,NSHALL
       LOGICAL :: IPRNT
       REAL :: u00,qslcl,rhlcl,dqssdt    !jfb
       CHARACTER*1024 message
@@ -779,6 +835,11 @@ usl:   DO
                FBFRC=1.
                CYCLE usl
              ELSE
+                !BSINGH - For WRFCuP scheme
+                ! wig, 29-Aug-2006: I think this is where no convecion occurs. So, force
+                ! ishall to a flag value to indicate this for accounting purposes.
+                ishall = 2
+                !BSINGH -ENDS                
                RETURN
              ENDIF
            ENDIF      
@@ -814,6 +875,10 @@ usl:   DO
              END DO    
            ENDIF
            IF(DPTHMX.LT.DPMIN)THEN 
+              !BSINGH - For WRFCuP scheme
+              ! wig, 29-Aug-2006: Indicate no convection occurred in ishall.
+              ishall = 2
+              !BSINGH -ENDS
              RETURN
            ENDIF
            KPBL=LC+NLAYRS-1   
@@ -880,7 +945,15 @@ usl:   DO
          KLCL = NK
          IF ( ZLCL.LE.Z0(NK) )  EXIT
      END DO
-     IF ( ZLCL.GT.Z0(KL) )  RETURN
+     IF ( ZLCL.GT.Z0(KL) ) then
+        !BSINGH - For WRFCuP scheme 
+        !BSINGH - Improvised based on the following reason
+        !Before every "RETURN" statement assign ishall=2
+        ! wig, 29-Aug-2006: Indicate no convection occurred in ishall.
+        ishall = 2
+        !BSINGH -ENDS
+        RETURN
+     endif
 
           K=KLCL-1
 ! calculate DLP using Z instead of log(P)
@@ -2115,6 +2188,12 @@ iter:     DO NCOUNT=1,10
           IF(FABE.GT.1. .and. ISHALL.EQ.0)THEN
 !          WRITE(98,*)'UPDRAFT/DOWNDRAFT COUPLET INCREASES CAPE AT THIS
 !     *GRID POINT; NO CONVECTION ALLOWED!'
+             !BSINGH - For WRFCuP scheme
+             !BSINGH - Improvised based on the following reason
+             !Before every "RETURN" statement assign ishall=2
+             ! wig, 29-Aug-2006: Indicate no convection occurred in ishall.
+             ishall = 2
+             !BSINGH -ENDS
             RETURN  
           ENDIF
           IF(NCOUNT.NE.1)THEN
@@ -2169,6 +2248,13 @@ iter:     DO NCOUNT=1,10
 !...IF AINC BECOMES VERY SMALL, EFFECTS OF CONVECTION ! JSK MODS
 !...WILL BE MINIMAL SO JUST IGNORE IT...              ! JSK MODS
             IF(AINC.LT.0.05)then
+               !BSINGH - For WRFCuP scheme
+               !BSINGH - Improvised based on the following reason
+               !Before every "RETURN" statement assign ishall=2
+               ! wig, 29-Aug-2006: Indicate no convection occurred in ishall.
+               ishall = 2
+               !BSINGH -ENDS
+
               RETURN                          ! JSK MODS
             ENDIF
 !            AINC=AMAX1(AINC,0.05)                        ! JSK MODS
@@ -2209,6 +2295,17 @@ iter:     DO NCOUNT=1,10
             xcldfra = amax1(0.01,xcldfra)
             cldfra_dp_KF(I,NK,J) = amin1(0.6,xcldfra)
           ENDDO
+        ENDIF
+
+!kf_edrates
+!Save up/down entrainment/detrainment rates as 3D variables
+        IF (KF_EDRATES == 1) THEN
+           DO NK=1,LTOP
+             UDR_KF(I,NK,J)=UDR(NK)
+             DDR_KF(I,NK,J)=DDR(NK)
+             UER_KF(I,NK,J)=UER(NK)
+             DER_KF(I,NK,J)=DER(NK)
+           ENDDO
         ENDIF
 !     
 !...COMPUTE HYDROMETEOR TENDENCIES AS IS DONE FOR T, QV...
@@ -2283,6 +2380,12 @@ iter:     DO NCOUNT=1,10
           QRG(NK)=QRPA(NK)
           QSG(NK)=QSPA(NK)
         ENDDO   
+
+!kf_edrates
+!Save convective timescale (TIMEC) as 2D variable
+        IF (KF_EDRATES == 1) THEN
+           TIMEC_KF(I,J)=TIMEC
+        ENDIF
 !
 !...CLEAN THINGS UP, CALCULATE CONVECTIVE FEEDBACK TENDENCIES FOR THIS
 !...GRID POINT...

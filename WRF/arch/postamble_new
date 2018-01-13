@@ -14,6 +14,7 @@ ARCHFLAGS       =    $(COREDEFS) -DIWORDSIZE=$(IWORDSIZE) -DDWORDSIZE=$(DWORDSIZ
                       CONFIGURE_GRIB2_FLAG \
                       CONFIGURE_RTTOV_FLAG \
                       CONFIGURE_CRTM_FLAG \
+                      CONFIGURE_HDF5_FLAG \
                       CONFIGURE_CLOUDCV_FLAG \
                       CONFIGURE_4DVAR_FLAG \
                       CONFIGURE_WAVELET_FLAG \
@@ -21,6 +22,7 @@ ARCHFLAGS       =    $(COREDEFS) -DIWORDSIZE=$(IWORDSIZE) -DDWORDSIZE=$(DWORDSIZ
                       -DUSE_ALLOCATABLES \
                       -DGRIB1 \
                       -DINTIO \
+                      -DKEEP_INT_AROUND \
                       -DLIMIT_ARGS \
                       -DCONFIG_BUF_LEN=$(CONFIG_BUF_LEN) \
                       -DMAX_DOMAINS_F=$(MAX_DOMAINS) \
@@ -59,7 +61,7 @@ CC_TOOLS_CFLAGS = CONFIGURE_NMM_CORE
 #NOWIN                      $(WRF_SRC_ROOT_DIR)/frame/pack_utils.o 
 
 #NOWIN LIB_EXTERNAL    = \
-#NOWIN                      CONFIGURE_NETCDF_LIB_PATH CONFIGURE_PNETCDF_LIB_PATH CONFIGURE_GRIB2_LIB CONFIGURE_ATMOCN_LIB
+#NOWIN                      CONFIGURE_NETCDF_LIB_PATH CONFIGURE_PNETCDF_LIB_PATH CONFIGURE_GRIB2_LIB CONFIGURE_ATMOCN_LIB CONFIGURE_HDF5_LIB_PATH
 
 LIB             =    $(LIB_BUNDLED) $(LIB_EXTERNAL) $(LIB_LOCAL) $(LIB_WRF_HYDRO)
 LIB             +=   -L$(MCT_LIBDIR) -lmct -lmpeu
@@ -71,6 +73,9 @@ CPPFLAGS       +=    -D'PROJECT_HEADER="$(MY_HEADER_DIR)/$(HEADER)"'
 CPPFLAGS       +=    -D'GLOBAL_DEFS="$(GLOBAL_DEFS_FILE)"'
 CPPFLAGS       +=    $(ARCHFLAGS) $(ENVCOMPDEFS) -I$(LIBINCLUDE) $(TRADFLAG) CONFIGURE_COMMS_INCLUDE
 NETCDFPATH      =    CONFIGURE_NETCDF_PATH
+HDF5PATH        =    CONFIGURE_HDF5_PATH
+WRFPLUSPATH     =    CONFIGURE_WRFPLUS_PATH
+RTTOVPATH       =    CONFIGURE_RTTOV_PATH
 PNETCDFPATH     =    CONFIGURE_PNETCDF_PATH
 
 bundled:  io_only CONFIGURE_ATMOCN
@@ -132,7 +137,7 @@ wrfio_grib2 :
 
 wrfio_int : 
 	( cd $(WRF_SRC_ROOT_DIR)/external/io_int ; \
-          make $(J) CC="$(CC)" RM="$(RM)" RANLIB="$(RANLIB)" CPP="$(CPP)" \
+          make $(J) CC="$(CC)" CFLAGS_LOCAL="$(CFLAGS_LOCAL)" RM="$(RM)" RANLIB="$(RANLIB)" CPP="$(CPP)" \
           FC="$(FC) $(PROMOTION) $(FCDEBUG) $(FCBASEOPTS) $(OMP)" FGREP="$(FGREP)" \
           TRADFLAG="$(TRADFLAG)" AR="$(AR)" ARFLAGS="$(ARFLAGS)" ARCHFLAGS="$(ARCHFLAGS)" all )
 
@@ -182,15 +187,19 @@ wrfio_esmf :
 
 .F.i:
 	$(RM) $@
-	$(CPP) -I$(WRF_SRC_ROOT_DIR)/inc $(CPPFLAGS) $*.F > $@
+	sed -e "s/grid%mu/gridmu/g" -e "s/grid%Mu/gridMu/g" -e "s/^\!.*'.*//" -e "s/^ *\!.*'.*//" $*.F > $*.G
+	$(CPP) -I$(WRF_SRC_ROOT_DIR)/inc $(CPPFLAGS) $*.G > $*.H
+	sed -e "s/gridmu/grid%mu/g" -e "s/gridMu/grid%Mu/g" $*.H > $*.i
 	mv $*.i $(DEVTOP)/pick/$*.f90
 	cp $*.F $(DEVTOP)/pick
 
 .F.o:
 	$(RM) $@
-	$(CPP) -I$(WRF_SRC_ROOT_DIR)/inc $(CPPFLAGS) $(OMPCPP) $*.F  > $*.bb
+	sed -e "s/grid%mu/gridmu/g" -e "s/grid%Mu/gridMu/g" -e "s/^\!.*'.*//" -e "s/^ *\!.*'.*//" $*.F > $*.G
+	$(CPP) -I$(WRF_SRC_ROOT_DIR)/inc $(CPPFLAGS) $(OMPCPP) $*.G  > $*.H
+	sed -e "s/gridmu/grid%mu/g" -e "s/gridMu/grid%Mu/g" $*.H > $*.bb
 	$(SED_FTN) $*.bb | $(CPP) $(TRADFLAG) > $*.f90
-	$(RM) $*.b $*.bb
+	$(RM) $*.G $*.H $*.bb
 	@ if echo $(ARCHFLAGS) | $(FGREP) 'DVAR4D'; then \
           echo COMPILING $*.F for 4DVAR ; \
           $(WRF_SRC_ROOT_DIR)/var/build/da_name_space.pl $*.f90 > $*.f90.tmp ; \
@@ -201,9 +210,11 @@ wrfio_esmf :
 
 .F.f90:
 	$(RM) $@
-	$(SED_FTN) $*.F > $*.b 
-	$(CPP) -I$(WRF_SRC_ROOT_DIR)/inc $(CPPFLAGS) $*.b  > $@
-	$(RM) $*.b
+	sed -e "s/grid%mu/gridmu/g" -e "s/grid%Mu/gridMu/g" -e "s/^\!.*'.*//" -e "s/^ *\!.*'.*//" $*.F > $*.G
+	$(SED_FTN) $*.G > $*.H 
+	$(CPP) -I$(WRF_SRC_ROOT_DIR)/inc $(CPPFLAGS) $*.H  > $*.I
+	sed -e "s/gridmu/grid%mu/g" -e "s/gridMu/grid%Mu/g" $*.I > $@
+	$(RM) $*.G $*.H $*.I
 
 .f90.o:
 	$(RM) $@

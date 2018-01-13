@@ -1,5 +1,5 @@
 !------------------------------------------------------------------
-!$Id: wrf_io.F90 7685 2014-10-10 01:58:54Z huangwei@ucar.edu $
+!$Id$
 !------------------------------------------------------------------
 
 subroutine ext_pio_open_for_read(DatasetName, grid, SysDepInfo, DataHandle, Status)

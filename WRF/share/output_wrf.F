@@ -12,8 +12,8 @@
     USE module_model_constants
     USE module_utility
     IMPLICIT NONE
-#include <wrf_io_flags.h>
-#include <wrf_status_codes.h>
+#include "wrf_io_flags.h"
+#include "wrf_status_codes.h"
     TYPE(domain) :: grid
     TYPE(grid_config_rec_type),  INTENT(INOUT)    :: config_flags
     INTEGER, INTENT(IN) :: fid, switch
@@ -39,9 +39,9 @@
     INTEGER km_opt, diff_opt, damp_opt,  &
             mp_physics, ra_lw_physics, ra_sw_physics, sf_sfclay_physics, &
             sf_surface_physics, bl_pbl_physics, cu_physics, hypsometric_opt, sf_lake_physics, &
-            use_theta_m, use_maxw_level, use_trop_level
+            use_theta_m, use_maxw_level, use_trop_level,hybrid_opt, gwd_opt
     INTEGER swint_opt, aer_type,aer_aod550_opt,aer_angexp_opt,aer_ssa_opt,aer_asy_opt, aer_opt
-    REAL    aer_aod550_val,aer_angexp_val,aer_ssa_val,aer_asy_val
+    REAL    aer_aod550_val,aer_angexp_val,aer_ssa_val,aer_asy_val,etac
     REAL    khdif, kvdif, swrad_scat, dampcoef,radt,bldt,cudt
     REAL    dt, adapt_dt_start, adapt_dt_min, adapt_dt_max
     INTEGER sf_urban_physics, w_damping, smooth_option, feedback, surface_input_source, sst_update
@@ -81,7 +81,7 @@
 
     CHARACTER*80  dname, memord
     CHARACTER*256 message
-    CHARACTER*80  fname
+    CHARACTER*256  fname
     CHARACTER*80  char_junk
     CHARACTER(LEN=256) :: MMINLU
     INTEGER    ibuf(1)
@@ -153,8 +153,8 @@
     call nl_get_aer_asy_opt        ( grid%id,  aer_asy_opt        )
     call nl_get_aer_aod550_val     ( grid%id,  aer_aod550_val     )
     call nl_get_aer_angexp_val     ( grid%id,  aer_angexp_val     )
-    call nl_get_aer_ssa_opt        ( grid%id,  aer_ssa_val        )
-    call nl_get_aer_asy_opt        ( grid%id,  aer_asy_val        )
+    call nl_get_aer_ssa_val        ( grid%id,  aer_ssa_val        )
+    call nl_get_aer_asy_val        ( grid%id,  aer_asy_val        )
     call nl_get_sf_lake_physics    ( grid%id,  sf_lake_physics    )
 
 #if (EM_CORE == 1)
@@ -162,6 +162,7 @@
     adapt_dt_min = grid%min_time_step
     adapt_dt_max = grid%max_time_step
     adapt_dt_start = grid%starting_time_step
+    call nl_get_gwd_opt            ( grid%id,  gwd_opt            )
 #endif
 
 ! add nml variables in 2.2
@@ -194,6 +195,14 @@
     CALL nl_get_ysu_topdown_pblmix  ( grid%id , ysu_topdown_pblmix )
     CALL nl_get_grav_settling  ( grid%id , grav_settling )
 
+#if ( HYBRID_COORD==1 )
+    CALL nl_get_hybrid_opt ( 1       , hybrid_opt )
+    CALL nl_get_etac       ( 1       , etac )
+    IF ( hybrid_opt .EQ. 0 ) THEN
+       etac = 0.
+    END IF
+#endif
+
     IF ( grid_fdda == 1 ) THEN
     CALL nl_get_fgdt       ( grid%id , fgdt )
     CALL nl_get_guv        ( grid%id , guv )
@@ -212,7 +221,7 @@
     CALL nl_get_dtramp_min ( 1       , dtramp_min )
     ENDIF
 
-    IF ( grid_sfdda == 1 ) THEN
+    IF ( grid_sfdda >= 1 ) THEN
     CALL nl_get_guv_sfc      ( grid%id , guv_sfc )
     CALL nl_get_gt_sfc       ( grid%id , gt_sfc )
     CALL nl_get_gq_sfc       ( grid%id , gq_sfc )
@@ -333,7 +342,7 @@
     CALL wrf_put_dom_ti_char ( fid , 'START_DATE', TRIM(start_date) , ierr )
     IF ( switch .EQ. input_only) THEN
        CALL wrf_put_dom_ti_char ( fid , 'SIMULATION_START_DATE', TRIM(start_date) , ierr )
-#ifdef HWRF
+#if ( HWRF == 1 )
     ELSE
 #else
     ELSE IF ( ( switch .EQ. restart_only ) .OR. ( switch .EQ. history_only ) ) THEN
@@ -648,10 +657,13 @@ endif
          CALL wrf_put_dom_ti_integer ( fid, 'USE_MAXW_LEVEL', use_maxw_level , 1 , ierr )
          CALL wrf_put_dom_ti_integer ( fid, 'USE_TROP_LEVEL', use_trop_level , 1 , ierr )
       END IF
+    ibuf(1) = gwd_opt
+    CALL wrf_put_dom_ti_integer ( fid, 'GWD_OPT' ,  ibuf , 1 , ierr )
+    CALL wrf_put_dom_ti_integer ( fid, 'SF_URBAN_PHYSICS', sf_urban_physics , 1 , ierr )
+    CALL wrf_put_dom_ti_integer ( fid, 'SF_OCEAN_PHYSICS', config_flags%sf_ocean_physics     , 1 , ierr ) 
 #endif
 
       IF ( switch .EQ. history_only ) THEN
-      CALL wrf_put_dom_ti_integer ( fid, 'SF_URBAN_PHYSICS', sf_urban_physics , 1 , ierr )
       CALL wrf_put_dom_ti_integer ( fid, 'SHCU_PHYSICS',     config_flags%shcu_physics , 1 , ierr ) 
       CALL wrf_put_dom_ti_integer ( fid, 'MFSHCONV',         config_flags%mfshconv , 1 , ierr ) 
       CALL wrf_put_dom_ti_integer ( fid, 'FEEDBACK', feedback , 1 , ierr )
@@ -711,7 +723,7 @@ endif
         CALL wrf_put_dom_ti_real    ( fid, 'DTRAMP_MIN', dtramp_min , 1 , ierr )
       ENDIF
 
-      IF ( grid_sfdda == 1 ) THEN
+      IF ( grid_sfdda >= 1 ) THEN
         CALL wrf_put_dom_ti_real    ( fid, 'GUV_SFC', guv_sfc , 1 , ierr )
         CALL wrf_put_dom_ti_real    ( fid, 'GT_SFC', gt_sfc , 1 , ierr )
         CALL wrf_put_dom_ti_real    ( fid, 'GQ_SFC', gq_sfc , 1 , ierr )
@@ -737,7 +749,6 @@ endif
       CALL wrf_put_dom_ti_real      ( fid, 'BUCKET_MM',   config_flags%bucket_mm   , 1 , ierr ) 
       CALL wrf_put_dom_ti_real      ( fid, 'BUCKET_J',    config_flags%bucket_J    , 1 , ierr ) 
       CALL wrf_put_dom_ti_real      ( fid, 'PREC_ACC_DT', config_flags%prec_acc_dt , 1 , ierr ) 
-      CALL wrf_put_dom_ti_integer   ( fid, 'SF_OCEAN_PHYSICS',     config_flags%sf_ocean_physics     , 1 , ierr ) 
       CALL wrf_put_dom_ti_integer   ( fid, 'ISFTCFLX',    config_flags%isftcflx    , 1 , ierr ) 
       CALL wrf_put_dom_ti_integer   ( fid, 'ISHALLOW',    config_flags%ishallow    , 1 , ierr ) 
       CALL wrf_put_dom_ti_integer   ( fid, 'ISFFLX',      config_flags%isfflx      , 1 , ierr ) 
@@ -763,6 +774,8 @@ endif
         CALL wrf_put_dom_ti_integer   ( fid, 'OPT_SNF',     config_flags%opt_snf     , 1 , ierr )
         CALL wrf_put_dom_ti_integer   ( fid, 'OPT_TBOT',    config_flags%opt_tbot    , 1 , ierr )
         CALL wrf_put_dom_ti_integer   ( fid, 'OPT_STC',     config_flags%opt_stc     , 1 , ierr )
+        CALL wrf_put_dom_ti_integer   ( fid, 'OPT_GLA',     config_flags%opt_gla     , 1 , ierr )
+        CALL wrf_put_dom_ti_integer   ( fid, 'OPT_RSF',     config_flags%opt_rsf     , 1 , ierr )
       ENDIF
 
 
@@ -914,7 +927,7 @@ endif
     CALL wrf_put_dom_ti_integer ( fid , 'ISOILWATER' ,  config_flags%isoilwater , 1 , ierr )
 ! added these fields for restarting of moving nests, JM
 !For HWRF: zhang 
-#if defined (HWRF)
+#if ( HWRF == 1 )
     CALL wrf_put_dom_ti_integer ( fid , 'I_PARENT_START' ,  grid%i_parent_start  , 1 , ierr )
     CALL wrf_put_dom_ti_integer ( fid , 'J_PARENT_START' ,  grid%j_parent_start  , 1 , ierr )
 #elif ! defined(EM_CORE)
@@ -929,6 +942,18 @@ endif
         CALL wrf_put_dom_td_char ( fid , 'THISBDYTIME' ,  current_date(1:19), current_date(1:19), ierr )
         CALL wrf_put_dom_td_char ( fid , 'NEXTBDYTIME' ,  current_date(1:19), next_datestr(1:19), ierr )
     ENDIF
+
+    !  Add the hybrid vertical coordinate metadata.
+
+#if (EM_CORE == 1)
+# if ! ( HYBRID_COORD==1 )
+    CALL wrf_put_dom_ti_integer ( fid , 'HYBRID_OPT',          -1  , 1 , ierr )
+    CALL wrf_put_dom_ti_real    ( fid , 'ETAC'      ,           0. , 1 , ierr )
+# else
+    CALL wrf_put_dom_ti_integer ( fid , 'HYBRID_OPT',  hybrid_opt  , 1 , ierr )
+    CALL wrf_put_dom_ti_real    ( fid , 'ETAC'      ,  etac        , 1 , ierr )
+# endif
+#endif
 
     ! added grib2-specific metadata:  Todd Hutchinson 8/21/2005
     IF ( use_package( io_form ) == IO_GRIB2 ) THEN
@@ -1511,7 +1536,7 @@ endif
 
        IF ( switch .EQ. history_only .AND. config_flags%output_ready_flag ) THEN
           WRITE ( wrf_err_message , FMT='(I2.2)' ) grid%id
-          CALL get_nio_tasks_in_group ( nio_tasks_per_group )
+          CALL get_nio_tasks_in_group ( grid%id, nio_tasks_per_group )
           IF ( nio_tasks_per_group .EQ. 0 ) THEN
              OPEN ( UNIT   = 99 , &
                     FILE   = 'wrfoutReady_d' // wrf_err_message(1:2) // '_' // TRIM(current_date) , &

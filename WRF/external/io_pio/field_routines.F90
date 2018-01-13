@@ -1,5 +1,5 @@
 !------------------------------------------------------------------
-!$Id: field_routines.F90 7668 2014-09-29 16:48:30Z huangwei@ucar.edu $
+!$Id$
 !------------------------------------------------------------------
 
 subroutine ext_pio_RealFieldIO(whole,IO,DH,Starts,Counts,fldsize,datasize,Data,Status)

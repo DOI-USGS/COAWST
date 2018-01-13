@@ -17,7 +17,7 @@ contains
                   rqvblten,rqcblten,rqiblten,flag_qi,                          &
                   cp,g,rovcp,rd,rovg,ep1,ep2,karman,xlv,rv,                    &
                   dz8w,psfc,                                                   &
-                  znu,znw,mut,p_top,                                           &
+                  znu,znw,p_top,                                               &
                   znt,ust,hpbl,psim,psih,                                      &
                   xland,hfx,qfx,wspd,br,                                       &
                   dt,kpbl2d,                                                   &
@@ -192,9 +192,6 @@ contains
              intent(in   )   ::                                           znu, &
                                                                           znw
 !
-   real,     dimension( ims:ime, jms:jme )                                   , &
-             optional                                                        , &
-             intent(in   )   ::                                           mut
 !
    real,     optional, intent(in   )   ::                               p_top
 !
@@ -217,24 +214,12 @@ contains
    qv2d(its:ite,:) = 0.0
 !
    do j = jts,jte
-     if(present(mut))then
-!
-! For ARW we will replace p and p8w with dry hydrostatic pressure
-!
-        do k = kts,kte+1
-          do i = its,ite
-             if(k.le.kte)pdh(i,k) = mut(i,j)*znu(k) + p_top
-             pdhi(i,k) = mut(i,j)*znw(k) + p_top
-          enddo
+      do k = kts,kte+1
+        do i = its,ite
+          if(k.le.kte)pdh(i,k) = p3d(i,k,j)
+          pdhi(i,k) = p3di(i,k,j)
         enddo
-      else
-        do k = kts,kte+1
-          do i = its,ite
-            if(k.le.kte)pdh(i,k) = p3d(i,k,j)
-            pdhi(i,k) = p3di(i,k,j)
-          enddo
-        enddo
-      endif
+      enddo
       do k = kts,kte
         do i = its,ite
           qv2d(i,k) = qv3d(i,k,j)
@@ -348,13 +333,17 @@ contains
 !              revised thermal, shin et al. mon. wea. rev. , songyou hong, aug 2011
 !              ==> reduce the thermal strength when z1 < 0.1 h
 !              revised prandtl number for free convection, dudhia, mar 2012
-!              ==> pr0 = 1 + bke (=0.272) when newtral, kh is reduced
+!              ==> pr0 = 1 + bke (=0.272) when neutral, kh is reduced
 !              minimum kzo = 0.01, lo = min (30m,delz), hong, mar 2012
 !              ==> weaker mixing when stable, and les resolution in vertical
-!              gz1oz0 is removed, and phim phih are ln(z1/z0)-phim,h, hong, mar 2012
+!              gz1oz0 is removed, and psim psih are ln(z1/z0)-psim,h, hong, mar 2012
 !              ==> consider thermal z0 when differs from mechanical z0
 !              a bug fix in wscale computation in stable bl, sukanta basu, jun 2012
 !              ==> wscale becomes small with height, and less mixing in stable bl
+!              revision in background diffusion (kzo), jan 2016
+!              ==> kzo = 0.1 for momentum and = 0.01 for mass to account for
+!                  internal wave mixing of large et al. (1994), songyou hong, feb 2016
+!              ==> alleviate superious excessive mixing when delz is large
 !
 !     references:
 !
@@ -366,6 +355,7 @@ contains
 !
 !-------------------------------------------------------------------------------
 !
+   real,parameter    ::  xkzminm = 0.1,xkzminh = 0.01
    real,parameter    ::  xkzmin = 0.01,xkzmax = 1000.,rimin = -100.
    real,parameter    ::  rlam = 30.,prmin = 0.25,prmax = 4.
    real,parameter    ::  brcr_ub = 0.0,brcr_sb = 0.25,cori = 1.e-4
@@ -373,7 +363,7 @@ contains
    real,parameter    ::  phifac = 8.,sfcfrac = 0.1
    real,parameter    ::  d1 = 0.02, d2 = 0.05, d3 = 0.001
    real,parameter    ::  h1 = 0.33333335, h2 = 0.6666667
-   real,parameter    ::  ckz = 0.001,zfmin = 1.e-8,aphi5 = 5.,aphi16 = 16.
+   real,parameter    ::  zfmin = 1.e-8,aphi5 = 5.,aphi16 = 16.
    real,parameter    ::  tmin=1.e-2
    real,parameter    ::  gamcrt = 3.,gamcrq = 2.e-3
    real,parameter    ::  xka = 2.4e-5
@@ -453,7 +443,8 @@ contains
                                                                           del, &
                                                                           dza, &
                                                                           dzq, &
-                                                                         xkzo, &
+                                                                        xkzom, &
+                                                                        xkzoh, &
                                                                            za
 !
    real,    dimension( its:ite )             ::                                &
@@ -536,7 +527,15 @@ contains
    real    ::  prnumfac,bfx0,hfx0,qfx0,delb,dux,dvx,                           &
                dsdzu,dsdzv,wm3,dthx,dqx,wspd10,ross,tem1,dsig,tvcon,conpr,     &
                prfac,prfac2,phim8z,radsum,tmp1,templ,rvls,temps,ent_eff,    &
-               rcldb,bruptmp,radflux
+               rcldb,bruptmp,radflux,vconvlim,vconvnew,fluxc,vconvc,vconv
+!topo-corr
+   real,    dimension( ims:ime, kms:kme )    ::                          fric, &
+                                                                       tke_ysu,&
+                                                                        el_ysu,&
+                                                                     shear_ysu,&
+                                                                     buoy_ysu
+   real,    dimension( ims:ime )             ::                       pblh_ysu,&
+                                                                      vconvfx
 !
 !-------------------------------------------------------------------------------
 !
@@ -654,7 +653,8 @@ contains
    enddo
    do k = kts,klpbl-1
      do i = its,ite
-       xkzo(i,k) = ckz*dza(i,k+1)
+       xkzom(i,k) = xkzminm
+       xkzoh(i,k) = xkzminh
      enddo
    enddo
 !
@@ -1035,12 +1035,12 @@ contains
          prnum0 = prnum0/(1.+prfac2*karman*sfcfrac)
          prnum =  1. + (prnum0-1.)*exp(prnumfac)
          xkzh(i,k) = xkzm(i,k)/prnum
+         xkzm(i,k) = xkzm(i,k)+xkzom(i,k)
+         xkzh(i,k) = xkzh(i,k)+xkzoh(i,k)
+         xkzq(i,k) = xkzq(i,k)+xkzoh(i,k)
          xkzm(i,k) = min(xkzm(i,k),xkzmax)
-         xkzm(i,k) = max(xkzm(i,k),xkzo(i,k))
          xkzh(i,k) = min(xkzh(i,k),xkzmax)
-         xkzh(i,k) = max(xkzh(i,k),xkzo(i,k))
          xkzq(i,k) = min(xkzq(i,k),xkzmax)
-         xkzq(i,k) = max(xkzq(i,k),xkzo(i,k))
        endif
      enddo
    enddo
@@ -1085,10 +1085,10 @@ contains
            xkzm(i,k) = xkzh(i,k)*prnum
          endif
 !
+         xkzm(i,k) = xkzm(i,k)+xkzom(i,k)
+         xkzh(i,k) = xkzh(i,k)+xkzoh(i,k)
          xkzm(i,k) = min(xkzm(i,k),xkzmax)
-         xkzm(i,k) = max(xkzm(i,k),xkzo(i,k))
          xkzh(i,k) = min(xkzh(i,k),xkzmax)
-         xkzh(i,k) = max(xkzh(i,k),xkzo(i,k))
          xkzml(i,k) = xkzm(i,k)
          xkzhl(i,k) = xkzh(i,k)
        endif
@@ -1125,8 +1125,8 @@ contains
        elseif(pblflg(i).and.k.ge.kpbl(i).and.entfac(i,k).lt.4.6) then
          xkzh(i,k) = -we(i)*dza(i,kpbl(i))*exp(-entfac(i,k))
          xkzh(i,k) = sqrt(xkzh(i,k)*xkzhl(i,k))
+         xkzh(i,k) = max(xkzh(i,k),xkzoh(i,k))
          xkzh(i,k) = min(xkzh(i,k),xkzmax)
-         xkzh(i,k) = max(xkzh(i,k),xkzo(i,k))
          f1(i,k+1) = thx(i,k+1)-300.
        else
          f1(i,k+1) = thx(i,k+1)-300.
@@ -1216,8 +1216,8 @@ contains
        elseif(pblflg(i).and.k.ge.kpbl(i).and.entfac(i,k).lt.4.6) then
          xkzq(i,k) = -we(i)*dza(i,kpbl(i))*exp(-entfac(i,k))
          xkzq(i,k) = sqrt(xkzq(i,k)*xkzhl(i,k))
+         xkzq(i,k) = max(xkzq(i,k),xkzoh(i,k))
          xkzq(i,k) = min(xkzq(i,k),xkzmax)
-         xkzq(i,k) = max(xkzq(i,k),xkzo(i,k))
          f3(i,k+1,1) = qx(i,k+1)
        else
          f3(i,k+1,1) = qx(i,k+1)
@@ -1297,18 +1297,62 @@ contains
      enddo
    enddo
 !
-   do i = its,ite
 ! paj: ctopo=1 if topo_wind=0 (default)
-! mchen add this line to make sure NMM can still work with YSU PBL
-     if(present(ctopo)) then
-       ad(i,1) = 1.+ctopo(i)*ust(i)**2/wspd1(i)*rhox(i)*g/del(i,1)*dt2         &
+!raquel---paj tke code (could be replaced with shin-hong tke in future
+   do i = its,ite
+      do k= kts, kte-1
+        shear_ysu(i,k)=xkzm(i,k)*((-hgamu(i)/hpbl(i)+(ux(i,k+1)-ux(i,k))/dza(i,k+1))*(ux(i,k+1)-ux(i,k))/dza(i,k+1) &
+        + (-hgamv(i)/hpbl(i)+(vx(i,k+1)-vx(i,k))/dza(i,k+1))*(vx(i,k+1)-vx(i,k))/dza(i,k+1))
+         buoy_ysu(i,k)=xkzh(i,k)*g*(1.0/thx(i,k))*(-hgamt(i)/hpbl(i)+(thx(i,k+1)-thx(i,k))/dza(i,k+1))
+
+       zk = karman*zq(i,k+1)
+ !over pbl
+       if (k.ge.kpbl(i)) then
+        rlamdz = min(max(0.1*dza(i,k+1),rlam),300.)
+        rlamdz = min(dza(i,k+1),rlamdz)
+       else
+ !in pbl
+        rlamdz = 150.0
+       endif
+       el_ysu(i,k) = zk*rlamdz/(rlamdz+zk)
+       tke_ysu(i,k)=16.6*el_ysu(i,k)*(shear_ysu(i,k)-buoy_ysu(i,k))
+ !q2 when q3 positive
+       if(tke_ysu(i,k).le.0) then
+        tke_ysu(i,k)=0.0
+       else
+        tke_ysu(i,k)=(tke_ysu(i,k))**0.66
+       endif
+      enddo
+ !Hybrid pblh of MYNN
+ !tke is q2
+      CALL GET_PBLH(KTS,KTE,pblh_ysu(i),thvx(i,kts:kte),&
+      &    tke_ysu(i,kts:kte),zq(i,kts:kte+1),dzq(i,kts:kte),xland(i))
+
+!--- end of paj tke
+! compute vconv
+!      Use Beljaars over land
+        if (xland(i).lt.1.5) then
+        fluxc = max(sflux(i),0.0)
+        vconvc=1.
+        VCONV = vconvc*(g/thvx(i,1)*pblh_ysu(i)*fluxc)**.33
+        else
+! for water there is no topo effect so vconv not needed
+        VCONV = 0.
+        endif
+        vconvfx(i) = vconv
+!raquel
+!ctopo stability correction
+      fric(i,1)=ust(i)**2/wspd1(i)*rhox(i)*g/del(i,1)*dt2         &
         *(wspd1(i)/wspd(i))**2
-     else
-       ad(i,1) = 1.+ust(i)**2/wspd1(i)*rhox(i)*g/del(i,1)*dt2                  &
-        *(wspd1(i)/wspd(i))**2
-     endif
-     f1(i,1) = ux(i,1)+uox(i)*ust(i)**2*g/del(i,1)*dt2/wspd1(i)
-     f2(i,1) = vx(i,1)+vox(i)*ust(i)**2*g/del(i,1)*dt2/wspd1(i)
+      if(present(ctopo)) then
+        vconvnew=0.9*vconvfx(i)+1.5*(max((pblh_ysu(i)-500)/1000.0,0.0))
+        vconvlim = min(vconvnew,1.0)
+        ad(i,1) = 1.+fric(i,1)*vconvlim+ctopo(i)*fric(i,1)*(1-vconvlim)
+      else
+       ad(i,1) = 1.+fric(i,1)
+      endif
+     f1(i,1) = ux(i,1)+uox(i)*ust(i)**2*rhox(i)*g/del(i,1)*dt2/wspd1(i)*(wspd1(i)/wspd(i))**2
+     f2(i,1) = vx(i,1)+vox(i)*ust(i)**2*rhox(i)*g/del(i,1)*dt2/wspd1(i)*(wspd1(i)/wspd(i))**2
    enddo
 !
    do k = kts,kte-1
@@ -1328,8 +1372,8 @@ contains
        elseif(pblflg(i).and.k.ge.kpbl(i).and.entfac(i,k).lt.4.6) then
          xkzm(i,k) = prpbl(i)*xkzh(i,k)
          xkzm(i,k) = sqrt(xkzm(i,k)*xkzml(i,k))
+         xkzm(i,k) = max(xkzm(i,k),xkzom(i,k))
          xkzm(i,k) = min(xkzm(i,k),xkzmax)
-         xkzm(i,k) = max(xkzm(i,k),xkzo(i,k))
          f1(i,k+1) = ux(i,k+1)
          f2(i,k+1) = vx(i,k+1)
        else
@@ -1603,5 +1647,117 @@ contains
 !
    end subroutine ysuinit
 !-------------------------------------------------------------------------------
+! ==================================================================
+
+      SUBROUTINE GET_PBLH(KTS,KTE,zi,thetav1D,qke1D,zw1D,dz1D,landsea)
+! Copied from MYNN PBL
+
+      !---------------------------------------------------------------
+      !             NOTES ON THE PBLH FORMULATION
+      !
+      !The 1.5-theta-increase method defines PBL heights as the level at
+      !which the potential temperature first exceeds the minimum potential
+      !temperature within the boundary layer by 1.5 K. When applied to
+      !observed temperatures, this method has been shown to produce PBL-
+      !height estimates that are unbiased relative to profiler-based
+      !estimates (Nielsen-Gammon et al. 2008). However, their study did not
+      !include LLJs. Banta and Pichugina (2008) show that a TKE-based
+      !threshold is a good estimate of the PBL height in LLJs. Therefore,
+      !a hybrid definition is implemented that uses both methods, weighting
+      !the TKE-method more during stable conditions (PBLH < 400 m).
+      !A variable tke threshold (TKEeps) is used since no hard-wired
+      !value could be found to work best in all conditions.
+      !---------------------------------------------------------------
+
+      INTEGER,INTENT(IN) :: KTS,KTE
+      REAL, INTENT(OUT) :: zi
+      REAL, INTENT(IN) :: landsea
+      REAL, DIMENSION(KTS:KTE), INTENT(IN) :: thetav1D, qke1D, dz1D
+      REAL, DIMENSION(KTS:KTE+1), INTENT(IN) :: zw1D
+      !LOCAL VARS
+      REAL ::  PBLH_TKE,qtke,qtkem1,wt,maxqke,TKEeps,minthv
+      REAL :: delt_thv   !delta theta-v; dependent on land/sea point
+      REAL, PARAMETER :: sbl_lim  = 200. !Theta-v PBL lower limit of trust (m).
+      REAL, PARAMETER :: sbl_damp = 400. !Damping range for averaging with TKE-based PBLH (m).
+      INTEGER :: I,J,K,kthv,ktke
+
+      !FIND MAX TKE AND MIN THETAV IN THE LOWEST 500 M
+      k = kts+1
+      kthv = 1
+      ktke = 1
+      maxqke = 0.
+      minthv = 9.E9
+
+      DO WHILE (zw1D(k) .LE. 500.)
+        qtke  =MAX(Qke1D(k),0.)   ! maximum QKE
+         IF (maxqke < qtke) then
+            maxqke = qtke
+            ktke = k
+         ENDIF
+         IF (minthv > thetav1D(k)) then
+             minthv = thetav1D(k)
+             kthv = k
+         ENDIF
+         k = k+1
+      ENDDO
+      !TKEeps = maxtke/20. = maxqke/40.
+      TKEeps = maxqke/40.
+      TKEeps = MAX(TKEeps,0.025)
+      TKEeps = MIN(TKEeps,0.25)
+
+      !FIND THETAV-BASED PBLH (BEST FOR DAYTIME).
+      zi=0.
+      k = kthv+1
+      IF((landsea-1.5).GE.0)THEN
+      ! WATER
+          delt_thv = 0.75
+      ELSE
+      ! LAND
+          delt_thv = 1.5
+      ENDIF
+
+      zi=0.
+      k = kthv+1
+      DO WHILE (zi .EQ. 0.)
+         IF (thetav1D(k) .GE. (minthv + delt_thv))THEN
+            zi = zw1D(k) - dz1D(k-1)* &
+              & MIN((thetav1D(k)-(minthv + delt_thv))/MAX(thetav1D(k)-thetav1D(k-1),1E-6),1.0)
+        ENDIF
+        k = k+1
+         IF (k .EQ. kte-1) zi = zw1D(kts+1) !EXIT SAFEGUARD
+      ENDDO
+
+      !print*,"IN GET_PBLH:",thsfc,zi
+      !FOR STABLE BOUNDARY LAYERS, USE TKE METHOD TO COMPLEMENT THE
+      !THETAV-BASED DEFINITION (WHEN THE THETA-V BASED PBLH IS BELOW ~0.5 KM).
+      !THE TANH WEIGHTING FUNCTION WILL MAKE THE TKE-BASED DEFINITION NEGLIGIBLE
+      !WHEN THE THETA-V-BASED DEFINITION IS ABOVE ~1 KM.
+      !FIND TKE-BASED PBLH (BEST FOR NOCTURNAL/STABLE CONDITIONS).
+
+      PBLH_TKE=0.
+      k = ktke+1
+     DO WHILE (PBLH_TKE .EQ. 0.)
+        !QKE CAN BE NEGATIVE (IF CKmod == 0)... MAKE TKE NON-NEGATIVE.
+         qtke  =MAX(Qke1D(k)/2.,0.)      ! maximum TKE
+         qtkem1=MAX(Qke1D(k-1)/2.,0.)
+         IF (qtke .LE. TKEeps) THEN
+               PBLH_TKE = zw1D(k) - dz1D(k-1)* &
+               & MIN((TKEeps-qtke)/MAX(qtkem1-qtke, 1E-6), 1.0)
+             !IN CASE OF NEAR ZERO TKE, SET PBLH = LOWEST LEVEL.
+             PBLH_TKE = MAX(PBLH_TKE,zw1D(kts+1))
+             !print *,"PBLH_TKE:",i,j,PBLH_TKE, Qke1D(k)/2., zw1D(kts+1)
+         ENDIF
+         k = k+1
+         IF (k .EQ. kte-1) PBLH_TKE = zw1D(kts+1) !EXIT SAFEGUARD
+      ENDDO
+
+    !BLEND THE TWO PBLH TYPES HERE:
+
+      wt=.5*TANH((zi - sbl_lim)/sbl_damp) + .5
+      zi=PBLH_TKE*(1.-wt) + zi*wt
+
+   END SUBROUTINE GET_PBLH
+! ==================================================================
+
 end module module_bl_ysu
 !-------------------------------------------------------------------------------

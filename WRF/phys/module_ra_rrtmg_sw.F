@@ -9173,7 +9173,7 @@
 !           input aerosol optical depth at 0.55 microns for each aerosol type (ecaer)
 ! iaer = 10, input total aerosol optical depth, single scattering albedo 
 !            and asymmetry parameter (tauaer, ssaaer, asmaer) directly
-      if ( aer_opt .eq. 0 .or. aer_opt .eq. 2 ) then
+      if ( aer_opt.eq.0 .or. aer_opt.eq.2 .or. aer_opt.eq.3) then
       iaer = 10
       else if ( aer_opt .eq. 1 ) then
       iaer = 6
@@ -9802,6 +9802,11 @@ MODULE module_ra_rrtmg_sw
 
 use module_model_constants, only : cp
 USE module_wrf_error
+#if (HWRF == 1)
+USE module_state_description, ONLY : FER_MP_HIRES, FER_MP_HIRES_ADVECT, ETAMP_HWRF 
+#else
+USE module_state_description, ONLY : FER_MP_HIRES, FER_MP_HIRES_ADVECT
+#endif
 !USE module_dm
 
 use parrrsw, only : nbndsw, ngptsw, naerec
@@ -9851,6 +9856,7 @@ CONTAINS
 !jdfcz                 progn,prescribe,                           &
                        progn,                                     &
                        qndrop3d,f_qndrop,                         & !czhao
+                       mp_physics,                                & !wang 2014/12
                        ids,ide, jds,jde, kds,kde,                 & 
                        ims,ime, jms,jme, kms,kme,                 &
                        its,ite, jts,jte, kts,kte,                 &
@@ -9870,6 +9876,7 @@ CONTAINS
                                        its,ite, jts,jte, kts,kte
 
    INTEGER, INTENT(IN )      ::        ICLOUD
+   INTEGER, INTENT(IN )      ::        MP_PHYSICS
 !
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme )                 , &
          INTENT(IN   ) ::                                   dz8w, &
@@ -9929,10 +9936,7 @@ CONTAINS
             julian      ! julian day (1-366)
    real, dimension(ims:ime,jms:jme), intent(in) :: &
             xcoszen     ! cosine of the solar zenith angle
-  real, dimension(ims:ime,kms:kme,jms:jme,nbndsw), optional,      &
-        intent(in)                                :: tauaer3d_sw, &
-                                                     ssaaer3d_sw, &
-                                                     asyaer3d_sw
+   real, dimension(:,:,:,:), pointer :: tauaer3d_sw,ssaaer3d_sw,asyaer3d_sw
 ! ------------------------ jararias end snippet -----------------
 
    REAL, INTENT(IN  )   ::                                   R,G
@@ -10030,10 +10034,15 @@ CONTAINS
                                                             QC1D, &
                                                             QR1D, &
                                                             QI1D, &
+                                                           RHO1D, &
                                                             QS1D, &
                                                             QG1D, &
                                                             O31D, &
                                                           qndrop1d 
+
+!BSF: From eq. (5) on p. 2434 in McFarquhar & Heymsfield (1996)
+      real, parameter :: re_50C=1250.0/9.917, re_40C=1250.0/9.337,     &
+                         re_30C=1250.0/9.208, re_20C=1250.0/9.387
 
 ! Added local arrays for RRTMG
     integer ::                                              ncol, &
@@ -10172,7 +10181,7 @@ CONTAINS
     real, dimension(1, 1:kte-kts+1):: recloud1d, &
                                         reice1d, &
                                        resnow1d
-    real :: gliqwp, gicewp, gsnowp, gravmks
+    real :: gliqwp, gicewp, gsnowp, gravmks, tem1,tem2,tem3
 
 !
 !    REAL   ::  TSFC,GLW0,OLR0,EMISS0,FP
@@ -10223,6 +10232,7 @@ CONTAINS
 
 ! longitude loop
      i_loop: do i = its,ite
+         rho1d(kts:kte)=rho3d(i,kts:kte,j) ! BUG FIX (SGT): this was uninitialized
 !
 ! Do shortwave by default, deactivate below if sun below horizon
          dorrsw = .true.
@@ -10373,7 +10383,25 @@ CONTAINS
             ENDIF
 
          ENDIF
-
+! For mp option=5 or 85  (new Ferrier- Aligo or called fer_hires
+! scheme), QI3D saves all frozen water (ice+snow)
+#if (HWRF == 1)
+           IF ( mp_physics == FER_MP_HIRES .OR. &
+                mp_physics == FER_MP_HIRES_ADVECT .OR. &
+                mp_physics == ETAMP_HWRF ) THEN
+#else
+           IF ( mp_physics == FER_MP_HIRES .OR. &
+                mp_physics == FER_MP_HIRES_ADVECT) THEN
+#endif
+                  DO K=kts,kte
+                     qi1d(k) = qi3d(i,k,j)
+                     qs1d(k) = 0.0
+                     qc1d(k) = qc3d(i,k,j)
+                     qi1d(k) = max(0.,qi1d(k))
+                     qc1d(k) = max(0.,qc1d(k))
+                  ENDDO
+           ENDIF
+!
 !         EMISS0=EMISS(I,J)
 !         GLW0=0. 
 !         OLR0=0. 
@@ -10415,7 +10443,11 @@ CONTAINS
                ENDDO
             ELSE
                DO K=kts,kte
+#if (EM_CORE==1)
                   recloud1D(ncol,K) = 5.0
+#else
+                  recloud1D(ncol,K) = 10.0  ! was 5.0
+#endif
                ENDDO
             ENDIF
 
@@ -10423,14 +10455,14 @@ CONTAINS
                inflgsw  = 4
                iceflgsw = 4
                DO K=kts,kte
-                  reice1D(ncol,K) = MAX(10., re_ice(I,K,J)*1.E6)
-                  if (reice1D(ncol,K).LE.10..AND.cldfra3d(i,k,j).gt.0.) then
+                  reice1D(ncol,K) = MAX(5., re_ice(I,K,J)*1.E6)
+                  if (reice1D(ncol,K).LE.5..AND.cldfra3d(i,k,j).gt.0.) then
                      idx_rei = int(t3d(i,k,j)-179.)
                      idx_rei = min(max(idx_rei,1),75)
                      corr = t3d(i,k,j) - int(t3d(i,k,j))
                      reice1D(ncol,K) = retab(idx_rei)*(1.-corr) +      &
      &                                 retab(idx_rei+1)*corr
-                     reice1D(ncol,K) = MAX(reice1D(ncol,K), 10.0)
+                     reice1D(ncol,K) = MAX(reice1D(ncol,K), 5.0)
                   endif
                ENDDO
             ELSE
@@ -10447,9 +10479,43 @@ CONTAINS
                ENDDO
             ELSE
                DO K=kts,kte
+#if (EM_CORE==1) 
                   resnow1D(ncol,K) = 10.0
+#else
+                 tem2 = 25.0  !- was 10.0
+                 tem3=1.e3*rho1d(k)*qi1d(k)  !- IWC (g m^-3)
+                 if (tem3>thresh) then       !- Only when IWC>1.e-9 g m^-3
+                   tem1=t1d(k)-273.15
+                   if (tem1 < -50.0) then
+                     tem2 = re_50C*tem3**0.109
+                   elseif (tem1 < -40.0) then
+                      tem2 = re_40C*tem3**0.08
+                   elseif (tem1 < -30.0) then
+                      tem2 = re_30C*tem3**0.055
+                   else
+                      tem2 = re_20C*tem3**0.031
+                   endif
+                    tem2 = max(25.,tem2)
+                 endif
+                 reice1D(ncol,K) = min(tem2, 135.72)   !- 1.0315*reice <= 140 microns 
+#endif
                ENDDO
             ENDIF
+
+! special case for P3 microphysics
+! put ice into snow category for optics, then set ice to zero
+            IF ( has_reqs .eq. 0 .and. has_reqi .ne. 0 .and. has_reqc .ne. 0) THEN
+               inflgsw  = 5
+               iceflgsw = 5
+               DO K=kts,kte
+                  resnow1D(ncol,K) = MAX(10., re_ice(I,K,J)*1.E6)
+                  QS1D(K)=QI3D(I,K,J)
+                  QI1D(K)=0.
+                  reice1D(ncol,K)=10.
+               END DO
+
+            END IF
+
          ENDIF
 
 ! Set cosine of solar zenith angle
@@ -10692,7 +10758,11 @@ CONTAINS
             reliq(ncol,k) = recloud1d(ncol,k)
          end do
       endif
+#if (EM_CORE==1) 
       if (iceflgsw .ge. 4) then
+#else
+      if (iceflgsw .ge. 3) then   !BSF: was .ge. 4
+#endif
          do k = kts, kte
             reice(ncol,k) = reice1d(ncol,k)
          end do
@@ -10820,9 +10890,8 @@ CONTAINS
       end do
       end do
 
-      if ( present (tauaer3d_sw) ) then
+      if ( associated (tauaer3d_sw) ) then
 ! ---- jararias 11/2012
-         if ( aer_opt .eq. 2) then
             do nb=1,nbndsw
                do k=kts,kte
                   tauaer(ncol,k,nb)=tauaer3d_sw(i,k,j,nb)
@@ -10830,7 +10899,6 @@ CONTAINS
                   asmaer(ncol,k,nb)=asyaer3d_sw(i,k,j,nb)
                end do
             end do
-         end if
       end if
 
 #if ( WRF_CHEM == 1 )
@@ -11026,6 +11094,7 @@ CONTAINS
             swddir(i,j)    = 0.  ! jararias 2013/08/10
             swddni(i,j)    = 0.  ! jararias 2013/08/10
             swddif(i,j)    = 0.  ! jararias 2013/08/10
+            swcf(i,j)      = 0.
 
       endif
 !

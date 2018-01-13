@@ -16,8 +16,11 @@ CONTAINS
                      UST,PSIM,PSIH,                             &   
                      XLAND,HFX,QFX,TAUX,TAUY,LH,GSW,GLW,TSK,FLHC,FLQC,    & ! gopal's doing for Ocean coupling
                      QGH,QSFC,U10,V10,                          &
-                     GZ1OZ0,WSPD,BR,ISFFLX,                     &
+                     ICOEF_SF,IWAVECPL,LCURR_SF,CHARN,MSANG,SCURX, SCURY,&
+                     pert_Cd, ens_random_seed, ens_Cdamp,       &
+                     GZ1OZ0,WSPD,BR,ZKMAX, ISFFLX,              &
                      EP1,EP2,KARMAN,NTSFLG,SFENTH,              &
+                     Cd_out,Ch_out,                             &
                      ids,ide, jds,jde, kds,kde,                 &
                      ims,ime, jms,jme, kms,kme,                 &
                      its,ite, jts,jte, kts,kte                  )
@@ -90,6 +93,12 @@ CONTAINS
                                         ims,ime, jms,jme, kms,kme,      &
                                         its,ite, jts,jte, kts,kte,      &
                                         ISFFLX,NUM_SOIL_LAYERS,NTSFLG
+      INTEGER, INTENT(IN) ::            ICOEF_SF
+      INTEGER, INTENT(IN) ::            IWAVECPL
+      LOGICAL, INTENT(IN) ::            LCURR_SF
+      logical,intent(in)  :: pert_Cd 
+      integer,intent(in)  :: ens_random_seed
+      real,intent(in)     :: ens_Cdamp
 
       REAL,    INTENT(IN) ::                                            &
                                         CP,                             &
@@ -116,10 +125,18 @@ CONTAINS
                                         GLW,                            &
                                         GSW,                            &
                                         XLAND                           
+      REAL,    DIMENSION(ims:ime, jms:jme), INTENT(IN) ::               &
+                                        CHARN,                          &
+                                        MSANG,                          &
+                                        SCURX,                          &
+                                        SCURY
       REAL,    DIMENSION(ims:ime, jms:jme), INTENT(INOUT) ::            & 
                                         TSK,                            &
                                         BR,                             &
+                                        ZKMAX,                          &
                                         CHS,                            &
+                                        Cd_out,                         &
+                                        Ch_out,                         &
                                         CHS2,                           &
                                         CPM,                            &
                                         CQS2,                           &
@@ -144,8 +161,7 @@ CONTAINS
 
       REAL, DIMENSION(ims:ime, jms:jme), INTENT(OUT) ::                 &
                                         U10,                            &
-                                        V10 
-
+                                        V10                            
 
 !--------------------------- LOCAL VARS ------------------------------
 
@@ -211,10 +227,11 @@ CONTAINS
                                         tstrc,                          &
                                         zoc,                            &
                                         mzoc,                           &  !ADDED BY KWON FOR momentum Zo
+                                        tzot,                           &  !Wang
                                         wetc,                           &
                                         slwdc,                          &
                                         rib,                            &
-                                        zkmax,                          &
+!!!                                        zkmax,                          &
                                         tkmax,                          &
                                         fxmx,                           &
                                         fxmy,                           &
@@ -224,7 +241,11 @@ CONTAINS
                                         xxfh,                           &
                                         xxfh2,                          &
                                         wind10,                         &
-                                        tjloc
+                                        tjloc,                          &
+                                        alpha,                          &
+                                        gamma,                          &
+                                        xcur,                           &
+                                        ycur
 
       INTEGER ::                                                        &
                                         I,                              &
@@ -235,6 +256,7 @@ CONTAINS
                                         K,                              &
                                         KM
 
+      real :: tmp9,zhalf  ! wang, height of the first half level
 
         DATA MAXSMC/0.339, 0.421, 0.434, 0.476, 0.476, 0.439,  &
                     0.404, 0.464, 0.465, 0.406, 0.468, 0.468,  &
@@ -260,7 +282,9 @@ CONTAINS
    KM=KTE-KTS+1
 
    WRITE(message,*)'WITHIN THE GFDL SCHEME, NTSFLG=1 FOR GFDL SLAB  2010 UPGRADS',NTSFLG
-   call wrf_debug(1,message)
+   call wrf_debug(2,message)
+
+!!     write(0,*)'icoef_sf,lcurr_sf=',icoef_sf,lcurr_sf
 
    DO J=jts,jte
 
@@ -297,6 +321,7 @@ CONTAINS
         vpc(kts,i)=v3D(i,kts,j) * 100.
         Z0RL(I) = ZNT(i,j)*100.
         zoc(i)=ZNT(i,j)*100.
+        cdm(i) = Cd_out(i,j)
          if(XLAND(i,j).gt.1.99)  zoc(i)=- zoc(i)
 !        Z0RL(I) = z00(i,j)*100.
 !       slwdc... GFDL downward net flux in units of cal/(cm**2/min)
@@ -304,7 +329,31 @@ CONTAINS
         slwdc(i)=gsw(i,j)+glw(i,j)
         slwdc(i)=0.239*60.*slwdc(i)*1.e-4
          tjloc(i)=float(j)
-        
+        alpha(i) = charn(i,j)
+        gamma(i) = msang(i,j)
+        xcur(i) = scurx(i,j)
+        ycur(i) = scury(i,j)
+
+
+ !Wang, calulate height of the first half level
+ !      use previous u10 v10 to compute wind10, input to MFLUX to compute z0
+          wind10(i)=sqrt(u10(i,j)*u10(i,j)+v10(i,j)*v10(i,j))
+        !first time step, u10 and v10 may be zero
+           zhalf=0.0
+          if (wind10(i) <= 1.0e-10 .or. wind10(i) > 150.0) then
+!           write(0,*)'maybe first timestep'
+           zhalf = -R*tpc(kts,i)*alog(pkmax(i)/pspc(i))/grav
+           wind10(i)=sqrt(u1(i)*u1(i)+v1(i)*v1(i))*alog(10.0/znt(i,j))/alog(zhalf/znt(i,j))
+          endif
+           wind10(i)=wind10(i)*100.0   !! m/s to cm/s
+           zhalf = -R*tpc(kts,i)*alog(pkmax(i)/pspc(i))/grav
+!         if (i == (its+ite)/2 .and. j == (jts+jte)/2 ) then
+!         write(0,*)'before call mflux,zh,w10,u10,v10,WIND1,znt'
+!         write(0,*)zhalf,wind10(i),u10(i,j),v10(i,j),sqrt(u1(i)**2+v1(i)**2),znt(i,j)
+!         write(0,*)'uselog', sqrt(u1(i)*u1(i)+v1(i)*v1(i))*alog(10.0/znt(i,j))/alog(zhalf/znt(i,j))
+!         endif
+        !
+
       ENDDO
 
       DO i=its,ite
@@ -328,11 +377,14 @@ CONTAINS
 
      CALL MFLUX2(  fxh,fxe,fxmx,fxmy,cdm,rib,xxfh,zoc,mzoc,tstrc,   &    !mzoc for momentum Zo KWON
                    pspc,pkmax,wetc,slwdc,tjloc,                &
+                   icoef_sf,iwavecpl,lcurr_sf,alpha,gamma,xcur,ycur,           &
+                   pert_Cd, ens_random_seed, ens_Cdamp,        &
                    upc,vpc,tpc,rpc,dt,J,wind10,xxfh2,ntsflg,SFENTH,   &
+                   tzot,   &  ! tzot , zot for thermal z0 Wang
                    ids,ide, jds,jde, kds,kde,                  &
                    ims,ime, jms,jme, kms,kme,                  &
                    its,ite, jts,jte, kts,kte                   )
-
+!!!        if(j == (jts+jte)/2)   write(0,*)'after call mflux,w10',wind10( (its+ite)/2  )
 !     if(j==2)then
 !       write(0,*)'--------------------------------------------'
 !       write(0,*) 'fxh, fxe, fxmx, fxmy, cdm, xxfh zoc,tstrc'
@@ -394,10 +446,10 @@ CONTAINS
 !       br     =0.0001*zfull(i,kmax)*dthv/
 !    &          (gmks*theta(i,kmax)*wspd     *wspd     )
 !       zkmax    = rgas*tpc(kmax,i)*qqlog(kmax)*og
-        zkmax(i) = -R*tpc(kts,i)*alog(pkmax(i)/pspc(i))/grav
+        zkmax(i,j) = -R*tpc(kts,i)*alog(pkmax(i)/pspc(i))/grav
 !------------------------------------------------------------------------
 
-        gz1oz0(i,j)=alog(zkmax(i)/znt(i,j))
+        gz1oz0(i,j)=alog(zkmax(i,j)/znt(i,j))
         ustar   (i)= 0.01*sqrt(cdm(i)*   &
                    (upc(kts,i)*upc(kts,i) + vpc(kts,i)*vpc(kts,i)))
 !       convert from g/(cm*cm*sec) to kg/(m*m*sec)
@@ -415,7 +467,22 @@ CONTAINS
         fh2(i)         = karman*xxfh2(i)            
         ch(i)      = karman*karman/(fm(i) * fh(i))
         cm(i)      = cdm(i)
+        Cd_out(i,j) = cm(i)
+        Ch_out(i,j) = ch(i)
 
+!!! convert cd, ch to values at 10m, for output
+         if ( wind10(i) .ge. 0.1 ) then
+           cd_out(i,j)=cm(i)* (wspd(i,j)/(0.01*wind10(i)) )**2
+           tmp9=0.01*abs(tzot(i))
+           ch_out(i,j)=ch(i)*(wspd(i,j)/(0.01*wind10(i)) ) * &
+                     (alog(zkmax(i,j)/tmp9)/alog(10.0/tmp9))
+!           if(j == (jts+jte)/2 .and. i == (its+ite)/2 ) then
+!            write(0,*)'cm,cd10=',cm(i),cd_out(i,j)
+!            write(0,*)'ch,ch10=',ch(i),ch_out(i,j)
+!            write(0,*)'w/w10,zkmax(i),tzot=',wspd(i,j)/(0.01*wind10(i)),zkmax(i,j),tmp9
+!           endif
+         endif
+!!!
         U10(i,j)=U10M(i)
         V10(i,j)=V10M(i)
         BR(i,j)=rib(i)
@@ -533,7 +600,10 @@ CONTAINS
 !-------------------------------------------------------------------
        SUBROUTINE MFLUX2( fxh,fxe,fxmx,fxmy,cdm,rib,xxfh,zoc,mzoc,tstrc,       &    !mzoc KWON
                           pspc,pkmax,wetc,slwdc,tjloc,                    &
+                          icoef_sf,iwavecpl,lcurr_sf,alpha,gamma,xcur,ycur,                &
+                          pert_Cd, ens_random_seed, ens_Cdamp,            &
                           upc,vpc,tpc,rpc,dt,jfix,wind10,xxfh2,ntsflg,sfenth,    &
+                           tzot, &
                           ids,ide, jds,jde, kds,kde,                      &
                           ims,ime, jms,jme, kms,kme,                      &
                           its,ite, jts,jte, kts,kte                       )
@@ -548,6 +618,7 @@ CONTAINS
 !
 !------------------------------------------------------------------------
 
+      USE module_sf_exchcoef
       IMPLICIT NONE
 !     use allocate_mod
 !     use module_TLDATA , ONLY : tab,table,cp,g,rgas,og 
@@ -577,12 +648,18 @@ CONTAINS
       integer,intent(in)  :: ims,ime, jms,jme, kms,kme
       integer,intent(in)  :: its,ite, jts,jte, kts,kte
       integer,intent(in)  :: jfix,ntsflg
+      integer,intent(in)  :: icoef_sf
+      integer,intent(in)  :: iwavecpl
+      logical,intent(in)  :: lcurr_sf
+      logical,intent(in)  :: pert_Cd 
+      integer,intent(in)  :: ens_random_seed
+      real,intent(in)     :: ens_Cdamp
 
       real, intent (out), dimension (ims :ime ) :: fxh
       real, intent (out), dimension (ims :ime ) :: fxe
       real, intent (out), dimension (ims :ime ) :: fxmx
       real, intent (out), dimension (ims :ime ) :: fxmy
-      real, intent (out), dimension (ims :ime ) :: cdm
+      real, intent (inout), dimension (ims :ime ) :: cdm
 !      real, intent (out), dimension (ims :ime ) :: cdm2
       real, intent (out), dimension (ims :ime ) :: rib
       real, intent (out), dimension (ims :ime ) :: xxfh
@@ -590,6 +667,7 @@ CONTAINS
       real, intent (out), dimension (ims :ime ) :: wind10
 
       real, intent ( inout), dimension (ims :ime ) :: zoc,mzoc    !KWON
+      real, intent ( inout), dimension (ims :ime ) :: tzot        !WANG
       real, intent ( inout), dimension (ims :ime ) :: tstrc
 
       real, intent ( in)                        :: dt
@@ -599,6 +677,8 @@ CONTAINS
       real, intent ( in), dimension (ims :ime ) :: wetc
       real, intent ( in), dimension (ims :ime ) :: slwdc
       real, intent ( in), dimension (ims :ime ) :: tjloc
+      real, intent ( in), dimension (ims :ime ) :: alpha, gamma
+      real, intent ( in), dimension (ims :ime ) :: xcur, ycur
 
       real, intent ( in), dimension (kms:kme, ims :ime ) :: upc
       real, intent ( in), dimension (kms:kme, ims :ime ) :: vpc
@@ -674,6 +754,8 @@ CONTAINS
       real, dimension(1   :ime) :: vrts
       real, dimension(1   :ime) :: wind
       real, dimension(1   :ime) :: windp
+      real, dimension(1   :ime) :: wind10p  !WANG, 10m wind previous step
+      real, dimension(1   :ime) :: uvs1
 !     real, dimension(1   :ime) :: xxfh
       real, dimension(1   :ime) :: xxfm
       real, dimension(1   :ime) :: xxsh
@@ -701,7 +783,8 @@ CONTAINS
       real :: shfx,sigt4,reflect
       real :: cor1,cor2,szetho,zal2gh,cons_p000001,cons_7,vis,ustar,restar,rat
       real :: wndm,ckg
-      real :: yz,y1,y2,y3,y4,windmks,znott,znotm
+      real :: windmks,znott,znotm
+      real :: ubot, vbot
       integer:: i,j,ii,iq,nnest,icnt,ngd,ip
 
 !-----------------------------------------------------------------------
@@ -717,6 +800,8 @@ CONTAINS
       real, dimension (54) :: table3
       real, dimension (74) :: table1
       real, dimension (80) :: tab22
+
+      character(len=255) :: message
 
       equivalence (tab(1),tab11(1))
       equivalence (tab(102),tab22(1))
@@ -806,8 +891,25 @@ CONTAINS
       real,parameter :: g     = 980.6
       real,parameter :: rgas  = 2.87e6
       real,parameter :: og    = 1./g
-      character*255 :: message
+      integer :: ntstep = 0
 !
+#if HWRF==1
+      real*8 :: gasdev,ran1          !zhang
+      real :: rr                     !zhang
+      logical,save :: pert_Cd_local            !zhang
+      integer,save :: ens_random_seed_local         !zhang
+      real,save :: ens_Cdamp_local         !zhang
+      data ens_random_seed_local/0/
+      if ( ens_random_seed_local .eq. 0 ) then
+!        CALL nl_get_pert_Cd(1,pert_Cd)
+!        CALL nl_get_ens_random_seed(1,ens_random_seed)
+!        CALL nl_get_ens_Cdamp(1,ens_Cdamp)
+         ens_random_seed_local=ens_random_seed
+         pert_Cd_local=pert_Cd
+         ens_Cdamp_local=ens_Cdamp
+      endif
+#endif
+
 !     character*10 routine
 !     routine = 'mflux2'
 !
@@ -820,19 +922,44 @@ CONTAINS
 !
        cor1 = .120
        cor2 = 720.
-       yz=            0.0001344
-       y1=            3.015e-05 
-       y2=            1.517e-06 
-       y3=           -3.567e-08
-       y4=            2.046e-10
+! KWON : remove the artificial increase of 10m wind speed over 60kts
+!        which comes from GFDL hurricane model
+        cor1 = 0.
+        cor2 = 0.
+!
 
       do i = its,ite
         z10(i) = 1000.
         z2 (i) =  200.
         pss(i) = pspc(i)
         tstar(i) = tstrc(i)
-        ukmax(i) = upc(1,i)
-        vkmax(i) = vpc(1,i)
+
+        if ( lcurr_sf .and. zoc(i) .le. 0.0 ) then
+          ubot = upc(1,i)  - xcur(i) * 100.0
+          vbot = vpc(1,i)  - ycur(i) * 100.0
+!          ubot = upc(1,i)
+!          vbot = vpc(1,i)
+        else
+          ubot = upc(1,i)
+          vbot = vpc(1,i)
+        endif
+        uvs1(i)= amax1( SQRT(ubot*ubot +    &
+                             vbot*vbot), 100.0)
+        if ( iwavecpl .eq. 1 .and. zoc(i) .le. 0.0 ) then
+          ukmax(i) = ( ubot * cos(gamma(i))  -          &
+                      vbot * sin(gamma(i)) )            &
+                                  * cos(gamma(i))
+          vkmax(i) = ( vbot * cos(gamma(i))  -          &
+                      ubot * sin(gamma(i)) )            &
+                                  * cos(gamma(i))
+
+        else
+          ukmax(i) = ubot
+          vkmax(i) = vbot
+        endif
+
+!       ukmax(i) = upc(1,i)
+!        vkmax(i) = vpc(1,i)
         tkmax(i) = tpc(1,i)
         rkmax(i) = rpc(1,i)
       enddo
@@ -844,7 +971,14 @@ CONTAINS
       do i = its,ite
         windp(i) = SQRT(ukmax(i)*ukmax(i) + vkmax(i)*vkmax(i))
         wind (i) = amax1(windp(i),100.)
-        if (zoc(i) .LT. amask) zoc(i) = -0.0185*0.001*wind(i)*wind(i)*og
+
+!! use wind10 previous step
+         wind10p(i) = wind10(i)  !! cm/s
+        wind10p(i) = amax1(wind10p(i),100.)
+!!
+
+!        if (zoc(i) .LT. amask) zoc(i) = -0.0185*0.001*wind(i)*wind(i)*og
+        if (zoc(i) .LT. amask) zoc(i) = -0.0185*0.001*wind10p(i)*wind10p(i)*og
         if (zoc(i) .GT. 0.0) then
           ecof(i) = wetc(i)
           land(i) = 1.0
@@ -852,39 +986,45 @@ CONTAINS
         else
           ecof(i) = wetc(i)
           land(i) = 0.0
-          zot (i) = zoc(i)
-!  now use 2 regime fit for znot thermal
-          windmks=wind(i)*.01
-          znott=0.2375*exp(-0.5250*windmks) + 0.0025*exp(-0.0211*windmks)
-          znott=0.01*znott
-!  go back to moon et al for below 7m/s
-          if(windmks.le. 7.)                         &
-          znott = (0.0185/9.8*(7.59e-8*wind(i)**2+   &
-                                  2.46e-4*wind(i))**2)
-! back to cgs
-          zot (i) = 100.*znott
-!   end of kwon correction....
-!     in hwrf, thermal znot(zot) is passed as argument zoc
-!     in hwrf, momentum znot is recalculated internally
-              zoc(i)=-(0.0185/9.8*(7.59e-8*wind(i)**2+   &
-                                  2.46e-4*wind(i))**2)*100.
-            if(wind(i).ge.1250.0)   &
-             zoc(i)=-(.000739793 * wind(i) -0.58)/10
-        if(wind(i).ge.3000.)   then
-        windmks=wind(i)*.01
-!       kwon znotm
-        znotm   = yz   +windmks*y1   +windmks**2*y2   +windmks**3*y3   +windmks**4*y4 !powell 2003
-!       back to cgs
-        zoc(i)  = 100.*znotm
+          !windmks=wind(i)*.01
+          windmks=wind10p(i)*.01
+          if ( iwavecpl .eq. 1 ) then
+            if (  ntstep == 0 ) then
+              call  znot_m_v1(windmks,znotm)
+              zoc(i)  = -100.*znotm
+            endif
+            call  znot_t_v2(windmks,znott)
+            zot(i) =  -100* znott
+          else
+!            if ( icoef_sf .EQ. 1) then
+!              call  znot_m_v1(windmks,znotm)
+!              call  znot_t_v1(windmks,znott)
+!            else if ( icoef_sf .EQ. 0 ) then
+!              call  znot_m_v0(windmks,znotm)
+!              call  znot_t_v0(windmks,znott)
+!            else
+!              call  znot_m_v1(windmks,znotm)
+!              call  znot_t_v2(windmks,znott)
+!            endif
+            call znot_wind10m(windmks,znott,znotm,icoef_sf)
+
+            zoc(i)  = -100.*znotm
+            zot(i) =  -100* znott
+          endif
         endif
-        endif
+
+!          if(i == (its+ite)/2 .and. j == (jts+jte)/2) then
+!            write(0,*)'wind10p(i),windp(i),windmks,zoc(i),zot, land'
+!            write(0,*)wind10p(i),windp(i),windmks,zoc(i),zot(i),land(i)
+!          endif
+
 
 !------------------------------------------------------------------------
 !     where necessary modify zo values over ocean.
 !------------------------------------------------------------------------
 !
       mzoc(i) = zoc(i)                !FOR SAVE MOMENTUM Zo
-
+      tzot(i) = zot(i)                 !output wang
       enddo
 
 !------------------------------------------------------------------------
@@ -933,8 +1073,8 @@ CONTAINS
         tab1 (i) = tstar(i) - 153.16
         it   (i) = IFIX(tab1(i))
         tab2 (i) = tab1(i) - FLOAT(it(i))
-        t1   (i) = tab(it(i) + 1)
-        t2   (i) = table(it(i) + 1)
+        t1   (i) = tab(min(223,max(1,it(i) + 1)))
+        t2   (i) = table(min(223,max(1,it(i) + 1)))
         estso(i) = t1(i) + tab2(i)*t2(i)
          psps1 = (pss(i) - estso(i))
           if(psps1 .EQ. 0.0)then
@@ -1125,6 +1265,7 @@ CONTAINS
       go to 130
 
 110   continue
+
       write(6,120)
 120   format(2X, ' NON-CONVERGENCE FOR STABLE ZETA IN ROW ')
 !     call MPI_CLOSE(1,routine)
@@ -1183,7 +1324,7 @@ CONTAINS
 
 !!!   if (ngd .EQ. nNEST) then
         do i = 1,ip
-         wind10(istb(i)) = sf10(i)*wind(istb(i))/sfm(i)
+         wind10(istb(i)) = sf10(i)*uvs1(istb(i))/sfm(i)
          wind10(istb(i)) = wind10(istb(i)) * 1.944
            if(wind10(istb(i)) .GT. 6000.0) then
        wind10(istb(i))=wind10(istb(i))+wind10(istb(i))*cor1 &
@@ -1307,8 +1448,9 @@ CONTAINS
             uq        = (ugz - ugzm(i))/(uzeta(i) - uzetam(i))
             uzetam(i) = uzeta(i)
             if(uq .EQ. 1) then
-             write(0,*)'NCO ERROR DIVIDE BY ZERO IN MFLUX2 (UNSTABLE CASE)' 
-             write(0,*)'uq is 1 ',ux2,ugz,ugzm(i),uzeta(i),uzetam(i) 
+             call wrf_message('NCO ERROR DIVIDE BY ZERO IN MFLUX2 (UNSTABLE CASE)')
+             write(message,*)'uq is 1 ',ux2,ugz,ugzm(i),uzeta(i),uzetam(i) 
+             call wrf_message(message)
             endif
             uzeta (i) = (ugz - uzeta(i)*uq)/(1.0 - uq)
             ugzm  (i) = ugz
@@ -1327,7 +1469,8 @@ CONTAINS
       go to 250
 
 230   continue
-      write(6,240)
+      write(message,240)
+      call wrf_message(message)
 240   format(2X, ' NON-CONVERGENCE FOR UNSTABLE ZETA IN ROW ')
 !     call MPI_CLOSE(1,routine)
 
@@ -1381,7 +1524,7 @@ CONTAINS
 
 !!!   if (ngd .EQ. nNEST) then
         do i = 1,iq
-          wind10(iutb(i)) = uf10(i)*wind(iutb(i))/ufm(i)
+          wind10(iutb(i)) = uf10(i)*uvs1(iutb(i))/ufm(i)
           wind10(iutb(i)) = wind10(iutb(i)) * 1.944
            if(wind10(iutb(i)) .GT. 6000.0) then
          wind10(iutb(i))=wind10(iutb(i))+wind10(iutb(i))*cor1 &
@@ -1497,8 +1640,8 @@ CONTAINS
           tab1  (i) = tsp(i) - 153.16
           it    (i) = IFIX(tab1(i))
           tab2  (i) = tab1(i) - FLOAT(it(i))
-          t1    (i) = tab(it(i) + 1)
-          t2    (i) = table(it(i) + 1)
+          t1    (i) = tab(min(223,max(1,it(i) + 1)))
+          t2    (i) = table(min(223,max(1,it(i) + 1)))
           estsop(i) = t1(i) + tab2(i)*t2(i)
              psps2 = (pssp(i) - estsop(i))
              if(psps2 .EQ. 0.0)then
@@ -1547,12 +1690,14 @@ CONTAINS
 
       do i = 1,ip
         if (ifz(i) .EQ. 1) then
-        write(6, 340) tsp(i), i, j
+        write(message, 340) tsp(i), i, j
 340   format(2X, ' NON-CONVERGENCE OF T* PREDICTED (T*,I,J) = ', E14.8, &
             2I5)
+        call wrf_message(message)
 
-        write(6,345) indx(i), j, tstar(indx(i)), tsp(i), ip
+        write(message,345) indx(i), j, tstar(indx(i)), tsp(i), ip
 345   format(2X, ' I, J, OLD T*, NEW T*, NPTS ', 2I5, 2E14.8, I5)
+        call wrf_message(message)
 
 !       write(6,350) reflect, sigt4, shfx, alevp, delten, diffot
 350   format(2X, ' REFLECT, SIGT4, SHFX, ALEVP, DELTEN, DIFFOT ', &
@@ -1573,6 +1718,20 @@ CONTAINS
 
 370   continue
       do i = its,ite
+!!!
+        if ( iwavecpl .eq. 1 .and. zoc(i) .le. 0.0 ) then
+          windmks = wind(i) * 0.01
+          ustar = windmks / xxfm(i)
+          !Check if Charnock parameter ratio is received in a proper range.
+          if ( alpha(i) .ge. 0.2 .and. alpha(i) .le. 5. ) then
+            call  znot_m_v1(windmks,znotm)
+            znotm = znotm*alpha(i)
+          else
+            call  znot_m_v1(windmks,znotm)
+          endif
+          zoc(i)  = -100.*znotm
+        endif
+!!!!
         fxh(i) = bq1(i)*(theta(i) - tsg(i))
         fxe(i) = ecof(i)*bq1(i)*(rkmax(i) - rstso(i))
         if (fxe(i) .GT. 0.0) fxe(i) = 0.0
@@ -1583,8 +1742,16 @@ CONTAINS
         cdm(i) = 1./(xxfm(i)*xxfm(i))
 !       print *, 'i,zot,zoc,cdm,cdm2,tsg,wind', &
 !                i, zot(i),zoc(i), cdm(i),cdm2(i), tsg(i),wind(i)
-      enddo
+#if HWRF==1
+! randomly perturb the Cd
+        if( pert_Cd_local ) then
+        rr=2.0*ens_Cdamp_local*ran1(ens_random_seed_local)-ens_Cdamp_local
+        cdm(i) = cdm(i) *(1.0+rr)
+        endif
+#endif
 
+      enddo
+      ntstep = ntstep + 1
       return
       end subroutine MFLUX2
 

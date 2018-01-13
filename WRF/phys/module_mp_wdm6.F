@@ -128,6 +128,8 @@ CONTAINS
 !        ==> switch graupel or hail by changing no, den, fall vel.
 !        effective radius of hydrometeors, bae from kiaps, jan 2015
 !        ==> consistency in solar insolation of rrtmg radiation
+!        bug fix in melting terms, bae from kiaps, nov 2015
+!        ==> density of air is divided, which has not been
 !
 !  Reference) Lim and Hong (LH, 2010) Mon. Wea. Rev. 
 !             Juang and Hong (JH, 2010) Mon. Wea. Rev.
@@ -805,7 +807,7 @@ CONTAINS
               coeres = rslope2(i,k,2)*sqrt(rslope(i,k,2)*rslopeb(i,k,2))
               psmlt(i,k) = xka(t(i,k),den(i,k))/xlf*(t0c-t(i,k))*pi/2.       &
                          *n0sfac(i,k)*(precs1*rslope2(i,k,2)                 &
-                         +precs2*work2(i,k)*coeres)
+                         +precs2*work2(i,k)*coeres)/den(i,k)                  
               psmlt(i,k) = min(max(psmlt(i,k)*dtcld/mstep(i),-qrs(i,k,2)     &
                          /mstep(i)),0.)
               qrs(i,k,2) = qrs(i,k,2) + psmlt(i,k)
@@ -827,7 +829,8 @@ CONTAINS
             if(qrs(i,k,3).gt.0.) then
               coeres = rslope2(i,k,3)*sqrt(rslope(i,k,3)*rslopeb(i,k,3))
               pgmlt(i,k) = xka(t(i,k),den(i,k))/xlf*(t0c-t(i,k))*(precg1     &
-                           *rslope2(i,k,3) + precg2*work2(i,k)*coeres)
+                           *rslope2(i,k,3) + precg2*work2(i,k)*coeres)       &
+                           /den(i,k)                                          
               pgmlt(i,k) = min(max(pgmlt(i,k)*dtcld/mstep(i),                &
                           -qrs(i,k,3)/mstep(i)),0.)
               qrs(i,k,3) = qrs(i,k,3) + pgmlt(i,k)
@@ -905,8 +908,11 @@ CONTAINS
             graupel(i) = fallsum_qg*delz(i,kts)/denr*dtcld*1000. + graupel(i)
           ENDIF
         ENDIF
-        if(fallsum.gt.0.) sr(i) = (tstepsnow(i) + tstepgraup(i))               &
-                                  /(rainncv(i)+1.e-12)
+        IF ( PRESENT (snowncv)) THEN
+          if(fallsum.gt.0.)sr(i)=(snowncv(i) + graupelncv(i))/(rainncv(i)+1.e-12)
+        ELSE
+          if(fallsum.gt.0.)sr(i)=(tstepsnow(i) + tstepgraup(i))/(rainncv(i)+1.e-12)
+        ENDIF
       enddo
 !
 !---------------------------------------------------------------
@@ -1307,7 +1313,7 @@ CONTAINS
 !         (T<T0:QR->QS or QR->QG) (T>=T0: enhance melting of snow)
 !-------------------------------------------------------------
             acrfac = 30.*rslope3(i,k,1)*rslope2(i,k,1)*rslope(i,k,2)           &
-                     + 5.*rslope2(i,k,1)*rslope2(i,k,1)*rslope2(i,k,2)         &
+                     +10.*rslope2(i,k,1)*rslope2(i,k,1)*rslope2(i,k,2)         & 
                      + 2.*rslope3(i,k,1)*rslope3(i,k,2)
             psacr(i,k) = pi*pi*ncr(i,k,3)*n0s*n0sfac(i,k)*abs(vt2ave-vt2r)     &
                         *(denr/den(i,k))*acrfac
@@ -1330,7 +1336,7 @@ CONTAINS
 !-------------------------------------------------------------
           if(qrs(i,k,3).gt.qcrmin .and. qrs(i,k,1).gt.qcrmin) then
             acrfac = 30.*rslope3(i,k,1)*rslope2(i,k,1)*rslope(i,k,3)           &
-                    + 5.*rslope2(i,k,1)*rslope2(i,k,1)*rslope2(i,k,3)          &
+                    +10.*rslope2(i,k,1)*rslope2(i,k,1)*rslope2(i,k,3)          & 
                     + 2.*rslope3(i,k,1)*rslope3(i,k,3)
             pgacr(i,k) = pi*pi*ncr(i,k,3)*n0g*abs(vt2ave-vt2r)*(denr/den(i,k)) &
                         *acrfac
@@ -1498,7 +1504,7 @@ CONTAINS
 !
 !----------------------------------------------------------------
 !     check mass conservation of generation terms and feedback to the
-!     large scale
+!     large scale
 !
       do k = kts, kte
         do i = its, ite

@@ -9,7 +9,8 @@ MODULE module_sf_noahdrv
       &                         NSLTYPE, SLPCATS, SLOPE_DATA, SBETA_DATA, FXEXP_DATA, CSOIL_DATA,           &
       &                         SALP_DATA, REFDK_DATA, REFKDT_DATA, FRZK_DATA, ZBOT_DATA, CZIL_DATA,        &
       &                         SMLOW_DATA, SMHIGH_DATA, LVCOEF_DATA, NSLOPE, &
-      &                         FRH2O,ZTOPVTBL,ZBOTVTBL
+      &                         FRH2O,ZTOPVTBL,ZBOTVTBL, &
+      &                         LOW_DENSITY_RESIDENTIAL, HIGH_DENSITY_RESIDENTIAL, HIGH_INTENSITY_INDUSTRIAL
 
   USE module_sf_urban,    only: urban, oasis, IRI_SCHEME
   USE module_sf_noahlsm_glacial_only, only: sflx_glacial
@@ -47,7 +48,7 @@ CONTAINS
                   XICE_THRESHOLD,                               &
                   RDLAI2D,USEMONALB,                            &
                   RIB,                                          & !?
-                  NOAHRES,                                      &
+                  NOAHRES,opt_thcnd,                            &
 ! Noah UA changes
                   ua_phys,flx4_2d,fvb_2d,fbur_2d,fgsn_2d,       &
                   ids,ide, jds,jde, kds,kde,                    &
@@ -91,7 +92,9 @@ CONTAINS
                   a_u_bep,a_v_bep,a_t_bep,a_q_bep,              & !O multi-layer urban
                   a_e_bep,b_u_bep,b_v_bep,                      & !O multi-layer urban
                   b_t_bep,b_q_bep,b_e_bep,dlg_bep,              & !O multi-layer urban
-                  dl_u_bep,sf_bep,vl_bep,sfcheadrt,INFXSRT, soldrain      )   !O multi-layer urban         
+                  dl_u_bep,sf_bep,vl_bep,sfcheadrt,INFXSRT, soldrain      &   !O multi-layer urban         
+                 ,SDA_HFX, SDA_QFX, HFX_BOTH, QFX_BOTH, QNORM, fasdas     &   !fasdas
+                  )   !O multi-layer urban         
 
 !----------------------------------------------------------------
     IMPLICIT NONE
@@ -324,6 +327,7 @@ CONTAINS
                                                            ZNT
    REAL,    DIMENSION( ims:ime, jms:jme )                     , &
             INTENT(OUT)      ::                         NOAHRES
+   INTEGER, INTENT(IN)       ::                         OPT_THCND
 
 ! Noah UA changes
    LOGICAL,                                INTENT(IN)  :: UA_PHYS
@@ -629,8 +633,26 @@ CONTAINS
   REAL :: APELM,APES,SFCTH2,PSFC
   real, intent(in) :: xice_threshold
   character(len=80) :: message_text
+!
+!  FASDAS
+!
+   REAL,    DIMENSION( ims:ime, jms:jme ),  OPTIONAL,                     &
+            INTENT(INOUT)  ::   SDA_HFX, SDA_QFX, HFX_BOTH, QFX_BOTH, QNORM
+   INTEGER, INTENT(IN   )  ::  fasdas
+!  local vars
+   REAL                    ::  XSDA_HFX, XSDA_QFX, XQNORM
+   REAL                    ::  HFX_PHY, QFX_PHY
+   REAL                    ::  DZQ
+   REAL                    ::  HCPCT_FASDAS
 
-
+   HFX_PHY = 0.0   ! initialize
+   QFX_PHY = 0.0
+   XQNORM  = 0.0
+   XSDA_HFX = 0.0
+   XSDA_QFX = 0.0
+!
+!  END FASDAS
+!
   FLX4  = 0.0 !BSINGH - Initialized to 0.0
   FVB   = 0.0 !BSINGH - Initialized to 0.0
   FBUR  = 0.0 !BSINGH - Initialized to 0.0
@@ -772,6 +794,7 @@ CONTAINS
           LH_RURAL(I,J)=LH(I,J)
           EMISS_RURAL(I,J)=EMISS(I,J)
           GRDFLX_RURAL(I,J)=GRDFLX(I,J)
+
         ELSE
 ! Land or sea-ice case
 
@@ -803,15 +826,19 @@ CONTAINS
               DQSDT2=Q2SATI*6174./(SFCTSNO**2)
             ENDIF
 ! for snow cover fraction at 0 C, ground temp will not change, so DQSDT2 effectively zero
-            IF(T1 .GT. 273. .AND. SNOWC(I,J) .GT. 0.)DQSDT2=DQSDT2*(1.-SNOWC(I,J))
+! V3.8 add condition for SWDOWN to restrict condition to positive forcing (JD)
+            IF(T1 .GT. 273. .AND. SNOWC(I,J) .GT. 0. .AND. SWDOWN(I,J) .GT. 10.)DQSDT2=DQSDT2*(1.-SNOWC(I,J))
           ENDIF
 
           ! Land-ice or land points use the usual deep-soil temperature.
           TBOT=TMN(I,J)
 
+          IF(ISURBAN.EQ.1) THEN
+! assumes these only need to be set for USGS land data
           IF(VEGTYP.EQ.25) SHDFAC=0.0000
           IF(VEGTYP.EQ.26) SHDFAC=0.0000
           IF(VEGTYP.EQ.27) SHDFAC=0.0000
+          ENDIF
           IF(SOILTYP.EQ.14.AND.XICE(I,J).EQ.0.)THEN
 #if 0
          IF(IPRINT)PRINT*,' SOIL TYPE FOUND TO BE WATER AT A LAND-POINT'
@@ -855,8 +882,8 @@ CONTAINS
 ! the "NATURAL" category in the VEGPARM.TBL
 	
 	   IF(SF_URBAN_PHYSICS == 1.OR. SF_URBAN_PHYSICS==2.OR.SF_URBAN_PHYSICS==3 ) THEN
-                IF( IVGTYP(I,J) == ISURBAN .or. IVGTYP(I,J) == 31 .or. &
-                  IVGTYP(I,J) == 32 .or. IVGTYP(I,J) == 33) THEN
+                IF( IVGTYP(I,J) == ISURBAN .or. IVGTYP(I,J) == LOW_DENSITY_RESIDENTIAL .or. &
+                  IVGTYP(I,J) == HIGH_DENSITY_RESIDENTIAL .or. IVGTYP(I,J) == HIGH_INTENSITY_INDUSTRIAL) THEN
 		 VEGTYP = NATURAL
                  SHDFAC = SHDTBL(NATURAL)
                  ALBEDOK =0.2         !  0.2
@@ -876,8 +903,8 @@ CONTAINS
                  ENDIF
                 ENDIF
            ELSE
-                 IF( IVGTYP(I,J) == ISURBAN .or. IVGTYP(I,J) == 31 .or. &
-                  IVGTYP(I,J) == 32 .or. IVGTYP(I,J) == 33) THEN
+                 IF( IVGTYP(I,J) == ISURBAN .or. IVGTYP(I,J) == LOW_DENSITY_RESIDENTIAL .or. &
+                  IVGTYP(I,J) == HIGH_DENSITY_RESIDENTIAL .or. IVGTYP(I,J) == HIGH_INTENSITY_INDUSTRIAL) THEN
                   VEGTYP = ISURBAN
            	 ENDIF
            ENDIF
@@ -893,8 +920,8 @@ CONTAINS
            if (tloc.lt.0) tloc=tloc+24
            if (tloc==0) tloc=24
            CALL cal_mon_day(julian,julyr,jmonth,jday) 
-           IF( IVGTYP(I,J) == ISURBAN .or. IVGTYP(I,J) == 31 .or. &
-                IVGTYP(I,J) == 32 .or. IVGTYP(I,J) == 33) THEN
+           IF( IVGTYP(I,J) == ISURBAN .or. IVGTYP(I,J) == LOW_DENSITY_RESIDENTIAL .or. &
+                IVGTYP(I,J) == HIGH_DENSITY_RESIDENTIAL .or. IVGTYP(I,J) == HIGH_INTENSITY_INDUSTRIAL) THEN
             AOASIS = oasis  ! urban oasis effect
                    IF (IRIOPTION ==1) THEN
                    IF (tloc==21 .or. tloc==22) THEN  !irrigation on vegetaion in urban area, MAY-SEP, 9-10pm
@@ -962,7 +989,21 @@ CONTAINS
     ELSEIF (ICE == 0) THEN
 
        ! Non-glacial land
-       
+!
+!  FASDAS
+!
+       IF( fasdas == 1 ) THEN
+
+         DZQ = DZ8W(I,1,J)
+         XSDA_HFX= SDA_HFX(I,J)*RHO(I,1,J)*CPM(I,J)*DZQ  ! W/m^2
+         ! TWG2015 Bugfix remove factor of 1000.0 for correct units
+         XSDA_QFX= SDA_QFX(I,J)*RHO(I,1,J)*DZQ          ! Kg/m2/s of water
+         XQNORM = QNORM(I,J)
+
+       ENDIF
+!
+!  END FASDAS
+!
        CALL SFLX (I,J,FFROZP, ISURBAN, DT,ZLVL,NSOIL,SLDPTH,       &    !C
                  LOCAL,                                            &    !L
                  LUTYPE, SLTYPE,                                   &    !CL
@@ -986,8 +1027,10 @@ CONTAINS
                  RIBB,                                             &
                  SMCWLT,SMCDRY,SMCREF,SMCMAX,NROOT,                &
                  sfcheadrt(i,j),                                   &    !I
-                 INFXSRT(i,j),ETPND1,AOASIS                        &    !O
+                 INFXSRT(i,j),ETPND1,OPT_THCND,AOASIS              &    !O
+                ,XSDA_QFX, HFX_PHY, QFX_PHY, XQNORM, fasdas, HCPCT_FASDAS    &   ! fasdas
                  )
+
 
 #ifdef WRF_HYDRO
                  soldrain(i,j) = RUNOFF2*DT*1000.0
@@ -1007,6 +1050,21 @@ CONTAINS
           SMC(NS) = 1.0
           SMAV(NS) = 1.0
        ENDDO
+!
+!  FASDAS
+!
+       IF( fasdas == 1 ) THEN
+
+         DZQ = DZ8W(I,1,J)
+         XSDA_HFX= SDA_HFX(I,J)*RHO(I,1,J)*CPM(I,J)*DZQ  ! W/m^2
+         XSDA_QFX= 0.0          ! Kg/m2/s of water
+         XQNORM = 0.0
+
+       ENDIF
+!
+!  END FASDAS
+!
+
        CALL SFLX_GLACIAL(I,J,ISICE,FFROZP,DT,ZLVL,NSOIL,SLDPTH,   &    !C
             &    LWDN,SOLNET,SFCPRS,PRCP,SFCTMP,Q2K,              &    !F
             &    TH2,Q2SAT,DQSDT2,                                &    !I
@@ -1065,6 +1123,22 @@ CONTAINS
           EMISS_RURAL(I,J) = EMISSI
 ! Noah: activate time-varying roughness length (V3.3 Feb 2011)
           ZNT(I,J)=Z0K
+!
+! FASDAS
+!
+! Update Skin Temperature
+       IF( fasdas == 1 ) THEN
+           XSDA_QFX= XSDA_QFX*ELWV*XQNORM
+
+        !TWG2015 Bugfix to multiply Heat Capacity by Soil Depth for correct
+        !units 
+
+           T1 = T1 + (XSDA_HFX-XSDA_QFX)*DT/(HCPCT_FASDAS*DZS(1))
+
+       END IF
+!
+! END FASDAS
+!
           TSK(I,J)=T1
           TSK_RURAL(I,J)=T1
           HFX(I,J)=SHEAT
@@ -1136,8 +1210,8 @@ CONTAINS
 ! Input variables lsm --> urban
 
 
-          IF( IVGTYP(I,J) == ISURBAN .or. IVGTYP(I,J) == 31 .or. &
-              IVGTYP(I,J) == 32 .or. IVGTYP(I,J) == 33 ) THEN
+          IF( IVGTYP(I,J) == ISURBAN .or. IVGTYP(I,J) == LOW_DENSITY_RESIDENTIAL .or. &
+              IVGTYP(I,J) == HIGH_DENSITY_RESIDENTIAL .or. IVGTYP(I,J) == HIGH_INTENSITY_INDUSTRIAL ) THEN
 
 ! Call urban
 
@@ -1200,14 +1274,14 @@ CONTAINS
 !
 !
 !      Limits to avoid dividing by small number
-            if (CHS(I,J) < 1.0E-04) then
-               CHS(I,J)  = 1.0E-04
+            if (CHS(I,J) < 1.0E-02) then
+               CHS(I,J)  = 1.0E-02
             endif
-            if (CHS2(I,J) < 1.0E-04) then
-               CHS2(I,J)  = 1.0E-04
+            if (CHS2(I,J) < 1.0E-02) then
+               CHS2(I,J)  = 1.0E-02
             endif
-            if (CQS2(I,J) < 1.0E-04) then
-               CQS2(I,J)  = 1.0E-04
+            if (CQS2(I,J) < 1.0E-02) then
+               CQS2(I,J)  = 1.0E-02
             endif
 !
             CHS_URB  = CHS(I,J)
@@ -1571,8 +1645,8 @@ CONTAINS
               G_URB2D(I,J)     = 0.
               RN_URB2D(I,J)    = 0.
             endif
-!          IF( IVGTYP(I,J) == 1 .or. IVGTYP(I,J) == 31 .or. &
-!                  IVGTYP(I,J) == 32 .or. IVGTYP(I,J) == 33) THEN
+!          IF( IVGTYP(I,J) == 1 .or. IVGTYP(I,J) == LOW_DENSITY_RESIDENTIAL .or. &
+!                  IVGTYP(I,J) == HIGH_DENSITY_RESIDENTIAL .or. IVGTYP(I,J) == HIGH_INTENSITY_INDUSTRIAL) THEN
 !                    print*,'ivgtyp, qfx, hfx',ivgtyp(i,j),hfx_rural(i,j),qfx_rural(i,j)
 !                    print*,'ivgtyp,hfx,hfx_urb,hfx_rural',hfx(i,j),hfx_urb(i,j),hfx_rural(i,j)
 !                    print*,'lh,lh_rural',lh(i,j),lh_rural(i,j)
@@ -1680,7 +1754,7 @@ CONTAINS
      DO i = its,itf
        IF ( ISLTYP( i,j ) .LT. 1 ) THEN
          errflag = 1
-         WRITE(err_message,*)"module_sf_noahlsm.F: lsminit: out of range ISLTYP ",i,j,ISLTYP( i,j )
+         WRITE(err_message,*)"module_sf_noahdrv.F: lsminit: out of range ISLTYP ",i,j,ISLTYP( i,j )
          CALL wrf_message(err_message)
        ENDIF
        IF(.not.RDMAXALB) THEN
@@ -1689,8 +1763,13 @@ CONTAINS
      ENDDO
    ENDDO
    IF ( errflag .EQ. 1 ) THEN
-      CALL wrf_error_fatal( "module_sf_noahlsm.F: lsminit: out of range value "// &
+#if ( HWRF == 1 ) 
+      CALL wrf_message( "WARNING: message only; was fatal. module_sf_noahdrv.F: lsminit: out of range value "// &
                             "of ISLTYP. Is this field in the input?" )
+#else
+      CALL wrf_error_fatal( "module_sf_noahdrv.F: lsminit: out of range value "// &
+                            "of ISLTYP. Is this field in the input?" )
+#endif
    ENDIF
 
 ! initialize soil liquid water content SH2O
@@ -1787,7 +1866,10 @@ CONTAINS
         INTEGER , PARAMETER :: OPEN_OK = 0
 
         character*128 :: mess , message
+        character*256 :: a_string
         logical, external :: wrf_dm_on_monitor
+        integer , parameter :: loop_max   = 10
+        integer             :: loop_count
 
 
 !-----SPECIFY VEGETATION RELATED CHARACTERISTICS :
@@ -1826,8 +1908,9 @@ CONTAINS
 
         LUMATCH=0
 
+        loop_count = 0
+        READ (19,FMT='(A)',END=2002) a_string
         FIND_LUTYPE : DO WHILE (LUMATCH == 0)
-           READ (19,*,END=2002)
            READ (19,*,END=2002)LUTYPE
            READ (19,*)LUCATS,IINDEX
 
@@ -1836,10 +1919,16 @@ CONTAINS
               CALL wrf_message( mess )
               LUMATCH=1
            ELSE
+              loop_count = loop_count+1
               call wrf_message ( "Skipping over LUTYPE = " // TRIM ( LUTYPE ) )
-              DO LC = 1, LUCATS+14
-                 read(19,*)
-              ENDDO
+              FIND_VEGETATION_PARAMETER_FLAG : DO
+                 READ (19,FMT='(A)', END=2002) a_string
+                 IF ( a_string(1:21) .EQ. 'Vegetation Parameters' ) THEN
+                    EXIT FIND_VEGETATION_PARAMETER_FLAG
+                 ELSE IF ( loop_count .GE. loop_max ) THEN
+                    CALL wrf_error_fatal ( 'Too many loops in VEGPARM.TBL')
+                 ENDIF
+              ENDDO FIND_VEGETATION_PARAMETER_FLAG
            ENDIF
         ENDDO FIND_LUTYPE
 ! prevent possible array overwrite, Bill Bovermann, IBM, May 6, 2008
@@ -1886,6 +1975,18 @@ CONTAINS
           READ (19,*)BARE
           READ (19,*)
           READ (19,*)NATURAL
+          READ (19,*)
+          READ (19,*)
+          READ (19,FMT='(A)') a_string
+          IF ( a_string(1:21) .EQ. 'Vegetation Parameters' ) THEN
+             CALL wrf_message     ("Expected low and high density residential, and high density industrial information in VEGPARM.TBL")
+             CALL wrf_error_fatal ("This could be caused by using an older VEGPARM.TBL file with a newer WRF source code.")
+          ENDIF
+          READ (19,*)LOW_DENSITY_RESIDENTIAL
+          READ (19,*)
+          READ (19,*)HIGH_DENSITY_RESIDENTIAL
+          READ (19,*)
+          READ (19,*)HIGH_INTENSITY_INDUSTRIAL
         ENDIF
 !
  2002   CONTINUE
@@ -1923,6 +2024,9 @@ CONTAINS
       CALL wrf_dm_bcast_real    ( RSMAX_DATA  , 1 )
       CALL wrf_dm_bcast_integer ( BARE    , 1 )
       CALL wrf_dm_bcast_integer ( NATURAL , 1 )
+      CALL wrf_dm_bcast_integer ( LOW_DENSITY_RESIDENTIAL , 1 )
+      CALL wrf_dm_bcast_integer ( HIGH_DENSITY_RESIDENTIAL , 1 )
+      CALL wrf_dm_bcast_integer ( HIGH_INTENSITY_INDUSTRIAL , 1 )
 
 !
 !-----READ IN SOIL PROPERTIES FROM SOILPARM.TBL
@@ -2097,7 +2201,7 @@ SUBROUTINE lsm_mosaic(DZ8W,QV3D,P8W3D,T3D,TSK,                      &
                   XICE_THRESHOLD,                               &
                   RDLAI2D,USEMONALB,                            &
                   RIB,                                          & !?
-                  NOAHRES,                                      &
+                  NOAHRES,OPT_THCND,                            &
                  NLCAT,landusef,landusef2,                       & ! danli mosaic
                  sf_surface_mosaic,mosaic_cat,mosaic_cat_index,  & ! danli mosaic 
                  TSK_mosaic,QSFC_mosaic,                         & ! danli mosaic 
@@ -2161,7 +2265,10 @@ SUBROUTINE lsm_mosaic(DZ8W,QV3D,P8W3D,T3D,TSK,                      &
                   a_u_bep,a_v_bep,a_t_bep,a_q_bep,              & !O multi-layer urban
                   a_e_bep,b_u_bep,b_v_bep,                      & !O multi-layer urban
                   b_t_bep,b_q_bep,b_e_bep,dlg_bep,              & !O multi-layer urban
-                  dl_u_bep,sf_bep,vl_bep,sfcheadrt,INFXSRT, soldrain      )   !O multi-layer urban         
+                  dl_u_bep,sf_bep,vl_bep                        & !O multi-layer urban
+                 ,sfcheadrt,INFXSRT, soldrain                   & !hydro
+                 ,SDA_HFX, SDA_QFX, HFX_BOTH, QFX_BOTH, QNORM, fasdas     &   !fasdas
+                  )
 
 !----------------------------------------------------------------
     IMPLICIT NONE
@@ -2395,6 +2502,7 @@ SUBROUTINE lsm_mosaic(DZ8W,QV3D,P8W3D,T3D,TSK,                      &
                                                            ZNT
    REAL,    DIMENSION( ims:ime, jms:jme )                     , &
             INTENT(OUT)      ::                         NOAHRES
+   INTEGER,                                INTENT(IN)  :: OPT_THCND
 
 ! Noah UA changes
    LOGICAL,                                INTENT(IN)  :: UA_PHYS
@@ -2737,7 +2845,25 @@ SUBROUTINE lsm_mosaic(DZ8W,QV3D,P8W3D,T3D,TSK,                      &
   REAL :: APELM,APES,SFCTH2,PSFC
   real, intent(in) :: xice_threshold
   character(len=80) :: message_text
+!
+!  FASDAS: it doesn't work for mosaic, but we need the variables to call sflx
+!
+   REAL,    DIMENSION( ims:ime, jms:jme )                     , &
+            INTENT(INOUT)  ::   SDA_HFX, SDA_QFX, HFX_BOTH, QFX_BOTH, QNORM
+   INTEGER, INTENT(IN   )  ::  fasdas
+   REAL                    ::  XSDA_HFX, XSDA_QFX, XQNORM
+   REAL                    ::  HFX_PHY, QFX_PHY
+   REAL                    ::  DZQ
+   REAL                    ::  HCPCT_FASDAS
 
+   HFX_PHY = 0.0   ! initialize
+   QFX_PHY = 0.0
+   XQNORM  = 0.0
+   XSDA_HFX = 0.0
+   XSDA_QFX = 0.0
+!
+!  END FASDAS
+!
 ! MEK MAY 2007
       FDTLIW=DT/ROWLIW
 ! MEK JUL2007
@@ -3038,8 +3164,8 @@ SUBROUTINE lsm_mosaic(DZ8W,QV3D,P8W3D,T3D,TSK,                      &
       	!   IF(SF_URBAN_PHYSICS == 1.OR. SF_URBAN_PHYSICS==2.OR.SF_URBAN_PHYSICS==3 ) THEN
                        
       
-           !           IF( IVGTYP(I,J) == ISURBAN .or. IVGTYP(I,J) == 31 .or. &
-           !            IVGTYP(I,J) == 32 .or. IVGTYP(I,J) == 33) THEN
+           !           IF( IVGTYP(I,J) == ISURBAN .or. IVGTYP(I,J) == LOW_DENSITY_RESIDENTIAL .or. &
+           !            IVGTYP(I,J) == HIGH_DENSITY_RESIDENTIAL .or. IVGTYP(I,J) == HIGH_INTENSITY_INDUSTRIAL) THEN
            !	 VEGTYP = NATURAL
            !            SHDFAC = SHDTBL(NATURAL)
            !            ALBEDOK =0.2         !  0.2
@@ -3059,8 +3185,8 @@ SUBROUTINE lsm_mosaic(DZ8W,QV3D,P8W3D,T3D,TSK,                      &
          !              ENDIF
          !             ENDIF
           !       ELSE
-           !            IF( IVGTYP(I,J) == ISURBAN .or. IVGTYP(I,J) == 31 .or. &
-          !              IVGTYP(I,J) == 32 .or. IVGTYP(I,J) == 33) THEN
+           !            IF( IVGTYP(I,J) == ISURBAN .or. IVGTYP(I,J) == LOW_DENSITY_RESIDENTIAL .or. &
+          !              IVGTYP(I,J) == HIGH_DENSITY_RESIDENTIAL .or. IVGTYP(I,J) == HIGH_INTENSITY_INDUSTRIAL) THEN
            !             VEGTYP = ISURBAN
            !      	 ENDIF
            !      ENDIF
@@ -3069,8 +3195,8 @@ SUBROUTINE lsm_mosaic(DZ8W,QV3D,P8W3D,T3D,TSK,                      &
       
             If ( SF_URBAN_PHYSICS == 0 ) THEN   ! ONLY NOAH
       
-                 IF( IVGTYP(I,J) == ISURBAN .or. IVGTYP(I,J) == 31 .or. &
-                       IVGTYP(I,J) == 32 .or. IVGTYP(I,J) == 33) THEN
+                 IF( IVGTYP(I,J) == ISURBAN .or. IVGTYP(I,J) == LOW_DENSITY_RESIDENTIAL .or. &
+                       IVGTYP(I,J) == HIGH_DENSITY_RESIDENTIAL .or. IVGTYP(I,J) == HIGH_INTENSITY_INDUSTRIAL) THEN
                        Noah_call = .TRUE.                 
                        VEGTYP = ISURBAN
                  ENDIF
@@ -3079,8 +3205,8 @@ SUBROUTINE lsm_mosaic(DZ8W,QV3D,P8W3D,T3D,TSK,                      &
             
             IF(SF_URBAN_PHYSICS == 1) THEN
       
-                 IF( IVGTYP(I,J) == ISURBAN .or. IVGTYP(I,J) == 31 .or. &
-                       IVGTYP(I,J) == 32 .or. IVGTYP(I,J) == 33) THEN   
+                 IF( IVGTYP(I,J) == ISURBAN .or. IVGTYP(I,J) == LOW_DENSITY_RESIDENTIAL .or. &
+                       IVGTYP(I,J) == HIGH_DENSITY_RESIDENTIAL .or. IVGTYP(I,J) == HIGH_INTENSITY_INDUSTRIAL) THEN   
               	
                        Noah_call = .TRUE.                       
               	       VEGTYP = NATURAL                                              
@@ -3106,8 +3232,8 @@ SUBROUTINE lsm_mosaic(DZ8W,QV3D,P8W3D,T3D,TSK,                      &
            if (tloc==0) tloc=24
            CALL cal_mon_day(julian,julyr,jmonth,jday) 
 	  IF(SF_URBAN_PHYSICS == 1) THEN
-           IF( IVGTYP(I,J) == ISURBAN .or. IVGTYP(I,J) == 31 .or. &
-                IVGTYP(I,J) == 32 .or. IVGTYP(I,J) == 33) THEN
+           IF( IVGTYP(I,J) == ISURBAN .or. IVGTYP(I,J) == LOW_DENSITY_RESIDENTIAL .or. &
+                IVGTYP(I,J) == HIGH_DENSITY_RESIDENTIAL .or. IVGTYP(I,J) == HIGH_INTENSITY_INDUSTRIAL) THEN
             AOASIS = oasis  ! urban oasis effect
                    IF (IRIOPTION ==1) THEN
                    IF (tloc==21 .or. tloc==22) THEN  !irrigation on vegetaion in urban area, MAY-SEP, 9-10pm
@@ -3202,7 +3328,8 @@ SUBROUTINE lsm_mosaic(DZ8W,QV3D,P8W3D,T3D,TSK,                      &
                        RIBB,                                             &
                        SMCWLT,SMCDRY,SMCREF,SMCMAX,NROOT,                &
                        sfcheadrt(i,j),                                   &    !I
-                       INFXSRT(i,j),ETPND1,AOASIS                        &    !O
+                       INFXSRT(i,j),ETPND1,OPT_THCND,AOASIS              &    !O
+                ,XSDA_QFX, HFX_PHY, QFX_PHY, XQNORM, fasdas, HCPCT_FASDAS    & ! fasdas vars
                        )
       
 #ifdef WRF_HYDRO
@@ -3350,20 +3477,20 @@ SUBROUTINE lsm_mosaic(DZ8W,QV3D,P8W3D,T3D,TSK,                      &
       !--------------------------------------
       ! Input variables lsm --> urban
       
-                IF( IVGTYP(I,J) == ISURBAN .or. IVGTYP(I,J) == 31 .or. &
-                    IVGTYP(I,J) == 32 .or. IVGTYP(I,J) == 33 ) THEN            
+                IF( IVGTYP(I,J) == ISURBAN .or. IVGTYP(I,J) == LOW_DENSITY_RESIDENTIAL .or. &
+                    IVGTYP(I,J) == HIGH_DENSITY_RESIDENTIAL .or. IVGTYP(I,J) == HIGH_INTENSITY_INDUSTRIAL ) THEN            
       
                 !  UTYPE_URB = UTYPE_URB2D(I,J) !urban type (low, high or industrial)
                 !  this need to be changed in the mosaic danli
       
                 IF(IVGTYP(I,J)==ISURBAN) UTYPE_URB=2
-                IF(IVGTYP(I,J)==31) UTYPE_URB=3
-                IF(IVGTYP(I,J)==32) UTYPE_URB=2
-                IF(IVGTYP(I,J)==33) UTYPE_URB=1
+                IF(IVGTYP(I,J)==LOW_DENSITY_RESIDENTIAL) UTYPE_URB=1
+                IF(IVGTYP(I,J)==HIGH_DENSITY_RESIDENTIAL) UTYPE_URB=2
+                IF(IVGTYP(I,J)==HIGH_INTENSITY_INDUSTRIAL) UTYPE_URB=3
                         
-                IF(UTYPE_URB==3) FRC_URB2D(I,J)=0.5
+                IF(UTYPE_URB==1) FRC_URB2D(I,J)=0.5
                 IF(UTYPE_URB==2) FRC_URB2D(I,J)=0.9
-                IF(UTYPE_URB==1) FRC_URB2D(I,J)=0.95
+                IF(UTYPE_URB==3) FRC_URB2D(I,J)=0.95
       
                   TA_URB    = SFCTMP           ! [K]
                   QA_URB    = Q2K              ! [kg/kg]
@@ -3947,8 +4074,8 @@ SUBROUTINE lsm_mosaic(DZ8W,QV3D,P8W3D,T3D,TSK,                      &
       ! the "NATURAL" category in the VEGPARM.TBL
       	
       	   IF(SF_URBAN_PHYSICS == 1.OR. SF_URBAN_PHYSICS==2.OR.SF_URBAN_PHYSICS==3 ) THEN
-                      IF( IVGTYP(I,J) == ISURBAN .or. IVGTYP(I,J) == 31 .or. &
-                        IVGTYP(I,J) == 32 .or. IVGTYP(I,J) == 33) THEN
+                      IF( IVGTYP(I,J) == ISURBAN .or. IVGTYP(I,J) == LOW_DENSITY_RESIDENTIAL .or. &
+                        IVGTYP(I,J) == HIGH_DENSITY_RESIDENTIAL .or. IVGTYP(I,J) == HIGH_INTENSITY_INDUSTRIAL) THEN
       		 VEGTYP = NATURAL
                        SHDFAC = SHDTBL(NATURAL)
                        ALBEDOK =0.2         !  0.2
@@ -3968,8 +4095,8 @@ SUBROUTINE lsm_mosaic(DZ8W,QV3D,P8W3D,T3D,TSK,                      &
                        ENDIF
                       ENDIF
                  ELSE
-                       IF( IVGTYP(I,J) == ISURBAN .or. IVGTYP(I,J) == 31 .or. &
-                        IVGTYP(I,J) == 32 .or. IVGTYP(I,J) == 33) THEN
+                       IF( IVGTYP(I,J) == ISURBAN .or. IVGTYP(I,J) == LOW_DENSITY_RESIDENTIAL .or. &
+                        IVGTYP(I,J) == HIGH_DENSITY_RESIDENTIAL .or. IVGTYP(I,J) == HIGH_INTENSITY_INDUSTRIAL) THEN
                         VEGTYP = ISURBAN
                  	 ENDIF
                  ENDIF
@@ -3986,8 +4113,8 @@ SUBROUTINE lsm_mosaic(DZ8W,QV3D,P8W3D,T3D,TSK,                      &
            if (tloc==0) tloc=24
            CALL cal_mon_day(julian,julyr,jmonth,jday) 
 	  IF(SF_URBAN_PHYSICS == 1) THEN
-           IF( IVGTYP(I,J) == ISURBAN .or. IVGTYP(I,J) == 31 .or. &
-                IVGTYP(I,J) == 32 .or. IVGTYP(I,J) == 33) THEN
+           IF( IVGTYP(I,J) == ISURBAN .or. IVGTYP(I,J) == LOW_DENSITY_RESIDENTIAL .or. &
+                IVGTYP(I,J) == HIGH_DENSITY_RESIDENTIAL .or. IVGTYP(I,J) == HIGH_INTENSITY_INDUSTRIAL) THEN
             AOASIS = oasis  ! urban oasis effect
                    IF (IRIOPTION ==1) THEN
                    IF (tloc==21 .or. tloc==22) THEN  !irrigation on vegetaion in urban area, MAY-SEP, 9-10pm
@@ -4077,7 +4204,8 @@ SUBROUTINE lsm_mosaic(DZ8W,QV3D,P8W3D,T3D,TSK,                      &
                        RIBB,                                             &
                        SMCWLT,SMCDRY,SMCREF,SMCMAX,NROOT,                &
                        sfcheadrt(i,j),                                   &    !I
-                       INFXSRT(i,j),ETPND1,AOASIS                        &    !O
+                       INFXSRT(i,j),ETPND1,OPT_THCND,AOASIS              &    !O
+                ,XSDA_QFX, HFX_PHY, QFX_PHY, XQNORM, fasdas, HCPCT_FASDAS    & ! fasdas vars
                        )
       
 #ifdef WRF_HYDRO
@@ -4222,8 +4350,8 @@ SUBROUTINE lsm_mosaic(DZ8W,QV3D,P8W3D,T3D,TSK,                      &
       !--------------------------------------
       ! Input variables lsm --> urban
       
-                IF( IVGTYP(I,J) == ISURBAN .or. IVGTYP(I,J) == 31 .or. &
-                    IVGTYP(I,J) == 32 .or. IVGTYP(I,J) == 33 ) THEN
+                IF( IVGTYP(I,J) == ISURBAN .or. IVGTYP(I,J) == LOW_DENSITY_RESIDENTIAL .or. &
+                    IVGTYP(I,J) == HIGH_DENSITY_RESIDENTIAL .or. IVGTYP(I,J) ==  HIGH_INTENSITY_INDUSTRIAL) THEN
       
       ! Call urban
       !

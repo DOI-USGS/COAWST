@@ -64,7 +64,7 @@ CONTAINS
       KESSLERSCHEME, LINSCHEME, SBU_YLINSCHEME, WSM3SCHEME, WSM5SCHEME, &
       WSM6SCHEME, ETAMPNEW, THOMPSON, THOMPSONAERO,                     &
       MORR_TWO_MOMENT, GSFCGCESCHEME, WDM5SCHEME, WDM6SCHEME,           &
-      NSSL_2MOM, NSSL_2MOMCCN, NSSL_1MOM, NSSL_1MOMLFO,                 &
+      NSSL_2MOM, NSSL_2MOMG, NSSL_2MOMCCN, NSSL_1MOM, NSSL_1MOMLFO,                 &
       MILBRANDT2MOM , CAMMGMPSCHEME, FAST_KHAIN_LYNN, FULL_KHAIN_LYNN    !,MILBRANDT3MOM, NSSL_3MOM
 
    IMPLICIT NONE
@@ -199,7 +199,6 @@ CONTAINS
 
    INTEGER :: i,j,k,its,ite,jts,jte,ij
    INTEGER :: idp,jdp,irc,jrc,irnc,jrnc,isnh,jsnh
-   INTEGER :: prfreq
 
    REAL              :: no_points
    REAL              :: dpsdt_sum, dmudt_sum, dardt_sum, drcdt_sum, drndt_sum
@@ -251,7 +250,7 @@ CONTAINS
 
       DOUBLE PRECISION:: hail_max
       REAL:: hail_max_sp
-      DOUBLE PRECISION, PARAMETER:: thresh_conc = 0.0001d0                 ! number conc. of graupel/hail per cubic meter
+      DOUBLE PRECISION, PARAMETER:: thresh_conc = 0.001d0                  ! number conc. of graupel/hail per cubic meter
       LOGICAL:: scheme_has_graupel
       INTEGER, PARAMETER:: ngbins=50
       DOUBLE PRECISION, DIMENSION(ngbins+1):: xxDx
@@ -883,7 +882,7 @@ CONTAINS
 !    CASE (MILBRANDT3MOM)
 !      coming in future?
 
-     CASE (NSSL_1MOMLFO, NSSL_1MOM, NSSL_2MOM, NSSL_2MOMCCN)
+     CASE (NSSL_1MOMLFO, NSSL_1MOM, NSSL_2MOM, NSSL_2MOMG, NSSL_2MOMCCN)
 
        scheme_has_graupel = .true.
        xrho_g = nssl_rho_qh
@@ -1008,15 +1007,6 @@ CONTAINS
    if (diag_print .eq. 0 ) return
 
    IF ( xtime .ne. 0. ) THEN
-
-    if(diag_print.eq.1) then
-       prfreq = dt
-!      prfreq = max(2,int(dt/60.))   ! in min
-    else
-       prfreq=10                   ! in min
-    endif
-   
-    IF (MOD(nint(dt),prfreq) == 0) THEN
 
 ! COMPUTE THE NUMBER OF MASS GRID POINTS
    no_points = float((ide-ids)*(jde-jds))
@@ -1165,7 +1155,6 @@ CONTAINS
    ENDIF
 #endif
 
-    ENDIF        ! print frequency
    ENDIF
 
 ! save values at this time step

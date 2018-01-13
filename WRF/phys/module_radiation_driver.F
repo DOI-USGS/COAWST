@@ -44,6 +44,11 @@ CONTAINS
               ,CAM_ABS_FREQ_S                         &
               ,XTIME                                           &
               ,CURR_SECS, ADAPT_STEP_FLAG       &
+              !BSINGH - For WRFCuP scheme (optional args)
+              ,cu_physics,shallowcu_forced_ra   & !CuP, wig 1-Oct-2006
+              ,cubot,cutop,cldfra_cup           & !CuP, wig 1-Oct-2006
+              ,shall                            & !CuP, wig 4-Feb-2008
+              !BSINGH - ENDS
             ! indexes
               ,IDS,IDE, JDS,JDE, KDS,KDE          &
               ,IMS,IME, JMS,JME, KMS,KME          &
@@ -72,6 +77,8 @@ CONTAINS
               , QS, F_QS                     &
               , QG, F_QG                     &
               , QNDROP, F_QNDROP    &
+              ,QNIFA,F_QNIFA                  &   ! trude
+              ,QNWFA,F_QNWFA                  &   ! trude
               ,ACSWUPT   ,ACSWUPTC            &
               ,ACSWDNT   ,ACSWDNTC            &
               ,ACSWUPB   ,ACSWUPBC            &
@@ -99,6 +106,7 @@ CONTAINS
               ,ICLOUD_CU                      &
               ,AER_RA_FEEDBACK                &
               ,QC_CU , QI_CU                  &
+              ,icloud_bl,qc_bl,cldfra_bl     & !JOE-subgrid bl clouds
               ,PM2_5_DRY, PM2_5_WATER         &
               ,PM2_5_DRY_EC                   &
               ,TAUAER300, TAUAER400 & ! jcb
@@ -134,6 +142,8 @@ CONTAINS
               ,aer_asy_opt, aer_asy_val                                   &
               ,aod5502d, angexp2d, aerssa2d, aerasy2d                     &
               ,aod5503d                                                   &
+              ,taod5502d, taod5503d                                       & !  Trude
+              ,mp_physics                                                 &
                                                                           )
 
 
@@ -146,14 +156,12 @@ CONTAINS
                                        ,SWRADSCHEME, GSFCSWSCHEME       &
                                        ,GFDLSWSCHEME, CAMLWSCHEME, CAMSWSCHEME &
                                        ,HELDSUAREZ                      &
-#ifdef HWRF
+#if ( HWRF == 1 )
                                        ,HWRFSWSCHEME, HWRFLWSCHEME  &
 #endif
                                        ,goddardlwscheme                 & 
                                        ,goddardswscheme                 &  
-# if (EM_CORE == 1)
-                                       ,CAMMGMPSCHEME                   &
-# endif
+                                       ,KFCUPSCHEME                     & !BSINGH - Added KFCUPSCHEME for WRFCuP scheme
                                        ,FLGLWSCHEME, FLGSWSCHEME
 
    USE module_model_constants
@@ -172,7 +180,7 @@ CONTAINS
    USE module_ra_rrtmg_swf  , ONLY : rrtmg_swrad_fast
    USE module_ra_cam        , ONLY : camrad
    USE module_ra_gfdleta    , ONLY : etara
-#ifdef HWRF
+#if ( HWRF == 1 )
    USE module_ra_hwrf
 #endif
    USE module_ra_hs         , ONLY : hsrad
@@ -355,7 +363,7 @@ CONTAINS
                                                          kts,kte, &
                                        num_tiles
 
-   INTEGER, INTENT(IN)            :: lw_physics, sw_physics
+   INTEGER, INTENT(IN)            :: lw_physics, sw_physics, mp_physics
    INTEGER, INTENT(IN)            :: o3input, aer_opt
    INTEGER, INTENT(IN)            :: id
    integer, intent(in)            :: swint_opt
@@ -370,6 +378,10 @@ CONTAINS
    REAL,      INTENT(IN   )       ::   cam_abs_freq_s
 
    LOGICAL,      INTENT(IN   )    ::   warm_rain
+   INTEGER,      INTENT(IN   )    ::   cu_physics                !CuP, wig 5-Oct-2006 !BSINGH - For WRFCuP scheme
+   !BSINGH - For WRFCuP scheme
+   LOGICAL, OPTIONAL, INTENT(IN)  :: shallowcu_forced_ra          !CuP, wig
+   !BSINGH -ENDS
    LOGICAL,      INTENT(IN   )    ::   is_CAMMGMP_used !BSINGH:01/31/2013: Added for CAM5 RRTMG
 
    REAL,      INTENT(IN   )       ::   RADT
@@ -406,6 +418,14 @@ CONTAINS
                                                            HTOPR, &
                                                            HBOTR, &
                                                            CUPPT
+   !BSINGH - For WRFCuP scheme
+   REAL, DIMENSION( ims:ime, jms:jme ), OPTIONAL,                 &
+        INTENT(INOUT)  ::                                         &
+                                                           cutop, & !CuP, wig 1-Oct-2006
+                                                           cubot, & !CuP, wig 1-Oct-2006
+                                                           shall    !CuP, wig 4-Feb-2008
+   !BSINGH -ENDS
+
 
    INTEGER, INTENT(IN   )  ::   julyr
 !
@@ -418,6 +438,14 @@ CONTAINS
                                                                t, &
                                                              t8w, &
                                                              rho
+
+   !BSINGH - For WRFCuP scheme
+   REAL, DIMENSION( ims:ime, kms:kme, jms:jme ), OPTIONAL,        &
+        INTENT(INOUT ) ::                            cldfra_cup     !CuP, wig 1-Oct-2006
+
+
+      !BSINGH -ENDS
+
 !
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ), OPTIONAL ,       &
          INTENT(IN ) ::  tauaer300,tauaer400,tauaer600,tauaer999, & ! jcb
@@ -425,7 +453,7 @@ CONTAINS
                                  waer300,waer400,waer600,waer999
 
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ), OPTIONAL ,       &
-         INTENT(IN ) ::          qc_cu, qi_cu
+         INTENT(IN ) ::          qc_cu, qi_cu, qc_bl
 
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ), OPTIONAL ,       &
          INTENT(IN ) ::  tauaerlw1,tauaerlw2,tauaerlw3,tauaerlw4, & ! czhao 
@@ -435,6 +463,7 @@ CONTAINS
 
    INTEGER, INTENT(IN) :: icloud_cu
 
+   INTEGER, INTENT(IN   ), OPTIONAL  ::   icloud_bl
    INTEGER, INTENT(IN   ), OPTIONAL  ::   aer_ra_feedback
 
 !jdfcz   INTEGER, OPTIONAL, INTENT(IN   )    :: progn,prescribe
@@ -536,6 +565,9 @@ CONTAINS
                                                           aerasy2d          ! gridded aerosol asy from auxinput
     REAL, DIMENSION( ims:ime, kms:kme, jms:jme ), OPTIONAL,               &
           INTENT(OUT)                                  :: aod5503d   ! 3D AOD at 550 nm
+
+    REAL, DIMENSION(ims:ime,kms:kme,jms:jme), OPTIONAL:: taod5503d         !  Trude
+    REAL, DIMENSION(ims:ime,jms:jme), OPTIONAL:: taod5502d                 !  Trude
 !
    REAL, INTENT(IN  )   ::                                GMT,dt, &
                                                    julian, xtime
@@ -594,7 +626,8 @@ CONTAINS
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                  & ! ckay for sub-grid cloud fraction
          OPTIONAL,                                                &
          INTENT(INOUT) ::                              cldfra_dp, &
-                                                       cldfra_sh
+                                                       cldfra_sh, &
+                                                       cldfra_bl
 
 !..G. Thompson
    REAL, DIMENSION(ims:ime,kms:kme,jms:jme), INTENT(IN):: re_cloud, re_ice, re_snow
@@ -623,9 +656,11 @@ CONTAINS
          OPTIONAL,                                                &
          INTENT(INOUT ) ::                                        &
                                                                pb &
-                                        ,qv,qc,qr,qi,qs,qg,qndrop
+                                        ,qv,qc,qr,qi,qs,qg,qndrop,      &
+                                                      qnifa,qnwfa        ! Trude
 
-   LOGICAL, OPTIONAL ::     f_qv,f_qc,f_qr,f_qi,f_qs,f_qg,f_qndrop
+   LOGICAL, OPTIONAL ::     f_qv,f_qc,f_qr,f_qi,f_qs,f_qg,f_qndrop,     &
+                                                f_qnifa,f_qnwfa          ! trude
 !
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                  &
          OPTIONAL,                                                &
@@ -643,7 +678,6 @@ CONTAINS
 
    REAL , OPTIONAL, INTENT(INOUT) ::    radtacttime ! Storing the time in s when radiation is called next
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                  &
-         OPTIONAL,                                                &
          INTENT(INOUT)  ::                       o3rad
 
    ! vert nesting
@@ -651,28 +685,28 @@ CONTAINS
    REAL                           :: p_top_dummy
 
 ! LOCAL  VAR
-
+   INTEGER, DIMENSION( ims:ime, kms:kme, jms:jme ) ::    cldfra1_flag
    REAL, DIMENSION( ims:ime, jms:jme ) ::             GLAT,GLON
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ) ::    CEMISS
    REAL, DIMENSION( ims:ime, jms:jme ) ::             coszr
    REAL, DIMENSION( ims:ime, levsiz, jms:jme )  ::    ozmixt
    REAL, DIMENSION( ims:ime, alevsiz, jms:jme, 1:no_src_types )  ::    aerodt
 
-   REAL    ::    DECLIN,SOLCON,XXLAT,TLOCTM,XT24, CEN_LAT
+   REAL    ::    DECLIN,SOLCON,XXLAT,TLOCTM,XT24, CEN_LAT, cldfra_cup_mod
    INTEGER ::    i,j,k,its,ite,jts,jte,ij
    INTEGER ::    STEPABS
-   LOGICAL ::    gfdl_lw,gfdl_sw
+   LOGICAL ::    gfdl_lw,gfdl_sw, compute_cldfra_cup
    LOGICAL ::    doabsems
    LOGICAL, EXTERNAL :: wrf_dm_on_monitor
    INTEGER ::    s
 
    REAL    ::    OBECL,SINOB,SXLONG,ARG,DECDEG,                  &
                  DJUL,RJUL,ECCFAC
-   REAL, DIMENSION( ims:ime, kms:kme, jms:jme ) :: qi_temp,qc_temp
+   REAL, DIMENSION( ims:ime, kms:kme, jms:jme ) :: qc_temp
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ) :: qi_save,qc_save
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ) :: qs_save
 
-   REAL    ::    gridkm
+   REAL    ::    gridkm, Wice,Wh2o
 
    REAL    ::    next_rad_time, DTaccum
    LOGICAL ::    run_param , doing_adapt_dt , decided
@@ -692,12 +726,20 @@ CONTAINS
 ! jararias, 2013/08/10
    real :: ioh,kt,airmass,kd
    real, dimension(ims:ime,jms:jme) :: coszen_loc,hrang_loc
-! jararias 2013/11
-   real, dimension(:,:,:,:), allocatable :: tauaer_sw, ssaaer_sw, asyaer_sw
+! jararias 2013/11 but modified on 2016/2/10
+!  the following three arrays may be dimensioned by (ims,ime,kms,kme,jms,jme,aerosol_vars)
+   real, dimension(:,:,:,:), pointer :: tauaer_sw=>null(), ssaaer_sw=>null(), asyaer_sw=>null()
+
+! Trude AOD variables
+     INTEGER, PARAMETER:: taer_type = 1                                  !  rural, urban, maritime, ...
+     INTEGER, PARAMETER:: taer_aod550_opt = 2                            !  input option for AOD at 550 nm
+     INTEGER, PARAMETER:: taer_angexp_opt = 3                            !  input option for aerosol Angstrom exponent
+     INTEGER, PARAMETER:: taer_ssa_opt = 3                               !  input option for aerosol ssa
+     INTEGER, PARAMETER:: taer_asy_opt = 3                               !  input option for aerosol asy
 
 
-#ifdef HWRF
-   CHARACTER(len=265) :: wrf_err_message
+#if ( HWRF == 1 )
+   CHARACTER(len=255) :: wrf_err_message
 #endif
 
    ! This allows radiation schemes (mainly HWRF) to correctly
@@ -834,6 +876,8 @@ CONTAINS
 
    gfdl_lw = .false.
    gfdl_sw = .false.
+   flg_lw = .false.
+   flg_sw = .false.
 
 ! Allocate aerosol arrays used by aer_opt = 2 option
    IF ( PRESENT( AOD5502D ) ) THEN
@@ -852,21 +896,47 @@ CONTAINS
               allocate(asyaer_sw(ims:ime, kms:kme, jms:jme, 1:14))
 
         end select swrad_aerosol_select
-     ELSE
-        swrad_aerosol_select_stub: select case(sw_physics)
-
-           case(GODDARDSWSCHEME)
-              allocate(tauaer_sw(1, 1, 1, 1))
-              allocate(ssaaer_sw(1, 1, 1, 1))
-              allocate(asyaer_sw(1, 1, 1, 1))
-
-           case(RRTMG_SWSCHEME,RRTMG_SWSCHEME_FAST)
-              allocate(tauaer_sw(1, 1, 1, 1))
-              allocate(ssaaer_sw(1, 1, 1, 1))
-              allocate(asyaer_sw(1, 1, 1, 1))
-
-        end select swrad_aerosol_select_stub
      ENDIF
+   ENDIF
+
+! Allocate aerosol arrays used by aer_opt = 3 option, and explicit AOD from QNWFA+QNIFA   (Trude)
+   IF (PRESENT(f_qnwfa) .AND. PRESENT(f_qnifa) .AND. PRESENT(taod5503d) .AND.  PRESENT(taod5502d)) THEN
+      IF (F_QNWFA .AND. aer_opt.eq.3 .AND.                              &
+                 (sw_physics.eq.RRTMG_SWSCHEME .OR.                     &
+                  sw_physics.eq.RRTMG_SWSCHEME_FAST)) THEN
+         CALL wrf_debug (150, 'DEBUG-GT:  computing 3D AOD from QNWFA+QNIFA')
+
+         allocate(tauaer_sw(ims:ime, kms:kme, jms:jme, 1:14))
+         allocate(ssaaer_sw(ims:ime, kms:kme, jms:jme, 1:14))
+         allocate(asyaer_sw(ims:ime, kms:kme, jms:jme, 1:14))
+
+         !$OMP PARALLEL DO   &
+         !$OMP PRIVATE ( ij ,i,j,k,its,ite,jts,jte)
+         DO ij = 1 , num_tiles
+           its = i_start(ij)
+           ite = i_end(ij)
+           jts = j_start(ij)
+           jte = j_end(ij)
+
+           do j=jts,jte
+              do i=its,ite
+                 taod5502d(i,j) = 0.0
+              end do
+           end do
+
+           call gt_aod (p, DZ8W, t, qv, qnwfa, qnifa, taod5503d,        &
+                    ims,ime, jms,jme, kms,kme,its,ite, jts,jte, kts,kte) 
+
+           do j=jts,jte
+              do i=its,ite
+                 do k=kts,kte
+                    taod5502d(i,j) = taod5502d(i,j) + taod5503d(i,k,j)
+                 end do
+              end do
+           end do
+         ENDDO
+         !$OMP END PARALLEL DO
+      ENDIF
    ENDIF
 
 !---------------
@@ -966,31 +1036,29 @@ CONTAINS
         ENDDO
      ENDIF
 
-! temporarily modify hydrometeors (currently only done for GD scheme and WRF-Chem)
-!
-       IF ( PRESENT( qc ) .AND. PRESENT( qc_cu ) .AND. icloud_cu .EQ. 1 ) THEN
+! backup the incoming hydrometeors
+
+     IF ( F_QC ) THEN
           DO j=jts,jte
           DO k=kts,kte
           DO i=its,ite
-            qc_save(i,k,j) = qc(i,k,j)
-            qc(i,k,j) = qc(i,k,j) + qc_cu(i,k,j)
+             qc_save(i,k,j) = qc(i,k,j)
           ENDDO
           ENDDO
           ENDDO
-       ENDIF
-       IF ( PRESENT( qi ) .AND. PRESENT( qi_cu ) .AND. icloud_cu .EQ. 1 ) THEN
+     ENDIF
+     IF ( F_QI ) THEN
           DO j=jts,jte
           DO k=kts,kte
           DO i=its,ite
-            qi_save(i,k,j) = qi(i,k,j)
-            qi(i,k,j) = qi(i,k,j) + qi_cu(i,k,j)
+             qi_save(i,k,j) = qi(i,k,j)
           ENDDO
           ENDDO
           ENDDO
-       ENDIF
+     ENDIF
 
 ! Fill temporary water variable depending on micro package (tgs 25 Apr 2006)
-     if(PRESENT(qc) .and. PRESENT(F_QC)) then
+     if( F_QC ) then
         DO j=jts,jte
         DO k=kts,kte
         DO i=its,ite
@@ -1008,7 +1076,7 @@ CONTAINS
         ENDDO
      endif
 ! Remove this - to match NAM operational (affects GFDL and HWRF schemes)
-!    if(PRESENT(qr) .and. PRESENT(F_QR)) then
+!    if( F_QR ) then
 !       DO j=jts,jte
 !       DO k=kts,kte
 !       DO i=its,ite
@@ -1017,6 +1085,27 @@ CONTAINS
 !       ENDDO
 !       ENDDO
 !    endif
+!
+! temporarily modify hydrometeors (this is for GD scheme and WRF-Chem)
+!
+     IF ( F_QC .AND. icloud_cu .EQ. 1 ) THEN
+          DO j=jts,jte
+          DO k=kts,kte
+          DO i=its,ite
+             qc(i,k,j) = qc(i,k,j) + qc_cu(i,k,j)
+          ENDDO
+          ENDDO
+          ENDDO
+     ENDIF
+     IF ( F_QI .AND. icloud_cu .EQ. 1 ) THEN
+          DO j=jts,jte
+          DO k=kts,kte
+          DO i=its,ite
+             qi(i,k,j) = qi(i,k,j) + qi_cu(i,k,j)
+          ENDDO
+          ENDDO
+          ENDDO
+     ENDIF
 
 ! Choose how to compute cloud fraction (since 3.6)
 ! Initialize to zero 
@@ -1030,14 +1119,14 @@ CONTAINS
 
      IF ( ICLOUD == 1 ) THEN
 
-     IF ( PRESENT ( CLDFRA ) .AND.                           &
-          PRESENT(F_QC) .AND. PRESENT ( F_QI ) ) THEN
+     IF ( F_QC .OR. F_QI ) THEN
 ! Call to cloud fraction routine based on Randall 1994 (Hong Pan 1998)
 
         CALL wrf_debug (1, 'CALL cldfra1')
         CALL cal_cldfra1(CLDFRA,qv,qc,qi,qs,               &
                    F_QV,F_QC,F_QI,F_QS,t,p,                &
                    F_ICE_PHY,F_RAIN_PHY,                   &
+                   mp_physics,cldfra1_flag,                &
                    ids,ide, jds,jde, kds,kde,              &
                    ims,ime, jms,jme, kms,kme,              &
                    its,ite, jts,jte, kts,kte               )
@@ -1053,14 +1142,35 @@ CONTAINS
                 CLDFRA(i,k,j)=(1.-cldfra_cu(i,k,j))*CLDFRA(i,k,j)  ! Update resolved cloud fraction for Cu punch-through
                 CLDFRA(i,k,j)=CLDFRA(i,k,j)+cldfra_cu(i,k,j)       ! New total cloud fraction
                 CLDFRA(i,k,j)=AMIN1(1.0,CLDFRA(i,k,j))
-                qc_save(i,k,j)=qc(i,k,j)
                 qc(i,k,j) = qc(i,k,j)+qc_cu(i,k,j)*cldfra_cu(i,k,j)
-                qi_save(i,k,j)=qi(i,k,j)
                 qi(i,k,j) = qi(i,k,j)+qi_cu(i,k,j)*cldfra_cu(i,k,j)
              ENDDO
              ENDDO
              ENDDO
           ENDIF
+        ENDIF
+
+        IF ( PRESENT ( CLDFRA_BL ) .AND.  PRESENT ( QC_BL ) ) THEN
+           IF ( icloud_bl > 0 ) THEN
+           CALL wrf_debug (1, 'in rad driver; use BL clouds')
+           DO j = jts,jte
+           DO i = its,ite
+           DO k = kts,kte
+              IF (qc(i,k,j) < 1.E-6 .AND. qi(i,k,j) < 1.E-6 .AND. CLDFRA_BL(i,k,j)>0.001) THEN
+               !Partition the BL clouds into water & ice according to a linear
+               !approximation of Hobbs et al. (1974). This allows us to only use
+               !one 3D array for both cloud water & ice.
+!              Wice = 1. - MIN(1., MAX(0., (t(i,k,j)-254.)/15.))
+!              Wh2o = 1. - Wice
+               CLDFRA(i,k,j)=MAX(CLDFRA(i,k,j),CLDFRA_BL(i,k,j))
+               CLDFRA(i,k,j)=MAX(0.0,MIN(1.0,CLDFRA(i,k,j)))
+               qc(i,k,j)=qc(i,k,j) + QC_BL(i,k,j)*(MIN(1., MAX(0., (t(i,k,j)-254.)/15.)))*CLDFRA_BL(i,k,j)
+               qi(i,k,j)=qi(i,k,j) + QC_BL(i,k,j)*(1. - MIN(1., MAX(0., (t(i,k,j)-254.)/15.)))*CLDFRA_BL(i,k,j)
+              ENDIF
+           ENDDO
+           ENDDO
+           ENDDO
+           ENDIF
         ENDIF
 
         IF ( PRESENT (cldfra_mp_all) ) THEN
@@ -1083,8 +1193,7 @@ CONTAINS
  
      ELSE IF ( ICLOUD == 2 ) THEN
 
-     IF ( PRESENT ( CLDFRA ) .AND.                           &
-          PRESENT(F_QC) .AND. PRESENT ( F_QI ) ) THEN
+     IF ( F_QC .OR. F_QI ) THEN
        CALL wrf_debug (1, 'CALL cldfra2')
        CALL cal_cldfra2(CLDFRA,qc,qi,F_QC,F_QI,              &
                        ids,ide, jds,jde, kds,kde,            &
@@ -1096,31 +1205,13 @@ CONTAINS
 !..New cloud fraction scheme added by G. Thompson (2014Oct31)
 !+---+-----------------------------------------------------------------+ 
 
-      ELSEIF (ICLOUD == 3) THEN
-        IF (PRESENT(CLDFRA) .AND.                                       &
-                           PRESENT(F_QC) .AND. PRESENT ( F_QI ) ) THEN
-
-           DO j = jts,jte
-           DO k = kts,kte
-           DO i = its,ite
-              qc_save(i,k,j) = qc(i,k,j)
-              qi_save(i,k,j) = qi(i,k,j)
-           ENDDO
-           ENDDO
-           ENDDO
-           IF (PRESENT(F_QS)) THEN
+     ELSEIF (ICLOUD == 3) THEN
+        IF ( F_QC .AND. F_QI ) THEN
+           IF ( F_QS ) THEN
               DO j = jts,jte
               DO k = kts,kte
               DO i = its,ite
                  qs_save(i,k,j) = qs(i,k,j)
-              ENDDO
-              ENDDO
-              ENDDO
-           ELSE
-              DO j = jts,jte
-              DO k = kts,kte
-              DO i = its,ite
-                 qs_save(i,k,j) = 0.0
               ENDDO
               ENDDO
               ENDDO
@@ -1133,14 +1224,15 @@ CONTAINS
      &                 ims,ime, jms,jme, kms,kme,                       &
      &                 its,ite, jts,jte, kts,kte)
 
+        ELSE
+           CALL wrf_error_fatal('Can not use icloud = 3 option, missing QC or QI field.')
         ENDIF
 
      END IF
 
-! ww: Interpolating climatological ozone and aerosol to model time and levels
+!     Interpolating climatological ozone and aerosol to model time and levels
 !     Adapted from camrad code
-     IF ( PRESENT( O3RAD ) ) THEN
-     IF ( o3input .EQ. 2 .AND. id .EQ. 1 ) THEN
+     IF ( o3input .EQ. 2 ) THEN
 !       ! Find the current month (adapted from Cavallo)
 !       CALL cam_time_interp( ozmixm, pin, levsiz, date_str, &
 !                             ids , ide , jds , jde , kds , kde , &
@@ -1159,7 +1251,6 @@ CONTAINS
                               ims , ime , jms , jme , kms , kme ,     &
                               its , ite , jts , jte , kts , kte )
      ENDIF
-     ENDIF
 
      IF ( PRESENT( AEROD ) ) THEN
      IF ( aer_opt .EQ. 1 .AND. id .EQ. 1 ) THEN
@@ -1174,6 +1265,63 @@ CONTAINS
                               its , ite , jts , jte , kts , kte )
      ENDIF
      ENDIF
+
+     !Modify CLDFRA and QC for kfcupscheme cumulus scheme
+     if(present(cldfra_cup)) then
+        !BSINGH - overwrite cldfra with the cloud fraction computed in module_cu_kfcup.F        
+        !Force cloud fraction if cumulus triggered.
+        if( cu_physics == KFCUPSCHEME ) then
+           do j = jts,jte
+              do k = kts,kte
+                 do i = its,ite
+
+                    !Find whether to overwrite cldfra or not (ONLY if ICLOUD == 1)
+                    compute_cldfra_cup = .true. 
+                    if (icloud == 1 ) then
+                       compute_cldfra_cup = .false.  !-- LK Berg, 4/26/17     
+                       if(cldfra1_flag(i,k,j) == 1 .and. shall(i,j) .gt. 1) then
+                          CLDFRA(i,k,j)=0.
+                       elseif(cldfra1_flag(i,k,j) == 1 .and. shall(i,j) .le. 1) then
+                          CLDFRA(i,k,j)=0.
+                          compute_cldfra_cup = .true.    ! No resolved clouds, but check of shallow clouds.  -- LK Berg, 4/26/17
+                       elseif(cldfra1_flag(i,k,j) == 2 .and. shall(i,j) .gt. 1) then
+                          CLDFRA(i,k,j)=1.
+                       elseif(cldfra1_flag(i,k,j) == 3) then
+                          compute_cldfra_cup = .true.
+                       endif
+                    endif
+
+
+                    if(compute_cldfra_cup) then
+                       if( (int(shall(i,j)) .le.1) .and. k >= int(cubot(i,j)) .and. k <= int(cutop(i,j)) ) then  ! LD Mar232012
+                          CLDFRA(i,k,j) = cldfra_cup(i,k,j)
+                       else if( shall(i,j) .gt. 1) then       !!LD
+                          cldfra_cup(i,k,j) = 0.0
+                       end if
+                    endif
+                    if( shall(i,j) <= 1 .and. k >= cubot(i,j)  .and. k <= cutop(i,j)  ) then  ! 1=Shallow Cu  -- Changed to use for both deep and shallow  -- LK Berg 4/26/17
+                       ! Begin: wig, 4-Feb-2008
+                       !
+                       ! Override the cloud condensate values if shallow convection triggered.
+                       ! For shallow convection, use a representative condensate value based on
+                       ! observations from CHAPS (Oklahoma area) and Florida (Blyth et al. 2005)
+                       ! or the predicted value if it is greater.
+
+                       cldfra_cup_mod = cldfra_cup(i,k,j) * 1.0e-3 !modified cloud fraction, assume QCLOUD is 1 g/kg -- LK Berg 4/26/17                       
+                       qc(i,k,j) = max(cldfra_cup_mod, qc(i,k,j) )!DE+LB 2012-Feb
+
+                       ! Override the cloud fraction values calculated above if shallow
+                       ! convection triggered. For shallow convection, use a representative
+                       ! cloud fraction. In this case, the median value for shallow Cu cases
+                       ! at the ARM SGP site, 36%, Berg et al. 2008, J. Clim.
+                       if( shallowcu_forced_ra )cldfra(i,k,j) = max(0.36, cldfra(i,k,j)) ! Median shallow Cu frac at ARM SGP
+                    endif
+                 ENDDO
+              ENDDO
+           ENDDO
+        end if
+     endif
+        
 
      lwrad_select: SELECT CASE(lw_physics)
 
@@ -1239,6 +1387,9 @@ CONTAINS
                     ,f_qi=f_qi,f_qs=f_qs,f_qg=f_qg                     &
                     ,erbe_out=erbe_out                                 & !optional
                     ,aer_opt=aer_opt                                   &
+                    ,tauaer3d_sw=tauaer_sw                             & ! jararias, 2013/11
+                    ,ssaaer3d_sw=ssaaer_sw                             & ! jararias, 2013/11
+                    ,asyaer3d_sw=asyaer_sw                             & ! jararias, 2012/11
                                                                        )
 
         CASE (GFDLLWSCHEME)
@@ -1246,9 +1397,9 @@ CONTAINS
              CALL wrf_debug (100, 'CALL gfdllw')
 
              IF ( PRESENT(F_QV) .AND. PRESENT(F_QC) .AND.                     &
-                  PRESENT(F_QS) .AND. PRESENT(qs)   .AND.                     &
+                  PRESENT(F_QI) .AND. (PRESENT(qi) .OR. PRESENT(qs))  .AND.                     &
                   PRESENT(qv)   .AND. PRESENT(qc)   ) THEN
-               IF ( F_QV .AND. F_QC .AND. F_QS) THEN
+               IF ( F_QV .AND. F_QC .AND. (F_QI .OR. F_QS)) THEN
                  gfdl_lw  = .true.
                  CALL ETARA(                                        &
                   DT=dt,XLAND=xland                                 &
@@ -1281,7 +1432,7 @@ CONTAINS
                CALL wrf_error_fatal('Can not call ETARA (1b). Missing moisture fields.')
              ENDIF
 
-#ifdef HWRF
+#if ( HWRF == 1 )
        CASE (HWRFLWSCHEME)
 
              CALL wrf_debug (100, 'CALL hwrflw')
@@ -1415,8 +1566,8 @@ CONTAINS
                   IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme,&
                   ITS=its,ITE=ite, JTS=jts,JTE=jte, KTS=kts,KTE=kte,&
                   LWUPFLX=LWUPFLX,LWUPFLXC=LWUPFLXC,                &
-                  LWDNFLX=LWDNFLX,LWDNFLXC=LWDNFLXC                 &
-                                                                    )
+                  LWDNFLX=LWDNFLX,LWDNFLXC=LWDNFLXC,                &
+                  mp_physics=mp_physics                             )
 
         CASE (RRTMG_LWSCHEME_FAST)
              CALL wrf_debug (100, 'CALL rrtmg_lw')
@@ -1531,7 +1682,7 @@ CONTAINS
            
      END SELECT lwrad_select    
 
-     IF (lw_physics .gt. 0 .and. .not.gfdl_lw) THEN
+     IF (lw_physics .gt. 0 .and. .not.gfdl_lw .and. .not.flg_lw) THEN
         DO j=jts,jte
         DO k=kts,kte
         DO i=its,ite
@@ -1593,6 +1744,21 @@ CONTAINS
         case default
      end select swrad_aerosol_select2
      ENDIF
+     ENDIF
+
+     !..Different treatment for aer_opt=3 using QNWFA+QNIFA aerosol species (Trude)
+
+     IF (PRESENT(f_qnwfa) .AND. PRESENT(f_qnifa)) THEN
+       IF (F_QNWFA .AND. aer_opt.eq.3 .AND.                             &
+                             (sw_physics.eq.RRTMG_SWSCHEME .OR.         &
+                              sw_physics.eq.RRTMG_SWSCHEME_FAST)) THEN
+         call wrf_debug(100, 'call calc_aerosol_rrtmg_sw with 3D AOD values')
+         call calc_aerosol_rrtmg_sw(ht,dz8w,p,t,qv,taer_type,taer_aod550_opt,taer_angexp_opt,  &
+                                    taer_ssa_opt,taer_asy_opt,aer_aod550_val,aer_angexp_val,   &
+                                    aer_ssa_val,aer_asy_val,taod5502d,angexp2d,aerssa2d,       &
+                                    aerasy2d,ims,ime,jms,jme,kms,kme,its,ite,jts,jte,kts,kte,  &
+                                    tauaer_sw,ssaaer_sw,asyaer_sw, taod5503d)
+       ENDIF
      ENDIF
 
      swrad_select: SELECT CASE(sw_physics)
@@ -1825,7 +1991,7 @@ CONTAINS
                      ssaaer3d_sw=ssaaer_sw,                             & ! jararias 2013/11
                      asyaer3d_sw=asyaer_sw,                             & ! jararias 2013/11
                      swddir=swddir,swddni=swddni,swddif=swddif,         & ! jararias 2013/08/10
-                     xcoszen=coszen,julian=julian                       ) ! jararias 2013/08/14
+                     xcoszen=coszen,julian=julian,mp_physics=mp_physics ) ! jararias 2013/08/14
 
              DO j=jts,jte
              DO k=kts,kte
@@ -1909,9 +2075,9 @@ CONTAINS
              CALL wrf_debug (100, 'CALL gfdlsw')
 
              IF ( PRESENT(F_QV) .AND. PRESENT(F_QC) .AND.                     &
-                  PRESENT(F_QS) .AND. PRESENT(qs)   .AND.                     &
-                  PRESENT(qv)   .AND. PRESENT(qc) ) THEN
-               IF ( F_QV .AND. F_QC .AND. F_QS ) THEN
+                  PRESENT(F_QI) .AND. (PRESENT(qi) .OR. PRESENT(qs))  .AND.                     &
+                  PRESENT(qv)   .AND. PRESENT(qc)   ) THEN
+               IF ( F_QV .AND. F_QC .AND. (F_QI .OR. F_QS)) THEN
                  gfdl_sw = .true.
                  CALL ETARA(                                        &
                   DT=dt,XLAND=xland                                 &
@@ -1944,7 +2110,7 @@ CONTAINS
                CALL wrf_error_fatal('Can not call ETARA (2b). Missing moisture fields.')
              ENDIF
 
-#ifdef HWRF
+#if ( HWRF == 1 )
       CASE (HWRFSWSCHEME)
 
              CALL wrf_debug (100, 'CALL hwrfsw')
@@ -2004,7 +2170,7 @@ CONTAINS
           ENDIF
      ENDIF
 
-     IF (sw_physics .gt. 0 .and. .not.gfdl_sw) THEN
+     IF (sw_physics .gt. 0 .and. .not.gfdl_sw .and. .not.flg_sw) THEN
         DO j=jts,jte
         DO k=kts,kte
         DO i=its,ite
@@ -2046,17 +2212,8 @@ CONTAINS
                  swddni(i,j)=swddir(i,j)/max(coszen(i,j),1e-4)
               ENDIF
            ENDDO
-           ENDDO
-        ENDIF
-        IF ( PRESENT( qs  ) .AND. ICLOUD.eq.3) THEN
-           DO j=jts,jte
-           DO k=kts,kte
-           DO i=its,ite
-             qs(i,k,j) = qs_save(i,k,j)
-           ENDDO
-           ENDDO
-           ENDDO
-        ENDIF
+        ENDDO
+     ENDIF
 
      IF ( PRESENT( diffuse_frac ) ) THEN 
          DO j=jts,jte
@@ -2069,10 +2226,10 @@ CONTAINS
            endif
          ENDDO
          ENDDO
-      ENDIF
+     ENDIF
 
-     IF ( PRESENT( qc  ) .AND. PRESENT( qc_cu ) ) THEN 
-         IF ( icloud_cu .NE. 0 ) THEN
+ ! Restore qc & qi for any model physics configuration
+      IF ( F_QC ) THEN
          DO j=jts,jte
          DO k=kts,kte
          DO i=its,ite
@@ -2080,10 +2237,8 @@ CONTAINS
          ENDDO
          ENDDO
          ENDDO
-         ENDIF
       ENDIF
-      IF ( PRESENT( qi  ) .AND. PRESENT( qi_cu ) ) THEN
-         IF ( icloud_cu .NE. 0 ) THEN
+      IF ( F_QI ) THEN
          DO j=jts,jte
          DO k=kts,kte
          DO i=its,ite
@@ -2091,7 +2246,16 @@ CONTAINS
          ENDDO
          ENDDO
          ENDDO
-         ENDIF
+      ENDIF
+
+      IF (ICLOUD == 3 .AND. F_QS ) THEN
+          DO j = jts,jte
+          DO k = kts,kte
+          DO i = its,ite
+             qs(i,k,j) = qs_save(i,k,j)
+          ENDDO
+          ENDDO
+          ENDDO
       ENDIF
 
       ! jararias, aug 2013, updated 2013/11
@@ -2107,9 +2271,9 @@ CONTAINS
    ENDDO
    !$OMP END PARALLEL DO
 
-   IF ( allocated(tauaer_sw) ) deallocate(tauaer_sw)
-   IF ( allocated(ssaaer_sw) ) deallocate(ssaaer_sw)
-   IF ( allocated(asyaer_sw) ) deallocate(asyaer_sw)
+   IF ( associated(tauaer_sw) ) deallocate(tauaer_sw)
+   IF ( associated(ssaaer_sw) ) deallocate(ssaaer_sw)
+   IF ( associated(asyaer_sw) ) deallocate(asyaer_sw)
 
    ENDIF Radiation_step
 
@@ -2353,7 +2517,6 @@ CONTAINS
      else
        niter = int(shadlen/(dx*min_ptchsz)+3)
      endif
-
 
 
     IF( nested ) THEN
@@ -2600,12 +2763,12 @@ CONTAINS
          do i=its,ite
             ! sza interpolation of surface fluxes
             if ((coszen_ref(i,j).gt.coszen_min) .and. (coszen_loc(i,j).gt.coszen_min)) then
-               if ((bb(i,j).eq.-0.5).or.(bb(i,j).eq.2.5)) then
+               if ((bb(i,j).eq.-0.5).or.(bb(i,j).eq.2.5).or.(bb(i,j).eq.0.0)) then
                   swddir(i,j) =(coszen_loc(i,j)/coszen_ref(i,j))*swddir_ref(i,j)
                else
                   swddir(i,j) =Bx(i,j)*(coszen_loc(i,j)**bb(i,j))
                end if
-               if ((gg(i,j).eq.-0.5).or.(gg(i,j).eq.2.5)) then
+               if ((gg(i,j).eq.-0.5).or.(gg(i,j).eq.2.5).or.(gg(i,j).eq.0.0)) then
                   swdown(i,j) =(coszen_loc(i,j)/coszen_ref(i,j))*swdown_ref(i,j)
                else
                   swdown(i,j) =Gx(i,j)*(coszen_loc(i,j)**gg(i,j))
@@ -2632,6 +2795,7 @@ CONTAINS
           ids,ide, jds,jde, kds,kde,                                 &
           ims,ime, jms,jme, kms,kme,                                 &
           its,ite, jts,jte, kts,kte                                  )
+     USE module_state_description, ONLY : KFCUPSCHEME, KFETASCHEME       !CuP, wig 5-Oct-2006  !BSINGH - For WRFCuP scheme 
 !---------------------------------------------------------------------
    IMPLICIT NONE
 !---------------------------------------------------------------------
@@ -2646,7 +2810,6 @@ CONTAINS
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(IN   ) ::    &
                                                                  QI, &
                                                                  QC
-
    LOGICAL,INTENT(IN) :: F_QC,F_QI
 
    REAL thresh
@@ -2701,7 +2864,6 @@ CONTAINS
         ENDDO
         ENDDO
      ENDIF
-
    END SUBROUTINE cal_cldfra2
 
 !BOP
@@ -2714,12 +2876,20 @@ CONTAINS
 !!     (see Hong et al., 1998)
 !!     (modified by Ferrier, Feb '02)
 !
-   SUBROUTINE cal_cldfra1(CLDFRA, QV, QC, QI, QS,                     &
+   SUBROUTINE cal_cldfra1(CLDFRA, QV, QC, QI, QS,                    &
                          F_QV, F_QC, F_QI, F_QS, t_phy, p_phy,       &
                          F_ICE_PHY,F_RAIN_PHY,                       &
+                         mp_physics, cldfra1_flag,                   &
           ids,ide, jds,jde, kds,kde,                                 &
           ims,ime, jms,jme, kms,kme,                                 &
           its,ite, jts,jte, kts,kte                                  )
+     USE module_state_description, ONLY : KFCUPSCHEME, KFETASCHEME       !wig, CuP 4-Fb-2008 !BSINGH - For WRFCuP scheme
+
+#if (HWRF == 1)
+   USE module_state_description, ONLY : FER_MP_HIRES, FER_MP_HIRES_ADVECT, ETAMP_HWRF 
+#else
+   USE module_state_description, ONLY : FER_MP_HIRES, FER_MP_HIRES_ADVECT
+#endif
 !---------------------------------------------------------------------
    IMPLICIT NONE
 !---------------------------------------------------------------------
@@ -2728,6 +2898,7 @@ CONTAINS
                                           its,ite, jts,jte, kts,kte
 
 !
+   INTEGER, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(OUT  ) :: cldfra1_flag
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(OUT  ) ::    &
                                                              CLDFRA
 
@@ -2747,8 +2918,8 @@ CONTAINS
          INTENT(IN   ) ::                                            &
                                                           F_ICE_PHY, &
                                                          F_RAIN_PHY
-
    LOGICAL,OPTIONAL,INTENT(IN) :: F_QC,F_QI,F_QV,F_QS
+   INTEGER :: mp_physics
 
 !  REAL thresh
    INTEGER:: i,j,k
@@ -2815,7 +2986,7 @@ CONTAINS
       QVSW = EP_2 * esw / ( p_phy(i,k,j) - esw )
       QVSI = EP_2 * esi / ( p_phy(i,k,j) - esi )
 
-      IF ( PRESENT(F_QI) .and. PRESENT(F_QC) .and. PRESENT(F_QS) ) THEN
+      ifouter: IF ( PRESENT(F_QI) .and. PRESENT(F_QC) .and. PRESENT(F_QS) ) THEN
 
 ! mji - For MP options 2, 4, 6, 7, 8, etc. (qc = liquid, qi = ice, qs = snow)
          IF ( F_QI .and. F_QC .and. F_QS) THEN
@@ -2824,6 +2995,16 @@ CONTAINS
                weight = 0.
             ELSE
                weight = (QI(i,k,j)+QS(i,k,j)) / QCLD
+            ENDIF
+         ENDIF
+
+! for P3, mp option 50 or 51
+         IF ( F_QI .and. F_QC .and. .not. F_QS) THEN
+            QCLD = QI(i,k,j)+QC(i,k,j)
+            IF (QCLD .LT. QCLDMIN) THEN
+               weight = 0.
+            ELSE
+               weight = (QI(i,k,j)) / QCLD
             ENDIF
          ENDIF
 
@@ -2863,11 +3044,31 @@ CONTAINS
               weight = F_ICE_PHY(i,k,j)
            ENDIF
          ENDIF
+!BSF - For HWRF MP option; (qc = liquid, qi = cloud ice+snow)
+!         IF ( F_QC .and. F_QI .and. .not. F_QS ) THEN
+#if (HWRF == 1)
+         IF ( mp_physics .eq. FER_MP_HIRES .or. &
+	      mp_physics .eq. FER_MP_HIRES_ADVECT .or. &
+	      mp_physics .eq. ETAMP_HWRF) THEN
+#else
+         IF ( mp_physics .eq. FER_MP_HIRES .or. &
+              mp_physics==fer_mp_hires_advect) THEN
+#endif
+           QIMID = QI(i,k,j)     !- total ice (cloud ice + snow)
+           QWMID = QC(i,k,j)     !- cloud water
+           QCLD=QWMID+QIMID      !- cloud water + total ice
+           IF (QCLD .LT. QCLDMIN) THEN
+              weight = 0.
+           ELSE
+              weight = QIMID/QCLD
+              if (tc<-40.) weight=1.
+           ENDIF
+         ENDIF
 
       ELSE
          CLDFRA(i,k,j)=0.
 
-      ENDIF !  IF ( F_QI .and. F_QC .and. F_QS)
+      ENDIF ifouter !  IF ( F_QI .and. F_QC .and. F_QS)
 
 
       QVS_WEIGHT = (1-weight)*QVSW + weight*QVSI
@@ -2875,18 +3076,22 @@ CONTAINS
 !
 !--- Determine cloud fraction (modified from original algorithm)
 !
+      cldfra1_flag(i,k,j) = 0
       IF (QCLD .LT. QCLDMIN) THEN
 !
 !--- Assume zero cloud fraction if there is no cloud mixing ratio
 !
         CLDFRA(i,k,j)=0.
+        cldfra1_flag(i,k,j) = 1
       ELSEIF(RHUM.GE.RHGRID)THEN
 !
 !--- Assume cloud fraction of unity if near saturation and the cloud
 !    mixing ratio is at or above the minimum threshold
 !
         CLDFRA(i,k,j)=1.
+        cldfra1_flag(i,k,j) = 2
       ELSE
+         cldfra1_flag(i,k,j) = 3
 !
 !--- Adaptation of original algorithm (Randall, 1994; Zhao, 1995)
 !    modified based on assumed grid-scale saturation at RH=RHgrid.
@@ -2901,12 +3106,14 @@ CONTAINS
 !!              ARG=MAX(ARG, ARGMIN)
 !!              CLDFRA(i,k,j)=(RHUM/RHGRID)*(1.-EXP(ARG))
         IF (CLDFRA(i,k,j) .LT. .01) CLDFRA(i,k,j)=0.
-      ENDIF          !--- End IF (QCLD .LT. QCLDMIN) ...
+           
+     ENDIF          !--- End IF (QCLD .LT. QCLDMIN) ...     
     ENDDO          !--- End DO i
     ENDDO          !--- End DO k
     ENDDO          !--- End DO j
 
    END SUBROUTINE cal_cldfra1
+
 
 !+---+-----------------------------------------------------------------+
 !..Cloud fraction scheme by G. Thompson (NCAR-RAL), not intended for
@@ -2925,6 +3132,7 @@ CONTAINS
 
       SUBROUTINE cal_cldfra3(CLDFRA, qv, qc, qi, qs,                    &
      &                 p,t,rho, XLAND, gridkm,                          &
+!    &                 rand_perturb_on, kme_stoch, rand_pert,           &
      &                 ids,ide, jds,jde, kds,kde,                       &
      &                 ims,ime, jms,jme, kms,kme,                       &
      &                 its,ite, jts,jte, kts,kte)
@@ -2934,21 +3142,24 @@ CONTAINS
 !
       INTEGER, INTENT(IN):: ids,ide, jds,jde, kds,kde,                  &
      &                      ims,ime, jms,jme, kms,kme,                  &
+!    &                      kme_stoch,                                  &
      &                      its,ite, jts,jte, kts,kte
 
+!     INTEGER, INTENT(IN):: rand_perturb_on
       REAL, DIMENSION(ims:ime,kms:kme,jms:jme), INTENT(IN):: qv,p,t,rho
       REAL, DIMENSION(ims:ime,kms:kme,jms:jme), INTENT(INOUT):: qc,qi,qs
+!     REAL, DIMENSION(ims:ime,kms:kme_stoch,jms:jme), INTENT(IN):: rand_pert
       REAL, DIMENSION(ims:ime,jms:jme), INTENT(IN):: XLAND
 
       REAL, DIMENSION(ims:ime,kms:kme,jms:jme), INTENT(INOUT):: cldfra
       REAL, INTENT(IN):: gridkm
 
 !..Local vars.
-      REAL:: RH_00L, RH_00O, RH_00, RHI_max
+      REAL:: RH_00L, RH_00O, RH_00, RHI_max, entrmnt
       REAL, DIMENSION(ims:ime,kms:kme,jms:jme):: qvsat
       INTEGER:: i,j,k
-      REAL:: TK, TC, qvsi, qvsw, RHUM
-      REAL, DIMENSION(kms:kme):: qvs1d, cfr1d, T1d,                     &
+      REAL:: TK, TC, qvsi, qvsw, RHUM, xx, yy
+      REAL, DIMENSION(kts:kte):: qvs1d, cfr1d, T1d,                     &
      &                           P1d, R1d, qc1d, qi1d, qs1d
 
       character*512 dbg_msg
@@ -2962,20 +3173,19 @@ CONTAINS
 !.. to get near 100% RH as grid spacing moves toward 1.0km, but higher
 !.. RH over ocean required as compared to over land.
 
-      RH_00L = 0.839 + SQRT(1./(50.0+gridkm*gridkm*gridkm*0.5))
-      RH_00O = 0.879 + SQRT(1./(100.0+gridkm*gridkm))
+      RH_00L = 0.7  + SQRT(1./(25.0+gridkm*gridkm*gridkm))
+      RH_00O = 0.81 + SQRT(1./(50.0+gridkm*gridkm*gridkm))
 
       DO j = jts,jte
       DO k = kts,kte
       DO i = its,ite
-         RHI_max = 0.0
+
          CLDFRA(I,K,J) = 0.0
 
-         if (qc(i,k,j)+qi(i,k,j) .gt. 1.E-8) then
+         if (qc(i,k,j).gt.1.E-6 .or. qi(i,k,j).ge.1.E-7 .or. qs(i,k,j).gt.1.E-5) then
             CLDFRA(I,K,J) = 1.0
             qvsat(i,k,j) = qv(i,k,j)
          else
-
             TK   = t(i,k,j)
             TC   = TK - 273.16
 
@@ -2984,12 +3194,12 @@ CONTAINS
 
             if (tc .ge. -12.0) then
                qvsat(i,k,j) = qvsw
-            elseif (tc .lt. -30.0) then
+            elseif (tc .lt. -20.0) then
                qvsat(i,k,j) = qvsi
             else
-               qvsat(i,k,j) = qvsw - (qvsw-qvsi)*(-12.0-tc)/(-12.0+30.)
+               qvsat(i,k,j) = qvsw - (qvsw-qvsi)*(-12.0-tc)/(-12.0+20.)
             endif
-            RHUM = qv(i,k,j)/qvsat(i,k,j)
+            RHUM = MAX(0.01, MIN(qv(i,k,j)/qvsat(i,k,j), 0.9999))
 
             IF ((XLAND(I,J)-1.5).GT.0.) THEN                             !--- Ocean
                RH_00 = RH_00O
@@ -3000,13 +3210,11 @@ CONTAINS
             if (tc .ge. -12.0) then
                RHUM = MIN(0.999, RHUM)
                CLDFRA(I,K,J) = MAX(0.0, 1.0-SQRT((1.0-RHUM)/(1.-RH_00)))
-            elseif (tc.lt.-12..and.tc.gt.-70. .and. RHUM.gt.RH_00O) then
-               RHI_max = MAX(RHUM+1.E-6, qvsw/qvsi)
-               CLDFRA(I,K,J) = MAX(0., ((RH_00O-RHUM)/(RH_00O-RHI_max)) &
-     &                                *((RH_00O-RHUM)/(RH_00O-RHI_max)))
+            elseif (tc.lt.-12..and.tc.gt.-70. .and. RHUM.gt.RH_00L) then
+               RHUM = MAX(0.01, MIN(qv(i,k,j)/qvsat(i,k,j), 1.0 - 1.E-6))
+               CLDFRA(I,K,J) = MAX(0., 1.0-SQRT((1.0-RHUM)/(1.0-RH_00L)))
             endif
-
-            CLDFRA(I,K,J) = MAX(0.0, MIN(CLDFRA(I,K,J), 0.95))
+            CLDFRA(I,K,J) = MIN(0.90, CLDFRA(I,K,J))
 
          endif
       ENDDO
@@ -3022,6 +3230,13 @@ CONTAINS
 !        else
 !           debug_flag = .false.
 !        endif
+
+!        if (rand_perturb_on .eq. 1) then
+!           entrmnt = MAX(0.01, MIN(0.99, 0.5 + rand_pert(i,1,j)*0.5))
+!        else
+            entrmnt = 0.5
+!        endif
+
          DO k = kts,kte
             qvs1d(k) = qvsat(i,k,j)
             cfr1d(k) = cldfra(i,k,j)
@@ -3037,7 +3252,7 @@ CONTAINS
 !       WRITE (dbg_msg,*) 'DEBUG-GT: finding cloud layers at point  (', i, ', ', j, ')'
 !       CALL wrf_debug (150, dbg_msg)
 !     endif
-         call find_cloudLayers(qvs1d, cfr1d, T1d, P1d, R1d,             &
+         call find_cloudLayers(qvs1d, cfr1d, T1d, P1d, R1d, entrmnt,    &
      &                         debug_flag, qc1d, qi1d, qs1d, kts,kte)
 
          DO k = kts,kte
@@ -3048,6 +3263,7 @@ CONTAINS
       ENDDO
       ENDDO
 
+
       END SUBROUTINE cal_cldfra3
 
 !+---+-----------------------------------------------------------------+
@@ -3055,13 +3271,14 @@ CONTAINS
 !.. a reasonable value of LWP or IWP that might be contained in that depth,
 !.. unless existing LWC/IWC is already there.
 
-      SUBROUTINE find_cloudLayers(qvs1d, cfr1d, T1d, P1d, R1d,          &
+      SUBROUTINE find_cloudLayers(qvs1d, cfr1d, T1d, P1d, R1d, entrmnt, &
      &                            debugfl, qc1d, qi1d, qs1d, kts,kte)
 !
       IMPLICIT NONE
 !
       INTEGER, INTENT(IN):: kts, kte
       LOGICAL, INTENT(IN):: debugfl
+      REAL, INTENT(IN):: entrmnt
       REAL, DIMENSION(kts:kte), INTENT(IN):: qvs1d,T1d,P1d,R1d
       REAL, DIMENSION(kts:kte), INTENT(INOUT):: cfr1d
       REAL, DIMENSION(kts:kte), INTENT(INOUT):: qc1d, qi1d, qs1d
@@ -3079,8 +3296,8 @@ CONTAINS
       k_m40C = 0
       DO k = kte, kts, -1
          theta(k) = T1d(k)*((100000.0/P1d(k))**(287.05/1004.))
-         if (T1d(k)-273.16 .gt. -40.0) k_m40C = MAX(k_m40C, k)
-         if (T1d(k)-273.16 .gt. -12.0) k_m12C = MAX(k_m12C, k)
+         if (T1d(k)-273.16 .gt. -40.0 .and. P1d(k).gt.7000.0) k_m40C = MAX(k_m40C, k)
+         if (T1d(k)-273.16 .gt. -12.0 .and. P1d(k).gt.10000.0) k_m12C = MAX(k_m12C, k)
       ENDDO
       if (k_m40C .le. kts) k_m40C = kts
       if (k_m12C .le. kts) k_m12C = kts
@@ -3137,7 +3354,7 @@ CONTAINS
       DO k = kbot, k_m12C
          if ( (theta(k)-theta(k-1)) .gt. 0.05E-3*dz(k)) EXIT
       ENDDO
-      kbot = MAX(kts+1, k-1)
+      kbot = MAX(kts+1, k-2)
       DO k = kts, kbot
          if (cfr1d(k).gt.0.0 .and. cfr1d(k).lt.0.999) cfr1d(k) = 0.
       ENDDO
@@ -3175,8 +3392,11 @@ CONTAINS
 !       CALL wrf_debug (150, dbg_msg)
 !     endif
             call adjust_cloudIce(cfr1d, qi1d, qs1d, qvs1d, T1d,R1d,dz,  &
-     &                           k_cldb,k_cldt,kts,kte)
+     &                           entrmnt, k_cldb,k_cldt,kts,kte)
             k = k_cldb
+         else
+            if (cfr1d(k_cldb).gt.0.and.qi1d(k_cldb).lt.1.E-6)           &
+     &               qi1d(k_cldb)=1.E-5*cfr1d(k_cldb)
          endif
          k = k - 1
       ENDDO
@@ -3184,7 +3404,7 @@ CONTAINS
 
       k_cldb = k_tropo
       in_cloud = .false.
-      k = k_m12C
+      k = k_m12C + 2
       DO WHILE (.not. in_cloud .AND. k.gt.kbot)
          k_cldt = 0
          if (cfr1d(k).ge.0.01) then
@@ -3208,8 +3428,11 @@ CONTAINS
 !       CALL wrf_debug (150, dbg_msg)
 !     endif
             call adjust_cloudH2O(cfr1d, qc1d, qvs1d, T1d,R1d,dz,        &
-     &                           k_cldb,k_cldt,kts,kte)
+     &                           entrmnt, k_cldb,k_cldt,kts,kte)
             k = k_cldb
+         else
+            if (cfr1d(k_cldb).gt.0.and.qc1d(k_cldb).lt.1.E-6)           &
+     &               qc1d(k_cldb)=1.E-5*cfr1d(k_cldb)
          endif
          k = k - 1
       ENDDO
@@ -3234,38 +3457,48 @@ CONTAINS
 !       enddo
 !     endif
 
+
       END SUBROUTINE find_cloudLayers
 
 !+---+-----------------------------------------------------------------+
 
-      SUBROUTINE adjust_cloudIce(cfr,qi,qs,qvs, T,Rho,dz, k1,k2,kts,kte)
+      SUBROUTINE adjust_cloudIce(cfr,qi,qs,qvs, T,Rho,dz, entr, k1,k2,kts,kte)
 !
       IMPLICIT NONE
 !
       INTEGER, INTENT(IN):: k1,k2, kts,kte
+      REAL, INTENT(IN):: entr
       REAL, DIMENSION(kts:kte), INTENT(IN):: cfr, qvs, T, Rho, dz
       REAL, DIMENSION(kts:kte), INTENT(INOUT):: qi, qs
-      REAL:: iwp, xiwp, max_iwp, tdz, this_iwp, iwp_exists
-      INTEGER:: k
-      REAL, PARAMETER:: entr=0.35
-
-      max_iwp = ABS(qvs(k2-1)-qvs(k2))*Rho(k2-1)*dz(k2-1)
+      REAL:: iwc, max_iwc, tdz, this_iwc, this_dz, iwp_exists
+      INTEGER:: k, kmid
 
       tdz = 0.
-      iwp = 0.
-      iwp_exists = 0.
       do k = k1, k2
          tdz = tdz + dz(k)
-         iwp = iwp + MAX(0., (qvs(k-1)-qvs(k))*Rho(k)*dz(k))
+      enddo
+      kmid = NINT(0.5*(k1+k2))
+      max_iwc = ABS(qvs(k2-1)-qvs(k1))
+!     print*, ' max_iwc = ', max_iwc, ' over DZ=',tdz
+
+      iwp_exists = 0.
+      do k = k1, k2
          iwp_exists = iwp_exists + (qi(k)+qs(k))*Rho(k)*dz(k)
       enddo
-      if (iwp_exists .gt. 1.0) RETURN
-      max_iwp = MAX(max_iwp*(1.-entr), MIN(1.0, iwp*(1.0-entr)))
 
+      this_dz = 0.0
       do k = k1, k2
-         this_iwp = max_iwp*dz(k)/tdz
+         if (k.eq.k1) then
+            this_dz = this_dz + 0.5*dz(k)
+         else
+            this_dz = this_dz + dz(k)
+         endif
+         this_iwc = max_iwc*this_dz/tdz
+         iwc = MAX(1.E-6, this_iwc*(1.-entr))
          if (cfr(k).gt.0.01.and.cfr(k).lt.0.99.and.T(k).ge.203.16) then
-            qi(k) = qi(k) + cfr(k)*cfr(k)*this_iwp/Rho(k)/dz(k)
+            qi(k) = qi(k) + 0.1*cfr(k)*iwc
+         elseif (qi(k).lt.1.E-5.and.cfr(k).ge.0.99.and.T(k).ge.203.16) then
+            qi(k) = qi(k) + 0.01*iwc
          endif
       enddo
 
@@ -3273,43 +3506,49 @@ CONTAINS
 
 !+---+-----------------------------------------------------------------+
 
-      SUBROUTINE adjust_cloudH2O(cfr, qc, qvs, T,Rho,dz, k1,k2,kts,kte)
+      SUBROUTINE adjust_cloudH2O(cfr, qc, qvs, T,Rho,dz, entr, k1,k2,kts,kte)
 !
       IMPLICIT NONE
 !
       INTEGER, INTENT(IN):: k1,k2, kts,kte
+      REAL, INTENT(IN):: entr
       REAL, DIMENSION(kts:kte):: cfr, qc, qvs, T, Rho, dz
-      REAL:: lwp, xlwp, max_lwp, tdz, this_lwp, lwp_exists
-      INTEGER:: k
-      REAL, PARAMETER:: entr=0.35
-
-      max_lwp = ABS(qvs(k2-1)-qvs(k2))*Rho(k2-1)*dz(k2-1)
+      REAL:: lwc, max_lwc, tdz, this_lwc, this_dz, lwp_exists
+      INTEGER:: k, kmid
 
       tdz = 0.
-      lwp = 0.
-      lwp_exists = 0.
       do k = k1, k2
          tdz = tdz + dz(k)
-         lwp = lwp + MAX(0., (qvs(k-1)-qvs(k))*Rho(k)*dz(k))
+      enddo
+      kmid = NINT(0.5*(k1+k2))
+      max_lwc = ABS(qvs(k2-1)-qvs(k1))
+!     print*, ' max_lwc = ', max_lwc, ' over DZ=',tdz
+
+      lwp_exists = 0.
+      do k = k1, k2
          lwp_exists = lwp_exists + qc(k)*Rho(k)*dz(k)
       enddo
-      if (lwp_exists .gt. 1.0) RETURN
-      max_lwp = MAX(max_lwp*(1.-entr), MIN(1.0, lwp*(1.0-entr)))
 
+      this_dz = 0.0
       do k = k1, k2
-         this_lwp = max_lwp*dz(k)/tdz
-         if (cfr(k).gt.0.95.and.qc(k).lt.1.E-7.and.T(k).lt.253.16) then
-            qc(k) = qc(k) + 0.05*this_lwp/Rho(k)/dz(k)
-         elseif (cfr(k).gt.0.01.and.cfr(k).lt.0.99.and.T(k).lt.273.16.and.T(k).ge.253.16) then
-            qc(k) = qc(k) + cfr(k)*this_lwp/Rho(k)/dz(k)
-         elseif (cfr(k).gt.0.01.and.cfr(k).lt.0.99.and.T(k).le.298.16.and.T(k).ge.273.16) then
-            qc(k) = qc(k) + cfr(k)*cfr(k)*this_lwp/Rho(k)/dz(k)
+         if (k.eq.k1) then
+            this_dz = this_dz + 0.5*dz(k)
+         else
+            this_dz = this_dz + dz(k)
+         endif
+         this_lwc = max_lwc*this_dz/tdz
+         lwc = MAX(1.E-6, this_lwc*(1.-entr))
+         if (cfr(k).gt.0.01.and.cfr(k).lt.0.99.and.T(k).lt.298.16.and.T(k).ge.253.16) then
+            qc(k) = qc(k) + cfr(k)*cfr(k)*lwc
+         elseif (cfr(k).ge.0.99.and.qc(k).lt.1.E-5.and.T(k).lt.298.16.and.T(k).ge.253.16) then
+            qc(k) = qc(k) + 0.1*lwc
          endif
       enddo
 
       END SUBROUTINE adjust_cloudH2O
 
 !+---+-----------------------------------------------------------------+
+
 !..Do not alter any grid-explicitly resolved hydrometeors, rather only
 !.. the supposed amounts due to the cloud fraction scheme.
 
@@ -3324,20 +3563,15 @@ CONTAINS
       INTEGER:: k
 
       lwp = 0.
-      do k = kts, k_tropo
-         if (cfr(k).gt.0.01 .and. cfr(k).lt.0.99) then
-            lwp = lwp + qc(k)*Rho(k)*dz(k)
-         endif
-      enddo
-
       iwp = 0.
       do k = kts, k_tropo
-         if (cfr(k).gt.0.01 .and. cfr(k).lt.0.99) then
+         if (cfr(k).gt.0.0) then
+            lwp = lwp + qc(k)*Rho(k)*dz(k)
             iwp = iwp + qi(k)*Rho(k)*dz(k)
          endif
       enddo
 
-      if (lwp .gt. 1.0) then
+      if (lwp .gt. 1.5) then
          xfac = 1./lwp
          do k = kts, k_tropo
             if (cfr(k).gt.0.01 .and. cfr(k).lt.0.99) then
@@ -3346,7 +3580,7 @@ CONTAINS
          enddo
       endif
 
-      if (iwp .gt. 1.0) then
+      if (iwp .gt. 1.5) then
          xfac = 1./iwp
          do k = kts, k_tropo
             if (cfr(k).gt.0.01 .and. cfr(k).lt.0.99) then
@@ -3573,8 +3807,8 @@ CONTAINS
               i2 = i1+1
               wgt = ri-i1
               dxabs = sqrt((dy*(jj-j))**2+(dx*(ri-i))**2)
-              if ((jj.ge.jpe+1).or.(i1.le.ips-1).or.(i2.ge.ipe+1)) then
-                if (shadowmask(i,j).eq.0) shadowmask(i,j) = -1
+              if ((jj.ge.jpe+3).or.(i1.le.ips-3).or.(i2.ge.ipe+3)) then
+!               if (shadowmask(i,j).eq.0) shadowmask(i,j) = -1
                 goto 120
               endif
               topoelev=atan((wgt*ht_loc(i2,jj)+(1.-wgt)*ht_loc(i1,jj)-ht_loc(i,j))/dxabs)
@@ -3591,8 +3825,8 @@ CONTAINS
               j2 = j1+1
               wgt = rj-j1
               dxabs = sqrt((dx*(ii-i))**2+(dy*(rj-j))**2)
-              if ((ii.ge.ipe+1).or.(j1.le.jps-1).or.(j2.ge.jpe+1)) then
-                if (shadowmask(i,j).eq.0) shadowmask(i,j) = -1
+              if ((ii.ge.ipe+3).or.(j1.le.jps-3).or.(j2.ge.jpe+3)) then
+!               if (shadowmask(i,j).eq.0) shadowmask(i,j) = -1
                 goto 120
               endif
               topoelev=atan((wgt*ht_loc(ii,j2)+(1.-wgt)*ht_loc(ii,j1)-ht_loc(i,j))/dxabs)
@@ -3609,8 +3843,8 @@ CONTAINS
               i2 = i1+1
               wgt = ri-i1
               dxabs = sqrt((dy*(jj-j))**2+(dx*(ri-i))**2)
-              if ((jj.le.jps-1).or.(i1.le.ips-1).or.(i2.ge.ipe+1)) then
-                if (shadowmask(i,j).eq.0) shadowmask(i,j) = -1
+              if ((jj.le.jps-3).or.(i1.le.ips-3).or.(i2.ge.ipe+3)) then
+!               if (shadowmask(i,j).eq.0) shadowmask(i,j) = -1
                 goto 120
               endif
               topoelev=atan((wgt*ht_loc(i2,jj)+(1.-wgt)*ht_loc(i1,jj)-ht_loc(i,j))/dxabs)
@@ -3627,8 +3861,8 @@ CONTAINS
               j2 = j1+1
               wgt = rj-j1
               dxabs = sqrt((dx*(ii-i))**2+(dy*(rj-j))**2)
-              if ((ii.le.ips-1).or.(j1.le.jps-1).or.(j2.ge.jpe+1)) then
-                if (shadowmask(i,j).eq.0) shadowmask(i,j) = -1
+              if ((ii.le.ips-3).or.(j1.le.jps-3).or.(j2.ge.jpe+3)) then
+!               if (shadowmask(i,j).eq.0) shadowmask(i,j) = -1
                 goto 120
               endif
               topoelev=atan((wgt*ht_loc(ii,j2)+(1.-wgt)*ht_loc(ii,j1)-ht_loc(i,j))/dxabs)
@@ -3656,6 +3890,12 @@ CONTAINS
        HRANG=15.*(TLOCTM-12.)*DEGRAD
        XXLAT=XLAT(i,j)*DEGRAD
        CSZA=SIN(XXLAT)*SIN(DECLIN)+COS(XXLAT)*COS(DECLIN)*COS(HRANG)
+
+       if (csza.lt.1.e-2) then   ! shadow mask does not need to be computed
+       shadowmask(i,j) = 0
+       ht_shad(i,j) = ht_loc(i,j)-0.001
+       goto 220
+       endif
 
 ! Solar azimuth angle
 
@@ -4257,5 +4497,199 @@ SUBROUTINE aer_p_int(p ,pin, levsiz, aerodt, aerod, no_src, pf, totaod,   &
 
    return
 END SUBROUTINE aer_p_int
+
+
+!+---+-----------------------------------------------------------------+
+
+      SUBROUTINE gt_aod(p_phy,DZ8W,t_phy,qvapor, nwfa,nifa, taod5503d,  &
+     &             ims,ime, jms,jme, kms,kme, its,ite, jts,jte, kts,kte)
+
+      USE module_mp_thompson, only: RSLF
+
+      IMPLICIT NONE
+
+      INTEGER,  INTENT(IN):: ims,ime, jms,jme, kms,kme,                 &
+     &                       its,ite, jts,jte, kts,kte
+
+      REAL, DIMENSION(ims:ime,kms:kme,jms:jme), INTENT(IN) ::           &
+     &                                            t_phy,p_phy, DZ8W,    &
+     &                                            qvapor, nifa, nwfa
+      REAL,DIMENSION(ims:ime,kms:kme,jms:jme),INTENT(INOUT):: taod5503d
+                                                              
+      !..Local variables. 
+
+      REAL, DIMENSION(its:ite,kts:kte,jts:jte):: AOD_wfa, AOD_ifa
+      REAL:: RH, a_RH,b_RH, rh_d,rh_f, rhoa,qvsat, unit_bext1,unit_bext3
+      REAL:: ntemp
+      INTEGER :: i, k, j, RH_idx, RH_idx1, RH_idx2, t_idx
+      INTEGER, PARAMETER:: rind=8
+      REAL, DIMENSION(rind), PARAMETER:: rh_arr =                       &
+     &                      (/10., 60., 70., 80., 85., 90., 95., 99.8/)
+      REAL, DIMENSION(rind,4,2) :: lookup_tabl                           ! RH, temp, water-friendly, ice-friendly
+
+      lookup_tabl(1,1,1) =  5.73936E-15  
+      lookup_tabl(1,1,2) =  2.63577E-12
+      lookup_tabl(1,2,1) =  5.73936E-15  
+      lookup_tabl(1,2,2) =  2.63577E-12
+      lookup_tabl(1,3,1) =  5.73936E-15  
+      lookup_tabl(1,3,2) =  2.63577E-12
+      lookup_tabl(1,4,1) =  5.73936E-15  
+      lookup_tabl(1,4,2) =  2.63577E-12
+
+      lookup_tabl(2,1,1) = 6.93515E-15  
+      lookup_tabl(2,1,2) = 2.72095E-12
+      lookup_tabl(2,2,1) = 6.93168E-15  
+      lookup_tabl(2,2,2) = 2.72092E-12  
+      lookup_tabl(2,3,1) = 6.92570E-15  
+      lookup_tabl(2,3,2) = 2.72091E-12 
+      lookup_tabl(2,4,1) = 6.91833E-15  
+      lookup_tabl(2,4,2) = 2.72087E-12
+
+      lookup_tabl(3,1,1) = 7.24707E-15  
+      lookup_tabl(3,1,2) = 2.77219E-12
+      lookup_tabl(3,2,1) = 7.23809E-15  
+      lookup_tabl(3,2,2) = 2.77222E-12
+      lookup_tabl(3,3,1) = 7.23108E-15  
+      lookup_tabl(3,3,2) = 2.77201E-12
+      lookup_tabl(3,4,1) = 7.21800E-15  
+      lookup_tabl(3,4,2) = 2.77111E-12
+
+      lookup_tabl(4,1,1) = 8.95130E-15  
+      lookup_tabl(4,1,2) = 2.87263E-12
+      lookup_tabl(4,2,1) = 9.01582E-15  
+      lookup_tabl(4,2,2) = 2.87252E-12
+      lookup_tabl(4,3,1) = 9.13216E-15  
+      lookup_tabl(4,3,2) = 2.87241E-12
+      lookup_tabl(4,4,1) = 9.16219E-15  
+      lookup_tabl(4,4,2) = 2.87211E-12
+
+      lookup_tabl(5,1,1) = 1.06695E-14  
+      lookup_tabl(5,1,2) = 2.96752E-12
+      lookup_tabl(5,2,1) = 1.06370E-14  
+      lookup_tabl(5,2,2) = 2.96726E-12
+      lookup_tabl(5,3,1) = 1.05999E-14  
+      lookup_tabl(5,3,2) = 2.96702E-12
+      lookup_tabl(5,4,1) = 1.05443E-14  
+      lookup_tabl(5,4,2) = 2.96603E-12
+
+      lookup_tabl(6,1,1) = 1.37908E-14  
+      lookup_tabl(6,1,2) = 3.15081E-12
+      lookup_tabl(6,2,1) = 1.37172E-14  
+      lookup_tabl(6,2,2) = 3.15020E-12
+      lookup_tabl(6,3,1) = 1.36362E-14  
+      lookup_tabl(6,3,2) = 3.14927E-12
+      lookup_tabl(6,4,1) = 1.35287E-14  
+      lookup_tabl(6,4,2) = 3.14817E-12
+
+      lookup_tabl(7,1,1) = 2.26019E-14  
+      lookup_tabl(7,1,2) = 3.66798E-12
+      lookup_tabl(7,2,1) = 2.24435E-14  
+      lookup_tabl(7,2,2) = 3.66540E-12
+      lookup_tabl(7,3,1) = 2.23254E-14  
+      lookup_tabl(7,3,2) = 3.66173E-12
+      lookup_tabl(7,4,1) = 2.20496E-14  
+      lookup_tabl(7,4,2) = 3.65796E-12
+
+      lookup_tabl(8,1,1) = 4.41983E-13  
+      lookup_tabl(8,1,2) = 7.50091E-11
+      lookup_tabl(8,2,1) = 3.93335E-13  
+      lookup_tabl(8,2,2) = 6.79097E-11
+      lookup_tabl(8,3,1) = 3.45569E-13  
+      lookup_tabl(8,3,2) = 6.07845E-11
+      lookup_tabl(8,4,1) = 2.96971E-13  
+      lookup_tabl(8,4,2) = 5.36085E-11     
+
+      DO j=jts,jte
+         DO k=kts,kte
+            DO i=its,ite
+               AOD_wfa(i,k,j) = 0.
+               AOD_ifa(i,k,j) = 0.
+            END DO
+         END DO
+      END DO
+
+      DO j=jts,jte
+         DO k=kts,kte
+            DO i=its,ite
+               rhoa = p_phy(i,k,j)/(287.*t_phy(i,k,j))
+               t_idx = MAX(1, MIN(nint(10.999-0.0333*t_phy(i,k,j)),4))
+               qvsat = rslf(p_phy(i,k,j),t_phy(i,k,j))
+               RH = MIN(98., MAX(10.1, qvapor(i,k,j)/qvsat*100.))
+
+               !..Get the index for the RH array element
+
+               if (RH .lt. 60) then
+                  RH_idx1 = 1
+                  RH_idx2 = 2
+               elseif (RH .ge. 60 .AND. RH.lt.80) then
+                  a_RH = 0.1
+                  b_RH = -4
+                  RH_idx = nint(a_RH*RH+b_RH)
+                  rh_d = rh-rh_arr(rh_idx)
+                  if (rh_d .lt. 0) then
+                     RH_idx1 = RH_idx-1
+                     RH_idx2 = RH_idx
+                  else
+                     RH_idx1 = RH_idx
+                     RH_idx2 = RH_idx+1
+                     if (RH_idx2.gt.rind) then
+                        RH_idx2 = rind
+                        RH_idx1 = rind-1
+                     endif
+                  endif
+               else
+                  a_RH = 0.2
+                  b_RH = -12.
+                  RH_idx = MIN(rind, nint(a_RH*RH+b_RH))
+                  rh_d = rh-rh_arr(rh_idx)
+                  if (rh_d .lt. 0) then
+                     RH_idx1 = RH_idx-1
+                     RH_idx2 = RH_idx
+                  else
+                     RH_idx1 = RH_idx
+                     RH_idx2 = RH_idx+1
+                     if (RH_idx2.gt.rind) then
+                        RH_idx2 = rind
+                        RH_idx1 = rind-1
+                     endif
+                  endif
+               endif
+
+               !..RH fraction to be used
+
+               rh_f = MAX(0., MIN(1.0, (rh/(100-rh)-rh_arr(rh_idx1)     &
+     &                                  /(100-rh_arr(rh_idx1)))         &
+     &                        /(rh_arr(rh_idx2)/(100-rh_arr(rh_idx2))   &
+     &                        -rh_arr(rh_idx1)/(100-rh_arr(rh_idx1))) ))
+
+      
+               unit_bext1 = lookup_tabl(RH_idx1,t_idx,1)                &
+     &                    + (lookup_tabl(RH_idx2,t_idx,1)               &
+     &                    - lookup_tabl(RH_idx1,t_idx,1))*rh_f
+               unit_bext3 = lookup_tabl(RH_idx1,t_idx,2)                &
+     &                    + (lookup_tabl(RH_idx2,t_idx,2)               &
+     &                    - lookup_tabl(RH_idx1,t_idx,2))*rh_f
+
+               ntemp = MAX(1., MIN(99999.E6, nwfa(i,k,j)))
+               AOD_wfa(i,k,j) = unit_bext1*ntemp*dz8w(i,k,j)*rhoa
+
+               ntemp = MAX(0.01, MIN(9999.E6, nifa(i,k,j)))
+               AOD_ifa(i,k,j) = unit_bext3*ntemp*dz8w(i,k,j)*rhoa
+
+            END DO
+         END DO
+      END DO
+
+      DO j=jts,jte
+         DO k=kts,kte
+            DO i=its,ite
+               taod5503d(i,k,j) = aod_wfa(i,k,j) + aod_ifa(i,k,j)
+            END DO
+         END DO
+      END DO
+
+      END SUBROUTINE gt_aod
+
+!+---+-----------------------------------------------------------------+
 
 END MODULE module_radiation_driver

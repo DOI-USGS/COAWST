@@ -1,5 +1,5 @@
 #makefile to build a wrf_io with PIO
-#$Id: Makefile 7668 2014-09-29 16:48:30Z huangwei@ucar.edu $
+#$Id$
 
 FCOPTIM         = -O0 -g
 FCNOOPT         = -O0 -fno-inline -fno-ip -g

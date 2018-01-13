@@ -128,19 +128,21 @@ real::t1,t2
 #else
    CALL initial_config
 #endif
-   CALL check_nml_consistency
-   CALL set_physics_rconfigs
-
-   CALL nl_get_debug_level ( 1, debug_level )
-   CALL set_wrf_debug_level ( debug_level )
-
-   CALL  wrf_message ( program_name )
 
    !  There are variables in the Registry that are only required for the real
    !  program, fields that come from the WPS package.  We define the run-time
    !  flag that says to allocate space for these input-from-WPS-only arrays.
 
    CALL nl_set_use_wps_input ( 1 , REALONLY )
+
+   CALL check_nml_consistency
+   CALL setup_physics_suite
+   CALL set_physics_rconfigs
+
+   CALL nl_get_debug_level ( 1, debug_level )
+   CALL set_wrf_debug_level ( debug_level )
+
+   CALL  wrf_message ( program_name )
 
    !  Allocate the space for the mother of all domains.
 
@@ -236,9 +238,13 @@ real::t1,t2
          
          ok_so_far = .TRUE.
 
+         !DJW changed the check below so that instead of always comparing
+         !to d01 we now compare vertical levels between a grid and its parent.
+         !If 4 domains were used, this allows for vertical nesting to be enabled between grids 1 & 2 and
+         !between grids 3 & 4, but allows you to not use vertical grid nesting between grids 2 & 3.
          DO loop = 2 , model_config_rec%max_dom
-            IF ( model_config_rec%vert_refine_method(loop) .EQ. 0 ) THEN
-            IF ( model_config_rec%e_vert(loop) .NE.  model_config_rec%e_vert(1) ) THEN
+           IF (( model_config_rec%vert_refine_method(loop) .EQ. 0 ) .AND. ( model_config_rec%vert_refine_fact .EQ. 1 )) THEN
+             IF ( model_config_rec%e_vert(loop) .NE.  model_config_rec%e_vert(model_config_rec%parent_id(loop)) ) THEN
                CALL  wrf_message ( 'e_vert must be the same for each domain' )
                ok_so_far = .FALSE.
               END IF
@@ -324,7 +330,7 @@ SUBROUTINE med_sidata_input ( grid , config_flags )
   ! Local
    INTEGER                :: time_step_begin_restart
    INTEGER                :: idsi , ierr , myproc
-   CHARACTER (LEN=80)      :: si_inpname
+   CHARACTER (LEN=256)     :: si_inpname
    CHARACTER (LEN=80)      :: message
 
    CHARACTER(LEN=19) :: start_date_char , end_date_char , current_date_char , next_date_char
@@ -684,7 +690,7 @@ SUBROUTINE assemble_output ( grid , config_flags , loop , time_loop_max )
 
    INTEGER :: id1 , interval_seconds , ierr, rc, sst_update, grid_fdda
    INTEGER , SAVE :: id, id2,  id4 
-   CHARACTER (LEN=80) :: inpname , bdyname
+   CHARACTER (LEN=256) :: inpname , bdyname
    CHARACTER(LEN= 4) :: loop_char
    CHARACTER (LEN=256) :: message
 character *19 :: temp19
@@ -828,14 +834,19 @@ real::t1,t2
    
          !  u, theta, h, scalars coupled with my; v coupled with mx
          CALL couple ( grid%mu_2 , grid%mub , ubdy3dtemp1 , grid%u_2                 , 'u' , grid%msfuy , &
+                       grid%c1h, grid%c2h, grid%c1f, grid%c2f, &
                        ids, ide, jds, jde, kds, kde, ims, ime, jms, jme, kms, kme, ips, ipe, jps, jpe, kps, kpe )
          CALL couple ( grid%mu_2 , grid%mub , vbdy3dtemp1 , grid%v_2                 , 'v' , grid%msfvx , &
+                       grid%c1h, grid%c2h, grid%c1f, grid%c2f, &
                        ids, ide, jds, jde, kds, kde, ims, ime, jms, jme, kms, kme, ips, ipe, jps, jpe, kps, kpe )
          CALL couple ( grid%mu_2 , grid%mub , tbdy3dtemp1 , grid%t_2                 , 't' , grid%msfty , &
+                       grid%c1h, grid%c2h, grid%c1h, grid%c2h, &
                        ids, ide, jds, jde, kds, kde, ims, ime, jms, jme, kms, kme, ips, ipe, jps, jpe, kps, kpe )
          CALL couple ( grid%mu_2 , grid%mub , pbdy3dtemp1 , grid%ph_2                , 'h' , grid%msfty , &
+                       grid%c1h, grid%c2h, grid%c1f, grid%c2f, &
                        ids, ide, jds, jde, kds, kde, ims, ime, jms, jme, kms, kme, ips, ipe, jps, jpe, kps, kpe )
          CALL couple ( grid%mu_2 , grid%mub , qbdy3dtemp1 , grid%moist(:,:,:,P_QV)      , 't' , grid%msfty , &
+                       grid%c1h, grid%c2h, grid%c1h, grid%c2h, &
                        ids, ide, jds, jde, kds, kde, ims, ime, jms, jme, kms, kme, ips, ipe, jps, jpe, kps, kpe )
    
          DO j = jps , MIN(jde-1,jpe)
@@ -846,8 +857,10 @@ real::t1,t2
 
          IF (config_flags%mp_physics.eq.THOMPSONAERO .AND.  config_flags%use_aero_icbc) THEN
             CALL couple ( grid%mu_2 , grid%mub , qn1bdy3dtemp1 , grid%scalar(:,:,:,P_QNWFA)      , 't' , grid%msfty , &
+                       grid%c1h, grid%c2h, grid%c1h, grid%c2h, &
                        ids, ide, jds, jde, kds, kde, ims, ime, jms, jme, kms, kme, ips, ipe, jps, jpe, kps, kpe )
             CALL couple ( grid%mu_2 , grid%mub , qn2bdy3dtemp1 , grid%scalar(:,:,:,P_QNIFA)      , 't' , grid%msfty , &
+                       grid%c1h, grid%c2h, grid%c1h, grid%c2h, &
                        ids, ide, jds, jde, kds, kde, ims, ime, jms, jme, kms, kme, ips, ipe, jps, jpe, kps, kpe )
          END IF
 
@@ -975,14 +988,19 @@ real::t1,t2
    
          !  u, theta, h, scalars coupled with my; v coupled with mx
          CALL couple ( grid%mu_2 , grid%mub , ubdy3dtemp2 , grid%u_2                 , 'u' , grid%msfuy , &
+                       grid%c1h, grid%c2h, grid%c1f, grid%c2f, &
                        ids, ide, jds, jde, kds, kde, ims, ime, jms, jme, kms, kme, ips, ipe, jps, jpe, kps, kpe )
          CALL couple ( grid%mu_2 , grid%mub , vbdy3dtemp2 , grid%v_2                 , 'v' , grid%msfvx , &
+                       grid%c1h, grid%c2h, grid%c1f, grid%c2f, &
                        ids, ide, jds, jde, kds, kde, ims, ime, jms, jme, kms, kme, ips, ipe, jps, jpe, kps, kpe )
          CALL couple ( grid%mu_2 , grid%mub , tbdy3dtemp2 , grid%t_2                 , 't' , grid%msfty , &
+                       grid%c1h, grid%c2h, grid%c1h, grid%c2h, &
                        ids, ide, jds, jde, kds, kde, ims, ime, jms, jme, kms, kme, ips, ipe, jps, jpe, kps, kpe )
          CALL couple ( grid%mu_2 , grid%mub , pbdy3dtemp2 , grid%ph_2                , 'h' , grid%msfty , &
+                       grid%c1h, grid%c2h, grid%c1f, grid%c2f, &
                        ids, ide, jds, jde, kds, kde, ims, ime, jms, jme, kms, kme, ips, ipe, jps, jpe, kps, kpe )
          CALL couple ( grid%mu_2 , grid%mub , qbdy3dtemp2 , grid%moist(:,:,:,P_QV)      , 't' , grid%msfty , &
+                       grid%c1h, grid%c2h, grid%c1h, grid%c2h, &
                        ids, ide, jds, jde, kds, kde, ims, ime, jms, jme, kms, kme, ips, ipe, jps, jpe, kps, kpe )
    
          DO j = jps , jpe
@@ -993,8 +1011,10 @@ real::t1,t2
 
          IF (config_flags%mp_physics.eq.THOMPSONAERO .AND.  config_flags%use_aero_icbc) THEN
             CALL couple ( grid%mu_2 , grid%mub , qn1bdy3dtemp2 , grid%scalar(:,:,:,P_QNWFA)      , 't' , grid%msfty , &
+                       grid%c1h, grid%c2h, grid%c1h, grid%c2h, &
                        ids, ide, jds, jde, kds, kde, ims, ime, jms, jme, kms, kme, ips, ipe, jps, jpe, kps, kpe )
             CALL couple ( grid%mu_2 , grid%mub , qn2bdy3dtemp2 , grid%scalar(:,:,:,P_QNIFA)      , 't' , grid%msfty , &
+                       grid%c1h, grid%c2h, grid%c1h, grid%c2h, &
                        ids, ide, jds, jde, kds, kde, ims, ime, jms, jme, kms, kme, ips, ipe, jps, jpe, kps, kpe )
          END IF
 

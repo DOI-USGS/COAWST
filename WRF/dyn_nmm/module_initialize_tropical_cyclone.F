@@ -49,7 +49,7 @@ CONTAINS
 
         CALL init_domain_nmm (grid &
 !
-#include <actual_new_args.inc>
+#include "actual_new_args.inc"
 !
       )
 
@@ -59,7 +59,7 @@ CONTAINS
 !---------------------------------------------------------------------
    SUBROUTINE init_domain_nmm ( grid &
 !
-# include <dummy_new_args.inc>
+# include "dummy_new_args.inc"
 !
    )
 
@@ -71,7 +71,7 @@ CONTAINS
 !     TYPE (domain), POINTER :: grid
       TYPE (domain)          :: grid
 
-# include <dummy_new_decl.inc>
+# include "dummy_new_decl.inc"
 
 
 real      ,DIMENSION(grid%sm31:grid%em31,grid%sm32:grid%em32,1:grid%num_metgrid_levels)           :: ght_out
@@ -176,7 +176,7 @@ real      ,DIMENSION(grid%sm31:grid%em31,grid%sm32:grid%em32,1:grid%num_soil_cat
 
         REAL, PARAMETER:: DTR=0.01745329
         REAL, PARAMETER:: W_NMM=0.08
-#if defined(HWRF)
+#if ( HWRF == 1 )
         REAL, PARAMETER:: DDFC=1.0
 #else
         REAL, PARAMETER:: DDFC=8.0
@@ -201,7 +201,7 @@ real      ,DIMENSION(grid%sm31:grid%em31,grid%sm32:grid%em32,1:grid%num_soil_cat
         REAL, PARAMETER:: TG0=258.16
         REAL, PARAMETER:: TGA=30.0
     integer :: numzero,numexamined
-#ifdef HWRF
+#if ( HWRF == 1 )
 !============================================================================
 !   gopal's doing for ocean coupling
 !============================================================================
@@ -222,9 +222,9 @@ real      ,DIMENSION(grid%sm31:grid%em31,grid%sm32:grid%em32,1:grid%num_soil_cat
         if (ALLOCATED(TG_ALT)) DEALLOCATE(TG_ALT)
 
 !#define COPY_IN
-!#include <scalar_derefs.inc>
+!#include "scalar_derefs.inc"
 #ifdef DM_PARALLEL
-#    include <data_calls.inc>
+#    include "data_calls.inc"
 #endif
 
       SELECT CASE ( model_data_order )
@@ -413,6 +413,14 @@ real      ,DIMENSION(grid%sm31:grid%em31,grid%sm32:grid%em32,1:grid%num_soil_cat
      num_metgrid_levels = grid%num_metgrid_levels
 
 !---------------------------------------------------------------------
+! bug fix for albedo and emissivity
+      DO j = jts, MIN(jte,jde-1)
+         DO i = its, MIN(ite,ide-1)
+           grid%landmask(I,J) = 0.
+         END DO
+       END DO
+! end bug fix for albedo and emissivity
+
 !
 ! gopal's doing for ideal cases
 !
@@ -439,7 +447,7 @@ ips=its ; ipe=ite ;  jps=jts ; jpe=jte ; kps=kts ; kpe=kte
      &,          landusef_out,soilctop_out,soilcbot_out        &
      &,          num_veg_gc,num_soil_top_gc,num_soil_bot_gc    &
      &,          config_flags%dx,internal_time_loop            &
-     &,          1,grid%num_metgrid_levels                          &
+     &,          1,grid%num_metgrid_levels,config_flags%sf_surface_physics  &
      &,          ids,ide,jds,jde,kds,kde                       &
      &,          ims,ime,jms,jme,kms,kme                       &
      &,          its,ite,jts,jte,kts,kte                       )
@@ -463,7 +471,7 @@ ips=its ; ipe=ite ;  jps=jts ; jpe=jte ; kps=kts ; kpe=kte
      &,                            IMS,IME,JMS,JME,KMS,KME        &
      &,                            ITS,ITE,JTS,JTE,KTS,KTE )
 
-#if defined(HWRF)
+#if ( HWRF == 1 )
           if(.not. grid%use_prep_hybrid) then
 #endif
 
@@ -492,7 +500,7 @@ ips=its ; ipe=ite ;  jps=jts ; jpe=jte ; kps=kts ; kpe=kte
      &,                            IMS,IME,JMS,JME,KMS,KME        &
      &,                            ITS,ITE,JTS,JTE,KTS,KTE )
 
-#if defined(HWRF)
+#if ( HWRF == 1 )
           endif
 #endif
 
@@ -542,7 +550,7 @@ ips=its ; ipe=ite ;  jps=jts ; jpe=jte ; kps=kts ; kpe=kte
         if (grid%tsk_gc(I,J) .gt. 0.) then
            grid%nmm_tsk(I,J)=grid%tsk_gc(I,J)
         else
-#if defined(HWRF)
+#if ( HWRF == 1 )
                 if(grid%use_prep_hybrid) then
                    if(grid%t(I,J,1)<100) then
                       write(message,*) 'NO VALID SURFACE TEMPERATURE: I,J,TSK_GC(I,J),T(I,J,1) = ', &
@@ -554,7 +562,7 @@ ips=its ; ipe=ite ;  jps=jts ; jpe=jte ; kps=kts ; kpe=kte
                 else
 #endif
            grid%nmm_tsk(I,J)=grid%t_gc(I,J,1) ! stopgap measure
-#if defined(HWRF)
+#if ( HWRF == 1 )
                 endif
 #endif
         endif
@@ -576,7 +584,7 @@ ips=its ; ipe=ite ;  jps=jts ; jpe=jte ; kps=kts ; kpe=kte
         if (internal_time_loop .eq. 1) then
 
         if (eta_levels(1) .ne. 1.0) then
-#if defined(HWRF)
+#if ( HWRF == 1 )
              if(grid%use_prep_hybrid) then
                 call wrf_error_fatal('PREP_HYBRID ERROR: eta_levels is not specified, but use_prep_hybrid=.true.')
              end if
@@ -660,7 +668,7 @@ ips=its ; ipe=ite ;  jps=jts ; jpe=jte ; kps=kts ; kpe=kte
        enddo
        write(message,*) 'TOTAL NEAR-ZERO FIS POINTS: ',numzero,' OF ',numexamined
        call wrf_debug(10,message)
-#if defined(HWRF)
+#if ( HWRF == 1 )
        interp_notph: if(.not. grid%use_prep_hybrid) then
 #endif
       if (.NOT. allocated(PDVP))     allocate(PDVP(IMS:IME,JMS:JME))
@@ -820,7 +828,7 @@ ips=its ; ipe=ite ;  jps=jts ; jpe=jte ; kps=kts ; kpe=kte
 
       IF (ALLOCATED(QTMP)) DEALLOCATE(QTMP)
       IF (ALLOCATED(QTMP)) DEALLOCATE(QTMP2)
-#if defined(HWRF)
+#if ( HWRF == 1 )
        else ! we are using prep_hybrid
           ! Compute surface pressure:
           grid%psfc_out=grid%pdtop+grid%pd
@@ -884,12 +892,12 @@ ips=its ; ipe=ite ;  jps=jts ; jpe=jte ; kps=kts ; kpe=kte
 
          endif
 
-#if defined(HWRF)
+#if ( HWRF == 1 )
        if(.not.grid%use_prep_hybrid) then
 #endif
 !  new deallocs
         DEALLOCATE(p3d_out,p3dv_out,p3dv_in)
-#if defined(HWRF)
+#if ( HWRF == 1 )
        end if
 #endif
 
@@ -1084,7 +1092,7 @@ ips=its ; ipe=ite ;  jps=jts ; jpe=jte ; kps=kts ; kpe=kte
      &,                                ITS,ITE,JTS,JTE,1,1 )
 
         IF (WRF_DM_ON_MONITOR()) THEN
-#if defined(HWRF)
+#if ( HWRF == 1 )
           ! SM_G is still needed for the high-res grid
 #else
           DEALLOCATE(SM_G)
@@ -2075,7 +2083,7 @@ ips=its ; ipe=ite ;  jps=jts ; jpe=jte ; kps=kts ; kpe=kte
        write(message,*)'STUFF MOVED TO REGISTRY:',grid%IDTAD,          &
      & grid%NSOIL,grid%NRADL,grid%NRADS,grid%NPHS,grid%NCNVC,grid%sigma
        CALL wrf_message( TRIM(message) )
-#ifdef HWRF
+#if ( HWRF == 1 )
 !=========================================================================================
 !   gopal's doing for ocean coupling. Produce a high resolution grid for the entire domain
 !=========================================================================================
@@ -2169,7 +2177,7 @@ ips=its ; ipe=ite ;  jps=jts ; jpe=jte ; kps=kts ; kpe=kte
 #endif
 
 !#define COPY_OUT
-!#include <scalar_derefs.inc>
+!#include "scalar_derefs.inc"
       RETURN
 
    END SUBROUTINE init_domain_nmm
@@ -4648,7 +4656,7 @@ ips=its ; ipe=ite ;  jps=jts ; jpe=jte ; kps=kts ; kpe=kte
      &,              landusef_out,soilctop_out,soilcbot_out        &
      &,              num_veg_cat,num_soil_top_cat,num_soil_bot_cat &
      &,              dx,internal_time_loop                         &
-     &,              start_z,end_z                                 &
+     &,              start_z,end_z,sf_surface_physics              &
      &,              ids,ide,jds,jde,kds,kde                       &
      &,              ims,ime,jms,jme,kms,kme                       &
      &,              its,ite,jts,jte,kts,kte                       )
@@ -4662,7 +4670,7 @@ ips=its ; ipe=ite ;  jps=jts ; jpe=jte ; kps=kts ; kpe=kte
 INTEGER, INTENT(IN):: ids,ide,jds,jde,kds,kde, &
                        ims,ime,jms,jme,kms,kme, &
                        its,ite,jts,jte,kts,kte, &
-                       internal_time_loop
+                       internal_time_loop,sf_surface_physics
 
  INTEGER, INTENT(IN):: num_veg_cat,num_soil_top_cat,num_soil_bot_cat,start_z, end_z
 
@@ -4691,7 +4699,12 @@ INTEGER, INTENT(IN):: ids,ide,jds,jde,kds,kde, &
  character*255 :: message
  REAL, ALLOCATABLE,DIMENSION(:,:)   :: psc
  REAL, ALLOCATABLE,DIMENSION(:,:,:) :: u_temp,v_temp,t_temp,ght_temp,rh_temp
-
+!!BEGIN: LSM changes for LANDFALL: Subashini 7/27/2016
+ INTEGER                                         :: imin,jmin,imax,jmax,proceed,VEG_ID,SOIL_ID
+ LOGICAL                                         :: mvland, logic_temp
+ REAL                                            :: s_temp
+ NAMELIST / init_land /imin,jmin,imax,jmax,proceed,VEG_ID,SOIL_ID,mvland,logic_temp,s_temp
+!! END: LSM changes for LANDFALL : Subashini 7/27/2016
 !----------------------------------------------------------------------------
 !  PURPOSE:
 !         - HURRICANE VORTEX FILTERING
@@ -4734,15 +4747,34 @@ INTEGER, INTENT(IN):: ids,ide,jds,jde,kds,kde, &
 !
 !   SET UP IDEAL CONDITIONS
 !
+!!BEGIN: LSM changes for LANDFALL: Subashini 7/27/2016
+
+    open (7,FILE='land.nml')
+    read (UNIT=7, NML=init_land)
+    close (UNIT=7)
+
+    if (mvland .and. sf_surface_physics .ne. GFDLSLAB) then
+       CALL wrf_error_fatal('LSM must be GFDLSLAB when mvland is true')
+    endif
 
     do l = 1,num_veg_cat
      do j = jts, MIN(jte,jde-1)
       do i = its, MIN(ite,ide-1)
-        if(l==16)THEN
-           landusef_out(i,j,l)=1                    ! create ocean everywhere
-        else
-            landusef_out(i,j,l)=0
-        endif
+!        create land patch that will move from W2E
+         if(mvland .and. (i .ge. imin .and. i .le. imax .and. j .ge. jmin .and. j.le. jmax))then
+            if(l==VEG_ID)THEN
+                landusef_out(i,j,l)=1                    ! barren land
+            else
+                landusef_out(i,j,l)=0
+            endif
+         else                             ! original ocean world
+            if(l==16)THEN
+               landusef_out(i,j,l)=1      ! create ocean elsewhere
+            else
+               landusef_out(i,j,l)=0
+            endif
+         endif
+!
       enddo
      enddo
     enddo
@@ -4750,40 +4782,71 @@ INTEGER, INTENT(IN):: ids,ide,jds,jde,kds,kde, &
     do l = 1,num_soil_top_cat
      do j = jts, MIN(jte,jde-1)
       do i = its, MIN(ite,ide-1)
-        if(l==14)THEN
-           soilctop_out(i,j,l)=1                    ! create ocean everywhere
-        else
-           soilctop_out(i,j,l)=0
-        endif
-      enddo
-     enddo
-    enddo
-   do l = 1,num_soil_bot_cat
-     do j = jts, MIN(jte,jde-1)
-      do i = its, MIN(ite,ide-1)
-        if(l==14)THEN
-           soilcbot_out(i,j,l)=1                    ! create ocean everywhere
-        else
-           soilcbot_out(i,j,l)=0
-        endif
+!        create land patch that will move from W2E
+         if(mvland .and. (i .ge. imin .and. i .le. imax .and. j .ge. jmin .and. j.le. jmax))then
+            if(l==SOIL_ID)THEN
+              soilctop_out(i,j,l)=1       ! sandy soil
+            else
+              soilctop_out(i,j,l)=0
+            endif
+         else                             ! original ocean world
+            if(l==14)THEN
+               soilctop_out(i,j,l)=1      ! create ocean everywhere
+            else
+               soilctop_out(i,j,l)=0
+            endif
+         endif
+!
       enddo
      enddo
     enddo
 
+   do l = 1,num_soil_bot_cat
+     do j = jts, MIN(jte,jde-1)
+      do i = its, MIN(ite,ide-1)
+!        create land patch that will move from W2E
+         if(mvland .and. (i .ge. imin .and. i .le. imax .and. j .ge. jmin .and. j.le. jmax))then
+            if(l==SOIL_ID)THEN
+               soilcbot_out(i,j,l)=1       ! sandy soil
+            else
+               soilcbot_out(i,j,l)=0
+            endif
+         else                              ! original ocean world
+            if(l==14)THEN
+               soilcbot_out(i,j,l)=1       ! create ocean everywhere
+            else
+               soilcbot_out(i,j,l)=0
+            endif
+         endif
+!
+      enddo
+     enddo
+    enddo
 
     landusef_gc=landusef_out       !=landusef_gc
     soilcbot_gc=soilcbot_out       !=soilcbot_gc
     soilctop_gc=soilctop_out       !=soilctop_gc
-
 
     do j = jts, MIN(jte,jde-1)
      do i = its, MIN(ite,ide-1)
       xice_gc(i,j)=0.
       ht_gc(i,j)=0.                                 ! uniform terrain
       ght_gc(i,j,1)=0.                              ! uniform gpm at level 1
-      tsk_gc(i,j)=302.0                             ! uniform SSTs
+!     create land patch that will move from W2E
+      if(mvland .and. (i .ge. imin .and. i .le. imax .and. j .ge. jmin .and.j.le. jmax))then
+       if(logic_temp .eq. .true.) then
+       tsk_gc(i,j)=s_temp                            ! uniform land temperature or t_gc(i,j,1) for applying first level temperature
+       else
+       tsk_gc(i,j)= t_gc(i,j,1)
+       endif
+      else
+       tsk_gc(i,j)=302.0                             ! uniform SSTs
+      endif
      enddo
     enddo
+
+
+!! END: LSM changes for LANDFALL : Subashini 7/27/2016
 
 !
 ! Make sure the GFDL analysis does not have temperature problems especially
@@ -5707,6 +5770,10 @@ INTEGER, INTENT(IN):: ids,ide,jds,jde,kds,kde, &
       do 20 j=2,lq-1
   20  tem(j,i)=wk(j,i)
 !
+      !Gopal's doing on June 17th, 2015. The line below was erroneously removed from the code.
+      if(anorm.gt.err) goto 2
+      write(6,*) nt,anorm,err
+!
       do i=1,lp
       do j=1,lq
       xx(j,i)=tem(j,i)
@@ -6045,7 +6112,7 @@ INTEGER, INTENT(IN):: ids,ide,jds,jde,kds,kde, &
 
 
 
-#ifdef HWRF
+#if ( HWRF == 1 )
 ! compute earth lat-lons for before interpolations. This is gopal's doing for ocean coupling
 !============================================================================================
 

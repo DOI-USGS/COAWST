@@ -11,7 +11,7 @@ Note, this is not a namelist.input file. Find what interests you, and cut and pa
  lowest_lev_from_sfc                 = .false.
  use_levels_below_ground             = .true.
  use_surface                         = .true.
- lagrange_order                      = 1
+ lagrange_order                      = 2
  force_sfc_in_vinterp                = 1
  zap_close_levels                    = 500
  sfcp_to_sfcp                        = .false.
@@ -111,7 +111,7 @@ Note, this is not a namelist.input file. Find what interests you, and cut and pa
  /
 
  &domains
- time_step_dfi                       = 60.
+ time_step_dfi                       = 60
 
 ** Using gridded nudging option (note this is a separate namelist record) for
    upperair nudging
@@ -360,10 +360,6 @@ the unit is stream 22.
  auxhist23_interval                  = 30,   30,    30,
  frames_per_auxhist23                =  1,    1,     1, 
  auxhist23_outname                   = "PLEVS_d<domain>_<date>"
- io_form_auxhist22                   =  2,
- auxhist22_interval                  = 30,   30,    30,
- frames_per_auxhist22                =  1,    1,     1, 
- auxhist22_outname                   = "ZLEVS_d<domain>_<date>"
  /
 
  &diags
@@ -408,11 +404,11 @@ for z_levels means AGL, so -500 is 500 m AGL, and 10000 is 10 km).
  salinity is ocean_s (ppt).
 
  ocean_levels                        = 30,
- ocean_z                             =        5,        15,        25,        35,        45,        55,
-                                             65,        75,        85,        95,       105,       115,
-                                            125,       135,       145,       155,       165,       175,
-                                            185,       195,       210,       230,       250,       270,
-                                            290,       310,       330,       350,       370,       390
+ ocean_z                             =       5.,       15.,       25.,       35.,       45.,       55.,
+                                            65.,       75.,       85.,       95.,      105.,      115.,
+                                           125.,      135.,      145.,      155.,      165.,      175.,
+                                           185.,      195.,      210.,      230.,      250.,      270.,
+                                           290.,      310.,      330.,      350.,      370.,      390.
  ocean_t                             = 302.3493,  302.3493,  302.3493,  302.1055,  301.9763,  301.6818,
                                        301.2220,  300.7531,  300.1200,  299.4778,  298.7443,  297.9194,
                                        297.0883,  296.1443,  295.1941,  294.1979,  293.1558,  292.1136,
@@ -524,4 +520,92 @@ the turbine type: windturbines.txt
 &stoch
  skebs              = 1, 1, 1, 
  rand_perturb       = 1, 1, 1, 
+
+
+** Using kfcupscheme cu_physics (cumulus scheme option). This has been tested with
+the CAM radiation scheme and is not recommended with other radiation schemes.
+Regarding cu_rad_feedback, users want the parameterized clouds to affect radiation.  
+Turning it off is only useful as a sensitivity study to determine the importance of 
+that effect. Regarding shallowcu_forced_ra option, setting it to true will override 
+the cloud fraction calculations to a prescribed maximum cloud fraction (a value of 0.36)
+which can be changed by the user for sensitivity testing purposes.
+
+&physics
+ cu_physics          = 10,    10,    10,
+ ra_lw_physics       = 3,     3,     3,
+ ra_sw_physics       = 3,     3,     3,
+ cu_rad_feedback     =.true.,.true.,.true.,
+ shallowcu_forced_ra = .false.,.false.,.false.,
+ numBins             = 21,    21,    21,
+ thBinSize           = 0.1,   0.1,   0.1,
+ rBinSize            = 0.0001,0.0001,0.0001,
+ minDeepFreq         = 0.333, 0.333, 0.333,
+ minShallowFreq      = 0.01,  0.01,  0.01, 
+
+
+** To write out an input file during the model simulation.
+
+&time_control
+ write_input                         = .TRUE.,
+ inputout_interval_m                 = 60, 60, 60
+ input_outname                       = "wrfinput_out_d<domain>_<date>"
+ inputout_begin_h                    = 3, 6, 6
+ inputout_end_h                      = 9, 6, 6
+
+** To use climatological data in Thompson microphysics option 28: in addition to
+process additional data in metgrid, use these:
+
+&domains
+ wif_input_opt                       = 1
+ num_wif_levels                      = 30
+
+&physics
+ mp_physics                          = 28,    28,    28,
+ use_aero_icbc                       = .true.
+
+
+** The hybrid vertical coordinate (HVC) requires three pieces:
+1. The WRF and real codes must be built with HVC activated (./configure -hyb)
+2. The eta location (etac) at which the eta levels higher up in the atmosphere
+   become isobaric must be defined (suggested default in Registry).
+3. The run-time option to select the HVC (hybrid_opt, default is OFF): 
+&dynamics
+ hybrid_opt          = 2,
+ etac                = 0.2,
+
+** New mechanism to specify physics:
+
+&physics
+ physics_suite = 'CONUS'
+
+which is equivalent to
+
+ mp_physics         = 8,
+ cu_physics         = 6,
+ ra_lw_physics      = 4,
+ ra_sw_physics      = 4,
+ bl_pbl_physics     = 2,
+ sf_sfclay_physics  = 2,
+ sf_surface_physics = 2,
+
+&physics
+ physics_suite = 'TROPICAL'
+
+which is equivalent to
+
+ mp_physics         = 6,
+ cu_physics         = 16,
+ ra_lw_physics      = 4,
+ ra_sw_physics      = 4,
+ bl_pbl_physics     = 1,
+ sf_sfclay_physics  = 91,
+ sf_surface_physics = 2,
+
+
+To overwrite the cu_physics option for a second nest, set 
+
+ &physics
+ physics_suite                       = 'tropical'
+ cu_physics                          = -1,    -1,     0,
+ ...
 

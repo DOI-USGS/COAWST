@@ -269,10 +269,11 @@ contains
          julian    ! julian day (1-365) ! jararias, 14/08/2013
 
 ! jararias, 2013/11
-   real, dimension( ims:ime, kms:kme, jms:jme, ib_sw ), optional, intent(in) :: &
-         tauaer3d_sw, & ! 3D aerosol optical depth for SW bands
-         ssaaer3d_sw, & ! 3D single scattering albedo for SW bands
-         asyaer3d_sw    ! 3D asymmetry factor for SW bands
+!  real, dimension( ims:ime, kms:kme, jms:jme, ib_sw ), optional, intent(in) :: &
+!        tauaer3d_sw, & ! 3D aerosol optical depth for SW bands
+!        ssaaer3d_sw, & ! 3D single scattering albedo for SW bands
+!        asyaer3d_sw    ! 3D asymmetry factor for SW bands
+   real, dimension(:,:,:,:), pointer :: tauaer3d_sw,ssaaer3d_sw,asyaer3d_sw
    integer, intent(in) :: aer_opt
 
 !------- Local variables ----------------------------------------------
@@ -919,9 +920,10 @@ contains
       end do
    end do
 
+   if ( associated (tauaer3d_sw) ) then
    ! jararias 2013/11
-   if ( present (tauaer3d_sw) ) then
-      if ( aer_opt .eq. 2 ) then
+!  if ( present (tauaer3d_sw) ) then
+!     if ( aer_opt .eq. 2 ) then
          do ib=1,ib_sw
             do i=its,ite
                taual_sw(i,kts-1,ib)=0.
@@ -935,7 +937,7 @@ contains
                end do
             end do
          end do
-      end if
+!     end if
    end if
 !
 ! 1-dimension driver of shortwave radiative transfer scheme
@@ -3864,12 +3866,20 @@ contains
         1.334,  5.623,  31.62,  177.8,  1000.0/
 !-----water vapor k-distribution function,
 !     the sum of hk is 0.52926. unit: fraction (table 2)
+!      data hk/ &
+!       .20673,.08236,.01074,  .03497,.01157,.00360, &
+!       .03011,.01133,.00411,  .02260,.01143,.00421, &
+!       .01336,.01240,.00389,  .00696,.01258,.00326, &
+!       .00441,.01381,.00499,  .00115,.00650,.00465, &
+!       .00026,.00244,.00245,  .00000,.00094,.00145/
+!added by ucsd, 2016/03, to account for water vapor continuum absorption based on data from Table 1 in Tarasova and Fomin (2000)
       data hk/ &
-       .20673,.08236,.01074,  .03497,.01157,.00360, &
-       .03011,.01133,.00411,  .02260,.01143,.00421, &
-       .01336,.01240,.00389,  .00696,.01258,.00326, &
-       .00441,.01381,.00499,  .00115,.00650,.00465, &
-       .00026,.00244,.00245,  .00000,.00094,.00145/
+       .19310,.06924,.00310,  .05716,.01960,.00637, &
+       .02088,.00795,.00526,  .02407,.01716,.00641, &
+       .01402,.01118,.00542,  .00582,.01377,.00312, &
+       .00246,.02008,.00368,  .00163,.00265,.00346, &
+       .00101,.00282,.00555,  .00041,.00092,.00098/
+
 !-----ry is the extinction coefficient for rayleigh scattering.
 !     unit: /mb (table 3)
       data ry /.0000156, .0000018, .000000/

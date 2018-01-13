@@ -193,7 +193,9 @@ SUBROUTINE wrf_ioexit( Status )
   CALL ext_pio_ioexit  ( ierr(12) )
 #endif
  
-  IF ( use_output_servers() ) CALL wrf_quilt_ioexit( ierr(11) )
+  IF ( use_output_servers() ) THEN
+      CALL wrf_quilt_ioexit( ierr(11) )
+  ENDIF
   minerr = MINVAL(ierr)
   maxerr = MAXVAL(ierr)
   IF ( minerr < 0 ) THEN
@@ -234,9 +236,9 @@ SUBROUTINE wrf_open_for_write_begin( FileName , grid, SysDepInfo, &
   INTEGER, EXTERNAL           :: use_package
   LOGICAL, EXTERNAL           :: wrf_dm_on_monitor, multi_files
   LOGICAL, EXTERNAL :: use_output_servers_for
-  CHARACTER*128     :: LocFilename   ! for appending the process ID if necessary
+  CHARACTER*512     :: LocFilename   ! for appending the process ID if necessary
   INTEGER           :: myproc
-  CHARACTER*128     :: mess
+  CHARACTER*512     :: mess
   CHARACTER*1028    :: tstr, t1
   INTEGER           :: i,j
   INTEGER           :: Comm_compute , Comm_io
@@ -419,10 +421,10 @@ SUBROUTINE wrf_open_for_write_begin( FileName , grid, SysDepInfo, &
   ELSE ! use_output_servers_for(io_form)
     IF ( io_form .GT. 0 ) THEN
       IF ( ncd_nofill ) THEN
-        CALL wrf_quilt_open_for_write_begin ( FileName , Comm_compute, Comm_io, TRIM(SysDepInfo) // ",NOFILL=.TRUE.", &
+        CALL wrf_quilt_open_for_write_begin ( FileName , grid%id, Comm_compute, Comm_io, TRIM(SysDepInfo) // ",NOFILL=.TRUE.", &
                                               Hndl , io_form, Status )
       ELSE
-        CALL wrf_quilt_open_for_write_begin ( FileName , Comm_compute, Comm_io, SysDepInfo, &
+        CALL wrf_quilt_open_for_write_begin ( FileName , grid%id, Comm_compute, Comm_io, SysDepInfo, &
                                               Hndl , io_form, Status )
       ENDIF
     ENDIF
@@ -2624,7 +2626,7 @@ SUBROUTINE get_value_from_pairs ( varname , str , retval )
   CHARACTER*(*) ::    str
   CHARACTER*(*) ::    retval
 
-  CHARACTER (128) varstr, tstr
+  CHARACTER (256) varstr, tstr
   INTEGER i,j,n,varstrn
   LOGICAL nobreak, nobreakouter
 

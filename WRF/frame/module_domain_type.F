@@ -114,7 +114,7 @@ MODULE module_domain_type
 
    END TYPE fieldlist
 
-#include <state_subtypes.inc>
+#include "state_subtypes.inc"
 
    TYPE domain
 
@@ -122,7 +122,7 @@ MODULE module_domain_type
       TYPE ( fieldlist ), POINTER :: tail_statevars
 
 ! SEE THE INCLUDE FILE FOR DEFINITIONS OF STATE FIELDS WITHIN THE DOMAIN DATA STRUCTURE
-#include <state_struct.inc>
+#include "state_struct.inc"
 
       INTEGER                                             :: comms( max_comms ), shift_x, shift_y
 
@@ -150,6 +150,7 @@ MODULE module_domain_type
       INTEGER                                             :: num_parents, num_nests, num_siblings
       INTEGER      , DIMENSION( max_parents )             :: child_of_parent
       INTEGER      , DIMENSION( max_nests )               :: active
+      LOGICAL                                             :: active_this_task
 
       INTEGER      , DIMENSION(MAX_STREAMS)               :: nframes          ! frames per outfile for history 
                                                                               ! 1 is main history

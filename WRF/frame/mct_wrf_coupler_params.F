@@ -47,7 +47,7 @@
         integer :: peATM_frst          ! first atmosphere parallel node
         integer :: peATM_last          ! last  atmosphere parallel node
 # endif
-# ifdef SWAN_COUPLING
+# if defined SWAN_COUPLING || defined WW3_COUPLING
 !
 !  Parallel nodes assined to the wave model.
 !

@@ -767,14 +767,18 @@
       GLOBAL_CHANGE_WRF=TASK_CHANGE/GLB_NPTS
 #endif
 
+      grid%avgPchg=global_change_wrf
+
+! NOTE: These below messages are moved to frame/module_integrate.F,
+! and are merged with the timing information.
 #ifdef DM_PARALLEL
-      if ( MYPE == 0 ) then
-        write(wrf_err_message,*) 'avg global change (hPa/3h): ', GLOBAL_CHANGE_WRF
-        call wrf_debug(1,wrf_err_message)
-      endif
+      ! if ( MYPE == 0 ) then
+      !   write(wrf_err_message,*) 'avg global change (hPa/3h): ', GLOBAL_CHANGE_WRF
+      !   call wrf_debug(1,wrf_err_message)
+      ! endif
 #else
-        write(wrf_err_message,*) 'avg global change (hPa/3h): ', GLOBAL_CHANGE_WRF
-        call wrf_debug(1,wrf_err_message)
+        ! write(wrf_err_message,*) 'avg global change (hPa/3h): ', GLOBAL_CHANGE_WRF
+        ! call wrf_debug(1,wrf_err_message)
 #endif
 
 !
@@ -870,7 +874,7 @@
 !
 #ifdef DM_PARALLEL
 !          IPS=ITS;IPE=ITE;JPS=JTS;JPE=JTE;KPS=KTS;KPE=KTE
-# include <HALO_NMM_E.inc>
+# include "HALO_NMM_E.inc"
 #endif
 !-----------------------------------------------------------------------
 !

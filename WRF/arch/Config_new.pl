@@ -9,6 +9,7 @@ select((select(STDOUT), $|=1)[0]);
 $sw_perl_path = perl ;
 $sw_netcdf_path = "" ;
 $sw_pnetcdf_path = "" ;
+$sw_hdf5_path=""; 
 $sw_phdf5_path=""; 
 $sw_jasperlib_path=""; 
 $sw_jasperinc_path=""; 
@@ -20,9 +21,11 @@ $sw_opt_level="";
 $sw_rwordsize="\$\(NATIVE_RWORDSIZE\)";
 $sw_rttov_flag = "" ;
 $sw_rttov_inc = "" ;
+$sw_rttov_path = "" ;
 $sw_crtm_flag = "" ;
 $sw_cloudcv_flag = "" ;
 $sw_4dvar_flag = "" ;
+$sw_wrfplus_path = "" ;
 $sw_wavelet_flag = "" ;
 $WRFCHEM = 0 ;
 $sw_os = "ARCH" ;           # ARCH will match any
@@ -36,7 +39,8 @@ $sw_coamps_core = "-DCOAMPS_CORE=\$\(WRF_COAMPS_CORE\)" ;
 $sw_dmparallel = "" ;
 $sw_ompparallel = "" ;
 $sw_stubmpi = "" ;
-$sw_usenetcdff = "" ;    # for 3.6.2 and greater, the fortran bindings might be in a separate lib file
+$sw_usenetcdff = "" ;    # UNIDATA switches around library names a bit
+$sw_usenetcdf = "" ;    
 $sw_time = "" ;          # name of a timer to time fortran compiles, e.g. timex or time
 $sw_ifort_r8 = 0 ;
 $sw_hdf5 = "-lhdf5 -lhdf5_hl";
@@ -47,6 +51,9 @@ $sw_gpfs_lib  = "-lgpfs";
 $sw_curl_path = "";
 $sw_curl_lib  = "-lcurl";
 $sw_terrain_and_landuse = "";
+$sw_tfl = "" ;
+$sw_cfl = "" ;
+$sw_config_line = "" ;
 while ( substr( $ARGV[0], 0, 1 ) eq "-" )
  {
   if ( substr( $ARGV[0], 1, 5 ) eq "perl=" )
@@ -88,6 +95,10 @@ while ( substr( $ARGV[0], 0, 1 ) eq "-" )
   {
     $sw_pnetcdf_path = substr( $ARGV[0], 9 ) ;
   }
+  if ( substr( $ARGV[0], 1, 5 ) eq "hdf5=" )
+  {
+    $sw_hdf5_path = substr( $ARGV[0], 6 ) ;
+  }
   if ( substr( $ARGV[0], 1, 6 ) eq "phdf5=" )
   {
     $sw_phdf5_path = substr( $ARGV[0], 7 ) ;
@@ -107,6 +118,10 @@ while ( substr( $ARGV[0], 0, 1 ) eq "-" )
   if ( substr( $ARGV[0], 1, 11 ) eq "USENETCDFF=" )
   {
     $sw_usenetcdff = substr( $ARGV[0], 12 ) ;
+  }
+  if ( substr( $ARGV[0], 1, 10 ) eq "USENETCDF=" )
+  {
+    $sw_usenetcdf = substr( $ARGV[0], 11 ) ;
   }
   if ( substr( $ARGV[0], 1, 5 ) eq "time=" )
   {
@@ -194,6 +209,18 @@ while ( substr( $ARGV[0], 0, 1 ) eq "-" )
   {
     $sw_ompparallel=substr( $ARGV[0], 13 ) ;
   }
+  if ( substr( $ARGV[0], 1, 4 ) eq "tfl=" )
+  {
+    $sw_tfl=substr( $ARGV[0], 5 ) ;
+  }
+  if ( substr( $ARGV[0], 1, 4 ) eq "cfl=" )
+  {
+    $sw_cfl=substr( $ARGV[0], 5 ) ;
+  }
+  if ( substr( $ARGV[0], 1, 12 ) eq "config_line=" )
+  {
+    $sw_config_line=substr( $ARGV[0], 13 ) ;
+  }
   shift @ARGV ;
  }
 
@@ -247,14 +274,24 @@ while ( substr( $ARGV[0], 0, 1 ) eq "-" )
  if ( $ENV{WRF_DA_CORE} eq "1" || $sw_da_core eq "-DDA_CORE=1" )
    {
      $sw_rwordsize = "8";  
-     if ( $ENV{CRTM} )
+     if(defined $ENV{'CRTM'})
        {
-       $sw_crtm_flag = "-DCRTM";
+       if ( $ENV{CRTM} ne "0" )
+         {
+         $sw_crtm_flag = "-DCRTM";
+         }
+       } 
+     else 
+       {
+         {
+         $sw_crtm_flag = "-DCRTM";
+         }
        }
      if ( $ENV{RTTOV} )
        {
        $sw_rttov_flag = "-DRTTOV";
        $sw_rttov_inc = "-I$ENV{RTTOV}/include -I$ENV{RTTOV}/mod";
+       $sw_rttov_path= $ENV{RTTOV};
        }
      if ( $ENV{CLOUD_CV} )
        {
@@ -263,6 +300,7 @@ while ( substr( $ARGV[0], 0, 1 ) eq "-" )
      if ( $sw_wrf_core eq "4D_DA_CORE" )
        {
        $sw_4dvar_flag = "-DVAR4D";
+       $sw_wrfplus_path= $ENV{WRFPLUS_DIR};
        }
      if ( $ENV{WAVELET} )
        {
@@ -378,6 +416,8 @@ until ( $validresponse ) {
   { $validresponse = 1 ; }
   else
   { printf("\nInvalid response (%d)\n",$response);}
+  $response_opt = $response ; 
+  chop $response_opt ;
 }
 printf "------------------------------------------------------------------------\n" ;
 
@@ -406,6 +446,7 @@ while ( <CONFIGURE_DEFAULTS> )
     $_ =~ s/CONFIGURE_PERL_PATH/$sw_perl_path/g ;
     $_ =~ s/CONFIGURE_NETCDF_PATH/$sw_netcdf_path/g ;
     $_ =~ s/CONFIGURE_PNETCDF_PATH/$sw_pnetcdf_path/g ;
+    $_ =~ s/CONFIGURE_HDF5_PATH/$sw_hdf5_path/g ;
     $_ =~ s/CONFIGURE_PHDF5_PATH/$sw_phdf5_path/g ;
     $_ =~ s/CONFIGURE_LDFLAGS/$sw_ldflags/g ;
     $_ =~ s/CONFIGURE_COMPILEFLAGS/$sw_compileflags/g ;
@@ -421,10 +462,14 @@ while ( <CONFIGURE_DEFAULTS> )
     $_ =~ s/CONFIGURE_DMPARALLEL/$sw_dmparallelflag/g ;
     $_ =~ s/CONFIGURE_STUBMPI/$sw_stubmpi/g ;
     $_ =~ s/CONFIGURE_NESTOPT/$sw_nest_opt/g ;
+    $_ =~ s/CONFIGURE_TRADFLAG/$sw_tfl/g ;
+    $_ =~ s/CONFIGURE_CPPFLAGS/$sw_cfl/g ;
     $_ =~ s/CONFIGURE_4DVAR_FLAG/$sw_4dvar_flag/g ;
+    $_ =~ s/CONFIGURE_WRFPLUS_PATH/$sw_wrfplus_path/g ;
     $_ =~ s/CONFIGURE_CRTM_FLAG/$sw_crtm_flag/g ;
     $_ =~ s/CONFIGURE_RTTOV_FLAG/$sw_rttov_flag/g ;
     $_ =~ s/CONFIGURE_RTTOV_INC/$sw_rttov_inc/g ;
+    $_ =~ s/CONFIGURE_RTTOV_PATH/$sw_rttov_path/g ;
     $_ =~ s/CONFIGURE_CLOUDCV_FLAG/$sw_cloudcv_flag/g ;
     $_ =~ s/CONFIGURE_WAVELET_FLAG/$sw_wavelet_flag/g ;
     if ( $sw_ifort_r8 ) {
@@ -444,9 +489,9 @@ while ( <CONFIGURE_DEFAULTS> )
         if ( $ENV{NETCDF_LDFLAGS} ) {
           $_ =~ s:CONFIGURE_NETCDF_LIB_PATH:\$\(WRF_SRC_ROOT_DIR\)/external/io_netcdf/libwrfio_nf.a $ENV{NETCDF_LDFLAGS} : ;
         } elsif ( $sw_os eq "Interix" ) {
-	  $_ =~ s:CONFIGURE_NETCDF_LIB_PATH:\$\(WRF_SRC_ROOT_DIR\)/external/io_netcdf/libwrfio_nf.a -L$sw_netcdf_path/lib $sw_usenetcdff -lnetcdf : ;
+	  $_ =~ s:CONFIGURE_NETCDF_LIB_PATH:\$\(WRF_SRC_ROOT_DIR\)/external/io_netcdf/libwrfio_nf.a -L$sw_netcdf_path/lib $sw_usenetcdff $sw_usenetcdf : ;
         } else {
-	  $_ =~ s:CONFIGURE_NETCDF_LIB_PATH:-L\$\(WRF_SRC_ROOT_DIR\)/external/io_netcdf -lwrfio_nf -L$sw_netcdf_path/lib $sw_usenetcdff -lnetcdf : ;
+	  $_ =~ s:CONFIGURE_NETCDF_LIB_PATH:-L\$\(WRF_SRC_ROOT_DIR\)/external/io_netcdf -lwrfio_nf -L$sw_netcdf_path/lib $sw_usenetcdff $sw_usenetcdf : ;
         }
 	 }
     else                   
@@ -469,6 +514,15 @@ while ( <CONFIGURE_DEFAULTS> )
 	$_ =~ s:CONFIGURE_PNETCDF_FLAG::g ;
 	$_ =~ s:CONFIGURE_PNETCDF_LIB_PATH::g ;
 	 }
+
+    if ( $sw_hdf5_path ) 
+      { $_ =~ s:CONFIGURE_HDF5_LIB_PATH:-L$sw_hdf5_path/lib -lhdf5_fortran -lhdf5 -lm -lz: ;
+        $_ =~ s:CONFIGURE_HDF5_FLAG:-DHDF5: ;
+         }
+    else
+      { $_ =~ s:CONFIGURE_HDF5_LIB_PATH::g ;
+        $_ =~ s:CONFIGURE_HDF5_FLAG::g ;
+         }
 
     if ( $sw_phdf5_path ) 
 
@@ -628,6 +682,7 @@ while ( <CONFIGURE_DEFAULTS> )
         if ( $response == 0 ) {
           if ( ! ( $paropt eq 'serial' || $paropt eq 'smpar' ) ) { $response = 1 ; }
         } 
+        $response_nesting = $response ;
         if ( ( $response == 1 ) || ( $response == 2 ) || ( $response == 3 ) ) {
           if ( ( $paropt eq 'serial' || $paropt eq 'smpar' ) ) {   # nesting without MPI
             $sw_stubmpi = "-DSTUBMPI" ;
@@ -737,6 +792,9 @@ while ( <ARCH_PREAMBLE> )
   $_ =~ s:CONFIGURE_NMM_CORE:$sw_nmm_core:g ;
   $_ =~ s:CONFIGURE_COAMPS_CORE:$sw_coamps_core:g ;
   $_ =~ s:CONFIGURE_EXP_CORE:$sw_exp_core:g ;
+  $_ =~ s/CONFIGURE_CONFIG_LINE/$sw_config_line/g ;
+  $_ =~ s/CONFIGURE_CONFIG_NUM/Compiler choice: $response_opt/g ;
+  $_ =~ s/CONFIGURE_CONFIG_NEST/Nesting option: $response_nesting/g ;
 
   $_ =~ s/CONFIGURE_DEP_LIB_PATH/$sw_dep_lib_path/g ;
 

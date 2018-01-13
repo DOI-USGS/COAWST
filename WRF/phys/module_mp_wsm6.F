@@ -76,6 +76,9 @@ CONTAINS
                  ,ids,ide, jds,jde, kds,kde                        &
                  ,ims,ime, jms,jme, kms,kme                        &
                  ,its,ite, jts,jte, kts,kte                        &
+#ifdef WRF_CHEM
+                 ,evapprod, rainprod                               &
+#endif
                                                                    )
 !-------------------------------------------------------------------
   IMPLICIT NONE
@@ -141,6 +144,17 @@ CONTAINS
   REAL, DIMENSION( ims:ime , jms:jme ), OPTIONAL,                 &
         INTENT(INOUT) ::                                 graupel, &
                                                       graupelncv
+
+#ifdef WRF_CHEM
+  REAL, DIMENSION( ims:ime , kms:kme, jms:jme ), INTENT(INOUT) :: &
+                                                      rainprod,   &
+                                                      evapprod
+! local variable
+  REAL, DIMENSION( its:ite , kts:kte )                 ::         &
+                                                      rainprod2d, &
+                                                      evapprod2d
+#endif
+
 ! LOCAL VAR
   REAL, DIMENSION( its:ite , kts:kte ) ::   t
   REAL, DIMENSION( its:ite , kts:kte, 2 ) ::   qci
@@ -186,6 +200,9 @@ CONTAINS
                     ,its,ite, jts,jte, kts,kte                     &
                     ,snow,snowncv                                  &
                     ,graupel,graupelncv                            &
+#ifdef WRF_CHEM
+                   ,rainprod2d, evapprod2d                        &
+#endif
                                                                    )
          DO K=kts,kte
          DO I=its,ite
@@ -243,7 +260,14 @@ CONTAINS
           enddo   
         endif     ! has_reqc, etc...
 !+---+-----------------------------------------------------------------+
-
+#ifdef WRF_CHEM
+        do i=its,ite
+          do k=kts,kte
+            rainprod(i,k,j) = rainprod2d(i,k)
+            evapprod(i,k,j) = evapprod2d(i,k)
+          enddo
+        enddo
+#endif
       ENDDO
   END SUBROUTINE wsm6
 !===================================================================
@@ -262,6 +286,9 @@ CONTAINS
                    ,its,ite, jts,jte, kts,kte                     &
                    ,snow,snowncv                                  &
                    ,graupel,graupelncv                            &
+#ifdef WRF_CHEM
+                   ,rainprod2d, evapprod2d                        &
+#endif
                                                                   )
 !-------------------------------------------------------------------
   IMPLICIT NONE
@@ -293,6 +320,8 @@ CONTAINS
 !        ==> switch graupel or hail by changing no, den, fall vel.
 !        effective radius of hydrometeors, bae from kiaps, jan 2015
 !        ==> consistency in solar insolation of rrtmg radiation
+!        bug fix in melting terms, bae from kiaps, nov 2015
+!        ==> density of air is divided, which has not been
 !
 !  Reference) Hong, Dudhia, Chen (HDC, 2004) Mon. Wea. Rev.
 !             Hong and Lim (HL, 2006) J. Korean Meteor. Soc.
@@ -351,6 +380,13 @@ CONTAINS
   REAL, DIMENSION( ims:ime, jms:jme ), OPTIONAL,                  &
         INTENT(INOUT) ::                                 graupel, &
                                                       graupelncv
+
+#ifdef WRF_CHEM
+  REAL, DIMENSION( its:ite , kts:kte ), INTENT(INOUT)  ::         &
+                                                      rainprod2d, &
+                                                      evapprod2d
+#endif
+
 ! LOCAL VAR
   REAL, DIMENSION( its:ite , kts:kte , 3) ::                      &
                                                               rh, &
@@ -702,7 +738,7 @@ CONTAINS
               coeres = rslope2(i,k,2)*sqrt(rslope(i,k,2)*rslopeb(i,k,2))
               psmlt(i,k) = xka(t(i,k),den(i,k))/xlf*(t0c-t(i,k))*pi/2.       &
                          *n0sfac(i,k)*(precs1*rslope2(i,k,2)                 &
-                         +precs2*work2(i,k)*coeres)
+                         +precs2*work2(i,k)*coeres)/den(i,k)
               psmlt(i,k) = min(max(psmlt(i,k)*dtcld/mstep(i),                &
                           -qrs(i,k,2)/mstep(i)),0.)
               qrs(i,k,2) = qrs(i,k,2) + psmlt(i,k)
@@ -717,7 +753,7 @@ CONTAINS
               coeres = rslope2(i,k,3)*sqrt(rslope(i,k,3)*rslopeb(i,k,3))
               pgmlt(i,k) = xka(t(i,k),den(i,k))/xlf                          &
                          *(t0c-t(i,k))*(precg1*rslope2(i,k,3)                &
-                         +precg2*work2(i,k)*coeres)
+                         +precg2*work2(i,k)*coeres)/den(i,k)
               pgmlt(i,k) = min(max(pgmlt(i,k)*dtcld/mstep(i),                &
                           -qrs(i,k,3)/mstep(i)),0.)                          
               qrs(i,k,3) = qrs(i,k,3) + pgmlt(i,k)
@@ -789,8 +825,11 @@ CONTAINS
           graupel(i,lat) = fallsum_qg*delz(i,kts)/denr*dtcld*1000. + graupel(i,lat)
         ENDIF
         endif
-!       if(fallsum.gt.0.)sr(i)=(snowncv(i,lat) + graupelncv(i,lat))/(rainncv(i)+1.e-12)
-        if(fallsum.gt.0.)sr(i)=(tstepsnow(i) + tstepgraup(i))/(rainncv(i)+1.e-12)
+        IF ( PRESENT (snowncv)) THEN
+          if(fallsum.gt.0.)sr(i)=(snowncv(i,lat) + graupelncv(i,lat))/(rainncv(i)+1.e-12)
+        ELSE
+          if(fallsum.gt.0.)sr(i)=(tstepsnow(i) + tstepgraup(i))/(rainncv(i)+1.e-12)
+        ENDIF
       enddo
 !
 !---------------------------------------------------------------
@@ -1455,6 +1494,12 @@ CONTAINS
         enddo
       enddo
       enddo                  ! big loops
+
+#ifdef WRF_CHEM
+      rainprod2d = praut+pracw+praci+psaci+pgaci+psacw+pgacw+paacw+psaut
+      evapprod2d = -(prevp+psevp+pgevp+psdep+pgdep)
+#endif
+
   END SUBROUTINE wsm62d
 ! ...................................................................
       REAL FUNCTION rgmma(x)

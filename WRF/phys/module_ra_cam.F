@@ -577,16 +577,16 @@ subroutine camrad(RTHRATENLW,RTHRATENSW,                           &
      IF ( F_QI .and. F_QC .and. F_QS ) THEN
       q(ii,kk,ixcldliq) = max(0.,qc3d(i,k,j)/(1.+qv3d(i,k,j)))
       q(ii,kk,ixcldice) = max(0.,(qi3d(i,k,j)+qs3d(i,k,j))/(1.+qv3d(i,k,j)))
+     ELSE IF ( F_QC .and. F_QI ) THEN
+! For Ferrier (note fixed after V3.8.1 for hires window Ferrier)
+      q(ii,kk,ixcldice) = max(0.,qi3d(i,k,j)/(1.+qv3d(i,k,j)))
+      q(ii,kk,ixcldliq) = max(0.,qc3d(i,k,j)/(1.+qv3d(i,k,j)))
      ELSE IF ( F_QC .and. F_QR ) THEN
 ! Warm rain or simple ice
       q(ii,kk,ixcldliq) = 0.
       q(ii,kk,ixcldice) = 0.
       if(t_phy(i,k,j).gt.273.15)q(ii,kk,ixcldliq) = max(0.,qc3d(i,k,j)/(1.+qv3d(i,k,j)))
       if(t_phy(i,k,j).le.273.15)q(ii,kk,ixcldice) = max(0.,qc3d(i,k,j)/(1.+qv3d(i,k,j)))
-     ELSE IF ( F_QC .and. F_QS ) THEN
-! For Ferrier (note that currently Ferrier has QI, so this section will not be used)
-      q(ii,kk,ixcldice) = max(0.,qc3d(i,k,j)/(1.+qv3d(i,k,j))*f_ice_phy(i,k,j))
-      q(ii,kk,ixcldliq) = max(0.,qc3d(i,k,j)/(1.+qv3d(i,k,j))*(1.-f_ice_phy(i,k,j))*(1.-f_rain_phy(i,k,j)))
      ELSE
       q(ii,kk,ixcldliq) = 0.
       q(ii,kk,ixcldice) = 0.
@@ -1318,7 +1318,7 @@ subroutine aerosol_indirect(ncol,lchnk,pcols,pver,ppcnst,landfrac,pmid,t,qm1,cld
 ! use constituents, only: ppcnst, cnst_get_ind
 ! use history, only: outfld
 
-!#include <comctl.h>
+!#include "comctl.h"
 
   integer, intent(in) :: ncol                  ! number of atmospheric columns
   integer, intent(in) :: lchnk                 ! chunk identifier
@@ -1538,7 +1538,7 @@ end subroutine aerosol_indirect
 !     use ppgrid
 !     use pmgrid
       implicit none
-!#include <crdcon.h>
+!#include "crdcon.h"
 
 !     Parameters
 !     Input
