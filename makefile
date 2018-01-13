@@ -441,6 +441,10 @@ ifdef USE_SWAN
 all: $(SCRATCH_DIR) $(SCRATCH_DIR)/MakeDepend $(BIN) rm_macros
 endif
 
+#ifdef USE_WW3
+#.PHONY: all
+#endif
+
  modules  :=
 ifdef USE_ADJOINT
  modules  +=	ROMS/Adjoint \
@@ -509,6 +513,11 @@ ifdef USE_SWAN
  modules  +=	SWAN/Src
  includes +=	SWAN/Src
 endif
+
+#ifdef USE_WW3
+# modules  +=	WW3/ftn
+# includes +=	WW3/ftn
+#endif
 
 ifdef USE_REFDIF
  modules  +=	REFDIF
@@ -589,6 +598,39 @@ MYLIB := libocean.a
 .PHONY: libraries
 
 libraries: $(libraries)
+
+#--------------------------------------------------------------------------
+#  Build WW3.
+#--------------------------------------------------------------------------
+
+.PHONY: ww3clean
+
+ww3clean:
+ifdef USE_WW3
+	cd $(COAWST_WW3_DIR)/bin; ls; ./w3_clean -c;
+	echo "cleaned ww3";
+endif
+
+.PHONY: ww3
+
+ww3:
+ifdef USE_WW3
+	cp -p $(BIN) $(BIN).backup;                               \
+	$(RM) $(BIN);                                             \
+        $(RM) $(COAWST_WW3_DIR)/obj_DIST/libWW3.a;                \
+	cd $(COAWST_WW3_DIR); ls;                                 \
+	echo " "; echo " ";                                       \
+	echo "Compiling ww3";                                     \
+	./coawst_compile_ww3;                                     \
+	echo "";                                                  \
+	echo "-------- Finished compiling WW3 ------------"
+ ifndef USE_ROMS
+  ifndef USE_SWAN
+	ln -sf WW3/exe/ww3_shel $(BIN);
+  endif
+ endif
+	echo "";
+endif
 
 #--------------------------------------------------------------------------
 #  Build WRF.
@@ -694,7 +736,7 @@ endif
 .PHONY: tarfile
 
 tarfile:
-		tar --exclude=".svn" --exclude Output -cvf coawst_v3.2.tar *
+		tar --exclude=".svn" --exclude Output -cvf coawst_v3.3.tar *
 
 .PHONY: zipfile
 

@@ -21,4 +21,4 @@ NPROCS=`wc -l < $PBS_NODEFILE`
 
 cd /peach/data0/jcwarner/Models/COAWST_regress
 
-mpirun -np 8 -machinefile $PBS_NODEFILE ./coawstM Projects/Sandy/coupling_sandy1.in > cwstv3.out
+mpirun -np 8 -machinefile $PBS_NODEFILE ./coawstM Projects/Sandy/coupling_sandy.in > cwstv3.out

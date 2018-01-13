@@ -35,15 +35,19 @@
 #                  omit argument for all available CPUs                 :::
 #    -noclean     Do not clean already compiled roms objects            :::
 #    -nocleanwrf  Do not clean already compiled wrf objects             :::
+#    -nocleanww3  Do not clean already compiled ww3 objects             :::
 #                                                                       :::
 # Notice that sometimes the parallel compilation fail to find MPI       :::
 # include file "mpif.h".                                                :::
 #                                                                       :::
 #::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
-
+############################################################################
+# Top area here is to set flags from calling this routine. Do not change.
+#
 parallel=0
 clean=1
 cleanwrf=1
+cleanww3=1
 
 while [ $# -gt 0 ]
 do
@@ -70,6 +74,11 @@ do
       cleanwrf=0
       ;;
 
+    -nocleanww3 )
+      shift
+      cleanww3=0
+      ;;
+
     * )
       echo ""
       echo "$0 : Unknown option [ $1 ]"
@@ -80,30 +89,30 @@ do
       echo "              omit argument for all avaliable CPUs"
       echo "-noclean       Do not clean already compiled objects"
       echo "-nocleanwrf    Do not clean already compiled wrf objects"
+      echo "-nocleanww3    Do not clean already compiled ww3 objects"
       echo ""
       exit 1
       ;;
   esac
 done
-
+############################################################################
+# Start of USER definitions area:
+#
 # Set the CPP option defining the particular application. This will
 # determine the name of the ".h" header file with the application
-# CPP definitions.
-
+# CPP definitions. Also this will activate the switch file for WW3.
 export   COAWST_APPLICATION=INLET_TEST
 
-# Set the ROMS_APPLICATION to be the same as the COAWST_APP.  We use the COAWST
-# APP for other checks.
+# Set the ROMS_APPLICATION to be the same as the COAWST_APP.
+# Do not change this. We use the COAWST APP for other checks.
 export   ROMS_APPLICATION=${COAWST_APPLICATION}
 
 # Set a local environmental variable to define the path to the directories
 # where all this project's files are kept.
-
-export     MY_ROOT_DIR=/cygdrive/e/data/models/COAWST
-export     MY_PROJECT_DIR=${MY_ROOT_DIR}
+export   MY_ROOT_DIR=/cygdrive/d/COAWST_tests/coawst_v3.3_test10
+export   MY_PROJECT_DIR=${MY_ROOT_DIR}
 
 # The path to the user's local current ROMS source code.
-#
 # If using svn locally, this would be the user's Working Copy Path (WCPATH).
 # Note that one advantage of maintaining your source code locally with svn
 # is that when working simultaneously on multiple machines (e.g. a local
@@ -111,9 +120,36 @@ export     MY_PROJECT_DIR=${MY_ROOT_DIR}
 # the latest release and always get an up-to-date customized source on each
 # machine. This script is designed to more easily allow for differing paths
 # to the code and inputs on differing machines.
+export   MY_ROMS_SRC=${MY_ROOT_DIR}/
 
-export        MY_ROMS_SRC=${MY_ROOT_DIR}/
+############################################################################
+# WRF : Needs to have the env variable NETCDF set.
+#export  NETCDF=${NETCDF_INCDIR}/../
+#
+############################################################################
+# Wave Watch 3: Here we provide 5 environment variables for WW3.
+#
+# 1) COAWST_WW3_DIR is a pointer to root WW3 code, do not change.
+export   COAWST_WW3_DIR=${MY_ROOT_DIR}/WW3
+#
+# 2) WWATCH3_NETCDF can be NC3 or NC4. We need NC4 for COAWST. do not change.
+export   WWATCH3_NETCDF=NC4
+#
+# 3) WWATCH_ENV points to WW3 environment listing. do not change.
+export   WWATCH_ENV=${COAWST_WW3_DIR}/wwatch.env
+#
+# 4) NETCDF_CONFIG is needed by WW3. You need to set this:
+#export   NETCDF_CONFIG=${NETCDF_LIBDIR}/../bin/nc-config
+export   NETCDF_CONFIG=/share/apps/netcdf-4.1.3_intel-2011.4.191/bin/nc-config
+#
+# 5) WW3_SWITCH_FILE is like cpp options for WW3. You need to create it and
+#        list the name here.
+export   WW3_SWITCH_FILE=sandy_coupled
+#export  WW3_SWITCH_FILE=sandy_ww3only
 
+############################################################################
+# Compiler selections.
+#
 # Set path of the directory containing makefile configuration (*.mk) files.
 # The user has the option to specify a customized version of these files
 # in a different directory than the one distributed with the source code,
@@ -145,7 +181,7 @@ export        MY_ROMS_SRC=${MY_ROOT_DIR}/
 # conditional if-statements.
 
  export           USE_MPI=on            # distributed-memory parallelism
- export        USE_MPIF90=              # compile with mpif90 script
+ export        USE_MPIF90=on            # compile with mpif90 script
 #export         which_MPI=mpich         # compile with MPICH library
 #export         which_MPI=mpich2        # compile with MPICH2 library
  export         which_MPI=openmpi       # compile with OpenMPI library
@@ -207,7 +243,9 @@ if [ -n "${USE_MPIF90:+1}" ]; then
 
   esac
 fi
-
+############################################################################
+# Additional libraries selections.
+#
 # If the USE_MY_LIBS is activated above, the path of the libraries
 # required by ROMS can be set here using environmental variables
 # which take precedence to the values specified in the make macro
@@ -383,6 +421,9 @@ if [ -n "${USE_MY_LIBS:+1}" ]; then
   esac
 fi
 
+############################################################################
+# Header and other source directories selections.
+#
 # The rest of this script sets the path to the users header file and
 # analytical source files, if any. See the templates in User/Functionals.
 #
@@ -409,6 +450,10 @@ fi
 # Go to the users source directory to compile. The options set above will
 # pick up the application-specific code from the appropriate place.
 
+############################################################################
+# End of USER definitions area.  You really should not change anything 
+# down here.
+#
  cd ${MY_ROMS_SRC}
 
 # Remove build directory.
@@ -425,6 +470,12 @@ if [ $cleanwrf -eq 1 ]; then
   cd ${MY_ROMS_SRC}
 fi
 make wrf
+
+if [ $cleanww3 -eq 1 ]; then
+  make ww3clean
+  cd ${MY_ROMS_SRC}
+fi
+make ww3
 
 if [ $parallel -eq 1 ]; then
   make $NCPUS
