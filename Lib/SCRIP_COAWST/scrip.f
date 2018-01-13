@@ -254,8 +254,8 @@
 
 !-----------------------------------------------------------------------
 !     DEALLOCATE HERE for SCRIP_COAWST package
-      write(stdout,*), "-------------------------------------------"
-      write(stdout,*), "Reached the end of mapping one set of grids"
+      write(stdout,*) "-------------------------------------------"
+      write(stdout,*) "Reached the end of mapping one set of grids"
 !     deallocate arrays from grids.f
       deallocate ( grid1_dims, grid2_dims )
       deallocate ( grid1_area, grid2_area )

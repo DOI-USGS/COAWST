@@ -199,8 +199,8 @@
 !   Find child grid with respect to parent grid
 !
       do mo=1,Ngrids_roms-1
-        allocate(ngrd_rm(mo)%istr_o,ngrd_rm(mo)%jstr_o,                 &
-     &           ngrd_rm(mo)%iend_o,ngrd_rm(mo)%jend_o)
+!       allocate(ngrd_rm(mo)%istr_o,ngrd_rm(mo)%jstr_o,                 &
+!    &           ngrd_rm(mo)%iend_o,ngrd_rm(mo)%jend_o)
 
         nx=ngrd_rm(mo)%xi_size
         ny=ngrd_rm(mo)%eta_size 

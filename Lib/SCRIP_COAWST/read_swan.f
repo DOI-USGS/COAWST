@@ -156,8 +156,8 @@
 !     Find the indices of child grid with respect to parent grid
 !
       do mw=1,Ngrids_swan-1
-        allocate(ngrd_sw(mw)%istr_w,ngrd_sw(mw)%jstr_w,                 &
-     &           ngrd_sw(mw)%iend_w,ngrd_sw(mw)%jend_w)
+!       allocate(ngrd_sw(mw)%istr_w,ngrd_sw(mw)%jstr_w,                 &
+!    &           ngrd_sw(mw)%iend_w,ngrd_sw(mw)%jend_w)
 
         nx=ngrd_sw(mw)%Numx_swan
         ny=ngrd_sw(mw)%Numy_swan

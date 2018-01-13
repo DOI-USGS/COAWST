@@ -1331,6 +1331,837 @@
 
       end subroutine wav2atm_mask
 
+
+
+
+!!!!!!!!NEWWWWWWWWWWw
+
+!=======================================================================
+      subroutine ocn2ww3_mask()
+
+      implicit none
+
+!     local variables
+      real(dbl_kind), allocatable :: XX(:), YY(:)
+
+!  Allocate the source mask
+      do mo=1,Ngrids_roms
+        nx=ngrd_rm(mo)%xi_size
+        ny=ngrd_rm(mo)%eta_size
+        allocate(ngrd_rm(mo)%src_mask(nx,ny))
+      end do
+!  Save the ocean grid mask to src_mask
+      do mo=1,Ngrids_roms
+        do j=1,ngrd_rm(mo)%eta_size
+          do i=1,ngrd_rm(mo)%xi_size
+            ngrd_rm(mo)%src_mask(i,j)=ngrd_rm(mo)%mask_rho_o(i,j)
+          end do
+        end do
+      end do
+!  Mask out child portion of the src mask.
+      do mo=1,Ngrids_roms-1
+          do j=ngrd_rm(mo)%jstr_o,ngrd_rm(mo)%jend_o
+            do i=ngrd_rm(mo)%istr_o,ngrd_rm(mo)%iend_o
+              ngrd_rm(mo)%src_mask(i,j)=0
+            end do
+          end do
+      end do
+!  If a child grid, then set perimeter src_mask=0 because
+!  this region comes from its parent.
+      if (Ngrids_roms.gt.1) then
+        do mo=2,Ngrids_roms
+          i=ngrd_rm(mo)%xi_size
+          do j=1,ngrd_rm(mo)%eta_size
+            ngrd_rm(mo)%src_mask(1,j)=0
+            ngrd_rm(mo)%src_mask(i,j)=0
+          end do
+          j=ngrd_rm(mo)%eta_size
+          do i=1,ngrd_rm(mo)%xi_size
+            ngrd_rm(mo)%src_mask(i,1)=0
+            ngrd_rm(mo)%src_mask(i,j)=0
+          end do
+        end do
+      end if
+!  NOTICE piped ww3 and roms loops to end
+      allocate(do_adjust(Ngrids_ww3))
+      do mw=1,Ngrids_ww3
+        do_adjust(mw)=0
+        do mo=1,Ngrids_roms
+!
+!  Allocate the destination mask
+!
+          nx=ngrd_w3(mw)%Numx_ww3
+          ny=ngrd_w3(mw)%Numy_ww3
+          allocate(ngrd_w3(mw)%dst_mask(nx,ny))
+          allocate(dst_mask_unlim(nx,ny))
+!
+!  Compute ww3 grid dst mask. Start by using locations on dst grid
+!  where src_mask=1.
+!
+          do nx=1,ngrd_w3(mw)%Numx_ww3
+            do ny=1,ngrd_w3(mw)%Numy_ww3
+              dist_max=10e6
+              Ikeep=1
+              Jkeep=1
+              xx2=ngrd_w3(mw)%lon_rho_w(nx,ny)
+              yy2=ngrd_w3(mw)%lat_rho_w(nx,ny)
+              do j=1,ngrd_rm(mo)%eta_size
+                do i=1,ngrd_rm(mo)%xi_size
+                  dist1=sqrt((ngrd_rm(mo)%lon_rho_o(i,j)-xx2)**2+       &
+     &                       (ngrd_rm(mo)%lat_rho_o(i,j)-yy2)**2)
+!                 xx1=ngrd_rm(mo)%lon_rho_o(i,j)
+!                 yy1=ngrd_rm(mo)%lat_rho_o(i,j)
+!                 dlon = xx1-xx2
+!                 latrad1=abs(yy1*deg2rad)
+!                 latrad2=abs(yy2*deg2rad)
+!                 dep=cos(0.5*(latrad2+latrad1))*dlon
+!                 dlat=yy2-yy1
+!                 dist1=1852.0*60.0*sqrt(dlat**2+dep**2)
+                  if(dist1<=dist_max)then
+                    dist_max=dist1
+                    Ikeep=i
+                    Jkeep=j
+                  endif
+                enddo
+              enddo
+              ngrd_w3(mw)%dst_mask(nx,ny)=                              &
+     &                                 ngrd_rm(mo)%src_mask(Ikeep,Jkeep)
+            enddo
+          enddo
+!  Apply the ww3 grid Land/Sea mask to dst_mask
+          do j=1,ngrd_w3(mw)%Numy_ww3
+            do i=1,ngrd_w3(mw)%Numx_ww3
+              ngrd_w3(mw)%dst_mask(i,j)=ngrd_w3(mw)%dst_mask(i,j)*      &
+     &                                  ngrd_w3(mw)%mask_rho_w(i,j)
+            end do
+          end do
+!  Remove points on dst mask that are outside of the src grid.
+!  Create a vector of bounding src grid psi points.
+          N=(ngrd_rm(mo)%xi_size+ngrd_rm(mo)%eta_size+2)*2-4
+          allocate(XX(N), YY(N))
+          count=0
+          do i=1,ngrd_rm(mo)%eta_size+1
+            count=count+1
+            XX(count)=ngrd_rm(mo)%x_full_grid(1,i)
+            YY(count)=ngrd_rm(mo)%y_full_grid(1,i)
+          end do
+          do i=2,ngrd_rm(mo)%xi_size+1
+            count=count+1
+            XX(count)=ngrd_rm(mo)%x_full_grid(i,ngrd_rm(mo)%eta_size+1)
+            YY(count)=ngrd_rm(mo)%y_full_grid(i,ngrd_rm(mo)%eta_size+1)
+          end do
+          do i=ngrd_rm(mo)%eta_size,1,-1
+            count=count+1
+            XX(count)=ngrd_rm(mo)%x_full_grid(ngrd_rm(mo)%xi_size+1,i)
+            YY(count)=ngrd_rm(mo)%y_full_grid(ngrd_rm(mo)%xi_size+1,i)
+          end do
+          do i=ngrd_rm(mo)%xi_size,2,-1
+            count=count+1
+            XX(count)=ngrd_rm(mo)%x_full_grid(i,1)
+            YY(count)=ngrd_rm(mo)%y_full_grid(i,1)
+          end do
+!
+!  For each dst pt call the pnpoly to see if it is inside the src grd.
+!
+          do nx=1,ngrd_w3(mw)%Numx_ww3
+            do ny=1,ngrd_w3(mw)%Numy_ww3
+              PX=ngrd_w3(mw)%lon_rho_w(nx,ny)
+              PY=ngrd_w3(mw)%lat_rho_w(nx,ny)
+              INOUT=0
+              call PNPOLY( PX, PY, XX, YY, N, INOUT )
+              ngrd_w3(mw)%dst_mask(nx,ny)=                              &
+     &          ngrd_w3(mw)%dst_mask(nx,ny)*                            &
+     &          MIN(INOUT+1,1)
+            enddo
+          enddo
+          deallocate(XX, YY)
+!
+!  Compare src and dst lon points and see if points are coincident. 
+!  The test looks for less than 2.0e-7 rads =  1.1459e-05 degs =~ 1.3m
+!  If so, then offset the dst by 2.0e-7 rads
+!
+            tol=1.1459e-05
+            do i=1,ngrd_rm(mo)%xi_size
+              if (do_adjust(mw).eq.1) exit
+              do j=1,ngrd_rm(mo)%eta_size
+                if (do_adjust(mw).eq.1) exit
+                lons=ngrd_rm(mo)%lon_rho_o(i,j)
+                lats=ngrd_rm(mo)%lat_rho_o(i,j)
+                do nx=1,ngrd_w3(mw)%Numx_ww3
+                  if (do_adjust(mw).eq.1) exit
+                  do ny=1,ngrd_w3(mw)%Numy_ww3
+                    lond=ngrd_w3(mw)%lon_rho_w(nx,ny)
+                    latd=ngrd_w3(mw)%lat_rho_w(nx,ny)
+                    cff=min(abs(lons-lond),abs(lats-latd))
+                    if (cff.le.tol) then
+                      do_adjust(mw)=1
+                  write(*,*) 'Do adjust for coincident points grid ', mw
+                      exit
+                    end if
+                  enddo
+                enddo
+              enddo
+            enddo
+            if (do_adjust(mw).eq.1) then
+              do nx=1,ngrd_w3(mw)%Numx_ww3
+                do ny=1,ngrd_w3(mw)%Numy_ww3
+                  ngrd_w3(mw)%lon_rho_w(nx,ny)=                         &
+     &                                  ngrd_w3(mw)%lon_rho_w(nx,ny)+tol
+                  ngrd_w3(mw)%lat_rho_w(nx,ny)=                         &
+     &                                  ngrd_w3(mw)%lat_rho_w(nx,ny)+tol
+                enddo
+              enddo
+              do nx=1,ngrd_w3(mw)%Numx_ww3+1
+                do ny=1,ngrd_w3(mw)%Numy_ww3+1
+                  ngrd_w3(mw)%x_full_grid(nx,ny)=                       &
+     &                                ngrd_w3(mw)%x_full_grid(nx,ny)+tol
+                  ngrd_w3(mw)%y_full_grid(nx,ny)=                       &
+     &                                ngrd_w3(mw)%y_full_grid(nx,ny)+tol
+                enddo
+              enddo
+            end if
+!
+!  Send the data to SCRIP routines
+!
+          write(mw_string,'(i1)')mw
+          write(mo_string,'(i1)')mo
+          interp_file1='ocn'//trim(mo_string)//'_to_'//'wav'//          &
+     &                       trim(mw_string)//'_weights.nc'
+          interp_file2='unknown'
+          map1_name='ROMS to WW3 distwgt Mapping'
+          map2_name='unknown'
+
+          write(stdout,*)"============================================="
+          write(stdout,*)"Begin mapping between the two grids"
+          write(stdout,*)"---------------------------------------------"
+          write(stdout,*)"The interp file is: ", interp_file1
+          write(stdout,*)"The src grid is: ", roms_grids(mo)
+          write(stdout,*)"The dst grid is: ", ww3_xcoord(mw)
+
+          grid1_file=roms_grids(mo)
+          grid2_file=ww3_xcoord(mw)
+
+          counter_grid=counter_grid+1
+
+          call scrip_package(grid1_file, grid2_file,                    &
+     &                       ngrd_rm(mo)%xi_size,                       &
+     &                       ngrd_rm(mo)%eta_size,                      &
+     &                       ngrd_rm(mo)%lon_rho_o,                     &
+     &                       ngrd_rm(mo)%lat_rho_o,                     &
+     &                       ngrd_rm(mo)%x_full_grid,                   &
+     &                       ngrd_rm(mo)%y_full_grid,                   &
+     &                       ngrd_w3(mw)%Numx_ww3,                      &
+     &                       ngrd_w3(mw)%Numy_ww3,                      &
+     &                       ngrd_w3(mw)%lon_rho_w,                     &
+     &                       ngrd_w3(mw)%lat_rho_w,                     &
+     &                       ngrd_w3(mw)%x_full_grid,                   &
+     &                       ngrd_w3(mw)%y_full_grid,                   &
+     &                       interp_file1, interp_file2,                &
+     &                       map1_name, map2_name,                      &
+     &                       ngrd_rm(mo)%mask_rho_o,                    &
+     &                       ngrd_w3(mw)%dst_mask,                      &
+     &                       dst_mask_unlim,                            &
+     &                       counter_grid,                              &
+     &                       Ngrids_comb_total,                         &
+     &                       output_ncfile)
+!
+!  Undo the grid adjust.
+          if ((do_adjust(mw).eq.1).and.(mo.lt.Ngrids_roms)) then
+            do nx=1,ngrd_w3(mw)%Numx_ww3
+              do ny=1,ngrd_w3(mw)%Numy_ww3
+                ngrd_w3(mw)%lon_rho_w(nx,ny)=                           &
+     &                                ngrd_w3(mw)%lon_rho_w(nx,ny)-tol
+                ngrd_w3(mw)%lat_rho_w(nx,ny)=                           &
+     &                                ngrd_w3(mw)%lat_rho_w(nx,ny)-tol
+              enddo
+            enddo
+            do nx=1,ngrd_w3(mw)%Numx_ww3+1
+              do ny=1,ngrd_w3(mw)%Numy_ww3+1
+                ngrd_w3(mw)%x_full_grid(nx,ny)=                         &
+     &                              ngrd_w3(mw)%x_full_grid(nx,ny)-tol
+                ngrd_w3(mw)%y_full_grid(nx,ny)=                         &
+     &                              ngrd_w3(mw)%y_full_grid(nx,ny)-tol
+              enddo
+            enddo
+          end if
+          do_adjust(mw)=0
+!
+          deallocate(ngrd_w3(mw)%dst_mask)
+          deallocate(dst_mask_unlim)
+        end do
+      end do
+      deallocate(do_adjust)
+      do mo=1,Ngrids_roms
+        deallocate(ngrd_rm(mo)%src_mask)
+      end do
+
+      end subroutine ocn2ww3_mask
+
+!======================================================================
+!
+      subroutine ww32ocn_mask()
+
+      implicit none
+
+!     local variables
+      real(dbl_kind), allocatable :: XX(:), YY(:)
+
+!  Allocate the source mask
+      do mw=1,Ngrids_ww3
+        nx=ngrd_w3(mw)%Numx_ww3
+        ny=ngrd_w3(mw)%Numy_ww3
+        allocate(ngrd_w3(mw)%src_mask(nx,ny))
+      end do
+!  Save the wav grid mask to src_mask
+      do mw=1,Ngrids_ww3
+        do j=1,ngrd_w3(mw)%Numy_ww3
+          do i=1,ngrd_w3(mw)%Numx_ww3
+            ngrd_w3(mw)%src_mask(i,j)=ngrd_w3(mw)%mask_rho_w(i,j)
+          end do
+        end do
+      end do
+!  Mask out child portion of the src mask.
+      do mw=1,Ngrids_ww3-1
+        do j=ngrd_w3(mw)%jstr_w,ngrd_w3(mw)%jend_w
+          do i=ngrd_w3(mw)%istr_w,ngrd_w3(mw)%iend_w
+            ngrd_w3(mw)%src_mask(i,j)=0
+           end do
+        end do
+      end do
+!  If a child grid, then set perimeter src_mask=0 because
+!  this region comes from its parent.
+      if (Ngrids_ww3.gt.1) then
+        do mw=2,Ngrids_ww3
+          i=ngrd_w3(mw)%Numx_ww3
+          do j=1,ngrd_w3(mw)%Numy_ww3
+            ngrd_w3(mw)%src_mask(1,j)=0
+            ngrd_w3(mw)%src_mask(i,j)=0
+          end do
+          j=ngrd_w3(mw)%Numy_ww3
+          do i=1,ngrd_w3(mw)%Numx_ww3
+            ngrd_w3(mw)%src_mask(i,1)=0
+            ngrd_w3(mw)%src_mask(i,j)=0
+          end do
+        end do
+      end if
+!  NOTICE piped ww3 and roms loops to end
+      do mo=1,Ngrids_roms
+        do mw=1,Ngrids_ww3
+!
+!  Allocate the destination mask
+!
+          nx=ngrd_rm(mo)%xi_size
+          ny=ngrd_rm(mo)%eta_size
+          allocate(ngrd_rm(mo)%dst_mask(nx,ny))
+          allocate(dst_mask_unlim(nx,ny))
+!
+!  Compute roms grid dst mask. Start by using locations on dst grid
+!  where src_mask=1.
+!
+          do nx=1,ngrd_rm(mo)%xi_size
+            do ny=1,ngrd_rm(mo)%eta_size
+              dist_max=10e6
+              Ikeep=1
+              Jkeep=1
+              xx2=ngrd_rm(mo)%lon_rho_o(nx,ny)
+              yy2=ngrd_rm(mo)%lat_rho_o(nx,ny)
+              do j=1,ngrd_w3(mw)%Numy_ww3
+                do i=1,ngrd_w3(mw)%Numx_ww3
+                  dist1=sqrt((ngrd_w3(mw)%lon_rho_w(i,j)-xx2)**2+       &
+     &                       (ngrd_w3(mw)%lat_rho_w(i,j)-yy2)**2)
+!                 xx1=ngrd_sw(mw)%lon_rho_w(i,j)
+!                 yy1=ngrd_sw(mw)%lat_rho_w(i,j)
+!                 dlon = xx1-xx2
+!                 latrad1=abs(yy1*deg2rad)
+!                 latrad2=abs(yy2*deg2rad)
+!                 dep=cos(0.5*(latrad2+latrad1))*dlon
+!                 dlat=yy2-yy1
+!                 dist1=1852.0*60.0*sqrt(dlat**2+dep**2)
+                  if(dist1<=dist_max)then
+                    dist_max=dist1
+                    Ikeep=i
+                    Jkeep=j
+                  endif
+                enddo
+              enddo
+              ngrd_rm(mo)%dst_mask(nx,ny)=                              &
+     &                                 ngrd_w3(mw)%src_mask(Ikeep,Jkeep)
+            enddo
+          enddo
+!  Apply the roms grid Land/Sea mask to dst_mask
+          do j=1,ngrd_rm(mo)%eta_size
+            do i=1,ngrd_rm(mo)%xi_size
+              ngrd_rm(mo)%dst_mask(i,j)=ngrd_rm(mo)%dst_mask(i,j)*      &
+     &                                  ngrd_rm(mo)%mask_rho_o(i,j)
+            end do
+          end do
+!  Remove points on dst mask that are outside of the src grid.
+!  Create a vector of bounding src grid psi points.
+          N=(ngrd_w3(mw)%Numx_ww3+ngrd_w3(mw)%Numy_ww3+2)*2-4
+          allocate(XX(N), YY(N))
+          count=0
+          do i=1,ngrd_w3(mw)%Numy_ww3+1
+            count=count+1
+            XX(count)=ngrd_w3(mw)%x_full_grid(1,i)
+            YY(count)=ngrd_w3(mw)%y_full_grid(1,i)
+          end do
+          do i=2,ngrd_w3(mw)%Numx_ww3+1
+            count=count+1
+            XX(count)=ngrd_w3(mw)%x_full_grid(i,ngrd_w3(mw)%Numy_ww3+1)
+            YY(count)=ngrd_w3(mw)%y_full_grid(i,ngrd_w3(mw)%Numy_ww3+1)
+          end do
+          do i=ngrd_w3(mw)%Numy_ww3,1,-1
+            count=count+1
+            XX(count)=ngrd_w3(mw)%x_full_grid(ngrd_w3(mw)%Numx_ww3+1,i)
+            YY(count)=ngrd_w3(mw)%y_full_grid(ngrd_w3(mw)%Numx_ww3+1,i)
+          end do
+          do i=ngrd_w3(mw)%Numx_ww3,2,-1
+            count=count+1
+            XX(count)=ngrd_w3(mw)%x_full_grid(i,1)
+            YY(count)=ngrd_w3(mw)%y_full_grid(i,1)
+          end do
+!
+!  For each dst pt call the pnpoly to see if it is inside the src grd.
+!
+          do nx=1,ngrd_rm(mo)%xi_size
+            do ny=1,ngrd_rm(mo)%eta_size
+              PX=ngrd_rm(mo)%lon_rho_o(nx,ny)
+              PY=ngrd_rm(mo)%lat_rho_o(nx,ny)
+              INOUT=0
+              call PNPOLY( PX, PY, XX, YY, N, INOUT )
+              ngrd_rm(mo)%dst_mask(nx,ny)=                              &
+     &          ngrd_rm(mo)%dst_mask(nx,ny)*                            &
+     &          MIN(INOUT+1,1)
+            enddo
+          enddo
+          deallocate(XX, YY)
+!
+!  Send the data to SCRIP routines
+!
+          write(mo_string,'(i1)')mo
+          write(mw_string,'(i1)')mw
+          interp_file1='wav'//trim(mw_string)//'_to_'//'ocn'//          &
+     &                       trim(mo_string)//'_weights.nc'
+          interp_file2='unknown'
+          map1_name='WW3 to ROMS distwgt Mapping'
+          map2_name='unknown'
+
+          write(stdout,*)"============================================="
+          write(stdout,*)"Begin mapping between the two grids"
+          write(stdout,*)"---------------------------------------------"
+          write(stdout,*)"The interp file is: ", interp_file1
+          write(stdout,*)"The src grid is: ", ww3_xcoord(mw)
+          write(stdout,*)"The dst grid is: ", roms_grids(mo)
+
+          grid1_file=ww3_xcoord(mw)
+          grid2_file=roms_grids(mo)
+
+          counter_grid=counter_grid+1
+
+          call scrip_package(grid1_file, grid2_file,                    &
+     &                       ngrd_w3(mw)%Numx_ww3,                      &
+     &                       ngrd_w3(mw)%Numy_ww3,                      &
+     &                       ngrd_w3(mw)%lon_rho_w,                     &
+     &                       ngrd_w3(mw)%lat_rho_w,                     &
+     &                       ngrd_w3(mw)%x_full_grid,                   &
+     &                       ngrd_w3(mw)%y_full_grid,                   &
+     &                       ngrd_rm(mo)%xi_size,                       &
+     &                       ngrd_rm(mo)%eta_size,                      &
+     &                       ngrd_rm(mo)%lon_rho_o,                     &
+     &                       ngrd_rm(mo)%lat_rho_o,                     &
+     &                       ngrd_rm(mo)%x_full_grid,                   &
+     &                       ngrd_rm(mo)%y_full_grid,                   &
+     &                       interp_file1, interp_file2,                &
+     &                       map1_name, map2_name,                      &
+     &                       ngrd_w3(mw)%mask_rho_w,                    &
+     &                       ngrd_rm(mo)%dst_mask,                      &
+     &                       dst_mask_unlim,                            &
+     &                       counter_grid,                              &
+     &                       Ngrids_comb_total,                         &
+     &                       output_ncfile)
+
+          deallocate(ngrd_rm(mo)%dst_mask)
+          deallocate(dst_mask_unlim)
+        end do
+      end do
+      do mw=1,Ngrids_ww3
+        deallocate(ngrd_w3(mw)%src_mask)
+      end do
+
+      end subroutine ww32ocn_mask
+
+      
+!======================================================================
+
+      subroutine atm2ww3_mask()
+
+      implicit none
+
+!     local variables
+      real(dbl_kind), allocatable :: XX(:), YY(:)
+
+!  Allocate the source mask
+      do ma=1,Ngrids_wrf
+        nx=ngrd_wr(ma)%we_size
+        ny=ngrd_wr(ma)%sn_size
+        allocate(ngrd_wr(ma)%src_mask(nx,ny))
+      end do
+!  Save the atm grid mask to src_mask
+      do ma=1,Ngrids_wrf
+        do j=1,ngrd_wr(ma)%sn_size
+          do i=1,ngrd_wr(ma)%we_size
+            ngrd_wr(ma)%src_mask(i,j)=ngrd_wr(ma)%mask_rho_a(i,j)
+          end do
+        end do
+      end do
+!  Mask out child portion of the src mask.
+      do ma=1,Ngrids_wrf-1
+        if (wrf_grids(ma+1)/="moving") then
+          do j=ngrd_wr(ma)%jstr_a,ngrd_wr(ma)%jend_a
+            do i=ngrd_wr(ma)%istr_a,ngrd_wr(ma)%iend_a
+              ngrd_wr(ma)%src_mask(i,j)=0
+            end do
+          end do
+        end if
+      end do
+!
+!  NOTICE piped wrf and ww3 loops to end
+      do mw=1,Ngrids_ww3
+        do ma=1,Ngrids_wrf
+!
+!  Allocate the destination mask
+!
+          nx=ngrd_w3(mw)%Numx_ww3
+          ny=ngrd_w3(mw)%Numy_ww3
+          allocate(ngrd_w3(mw)%dst_mask(nx,ny))
+          allocate(dst_mask_unlim(nx,ny))
+!
+!  Compute ww3 grid dst mask. Start by using locations on dst grid
+!  where src_mask=1.
+!
+          do nx=1,ngrd_w3(mw)%Numx_ww3
+            do ny=1,ngrd_w3(mw)%Numy_ww3
+              dist_max=10e6
+              Ikeep=1
+              Jkeep=1
+              xx2=ngrd_w3(mw)%lon_rho_w(nx,ny)
+              yy2=ngrd_w3(mw)%lat_rho_w(nx,ny)
+              do j=1,ngrd_wr(ma)%sn_size
+                do i=1,ngrd_wr(ma)%we_size
+                  xx1=ngrd_wr(ma)%lon_rho_a(i,j)
+                  yy1=ngrd_wr(ma)%lat_rho_a(i,j)
+                  dlon = xx1-xx2
+                  latrad1=abs(yy1*deg2rad)
+                  latrad2=abs(yy2*deg2rad)
+                  dep=cos(0.5*(latrad2+latrad1))*dlon
+                  dlat=yy2-yy1
+                  dist1=1852.0*60.0*sqrt(dlat**2+dep**2)
+                  if(dist1<=dist_max)then
+                    dist_max=dist1
+                    Ikeep=i
+                    Jkeep=j
+                  endif
+                enddo
+              enddo
+              ngrd_w3(mw)%dst_mask(nx,ny)=                              &
+     &                                 ngrd_wr(ma)%src_mask(Ikeep,Jkeep)
+            enddo
+          enddo
+!  Apply the ww3 grid Land/Sea mask to dst_mask
+          do j=1,ngrd_w3(mw)%Numy_ww3
+            do i=1,ngrd_w3(mw)%Numx_ww3
+              ngrd_w3(mw)%dst_mask(i,j)=ngrd_w3(mw)%dst_mask(i,j)*      &
+     &                                  ngrd_w3(mw)%mask_rho_w(i,j)
+            end do
+          end do
+!  Remove points on dst mask that are outside of the src grid.
+!  Create a vector of bounding src grid psi points.
+          N=(ngrd_wr(ma)%we_size+ngrd_wr(ma)%sn_size+2)*2-4
+          allocate(XX(N), YY(N))
+          count=0
+          do i=1,ngrd_wr(ma)%sn_size+1
+            count=count+1
+            XX(count)=ngrd_wr(ma)%x_full_grid(1,i)
+            YY(count)=ngrd_wr(ma)%y_full_grid(1,i)
+          end do
+          do i=2,ngrd_wr(ma)%we_size+1
+            count=count+1
+            XX(count)=ngrd_wr(ma)%x_full_grid(i,ngrd_wr(ma)%sn_size+1)
+            YY(count)=ngrd_wr(ma)%y_full_grid(i,ngrd_wr(ma)%sn_size+1)
+          end do
+          do i=ngrd_wr(ma)%sn_size,1,-1
+            count=count+1
+            XX(count)=ngrd_wr(ma)%x_full_grid(ngrd_wr(ma)%we_size+1,i)
+            YY(count)=ngrd_wr(ma)%y_full_grid(ngrd_wr(ma)%we_size+1,i)
+          end do
+          do i=ngrd_wr(ma)%we_size,2,-1
+            count=count+1
+            XX(count)=ngrd_wr(ma)%x_full_grid(i,1)
+            YY(count)=ngrd_wr(ma)%y_full_grid(i,1)
+          end do
+!
+!  For each dst pt call the pnpoly to see if it is inside the src grd.
+!
+          do nx=1,ngrd_w3(mw)%Numx_ww3
+            do ny=1,ngrd_w3(mw)%Numy_ww3
+              PX=ngrd_w3(mw)%lon_rho_w(nx,ny)
+              PY=ngrd_w3(mw)%lat_rho_w(nx,ny)
+              INOUT=0
+              call PNPOLY( PX, PY, XX, YY, N, INOUT )
+              ngrd_w3(mw)%dst_mask(nx,ny)=                              &
+     &          ngrd_w3(mw)%dst_mask(nx,ny)*                            &
+     &          MIN(INOUT+1,1)
+            enddo
+          enddo
+          deallocate(XX, YY)
+!
+!  Send the data to SCRIP routines
+!
+          write(mw_string,'(i1)')mw
+          write(ma_string,'(i1)')ma
+          interp_file1='atm'//trim(ma_string)//'_to_'//'wav'//          &
+     &                       trim(mw_string)//'_weights.nc'
+          interp_file2='unknown'
+          map1_name='WRF to WW3 distwgt Mapping'
+          map2_name='unknown'
+
+          write(stdout,*)"============================================="
+          write(stdout,*)"Begin mapping between the two grids"
+          write(stdout,*)"---------------------------------------------"
+          write(stdout,*)"The interp file is: ", interp_file1
+          write(stdout,*)"The src grid is: ", wrf_grids(ma)
+          write(stdout,*)"The dst grid is: ", ww3_xcoord(mw)
+
+          grid1_file=wrf_grids(ma)
+          grid2_file=ww3_xcoord(mw)
+
+          counter_grid=counter_grid+1
+
+          call scrip_package(grid1_file, grid2_file,                    &
+     &                       ngrd_wr(ma)%we_size,                       &
+     &                       ngrd_wr(ma)%sn_size,                       &
+     &                       ngrd_wr(ma)%lon_rho_a,                     &
+     &                       ngrd_wr(ma)%lat_rho_a,                     &
+     &                       ngrd_wr(ma)%x_full_grid,                   &
+     &                       ngrd_wr(ma)%y_full_grid,                   &
+     &                       ngrd_w3(mw)%Numx_ww3,                      &
+     &                       ngrd_w3(mw)%Numy_ww3,                      &
+     &                       ngrd_w3(mw)%lon_rho_w,                     &
+     &                       ngrd_w3(mw)%lat_rho_w,                     &
+     &                       ngrd_w3(mw)%x_full_grid,                   &
+     &                       ngrd_w3(mw)%y_full_grid,                   &
+     &                       interp_file1, interp_file2,                &
+     &                       map1_name, map2_name,                      &
+     &                       ngrd_wr(ma)%mask_rho_a,                    &
+     &                       ngrd_w3(mw)%dst_mask,                      &
+     &                       dst_mask_unlim,                            &
+     &                       counter_grid,                              &
+     &                       Ngrids_comb_total,                         &
+     &                       output_ncfile)
+
+          deallocate(ngrd_w3(mw)%dst_mask)
+          deallocate(dst_mask_unlim)
+        end do
+      end do
+      do ma=1,Ngrids_wrf
+        deallocate(ngrd_wr(ma)%src_mask)
+      end do
+
+      end subroutine atm2ww3_mask
+
+!======================================================================
+
+      subroutine ww32atm_mask()
+
+      implicit none
+
+!     local variables
+      real(dbl_kind), allocatable :: XX(:), YY(:)
+
+!  Allocate the source mask
+      do mw=1,Ngrids_ww3
+        nx=ngrd_w3(mw)%Numx_ww3
+        ny=ngrd_w3(mw)%Numy_ww3
+        allocate(ngrd_w3(mw)%src_mask(nx,ny))
+      end do
+!  Save the wav grid mask to src_mask
+      do mw=1,Ngrids_ww3
+        do j=1,ngrd_w3(mw)%Numy_ww3
+          do i=1,ngrd_w3(mw)%Numx_ww3
+            ngrd_w3(mw)%src_mask(i,j)=ngrd_w3(mw)%mask_rho_w(i,j)
+          end do
+        end do
+      end do
+!  Mask out child portion of the src mask.
+      do mw=1,Ngrids_ww3-1
+          do j=ngrd_w3(mw)%jstr_w,ngrd_w3(mw)%jend_w
+            do i=ngrd_w3(mw)%istr_w,ngrd_w3(mw)%iend_w
+              ngrd_w3(mw)%src_mask(i,j)=0
+            end do
+          end do
+      end do
+!  If a child grid, then set perimeter src_mask=0 because
+!  this region comes from its parent.
+      if (Ngrids_ww3.gt.1) then
+        do mw=2,Ngrids_ww3
+          i=ngrd_w3(mw)%Numx_ww3
+          do j=1,ngrd_w3(mw)%Numy_ww3
+            ngrd_w3(mw)%src_mask(1,j)=0
+            ngrd_w3(mw)%src_mask(i,j)=0
+          end do
+          j=ngrd_w3(mw)%Numy_ww3
+          do i=1,ngrd_w3(mw)%Numx_ww3
+            ngrd_w3(mw)%src_mask(i,1)=0
+            ngrd_w3(mw)%src_mask(i,j)=0
+          end do
+        end do
+      end if
+!  NOTICE piped ww3 and roms loops to end
+      do ma=1,Ngrids_wrf
+        do mw=1,Ngrids_ww3
+!
+!  Allocate the destination mask
+!
+          nx=ngrd_wr(ma)%we_size
+          ny=ngrd_wr(ma)%sn_size
+          allocate(ngrd_wr(ma)%dst_mask(nx,ny))
+          allocate(dst_mask_unlim(nx,ny))
+!
+!  Compute wrf grid dst mask. Start by using locations on dst grid
+!  where src_mask=1.
+!
+          offset=MIN(mw-1,1)
+          do nx=1,ngrd_wr(ma)%we_size
+            do ny=1,ngrd_wr(ma)%sn_size
+              dist_max=10e6
+              Ikeep=1
+              Jkeep=1
+              xx2=ngrd_wr(ma)%lon_rho_a(nx,ny)
+              yy2=ngrd_wr(ma)%lat_rho_a(nx,ny)
+              do j=1+offset,ngrd_w3(mw)%Numy_ww3-offset
+                do i=1+offset,ngrd_w3(mw)%Numx_ww3-offset
+                  xx1=ngrd_w3(mw)%lon_rho_w(i,j)
+                  yy1=ngrd_w3(mw)%lat_rho_w(i,j)
+                  dlon = xx1-xx2
+                  latrad1=abs(yy1*deg2rad)
+                  latrad2=abs(yy2*deg2rad)
+                  dep=cos(0.5*(latrad2+latrad1))*dlon
+                  dlat=yy2-yy1
+                  dist1=1852.0*60.0*sqrt(dlat**2+dep**2)
+                  if(dist1<=dist_max)then
+                    dist_max=dist1
+                    Ikeep=i
+                    Jkeep=j
+                  endif
+                enddo
+              enddo
+              ngrd_wr(ma)%dst_mask(nx,ny)=                              &
+     &                                 ngrd_w3(mw)%src_mask(Ikeep,Jkeep)
+            enddo
+          enddo
+!  Apply the wrf grid Land/Sea mask to dst_mask
+          do j=1,ngrd_wr(ma)%sn_size
+            do i=1,ngrd_wr(ma)%we_size
+              ngrd_wr(ma)%dst_mask(i,j)=ngrd_wr(ma)%dst_mask(i,j)*      &
+     &                                  ngrd_wr(ma)%mask_rho_a(i,j)
+            end do
+          end do
+!  Remove points on dst mask that are outside of the src grid.
+!  Create a vector of bounding src grid psi points.
+          N=(ngrd_w3(mw)%Numx_ww3+ngrd_w3(mw)%Numy_ww3+2)*2-4
+          allocate(XX(N), YY(N))
+          count=0
+          do i=1,ngrd_w3(mw)%Numy_ww3+1
+            count=count+1
+            XX(count)=ngrd_w3(mw)%x_full_grid(1,i)
+            YY(count)=ngrd_w3(mw)%y_full_grid(1,i)
+          end do
+          do i=2,ngrd_w3(mw)%Numx_ww3+1
+            count=count+1
+            XX(count)=ngrd_w3(mw)%x_full_grid(i,ngrd_w3(mw)%Numy_ww3+1)
+            YY(count)=ngrd_w3(mw)%y_full_grid(i,ngrd_w3(mw)%Numy_ww3+1)
+          end do
+          do i=ngrd_w3(mw)%Numy_ww3,1,-1
+            count=count+1
+            XX(count)=ngrd_w3(mw)%x_full_grid(ngrd_w3(mw)%Numx_ww3+1,i)
+            YY(count)=ngrd_w3(mw)%y_full_grid(ngrd_w3(mw)%Numx_ww3+1,i)
+          end do
+          do i=ngrd_w3(mw)%Numx_ww3,2,-1
+            count=count+1
+            XX(count)=ngrd_w3(mw)%x_full_grid(i,1)
+            YY(count)=ngrd_w3(mw)%y_full_grid(i,1)
+          end do
+!
+!  For each dst pt call the pnpoly to see if it is inside the src grd.
+!
+          do nx=1,ngrd_wr(ma)%we_size
+            do ny=1,ngrd_wr(ma)%sn_size
+              PX=ngrd_wr(ma)%lon_rho_a(nx,ny)
+              PY=ngrd_wr(ma)%lat_rho_a(nx,ny)
+              INOUT=0
+              call PNPOLY( PX, PY, XX, YY, N, INOUT )
+              ngrd_wr(ma)%dst_mask(nx,ny)=                              &
+     &          ngrd_wr(ma)%dst_mask(nx,ny)*                            &
+     &          MIN(INOUT+1,1)
+            enddo
+          enddo
+          deallocate(XX, YY)
+!
+!  Send the data to SCRIP routines
+!
+          write(ma_string,'(i1)')ma
+          write(mw_string,'(i1)')mw
+          interp_file1='wav'//trim(mw_string)//'_to_'//'atm'//          &
+     &                       trim(ma_string)//'_weights.nc'
+          interp_file2='unknown'
+          map1_name='WW3 to WRF distwgt Mapping'
+          map2_name='unknown'
+
+          write(stdout,*)"============================================="
+          write(stdout,*)"Begin mapping between the two grids"
+          write(stdout,*)"---------------------------------------------"
+          write(stdout,*)"The interp file is: ", interp_file1
+          write(stdout,*)"The src grid is: ", ww3_xcoord(mw)
+          write(stdout,*)"The dst grid is: ", wrf_grids(ma)
+
+          grid1_file=ww3_xcoord(mw)
+          grid2_file=wrf_grids(ma)
+
+          counter_grid=counter_grid+1
+
+          call scrip_package(grid1_file, grid2_file,                    &
+     &                       ngrd_w3(mw)%Numx_ww3,                      &
+     &                       ngrd_w3(mw)%Numy_ww3,                      &
+     &                       ngrd_w3(mw)%lon_rho_w,                     &
+     &                       ngrd_w3(mw)%lat_rho_w,                     &
+     &                       ngrd_w3(mw)%x_full_grid,                   &
+     &                       ngrd_w3(mw)%y_full_grid,                   &
+     &                       ngrd_wr(ma)%we_size,                       &
+     &                       ngrd_wr(ma)%sn_size,                       &
+     &                       ngrd_wr(ma)%lon_rho_a,                     &
+     &                       ngrd_wr(ma)%lat_rho_a,                     &
+     &                       ngrd_wr(ma)%x_full_grid,                   &
+     &                       ngrd_wr(ma)%y_full_grid,                   &
+     &                       interp_file1, interp_file2,                &
+     &                       map1_name, map2_name,                      &
+     &                       ngrd_w3(mw)%mask_rho_w,                    &
+     &                       ngrd_wr(ma)%dst_mask,                      &
+     &                       dst_mask_unlim,                            &
+     &                       counter_grid,                              &
+     &                       Ngrids_comb_total,                         &
+     &                       output_ncfile)
+
+          deallocate(ngrd_wr(ma)%dst_mask)
+          deallocate(dst_mask_unlim)
+        end do
+      end do
+      do mw=1,Ngrids_ww3
+        deallocate(ngrd_w3(mw)%src_mask)
+      end do
+
+      end subroutine ww32atm_mask
+
+
 !======================================================================
 !                                                                       
          SUBROUTINE PNPOLY( PX, PY, XX, YY, N, INOUT )                     

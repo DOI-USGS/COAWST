@@ -151,8 +151,8 @@
 !     Find the parent grid indices w.r.t child grid
 !
       do ma=1,Ngrids_wrf-1
-        allocate(ngrd_wr(ma)%istr_a,ngrd_wr(ma)%jstr_a,                 &
-     &           ngrd_wr(ma)%iend_a,ngrd_wr(ma)%jend_a)
+!       allocate(ngrd_wr(ma)%istr_a,ngrd_wr(ma)%jstr_a,                 &
+!    &           ngrd_wr(ma)%iend_a,ngrd_wr(ma)%jend_a)
 
         nx=ngrd_wr(ma)%we_size
         ny=ngrd_wr(ma)%sn_size

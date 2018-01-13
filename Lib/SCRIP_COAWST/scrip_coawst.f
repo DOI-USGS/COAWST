@@ -18,6 +18,7 @@
       use read_swan 
       use read_roms 
       use read_wrf
+      use read_ww3
       use create_masks
 
       implicit none
@@ -39,8 +40,16 @@
       close(iunit)
 
 !     Read the information from different grids 
+      if ((Ngrids_swan>0).and.(Ngrids_ww3>0)) then 
+        write(stdout,*) 'Only use WW3 or SWAN, not both '
+        write(stdout,*) 'Num WW3 grids = ', Ngrids_ww3
+        write(stdout,*) 'Num SWAN grids = ', Ngrids_swan
+      end if
       if (Ngrids_swan>0) then 
         call load_swan_grid()
+      end if
+      if (Ngrids_ww3>0) then 
+        call load_ww3_grid()
       end if
       if (Ngrids_roms>0) then
         call load_roms_grid()
@@ -53,6 +62,9 @@
       if ((Ngrids_roms>0).and.(Ngrids_swan>0)) then 
         call ocn2wav_mask()
       end if
+      if ((Ngrids_roms>0).and.(Ngrids_ww3>0)) then 
+        call ocn2ww3_mask()
+      end if
       if ((Ngrids_roms>0).and.(Ngrids_wrf>0))  then 
         call ocn2atm_mask()
       end if
@@ -63,12 +75,21 @@
       if ((Ngrids_swan>0).and.(Ngrids_wrf>0)) then
         call wav2atm_mask()
       end if
+      if ((Ngrids_ww3>0).and.(Ngrids_roms>0)) then 
+        call ww32ocn_mask()
+      end if 
+      if ((Ngrids_ww3>0).and.(Ngrids_wrf>0)) then
+        call ww32atm_mask()
+      end if
 
       if ((Ngrids_wrf>0).and.(Ngrids_roms>0)) then
         call atm2ocn_mask()
       end if
       if ((Ngrids_wrf>0).and.(Ngrids_swan>0)) then
         call atm2wav_mask()
+      end if
+      if ((Ngrids_wrf>0).and.(Ngrids_ww3>0)) then
+        call atm2ww3_mask()
       end if
 
       end program scrip_coawst
@@ -86,9 +107,12 @@
       integer(int_kind) :: i
 
 !     Allocate input variables
-      namelist /inputs/ Ngrids_roms, Ngrids_swan, Ngrids_wrf,           &
+      namelist /inputs/ Ngrids_roms, Ngrids_swan, Ngrids_ww3,           &
+     &                  Ngrids_wrf,                                     &
      &                  roms_grids, swan_coord, swan_bath,              &
      &                  swan_numx, swan_numy, cartesian,                &
+     &                  ww3_xcoord, ww3_ycoord, ww3_bath,               &
+     &                  ww3_numx, ww3_numy,                             &
      &                  wrf_grids, parent_grid_ratio, parent_id,        &
      &                  output_ncfile
 
@@ -99,12 +123,15 @@
 
       write(stdout,*) "Ngrid_roms=",Ngrids_roms
       write(stdout,*) "Ngrid_swan=",Ngrids_swan
+      write(stdout,*) "Ngrid_ww3= ",Ngrids_ww3
       write(stdout,*) "Ngrid_wrf =",Ngrids_wrf
 
 !     Total number of grid interpolation combinations 
       Ngrids_comb_total=(Ngrids_roms*Ngrids_swan +                      &
      &                   Ngrids_roms*Ngrids_wrf  +                      &
-     &                   Ngrids_swan*Ngrids_wrf)*2 
+     &                   Ngrids_swan*Ngrids_wrf  +                      & 
+     &                   Ngrids_roms*Ngrids_ww3  +                      &
+     &                   Ngrids_ww3*Ngrids_wrf)*2
 
       write(stdout,*) "Common netcdf file is: ",output_ncfile
       write(stdout,*) "Number of netcdf subgroups ", Ngrids_comb_total
@@ -117,6 +144,11 @@
         write(*,10)"Input SWAN grid",i,"=", TRIM(ADJUSTL(swan_coord(i)))
         write(*,11)"Input SWAN bath",i,"=", TRIM(ADJUSTL(swan_bath(i)))
         write(*,12)"Cartesian input In meters=", cartesian(i)
+      end do 
+      do i = 1,Ngrids_ww3
+        write(*,10)"Input WW3 xgrid",i,"=", TRIM(ADJUSTL(ww3_xcoord(i)))
+        write(*,10)"Input WW3 ygrid",i,"=", TRIM(ADJUSTL(ww3_ycoord(i)))
+        write(*,11)"Input WW3 bath",i,"=", TRIM(ADJUSTL(ww3_bath(i)))
       end do 
       do i = 1,Ngrids_wrf
         write(*,10)"Input WRF grid ", i,"=", TRIM(ADJUSTL(wrf_grids(i)))

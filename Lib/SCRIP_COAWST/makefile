@@ -14,6 +14,8 @@ FORT = gfortran
 
 COMPILERS = ../../Compilers
 
+#export HDF5_DISABLE_VERSION_CHECK=1
+
 # This determine the operating system.
 OS := $(shell uname -s | sed 's/[\/ ]/-/g')
 OS := $(patsubst CYGWIN_%,CYGWIN,$(OS))
@@ -28,6 +30,7 @@ EXEDIR  = .
 #    NETCDF_MODFILE := netcdf.mod
 # TYPESIZES_MODFILE := typesizes.mod
 FLAGS = $(FFLAGS)
+#FLAGS = -g
 
 INCLUDE =
 
@@ -40,6 +43,7 @@ OBJSET  = \
 	create_fullgrid.o \
 	grids.o \
 	read_swan.o \
+	read_ww3.o \
 	read_roms.o \
 	read_wrf.o \
 	remap_vars.o \
@@ -87,6 +91,10 @@ create_fullgrid.o: $(SRCDIR)/create_fullgrid.f kinds_mod.o $(INCLUDE)
 read_swan.o: $(SRCDIR)/read_swan.f kinds_mod.o scripwrap_mod.o \
 	               create_fullgrid.o     $(INCLUDE)
 	$(FC) $(FLAGS) -c $(SRCDIR)/read_swan.f
+
+read_ww3.o: $(SRCDIR)/read_ww3.f kinds_mod.o scripwrap_mod.o \
+	               create_fullgrid.o     $(INCLUDE)
+	$(FC) $(FLAGS) -c $(SRCDIR)/read_ww3.f
 
 read_roms.o: $(SRCDIR)/read_roms.f kinds_mod.o scripwrap_mod.o  \
                         netcdf.o create_fullgrid.o $(INCLUDE)
@@ -142,7 +150,7 @@ create_masks.o: $(SRCDIR)/create_masks.f kinds_mod.o scripwrap_mod.o  \
 
 scrip_coawst.o: $(SRCDIR)/scrip_coawst.f kinds_mod.o constants.o iounits.o \
 		scripwrap_mod.o create_fullgrid.o read_swan.o read_roms.o  \
-		read_wrf.o scrip.o create_masks.o \
+		read_wrf.o read_ww3.o scrip.o create_masks.o \
 		$(INCLUDE)
 	$(FC) $(FLAGS) -c $(SRCDIR)/scrip_coawst.f
 

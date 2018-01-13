@@ -3,16 +3,17 @@ $INPUTS
 !  Input file for scrip_coawst.
 !  The $INPUTS line is required at the top of this file. 
 !  Edit this file to enter the correct information below.
-!  Then run this program as "scrip_coawst scrip_coawst.in"
+!  Then run this program as "scrip_coawst scrip_coawst_template.in"
 !
 ! 1) Enter name of output netcdf4 file
 !
 OUTPUT_NCFILE='scrip_file.nc'
 
-! 2) Enter total number of ROMS, SWAN, and WRF (max_dom) grids:
+! 2) Enter total number of ROMS, SWAN, WW3, and WRF grids:
 !
 NGRIDS_ROMS=2,
 NGRIDS_SWAN=2,
+NGRIDS_WW3=0,
 NGRIDS_WRF=2,
 
 ! 3) Enter name of the ROMS grid file(s):
@@ -37,7 +38,17 @@ SWAN_NUMY(2)=86,
 CARTESIAN(1)=0,
 CARTESIAN(2)=0,
 
-! 5) Enter the name of the WRF input grid(s). If the grid is a 
+! 5) Enter WW3 information
+!    -the name(s) of the WW3 grid file(s) for x- y- coords and bathy.
+!    -the size of the WW3 grids (full number of grid center points). 
+!
+WW3_XCOORD(1)=' ',
+WW3_YCOORD(1)='',
+WW3_BATH(1)='',
+WW3_NUMX(1)=1,
+WW3_NUMY(1)=1,
+
+! 6) Enter the name of the WRF input grid(s). If the grid is a 
 !    moving child nest then enter that grid name as 'moving'.
 !    Also provide the grid ratio, this is used for a moving nest.
 !
