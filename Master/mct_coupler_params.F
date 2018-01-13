@@ -8,6 +8,10 @@
 
       USE mct_wrf_coupler_params
 
+# elif defined WW3_COUPLING
+
+      USE mctww3pa
+
 # else
 
       USE mod_coupler_kinds
@@ -52,7 +56,7 @@
         integer :: peATM_frst          ! first atmosphere parallel node
         integer :: peATM_last          ! last  atmosphere parallel node
 # endif
-# ifdef SWAN_COUPLING
+# if defined SWAN_COUPLING || defined WW3_COUPLING
 !
 !  Parallel nodes assined to the wave model.
 !

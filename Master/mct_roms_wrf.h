@@ -864,7 +864,7 @@
       real(r8) :: add_offset, cff, fac, scale
       real(r8) :: RecvTime, SendTime, buffer(2), wtime(2)
       real(r8) :: BBR, cff1, cff2
-      real(r8), parameter ::  Large = 1.0E+20_r8
+!     real(r8), parameter ::  Large = 1.0E+20_r8
       real(r8), pointer :: A(:)
       real(r8), dimension(2) :: range
 

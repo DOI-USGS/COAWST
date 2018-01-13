@@ -18,6 +18,9 @@
 # ifdef SWAN_MODEL
       USE swan_iounits
 # endif
+# ifdef WW3_MODEL
+      USE ww3_iounits
+# endif
 # ifdef WRF_MODEL
       USE mod_coupler_iounits
 # endif
@@ -33,7 +36,7 @@
 !
       integer :: Npts, Nval, i, iw, ia, inp, out, status
       integer :: MyRank, MyError, MyMaster, DT, num, den
-      integer :: cdecode_line, cload_i, cload_r, indx
+      integer :: cdecode_line, cload_i, cload_r, indx, test
       integer :: Ivalue(1)
 # if defined WRF_COUPLING
       integer :: sstupdate
@@ -197,6 +200,76 @@
  160    CLOSE (inp)
       END DO
 
+# endif
+# if defined WW3_COUPLING
+!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!     Read WW3 input file
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
+      iw=1
+      OPEN (inp, FILE=TRIM(Wname(iw)), FORM='formatted', STATUS='old',  &
+     &      ERR=110)
+      GO TO 130
+ 110  WRITE (out,120) Wname(iw)
+      IF (MyRank.eq.MyMaster) WRITE(out,*) 'MyRank = ', MyRank,         &
+     &                        TRIM(Wname(iw))
+      RETURN
+ 120  FORMAT (/,' READ MODEL INPUTS - Unable to open ww3 input file.',  &
+     &        /,a80)
+ 130  CONTINUE
+!
+!  set number of WW3 grids to = 1 for now.
+!
+      Nwav_grids=1
+      allocate (dtwav(Nwav_grids))
+!
+!  now read the ww3_grid.inp file to get the dt
+!
+      REWIND (inp)
+      test=1
+      DO WHILE (test.eq.1)
+! Name of grid :
+        READ (inp,'(a)',ERR=116,END=140) line
+        IF (line(1:1).ne.'$') test=0
+      END DO
+!
+      test=1
+      DO WHILE (test.eq.1)
+! Define spectrum
+        READ (inp,'(a)',ERR=116,END=140) line
+        IF (line(1:1).ne.'$') test=0
+      END DO
+!
+      test=1
+      DO WHILE (test.eq.1)
+! Define model run flags
+        READ (inp,'(a)',ERR=116,END=140) line
+        IF (line(1:1).ne.'$') test=0
+      END DO
+!
+      test=1
+      DO WHILE (test.eq.1)
+! Define model time steps
+        READ (inp,'(a)',ERR=116,END=140) line
+        IF (line(1:1).ne.'$') test=0
+      END DO
+      aline=ADJUSTL(line)
+      indx=INDEX(aline,blank)
+      aline=aline(1:indx-1)
+      read(aline,*) dtwav(iw)
+!     write(*,*) 'ww3 dt is ', dtwav(iw)
+!
+      test=1
+      DO WHILE (test.eq.1)
+! Read rest of file
+        READ (inp,'(a)',ERR=116,END=140) line
+      END DO
+ 116  IF (MyRank.eq.MyMaster) WRITE (out,60) line
+!     exit_flag=4
+      RETURN
+ 140  CLOSE (inp)
+!
 # endif
 # ifdef WRF_COUPLING
 !

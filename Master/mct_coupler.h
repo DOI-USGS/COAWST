@@ -22,6 +22,11 @@
 !        http://vlm089.citg.tudelft.nl/swan/index.htm                  !
 !                                                                      !
 #endif
+#ifdef WW3_COUPLING
+!  WW3, Wave Watch 3:                                                  !
+!        http://polar.ncep.noaa.gov/waves/wavewatch/                   !
+!                                                                      !
+#endif
 !=======================================================================
 !
 #if defined ROMS_COUPLING
@@ -275,7 +280,7 @@
 #ifdef ROMS_COUPLING
       allocate(ocnids(Nocn_grids))
 #endif
-#ifdef SWAN_COUPLING
+#if defined SWAN_COUPLING || defined WW3_COUPLING
       allocate(wavids(Nwav_grids))
 #endif
 #ifdef WRF_COUPLING
@@ -289,7 +294,7 @@
         ocnids(ng)=N_mctmodels
       END DO
 #endif
-#ifdef SWAN_COUPLING
+#if defined SWAN_COUPLING || defined WW3_COUPLING
       DO ng=1,Nwav_grids
         N_mctmodels=N_mctmodels+1
         wavids(ng)=N_mctmodels
@@ -310,7 +315,7 @@
       peOCN_last=peOCN_frst+NnodesOCN-1
       pelast=peOCN_last
 #endif
-#ifdef SWAN_COUPLING
+#if defined SWAN_COUPLING || defined WW3_COUPLING
       peWAV_frst=pelast+1
       peWAV_last=peWAV_frst+NnodesWAV-1
       pelast=peWAV_last
@@ -335,7 +340,7 @@
           WRITE (stdout,20) peOCN_frst, peOCN_last
  20       FORMAT (/,7x,'Ocean Model MPI nodes: ',i3.3,' - ', i3.3)
 #endif
-#ifdef SWAN_COUPLING
+#if defined SWAN_COUPLING || defined WW3_COUPLING
           WRITE (stdout,21) peWAV_frst, peWAV_last
  21       FORMAT (/,7x,'Waves Model MPI nodes: ',i3.3,' - ', i3.3)
 #endif
@@ -346,7 +351,7 @@
         END IF
       END IF
 !
-!  Split the communicator into SWAN, WRF, and ROMS subgroups based 
+!  Split the communicator into SWAN or WW3, WRF, and ROMS subgroups based
 !  on color and key.
 !
       Atmcolor=1
@@ -358,7 +363,7 @@
         MyColor=OCNcolor
       END IF
 #endif
-#ifdef SWAN_COUPLING
+#if defined SWAN_COUPLING || defined WW3_COUPLING
       IF ((peWAV_frst.le.MyRank).and.(MyRank.le.peWAV_last)) THEN
         MyColor=WAVcolor
       END IF
@@ -380,6 +385,12 @@
         CALL SWAN_driver_init (MyCOMM)
         CALL SWAN_driver_run
         CALL SWAN_driver_finalize
+      END IF
+#elif defined WW3_COUPLING
+      IF (MyColor.eq.WAVcolor) THEN
+        CALL WW3_init (MyCOMM)
+!        CALL WW3_driver_run
+!        CALL WW3_driver_finalize
       END IF
 #elif defined REFDIF_COUPLING
       IF (MyColor.eq.WAVcolor) THEN
@@ -411,7 +422,8 @@
           CALL ROMS_run (run_time)
         END IF
         CALL ROMS_finalize
-# if defined SWAN_COUPLING || defined REFDIF_COUPLING
+# if defined SWAN_COUPLING || defined REFDIF_COUPLING || \
+     defined WW3_COUPLING
         CALL finalize_ocn2wav_coupling
 # endif
 # ifdef WRF_COUPLING

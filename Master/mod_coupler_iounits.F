@@ -20,6 +20,12 @@
 # ifdef ROMS_MODEL
       USE mod_param
 # endif
+# if defined WW3_COUPLING
+#  ifdef MCT_INTERP_WV2AT
+      USE mctww3pa
+#  endif
+# endif
+
       implicit none
 
 # ifndef ROMS_MODEL
@@ -27,10 +33,15 @@
       integer, parameter :: stdout = 6
       integer :: ioerror
 # endif
+!# ifdef WW3_MODEL
+!      integer, parameter :: IOnamesize = 160
+!      character (len=IOnamesize) :: Wname
+!# endif
 
 !# if defined MCT_INTERP_OC2WV || defined MCT_INTERP_OC2AT || \
 !     defined MCT_INTERP_WV2AT
 ! this flag is temporary for SCRIP option.
+
       integer :: scrip_opt
       character (len=80) :: SCRIPname
 !# endif
@@ -44,7 +55,7 @@
       character (len=80), dimension(:,:), pointer :: A2Oname
 #  endif
 # endif
-# ifdef SWAN_COUPLING
+# if defined SWAN_COUPLING || defined WW3_COUPLING
 #  ifdef MCT_INTERP_WV2AT
       character (len=80), dimension(:,:), pointer :: W2Aname
       character (len=80), dimension(:,:), pointer :: A2Wname
@@ -99,7 +110,7 @@
 #  endif
 
 # endif
-# ifdef SWAN_COUPLING
+# if defined SWAN_COUPLING || defined WW3_COUPLING
 #  ifdef MCT_INTERP_WV2AT
       allocate (W2Aname(Nwav_grids,Natm_grids))
       allocate (A2Wname(Natm_grids,Nwav_grids))

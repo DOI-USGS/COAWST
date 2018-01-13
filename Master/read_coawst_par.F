@@ -17,8 +17,11 @@
       USE mod_iounits
 # endif
 # ifdef SWAN_MODEL
-      USE swan_iounits
       USE M_COUPLING
+      USE swan_iounits
+# endif
+# ifdef WW3_MODEL
+      USE ww3_iounits
 # endif
       implicit none
 !
@@ -132,6 +135,14 @@
               END IF
               Wname(Nval)=TRIM(ADJUSTL(Cval(Nval)))
 # endif
+# ifdef WW3_MODEL
+            ELSE IF (TRIM(KeyWord).eq.'WAV_name') THEN
+              IF (Nval.eq.1) THEN
+!               call get_numswan_grids(tempname)
+                call allocate_ww3_iounits
+              END IF
+              Wname(Nval)=TRIM(ADJUSTL(Cval(Nval)))
+# endif
 # ifdef WRF_MODEL
             ELSE IF (TRIM(KeyWord).eq.'ATM_name') THEN
               DO i=1,LEN(Aname)
@@ -182,7 +193,7 @@
               END IF
 #  endif
 # endif
-# ifdef SWAN_COUPLING
+# if defined SWAN_COUPLING  || defined WW3_COUPLING
 #  ifdef MCT_INTERP_WV2AT
               IF (TRIM(KeyWord).eq.'A2WNAME') THEN
                 ia=CEILING(REAL(Nval)/REAL(Nwav_grids))

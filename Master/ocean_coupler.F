@@ -90,7 +90,7 @@
       PRIVATE
 
       PUBLIC :: ocean_coupling
-# ifdef SWAN_COUPLING
+# if defined SWAN_COUPLING || defined WW3_COUPLING
       PUBLIC :: initialize_ocn2wav_coupling
       PUBLIC :: initialize_ocn2wav_routers
       PUBLIC :: ocn2wav_coupling
@@ -126,7 +126,7 @@
 # endif
 
       TYPE T_AttrVect_G
-# ifdef SWAN_COUPLING
+# if defined SWAN_COUPLING || defined WW3_COUPLING
         TYPE(AttrVect) :: wav2ocn_AV          ! AttrVect variables
         TYPE(AttrVect) :: ocn2wav_AV
 # endif
@@ -137,7 +137,7 @@
       END TYPE T_AttrVect_G
       TYPE (T_AttrVect_G), ALLOCATABLE :: AttrVect_G(:)
 
-# ifdef SWAN_COUPLING
+# if defined SWAN_COUPLING || defined WW3_COUPLING
       TYPE T_Router_W
         TYPE(Router)   :: ROMStoSWAN          ! Router variables
       END TYPE T_Router_W
@@ -195,6 +195,9 @@
 
 # ifdef SWAN_COUPLING
 #  include "mct_roms_swan.h"
+# endif
+# ifdef WW3_COUPLING
+#  include "mct_roms_ww3.h"
 # endif
 # ifdef REFDIF_COUPLING
 #  include "mct_roms_refdif.h"

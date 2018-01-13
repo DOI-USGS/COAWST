@@ -81,7 +81,7 @@
 !
       integer :: i, ij, j
 
-      real(r8), parameter :: Large = 1.0E+20_r8
+!     real(r8), parameter :: Large = 1.0E+20_r8
 
       real(r8), dimension(2) :: range
 # ifdef DISTRIBUTE

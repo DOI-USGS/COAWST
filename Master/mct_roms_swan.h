@@ -1050,7 +1050,7 @@
 
       real(r8), parameter ::  Lwave_min = 1.0_r8
       real(r8), parameter ::  Lwave_max = 500.0_r8
-      real(r8), parameter ::  Large = 1.0E+20_r8
+!     real(r8), parameter ::  Large = 1.0E+20_r8
 
       real(r8) :: add_offset, scale
       real(r8) :: cff, fac, ramp
