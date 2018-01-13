@@ -1,0 +1,164 @@
+#!/bin/bash
+# --------------------------------------------------------------------------- #
+# install_ww3_tar: install WAVEWATCH III version 4 from tar archive files     #
+#                                                                             #
+# -remarks :                                                                  #
+#                                                                             #
+#                                                      Hendrik L. Tolman      #
+#                                                      Jose-Henrique Alves    #
+#                                                                             #
+#                                                      October 2012 (origin)  #
+#                                                      July 2013    (latest)  #
+#                                                                             #
+#    Copyright 2012-2013 National Weather Service (NWS),                      #
+#       National Oceanic and Atmospheric Administration.  All rights          #
+#       reserved.  WAVEWATCH III is a trademark of the NWS.                   #
+#       No unauthorized use without permission.                               #
+#                                                                             #
+# --------------------------------------------------------------------------- #
+
+
+# 0. Introductory flair
+# --------------------------------------------------------------------------- #
+
+# clear
+  echo -e '\n\n\n                  ==================================='
+  echo -e '              ------ Installing WAVEWATCH III  v.4 ------'
+  echo -e '                  =================================== \n'
+  echo -e '                  Script for installing package from tar files. '
+  echo -e '                  Modified to work in COAWST distribution.\n'
+
+# 1. Preparations                                                             #
+# --------------------------------------------------------------------------- #
+# 1.a Internal variables
+
+  src_dir=auxx # Source directory (before links or copies are made)
+
+# 1.c Test present directory and set location of environment file  - - - - - -
+
+  main_dir=`pwd`
+
+# homedir may be different than where cd takes...
+  if [ $HOME ]
+  then
+    cd $HOME
+  else  
+    cd
+  fi
+  home_dir=`pwd`
+  cd $main_dir
+
+  ww3_env="${home_dir}/.wwatch3.env"   # setup file
+
+# --------------------------------------------------------------------------- #
+# 3. Set-up / update aux directory                                            #
+# --------------------------------------------------------------------------- #
+
+   ldir="tmp"
+#  rm -f ${main_dir}/tmp/${ldir}_setup.out
+
+#   cd $main_dir/${ldir}
+#  all_files=`ls -p ../${src_dir}/model/${ldir} | grep -v '/$'`
+
+
+  cd $main_dir
+  if [ ! -d $ldir ]
+  then
+    mkdir $ldir
+  fi
+  cd $ldir
+
+# clear
+  echo -e '\n\n =============================== '
+  echo -e '--- Set up / update directories --- '
+  echo -e ' ============================================================== '
+  echo -e "    Directory `pwd` "
+
+# 3.a FORTRAN executables  - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+  echo -e '\n FORTRAN executables: '
+  echo -e ' -------------------- '
+
+  for code in w3adc w3prnt w3list w3split
+  do
+
+    echo -e "\n   Program $code ... " | tee ${main_dir}/tmp/${ldir}_setup.out
+    if [ -f "$main_dir/${src_dir}/$code.f" ]
+    then
+      cp -f ../${src_dir}/$code.f .
+      echo -e "      New $code.f was copied to $main_dir/${ldir} " | tee ${main_dir}/tmp/${ldir}_setup.out
+    else
+      echo -e "\n      No source for ${code}.f found, aborting! " | tee ${main_dir}/tmp/${ldir}_setup.out
+      exit 30
+    fi
+    echo -e "      Generating $code in $main_dir/bin " | tee ${main_dir}/tmp/${ldir}_setup.out
+    echo -e "         Compiling ... " | tee ${main_dir}/tmp/${ldir}_setup.out
+    echo -e "         FORT is $FORT"
+    if `$FORT $code.f > fort.out 2> fort.err`
+    then
+      rm -f $main_dir/bin/$code
+      if [ -f a.out ] || [ -f fort.out ]
+      then
+        echo -e "         Storing ... " | tee ${main_dir}/tmp/${ldir}_setup.out
+        mv a.out $main_dir/bin/$code
+      else
+        echo -e "\n\n\n      --- ERROR: FILE a.out NOT FOUND --- " | tee ${main_dir}/tmp/${ldir}_setup.out
+        echo -e ' Compilation error messages: '
+        cat fort.out 
+        echo -e ''
+        cat fort.err 
+        echo -e ''
+        exit
+       fi
+    else
+      echo -e "\n\n\n      --- ERROR IN COMPILING $code.f --- " | tee ${main_dir}/tmp/${ldir}_setup.out
+      echo -e ' Compilation error messages: '
+      cat fort.out 
+      echo -e '' 
+      cat fort.err 
+      echo -e '\n '
+      exit
+    fi
+    rm -f fort.*
+    tmp_files=$all_files
+    all_files=`echo -e $tmp_files | sed -e "s/$code.f//g"`
+
+  done
+  echo -e '\n All essential FORTRAN codes compiled correctly ' | tee ${main_dir}/tmp/${ldir}_setup.out
+  echo -e ' ---------------------------------------------- ' | tee ${main_dir}/tmp/${ldir}_setup.out
+  sleep 2
+
+#
+# Now do the w3_make
+# This will compile the ftn/* files and create the exe/* files
+#
+  cd $main_dir/bin
+
+  echo -e " w3 setup       FORT is $FORT"
+
+# headpre="$(echo ${COAWST_APPLICATION} | tr '[A-Z]' '[a-z]')"
+#  OS=`uname`
+#  OS="$(shell uname -s | sed 's/[\/ ]/-/g')"
+#  export OS
+#  echo -e " jcw OS is  $OS"
+
+#  OS=patsubst CYGWIN_%,CYGWIN,$OS
+#  OS=patsubst MINGW%,MINGW,$OS
+#  OS=patsubst sn%,UNICOS-sn,$OS
+#  export COMPILERS=$main_dir/../Compilers
+#  include $(COMPILERS)/$(OS)-$(strip $(FORT)).mk
+
+
+  if [ "${FORT}" = "ifort" ]
+  then
+#    ./w3_setup -c Intel -s COAWST -q ..
+     ./w3_setup -c Intel -s $WW3_SWITCH_FILE -t $main_dir/tmp -q ..
+  else
+    ./w3_setup -c $FORT -s COAWST -t $main_dir/tmp -q ..
+  fi
+
+  echo -e " w3 make       FORT is $FORT"
+#  ./w3_make
+  cd $main_dir/bin
+   ./make_MPI
+# end of script ------------------------------------------------------------- #
