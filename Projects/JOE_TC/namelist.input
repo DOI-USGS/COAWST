@@ -27,6 +27,8 @@
  io_form_boundary                    = 2
  io_form_auxinput4                   = 2
  debug_level                         = 0
+ auxinput4_inname                    = "wrflowinp_d<domain>"
+ auxinput4_interval                  = 360, 360, 360,
  /
 
  &domains
@@ -71,6 +73,7 @@
  icloud                              = 1,
  surface_input_source                = 1,
  num_soil_layers                     = 5,
+ num_land_cat                        = 24,
  sf_urban_physics                    = 0,
  mp_zero_out                         = 0,
  maxiens                             = 1,
@@ -78,7 +81,7 @@
  maxens2                             = 3,
  maxens3                             = 16,
  ensdim                              = 144,
- sst_update                          = 1,
+ sst_update                          = 0,
  /
 
  &fdda

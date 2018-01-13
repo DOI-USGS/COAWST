@@ -12,21 +12,27 @@
 */
 
 #define ROMS_MODEL
-#define NESTING
+#undef  NESTING
 #define WRF_MODEL
-#define SWAN_MODEL
+#undef  SWAN_MODEL
+#define WW3_MODEL
 #define MCT_LIB
 #define MCT_INTERP_OC2AT
 #define MCT_INTERP_WV2AT
-#define MCT_INTERP_OC2WV
+#undef  MCT_INTERP_OC2WV
 
-#if defined WRF_MODEL && defined SWAN_MODEL
+#if defined WRF_MODEL && (defined SWAN_MODEL || defined WW3_MODEL)
 # define DRAGLIM_DAVIS
 # define COARE_TAYLOR_YELLAND
 #endif
 
 #ifdef ROMS_MODEL
 /* Physics + numerics */
+# if defined WW3_MODEL || defined SWAN_MODEL
+#  define WEC_VF
+#  define WDISS_WAVEMOD
+#  define UV_KIRBY
+# endif
 # define UV_ADV
 # define UV_COR
 # define UV_VIS2
@@ -89,6 +95,8 @@
 #  define KANTHA_CLAYSON
 #  define N2S2_HORAVG
 #  define RI_SPLINES
+#  define CRAIG_BANNER
+#  define CHARNOK
 # endif
 
 # define SSH_TIDES

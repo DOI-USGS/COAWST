@@ -11,15 +11,15 @@
 ! Input parameters can be entered in ANY order, provided that the parameter   !
 ! KEYWORD (usually, upper case) is typed correctly followed by "="  or "=="   !
 ! symbols. Any comment lines are allowed and must begin with an exclamation   !
-! mark (!) in column one.  Comments may  appear to the right of a parameter   !
-! specification to improve documentation.  Comments will be ignored  during   !
+! mark (!) in column one.  Comments may appear to the right of a parameter    !
+! specification to improve documentation.  Comments are ignored during        !
 ! reading.  Blank lines are also allowed and ignored. Continuation lines in   !
-! a parameter specification are allowed and must be preceded by a backslash   !
-! (\).  In some instances, more than one value is required for a parameter.   !
-! If fewer values are provided, the  last value  is assigned for the entire   !
-! parameter array.  The multiplication symbol (*),  without blank spaces in   !
-! between, is allowed for a parameter specification.  For example, in a two   !
-! grids nested application:                                                   !
+! a parameter specification are allowed if preceded by a backslash (\).  In   !
+! some instances, more than one value is required for a parameter.  If fewer  !
+! values are provided, the last value is assigned for the entire parameter    !
+! array.  The multiplication symbol (*),  without blank spaces in between,    !
+! is allowed for a parameter specification. For example, in two grids nested  !
+! application:                                                                !
 !                                                                             !
 !    AKT_BAK == 2*1.0d-6  2*5.0d-6              ! m2/s                        !
 !                                                                             !
@@ -27,22 +27,22 @@
 ! major order, will have the same value of "1.0d-6" for grid 1,  whereas the  !
 ! next two entries will have the same value of "5.0d-6" for grid 2.           !
 !                                                                             !
-! In multiple levels of nesting and/or multiple connected domains  step-ups,  !
-! "Ngrids" entries are expected for some of these parameters.  In such case,  !
-! the order of the entries for a parameter is extremely important.  It  must  !
-! follow the same order (1:Ngrids) as in the state variable declaration. The  !
-! USER may follow the above guidelines for specifying his/her values.  These  !
-! parameters are marked by "==" plural symbol after the KEYWORD.              !
+! In multiple levels of nesting or multiple connected domains step-ups,       !
+! "Ngrids" entries are expected for some of these parameters. In such case,   !
+! the order of the entries for a parameter is critical. It must follow the    !
+! same order (1:Ngrids) as in the state variable declaration. The USER may    !
+! follow the above guidelines for specifying his/her values. These parameters !
+! are marked by "==" plural symbol after the KEYWORD.                         !
 !                                                                             !
-! Multiple NetCDF files are allowed for input field(s).  This is useful when  !
-! splitting input data (climatology,  boundary,  forcing)  time records into  !
-! several files (say monthly, annual, etc). In this case, each multiple file  !
-! entry line needs to be ended by the vertical bar (|) symbol. For example:   !
+! Multiple NetCDF files are allowed for input field(s). It is useful when     !
+! splitting input data (climatology,  boundary,  forcing) time records into   !
+! several files (say monthly, annual, etc.). In this case, each multiple      !
+! filename entry lines need to end with the vertical bar (|) symbol. For      !
+! example:                                                                    !
 !                                                                             !
-!    NFFILES == 7                          ! number of forcing files          !
+!    NFFILES == 6                          ! number of forcing files          !
 !                                                                             !
-!    FRCNAME == my_tides.nc       \                                           !
-!               my_lwrad_year1.nc |                                           !
+!    FRCNAME == my_lwrad_year1.nc |                                           !
 !               my_lwrad_year2.nc \                                           !
 !               my_swrad_year1.nc |                                           !
 !               my_swrad_year2.nc \                                           !
@@ -55,7 +55,7 @@
 !               my_Tair_year1.nc  |                                           !
 !               my_Tair_year2.nc                                              !
 !                                                                             !
-! Notice that NFFILES is 7 and not 13. There are 7 uniquely different fields  !
+! Notice that NFFILES is 6 and not 12. There are 6 uniquely different fields  !
 ! in the file list,  we  DO NOT  count file entries followed by the vertical  !
 ! bar symbol.  This is because  multiple file  entries are processed in ROMS  !
 ! with derived type structures.                                               !
@@ -163,13 +163,21 @@ GridsInLayer =  1
    LBC(isU3Sd) ==   Clo     Clo     Clo     Clo         ! 3D U-stokes
    LBC(isV3Sd) ==   Clo     Clo     Clo     Clo         ! 3D V-stokes
 
+! InWave boundary conditions
+
+   LBC(isAC3d) ==   Gra     Clo     Gra     Cla         ! 3D wave action density
+   LBC(isCT3d) ==   Gra     Clo     Gra     Gra         ! 3D wave theta celerity
+   LBC(isCX3d) ==   Gra     Clo     Gra     Gra         ! 3D wave x-dir celerity
+   LBC(isCY3d) ==   Gra     Clo     Gra     Gra         ! 3D wave y-dir celerity
+
 ! Ice boundary conditions
 
-   LBC(isAice) ==   Clo     Clo     Clo     Clo         ! ice concentration
-   LBC(isHice) ==   Clo     Clo     Clo     Clo         ! ice thickness
-   LBC(isHsno) ==   Clo     Clo     Clo     Clo         ! snow thickness
-   LBC(isTice) ==   Clo     Clo     Clo     Clo         ! ice temperature
-   LBC(isSfwat)==   Clo     Clo     Clo     Clo         ! surface water
+   LBC(isAice) ==   Clo     Per     Clo     Per         ! ice concentration
+   LBC(isHice) ==   Clo     Per     Clo     Per         ! ice thickness
+   LBC(isHsno) ==   Clo     Per     Clo     Per         ! snow thickness
+   LBC(isTice) ==   Clo     Per     Clo     Per         ! ice temperature
+   LBC(isApond)==   Clo     Clo     Clo     Clo         ! surface water
+   LBC(isHpond)==   Clo     Clo     Clo     Clo         ! surface water
    LBC(isSig11)==   Clo     Clo     Clo     Clo         ! sigma-11
    LBC(isSig12)==   Clo     Clo     Clo     Clo         ! sigma-12
    LBC(isSig22)==   Clo     Clo     Clo     Clo         ! sigma-22
@@ -309,6 +317,15 @@ LtracerSponge == F F                            ! temperature, salinity, inert
 
   ad_AKV_fac == 1.0d0                           ! nondimensional
 
+! Upper threshold values to limit vertical mixing coefficients computed
+! from vertical mixing parameterizations. Although this is an engineering
+! fix, the vertical mixing values inferred from ocean observations are
+! rarely higher than this upper limit value.
+
+   AKT_LIMIT == 1.0d-3 1.0d-3                   ! m2/s
+
+   AKV_LIMIT == 1.0d-3                          ! m2/s
+
 ! Turbulent closure parameters.
 
      AKK_BAK == 5.0d-6                          ! m2/s
@@ -392,20 +409,10 @@ LtracerSponge == F F                            ! temperature, salinity, inert
 ! Nudging/relaxation time scales, inverse scales will be computed
 ! internally, [1:Ngrids].
 
-       TNUDG == 0.0d0  0.0d0               ! days
-       ZNUDG == 0.0d0                      ! days
-      M2NUDG == 0.0d0                      ! days
-      M3NUDG == 0.0d0                      ! days
-
-! Nudging/relaxation time scale for surface salinity nudging, inverse
-! scales will be computed internally, [1:Ngrids].
-
-       TNUDG_SSS == 90.0d0                 ! days
-
-! Threshold to trigger SSS correction toward climatolgy,
-! needs SCORRECTION and SSSC_THRESHOLD defined
-
-       SSS_MISMATCH_THRESHOLD = 0.2d0
+       TNUDG == 0.000d0                    ! days
+       ZNUDG == 0.000d0                    ! days
+      M2NUDG == 0.000d0                    ! days
+      M3NUDG == 0.000d0                    ! days
 
 ! Factor between passive (outflow) and active (inflow) open boundary
 ! conditions, [1:Ngrids]. If OBCFAC > 1, nudging on inflow is stronger
@@ -572,10 +579,16 @@ Hout(idWztw) == T       ! zetaw              WEC_VF quasi-static sea level adjus
 Hout(idWqsp) == T       ! qsp                WEC_VF quasi-static pressure
 Hout(idWbeh) == T       ! bh                 WEC_VF Bernoulli head
 
-Hout(idU2rs) == F       ! ubar_Wecstress     WEC 2D U-stress
-Hout(idV2rs) == F       ! vbar_Wecstress     WEC 2D V-stress
-Hout(idU3rs) == F       ! u_Rstress          WEC 3D U-stress
-Hout(idV3rs) == F       ! v_Rstress          WEC 3D V-stress
+Hout(idACen) == T       ! AC                 InWave 3D wave action
+Hout(idACcx) == T       ! Cx                 InWave 2D Group velocity in xi dimension
+Hout(idACcy) == T       ! Cy                 InWave 2D Group velocity in etai dimension
+Hout(idACct) == T       ! Ct                 InWave 2D Group velocity in the directional dimension
+Hout(idACtp) == T       ! Tp                 InWave 2D Group peak period
+
+Hout(idU2rs) == T       ! ubar_Wecstress     WEC 2D U-stress
+Hout(idV2rs) == T       ! vbar_Wecstress     WEC 2D V-stress
+Hout(idU3rs) == T       ! u_Rstress          WEC 3D U-stress
+Hout(idV3rs) == T       ! v_Rstress          WEC 3D V-stress
 
 Hout(idU2Sd) == T       ! ubar_stokes        2D U-Stokes velocity
 Hout(idV2Sd) == T       ! vbar_stokes        2D V-Stokes velocity
@@ -651,7 +664,7 @@ Qout(idVsur) == T       ! v_sur              surface V-velocity
 Qout(idUsuE) == T       ! u_sur_eastward     surface U-eastward  velocity
 Qout(idVsuN) == T       ! v_sur_northward    surface V-northward velocity
 
-!Qout(idsurT) == T T     ! temp_sur, salt_sur surface temperature and salinity
+Qout(idsurT) == T T     ! temp_sur, salt_sur surface temperature and salinity
 
 Qout(idpthR) == F       ! z_rho              time-varying depths of RHO-points
 Qout(idpthU) == F       ! z_u                time-varying depths of U-points
@@ -950,6 +963,8 @@ Dout(iTvdif) == F F     ! temp_vdiff, ...    vertical diffusion
      IADNAME == ocean_iad.nc
      FWDNAME == ocean_fwd.nc
      ADSNAME == ocean_ads.nc
+     IWININAME == inwave_ini.nc
+     IWSWNNAME == point1.spc2d
 
 ! Nesting grids connectivity data: contact points information. This
 ! NetCDF file is special and complex. It is currently generated using
@@ -977,17 +992,27 @@ Dout(iTvdif) == F F     ! temp_vdiff, ...    vertical diffusion
 
      SSFNAME == ocean_rivers.nc
 
-! Input forcing NetCDF file name(s).  The USER has the option to enter
-! several file names for each nested grid.  For example, the USER may
-! have different files for wind products, heat fluxes, tides, etc.
-! The model will scan the file list and will read the needed data from
-! the first file in the list containing the forcing field. Therefore,
-! the order of the file names is very important. If using multiple forcing
-! files per grid, first enter all the file names for grid 1, then grid 2,
-! and so on.  It is also possible to split input data time records into
-! several NetCDF files (see prologue instructions above). Use a single line
-! per entry with a continuation (\) or vertical bar (|) symbol after each
-! entry, except the last one.
+! Input tidal forcing file name.
+
+    TIDENAME == ocean_tides.nc
+
+! Input forcing NetCDF file name(s).
+!
+! The USER has the option to enter several sets of file names for each
+! nested grid. For example, the USER may have different data for the
+! wind products, heat fluxes, etc. Alternatively, if the all the forcing
+! files are the same for nesting and the data is in its native resolution,
+! we could enter only one set of files names and ROMS will replicate those
+! files internally to the remaining grids using the plural KEYWORD protocol.
+!
+! The model will scan the files and will read the needed data from the first
+! file in the list containing the forcing field. Therefore, the order of the
+! filenames is critical. If using multiple forcing files per grid, first
+! enter all the file names for grid one followed by two, and so on.  It is
+! also possible to split input data time records into several NetCDF files
+! (see Prolog instructions above). Use a single line per entry with a
+! continuation (\) or a vertical bar (|) symbol after each entry, except
+! the last one.
 
      NFFILES == 1                          ! number of unique forcing files
 
@@ -1004,6 +1029,7 @@ Dout(iTvdif) == F F     ! temp_vdiff, ...    vertical diffusion
      TLFNAME == ocean_tlf.nc
      ADJNAME == ocean_adj.nc
      AVGNAME == ocean_avg.nc
+     HARNAME == ocean_har.nc
      DIANAME == ocean_dia.nc
      STANAME == ocean_sta.nc
      FLTNAME == ocean_flt.nc
@@ -1016,13 +1042,14 @@ Dout(iTvdif) == F F     ! temp_vdiff, ...    vertical diffusion
      BPARNAM =  ROMS/External/bioFasham.in
      SPARNAM =  ROMS/External/sediment.in 
      USRNAME =  ROMS/External/MyFile.dat
+     VEGNAM  =  vegetation.in
 
 !
 !  GLOSSARY:
 !  =========
 !
 !------------------------------------------------------------------------------
-! Application title (string with a maximum of eighty characters) and
+! Application title (string with a maximum of 80 characters) and
 ! C-preprocessing flag.
 !------------------------------------------------------------------------------
 !
@@ -1062,7 +1089,7 @@ Dout(iTvdif) == F F     ! temp_vdiff, ...    vertical diffusion
 !
 !                The order of grids and nesting layers is extremely important.
 !                It determines the order of the sequential solution at every
-!                sub-time step.  See WikiROMS nesting Sub-Classes diagrams.
+!                sub-timestep.  See WikiROMS nesting Sub-Classes diagrams.
 !
 !                In non-nesting applications, set GridsInLayer = 1.
 !
@@ -1235,18 +1262,19 @@ Dout(iTvdif) == F F     ! temp_vdiff, ...    vertical diffusion
 ! LBC(isMtke) Mixing TKE,    [1:4, Ngrids] values are expected.
 ! LBC(isTvar) Tracers,       [1:4, 1:NAT+NPT, Ngrids] values are expected.
 !
-! Ice boundary conditions
+! Wec boundary conditions for stokes velocities.
 !
-!  LBC(isAice) Ice concentration, [1:4, Ngrids] values are expected.
-!  LBC(isHice) Ice thickness,     [1:4, Ngrids] values are expected.
-!  LBC(isHsno) Snow thickness,    [1:4, Ngrids] values are expected.
-!  LBC(isTice) Ice temperature,   [1:4, Ngrids] values are expected.
-!  LBC(isSfwat)Surface water,     [1:4, Ngrids] values are expected.
-!  LBC(isSig11)Sigma-11,          [1:4, Ngrids] values are expected.
-!  LBC(isSig12)Sigma-12,          [1:4, Ngrids] values are expected.
-!  LBC(isSig22)Sigma-22,          [1:4, Ngrids] values are expected.
-!  LBC(isUice) Ice U-momentum,    [1:4, Ngrids] values are expected.
-!  LBC(isVice) Ice V-momentum,    [1:4, Ngrids] values are expected.
+!  LBC(isU2Sd) 2D U-stokes,  [1:4, Ngrids] values are expected.
+!  LBC(isV2Sd) 2D V-stokes,  [1:4, Ngrids] values are expected.
+!  LBC(isU3Sd) 3D U-stokes,  [1:4, Ngrids] values are expected.
+!  LBC(isV3Sd) 3D V-stokes,  [1:4, Ngrids] values are expected.
+
+! InWave boundary conditions
+
+   LBC(isAC3d) Wave action density, [1:4, Ngrids] values are expected.
+   LBC(isCT3d) Wave theta celerity, [1:4, Ngrids] values are expected.
+   LBC(isCX3d) Wave x-dir celerity, [1:4, Ngrids] values are expected.
+   LBC(isCY3d) Wave y-dir celerity, [1:4, Ngrids] values are expected.
 !
 ! Similarly, the adjoint-based algorithms (ADM, TLM, RPM) can have different
 ! lateral boundary conditions keywords:
@@ -1258,6 +1286,20 @@ Dout(iTvdif) == F F     ! temp_vdiff, ...    vertical diffusion
 ! ad_LBC(isVvel) 3D V-momentum, [1:4, Ngrids] values are expected.
 ! ad_LBC(isMtke) Mixing TKE,    [1:4, Ngrids] values are expected.
 ! ad_LBC(isTvar) Tracers,       [1:4, 1:NAT+NPT, Ngrids] values are expected.
+!
+! Ice boundary conditions
+!
+!  LBC(isAice) Ice concentration, [1:4, Ngrids] values are expected.
+!  LBC(isHice) Ice thickness,     [1:4, Ngrids] values are expected.
+!  LBC(isHsno) Snow thickness,    [1:4, Ngrids] values are expected.
+!  LBC(isTice) Ice temperature,   [1:4, Ngrids] values are expected.
+!  LBC(isApond)Surface water,     [1:4, Ngrids] values are expected.
+!  LBC(isHpond)Surface water,     [1:4, Ngrids] values are expected.
+!  LBC(isSig11)Sigma-11,          [1:4, Ngrids] values are expected.
+!  LBC(isSig12)Sigma-12,          [1:4, Ngrids] values are expected.
+!  LBC(isSig22)Sigma-22,          [1:4, Ngrids] values are expected.
+!  LBC(isUice) Ice U-momentum,    [1:4, Ngrids] values are expected.
+!  LBC(isVice) Ice V-momentum,    [1:4, Ngrids] values are expected.
 !
 ! Lateral open boundary edge volume conservation switch for nonlinear model
 ! and adjoint-based algorithm. Usually activated with radiation boundary
@@ -1276,20 +1318,20 @@ Dout(iTvdif) == F F     ! temp_vdiff, ...    vertical diffusion
 ! ad_VolCons(north)   Northern boundary volume conservation switch.
 !
 !------------------------------------------------------------------------------
-! Time-Stepping parameters.
+! Timestepping parameters.
 !------------------------------------------------------------------------------
 !
-! NTIMES       Total number time-steps in current run.  If 3D configuration,
-!                NTIMES is the total of baroclinic time-steps.  If only 2D
-!                configuration, NTIMES is the total of barotropic time-steps.
+! NTIMES       Total number timesteps in current run.  If 3D configuration,
+!                NTIMES is the total of baroclinic timesteps.  If only 2D
+!                configuration, NTIMES is the total of barotropic timesteps.
 !
-! DT           Time-Step size in seconds.  If 3D configuration, DT is the
-!                size of the baroclinic time-step.  If only 2D configuration,
-!                DT is the size of the barotropic time-step.
+! DT           TimeStep size in seconds.  If 3D configuration, DT is the
+!                size of the baroclinic timestep.  If only 2D configuration,
+!                DT is the size of the barotropic timestep.
 !
-! NDTFAST      Number of barotropic time-steps between each baroclinic time
+! NDTFAST      Number of barotropic timesteps between each baroclinic time
 !                step. If only 2D configuration, NDTFAST should be unity since
-!                there is no need to split time-stepping.
+!                there is no need to split timestepping.
 !
 !------------------------------------------------------------------------------
 ! Model iteration loops parameters.
@@ -1334,7 +1376,7 @@ Dout(iTvdif) == F F     ! temp_vdiff, ...    vertical diffusion
 ! NCV          Number of eigenvectors to compute for the Lanczos/Arnoldi
 !                problem. NCV must be greater than NEV.
 !
-!  At present, there is no a-priori analysis to guide the selection of NCV
+!  At present, there is no apriori analysis to guide the selection of NCV
 !  relative to NEV.  The only formal requirement is that NCV > NEV. However
 !  in optimal perturbations, it is recommended to have NCV greater than or
 !  equal to 2*NEV. In Finite Time Eigenmodes (FTE) and Adjoint Finite Time
@@ -1363,20 +1405,20 @@ Dout(iTvdif) == F F     ! temp_vdiff, ...    vertical diffusion
 !                variables at all levels.
 !
 ! LcycleRST    Logical switch (T/F) used to recycle time records in output
-!                re-start file.  If TRUE,  only the latest two re-start time
+!                restart file.  If TRUE,  only the latest two re-start time
 !                records are maintained.  If FALSE, all re-start fields are
-!                saved every NRST time-steps without recycling.  The re-start
+!                saved every NRST timesteps without recycling.  The restart
 !                fields are written at all levels in double precision.
 !
-! NRST         Number of time-steps between writing of re-start fields.
+! NRST         Number of timesteps between the writing of re-start fields.
 !                Set NRST=0 to suppress writing of RESTART file.
 !
-! NSTA         Number of time-steps between writing data into STATIONS file.
+! NSTA         Number of timesteps between writing data into STATIONS file.
 !                Station data is written at all levels.
 !
-! NFLT         Number of time-steps between writing data into FLOATS file.
+! NFLT         Number of timesteps between writing data into FLOATS file.
 !
-! NINFO        Number of time-steps between print of single line information
+! NINFO        Number of timesteps between the print of single line information
 !                to standard output.  It also determines the interval between
 !                computation of global energy diagnostics.
 !
@@ -1402,48 +1444,49 @@ Dout(iTvdif) == F F     ! temp_vdiff, ...    vertical diffusion
 !                See also parameters NDEFHIS, NDEFQCK, NDEFAVG and NDEFDIA
 !                below.
 !
-! NHIS         Number of time-steps between writing fields into HISTORY file.
-!                Set NHIS=0 to suppress writing of HISTORY file.
+! NHIS         Number of timesteps between writing fields into the HISTORY
+!                 file. Set NHIS=0 to suppress writing of HISTORY file.
 !
-! NDEFHIS      Number of time-steps between the creation of new HISTORY file.
+! NDEFHIS      Number of timesteps between the creation of new HISTORY file.
 !                If NDEFHIS=0, the model will only process one HISTORY file.
-!                This feature is useful for long simulations when HISTORY file
-!                get too large; it creates a new file every NDEFHIS time-steps.
+!                This feature is useful for extended simulations when HISTORY
+!                file get too large; it creates a new file every NDEFHIS
+!                timesteps.
 !
-! NQCK         Number of time-steps between writing fields into QUICKSAVE file.
+! NQCK         Number of timesteps between writing fields into QUICKSAVE file.
 !                Set NQCK=0 to suppress writing of QUICKSAVE file.
 !
-! NDEFQCK      Number of time-steps between the creation of new QUICKSAVE file.
+! NDEFQCK      Number of timesteps between the creation of new QUICKSAVE file.
 !                If NDEFQCK=0, the model will only process one QUICKSAVE file.
-!                This feature is useful for long simulations when QUICKSAVE
+!                This feature is useful for extended simulations when QUICKSAVE
 !                file get too large; it creates a new file every NDEFQCK
-!                time-steps.
+!                timesteps.
 !
-! NTSAVG       Starting time-step for the accumulation of output time-averaged
+! NTSAVG       Starting timestep for the accumulation of output time-averaged
 !                data.
 !
-! NAVG         Number of time-steps between writing time-averaged data
+! NAVG         Number of timesteps between writing time-averaged data
 !                into AVERAGE file.  Averaged date is written for all fields.
 !                Set NAVG=0 to suppress writing of AVERAGE file.
 !
-! NDEFAVG      Number of time-steps between the creation of new AVERAGE
+! NDEFAVG      Number of timesteps between the creation of new AVERAGE
 !                file.  If NDEFAVG=0, the model will only process one AVERAGE
-!                file.  This feature is useful for long simulations when
+!                file.  This feature is useful for extended simulations when
 !                AVERAGE file get too large; it creates a new file every
-!                NDEFAVG time-steps.
+!                NDEFAVG timesteps.
 !
-! NTSDIA       Starting time-step for the accumulation of output time-averaged
+! NTSDIA       Starting timestep for the accumulation of output time-averaged
 !                diagnostics data.
 !
-! NDIA         Number of time-steps between writing time-averaged diagnostics
+! NDIA         Number of timesteps between writing time-averaged diagnostics
 !                data into DIAGNOSTIC file.  Averaged date is written for all
 !                fields. Set NDIA=0 to suppress writing of DIAGNOSTIC file.
 !
-! NDEFDIA      Number of time-steps between the creation of new time-averaged
+! NDEFDIA      Number of timesteps between the creation of new time-averaged
 !                diagnostics file.  If NDEFDIA=0, the model will only process
 !                one DIAGNOSTICS file.  This feature is useful for long
 !                simulations when DIAGNOSTIC file get too large; it creates
-!                a new file every NDEFDIA time-steps.
+!                a new file every NDEFDIA timesteps.
 !
 !------------------------------------------------------------------------------
 !  Output tangent linear and adjoint model parameters.
@@ -1452,32 +1495,32 @@ Dout(iTvdif) == F F     ! temp_vdiff, ...    vertical diffusion
 ! LcycleTLM    Logical switch (T/F) used to recycle time records in output
 !                tangent linear file.  If TRUE, only the latest two time
 !                records are maintained.  If FALSE, all tangent linear fields
-!                are saved every NTLM time-steps without recycling.
+!                are saved every NTLM timesteps without recycling.
 !
-! NTLM         Number of time-steps between writing fields into tangent linear
+! NTLM         Number of timesteps between writing fields into tangent linear
 !                model file.
 !
-! NDEFTLM      Number of time-steps between the creation of new tangent linear
+! NDEFTLM      Number of timesteps between the creation of new tangent linear
 !                file. If NDEFTLM=0, the model will only process one tangent
-!                linear file. This feature is useful for long simulations when
-!                output NetCDF files get too large; it creates a new file every
-!                NDEFTLM time-steps.
+!                linear file. This feature is useful for extended simulations
+!                when output NetCDF files get too large; it creates a new file
+!                every NDEFTLM timesteps.
 !
 ! LcycleADJ    Logical switch (T/F) used to recycle time records in output
 !                adjoint file.  If TRUE, only the latest two time records are
-!                maintained.  If FALSE, all tangent linear fields re saved
-!                every NADJ time-steps without recycling.
+!                maintained.  If FALSE, all tangent linear fields are saved
+!                every NADJ timesteps without recycling.
 !
-! NADJ         Number of time-steps between writing fields into adjoint model
-!                file.
+! NADJ         Number of timesteps between writing fields into the adjoint
+!                 model file.
 !
-! NDEFADJ      Number of time-steps between the creation of new adjoint file.
-!                If NDEFADJ=0, the model will only process one adjoint file.
-!                This feature is useful for long simulations when output NetCDF
-!                files get too large; it creates a new file every NDEFADJ
-!                time-steps.
+! NDEFADJ      Number of timesteps between the creation of the new adjoint
+!                file. If NDEFADJ=0, the model will only process one adjoint
+!                file. This feature is useful for extensive simulations when
+!                the output NetCDF files get too large; it creates a new file
+!                every NDEFADJ timesteps.
 !
-! NSFF         Number of time-steps between 4DVAR adjustment of surface forcing
+! NSFF         Number of timesteps between 4DVAR adjustment of surface forcing
 !                fluxes. In strong constraint 4DVAR, it is possible to adjust
 !                surface forcing at other time intervals in addition to initial
 !                time.  This parameter is used to store the appropriate number
@@ -1489,7 +1532,7 @@ Dout(iTvdif) == F F     ! temp_vdiff, ...    vertical diffusion
 !                relevant in 4DVAR when activating either ADJUST_STFLUX or
 !                ADJUST_WSTRESS.
 !
-! NOBC         Number of time-steps between 4DVAR adjustment of open boundary
+! NOBC         Number of timesteps between 4DVAR adjustment of open boundary
 !                fields. In strong constraint 4DVAR, it is possible to adjust
 !                open boundaries at other time intervals in addition to initial
 !                time.  This parameter is used to store the appropriate number
@@ -1509,7 +1552,7 @@ Dout(iTvdif) == F F     ! temp_vdiff, ...    vertical diffusion
 !
 ! LrstGST      Logical switch (TRUE/FALSE) to restart GST analysis. If TRUE,
 !                the check pointing data is read in from the GST restart NetCDF
-!                file.  If FALSE and applicable, the check pointing GST data is
+!                file.  If FALSE and applicable, the checkpointing GST data is
 !                saved and overwritten every NGST iterations of the algorithm.
 !
 ! MaxIterGST   Maximum number of GST algorithm iterations.
@@ -1518,11 +1561,11 @@ Dout(iTvdif) == F F     ! temp_vdiff, ...    vertical diffusion
 !                data into NetCDF file. The restart data is always saved if
 !                MaxIterGST is reached without convergence. It is also saved
 !                when convergence is achieved. It is always a good idea to
-!                save the check pointing data at regular intervals so there
+!                save the checkpointing data at regular intervals so there
 !                is a mechanism to recover from an unexpected interruption
-!                in this very expensive computation. The check pointing data
-!                can be used also to recompute the Ritz vectors by changing
-!                some of the parameters, like convergence criteria (Ritz_tol)
+!                in this costly computation. The check pointing data can
+!                be used also to recompute the Ritz vectors by changing some
+!                of the parameters, like convergence criteria (Ritz_tol)
 !                and number of Arnoldi iterations (iparam(3)).
 !
 ! Ritz_tol     Relative accuracy of the Ritz values computed in the GST
@@ -1636,6 +1679,12 @@ Dout(iTvdif) == F F     ! temp_vdiff, ...    vertical diffusion
 ! AKT_BAK      Background vertical mixing coefficient (m2/s) for active
 !                (NAT) and inert (NPT) tracer variables.
 !
+! AKT_LIMIT    Upper threshold values to limit vertical diffusion coefficients
+!                computed from vertical mixing parameterizations (GLS_MIXING,
+!                LMD_MIXING, MY25_MIXING). Sometimes, these parameterizations
+!                yield high mixing values and the threshold values are used as
+!                upper limiter when LIMIT_VDIFF is activated.
+!
 ! ad_AKT_fac   Adjoint-based algorithms vertical mixing, basic state, scale
 !                factor (nondimensional) for active (NAT) and inert (NPT)
 !                tracer variables. In some applications, smaller/larger
@@ -1647,6 +1696,12 @@ Dout(iTvdif) == F F     ! temp_vdiff, ...    vertical diffusion
 !------------------------------------------------------------------------------
 !
 ! AKV_BAK      Background vertical mixing coefficient (m2/s) for momentum.
+!
+! AKV_LIMIT    Upper threshold value to limit vertical viscosity coefficient
+!                computed from vertical mixing parameterizations (GLS_MIXING,
+!                LMD_MIXING, MY25_MIXING). Sometimes, these parameterizations
+!                yield a high mixing value and the threshold value is used as
+!                upper limiter when LIMIT_VVISC is activated.
 !
 ! ad_AKV_fac   Adjoint-based algorithms vertical mixing, basic state, scale
 !                factor (nondimensional) for momentum. In some applications,
@@ -1673,17 +1728,17 @@ Dout(iTvdif) == F F     ! temp_vdiff, ...    vertical diffusion
 ! Generic length-scale turbulence closure parameters.
 !------------------------------------------------------------------------------
 !
-! GLS_P        Stability exponent (non-dimensional).
+! GLS_P        Stability exponent (nondimensional).
 !
-! GLS_M        Turbulent kinetic energy exponent (non-dimensional).
+! GLS_M        Turbulent kinetic energy exponent (nondimensional).
 !
-! GLS_N        Turbulent length scale exponent (non-dimensional).
+! GLS_N        Turbulent length scale exponent (nondimensional).
 !
 ! GLS_Kmin     Minimum value of specific turbulent kinetic energy
 !
 ! GLS_Pmin     Minimum Value of dissipation.
 !
-! Closure independent constraint parameters (non-dimensional):
+! Closure independent constraint parameters (nondimensional):
 !
 ! GLS_CMU0     Stability coefficient.
 !
@@ -1695,10 +1750,10 @@ Dout(iTvdif) == F F     ! temp_vdiff, ...    vertical diffusion
 !
 ! GLS_C3P      Buoyancy production coefficient (plus).
 !
-! GLS_SIGK     Constant Schmidt number (non-dimensional) for turbulent
+! GLS_SIGK     Constant Schmidt number (nondimensional) for turbulent
 !                kinetic energy diffusivity.
 !
-! GLS_SIGP     Constant Schmidt number (non-dimensional) for turbulent
+! GLS_SIGP     Constant Schmidt number (nondimensional) for turbulent
 !                generic statistical field, "psi".
 !
 ! Suggested values for various parameterizations:
@@ -1903,6 +1958,18 @@ Dout(iTvdif) == F F     ! temp_vdiff, ...    vertical diffusion
 !                      0 <  theta_s <= 10.0
 !                      0 <= theta_b <=  4.0
 !
+!                 (5) Souza et al. (2015) quadratic Legendre polynomial function
+!                     that allows higher resolution near the surface,
+!                     Vstretching=5. It is similar to Vstretching=4, but the
+!                     fractional stretched vertical coordinate (s) is re-defined
+!                     as:
+!
+!                       s(k)=- [(k*k - 2*k*N + k + N*N - N) / (N*N - N)]
+!                            - weight * [(k*k - k*N) / (1 - N)]
+!
+!                     at vertical W-points, k=0,...,N and weight=0.01. To get
+!                     the equation at vertical RHO-points, replace k with k-0.5.
+!
 !              Many other stretching functions (Vstretching>4) are possible
 !              provided that:
 !
@@ -2009,10 +2076,6 @@ Dout(iTvdif) == F F     ! temp_vdiff, ...    vertical diffusion
 ! M2NUDG       Nudging time scale (days) for 2D momentum.
 !
 ! M3NUDG       Nudging time scale (days) for 3D momentum.
-!
-! TNUDG_SSS    Nudging time scale (days) for surface salinity.
-!
-! SSS_MISMATCH_THRESHOLD   Threshold to trigger SSS correction.
 !
 ! OBCFAC       Factor between passive (outflow) and active (inflow) open
 !                boundary conditions.  The nudging time scales for the
@@ -2185,7 +2248,7 @@ Dout(iTvdif) == F F     ! temp_vdiff, ...    vertical diffusion
 ! Logical switches for nudging to climatology fields.
 !------------------------------------------------------------------------------
 !
-! LnudgeM2CLM   Logical switch (T/F) to activate the nugding of 2D momentum
+! LnudgeM2CLM   Logical switch (T/F) to activate the nudging of 2D momentum
 !                 climatology.  The CPP option M2CLM_NUDGING is now obsolete
 !                 and replaced with this switch to facilitate nesting
 !                 applications.  Users also need to TURN ON the logical
@@ -2199,7 +2262,7 @@ Dout(iTvdif) == F F     ! temp_vdiff, ...    vertical diffusion
 !                 option ANA_NUDGCOEF.  Otherwise, it will be read from
 !                 NetCDF file NUDNAME.
 !
-! LnudgeM3CLM   Logical switch (T/F) to activate the nugding of 3D momentum
+! LnudgeM3CLM   Logical switch (T/F) to activate the nudging of 3D momentum
 !                 climatology.  The CPP option M3CLM_NUDGING is now obsolete
 !                 and replaced with this switch to facilitate nesting
 !                 applications.
@@ -2215,7 +2278,7 @@ Dout(iTvdif) == F F     ! temp_vdiff, ...    vertical diffusion
 !                 option ANA_NUDGCOEF.  Otherwise, it will be read from
 !                 NetCDF file NUDNAME.
 !
-! LnudgeTCLM    Logical switches (T/F) to activate the nugding of active and
+! LnudgeTCLM    Logical switches (T/F) to activate the nudging of active and
 !                 inert tracer variables climatology. These switches also
 !                 control which tracer variables to nudge.  The CPP option
 !                 TCLM_NUDGING is now obsolete and replaced with these
@@ -2387,6 +2450,12 @@ Dout(iTvdif) == F F     ! temp_vdiff, ...    vertical diffusion
 !  Hout(idWqsp)  Write out WEC quasi-static pressure.
 !  Hout(idWbeh)  Write out WEC Bernoulli head.
 !
+!  Hout(idACen)  Write out InWave 3D wave action
+!  Hout(idACcx)  Write out InWave 2D Group velocity in xi dimension
+!  Hout(idACcy)  Write out InWave 2D Group velocity in etai dimension
+!  Hout(idACct)  Write out InWave 2D Group velocity in the directional dimension
+!  Hout(idACtp)  Write out InWave 2D Group peak period
+!
 !  Hout(idTsur)  Write out surface net heat and salt flux
 !  Hout(idLhea)  Write out latent heat flux.
 !  Hout(idShea)  Write out sensible heat flux.
@@ -2432,7 +2501,7 @@ Dout(iTvdif) == F F     ! temp_vdiff, ...    vertical diffusion
 ! Qout(idVsuN)   Write out surface Northward velocity component at RHO-points.
 !
 ! Qout(idsurT)   Write out surface temperature and salinity
-
+!
 ! Qout(idpthR)   Write out time-varying depths of RHO-points.
 ! Qout(idpthU)   Write out time-varying depths of U-points.
 ! Qout(idpthV)   Write out time-varying depths of V-points.
@@ -2506,6 +2575,150 @@ Dout(iTvdif) == F F     ! temp_vdiff, ...    vertical diffusion
 ! Qout(inert)    Write out inert passive tracers.
 ! Qout(Snert)    Write out surface inert passive tracers.
 !
+!------------------------------------------------------------------------------
+! Logical switches (T/F) to activate writing of time-averaged fields into
+! AVERAGE file.
+!------------------------------------------------------------------------------
+!
+! Aout(idUvel)   Write out 3D U-velocity component.
+! Aout(idVvel)   Write out 3D V-velocity component.
+! Aout(idu3dE)   Write out 3D Eastward  velocity component at RHO-points.
+! Aout(idv3dN)   Write out 3D Northward velocity component at RHO-points.
+! Aout(idWvel)   Write out 3D W-velocity component.
+! Aout(idOvel)   Write out 3D omega vertical velocity.
+! Aout(idUbar)   Write out 2D U-velocity component.
+! Aout(idVbar)   Write out 2D V-velocity component.
+! Aout(idu2dE)   Write out 2D Eastward  velocity component at RHO-points.
+! Aout(idv2dN)   Write out 2D Northward velocity component at RHO-points.
+! Aout(idFsur)   Write out free-surface.
+!
+! Aout(idTvar)   Write out active (NAT) tracers: temperature and salinity.
+!
+! Aout(idUsms)   Write out surface U-momentum stress.
+! Aout(idVsms)   Write out surface V-momentum stress.
+! Aout(idUbms)   Write out bottom  U-momentum stress.
+! Aout(idVbms)   Write out bottom  V-momentum stress.
+!
+! Aout(idW2xx)   Write out 2D radiation stress, Sxx component.
+! Aout(idW2xy)   Write out 2D radiation stress, Sxy component.
+! Aout(idW2yy)   Write out 2D radiation stress, Syy component.
+! Aout(idU2rs)   Write out 2D U-radiation stress.
+! Aout(idV2rs)   Write out 2D V-radiation stress.
+! Aout(idU2Sd)   Write out 2D U-Stokes velocity.
+! Aout(idV2Sd)   Write out 2D V-Stokes velocity.
+!
+! Aout(idW3xx)   Write out 3D radiation stress, Sxx component.
+! Aout(idW3xy)   Write out 3D radiation stress, Sxy component.
+! Aout(idW3yy)   Write out 3D radiation stress, Syy component.
+! Aout(idW3zx)   Write out 3D radiation stress, Szx component.
+! Aout(idW3zy)   Write out 3D radiation stress, Szy component.
+! Aout(idU3rs)   Write out 3D U-radiation stress.
+! Aout(idV3rs)   Write out 3D V-radiation stress.
+! Aout(idU3Sd)   Write out 3D U-Stokes velocity.
+! Aout(idV3Sd)   Write out 3D V-Stokes velocity.
+!
+! Aout(idPair)   Write out surface air pressure.
+! Aout(idUair)   Write out surface U-wind component.
+! Aout(idVair)   Write out surface V-wind component.
+!
+! Aout(idTsur)   Write out surface net heat and salt flux
+! Aout(idLhea)   Write out latent heat flux.
+! Aout(idShea)   Write out sensible heat flux.
+! Aout(idLrad)   Write out long-wave radiation flux.
+! Aout(idSrad)   Write out short-wave radiation flux.
+! Aout(idevap)   Write out evaporation rate.
+! Aout(idrain)   Write out precipitation rate.
+!
+! Aout(idDano)   Write out density anomaly.
+! Aout(idVvis)   Write out vertical viscosity coefficient.
+! Aout(idTdif)   Write out vertical diffusion coefficient of temperature.
+! Aout(idSdif)   Write out vertical diffusion coefficient of salinity.
+! Aout(idHsbl)   Write out depth of oceanic surface boundary layer.
+! Aout(idHbbl)   Write out depth of oceanic bottom boundary layer.
+!
+! Aout(id2dRV)   Write out 2D relative vorticity (vertically integrated).
+! Aout(id3dRV)   Write out 3D relative vorticity.
+! Aout(id2dPV)   Write out 2D potential vorticity (shallow water).
+! Aout(id3dPV)   Write out 3D potential vorticity.
+!
+! Aout(idu3dD)   Write out detided 3D U-velocity.
+! Aout(idv3dD)   Write out detided 3D V-velocity.
+! Aout(idu2dD)   Write out detided 2D U-velocity.
+! Aout(idv2dD)   Write out detided 2D V-velocity.
+! Aout(idFsuD)   Write out detided free-surface
+!
+! Aout(idTrcD)   Write out detided temperature and salinity.
+!
+! Aout(idHUav)   Write out u-volume flux, Huon.
+! Aout(idHVav)   Write out v-volume flux, Hvom.
+! Aout(idUUav)   Write out quadratic <u*u> term.
+! Aout(idUVav)   Write out quadratic <u*v> term.
+! Aout(idVVav)   Write out quadratic <v*v> term.
+! Aout(idU2av)   Write out quadratic <ubar*ubar> term.
+! Aout(idV2av)   Write out quadratic <vbar*vbar> term.
+! Aout(idZZav)   Write out quadratic <zeta*zeta> term.
+!
+! Aout(idTTav)   Write out quadratic <t*t> active and inert tracers terms.
+! Aout(idUTav)   Write out quadratic <u*t> active and inert tracers terms.
+! Aout(idVTav)   Write out quadratic <v*t> active and inert tracers terms.
+! Aout(iHUTav)   Write out active and inert tracer u-volume flux, <Huon*t>.
+! Aout(iHVTav)   Write out active and inert tracer v-volume flux, <Hvom*t>.
+!
+! Aout(inert)    Write out extra inert passive tracers.
+!
+!------------------------------------------------------------------------------
+! Logical switches (T/F) to activate writing of time-averaged fields into
+! DIAGNOSTIC file.
+!------------------------------------------------------------------------------
+!
+! Time-averaged, 2D momentum (ubar,vbar) diagnostic terms:
+! (if DIAGNOSTICS_UV)
+!
+! Dout(M2rate)   Write out acceleration.
+! Dout(M2pgrd)   Write out pressure gradient.
+! Dout(M2fcor)   Write out Coriolis force, if UV_COR.
+! Dout(M2hadv)   Write out horizontal total advection, if UV_ADV.
+! Dout(M2xadv)   Write out horizontal  XI-advection, if UV_ADV.
+! Dout(M2yadv)   Write out horizontal ETA-advection, if UV_ADV.
+! Dout(M2hrad)   Write out horizontal total radiation stress, NEARSHORE_MELLOR.
+! Dout(M2hvis)   Write out horizontal total viscosity, if UV_VIS2 or UV_VIS4.
+! Dout(M2xvis)   Write out horizontal  XI-viscosity, if UV_VIS2 or UV_VIS4.
+! Dout(M2yvis)   Write out horizontal ETA-viscosity, if UV_VIS2 or UV_VIS4.
+! Dout(M2sstr)   Write out surface stress.
+! Dout(M2bstr)   Write out bottom stress
+!
+! Time-averaged, 3D momentum (u,v) diagnostic terms:
+! (if SOLVE3D and DIAGNOSTICS_UV)
+!
+! Dout(M3rate)   Write out acceleration.
+! Dout(M3pgrd)   Write out pressure gradient.
+! Dout(M3fcor)   Write out Coriolis force, if UV_COR.
+! Dout(M3hadv)   Write out horizontal total advection, if UV_ADV.
+! Dout(M3xadv)   Write out horizontal  XI-advection, if UV_ADV.
+! Dout(M3yadv)   Write out horizontal ETA-advection, if UV_ADV.
+! Dout(M3hrad)   Write out horizontal total radiation stress, NEARSHORE_MELLOR.
+! Dout(M3vrad)   Write out vertical radiation stress, if NEARSHORE_MELLOR.
+! Dout(M3hvis)   Write out horizontal total viscosity, if UV_VIS2 or UV_VIS4.
+! Dout(M3xvis)   Write out horizontal  XI-viscosity, if UV_VIS2 or UV_VIS4.
+! Dout(M3yvis)   Write out horizontal ETA-viscosity, if UV_VIS2 or UV_VIS4.
+! Dout(M3yvis)   Write out horizontal ETA-viscosity, if UV_VIS2 or UV_VIS4.
+! Dout(M3vvis)   Write out vertical viscosity.
+!
+! Time-averaged, active (temperature and salinity) and passive (inert) tracer
+! diagnostic terms, [1:NAT+NPT,Ngrids] values expected:
+! (if SOLVE3D and DIAGNOSTICS_TS)
+!
+! Dout(iTrate)   Write out time rate of change.
+! Dout(iThadv)   Write out horizontal total advection.
+! Dout(iTxadv)   Write out horizontal  XI-advection.
+! Dout(iTyadv)   Write out horizontal ETA-advection.
+! Dout(iTvadv)   Write out vertical advection.
+! Dout(iThdif)   Write out horizontal total diffusion, if TS_DIF2 or TS_DIF4.
+! Dout(iTxdif)   Write out horizonta1  XI-diffusion, if TS_DIF2 or TS_DIF4.
+! Dout(iTydif)   Write out horizontal ETA-diffusion, if TS_DIF2 or TS_DIF4.
+! Dout(iTsdif)   Write out horizontal   S-diffusion, if TS_DIF2 or TS_DIF4 and
+!                  rotated tensor (MIX_GEO_TS or MIX_ISO_TS).
+! Dout(iTvdif)   Write out vertical diffusion.
 !
 !------------------------------------------------------------------------------
 ! Generic User parameters.
@@ -2582,6 +2795,9 @@ Dout(iTvdif) == F F     ! temp_vdiff, ...    vertical diffusion
 !
 !  ADSNAME     Input adjoint sensitivity functional file name.
 !
+!  IWININAME   Input initial conditions file name for InWave.
+!
+!  IWSWNNAME   Input file of SWAN 2D spec to drive InWave
 !
 ! Nesting grids connectivity data:
 !
@@ -2642,6 +2858,16 @@ Dout(iTvdif) == F F     ! temp_vdiff, ...    vertical diffusion
 !                be processed in ROMS because of the logical switches are
 !                FALSE the second grid.
 !
+! Input/output tidal forcing file name:
+!
+! TIDENAME     Tidal constituents period, phase, elevation, and current data.
+!                This data is needed when SSH_TIDES, UV_TIDES, or both are
+!                activated to force tides at the open boundaries. Currently,
+!                in nested applications, the tidal forcing is used in the
+!                coarser/larger grid (ng=1). If AVERAGES_DETIDE is activated,
+!                several least-squares time-accumulated harmonic variables
+!                are written into this NetCDF file to facilitate restart for
+!                during long fitting simulations.
 !
 ! Input forcing file(s) name:
 !
@@ -2651,19 +2877,18 @@ Dout(iTvdif) == F F     ! temp_vdiff, ...    vertical diffusion
 !
 !  The USER has the option to enter several file names for forcing fields
 !  and/or split input data time records for each nested grid. For example,
-!  the USER may have different files for wind products, heat fluxes, tides,
-!  etc.  The model will scan the file list and will read the needed data
-!  from the first file in the list containing the forcing field. Therefore,
+!  the USER may have different files for wind products, heat fluxes, etc.
+!  The model will scan the file list and will read the needed data from
+!  the first file in the list containing the forcing field. Therefore,
 !  the order of the file names is very important. It is also possible to
 !  split input data time records into several NetCDF files.
 !
 !  Use a single line per entry with a continuation (\) or vertical bar (|)
 !  symbol after each entry, except the last one:
 !
-!    NFFILES == 7                          ! number of unique forcing files
+!    NFFILES == 6                          ! number of unique forcing files
 !
-!    FRCNAME == my_tides.nc       \        ! tidal forcing
-!               my_lwrad_year1.nc |        ! net longwave radiation flux
+!    FRCNAME == my_lwrad_year1.nc |        ! net longwave radiation flux
 !               my_lwrad_year2.nc \
 !               my_swrad_year1.nc |        ! solar shortwave radiation flux
 !               my_swrad_year2.nc \
@@ -2689,6 +2914,7 @@ Dout(iTvdif) == F F     ! temp_vdiff, ...    vertical diffusion
 ! TLMNAME      Output tangent linear file name.
 ! ADJNAME      Output adjoint file name.
 ! AVGNAME      Output averages file name.
+! HARNAME      Output least-squares detiding harmonics file name.
 ! DIANAME      Output diagnostics file name.
 ! STANAME      Output stations file name.
 ! FLTNAME      Output floats file name.
@@ -2703,4 +2929,5 @@ Dout(iTvdif) == F F     ! temp_vdiff, ...    vertical diffusion
 ! BPARNAM      Input biological parameters file name.
 ! SPARNAM      Input sediment transport parameters file name.
 ! USRNAME      USER's input generic file name.
+! VEGNAM       Input vegetation file name.
 !

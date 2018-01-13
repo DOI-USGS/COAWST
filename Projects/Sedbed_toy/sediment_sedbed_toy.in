@@ -135,6 +135,7 @@ ad_LBC(isTvar) ==   Per     Per     Per     Per      ! idsed(:), compact
  Hout(iaged) == T       ! bed_age                 sediment layer age
  Hout(iporo) == T       ! bed_porosity            sediment layer porosity
  Hout(idiff) == F       ! bed_biodiff             biodiffusivity
+ Hout(ibtcr) == T       ! bed_tau_crit            cohesive bed critical stress
 
 
 ! Logical switches (TRUE/FALSE) to activate writing of bed
@@ -431,19 +432,19 @@ Dout(MTvdif) == T       ! mud_01_vdiff, ...       vertical diffusion
 
 ! Minimum shear for erosion
 
-   MUD_TAUCR_MIN == 0.030000d0
+   MUD_TAUCR_MIN == 0.030d0
     
 ! Maximum shear for erosion
 
-   MUD_TAUCR_MAX == 5.20d0
+   MUD_TAUCR_MAX == 1.50d0
     
 ! Tau_crit profile slope
 
-   MUD_TAUCR_SLOPE == 0.300000d0
+   MUD_TAUCR_SLOPE == 2.0d0
     
 ! Tau_crit profile offset
 
-   MUD_TAUCR_OFF == 1.000000d0
+   MUD_TAUCR_OFF == 3.40d0
     
 ! Tau_crit consolidation rate 
 
