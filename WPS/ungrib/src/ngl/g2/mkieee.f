@@ -32,15 +32,16 @@
 
       integer(4) :: ieee 
 
-      real,save :: two23
-      real,save :: two126
-      integer,save :: once=0
+! Recent versions of the PGI compilers apparently still do not fully support
+! the use of all intrinsics in parameter statements, though this is part of
+! the F2003 standard.
+!      real, parameter :: two23=scale(1.0,23)
+!      real, parameter :: two126=scale(1.0,126)
+      real :: two23
+      real :: two126
 
-      if ( once .EQ. 0 ) then
-         once=1
-         two23=scale(1.0,23)
-         two126=scale(1.0,126)
-      endif
+      two23=scale(1.0,23)
+      two126=scale(1.0,126)
 
       alog2=alog(2.0)
 
