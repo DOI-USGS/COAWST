@@ -1,6 +1,6 @@
 !  4DVar assimilation input parameters.
 !
-!svn $Id: s4dvar.in 830 2017-01-24 21:21:11Z arango $
+!svn $Id: s4dvar.in 885 2017-12-27 23:18:30Z arango $
 !========================================================= Hernan G. Arango ===
 !  Copyright (c) 2002-2017 The ROMS/TOMS Group                                !
 !    Licensed under a MIT/X style license                                     !
@@ -126,7 +126,27 @@ balance(isVvel) =  T                      ! 3D momentum (u, v)
 ! If observations impact or observations sensitivity, set the 4D-Var
 ! outer loop to process. It must be less or equal that Nouter.
 
-         Nimpact = 1
+        Nimpact = 1
+
+! Number of extra-observation classes (NextraObs), observation type
+! indices (ExtraIndex), and observation type names (ExtraName) to
+! consider in addition to the 1-to-1 associated with the state
+! variables. It is used in observation operators that require more that
+! one state variable to evaluate particular observation type like
+! HF radials, travel time, pressure, etc.
+!
+! In any application, the number of observation types is computed as:
+! NobsVar = NstateVar + NextraObs.
+!
+! NextraObs values are expected for keywords ExtraIndex and ExtraName.
+! If NextraVar > 1, enter one observation type names per line and
+! use a backslash as the continuation.
+
+      NextraObs = 0
+
+     ExtraIndex = 20
+
+      ExtraName = radial
 
 ! If weak constraint 4DVar, set diffusive relaxation coefficients (m2/s)
 ! used to relax representer tangent linear solution to privious Picard
@@ -273,7 +293,7 @@ HdecayB(isUbar) == 100.0d+3 100.0d+3 100.0d+3 100.0d+3    ! 2D U-momentum
 HdecayB(isVbar) == 100.0d+3 100.0d+3 100.0d+3 100.0d+3    ! 2D V-momentum
 HdecayB(isUvel) == 100.0d+3 100.0d+3 100.0d+3 100.0d+3    ! 3D U-momentum
 HdecayB(isVvel) == 100.0d+3 100.0d+3 100.0d+3 100.0d+3    ! 3D V-momentum
-HdecayB(isTvar) == 4*100.0d+3  4*100.0d+3                 ! 1:NT tracers
+HdecayB(isTvar) == 4*100.0d+3  4*100.0d+3                 ! (4,1:NT) tracers
 
 ! Boundary conditions error covariance: vertical, isotropic decorrelation
 ! scales (m). A value is expected for each boundary edge in the following
@@ -282,7 +302,7 @@ HdecayB(isTvar) == 4*100.0d+3  4*100.0d+3                 ! 1:NT tracers
 
 VdecayB(isUvel) == 100.0d0  100.0d0  100.0d0  100.0d0     ! 3D U-momentum
 VdecayB(isVvel) == 100.0d0  100.0d0  100.0d0  100.0d0     ! 3D V-momentum
-VdecayB(isTvar) == 4*100.d0  4*100.d0                     ! 1:NT tracers
+VdecayB(isTvar) == 4*100.d0  4*100.d0                     ! (4,1:NT) tracers
 
 ! Surface forcing error covariance: horizontal, isotropic decorrelation
 ! scales (m).
@@ -561,6 +581,45 @@ HdecayF(isTsur) == 100.0d+3  100.0d+3             ! 1:NT surface tracers flux
 !                 applications.  The observation analysis needs to be computed
 !                 separately for each outer loop.  The full analysis for all
 !                 outer loops is combined offline.
+!
+!------------------------------------------------------------------------------
+! Additional observation operators.
+!------------------------------------------------------------------------------
+!
+! Currently, only one extra-observation operator has been implemented to
+! process radial velocities from HF radars instruments.
+!
+!  NextraObs      Number of extra-observation classes to consider in addition
+!                 to those associated with the state variables (one-to-one
+!                 correspondence. They are used in observation operators that
+!                 require more that one state variable to evaluate particular
+!                 extra-observation type like HF radials, travel time,
+!                 pressure, etc.
+!
+!                 In any application, the number of observation types is
+!                 computed as:
+!
+!                   NobsVar(ng) = NstateVar(ng) + NextraObs
+!
+!                 If not processing extra-observation classes, set NextraObs
+!                 to zero.
+!
+!  ExtraIndex     Extra-observation class identification indices, as specified
+!                 in input observation NetCDF file variable "obs_type".  The
+!                 index has to be a number greater than 7+2*NT, where NT is
+!                 the total of active plus passive tracers. NextraObs values
+!                 are expected for this Keyword. This parameter is only
+!                 processed when NextraObs > 0.
+!
+!  ExtraName      Extra-observation class names. NextraObs values are expected.
+!                 This parameter is only processed when NextraObs > 0.  Enter
+!                 one class type name per line and use a backslash for
+!                 continuation. For example:
+!
+!                   ExtraName = radials  \
+!                               pressure
+!
+!                 Currently, however, only the radials operator is coded.
 !
 !------------------------------------------------------------------------------
 ! Diffusive relaxation coefficients.

@@ -1,6 +1,6 @@
       SUBROUTINE ana_wtype (ng, tile, model)
 !
-!! svn $Id: ana_wtype.h 830 2017-01-24 21:21:11Z arango $
+!! svn $Id: ana_wtype.h 875 2017-11-03 01:10:02Z arango $
 !!======================================================================
 !! Copyright (c) 2002-2017 The ROMS/TOMS Group                         !
 !!   Licensed under a MIT/X style license                              !
@@ -74,12 +74,16 @@
 !***********************************************************************
 !
       USE mod_param
+      USE mod_parallel
+      USE mod_ncparam
+      USE mod_iounits
       USE mod_scalars
 !
       USE exchange_2d_mod, ONLY : exchange_r2d_tile
 #ifdef DISTRIBUTE
       USE mp_exchange_mod, ONLY : mp_exchange2d
 #endif
+      USE stats_mod, ONLY : stats_2dfld
 !
 !  Imported variable declarations.
 !
@@ -97,9 +101,26 @@
 !
 !  Local variable declarations.
 !
+      logical, save :: first = .TRUE.
+
       integer :: i, j
 
+      TYPE (T_STATS), save :: Stats
+
 #include "set_bounds.h"
+!
+!-----------------------------------------------------------------------
+!  Initialize field statistics structure.
+!-----------------------------------------------------------------------
+!
+      IF (first) THEN
+        first=.FALSE.
+        Stats % count=0.0_r8
+        Stats % min=Large
+        Stats % max=-Large
+        Stats % avg=0.0_r8
+        Stats % rms=0.0_r8
+      END IF
 !
 !-----------------------------------------------------------------------
 !  Set Jerlov water type array indices (1 to 9, currently) for light
@@ -116,6 +137,15 @@
       ana_wtype.h: no values provided for Jwtype.
 #endif
 !
+!  Report statistics.
+!
+      CALL stats_2dfld (ng, tile, iNLM, r2dvar, Stats,                  &
+     &                  LBi, UBi, LBj, UBj, Jwtype)
+      IF (DOMAIN(ng)%NorthEast_Corner(tile)) THEN
+        WRITE (stdout,10) 'Jerlov water type: wtype_grid',              &
+     &                     ng, Stats%min, Stats%max
+      END IF
+!
 !  Exchange boundary data.
 !
       IF (EWperiodic(ng).or.NSperiodic(ng)) THEN
@@ -131,6 +161,10 @@
      &                    EWperiodic(ng), NSperiodic(ng),               &
      &                    Jwtype)
 #endif
+!
+  10  FORMAT (3x,' ANA_WTYPE   - ',a,/,19x,                             &
+     &        '(Grid = ',i2.2,', Min = ',1p,e15.8,0p,                   &
+     &                         ' Max = ',1p,e15.8,0p,')')
 
       RETURN
       END SUBROUTINE ana_wtype_tile
