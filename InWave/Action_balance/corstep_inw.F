@@ -164,7 +164,7 @@
 !
 !  Local variable declarations.
 !
-      integer :: i, is, itrc, j, k, d
+      integer :: i, is, itrc, j, k, d, ii, jj
 
       real(r8) :: cff, cff1, cff2, cff3, opd
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: FE
@@ -281,7 +281,7 @@
       epson=1.0E-12_r8
 !
       DO j=Jstr,Jend
-        DO i=Istr-1,Iend+2
+        DO i=Istrm1,Iendp2
           grad_x(i)=(AC(i,j,d,3)-AC(i-1,j,d,3))
           cff=0.5_r8*(pm(i-1,j)+pm(i,j))
           kax(i)=(1.0_r8-abs(cx(i,j,d)*dt(ng)*cff))
@@ -324,7 +324,8 @@
             cff=0.5_r8*max(0.0_r8,min(2.0_r8,2.0_r8*rl*rkal,betal))*    &
      &                                  grad_x(i)*kax(i)
 #  ifdef MASKING
-            cff=cff*rmask(i-2,j)
+            ii=MAX(i-2,0)
+            cff=cff*rmask(ii,j)
 #  endif
             sw_xi=AC(i-1,j,d,3)+cff
           ELSE
@@ -350,7 +351,7 @@
       END DO
 !
       DO i=Istr,Iend
-        DO j=Jstr-1,Jend+2
+        DO j=Jstrm1,Jendp2
           grad_y(j)=(AC(i,j,d,3)-AC(i,j-1,d,3))
           cff=0.5_r8*(pn(i,j)+pn(i,j-1))
           kay(j)=(1.0_r8-abs(cy(i,j,d)*dt(ng)*cff))
@@ -393,7 +394,8 @@
             cff=0.5_r8*max(0.0_r8,min(2.0_r8,2.0_r8*rd*rkad,betad))*    &
      &                              grad_y(j)*kay(j)
 #  ifdef MASKING
-            cff=cff*rmask(i,j-2)
+            jj=MAX(j-2,0)
+            cff=cff*rmask(i,jj)
 #  endif
             sw_eta=AC(i,j-1,d,3)+cff
           ELSE

@@ -263,6 +263,32 @@
      &                  LBi, UBi, LBj, UBj,                             &
      &                  Pwave_bot)
 #  endif
+      IF (EWperiodic(ng).or.NSperiodic(ng)) THEN
+        CALL exchange_r2d_tile (ng, tile,                               &
+     &                          LBi, UBi, LBj, UBj,                     &
+     &                          Hwave)
+        CALL exchange_r2d_tile (ng, tile,                               &
+     &                          LBi, UBi, LBj, UBj,                     &
+     &                          Dwave)
+        CALL exchange_r2d_tile (ng, tile,                               &
+     &                          LBi, UBi, LBj, UBj,                     &
+     &                          Lwave)
+#  if defined WAVES_UB
+        CALL exchange_r2d_tile (ng, tile,                               &
+     &                          LBi, UBi, LBj, UBj,                     &
+     &                          Uwave_rms)
+#  endif
+#  if defined WAVES_TOP_PERIOD
+        CALL exchange_r2d_tile (ng, tile,                               &
+     &                          LBi, UBi, LBj, UBj,                     &
+     &                          Pwave_top)
+#  endif
+#  if defined WAVES_BOT_PERIOD
+        CALL exchange_r2d_tile (ng, tile,                               &
+     &                          LBi, UBi, LBj, UBj,                     &
+     &                          Pwave_bot)
+#  endif
+      END IF
 #  ifdef DISTRIBUTE
 !
 !   Exchange boundary data.

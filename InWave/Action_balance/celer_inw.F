@@ -451,12 +451,12 @@
 !
       IF (EWperiodic(ng).or.NSperiodic(ng)) THEN
 #  ifdef ACX_ADVECTION
-        CALL exchange_r3d_tile (ng, tile,                               &
+        CALL exchange_u3d_tile (ng, tile,                               &
      &                        LBi, UBi, LBj, UBj, 1, ND,                &
      &                        cx)
 #  endif
 #  ifdef ACY_ADVECTION
-        CALL exchange_r3d_tile (ng, tile,                               &
+        CALL exchange_v3d_tile (ng, tile,                               &
      &                        LBi, UBi, LBj, UBj, 1, ND,                &
      &                        cy)
 #  endif

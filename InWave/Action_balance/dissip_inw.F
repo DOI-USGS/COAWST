@@ -197,7 +197,7 @@
 #  ifdef WDISS_ROELVINK
             Qb=MIN(1.0_r8,1.0_r8-EXP(-(H/Hmax_r)**n_r))
             IF (TRM.gt.0.0_r8) THEN
-              Dissip_break(i,j)=2.0_r8*alfa*1./TRM*EW*Qb*dt(ng)
+              Dissip_break(i,j)=2.0_r8*alfa/TRM*EW*Qb*dt(ng)
             ELSE
               Dissip_break(i,j)=0.0_r8
             END IF

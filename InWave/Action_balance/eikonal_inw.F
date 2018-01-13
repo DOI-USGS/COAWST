@@ -48,8 +48,9 @@
      &                      GRID(ng) % pn,                              &
 # ifdef MASKING
      &                      GRID(ng) % rmask,                           &
-     &                      GRID(ng) % umask,                           &
-     &                      GRID(ng) % vmask,                           &
+# endif
+# ifdef WET_DRY
+     &                      GRID(ng) % rmask_wet,                       &
 # endif
      &                      WAVEG(ng) % wd,                             &
      &                      WAVEP(ng) % cx,                             &
@@ -72,7 +73,10 @@
      &                            IminS, ImaxS, JminS, JmaxS,           &
      &                            angler, pm, pn,                       &
 # ifdef MASKING
-     &                            rmask, umask, vmask,                  &
+     &                            rmask,                                &
+# endif
+# ifdef WET_DRY
+     &                            rmask_wet,                            &
 # endif
      &                            wd, cx, cy, h_tot,                    &
      &                            u_rho, v_rho, kwc)
@@ -101,8 +105,9 @@
       real(r8), intent(in) :: pn(LBi:,LBj:)
 #   ifdef MASKING
       real(r8), intent(in) :: rmask(LBi:,LBj:)
-      real(r8), intent(in) :: umask(LBi:,LBj:)
-      real(r8), intent(in) :: vmask(LBi:,LBj:)
+#   endif
+#   ifdef WET_DRY
+      real(r8), intent(in) :: rmask_wet(LBi:,LBj:)
 #   endif
       real(r8), intent(in) :: wd(:)
       real(r8), intent(in) :: cx(LBi:,LBj:,:)
@@ -117,8 +122,9 @@
       real(r8), intent(in) :: pn(LBi:UBi,LBj:UBj)
 #   ifdef MASKING
       real(r8), intent(in) :: rmask(LBi:UBi,LBj:UBj)
-      real(r8), intent(in) :: umask(LBi:UBi,LBj:UBj)
-      real(r8), intent(in) :: vmask(LBi:UBi,LBj:UBj)
+#   endif
+#   ifdef WET_DRY
+      real(r8), intent(in) :: rmask_wet(LBi:UBi,LBj:UBj)
 #   endif
       real(r8), intent(in) :: wd(ND)
       real(r8), intent(in) :: cx(LBi:UBi,LBj:UBj,ND)
@@ -135,6 +141,7 @@
 
       real(r8) :: alfa_wave, kx, ky, cff, cff1, cff2
       real(r8) :: crk, crx, cry, kh
+      real(r8), parameter :: kwc_max = 10.0_r8
 
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: FE
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: FX
@@ -153,7 +160,8 @@
             cff2=kwc(i,j,d)*h_tot(i,j)
             crk=0.5_r8*(sqrt(g/kwc(i-1,j,d)*tanh(cff1))+                &
      &                  sqrt(g/kwc(i  ,j,d)*tanh(cff2)))
-            cff=crk*cos(alfa_wave)+u_rho(i,j)
+            cff1=0.5_r8*(u_rho(i-1,j)+u_rho(i,j))
+            cff=crk*cos(alfa_wave)+cff1
             cff1=MAX(cff,0.0_r8)
             cff2=MIN(cff,0.0_r8)
             FX(i,j)=cff1*kwc(i-1,j,d)+                                  &
@@ -167,7 +175,8 @@
             cff2=kwc(i,j  ,d)*h_tot(i,j)
             crk=0.5_r8*(sqrt(g/kwc(i,j-1,d)*tanh(cff1))+                &
      &                  sqrt(g/kwc(i,j  ,d)*tanh(cff2)))
-            cff=crk*sin(alfa_wave)+v_rho(i,j)
+            cff1=0.5_r8*(v_rho(i,j-1)+v_rho(i,j))
+            cff=crk*sin(alfa_wave)+cff1
             cff1=MAX(cff,0.0_r8)
             cff2=MIN(cff,0.0_r8)
             FE(i,j)=cff1*kwc(i,j-1,d)+                                  &
@@ -184,13 +193,30 @@
      &                   cff*pm(i,j)*pn(i,j)*                           &
      &                  (FX(i+1,j)-FX(i,j)+                             &
      &                   FE(i,j+1)-FE(i,j))
-          END DO
+!           kwc(i,j,d)=MIN(kwc(i,j,d),kwc_max)
+!#  ifdef MASKING
+!            kwc(i,j,d)=kwc(i,j,d)*rmask(i,j)
+!#  endif
+!#  ifdef WET_DRY
+!            kwc(i,j,d)=kwc(i,j,d)*rmask_wet(i,j)
+!#  endif
+         END DO
         END DO
       END DO
-
+!
+!  Apply nonperiodic boundary conditions in xi and etai space.
+!
       CALL Tr3dbc_tile (ng, tile,                                       &
      &                  LBi, UBi, LBj, UBj, ND,                         &
      &                  kwc)
+!
+!  Apply periodic boundary conditions.
+!
+      IF (EWperiodic(ng).or.NSperiodic(ng)) THEN
+        CALL exchange_r3d_tile (ng, tile,                               &
+     &                          LBi, UBi, LBj, UBj, 1, ND,              &
+     &                          kwc)
+      END IF
 !
 # ifdef DISTRIBUTE
 !

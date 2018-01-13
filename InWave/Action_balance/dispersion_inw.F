@@ -126,8 +126,7 @@
       real(r8) :: cff, cff1, cff2
       real(r8) :: tanhkh, sinhtkh, o2aa, Vcur, cosde, sinde
       real(r8), parameter :: maxErr = 0.1_r8
-      real(r8), parameter :: kmax = 0.6_r8
-
+      real(r8), parameter :: kwc_max = 10.0_r8
 
 # include "set_bounds.h"
 !
@@ -176,7 +175,7 @@
               kwc(i,j,d)=k0
               cwc(i,j,d)=SQRT(g*k0*tanhkh)/SINH(2.0_r8*kh)
             ELSE
-              kwc(i,j,d)=kmax
+              kwc(i,j,d)=kwc_max
               cwc(i,j,d)=0.0_r8
             ENDIF
           END DO
@@ -194,7 +193,14 @@
       CALL bc_r3d_tile (ng, tile,                                       &
      &                  LBi, UBi, LBj, UBj, 1, ND,                      &
      &                  kwc)
-
+      IF (EWperiodic(ng).or.NSperiodic(ng)) THEN
+        CALL exchange_r3d_tile (ng, tile,                               &
+     &                          LBi, UBi, LBj, UBj, 1, ND,              &
+     &                          kwc)
+        CALL exchange_r2d_tile (ng, tile,                               &
+     &                          LBi, UBi, LBj, UBj,                     &
+     &                          h_tot)
+      END IF
 # ifdef DISTRIBUTE
 !
 !  Exchange boundary data.
