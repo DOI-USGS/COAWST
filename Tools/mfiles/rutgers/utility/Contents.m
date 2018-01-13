@@ -44,7 +44,7 @@
 %                     tightly contains the Target Grid.
 %
 %   uv_barotropic - Computes vertically integrated velocity components
-%                      for ROMS full grid or boundaries.
+%                     for ROMS full grid or boundaries.
 %
 % Filters:
 %
@@ -67,12 +67,17 @@
 %   caldate      - Converts Julian day number to calendar date structure.
 %   date_stamp   - Sets current date string.
 %   day_code     - Computes day of the week for a given date.
+%   daynum       - Calculates date number from date (ROMS Version).
+%   dayvec       - Calculates date from a date number (ROMS Version).
 %   gregorian    - Converts Julian day number to Gregorian calendar date.
 %   greg2str     - Converts Gregorian date array to string.
 %   hms2h        - Converts hours, minutes, and seconds to decimal hours.
 %   julian       - Converts Gregorian calendar date to Julian day numbers.
 %   s2hms        - Converts decimal seconds to integer hour, minute,
 %                    seconds.
+%   tround       - Floating-point rounding function with a fuzzy or
+%                    tolerant floor function.
+%   yearday      - Computes the day of the year.
 %
 % Parallelism:
 %
@@ -98,9 +103,9 @@
 %                      plotted with 'plot_nesting'. 
 %
 
-% svn $Id: Contents.m 735 2014-04-28 23:15:37Z arango $
+% svn $Id: Contents.m 866 2017-08-11 22:15:00Z arango $
 %=========================================================================%
-%  Copyright (c) 2002-2014 The ROMS/TOMS Group                            %
+%  Copyright (c) 2002-2017 The ROMS/TOMS Group                            %
 %    Licensed under a MIT/X style license                                 %
 %    See License_ROMS.txt                           Hernan G. Arango      %
 %=========================================================================%

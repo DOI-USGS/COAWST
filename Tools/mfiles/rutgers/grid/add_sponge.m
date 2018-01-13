@@ -35,9 +35,9 @@ function add_sponge(ncfile, visc_factor, diff_factor)
 %    diff_factor   Diffusivity factor (2D array; nondimensional, positive)
 %
 
-% svn $Id: add_sponge.m 722 2014-03-14 00:53:34Z arango $
+% svn $Id: add_sponge.m 832 2017-01-24 22:07:36Z arango $
 %=========================================================================%
-%  Copyright (c) 2002-2014 The ROMS/TOMS Group                            %
+%  Copyright (c) 2002-2017 The ROMS/TOMS Group                            %
 %    Licensed under a MIT/X style license                                 %
 %    See License_ROMS.txt                           Hernan G. Arango      %
 %=========================================================================%

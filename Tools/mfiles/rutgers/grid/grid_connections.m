@@ -58,9 +58,9 @@ function S = grid_connections(G, Sinp)
 % grid perimenter.  
 %
 
-% svn $Id: grid_connections.m 738 2014-10-14 21:49:14Z arango $
+% svn $Id: grid_connections.m 832 2017-01-24 22:07:36Z arango $
 %=========================================================================%
-%  Copyright (c) 2002-2014 The ROMS/TOMS Group                            %
+%  Copyright (c) 2002-2017 The ROMS/TOMS Group                            %
 %    Licensed under a MIT/X style license                                 %
 %    See License_ROMS.txt                           Hernan G. Arango      %
 %=========================================================================%

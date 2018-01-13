@@ -64,9 +64,9 @@ function S = sponge (Gname, varargin)
 % of the computational domain.
 %
   
-% svn $Id: sponge.m 742 2014-10-22 18:03:58Z arango $
+% svn $Id: sponge.m 832 2017-01-24 22:07:36Z arango $
 %=========================================================================%
-%  Copyright (c) 2002-2014 The ROMS/TOMS Group                            %
+%  Copyright (c) 2002-2017 The ROMS/TOMS Group                            %
 %    Licensed under a MIT/X style license           Hernan G. Arango      %
 %    See License_ROMS.txt                                John Wilkin      %
 %=========================================================================%

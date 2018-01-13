@@ -53,9 +53,9 @@ function [S, G] = check_nest_masks(Gnames, Cname, Lplot)
 %    read_contact        Gets nesting grid connectivity structure, S
 %
 
-% svn $Id: check_nest_masks.m 732 2014-04-18 18:24:32Z arango $
+% svn $Id: check_nest_masks.m 832 2017-01-24 22:07:36Z arango $
 %=========================================================================%
-%  Copyright (c) 2002-2014 The ROMS/TOMS Group                            %
+%  Copyright (c) 2002-2017 The ROMS/TOMS Group                            %
 %    Licensed under a MIT/X style license                                 %
 %    See License_ROMS.txt                           Hernan G. Arango      %
 %=========================================================================%

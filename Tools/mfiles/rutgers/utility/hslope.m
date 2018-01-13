@@ -27,9 +27,9 @@ function [x,y,dhdx,dhde,slope,r]=hslope(fname,iprint,iplot);
 %    r           R-value (2D array)
 %
 
-% svn $Id: hslope.m 738 2014-10-14 21:49:14Z arango $
+% svn $Id: hslope.m 832 2017-01-24 22:07:36Z arango $
 %===========================================================================%
-%  Copyright (c) 2002-2014 The ROMS/TOMS Group                              %
+%  Copyright (c) 2002-2017 The ROMS/TOMS Group                              %
 %    Licensed under a MIT/X style license                                   %
 %    See License_ROMS.txt                           Hernan G. Arango        %
 %===========================================================================%
@@ -160,7 +160,7 @@ end
 %----------------------------------------------------------------------------
 
 hx(1:L,1:Mp)=0.5.*(pm(1:L,1:Mp)+pm(2:Lp,1:Mp)).*(h(2:Lp,1:Mp)-h(1:L,1:Mp));
-hy(1:Lp,1:M)=0.5.*(pm(1:Lp,1:M)+pm(1:Lp,2:Mp)).*(h(1:Lp,2:Mp)-h(1:Lp,1:M));
+hy(1:Lp,1:M)=0.5.*(pn(1:Lp,1:M)+pn(1:Lp,2:Mp)).*(h(1:Lp,2:Mp)-h(1:Lp,1:M));
 
 dhdx(1:L,1:M)=0.5.*(hx(1:L,1:M)+hx(1:L,2:Mp));
 dhde(1:L,1:M)=0.5.*(hy(1:L,1:M)+hy(2:Lp,1:M));

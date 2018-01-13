@@ -46,6 +46,8 @@
 %                      variables and attributes stored in the structure.
 %                      This structure can be created using "nc_inq" or
 %                      nativ function "ncinfo".
+%   nc_dfixed      - Creates a new NetCDF file with the requested record
+%                      unlimited dimension changed to fixed dimension.
 %   nc_dinfo       - Inquires about the dimensions in a NetCDF file.
 %   nc_drename     - Renames a NetCDF dimension.
 %   nc_getatt      - Gets a global or variable NetCDF attribute.
@@ -84,9 +86,9 @@
 %                      NetCDF a file in a compact way.
 %
 
-% svn $Id: Contents.m 711 2014-01-23 20:36:13Z arango $
+% svn $Id: Contents.m 866 2017-08-11 22:15:00Z arango $
 %=========================================================================%
-%  Copyright (c) 2002-2014 The ROMS/TOMS Group                            %
+%  Copyright (c) 2002-2017 The ROMS/TOMS Group                            %
 %    Licensed under a MIT/X style license                                 %
 %    See License_ROMS.txt                           Hernan G. Arango      %
 %=========================================================================%

@@ -19,16 +19,22 @@ function [hour,min,sec]=s2hms(secs);
 %    s           Seconds (rounded to nearest integer)
 %
 
-% svn $Id: s2hms.m 711 2014-01-23 20:36:13Z arango $
+% svn $Id: s2hms.m 867 2017-08-11 22:17:01Z arango $
 %===========================================================================%
-%  Copyright (c) 2002-2014 The ROMS/TOMS Group                              %
+%  Copyright (c) 2002-2017 The ROMS/TOMS Group                              %
 %    Licensed under a MIT/X style license                                   %
 %    See License_ROMS.txt                               Rich Signell        %
 %===========================================================================%
 
-sec=round(secs);
-hour=floor(sec/3600);
-min=floor(rem(sec,3600)/60);
-sec=round(rem(sec,60));
+%sec=round(secs);
+%hour=floor(sec/3600);
+%min=floor(rem(sec,3600)/60);
+%sec=round(rem(sec,60));
+
+sec = secs;
+hour = fix(sec / 3600);
+sec = sec - 3600*hour;
+min = fix(sec / 60);
+sec = sec - 60*min;
 
 return

@@ -21,9 +21,9 @@ function c_contact(ncname, spherical, Ngrids, Ndatum)
 %    Ndatum      Total number of contact points (optional)
 %
 
-% svn $Id: c_contact.m 746 2014-12-15 23:24:27Z arango $
+% svn $Id: c_contact.m 832 2017-01-24 22:07:36Z arango $
 %=========================================================================%
-%  Copyright (c) 2002-2014 The ROMS/TOMS Group                            %
+%  Copyright (c) 2002-2017 The ROMS/TOMS Group                            %
 %    Licensed under a MIT/X style license                                 %
 %    See License_ROMS.txt                           Hernan G. Arango      %
 %=========================================================================%

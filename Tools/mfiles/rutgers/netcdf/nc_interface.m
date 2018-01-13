@@ -44,9 +44,9 @@ function [method,url,ftype] = nc_interface(varargin)
 %     have Java support for OpenDAP files.
 %
 
-% svn $Id: nc_interface.m 711 2014-01-23 20:36:13Z arango $
+% svn $Id: nc_interface.m 832 2017-01-24 22:07:36Z arango $
 %=========================================================================%
-%  Copyright (c) 2002-2014 The ROMS/TOMS Group                            %
+%  Copyright (c) 2002-2017 The ROMS/TOMS Group                            %
 %    Licensed under a MIT/X style license                                 %
 %    See License_ROMS.txt                           Hernan G. Arango      %
 %=========================================================================%

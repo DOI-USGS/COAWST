@@ -19,8 +19,9 @@ close all
 
 %1) SET THE CASE TO = 1.
 
-INWAVE_SHOREFACE=1;
+INWAVE_SHOREFACE=0;
 INLET_TEST=0;
+LIP=1;
 MY_APP=0;
 
 %2) Provide the name of the mfile containing configuration parameters of
@@ -30,6 +31,8 @@ if (INWAVE_SHOREFACE)
     inwave_gen_file='InWave_shoreface_param';
 elseif (INLET_TEST)
     inwave_gen_file='InWave_inlet_test_param';
+elseif (LIP)
+    inwave_gen_file='InWave_lip_param';
 elseif (MY_APP)
     inwave_gen_file='InWave_myapp_param';
 end
@@ -63,7 +66,7 @@ if (make_InWave_bry)
 
   else
 
-    create_InWave_bry(Lp, Mp, Nbins, Bindirs_centers, obc, ...
+    create_InWave_bry(Lp, Mp, Nbins_bnd, dir_bnd, obc, ...
                       Ac_north,Ac_east,Ac_south,Ac_west,TA,time, bry_file)
   end
 

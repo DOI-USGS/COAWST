@@ -1,86 +1,86 @@
-function [C]=ijcoast(Gname, Cname);
+function [C]=ijcoast(ncfile, coast_file);
 
 %
 % IJCOAST:  Converts coastline (lon,lat) to fractional coordinates
 %
-% [C]=ijcoast(Gname,Cname)
+% [C]=ijcoast(ncfile,coast_file)
 %
-% This script converts coastline data to GRID indices for a particular
-% application.  This will used in the Land/Sea masking tools.
+% Converts coastline data to ROMS (I,J) fractional coordinates to
+% facilitate Land/Sea masking editing with 'editmask'.
 %
 % On Input:
 %
-%    Gname       NetCDF file name (character string).
-%    Cname       Coastline file name (character string).
+%    ncfile      NetCDF file name (string)
+%    coast_file  Coastline file name (string)
 %
 % On Output:
 %
 %    C           Coastline indices (structure array):
-%                  C.grid    => Grid file name.
-%                  C.coast   => Coastline file name.
-%                  C.indices => Coastline indices file name.
-%                  C.lon     => Coastline longitudes.
-%                  C.lat     => Coastline latitudes.
-%                  C.Icst    => Coastline I-grid coordinates, (0:L).
-%                  C.Jcst    => Coastline J-grid coordinates, (0:M).
+%                  C.grid    => Grid file name
+%                  C.coast   => Coastline file name
+%                  C.indices => Coastline indices file name
+%                  C.lon     => Coastline longitudes
+%                  C.lat     => Coastline latitudes
+%                  C.Icst    => Coastline I-grid coordinates, (0:L)
+%                  C.Jcst    => Coastline J-grid coordinates, (0:M)
 %
 
-% svn $Id: ijcoast.m 436 2010-01-02 17:07:55Z arango $
-%===========================================================================%
-%  Copyright (c) 2002-2010 The ROMS/TOMS Group                              %
-%    Licensed under a MIT/X style license                                   %
-%    See License_ROMS.txt                           Hernan G. Arango        %
-%===========================================================================%
+% svn $Id: ijcoast.m 832 2017-01-24 22:07:36Z arango $
+%=========================================================================%
+%  Copyright (c) 2002-2017 The ROMS/TOMS Group                            %
+%    Licensed under a MIT/X style license                                 %
+%    See License_ROMS.txt                           Hernan G. Arango      %
+%=========================================================================%
 
 EXTRACT=0;
 method='linear';
 
-%---------------------------------------------------------------------------
+%-------------------------------------------------------------------------
 % Inquire NetCDF about coastline data.
-%---------------------------------------------------------------------------
+%-------------------------------------------------------------------------
 
-got_coast=0;
+got_coast=false;
 if (nargin < 2),
-% [varnam,nvars]=nc_vname(Gname);
-  finfo=ncinfo(grid_file);
-  Dnames={finfo.Variables.Name};
-  got_coast=strmatch('lon_coast',Dnames,'exact');
-  got_coast=got_coast+strmatch('lat_coast',Dnames,'exact');
-end,
+  S=nc_vnames(ncfile);
+  vnames={S.Variables.Name};
+  got_Clon=any(strcmp(vnames,'lon_coast'));
+  got_Clat=any(strcmp(vnames,'lat_coast'));
+  got_coast=got_Clon && got_Clat;
+end
 
-C.grid=Gname;
+C.grid=ncfile;
 if (~got_coast),
-  C.coast=Cname;
+  C.coast=coast_file;
 end,
 C.indices='ijcoast.mat';
 
-%---------------------------------------------------------------------------
+%--------------------------------------------------------------------------
 % Read in grid coordinates at rho-points.
-%---------------------------------------------------------------------------
+%--------------------------------------------------------------------------
 
-rlon=ncread(Gname,'lon_rho');
-rlat=ncread(Gname,'lat_rho');
+rlon=nc_read(ncfile,'lon_rho');
+rlat=nc_read(ncfile,'lat_rho');
 
 [Lp,Mp]=size(rlon);
 L=Lp-1;
 M=Mp-1;
 
-%---------------------------------------------------------------------------
+%--------------------------------------------------------------------------
 % Read in coastline data.
-%---------------------------------------------------------------------------
+%--------------------------------------------------------------------------
 
 if (got_coast),
-  Clon=ncread(Gname,'lon_coast');
-  Clat=ncread(Gname,'lat_coast');
+  Clon=nc_read(ncfile,'lon_coast');
+  Clat=nc_read(ncfile,'lat_coast');
 else
-  load(Cname);
+  load(coast_file);
   Clon=lon;
   Clat=lat;
 end,
 
-%---------------------------------------------------------------------------
+%--------------------------------------------------------------------------
 % Extract need coasline data.
-%---------------------------------------------------------------------------
+%--------------------------------------------------------------------------
 
 if (EXTRACT),
 
@@ -115,11 +115,11 @@ end,
 
 clear Clon Clat clon clat
 
-%---------------------------------------------------------------------------
+%--------------------------------------------------------------------------
 % Interpolate coastline to grid units. Notice that the mean grid
 % longitude and latitude values are substracted to avoid roundoff
 % errors from triangulation.
-%---------------------------------------------------------------------------
+%--------------------------------------------------------------------------
 
 disp(['Converting coastline (lon,lat) to (I,J) grid indices.']);
 
@@ -136,9 +136,9 @@ C.Jcst=griddata(rlon-LonAvg,rlat-LatAvg,y,C.lon-LonAvg,C.lat-LatAvg,method);
 C.Icst=C.Icst-1;
 C.Jcst=C.Jcst-1;
 
-%---------------------------------------------------------------------------
+%--------------------------------------------------------------------------
 %  Save sctructure array into a Matlab file.
-%---------------------------------------------------------------------------
+%--------------------------------------------------------------------------
 
 disp(['Saving coastline (I,J) into file: ',C.indices]);
 

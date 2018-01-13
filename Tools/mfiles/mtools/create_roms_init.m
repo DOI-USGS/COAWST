@@ -317,11 +317,11 @@ grain_diameter=cff1;
 grain_density=cff2;
 settling_vel=cff3;
 erosion_stress=cff4;
-ripple_length=0.10;
-ripple_height=0.01;
-dmix_offset=0.0;
-dmix_slope=0.0;
-dmix_time=0.0;
+ripple_length=0.10*ones(xi_rho,eta_rho);
+ripple_height=0.01*ones(xi_rho,eta_rho);
+dmix_offset=0.0*ones(xi_rho,eta_rho);
+dmix_slope=0.0*ones(xi_rho,eta_rho);
+dmix_time=0.0*ones(xi_rho,eta_rho);
 
 %12)
 %

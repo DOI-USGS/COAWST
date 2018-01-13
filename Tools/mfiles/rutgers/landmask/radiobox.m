@@ -10,9 +10,9 @@ function h=radiobox(r,tit,texts,name);
 %    field NAME_h with the handles.
 %
 
-% svn $Id: radiobox.m 436 2010-01-02 17:07:55Z arango $
+% svn $Id: radiobox.m 832 2017-01-24 22:07:36Z arango $
 %===========================================================================%
-%  Copyright (c) 2002-2010 The ROMS/TOMS Group                              %
+%  Copyright (c) 2002-2017 The ROMS/TOMS Group                              %
 %    Licensed under a MIT/X style license                                   %
 %    See License_ROMS.txt                            A. Shcherbina          %
 %===========================================================================%

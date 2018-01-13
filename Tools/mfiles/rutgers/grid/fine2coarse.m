@@ -37,9 +37,9 @@ function C = fine2coarse(Ginp,Gout,Gfactor,varargin)
 %    C          Coaser resolution Grid structure
 %
 
-% svn $Id: fine2coarse.m 729 2014-04-03 16:59:08Z arango $
+% svn $Id: fine2coarse.m 832 2017-01-24 22:07:36Z arango $
 %=========================================================================%
-%  Copyright (c) 2002-2014 The ROMS/TOMS Group                            %
+%  Copyright (c) 2002-2017 The ROMS/TOMS Group                            %
 %    Licensed under a MIT/X style license                                 %
 %    See License_ROMS.txt                           Hernan G. Arango      %
 %=========================================================================%

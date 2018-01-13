@@ -32,8 +32,9 @@
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %1) set your case here to = 1.
-inlet_test=1;
+inlet_test=0;
 inlet_test_diff=0;
+lip=1;
 MY_APP=0;
 
 if (inlet_test)
@@ -81,6 +82,34 @@ elseif (inlet_test_diff)
     mask_rho(41,50:end)=0;
   %5) enter output file name
     fname='inlet_test_roms_bigger_grid.nc';
+
+elseif (lip)
+  %2) enter x and y coordinates of rho points
+    ncellsx=220;  dx=1;
+    ncellsy=8;    dy=2;
+    xx=[0:dx:dx*(ncellsx-1)];
+    yy=[0:dy:dy*(ncellsy-1)];
+  % 
+    x=repmat(xx',1,length(yy));
+    y=repmat(yy,length(xx),1);
+  %3) set depth
+    load lip_data.mat
+    depth_2e=depth_init;
+    depth_2e(1,1)=0;
+    depth_2e(1,2)=0.1;
+    depth_2e(end,1)=220;
+    depth_2e(end,2)=4;
+    depth_2e=depth_2e.';
+    depth=zeros(size(x));
+    depth(:,1)=interp1(depth_2e(1,:),depth_2e(2,:),x(:,1));
+    depth(:,2:end)=repmat(depth(:,1),1,7);
+    depth=-depth;
+  %4) set masking
+    mask_rho=ones(size(depth));
+%    mask_rho(:,1)=0;
+%    mask_rho(:,end)=0;
+  %5) enter output file name
+    fname='lip_roms_grid.nc';
 
 elseif (MY_APP)
   disp('set MY_APP=1 and then put your stuff in here')

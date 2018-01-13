@@ -20,9 +20,9 @@ function h=plot_perimeter(G, LineType)
 %    h            Plot handler (vector)
 %
 
-% svn $Id: plot_perimeter.m 735 2014-04-28 23:15:37Z arango $
+% svn $Id: plot_perimeter.m 832 2017-01-24 22:07:36Z arango $
 %=========================================================================%
-%  Copyright (c) 2002-2014 The ROMS/TOMS Group                            %
+%  Copyright (c) 2002-2017 The ROMS/TOMS Group                            %
 %    Licensed under a MIT/X style license                                 %
 %    See License_ROMS.txt                           Hernan G. Arango      %
 %=========================================================================%

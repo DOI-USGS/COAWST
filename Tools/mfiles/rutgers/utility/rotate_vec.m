@@ -43,9 +43,9 @@ function [Uout,Vout]=rotate_vec(Uinp,Vinp,angle,irotate)
 %    Vout        V-component data at RHO- or V-points (array)
 %
 
-% svn $Id: rotate_vec.m 711 2014-01-23 20:36:13Z arango $
+% svn $Id: rotate_vec.m 832 2017-01-24 22:07:36Z arango $
 %=========================================================================%
-%  Copyright (c) 2002-2014 The ROMS/TOMS Group                            %
+%  Copyright (c) 2002-2017 The ROMS/TOMS Group                            %
 %    Licensed under a MIT/X style license                                 %
 %    See License_ROMS.txt                           Hernan G. Arango      %
 %=========================================================================%
@@ -123,8 +123,8 @@ if (irotate == 0),
       for i = [1,L],
         UatV(1,2:M,:)=0.5.*(Uinp(i,1:Mm,:)+Uinp(i,2:M,:));
         Vangle(1,2:M,:)=0.5*(angle(i,1:Mm,:)+angle(i,2:M,:));
-        Vout(i,1:Mm,:)=-UatV(1,2:M,:).*sin(Vangle(1,1:Mm,:))-         ...
-                      Vinp(i,1:Mm,:).*cos(Vangle(1,1:Mm,:));
+        Vout(i,1:Mm,:)=-UatV(1,2:M ,:).*sin(Vangle(1,1:Mm,:))-        ...
+                        Vinp(i,1:Mm,:).*cos(Vangle(1,1:Mm,:));
       end
     
     else

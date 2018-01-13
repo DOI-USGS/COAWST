@@ -1,59 +1,60 @@
-function status=write_scope(Gname, Rscope, Uscope, Vscope);
+function status = write_scope(ncfile, Rscope, Uscope, Vscope)
 
 % WRITE_SCOPE:  Writes ROMS adjoint sensitivity scope masks
 %
-% status=write_scope(Gname, Rscope, Uscope, Vscope)
+% status = write_scope(ncfile, Rscope, Uscope, Vscope)
 %
 % This routine writes out adjoint sensitivity scope mask data into
 % GRID NetCDF file.
 %
 % On Input:
 %
-%    Gname       GRID NetCDF file name (character string).
+%    ncfile      GRID NetCDF file name (character string)
 %    Rscope      Adjoint sensitivity scope mask on RHO-points:
-%                  Rscope=0 inactive, Rscope=1 active.
+%                  Rscope=0 inactive, Rscope=1 active
 %    Uscope      Adjoint sensitivity scope mask on U-points:
-%                  Uscope=0 inactive, Uscope=1 active.
+%                  Uscope=0 inactive, Uscope=1 active
 %    Vscope      Adjoint sensitivity scope mask on V-points:
-%                  Vscope=0 inactive, Vscope=1 active.
+%                  Vscope=0 inactive, Vscope=1 active
 %
 
-% svn $Id: write_scope.m 485 2010-07-07 18:10:13Z arango $
-%===========================================================================%
-%  Copyright (c) 2002-2010 The ROMS/TOMS Group                              %
-%    Licensed under a MIT/X style license                                   %
-%    See License_ROMS.txt                           Hernan G. Arango        %
-%===========================================================================%
+% svn $Id: write_scope.m 832 2017-01-24 22:07:36Z arango $
+%=========================================================================%
+%  Copyright (c) 2002-2017 The ROMS/TOMS Group                            %
+%    Licensed under a MIT/X style license                                 %
+%    See License_ROMS.txt                           Hernan G. Arango      %
+%=========================================================================%
 
-%---------------------------------------------------------------------------
+%-------------------------------------------------------------------------
 % Inquire grid NetCDF file about scope variables.
-%---------------------------------------------------------------------------
+%-------------------------------------------------------------------------
 
-got.Rscope=0;  define.Rscope=1;  Vname.Rscope='scope_rho';
-got.Uscope=0;  define.Uscope=1;  Vname.Uscope='scope_u';
-got.Vscope=0;  define.Vscope=1;  Vname.Vscope='scope_v';
+got.Rscope=false;  define.Rscope=true;  Vname.Rscope='scope_rho';
+got.Uscope=false;  define.Uscope=true;  Vname.Uscope='scope_u';
+got.Vscope=false;  define.Vscope=true;  Vname.Vscope='scope_v';
 
-[varnam,nvars]=nc_vname(Gname);
+V=nc_vnames(ncfile);
+nvars=length(V.Variables);
 for n=1:nvars,
-  name=deblank(varnam(n,:));
+  name=char(V.Variables(n).Name);
   switch name
     case {Vname.Rscope}
-      got.Rscope=1;
-      define.Rscope=0;
+      got.Rscope   =true;
+      define.Rscope=false;
     case {Vname.Uscope}
-      got.Uscope=1;
-      define.Uscope=0;
+      got.Uscope   =true;
+      define.Uscope=false;
     case {Vname.Vscope}
-      got.Vscope=1;
-      define.Vscope=0;
+      got.Vscope   =true;
+      define.Vscope=false;
   end,
 end,
 
-%---------------------------------------------------------------------------
+%--------------------------------------------------------------------------
 %  If appropriate, define scope variables.
-%---------------------------------------------------------------------------
+%--------------------------------------------------------------------------
 
-if (define.Rscope | define.Uscope | define.Vscope),
+if (define.Rscope || define.Uscope || define.Vscope),
 
 %  Inquire about dimensions.
 
@@ -61,49 +62,40 @@ if (define.Rscope | define.Uscope | define.Vscope),
   Dname.xu='xi_u';      Dname.yu='eta_u';
   Dname.xv='xi_v';      Dname.yv='eta_v';
 
-  [Dnames,Dsizes]=nc_dim(Gname);
-  ndims=length(Dsizes);
+  D=nc_dinfo(ncfile);
+  ndims=length(D);
   for n=1:ndims,
-    dimid=n-1;
-    name=deblank(Dnames(n,:));
+    name=char(D(n).Name);
     switch name
       case {Dname.xr}
-        Dsize.xr=Dsizes(n);
-        did.xr=dimid;
+        Dsize.xr=D(n).Length;
+        did.xr  =D(n).dimid;
       case {Dname.yr}
-        Dsize.yr=Dsizes(n);
-        did.yr=dimid;
+        Dsize.yr=D(n).Length;
+        did.yr  =D(n).dimid;
       case {Dname.xu}
-        Dsize.xu=Dsizes(n);
-        did.xu=dimid;
+        Dsize.xu=D(n).Length;
+        did.xu  =D(n).dimid;
       case {Dname.yu}
-        Dsize.yu=Dsizes(n);
-        did.yu=dimid;
+        Dsize.yu=D(n).Length;
+        did.yu  =D(n).dimid;
       case {Dname.xv}
-        Dsize.xv=Dsizes(n);
-        did.xv=dimid;
+        Dsize.xv=D(n).Length;
+        did.xv  =D(n).dimid;
       case {Dname.yv}
-        Dsize.yv=Dsizes(n);
-        did.yv=dimid;
-    end,
-  end,
-
-%  Define NetCDF parameters.
-
-  [ncglobal]=mexnc('parameter','nc_global');
-  [ncdouble]=mexnc('parameter','nc_double');
-  [ncfloat ]=mexnc('parameter','nc_float');
-  [ncchar  ]=mexnc('parameter','nc_char');
+        Dsize.yv=D(n).Length;
+        did.yv  =D(n).dimid;
+    end
+  end
 
 %  Open GRID NetCDF file.
 
-  [ncid,status]=mexnc('open',Gname,'nc_write');
+  [ncid,status]=mexnc('open',ncfile,'nc_write');
   if (status ~= 0),
     disp('  ');
     disp(mexnc('strerror',status));
-    error(['WRITE_MASK: OPEN - unable to open file: ', Gname]);
-    return
-  end,
+    error(['WRITE_MASK: OPEN - unable to open file: ', ncfile]);
+  end
 
 
 %  Put GRID NetCDF file into define mode.
@@ -112,54 +104,56 @@ if (define.Rscope | define.Uscope | define.Vscope),
   if (status ~= 0),
     disp('  ');
     disp(mexnc('strerror',status));
-    error(['WRITE_MASK: REFDEF - unable to put into define mode.']);
-    return
-  end,
+    error('WRITE_MASK: REFDEF - unable to put into define mode.');
+  end
 
 %  Define scope mask on RHO-points.
 
   if (define.Rscope),
     Var.name          = Vname.Rscope;
-    Var.type          = ncdouble;
+    Var.type          = nc_constant('nc_double');
     Var.dimid         = [did.yr did.xr];
     Var.long_name     = 'adjoint sensitivity scope mask on RHO-points';
     Var.flag_values   = [0.0 1.0];
     Var.flag_meanings = ['inactive', blanks(1), ...
                          'active'];
 
-    [varid,status]=nc_vdef(ncid,Var);
+    [~,status]=nc_vdef(ncid,Var);
+    if (status ~= 0), return, end,
     clear Var
-  end,
+  end
 
 %  Define scope mask on U-points.
 
   if (define.Uscope),
     Var.name          = Vname.Uscope;
-    Var.type          = ncdouble;
+    Var.type          = nc_constant('nc_double');
     Var.dimid         = [did.yu did.xu];
     Var.long_name     = 'adjoint sensitivity scope mask on U-points';
     Var.flag_values   = [0.0 1.0];
     Var.flag_meanings = ['inactive', blanks(1), ...
                          'active'];
 
-    [varid,status]=nc_vdef(ncid,Var);
+    [~,status]=nc_vdef(ncid,Var);
+    if (status ~= 0), return, end,
     clear Var
-  end,
+  end
 
 %  Define scope mask on V-points.
 
   if (define.Vscope),
     Var.name          = Vname.Vscope;
-    Var.type          = ncdouble;
+    Var.type          = nc_constant('nc_double');
     Var.dimid         = [did.yv did.xv];
     Var.long_name     = 'adjoint sensitivity scope mask on V-points';
     Var.flag_values   = [0.0 1.0];
     Var.flag_meanings = ['inactive', blanks(1), ...
                          'active'];
 
-    [varid,status]=nc_vdef(ncid,Var);
+    [~,status]=nc_vdef(ncid,Var);
+    if (status ~= 0), return, end,
     clear Var
-  end,
+  end
 
 %  Leave definition mode.
 
@@ -167,8 +161,8 @@ if (define.Rscope | define.Uscope | define.Vscope),
   if (status ~= 0),
     disp('  ');
     disp(mexnc('strerror',status));
-    error(['WRITE_MASK: ENDDEF - unable to leave definition mode.']);
-  end,
+    error('WRITE_MASK: ENDDEF - unable to leave definition mode.');
+  end
 
 %  Close GRID NetCDF file.
 
@@ -176,17 +170,17 @@ if (define.Rscope | define.Uscope | define.Vscope),
   if (status ~= 0),
     disp('  ');
     disp(mexnc('strerror',status));
-    error(['WRITE_MASK: CLOSE - unable to close NetCDF file: ', Gname]);
-  end,
+    error(['WRITE_MASK: CLOSE - unable to close NetCDF file: ', ncfile]);
+  end
 
-end,
+end
 
-%---------------------------------------------------------------------------
+%--------------------------------------------------------------------------
 %  Write out mask data into GRID NetCDF file.
-%---------------------------------------------------------------------------
+%--------------------------------------------------------------------------
 
-[status]=nc_write(Gname,Vname.Rscope,Rscope);
-[status]=nc_write(Gname,Vname.Uscope,Uscope);
-[status]=nc_write(Gname,Vname.Vscope,Vscope);
+[status]=nc_write(ncfile,Vname.Rscope,Rscope);
+[status]=nc_write(ncfile,Vname.Uscope,Uscope);
+[status]=nc_write(ncfile,Vname.Vscope,Vscope);
 
 return

@@ -62,15 +62,16 @@ function F=plot_nesting(Gnames, Hnames, Vname, Tindex, Level, varargin)
 %                    F(n).ht           figure title handler
 %                    F(n).hc           figure coastlines handler
   
-% svn $Id: plot_nesting.m 746 2014-12-15 23:24:27Z arango $
+% svn $Id: plot_nesting.m 832 2017-01-24 22:07:36Z arango $
 %=========================================================================%
-%  Copyright (c) 2002-2014 The ROMS/TOMS Group                            %
+%  Copyright (c) 2002-2017 The ROMS/TOMS Group                            %
 %    Licensed under a MIT/X style license                                 %
 %    See License_ROMS.txt                           Hernan G. Arango      %
 %=========================================================================%
 
 % Initialize.
 
+got.data  = false;
 got.coast = false;
 got.Mname = false;
 got.Xname = false;
@@ -327,6 +328,14 @@ for n=1:Nfiles,
   if (~isempty(Tname)),
     Tvalue = nc_read(char(Hnames(n)),Tname,Tindex);
     Tvalue = Tvalue/86400;                  % seconds to days
+
+    Tunits=nc_getatt(char(Hnames(n)),'units',Tname);
+    if (strfind(Tunits,'seconds since ')),
+      basedate = Tunits(14:end);
+      epoch    = datenum(basedate);
+      Tstring  = datestr(Tvalue+epoch, 0);
+      got.date = true;
+    end    
   end
 
   ReplaceValue = NaN;
@@ -419,8 +428,15 @@ for n=1:Nfiles,
     ht = title(texlabel(my_title,'literal'),                            ...
                'FontSize',14,'FontWeight','bold' );
 
-    F(n).ht = ht;                           % figure title handdler
+    F(n).ht = ht;                           % figure title handler
 
+    if (got.date),
+      xl = xlabel(texlabel(Tstring,'literal'),                          ...
+                  'FontSize',14,'FontWeight','bold' );
+
+      F(n).xl = xl;                         % figure title handler
+    end
+    
     set (gcf, 'renderer', 'OpenGL');
     alpha (hp, 1);
     
