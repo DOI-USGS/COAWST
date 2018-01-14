@@ -12,7 +12,9 @@ NGRIDS_SWAN=0;
 NGRIDS_WW3=1;
 NGRIDS_WRF=1;
 
-%  END OF USER INPUT  %%%
+%%%%%%%%%%%%%%%%%  END OF USER INPUT  %%%%%%%%%%%%%%%%%%%
+
+
 num_str=(NGRIDS_ROMS+NGRIDS_SWAN+NGRIDS_WW3+NGRIDS_WRF)*2;
 for mm=1:num_str
   strnames(mm,:)='            ';
@@ -103,10 +105,12 @@ for mm=1:count
 %    zs(add_src(mm))=zs(add_src(mm))+add_remap(mm);
 %  end
   
-  figure
-  plot(zd,'b+')
-  hold on
-  plot(zs,'r+')
+  if (0)
+    figure
+    plot(zd,'b+')
+    hold on
+    plot(zs,'r+')
+  end
   figure
   subplot(211)
   zs2=reshape(zs,src_size(1),src_size(2));
