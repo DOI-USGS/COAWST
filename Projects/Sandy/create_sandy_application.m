@@ -2,9 +2,10 @@
 %
 % jcwarner 19August2014
 %          29July2016 - general updates for workshop.
+%          10 Jan 2018 - add WAVEWATCH III coupling
 %
 % This is a list of procedures and notes used to create the 
-% Projects/Sandy files for roms and swan. The wrf files
+% Projects/Sandy files for roms, swan, and ww3. The wrf files
 % are assumed to already be created.
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -446,9 +447,130 @@ edit sandy.h
 #define MCT_INTERP_WV2AT
 #define MCT_INTERP_OC2WV
 %
-% recompile and run with
+% recompile and run
 %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%  WAVEWATCH III only
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Step 21 - I added text to the COAWST USer manual Section 11 for WW3 by itself.
+% please read that part of the manual.
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%  ROMS - WRF - WAVEWATCH III coupling
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%Step 22 - to run ROMS + WRF + WW3
+edit sandy.h
+% some of model setup cppdefs:
+#define ROMS_MODEL
+#define NESTING
+#define WRF_MODEL
+#define WW3_MODEL
+#undef  SWAN_MODEL
+#define MCT_LIB
+#define MCT_INTERP_OC2AT
+#define MCT_INTERP_WV2AT
+#define MCT_INTERP_OC2WV
+%
+%Step 23 edit coawst.bash
+% Set these 5 environment variables:
+#1) COAWST_WW3_DIR is a pointer to root WW3 code, do not change.
+export   COAWST_WW3_DIR=${MY_ROOT_DIR}/WW3
 
+#2) WWATCH3_NETCDF can be NC3 or NC4. We need NC4 for COAWST. do not change.
+export   WWATCH3_NETCDF=NC4
 
+#3) WWATCH_ENV points to WW3 environment listing. do not change.
+export   WWATCH_ENV=${COAWST_WW3_DIR}/wwatch.env
 
+#4) NETCDF_CONFIG is needed by WW3. You need to set this:
+export   NETCDF_CONFIG=/usr/bin/nc-config
+
+#5) WW3_SWITCH_FILE is like cpp options for WW3. You need to create it and
+#        list the name here. This is described below.
+export  WW3_SWITCH_FILE=sandy_coupled
+
+3) As with all applications, set the MPI and compiler information (this will depend on your system):
+export           USE_MPI=on            # distributed-memory parallelism
+export        USE_MPIF90=on            # compile with mpif90 script
+export         which_MPI=openmpi       # compile with OpenMPI library
+export              FORT=ifort
+
+4) Set the location of the header and analytical files:
+export     MY_HEADER_DIR=${MY_PROJECT_DIR}/Projects/Sandy
+export MY_ANALYTICAL_DIR=${MY_PROJECT_DIR}/Projects/Sandy
+
+5) You may need to edit some WW3 specific build files.  So if you selected ifort (for example), then we need to look at
+COAWST/WW3/bin/comp.Intel
+COAWST/WW3/bin/link.Intel
+Please look at these fiels (or the files needed for your compiler) to see if the flags are correct.
+
+6) Create a switch file.
+The switch file is like the cppdefs file for roms. It tells WW3 what features to compile. We have a file COAWST/WW3/bin/switch_sandy_coupled. List part of the name in the coawst.bash file. The file needs to start with ‘switch_’ and list the last part in the coawst.bash file. Here is the switch_sandy_coupled:
+
+F90 NOGRB COAWST LRB4 SCRIP SCRIPNC NC4 TRKNC DIST MPI PR3 UQ FLX0 LN1 ST4 STAB0 NL1 BT4 DB1 MLIM TR0 BS0 IC2 IS2 REF1 IG1 XX0 WNT2 WNX1 RWND CRT1 CRX1 TIDE O0 O1 O2 O2a O2b O2c O3 O4 O5 O6 O7
+
+Please read the WW3 manual in the WW3 directory. Some important options are:
+NOPA	(not listed above) -this is for stand alone. If couled to another model, use COAWST and not NOPA. Do not use PALM.
+COAWST	list this if WW3 coupled to another model, and then do not list NOPA.
+SCRIP, SCRIPNC	I don’t use the WW3 scrip but we may in the future. So these are not really needed.
+DIST, MPI	this is to use mpi, needed.
+
+7) compile the code by running ./coawst.bash at the command prompt.
+If it compiles correctly, you will get a coawstM.
+
+8) Now we need to create some WW3 grids files. Here is a way to do that. There are probalbly many other ways to do this.
+You can use Tools/mfiles/mtools/create_ww3_grid_files to create an x, y, bath, and mask files for WW3. This m file uses the roms grid to create the WW3 files of:
+ww3_sandy_xcoord.dat, ww3_sandy_ycoord.dat, ww3_sandy_bathy.bot, and ww3_sandy_mapsta.inp.
+
+9) Forcinng files for WW3: again, there are probably many ways to do this, but here is one way.
+This is only needed if you are not coupled to WRF. You can use Tools/mfiles/mtools/create_ww3_wind_forcing to create a wind forcing file ww3_sandy_winnd_forc.dat.
+
+10) We then need to create some WW3 run files using 4 of their utilities:
+- edit WW3/work/ww3_grid.inp. Here is where you enter number of bins, advection choices, time steps (we chose 180), and the grid settings 
+     'CURV'  T  'NONE'
+      84     64
+      40 1. 0. 1 1 'FREE' 'NAME' 'ww3_sandy_xcoord.dat'
+      40 1. 0. 1 1 'FREE' 'NAME' 'ww3_sandy_ycoord.dat'
+      -1.0  -1.0  40 -1. 1 1 '(....)' 'NAME' 'ww3_sandy_bathy.bot'
+Then cd to WW3/work and run ../exe/ww3_grid to create mask.ww3, mapsta.ww3, mod_def.ww3.
+
+- edit WW3/work/ww3_strt.inp. Here is where you enter init information.
+Then cd to WW3/work and run ../exe/ww3_strt to create restart.ww3.
+
+- edit WW3/work/ww3_prep.inp. Here is where you enter forcing data. You do not need this if it is couled to WRF. We have:
+$
+   'WND' 'LL' T T
+$ Additional input format type 'LL' ---------------------------------- $
+$ Grid range (degr. or m) and number of points for axes, respectively.
+$ Example for longitude-latitude grid.
+    -105. -50. 551   10. 50. 401
+This tells WW3 that the wind is on a grid with these lon/lat values.
+$ Define data files -------------------------------------------------- $
+$ The first input line identifies the file format with FROM, IDLA and
+$ IDFM, the second (third) lines give the file unit number and name.
+  'NAME' 1 1 '(....)' '(....)'
+   40 'ww3_sandy_wind_forc.dat'
+This tells WW3 the name of the wind forcing file.
+Then cd to WW3/work and run ../exe/ww3_prep to create wind.ww3 (not needed if coupled to wrf).
+
+- edit WW3/work/ww3_shel.inp. Here is where you enter run information.
+Here we choose:
+   C F     Water levels
+   C F     Currents
+   C F     Winds
+The first letter is to set if the field is to be not used (F), used as read in from a file (T), or used and read in from a coupled model ( C). So those settings are to get coupled water levels, currents, and winds.
+
+You need to set the run times here:
+$ Type 1 : Fields of mean wave parameters
+   20121028 120000   1800  20121030 120000
+and set to have the fields of Hwave, Dwave, and Lwave written out:
+$ HS  LM  T02 T0M1 T01 FP DIR SPR DP
+  T   T   T   T   T   T   T   T   T
+
+We do NOT need to run ../exe/ww3_shel because that would run the wave model. We will run the wave model as coawstM.
+
+11) Now we are ready to run coawstM.  When the model is done you can visualize the output by using 
+cd WW3/work and type
+../exe/ww3_ounf
+This will create a ww3.*.nc file
 
