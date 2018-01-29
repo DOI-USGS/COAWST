@@ -139,22 +139,22 @@
 !  Set array initialization range.
 !
 #ifdef _OPENMP
-      IF (WESTERN_EDGE) THEN
+      IF (DOMAIN(ng)%Western_Edge(tile)) THEN
         Imin=BOUNDS(ng)%LBi(tile)
       ELSE
         Imin=Istr
       END IF
-      IF (EASTERN_EDGE) THEN
+      IF (DOMAIN(ng)%Eastern_Edge(tile)) THEN
         Imax=BOUNDS(ng)%UBi(tile)
       ELSE
         Imax=Iend
       END IF
-      IF (SOUTHERN_EDGE) THEN
+      IF (DOMAIN(ng)%Southern_Edge(tile)) THEN
         Jmin=BOUNDS(ng)%LBj(tile)
       ELSE
         Jmin=Jstr
       END IF
-      IF (NORTHERN_EDGE) THEN
+      IF (DOMAIN(ng)%Northern_Edge(tile)) THEN
         Jmax=BOUNDS(ng)%UBj(tile)
       ELSE
         Jmax=Jend
@@ -202,7 +202,7 @@
       USE mod_scalars
       USE mod_sediment
 !
-      implicit none 
+      implicit none
 !
 !  Imported variable declarations.
 !
@@ -225,7 +225,7 @@
       integer  :: iv1,iv2,iv3,iv,itrc
       real(r8) :: f_vol(NCS),f_rho(NCS)
       real(r8), parameter :: mu = 0.001_r8
-      real(r8) :: eps 
+      real(r8) :: eps
       eps = epsilon(1.0)
 !
 ! ALA the rest of the initialization
@@ -249,20 +249,20 @@
 !!--------------------------------------------------
 !! floc characteristics
       DO itrc=1,NCS
-         f_diam(itrc)=Sd50(itrc,ng) 
+         f_diam(itrc)=Sd50(itrc,ng)
          f_vol(itrc)=pi/6.0_r8*(f_diam(itrc))**3.0_r8
          f_rho(itrc)=rhoref+(2650.0_r8-rhoref)*                          &
      &     (f_dp0/f_diam(itrc))**(3.0_r8-f_nf)
          f_mass(itrc)=f_vol(itrc)*(f_rho(itrc)-rhoref)
       ENDDO
-      f_mass(NCS+1)=f_mass(NCS)*2.0_r8+1.0_r8  
+      f_mass(NCS+1)=f_mass(NCS)*2.0_r8+1.0_r8
       IF (f_diam(1).eq.f_dp0)  THEN
           f_mass(1)=f_vol(1)*Srho(1,ng)
       ENDIF
-!TODO - This wont parallelize 
+!TODO - This wont parallelize
       WRITE(*,*) ' '
       WRITE(*,*) '*** FLOCMOD INIT *** '
-      write(*,*) 'NAT, NPT, NCS, NNS:', NAT,NPT,NCS,NNS   
+      write(*,*) 'NAT, NPT, NCS, NNS:', NAT,NPT,NCS,NNS
       WRITE(*,*) 'class diameter (um)  volume (m3)  density (kg/m3)  mass (kg)'
       DO itrc=1,NCS
          WRITE(*,*) itrc,f_diam(itrc)*1e6,f_vol(itrc),f_rho(itrc),f_mass(itrc)
@@ -362,7 +362,7 @@
            IF (f_mass(iv2)/f_nb_frag .gt. f_mass(iv1-1) &
                 .and. f_mass(iv2)/f_nb_frag .le. f_mass(iv1)) THEN
 
-              IF (iv1 .eq. 1) THEN 
+              IF (iv1 .eq. 1) THEN
                  f_weight=1.0_r8
               ELSE
                  f_weight=(f_mass(iv2)/f_nb_frag-f_mass(iv1-1))/        &
@@ -395,7 +395,7 @@
            IF (f_mass(iv2)/(2.0_r8*f_nb_frag) .gt. f_mass(iv1-1) .and.  &
      &          f_mass(iv2)/(2.0_r8*f_nb_frag) .le. f_mass(iv1)) THEN
 
-              IF (iv1 .eq. 1) THEN 
+              IF (iv1 .eq. 1) THEN
                  f_weight=1.0_r8
               ELSE
                  f_weight=(f_mass(iv2)/(2.0_r8*f_nb_frag)-              &
@@ -416,7 +416,7 @@
            ! update for ternary fragments
            f_g3(iv2,iv1)=f_g3(iv2,iv1)+(1.0_r8-f_ero_frac)*(f_ater)*    &
      &            f_weight*f_beta*f_diam(iv2)*((f_diam(iv2)-f_dp0)/     &
-     &            f_dp0)**(3.0_r8-f_nf)*f_mass(iv2)/f_mass(iv1)   
+     &            f_dp0)**(3.0_r8-f_nf)*f_mass(iv2)/f_mass(iv1)
 
            ! Floc erosion
 
@@ -447,7 +447,7 @@
                  f_weight=0.0_r8
               ENDIF
 
-              ! update for eroded floc masses 
+              ! update for eroded floc masses
 
               f_g3(iv2,iv1)=f_g3(iv2,iv1)+f_ero_frac*f_weight*f_beta*   &
      &            f_diam(iv2)*(max(eps,(f_diam(iv2)-f_dp0))/f_dp0)**    &
@@ -479,8 +479,8 @@
            mult=1.0_r8
         ENDIF
 
-        f_l1_sh(iv2,iv1)=mult*f_alpha*f_coll_prob_sh(iv2,iv1) 
-        f_l1_ds(iv2,iv1)=mult*f_alpha*f_coll_prob_ds(iv2,iv1) 
+        f_l1_sh(iv2,iv1)=mult*f_alpha*f_coll_prob_sh(iv2,iv1)
+        f_l1_ds(iv2,iv1)=mult*f_alpha*f_coll_prob_ds(iv2,iv1)
 
        ENDDO
       ENDDO
@@ -516,7 +516,7 @@
       write(*,*) 'f_g3',sum(f_g3)
       write(*,*) 'f_l3',sum(f_l3)
       WRITE(*,*) ' '
-      WRITE(*,*) '*** END FLOCMOD INIT *** '    
+      WRITE(*,*) '*** END FLOCMOD INIT *** '
 
 
 !      END FORMER SUBROUTINE flocmod_kernels
