@@ -762,7 +762,7 @@
 #  define FRC_FILE
 # endif
 #else
-# if !defined ANA_SMFLUX   || \
+# if !defined ANA_SMFLUX
 #  define FRC_FILE
 # endif
 #endif
@@ -941,8 +941,8 @@
 #endif
 
 /*
-** Define internal switch for vegetation horizontal mixing 
+** Define internal switch for vegetation horizontal mixing
 */
-#if defined VEG_HMIXING  
+#if defined VEG_HMIXING
 # define VISC_3DCOEF
 #endif

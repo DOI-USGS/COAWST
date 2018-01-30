@@ -20,6 +20,8 @@ function create_roms_forcings(lon,lat,time,fn,varargin)
 % rain: rain fall rate (kg/m2/s)
 % swrad: solar shortwave radiation (W/m2)
 % lwrad: solar longwave radiation (W/m2)
+% sustr: surface u-stress (N/m2)
+% svstr: surface v-stress (N/m2)
 % 
 % e.g. 
 % create_roms_forcings(lon_rho,lat_rho,ocean_time, 'frc_bulk.nc', 'Uwind', 'Vwind')
@@ -156,7 +158,7 @@ if sum(strcmpi(varargin,'rain'))>0
   rainID = netcdf.defVar(nc,'rain','double',[lon_dimID lat_dimID rt_dimID]);
   netcdf.putAtt(nc,rainID,'long_name','rain fall rate');
   netcdf.putAtt(nc,rainID,'units','kilogram meter-2 second-1');
-  netcdf.putAtt(nc,rainID,'field','Qair, scalar, series');
+  netcdf.putAtt(nc,rainID,'field','rain, scalar, series');
   netcdf.putAtt(nc,rainID,'coordinates','lon lat');
   netcdf.putAtt(nc,rainID,'time','rain_time');
 end
@@ -194,6 +196,38 @@ if sum(strcmpi(varargin,'lwrad'))>0
   netcdf.putAtt(nc,lwradID,'coordinates','lon lat');
   netcdf.putAtt(nc,lwradID,'time','lwrad_time');
 end
+
+if sum(strcmpi(varargin,'sustr'))>0
+  su_dimID = netcdf.defDim(nc,'sustr_time',t);
+  suID = netcdf.defVar(nc,'sustr_time','double',su_dimID);
+  netcdf.putAtt(nc,suID,'long_name','sustr_time');
+  netcdf.putAtt(nc,suID,'units','days');
+  netcdf.putAtt(nc,suID,'field','sustr_time, scalar, series');
+
+  sustrID = netcdf.defVar(nc,'sustr','double',[lon_dimID lat_dimID su_dimID]);
+  netcdf.putAtt(nc,sustrID,'long_name','surface u-stress');
+  netcdf.putAtt(nc,sustrID,'units','Newtons meter-2');
+  netcdf.putAtt(nc,sustrID,'field','sustr, scalar, series');
+  netcdf.putAtt(nc,sustrID,'coordinates','lon lat');
+  netcdf.putAtt(nc,sustrID,'time','sustr_time');
+end
+
+if sum(strcmpi(varargin,'svstr'))>0
+  sv_dimID = netcdf.defDim(nc,'svstr_time',t);
+  svID = netcdf.defVar(nc,'svstr_time','double',sv_dimID);
+  netcdf.putAtt(nc,svID,'long_name','svstr_time');
+  netcdf.putAtt(nc,svID,'units','days');
+  netcdf.putAtt(nc,svID,'field','svstr_time, scalar, series');
+
+  svstrID = netcdf.defVar(nc,'svstr','double',[lon_dimID lat_dimID sv_dimID]);
+  netcdf.putAtt(nc,svstrID,'long_name','surface v-stress');
+  netcdf.putAtt(nc,svstrID,'units','Newtons meter-2');
+  netcdf.putAtt(nc,svstrID,'field','svstr, scalar, series');
+  netcdf.putAtt(nc,svstrID,'coordinates','lon lat');
+  netcdf.putAtt(nc,svstrID,'time','svstr_time');
+end
+
+
 netcdf.close(nc)
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -265,6 +299,20 @@ if sum(strcmpi(varargin,'lwrad'))>0
   lwrad=evalin('base','lwrad');
   ID=netcdf.inqVarID(nc,'lwrad');
   netcdf.putVar(nc,ID,lwrad);
+end
+if sum(strcmpi(varargin,'sustr'))>0
+  ID=netcdf.inqVarID(nc,'sustr_time');
+  netcdf.putVar(nc,ID,time);
+  sustr=evalin('base','sustr');
+  ID=netcdf.inqVarID(nc,'sustr');
+  netcdf.putVar(nc,ID,sustr);
+end
+if sum(strcmpi(varargin,'svstr'))>0
+  ID=netcdf.inqVarID(nc,'svstr_time');
+  netcdf.putVar(nc,ID,time);
+  svstr=evalin('base','svstr');
+  ID=netcdf.inqVarID(nc,'svstr');
+  netcdf.putVar(nc,ID,svstr);
 end
 netcdf.close(nc)
 
