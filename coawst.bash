@@ -109,7 +109,7 @@ export   ROMS_APPLICATION=${COAWST_APPLICATION}
 
 # Set a local environmental variable to define the path to the directories
 # where all this project's files are kept.
-export   MY_ROOT_DIR=/cygdrive/d/COAWST_tests/coawst_v3.3_test10
+export   MY_ROOT_DIR=/cygdrive/e/data/models/COAWST
 export   MY_PROJECT_DIR=${MY_ROOT_DIR}
 
 # The path to the user's local current ROMS source code.
