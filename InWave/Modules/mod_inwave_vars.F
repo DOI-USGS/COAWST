@@ -10,7 +10,7 @@
 !  cx        wave celerity xi direction                                !
 !  cy        wave celerity eta direction                               !
 !  ct        wave celerity direction direction                         !
-!  pd        wave direction bins, per degrees                          !
+!  pd        wave direction bins, per radians                          !
 !  Tr        relative short wave period                                !
 !  Ta        absolute short wave period                                !
 !  kwc       wave number in wave current flows                         !

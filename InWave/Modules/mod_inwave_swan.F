@@ -2,8 +2,6 @@
       MODULE mod_inwave_swan
 !
 !svn $Id: swan_reader.F 1336 2008-01-24 02:45:56Z jcwarner $
-! LAST CHANGE: mai 12/28/2010
-
 !=======================================================================
 !                                                                      !
 !  NDIR        number of directional dimensions in Fourier components  !
@@ -55,9 +53,6 @@
 !
 !=======================================================================
 !                                                                      !
-!  Currently,  this routine is only executed in serial mode by the     !
-!  main thread.                                                        !
-!                                                                      !
 !  CONTAINS THE FOLLOWING SUBROUTINES:                                 !
 !                                                                      !
 !     inwave_swan: this is the main driver of boundary conditions      !
@@ -74,7 +69,7 @@
 !=======================================================================
 !
 
-# ifdef INWAVE_SWAN_COUPLING
+#ifdef INWAVE_SWAN_COUPLING
 
         USE mod_kinds
         USE mod_inwave_params
@@ -113,6 +108,7 @@
          real(r8), pointer :: Ampzeta(:,:)
          real(r8), pointer :: Ampzeta_tot(:)
          real(r8), pointer :: position(:)
+         real(r8), pointer :: bndwave(:)
 
          complex(fftkind),dimension(:),allocatable   :: CompFn, Comptemp
          complex(fftkind),dimension(:),allocatable   :: Comptemp_tot
@@ -217,6 +213,12 @@
       DO dir_index=1,ND
         call FourierComp (dir_index, ng, first)
       ENDDO
+!
+!-----------------------------------------------------------------------
+! Compute the boundwave
+!-----------------------------------------------------------------------
+!
+! jcw     call boundwave (ng, first)
 !
 !-----------------------------------------------------------------------
 ! Compute the Hilbert transform
@@ -496,26 +498,26 @@
 
       integer :: i, j, k, Npts, MyError
       real(r8) :: twopi
-#ifdef DISTRIBUTE
+# ifdef DISTRIBUTE
       real(r8), allocatable :: wrk(:)
-#endif
+# endif
 
       call random_number(WAVES(ng)%phase)
 
       twopi=2.0_r8*pi
 
-#ifdef DISTRIBUTE
+# ifdef DISTRIBUTE
       IF (Master) THEN
-#endif
+# endif
         DO i=1,WAVES(ng)%nfreq
           DO j=1,WAVES(ng)%ndir
             WAVES(ng)%phase(i,j)=WAVES(ng)%phase(i,j)*twopi
           END DO
         END DO
-#ifdef DISTRIBUTE
+# ifdef DISTRIBUTE
       END IF
-#endif
-#ifdef DISTRIBUTE
+# endif
+# ifdef DISTRIBUTE
 !
 !  Scatter phase to all the nodes.
 !
@@ -541,8 +543,8 @@
       END DO
 !
       deallocate(wrk)
-#endif
-      
+# endif
+
       RETURN
 
       END SUBROUTINE random_phase
@@ -578,8 +580,8 @@
       SUBROUTINE amplitudes (ng)
 !***********************************************************************
 !
-      use mod_scalars
-      use mod_inwave_params
+      USE mod_scalars
+      USE mod_inwave_params
       USE mod_inwave_vars
 
       implicit none
@@ -622,9 +624,7 @@
       SUBROUTINE FourierComp (dir_index, ng, first)
 !***********************************************************************
 !
-
       USE mod_scalars
-!      USE mod_inwave_spectra
 
       implicit none
 
@@ -634,15 +634,13 @@
 
 !  Local variable declarations.
 !
-      integer                         :: mai, jcw
-      integer                         :: i, j, F2, nn
+      integer                         :: i, j
       real(r8)                        :: cff
       real(r8)                        :: twopi
       complex(kind(0.0d0))            :: compi
 
       twopi=2.0_r8*pi
 
-      F2=0
       compi = (0.0_r8,1.0_r8)
 
 ! COMPUTES THE FOURIER COMPONENTS
@@ -675,7 +673,150 @@
       RETURN
 
       END SUBROUTINE FourierComp
+!
+!***********************************************************************
+      SUBROUTINE boundwave (ng, first)
+!                                                                       !
+!                compute the                                            !
+!                wave envelope and the associated bound wave (Hasselman,!
+!                1962; Herbers et al., 1994; Van Dongeren et al., 2003).!
+!                A double summation technique                           !
+!***********************************************************************
+!
+      USE mod_scalars
+      USE mod_inwave_vars
 
-# endif
+      implicit none
+
+!  Imported variable declarations.
+!
+      integer, intent(in) :: ng, first
+
+!  Local variable declarations.
+!
+      integer                         :: i, j, p, f1, f2, dum
+      real(r8)                        :: cff, cff1, cff2, twopi, otwopi
+      real(r8)                        :: error, Tr_min
+      real(r8)                        :: fac1, fac2, fac3
+      real(r8)                        :: L0, k0, k1, kh, wr
+      real(r8)                        :: F, FDER, tanhkh
+      real(r8)                        :: DDf, DDtheta, k3, Z_bw
+      real(r8)                        :: D1, D2, D3, D4, DTOT, E3, A3
+      real(r8)                        :: h0
+
+      real(r8), allocatable           :: k(:)
+
+      real(r8), parameter :: maxErr = 0.1_r8
+!     real(r8), parameter :: kwc_max = 10.0_r8
+
+      twopi=2.0_r8*pi
+      otwopi=1.0_r8/(2.0_r8*pi)
+      Tr_min=1.0_r8
+      h0=15.0_r8
+!
+!  Allocate bouundwave array.
+!
+      allocate (k(WAVES(ng)%nfreq))
+      IF (first.eq.1) THEN
+        allocate(WAVES(ng)%bndwave(WAVES(ng)%Insteps))
+      ENDIF
+      DO i=1,WAVES(ng)%Insteps
+        WAVES(ng)%bndwave(i)=0.0_r8
+      END DO
+!
+! Compute the wave number or each freq bin
+!
+      DO i=1,WAVES(ng)%nfreq
+        L0=g*otwopi*WAVES(ng)%Trep**2.0_r8
+        k0=twopi/L0
+        error=100.0_r8
+        wr=twopi/MAX(Tr_min,WAVES(ng)%Trep)
+        DO WHILE(error.gt.maxErr)
+          kh=k0*h0
+          tanhkh=TANH(kh)
+          cff1=wr**2.0_r8
+          cff2=-g*k0*tanhkh
+          F=cff1+cff2
+          cff1=-g*tanhkh
+          cff2=-g*kh/COSH(kh)**2.0_r8
+          FDER=cff1+cff2
+          k1=k0-F/FDER
+          error=100.0_r8*ABS((k1-k0)/k0)
+          k0=k1
+        END DO
+        k(i)=k0
+      END DO
+!
+! Compute the energy transfer for each pair of frequency bins
+!
+!     dum=find(f<fcutoff);
+!     DO f1=dum(end):nf-1
+
+      DO f1=1,WAVES(ng)%nfreq-1
+        DO f2=f1,WAVES(ng)%nfreq
+          fac1=WAVES(ng)%f(f1)*WAVES(ng)%f(f2)
+          fac2=1.0_r8/cosh(k(f1)*h0)
+          fac3=1.0_r8/cosh(k(f2)*h0)
+          DO p=1,ND
+          
+          write(*,*) 'doing f1 f2 p ', f1,f2,p,WAVES(ng)%nfreq,ND
+!
+! Compute the freq diff, dir diff, wave number, and phase of bound wave.
+!
+            DDf=WAVES(ng)%f(f2)-WAVES(ng)%f(f1)
+!           DDtheta=(WAVES(ng)%Sdir(f2)-WAVES(ng)%Sdir(f1))*deg2rad
+            DDtheta=WAVEG(ng)%pd*(p-1)
+            k3=sqrt(k(f2)**2+k(f1)**2-2.0_r8*k(f2)*k(f1)*COS(DDtheta))
+            Z_bw=WAVES(ng)%phase(f1,p)-WAVES(ng)%phase(f2,p)+pi
+!
+!  Compute the double summation.
+!
+            D1=g*k(f1)*k(f2)*COS(DDtheta+pi)/                           &
+     &         (8.0_r8*pi**2*fac1)*                                     &
+     &         cosh(k3*h0)*fac2*fac3
+            D2=-g*(DDf)/((g*k3*tanh(k3*h0)-(2.0_r8*pi)**2*DDf**2)*      &
+     &                   fac1)
+            D3=DDf*(((2.0_r8*pi)**4*(fac1)**2)/                         &
+     &         (g**2)-k(f1)*k(f2)*COS(DDtheta+pi))
+            D4=-0.5*(-WAVES(ng)%f(f1)*k(f2)**2*fac3**2+                 &
+     &                WAVES(ng)%f(f2)*k(f1)**2*fac2**2)
+            DTOT=D1+D2*(D3+D4)
+
+!            if DDf>fcutoff
+!              DTOT(f1,f2)=0;  % do not consider frequencies higher than fcutoff
+!            end   
+!        
+!            if DDf<fmin
+!              DTOT(f1,f2)=0;  % do not consider frequencies lower than fmin
+!            end   
+!            if (isnan(DTOT(f1,f2))==1) 
+!              DTOT(f1,f2)=0;
+!            end
+
+!
+!  Compute energy of bound wave
+!
+!           cff=2.0_r8*DTOT**2* Si(f1) * Si(f2) * df
+            cff=2.0_r8*DTOT**2*WAVES(ng)%SD(f1,p)*WAVES(ng)%SD(f2,p)*   &
+     &          WAVEG(ng)%pd*WAVEG(ng)%pd*WAVES(ng)%df
+            A3=SQRT(2.0_r8*cff*WAVES(ng)%df);
+!
+!            IF (DDf.le.fcutoff) THEN
+             DO i=1,WAVES(ng)%Insteps
+               cff=REAL((i-1),r8)*dt(ng)
+               WAVES(ng)%bndwave(i)=WAVES(ng)%bndwave(i)+0.5_r8*A3*     &
+     &                              COS(2.0_r8*pi*DDf*cff+Z_bw)
+             END DO
+!            ENDIF
+          END DO
+        END DO
+      END DO
+      deallocate (k)
+
+      RETURN
+
+      END SUBROUTINE boundwave
+
+#endif
 
       END MODULE mod_inwave_swan
