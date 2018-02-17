@@ -9,7 +9,7 @@ function ROMS2SWAN(varargin);
 % lon_rho, lat_rho, h, and mask_rho from the file.
 %
 % example 2:
-% ncload roms_grid.nc
+% netcdf_load('roms_grid.nc')
 % roms2swan(lon_rho,lat_rho,h,mask_rho)
 % if the input is four variables, it assumes
 % that these are the variables x_rho (or lon_rho), y_rho (or lat_rho), 
