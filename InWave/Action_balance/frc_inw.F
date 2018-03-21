@@ -233,6 +233,19 @@
               Pwave_bot(i,j)=Pmin
 #  endif
             ENDIF
+          ELSE
+              Hwave(i,j)=0.0_r8
+              Dwave(i,j)=0.0_r8
+              Lwave(i,j)=Lmin
+#  if defined WAVES_UB
+              Uwave_rms(i,j)=0.0_r8
+#  endif
+#  if defined WAVES_TOP_PERIOD
+              Pwave_top(i,j)=Pmin
+#  endif
+#  if defined WAVES_BOT_PERIOD
+              Pwave_bot(i,j)=Pmin
+#  endif
           ENDIF
         ENDDO
       ENDDO
