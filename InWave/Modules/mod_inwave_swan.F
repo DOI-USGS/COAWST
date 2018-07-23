@@ -84,7 +84,7 @@
          integer             :: ndirsw,nfreqsw
          integer             :: Insteps, Swancircle
          real(r8)            :: dur,dt
-         real(r8)            :: fnyq,fmax,fmin,df,Trep
+         real(r8)            :: fnyq,fmax,fmin,df
          real(r8)            :: ddir,fp
          real(r8)            :: mainang, hm0gew, dang,int
          real(r8)            :: df_fft
@@ -727,10 +727,10 @@
 ! Compute the wave number or each freq bin
 !
       DO i=1,WAVES(ng)%nfreq
-        L0=g*otwopi*WAVES(ng)%Trep**2.0_r8
+        L0=g*otwopi*WAVEG(ng)%Trep**2.0_r8
         k0=twopi/L0
         error=100.0_r8
-        wr=twopi/MAX(Tr_min,WAVES(ng)%Trep)
+        wr=twopi/MAX(Tr_min,WAVEG(ng)%Trep)
         DO WHILE(error.gt.maxErr)
           kh=k0*h0
           tanhkh=TANH(kh)

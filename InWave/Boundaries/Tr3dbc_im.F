@@ -20,7 +20,7 @@
 !
 !***********************************************************************
       SUBROUTINE Tr3dbc_tile (ng, tile,                                 &
-     &                       LBi, UBi, LBj, UBj, ND,                    &
+     &                       LBi, UBi, LBj, UBj,                        &
      &                       Tr)
 !***********************************************************************
 !
@@ -28,6 +28,9 @@
       USE mod_boundary
       USE mod_grid
       USE mod_scalars
+      USE mod_inwave_params
+      USE mod_inwave_swan
+      USE mod_inwave_vars
 # ifdef REFINED_GRID
       USE mod_stepping
 # endif
@@ -35,7 +38,7 @@
 !  Imported variable declarations.
 !
       integer, intent(in) :: ng, tile
-      integer, intent(in) :: LBi, UBi, LBj, UBj, ND
+      integer, intent(in) :: LBi, UBi, LBj, UBj
 !
 # ifdef ASSUMED_SHAPE
       real(r8), intent(inout) :: Tr(LBi:,LBj:,:)
@@ -55,15 +58,27 @@
 !
       IF (.not.EWperiodic(ng)) THEN
         IF (DOMAIN(ng)%Western_Edge(tile)) THEN
-          DO d=1,ND
-            DO j=Jstr,Jend
-              Tr(Istr-1,j,d)=Tr(Istr,j,d)
+          IF (LBC(iwest,isAC3d,ng)%acquire) THEN
+            DO d=1,ND
+              DO j=Jstr,Jend
+                Tr(Istr-1,j,d)=WAVEG(ng)%Trep
 #   ifdef MASKING
-              Tr(Istr-1,j,d)=Tr(Istr-1,j,d)*                            &
-     &                       GRID(ng)%rmask(Istr-1,j)
+                Tr(Istr-1,j,d)=Tr(Istr-1,j,d)*                          &
+     &                         GRID(ng)%rmask(Istr-1,j)
 #   endif
+              END DO
             END DO
-          END DO
+          ELSE
+            DO d=1,ND
+              DO j=Jstr,Jend
+                Tr(Istr-1,j,d)=Tr(Istr,j,d)
+#   ifdef MASKING
+                Tr(Istr-1,j,d)=Tr(Istr-1,j,d)*                          &
+     &                         GRID(ng)%rmask(Istr-1,j)
+#   endif
+              END DO
+            END DO
+          END IF
         END IF
 !
 !-----------------------------------------------------------------------
@@ -71,15 +86,27 @@
 !-----------------------------------------------------------------------
 !
         IF (DOMAIN(ng)%Eastern_Edge(tile)) THEN
-          DO d=1,ND
-            DO j=Jstr,Jend
-              Tr(Iend+1,j,d)=Tr(Iend,j,d)
+          IF (LBC(ieast,isAC3d,ng)%acquire) THEN
+            DO d=1,ND
+              DO j=Jstr,Jend
+                Tr(Iend+1,j,d)=WAVEG(ng)%Trep
 #   ifdef MASKING
-              Tr(Iend+1,j,d)=Tr(Iend+1,j,d)*                            &
-     &                       GRID(ng)%rmask(Iend+1,j)
+                Tr(Iend+1,j,d)=Tr(Iend+1,j,d)*                          &
+     &                         GRID(ng)%rmask(Iend+1,j)
 #   endif
+              END DO
             END DO
-          END DO
+          ELSE
+            DO d=1,ND
+              DO j=Jstr,Jend
+                Tr(Iend+1,j,d)=Tr(Iend,j,d)
+#   ifdef MASKING
+                Tr(Iend+1,j,d)=Tr(Iend+1,j,d)*                          &
+     &                         GRID(ng)%rmask(Iend+1,j)
+#   endif
+              END DO
+            END DO
+          END IF
         END IF
       END IF
 !-----------------------------------------------------------------------
@@ -88,15 +115,27 @@
 !
       IF (.not.NSperiodic(ng)) THEN
         IF (DOMAIN(ng)%Southern_Edge(tile)) THEN
-          DO d=1,ND
-            DO i=Istr,Iend
-              Tr(i,Jstr-1,d)=Tr(i,Jstr,d)
+          IF (LBC(isouth,isAC3d,ng)%acquire) THEN
+            DO d=1,ND
+              DO i=Istr,Iend
+                Tr(i,Jstr-1,d)=WAVEG(ng)%Trep
 #   ifdef MASKING
-              Tr(i,Jstr-1,d)=Tr(i,Jstr-1,d)*                            &
-     &                       GRID(ng)%rmask(i,Jstr-1)
+                Tr(i,Jstr-1,d)=Tr(i,Jstr-1,d)*                          &
+     &                         GRID(ng)%rmask(i,Jstr-1)
 #   endif
+              END DO
             END DO
-          END DO
+          ELSE
+            DO d=1,ND
+              DO i=Istr,Iend
+                Tr(i,Jstr-1,d)=Tr(i,Jstr,d)
+#   ifdef MASKING
+                Tr(i,Jstr-1,d)=Tr(i,Jstr-1,d)*                          &
+     &                         GRID(ng)%rmask(i,Jstr-1)
+#   endif
+              END DO
+            END DO
+          END IF
         END IF
 !
 !-----------------------------------------------------------------------
@@ -104,15 +143,27 @@
 !-----------------------------------------------------------------------
 !
         IF (DOMAIN(ng)%Northern_Edge(tile)) THEN
-          DO d=1,ND
-            DO i=Istr,Iend
-              Tr(i,Jend+1,d)=Tr(i,Jend,d)
+          IF (LBC(inorth,isAC3d,ng)%acquire) THEN
+            DO d=1,ND
+              DO i=Istr,Iend
+                Tr(i,Jend+1,d)=WAVEG(ng)%Trep
 #   ifdef MASKING
-              Tr(i,Jend+1,d)=Tr(i,Jend+1,d)*                            &
-     &                       GRID(ng)%rmask(i,Jend+1)
+                Tr(i,Jend+1,d)=Tr(i,Jend+1,d)*                          &
+     &                         GRID(ng)%rmask(i,Jend+1)
 #   endif
+              END DO
             END DO
-          END DO
+          ELSE
+            DO d=1,ND
+              DO i=Istr,Iend
+                Tr(i,Jend+1,d)=Tr(i,Jend,d)
+#   ifdef MASKING
+                Tr(i,Jend+1,d)=Tr(i,Jend+1,d)*                          &
+     &                         GRID(ng)%rmask(i,Jend+1)
+#   endif
+              END DO
+            END DO
+          END IF
         END IF
       END IF
 !

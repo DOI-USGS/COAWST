@@ -135,7 +135,7 @@
 !  Local variable declarations.
 !
       integer :: i, j, d
-      real(r8) :: EW, KM, TRM, H, Qb, Hmax_r, diff, Emax_r
+      real(r8) :: EW, oEW, KM, TRM, H, Qb, Hmax_r, diff, Emax_r
       real(r8) :: twopi, otwopi, ogrho0, cff
       real(r8), parameter :: Trmin=1.0_r8
       real(r8), parameter :: alfa=1.0_r8
@@ -218,12 +218,13 @@
 !=======================================================================
 !  Distribute dissipation over directions and recompute Ac
 !=======================================================================
+          oEW=1.0_r8/EW
           DO d=1,ND
             IF ((h_tot(i,j).ge.Dcrit(ng)).and.(EW.gt.EWlim)) THEN
-              EN(d)=EN(d)-Dissip_break(i,j)*EN(d)/EW
+              EN(d)=MAX(0.0_r8,EN(d)-Dissip_break(i,j)*EN(d)*oEW)
               AC(i,j,d,nout)=EN(d)*Tr(i,j,d)*otwopi
             ELSE
-                AC(i,j,d,nout)=0.0_r8
+              AC(i,j,d,nout)=0.0_r8
             ENDIF
 #  ifdef MASKING
             AC(i,j,d,nout)=AC(i,j,d,nout)*rmask(i,j)

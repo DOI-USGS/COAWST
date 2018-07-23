@@ -162,7 +162,7 @@
       END DO
 
       CALL Tr3dbc_tile (ng, tile,                                       &
-     &                  LBi, UBi, LBj, UBj, ND,                         &
+     &                  LBi, UBi, LBj, UBj,                             &
      &                  Tr)
       CALL bc_r2d_tile (ng, tile,                                       &
      &                  LBi, UBi, LBj, UBj,                             &

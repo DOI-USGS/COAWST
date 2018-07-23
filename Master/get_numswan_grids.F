@@ -1,7 +1,7 @@
 #include "cppdefs.h"
 
-      SUBROUTINE get_numswan_grids(tempname)
 #if defined SWAN_MODEL
+      SUBROUTINE get_numswan_grids(tempname)
 !
 !=======================================================================
 !                                                                      !
@@ -76,6 +76,12 @@
 
   60  FORMAT (/,'read model inputs - Error while processing line: ',/,a)
 
-#endif
       RETURN
       END SUBROUTINE get_numswan_grids
+#else
+      SUBROUTINE get_numswan_grids(tempname)
+      character (len=160), intent(in) :: tempname
+      RETURN
+      END SUBROUTINE get_numswan_grids
+#endif
+

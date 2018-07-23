@@ -2,7 +2,7 @@
 !
 !svn $Id: mct_coupler.h 830 2017-01-24 21:21:11Z arango $
 !=======================================================================
-!  Copyright (c) 2002-2017 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2018 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                           Hernan G. Arango   !
 !==================================================== John C. Warner ===
@@ -73,7 +73,8 @@
       integer :: MyColor, MyCOMM, MyError, MyKey, Nnodes
       integer :: MyRank, pelast
       integer :: Ocncolor, Wavcolor, Atmcolor
-      integer :: ng, iw, io, ia, icc, lcm, gcdlcm
+      integer :: ng, iw, io, ia, icc
+      real(m8) :: lcm, gcdlcm
 
       real(m4) :: CouplingTime             ! single precision
 !
@@ -82,7 +83,7 @@
 !-----------------------------------------------------------------------
 !
 !  Initialize MPI execution environment.
-! 
+!
       CALL mpi_init (MyError)
 !
 !  Get rank of the local process in the group associated with the
@@ -115,18 +116,18 @@
 !
 !  For each model grid, determine the number of steps it should
 !  compute before it sends data out.
-!  For example, nWAV2OCN(1,2) is the number of steps the wave model 
+!  For example, nWAV2OCN(1,2) is the number of steps the wave model
 !  grid 1 should take before it sends data to the ocn grid 2.
 !
 #ifdef WAVES_OCEAN
       DO iw=1,Nwav_grids
         DO io=1,Nocn_grids
           lcm=gcdlcm(dtwav(iw),dtocn(io))
-          IF (MOD(TI_WAV2OCN,REAL(lcm,m8)).eq.0) THEN
+          IF (MOD(TI_WAV2OCN,lcm).eq.0) THEN
             nWAV2OCN(iw,io)=INT(TI_WAV2OCN/dtwav(iw))
           ELSE
-            lcm=gcdlcm(TI_WAV2OCN,REAL(lcm,m8))
-            nWAV2OCN(iw,io)=INT(REAL(lcm,m8)/dtwav(iw))
+            lcm=gcdlcm(TI_WAV2OCN,lcm)
+            nWAV2OCN(iw,io)=INT(lcm/dtwav(iw))
           END IF
         END DO
       END DO
@@ -134,11 +135,11 @@
       DO io=1,Nocn_grids
         DO iw=1,Nwav_grids
           lcm=gcdlcm(dtwav(iw),dtocn(io))
-          IF (MOD(TI_OCN2WAV,REAL(lcm,m8)).eq.0) THEN
+          IF (MOD(TI_OCN2WAV,lcm).eq.0) THEN
             nOCN2WAV(io,iw)=INT(TI_OCN2WAV/dtocn(io))
           ELSE
-            lcm=gcdlcm(TI_OCN2WAV,REAL(lcm,m8))
-            nOCN2WAV(io,iw)=INT(REAL(lcm,m8)/dtocn(io))
+            lcm=gcdlcm(TI_OCN2WAV,lcm)
+            nOCN2WAV(io,iw)=INT(lcm/dtocn(io))
           END IF
         END DO
       END DO
@@ -147,11 +148,11 @@
       DO ia=1,Natm_grids
         DO io=1,Nocn_grids
           lcm=gcdlcm(dtatm(ia),dtocn(io))
-          IF (MOD(TI_ATM2OCN,REAL(lcm,m8)).eq.0) THEN
+          IF (MOD(TI_ATM2OCN,lcm).eq.0) THEN
             nATM2OCN(ia,io)=INT(TI_ATM2OCN/dtatm(ia))
           ELSE
-            lcm=gcdlcm(TI_ATM2OCN,REAL(lcm,m8))
-            nATM2OCN(ia,io)=INT(REAL(lcm,m8)/dtatm(ia))
+            lcm=gcdlcm(TI_ATM2OCN,lcm)
+            nATM2OCN(ia,io)=INT(lcm/dtatm(ia))
           END IF
         END DO
       END DO
@@ -159,11 +160,11 @@
       DO io=1,Nocn_grids
         DO ia=1,Natm_grids
           lcm=gcdlcm(dtatm(ia),dtocn(io))
-          IF (MOD(TI_OCN2ATM,REAL(lcm,m8)).eq.0) THEN
+          IF (MOD(TI_OCN2ATM,lcm).eq.0) THEN
             nOCN2ATM(io,ia)=INT(TI_OCN2ATM/dtocn(io))
           ELSE
-            lcm=gcdlcm(TI_OCN2ATM,REAL(lcm,m8))
-            nOCN2ATM(io,ia)=INT(REAL(lcm,m8)/dtocn(io))
+            lcm=gcdlcm(TI_OCN2ATM,lcm)
+            nOCN2ATM(io,ia)=INT(lcm/dtocn(io))
           END IF
         END DO
       END DO
@@ -172,11 +173,11 @@
       DO ia=1,Natm_grids
         DO iw=1,Nwav_grids
           lcm=gcdlcm(dtatm(ia),dtwav(iw))
-          IF (MOD(TI_ATM2WAV,REAL(lcm,m8)).eq.0) THEN
+          IF (MOD(TI_ATM2WAV,lcm).eq.0) THEN
             nATM2WAV(ia,iw)=INT(TI_ATM2WAV/dtatm(ia))
           ELSE
-            lcm=gcdlcm(TI_ATM2WAV,REAL(lcm,m8))
-            nATM2WAV(ia,iw)=INT(REAL(lcm,m8)/dtatm(ia))
+            lcm=gcdlcm(TI_ATM2WAV,lcm)
+            nATM2WAV(ia,iw)=INT(lcm/dtatm(ia))
           END IF
         END DO
       END DO
@@ -184,30 +185,30 @@
       DO iw=1,Nwav_grids
         DO ia=1,Natm_grids
           lcm=gcdlcm(dtatm(ia),dtwav(iw))
-          IF (MOD(TI_WAV2ATM,REAL(lcm,m8)).eq.0) THEN
+          IF (MOD(TI_WAV2ATM,lcm).eq.0) THEN
             nWAV2ATM(iw,ia)=INT(TI_WAV2ATM/dtwav(iw))
           ELSE
-            lcm=gcdlcm(TI_WAV2ATM,REAL(lcm,m8))
-            nWAV2ATM(iw,ia)=INT(REAL(lcm,m8)/dtwav(iw))
+            lcm=gcdlcm(TI_WAV2ATM,lcm)
+            nWAV2ATM(iw,ia)=INT(lcm/dtwav(iw))
           END IF
         END DO
       END DO
 #endif
 !
-!  Similarly, for each model grid, determine the number of steps 
+!  Similarly, for each model grid, determine the number of steps
 !  it should compute before it recvs data from somewhere.
-!  For example, nWAVFOCN(1,2) is the number of steps the wave model 
+!  For example, nWAVFOCN(1,2) is the number of steps the wave model
 !  grid 1 should take before it gets data from ocn grid 2.
 !
 #ifdef WAVES_OCEAN
       DO iw=1,Nwav_grids
         DO io=1,Nocn_grids
           lcm=gcdlcm(dtwav(iw),dtocn(io))
-          IF (MOD(TI_OCN2WAV,REAL(lcm,m8)).eq.0) THEN
+          IF (MOD(TI_OCN2WAV,lcm).eq.0) THEN
             nWAVFOCN(iw,io)=INT(TI_OCN2WAV/dtwav(iw))
           ELSE
-            lcm=gcdlcm(TI_OCN2WAV,REAL(lcm,m8))
-            nWAVFOCN(iw,io)=INT(REAL(lcm,m8)/dtwav(iw))
+            lcm=gcdlcm(TI_OCN2WAV,lcm)
+            nWAVFOCN(iw,io)=INT(lcm/dtwav(iw))
           END IF
         END DO
       END DO
@@ -215,11 +216,11 @@
       DO io=1,Nocn_grids
         DO iw=1,Nwav_grids
           lcm=gcdlcm(dtwav(iw),dtocn(io))
-          IF (MOD(TI_WAV2OCN,REAL(lcm,m8)).eq.0) THEN
+          IF (MOD(TI_WAV2OCN,lcm).eq.0) THEN
             nOCNFWAV(io,iw)=INT(TI_WAV2OCN/dtocn(io))
           ELSE
-            lcm=gcdlcm(TI_WAV2OCN,REAL(lcm,m8))
-            nOCNFWAV(io,iw)=INT(REAL(lcm,m8)/dtocn(io))
+            lcm=gcdlcm(TI_WAV2OCN,lcm)
+            nOCNFWAV(io,iw)=INT(lcm/dtocn(io))
           END IF
         END DO
       END DO
@@ -228,11 +229,11 @@
       DO ia=1,Natm_grids
         DO io=1,Nocn_grids
           lcm=gcdlcm(dtatm(ia),dtocn(io))
-          IF (MOD(TI_OCN2ATM,REAL(lcm,m8)).eq.0) THEN
+          IF (MOD(TI_OCN2ATM,lcm).eq.0) THEN
             nATMFOCN(ia,io)=INT(TI_OCN2ATM/dtatm(ia))
           ELSE
-            lcm=gcdlcm(TI_OCN2ATM,REAL(lcm,m8))
-            nATMFOCN(ia,io)=INT(REAL(lcm,m8)/dtatm(ia))
+            lcm=gcdlcm(TI_OCN2ATM,lcm)
+            nATMFOCN(ia,io)=INT(lcm/dtatm(ia))
           END IF
         END DO
       END DO
@@ -240,11 +241,11 @@
       DO io=1,Nocn_grids
         DO ia=1,Natm_grids
           lcm=gcdlcm(dtatm(ia),dtocn(io))
-          IF (MOD(TI_ATM2OCN,REAL(lcm,m8)).eq.0) THEN
+          IF (MOD(TI_ATM2OCN,lcm).eq.0) THEN
             nOCNFATM(io,ia)=INT(TI_ATM2OCN/dtocn(io))
           ELSE
-            lcm=gcdlcm(TI_ATM2OCN,REAL(lcm,m8))
-            nOCNFATM(io,ia)=INT(REAL(lcm,m8)/dtocn(io))
+            lcm=gcdlcm(TI_ATM2OCN,lcm)
+            nOCNFATM(io,ia)=INT(lcm/dtocn(io))
           END IF
         END DO
       END DO
@@ -253,11 +254,11 @@
       DO ia=1,Natm_grids
         DO iw=1,Nwav_grids
           lcm=gcdlcm(dtatm(ia),dtwav(iw))
-          IF (MOD(TI_WAV2ATM,REAL(lcm,m8)).eq.0) THEN
+          IF (MOD(TI_WAV2ATM,lcm).eq.0) THEN
             nATMFWAV(ia,iw)=INT(TI_WAV2ATM/dtatm(ia))
           ELSE
-            lcm=gcdlcm(TI_WAV2ATM,REAL(lcm,m8))
-            nATMFWAV(ia,iw)=INT(REAL(lcm,m8)/dtatm(ia))
+            lcm=gcdlcm(TI_WAV2ATM,lcm)
+            nATMFWAV(ia,iw)=INT(lcm/dtatm(ia))
           END IF
         END DO
       END DO
@@ -265,11 +266,11 @@
       DO iw=1,Nwav_grids
         DO ia=1,Natm_grids
           lcm=gcdlcm(dtatm(ia),dtwav(iw))
-          IF (MOD(TI_ATM2WAV,REAL(lcm,m8)).eq.0) THEN
+          IF (MOD(TI_ATM2WAV,lcm).eq.0) THEN
             nWAVFATM(iw,ia)=INT(TI_ATM2WAV/dtwav(iw))
           ELSE
-            lcm=gcdlcm(TI_ATM2WAV,REAL(lcm,m8))
-            nWAVFATM(iw,ia)=INT(REAL(lcm,m8)/dtwav(iw))
+            lcm=gcdlcm(TI_ATM2WAV,lcm)
+            nWAVFATM(iw,ia)=INT(lcm/dtwav(iw))
           END IF
         END DO
       END DO
@@ -348,8 +349,55 @@
           WRITE (stdout,22) peATM_frst, peATM_last
  22       FORMAT (/,7x,'Atmos Model MPI nodes: ',i3.3,' - ', i3.3)
 #endif
+!
+!  Write out some coupled model info.
+!
+
+#ifdef WAVES_OCEAN
+      DO iw=1,Nwav_grids
+        DO io=1,Nocn_grids
+          WRITE (stdout,25) iw, dtwav(iw),io, dtocn(io),                &
+     &                      TI_WAV2OCN, nWAV2OCN(iw,io)
+ 25       FORMAT (/,7x,'WAVgrid ',i2.2,' dt= ',f5.1,' -to- OCNgrid ',   &
+     &            i2.2,' dt= ',f5.1,', CplInt: ',f5.1,' Steps: ',i3.3)
+          WRITE (stdout,26) io, dtocn(io),iw, dtwav(iw),                &
+     &                      TI_OCN2WAV, nOCN2WAV(io,iw)
+ 26       FORMAT (/,7x,'OCNgrid ',i2.2,' dt= ',f5.1,' -to- WAVgrid ',   &
+     &            i2.2,' dt= ',f5.1,', CplInt: ',f5.1,' Steps: ',i3.3)
+        END DO
+      END DO
+#endif
+#ifdef AIR_OCEAN
+      DO ia=1,Natm_grids
+        DO io=1,Nocn_grids
+          WRITE (stdout,27) ia, dtatm(ia),io, dtocn(io),                &
+     &                      TI_ATM2OCN, nATM2OCN(ia,io)
+ 27       FORMAT (/,7x,'ATMgrid ',i2.2,' dt= ',f5.1,' -to- OCNgrid ',   &
+     &            i2.2,' dt= ',f5.1,', CplInt: ',f5.1,' Steps: ',i3.3)
+          WRITE (stdout,28) io, dtocn(io),ia, dtatm(ia),                &
+     &                      TI_OCN2ATM, nOCN2ATM(io,ia)
+ 28       FORMAT (/,7x,'OCNgrid ',i2.2,' dt= ',f5.1,' -to- ATMgrid ',   &
+     &            i2.2,' dt= ',f5.1,', CplInt: ',f5.1,' Steps: ',i3.3)
+        END DO
+      END DO
+#endif
+#ifdef AIR_WAVES
+      DO ia=1,Natm_grids
+        DO iw=1,Nwav_grids
+          WRITE (stdout,29) ia, dtatm(ia),iw, dtwav(iw),                &
+     &                      TI_ATM2WAV, nATM2WAV(ia,iw)
+ 29       FORMAT (/,7x,'ATMgrid ',i2.2,' dt= ',f5.1,' -to- WAVgrid ',   &
+     &            i2.2,' dt= ',f5.1,', CplInt: ',f5.1,' Steps: ',i3.3)
+          WRITE (stdout,30) iw, dtwav(iw),ia, dtatm(ia),                &
+     &                      TI_WAV2ATM, nWAV2ATM(iw,ia)
+ 30       FORMAT (/,7x,'WAVgrid ',i2.2,' dt= ',f5.1,' -to- ATMgrid ',   &
+     &            i2.2,' dt= ',f5.1,', CplInt: ',f5.1,' Steps: ',i3.3)
+        END DO
+      END DO
+#endif
         END IF
       END IF
+!     CALL flush_coawst (stdout)
 !
 !  Split the communicator into SWAN or WW3, WRF, and ROMS subgroups based
 !  on color and key.
@@ -466,7 +514,7 @@
 !  Imported variable declarations.
 !
       real(m8), intent(in) :: dtAin, dtBin
-      integer :: gcdlcm
+      real(m8) :: gcdlcm
 !
 !  Local variable declarations.
 !
@@ -500,3 +548,18 @@
 
       RETURN
       END FUNCTION gcdlcm
+
+      !SUBROUTINE flush_coawst (unit)
+	  !-----------------------------------------------------------------------
+	  !
+	  !     USE mod_kinds
+	  !
+	  !      implicit none
+	  !
+	  !  Imported variable declarations.
+	  !
+	  !      integer, intent(in) :: unit
+	  !
+	  !      RETURN
+	  !      END SUBROUTINE flush_coawst
+

@@ -372,37 +372,11 @@
 !
       call tpdcalc(WAVES(ng)%Sf,WAVES(ng)%fsw,frep)
 !
-      WAVES(ng)%Trep=1.0_r8/frep
+      WAVEG(ng)%Trep=1.0_r8/frep
       WAVES(ng)%fp=frep
       IF (Master) THEN
-        WRITE(stdout,*) 'Representative period is ',  WAVES(ng)%Trep
+        WRITE(stdout,*) 'Representative period is ',  WAVEG(ng)%Trep
       END IF
-!
-      DO d=1,ND
-        DO j=Jstr,Jend
-          DO i=Istr,Iend
-            WAVEP(ng)%Ta(i,j,d)=WAVES(ng)%Trep
-            WAVEP(ng)%Tr(i,j,d)=WAVES(ng)%Trep
-          END DO
-        END DO
-      END DO
-!
-      CALL Tr3dbc_tile (ng, tile,                                       &
-     &                  LBi, UBi, LBj, UBj, ND,                         &
-     &                  WAVEP(ng)%Tr)
-      CALL Tr3dbc_tile (ng, tile,                                       &
-     &                  LBi, UBi, LBj, UBj, ND,                         &
-     &                  WAVEP(ng)%Ta)
-# ifdef DISTRIBUTE
-!
-!  Exchange boundary data.
-!
-      CALL mp_exchange3d (ng, tile, iNLM, 2,                            &
-     &                    LBi, UBi, LBj, UBj, 1, ND,                    &
-     &                    NghostPoints,                                 &
-     &                    EWperiodic(ng), NSperiodic(ng),               &
-     &                    WAVEP(ng)%Tr, WAVEP(ng)%Ta)
-# endif
 !
       GO TO 250
  215  IF (Master) THEN

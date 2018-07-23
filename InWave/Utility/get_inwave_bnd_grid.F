@@ -41,12 +41,16 @@
       character (len=256) :: Fname
 !
 !-----------------------------------------------------------------------
-! Determine number of directions.
+! Open boudnary files for reading and get directional information.
 !-----------------------------------------------------------------------
 !
       foundit=.FALSE.
       QUERY: DO ifile=1,nfiles
         Fname=S(ifile)%name
+!
+!-----------------------------------------------------------------------
+! Determine number of directions.
+!-----------------------------------------------------------------------
 !
 !  Inquire about requested variable.
 !
@@ -97,6 +101,155 @@
         END IF
       END DO QUERY
 !
+!-----------------------------------------------------------------------
+! Open boudnary files for reading and get Ta boundary information.
+!-----------------------------------------------------------------------
+!
+      foundit=.FALSE.
+      QUERY2: DO ifile=1,nfiles
+        Fname=S(ifile)%name
+!
+!-----------------------------------------------------------------------
+! Determine which boundary we have data for.
+!-----------------------------------------------------------------------
+!
+!  Inquire about Ta_west.
+!
+        CALL netcdf_inq_var (ng, iNLM, Fname,                           &
+     &                       MyVarName = 'Ta_west',                     &
+     &                       SearchVar = foundit,                       &
+     &                       VarID = Vid,                               &
+     &                       nVarDim = nvdim,                           &
+     &                       nVarAtt = nvatt)
+        IF (exit_flag.ne.NoError) RETURN
+!
+        IF (foundit) THEN
+          status=nf90_open(TRIM(Fname), nf90_nowrite, ncid)
+          IF (status.ne.nf90_noerr) THEN
+            WRITE (stdout,5) TRIM(Fname)
+            exit_flag=2
+            ioerror=status
+            RETURN
+          END IF
+!
+          status=nf90_inq_varid(ncid,'Ta_west', Vid)
+          status=nf90_inquire_variable(ncid, Vid, dimids=dimIDs)
+          IF (status.ne.nf90_noerr) THEN
+            WRITE (stdout,40) TRIM('Ta_west at the boundary')
+            exit_flag=4
+            ioerror=status
+          END IF
+          CALL netcdf_get_fvar (ng, iNLM, Fname, 'Ta_west',             &
+     &                          WAVEB(ng)%Ta_west,                      &
+     &                          ncid)
+          CALL netcdf_close (ng, iNLM, ncid, Fname, .FALSE.)
+!
+          EXIT QUERY2
+        END IF
+!
+!  Inquire about Ta_east
+!
+        CALL netcdf_inq_var (ng, iNLM, Fname,                           &
+     &                       MyVarName = 'Ta_east',                     &
+     &                       SearchVar = foundit,                       &
+     &                       VarID = Vid,                               &
+     &                       nVarDim = nvdim,                           &
+     &                       nVarAtt = nvatt)
+        IF (exit_flag.ne.NoError) RETURN
+!
+        IF (foundit) THEN
+          status=nf90_open(TRIM(Fname), nf90_nowrite, ncid)
+          IF (status.ne.nf90_noerr) THEN
+            WRITE (stdout,5) TRIM(Fname)
+            exit_flag=2
+            ioerror=status
+            RETURN
+          END IF
+!
+          status=nf90_inq_varid(ncid,'Ta_east', Vid)
+          status=nf90_inquire_variable(ncid, Vid, dimids=dimIDs)
+          IF (status.ne.nf90_noerr) THEN
+            WRITE (stdout,40) TRIM('Ta_east at the boundary')
+            exit_flag=4
+            ioerror=status
+          END IF
+          CALL netcdf_get_fvar (ng, iNLM, Fname, 'Ta_east',             &
+     &                          WAVEB(ng)%Ta_east,                      &
+     &                          ncid)
+          CALL netcdf_close (ng, iNLM, ncid, Fname, .FALSE.)
+!
+          EXIT QUERY2
+        END IF
+!
+!  Inquire about Ta_north.
+!
+        CALL netcdf_inq_var (ng, iNLM, Fname,                           &
+     &                       MyVarName = 'Ta_north',                    &
+     &                       SearchVar = foundit,                       &
+     &                       VarID = Vid,                               &
+     &                       nVarDim = nvdim,                           &
+     &                       nVarAtt = nvatt)
+        IF (exit_flag.ne.NoError) RETURN
+!
+        IF (foundit) THEN
+          status=nf90_open(TRIM(Fname), nf90_nowrite, ncid)
+          IF (status.ne.nf90_noerr) THEN
+            WRITE (stdout,5) TRIM(Fname)
+            exit_flag=2
+            ioerror=status
+            RETURN
+          END IF
+!
+          status=nf90_inq_varid(ncid,'Ta_north', Vid)
+          status=nf90_inquire_variable(ncid, Vid, dimids=dimIDs)
+          IF (status.ne.nf90_noerr) THEN
+            WRITE (stdout,40) TRIM('Ta_north at the boundary')
+            exit_flag=4
+            ioerror=status
+          END IF
+          CALL netcdf_get_fvar (ng, iNLM, Fname, 'Ta_north',            &
+     &                          WAVEB(ng)%Ta_north,                     &
+     &                          ncid)
+          CALL netcdf_close (ng, iNLM, ncid, Fname, .FALSE.)
+!
+          EXIT QUERY2
+        END IF
+
+!
+!  Inquire about Ta_south.
+!
+        CALL netcdf_inq_var (ng, iNLM, Fname,                           &
+     &                       MyVarName = 'Ta_south',                    &
+     &                       SearchVar = foundit,                       &
+     &                       VarID = Vid,                               &
+     &                       nVarDim = nvdim,                           &
+     &                       nVarAtt = nvatt)
+        IF (exit_flag.ne.NoError) RETURN
+!
+        IF (foundit) THEN
+          status=nf90_open(TRIM(Fname), nf90_nowrite, ncid)
+          IF (status.ne.nf90_noerr) THEN
+            WRITE (stdout,5) TRIM(Fname)
+            exit_flag=2
+            ioerror=status
+            RETURN
+          END IF
+!
+          status=nf90_inq_varid(ncid,'Ta_south', Vid)
+          status=nf90_inquire_variable(ncid, Vid, dimids=dimIDs)
+          IF (status.ne.nf90_noerr) THEN
+            WRITE (stdout,40) TRIM('Ta_south at the boundary')
+            exit_flag=4
+            ioerror=status
+          END IF
+          CALL netcdf_get_fvar (ng, iNLM, Fname, 'Ta_south',            &
+     &                          WAVEB(ng)%Ta_south,                     &
+     &                          ncid)
+          CALL netcdf_close (ng, iNLM, ncid, Fname, .FALSE.)
+!
+          EXIT QUERY2
+        END IF
+      END DO QUERY2
   5   FORMAT (/,'GET_INWAVE_BND_GRID - error while opening file: ', a)
  10   FORMAT (/,'GET_INWAVE_BND_GRID - error while reading attribute: ' &
      &         , a, ' for variable: ', a)

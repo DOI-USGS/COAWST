@@ -24,6 +24,8 @@
 
         TYPE T_INWAVE_BOUND
 
+          integer,  pointer :: ND_bnd, ND_ini, ND_end
+          real(r8), pointer :: Ta_east, Ta_west, Ta_north, Ta_south
           real(r8), pointer :: AC_east(:,:)
 #ifndef ANA_ACOBC
           real(r8), pointer :: ACG_east(:,:,:)
@@ -46,7 +48,6 @@
 
           real(r8), allocatable :: WD_bnd(:)
 
-          integer :: ND_bnd, ND_ini, ND_end
 
         END TYPE T_INWAVE_BOUND
 
@@ -71,6 +72,7 @@
       USE mod_scalars
       USE inwave_iounits
       USE mod_iounits
+      USE mod_inwave_vars
 !
 !  Imported variable declarations.
 !
@@ -100,6 +102,19 @@
 !-----------------------------------------------------------------------
 !  Read the boundary grid
 !-----------------------------------------------------------------------
+      allocate ( WAVEB(ng) % ND_bnd )
+      allocate ( WAVEB(ng) % ND_ini )
+      allocate ( WAVEB(ng) % ND_end )
+      allocate ( WAVEB(ng) % Ta_east )
+      allocate ( WAVEB(ng) % Ta_west )
+      allocate ( WAVEB(ng) % Ta_north )
+      allocate ( WAVEB(ng) % Ta_south )
+
+      WAVEB(ng)%Ta_east=0.0_r8
+      WAVEB(ng)%Ta_west=0.0_r8
+      WAVEB(ng)%Ta_north=0.0_r8
+      WAVEB(ng)%Ta_south=0.0_r8
+      WAVEG(ng)%Trep=0.0_r8
 
 #if !defined INWAVE_SWAN_COUPLING
       call get_inwave_bnd_grid(ng, nBCfiles(ng), BRY(1,ng))
@@ -158,6 +173,7 @@
       USE mod_param
       USE mod_ncparam
       USE mod_scalars
+      USE mod_inwave_vars
 !
 !  Imported variable declarations.
 !
@@ -204,6 +220,17 @@
           WAVEB(ng) % ACG_north = IniVal
 # endif
         END IF
+!
+!  Here we assume that only one of the boudnary Ta was set. So we 
+!  will set Trep to be the boundary value.
+!
+        WAVEG(ng)%Trep=MAX(WAVEG(ng)%Trep,WAVEB(ng)%Ta_west)
+        WAVEG(ng)%Trep=MAX(WAVEG(ng)%Trep,WAVEB(ng)%Ta_east)
+        WAVEG(ng)%Trep=MAX(WAVEG(ng)%Trep,WAVEB(ng)%Ta_north)
+        WAVEG(ng)%Trep=MAX(WAVEG(ng)%Trep,WAVEB(ng)%Ta_south)
+
+
+        WAVEG(ng)%Trep=MAX(WAVEG(ng)%Trep,WAVEB(ng)%Ta_south)
 
       RETURN
       END SUBROUTINE initialize_inwave_bound

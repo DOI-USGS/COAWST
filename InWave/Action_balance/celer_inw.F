@@ -102,6 +102,7 @@
       USE ct3dbc_dir_mod
       USE Tr3dbc_mod
       USE exchange_3d_mod
+      USE bc_3d_mod
 
 # ifdef DISTRIBUTE
       USE mp_exchange_mod, ONLY : mp_exchange3d
@@ -336,8 +337,8 @@
 
 !  Apply nonperiodic boundary conditions in xi and etai space.
 !
-      CALL Tr3dbc_tile (ng, tile,                                       &
-     &                  LBi, UBi, LBj, UBj, ND,                         &
+      CALL bc_r3d_tile (ng, tile,                                       &
+     &                  LBi, UBi, LBj, UBj, 1, ND,                      &
      &                  Ta)
 # ifdef DISTRIBUTE
       CALL mp_exchange3d (ng, tile, iNLM, 1,                            &

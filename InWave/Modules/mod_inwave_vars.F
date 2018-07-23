@@ -20,6 +20,7 @@
 !  v_rho     etai component of the currents affecting waves            !
 !  wd        wave directions                                           !
 !  pd        incremental wave directions for each directional bin      !
+!  Trep      representative absolute boundary wave period.
 !                                                                      !
 !=======================================================================
 !
@@ -45,6 +46,7 @@
           integer, pointer :: Inwavecircle
           real(r8), pointer :: wd(:)
           real(r8), pointer :: pd
+          real(r8), pointer :: Trep
 
         END TYPE T_INWAVEG
         TYPE (T_INWAVEG), allocatable :: WAVEG(:)
@@ -90,6 +92,7 @@
       allocate ( WAVEG(ng) % Inwavecircle )
       allocate ( WAVEG(ng) % wd(ND) )
       allocate ( WAVEG(ng) % pd )
+      allocate ( WAVEG(ng) % Trep )
 
       RETURN
       END SUBROUTINE allocate_inwave_vars
@@ -104,7 +107,7 @@
       USE mod_param
       USE mod_scalars
       USE mod_inwave_params
-      USE mod_inwave_bound
+!     USE mod_inwave_bound
       USE inwave_iounits
 !
 !  Imported variable declarations.
@@ -188,11 +191,15 @@
 ! Compute the angle increment
 !-----------------------------------------------------------------------
 !
-      cff=WAVEG(ng)%wd(2)-WAVEG(ng)%wd(1)
-      IF (cff.lt.0.0_r8) THEN
-        cff=cff+2.0_r8*pi
-      ENDIF
-      WAVEG(ng)%pd=cff
+      IF (ND.gt.1) THEN
+        cff=WAVEG(ng)%wd(2)-WAVEG(ng)%wd(1)
+        IF (cff.lt.0.0_r8) THEN
+          cff=cff+2.0_r8*pi
+        ENDIF
+        WAVEG(ng)%pd=cff
+      ELSE
+        WAVEG(ng)%pd=2.0_r8*pi/16.0_r8
+      END IF
 
 !     If user sets computational grid for a full circle or just a sector.
       IF (INT(2.0_r8*pi/WAVEG(ng)%pd).eq.ND) THEN

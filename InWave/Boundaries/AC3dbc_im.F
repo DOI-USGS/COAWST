@@ -156,7 +156,7 @@
               IF(WAVEB(ng)%WD_bnd(d_bnd).EQ.WAVEG(ng)%wd(k))then
                 DO j=Jstr,Jend
                   IF (LBC_apply(ng)%west(j)) THEN
-                    AC(Istr-1,j,k,nout)=WAVEB(ng)%AC_west(j,d_bnd)
+                    AC(Istr-1,j,k,nout)=WAVEB(ng)%AC_west(j,d_bnd)*ramp
 # ifdef MASKING
                     AC(Istr-1,j,k,nout)=AC(Istr-1,j,k,nout)*              &
      &                                  GRID(ng)%rmask(Istr-1,j)
@@ -260,7 +260,7 @@
               IF(WAVEB(ng)%WD_bnd(d_bnd).EQ.WAVEG(ng)%wd(k)) THEN
                 IF (LBC_apply(ng)%east(j)) THEN
                   DO j=Jstr,Jend
-                    AC(Iend+1,j,k,nout)=WAVEB(ng)%AC_east(j,d_bnd)
+                    AC(Iend+1,j,k,nout)=WAVEB(ng)%AC_east(j,d_bnd)*ramp
 # ifdef MASKING
                     AC(Iend+1,j,k,nout)=AC(Iend+1,j,k,nout)*            &
      &                                  GRID(ng)%rmask(Iend+1,j)
@@ -466,7 +466,7 @@
               IF(WAVEB(ng)%WD_bnd(d_bnd).EQ.WAVEG(ng)%wd(k))then
                 DO i=Istr,Iend
                   IF (LBC_apply(ng)%north(i)) THEN
-                    AC(i,Jend+1,k,nout)=WAVEB(ng)%AC_north(i,d_bnd)
+                    AC(i,Jend+1,k,nout)=WAVEB(ng)%AC_north(i,d_bnd)*ramp
 # ifdef MASKING
                     AC(i,Jend+1,k,nout)=AC(i,Jend+1,k,nout)*            &
      &                                  GRID(ng)%rmask(i,Jend+1)

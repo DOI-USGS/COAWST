@@ -40,6 +40,7 @@
       integer :: Ivalue(1)
 # if defined WRF_COUPLING
       integer :: sstupdate
+      integer, allocatable :: parentid(:)
 # endif
       real(m8), dimension(100) :: Rval
       real(m8) :: FAC
@@ -308,6 +309,7 @@
           indx=INDEX(aline,',')
           read(aline(1:indx-1),'(i5)') Natm_grids
           allocate (dtatm(Natm_grids))
+          allocate (parentid(Natm_grids))
 !
 ! Process the time steps
 !
@@ -336,6 +338,16 @@
             dtatm(1)=REAL(DT,m8)+REAL(num,m8)/REAL(den,m8)
           END IF
         END IF
+        IF(aline(1:9).eq.'parent_id') THEN
+          indx=INDEX(aline,'=')
+          DO ia=1,Natm_grids
+            aline=aline(indx+1:LEN(aline))
+            indx=INDEX(aline,',')
+            saveline1=TRIM(ADJUSTL(aline(1:indx-1)))
+            read(saveline1,'(i5)') parentid(ia)
+            IF (parentid(ia).EQ.0) parentid(ia) = 1
+          END DO
+        END IF
         IF(aline(1:22).eq.'parent_time_step_ratio') THEN
           indx=INDEX(aline,'=')
           DO ia=1,Natm_grids
@@ -343,7 +355,8 @@
             indx=INDEX(aline,',')
             saveline1=TRIM(ADJUSTL(aline(1:indx-1)))
             read(saveline1,'(i5)') den
-            dtatm(ia)=dtatm(1)/REAL(den,m8)
+!           dtatm(ia)=dtatm(1)/REAL(den,m8)
+            dtatm(ia)=dtatm(parentid(ia))/REAL(den,m8)
           END DO
         END IF
         IF(aline(1:10).eq.'sst_update') THEN

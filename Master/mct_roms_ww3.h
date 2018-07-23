@@ -933,7 +933,7 @@
       ELSE
         IF (Master) THEN
         WRITE (stdout,36) ' ** ROMS grid ',ng,                          &
-     &                    ' sent data to SWAN grid ',iw
+     &                    ' sent data to WW3 grid ',iw
  36     FORMAT (a14,i2,a24,i2)
         END IF
       END IF
