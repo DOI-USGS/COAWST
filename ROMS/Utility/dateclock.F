@@ -3,7 +3,7 @@
 !
 !svn $Id: dateclock.F 853 2017-07-01 02:24:45Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2017 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2018 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -175,18 +175,9 @@
         DayFraction=ABS(DateNumber-AINT(DateNumber))
 !
         MyYear=INT(DateNumber/360.0_r8)
-        MyYday=INT(MOD(DateNumber,360.0_r8))
-        IF (MyYday.eq.0) THEN
-          MyYday=360            ! last day of current year, MOD(x,360)=0
-          MyYear=MyYear-1       ! susbract one, new year tomorrow
-        END IF
-        IF (MOD(MyYday,30).eq.0) THEN
-          MyMonth=MyYday/30
-          MyDay=30              ! last day of the month, MOD(x,30)=0
-        ELSE
-          MyMonth=(MyYday/30)+1
-          MyDay=MOD(MyYday,30)
-        END IF
+        MyYday=INT(DateNumber-REAL(MyYear*360,r8)+1)
+        MyMonth=((MyYday-1)/30)+1
+        MyDay=MOD(MyYday-1,30)+1
 !
         Seconds=DayFraction*86400.0_r8
         CT=3.0_r8*EPSILON(Seconds)           ! comparison tolerance
@@ -272,18 +263,23 @@
 !***********************************************************************
 !                                                                      !
 !  Converts requested date (year, month, day, ...) into a serial date  !
-!  number.  It is similar to Matlab function "datenum", except for the !
-!  base date for day 0:                                                !
+!  number.  It is similar to Matlab function "datenum":                !
 !                                                                      !
 !     Matlab:  datenum(0000,00,00)=0       reference date              !
 !              datenum(0000,01,01)=1                                   !
 !                                                                      !
+!  For simplicity, the equation coded here have a difference reference !
+!  date (Mar 1, 0000) to facilitate manipulation of leap-years:        !
+!                                                                      !
 !       Here:  datenum(0000,03,01)=0       refecence date: Mar 1, 0000 !
 !              datenum(0000,01,01)=-59                                 !
 !                                                                      !
-!  They just have different reference date.  On 15 October 1582, the   !
-!  Gregorian was adapted with a year length of 365.2425 days.  This    !
-!  is coded as:                                                        !
+!  To avoid confusion, an offset of 61 days is added to match Matlab   !
+!  "datenum" function.  The difference between 0000-00-00 00:00:00 and !
+!  0000-03-01 00:00:00 is 61 days.                                     !
+!                                                                      !
+!  On 15 October 1582, the Gregorian was adapted with a year length of !
+!  365.2425 days. This is coded as:                                    !
 !                                                                      !
 !     365 + 1/4 - 1/100 + 1/400   or   365 + 0.25 - 0.01 + 0.0025      !
 !                                                                      !
@@ -332,6 +328,8 @@
 !
 !  Local variable declarations.
 !
+      integer, parameter :: offset = 61
+
       integer :: MyDay, MyHour, MyMinutes, MyMonth, MyYear
 
       real(r8) :: MySeconds
@@ -371,6 +369,19 @@
      &      INT(0.0025_r8*REAL(MyYear,r8))+                             &
      &      INT(0.1_r8*(REAL(MyMonth,r8)*306.0_r8 + 5.0_r8))+           &
      &      (day - 1)
+!
+!  Adjust for Matlab origin 0000-00-00 00:00:00, so we get the same
+!  value as their function "datenum".
+!
+      IF ((year.eq.0).and.(month.eq.0).and.(day.eq.0)) THEN
+        MyDay=0;
+      ELSE
+        IF (MyDay.lt.0) THEN
+          MyDay=MyDay+offset-1
+        ELSE
+          MyDay=MyDay+offset
+        END IF
+      END IF
 !
 !  Fractional date number (units=day).
 !
@@ -439,11 +450,14 @@
 !
       integer :: MyDay, MyMonth, MyYear
 
+      real(r8), parameter :: offset = 61.0_r8
       real(r8) :: CT, DayFraction, MyDateNumber
 !
 !-----------------------------------------------------------------------
 !  Initialize according to input units (days or seconds).
 !-----------------------------------------------------------------------
+!
+!  It appropriate, convert to fractional days.
 !
       IF (IsDayUnits) THEN                          ! fractional days
         MyDateNumber=DateNumber
@@ -451,6 +465,15 @@
         MyDateNumber=DateNumber/86400.0_r8
       END IF
       DayFraction=ABS(MyDateNumber-AINT(MyDateNumber))
+!
+!  Adjust for Matlab origin 0000-00-00 00:00:00, so we get the same
+!  value as their function "datestr".
+!
+      IF (MyDateNumber.lt.offset) THEN
+        MyDateNumber=MyDateNumber-offset+1.0_r8
+      ELSE
+        MyDateNumber=MyDateNumber-offset
+      ENDIF
 !
 !-----------------------------------------------------------------------
 !  Compute date vector (year, month, day, hour, minutes, seconds).
@@ -477,6 +500,15 @@
      &     INT((REAL(MyMonth,r8)+2.0_r8)/12.0_r8)
       day=MyDay-                                                        &
      &    INT(0.1_r8*(REAL(MyMonth,r8)*306.0_r8 + 5.0_r8)) + 1
+!
+!  Fix to match Matlab "datestr" function values with the origin at
+!  0000-00-00 00:00:00
+!
+      IF (DateNumber.eq.0.0_r8) THEN
+        year=0
+        month=1
+        day=0
+      END IF
 !
 !  Convert fraction of a day.
 !
@@ -805,19 +837,46 @@
      &                REAL(isec,r8))
 !
 !  The model clock is the elapsed time since reference time of the form
-!  'time-units since 0001-01-01 00:00:00'. It has a year length of
+!  'time-units since 0001-01-01 00:00:00'.  It has a year length of
 !  360 days.
+!
+!  In this calendar, the time in days is simply:
+!
+!    Time = year * 360 + (month - 1) * 30 + (day - 1)
+!
+!  And it inverse
+!
+!    year  = INT(Time / 360)
+!    yday  = INT((Time - year * 360) + 1)
+!    month = INT(((yday - 1) / 30) + 1)
+!    day   = MOD(yday - 1, 30) + 1
+!
+!  It assumes that the origin (DayNumber=0) corresponds to 01-Jan-0000.
+!  However, historically ROMS assumed that DayNumber=1 corresponded to
+!  01-Jan-0000 instead. So, there is one day shift. The equations
+!  can be manipulated to give either origin, but it is confusing. The
+!  above equations are cleaner and now effective (HGA: 30-Jan-2018). The
+!  origin (DayNumber=0) occurs on 01-Jan-0000.
+!
+!  To guarantee compatibility with previous ROMS solutions with this
+!  climatological calendar, the reference date is changed to
+!
+!  'time-units since 0000-12-30 00:00:00'
+!
+!  to fix the one date shift because DayNumber=0 on 01-Jan-0000. Anyway,
+!  it is a highly idealized calendar used in analytical test cases or
+!  climatological solutions.
 !
       ELSE IF (INT(r_time).eq.-1) THEN           ! day 0: Jan 1, 0000
         calendar='360_day'
-        iyear=1
-        month=1
-        iday=1
+        iyear=0
+        month=12
+        iday=30
         ihour=0
         minute=0
         isec=0
-        yday=MAX(1,MOD(iday,360))
-        DateNumber(1)=360.0_r8
+        yday=360
+        DateNumber(1)=359.0_r8
         DateNumber(2)=DateNumber(1)*86400.0_r8
 !
 !  The model clock is the elapsed time since reference time of the form
@@ -846,7 +905,7 @@
 !-----------------------------------------------------------------------
 !
       WRITE (string,10) iyear, month, iday, ihour, minute, isec
- 10   FORMAT (i4,'-',i2.2,'-',i2.2,1x,i2.2,':',i2.2,':',i2.2)
+ 10   FORMAT (i4.4,'-',i2.2,'-',i2.2,1x,i2.2,':',i2.2,':',i2.2)
 !
 !-----------------------------------------------------------------------
 !  Load time reference clock information into structure.

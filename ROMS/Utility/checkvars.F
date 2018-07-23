@@ -4,7 +4,7 @@
 !
 !svn $Id: checkvars.F 883 2017-12-05 22:24:46Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2017 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2018 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -108,11 +108,13 @@
       END DO
 !
 !  Determine state variables to read from input NetCDF file.  Notice
-!  that these state variable are only assigned if input flag model < 8.
-!  Higher values are used to process only boundary condition or
-!  surface forcing in the variational data assimilation algorithms.
+!  that these state variable are only assigned if input flag model < 12,
+!  model = 14, or model = 15. That is, all the state variables associated
+!  with ROMS prognostic equations.  The remaining values are used to
+!  process open boundary condition or surface forcing variable in the
+!  4D-Var control vector.
 !
-      IF (model.lt.8.or.model.eq.14) THEN
+      IF ((model.le.11).or.(model.eq.14).or.(model.eq.15)) THEN
 #ifdef ANA_INITIAL
         IF (nrrec(ng).ne.0) THEN
           get_var(idFsur)=.TRUE.
@@ -302,8 +304,8 @@
 !  Determine 4DVar boundary variables to adjust.
 !
       IF ((model.eq.iADM).or.(model.eq.iTLM).or.(model.eq.iNLM).or.     &
-     &    (model.eq.iRPM).or.(model.eq.8).or.(model.eq.10).or.          &
-     &    (model.eq.12)) THEN
+     &    (model.eq.iRPM).or.(model.eq.5).or.(model.eq.12).or.          &
+     &    (model.eq.16)) THEN
         IF (ANY(Lobc(:,isFsur,ng))) THEN
           get_var(idSbry(isFsur))=.TRUE.
         END IF
@@ -333,8 +335,8 @@
 !  Determine 4DVar surface forcing variables to adjust.
 !
       IF ((model.eq.iADM).or.(model.eq.iTLM).or.(model.eq.iNLM).or.     &
-     &    (model.eq.iRPM).or.(model.eq.9).or.(model.eq.11).or.          &
-     &    (model.eq.12)) THEN
+     &    (model.eq.iRPM).or.(model.eq.5).or.(model.eq.13).or.          &
+     &    (model.eq.17)) THEN
 # ifdef ADJUST_STFLUX
         DO itrc=1,NT(ng)
           IF (Lstflux(itrc,ng)) THEN

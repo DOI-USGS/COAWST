@@ -4,7 +4,7 @@
 !
 !svn $Id: u3dbc_im.F 830 2017-01-24 21:21:11Z arango $
 !=======================================================================
-!  Copyright (c) 2002-2017 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2018 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                           Hernan G. Arango   !
 !========================================== Alexander F. Shchepetkin ===
@@ -82,7 +82,7 @@
       real(r8), parameter :: eps = 1.0E-20_r8
 
       real(r8) :: Ce, Cx, cff, dUde, dUdt, dUdx
-      real(r8) :: obc_in, obc_out, tau
+      real(r8) :: obc_in, obc_out, phi, tau
 
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: grad
 
@@ -124,7 +124,11 @@
                   ELSE
                     tau=obc_out
                   END IF
+# ifdef IMPLICIT_NUDGING
+                  IF (tau.gt.0.0_r8) tau=1.0_r8/tau
+# else
                   tau=tau*dt(ng)
+# endif
                 END IF
 
                 IF ((dUdt*dUdx).lt.0.0_r8) dUdt=0.0_r8
@@ -153,9 +157,15 @@
      &                           (cff+Cx)
 
                 IF (LBC(iwest,isUvel,ng)%nudging) THEN
+# ifdef IMPLICIT_NUDGING
+                  phi=dt(ng)/(tau+dt(ng))
+                  u(Istr,j,k,nout)=(1.0_r8-phi)*u(Istr,j,k,nout)+       &
+     &                             phi*BOUNDARY(ng)%u_west(j,k)
+# else
                   u(Istr,j,k,nout)=u(Istr,j,k,nout)+                    &
      &                             tau*(BOUNDARY(ng)%u_west(j,k)-       &
      &                                  u(Istr,j,k,nstp))
+# endif
                 END IF
 # ifdef MASKING
                 u(Istr,j,k,nout)=u(Istr,j,k,nout)*                      &
@@ -256,7 +266,11 @@
                   ELSE
                     tau=obc_out
                   END IF
+# ifdef IMPLICIT_NUDGING
+                  IF (tau.gt.0.0_r8) tau=1.0_r8/tau
+# else
                   tau=tau*dt(ng)
+# endif
                 END IF
 
                 IF ((dUdt*dUdx).lt.0.0_r8) dUdt=0.0_r8
@@ -285,9 +299,15 @@
      &                             (cff+Cx)
 
                 IF (LBC(ieast,isUvel,ng)%nudging) THEN
+# ifdef IMPLICIT_NUDGING
+                  phi=dt(ng)/(tau+dt(ng))
+                  u(Iend+1,j,k,nout)=(1.0_r8-phi)*u(Iend+1,j,k,nout)+   &
+     &                               phi*BOUNDARY(ng)%u_east(j,k)
+# else
                   u(Iend+1,j,k,nout)=u(Iend+1,j,k,nout)+                &
      &                               tau*(BOUNDARY(ng)%u_east(j,k)-     &
      &                                    u(Iend+1,j,k,nstp))
+# endif
                 END IF
 # ifdef MASKING
                 u(Iend+1,j,k,nout)=u(Iend+1,j,k,nout)*                  &
@@ -388,7 +408,11 @@
                   ELSE
                     tau=obc_out
                   END IF
+# ifdef IMPLICIT_NUDGING
+                  IF (tau.gt.0.0_r8) tau=1.0_r8/tau
+# else
                   tau=tau*dt(ng)
+# endif
                 END IF
 
                 IF ((dUdt*dUde).lt.0.0_r8) dUdt=0.0_r8
@@ -417,9 +441,15 @@
      &                             (cff+Ce)
 
                 IF (LBC(isouth,isUvel,ng)%nudging) THEN
+# ifdef IMPLICIT_NUDGING
+                  phi=dt(ng)/(tau+dt(ng))
+                  u(i,Jstr-1,k,nout)=(1.0_r8-phi)*u(i,Jstr-1,k,nout)+   &
+     &                               phi*BOUNDARY(ng)%u_south(i,k)
+# else
                   u(i,Jstr-1,k,nout)=u(i,Jstr-1,k,nout)+                &
      &                               tau*(BOUNDARY(ng)%u_south(i,k)-    &
      &                                    u(i,Jstr-1,k,nstp))
+# endif
                 END IF
 # ifdef MASKING
                 u(i,Jstr-1,k,nout)=u(i,Jstr-1,k,nout)*                  &
@@ -536,7 +566,11 @@
                   ELSE
                     tau=obc_out
                   END IF
+# ifdef IMPLICIT_NUDGING
+                  IF (tau.gt.0.0_r8) tau=1.0_r8/tau
+# else
                   tau=tau*dt(ng)
+# endif
                 END IF
 
                 IF ((dUdt*dUde).lt.0.0_r8) dUdt=0.0_r8
@@ -565,9 +599,15 @@
      &                             (cff+Ce)
 
                 IF (LBC(inorth,isUvel,ng)%nudging) THEN
+# ifdef IMPLICIT_NUDGING
+                  phi=dt(ng)/(tau+dt(ng))
+                  u(i,Jend+1,k,nout)=(1.0_r8-phi)*u(i,Jend+1,k,nout)+   &
+     &                               phi*BOUNDARY(ng)%u_north(i,k)
+# else
                   u(i,Jend+1,k,nout)=u(i,Jend+1,k,nout)+                &
      &                               tau*(BOUNDARY(ng)%u_north(i,k)-    &
      &                                    u(i,Jend+1,k,nstp))
+# endif
                 END IF
 # ifdef MASKING
                 u(i,Jend+1,k,nout)=u(i,Jend+1,k,nout)*                  &

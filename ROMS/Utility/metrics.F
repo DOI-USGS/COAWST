@@ -3,7 +3,7 @@
 !
 !svn $Id: metrics.F 875 2017-11-03 01:10:02Z arango $
 !=======================================================================
-!  Copyright (c) 2002-2017 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2018 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                           Hernan G. Arango   !
 !========================================== Alexander F. Shchepetkin ===
@@ -283,7 +283,6 @@
 #ifdef NESTING
       integer :: cr, dg, ig, rg
 #endif
-!     real(r8), parameter :: Large = 1.0E+20_r8
 #if defined DIFF_3DCOEF || defined VISC_3DCOEF
       real(r8), parameter :: PecletCoef = 1.0_r8 / 12.0_r8
       real(r8), parameter :: Uscale = 0.1_r8

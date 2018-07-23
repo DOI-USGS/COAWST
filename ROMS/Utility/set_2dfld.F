@@ -3,7 +3,7 @@
 !
 !svn $Id: set_2dfld.F 830 2017-01-24 21:21:11Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2017 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2018 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -82,7 +82,8 @@
       Tindex =Iinfo(8,ifield,ng)
       update=.TRUE.
 !
-!  Set linear-interpolation factors.
+!  Set linear, time interpolation factors. Fractional seconds are
+!  rounded to the nearest integer towards zero in the weights.
 !
       it1=3-Tindex
       it2=Tindex

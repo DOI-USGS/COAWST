@@ -3,7 +3,7 @@
 !
 !svn $Id: mod_strings.F 854 2017-07-18 23:28:45Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2017 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2018 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -15,19 +15,24 @@
 !  Mregion     Start index of message passage code profiling region.   !
 !  Nregion     Number of total code profiling regions.                 !
 !                                                                      !
-!  StateMsg    Model state processing messages:                        !
-!                ( 1) Reading state initial conditions                 !
-!                ( 2) Reading previous state initial conditions        !
-!                ( 3) Reading previous adjoint state solution          !
-!                ( 4) Reading latest adjoint state solution            !
-!                ( 5) Reading initial/model normalization factors      !
-!                ( 6) Reading correlation standard deviation           !
-!                ( 7) Reading impulse forcing                          !
-!                ( 8) Reading v-space increments                       !
-!                ( 9) Reading background state                         !
-!                (10) Reading boundary normalization factors           !
-!                (11) Reading forcing normalization factors            !
-!                (12) Reading surface forcing and/or OBS increments    !
+!  StateMsg    Model state messages when reading:                      !
+!                ( 1) state initial conditions                         !
+!                ( 2) previous state initial conditions                !
+!                ( 3) previous adjoint state solution                  !
+!                ( 4) latest adjoint state solution                    !
+!                ( 5) surface forcion and or OBC increments            !
+!                ( 6) tangent linear model error forcing               !
+!                ( 7) impulse forcing                                  !
+!                ( 8) v-space increments                               !
+!                ( 9) background state                                 !
+!                (10) IC correlation standard deviation                !
+!                (11) model error correlation standard deviation       !
+!                (12) OBC correlation standard deviation               !
+!                (13) surface forcing correlation standard deviation   !
+!                (14) IC normalization factors                         !
+!                (15) model error normalization factors                !
+!                (16) OBC normalization factors                        !
+!                (17) surface forcing normalization factors            !
 !                                                                      !
 !  Pregion     Model regions identifiers used for time profiling:      !
 !                ( 1) Allocation and array initialization              !
@@ -114,19 +119,25 @@
         integer, parameter :: Mregion = 60
         integer, parameter :: Nregion = 73
 
-        character (len=48), dimension(12) :: StateMsg =                 &
-     &    (/'Reading state initial conditions,               ',         & !01
-     &      'Reading previous state initial conditions,      ',         & !02
-     &      'Reading previous adjoint state solution,        ',         & !03
-     &      'Reading latest adjoint state solution,          ',         & !04
-     &      'Reading initial/model normalization factors,    ',         & !05
-     &      'Reading correlation standard deviation,         ',         & !06
-     &      'Reading impulse forcing,                        ',         & !07
-     &      'Reading v-space increments,                     ',         & !08
-     &      'Reading background state,                       ',         & !09
-     &      'Reading boundary normalization factors,         ',         & !10
-     &      'Reading forcing normalization factors,          ',         & !11
-     &      'Reading surface forcing and/or OBS increments,  '/)          !12
+        character (len=48), dimension(17) :: StateMsg =                 &
+     &    (/'state initial conditions,                       ',         & !01
+     &      'previous state initial conditions,              ',         & !02
+     &      'previous adjoint state solution,                ',         & !03
+     &      'latest adjoint state solution,                  ',         & !04
+     &      'surface forcing and or OBC increments,          ',         & !05
+     &      'tangent linear model error forcing,             ',         & !06
+     &      'impulse forcing,                                ',         & !07
+     &      'v-space increments,                             ',         & !08
+     &      'background state,                               ',         & !09
+     &      'IC correlation standard deviation,              ',         & !10
+     &      'model error correlation standard deviation,     ',         & !11
+     &      'OBC correlation standard deviation,             ',         & !12
+     &      'surface forcing correlation standard deviation, ',         & !13
+     &      'IC normalization factors,                       ',         & !14
+     &      'model error normalization factors,              ',         & !15
+     &      'OBC normalization factors,                      ',         & !16
+     &      'surface forcing normalization factors,          '/)          !17
+
         character (len=50), dimension(Nregion) :: Pregion =             &
      &    (/'Allocation and array initialization ..............',       & !01
      &      'Ocean state initialization .......................',       & !02

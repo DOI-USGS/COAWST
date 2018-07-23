@@ -3,7 +3,7 @@
 !
 !svn $Id: mod_ocean.F 830 2017-01-24 21:21:11Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2017 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2018 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -217,6 +217,9 @@
           real(r8), pointer :: tl_u(:,:,:,:)
           real(r8), pointer :: tl_v(:,:,:,:)
           real(r8), pointer :: tl_W(:,:,:)
+#  ifdef NOT_YET
+          real(r8), pointer :: tl_wvel(:,:,:)
+#  endif
 #  if defined WEC
           real(r8), pointer :: tl_rulag3d(:,:,:)
           real(r8), pointer :: tl_rvlag3d(:,:,:)
@@ -254,6 +257,8 @@
           real(r8), pointer :: ad_u(:,:,:,:)
           real(r8), pointer :: ad_v(:,:,:,:)
           real(r8), pointer :: ad_W(:,:,:)
+          real(r8), pointer :: ad_wvel(:,:,:)
+
           real(r8), pointer :: ad_t_sol(:,:,:,:)
           real(r8), pointer :: ad_u_sol(:,:,:)
           real(r8), pointer :: ad_v_sol(:,:,:)
@@ -525,6 +530,9 @@
       allocate ( OCEAN(ng) % tl_u(LBi:UBi,LBj:UBj,N(ng),2) )
       allocate ( OCEAN(ng) % tl_v(LBi:UBi,LBj:UBj,N(ng),2) )
       allocate ( OCEAN(ng) % tl_W(LBi:UBi,LBj:UBj,0:N(ng)) )
+#  ifdef NOT_YET
+      allocate ( OCEAN(ng) % tl_wvel(LBi:UBi,LBj:UBj,0:N(ng)) )
+#  endif
 
 #  if defined WEC
       allocate ( OCEAN(ng) % tl_rulag3d(LBi:UBi,LBj:UBj,N(ng)) )
@@ -569,6 +577,7 @@
       allocate ( OCEAN(ng) % ad_u(LBi:UBi,LBj:UBj,N(ng),2) )
       allocate ( OCEAN(ng) % ad_v(LBi:UBi,LBj:UBj,N(ng),2) )
       allocate ( OCEAN(ng) % ad_W(LBi:UBi,LBj:UBj,0:N(ng)) )
+      allocate ( OCEAN(ng) % ad_wvel(LBi:UBi,LBj:UBj,0:N(ng)) )
 
       allocate ( OCEAN(ng) % ad_t_sol(LBi:UBi,LBj:UBj,N(ng),NT(ng)) )
       allocate ( OCEAN(ng) % ad_u_sol(LBi:UBi,LBj:UBj,N(ng)) )
@@ -969,6 +978,9 @@
               OCEAN(ng) % tl_rv(i,j,k,2) = IniVal
 
               OCEAN(ng) % tl_W(i,j,k) = IniVal
+#  ifdef NOT_YET
+              OCEAN(ng) % tl_wvel(i,j,k) = IniVal
+#  endif
             END DO
           END DO
           DO itrc=1,NT(ng)
@@ -1059,6 +1071,7 @@
               OCEAN(ng) % ad_rv(i,j,k,2) = IniVal
 
               OCEAN(ng) % ad_W(i,j,k) = IniVal
+              OCEAN(ng) % ad_wvel(i,j,k) = IniVal
             END DO
           END DO
           DO itrc=1,NT(ng)

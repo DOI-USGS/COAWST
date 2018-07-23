@@ -3,7 +3,7 @@
 !
 !svn $Id: stats.F 875 2017-11-03 01:10:02Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2017 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2018 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -65,6 +65,7 @@
 !
       USE mod_param
       USE mod_parallel
+      USE mod_iounits
       USE mod_ncparam
 
 #ifdef DISTRIBUTE
@@ -198,7 +199,8 @@
       S%avg=S%avg+my_avg
       S%rms=S%rms+my_rms
       IF (Lprint) THEN
-        PRINT 10, 'thread = ', my_threadnum(),                          &
+        WRITE (stdout,10)                                               &
+     &            'thread = ', my_threadnum(),                          &
      &            'tile = ', tile,                                      &
      &            'tile_count = ', tile_count,                          &
      &            'my_count = ', my_count,                              &
@@ -218,7 +220,7 @@
   10    FORMAT (10x,3(5x,a,i4),/,                                       &
      &          15x,a,f15.0,5x,a,f15.0,/,                               &
      &          6(15x,a,1p,e15.8,0p,5x,a,1p,e15.8,0p,/))
-        CALL my_flush (6)
+        CALL my_flush (stdout)
       END IF
       tile_count=tile_count+1
       IF (tile_count.eq.NSUB) THEN
@@ -291,6 +293,7 @@
 !
       USE mod_param
       USE mod_parallel
+      USE mod_iounits
       USE mod_ncparam
 
 #ifdef DISTRIBUTE
@@ -431,7 +434,8 @@
       S%avg=S%avg+my_avg
       S%rms=S%rms+my_rms
       IF (Lprint) THEN
-        PRINT 10, 'thread = ', my_threadnum(),                          &
+        WRITE (stdout,10)                                               &
+     &            'thread = ', my_threadnum(),                          &
      &            'tile = ', tile,                                      &
      &            'tile_count = ', thread_count,                        &
      &            'my_count = ', my_count,                              &
@@ -451,7 +455,7 @@
   10    FORMAT (10x,3(5x,a,i4),/,                                       &
      &          15x,a,f15.0,5x,a,f15.0,/,                               &
      &          6(15x,a,1p,e15.8,0p,5x,a,1p,e15.8,0p,/))
-        CALL my_flush (6)
+        CALL my_flush (stdout)
       END IF
       thread_count=thread_count+1
       IF (thread_count.eq.NSUB) THEN

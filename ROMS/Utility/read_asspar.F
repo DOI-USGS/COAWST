@@ -4,7 +4,7 @@
 !
 !svn $Id: read_asspar.F 885 2017-12-27 23:18:30Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2017 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2018 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -1274,27 +1274,31 @@
           WRITE (out,160) '      Input observations File:  ',           &
      &                    TRIM(fname)
 #   endif
+#   if !defined CORRELATION
           WRITE (out,160) '    Input/Output Lanczos File:  ',           &
      &                    TRIM(LCZ(ng)%name)
-#   ifndef IS4DVAR_SENSITIVITY
+#    ifndef IS4DVAR_SENSITIVITY
           WRITE (out,160) '    Input/Output Hessian File:  ',           &
      &                    TRIM(HSS(ng)%name)
-#   endif
-#   ifdef EVOLVED_LCZ
+#    endif
+#    ifdef EVOLVED_LCZ
           WRITE (out,160) '  Output evolved Lanczos File:  ',           &
      &                    TRIM(LZE(ng)%name)
+#    endif
 #   endif
 #  endif
-#  ifdef VERIFICATION
+#  if !defined CORRELATION
+#   ifdef VERIFICATION
           fname=OBS(ng)%name
           IF (.not.find_file(ng, fname, 'OBSname')) GO TO 30
           WRITE (out,160) '      Input observations File:  ',           &
      &                    TRIM(fname)
           WRITE (out,160) '     Output verification File:  ',           &
      &                    TRIM(DAV(ng)%name)
-#  else
+#   else
           WRITE (out,160) '            Output 4DVAR File:  ',           &
      &                    TRIM(DAV(ng)%name)
+#   endif
 #  endif
 #  if defined WEAK_CONSTRAINT   && \
      (defined POSTERIOR_ERROR_F || defined POSTERIOR_ERROR_I)

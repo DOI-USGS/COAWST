@@ -7,7 +7,7 @@
 !
 !svn $Id: mod_average.F 830 2017-01-24 21:21:11Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2017 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2018 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -78,7 +78,7 @@
 #  ifdef SHORTWAVE
 !  avgsrf     Shortwave radiation flux (W/m2).                         !
 #  endif
-#  ifdef BULK_FLUXES
+# if defined BULK_FLUXES || defined AIR_OCEAN
 !  avglhf     Latent heat flux (W/m2).                                 !
 !  avglrf     Longwave radiation flux (W/m2).                          !
 !  avgshf     Sensible heat flux (W/m2).                               !
@@ -281,7 +281,7 @@
 #  ifdef SHORTWAVE
           real(r8), pointer :: avgsrf(:,:)
 #  endif
-#  ifdef BULK_FLUXES
+# if defined BULK_FLUXES || defined AIR_OCEAN
           real(r8), pointer :: avglhf(:,:)
           real(r8), pointer :: avglrf(:,:)
           real(r8), pointer :: avgshf(:,:)
@@ -703,7 +703,7 @@
         allocate ( AVERAGE(ng) % avgsrf(LBi:UBi,LBj:UBj) )
       END IF
 #  endif
-#  ifdef BULK_FLUXES
+# if defined BULK_FLUXES || defined AIR_OCEAN
       IF (Aout(idLhea,ng)) THEN
         allocate ( AVERAGE(ng) % avglhf(LBi:UBi,LBj:UBj) )
       END IF
@@ -1535,7 +1535,7 @@
       END IF
 #  endif
 
-#  ifdef BULK_FLUXES
+# if defined BULK_FLUXES || defined AIR_OCEAN
       IF (Aout(idLhea,ng)) THEN
         DO j=Jmin,Jmax
           DO i=Imin,Imax

@@ -1,10 +1,10 @@
 #include "cppdefs.h"
-#ifdef MODEL_COUPLING
+#if defined MODEL_COUPLING && defined MCT_LIB && !defined COAWST_MODEL
       SUBROUTINE read_CouplePar (model)
 !
 !svn $Id: read_couplepar.F 830 2017-01-24 21:21:11Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2017 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2018 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -41,7 +41,7 @@
 
       integer :: decode_line, load_i, load_l, load_r
 
-      real(r8), dimension(200) :: Rval
+      real(r8), dimension(100) :: Rval
 
       real(r8), allocatable :: MyRval(:)
 

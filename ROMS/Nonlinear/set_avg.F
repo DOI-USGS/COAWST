@@ -4,7 +4,7 @@
 !
 !svn $Id: set_avg.F 855 2017-07-29 03:10:57Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2017 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2018 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -943,7 +943,7 @@
           END DO
         END IF
 #  endif
-#  ifdef BULK_FLUXES
+#  if defined BULK_FLUXES || defined AIR_OCEAN
         IF (Aout(idLhea,ng)) THEN
           DO j=JstrR,JendR
             DO i=IstrR,IendR
@@ -2863,7 +2863,7 @@
           END DO
         END IF
 #  endif
-#  ifdef BULK_FLUXES
+#  if defined BULK_FLUXES || defined AIR_OCEAN
         IF (Aout(idLhea,ng)) THEN
           DO j=JstrR,JendR
             DO i=IstrR,IendR
@@ -5269,8 +5269,7 @@
           END IF
         END IF
 #  endif
-
-#  ifdef BULK_FLUXES
+#  if defined BULK_FLUXES || defined AIR_OCEAN
         IF (Aout(idLhea,ng)) THEN
           DO j=JstrR,JendR
             DO i=IstrR,IendR

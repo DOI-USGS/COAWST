@@ -3,7 +3,7 @@
 !
 !svn $Id: mod_param.F 875 2017-11-03 01:10:02Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2017 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2018 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -452,7 +452,7 @@
 !  (like dyes, etc). This parameter is independent of the number of
 !  biological and/or sediment tracers.
 !
-        integer :: NPT = 0
+      integer :: NPT = 0
 
 #ifdef FILTERED_RST
 # ifdef ICE_MODEL

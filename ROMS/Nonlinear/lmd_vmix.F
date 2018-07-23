@@ -4,7 +4,7 @@
 !
 !svn $Id: lmd_vmix.F 830 2017-01-24 21:21:11Z arango $
 !=======================================================================
-!  Copyright (c) 2002-2017 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2018 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                           Hernan G. Arango   !
 !========================================== Alexander F. Shchepetkin ===
@@ -576,6 +576,23 @@
             Akt(i,j,k,itemp)=Akt(i,j,k,itemp)+lmd_nu0c*nu_sxc
 #  ifdef SALINITY
             Akt(i,j,k,isalt)=Akt(i,j,k,isalt)+lmd_nu0c*nu_sxc
+#  endif
+#  if defined LIMIT_VDIFF || defined LIMIT_VVISC
+!
+!  Limit vertical mixing coefficients with the upper threshold value.
+!  This is an engineering fix but it can be based on the fact that
+!  vertical mixing in the ocean from indirect observations is not
+!  higher than the threshold value.
+!
+#   ifdef LIMIT_VVISC
+            Akv(i,j,k)=MIN(Akv_limit(ng), Akv(i,j,k))
+#   endif
+#   ifdef LIMIT_VDIFF
+            Akt(i,j,k,itemp)=MIN(Akt_limit(itemp,ng), Akt(i,j,k,itemp))
+#    ifdef SALINITY
+            Akt(i,j,k,isalt)=MIN(Akt_limit(isalt,ng), Akt(i,j,k,isalt))
+#    endif
+#   endif
 #  endif
 # endif
           END DO

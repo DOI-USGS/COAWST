@@ -4,7 +4,7 @@
 !
 !svn $Id: inner2state.F 857 2017-07-29 04:05:27Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2017 The ROMS/TOMS Group       Andrew M. Moore   !
+!  Copyright (c) 2002-2018 The ROMS/TOMS Group       Andrew M. Moore   !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -486,7 +486,7 @@
       CALL mp_bcastf (ng, iTLM, zLanczos_offdiag)
 # endif
       IF (info.ne.0) THEN
-        IF (Master) PRINT *,' Error in DPTTRF: info = ', info
+        IF (Master) WRITE (stdout,*) ' Error in DPTTRF: info = ', info
         exit_flag=8
         RETURN
       END IF
@@ -913,7 +913,7 @@
 !
 !
       IF (Master) THEN
-        print *,'Test of orthonormalization'
+        WRITE (stdout,*) ' Test of orthonormalization'
       END IF
 !
       DO inner=1,Ninner
@@ -1020,7 +1020,8 @@
      &                        tl_zeta(:,:,Lwrk), ad_zeta(:,:,Lwrk))
 !
          IF (Master) THEN
-           print *,'inner=',inner,' rec=',rec,' dot-product=',dot(0)
+           WRITE (stdout,*) 'inner = ', inner, ' rec = ', rec,          &
+     &                      ' dot-product = ', dot(0)
          END IF
 !
         END DO
@@ -1034,7 +1035,7 @@
           GSmatinv(i,j)=GSmatrix(i,j)
          END DO
         END DO
-        CALL dtrtri('U','N',Ninner,GSmatinv,Ninner,info)
+        CALL dtrtri ('U','N',Ninner,GSmatinv,Ninner,info)
       END IF
 # ifdef DISTRIBUTE
       CALL mp_bcasti (ng, iTLM, info)
@@ -1042,7 +1043,7 @@
       CALL mp_bcastf (ng, iTLM, GSmatinv)
 # endif
       IF (info.ne.0) THEN
-        IF (Master) PRINT *,' Error in DPTTRF: info = ', info
+        IF (Master) WRITE (stdout,*) ' Error in DPTTRF: info = ', info
         exit_flag=8
         RETURN
       END IF

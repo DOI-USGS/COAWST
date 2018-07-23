@@ -4,7 +4,7 @@
 !
 !svn $Id: def_mod.F 880 2017-11-15 22:04:38Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2017 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2018 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -1713,6 +1713,18 @@
 !
 !  Define total observations impact.
 !
+#   ifdef IMPACT_INNER
+        Vinfo( 1)='ObsImpact_total'
+        Vinfo( 2)='total observation impact'
+        vardim(1)=datumDim
+        vardim(2)=NinnerDim
+        Vinfo(24)='_FillValue'
+        Aval(6)=spval
+        status=def_var(ng, iNLM, DAV(ng)%ncid, varid, nf90_double,      &
+     &                 2, vardim, Aval, Vinfo, ncname)
+        IF (FoundError(exit_flag, NoError, __LINE__,                    &
+     &                 __FILE__)) RETURN
+#   else
         Vinfo( 1)='ObsImpact_total'
         Vinfo( 2)='total observation impact'
         vardim(1)=datumDim
@@ -1722,6 +1734,7 @@
      &                 1, vardim, Aval, Vinfo, ncname)
         IF (FoundError(exit_flag, NoError, __LINE__,                    &
      &                 __FILE__)) RETURN
+#   endif
 #  else
 !
 !  Define total observation sensitivity.
@@ -1743,6 +1756,18 @@
 !
 !  Define observation impact due to initial condition increments.
 !
+#  ifdef IMPACT_INNER
+        Vinfo( 1)='ObsImpact_IC'
+        Vinfo( 2)='observation impact due to initial conditions'
+        vardim(1)=datumDim
+        vardim(2)=NinnerDim
+        Vinfo(24)='_FillValue'
+        Aval(6)=spval
+        status=def_var(ng, iNLM, DAV(ng)%ncid, varid, nf90_double,      &
+     &                 2, vardim, Aval, Vinfo, ncname)
+        IF (FoundError(exit_flag, NoError, __LINE__,                    &
+     &                 __FILE__)) RETURN
+#  else
         Vinfo( 1)='ObsImpact_IC'
         Vinfo( 2)='observation impact due to initial conditions'
         vardim(1)=datumDim
@@ -1752,11 +1777,25 @@
      &                 1, vardim, Aval, Vinfo, ncname)
         IF (FoundError(exit_flag, NoError, __LINE__,                    &
      &                 __FILE__)) RETURN
+#  endif
 
 #  if defined ADJUST_WSTRESS || defined ADJUST_STFLUX
 !
 !  Define observation impact due to surface forcing increments.
 !
+#   ifdef IMPACT_INNER
+
+        Vinfo( 1)='ObsImpact_FC'
+        Vinfo( 2)='observation impact due to surface forcing'
+        vardim(1)=datumDim
+        vardim(2)=NinnerDim
+        Vinfo(24)='_FillValue'
+        Aval(6)=spval
+        status=def_var(ng, iNLM, DAV(ng)%ncid, varid, nf90_double,      &
+     &                 2, vardim, Aval, Vinfo, ncname)
+        IF (FoundError(exit_flag, NoError, __LINE__,                    &
+     &                 __FILE__)) RETURN
+#   else
         Vinfo( 1)='ObsImpact_FC'
         Vinfo( 2)='observation impact due to surface forcing'
         vardim(1)=datumDim
@@ -1766,11 +1805,24 @@
      &                 1, vardim, Aval, Vinfo, ncname)
         IF (FoundError(exit_flag, NoError, __LINE__,                    &
      &                 __FILE__)) RETURN
+#   endif
 #  endif
 #  if defined ADJUST_BOUNDARY
 !
 !  Define observation impact due to boundary condition increments.
 !
+#   ifdef IMPACT_INNER
+        Vinfo( 1)='ObsImpact_BC'
+        Vinfo( 2)='observation impact due to open boundary conditions'
+        vardim(1)=datumDim
+        vardim(2)=NinnerDim
+        Vinfo(24)='_FillValue'
+        Aval(6)=spval
+        status=def_var(ng, iNLM, DAV(ng)%ncid, varid, nf90_double,      &
+     &                 2, vardim, Aval, Vinfo, ncname)
+        IF (FoundError(exit_flag, NoError, __LINE__,                    &
+     &                 __FILE__)) RETURN
+#   else
         Vinfo( 1)='ObsImpact_BC'
         Vinfo( 2)='observation impact due to open boundary conditions'
         vardim(1)=datumDim
@@ -1780,6 +1832,7 @@
      &                 1, vardim, Aval, Vinfo, ncname)
         IF (FoundError(exit_flag, NoError, __LINE__,                    &
      &                 __FILE__)) RETURN
+#   endif
 #  endif
 # endif
 # if defined BALANCE_OPERATOR && defined ZETA_ELLIPTIC

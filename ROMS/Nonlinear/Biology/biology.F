@@ -4,7 +4,7 @@
 !
 !svn $Id: biology.F 851 2017-06-23 23:22:54Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2017 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2018 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -139,7 +139,7 @@
 #  include <red_tide.h>
 # else
       SUBROUTINE biology(ng, tile)
-      integer ng, tile
+        integer ng, tile
       END subroutine biology
 # endif
 

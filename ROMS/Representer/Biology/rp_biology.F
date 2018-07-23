@@ -2,9 +2,9 @@
       MODULE rp_biology_mod
 #if defined TL_IOMS && defined BIOLOGY
 !
-!svn $Id: rp_biology.F 830 2017-01-24 21:21:11Z arango $
+!svn $Id: rp_biology.F 889 2018-02-10 03:32:52Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2017 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2018 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================

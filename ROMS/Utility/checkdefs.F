@@ -3,7 +3,7 @@
 !
 !svn $Id: checkdefs.F 873 2017-10-05 20:27:10Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2017 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2018 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -871,13 +871,12 @@
       Coptions(is:is+13)=' CORRELATION,'
       idriver=idriver+1
 #endif
-#if defined COUPLING_INTERP && defined MODEL_COUPLING
+#ifdef DATA_COUPLING
 !
-      IF (Master) WRITE (stdout,20) 'COUPLING_INTERP',                  &
-     &   'Time interpolation from coupling snapshots arrays.'
+      IF (Master) WRITE (stdout,20) 'DATA_COUPLING',                     &
+     &   'DATA model included in coupling.'
       is=LEN_TRIM(Coptions)+1
-      Coptions(is:is+17)=' COUPLING_INTERP,'
-      iatms=iatms+1
+      Coptions(is:is+15)=' DATA_COUPLING,'
 #endif
 #if defined DATALESS_LOOPS && defined W4DVAR
 !
@@ -1140,7 +1139,7 @@
       is=LEN_TRIM(Coptions)+1
       Coptions(is:is+9)=' EMINUSP,'
 #endif
-#if defined ESMF_LIB && defined COAWST_COUPLING
+#if defined ESMF_LIB && defined MODEL_COUPLING
 !
       IF (Master) WRITE (stdout,20) 'ESMF_LIB',                         &
      &   'Using Earth System Modeling Framework library.'
@@ -1250,6 +1249,13 @@
      &   'Write out Forward solution for Tangent/Adjoint.'
       is=LEN_TRIM(Coptions)+1
       Coptions(is:is+15)=' FORWARD_WRITE,'
+#endif
+#if defined FRC_COUPLING && defined MODEL_COUPLING
+!
+      IF (Master) WRITE (stdout,20) 'FRC_COUPLING',                     &
+     &   'Atmospheric forcing fields are from ESM coupling.'
+      is=LEN_TRIM(Coptions)+1
+      Coptions(is:is+14)=' FRC_COUPLING,'
 #endif
 #ifdef FSOBC_REDUCED
 !
@@ -1463,11 +1469,12 @@
       is=LEN_TRIM(Coptions)+1
       Coptions(is:is+16)=' IMPLICIT_VCONV,'
 #endif
-#ifdef IMPULSE
-      IF (Master) WRITE (stdout,20) 'IMPULSE',                          &
-     &   'Processing Adjoint Impulse forcing.'
+#if defined LIMIT_BSTRESS && defined SOLVE3D  && !defined BBL_MODEL
+!
+      IF (Master) WRITE (stdout,20) 'LIMIT_BSTRESS',                    &
+     &   'Limit bottom stress to maintain bottom velocity direction.'
       is=LEN_TRIM(Coptions)+1
-      Coptions(is:is+9)=' IMPULSE,'
+      Coptions(is:is+15)=' LIMIT_BSTRESS,'
 #endif
 #if defined LIMIT_STFLX_COOLING && defined SOLVE3D
 !
@@ -1475,13 +1482,6 @@
      &   'Suppress further cooling if SST is at freezing point.'
       is=LEN_TRIM(Coptions)+1
       Coptions(is:is+21)=' LIMIT_STFLX_COOLING,'
-#endif
-#ifdef INNER_PRODUCT
-      IF (Master) WRITE (stdout,20) 'INNER_PRODUCT',                    &
-     &   'Tangent/Adjoint State Matrices Inner Product Test.'
-      is=LEN_TRIM(Coptions)+1
-      Coptions(is:is+15)=' INNER_PRODUCT,'
-      idriver=idriver+1
 #endif
 #if defined IRON_LIMIT && (NPZD_IRON || defined NEMURO || \
              defined BIO_GOANPZ || defined BIO_UMAINE)
@@ -1502,6 +1502,21 @@
      &   'Variable Si:N ratio based on iron'
       is=LEN_TRIM(Coptions)+1
       Coptions(is:is+11)=' IRON_RSIN,'
+#endif
+#ifdef IMPULSE
+!
+      IF (Master) WRITE (stdout,20) 'IMPULSE',                          &
+     &   'Processing Adjoint Impulse forcing.'
+      is=LEN_TRIM(Coptions)+1
+      Coptions(is:is+9)=' IMPULSE,'
+#endif
+#ifdef INNER_PRODUCT
+!
+      IF (Master) WRITE (stdout,20) 'INNER_PRODUCT',                    &
+     &   'Tangent/Adjoint State Matrices Inner Product Test.'
+      is=LEN_TRIM(Coptions)+1
+      Coptions(is:is+15)=' INNER_PRODUCT,'
+      idriver=idriver+1
 #endif
 #ifdef IS4DVAR
 !
@@ -2118,6 +2133,7 @@
 #endif
 #if defined OXYGEN && defined ESTUARYBGC 
 # ifdef OCMIP_OXYGEN_SC
+!
       IF (Master) WRITE (stdout,20) 'OCMIP_OXYGEN_SC',                  &
      &   'Schmidt number from Keeling et al. (1998).'
       is=LEN_TRIM(Coptions)+1
@@ -2377,6 +2393,21 @@
       is=LEN_TRIM(Coptions)+1
       Coptions(is:is+10)=' RED_TIDE,'
       ibiology=ibiology+1
+#endif
+#if defined REGRESS_STARTCLOCK && defined MODEL_COUPLING && \
+    defined ESMF_LIB
+!
+      IF (Master) WRITE (stdout,20) 'REGRESS_STARTCLOCK',               &
+     &   'Regressing start clock by one coupling interval.'
+      is=LEN_TRIM(Coptions)+1
+      Coptions(is:is+20)=' REGRESS_STARTCLOCK,'
+#endif
+#ifdef ROMS_STDOUT
+!
+      IF (Master) WRITE (stdout,20) 'ROMS_STDOUT',                      &
+     &   'Red tide biological model.'
+      is=LEN_TRIM(Coptions)+1
+      Coptions(is:is+13)=' ROMS_STDOUT,'
 #endif
 #ifdef R_SYMMETRY
 !
@@ -2877,6 +2908,13 @@
      &   'Weak-constraint 4D-Var time convolution.'
       is=LEN_TRIM(Coptions)+1
       Coptions(is:is+11)=' TIME_CONV,'
+#endif
+#if defined TIME_INTERP && defined MODEL_COUPLING
+!
+      IF (Master) WRITE (stdout,20) 'TIME_INTERP',                  &
+     &   'Time interpolation from coupling snapshots arrays.'
+      is=LEN_TRIM(Coptions)+1
+      Coptions(is:is+13)=' TIME_INTERP,'
 #endif
 #if defined TIDES_ASTRO
       IF (Master) WRITE (stdout,20) 'TIDES_ASTRO',                      &
@@ -3445,6 +3483,13 @@
      &   'Wetting and drying activated.'
       is=LEN_TRIM(Coptions)+1
       Coptions(is:is+9)=' WET_DRY,'
+#endif
+#ifdef WIND_MINUS_CURRENT && defined BULK_FLUXES && defined SOLVE3D
+!
+      IF (Master) WRITE (stdout,20) 'WIND_MINUS_CURRENT',               &
+     &   'Compute effective wind by removing surface ocean current.'
+      is=LEN_TRIM(Coptions)+1
+      Coptions(is:is+20)=' WIND_MINUS_CURRENT,'
 #endif
 #ifdef WIND_WAVES
 !

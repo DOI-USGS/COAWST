@@ -4,7 +4,7 @@
 !
 !svn $Id: get_grid.F 884 2017-12-06 01:59:26Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2017 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2018 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -1359,7 +1359,8 @@
               ELSE
                 IF (Master) THEN
                   WRITE (stdout,30) 'longitude of RHO-points: lon_rho', &
-     &                              ng, TRIM(ncname), Fmin, Fmax
+     &                              ng, TRIM(ncname),                   &
+     &                              LonMin(ng), LonMax(ng)
                 END IF
               END IF
 # ifdef NESTING
@@ -1403,7 +1404,8 @@
               ELSE
                 IF (Master) THEN
                   WRITE (stdout,30) 'latitude of RHO-points lat_rho',   &
-     &                              ng, TRIM(ncname), Fmin, Fmax
+     &                              ng, TRIM(ncname),                   &
+     &                              LatMin(ng), LatMax(ng)
                 END IF
               END IF
 # ifdef NESTING

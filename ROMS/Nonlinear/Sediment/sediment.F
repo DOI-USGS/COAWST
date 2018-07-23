@@ -6,7 +6,7 @@
 !
 !svn $Id: sediment.F 830 2017-01-24 21:21:11Z arango $
 !==================================================== John C. Warner ===
-!  Copyright (c) 2002-2017 The ROMS/TOMS Group      Hernan G. Arango   !
+!  Copyright (c) 2002-2018 The ROMS/TOMS Group      Hernan G. Arango   !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -84,8 +84,13 @@
 # else
       USE sed_bed_mod, ONLY : sed_bed
 # endif
-# ifdef BEDLOAD
+# if defined BEDLOAD
+#  if defined BEDLOAD_SOULSBY || defined BEDLOAD_MPM
       USE sed_bedload_mod, ONLY : sed_bedload
+#  elif defined BEDLOAD_VANDERA
+      USE mod_vandera_funcs 
+      USE sed_bedload_vandera_mod, ONLY : sed_bedload_vandera
+#  endif 
 # endif
 # if defined SED_BIODIFF
     USE sed_biodiff_mod, ONLY : sed_biodiff
@@ -109,7 +114,11 @@
 !  Compute sediment bedload transport.
 !-----------------------------------------------------------------------
 !
+#   if defined BEDLOAD_SOULSBY || defined BEDLOAD_MPM
       CALL sed_bedload (ng, tile)
+#   elif defined BEDLOAD_VANDERA
+      CALL sed_bedload_vandera(ng, tile)
+#   endif
 # endif
 
 # ifdef SUSPLOAD

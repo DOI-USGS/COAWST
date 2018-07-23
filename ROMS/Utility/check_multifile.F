@@ -3,7 +3,7 @@
 !
 !svn $Id: check_multifile.F 885 2017-12-27 23:18:30Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2017 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2018 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -97,9 +97,10 @@
 !  Get final time string for simulation.
 !
       IF (model.eq.iADM) THEN
-        Tfinal=dstart*day2sec
+        Tfinal=time(ng)-ntimes(ng)*dt(ng)
       ELSE
-        Tfinal=dstart*day2sec+ntimes(ng)*dt(ng)
+        Tfinal=time(ng)+ntimes(ng)*dt(ng)
+!       Tfinal=dstart*day2sec+ntimes(ng)*dt(ng)
       END IF
       CALL time_string (tfinal, F_code)
 !
@@ -252,7 +253,7 @@
           SSF(ng)%base=ncname(1:lstr-3)
         ELSE
           IF (Master.and.Lcheck) THEN
-            WRITE (stdout,10) 'Sources/Sinks DataQ', I_code
+            WRITE (stdout,10) 'Sources/Sinks Data', I_code
             DO ifile=1,Nfiles
               Tmin=Tscale*SSF(ng)%time_min(ifile)
               Tmax=Tscale*SSF(ng)%time_max(ifile)
@@ -263,6 +264,8 @@
             END DO
           END IF
           exit_flag=4
+          IF (FoundError(exit_flag, NoError, __LINE__,                  &
+     &                   __FILE__)) RETURN
         END IF
 !
 !  Check if there is Sources/Sinks data up to the end of the simulation.
@@ -278,6 +281,8 @@
      &                            'first ', Tmin_code, F_code
               END IF
               exit_flag=4
+              IF (FoundError(exit_flag, NoError, __LINE__,              &
+     &                       __FILE__)) RETURN
             END IF
           ELSE
             Tmax=Tscale*SSF(ng)%time_max(Nfiles)
@@ -289,6 +294,8 @@
      &                            'last  ', Tmax_code, F_code
               END IF
               exit_flag=4
+              IF (FoundError(exit_flag, NoError, __LINE__,              &
+     &                       __FILE__)) RETURN
             END IF
           END IF
         END IF
@@ -358,6 +365,8 @@
             END DO
           END IF
           exit_flag=4
+          IF (FoundError(exit_flag, NoError, __LINE__,                  &
+     &                   __FILE__)) RETURN
         END IF
 !
 !  Check if there is forcing data up to the end of the simulation.
@@ -373,6 +382,8 @@
      &                            'first ', Tmin_code, F_code
               END IF
               exit_flag=4
+              IF (FoundError(exit_flag, NoError, __LINE__,              &
+     &                       __FILE__)) RETURN
             END IF
           ELSE
             Tmax=Tscale*FRC(i,ng)%time_max(Nfiles)
@@ -384,6 +395,8 @@
      &                            'last  ', Tmax_code, F_code
               END IF
               exit_flag=4
+              IF (FoundError(exit_flag, NoError, __LINE__,              &
+     &                       __FILE__)) RETURN
             END IF
           END IF
         END IF
@@ -453,6 +466,9 @@
               END DO
             END IF
             exit_flag=4
+            IF (FoundError(exit_flag, NoError, __LINE__,                &
+     &                     __FILE__)) RETURN
+
           END IF
 !
 !  Check if there is climatology data to the end of the simulation.
@@ -468,6 +484,8 @@
      &                              'first ', Tmin_code, F_code
                 END IF
                 exit_flag=4
+                IF (FoundError(exit_flag, NoError, __LINE__,            &
+     &                         __FILE__)) RETURN
               END IF
             ELSE
               Tmax=Tscale*CLM(i,ng)%time_max(Nfiles)
@@ -479,6 +497,8 @@
      &                              Tmax_code, F_code
                 END IF
                 exit_flag=4
+                IF (FoundError(exit_flag, NoError, __LINE__,            &
+     &                         __FILE__)) RETURN
               END IF
             END IF
           END IF
@@ -575,7 +595,7 @@
       CALL netcdf_open (ng, model, ncname, 0, ncid)
       IF (FoundError(exit_flag, NoError, __LINE__,                      &
      &               __FILE__)) THEN
-        WRITE (stdout,10) TRIM(ncname)
+        IF (Master) WRITE (stdout,10) TRIM(ncname)
         RETURN
       END IF
 !
@@ -608,6 +628,8 @@
           WRITE (stdout,20) TRIM(ncname)
         END IF
         exit_flag=4
+        IF (FoundError(exit_flag, NoError, __LINE__,                    &
+     &                 __FILE__)) RETURN
       END IF
 !
 !  Inquire about requested variable.
@@ -678,6 +700,8 @@
 !  Close NetCDF file.
 !
       CALL netcdf_close (ng, model, ncid, ncname, .FALSE.)
+      IF (FoundError(exit_flag, NoError, __LINE__,                      &
+     &               __FILE__)) RETURN
 !
  10   FORMAT (/, ' CHECK_FILE - unable to open grid NetCDF file: ',a)
  20   FORMAT (/, ' CHECK_FILE - unable to find time variable in input', &

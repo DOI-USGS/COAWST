@@ -3,7 +3,7 @@
 !
 !svn $Id: uv_rotate.F 837 2017-03-04 03:03:41Z arango $
 !=======================================================================
-!  Copyright (c) 2002-2017 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2018 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                           Hernan G. Arango   !
 !=======================================================================

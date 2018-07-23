@@ -5,7 +5,7 @@
 !
 !svn $Id: mod_nesting.F 830 2017-01-24 21:21:11Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2017 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2018 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -141,9 +141,10 @@
 !
       integer, allocatable :: RefineStepsCounter(:) ! [Ngrids]
 !
-!  Counter for two-way exchange between fine and coarse grids.
+!  Interval used in the two-way exchange between fine and coarse
+!  grids.
 !
-      integer, allocatable :: TwoWayCounter(:)      ! [Ngrids]
+      real(r8), allocatable :: TwoWayInterval(:)    ! [Ngrids]
 !
 !  Donor and reciver grids for each contact region. These paremeters
 !  are also duplicated in the T_NGC structure.

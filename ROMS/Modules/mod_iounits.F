@@ -3,7 +3,7 @@
 !
 !svn $Id: mod_iounits.F 875 2017-11-03 01:10:02Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2017 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2018 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -57,7 +57,7 @@
 !                STD(3,ng)  lateral open boundary conditions           !
 !                STD(4,ng)  surface forcing                            !
 !                                                                      !
-!  Standard input files:                                               !
+!  Input/output information files:                                     !
 !                                                                      !
 !  Iname       Physical parameters standard input script file name.    !
 !  NGCname     Nested grids contact point information file name.       !
@@ -177,8 +177,8 @@
 !
       character (len=256) :: Iname          ! ROMS physical parameters
 !     character (len=256) :: Wname          ! wave model standard input
-      character (len=256) :: NGCname        ! contact points file name
-      character (len=256) :: USRname        ! use generic file name
+      character (len=256) :: NGCname        ! contact points filename
+      character (len=256) :: USRname        ! use generic filename
       character (len=256) :: aparnam        ! assimilation parameters
       character (len=256) :: bparnam        ! biology model parameters
       character (len=256) :: fbionam        ! floats behavior parameters

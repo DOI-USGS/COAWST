@@ -3,7 +3,7 @@
 !
 !svn $Id: initial.F 882 2017-11-23 05:41:19Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2017 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2018 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -220,7 +220,9 @@
           LdefINI(ng)=.TRUE.
 # endif
           LdefHIS(ng)=.TRUE.
+# ifndef CORRELATION
           CALL def_ini (ng)
+# endif
 # ifdef DISTRIBUTE
           CALL mp_bcasti (ng, iNLM, exit_flag)
 # endif
@@ -390,13 +392,14 @@
         END DO
 !$OMP BARRIER
 #endif
+#if !defined CORRELATION
 !
 !-----------------------------------------------------------------------
 !  If appropriate, set spatially varying nudging coefficients time
 !  scales.
 !-----------------------------------------------------------------------
 !
-#ifdef ANA_NUDGCOEF
+# ifdef ANA_NUDGCOEF
         DO ng=1,Ngrids
           IF (Lnudging(ng)) THEN
             DO tile=first_tile(ng),last_tile(ng),+1
@@ -405,20 +408,21 @@
 !$OMP BARRIER
           END IF
         END DO
-#else
+# else
         DO ng=1,Ngrids
           IF (Lnudging(ng)) THEN
 !$OMP MASTER
             CALL get_nudgcoef (ng, iNLM)
 !$OMP END MASTER
-# ifdef DISTRIBUTE
+#  ifdef DISTRIBUTE
             CALL mp_bcasti (ng, iNLM, exit_flag)
-# endif
+#  endif
 !$OMP BARRIER
             IF (FoundError(exit_flag, NoError, __LINE__,                &
      &                     __FILE__)) RETURN
           END IF
         END DO
+# endif
 #endif
       END IF
 !
@@ -681,7 +685,7 @@
       IF (Nrun.gt.1) THEN
         DO ng=1,Ngrids
 !$OMP MASTER
-          CALL get_state (ng, 12, 12, INI(ng)%name,                     &
+          CALL get_state (ng, 5, 5, INI(ng)%name,                       &
      &                    IniRec(ng), Tindex(ng))
 !$OMP END MASTER
 # ifdef DISTRIBUTE
@@ -816,6 +820,7 @@
 !$OMP END MASTER
 !$OMP BARRIER
 # endif
+# if !defined CORRELATION
 !
 !  If applicable, close all input boundary, climatology, and forcing
 !  NetCDF files and set associated parameters to the closed state. This
@@ -829,9 +834,9 @@
         CALL close_inp (ng, iNLM)
         CALL check_multifile (ng, iNLM)
 !$OMP END MASTER
-# ifdef DISTRIBUTE
+#  ifdef DISTRIBUTE
         CALL mp_bcasti (ng, iNLM, exit_flag)
-# endif
+#  endif
 !$OMP BARRIER
         IF (FoundError(exit_flag, NoError, __LINE__,                    &
      &                 __FILE__)) RETURN
@@ -844,13 +849,14 @@
         CALL get_idata (ng)
         CALL get_data (ng)
 !$OMP END MASTER
-# ifdef DISTRIBUTE
+#  ifdef DISTRIBUTE
         CALL mp_bcasti (ng, iNLM, exit_flag)
-# endif
+#  endif
 !$OMP BARRIER
         IF (FoundError(exit_flag, NoError, __LINE__,                    &
      &                 __FILE__)) RETURN
       END DO
+# endif
 #endif
 
 #ifdef MASKING
@@ -867,8 +873,9 @@
       END DO
 #endif
 
-#ifdef NESTING
-# if defined MASKING || defined WET_DRY
+#if !defined CORRELATION
+# ifdef NESTING
+#  if defined MASKING || defined WET_DRY
 !
 !-----------------------------------------------------------------------
 !  If nesting and Land/Sea masking, scale horizontal interpolation
@@ -881,10 +888,10 @@
         END DO
 !$OMP BARRIER
       END DO
-# endif
+#  endif
 !
 !-----------------------------------------------------------------------
-!  If nesting, process state fields initial conditons in the contact
+!  If nesting, process state fields initial conditions in the contact
 !  regions.
 !-----------------------------------------------------------------------
 !
@@ -895,14 +902,14 @@
           ng=GridNumber(ig,nl)
           IF (ANY(CompositeGrid(:,ng))) THEN
             CALL nesting (ng, iNLM, nFSIC)        ! free-surface
-# ifndef SOLVE3D
+#  ifndef SOLVE3D
             CALL nesting (ng, iNLM, n2dIC)        ! 2d momentum
-# endif
+#  endif
           END IF
         END DO
       END DO
 
-# ifdef SOLVE3D
+#  ifdef SOLVE3D
 !
 !  Determine vertical indices and vertical interpolation weights in
 !  the contact zone using initial unperturbed depth arrays.
@@ -922,6 +929,7 @@
           END IF
         END DO
       END DO
+#  endif
 # endif
 #endif
 

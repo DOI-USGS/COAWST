@@ -3,7 +3,7 @@
 !
 !svn $Id: diag.F 875 2017-11-03 01:10:02Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2017 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2018 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -236,10 +236,10 @@
         my_max_Ck=0
         my_maxspeed=0.0_r8
 #ifdef SOLVE3D
-        my_maxrho=-1.0E+20_r8
+        my_maxrho=-spval
 # ifdef BIOLOGY
         DO ibt=1,NBT
-          my_maxbio(ibt)=-1.0E+20_r8
+          my_maxbio(ibt)=-spval
         END DO
 # endif
 #endif

@@ -1,9 +1,9 @@
 #include "cppdefs.h"
 #ifdef BIOLOGY
 !!
-!!svn $Id: read_biopar.F 851 2017-06-23 23:22:54Z arango $
+!!svn $Id: read_biopar.F 889 2018-02-10 03:32:52Z arango $
 !!================================================= Hernan G. Arango ===
-!! Copyright (c) 2002-2017 The ROMS/TOMS Group                         !
+!! Copyright (c) 2002-2018 The ROMS/TOMS Group                         !
 !!   Licensed under a MIT/X style license                              !
 !!   See License_ROMS.txt                                              !
 !!======================================================================

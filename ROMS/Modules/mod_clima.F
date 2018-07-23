@@ -3,7 +3,7 @@
 !
 !svn $Id: mod_clima.F 830 2017-01-24 21:21:11Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2017 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2018 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -132,6 +132,8 @@
           real(r8), pointer :: v_ads(:,:,:)
           real(r8), pointer :: u_adsG(:,:,:,:)
           real(r8), pointer :: v_adsG(:,:,:,:)
+          real(r8), pointer :: wvel_ads(:,:,:)
+          real(r8), pointer :: wvel_adsG(:,:,:,:)
 
           real(r8), pointer :: t_ads(:,:,:,:)
           real(r8), pointer :: t_adsG(:,:,:,:,:)
@@ -272,6 +274,8 @@
       allocate ( CLIMA(ng) % v_ads(LBi:UBi,LBj:UBj,N(ng)) )
       allocate ( CLIMA(ng) % u_adsG(LBi:UBi,LBj:UBj,N(ng),2) )
       allocate ( CLIMA(ng) % v_adsG(LBi:UBi,LBj:UBj,N(ng),2) )
+      allocate ( CLIMA(ng) % wvel_ads(LBi:UBi,LBj:UBj,0:N(ng)) )
+      allocate ( CLIMA(ng) % wvel_adsG(LBi:UBi,LBj:UBj,0:N(ng),2) )
 
       allocate ( CLIMA(ng) % t_ads(LBi:UBi,LBj:UBj,N(ng),NT(ng)) )
       allocate ( CLIMA(ng) % t_adsG(LBi:UBi,LBj:UBj,N(ng),2,NT(ng)) )
@@ -511,6 +515,14 @@
             CLIMA(ng) % u_adsG(i,j,k,2) = IniVal
             CLIMA(ng) % v_adsG(i,j,k,1) = IniVal
             CLIMA(ng) % v_adsG(i,j,k,2) = IniVal
+          END DO
+        END DO
+!
+        DO k=0,N(ng)
+          DO i=Imin,Imax
+            CLIMA(ng) % wvel_ads(i,j,k) = IniVal
+            CLIMA(ng) % wvel_adsG(i,j,k,1) = IniVal
+            CLIMA(ng) % wvel_adsG(i,j,k,2) = IniVal
           END DO
         END DO
 !

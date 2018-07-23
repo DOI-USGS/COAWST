@@ -4,7 +4,7 @@
 !
 !svn $Id: set_data.F 858 2017-07-31 23:02:30Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2017 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2018 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -44,9 +44,9 @@
 !***********************************************************************
 !
       USE mod_param
-# if defined HYPOXIA_SRM || defined RED_TIDE
+#if defined HYPOXIA_SRM || defined RED_TIDE
       USE mod_biology
-# endif
+#endif
       USE mod_boundary
       USE mod_clima
       USE mod_forces
@@ -283,7 +283,26 @@
 #   endif
 #  endif
 # else
-
+#  if defined CLOUDS && !defined AIR_OCEAN
+!
+!-----------------------------------------------------------------------
+!  Set cloud fraction (nondimensional).  Notice that clouds are
+!  processed first in case that they are used to adjust shortwave
+!  radiation.
+!-----------------------------------------------------------------------
+!
+#    ifdef ANA_CLOUD
+      CALL ana_cloud (ng, tile, iNLM)
+#    else
+      CALL set_2dfld_tile (ng, tile, iNLM, idCfra,                      &
+     &                     LBi, UBi, LBj, UBj,                          &
+     &                     FORCES(ng)%cloudG,                           &
+     &                     FORCES(ng)%cloud,                            &
+     &                     update)
+      IF (FoundError(exit_flag, NoError, __LINE__,                      &
+     &               __FILE__)) RETURN
+#    endif
+#   endif
 #  if (defined BULK_FLUXES || defined ECOSIM || \
        defined SPECTRAL_LIGHT || defined CCSM_FLUXES2D || \
     (defined SHORTWAVE && defined ANA_SRFLUX && defined ALBEDO_CLOUD)) && \
@@ -340,27 +359,6 @@
       FORCES(ng)%albedo_ice = FORCES(ng)%albedo
 #    endif
 #   endif
-#  if defined CLOUDS && !defined AIR_OCEAN
-!
-!-----------------------------------------------------------------------
-!  Set cloud fraction (nondimensional).  Notice that clouds are
-!  processed first in case that they are used to adjust shortwave
-!  radiation.
-!-----------------------------------------------------------------------
-!
-#    ifdef ANA_CLOUD
-      CALL ana_cloud (ng, tile, iNLM)
-#    else
-      CALL set_2dfld_tile (ng, tile, iNLM, idCfra,                      &
-     &                     LBi, UBi, LBj, UBj,                          &
-     &                     FORCES(ng)%cloudG,                           &
-     &                     FORCES(ng)%cloud,                            &
-     &                     update)
-      IF (FoundError(exit_flag, NoError, __LINE__,                      &
-     &               __FILE__)) RETURN
-#    endif
-#   endif
-
 #  if defined SHORTWAVE && !defined AIR_OCEAN
 !
 !-----------------------------------------------------------------------

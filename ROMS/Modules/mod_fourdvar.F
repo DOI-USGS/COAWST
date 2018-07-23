@@ -5,7 +5,7 @@
 !
 !svn $Id: mod_fourdvar.F 880 2017-11-15 22:04:38Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2017 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2018 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -257,7 +257,11 @@
         real(r8), allocatable :: ad_zgrad0(:)
         real(r8), allocatable :: ad_cg_innov(:)
         real(r8), allocatable :: ad_cg_pxsave(:)
+#    ifdef IMPACT_INNER
+        real(r8), allocatable :: ad_ObsVal(:,:)
+#    else
         real(r8), allocatable :: ad_ObsVal(:)
+#    endif
 
         real(r8), allocatable :: tl_zcglwk(:,:)
         real(r8), allocatable :: tl_zgrad0(:)
@@ -1324,9 +1328,14 @@
       allocate ( tl_ObsVal(Mobs) )
       tl_ObsVal = IniVal
 
+#    ifdef IMPACT_INNER
+      allocate ( ad_ObsVal(Mobs,Ninner) )
+#    else
       allocate ( ad_ObsVal(Mobs) )
+#    endif
       ad_ObsVal = IniVal
 #   endif
+
       allocate ( cg_dla(Ninner,Nouter) )
       cg_dla = IniVal
 

@@ -1,7 +1,7 @@
 /*
 ** svn $Id: hypoxia_srm_var.h 851 2017-06-23 23:22:54Z arango $
 *************************************************** Hernan G. Arango ***
-** Copyright (c) 2002-2017 The ROMS/TOMS Group                        **
+** Copyright (c) 2002-2018 The ROMS/TOMS Group                        **
 **   Licensed under a MIT/X style license                             **
 **   See License_ROMS.txt                                             **
 ************************************************************************

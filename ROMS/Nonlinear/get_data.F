@@ -3,7 +3,7 @@
 !
 !svn $Id: get_data.F 858 2017-07-31 23:02:30Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2017 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2018 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -107,7 +107,7 @@
       DO i=1,NT(ng)
         IF (LtracerSrc(i,ng)) THEN
           CALL get_ngfld (ng, iNLM, idRtrc(i), SSF(ng)%ncid,            &
-     &                    1, SSF(ng), update(1),                        &
+      &                    1, SSF(ng), update(1),                        &
 #  ifdef ONE_TRACER_SOURCE
      &                    1, 1, 1, 2, 1, 1, 1,                          &
      &                    SOURCES(ng) % TsrcG(:,i))
@@ -2046,17 +2046,15 @@
      &                  OCEAN(ng) % zetaG)
         IF (FoundError(exit_flag, NoError, __LINE__,                    &
      &                 __FILE__)) RETURN
-
-# ifndef SOLVE3D
 !
 !  Read 2D momentum.
 !
         CALL get_2dfld (ng, iNLM, idUbar, TLF(ng)%ncid,                 &
      &                  1, TLF(ng), update(1),                          &
      &                  LBi, UBi, LBj, UBj, 2, 1,                       &
-#  ifdef MASKING
+# ifdef MASKING
      &                  GRID(ng) % umask,                               &
-#  endif
+# endif
      &                  OCEAN(ng) % ubarG)
         IF (FoundError(exit_flag, NoError, __LINE__,                    &
      &                 __FILE__)) RETURN
@@ -2064,14 +2062,13 @@
         CALL get_2dfld (ng, iNLM, idVbar, TLF(ng)%ncid,                 &
      &                  1, TLF(ng), update(1),                          &
      &                  LBi, UBi, LBj, UBj, 2, 1,                       &
-#  ifdef MASKING
+# ifdef MASKING
      &                  GRID(ng) % vmask,                               &
-#  endif
+# endif
      &                  OCEAN(ng) % vbarG)
         IF (FoundError(exit_flag, NoError, __LINE__,                    &
      &                 __FILE__)) RETURN
 
-# endif
 # ifdef SOLVE3D
 !
 !  Read in 3D momentum.

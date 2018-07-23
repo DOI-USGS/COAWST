@@ -2,9 +2,9 @@
 #if defined TL_IOMS && defined FOUR_DVAR
       SUBROUTINE rp_def_ini (ng)
 !
-!svn $Id: rp_def_ini.F 873 2017-10-05 20:27:10Z arango $
+!svn $Id: rp_def_ini.F 889 2018-02-10 03:32:52Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2017 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2018 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================

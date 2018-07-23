@@ -2,9 +2,9 @@
 # ifdef TANGENT
       SUBROUTINE tl_get_data (ng)
 !
-!svn $Id: tl_get_data.F 858 2017-07-31 23:02:30Z arango $
+!svn $Id: tl_get_data.F 900 2018-03-21 03:23:08Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2017 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2018 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -149,7 +149,7 @@
      &               __FILE__)) RETURN
 # endif
 
-# ifndef ATM_COUPLING
+# ifndef FRC_COUPLING
 #  if !defined ANA_SMFLUX  && \
       !defined BULK_FLUXES && !defined NL_BULK_FLUXES
 !

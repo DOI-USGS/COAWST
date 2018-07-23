@@ -2,7 +2,7 @@
 !
 !svn $Id: nrutil.F 844 2017-04-29 05:30:54Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2017 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2018 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -295,6 +295,8 @@
 !                                                                      !
 !=======================================================================
 !
+      USE mod_iounits, ONLY : stdout
+!
 !  Imported variable declarations.
 !
       character(len=*), intent(in) :: string
@@ -303,7 +305,7 @@
 !  Report error message to standard output and terminate execution.
 !-----------------------------------------------------------------------
 !
-      PRINT 10, string, 'program terminated by NRERROR'
+      WRITE (stdout,10) string, 'program terminated by NRERROR'
  10   FORMAT (/,1x,a,/20x,a)
       STOP
 

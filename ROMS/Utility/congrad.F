@@ -6,7 +6,7 @@
 !
 !svn $Id: congrad.F 857 2017-07-29 04:05:27Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2017 The ROMS/TOMS Group       Andrew M. Moore   !
+!  Copyright (c) 2002-2018 The ROMS/TOMS Group       Andrew M. Moore   !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -1068,7 +1068,8 @@
             CALL DSTEQR ('I', innLoop, cg_Ritz(1,outLoop), zwork(1,1),  &
      &                   zgv, Ninner, work, info)
             IF (info.ne.0) THEN
-              PRINT *,' CONGRAD - Error in DSTEQR: info = ',info
+              WRITE (stdout,*) ' CONGRAD - Error in DSTEQR: info = ',   &
+     &                         info
               exit_flag=8
               GO TO 10
             END IF
@@ -1090,7 +1091,7 @@
 !
             DO ivec=1,innLoop
               IF (cg_RitzErr(ivec,outLoop).lt.0.0_r8) THEN
-                PRINT *,'CONGRAD - negative Ritz value found.'
+                WRITE (stdout,*) ' CONGRAD - negative Ritz value found.'
                 exit_flag=8
                 GO TO 10
               END IF

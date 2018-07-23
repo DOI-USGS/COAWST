@@ -2,7 +2,7 @@
 !
 !svn $Id: uv3dmix2_s.h 854 2017-07-18 23:28:45Z arango $
 !************************************************** Hernan G. Arango ***
-!  Copyright (c) 2002-2017 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2018 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !***********************************************************************

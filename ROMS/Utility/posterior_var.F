@@ -8,7 +8,7 @@
 !
 !svn $Id: posterior_var.F 854 2017-07-18 23:28:45Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2017 The ROMS/TOMS Group       Andrew M. Moore   !
+!  Copyright (c) 2002-2018 The ROMS/TOMS Group       Andrew M. Moore   !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -637,7 +637,7 @@
       CALL mp_bcasti (ng, model, info)
 # endif
       IF (info.ne.0) THEN
-        IF (Master) PRINT *,' Error in DPOTRF: info = ', info
+        IF (Master) WRITE (stdout,*) ' Error in DPOTRF: info = ', info
         exit_flag=8
         RETURN
       END IF
@@ -650,7 +650,7 @@
       CALL mp_bcastf (ng, model, zLanczos_inv)
 # endif
       IF (info.ne.0) THEN
-        IF (Master) PRINT *,' Error in DPOTRI: info =', info
+        IF (Master) WRITE (stdout,*) ' Error in DPOTRI: info = ', info
         exit_flag=8
         RETURN
       END IF

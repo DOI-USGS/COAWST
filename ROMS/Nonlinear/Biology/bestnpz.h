@@ -3810,3 +3810,4 @@
      &             / Pmax1 / CrChlRatio1 )
        GetLightLim2 = LightLim
       END FUNCTION GetLightLim2
+ 

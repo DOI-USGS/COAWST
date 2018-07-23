@@ -159,7 +159,8 @@
             fac2=(z_r(i,j,k)-z_w(i,j,0))*oDstp(i,j)
             cff2=fac2*gamr(i,j)
             cff3=COSH(2.0_r8*pi*cff2)
-            cff1=Dissip_wcap(i,j)+Dissip_break(i,j)
+!           cff1=Dissip_wcap(i,j)+Dissip_break(i,j)
+            cff1=Dissip_break(i,j)
             cff4=((1.0_r8-wec_alpha(ng))*cff1)**(1.0_r8/3.0_r8)
 # ifdef WEC_ROLLER
             cff4=cff4+(Dissip_roller(i,j))**(1.0_r8/3.0_r8)

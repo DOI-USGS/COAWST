@@ -4,7 +4,7 @@
 !
 !svn $Id: rep_matrix.F 830 2017-01-24 21:21:11Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2017 The ROMS/TOMS Group       Andrew M. Moore   !
+!  Copyright (c) 2002-2018 The ROMS/TOMS Group       Andrew M. Moore   !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -35,6 +35,9 @@
 !  Local variable declarations.
 !
       integer :: i, j, iobs, ivec, innLoop
+# ifdef IMPACT_INNER
+      integer :: mloop
+# endif
 # ifdef MINRES
       integer :: info
       integer, dimension(NinnLoop) :: ipiv
@@ -51,6 +54,185 @@
 # ifdef RPCG
       real(r8), dimension(NinnLoop) :: zfact
 # endif
+# ifdef IMPACT_INNER
+!
+!-----------------------------------------------------------------------
+!  Compute observation impact on the weak constraint 4DVAR data
+!  assimilation systems for each inner-loop.
+!-----------------------------------------------------------------------
+!
+      MASTER_THREAD : IF (Master) THEN
+
+        DO mloop=1,NinnLoop
+
+          DO iobs=1,Ndatum(ng)
+            ad_ObsVal(iobs,mloop)=0.0_r8
+          END DO
+          DO innLoop=1,NinnLoop
+            zt(innLoop)=0.0_r8
+          END DO
+#  ifdef RPCG
+          DO innLoop=1,NinnLoop
+            IF (innLoop.eq.1) THEN
+              zfact(innLoop)=1.0_r8/cg_QG(1,outLoop)
+            ELSE
+              zfact(innLoop)=1.0_r8/cg_beta(innLoop,outLoop)
+            END IF
+          END DO
+#  endif
+!
+!  Multiply TLmodVal by the tranpose matrix of Lanczos vectors.
+!  Note that the factor of 1/SQRT(ObsErr) is added to convert to
+!  x-space.
+!
+          DO innLoop=1,mloop
+            DO iobs=1,Ndatum(ng)
+              IF (ObsErr(iobs).NE.0.0_r8) THEN
+#  ifdef RPCG
+                zt(innLoop)=zt(innLoop)+                                &
+     &                      ObsScale(iobs)*                             &
+     &                      zcglwk(iobs,innLoop,outLoop)*               &
+     &                      TLmodVal(iobs)
+#  else
+                zt(innLoop)=zt(innLoop)+                                &
+     &                      ObsScale(iobs)*                             &
+     &                      zcglwk(iobs,innLoop,outLoop)*               &
+     &                      TLmodVal(iobs)/                             &
+     &                      SQRT(ObsErr(iobs))
+#  endif
+              END IF
+            END DO
+          END DO
+
+#  ifdef MINRES
+!
+!  Use the minimum residual method as described by Paige and Saunders
+!  ("Sparse Indefinite Systems of Linear Equations", 1975, SIAM Journal
+!  on Numerical Analysis, 617-619). Specifically we refer to equations
+!  6.10 and 6.11 of this paper.
+!
+!  Perform a LQ factorization of the tridiagonal matrix.
+!
+          ztriT=0.0_r8
+          DO i=1,mloop
+            ztriT(i,i)=cg_delta(i,outLoop)
+          END DO
+          DO i=1,mloop-1
+            ztriT(i,i+1)=cg_beta(i+1,outLoop)
+          END DO
+          DO i=2,mloop
+            ztriT(i,i-1)=cg_beta(i,outLoop)
+          END DO
+          CALL sqlq (mloop, ztriT, tau, zwork1)
+!
+!   Isolate L=zLT and its tranpose.
+!
+          zLT=0.0_r8
+          zLTt=0.0_r8
+          DO i=1,mloop
+            DO j=1,i
+              zLT(i,j)=ztriT(i,j)
+            END DO
+          END DO
+          DO j=1,mloop
+            DO i=1,mloop
+              zLTt(i,j)=zLT(j,i)
+            END DO
+          END DO
+!
+!  Compute zck.
+!
+          zgk=SQRT(zLT(mloop,mloop)*zLT(mloop,mloop)+                   &
+     &        cg_beta(mloop+1,outLoop)*cg_beta(mloop+1,outLoop))
+          zck=zLT(mloop,mloop)/zgk
+!
+!  Now form inv(L)*zt - NOTE: we use L not L', so we use the
+!  adjoint of the original solver.
+!
+          DO j=1,mloop
+            DO i=j-1,1,-1
+              zt(j)=zt(j)-zt(i)*zLTt(i,j)
+            END DO
+            zt(j)=zt(j)/zLTt(j,j)
+          END DO
+!
+!   Now form zt=D*zt.
+!
+          zt(mloop)=zck*zt(mloop)
+!
+!   Now form zt=Q'*zt.
+!
+          DO i=mloop,1,-1
+            DO j=1,mloop
+              zeref(j)=0.0_r8
+            END DO
+            zeref(i)=1.0_r8
+            DO j=i+1,mloop
+              zeref(j)=ztriT(i,j)
+            END DO
+            zsum=0.0_r8
+            DO j=1,mloop
+              zsum=zsum+zt(j)*zeref(j)
+            END DO
+            DO j=1,mloop
+              zt(j)=zt(j)-tau(i)*zsum*zeref(j)
+            END DO
+          END DO
+!
+!   Copy the solution zt into zu.
+!
+          DO i=1,mloop
+            zu(i)=zt(i)
+          END DO
+#  else
+!
+!  Now multiply the result by the inverse tridiagonal matrix.
+!
+          zbet=cg_delta(1,outLoop)
+          zu(1)=zt(1)/zbet
+          DO ivec=2,mloop
+            zgam(ivec)=cg_beta(ivec,outLoop)/zbet
+            zbet=cg_delta(ivec,outLoop)-cg_beta(ivec,outLoop)*zgam(ivec)
+            zu(ivec)=(zt(ivec)-cg_beta(ivec,outLoop)*                   &
+     &                zu(ivec-1))/zbet
+          END DO
+
+          DO ivec=mloop-1,1,-1
+            zu(ivec)=zu(ivec)-zgam(ivec+1)*zu(ivec+1)
+          END DO
+#  endif
+!
+!  Finally multiply by the matrix of Lanczos vactors.
+#  ifndef RPCG
+!  Note that the factor of 1/SQRT(ObsErr) is added to covert to
+!  x-space.
+#  endif
+!
+          DO iobs=1,Ndatum(ng)
+            DO innLoop=1,mloop
+              IF (ObsErr(iobs).NE.0.0_r8) THEN
+#  ifdef RPCG
+                ad_ObsVal(iobs,mloop)=ad_ObsVal(iobs,mloop)+            &
+     &                                ObsScale(iobs)*                   &
+     &                                TLmodVal_S(iobs,innLoop,outLoop)* &
+     &                                zu(innLoop)*zfact(innLoop)/       &
+     &                                ObsErr(iobs)
+#  else
+                ad_ObsVal(iobs,mloop)=ad_ObsVal(iobs,mloop)+            &
+     &                                ObsScale(iobs)*                   &
+     &                                zcglwk(iobs,innLoop,outLoop)*     &
+     &                                zu(innLoop)/                      &
+     &                                SQRT(ObsErr(iobs))
+#  endif
+              END IF
+            END DO
+          END DO
+
+        END DO
+
+      END IF MASTER_THREAD
+
+# else
 !
 !-----------------------------------------------------------------------
 !  Compute observation impact on the weak constraint 4DVAR data
@@ -65,7 +247,7 @@
         DO innLoop=1,NinnLoop
           zt(innLoop)=0.0_r8
         END DO
-# ifdef RPCG
+#  ifdef RPCG
         DO innLoop=1,NinnLoop
           IF (innLoop.eq.1) THEN
             zfact(innLoop)=1.0_r8/cg_QG(1,outLoop)
@@ -73,7 +255,7 @@
             zfact(innLoop)=1.0_r8/cg_beta(innLoop,outLoop)
           ENDIF
         END DO
-# endif
+#  endif
 !
 !  Multiply TLmodVal by the tranpose matrix of Lanczos vectors.
 !  Note that the factor of 1/SQRT(ObsErr) is added to convert to
@@ -82,19 +264,19 @@
         DO innLoop=1,NinnLoop
           DO iobs=1,Ndatum(ng)
             IF (ObsErr(iobs).NE.0.0_r8) THEN
-# ifdef RPCG
+#  ifdef RPCG
               zt(innLoop)=zt(innLoop)+ObsScale(iobs)*                   &
      &                    zcglwk(iobs,innLoop,outLoop)*TLmodVal(iobs)
-# else
+#  else
               zt(innLoop)=zt(innLoop)+ObsScale(iobs)*                   &
      &                    zcglwk(iobs,innLoop,outLoop)*TLmodVal(iobs)/  &
      &                    SQRT(ObsErr(iobs))
-# endif
+#  endif
             END IF
           END DO
         END DO
 
-# ifdef MINRES
+#  ifdef MINRES
 !
 !  Use the minimum residual method as described by Paige and Saunders
 !  ("Sparse Indefinite Systems of Linear Equations", 1975, SIAM Journal
@@ -174,7 +356,7 @@
         DO i=1,NinnLoop
           zu(i)=zt(i)
         END DO
-# else
+#  else
 !
 !  Now multiply the result by the inverse tridiagonal matrix.
 !
@@ -190,26 +372,28 @@
         DO ivec=NinnLoop-1,1,-1
           zu(ivec)=zu(ivec)-zgam(ivec+1)*zu(ivec+1)
         END DO
-# endif
+#  endif
 !
 !  Finally multiply by the matrix of Lanczos vactors.
-# ifndef RPCG
+#  ifndef RPCG
 !  Note that the factor of 1/SQRT(ObsErr) is added to covert to
 !  x-space.
-# endif
+#  endif
 !
         DO iobs=1,Ndatum(ng)
           DO innLoop=1,NinnLoop
             IF (ObsErr(iobs).NE.0.0_r8) THEN
-# ifdef RPCG
+#  ifdef RPCG
               ad_ObsVal(iobs)=ad_ObsVal(iobs)+                          &
      &                        ObsScale(iobs)*                           &
      &                        TLmodVal_S(iobs,innLoop,outLoop)*         &
-     &                        zu(innLoop)*zfact(innLoop)/ObsErr(iobs)
+     &                        zu(innLoop)*zfact(innLoop)/               &
+     &                        ObsErr(iobs)
 #  else
               ad_ObsVal(iobs)=ad_ObsVal(iobs)+                          &
      &                        ObsScale(iobs)*                           &
-     &                        zcglwk(iobs,innLoop,outLoop)*zu(innLoop)/ &
+     &                        zcglwk(iobs,innLoop,outLoop)*             &
+     &                        zu(innLoop)/                              &
      &                        SQRT(ObsErr(iobs))
 #  endif
             END IF
@@ -218,6 +402,7 @@
 
       END IF MASTER_THREAD
 
+# endif
 # ifdef DISTRIBUTE
 !
 !-----------------------------------------------------------------------

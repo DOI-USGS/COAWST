@@ -2,7 +2,7 @@
 !
 !svn $Id: fennel.h 864 2017-08-10 04:11:10Z arango $
 !***********************************************************************
-!  Copyright (c) 2002-2017 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2018 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license           Hernan G. Arango   !
 !    See License_ROMS.txt                               Katja Fennel   !
 !****************************************** Alexander F. Shchepetkin ***

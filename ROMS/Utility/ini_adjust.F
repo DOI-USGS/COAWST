@@ -8,7 +8,7 @@
 !
 !svn $Id: ini_adjust.F 854 2017-07-18 23:28:45Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2017 The ROMS/TOMS Group       Andrew M. Moore   !
+!  Copyright (c) 2002-2018 The ROMS/TOMS Group       Andrew M. Moore   !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -954,7 +954,8 @@
 !
       USE mod_param
       USE mod_ncparam
-#  if defined ADJUST_STFLUX || defined ADJUST_WSTRESS
+#  if defined ADJUST_BOUNDARY || defined ADJUST_STFLUX || \
+      defined ADJUST_WSTRESS
       USE mod_scalars
 #  endif
 !
@@ -1766,7 +1767,8 @@
 !
       USE mod_param
       USE mod_ncparam
-#  if defined ADJUST_STFLUX || defined ADJUST_WSTRESS
+#  if defined ADJUST_BOUNDARY || defined ADJUST_STFLUX || \
+      defined ADJUST_WSTRESS
       USE mod_scalars
 #  endif
 !

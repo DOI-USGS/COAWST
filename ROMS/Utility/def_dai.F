@@ -4,7 +4,7 @@
 !
 !svn $Id: def_dai.F 873 2017-10-05 20:27:10Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2017 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2018 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -683,9 +683,9 @@
         DAI(ng)%Rindex=rec_size
       END IF QUERY
 !
-  10  FORMAT (6x,'DEF_DAI     - creating  DA INI/RST', t43,             &
+  10  FORMAT (/,6x,'DEF_DAI   - creating  DA INI/RST', t43,             &
      &        ' file, Grid ',i2.2,': ', a)
-  20  FORMAT (6x,'DEF_DAI     - inquiring DA INI/RST', t43,             &
+  20  FORMAT (/,6x,'DEF_DAI   - inquiring DA INI/RST', t43,             &
      &        ' file, Grid ',i2.2,': ', a)
   30  FORMAT (/,' DEF_DAI - unable to create DA initial/restart',       &
      &        ' NetCDF file: ',a)

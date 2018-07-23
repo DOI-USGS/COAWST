@@ -4,7 +4,7 @@
 !
 !svn $Id: bulk_flux.F 830 2017-01-24 21:21:11Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2017 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2018 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -35,7 +35,7 @@
 !  (10/2004).                                                          !
 !                                                                      !
 !  Modified by Kate Hedstrom for COARE version 3.0 (03/2005).          !
-!  Modified by Jim Edson to correct specific hunidities.               !
+!  Modified by Jim Edson to correct specific humidities.               !
 !                                                                      !
 !  Reference:                                                          !
 !                                                                      !
@@ -109,6 +109,10 @@
      &                     MIXING(ng) % beta,                           &
      &                     OCEAN(ng) % rho,                             &
      &                     OCEAN(ng) % t,                               &
+# ifdef WIND_MINUS_CURRENT
+     &                     OCEAN(ng) % u,                               &
+     &                     OCEAN(ng) % v,                               &
+# endif
      &                     FORCES(ng) % Hair,                           &
      &                     FORCES(ng) % Pair,                           &
      &                     FORCES(ng) % Tair,                           &
@@ -205,6 +209,9 @@
      &                           rmask_wet, umask_wet, vmask_wet,       &
 # endif
      &                           alpha, beta, rho, t,                   &
+# ifdef WIND_MINUS_CURRENT
+     &                           u, v,                                  &
+# endif
      &                           Hair, Pair, Tair, Uwind, Vwind,        &
 # ifdef CLOUDS
      &                           cloud,                                 &
@@ -297,11 +304,20 @@
       real(r8), intent(in) :: beta(LBi:,LBj:)
       real(r8), intent(in) :: rho(LBi:,LBj:,:)
       real(r8), intent(in) :: t(LBi:,LBj:,:,:,:)
+#  ifdef WIND_MINUS_CURRENT
+      real(r8), intent(in) :: u(LBi:,LBj:,:,:)
+      real(r8), intent(in) :: v(LBi:,LBj:,:,:)
+#  endif
       real(r8), intent(in) :: Hair(LBi:,LBj:)
       real(r8), intent(in) :: Pair(LBi:,LBj:)
       real(r8), intent(in) :: Tair(LBi:,LBj:)
+#  ifdef WIND_MINUS_CURRENT
+      real(r8), intent(inout) :: Uwind(LBi:,LBj:)
+      real(r8), intent(inout) :: Vwind(LBi:,LBj:)
+#  else
       real(r8), intent(in) :: Uwind(LBi:,LBj:)
       real(r8), intent(in) :: Vwind(LBi:,LBj:)
+#  endif
 #  ifdef CLOUDS
       real(r8), intent(in) :: cloud(LBi:,LBj:)
 #  endif
@@ -379,7 +395,6 @@
       real(r8), intent(out) :: sustr(LBi:,LBj:)
       real(r8), intent(out) :: svstr(LBi:,LBj:)
 # else
-
 #  ifdef MASKING
       real(r8), intent(in) :: rmask(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: umask(LBi:UBi,LBj:UBj)
@@ -394,11 +409,20 @@
       real(r8), intent(in) :: beta(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: rho(LBi:UBi,LBj:UBj,N(ng))
       real(r8), intent(in) :: t(LBi:UBi,LBj:UBj,N(ng),3,NT(ng))
+#  ifdef WIND_MINUS_CURRENT
+      real(r8), intent(in) :: u(LBi:UBi,LBj:UBj,N(ng),3)
+      real(r8), intent(in) :: v(LBi:UBi,LBj:UBj,N(ng),3)
+#  endif
       real(r8), intent(in) :: Hair(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: Pair(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: Tair(LBi:UBi,LBj:UBj)
-      real(r8), intent(in) :: Uwind(LBi:UBi,LBj:UBj)
-      real(r8), intent(in) :: Vwind(LBi:UBi,LBj:UBj)
+#  ifdef WIND_MINUS_CURRENT
+      real(r8), intent(inout) :: Uwind(LBi:,LBj:)
+      real(r8), intent(inout) :: Vwind(LBi:,LBj:)
+#  else
+      real(r8), intent(in) :: Uwind(LBi:,LBj:)
+      real(r8), intent(in) :: Vwind(LBi:,LBj:)
+#  endif
 #  ifdef CLOUDS
       real(r8), intent(in) :: cloud(LBi:UBi,LBj:UBj)
 #  endif
@@ -602,6 +626,26 @@
 !  Atmosphere-Ocean bulk fluxes parameterization.
 !=======================================================================
 !
+#ifdef WIND_MINUS_CURRENT
+!
+!  Modify near-surface (2m or 10m) effective winds by subtracting the
+!  ocean surface current (J Wilkin). See:
+!
+!  Bye, J.A.T. and J.-O. Wolff, 1999: Atmosphere-ocean momentum exchange
+!     in general circulation models. J. Phys. Oceanogr. 29, 671-691.
+!
+      DO j=Jstr-1,JendR
+        DO i=Istr-1,IendR
+          Uwind(i,j)=Uwind(i,j)-                                        &
+     &               0.5_r8*(u(i,j,N(ng),nrhs)+u(i+1,j,N(ng),nrhs))
+          Vwind(i,j)=Vwind(i,j)-                                        &
+     &               0.5_r8*(v(i,j,N(ng),nrhs)+v(i,j+1,N(ng),nrhs))
+        END DO
+      END DO
+#endif
+!
+!  Compute Atmosphere-ocean fluxes using a bulk flux parameterization.
+!
       Hscale=rho0*Cp
       Hscale2=1.0_r8/(rho0*Cp)
       twopi_inv=0.5_r8/pi
@@ -789,7 +833,11 @@
 !
 !  Compute latent heat of vaporization (J/kg) at sea surface, Hlv.
 !
+#ifdef REGCM_COUPLING
+          Hlv(i,j)=2.5104E+6_r8 ! to be consistent with RegCM
+#else
           Hlv(i,j)=(2.501_r8-0.00237_r8*TseaC(i))*1.0E+6_r8
+#endif
 !
 !  Assume that wind is measured relative to sea surface and include
 !  gustiness.
@@ -898,7 +946,7 @@
      &             (Tstar(i)*(1.0_r8+0.61_r8*Q(i))+                     &
      &                        0.61_r8*TairK(i)*Qstar(i))/               &
      &             (TairK(i)*Wstar(i)*Wstar(i)*                         &
-     &             (1.0_r8+0.61_r8*Q(i))+eps)
+     &              (1.0_r8+0.61_r8*Q(i))+eps)
             L(i)=blk_ZW(ng)/(ZoL(i)+eps)
 !
 !  Evaluate stability functions at Z/L.
@@ -940,7 +988,7 @@
 !  Cool skin correction constants. Clam: part of Saunders constant
 !  lambda; Cwet: slope of saturation vapor.
 !
-            Clam=16.0_r8*g*blk_Cpw*(rhoSea(i)*blk_visw)**3/             &
+            Clam=16.0_r8*g*blk_Cpw*(rhoSea(i)*blk_visw)**3.0_r8/        &
      &           (blk_tcw*blk_tcw*rhoAir(i)*rhoAir(i))
 !
 !  Set initial guesses for cool-skin layer thickness (Hcool).
@@ -967,7 +1015,7 @@
             IF ((Qcool.gt.0.0_r8).and.(Qbouy.gt.0.0_r8)) THEN
               lambd=6.0_r8/                                             &
      &              (1.0_r8+                                            &
-     &               (Clam*Qbouy/(Wstar(i)+eps)**4)**0.75_r8)**r3
+     &               (Clam*Qbouy/(Wstar(i)+eps)**4.0_r8)**0.75_r8)**r3
               Hcool=lambd*blk_visw/(SQRT(rhoAir(i)/rhoSea(i))*          &
      &                              Wstar(i)+eps)
               delTc(i)=Qcool*Hcool/blk_tcw
@@ -1006,7 +1054,9 @@
      &                                     (blk_Cpa*diffh))
           Hsr=rain(i,j)*wet_bulb*blk_Cpw*                               &
      &        ((TseaC(i)-TairC(i))+(Qsea(i)-Q(i))*Hlv(i,j)/blk_Cpa)
+# ifndef REGCM_COUPLING
           SHeat(i,j)=(Hs+Hsr)
+# endif
 # ifdef WET_DRY
           SHeat(i,j)=SHeat(i,j)*rmask_wet(i,j)
 # elif defined MASKING
@@ -1025,7 +1075,9 @@
           upvel=-1.61_r8*Wstar(i)*Qstar(i)-                             &
      &          (1.0_r8+1.61_r8*Q(i))*Wstar(i)*Tstar(i)/TairK(i)
           Hlw=rhoAir(i)*Hlv(i,j)*upvel*Q(i)
+# ifndef REGCM_COUPLING
           LHeat(i,j)=(Hl+Hlw)
+# endif
 # ifdef ENHANCED_LHF_TRANSFER
           LHeat(i,j)=LHeat(i,j)*1.07_r8
 # endif
@@ -1190,8 +1242,8 @@
 !
 !  Note that fresh water flux is positive out of the ocean and the
 !  salt flux (stflx(isalt)) is positive into the ocean. It is converted
-!  to (psu m/s) for stflx(isalt) in "set_vbc.F" or "ice_mk.h". The E-P
-!  value is saved in variable EminusP for I/O purposes.
+!  to (psu m/s) for stflx(isalt) in "set_vbc.F". The E-P value is
+!  saved in variable EminusP for I/O purposes.
 !
       cff=1.0_r8/rhow
       DO j=JstrR,JendR

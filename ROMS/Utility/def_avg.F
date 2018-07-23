@@ -7,7 +7,7 @@
 !
 !svn $Id: def_avg.F 873 2017-10-05 20:27:10Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2017 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2018 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -1894,7 +1894,7 @@
      &                   __FILE__)) RETURN
         END IF
 
-#  ifdef BULK_FLUXES
+#  if defined BULK_FLUXES || defined AIR_OCEAN
 !
 !  Define latent heat flux.
 !
@@ -3916,7 +3916,7 @@
      &             TRIM(Vname(1,idTsur(isalt)))) THEN
             got_var(idTsur(isalt))=.TRUE.
             AVG(ng)%Vid(idTsur(isalt))=var_id(i)
-#  ifdef BULK_FLUXES
+#  if defined BULK_FLUXES || defined AIR_OCEAN
           ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idLhea))) THEN
             got_var(idLhea)=.TRUE.
             AVG(ng)%Vid(idLhea)=var_id(i)
@@ -4702,7 +4702,7 @@
           exit_flag=3
           RETURN
         END IF
-#  ifdef BULK_FLUXES
+#  if defined BULK_FLUXES  || defined AIR_OCEAN
         IF (.not.got_var(idLhea).and.Aout(idLhea,ng)) THEN
           IF (Master) WRITE (stdout,60) TRIM(Vname(1,idLhea)),          &
      &                                  TRIM(ncname)

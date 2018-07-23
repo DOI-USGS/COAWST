@@ -5,7 +5,7 @@
 !
 !svn $Id: nesting.F 857 2017-07-29 04:05:27Z arango $
 !=======================================================================
-!  Copyright (c) 2002-2017 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2018 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license           Hernan G. Arango   !
 !    See License_ROMS.txt                             John C. Warner   !
 !=======================================================================
@@ -101,33 +101,33 @@
       PUBLIC  :: do_twoway
 # endif
       PUBLIC  :: fill_contact
-      PRIVATE :: check_massflux
+      PUBLIC  :: check_massflux
 # ifdef SOLVE3D
       PRIVATE :: correct_tracer
       PRIVATE :: correct_tracer_tile
 # endif
       PRIVATE :: fine2coarse
-      PRIVATE :: fine2coarse2d
+      PUBLIC  :: fine2coarse2d
 # ifdef SOLVE3D
-      PRIVATE :: fine2coarse3d
+      PUBLIC  :: fine2coarse3d
 # endif
-      PRIVATE :: get_contact2d
+      PUBLIC  :: get_contact2d
 # ifdef SOLVE3D
-      PRIVATE :: get_contact3d
+      PUBLIC  :: get_contact3d
 # endif
       PRIVATE :: get_composite
-      PRIVATE :: get_metrics
-      PRIVATE :: get_persisted2d
+      PUBLIC  :: get_metrics
+      PUBLIC  :: get_persisted2d
       PRIVATE :: get_refine
 # if defined MASKING || defined WET_DRY
-      PRIVATE :: mask_hweights
+      PUBLIC  :: mask_hweights
 # endif
       PRIVATE :: put_composite
       PRIVATE :: put_refine
       PRIVATE :: put_refine2d
 # ifdef SOLVE3D
       PRIVATE :: put_refine3d
-      PRIVATE :: z_weights
+      PUBLIC  :: z_weights
 # endif
 !
       CONTAINS
@@ -949,7 +949,7 @@
 
 # ifndef ONE_WAY
 !
-      FUNCTION do_twoway (nl, il, ng, istep) RESULT (doit)
+      FUNCTION do_twoway (model, nl, il, ng, istep) RESULT (doit)
 !
 !=======================================================================
 !                                                                      !
@@ -984,7 +984,7 @@
 !
 !  Imported variable declarations.
 !
-      integer, intent(in) :: nl, il, ng, istep
+      integer, intent(in) :: model, nl, il, ng, istep
 !
 !  Local variable declarations.
 !
@@ -1007,9 +1007,9 @@
 !  correct sequence: finest grid exchage first.
 !
         IF (Telescoping(ng)) THEN
-          dgc=coarserDonor(ng)                        ! for debbuging
+          dgc=CoarserDonor(ng)
           dgf=FinerDonor(ng)
-          IF (TwoWayCounter(dgf).eq.RefineSteps(dgf)) THEN
+          IF (TwoWayInterval(dgf).eq.dt(dgc)) THEN
             doit=.TRUE.
           END IF
 !
@@ -1026,7 +1026,13 @@
 !  Update two-way exchange counter between fine and coarse grids.
 !
       IF (doit) THEN
-        TwoWayCounter(ng)=TwoWayCounter(ng)+1
+        IF (model.eq.iADM) THEN
+          TwoWayInterval(ng)=TwoWayInterval(ng)-                        &
+     &                       REAL(RefineSteps(ng),r8)*dt(ng)
+        ELSE
+          TwoWayInterval(ng)=TwoWayInterval(ng)+                        &
+     &                       REAL(RefineSteps(ng),r8)*dt(ng)
+        END IF
       END IF
 
       RETURN

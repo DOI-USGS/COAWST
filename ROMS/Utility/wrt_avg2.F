@@ -1786,3 +1786,4 @@
 #endif
       RETURN
       END SUBROUTINE wrt_avg2
+ 

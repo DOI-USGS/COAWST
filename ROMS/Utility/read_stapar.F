@@ -4,7 +4,7 @@
 !
 !svn $Id: read_stapar.F 858 2017-07-31 23:02:30Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2017 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2018 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -412,7 +412,7 @@
             WRITE (out,80) Nstation(ng), 'Nstation',                    &
      &            'Number of stations to write out into stations file.'
 #if defined SEDIMENT && defined SED_MORPH
-            IF (Sout(idBath,ng)) WRITE (out,90) Sout(idBath,ng),        &
+            IF (Sout(idbath,ng)) WRITE (out,90) Sout(idbath,ng),        &
      &          'Sout(idbath)',                                         &
      &          'Write out free-surface.'
 #endif
