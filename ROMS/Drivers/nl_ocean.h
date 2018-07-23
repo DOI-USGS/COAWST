@@ -2,7 +2,7 @@
 !
 !svn $Id: nl_ocean.h 830 2017-01-24 21:21:11Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2017 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2018 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -241,7 +241,8 @@
 !=======================================================================
 !                                                                      !
 !  This routine runs ROMS/TOMS nonlinear model for the specified time  !
-!  interval (seconds), RunInterval.                                    !
+!  interval (seconds), RunInterval.  It RunInterval=0, ROMS advances   !
+!  one single time-step.                                               !
 !                                                                      !
 !=======================================================================
 !
@@ -264,29 +265,52 @@
 !
 !  Local variable declarations.
 !
+#if defined MODEL_COUPLING && !defined MCT_LIB
+      logical, save :: FirstPass = .TRUE.
+#endif
       integer :: ng
+#if defined MODEL_COUPLING && !defined MCT_LIB
+      integer :: NstrStep, NendStep
+#endif
+      real (r8) :: MyRunInterval
 !
 !-----------------------------------------------------------------------
 !  Time-step nonlinear model over all nested grids, if applicable.
+#if defined MODEL_COUPLING && !defined MCT_LIB
+!  On first pass, add a timestep to the coupling interval to account
+!  for ROMS kernel delayed delayed output until next timestep.
+#endif
 !-----------------------------------------------------------------------
 !
-      IF (Master) THEN
-        WRITE (stdout,'(1x)')
-        DO ng=1,Ngrids
-          WRITE (stdout,10) 'NL', ng, ntstart(ng), ntend(ng)
-        END DO
-        WRITE (stdout,'(1x)')
-      END IF
-
+      MyRunInterval=RunInterval
+      IF (Master) WRITE (stdout,'(1x)')
+      DO ng=1,Ngrids
+#if defined MODEL_COUPLING && !defined MCT_LIB
+        step_counter(ng)=0
+        NstrStep=iic(ng)
+        IF (FirstPass) THEN
+          NendStep=NstrStep+INT((RunInterval+dt(ng))/dt(ng))
+          IF (ng.eq.1) MyRunInterval=MyRunInterval+dt(ng)
+          FirstPass=.FALSE.
+        ELSE
+          NendStep=NstrStep+INT(MyRunInterval/dt(ng))
+        END IF
+        IF (Master) WRITE (stdout,10) 'NL', ng, NstrStep, NendStep
+#else
+        IF (Master) WRITE (stdout,10) 'NL', ng, ntstart(ng), ntend(ng)
+#endif
+      END DO
+      IF (Master) WRITE (stdout,'(1x)')
+!
 !$OMP PARALLEL
 #ifdef SOLVE3D
 # if defined OFFLINE_BIOLOGY || defined OFFLINE_FLOATS
-      CALL main3d_offline (RunInterval)
+      CALL main3d_offline (MyRunInterval)
 # else
-      CALL main3d (RunInterval)
+      CALL main3d (MyRunInterval)
 # endif
 #else
-      CALL main2d (RunInterval)
+      CALL main2d (MyRunInterval)
 #endif
 #ifdef INWAVE_MODEL
 !     CALL inwave_run

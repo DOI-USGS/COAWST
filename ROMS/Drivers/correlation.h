@@ -2,7 +2,7 @@
 !
 !svn $Id: correlation.h 857 2017-07-29 04:05:27Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2017 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2018 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -209,7 +209,7 @@
       Tindex=1
       DO ng=1,Ngrids
         IF (LdefNRM(1,ng).or.LwrtNRM(1,ng)) THEN
-          CALL get_state (ng, 6, 6, STD(1,ng)%name, STDrec, Tindex)
+          CALL get_state (ng, 10, 10, STD(1,ng)%name, STDrec, Tindex)
           IF (FoundError(exit_flag, NoError, __LINE__,                  &
      &                   __FILE__)) RETURN
         END IF
@@ -222,7 +222,7 @@
       Tindex=2
       DO ng=1,Ngrids
         IF ((LdefNRM(2,ng).or.LwrtNRM(2,ng)).and.(NSA.eq.2)) THEN
-          CALL get_state (ng, 6, 6, STD(2,ng)%name, STDrec, Tindex)
+          CALL get_state (ng, 11, 11, STD(2,ng)%name, STDrec, Tindex)
           IF (FoundError(exit_flag, NoError, __LINE__,                  &
      &                   __FILE__)) RETURN
         END IF
@@ -236,7 +236,7 @@
       Tindex=1
       DO ng=1,Ngrids
         IF (LdefNRM(3,ng).or.LwrtNRM(3,ng)) THEN
-          CALL get_state (ng, 8, 8, STD(3,ng)%name, STDrec, Tindex)
+          CALL get_state (ng, 12, 12, STD(3,ng)%name, STDrec, Tindex)
           IF (FoundError(exit_flag, NoError, __LINE__,                  &
      &                   __FILE__)) RETURN
         END IF
@@ -250,7 +250,7 @@
       Tindex=1
       DO ng=1,Ngrids
         IF (LdefNRM(4,ng).or.LwrtNRM(4,ng)) THEN
-          CALL get_state (ng, 9, 9, STD(4,ng)%name, STDrec, Tindex)
+          CALL get_state (ng, 13, 13, STD(4,ng)%name, STDrec, Tindex)
           IF (FoundError(exit_flag, NoError, __LINE__,                  &
      &                   __FILE__)) RETURN
         END IF

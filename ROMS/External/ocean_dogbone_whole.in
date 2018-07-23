@@ -3,7 +3,7 @@
 !
 !svn $Id: ocean_dogbone_whole.in 877 2017-11-15 04:04:42Z arango $
 !========================================================= Hernan G. Arango ===
-!  Copyright (c) 2002-2017 The ROMS/TOMS Group                                !
+!  Copyright (c) 2002-2018 The ROMS/TOMS Group                                !
 !    Licensed under a MIT/X style license                                     !
 !    See License_ROMS.txt                                                     !
 !==============================================================================
@@ -468,6 +468,7 @@ Lstate(isUbar) == F                        ! 2D U-momentum
 Lstate(isVbar) == F                        ! 2D V-momentum
 Lstate(isUvel) == F                        ! 3D U-momentum
 Lstate(isVvel) == F                        ! 3D V-momentum
+Lstate(isWvel) == F                        ! 3D W-momentum
 
 Lstate(isTvar) == 2*F                      ! NT tracers
 
@@ -1889,8 +1890,9 @@ Dout(iTvdif) == 2*T     ! temp_vdiff, ...    vertical diffusion
 !                a Calendar linear coordinate, like modified Julian Day.  For
 !                Example:
 !
-!                         Julian Day = 1  for  Nov 25, 0:0:0 4713 BCE
-!                modified Julian Day = 1  for  May 24, 0:0:0 1968  CE GMT
+!                         Julian Day    = 1      for  Nov 25, 00:00:00 4713 BCE
+!                modified Julian Day    = 1      for  May 24, 00:00:00 1968 GMT
+!                Days since Jan 1, 2000 = 988.5  for  Sep 15, 12:00:00 2002
 !
 !                It is called truncated or modified Julian day because an
 !                offset of 2440000 needs to be added.
@@ -1909,24 +1911,24 @@ Dout(iTvdif) == 2*T     ! temp_vdiff, ...    vertical diffusion
 !                If TIME_REF = -2, model time and DSTART are in modified Julian
 !                days units.  The "units" attribute is:
 !
-!                      'time-units since 1968-05-23 00:00:00 GMT'
+!                  'time-units since 1968-05-23 00:00:00 GMT'    (May 23, 1968)
 !
 !                If TIME_REF = -1, model time and DSTART are in a calendar
 !                with 360 days in every year (30 days each month).  The "units"
 !                attribute is:
 !
-!                      'time-units since 0001-01-01 00:00:00'
+!                  'time-units since 0000-12-30 00:00:00'        (Dec 30, 0000)
 !
 !                If TIME_REF = 0, model time and DSTART are in a common year
 !                calendar with 365.25 days.  The "units" attribute is:
 !
-!                      'time-units since 0001-01-01 00:00:00'
+!                  'time-units since 0001-01-01 00:00:00'        (Jan  1, 0001)
 !
 !                If TIME_REF > 0, model time and DSTART are the elapsed time
 !                units since specified reference time.  For example,
 !                TIME_REF=20020115.5 will yield the following attribute:
 !
-!                      'time-units since 2002-01-15 12:00:00'
+!                  'time-units since 2002-01-15 12:00:00'        (Jan 15, 2002)
 !
 !------------------------------------------------------------------------------
 ! Nudging/relaxation time scales, inverse scales will be computed internally.
@@ -2202,6 +2204,7 @@ Dout(iTvdif) == 2*T     ! temp_vdiff, ...    vertical diffusion
 !                Lstate(isVbar):   2D V-momentum
 !                Lstate(isUvel):   3D U-momentum
 !                Lstate(isVvel):   3D V-momentum
+!                Lstate(isWvel):   3D W-momentum
 !                Lstate(isTvar):   Traces (NT values expected)
 !
 !------------------------------------------------------------------------------

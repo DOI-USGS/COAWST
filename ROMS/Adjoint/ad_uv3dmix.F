@@ -5,9 +5,9 @@
    (defined UV_VIS2 || defined UV_VIS4)
 
 !
-!svn $Id: ad_uv3dmix.F 830 2017-01-24 21:21:11Z arango $
+!svn $Id: ad_uv3dmix.F 889 2018-02-10 03:32:52Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2017 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2018 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================

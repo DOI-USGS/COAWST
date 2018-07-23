@@ -2,7 +2,7 @@
 !
 !! svn $Id: ana_srflux.h 841 2017-04-19 21:42:22Z arango $
 !!======================================================================
-!! Copyright (c) 2002-2017 The ROMS/TOMS Group                         !
+!! Copyright (c) 2002-2018 The ROMS/TOMS Group                         !
 !!   Licensed under a MIT/X style license                              !
 !!   See License_ROMS.txt                                              !
 !=======================================================================

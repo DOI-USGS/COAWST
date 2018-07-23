@@ -2,9 +2,9 @@
 #if defined ADJOINT && defined SOLVE3D
       SUBROUTINE ad_main3d (RunInterval)
 !
-!svn $Id: ad_main3d.F 858 2017-07-31 23:02:30Z arango $
+!svn $Id: ad_main3d.F 889 2018-02-10 03:32:52Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2017 The ROMS/TOMS Group       Andrew M. Moore   !
+!  Copyright (c) 2002-2018 The ROMS/TOMS Group       Andrew M. Moore   !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -25,6 +25,9 @@
       USE mod_fourdvar
 # endif
       USE mod_iounits
+# ifdef SENSITIVITY_4DVAR
+      USE mod_ncparam
+# endif
       USE mod_scalars
       USE mod_stepping
 # ifdef SO_SEMI
@@ -138,7 +141,9 @@
       USE set_depth_mod,           ONLY : set_depth
       USE set_massflux_mod
       USE strings_mod,             ONLY : FoundError
-!!    USE wvelocity_mod,           ONLY : wvelocity
+# ifdef SENSITIVITY_4DVAR
+      USE ad_wvelocity_mod,        ONLY : ad_wvelocity
+# endif
 !
       implicit none
 !
@@ -522,7 +527,11 @@
 !
         DO ng=1,Ngrids
           DO tile=last_tile(ng),first_tile(ng),-1
-!!          CALL wvelocity (ng, tile, nstp(ng))
+# ifdef SENSITIVITY_4DVAR
+            IF (SCALARS(ng)%Lstate(isWvel)) THEN
+              CALL ad_wvelocity (ng, tile, nstp(ng))
+            END IF
+# endif
             CALL ad_omega (ng, tile, iADM)
 # if defined ANA_VMIX_NOT_YET
             CALL ad_ana_vmix (ng, tile, iADM)

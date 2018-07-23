@@ -6,9 +6,9 @@
     defined OPT_OBSERVATIONS || defined SENSITIVITY_4DVAR   || \
     defined SO_SEMI)
 !
-!svn $Id: adsen_initial.F 830 2017-01-24 21:21:11Z arango $
+!svn $Id: adsen_initial.F 889 2018-02-10 03:32:52Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2017 The ROMS/TOMS Group       Andrew M. Moore   !
+!  Copyright (c) 2002-2018 The ROMS/TOMS Group       Andrew M. Moore   !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -56,6 +56,7 @@
 # ifdef SOLVE3D
      &                         CLIMA(ng) % u_adsG,                      &
      &                         CLIMA(ng) % v_adsG,                      &
+     &                         CLIMA(ng) % wvel_adsG,                   &
      &                         CLIMA(ng) % t_adsG,                      &
 # endif
      &                         CLIMA(ng) % ubar_adsG,                   &
@@ -64,6 +65,7 @@
 # ifdef SOLVE3D
      &                         OCEAN(ng) % ad_u,                        &
      &                         OCEAN(ng) % ad_v,                        &
+     &                         OCEAN(ng) % ad_wvel,                     &
      &                         OCEAN(ng) % ad_t,                        &
 # endif
      &                         OCEAN(ng) % ad_ubar,                     &
@@ -83,11 +85,13 @@
 # endif
      &                               Rscope, Uscope, Vscope,            &
 # ifdef SOLVE3D
-     &                               u_adsG, v_adsG, t_adsG,            &
+     &                               u_adsG, v_adsG, wvel_adsG,         &
+     &                               t_adsG,                            &
 # endif
      &                               ubar_adsG, vbar_adsG, zeta_adsG,   &
 # ifdef SOLVE3D
-     &                               ad_u, ad_v, ad_t,                  &
+     &                               ad_u, ad_v, ad_wvel,               &
+     &                               ad_t,                              &
 # endif
      &                               ad_ubar, ad_vbar, ad_zeta)
 !***********************************************************************
@@ -113,6 +117,7 @@
 #  ifdef SOLVE3D
       real(r8), intent(in) :: u_adsG(LBi:,LBj:,:,:)
       real(r8), intent(in) :: v_adsG(LBi:,LBj:,:,:)
+      real(r8), intent(in) :: wvel_adsG(LBi:,LBj:,:,:)
       real(r8), intent(in) :: t_adsG(LBi:,LBj:,:,:,:)
 #  endif
       real(r8), intent(in) :: ubar_adsG(LBi:,LBj:,:)
@@ -121,6 +126,7 @@
 #  ifdef SOLVE3D
       real(r8), intent(inout) :: ad_u(LBi:,LBj:,:,:)
       real(r8), intent(inout) :: ad_v(LBi:,LBj:,:,:)
+      real(r8), intent(inout) :: ad_wvel(LBi:,LBj:,:)
       real(r8), intent(inout) :: ad_t(LBi:,LBj:,:,:,:)
 #  endif
       real(r8), intent(inout) :: ad_ubar(LBi:,LBj:,:)
@@ -133,6 +139,7 @@
 #  ifdef SOLVE3D
       real(r8), intent(in) :: u_adsG(LBi:UBi,LBj:UBj,N(ng),2)
       real(r8), intent(in) :: v_adsG(LBi:UBi,LBj:UBj,N(ng),2)
+      real(r8), intent(in) :: wvel_adsG(LBi:UBi,LBj:UBj,N(ng),2)
       real(r8), intent(in) :: t_adsG(LBi:UBi,LBj:UBj,N(ng),2,NT(ng))
 #  endif
       real(r8), intent(in) :: ubar_adsG(LBi:UBi,LBj:UBj,2)
@@ -141,6 +148,7 @@
 #  ifdef SOLVE3D
       real(r8), intent(inout) :: ad_u(LBi:UBi,LBj:UBj,N(ng),2)
       real(r8), intent(inout) :: ad_v(LBi:UBi,LBj:UBj,N(ng),2)
+      real(r8), intent(inout) :: ad_wvel(LBi:UBi,LBj:UBj,0:N(ng))
       real(r8), intent(inout) :: ad_t(LBi:UBi,LBj:UBj,N(ng),3,NT(ng))
 #  endif
       real(r8), intent(inout) :: ad_ubar(LBi:UBi,LBj:UBj,3)
@@ -206,6 +214,18 @@
           DO j=Jstr,JendR
             DO i=IstrR,IendR
               ad_v(i,j,k,nstp)=v_adsG(i,j,k,1)*Vscope(i,j)
+            END DO
+          END DO
+        END DO
+      END IF
+!
+!  Vertical velocity.
+!
+      IF (SCALARS(ng)%Lstate(isVvel)) THEN
+        DO k=KstrS(ng),KendS(ng)
+          DO j=JstrR,JendR
+            DO i=IstrR,IendR
+              ad_wvel(i,j,k)=wvel_adsG(i,j,k,1)*Rscope(i,j)
             END DO
           END DO
         END DO

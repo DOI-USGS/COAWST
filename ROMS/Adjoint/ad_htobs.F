@@ -2,9 +2,9 @@
       MODULE ad_htobs_mod
 #if defined ADJOINT && defined OBSERVATIONS && defined WEAK_CONSTRAINT
 !
-!svn $Id: ad_htobs.F 880 2017-11-15 22:04:38Z arango $
+!svn $Id: ad_htobs.F 889 2018-02-10 03:32:52Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2017 The ROMS/TOMS Group       Andrew M. Moore   !
+!  Copyright (c) 2002-2018 The ROMS/TOMS Group       Andrew M. Moore   !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================

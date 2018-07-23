@@ -2,7 +2,7 @@
 #
 # svn $Id: copyright.bash 830 2017-01-24 21:21:11Z arango $
 #::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
-# Copyright (c) 2002-2017 The ROMS/TOMS Group                           :::
+# Copyright (c) 2002-2018 The ROMS/TOMS Group                           :::
 #   Licensed under a MIT/X style license                                :::
 #   See License_ROMS.txt                                                :::
 #:::::::::::::::::::::::::::::::::::::::::::::::::::::: David Robertson :::
@@ -27,12 +27,12 @@
 #                                                                       :::
 #::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 
-search="2002-2016 The ROMS/TOMS"
-replace="2002-2017 The ROMS/TOMS"
+search="2002-2017 The ROMS/TOMS"
+replace="2002-2018 The ROMS/TOMS"
 
 # Directories to search for replacements.
 
-c_dirs="Apps Compilers Master ROMS User SeaIce"
+c_dirs="Compilers Master ROMS User"
 
 # Specific files not in the "c_dirs".
 
@@ -107,14 +107,14 @@ done
 echo -e "\nDone.\n"
 
 if [ $setsvn -eq 1 ]; then
-  svn propset -R copyright '(c) 2002-2017 The ROMS/TOMS Group' Compilers
-  svn propset -R copyright '(c) 2002-2017 The ROMS/TOMS Group' Data
-  svn propset -R copyright '(c) 2002-2017 The ROMS/TOMS Group' Master
-  svn propset -R copyright '(c) 2002-2017 The ROMS/TOMS Group' ROMS
-  svn propset -R copyright '(c) 2002-2017 The ROMS/TOMS Group' User
-  svn propset copyright '(c) 2002-2017 The ROMS/TOMS Group' . makefile
-  svn propset copyright '(c) 2002-2017 The ROMS/TOMS Group' Waves/SWAN/Src/Module.mk
-  svn propset copyright '(c) 2002-2017 The ROMS/TOMS Group' Waves/SWAN/Src/waves_coupler.F
+  svn propset -R copyright '(c) 2002-2018 The ROMS/TOMS Group' Compilers
+  svn propset -R copyright '(c) 2002-2018 The ROMS/TOMS Group' Data
+  svn propset -R copyright '(c) 2002-2018 The ROMS/TOMS Group' Master
+  svn propset -R copyright '(c) 2002-2018 The ROMS/TOMS Group' ROMS
+  svn propset -R copyright '(c) 2002-2018 The ROMS/TOMS Group' User
+  svn propset copyright '(c) 2002-2018 The ROMS/TOMS Group' . makefile
+  svn propset copyright '(c) 2002-2018 The ROMS/TOMS Group' Waves/SWAN/Src/Module.mk
+  svn propset copyright '(c) 2002-2018 The ROMS/TOMS Group' Waves/SWAN/Src/waves_coupler.F
 else
   echo -e "Not updating svn properties.\n"
 fi

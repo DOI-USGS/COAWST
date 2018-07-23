@@ -5,9 +5,9 @@
    (defined AD_SENSITIVITY   || defined IS4DVAR_SENSITIVITY || \
     defined OPT_OBSERVATIONS || defined SENSITIVITY_4DVAR)
 !
-!svn $Id: adsen_force.F 830 2017-01-24 21:21:11Z arango $
+!svn $Id: adsen_force.F 889 2018-02-10 03:32:52Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2017 The ROMS/TOMS Group       Andrew M. Moore   !
+!  Copyright (c) 2002-2018 The ROMS/TOMS Group       Andrew M. Moore   !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -58,6 +58,7 @@
 # ifdef SOLVE3D
      &                       CLIMA(ng) % u_ads,                         &
      &                       CLIMA(ng) % v_ads,                         &
+     &                       CLIMA(ng) % wvel_ads,                      &
      &                       CLIMA(ng) % t_ads,                         &
 # endif
      &                       CLIMA(ng) % ubar_ads,                      &
@@ -66,6 +67,7 @@
 # ifdef SOLVE3D
      &                       OCEAN(ng) % ad_u,                          &
      &                       OCEAN(ng) % ad_v,                          &
+     &                       OCEAN(ng) % ad_wvel,                       &
      &                       OCEAN(ng) % ad_t,                          &
      &                       COUPLING(ng) % ad_Zt_avg1,                 &
 # else
@@ -87,12 +89,13 @@
 # endif
      &                             Rscope, Uscope, Vscope,              &
 # ifdef SOLVE3D
-     &                             u_ads, v_ads, t_ads,                 &
+     &                             u_ads, v_ads, wvel_ads,              &
+     &                             t_ads,                               &
 # endif
      &                             ubar_ads, vbar_ads, zeta_ads,        &
 # ifdef SOLVE3D
-     &                             ad_u, ad_v, ad_t,                    &
-     &                             ad_Zt_avg1,                          &
+     &                             ad_u, ad_v, ad_wvel,                 &
+     &                             ad_t, ad_Zt_avg1,                    &
 # else
      &                             ad_zeta,                             &
 # endif
@@ -122,6 +125,7 @@
 #  ifdef SOLVE3D
       real(r8), intent(in) :: u_ads(LBi:,LBj:,:)
       real(r8), intent(in) :: v_ads(LBi:,LBj:,:)
+      real(r8), intent(in) :: wvel_ads(LBi:,LBj:,:)
       real(r8), intent(in) :: t_ads(LBi:,LBj:,:,:)
 #  endif
       real(r8), intent(in) :: ubar_ads(LBi:,LBj:)
@@ -130,6 +134,7 @@
 #  ifdef SOLVE3D
       real(r8), intent(inout) :: ad_u(LBi:,LBj:,:,:)
       real(r8), intent(inout) :: ad_v(LBi:,LBj:,:,:)
+      real(r8), intent(inout) :: ad_wvel(LBi:,LBj:,:)
       real(r8), intent(inout) :: ad_t(LBi:,LBj:,:,:,:)
       real(r8), intent(inout) :: ad_Zt_avg1(LBi:,LBj:)
 #  else
@@ -144,6 +149,7 @@
 #  ifdef SOLVE3D
       real(r8), intent(in) :: u_ads(LBi:UBi,LBj:UBj,N(ng))
       real(r8), intent(in) :: v_ads(LBi:UBi,LBj:UBj,N(ng))
+      real(r8), intent(in) :: wvel_ads(LBi:UBi,LBj:UBj,N(ng))
       real(r8), intent(in) :: t_ads(LBi:UBi,LBj:UBj,N(ng),NT(ng))
 #  endif
       real(r8), intent(in) :: ubar_ads(LBi:UBi,LBj:UBj)
@@ -152,6 +158,7 @@
 #  ifdef SOLVE3D
       real(r8), intent(inout) :: ad_u(LBi:UBi,LBj:UBj,N(ng),2)
       real(r8), intent(inout) :: ad_v(LBi:UBi,LBj:UBj,N(ng),2)
+      real(r8), intent(inout) :: ad_u(LBi:UBi,LBj:UBj,0:N(ng))
       real(r8), intent(inout) :: ad_t(LBi:UBi,LBj:UBj,N(ng),3,NT(ng))
       real(r8), intent(inout) :: ad_Zt_avg1(LBi:UBi,LBj:UBj)
 #  else
@@ -270,6 +277,24 @@
             DO i=IstrR,IendR
               ad_v(i,j,k,Nfrc)=ad_v(i,j,k,Nfrc)+                        &
      &                         adFac*v_ads(i,j,k)*Vscope(i,j)
+            END DO
+          END DO
+        END DO
+      END IF
+!
+!  Vertical velocity.
+!
+!  Notice that vertical velocity will not be forced at the top in the
+!  current code. To do this, uncomment the next line and ensure that
+!  KendSb=N in the ocean input file.
+!
+      IF (SCALARS(ng)%Lstate(isVvel)) THEN
+!!      DO k=KstrS(ng),KendS(ng)+1             ! if forced at the top
+        DO k=KstrS(ng),KendS(ng)
+          DO j=JstrR,JendR
+            DO i=IstrR,IendR
+              ad_wvel(i,j,k)=ad_wvel(i,j,k)+                            &
+     &                       adFac*wvel_ads(i,j,k)*Rscope(i,j)
             END DO
           END DO
         END DO

@@ -3,7 +3,7 @@
 **
 ** svn $Id: globaldefs.h 876 2017-11-13 23:24:37Z arango $
 ********************************************************** Hernan G. Arango ***
-** Copyright (c) 2002-2017 The ROMS/TOMS Group     Alexander F. Shchepetkin  **
+** Copyright (c) 2002-2018 The ROMS/TOMS Group     Alexander F. Shchepetkin  **
 **   Licensed under a MIT/X style license                                    **
 **   See License_ROMS.txt                                                    **
 *******************************************************************************
@@ -83,18 +83,6 @@
 #define RHO_SURF
 
 /*
-** Activate criteria for isopycnic diffusion of tracer as maximum
-** density slope or minimum density stratification.  Choose only
-** one option. If neither option is activated, the default criteria
-** is used in the algorithm.
-*/
-
-#if defined MIX_ISO_TS && (defined TS_DIF2 || defined TS_DIF4)
-# undef   MAX_SLOPE
-# undef   MIN_STRAT
-#endif
-
-/*
 ** Turn ON/OFF double precision for real type variables and
 ** associated intrinsic functions.
 */
@@ -107,6 +95,15 @@
 
 #if !defined MASKING && defined WET_DRY
 # define MASKING
+#endif
+
+/*
+** If wetting and drying, activate limiting of bottom stress.
+** For COAWST, I use WET_DRY in place of the LIMIT option.
+*/
+
+#if !defined LIMIT_BSTRESS && defined WET_DRY
+# define LIMIT_BSTRESS
 #endif
 
 /*
@@ -436,6 +433,12 @@
       defined OBS_IMPACT
 # undef OBS_IMPACT
 #endif
+#if !(defined OBS_IMPACT             && \
+      (defined W4DVAR_SENSITIVITY    || defined W4DPSAS_SENSITIVITY || \
+       defined IS4DVAR_SENSITIVITY))
+# undef IMPACT_INNER
+#endif
+
 
 /*
 ** Activate internal switch to process 4DVAR observations.
@@ -580,6 +583,10 @@
 **
 */
 
+/* this allows differentiation between Rutgers
+   and coawst coupling methods */
+#define COAWST_MODEL
+
 #if defined ROMS_MODEL && (defined SWAN_MODEL || defined WRF_MODEL || \
                            defined WW3_MODEL)
 # define ROMS_COUPLING
@@ -608,10 +615,6 @@
 # define WAVES_OCEAN
 #endif
 
-#if defined AIR_OCEAN || defined WAVES_OCEAN
-!# define MODEL_COUPLING
-#endif
-
 #if defined AIR_OCEAN || defined AIR_WAVES || defined WAVES_OCEAN
 # define COAWST_COUPLING
 #endif
@@ -627,6 +630,37 @@
 #  define MCT_INTERP_WV2AT
 # endif
 #endif
+
+/* Start of ROMS model coupling cpps.
+   COAWST coupling uses options above. These are here for
+   consistenct between codes. */
+#if defined COAMPS_COUPLING || defined REGCM_COUPLING || \
+    defined WRF_COUPLING
+# define ATM_COUPLING
+# ifndef FRC_COUPLING
+#  define FRC_COUPLING
+# endif
+#endif
+
+#if defined CICE_COUPLING
+# define ICE_COUPLING
+#endif
+
+#if defined REFDIF_COUPLING || defined SWAN_COUPLING || \
+    defined WAM_COUPLING
+# define WAV_COUPLING
+#endif
+
+#if defined ATM_COUPLING || defined DATA_COUPLING || \
+    defined ICE_COUPLING || defined WAV_COUPLING
+# define MODEL_COUPLING
+#endif
+
+#if defined MODEL_COUPLING && defined ESMF_LIB
+# define REGRESS_STARTCLOCK
+#endif
+/* end of ROMS coupling cpps */
+
 
 /*
 ** Define internal option to process wave data.
@@ -669,12 +703,12 @@
 #if (defined BBL_MODEL        && !defined WAVES_UB) ||  \
      defined WEC              || \
      defined ZOS_HSIG         || defined COARE_TAYLOR_YELLAND || \
-     defined BEDLOAD_SOULSBY  || defined WAVES_OCEAN || \
-     defined DRENNAN
+     defined BEDLOAD_SOULSBY  || defined BEDLOAD_VANDERA || \
+     defined WAVES_OCEAN      || defined DRENNAN
 # define WAVES_HEIGHT
 #endif
 
-#if defined WEC || defined BEDLOAD_SOULSBY || \
+#if defined WEC || defined BEDLOAD_SOULSBY || defined BEDLOAD_VANDERA || \
     defined WAVES_OCEAN
 # define WAVES_LENGTH
 #endif
@@ -692,6 +726,10 @@
 
 #if defined BBL_MODEL || defined WAVES_OCEAN
 # define WAVES_BOT_PERIOD
+#endif
+
+#if (defined WDISS_GAMMA || defined WDISS_ROELVINK)
+# define WDISS_INWAVE
 #endif
 
 #if (defined TKE_WAVEDISS || defined WEC_VF) && \
@@ -715,7 +753,7 @@
 ** Define internal option for bedload treatment.
 */
 
-#if defined BEDLOAD_MPM || defined BEDLOAD_SOULSBY
+#if defined BEDLOAD_MPM || defined BEDLOAD_SOULSBY  || defined BEDLOAD_VANDERA
 # define BEDLOAD
 #endif
 
@@ -741,28 +779,28 @@
     ( defined BIOLOGY      && !defined ANA_BPFLUX)   || \
     ( defined BULK_FLUXES  && !defined LONGWAVE  && !defined ANA_LRFLUX      && \
      !defined AIR_OCEAN)      || \
-    ( defined BULK_FLUXES  && (!defined ANA_PAIR && !defined AIR_OCEAN))     || \
-    ( defined BULK_FLUXES  && (!defined ANA_TAIR && !defined AIR_OCEAN))     || \
-    ( defined BULK_FLUXES  && (!defined ANA_HUMIDITY && !defined AIR_OCEAN)) || \
-    ( defined BULK_FLUXES  && (!defined ANA_CLOUD    && !defined AIR_OCEAN)) || \
-    ( defined BULK_FLUXES  && (!defined ANA_RAIN     && !defined AIR_OCEAN)) || \
-    ( defined BULK_FLUXES  && (!defined ANA_WINDS    && !defined AIR_OCEAN)) || \
-    ( defined BULK_FLUXES  && (!defined ANA_SRFLUX   && !defined AIR_OCEAN)) || \
-    ( defined LMD_SKPP     && (!defined ANA_SRFLUX   && !defined AIR_OCEAN)) || \
-      defined RED_TIDE     || \
+    ( defined BULK_FLUXES  && !defined ANA_PAIR && !defined AIR_OCEAN)     || \
+    ( defined BULK_FLUXES  && !defined ANA_TAIR && !defined AIR_OCEAN)     || \
+    ( defined BULK_FLUXES  && !defined ANA_HUMIDITY && !defined AIR_OCEAN) || \
+    ( defined BULK_FLUXES  && !defined ANA_CLOUD    && !defined AIR_OCEAN) || \
+    ( defined BULK_FLUXES  && !defined ANA_RAIN     && !defined AIR_OCEAN) || \
+    ( defined BULK_FLUXES  && !defined ANA_WINDS    && !defined AIR_OCEAN) || \
+    ( defined BULK_FLUXES  && !defined ANA_SRFLUX   && !defined AIR_OCEAN) || \
+    ( defined LMD_SKPP     && !defined ANA_SRFLUX   && !defined AIR_OCEAN) || \
+    ( defined RED_TIDE     && !defined AIR_OCEAN)   || \
     ( defined SALINITY     && !defined ANA_SSFLUX    && \
-     (defined BULK_FLUXES  && !defined EMINUSP))     || \
-    ( defined SOLAR_SOURCE && (!defined ANA_SRFLUX   && !defined AIR_OCEAN)) || \
-    ( defined BBL_MODEL    && (!defined ANA_WWAVE  && !defined WAVES_OCEAN && \
-                               !defined INWAVE_MODEL)) || \
+      defined BULK_FLUXES  && !defined EMINUSP && !defined AIR_OCEAN)    || \
+    ( defined SOLAR_SOURCE && !defined ANA_SRFLUX   && !defined AIR_OCEAN) || \
+    ( defined BBL_MODEL    && !defined ANA_WWAVE  && !defined WAVES_OCEAN && \
+                               !defined INWAVE_MODEL) || \
     ( defined SEDIMENT     && !defined ANA_SPFLUX)   || \
     ( defined SEDIMENT     && !defined ANA_BPFLUX)   || \
-    ( defined WAVE_DATA    && (!defined ANA_WWAVE    && \
-     !defined WAVES_OCEAN  && !defined INWAVE_MODEL))
+    ( defined WAVE_DATA    && !defined ANA_WWAVE    && \
+     !defined WAVES_OCEAN  && !defined INWAVE_MODEL)
 #  define FRC_FILE
 # endif
 #else
-# if !defined ANA_SMFLUX
+# if (!defined AIR_OCEAN && !defined ANA_SMFLUX)
 #  define FRC_FILE
 # endif
 #endif
@@ -857,27 +895,28 @@
 ** Check if any analytical expression is defined.
 */
 
-#if defined ANA_BIOLOGY    || defined ANA_BPFLUX     || \
-    defined ANA_BSFLUX     || defined ANA_BTFLUX     || \
-    defined ANA_CLOUD      || defined ANA_DIAG       || \
-    defined ANA_DQDSST     || defined ANA_DRAG       || \
-    defined ANA_FSOBC      || defined ANA_GRID       || \
-    defined ANA_HUMIDITY   || defined ANA_INITIAL    || \
-    defined ANA_M2CLIMA    || defined ANA_M2OBC      || \
-    defined ANA_M3CLIMA    || defined ANA_M3OBC      || \
-    defined ANA_MASK       || defined ANA_NUDGCOEF   || \
-    defined ANA_PAIR       || defined ANA_PASSIVE    || \
-    defined ANA_PERTURB    || defined ANA_PSOURCE    || \
-    defined ANA_RAIN       || defined ANA_SEDIMENT   || \
-    defined ANA_SMFLUX     || defined ANA_SPFLUX     || \
-    defined ANA_SPINNING   || defined ANA_SPONGE     || \
-    defined ANA_SRFLUX     || defined ANA_SSFLUX     || \
-    defined ANA_SSH        || defined ANA_SSS        || \
-    defined ANA_SST        || defined ANA_STFLUX     || \
-    defined ANA_TAIR       || defined ANA_TCLIMA     || \
-    defined ANA_TOBC       || defined ANA_VMIX       || \
-    defined ANA_WINDS      || defined ANA_WWAVE      || \
-    defined DIFF_GRID      || defined VISC_GRID
+#if defined ANA_BIOLOGY    || defined ANA_BPFLUX      || \
+    defined ANA_BSFLUX     || defined ANA_BTFLUX      || \
+    defined ANA_CLOUD      || defined ANA_DIAG        || \
+    defined ANA_DQDSST     || defined ANA_DRAG        || \
+    defined ANA_FSOBC      || defined ANA_GRID        || \
+    defined ANA_HUMIDITY   || defined ANA_INITIAL     || \
+    defined ANA_M2CLIMA    || defined ANA_M2OBC       || \
+    defined ANA_M3CLIMA    || defined ANA_M3OBC       || \
+    defined ANA_MASK       || defined ANA_NUDGCOEF    || \
+    defined ANA_PAIR       || defined ANA_PASSIVE     || \
+    defined ANA_PERTURB    || defined ANA_PSOURCE     || \
+    defined ANA_RAIN       || defined ANA_RESPIRATION || \
+    defined ANA_SEDIMENT   || defined ANA_SMFLUX      || \
+    defined ANA_SPFLUX     || defined ANA_SPINNING    || \
+    defined ANA_SPONGE     || defined ANA_SRFLUX      || \
+    defined ANA_SSFLUX     || defined ANA_SSH         || \
+    defined ANA_SSS        || defined ANA_SST         || \
+    defined ANA_STFLUX     || defined ANA_TAIR        || \
+    defined ANA_TCLIMA     || defined ANA_TOBC        || \
+    defined ANA_VMIX       || defined ANA_WINDS       || \
+    defined ANA_WWAVE      || defined DIFF_GRID       || \
+    defined VISC_GRID
 # define ANALYTICAL
 #endif
 

@@ -2,7 +2,7 @@
 !
 !svn $Id: tlcheck_ocean.h 858 2017-07-31 23:02:30Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2017 The ROMS/TOMS Group       Andrew M. Moore   !
+!  Copyright (c) 2002-2018 The ROMS/TOMS Group       Andrew M. Moore   !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -281,19 +281,19 @@
 !  observations.
 !
       DO ng=1,Ngrids
-        DO i=0,NstateVar(ng)
+        DO i=0,NobsVar(ng)
           FOURDVAR(ng)%CostFunOld(i)=FOURDVAR(ng)%CostFun(i)
         END DO
         IF (Master) THEN
           WRITE (stdout,40) FOURDVAR(ng)%CostFunOld(0)
-          DO i=1,NstateVar(ng)
+          DO i=1,NobsVar(ng)
             IF (FOURDVAR(ng)%CostFunOld(i).gt.0.0_r8) THEN
               IF (i.eq.1) THEN
                 WRITE (stdout,50) FOURDVAR(ng)%CostFunOld(i),           &
-     &                            TRIM(Vname(1,idSvar(i)))
+     &                            TRIM(ObsName(i))
               ELSE
                 WRITE (stdout,60) FOURDVAR(ng)%CostFunOld(i),           &
-     &                            TRIM(Vname(1,idSvar(i)))
+     &                            TRIM(ObsName(i))
               END IF
             END IF
           END DO

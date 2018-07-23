@@ -3,7 +3,7 @@
 !
 !svn $Id: ocean_riverplume1.in 877 2017-11-15 04:04:42Z arango $
 !========================================================= Hernan G. Arango ===
-!  Copyright (c) 2002-2017 The ROMS/TOMS Group                                !
+!  Copyright (c) 2002-2018 The ROMS/TOMS Group                                !
 !    Licensed under a MIT/X style license                                     !
 !    See License_ROMS.txt                                                     !
 !==============================================================================
@@ -154,6 +154,20 @@ GridsInLayer =  1
 
    LBC(isTvar) ==   Clo     Per     Clo     Per \       ! temperature
                     Clo     Per     Clo     Per         ! salinity
+
+! Wec boundary conditions
+
+   LBC(isU2Sd) ==   Clo     Per     Gra     Per         ! 2D U-stokes
+   LBC(isV2Sd) ==   Clo     Per     Gra     Per         ! 2D V-stokes
+   LBC(isU3Sd) ==   Clo     Per     Gra     Per         ! 3D U-stokes
+   LBC(isV3Sd) ==   Clo     Per     Gra     Per         ! 3D V-stokes
+
+! InWave boundary conditions
+
+   LBC(isAC3d) ==   Gra     Clo     Gra     Cla         ! 3D wave action density
+   LBC(isCT3d) ==   Gra     Clo     Gra     Gra         ! 3D wave theta celerity
+   LBC(isCX3d) ==   Gra     Clo     Gra     Gra         ! 3D wave x-dir celerity
+   LBC(isCY3d) ==   Gra     Clo     Gra     Gra         ! 3D wave y-dir celerity
 
 ! Ice boundary conditions
 
@@ -340,6 +354,8 @@ LtracerSponge == F F                            ! temperature, salinity, inert
  ZOS_HSIG_ALPHA == 0.5d0            ! roughness from wave amplitude
        SZ_ALPHA == 0.25d0           ! roughness from wave dissipation
       CRGBAN_CW == 100.0d0          ! Craig and Banner wave breaking
+      WEC_ALPHA == 1.0d0                        ! 0: all wave dissip goes to break and none to roller.
+                                                ! 1: all wave dissip goes to roller and none to breaking.
 
 ! Constants used in momentum stress computation.
 
@@ -468,6 +484,7 @@ Lstate(isUbar) == F                        ! 2D U-momentum
 Lstate(isVbar) == F                        ! 2D V-momentum
 Lstate(isUvel) == F                        ! 3D U-momentum
 Lstate(isVvel) == F                        ! 3D V-momentum
+Lstate(isWvel) == F                        ! 3D W-momentum
 
 Lstate(isTvar) == F F                      ! NT tracers
 
@@ -538,6 +555,7 @@ Hout(idUbws) == F       ! bustrw             bottom U-wave stress
 Hout(idVbws) == F       ! bvstrw             bottom V-wave stress
 Hout(idUbcs) == F       ! bustrcwmax         bottom max wave-current U-stress
 Hout(idVbcs) == F       ! bvstrcwmax         bottom max wave-current V-stress
+Hout(idUVwc) == T       ! bstrcwmax          bottom max wave-current stress magnitude
 
 Hout(idUbot) == F       ! Ubot               bed wave orbital U-velocity
 Hout(idVbot) == F       ! Vbot               bed wave orbital V-velocity
@@ -813,6 +831,17 @@ Dout(M2xvis) == T       ! ubar_xvisc, ...    horizontal XI-viscosity
 Dout(M2yvis) == T       ! ubar_yvisc, ...    horizontal ETA-viscosity
 Dout(M2sstr) == T       ! ubar_sstr, ...     surface stress
 Dout(M2bstr) == T       ! ubar_bstr, ...     bottom stress
+Dout(M2hjvf) == F       ! 2D wec_vf horizontal J vortex force
+Dout(M2kvrf) == F       ! 2D wec_vf K vortex force
+Dout(M2fsco) == F       ! 2D wec_vf coriolis-stokes
+Dout(M2bstm) == F       ! 2D wec_vf bottom streaming
+Dout(M2sstm) == F       ! 2D wec_vf surface streaming
+Dout(M2wrol) == F       ! 2D wec_vf wave roller accel
+Dout(M2wbrk) == F       ! 2D wec_vf wave breaking
+Dout(M2zeta) == F       ! 2D wec_vf Eulerian sea level adjustment
+Dout(M2zetw) == F       ! 2D wec_vf quasi-static sea level adjustment
+Dout(M2zqsp) == F       ! 2D wec_vf quasi-static pressure
+Dout(M2zbeh) == F       ! 2D wec_vf Bernoulli head
 
 ! Logical switches (TRUE/FALSE) to activate writing of time-averaged,
 ! 3D momentum (u,v) diagnostic terms into DIAGNOSTIC output file.
@@ -830,6 +859,14 @@ Dout(M3hvis) == T       ! u_hvisc, ...       horizontal total viscosity
 Dout(M3xvis) == T       ! u_xvisc, ...       horizontal XI-viscosity
 Dout(M3yvis) == T       ! u_yvisc, ...       horizontal ETA-viscosity
 Dout(M3vvis) == T       ! u_vvisc, ...       vertical viscosity
+Dout(M3vjvf) == F       ! 3D wec_vf vertical J vortex force
+Dout(M3hjvf) == F       ! 3D wec_vf horizontal J vortex force
+Dout(M3kvrf) == F       ! 3D wec_vf K vortex force
+Dout(M3fsco) == F       ! 3D wec_vf coriolis-stokes
+Dout(M3bstm) == F       ! 3D wec_vf bottom streaming
+Dout(M3sstm) == F       ! 3D wec_vf surface streaming
+Dout(M3wrol) == F       ! 3D wec_vf wave roller accel
+Dout(M3wbrk) == F       ! 3D wec_vf wave breaking
 
 ! Logical switches (TRUE/FALSE) to activate writing of time-averaged,
 ! active (temperature and salinity) and passive (inert) tracer diagnostic
@@ -884,7 +921,6 @@ Dout(iTvdif) == T T     ! temp_vdiff, ...    vertical diffusion
 
      NBCFILES == 1                          ! number of boundary files
      BRYNAME == ocean_bry.nc
-     CLMNAME == ocean_clm.nc
 
 ! Input climatology nudging coefficients file name.
 
@@ -944,6 +980,7 @@ Dout(iTvdif) == T T     ! temp_vdiff, ...    vertical diffusion
      BPARNAM =  ROMS/External/bio_Fennel.in
      SPARNAM =  ROMS/External/sediment.in
      USRNAME =  ROMS/External/MyFile.dat
+     VEGNAM  =  vegetation.in
 
 !
 !  GLOSSARY:
@@ -1162,6 +1199,31 @@ Dout(iTvdif) == T T     ! temp_vdiff, ...    vertical diffusion
 ! LBC(isVvel) 3D V-momentum, [1:4, Ngrids] values are expected.
 ! LBC(isMtke) Mixing TKE,    [1:4, Ngrids] values are expected.
 ! LBC(isTvar) Tracers,       [1:4, 1:NAT+NPT, Ngrids] values are expected.
+!
+! Wec boundary conditions for stokes velocities.
+!
+!  LBC(isU2Sd) 2D U-stokes,  [1:4, Ngrids] values are expected.
+!  LBC(isV2Sd) 2D V-stokes,  [1:4, Ngrids] values are expected.
+!  LBC(isU3Sd) 3D U-stokes,  [1:4, Ngrids] values are expected.
+!  LBC(isV3Sd) 3D V-stokes,  [1:4, Ngrids] values are expected.
+
+! InWave boundary conditions
+
+   LBC(isAC3d) Wave action density, [1:4, Ngrids] values are expected.
+   LBC(isCT3d) Wave theta celerity, [1:4, Ngrids] values are expected.
+   LBC(isCX3d) Wave x-dir celerity, [1:4, Ngrids] values are expected.
+   LBC(isCY3d) Wave y-dir celerity, [1:4, Ngrids] values are expected.
+!
+! Similarly, the adjoint-based algorithms (ADM, TLM, RPM) can have different
+! lateral boundary conditions keywords:
+!
+! ad_LBC(isFsur) Free-surface,  [1:4, Ngrids] values are expected.
+! ad_LBC(isUbar) 2D U-momentum, [1:4, Ngrids] values are expected.
+! ad_LBC(isVbar) 2D V-momentum, [1:4, Ngrids] values are expected.
+! ad_LBC(isUvel) 3D U-momentum, [1:4, Ngrids] values are expected.
+! ad_LBC(isVvel) 3D V-momentum, [1:4, Ngrids] values are expected.
+! ad_LBC(isMtke) Mixing TKE,    [1:4, Ngrids] values are expected.
+! ad_LBC(isTvar) Tracers,       [1:4, 1:NAT+NPT, Ngrids] values are expected.
 !
 ! Ice boundary conditions
 !
@@ -1679,6 +1741,13 @@ Dout(iTvdif) == T T     ! temp_vdiff, ...    vertical diffusion
 !                    flux:  dt * crgban_cw * u_star**3
 !
 !------------------------------------------------------------------------------
+! Constants used in the wave effects on currents formulations.
+!------------------------------------------------------------------------------
+!
+!  WEC_ALPHA     If 0 then all wave dissip goes to break and none to roller.
+!                If 1 then all wave dissip goes to roller and none to breaking.
+!
+!------------------------------------------------------------------------------
 ! Constants used in the computation of momentum stress.
 !------------------------------------------------------------------------------
 !
@@ -1902,8 +1971,9 @@ Dout(iTvdif) == T T     ! temp_vdiff, ...    vertical diffusion
 !                a Calendar linear coordinate, like modified Julian Day.  For
 !                Example:
 !
-!                         Julian Day = 1  for  Nov 25, 0:0:0 4713 BCE
-!                modified Julian Day = 1  for  May 24, 0:0:0 1968  CE GMT
+!                         Julian Day    = 1      for  Nov 25, 00:00:00 4713 BCE
+!                modified Julian Day    = 1      for  May 24, 00:00:00 1968 GMT
+!                Days since Jan 1, 2000 = 988.5  for  Sep 15, 12:00:00 2002
 !
 !                It is called truncated or modified Julian day because an
 !                offset of 2440000 needs to be added.
@@ -1922,24 +1992,24 @@ Dout(iTvdif) == T T     ! temp_vdiff, ...    vertical diffusion
 !                If TIME_REF = -2, model time and DSTART are in modified Julian
 !                days units.  The "units" attribute is:
 !
-!                      'time-units since 1968-05-23 00:00:00 GMT'
+!                  'time-units since 1968-05-23 00:00:00 GMT'    (May 23, 1968)
 !
 !                If TIME_REF = -1, model time and DSTART are in a calendar
 !                with 360 days in every year (30 days each month).  The "units"
 !                attribute is:
 !
-!                      'time-units since 0001-01-01 00:00:00'
+!                  'time-units since 0000-12-30 00:00:00'        (Dec 30, 0000)
 !
 !                If TIME_REF = 0, model time and DSTART are in a common year
 !                calendar with 365.25 days.  The "units" attribute is:
 !
-!                      'time-units since 0001-01-01 00:00:00'
+!                  'time-units since 0001-01-01 00:00:00'        (Jan  1, 0001)
 !
 !                If TIME_REF > 0, model time and DSTART are the elapsed time
 !                units since specified reference time.  For example,
 !                TIME_REF=20020115.5 will yield the following attribute:
 !
-!                      'time-units since 2002-01-15 12:00:00'
+!                  'time-units since 2002-01-15 12:00:00'        (Jan 15, 2002)
 !
 !------------------------------------------------------------------------------
 ! Nudging/relaxation time scales, inverse scales will be computed internally.
@@ -2215,6 +2285,7 @@ Dout(iTvdif) == T T     ! temp_vdiff, ...    vertical diffusion
 !                Lstate(isVbar):   2D V-momentum
 !                Lstate(isUvel):   3D U-momentum
 !                Lstate(isVvel):   3D V-momentum
+!                Lstate(isWvel):   3D W-momentum
 !                Lstate(isTvar):   Traces (NT values expected)
 !
 !------------------------------------------------------------------------------
@@ -2313,13 +2384,23 @@ Dout(iTvdif) == T T     ! temp_vdiff, ...    vertical diffusion
 ! Hout(idU3Sd)   Write out 3D U-Stokes velocity.
 ! Hout(idV3Sd)   Write out 3D V-Stokes velocity.
 !
-! Hout(idWamp)   Write out wave height.
-! Hout(idWlen)   Write out wave length.
-! Hout(idWdir)   Write out wave direction.
-! Hout(idWptp)   Write out wave surface period.
-! Hout(idWpbt)   Write out wave bottom period.
-! Hout(idWorb)   Write out wave bottom orbital velocity.
-! Hout(idWdis)   Write out wave dissipation.
+!  Hout(idWamp)  Write out wave height.
+!  Hout(idWlen)  Write out wave length.
+!  Hout(idWdir)  Write out wave direction.
+!  Hout(idWptp)  Write out wave surface period.
+!  Hout(idWpbt)  Write out wave bottom period.
+!  Hout(idWorb)  Write out wave bottom orbital velocity.
+!  Hout(idWbrk)  Write out wave breaking (percent).
+!  Hout(idUwav)  Write out wave-depth avgeraged U-velocity.
+!  Hout(idVwav)  Write out wave-depth avgeraged V-velocity.
+!  Hout(idWdif)  Write out wave dissipation due to bottom friction.
+!  Hout(idWdib)  Write out wave dissipation due to breaking.
+!  Hout(idWdiw)  Write out wave dissipation due to white capping.
+!  Hout(idWdis)  Write out wave roller dissipation.
+!  Hout(idWrol)  Write out wave roller action density.
+!  Hout(idWztw)  Write out WEC quasi-static sea level adjustment.
+!  Hout(idWqsp)  Write out WEC quasi-static pressure.
+!  Hout(idWbeh)  Write out WEC Bernoulli head.
 !
 ! Hout(idPair)   Write out surface air pressure.
 ! Hout(idUair)   Write out surface U-wind component.
@@ -2665,6 +2746,9 @@ Dout(iTvdif) == T T     ! temp_vdiff, ...    vertical diffusion
 !
 !  ADSNAME     Input adjoint sensitivity functional file name.
 !
+!  IWININAME   Input initial conditions file name for InWave.
+!
+!  IWSWNNAME   Input file of SWAN 2D spec to drive InWave
 !
 ! Nesting grids connectivity data:
 !

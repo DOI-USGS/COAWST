@@ -3,7 +3,7 @@
 !
 !svn $Id: varinfo.dat 830 2017-01-24 21:21:11Z arango $
 !========================================================= Hernan G. Arango ===
-!  Copyright (c) 2002-2017 The ROMS/TOMS Group                                !
+!  Copyright (c) 2002-2018 The ROMS/TOMS Group                                !
 !    Licensed under a MIT/X style license                                     !
 !    See License_ROMS.txt                                                     !
 !==============================================================================
@@ -3285,6 +3285,15 @@
   'v3dvar'
   1.0d0
 
+'w'                                                ! Input
+  'w-momentum component functional'
+  'meter second-1'                                 ! [m/s]
+  'w-velocity, scalar, series'
+  'v3d_time'
+  'idWads'
+  'w3dvar'
+  1.0d0
+
 'temp'                                             ! Input
   'potential temperature functional'
   'Celsius'                                        ! [Celsius]
@@ -4668,6 +4677,15 @@
   'Oxygen, scalar, series'
   'ocean_time'
   'idTads(iOxyg)'
+  'r3dvar'
+  1.0d0
+
+'respiration'                                      ! Input
+  'total respiration rate'
+  'millimole_oxygen meter-3 day-1'                 ! [millimoe/m3/day]
+  'respiration, scalar, series'
+  'respiration_time'
+  'idResR'
   'r3dvar'
   1.0d0
 
@@ -8706,6 +8724,24 @@
   'nulvar'
   1.0d0
 
+'obs_lon'                                         ! Input
+  'observation longitude'
+  'degrees_east'                                  ! [degrees_east]
+  'nulvar'
+  'datum'
+  'idOlon'
+  'nulvar'
+  1.0d0
+
+'obs_lat'                                         ! Input
+  'observation latitude'
+  'degrees_north'                                 ! [degrees_north]
+  'nulvar'
+  'datum'
+  'idOlat'
+  'nulvar'
+  1.0d0
+
 'obs_depth'                                        ! Input/Output
   'depth of observation'
   'meter'                                          ! [m]
@@ -8748,6 +8784,15 @@
   'nulvar'
   'datum'
   'idOval'
+  'nulvar'
+  1.0d0
+
+'obs_meta'                                         ! Input
+  'observation meta value'
+  'nondimensional'                                 ! [Meta units]
+  'nulvar'
+  'datum'
+  'idOmet'
   'nulvar'
   1.0d0
 
@@ -8840,6 +8885,25 @@
   'idMOMf'
   'nulvar'
   1.0d0
+
+'BgError_value'                                    ! Output
+  'Background error at observation locations'
+  'nulvar'
+  'nulvar'
+  'datum'
+  'idBgEr'
+  'nulvar'
+  1.0d0
+
+'BgThresh_value'                                   ! Output
+  'Threshold for background quality control check of observations'
+  'nulvar'
+  'nulvar'
+  'datum'
+  'idBgTh'
+  'nulvar'
+  1.0d0
+
 !
 !------------------------------------------------------------------------------
 !  SAV_BIOMASS properties (Module in Biology folder).

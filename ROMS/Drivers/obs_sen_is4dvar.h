@@ -2,7 +2,7 @@
 !
 !svn $Id: obs_sen_is4dvar.h 858 2017-07-31 23:02:30Z arango $
 !=================================================== Andrew M. Moore ===
-!  Copyright (c) 2002-2017 The ROMS/TOMS Group      Hernan G. Arango   !
+!  Copyright (c) 2002-2018 The ROMS/TOMS Group      Hernan G. Arango   !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -330,7 +330,7 @@
       STDrec=1
       Tindex=1
       DO ng=1,Ngrids
-        CALL get_state (ng, 6, 6, STD(1,ng)%name, STDrec, Tindex)
+        CALL get_state (ng, 10, 10, STD(1,ng)%name, STDrec, Tindex)
         IF (FoundError(exit_flag, NoError, __LINE__,                    &
      &                 __FILE__)) RETURN
       END DO
@@ -342,7 +342,7 @@
       STDrec=1
       Tindex=1
       DO ng=1,Ngrids
-        CALL get_state (ng, 8, 8, STD(3,ng)%name, STDrec, Tindex)
+        CALL get_state (ng, 12, 12, STD(3,ng)%name, STDrec, Tindex)
         IF (FoundError(exit_flag, NoError, __LINE__,                    &
      &                 __FILE__)) RETURN
       END DO
@@ -354,7 +354,7 @@
       STDrec=1
       Tindex=1
       DO ng=1,Ngrids
-        CALL get_state (ng, 9, 9, STD(4,ng)%name, STDrec, Tindex)
+        CALL get_state (ng, 13, 13, STD(4,ng)%name, STDrec, Tindex)
         IF (FoundError(exit_flag, NoError, __LINE__,                    &
      &                 __FILE__)) RETURN
       END DO
@@ -367,17 +367,17 @@
 !
       NRMrec=1
       DO ng=1,Ngrids
-        CALL get_state (ng, 5, 5, NRM(1,ng)%name, NRMrec, 1)
+        CALL get_state (ng, 14, 14, NRM(1,ng)%name, NRMrec, 1)
         IF (FoundError(exit_flag, NoError, __LINE__,                    &
      &                 __FILE__)) RETURN
 
 #ifdef ADJUST_BOUNDARY
-        CALL get_state (ng, 10, 10, NRM(3,ng)%name, NRMrec, 1)
+        CALL get_state (ng, 16, 16, NRM(3,ng)%name, NRMrec, 1)
         IF (FoundError(exit_flag, NoError, __LINE__,                    &
      &                 __FILE__)) RETURN
 #endif
 #if defined ADJUST_WSTRESS || defined ADJUST_STFLUX
-        CALL get_state (ng, 11, 11, NRM(4,ng)%name, NRMrec, 1)
+        CALL get_state (ng, 17, 17, NRM(4,ng)%name, NRMrec, 1)
         IF (FoundError(exit_flag, NoError, __LINE__,                    &
      &                 __FILE__)) RETURN
 #endif
