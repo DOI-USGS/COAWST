@@ -12,14 +12,14 @@
 */
 
 #define ROMS_MODEL
-#undef  NESTING
+#define NESTING
 #define WRF_MODEL
-#undef  SWAN_MODEL
-#define WW3_MODEL
+#define SWAN_MODEL
+#undef  WW3_MODEL
 #define MCT_LIB
 #define MCT_INTERP_OC2AT
 #define MCT_INTERP_WV2AT
-#undef  MCT_INTERP_OC2WV
+#define MCT_INTERP_OC2WV
 
 #if defined WRF_MODEL && (defined SWAN_MODEL || defined WW3_MODEL)
 # define DRAGLIM_DAVIS
