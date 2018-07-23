@@ -68,7 +68,11 @@
 %   date_stamp   - Sets current date string.
 %   day_code     - Computes day of the week for a given date.
 %   daynum       - Calculates date number from date (ROMS Version).
+%   daynum360    - Calculates date number from a 360-day calendar date
+%                    (ROMS Version).
 %   dayvec       - Calculates date from a date number (ROMS Version).
+%   dayvec360    - Calculates date from a date number of the 360-day
+%                    calendar (ROMS Version).
 %   gregorian    - Converts Julian day number to Gregorian calendar date.
 %   greg2str     - Converts Gregorian date array to string.
 %   hms2h        - Converts hours, minutes, and seconds to decimal hours.
@@ -103,9 +107,9 @@
 %                      plotted with 'plot_nesting'. 
 %
 
-% svn $Id: Contents.m 866 2017-08-11 22:15:00Z arango $
+% svn $Id: Contents.m 895 2018-02-11 23:15:37Z arango $
 %=========================================================================%
-%  Copyright (c) 2002-2017 The ROMS/TOMS Group                            %
+%  Copyright (c) 2002-2018 The ROMS/TOMS Group                            %
 %    Licensed under a MIT/X style license                                 %
 %    See License_ROMS.txt                           Hernan G. Arango      %
 %=========================================================================%

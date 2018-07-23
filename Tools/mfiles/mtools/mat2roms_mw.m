@@ -91,8 +91,8 @@ v34 = netcdf.inqVarID(nc,'angle');
 
 disp(' ## Filling Variables...')
 
-projection = s.projection;
-m_proj(s.projection);
+projection = s.projection.name;
+m_proj(s.projection.name);
 switch lower(projection)
 case 'mercator'
 	theProjection = 'ME';
@@ -101,6 +101,9 @@ case 'stereographic'
 case 'lambert conformal conic'
 	theProjection = 'LC';
     m_proj('Lambert Conformal Conic','clo',mean(s.rho.lon(:)))
+case 'utm'
+	theProjection = 'TM';
+    m_proj('UTM','zone',s.projection.zone,'longitudes',[s.projection.lon1 s.projection.lon2]);
 otherwise
 	theProjection = '??';
 end

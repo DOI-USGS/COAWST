@@ -32,9 +32,9 @@ function S = grid_extract(Ginp,Gout,Imin,Imax,Jmin,Jmax)
 %    S          Smaller Grid structure
 %
 
-% svn $Id: grid_extract.m 832 2017-01-24 22:07:36Z arango $
+% svn $Id: grid_extract.m 895 2018-02-11 23:15:37Z arango $
 %=========================================================================%
-%  Copyright (c) 2002-2017 The ROMS/TOMS Group                            %
+%  Copyright (c) 2002-2018 The ROMS/TOMS Group                            %
 %    Licensed under a MIT/X style license                                 %
 %    See License_ROMS.txt                           Hernan G. Arango      %
 %=========================================================================%
@@ -174,6 +174,24 @@ status = c_grid(Lp, Mp, Gout, NewFile, S.spherical);
 if (status ~= 0), return, end
 
 % Set global attributes.
+
+status = nc_attadd(Gout, 'parent_grid', L.grid_name);
+if (status ~= 0), return, end
+
+status = nc_attadd(Gout, 'parent_Imin', int32(Imin));
+if (status ~= 0), return, end
+
+status = nc_attadd(Gout, 'parent_Imax', int32(Imax));
+if (status ~= 0), return, end
+
+status = nc_attadd(Gout, 'parent_Jmin', int32(Jmin));
+if (status ~= 0), return, end
+
+status = nc_attadd(Gout, 'parent_Jmax', int32(Jmax));
+if (status ~= 0), return, end
+
+status = nc_attadd(Gout, 'refine_factor', int32(1));
+if (status ~= 0), return, end
 
 status = nc_attdel(Gout, 'history');
 if (status ~= 0), return, end

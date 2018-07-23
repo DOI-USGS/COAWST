@@ -1,6 +1,5 @@
 function [s,C]=stretching(Vstretching, theta_s, theta_b, hc, N, kgrid,  ...
                           report)
-
 %
 % STRETCHING:  Compute ROMS vertical coordinate stretching function
 %
@@ -19,6 +18,7 @@ function [s,C]=stretching(Vstretching, theta_s, theta_b, hc, N, kgrid,  ...
 %                    Vstretching = 2,  A. Shchepetkin (UCLA-ROMS, 2005)
 %                    Vstretching = 3,  R. Geyer BBL refinement
 %                    Vstretching = 4,  A. Shchepetkin (UCLA-ROMS, 2010)
+%                    Vstretching = 5,  Quadractic (Souza et al., 2015)
 %    theta_s       S-coordinate surface control parameter (scalar)
 %    theta_b       S-coordinate bottom control parameter (scalar)
 %    hc            Width (m) of surface or bottom boundary layer in which
@@ -40,9 +40,9 @@ function [s,C]=stretching(Vstretching, theta_s, theta_b, hc, N, kgrid,  ...
 %                    C(s), 1D array, [-1 <= C(s) <= 0]
 %
 
-% svn $Id: stretching.m 832 2017-01-24 22:07:36Z arango $
+% svn $Id: stretching.m 895 2018-02-11 23:15:37Z arango $
 %=========================================================================%
-%  Copyright (c) 2002-2017 The ROMS/TOMS Group                            %
+%  Copyright (c) 2002-2018 The ROMS/TOMS Group                            %
 %    Licensed under a MIT/X style license                                 %
 %    See License_ROMS.txt                           Hernan G. Arango      %
 %=========================================================================%
@@ -64,7 +64,7 @@ if (nargin < 6),
   return
 end,
 
-if (Vstretching < 1 || Vstretching > 4),
+if (Vstretching < 1 || Vstretching > 5),
   disp(' ');
   disp(['*** Error:  STRETCHING - Illegal parameter Vstretching = '     ...
 	num2str(Vstretching)]); 
@@ -174,6 +174,38 @@ elseif (Vstretching == 4),
     Nlev=N;
     lev=(1:N)-0.5;
     s=(lev-N).*ds;
+  end
+  if (theta_s > 0),
+    Csur=(1.0-cosh(theta_s.*s))/(cosh(theta_s)-1.0);
+  else
+    Csur=-s.^2;
+  end
+  if (theta_b > 0),
+    Cbot=(exp(theta_b.*Csur)-1.0)/(1.0-exp(-theta_b));
+    C=Cbot;
+  else
+    C=Csur;
+  end
+
+% Quadratic formulation to enhance surface exchange.
+%
+% (J. Souza, B.S. Powell, A.C. Castillo-Trujillo, and P. Flament, 2014:
+%  The Vorticity Balance of the Ocean Surface in Hawaii from a
+%  Regional Reanalysis.'' J. Phys. Oceanogr., 45, 424-440)
+
+elseif (Vstretching == 5),
+
+  if (kgrid == 1),
+    Nlev=Np;
+    lev=0:N;
+    s=-(lev.*lev - 2.0.*lev.*N + lev + N*N - N) ./ (N*N - N)-           ...
+      0.01.*(lev.*lev - lev.*N) ./ (1.0 - N);
+    s(1)=-1.0;
+  else
+    Nlev=N;
+    lev=(1:N)-0.5;
+    s=-(lev.*lev - 2.0.*lev.*N + lev + N*N - N) ./ (N*N - N)-           ...
+      0.01.*(lev.*lev - lev.*N) ./ (1.0 - N);
   end
   if (theta_s > 0),
     Csur=(1.0-cosh(theta_s.*s))/(cosh(theta_s)-1.0);

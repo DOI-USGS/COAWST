@@ -48,9 +48,9 @@ function G = grids_structure(Gnames, Hnames)
 %    get_roms_grid     Gets Information Grids Structure, G(ng) 
 %
 
-% svn $Id: grids_structure.m 849 2017-06-09 21:06:09Z arango $
+% svn $Id: grids_structure.m 895 2018-02-11 23:15:37Z arango $
 %=========================================================================%
-%  Copyright (c) 2002-2017 The ROMS/TOMS Group                            %
+%  Copyright (c) 2002-2018 The ROMS/TOMS Group                            %
 %    Licensed under a MIT/X style license                                 %
 %    See License_ROMS.txt                           Hernan G. Arango      %
 %=========================================================================%

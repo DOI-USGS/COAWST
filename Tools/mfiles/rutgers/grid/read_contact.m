@@ -17,9 +17,9 @@ function [S] = read_contact(ncname)
 %    S           Nested grids Contact Points structure (struct array)
 %
 
-% svn $Id: read_contact.m 832 2017-01-24 22:07:36Z arango $
+% svn $Id: read_contact.m 895 2018-02-11 23:15:37Z arango $
 %=========================================================================%
-%  Copyright (c) 2002-2017 The ROMS/TOMS Group                            %
+%  Copyright (c) 2002-2018 The ROMS/TOMS Group                            %
 %    Licensed under a MIT/X style license                                 %
 %    See License_ROMS.txt                           Hernan G. Arango      %
 %=========================================================================%
@@ -61,21 +61,10 @@ for ng=1:Ngrids
   gotfile(ng) = exist(char(Gnames(ng)), 'file');
 end
 
-% Get nested grids structures. If the grid structure have the parent
-% fields, remove them to have an array of similar structures.
+% Get nested grids structure array.
 
 if (all(gotfile)),
-  parent = {'parent_grid',                                              ...
-            'parent_Imin', 'parent_Imax',                               ...
-            'parent_Jmin', 'parent_Jmax'};
-  for ng=1:Ngrids,
-    g = get_roms_grid(char(Gnames(ng)));
-    if (isfield(g, 'parent_grid')),
-      G(ng) = rmfield(g, parent);
-    else
-      G(ng) = g;
-    end
-  end
+  G = grids_structure(Gnames);
 end
 
 % Initialize structure if perimeter, boundary edges, and connectivity
@@ -96,6 +85,7 @@ par_list = {'Lm', 'Mm',                                                 ...
             'coincident', 'composite', 'mosaic', 'refinement',          ...
             'refine_factor',                                            ...
             'donor_grid', 'receiver_grid',                              ...
+            'I_left', 'I_right', 'J_bottom', 'J_top',                   ...
             'NstrR', 'NendR',                                           ...
             'NstrU', 'NendU',                                           ...
             'NstrV', 'NendV'};
@@ -115,12 +105,13 @@ P.refinement = logical(P.refinement);
 if (all(gotfile)),
   S.Ndatum = Ndatum;
 else
-  S.Ngrids   = Ngrids;               % Grid NetCDF filenames in global
-  S.Ncontact = Ncontact;             % attributes are not available.
-  S.Nweights = Nweights;             % Therefore, build the S.grid
-  S.Ndatum   = Ndatum;               % substructure with the few
-                                     % informations that it is
-  S.western_edge  = 1;               % available in the NetCDF file.
+  S.Ngrids    = Ngrids;              % Grid NetCDF filenames in global
+  S.Ncontact  = Ncontact;            % attributes are not available.
+  S.nLweights = nLweights;           % Therefore, build the S.grid
+  S.nQweights = nQweights;           % substructure with the few
+  S.Ndatum    = Ndatum;              % information that it is
+                                     % available in the NetCDF file.
+  S.western_edge  = 1;
   S.southern_edge = 2;
   S.eastern_edge  = 3;
   S.northern_edge = 4;
@@ -137,6 +128,10 @@ else
     S.grid(ng).M  = P.Mm(ng)+1;
   
     S.grid(ng).refine_factor = P.refine_factor(ng);
+    S.grid(ng).parent_Imin   = P.I_left(ng);
+    S.grid(ng).parent_Imax   = P.I_right(ng);
+    S.grid(ng).parent_Jmin   = P.J_bottom(ng);
+    S.grid(ng).parent_Jmax   = P.J_top(ng);
   end
 end
 

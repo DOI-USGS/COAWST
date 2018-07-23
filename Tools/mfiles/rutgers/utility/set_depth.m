@@ -37,6 +37,7 @@ function [z]=set_depth(Vtransform, Vstretching, ...
 %                    Vstretching = 2,  A. Shchepetkin (UCLA-ROMS, 2005)
 %                    Vstretching = 3,  R. Geyer BBL refinement
 %                    Vstretching = 4,  A. Shchepetkin (UCLA-ROMS, 2010)
+%                    Vstretching = 5,  Quadractic (Souza et al., 2015)
 %
 %    theta_s       S-coordinate surface control parameter (scalar)
 %
@@ -70,9 +71,9 @@ function [z]=set_depth(Vtransform, Vstretching, ...
 %    z             Depths (m, negative), 3D array
 %
 
-% svn $Id: set_depth.m 832 2017-01-24 22:07:36Z arango $
+% svn $Id: set_depth.m 895 2018-02-11 23:15:37Z arango $
 %=========================================================================%
-%  Copyright (c) 2002-2017 The ROMS/TOMS Group                            %
+%  Copyright (c) 2002-2018 The ROMS/TOMS Group                            %
 %    Licensed under a MIT/X style license                                 %
 %    See License_ROMS.txt                           Hernan G. Arango      %
 %=========================================================================%
@@ -101,7 +102,7 @@ if (Vtransform < 1 || Vtransform > 2),
   return
 end
 
-if (Vstretching < 1 || Vstretching > 4),
+if (Vstretching < 1 || Vstretching > 5),
   disp(' ');
   disp(['*** Error:  SET_DEPTH - Illegal parameter Vstretching = '      ...
         num2str(Vstretching)]);

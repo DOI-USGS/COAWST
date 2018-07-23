@@ -18,9 +18,9 @@ make_InWave_bry=1;
 %%%%%        GENERAL PARAMETERS: THESE NEED TO BE DEFINED ALWAYS       %%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-Lp= 220;                % number of total rho points in the xi direction
-Mp= 8;                  % number of total rho points in the eta direction
-TA= 15.0;                % representative absolute wave period (sec)
+Lp = 220;                % number of total rho points in the xi direction
+Mp = 8;                  % number of total rho points in the eta direction
+TA = 5.0;                % representative absolute wave period (sec)
 theta=270;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -107,8 +107,8 @@ if (make_InWave_bry)
 
   % Duration of the simulation and time increment for the boundaries
   
-% dt= 1.0;            % time increment for the boundaries (seconds)
-  dt= 0.1;            % time increment for the boundaries (seconds)
+ %dt= 1.0;            % time increment for the boundaries (seconds)
+  dt= 0.2;            % time increment for the boundaries (seconds)
   drtn= 3600*6;       % total duration of the simulation (seconds)
 
   time=[0:dt:drtn];

@@ -46,7 +46,8 @@ function updatinit_coawst_mw(fn,gn,ini,wdr,T1)
 %5) Obtain grid information.
    h=gn.h;
    hmin=min(h(:));
-   hc=min([hmin,Tcline]);
+%  hc=min([hmin,Tcline]);
+   hc=gn.hc;
    [LP,MP]=size(gn.lon_rho);
    L=LP-1;
    Lm=L-1;

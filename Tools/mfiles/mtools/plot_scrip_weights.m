@@ -14,11 +14,10 @@ NGRIDS_WRF=1;
 
 %%%%%%%%%%%%%%%%%  END OF USER INPUT  %%%%%%%%%%%%%%%%%%%
 
-
-num_str=(NGRIDS_ROMS+NGRIDS_SWAN+NGRIDS_WW3+NGRIDS_WRF)*2;
-for mm=1:num_str
-  strnames(mm,:)='            ';
-end
+%num_str=(NGRIDS_ROMS+NGRIDS_SWAN+NGRIDS_WW3+NGRIDS_WRF);
+%for mm=1:num_str
+%  strnames(mm,:)='            ';
+%end
 count=0;
 for mo=1:NGRIDS_ROMS
   for mw=1:NGRIDS_SWAN
@@ -31,7 +30,7 @@ for mo=1:NGRIDS_ROMS
   end
   for ma=1:NGRIDS_WRF
     count=count+1;
-    strnames(count,:)=['ocn',num2str(mo),'_to_atm',num2str(mw)];
+    strnames(count,:)=['ocn',num2str(mo),'_to_atm',num2str(ma)];
   end
 end
 for mw=1:NGRIDS_SWAN
@@ -41,38 +40,38 @@ for mw=1:NGRIDS_SWAN
   end
   for ma=1:NGRIDS_WRF
     count=count+1;
-    strnames(count,:)=['wav',num2str(mo),'_to_atm',num2str(mw)];
+    strnames(count,:)=['wav',num2str(mo),'_to_atm',num2str(ma)];
   end
 end
 for mw=1:NGRIDS_WW3
   for mo=1:NGRIDS_ROMS
     count=count+1;
-    strnames(count,:)=['wav',num2str(mo),'_to_ocn',num2str(mw)];
+    strnames(count,:)=['wav',num2str(mw),'_to_ocn',num2str(mo)];
   end
   for ma=1:NGRIDS_WRF
     count=count+1;
-    strnames(count,:)=['wav',num2str(mo),'_to_atm',num2str(mw)];
+    strnames(count,:)=['wav',num2str(mw),'_to_atm',num2str(ma)];
   end
 end
 for ma=1:NGRIDS_WRF
   for mw=1:NGRIDS_SWAN
     count=count+1;
-    strnames(count,:)=['atm',num2str(mo),'_to_wav',num2str(mw)];
+    strnames(count,:)=['atm',num2str(ma),'_to_wav',num2str(mw)];
   end
   for mw=1:NGRIDS_WW3
     count=count+1;
-    strnames(count,:)=['atm',num2str(mo),'_to_wav',num2str(mw)];
+    strnames(count,:)=['atm',num2str(ma),'_to_wav',num2str(mw)];
   end
   for mo=1:NGRIDS_ROMS
     count=count+1;
-    strnames(count,:)=['atm',num2str(mo),'_to_ocn',num2str(mw)];
+    strnames(count,:)=['atm',num2str(ma),'_to_ocn',num2str(mo)];
   end
 end
 
-if (count~=num_str)
-  disp('error : numstrings not = number of grid connections');
-  return
-end
+%if (count~=num_str)
+%  disp('error : numstrings not = number of grid connections');
+%  return
+%end
 for mm=1:count
   str=strnames(mm,:);
   remap=ncread(fname,['/',str,'_weights.nc/remap_matrix']);

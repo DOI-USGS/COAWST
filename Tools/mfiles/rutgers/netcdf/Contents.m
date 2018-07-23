@@ -85,10 +85,16 @@
 %                      'ncinfo'. This can be used elsewhere to create
 %                      NetCDF a file in a compact way.
 %
+% Miscelaneous:
+%
+%   check_records  - Checks multi-file records for monotonicity.
+%
+%   remove_record  - Removes specified record in a NetCDF file.
+%
 
-% svn $Id: Contents.m 866 2017-08-11 22:15:00Z arango $
+% svn $Id: Contents.m 899 2018-03-20 22:25:24Z arango $
 %=========================================================================%
-%  Copyright (c) 2002-2017 The ROMS/TOMS Group                            %
+%  Copyright (c) 2002-2018 The ROMS/TOMS Group                            %
 %    Licensed under a MIT/X style license                                 %
 %    See License_ROMS.txt                           Hernan G. Arango      %
 %=========================================================================%
