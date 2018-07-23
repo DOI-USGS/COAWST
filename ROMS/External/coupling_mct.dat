@@ -1,0 +1,282 @@
+!
+!  Export/Import Coupling Variables
+!
+!svn $Id: coupling_mct.dat 889 2018-02-10 03:32:52Z arango $
+!========================================================= Hernan G. Arango ===
+!  Copyright (c) 2002-2018 The ROMS/TOMS Group                                !
+!    Licensed under a MIT/X style license                                     !
+!    See License_ROMS.txt                                                     !
+!==============================================================================
+!                                                                             !
+!  This file contains all ROMS/TOMS Input/Output variables information.  It   !
+!  is used to manage NetCDF files.  The following information is needed for   !
+!  any IO variable:                                                           !
+!                                                                             !
+!       Vinfo(1)      Field code indentifier.                                 !
+!       Vinfo(2)      ROMS variable name.                                     !
+!       Vinfo(3)      Long descritive field name.                             !
+!       Vinfo(4)      Standard field units.                                   !
+!       Vinfo(5)      Staggered C-grid variable type:                         !
+!                       'nulvar' => non-grided variable.                      !
+!                       'p2dvar' => 2D PHI-variable.                          !
+!                       'r2dvar' => 2D RHO-variable.                          !
+!                       'u2dvar' => 2D U-variable.                            !
+!                       'v2dvar' => 2D V-variable.                            !
+!                       'p3dvar' => 3D PHI-variable.                          !
+!                       'r3dvar' => 3D RHO-variable.                          !
+!                       'u3dvar' => 3D U-variable.                            !
+!                       'v3dvar' => 3D V-variable.                            !
+!                       'w3dvar' => 3D W-variable.                            !
+!                       'b3dvar' => 3D BED-sediment.                          !
+!       add_offset    Value added to data.                                    !
+!       scale         Scale to convert input data to model units.             !
+!                                                                             !
+!  The fields are processed as:                                               !
+!                                                                             !
+!       field (standard_units) = field (native_units) * scale + add_offset    !
+!                                                                             !
+!  Enclose Vinfo variables with single quotes so this file can be read with   !
+!  a free format statement.                                                   !
+!                                                                             !
+!  Notice that there is commented information for each variable  including    !
+!  native ROMS units in brackets.                                             !
+!                                                                             !
+!==============================================================================
+!
+!------------------------------------------------------------------------------
+!  ROMS/TOMS Import fields from atmospheric model.
+!------------------------------------------------------------------------------
+!
+!  Fields needed for the COARE atmospheric boundary layer parameterization
+!  which is activated with the BULK_FLUXES C-preprocessing flag.
+!
+
+'Pair'                                             ! at mean sea level
+  'Pair'
+  'surface air pressure'
+  'millibar'                                       ! [millibar]
+  'r2dvar'
+  0.0d0
+  1.0d0
+
+'Tair'                                             ! at 2 m, usually
+  'Tair'
+  'surface air temperature'
+  'Celsius'                                        ! [Kelvin]
+  'r2dvar'
+  273.16d0                                         ! Kelvin to Celsius
+  1.0d0
+
+'Hair'                                             ! at 10 m, usually
+  'Hair'
+  'surface air relative humidity'
+  'percentage'                                     ! [percentage]
+  'r2dvar'
+  0.0d0
+  0.01d0                                           ! 1/100
+
+'cloud'                                            ! at 10 m, usually
+  'cloud'
+  'cloud fraction'
+  'nondimensional'                                 ! [nondimensional]
+  'r2dvar'
+  0.0d0
+  1.0d0
+
+'SWrad'                                            ! at 10 m, usually
+  'swrad'
+  'solar shortwave radiation flux'
+  'Celsius meter second-1'                         ! [Watt/m2]
+  'r2dvar'
+  0.0d0
+  1.0d0                                            ! 1/rho0/Cp
+
+'LWrad'                                            ! at 10 m, usually
+  'lwrad_down'
+  'downwelling longwave radiation flux'
+  'Celsius meter second-1'                         ! [Watt/m2]
+  'r2dvar'
+  0.0d0
+  1.0d0                                            ! 1/rho0/Cp
+
+'rain'                                             ! at 10 m, usually
+  'rain'
+  'rain fall rate'
+  'kilogram meter-2 second-1'                      ! [kg m2/s]
+  'r2dvar'
+  0.0d0
+  1.0d0                                            ! 1/rhow (0.001 m3/kg) if m/s
+
+'Uwind'                                            ! at 10 m, usually
+  'Uwind'
+  'surface u-wind component'
+  'meter second-1'                                 ! [m/s]
+  'r2dvar'
+  0.0d0
+  1.0d0
+
+'Vwind'                                            ! at 10 m, usually
+  'Vwind'
+  'surface v-wind component'
+  'meter second-1'                                 ! [m/s]
+  'r2dvar'
+  0.0d0
+  1.0d0
+
+!
+!  If BULK_FLUXES is not activated, the following fields are needed.
+!
+
+'heat'
+  'shflux'
+  'surface net heat flux'
+  'Celsius meter second-1'                         ! [Watt/m2]
+  'r2dvar'
+  0.0d0
+  1.0d0                                            ! 1/rho0/Cp
+
+'Ustr'
+  'sustr'
+  'surface u-momentum stress'
+  'meter2 second-2'                                ! [N/m2]
+  'u2dvar'
+  0.0d0
+  1.0d0                                            ! 1/rho0
+
+'Vstr'
+  'svstr'
+  'surface v-momentum stress'
+  'meter2 second-2'                                ! [N/m2]
+  'v2dvar'
+  0.0d0
+  1.0d0                                            ! 1/rho0
+
+!
+!------------------------------------------------------------------------------
+!  ROMS/TOMS export fields from atmospheric model.
+!------------------------------------------------------------------------------
+!
+
+'SST'
+  't(:,:,N,itemp)'
+  'sea surface temperature'
+  'Celsius'                                        ! [Celsius]
+  'r2dvar'
+  0.0d0
+  1.0d0
+
+!
+!------------------------------------------------------------------------------
+!  ROMS/TOMS Import fields from wave model.
+!------------------------------------------------------------------------------
+!
+
+'Wdir'
+  'Dwave'
+  'wave direction'
+  'degrees'                                        ! [radians]
+  'r2dvar'
+  0.0d0
+  0.017453292519943295                             ! pi/180
+
+'Wamp'
+  'Hwave'
+  'significant wave height'
+  'meter'                                          ! [m]
+  'r2dvar'
+  0.0d0
+  1.0d0
+
+'Wlen'
+  'Lwave'
+  'average wave length'
+  'meter'                                          ! [m]
+  'r2dvar'
+  0.0d0
+  1.0
+
+'Wptop'
+  'Pwave_top'
+  'surface wave relative peak period'
+  'second'                                         ! [s]
+  'r2dvar'
+  0.0d0
+  1.0d0
+
+'Wpbot'
+  'Pwave_bot'
+  'bottom wave period'
+  'second'                                         ! [s]
+  'r2dvar'
+  0.0d0
+  1.0d0
+
+'Wdiss'
+  'wave_dissip'
+  'wave energy dissipation'
+  'Watts meter-2'                                  ! [W/m2]
+  'r2dvar'
+  0.0d0
+  0.00097561                                       ! 1/rho0
+
+'Wbrk'
+  'wave_break'
+  'percent wave breaking'
+  'nondimensionsal'
+  'r2dvar'
+  0.0d0
+  1.0d0
+
+'Wubot'
+  'Ub_swan'
+  'wave bottom orbital velocity'
+  'meter second-1'                                 ! [m/s]
+  'r2dvar'
+  0.0d0
+  1.0d0
+
+!
+!------------------------------------------------------------------------------
+!  ROMS/TOMS Export fields to wave model.
+!------------------------------------------------------------------------------
+!
+
+'bath'
+  'h'
+  'bathymetry'
+  'meter'                                          ! [m]
+  'r2dvar'
+  0.0d0
+  1.0d0
+
+'SSH'
+  'zeta'
+  'free-surface'
+  'meter'                                          ! [m]
+  'r2dvar'
+  0.0d0
+  1.0d0
+
+'Ubar'
+  'ubar'
+  'vertically integrated u-momentum component'
+  'meter second-1'                                 ! [m/s]
+  'u2dvar'
+  0.0d0
+  1.0d0
+
+'Vbar'
+  'vbar'
+  'vertically integrated v-momentum component'
+  'meter second-1'                                 ! [m/s]
+  'v2dvar'
+  0.0d0
+  1.0d0
+
+'ZO'
+  'ZO'
+  'bottom roughness'
+  'meter'                                          ! [m/s]
+  'r2dvar'
+  0.0d0
+  1.0d0

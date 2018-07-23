@@ -1,0 +1,35 @@
+%  Edge boundary data for SeaGrid:
+%
+% svn $Id: boundary.dat 895 2018-02-11 23:15:37Z arango $
+%===========================================================================%
+%  Copyright (c) 2002-2018 The ROMS/TOMS Group                              %
+%    Licensed under a MIT/X style license                                   %
+%    See License_ROMS.txt                           Hernan G. Arango        %
+%===========================================================================%
+%
+%  This file can be used to load boundary edges to SeaGrid using the
+%  "File-->Load-->BoundaryFile" menu item. This ASCII file consists of
+%  three columns: [lon lat corner_flag], where the corner_flag is 1 if
+%  the point is a corner, 0 otherwise.  Exactly four of the boundary
+%  points must be marked as corners.
+%
+%  In order for this to work in SeaGrid, the bathymetry matlab file
+%  should be loaded first, followed by the coastline matlab file, and
+%  then this boundary file.
+%
+%  To get the origin of the (lon,lat) coordinates in the lower-letf-corner,
+%  you need to specify as the first-point below to the (lat,lon) of the map
+%  upper-left-corner. Then, specify the other points in counterclock order:
+%
+%            1 ---------- 4
+%              |        |
+%        Eta   |        |        O:  Origin of ROMS (Xi,Eta) coordinates
+%              |        |
+%            2 ---------- 3
+%              O
+%                  Xi
+
+-4.0 70.0 1
+-4.0 62.5 1
+14.0 62.5 1
+14.0 70.0 1
