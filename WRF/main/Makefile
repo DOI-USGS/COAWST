@@ -12,15 +12,9 @@ LIBPATHS =
 
 include ../configure.wrf
 
-ifeq "$(WRF_MAKE_EXE)" "YES"
-$(SOLVER)_wrf : wrf.o ../main/module_wrf_top.o
-	$(RANLIB) $(RLFLAGS) $(LIBWRFLIB)
-	$(LD) -o wrf.exe $(LDFLAGS) wrf.o ../main/module_wrf_top.o $(LIBWRFLIB) $(LIB) 
-else
 $(SOLVER)_wrf : wrf.o ../main/module_wrf_top.o
 	$(RANLIB) $(RLFLAGS) $(LIBWRFLIB)
 	$(LD) -o wrf.exe $(LDFLAGS) wrf.o ../main/module_wrf_top.o $(LIBWRFLIB) $(LIB)
-endif
 
 $(SOLVER)_wrf_SST_ESMF : wrf_ESMFMod.o wrf_SST_ESMF.o ../main/module_wrf_top.o
 	$(RANLIB) $(RLFLAGS) $(LIBWRFLIB)

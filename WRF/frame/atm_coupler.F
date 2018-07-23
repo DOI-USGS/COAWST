@@ -238,7 +238,7 @@
       TYPE(domain) , INTENT (IN) :: grid 
       integer, intent(in) :: ia
 
-      include 'mpif.h'
+!     include 'mpif.h'
 !
 !  Local variable declarations.  
 !
@@ -1649,7 +1649,7 @@
       CALL MCT_waits (Router_W(ia,iw)%WRFtoSWAN)
       IF (MYRANK.EQ.0) THEN
         WRITE (*,37) ' ## WRF grid ',ia,                                &
-     &                    ' sent data to SWAN grid ',iw
+     &                    ' sent data to WAVE grid ',iw
  37     FORMAT (a14,i2,a24,i2)
       ENDIF
       IF (MyError.ne.0) THEN
@@ -1969,7 +1969,7 @@
 !
       IF (MYRANK.EQ.0) THEN
         WRITE (*,30) ' ## WRF grid ',ia,                                &
-     &                    ' recv data from SWAN grid ',iw
+     &                    ' recv data from WAVE grid ',iw
  30     FORMAT (a14,i2,a26,i2)
       END IF
       IF (MyError.ne.0) THEN
@@ -2020,7 +2020,7 @@
      &                     MPI_MAX, ATM_COMM_WORLD, ierr )
       range(2)=retval
       IF (Myrank.eq.0) THEN
-        write(*,40) 'SWANtoWRF  Min/Max HSIGN   (m):     ',             &
+        write(*,40) 'WAVtoWRF  Min/Max HSIGN   (m):     ',              &
      &                    range(1),range(2)
       END IF
 !
@@ -2052,7 +2052,7 @@
      &                     MPI_MAX, ATM_COMM_WORLD, ierr )
       range(2)=retval
       IF (Myrank.eq.0) THEN
-        write(*,40) 'SWANtoWRF  Min/Max WLENP   (m):     ',             &
+        write(*,40) 'WAVtoWRF  Min/Max WLENP   (m):     ',              &
      &                    range(1),range(2)
       END IF
 !
@@ -2084,7 +2084,7 @@
      &                     MPI_MAX, ATM_COMM_WORLD, ierr )
       range(2)=retval
       IF (Myrank.eq.0) THEN
-        write(*,40) 'SWANtoWRF  Min/Max RTP     (m):     ',             &
+        write(*,40) 'WAVtoWRF  Min/Max RTP     (m):     ',              &
      &                    range(1),range(2)
       END IF
 !
