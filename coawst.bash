@@ -2,7 +2,7 @@
 #
 # svn $Id: build.bash 429 2009-12-20 17:30:26Z jcwarner $
 #::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
-# Copyright (c) 2002-2017 The ROMS/TOMS Group                           :::
+# Copyright (c) 2002-2018 The ROMS/TOMS Group                           :::
 #   Licensed under a MIT/X style license                                :::
 #   See License_ROMS.txt                                                :::
 #::::::::::::::::::::::::::::::::::::::::::::::::::::: Hernan G. Arango :::
@@ -33,6 +33,8 @@
 #                                                                       :::
 #    -j [N]       Compile in parallel using N CPUs                      :::
 #                  omit argument for all available CPUs                 :::
+#    -p macro     Prints any Makefile macro value. For example,          :::
+#                  build.bash -p FFLAGS                                 :::
 #    -noclean     Do not clean already compiled roms objects            :::
 #    -nocleanwrf  Do not clean already compiled wrf objects             :::
 #    -nocleanww3  Do not clean already compiled ww3 objects             :::
@@ -46,6 +48,7 @@
 #
 parallel=0
 clean=1
+dprint=0
 cleanwrf=1
 cleanww3=1
 
@@ -55,13 +58,21 @@ do
     -j )
       shift
       parallel=1
-      test=`echo $1 | grep -P '^\d+$'`
+      test=`echo $1 | grep '^[0-9]\+$'`
       if [ "$test" != "" ]; then
         NCPUS="-j $1"
         shift
       else
         NCPUS="-j"
       fi
+      ;;
+
+    -p )
+      shift
+      clean=0
+      dprint=1
+      debug="print-$1"
+      shift
       ;;
 
     -noclean )
@@ -87,6 +98,8 @@ do
       echo ""
       echo "-j [N]      Compile in parallel using N CPUs"
       echo "              omit argument for all avaliable CPUs"
+      echo "-p macro    Prints any Makefile macro value"
+      echo "              For example:  build.bash -p FFLAGS"
       echo "-noclean       Do not clean already compiled objects"
       echo "-nocleanwrf    Do not clean already compiled wrf objects"
       echo "-nocleanww3    Do not clean already compiled ww3 objects"
@@ -140,12 +153,12 @@ export   WWATCH_ENV=${COAWST_WW3_DIR}/wwatch.env
 #
 # 4) NETCDF_CONFIG is needed by WW3. You need to set this:
 #export   NETCDF_CONFIG=${NETCDF_LIBDIR}/../bin/nc-config
+#    This may require nf-config, depending on your system.
 export   NETCDF_CONFIG=/share/apps/netcdf-4.1.3_intel-2011.4.191/bin/nc-config
 #
 # 5) WW3_SWITCH_FILE is like cpp options for WW3. You need to create it and
-#        list the name here.
-export   WW3_SWITCH_FILE=sandy_coupled
-#export  WW3_SWITCH_FILE=sandy_ww3only
+#    list the name here.  You need to have COAWST listed in the switch file.
+ export  WW3_SWITCH_FILE=switch_sandy
 
 ############################################################################
 # Compiler selections.
@@ -194,7 +207,7 @@ export   WW3_SWITCH_FILE=sandy_coupled
 
  export         USE_DEBUG=              # use Fortran debugging flags
  export         USE_LARGE=              # activate 64-bit compilation
-#export       USE_NETCDF4=on            # compile with NetCDF-4 library
+ export       USE_NETCDF4=              # compile with NetCDF-4 library
 #export   USE_PARALLEL_IO=on            # Parallel I/O with Netcdf-4/HDF5
 
 #export       USE_MY_LIBS=on            # use my library paths below
@@ -456,6 +469,9 @@ fi
 #
  cd ${MY_ROMS_SRC}
 
+#--------------------------------------------------------------------------
+# Compile.
+#--------------------------------------------------------------------------
 # Remove build directory.
 
 if [ $clean -eq 1 ]; then
@@ -477,8 +493,12 @@ if [ $cleanww3 -eq 1 ]; then
 fi
 make ww3
 
-if [ $parallel -eq 1 ]; then
-  make $NCPUS
+if [ $dprint -eq 1 ]; then
+  make $debug
 else
-  make
+  if [ $parallel -eq 1 ]; then
+    make $NCPUS
+  else
+    make
+  fi
 fi

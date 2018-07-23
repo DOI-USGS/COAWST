@@ -1,6 +1,6 @@
 # svn $Id: makefile 830 2017-01-24 21:21:11Z arango $
 #::::::::::::::::::::::::::::::::::::::::::::::::::::: Hernan G. Arango :::
-# Copyright (c) 2002-2017 The ROMS/TOMS Group             Kate Hedstrom :::
+# Copyright (c) 2002-2018 The ROMS/TOMS Group             Kate Hedstrom :::
 #   Licensed under a MIT/X style license                                :::
 #   See License_ROMS.txt                                                :::
 #::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
@@ -441,10 +441,6 @@ ifdef USE_SWAN
 all: $(SCRATCH_DIR) $(SCRATCH_DIR)/MakeDepend $(BIN) rm_macros
 endif
 
-#ifdef USE_WW3
-#.PHONY: all
-#endif
-
  modules  :=
 ifdef USE_ADJOINT
  modules  +=	ROMS/Adjoint \
@@ -514,11 +510,6 @@ ifdef USE_SWAN
  includes +=	SWAN/Src
 endif
 
-#ifdef USE_WW3
-# modules  +=	WW3/ftn
-# includes +=	WW3/ftn
-#endif
-
 ifdef USE_REFDIF
  modules  +=	REFDIF
  includes +=	REFDIF
@@ -544,6 +535,12 @@ ifdef USE_ROMS
 else ifdef USE_SWAN
  modules  +=	Master
  includes +=	Master Compilers
+else ifdef USE_WW3
+ modules  +=	Master
+ includes +=	Master Compilers
+#else ifdef USE_WRF
+# modules  +=	Master
+# includes +=	Master Compilers
 endif
 
 vpath %.F $(modules)
@@ -620,15 +617,11 @@ ifdef USE_WW3
         $(RM) $(COAWST_WW3_DIR)/obj_DIST/libWW3.a;                \
 	cd $(COAWST_WW3_DIR); ls;                                 \
 	echo " "; echo " ";                                       \
-	echo "Compiling ww3";                                     \
+	export FC=$(FC);                                          \
+	export "FFLAGS=$(FFLAGS)";                                \
 	./coawst_compile_ww3;                                     \
 	echo "";                                                  \
 	echo "-------- Finished compiling WW3 ------------"
- ifndef USE_ROMS
-  ifndef USE_SWAN
-	ln -sf WW3/exe/ww3_shel $(BIN);
-  endif
- endif
 	echo "";
 endif
 
@@ -650,12 +643,6 @@ endif
 
 wrf:
 ifdef USE_WRF
-	WRF_MAKE_EXE=NO
- ifndef USE_ROMS
-  ifndef USE_SWAN
-	WRF_MAKE_EXE=YES
-  endif
- endif
 	cp -p $(BIN) $(BIN).backup;                               \
 	$(RM) -r $(BIN);                                          \
 	cd $(WRF_DIR); ls;                                        \
@@ -666,7 +653,9 @@ ifdef USE_WRF
 	echo "-------- Finished compiling WRF ------------"
  ifndef USE_ROMS
   ifndef USE_SWAN
+   ifndef USE_WW3
 	ln -sf WRF/main/wrf.exe coawstM;
+   endif
   endif
  endif
 	echo "";
