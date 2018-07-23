@@ -4451,8 +4451,8 @@
 !             --- apply shape function to relaxation
 !
               IF (ISHAP.EQ.1) THEN
-                 SHAP(1) = EXP(-1.25*((SIG1/(2.*PI))/0.4)**-4)
-                 SHAP(2) = EXP(-1.25*((SIG2/(2.*PI))/0.4)**-4)
+                 SHAP(1) = EXP(-1.25*((SIG1/(2.*PI))/0.4)**(-4))
+                 SHAP(2) = EXP(-1.25*((SIG2/(2.*PI))/0.4)**(-4))
                  !
                  SDIA1  = SDIA1  / SHAP(1)
                  SDIA2  = SDIA2  / SHAP(2)

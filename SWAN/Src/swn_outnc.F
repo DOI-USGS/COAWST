@@ -404,7 +404,7 @@ contains
             end if
             inquire(unit=binnr, opened=lopen)
             if ( .not. lopen ) then
-                write(errmsg,'("unit ",I3," is NOT open")'), binnr
+                write(errmsg,'("unit ",I3," is NOT open")') binnr
                 call MSGERR(4, errmsg)
                 return
             end if
@@ -684,7 +684,7 @@ contains
           if ( oqi(1) == 0 ) then
               call FOR(oqi(1), OUTP_FILES(irq), 'UU', ierr)
               if ( ierr > 0 ) then
-                  write(errmsg,'("File ", A, " open returned IOSTAT ", I3)'), trim(OUTP_FILES(irq)), ierr
+                  write(errmsg,'("File ", A, " open returned IOSTAT ", I3)') trim(OUTP_FILES(irq)), ierr
                   call MSGERR(4, errmsg)
                   return
               end if
