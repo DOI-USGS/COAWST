@@ -1,6 +1,6 @@
 # svn $Id: Linux-g95.mk 834 2017-01-25 18:49:17Z arango $
 #::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
-# Copyright (c) 2002-2017 The ROMS/TOMS Group                           :::
+# Copyright (c) 2002-2018 The ROMS/TOMS Group                           :::
 #   Licensed under a MIT/X style license                                :::
 #   See License_ROMS.txt                                                :::
 #::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
@@ -96,13 +96,6 @@ else
          CXXFLAGS += -O3
 endif
 
-ifdef USE_MCT
-       MCT_INCDIR ?= /opt/g95soft/mct/include
-       MCT_LIBDIR ?= /opt/g95soft/mct/lib
-           FFLAGS += -I$(MCT_INCDIR)
-             LIBS += -L$(MCT_LIBDIR) -lmct -lmpeu
-endif
-
 ifdef USE_ESMF
           ESMF_OS ?= $(OS)
       ESMF_SUBDIR := $(ESMF_OS).$(ESMF_COMPILER).$(ESMF_ABI).$(ESMF_COMM).$(ESMF_SITE)
@@ -135,6 +128,13 @@ endif
 ifdef USE_WW3
              FFLAGS += -I${COAWST_WW3_DIR}/mod_DIST/
              LIBS += WW3/obj/libWW3.a
+endif
+
+ifdef USE_MCT
+       MCT_INCDIR ?= /opt/g95soft/mct/include
+       MCT_LIBDIR ?= /opt/g95soft/mct/lib
+           FFLAGS += -I$(MCT_INCDIR)
+             LIBS += -L$(MCT_LIBDIR) -lmct -lmpeu
 endif
 
 #

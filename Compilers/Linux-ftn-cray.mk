@@ -1,6 +1,6 @@
 # svn $Id: Linux-ftn-cray.mk 885 2017-12-27 23:18:30Z arango $
 #::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
-# Copyright (c) 2002-2017 The ROMS/TOMS Group                           :::
+# Copyright (c) 2002-2018 The ROMS/TOMS Group                           :::
 #   Licensed under a MIT/X style license                                :::
 #   See License_ROMS.txt                                                :::
 #::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
@@ -13,9 +13,15 @@
 # FFLAGS         Flags to the fortran compiler
 # CPP            Name of the C-preprocessor
 # CPPFLAGS       Flags to the C-preprocessor
+# CC             Name of the C compiler
+# CFLAGS         Flags to the C compiler
+# CXX            Name of the C++ compiler
+# CXXFLAGS       Flags to the C++ compiler
 # CLEAN          Name of cleaning executable after C-preprocessing
+# NF_CONFIG      NetCDF Fortran configuration script
 # NETCDF_INCDIR  NetCDF include directory
-# NETCDF_LIBDIR  NetCDF libary directory
+# NETCDF_LIBDIR  NetCDF library directory
+# NETCDF_LIBS    NetCDF library switches
 # LD             Program to load the objects into an executable
 # LDFLAGS        Flags to the loader
 # RANLIB         Name of ranlib command
@@ -27,12 +33,16 @@
            FFLAGS := -e I -e m
               CPP := /usr/bin/cpp
          CPPFLAGS := -P -traditional
+               CC := cc
+              CXX := CC
+           CFLAGS :=
+         CXXFLAGS :=
           LDFLAGS :=
                AR := ar
           ARFLAGS := -r
             MKDIR := mkdir -p
                RM := rm -f
-           RANLIB := touch
+           RANLIB := ranlib
              PERL := perl
              TEST := test
 
@@ -49,7 +59,8 @@ ifdef USE_NETCDF4
 else
     NETCDF_INCDIR ?= /usr/local/include
     NETCDF_LIBDIR ?= /usr/local/lib
-             LIBS := -L$(NETCDF_LIBDIR) -lnetcdf
+      NETCDF_LIBS ?= -lnetcdf
+             LIBS := -L$(NETCDF_LIBDIR) $(NETCDF_LIBS)
 endif
 
 ifdef USE_ARPACK
@@ -75,13 +86,6 @@ else
            FFLAGS += -O 3,aggress
 endif
 
-ifdef USE_MCT
-       MCT_INCDIR ?= /usr/local/mct/include
-       MCT_LIBDIR ?= /usr/local/mct/lib
-           FFLAGS += -I$(MCT_INCDIR)
-             LIBS += -L$(MCT_LIBDIR) -lmct -lmpeu
-endif
-
 ifdef USE_ESMF
           ESMF_OS ?= $(OS)
       ESMF_SUBDIR := $(ESMF_OS).$(ESMF_COMPILER).$(ESMF_ABI).$(ESMF_COMM).$(ESMF_SITE)
@@ -92,7 +96,7 @@ ifdef USE_ESMF
 endif
 
 ifdef USE_WRF
-             FFLAGS += -I$(WRF_DIR)/main -I$(WRF_DIR)/external/esmf_time_f90 -I$(WRF_DIR)/frame -I$(WRF_DIR)/share
+           FFLAGS += -I$(WRF_DIR)/main -I$(WRF_DIR)/external/esmf_time_f90 -I$(WRF_DIR)/frame -I$(WRF_DIR)/share
              LIBS += WRF/main/module_wrf_top.o
              LIBS += WRF/main/libwrflib.a
              LIBS += WRF/external/fftpack/fftpack5/libfftpack.a
@@ -107,8 +111,15 @@ ifdef USE_WRF
 endif
 
 ifdef USE_WW3
-             FFLAGS += -I${COAWST_WW3_DIR}/mod_DIST/
+           FFLAGS += -I${COAWST_WW3_DIR}/mod_DIST/
              LIBS += WW3/obj/libWW3.a
+endif
+
+ifdef USE_MCT
+       MCT_INCDIR ?= /usr/local/mct/include
+       MCT_LIBDIR ?= /usr/local/mct/lib
+           FFLAGS += -I$(MCT_INCDIR)
+             LIBS += -L$(MCT_LIBDIR) -lmct -lmpeu
 endif
 
 #
@@ -160,9 +171,32 @@ $(SCRATCH_DIR)/swanpre2.o: FFLAGS += -f fixed
 $(SCRATCH_DIR)/swanser.o: FFLAGS += -f fixed
 $(SCRATCH_DIR)/swmod1.o: FFLAGS += -f fixed
 $(SCRATCH_DIR)/swmod2.o: FFLAGS += -f fixed
+$(SCRATCH_DIR)/SwanSpectPart.o:  FFLAGS += -f fixed
 $(SCRATCH_DIR)/m_constants.o: FFLAGS += -f free
 $(SCRATCH_DIR)/m_fileio.o: FFLAGS += -f free
 $(SCRATCH_DIR)/mod_xnl4v5.o: FFLAGS += -f free
 $(SCRATCH_DIR)/serv_xnl4v5.o: FFLAGS += -f free
+$(SCRATCH_DIR)/nctablemd.o:   FFLAGS += -f free
+$(SCRATCH_DIR)/agioncmd.o:    FFLAGS += -f free
+$(SCRATCH_DIR)/swn_outnc.o:   FFLAGS += -f free
+$(SCRATCH_DIR)/SdsBabanin.o:  FFLAGS += -f free
+$(SCRATCH_DIR)/SwanBpntlist.o:  FFLAGS += -f free
+$(SCRATCH_DIR)/SwanCheckGrid.o: FFLAGS += -f free
+$(SCRATCH_DIR)/SwanCompdata.o:  FFLAGS += -f free
+$(SCRATCH_DIR)/SwanCompUnstruc.o: FFLAGS += -f free
+$(SCRATCH_DIR)/SwanComputeForce.o: FFLAGS += -f free
+$(SCRATCH_DIR)/SwanConvAccur.o: FFLAGS += -f free
+$(SCRATCH_DIR)/SwanConvStopc.o: FFLAGS += -f free
+$(SCRATCH_DIR)/SwanCreateEdges.o: FFLAGS += -f free
+$(SCRATCH_DIR)/SwanCrossObstacle.o: FFLAGS += -f free
+$(SCRATCH_DIR)/SwanDiffPar.o: FFLAGS += -f free
+$(SCRATCH_DIR)/SwanDispParm.o: FFLAGS += -f free
+$(SCRATCH_DIR)/SwanFindObstacles.o: FFLAGS += -f free
+$(SCRATCH_DIR)/SwanFindPoint.o: FFLAGS += -f free
+$(SCRATCH_DIR)/SwanGridCell.o: FFLAGS += -f free
+$(SCRATCH_DIR)/SwanGriddata.o: FFLAGS += -f free
+$(SCRATCH_DIR)/nctablemd.o:    FFLAGS += -f free
+$(SCRATCH_DIR)/agioncmd.o:     FFLAGS += -f free
+$(SCRATCH_DIR)/swn_outnc.o:    FFLAGS += -f free
 
 endif

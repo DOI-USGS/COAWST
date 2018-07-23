@@ -1,6 +1,6 @@
 # svn $Id: CYGWIN-ifort.mk 834 2017-01-25 18:49:17Z arango $
 #::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
-# Copyright (c) 2002-2017 The ROMS/TOMS Group                           :::
+# Copyright (c) 2002-2018 The ROMS/TOMS Group                           :::
 #   Licensed under a MIT/X style license                                :::
 #   See License_ROMS.txt                                                :::
 #::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
@@ -149,6 +149,14 @@ endif
 ifdef USE_WW3
              FFLAGS += -I${COAWST_WW3_DIR}/mod_DIST/
              LIBS += WW3/obj/libWW3.a
+endif
+
+ifdef USE_MCT
+       MCT_LIBDIR ?= c:\\work\\models\\MCT_v2.2\\lib
+       MCT_INCDIR ?= c:\\work\\models\\MCT_v2.2\\include
+         CPPFLAGS += -traditional-cpp
+           FFLAGS += -I$(MCT_INCDIR)
+       LIBS_WIN32 += "$(MCT_LIBDIR)\libmct.a" "$(MCT_LIBDIR)\libmpeu.a"
 endif
 
 #

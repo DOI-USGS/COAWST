@@ -1,6 +1,6 @@
 # svn $Id: CYGWIN-df.mk 834 2017-01-25 18:49:17Z arango $
 #::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
-# Copyright (c) 2002-2017 The ROMS/TOMS Group                           :::
+# Copyright (c) 2002-2018 The ROMS/TOMS Group                           :::
 #   Licensed under a MIT/X style license                                :::
 #   See License_ROMS.txt                                                :::
 #::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
@@ -84,15 +84,6 @@ ifdef USE_MPI
          CPPFLAGS += -DMPI -I$(MPI_INCDIR)
 endif
 
-ifdef USE_MCT
-       MCT_LIBDIR ?= c:\\work\\models\\MCT_v2.2\\mct
-      MPEU_LIBDIR ?= c:\\work\\models\\MCT_v2.2\\mpeu
-       LIBS_WIN32 += $(MCT_LIBDIR)\\libmct.a $(MPEU_LIBDIR)\\libmpeu.a
-         CPPFLAGS += -traditional-cpp
-           FFLAGS += -I$(MCT_LIBDIR) -I$(MPEU_LIBDIR)
-           FFLAGS += /noextend_source -assume:byterecl
-endif
-
 ifdef USE_ESMF
           ESMF_OS ?= $(OS)
       ESMF_SUBDIR := $(ESMF_OS).$(ESMF_COMPILER).$(ESMF_ABI).$(ESMF_COMM).$(ESMF_SITE)
@@ -121,6 +112,15 @@ endif
 ifdef USE_WW3
              FFLAGS += -I${COAWST_WW3_DIR}/mod_DIST/
              LIBS += WW3/obj/libWW3.a
+endif
+
+ifdef USE_MCT
+       MCT_LIBDIR ?= c:\\work\\models\\MCT_v2.2\\mct
+      MPEU_LIBDIR ?= c:\\work\\models\\MCT_v2.2\\mpeu
+       LIBS_WIN32 += $(MCT_LIBDIR)\\libmct.a $(MPEU_LIBDIR)\\libmpeu.a
+         CPPFLAGS += -traditional-cpp
+           FFLAGS += -I$(MCT_LIBDIR) -I$(MPEU_LIBDIR)
+           FFLAGS += /noextend_source -assume:byterecl
 endif
 
 #

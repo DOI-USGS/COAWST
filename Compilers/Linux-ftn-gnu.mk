@@ -1,11 +1,11 @@
-# svn $Id: UNICOS-mp-ftn.mk 834 2017-01-25 18:49:17Z arango $
+# svn $Id: Linux-ftn-gnu.mk 897 2018-02-14 17:47:30Z arango $
 #::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 # Copyright (c) 2002-2018 The ROMS/TOMS Group                           :::
 #   Licensed under a MIT/X style license                                :::
 #   See License_ROMS.txt                                                :::
 #::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 #
-# Include file for UNICOS FTN compiler on CRAY X1
+# Include file for CRAY ftn compiler with PrgEnv-gnu
 # -------------------------------------------------------------------------
 #
 # ARPACK_LIBDIR  ARPACK libary directory
@@ -18,8 +18,10 @@
 # CXX            Name of the C++ compiler
 # CXXFLAGS       Flags to the C++ compiler
 # CLEAN          Name of cleaning executable after C-preprocessing
+# NF_CONFIG      NetCDF Fortran configuration script
 # NETCDF_INCDIR  NetCDF include directory
-# NETCDF_LIBDIR  NetCDF libary directory
+# NETCDF_LIBDIR  NetCDF library directory
+# NETCDF_LIBS    NetCDF library switches
 # LD             Program to load the objects into an executable
 # LDFLAGS        Flags to the loader
 # RANLIB         Name of ranlib command
@@ -28,11 +30,11 @@
 # First the defaults
 #
                FC := ftn
-           FFLAGS := -e I -e m
-              CPP := $(HOME)/bin/cpp
-         CPPFLAGS := -P
-               CC := gcc
-              CXX := g++
+           FFLAGS := -frepack-arrays
+              CPP := /usr/bin/cpp
+         CPPFLAGS := -P -traditional
+               CC := cc
+              CXX := CC
            CFLAGS :=
          CXXFLAGS :=
           LDFLAGS :=
@@ -40,7 +42,7 @@
           ARFLAGS := -r
             MKDIR := mkdir -p
                RM := rm -f
-           RANLIB := touch
+           RANLIB := ranlib
              PERL := perl
              TEST := test
 
@@ -50,22 +52,28 @@
 # Library locations, can be overridden by environment variables.
 #
 
+ifdef USE_CICE
+    LIBS  :=    $(SCRATCH_DIR)/libCICE.a
+else
+    LIBS  :=
+endif
 ifdef USE_NETCDF4
         NF_CONFIG ?= nf-config
-    NETCDF_INCDIR ?= $(shell $(NF_CONFIG) --prefix)/include
+    NETCDF_INCDIR ?= $(shell $(NF_CONFIG) --includedir)
              LIBS := $(shell $(NF_CONFIG) --flibs)
 else
     NETCDF_INCDIR ?= /usr/local/include
     NETCDF_LIBDIR ?= /usr/local/lib
-             LIBS := -L$(NETCDF_LIBDIR) -lnetcdf -lnetcdff
+      NETCDF_LIBS ?= -lnetcdff
+             LIBS := -L$(NETCDF_LIBDIR) $(NETCDF_LIBS)
 endif
 
 ifdef USE_ARPACK
  ifdef USE_MPI
-   PARPACK_LIBDIR ?= /usr/local/lib
+   PARPACK_LIBDIR ?= /opt/gfortransoft/PARPACK
              LIBS += -L$(PARPACK_LIBDIR) -lparpack
  endif
-    ARPACK_LIBDIR ?= /usr/local/lib
+    ARPACK_LIBDIR ?= /opt/gfortransoft/PARPACK
              LIBS += -L$(ARPACK_LIBDIR) -larpack
 endif
 
@@ -75,16 +83,17 @@ endif
 
 ifdef USE_OpenMP
          CPPFLAGS += -D_OPENMP
+           FFLAGS += -fopenmp
 endif
 
 ifdef USE_DEBUG
-           FFLAGS += -G 0
+           FFLAGS += -g -fbounds-check -fbacktrace -finit-real=nan -ffpe-trap=invalid,zero,overflow
            CFLAGS += -g
          CXXFLAGS += -g
 else
-           FFLAGS += -O 3,aggress
-           CFLAGS += -O3
-         CXXFLAGS += -O3
+           FFLAGS += -O3  #-ffast-math
+           FFLAGS += -ftree-vectorize -ftree-loop-linear -funroll-loops -w -ffree-form -ffree-line-length-none -frecord-marker=4 -fconvert=big-endian
+##                   -fconvert=big-endian
 endif
 
 ifdef USE_ESMF
@@ -93,7 +102,7 @@ ifdef USE_ESMF
       ESMF_MK_DIR ?= $(ESMF_DIR)/lib/lib$(ESMF_BOPT)/$(ESMF_SUBDIR)
                      include $(ESMF_MK_DIR)/esmf.mk
            FFLAGS += $(ESMF_F90COMPILEPATHS)
-             LIBS += $(ESMF_F90LINKPATHS) $(ESMF_F90ESMFLINKLIBS)
+             LIBS += $(ESMF_F90LINKPATHS) -lesmf -lC
 endif
 
 ifdef USE_CXX
@@ -122,8 +131,8 @@ ifdef USE_WW3
 endif
 
 ifdef USE_MCT
-       MCT_INCDIR ?= /usr/local/pkg/mct/include
-       MCT_LIBDIR ?= /usr/local/pkg/mct/lib
+       MCT_INCDIR ?= /usr/local/mct/include
+       MCT_LIBDIR ?= /usr/local/mct/lib
            FFLAGS += -I$(MCT_INCDIR)
              LIBS += -L$(MCT_LIBDIR) -lmct -lmpeu
 endif
@@ -139,18 +148,18 @@ endif
 # local directory and compilation flags inside the code.
 #
 
-$(SCRATCH_DIR)/mod_ncparam.o: FFLAGS += -free-form
-$(SCRATCH_DIR)/mod_strings.o: FFLAGS += -free-form
-$(SCRATCH_DIR)/analytical.o: FFLAGS += -free-form
-$(SCRATCH_DIR)/biology.o: FFLAGS += -free-form
+$(SCRATCH_DIR)/mod_ncparam.o: FFLAGS += -ffree-form -ffree-line-length-none
+$(SCRATCH_DIR)/mod_strings.o: FFLAGS += -ffree-form -ffree-line-length-none
+$(SCRATCH_DIR)/analytical.o: FFLAGS += -ffree-form -ffree-line-length-none
+$(SCRATCH_DIR)/biology.o: FFLAGS += -ffree-form -ffree-line-length-none
 ifdef USE_ADJOINT
-$(SCRATCH_DIR)/ad_biology.o: FFLAGS += -free-form
+$(SCRATCH_DIR)/ad_biology.o: FFLAGS += -ffree-form -ffree-line-length-none
 endif
 ifdef USE_REPRESENTER
-$(SCRATCH_DIR)/rp_biology.o: FFLAGS += -free-form
+$(SCRATCH_DIR)/rp_biology.o: FFLAGS += -ffree-form -ffree-line-length-none
 endif
 ifdef USE_TANGENT
-$(SCRATCH_DIR)/tl_biology.o: FFLAGS += -free-form
+$(SCRATCH_DIR)/tl_biology.o: FFLAGS += -ffree-form -ffree-line-length-none
 endif
 
 #

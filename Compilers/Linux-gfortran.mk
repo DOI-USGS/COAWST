@@ -1,6 +1,6 @@
 # svn $Id: Linux-gfortran.mk 834 2017-01-25 18:49:17Z arango $
 #::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
-# Copyright (c) 2002-2017 The ROMS/TOMS Group                           :::
+# Copyright (c) 2002-2018 The ROMS/TOMS Group                           :::
 #   Licensed under a MIT/X style license                                :::
 #   See License_ROMS.txt                                                :::
 #::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
@@ -13,13 +13,15 @@
 # FFLAGS         Flags to the fortran compiler
 # CPP            Name of the C-preprocessor
 # CPPFLAGS       Flags to the C-preprocessor
+# NF_CONFIG      NetCDF Fortran configuration script
 # CC             Name of the C compiler
 # CFLAGS         Flags to the C compiler
 # CXX            Name of the C++ compiler
 # CXXFLAGS       Flags to the C++ compiler
 # CLEAN          Name of cleaning executable after C-preprocessing
 # NETCDF_INCDIR  NetCDF include directory
-# NETCDF_LIBDIR  NetCDF libary directory
+# NETCDF_LIBDIR  NetCDF library directory
+# NETCDF_LIBS    NetCDF library switches
 # LD             Program to load the objects into an executable
 # LDFLAGS        Flags to the loader
 # RANLIB         Name of ranlib command
@@ -52,11 +54,13 @@
 
 ifdef USE_NETCDF4
         NF_CONFIG ?= nf-config
-    NETCDF_INCDIR ?= $(shell $(NF_CONFIG) --prefix)/include
+    NETCDF_INCDIR ?= $(shell $(NF_CONFIG) --includedir)
              LIBS := $(shell $(NF_CONFIG) --flibs)
 else
     NETCDF_INCDIR ?= /usr/local/include
     NETCDF_LIBDIR ?= /usr/local/lib
+#     NETCDF_LIBS ?= -lnetcdf
+#            LIBS := -L$(NETCDF_LIBDIR) $(NETCDF_LIBS)
              LIBS := -L$(NETCDF_LIBDIR) -lnetcdf -lnetcdff
 endif
 
@@ -84,20 +88,15 @@ ifdef USE_OpenMP
 endif
 
 ifdef USE_DEBUG
-           FFLAGS += -g -fbounds-check
+           FFLAGS += -g -fbounds-check -fbacktrace
+           FFLAGS += -finit-real=nan -ffpe-trap=invalid,zero,overflow
            CFLAGS += -g
          CXXFLAGS += -g
 else
            FFLAGS += -O3
+#           I do not use -ffast-math it does not maintain enough accuracy!
            FFLAGS += -ftree-vectorize -ftree-loop-linear -funroll-loops -w -ffree-form -ffree-line-length-none -frecord-marker=4 -fconvert=big-endian
 ##                   -fconvert=big-endian
-endif
-
-ifdef USE_MCT
-       MCT_INCDIR ?= /usr/local/mct/include
-       MCT_LIBDIR ?= /usr/local/mct/lib
-           FFLAGS += -I$(MCT_INCDIR)
-             LIBS += -L$(MCT_LIBDIR) -lmct -lmpeu
 endif
 
 ifdef USE_MPI
@@ -138,6 +137,13 @@ ifdef USE_WW3
              LIBS += WW3/obj/libWW3.a
 endif
 
+ifdef USE_MCT
+       MCT_INCDIR ?= /usr/local/mct/include
+       MCT_LIBDIR ?= /usr/local/mct/lib
+           FFLAGS += -I$(MCT_INCDIR)
+             LIBS += -L$(MCT_LIBDIR) -lmct -lmpeu
+endif
+
 #
 # Use full path of compiler.
 #
@@ -157,12 +163,15 @@ $(SCRATCH_DIR)/def_var.o: FFLAGS += -fno-bounds-check
 # Gfortran versions >= 4.2.
 #
 
-FC_TEST := $(findstring $(shell ${FC} --version | head -1 | cut -d " " -f 4 | \
-                              cut -d "." -f 1-2),4.0 4.1)
+FC_TEST := $(findstring $(shell ${FC} --version | head -1 | \
+                              awk '{ sub("Fortran 95", "Fortran"); print }' | \
+                              cut -d " " -f 4 | \
+                              cut -d "." -f 1-2), \
+             4.0 4.1)
 
-#ifeq "${FC_TEST}" ""
-#$(SCRATCH_DIR)/ran_state.o: FFLAGS += -fno-strict-overflow
-#endif
+ifeq "${FC_TEST}" ""
+$(SCRATCH_DIR)/ran_state.o: FFLAGS += -fno-strict-overflow
+endif
 
 #
 # Set free form format in source files to allow long string for
@@ -192,6 +201,7 @@ endif
 #
 
 ifdef USE_SWAN
+
 $(SCRATCH_DIR)/ocpcre.o: FFLAGS += -ffixed-form
 $(SCRATCH_DIR)/ocpids.o: FFLAGS += -ffixed-form
 $(SCRATCH_DIR)/ocpmix.o: FFLAGS += -ffixed-form
