@@ -59,6 +59,7 @@
 # ifdef SEDIMENT
 #  define SUSPLOAD
 #  undef  BEDLOAD_SOULSBY
+#  undef  BEDLOAD_VANDERA
 #  undef  BEDLOAD_MPM
 #  define SED_MORPH
 # endif

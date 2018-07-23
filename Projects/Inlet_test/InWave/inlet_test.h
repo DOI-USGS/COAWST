@@ -56,13 +56,14 @@
 # ifdef GLS_MIXING
 #  define KANTHA_CLAYSON
 #  define N2S2_HORAVG
-#  define RI_SPLINES 
+#  define RI_SPLINES
 # endif
 # undef SEDIMENT
 # ifdef SEDIMENT
 #  define SUSPLOAD
 #  undef  BEDLOAD_SOULSBY
 #  undef  BEDLOAD_MPM
+#  define BEDLOAD_VANDERA
 #  define SED_MORPH
 # endif
 # if defined SEDIMENT || defined SG_BBL || defined MB_BBL || defined SSW_BBL

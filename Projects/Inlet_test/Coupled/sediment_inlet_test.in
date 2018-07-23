@@ -189,7 +189,7 @@ ad_LBC(isTvar) ==   Gra     Per     Clo     Per      ! idsed(:), compact
 
 ! Surface erosion rate (kg/m2/s).
 
-   SAND_ERATE == 1.0d-5
+   SAND_ERATE == 1.0d-3
 
 ! Critical shear for erosion and deposition (N/m2).
 
