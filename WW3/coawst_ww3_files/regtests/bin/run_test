@@ -1,0 +1,1571 @@
+#!/bin/sh
+# --------------------------------------------------------------------------- #
+#                                                                             #
+# Script for running WW-III tests.                                            #
+#                                                                             #
+#                    Last update :         27-Jan-2014                        #
+# --------------------------------------------------------------------------- #
+#    Modification history
+#    27-Jan-2014 : Adapts ww3_ounf section for multigrid  ( version 4.18 )
+#
+# Limitations:
+#  - For each ww3_grid_*.inp, run_test process *all* ww3_prep_*.inp files.
+#    For example, when processing ww3_grid_1.inp, it does not know that
+#    it needs to process ww3_prep_a.inp and *not* process ww3_prep_b.inp.
+#    This can be addressed in the future by adding instructions for prep
+#    to the grdset file.
+#  - When running through ww3_prep, run_test is not smart enough to process
+#    multiple input files of the same type. For example, for wind it wants
+#    a file ww3_prep_wind.inp and does not know what to do if you have two 
+#    files, ww3_prep_wind_hwna_15m.inp and ww3_prep_wind_gfs_30m.inp. 
+#    It needs to rename wind.ww3 as wind.wind_gfs_30m, for example, but
+#    looks for wind_gfs_30m.ww3 where it should look for wind.ww3. Another
+#    loop is needed to make this work.
+
+# --------------------------------------------------------------------------- #
+# 1. Function definitions                                                     #
+# --------------------------------------------------------------------------- #
+
+# 1.a Error message function
+errmsg ()
+{
+  echo "" 2>&1
+  while [ $# != 0 ]
+  do
+    echo "ERROR: $1" 2>&1
+    shift
+  done
+  echo "" 2>&1
+}
+
+# 1.b Usage function
+myname="`basename $0`"  #name of script
+optstr="a:c:Cdefg:Ghi:m:n:o:Op:q:r:s:t:Sw:"  #option string for getopt function
+usage ()
+{
+cat 2>&1 << EOF
+
+Usage: $myname [options] source_dir test_name
+Required:
+  source_dir : path to top-level of WW3 source
+  test_name  : name of test case (directory)
+Options:
+  -a ww3_env       : use WW3 environment setup file <ww3_env>
+                   :   *default is <source_dir>/wwatch3.env
+                   :   *file will be created if it does not already exist
+  -c cmplr         : setup comp & link files for specified cmplr
+  -C               : enable coupling using OASIS3-mct
+  -d               : invoke main program using gdb (non-parallel)
+  -e               : prompt for changes to existing WW3 environment
+  -f               : force pre- and post-processing programs to be compiled
+                   : non-MPI (i.e., with SHRD switch); default is all programs
+                   : compiled with unmodified switch settings
+  -g grid_string   : use ww3_grid_<grid_string>.inp
+  -G               : create GrADS data files using gx_outX.inp
+  -h               : print usage and exit
+  -i inpdir        : use inputs in test_name/<inpdir> (default  test_name/input)
+  -m grid_set      : execute multi-model test
+                   :   *grid names are obtained from input/<grid_set>
+                   :   *ww3_multi_<grid_set> will execute instead of ww3_shel
+                   :   *to execute a single model test case with ww3_multi use
+                   :    grid_set = none
+  -n nproc         : specify <nproc> processors for parallel run
+                   :   *some <runcmd> programs do not require <nproc>
+                   :   *ignored if -p <runcmd> or -O is not specified
+  -o outopt        : limit output post-processing based on <outopt>
+                   :   native : post-process only native output
+                   :   netcdf : post-process only NetCDF output
+                   :   both   : post-process both native and NetCDF output
+                   :   * default is native
+                   :   * note that required input files must be present for
+                   :     selected output post-processing to occur
+  -O               : parallel run using OpenMP paradigm and OMP_NUM_THREADS
+                     environment variable and number of processors defined with
+                     the -n np option
+  -p runcmd        : run in parallel using <runcmd> to start program
+                   :   *MPICH or OpenMPI: mpirun or mpiexec (default <nproc> = 1)
+                   :   *IBM with Loadleveler: poe (no <nproc> required)
+                   :   *LSF: mpirun.lsf (no <nproc> required)
+  -q program       : exit script after program <program> executes
+  -r program       : only execute program <program>
+  -s switch_string : use switch_<switch_string>
+  -S               : create stub file <finished>. with end data and time.
+                     tests not executed if file is found.
+  -t nthrd         : Threading option. (this is system dependant and can be used
+                   : only for the hybrid option)
+  -w work_dir      : run test case in test_name/work_dir (default test_name/work)
+
+EOF
+}
+
+
+# --------------------------------------------------------------------------- #
+# 2. Preparations                                                             #
+# --------------------------------------------------------------------------- #
+
+# 2.a Setup array of command-line arguments
+args=`getopt $optstr $*`
+if [ $? != 0 ]
+then
+  usage
+  exit 1
+fi
+set -- $args
+
+# 2.b Process command-line options
+exit_p=none
+exec_p=none
+multi=0
+dist=0
+inpdir=input
+outopt=native
+grads=0
+while :
+do
+  case "$1" in
+  -a) shift; ww3_env="$1" ;;
+  -c) shift; cmplr="$1" ;;
+  -C) coupl=1 ;;
+  -d) use_gdb=1 ;;
+  -e) prompt=1 ;;
+  -f) force_shrd=1 ;;
+  -g) shift; grdstr="$1" ;;
+  -G) grads=1 ;;
+  -h) help=1 ;;
+  -i) shift; inpdir="$1" ;;
+  -m) shift; grdset="$1" ;
+      if [ $grdset = none ]
+      then
+        multi=1
+      else
+        multi=2
+      fi ;;
+  -n) shift; nproc="$1" ;;
+  -o) shift; outopt="$1" ;;
+  -O) pomp=1 ;;
+  -p) shift; runcmd="$1" ; pmpi=1 ;;
+  -q) shift; exit_p="$1" ;;
+  -r) shift; exec_p="$1" ;;
+  -s) shift; swtstr="$1" ;;
+  -S) stub=1 ;;
+  -t) shift; nthrd="$1" ;;
+  -w) shift; wrkdir="$1" ;;
+  --) break ;;
+  esac
+  shift
+done
+shift #remove the trailing --
+if [ $help ]
+then
+  usage
+  exit 1
+fi
+if [ ! $exec_p = "none" ]
+then
+  exit_p=$exec_p
+fi
+case $outopt in
+  native|netcdf|both) ;;
+  *) errmsg "outopt = $outopt not supported" ; usage ; exit 1 ;;
+esac
+
+# 2.c Get required arguments
+if [ ! $# = 0 ]
+then
+  path_s="$1" ; shift
+else
+  usage
+  exit 1
+fi
+if [ ! $# = 0 ]
+then
+  testnm="$1" ; shift
+else
+  usage
+  exit 1
+fi
+
+# 2.d Convert source path from "relative" to "absolute"
+if [ ! -d $path_s ]
+then
+  errmsg "$path_s not found"
+  usage
+  exit 1
+fi
+path_s="`cd $path_s 1>/dev/null 2>&1 && pwd`"
+
+# 2.e Path to test directory
+path_t="`pwd`/$testnm"
+if [ ! -d $path_t ]
+then
+  errmsg "$path_t not found"
+  usage
+  exit 1
+fi
+
+# 2.f Path to input files
+path_i="$path_t/$inpdir"
+if [ ! -d $path_i ]
+then
+  errmsg "$path_i not found"
+  usage
+  exit 1
+fi
+
+# 2.g Path to working directory
+if [ $wrkdir ]
+then
+  path_w="$path_t/$wrkdir"
+else
+  path_w="$path_t/work"
+fi
+
+# 2.h Paths to source subdirectories
+path_e="$path_s/exe"
+path_a="$path_s/auxx"
+path_b="$path_s/bin"
+if [ ! -d $path_a ]
+then
+  errmsg "$path_a not found"
+  exit 1
+fi
+if [ ! -d $path_b ]
+then
+  errmsg "$path_b not found"
+  exit 1
+fi
+
+# 2.i Check for switch file
+if [ $swtstr ]
+then
+  file_c="$path_i/switch_$swtstr"
+else
+  file_c="$path_i/switch"
+fi
+if [ ! -f $file_c ]
+then
+  errmsg "switch file $file_c not found"
+  exit 1
+fi
+
+# 2.j If parallel execution, then check for proper switches
+#     Also, set default run command
+if [ $pmpi ]
+then
+  if [ "`grep MPI $file_c`" ]
+  then :
+  else
+    errmsg "Improper switch setup for MPI run"
+    exit 1
+  fi
+else
+  if [ $use_gdb ]
+  then
+    runcmd='gdb'
+  else
+    runcmd=''
+  fi
+fi
+
+if [ $pomp ]
+then
+  if [ "`grep OMP $file_c`" ]
+  then :
+  else
+    errmsg "Improper switch setup for OpenMP run"
+    exit 1
+  fi
+fi
+
+# 2.k Setup for multi-model (and defaults for non-multi-model)
+gu=""
+if [ $multi -eq 2 ]
+then
+  if [ -f $path_i/$grdset ]
+  then
+    model_grids="`awk '/^MODEL:/' $path_i/$grdset | sed 's/MODEL\://'`"
+    input_grids="`awk '/^INPUT:/' $path_i/$grdset | sed 's/INPUT\://'`"
+    point_grids="`awk '/^POINT:/' $path_i/$grdset | sed 's/POINT\://'`"
+    intgl_grids="`awk '/^INTGL:/' $path_i/$grdset | sed 's/INTGL\://'`"
+  else
+    errmsg "grid_set file $path_i/$grdset not found"
+    exit 1
+  fi
+else
+  model_grids="none"
+  input_grids="none"
+  point_grids="none"
+  intgl_grids="none"
+fi
+all_grids=$model_grids
+for g in $input_grids $point_grids $intgl_grids
+do
+  if [ -z "`echo $all_grids | grep $g`" ]
+  then
+    all_grids="$all_grids $g"
+  fi
+done
+
+# 2.l Setup WW3
+if [ $ww3_env ]
+then
+  d="`dirname $ww3_env`"; b="`basename $ww3_env`";
+  export WWATCH3_ENV="`cd $d 1>/dev/null 2>&1 && pwd`/$b"
+else
+  export WWATCH3_ENV="$path_s/wwatch3.env"
+fi
+if [ -f $path_b/w3_setup ]
+then
+  args="-t $path_s/tmp $path_s"
+  if [ $cmplr ]
+  then
+    args="-c $cmplr $args"
+  fi
+  if [ $prompt ]
+  then :
+  else
+    args="-q $args"
+  fi
+  if $path_b/w3_setup "$args"
+  then :
+  else
+    errmsg "Error occured during w3_setup"
+    exit 1
+  fi
+else
+  errmsg "WW3 setup script $path_b/w3_setup not found"
+  exit 1
+fi
+
+# --------------------------------------------------------------------------- #
+# 3. Execute Test                                                             #
+# --------------------------------------------------------------------------- #
+# 3.a Go to work directory and clean-up
+mkdir -p $path_w
+cd $path_w
+if [ $exec_p = "none" ]
+then
+  ncfiles=`\ls *.nc 2>/dev/null | grep -v rmp_`
+  if [ ! $stub ]
+  then
+    # restart, nest, etc. may have been placed there manually, so don't remove them
+    \rm -f *.inp *.out *.txt $ncfiles finished
+    \ls *.ww3  2>/dev/null | grep -v 'restart.ww3' | grep -v 'nest.ww3' | grep -v 'wind.ww3' | grep -v 'ice.ww3' | grep -v 'ice1.ww3' | xargs \rm 2>/dev/null
+  fi
+fi
+
+if [ $coupl ]
+then
+  if $path_i/prep_env.sh $path_i $path_w $cmplr $swtstr
+  then :
+  else
+    errmsg "Error occured during WW3 $prog build"
+    exit 1
+  fi
+  export OASISDIR=$path_i/../work_oasis3-mct
+fi
+
+# 3.b Header
+echo ' ' ; echo ' '
+echo '                    ==================================   '
+echo '                  ======> TEST RUN WAVEWATCH III <====== '
+echo '                    ==================================   '
+echo ' '
+if [ -f $path_t/info ]
+then
+  cat $path_t/info
+fi
+echo ' '
+echo " Input directory: $path_i"
+echo " Switch file: $file_c"
+echo ' '
+
+if [ $stub ] && [ -f finished ]
+then
+  echo " Test already finished, skipping ..."
+  echo ' '
+  exit 0
+fi
+
+# 3.c Grid pre-processor ---------------------------------------------------- #
+
+prog=ww3_grid
+if [ $exec_p = $prog -o $exec_p = "none" ]
+then
+
+  echo ' '
+  echo '+--------------------+'
+  echo '|  Grid preprocessor |'
+  echo '+--------------------+'
+  echo ' '
+
+  if [ $force_shrd ]
+  then # build pre- & post-processing programs with SHRD only
+    cat $file_c | sed 's/DIST/SHRD/' | sed 's/MPI //' | \
+                  sed 's/OMPG //'    | sed 's/OMPX //'| \
+                  sed 's/OMPH //'                          > $path_b/switch
+  else
+    \cp -f $file_c $path_b/switch
+  fi
+  if $path_b/w3_make $prog
+  then :
+  else
+    errmsg "Error occured during WW3 $prog build"
+    exit 1
+  fi
+
+  for g in $all_grids
+  do
+
+    if [ $multi -eq 2 ]
+    then
+      gu="_$g"
+    fi
+
+    if [ $grdstr ]
+    then
+      ifile=$path_i/${prog}_${grdstr}${gu}.inp
+    else
+      ifile=$path_i/$prog${gu}.inp
+    fi
+    ofile="$path_w/`basename $ifile .inp`.out"
+
+    if [ ! -f $path_e/$prog ]
+    then
+      errmsg "$path_e/$prog not found"
+      exit 1
+    fi
+    if [ ! -f $ifile ]
+    then
+      errmsg "$ifile not found"
+      exit 1
+    fi
+    \rm -f $prog.inp
+    \ln -s $ifile $prog.inp
+    echo "   Processing $ifile"
+    echo "   Screen output routed to $ofile"
+    if $path_e/$prog > $ofile
+    then
+      \rm -f $prog.inp
+      if [ $multi -eq 2 ]
+      then
+        mv mod_def.ww3 mod_def.$g
+      fi
+    else
+      errmsg "Error occured during $path_e/$prog execution"
+      exit 1
+    fi
+
+  done
+
+fi
+
+if [ $exit_p = $prog ]
+then
+  exit
+fi
+
+# 3.d Initial conditions ---------------------------------------------------- #
+
+prog=ww3_strt
+if [ $exec_p = $prog -o $exec_p = "none" ]
+then
+
+ifile="`ls $path_i/$prog.inp 2>/dev/null`"
+if [ $? = 0 ]
+then
+
+  echo ' '
+  echo '+--------------------+'
+  echo '| Initial conditions |'
+  echo '+--------------------+'
+  echo ' '
+
+  if [ $force_shrd ]
+  then # build pre- & post-processing programs with SHRD only
+    cat $file_c | sed 's/DIST/SHRD/' | sed 's/MPI //' | \
+                  sed 's/OMPG //'    | sed 's/OMPX //'| \
+                  sed 's/OMPH //'                          > $path_b/switch
+
+  else
+    \cp -f $file_c $path_b/switch
+  fi
+  if $path_b/w3_make $prog
+  then :
+  else
+    errmsg "Error occured during WW3 $prog build"
+    exit 1
+  fi
+
+  if [ ! -f $path_e/$prog ]
+  then
+    errmsg "$path_e/$prog not found"
+    exit 1
+  fi
+
+  for g in $model_grids
+  do
+
+    if [ $multi -eq 2 ]
+    then
+      gu="_$g"
+    fi
+
+    ofile="$path_w/`basename $ifile .inp`${gu}.out"
+
+    echo "   Processing $ifile"
+    echo "   Screen output routed to $ofile"
+    \rm -f $prog.inp
+    \ln -s $ifile $prog.inp
+    if [ $multi -eq 2 ]
+    then
+      \rm -f mod_def.ww3
+      \ln -s mod_def.$g mod_def.ww3
+    fi
+    if $path_e/$prog > $ofile
+    then
+      \rm -f $prog.inp
+      if [ $multi -eq 2 ]
+      then
+        mv restart.ww3 restart.$g
+        \rm -f mod_def.ww3
+      fi
+    else
+      errmsg "Error occured during $path_e/$prog execution"
+      exit 1
+    fi
+
+  done
+
+fi
+
+fi
+
+if [ $exit_p = $prog ]
+then
+  exit
+fi
+
+# 3.d boundary conditions -------------------------------------------------- #
+
+prog=ww3_bound
+if [ $exec_p = $prog -o $exec_p = "none" ]
+then
+
+ifile="`ls $path_i/$prog.inp 2>/dev/null`"
+if [ $? = 0 ]
+then
+
+  echo ' '
+  echo '+---------------------+'
+  echo '| Boundary conditions |'
+  echo '+---------------------+'
+  echo ' '
+
+  if [ $force_shrd ]
+  then # build pre- & post-processing programs with SHRD only
+    cat $file_c | sed 's/DIST/SHRD/' | sed 's/MPI //' | \
+                  sed 's/OMPG //'    | sed 's/OMPX //'| \
+                  sed 's/OMPH //'                          > $path_b/switch
+  else
+    \cp -f $file_c $path_b/switch
+  fi
+  if $path_b/w3_make $prog
+  then :
+  else
+    errmsg "Error occured during WW3 $prog build"
+    exit 1
+  fi
+
+  if [ ! -f $path_e/$prog ]
+  then
+    errmsg "$path_e/$prog not found"
+    exit 1
+  fi
+
+  for g in $model_grids
+  do
+    if [ $multi -eq 2 ]
+    then
+      gu="_$g"
+    fi
+
+    ofile="$path_w/`basename $ifile .inp`${gu}.out"
+
+    echo "   Processing $ifile"
+    echo "   Screen output routed to $ofile"
+    \rm -f $prog.inp
+    \ln -s $ifile $prog.inp
+    if [ $multi -eq 2 ]
+    then
+      \rm -f mod_def.ww3
+      \ln -s mod_def.$g mod_def.ww3
+    fi
+    if $path_e/$prog > $ofile
+    then
+      \rm -f $prog.inp
+      if [ $multi -eq 2 ]
+      then
+        mv nest.ww3 nest.$g
+        \rm -f mod_def.ww3
+      fi
+    else
+      errmsg "Error occured during $path_e/$prog execution"
+      exit 1
+    fi
+
+  done
+
+fi
+
+fi
+
+if [ $exit_p = $prog ]
+then
+  exit
+fi
+
+# 3.d boundary conditions -------------------------------------------------- #
+
+prog=ww3_bounc
+if [ $exec_p = $prog -o $exec_p = "none" ]
+then
+
+ifile="`ls $path_i/$prog.inp 2>/dev/null`"
+if [ $? = 0 ]
+then
+
+  echo ' '
+  echo '+---------------------+'
+  echo '| Boundary conditions |'
+  echo '+---------------------+'
+  echo ' '
+
+  if [ $force_shrd ]
+  then # build pre- & post-processing programs with SHRD only
+    cat $file_c | sed 's/DIST/SHRD/' | sed 's/MPI //' | \
+                  sed 's/OMPG //'    | sed 's/OMPX //'| \
+                  sed 's/OMPH //'                          > $path_b/switch
+  else
+    \cp -f $file_c $path_b/switch
+  fi
+  if $path_b/w3_make $prog
+  then :
+  else
+    errmsg "Error occured during WW3 $prog build"
+    exit 1
+  fi
+
+  if [ ! -f $path_e/$prog ]
+  then
+    errmsg "$path_e/$prog not found"
+    exit 1
+  fi
+
+  for g in $model_grids
+  do
+    if [ $multi -eq 2 ]
+    then
+      gu="_$g"
+    fi
+
+    ofile="$path_w/`basename $ifile .inp`${gu}.out"
+
+    echo "   Processing $ifile"
+    echo "   Screen output routed to $ofile"
+    \rm -f $prog.inp
+    \ln -s $ifile $prog.inp
+    if [ $multi -eq 2 ]
+    then
+      \rm -f mod_def.ww3
+      \ln -s mod_def.$g mod_def.ww3
+    fi
+    if $path_e/$prog > $ofile
+    then
+      \rm -f $prog.inp
+      if [ $multi -eq 2 ]
+      then
+        mv nest.ww3 nest.$g
+        \rm -f mod_def.ww3
+      fi
+    else
+      errmsg "Error occured during $path_e/$prog execution"
+      exit 1
+    fi
+
+  done
+
+fi
+
+fi
+
+if [ $exit_p = $prog ]
+then
+  exit
+fi
+
+# 3.e Prep forcing fields --------------------------------------------------- #
+
+prog=ww3_prep
+if [ $exec_p = $prog -o $exec_p = "none" ]
+then
+
+inputs="`ls $path_i/$prog*.inp 2>/dev/null`"
+if [ $? = 0 ]
+then
+
+  echo ' '
+  echo '+---------------------+'
+  echo '| Prep forcing fields |'
+  echo '+---------------------+'
+  echo ' '
+
+  if [ $force_shrd ]
+  then # build pre- & post-processing programs with SHRD only
+    cat $file_c | sed 's/DIST/SHRD/' | sed 's/MPI //' | \
+                  sed 's/OMPG //'    | sed 's/OMPX //'| \
+                  sed 's/OMPH //'                          > $path_b/switch
+  else
+    \cp -f $file_c $path_b/switch
+  fi
+  if $path_b/w3_make $prog
+  then :
+  else
+    errmsg "Error occured during WW3 $prog build"
+    exit 1
+  fi
+
+  if [ ! -f $path_e/$prog ]
+  then
+    errmsg "$path_e/$prog not found"
+    exit 1
+  fi
+
+  for g in $input_grids
+  do
+
+    if [ $multi -eq 2 ]
+    then
+      gu="_$g"
+    fi
+
+    for ifile in $inputs
+    do
+
+      otype="`basename $ifile .inp | sed s/^${prog}_//`"
+      ofile="$path_w/`basename $ifile .inp`.out"
+      echo "   Processing $ifile for $otype"
+      echo "   Screen output routed to $ofile"
+      \rm -f $prog.inp
+      \ln -s $ifile $prog.inp
+      if [ $multi -eq 2 ]
+      then
+        \rm -f mod_def.ww3
+        \ln -s mod_def.$g mod_def.ww3
+      fi
+      if $path_e/$prog > $ofile
+      then
+        \rm -f $prog.inp
+        if [ $multi -eq 2 ]
+        then
+          \rm -f mod_def.ww3
+          mv $otype.ww3 $otype.$g
+        fi
+      else
+        errmsg "Error occured during $path_e/$prog execution"
+        exit 1
+      fi
+
+    done
+
+  done
+
+fi
+
+fi
+
+if [ $exit_p = $prog ]
+then
+  exit
+fi
+
+# 3.e Prep forcing fields --------------------------------------------------- #
+
+prog=ww3_prnc
+if [ $exec_p = $prog -o $exec_p = "none" ]
+then
+
+inputs="`ls $path_i/$prog*.inp 2>/dev/null`"
+if [ $? = 0 ]
+then
+
+  echo ' '
+  echo '+-------------------------------+'
+  echo '| Prep of NetCDF forcing fields |'
+  echo '+-------------------------------+'
+  echo ' '
+
+  if [ $force_shrd ]
+  then # build pre- & post-processing programs with SHRD only
+    cat $file_c | sed 's/DIST/SHRD/' | sed 's/MPI //' | \
+                  sed 's/OMPG //'    | sed 's/OMPX //'| \
+                  sed 's/OMPH //'                          > $path_b/switch
+  else
+    \cp -f $file_c $path_b/switch
+  fi
+  if $path_b/w3_make $prog
+  then :
+  else
+    errmsg "Error occured during WW3 $prog build"
+    exit 1
+  fi
+
+  if [ ! -f $path_e/$prog ]
+  then
+    errmsg "$path_e/$prog not found"
+    exit 1
+  fi
+
+  for g in $input_grids
+  do
+
+    if [ $multi -eq 2 ]
+    then
+      gu="_$g"
+    fi
+
+    for ifile in $inputs
+    do
+
+      otype="`basename $ifile .inp | sed s/^${prog}_//`"
+      ofile="$path_w/`basename $ifile .inp`.out"
+      echo "   Processing $ifile"
+      echo "   Screen output routed to $ofile"
+      \rm -f $prog.inp
+      \ln -s $ifile $prog.inp
+      if [ $multi -eq 2 ]
+      then
+        \rm -f mod_def.ww3
+        \ln -s mod_def.$g mod_def.ww3
+      fi
+      if $path_e/$prog > $ofile
+      then
+        \rm -f $prog.inp
+        if [ $multi -eq 2 ]
+        then
+          \rm -f mod_def.ww3
+          mv $otype.ww3 $otype.$g
+        fi
+      else
+        errmsg "Error occured during $path_e/$prog execution"
+        exit 1
+      fi
+
+    done
+
+  done
+
+fi
+
+fi
+
+if [ $exit_p = $prog ]
+then
+  exit
+fi
+
+# 3.f Main program ---------------------------------------------------------- #
+
+if [ $multi -ge 1 ]
+then
+  prog=ww3_multi
+else
+  prog=ww3_shel
+fi
+if [ $exec_p = $prog -o $exec_p = "none" ]
+then
+
+# track file - multigrid option (ge 1)
+if [ $multi -ge 1 ]
+then
+  for g in $all_grids
+  do
+    ifile="`ls $path_i/track_i.$g 2>/dev/null`"
+    if [ $? = 0 ]
+    then
+      \rm -f track_i.$g
+      \ln -s $ifile
+    fi
+  done
+else
+  ifile="`ls $path_i/track_i.ww3 2>/dev/null`"
+  if [ $? = 0 ]
+  then
+    \rm -f track_i.ww3
+    \ln -s $ifile
+  fi
+fi
+
+# inp / nml file - gridset option (eq 2)
+if [ $multi -eq 2 ]
+then
+  if [ ! -z "`ls ${path_i}/${prog}_${grdset}.nml 2>/dev/null`" ]
+  then
+    ifile="`ls ${path_i}/${prog}_${grdset}.nml 2>/dev/null`"
+    files_p="`cat ${ifile} | grep 'point%file' |  cut -d '=' -f2 | cut -d "'" -f2 | cut -d '"' -f2 `"
+  else
+    ifile="`ls ${path_i}/${prog}_${grdset}.inp 2>/dev/null`"
+  fi
+else
+  if [ ! -z "`ls ${path_i}/${prog}.nml 2>/dev/null`" ]
+  then
+    ifile="`ls ${path_i}/${prog}.nml 2>/dev/null`"
+    files_p="`cat ${ifile} | grep 'point%file' |  cut -d '=' -f2 | cut -d "'" -f2 | cut -d '"' -f2 `"
+  else
+    ifile="`ls ${path_i}/${prog}.inp 2>/dev/null`"
+  fi
+fi
+
+
+if [ $? = 0 ]
+then
+
+  echo ' '
+  echo '+--------------------+'
+  echo '|    Main program    |'
+  echo '+--------------------+'
+  echo ' '
+
+  \cp -f $file_c $path_b/switch
+  if $path_b/w3_make $prog
+  then :
+  else
+    errmsg "Error occured during WW3 $prog build"
+    exit 1
+  fi
+
+  if [ ! -f $path_e/$prog ]
+  then
+    errmsg "$path_e/$prog not found"
+    exit 1
+  fi
+
+  ofile="$path_w/$prog.out"
+
+  \rm -f $prog.inp
+  \ln -s $ifile $prog.inp
+  if [ ${prog} = ww3_multi ] && [ ! -z "`echo ${ifile} | grep -o nml`" ]
+  then
+    \rm -f $prog.inp
+    \rm -f $prog.nml
+    \ln -s $ifile $prog.nml
+    for file_p in ${files_p}
+    do
+      if [ -e ${path_i}/${file_p} ]
+      then
+        \ln -s ${path_i}/${file_p} .
+      fi
+    done
+  fi
+
+  echo "   Processing $ifile"
+  echo "   Screen output copied to $ofile"
+  if [ $pmpi ]
+  then
+    if [ $nproc ]
+    then
+      runcmd="$runcmd -np $nproc"
+    fi
+    if [ $nthrd ]
+    then
+      runcmd="$runcmd omplace -nt $nthrd"
+    fi
+  fi
+  if [ $pomp ]
+  then
+    if [ $nproc ]
+    then
+      export OMP_NUM_THREADS=$nproc
+    fi
+  fi
+
+  if [ $coupl ]
+  then
+    if $runcmd $path_e/$prog : -np $nproc $path_w/toy_model | tee $ofile
+    then
+      \rm -f track_i.ww3
+      \rm -f $prog.inp
+    else
+      errmsg "Error occured during $path_e/$prog execution"
+      exit 1
+    fi
+  else
+    if $runcmd $path_e/$prog | tee $ofile
+    then
+      \rm -f track_i.ww3
+      \rm -f $prog.inp
+      \rm -f $prog.nml
+      for file_p in ${files_p}
+      do
+        \rm -f ${file_p}
+      done
+    else
+      errmsg "Error occured during $path_e/$prog execution"
+      exit 1
+    fi
+  fi
+fi
+
+fi
+
+if [ $exit_p = $prog ]
+then
+  exit
+fi
+
+# 3.g Grid integration ------------------------------------------------------- #
+
+prog=ww3_gint
+if [ $exec_p = $prog -o $exec_p = "none" ]
+then
+
+if [ $multi -eq 2 ]
+then
+  ifile="`ls ${path_i}/${prog}_${grdset}.inp 2>/dev/null`"
+else
+  ifile="`ls ${path_i}/${prog}.inp 2>/dev/null`"
+fi
+if [ $? = 0 ]
+then
+
+  echo ' '
+  echo '+-------------------------+'
+  echo '|    Integrated output    |'
+  echo '+-------------------------+'
+  echo ' '
+
+  if [ $force_shrd ]
+  then # build pre- & post-processing programs with SHRD only
+    cat $file_c | sed 's/DIST/SHRD/' | sed 's/MPI //' | \
+                  sed 's/OMPG //'    | sed 's/OMPX //'| \
+                  sed 's/OMPH //'                          > $path_b/switch
+  else
+    \cp -f $file_c $path_b/switch
+  fi
+  if $path_b/w3_make $prog
+  then :
+  else
+    errmsg "Error occured during WW3 $prog build"
+    exit 1
+  fi
+
+  ofile="$path_w/`basename $ifile .inp`.out"
+  \rm -f $prog.inp
+  \ln -f $ifile $prog.inp
+  echo "   Processing $ifile"
+  echo "   Screen output copied to $ofile"
+  if $path_e/$prog > $ofile
+  then
+    \rm -f $prog.inp
+    for g in $intgl_grids
+    do
+      if [ -f "out_grd.$g" ]
+      then
+        model_grids="$model_grids $g"
+      fi
+    done
+  else
+    errmsg "Error occured during $path_e/$prog execution"
+    exit 1
+  fi
+
+fi
+
+fi
+
+if [ $exit_p = $prog ]
+then
+  exit
+fi
+
+# 3.g Gridded output -------------------------------------------------------- #
+
+case $outopt in
+  native) out_progs="ww3_outf" ;;
+  netcdf) out_progs="ww3_ounf" ;;
+  both)   out_progs="ww3_outf ww3_ounf" ;;
+  *)      out_progs="" ;;
+esac
+
+if [ "$grads" = '1' ]
+then
+  out_progs="$out_progs gx_outf"
+  if [ `ls $path_i | grep '.gs' | wc -l` -gt '0' ]
+  then
+    cp $path_i/*.gs .
+    cp $path_a/cbarn.gs .
+    cp $path_a/colorset.gs .
+  fi
+fi
+
+for prog in $out_progs
+do
+
+rline='|   Gridded output   |'
+if [ $prog = ww3_ounf ]
+then
+  rline='| NC Gridded output  |'
+fi
+if [ $prog = gx_outf ]
+then
+  rline='|GrADS Gridded output|'
+fi
+
+if [ $exec_p = $prog -o $exec_p = "none" ]
+then
+
+inputs="`ls $path_i/$prog*.inp 2>/dev/null`"
+if [ $? = 0 ]
+then
+
+  echo ' '
+  echo '+--------------------+'
+  echo "$rline"
+  echo '+--------------------+'
+  echo ' '
+
+  if [ $force_shrd ]
+  then # build pre- & post-processing programs with SHRD only
+    cat $file_c | sed 's/DIST/SHRD/' | sed 's/MPI //' | \
+                  sed 's/OMPG //'    | sed 's/OMPX //'| \
+                  sed 's/OMPH //'                          > $path_b/switch
+  else
+    \cp -f $file_c $path_b/switch
+  fi
+  if $path_b/w3_make $prog
+  then :
+  else
+    errmsg "Error occured during WW3 $prog build"
+    exit 1
+  fi
+
+  if [ ! -f $path_e/$prog ]
+  then
+    errmsg "$path_e/$prog not found"
+    exit 1
+  fi
+
+  for g in $model_grids
+  do
+
+    if [ $multi -eq 2 ]
+    then
+      if [ ! -e out_grd.$g ]
+      then
+        continue
+      fi
+      gu="_$g"
+    fi
+
+    for ifile in $inputs
+    do
+
+      otype="`basename $ifile .inp | sed s/^${prog}_//`"
+      ofile="$path_w/`basename $ifile .inp`${gu}.out"
+      echo "   Processing $ifile"
+      echo "   Screen output routed to $ofile"
+      \rm -f $prog.inp
+      \ln -s $ifile $prog.inp
+      if [ $multi -eq 2 ]
+      then
+        \rm -f mod_def.ww3
+        \rm -f out_grd.ww3
+        \ln -s mod_def.$g mod_def.ww3
+        \ln -s out_grd.$g out_grd.ww3
+        \rm -f ww3.????????.*
+        \rm -fr ${otype}_$g
+      fi
+      if $path_e/$prog > $ofile
+      then
+        \rm -f $prog.inp
+        if [ $multi -eq 2 ]
+        then
+          \rm -f mod_def.ww3
+          \rm -f out_grd.ww3
+          ofiles="`ls ww3.????????.* 2>/dev/null`"
+          if [ $? = 0 ]
+          then
+            mkdir ${otype}_$g
+            mv -f $ofiles ${otype}_$g/.
+            echo "   ASCII output files moved to ${otype}_$g"
+          fi
+          ofiles="`ls ww3.????*.nc 2>/dev/null`"
+          if [ $? = 0 ]
+          then
+            mkdir ${otype}_$g
+            mv -f $ofiles ${otype}_$g/.
+            echo "   NetCDF output files moved to ${otype}_$g"
+          fi
+#
+          if [ "$prog" = 'gx_outf' ]
+          then
+            case $g in
+              'grd2' )  sed -e "s/ww3\.grads/ww3\.$g/g" \
+                            -e "s/37\.5/3\.75/g" \
+                            -e "s/1\.50/0\.15/g" \
+                                                  ww3.ctl > $g.ctl ;;
+              'grd3' )  sed -e "s/ww3\.grads/ww3\.$g/g" \
+                            -e "s/12\.5/1\.25/g" \
+                            -e "s/0\.50/0\.05/g" \
+                                                  ww3.ctl > $g.ctl ;;
+                *    )  sed -e "s/ww3\.grads/ww3\.$g/g" \
+                            -e "s/0\.25/2\.50/g" ww3.ctl > $g.ctl ;;
+            esac
+            rm -f ww3.ctl
+            echo "   ww3.ctl moved to $g.ctl"
+            mv ww3.grads ww3.$g
+            echo "   ww3.grads moved to ww3.$g"
+          fi
+        fi
+      else
+        errmsg "Error occured during $path_e/$prog execution"
+        exit 1
+      fi
+
+    done
+
+  done
+
+fi
+
+fi
+
+if [ $exit_p = $prog ]
+then
+  exit
+fi
+
+done # end of loop on progs
+
+# 3.h Point output ---------------------------------------------------------- #
+
+case $outopt in
+  native) out_progs="ww3_outp" ;;
+  netcdf) out_progs="ww3_ounp" ;;
+  both)   out_progs="ww3_outp ww3_ounp" ;;
+  *)      out_progs="" ;;
+esac
+
+if [ "$grads" = '1' ]
+then
+  out_progs="$out_progs gx_outp"
+  if [ `ls $path_i | grep 'gx_outp' | wc -l` -gt '0' ]
+  then
+    cp $path_a/cbarn.gs .
+    cp $path_a/colorset.gs .
+    cp $path_a/source.gs .
+    cp $path_a/1source.gs .
+    cp $path_a/spec.gs .
+  fi
+fi
+
+for prog in $out_progs
+do
+
+rline='|    Point output    |'
+if [ $prog = ww3_ounp ]
+then
+  rline='| NC Point output    |'
+fi
+
+if [ $exec_p = $prog -o $exec_p = "none" ]
+then
+
+inputs="`ls $path_i/$prog*.inp 2>/dev/null`"
+if [ $? = 0 ]
+then
+
+  echo ' '
+  echo '+--------------------+'
+  echo "$rline"
+  echo '+--------------------+'
+  echo ' '
+
+  if [ $force_shrd ]
+  then # build pre- & post-processing programs with SHRD only
+    cat $file_c | sed 's/DIST/SHRD/' | sed 's/MPI //' | \
+                  sed 's/OMPG //'    | sed 's/OMPX //'| \
+                  sed 's/OMPH //'                          > $path_b/switch
+  else
+    \cp -f $file_c $path_b/switch
+  fi
+  if $path_b/w3_make $prog
+  then :
+  else
+    errmsg "Error occured during WW3 $prog build"
+    exit 1
+  fi
+
+  if [ ! -f $path_e/$prog ]
+  then
+    errmsg "$path_e/$prog not found"
+    exit 1
+  fi
+
+  for g in $point_grids
+  do
+
+    if [ $multi -eq 2 ]
+    then
+      if [ ! -e out_pnt.$g ]
+      then
+        continue
+      fi
+      gu="_$g"
+    fi
+
+    for ifile in $inputs
+    do
+
+      otype="`basename $ifile .inp | sed s/^${prog}_//`"
+      ofile="$path_w/`basename $ifile .inp`${gu}.out"
+      echo "   Processing $ifile"
+      echo "   Screen output routed to $ofile"
+      \rm -f $prog.inp
+      \ln -s $ifile $prog.inp
+      if [ $multi -eq 2 ]
+      then
+        \rm -f mod_def.ww3
+        \rm -f out_pnt.ww3
+        \ln -s mod_def.$g mod_def.ww3
+        \ln -s out_pnt.$g out_pnt.ww3
+      fi
+      if $path_e/$prog > $ofile
+      then
+        \rm -f $prog.inp
+        if [ $multi -eq 2 ]
+        then
+          \rm -f mod_def.ww3
+          \rm -f out_pnt.ww3
+        fi
+      else
+        errmsg "Error occured during $path_e/$prog execution"
+        exit 1
+      fi
+
+    done
+
+  done
+
+fi
+
+fi
+
+if [ $exit_p = $prog ]
+then
+  exit
+fi
+
+done # end of loop on progs
+
+# 3.i Track output ---------------------------------------------------------- #
+
+case $outopt in
+  native) out_progs="ww3_trck" ;;
+  netcdf) out_progs="ww3_trnc" ;;
+  both)   out_progs="ww3_trck ww3_trnc" ;;
+  *)      out_progs="" ;;
+esac
+
+for prog in $out_progs
+do
+
+if [ $exec_p = $prog -o $exec_p = "none" ]
+then
+
+inputs="`ls $path_i/$prog*.inp 2>/dev/null`"
+if [ $? = 0 ]
+then
+
+  echo ' '
+  echo '+--------------------+'
+  echo '|    Track output    |'
+  echo '+--------------------+'
+  echo ' '
+
+  if [ $force_shrd ]
+  then # build pre- & post-processing programs with SHRD only
+    cat $file_c | sed 's/DIST/SHRD/' | sed 's/MPI //' | \
+                  sed 's/OMPG //'    | sed 's/OMPX //'| \
+                  sed 's/OMPH //'                          > $path_b/switch
+  else
+    \cp -f $file_c $path_b/switch
+  fi
+  if $path_b/w3_make $prog
+  then :
+  else
+    errmsg "Error occured during WW3 $prog build"
+    exit 1
+  fi
+
+  if [ ! -f $path_e/$prog ]
+  then
+    errmsg "$path_e/$prog not found"
+    exit 1
+  fi
+
+  for g in $point_grids
+  do
+
+    if [ $multi -eq 2 ]
+    then
+      if [ ! -e track_o.$g ]
+      then
+        continue
+      fi
+      gu="_$g"
+    fi
+
+    ifile=$path_i/$prog${gu}.inp
+    if [ ! -f $ifile ]
+    then
+      errmsg "$ifile not found"
+      exit 1
+    fi
+    otype="`basename $ifile .inp | sed s/^${prog}_//`"
+    ofile="$path_w/`basename $ifile .inp`.out"
+    echo "   Processing $ifile"
+    echo "   Screen output routed to $ofile"
+    \rm -f $prog.inp
+    \ln -s $ifile $prog.inp
+    if [ $multi -eq 2 ]
+    then
+      \rm -f track_o.ww3
+      \ln -s track_o.$g track_o.ww3
+    fi
+    if $path_e/$prog > $ofile
+    then
+      \rm -f $prog.inp
+      if [ $multi -eq 2 ]
+      then
+        \rm -f track_o.ww3
+        if [ -e track.ww3 ]
+        then
+          mv track.ww3 track.$g
+        elif [ -e track.nc ]
+        then
+          mv track.nc track_$g.nc
+        fi        
+      fi
+    else
+      errmsg "Error occured during $path_e/$prog execution"
+      exit 1
+    fi
+  done
+
+fi
+
+fi
+
+if [ $exit_p = $prog ]
+then
+  exit
+fi
+
+done # end of loop on progs
+
+# 3.j Wave system tracking -------------------------------------------------- #
+
+prog=ww3_systrk
+if [ $exec_p = $prog -o $exec_p = "none" ]
+then
+
+ifile="`ls $path_i/$prog.inp 2>/dev/null`"
+if [ $? = 0 ]
+then
+
+  echo ' '
+  echo '+-------------------------+'
+  echo '|  Wave system tracking   |'
+  echo '+-------------------------+'
+  echo ' '
+
+    \cp -f $file_c $path_b/switch
+#  if [ $force_shrd ]
+#  then # build pre- & post-processing programs with SHRD only
+#    cat $file_c | sed 's/DIST/SHRD/' | sed 's/MPI //' | \
+#                  sed 's/OMPG //'    | sed 's/OMPX //'| \
+#                  sed 's/OMPH //'                          > $path_b/switch
+#  else
+#    \cp -f $file_c $path_b/switch
+#  fi
+  if $path_b/w3_make $prog
+  then :
+  else
+    errmsg "Error occured during WW3 $prog build"
+    exit 1
+  fi
+
+  ofile="$path_w/`basename $ifile .inp`.out"
+  \rm -f $prog.inp
+  \ln -f $ifile $prog.inp
+  echo "   Processing $ifile"
+  echo "   Screen output copied to $ofile"
+  if [ $pmpi ]
+  then
+    if [ $nproc ]
+    then
+      runcmd="$runcmd -np $nproc"
+    fi
+  fi
+  if $runcmd $path_e/$prog | tee $ofile
+  then
+    \rm -f $prog.inp
+  else
+    errmsg "Error occured during $path_e/$prog execution"
+    exit 1
+  fi
+#  if $path_e/$prog > $ofile
+#  then
+#    \rm -f $prog.inp
+#    for g in $intgl_grids
+#    do
+#      if [ -f "out_grd.$g" ]
+#      then
+#        model_grids="$model_grids $g"
+#      fi
+#    done
+#  else
+#    errmsg "Error occured during $path_e/$prog execution"
+#    exit 1
+#  fi
+
+fi
+
+fi
+
+if [ $exit_p = $prog ]
+then
+  exit
+fi
+
+# 3.k End ------------------------------------------------------------------- #
+
+if [ "$stub" ]
+then
+  date > finished
+fi
+
+echo ' ' ; echo ' ' ; echo "Files in `pwd` :" ; echo ' '
+ls -l
+
+echo ' ' ; echo ' '
+echo '                    ==================================   '
+echo '                  ======>  END OF WAVEWATCH III  <====== '
+echo '                    ==================================   '
+echo ' '
+
+# --------------------------------------------------------------------------- #
+# End of script                                                               #
+# --------------------------------------------------------------------------- #
+
