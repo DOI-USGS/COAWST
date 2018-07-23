@@ -20,7 +20,7 @@
 # undef  INWAVE_SWAN_COUPLING
 # define ACX_ADVECTION
 # define ACY_ADVECTION
-# define ACT_ADVECTION
+# undef  ACT_ADVECTION
 # undef  THETA_AC_PERIODIC
 # define DOPPLER
 # undef  WDISS_GAMMA
@@ -29,25 +29,25 @@
 # define RAMP_INWAVE
 # define WEC_VF
 # define UV_KIRBY
-# undef  ROLLER_RENIERS /*  this is a problem */
+# define ROLLER_RENIERS /*  this is a problem */
 # undef  ROLLER_SVENDSEN
 #endif
 
 #define UV_VIS2
 #define MIX_S_UV
-#undef DIAGNOSTICS_UV
-#undef AVERAGES
+#undef  DIAGNOSTICS_UV
+#undef  AVERAGES
 #define WET_DRY
-#define OUT_DOUBLE
+#undef  OUT_DOUBLE
 #define UV_ADV
-#undef  TS_HSIMT
+#define TS_HSIMT
 #undef  TS_U3HADV
-#define TS_MPDATA
+#undef  TS_MPDATA
 #define DJ_GRADPS
 #undef  SALINITY
 #define SOLVE3D
-#define SPLINES_VDIFF
-#define SPLINES_VVISC
+#undef  SPLINES_VDIFF
+#undef  SPLINES_VVISC
 #undef  TS_FIXED
 
 #define MASKING
@@ -69,10 +69,13 @@
 #  define SUSPLOAD
 #  define BEDLOAD_SOULSBY
 #  undef  BEDLOAD_MPM
+#  undef  BEDLOAD_VANDERA
 #  define SED_MORPH
 #  define SED_SLUMP
-#  undef  SED_DUNEFACE
+#  define SED_DUNEFACE
 #  undef  SLOPE_KIRWAN
+#  define SLOPE_NEMETH
+#  undef  SLOPE_LESSER
 # endif
 # if defined SEDIMENT || defined SG_BBL || defined MB_BBL || defined SSW_BBL
 #  define ANA_SEDIMENT
