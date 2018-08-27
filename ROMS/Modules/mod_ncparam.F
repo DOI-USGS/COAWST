@@ -392,7 +392,7 @@
         integer  :: idWamp        ! wave amplitude
         integer  :: idWbeh        ! WEC Bernoulli head
         integer  :: idWbrk        ! percent wave breaking
-        integer  :: idWdif        ! wave dissipation from bottom friction 
+        integer  :: idWdif        ! wave dissipation from bottom friction
         integer  :: idWdib        ! wave dissipation from surface breaking
         integer  :: idWdiw        ! wave dissipation from white capping
         integer  :: idWdir        ! wave direction
@@ -806,8 +806,8 @@
       USE mod_sediment
 #endif
 #if defined VEGETATION
-      USE mod_vegetation 
-#endif 
+      USE mod_vegetation
+#endif
 !
 !  Local variable declarations.
 !
@@ -2192,7 +2192,7 @@
 #if defined SEDIMENT || defined BBL_MODEL
 #  include <sediment_var.h>
 #endif
-#if defined VEGETATION 
+#if defined VEGETATION
 #  include <vegetation_var.h>
 #endif
 
