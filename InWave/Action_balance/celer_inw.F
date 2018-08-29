@@ -107,7 +107,7 @@
 # ifdef DISTRIBUTE
       USE mp_exchange_mod, ONLY : mp_exchange3d
 # endif
-      
+
 !
 !  Imported variable declarations.
 !
@@ -419,7 +419,7 @@
 #  ifdef MASKING
 !  Apply Land/Sea mask
           ct(i,j,ND+1)=ct(i,j,ND+1)*rmask(i,j)
-#  endif 
+#  endif
 #  ifdef WET_DRY
           ct(i,j,ND+1)=ct(i,j,ND+1)*rmask_wet(i,j)
 #  endif

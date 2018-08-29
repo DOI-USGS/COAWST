@@ -92,7 +92,7 @@
   USE_ROMS := on
 #else
   USE_ROMS :=
-#endif 
+#endif
 
 /*
 ** Process WRF Atmospheric model.

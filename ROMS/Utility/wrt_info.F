@@ -48,7 +48,7 @@
 #ifdef SEDIMENT
       USE mod_sediment
 #endif
-#ifdef VEGETATION 
+#ifdef VEGETATION
       USE mod_vegetation
 #endif
 #ifdef PROPAGATOR
@@ -1496,7 +1496,7 @@
 # include <inwave_wrt.h>
 #endif
 
-!#ifdef VEGETATION 
+!#ifdef VEGETATION
 !# include <vegetation_wrt_info.h>
 !#endif
 !

@@ -180,7 +180,7 @@
           real(r8), pointer :: avgbt(:,:,:,:)
 #   endif
 #   ifdef ICE_BIO
-#     ifdef CLIM_ICE_1D   
+#     ifdef CLIM_ICE_1D
           real(r8), pointer :: avgit(:,:,:)
 #     elif defined BERING_10K
           real(r8), pointer :: avgIPhL(:,:)
@@ -2097,7 +2097,7 @@
             AVERAGE(ng) % avgit(i,j,itrc) = IniVal
           END DO
         END DO
-#  elif defined BERING_10K       
+#  elif defined BERING_10K
       IF (Aout(idIceNO3,ng)) THEN
         DO j=Jmin,Jmax
           DO i=Imin,Imax

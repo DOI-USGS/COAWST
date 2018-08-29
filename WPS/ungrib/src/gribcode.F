@@ -193,7 +193,7 @@ module module_grib
 !
 ! Machine wordsize must be known for the various unpacking routines to work.
 ! Machine wordsize is set through CPP Directives.
-! Use options -DBIT32 (for 32-bit word-size) or -DBIT64 (for 64-bit wordsize) 
+! Use options -DBIT32 (for 32-bit word-size) or -DBIT64 (for 64-bit wordsize)
 ! for the CPP pass of the compiler.
 !
 #if defined (BIT32)
@@ -208,7 +208,7 @@ module module_grib
 !
 ! For some reason, the cray does not like grec to be allocatable.
 !
-#if defined (CRAY) 
+#if defined (CRAY)
   integer, dimension(100000) :: grec
   integer, dimension(100000) :: bitmap
 #else
@@ -419,7 +419,7 @@ contains
 ! Reposition the file pointer back to where we started.
        call bn_seek(nunit, -isz, 0, 0)
 
-! Compare the first four bytes of TREC with the string 'GRIB' stored in 
+! Compare the first four bytes of TREC with the string 'GRIB' stored in
 ! integer variable GTEST.
        if (mwsize.eq.32) then
           if (trec(1) == gtest) exit LOOP
@@ -479,14 +479,14 @@ contains
 ! If sec4(8) is 0, assume datarray is constant value of xec4(1)
 
     if (sec4(8).eq.0) then
-       !!! HERE IS THE ORIGINAL NCAR CODE: 
+       !!! HERE IS THE ORIGINAL NCAR CODE:
        ! datarray = xec4(1)
        !!! HERE IS WHAT FSL CHANGED IT TO:
        datarray = DFAC*xec4(1)
        !!! because even though it is a constant value
        !!! you still need to scale by the decimal scale factor.
     else
-       !!! FSL developers MOVED THE CALL TO gbytes FROM line 441 ABOVE 
+       !!! FSL developers MOVED THE CALL TO gbytes FROM line 441 ABOVE
        !!! BECAUSE IF sec4(8)==0 BEFORE gbytes IS CALLED, THE MASKS ARRAY
        !!! IN gbytes WILL BE INDEXED OUT OF BOUNDS. C HARROP 9/16/04
        call gbytes_g1(grec, IX, iskip, sec4(8), 0, ndat)
@@ -516,7 +516,7 @@ contains
 
     datarray = -1.E30
 
-! 1) There are fewer than NDAT data values, because a bitmap was used.  
+! 1) There are fewer than NDAT data values, because a bitmap was used.
 !    Compute the number of data values (NBM).  There are 11 extra bytes
 !    in the header section 4.  NBM equals the total number of data bits (not
 !    counting the header bits), minus the number of unused buts, and then
@@ -548,7 +548,7 @@ contains
 ! If sec4(8) = 255, assume they mean sec4(8) = 0
     if (sec4(8) == 255) sec4(8) = 0
 
-! Unpack the data according to packing parameters DFAC, BFAC, and XEC4(1), 
+! Unpack the data according to packing parameters DFAC, BFAC, and XEC4(1),
 ! and masked by the bitmap BITMAP.
        nn = 0
        do i = 1, ndat
@@ -870,7 +870,7 @@ subroutine gribread(nunit, data, ndata, debug_level, ierr)
 
   call gribheader(debug_level,ierr)
 
-! Determine the size of the data array from the information in the header, 
+! Determine the size of the data array from the information in the header,
 ! and allocate the array DATARRAY to hold that data.
 
   if (sec2(4).ne.50) then
@@ -885,7 +885,7 @@ subroutine gribread(nunit, data, ndata, debug_level, ierr)
 
 ! Unpack the data from the GRIB record, and fill the array DATARRAY.
 
-  call gribdata(datarray, ni*nj) 
+  call gribdata(datarray, ni*nj)
 
   data(1:ni*nj) = datarray(1:ni*nj)
 #if defined (CRAY)
@@ -1343,7 +1343,7 @@ subroutine gribheader(debug_level,ierr)
 
      if (sec2(4) == 0) then
         ! Lat/Lon Grid:
-        call gbytes_g1(grec, infogrid(1), iskip, 16, 0, 2)        
+        call gbytes_g1(grec, infogrid(1), iskip, 16, 0, 2)
         iskip = iskip + 32
         call gbytes_g1(grec, infogrid(3), iskip, 24, 0, 2)
         iskip = iskip + 48
@@ -1351,7 +1351,7 @@ subroutine gribheader(debug_level,ierr)
         iskip = iskip + 8
         call gbytes_g1(grec, infogrid(6), iskip, 24, 0, 2)
         iskip = iskip + 48
-        call gbytes_g1(grec, infogrid(8), iskip, 16, 0, 2)        
+        call gbytes_g1(grec, infogrid(8), iskip, 16, 0, 2)
         iskip = iskip + 32
         call gbyte_g1(grec, infogrid(21), iskip, 1)
         infogrid(21) = 1-(infogrid(21)*2)
@@ -1452,7 +1452,7 @@ subroutine gribheader(debug_level,ierr)
            stop
         endif
 ! Lambert Conformal:
-        call gbytes_g1(grec, infogrid(1), iskip, 16, 0, 2)        
+        call gbytes_g1(grec, infogrid(1), iskip, 16, 0, 2)
         iskip = iskip + 32
         call gbytes_g1(grec, infogrid(3), iskip, 24, 0, 2)
         iskip = iskip + 48
@@ -1516,7 +1516,7 @@ subroutine gribheader(debug_level,ierr)
 !                                                                             !
         if (sec1(3) == 59) then  ! If FSL
            if (sec1(4) == 86) then  ! and RUC
-              if (sec1(5) == 255) then 
+              if (sec1(5) == 255) then
            ! Check to correct bad lat/lon numbers.
                  if (infogrid(3) == 16909) then
                     infogrid(3) = 16281
@@ -1540,7 +1540,7 @@ subroutine gribheader(debug_level,ierr)
         glon1 = gridinfo(4)
         gclon = gridinfo(6)
         if (gclon.gt.180.) gclon = -(360.-gclon)
-        if ((gclon<0).and.(glon1>180)) glon1 = glon1-360.  
+        if ((gclon<0).and.(glon1>180)) glon1 = glon1-360.
         gtrue1 = gridinfo(11)
         gtrue2 = gridinfo(12)
         grrth = gridinfo(20)
@@ -1552,7 +1552,7 @@ subroutine gribheader(debug_level,ierr)
 
      elseif (sec2(4) == 4) then
         ! Gaussian Grid:
-        call gbytes_g1(grec, infogrid(1), iskip, 16, 0, 2)        
+        call gbytes_g1(grec, infogrid(1), iskip, 16, 0, 2)
         iskip = iskip + 32
         call gbytes_g1(grec, infogrid(3), iskip, 24, 0, 2)
         iskip = iskip + 48
@@ -1560,7 +1560,7 @@ subroutine gribheader(debug_level,ierr)
         iskip = iskip + 8
         call gbytes_g1(grec, infogrid(6), iskip, 24, 0, 2)
         iskip = iskip + 48
-        call gbytes_g1(grec, infogrid(8), iskip, 16, 0, 2)        
+        call gbytes_g1(grec, infogrid(8), iskip, 16, 0, 2)
         iskip = iskip + 32
         call gbyte_g1(grec, infogrid(21), iskip, 1)
         infogrid(21) = 1-(infogrid(21)*2)
@@ -1666,12 +1666,12 @@ subroutine gribheader(debug_level,ierr)
         ! Which hemisphere depends on infogrid(9), the "Projection Center Flag"
         grrth = gridinfo(20)
         if (infogrid(9) > 127) then
-           gtrue1 = -60. 
+           gtrue1 = -60.
            r = grrth/gridinfo(7) * tand((-90.-glat1)/2.) * (1.+sind(-gtrue1))
            gx1 = -r * sind(glon1-gridinfo(6))
-           gy1 = -r * cosd(glon1-gridinfo(6)) 
+           gy1 = -r * cosd(glon1-gridinfo(6))
         else
-           gtrue1 = 60. 
+           gtrue1 = 60.
            r = grrth/gridinfo(7) * tand((90.-glat1)/2.) * (1.+sind(gtrue1))
            gx1 = r * sind(glon1-gridinfo(6))
            gy1 = -r * cosd(glon1-gridinfo(6))
@@ -1811,7 +1811,7 @@ end subroutine gribheader
 !=============================================================================!
 !=============================================================================!
 !
-  subroutine gribdata(datarray, ndat) 
+  subroutine gribdata(datarray, ndat)
 
 !-----------------------------------------------------------------------------!
 !                                                                             !
@@ -1948,7 +1948,7 @@ SUBROUTINE gribLGG( NLAT, startlat, deltalat )
 !
 !       -determine the value of the ordinary Legendre polynomial for
 !       -the current guess root
-     LOOP30 : DO 
+     LOOP30 : DO
         CALL LGORD( G, COSC(I), NLAT )
 !
 !       -determine the derivative of the polynomial at this point

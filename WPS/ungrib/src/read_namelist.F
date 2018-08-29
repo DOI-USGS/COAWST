@@ -87,7 +87,7 @@ subroutine read_namelist(hstart, hend, delta_time, ntimes,&
   end_minute = 0
   end_second = 0
 
-  ! Set defaults. 
+  ! Set defaults.
   io_form_geogrid = 2
   max_dom = 1
   wrf_core = 'ARW'
@@ -106,12 +106,12 @@ subroutine read_namelist(hstart, hend, delta_time, ntimes,&
   CALL GETENV('EXT_DATAROOT',extdataroot)
 #endif
   file_name_namelist =  'namelist.wps'
- 
+
 ! Open the namelist file:
   open(10, file=file_name_namelist, status='old', iostat=ierr)
   call mprintf((ierr.ne.0),ERROR,"**** Error opening namelist file namelist.wps")
 
-   REWIND (10) 
+   REWIND (10)
 
   ! set default:
   ordered_by_date = .TRUE.
@@ -163,7 +163,7 @@ subroutine read_namelist(hstart, hend, delta_time, ntimes,&
      call mprintf(.true.,ERROR,"Change your namelist, and resubmit")
   endif
 
-! Check that the selected INTERVAL evenly fills difference between 
+! Check that the selected INTERVAL evenly fills difference between
 ! start time and end time:
 
   if ((idts/interval_seconds)*interval_seconds /= idts) then
@@ -260,7 +260,7 @@ subroutine read_namelist(hstart, hend, delta_time, ntimes,&
      out_format = 'MM5'
      call mprintf(.true.,STDOUT,'output format is MM5 pregrid')
      call mprintf(.true.,LOGFILE,'output format is MM5 pregrid')
-   else 
+   else
      call mprintf(.true.,ERROR, &
  'read_namelist: I do not recognize the output format, %s , stopping.',s1=out_format)
    endif
@@ -277,13 +277,13 @@ subroutine read_namelist(hstart, hend, delta_time, ntimes,&
       end if
       new_plvl(il) = new_plvl(il-1) - incr
       ! If we are past the end of the range of pressures over which new levels
-      ! are to be created, then discard the pressure we just calculated. 
+      ! are to be created, then discard the pressure we just calculated.
       ! This occurs when the user-chosen increment did not evenly divide
-      ! the range of pressures over which new pressures were to be added.  
-      if ( new_plvl(il) < target_end ) then 
+      ! the range of pressures over which new pressures were to be added.
+      if ( new_plvl(il) < target_end ) then
         new_plvl(il) = -99999.
         exit make_plvl
-      end if 
+      end if
       if ( new_plvl(il) == target_end ) exit make_plvl
       il = il + 1
     end do make_plvl
@@ -295,5 +295,5 @@ subroutine read_namelist(hstart, hend, delta_time, ntimes,&
 
   new_plvl_in(:) = new_plvl(:)
   deallocate(new_plvl)
-  
+
 end subroutine read_namelist

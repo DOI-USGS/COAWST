@@ -16,7 +16,7 @@ CONTAINS
 
    SUBROUTINE diagnostics_driver ( grid, config_flags,                  &
                                    moist, chem, tracer, scalar,         &
-                                   th_phy, pi_phy, p_phy, rho_phy,      & 
+                                   th_phy, pi_phy, p_phy, rho_phy,      &
                                    p8w, t8w, dz8w,                      &
                                    curr_secs2,                          &
                                    diag_flag,                           &
@@ -64,13 +64,13 @@ CONTAINS
                                    model_config_rec
 
       USE module_streams
-      USE module_utility, ONLY : WRFU_Time 
+      USE module_utility, ONLY : WRFU_Time
 
       !=============================================================
       !  USE Association for the Diagnostic Packages
       !=============================================================
-      
-      USE module_lightning_driver, ONLY : lightning_driver      
+
+      USE module_lightning_driver, ONLY : lightning_driver
       USE module_diag_misc, ONLY : diagnostic_output_calc
       USE module_diag_cl, ONLY : clwrf_output_calc
       USE module_diag_pld, ONLY : pld
@@ -130,7 +130,7 @@ CONTAINS
       !           incrementing index
       !        k: refers to the vertical direction form bottom to top, the second dimension
       !           in all 3d arrays
-      !     The second letter: 
+      !     The second letter:
       !        d: refers to the domain size, the geophysical extent of the entire domain,
       !           not used in dimensions or looping, used to determine when we are close to
       !           the edge of the boundary
@@ -186,15 +186,15 @@ CONTAINS
 
       !  Lightning flash rate diagnostic production.
 
-      LIGHTNING: IF ( config_flags%lightning_option /= 0 ) THEN 
+      LIGHTNING: IF ( config_flags%lightning_option /= 0 ) THEN
          CALL wrf_debug ( 100 , '--> CALL DIAGNOSTICS PACKAGE: LIGHTNING_DRIVER' )
          CALL lightning_driver ( &
           ! Frequently used prognostics
             grid%itimestep, grid%dt, grid%dx, grid%dy,         &
             grid%xlat, grid%xlong, grid%xland, grid%ht,        &
             grid%t_phy, p_phy, grid%rho,                       &
-            grid%u_phy, grid%v_phy, grid%w_2,                  &    
-            th_phy,     pi_phy,dz8w,                           &  
+            grid%u_phy, grid%v_phy, grid%w_2,                  &
+            th_phy,     pi_phy,dz8w,                           &
             grid%z, moist,                                     &
           ! Scheme specific prognostics
             grid%ktop_deep, grid%refl_10cm,                    &
@@ -213,15 +213,15 @@ CONTAINS
           ! Scheme specific namelist inputs
             config_flags%cellcount_method,                     &
             config_flags%cldtop_adjustment,                    &
-          ! Order dependent args for domain, mem, and tile dims 
+          ! Order dependent args for domain, mem, and tile dims
             ids, ide, jds, jde, kds, kde,         &
             ims, ime, jms, jme, kms, kme,         &
             ips, ipe, jps, jpe, kps, kpe,         &
           ! Mandatory outputs for all quantitative schemes
             grid%ic_flashcount, grid%ic_flashrate,          &
             grid%cg_flashcount, grid%cg_flashrate,          &
-            grid%lpi                                        &   
-      )    
+            grid%lpi                                        &
+      )
       END IF LIGHTNING
 
 
@@ -273,8 +273,8 @@ CONTAINS
                 ,RAINCV=grid%raincv    ,RAINNCV=grid%rainncv         &
                 ,RAINC=grid%rainc    ,RAINNC=grid%rainnc             &
                 ,I_RAINC=grid%i_rainc    ,I_RAINNC=grid%i_rainnc     &
-                ,HFX=grid%hfx   ,SFCEVP=grid%sfcevp    ,LH=grid%lh   &    
-                ,DT=grid%dt      ,SBW=config_flags%spec_bdy_width    &    
+                ,HFX=grid%hfx   ,SFCEVP=grid%sfcevp    ,LH=grid%lh   &
+                ,DT=grid%dt      ,SBW=config_flags%spec_bdy_width    &
                 ,XTIME=grid%xtime   ,T2=grid%t2                      &
            ,ACSWUPT=grid%acswupt    ,ACSWUPTC=grid%acswuptc          &
            ,ACSWDNT=grid%acswdnt    ,ACSWDNTC=grid%acswdntc          &
@@ -292,7 +292,7 @@ CONTAINS
          ,I_ACLWDNT=grid%i_aclwdnt  ,I_ACLWDNTC=grid%i_aclwdntc      &
          ,I_ACLWUPB=grid%i_aclwupb  ,I_ACLWUPBC=grid%i_aclwupbc      &
          ,I_ACLWDNB=grid%i_aclwdnb  ,I_ACLWDNBC=grid%i_aclwdnbc      &
-      ! Selection flag 
+      ! Selection flag
                 ,DIAG_PRINT=config_flags%diag_print                  &
                 ,BUCKET_MM=config_flags%bucket_mm                    &
                 ,BUCKET_J =config_flags%bucket_J                     &
@@ -306,7 +306,7 @@ CONTAINS
                 ,NSSL_CNOHL=config_flags%nssl_cnohl                  &  !  gthompsn
                 ,NSSL_RHO_QH=config_flags%nssl_rho_qh                &  !  gthompsn
                 ,NSSL_RHO_QHL=config_flags%nssl_rho_qhl              &  !  gthompsn
-                ,SNOWNCV=grid%snowncv, SNOW_ACC_NC=grid%snow_acc_nc  &    
+                ,SNOWNCV=grid%snowncv, SNOW_ACC_NC=grid%snow_acc_nc  &
                 ,PREC_ACC_C=grid%prec_acc_c                          &
                 ,PREC_ACC_NC=grid%prec_acc_nc                        &
                 ,PREC_ACC_DT=config_flags%prec_acc_dt                &
@@ -348,8 +348,8 @@ CONTAINS
                 ,RAINCV=grid%raincv    ,RAINNCV=grid%rainncv         &
                 ,RAINC=grid%rainc    ,RAINNC=grid%rainnc             &
                 ,I_RAINC=grid%i_rainc    ,I_RAINNC=grid%i_rainnc     &
-                ,HFX=grid%hfx   ,SFCEVP=grid%sfcevp    ,LH=grid%lh   &    
-                ,DT=grid%dt      ,SBW=config_flags%spec_bdy_width    &    
+                ,HFX=grid%hfx   ,SFCEVP=grid%sfcevp    ,LH=grid%lh   &
+                ,DT=grid%dt      ,SBW=config_flags%spec_bdy_width    &
                 ,XTIME=grid%xtime   ,T2=grid%t2                      &
            ,ACSWUPT=grid%acswupt    ,ACSWUPTC=grid%acswuptc          &
            ,ACSWDNT=grid%acswdnt    ,ACSWDNTC=grid%acswdntc          &
@@ -367,7 +367,7 @@ CONTAINS
          ,I_ACLWDNT=grid%i_aclwdnt  ,I_ACLWDNTC=grid%i_aclwdntc      &
          ,I_ACLWUPB=grid%i_aclwupb  ,I_ACLWUPBC=grid%i_aclwupbc      &
          ,I_ACLWDNB=grid%i_aclwdnb  ,I_ACLWDNBC=grid%i_aclwdnbc      &
-      ! Selection flag 
+      ! Selection flag
                 ,DIAG_PRINT=config_flags%diag_print                  &
                 ,BUCKET_MM=config_flags%bucket_mm                    &
                 ,BUCKET_J =config_flags%bucket_J                     &
@@ -381,7 +381,7 @@ CONTAINS
                 ,NSSL_CNOHL=config_flags%nssl_cnohl                  &  !  gthompsn
                 ,NSSL_RHO_QH=config_flags%nssl_rho_qh                &  !  gthompsn
                 ,NSSL_RHO_QHL=config_flags%nssl_rho_qhl              &  !  gthompsn
-                ,SNOWNCV=grid%snowncv, SNOW_ACC_NC=grid%snow_acc_nc  &    
+                ,SNOWNCV=grid%snowncv, SNOW_ACC_NC=grid%snow_acc_nc  &
                 ,PREC_ACC_C=grid%prec_acc_c                          &
                 ,PREC_ACC_NC=grid%prec_acc_nc                        &
                 ,PREC_ACC_DT=config_flags%prec_acc_dt                &
@@ -425,8 +425,8 @@ CONTAINS
                 ,RAINCV=grid%raincv    ,RAINNCV=grid%rainncv         &
                 ,RAINC=grid%rainc    ,RAINNC=grid%rainnc             &
                 ,I_RAINC=grid%i_rainc    ,I_RAINNC=grid%i_rainnc     &
-                ,HFX=grid%hfx   ,SFCEVP=grid%sfcevp    ,LH=grid%lh   &    
-                ,DT=grid%dt      ,SBW=config_flags%spec_bdy_width    &    
+                ,HFX=grid%hfx   ,SFCEVP=grid%sfcevp    ,LH=grid%lh   &
+                ,DT=grid%dt      ,SBW=config_flags%spec_bdy_width    &
                 ,XTIME=grid%xtime   ,T2=grid%t2                      &
            ,ACSWUPT=grid%acswupt    ,ACSWUPTC=grid%acswuptc          &
            ,ACSWDNT=grid%acswdnt    ,ACSWDNTC=grid%acswdntc          &
@@ -444,7 +444,7 @@ CONTAINS
          ,I_ACLWDNT=grid%i_aclwdnt  ,I_ACLWDNTC=grid%i_aclwdntc      &
          ,I_ACLWUPB=grid%i_aclwupb  ,I_ACLWUPBC=grid%i_aclwupbc      &
          ,I_ACLWDNB=grid%i_aclwdnb  ,I_ACLWDNBC=grid%i_aclwdnbc      &
-      ! Selection flag 
+      ! Selection flag
                 ,DIAG_PRINT=config_flags%diag_print                  &
                 ,BUCKET_MM=config_flags%bucket_mm                    &
                 ,BUCKET_J =config_flags%bucket_J                     &
@@ -458,7 +458,7 @@ CONTAINS
                 ,NSSL_CNOHL=config_flags%nssl_cnohl                  &  !  gthompsn
                 ,NSSL_RHO_QH=config_flags%nssl_rho_qh                &  !  gthompsn
                 ,NSSL_RHO_QHL=config_flags%nssl_rho_qhl              &  !  gthompsn
-                ,SNOWNCV=grid%snowncv, SNOW_ACC_NC=grid%snow_acc_nc  &    
+                ,SNOWNCV=grid%snowncv, SNOW_ACC_NC=grid%snow_acc_nc  &
                 ,PREC_ACC_C=grid%prec_acc_c                          &
                 ,PREC_ACC_NC=grid%prec_acc_nc                        &
                 ,PREC_ACC_DT=config_flags%prec_acc_dt                &
@@ -501,8 +501,8 @@ CONTAINS
                 ,RAINCV=grid%raincv    ,RAINNCV=grid%rainncv         &
                 ,RAINC=grid%rainc    ,RAINNC=grid%rainnc             &
                 ,I_RAINC=grid%i_rainc    ,I_RAINNC=grid%i_rainnc     &
-                ,HFX=grid%hfx   ,SFCEVP=grid%sfcevp    ,LH=grid%lh   &    
-                ,DT=grid%dt      ,SBW=config_flags%spec_bdy_width    &    
+                ,HFX=grid%hfx   ,SFCEVP=grid%sfcevp    ,LH=grid%lh   &
+                ,DT=grid%dt      ,SBW=config_flags%spec_bdy_width    &
                 ,XTIME=grid%xtime   ,T2=grid%t2                      &
            ,ACSWUPT=grid%acswupt    ,ACSWUPTC=grid%acswuptc          &
            ,ACSWDNT=grid%acswdnt    ,ACSWDNTC=grid%acswdntc          &
@@ -520,7 +520,7 @@ CONTAINS
          ,I_ACLWDNT=grid%i_aclwdnt  ,I_ACLWDNTC=grid%i_aclwdntc      &
          ,I_ACLWUPB=grid%i_aclwupb  ,I_ACLWUPBC=grid%i_aclwupbc      &
          ,I_ACLWDNB=grid%i_aclwdnb  ,I_ACLWDNBC=grid%i_aclwdnbc      &
-      ! Selection flag 
+      ! Selection flag
                 ,DIAG_PRINT=config_flags%diag_print                  &
                 ,BUCKET_MM=config_flags%bucket_mm                    &
                 ,BUCKET_J =config_flags%bucket_J                     &
@@ -534,7 +534,7 @@ CONTAINS
                 ,NSSL_CNOHL=config_flags%nssl_cnohl                  &  !  gthompsn
                 ,NSSL_RHO_QH=config_flags%nssl_rho_qh                &  !  gthompsn
                 ,NSSL_RHO_QHL=config_flags%nssl_rho_qhl              &  !  gthompsn
-                ,SNOWNCV=grid%snowncv, SNOW_ACC_NC=grid%snow_acc_nc  &    
+                ,SNOWNCV=grid%snowncv, SNOW_ACC_NC=grid%snow_acc_nc  &
                 ,PREC_ACC_C=grid%prec_acc_c                          &
                 ,PREC_ACC_NC=grid%prec_acc_nc                        &
                 ,PREC_ACC_DT=config_flags%prec_acc_dt                &
@@ -577,8 +577,8 @@ CONTAINS
                 ,RAINCV=grid%raincv    ,RAINNCV=grid%rainncv         &
                 ,RAINC=grid%rainc    ,RAINNC=grid%rainnc             &
                 ,I_RAINC=grid%i_rainc    ,I_RAINNC=grid%i_rainnc     &
-                ,HFX=grid%hfx   ,SFCEVP=grid%sfcevp    ,LH=grid%lh   &    
-                ,DT=grid%dt      ,SBW=config_flags%spec_bdy_width    &    
+                ,HFX=grid%hfx   ,SFCEVP=grid%sfcevp    ,LH=grid%lh   &
+                ,DT=grid%dt      ,SBW=config_flags%spec_bdy_width    &
                 ,XTIME=grid%xtime   ,T2=grid%t2                      &
            ,ACSWUPT=grid%acswupt    ,ACSWUPTC=grid%acswuptc          &
            ,ACSWDNT=grid%acswdnt    ,ACSWDNTC=grid%acswdntc          &
@@ -596,7 +596,7 @@ CONTAINS
          ,I_ACLWDNT=grid%i_aclwdnt  ,I_ACLWDNTC=grid%i_aclwdntc      &
          ,I_ACLWUPB=grid%i_aclwupb  ,I_ACLWUPBC=grid%i_aclwupbc      &
          ,I_ACLWDNB=grid%i_aclwdnb  ,I_ACLWDNBC=grid%i_aclwdnbc      &
-      ! Selection flag 
+      ! Selection flag
                 ,DIAG_PRINT=config_flags%diag_print                  &
                 ,BUCKET_MM=config_flags%bucket_mm                    &
                 ,BUCKET_J =config_flags%bucket_J                     &
@@ -610,7 +610,7 @@ CONTAINS
                 ,NSSL_CNOHL=config_flags%nssl_cnohl                  &  !  gthompsn
                 ,NSSL_RHO_QH=config_flags%nssl_rho_qh                &  !  gthompsn
                 ,NSSL_RHO_QHL=config_flags%nssl_rho_qhl              &  !  gthompsn
-                ,SNOWNCV=grid%snowncv, SNOW_ACC_NC=grid%snow_acc_nc  &    
+                ,SNOWNCV=grid%snowncv, SNOW_ACC_NC=grid%snow_acc_nc  &
                 ,PREC_ACC_C=grid%prec_acc_c                          &
                 ,PREC_ACC_NC=grid%prec_acc_nc                        &
                 ,PREC_ACC_DT=config_flags%prec_acc_dt                &
@@ -684,8 +684,8 @@ CONTAINS
                 ,RAINCV=grid%raincv    ,RAINNCV=grid%rainncv         &
                 ,RAINC=grid%rainc    ,RAINNC=grid%rainnc             &
                 ,I_RAINC=grid%i_rainc    ,I_RAINNC=grid%i_rainnc     &
-                ,HFX=grid%hfx   ,SFCEVP=grid%sfcevp    ,LH=grid%lh   &    
-                ,DT=grid%dt      ,SBW=config_flags%spec_bdy_width    &    
+                ,HFX=grid%hfx   ,SFCEVP=grid%sfcevp    ,LH=grid%lh   &
+                ,DT=grid%dt      ,SBW=config_flags%spec_bdy_width    &
                 ,XTIME=grid%xtime   ,T2=grid%t2                      &
            ,ACSWUPT=grid%acswupt    ,ACSWUPTC=grid%acswuptc          &
            ,ACSWDNT=grid%acswdnt    ,ACSWDNTC=grid%acswdntc          &
@@ -703,7 +703,7 @@ CONTAINS
          ,I_ACLWDNT=grid%i_aclwdnt  ,I_ACLWDNTC=grid%i_aclwdntc      &
          ,I_ACLWUPB=grid%i_aclwupb  ,I_ACLWUPBC=grid%i_aclwupbc      &
          ,I_ACLWDNB=grid%i_aclwdnb  ,I_ACLWDNBC=grid%i_aclwdnbc      &
-      ! Selection flag 
+      ! Selection flag
                 ,DIAG_PRINT=config_flags%diag_print                  &
                 ,BUCKET_MM=config_flags%bucket_mm                    &
                 ,BUCKET_J =config_flags%bucket_J                     &
@@ -717,7 +717,7 @@ CONTAINS
                 ,NSSL_CNOHL=config_flags%nssl_cnohl                  &  !  gthompsn
                 ,NSSL_RHO_QH=config_flags%nssl_rho_qh                &  !  gthompsn
                 ,NSSL_RHO_QHL=config_flags%nssl_rho_qhl              &  !  gthompsn
-                ,SNOWNCV=grid%snowncv, SNOW_ACC_NC=grid%snow_acc_nc  &    
+                ,SNOWNCV=grid%snowncv, SNOW_ACC_NC=grid%snow_acc_nc  &
                 ,PREC_ACC_C=grid%prec_acc_c                          &
                 ,PREC_ACC_NC=grid%prec_acc_nc                        &
                 ,PREC_ACC_DT=config_flags%prec_acc_dt                &
@@ -1025,7 +1025,7 @@ CONTAINS
                        ,TH2=grid%th2, TH2_MEAN=grid%th2_mean                  &
                        ,Q2=grid%q2, Q2_MEAN=grid%q2_mean                      &
                        ,U10=grid%u10, U10_MEAN=grid%u10_mean                  &
-                       ,V10=grid%v10, V10_MEAN=grid%v10_mean                  &           
+                       ,V10=grid%v10, V10_MEAN=grid%v10_mean                  &
                        ,HFX=grid%hfx, HFX_MEAN=grid%hfx_mean                  &
                        ,LH=grid%lh, LH_MEAN=grid%lh_mean                      &
                        ,SWDNB=grid%swdnb, SWDNB_MEAN=grid%swdnb_mean          &
@@ -1103,8 +1103,8 @@ CONTAINS
            ,LWUPT_DIURN=grid%LWUPT_DIURN, LWDNT_DIURN=grid%LWDNT_DIURN        &
          ! Dimension arguments
            ,IDS=ids, IDE=ide, JDS=jds, JDE=jde, KDS=kds, KDE=kde              &
-           ,IMS=ims, IME=ime, JMS=jms, JME=jme, KMS=kms, KME=kme              & 
-           ,IPS=ips, IPE=ipe, JPS=jps, JPE=jpe, KPS=kps, KPE=kpe              &         
+           ,IMS=ims, IME=ime, JMS=jms, JME=jme, KMS=kms, KME=kme              &
+           ,IPS=ips, IPE=ipe, JPS=jps, JPE=jpe, KPS=kps, KPE=kpe              &
            ,I_START=grid%i_start, I_END=min(grid%i_end, ide-1)                &
            ,J_START=grid%j_start, J_END=min(grid%j_end, jde-1)                &
            ,NUM_TILES=grid%num_tiles                                          &

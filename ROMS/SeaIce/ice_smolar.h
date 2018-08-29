@@ -200,7 +200,7 @@
 !  ---------------------------------------------------------------------
 !  Advect the icePhL
 !  ---------------------------------------------------------------------
-       
+
       CALL ice_advect_tile (ng, tile,                                   &
      &                      LBi, UBi, LBj, UBj,                         &
      &                      IminS, ImaxS, JminS, JmaxS,                 &
@@ -225,7 +225,7 @@
      &                      ICE(ng) % vi,                               &
      &                      ICE(ng) % IcePhL                            &
      &                      )
-!  FOOOO 
+!  FOOOO
 ! Need to change this to i2d_bc_tile calls
       CALL IcePhLbc_tile (ng, tile,                                   &
      &                          LBi, UBi, LBj, UBj,                      &
@@ -860,10 +860,10 @@
 ! Antidiffusive corrector step:
 !-------------- --------- -----
 ! This is needed to avoid touching "aif" under land mask.
-! Note that only aif(i,j) and aif(i-1,j) are allowed to appear 
-! explicitly in the code segment below. This is OK 
-! because if either of them masked, then "ui" is zero 
-! at that point, and therefore no additional masking is required. 
+! Note that only aif(i,j) and aif(i-1,j) are allowed to appear
+! explicitly in the code segment below. This is OK
+! because if either of them masked, then "ui" is zero
+! at that point, and therefore no additional masking is required.
 !
       DO j=Jstr,Jend+1
         DO i=Istr,Iend+1

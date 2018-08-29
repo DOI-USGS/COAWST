@@ -1,7 +1,7 @@
 #include "cppdefs.h"
       MODULE i2d_bc_mod
 #ifdef ICE_MODEL
-! 
+!
 !***********************************************************************
 !  Compute lateral boundary conditions for any 2D ice variable.
 !***********************************************************************
@@ -61,7 +61,7 @@
 !
       integer :: i, j, know
       real(r8), parameter :: eps =1.0E-20_r8
-      real(r8) :: Ce, Cx, cff, dTde, dTdt, dTdx, tau 
+      real(r8) :: Ce, Cx, cff, dTde, dTdt, dTdx, tau
 
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: grad
 

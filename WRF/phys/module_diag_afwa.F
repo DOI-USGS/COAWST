@@ -13,19 +13,19 @@ MODULE diag_functions
 CONTAINS
 
   !!!~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~!!!
-  !~ 
+  !~
   !~ Name:
   !~    calc_rh
   !~
   !~ Description:
-  !~    This function calculates relative humidity given pressure, 
+  !~    This function calculates relative humidity given pressure,
   !~    temperature, and water vapor mixing ratio.
-  !~ 
+  !~
   !!!~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~!!!
   FUNCTION calc_rh ( p, t, qv ) result ( rh )
-    
+
     IMPLICIT NONE
- 
+
     REAL, INTENT(IN) :: p, t, qv
     REAL :: rh
 
@@ -38,7 +38,7 @@ CONTAINS
     REAL, PARAMETER :: rhmin=1.
     REAL :: q, qs
     INTEGER :: i,j,k
-  
+
     ! Following algorithms adapted from WRFPOST
     ! May want to substitute with another later
     ! -----------------------------------------
@@ -56,19 +56,19 @@ CONTAINS
 
 
   !!!~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~!!!
-  !~ 
+  !~
   !~ Name:
   !~    uv_wind
   !~
   !~ Description:
   !~    This function calculates the wind speed given U and V wind
   !~    components.
-  !~ 
+  !~
   !!!~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~!!!
   FUNCTION uv_wind ( u, v ) result ( wind_speed )
- 
+
     IMPLICIT NONE
- 
+
     REAL, INTENT(IN) :: u, v
     REAL :: wind_speed
 
@@ -77,7 +77,7 @@ CONTAINS
   END FUNCTION uv_wind
 
 
-  
+
   !!!~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~!!!
   !~
   !~ Name:
@@ -100,7 +100,7 @@ CONTAINS
      REAL :: Rd ! Dry gas constant
      REAL :: Cp ! Specific heat of dry air at constant pressure
      REAL :: p0 ! Standard pressure ( 1000 hPa )
-  
+
      Rd =  287.04
      Cp = 1004.67
      p0 = 1000.00
@@ -108,7 +108,7 @@ CONTAINS
      !~ Poisson's equation
      !  ------------------
      theta = t * ( (p0/p)**(Rd/Cp) )
-  
+
   END FUNCTION Theta
 
 
@@ -119,7 +119,7 @@ CONTAINS
   !~    Thetae
   !~
   !~ Description:
-  !~    This function returns equivalent potential temperature using the 
+  !~    This function returns equivalent potential temperature using the
   !~    method described in Bolton 1980, Monthly Weather Review, equation 43.
   !~
   !!!~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~!!!
@@ -134,7 +134,7 @@ CONTAINS
      REAL :: mixr      ! Mixing Ratio ( kg kg^-1)
      REAL :: te        ! Equivalent temperature ( K )
      REAL :: thetae    ! Equivalent potential temperature
-  
+
      REAL, PARAMETER :: R  = 287.04         ! Universal gas constant (J/deg kg)
      REAL, PARAMETER :: P0 = 1000.0         ! Standard pressure at surface (hPa)
      REAL, PARAMETER :: lv = 2.54*(10**6)   ! Latent heat of vaporization
@@ -142,17 +142,17 @@ CONTAINS
      REAL, PARAMETER :: cp = 1004.67        ! Specific heat of dry air constant
                                             ! at pressure (J/deg kg)
      REAL :: tlc                            ! LCL temperature
-  
+
      !~ Calculate the temperature of the LCL
      !  ------------------------------------
      tlc = TLCL ( tK, rh )
-  
+
      !~ Calculate theta-e
      !  -----------------
      thetae = (tK * (p0/p)**( (R/Cp)*(1.- ( (.28E-3)*mixr*1000.) ) ) )* &
                  exp( (((3.376/tlc)-.00254))*&
                     (mixr*1000.*(1.+(.81E-3)*mixr*1000.)) )
-  
+
   END FUNCTION Thetae
 
 
@@ -173,14 +173,14 @@ CONTAINS
   !!!~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~!!!
   FUNCTION The2T ( thetaeK, pres, flag ) result ( tparcel )
   IMPLICIT NONE
-  
+
      !~ Variable Declaration
      !  --------------------
      REAL,    INTENT     ( IN ) :: thetaeK
      REAL,    INTENT     ( IN ) :: pres
      LOGICAL, INTENT ( INOUT )  :: flag
      REAL                       :: tparcel
-  
+
      REAL :: thetaK
      REAL :: tovtheta
      REAL :: tcheck
@@ -188,15 +188,15 @@ CONTAINS
      REAL :: smixr, smixr2
      REAL :: thetae_check, thetae_check2
      REAL :: tguess_2, correction
-  
+
      LOGICAL :: found
      INTEGER :: iter
-  
+
      REAL :: R     ! Dry gas constant
      REAL :: Cp    ! Specific heat for dry air
      REAL :: kappa ! Rd / Cp
      REAL :: Lv    ! Latent heat of vaporization at 0 deg. C
-  
+
      R     = 287.04
      Cp    = 1004.67
      Kappa = R/Cp
@@ -300,7 +300,7 @@ CONTAINS
   !~
   !~ Description:
   !~    This function calculates saturation mixing ratio given the
-  !~    temperature ( K ) and the ambient pressure ( Pa ).  Uses 
+  !~    temperature ( K ) and the ambient pressure ( Pa ).  Uses
   !~    approximation of saturation vapor pressure.
   !~
   !~ References:
@@ -325,26 +325,26 @@ CONTAINS
 
 
   !!!~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~!!!
-  !~                                                                     
-  !~ Name:                                                                
-  !~    tlcl                                                               
-  !~                                                                        
-  !~ Description:                                                            
+  !~
+  !~ Name:
+  !~    tlcl
+  !~
+  !~ Description:
   !~    This function calculates the temperature of a parcel of air would have
-  !~    if lifed dry adiabatically to it's lifting condensation level (lcl).  
-  !~                                                                          
-  !~ References:                                                              
+  !~    if lifed dry adiabatically to it's lifting condensation level (lcl).
+  !~
+  !~ References:
   !~    Bolton (1980), Monthly Weather Review, pg. 1048, Eq. 22
-  !~                                                                          
+  !~
   !!!~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~!!!
   FUNCTION TLCL ( tk, rh )
-    
+
     IMPLICIT NONE
- 
+
     REAL, INTENT ( IN ) :: tK   !~ Temperature ( K )
     REAL, INTENT ( IN ) :: rh   !~ Relative Humidity ( % )
     REAL                :: tlcl
-    
+
     REAL :: denom, term1, term2
 
     term1 = 1.0 / ( tK - 55.0 )
@@ -354,7 +354,7 @@ CONTAINS
       term2 = ( LOG (0.001/1.0) / 2840.0 )
     END IF
     denom = term1 - term2
-    tlcl = ( 1.0 / denom ) + REAL ( 55 ) 
+    tlcl = ( 1.0 / denom ) + REAL ( 55 )
 
   END FUNCTION TLCL
 
@@ -366,7 +366,7 @@ CONTAINS
   !~    PWat
   !~
   !~ Description:
-  !~    This function calculates precipitable water by summing up the 
+  !~    This function calculates precipitable water by summing up the
   !~    water vapor in a column from the first eta layer to model top
   !~
   !!!~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~!!!
@@ -390,9 +390,9 @@ CONTAINS
      DO k = 1, nz
        Pwat = Pwat + (qv(k) + qc(k)) * dz8w(k) * rho(k)
      ENDDO
-             
+
   END FUNCTION Pwat
- 
+
 
 
   !!!~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~!!!
@@ -438,9 +438,9 @@ CONTAINS
   !!!~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~!!!
     FUNCTION Buoyancy ( nz, tk, rh, p, hgt, sfc, cape, cin, zlfc, plfc, lidx,  &
                         parcel ) result (ostat)
-  
+
       IMPLICIT NONE
-  
+
       INTEGER, INTENT ( IN )  :: nz          !~ Number of vertical levels
       INTEGER, INTENT ( IN )  :: sfc         !~ Surface level in the profile
       REAL,    INTENT ( IN )  :: tk   ( nz ) !~ Temperature profile ( K )
@@ -458,7 +458,7 @@ CONTAINS
       INTEGER, INTENT ( IN  ) :: parcel      !~ Most Unstable = 1 (default)
                                              !~ Mean layer    = 2
                                              !~ Surface based = 3
-  
+
       !~ Derived profile variables
       !  -------------------------
       REAL                    :: ws   ( nz ) !~ Saturation mixing ratio
@@ -469,7 +469,7 @@ CONTAINS
       REAL                    :: plcl        !~ LCL pressure ( Pa )
       REAL                    :: nbuoy       !~ Negative buoyancy
       REAL                    :: pbuoy       !~ Positive buoyancy
-  
+
       !~ Source parcel information
       !  -------------------------
       REAL                    :: srctK       !~ Source parcel temperature ( K )
@@ -481,14 +481,14 @@ CONTAINS
       REAL                    :: srcthetaeK  !~ Source parcel theta-e ( K )
       INTEGER                 :: srclev      !~ Level of the source parcel
       REAL                    :: spdiff      !~ Pressure difference
-   
+
       !~ Parcel variables
       !  ----------------
       REAL                    :: ptK        !~ Parcel temperature ( K )
       REAL                    :: ptvK       !~ Parcel virtual temperature ( K )
       REAL                    :: tvK        !~ Ambient virtual temperature ( K )
       REAL                    :: pw         !~ Parcel mixing ratio
-  
+
       !~ Other utility variables
       !  -----------------------
       INTEGER                 :: i, j, k    !~ Dummy iterator
@@ -499,11 +499,11 @@ CONTAINS
       LOGICAL                 :: flag       !~ Dummy flag
       LOGICAL                 :: wflag      !~ Saturation flag
       REAL                    :: freeze     !~ Water loading multiplier
-      REAL                    :: pdiff      !~ Pressure difference between levs 
+      REAL                    :: pdiff      !~ Pressure difference between levs
       REAL                    :: pm, pu, pd !~ Middle, upper, lower pressures
       REAL                    :: lidxu      !~ Lifted index at upper level
       REAL                    :: lidxd      !~ Lifted index at lower level
-  
+
       !~ Thermo / dynamical constants
       !  ----------------------------
       REAL                    :: Rd         !~ Dry gas constant
@@ -514,7 +514,7 @@ CONTAINS
          PARAMETER ( g  = 9.80665 )         !~ m s^-2
       REAL                    :: RUNDEF
          PARAMETER ( RUNDEF = -9.999E30 )
-  
+
       !~ Initialize variables
       !  --------------------
       ostat  = 0
@@ -522,7 +522,7 @@ CONTAINS
       CIN    = REAL ( 0 )
       ZLFC   = RUNDEF
       PLFC   = RUNDEF
-  
+
       !~ Look for submitted parcel definition
       !~ 1 = Most unstable
       !~ 2 = Mean layer
@@ -533,7 +533,7 @@ CONTAINS
       ELSE
          prcl =  parcel
       END IF
-  
+
       !~ Initalize our parcel to be (sort of) surface based.  Because of
       !~ issues we've been observing in the WRF model, specifically with
       !~ excessive surface moisture values at the surface, using a true
@@ -543,14 +543,14 @@ CONTAINS
       !~ above the surface. UPDATE - now that this routine is in WRF,
       !~ going to trust surface info. GAC 20140415
       !  ----------------------------------------------------------------
-  
+
       !~ Compute mixing ratio values for the layer
       !  -----------------------------------------
       DO k = sfc, nz
         ws  ( k )   = SaturationMixingRatio ( tK(k), p(k) )
         w   ( k )   = ( rh(k)/100.0 ) * ws ( k )
       END DO
-  
+
       srclev      = sfc
       srctK       = tK    ( sfc )
       srcrh       = rh    ( sfc )
@@ -558,14 +558,14 @@ CONTAINS
       srcws       = ws    ( sfc )
       srcw        = w     ( sfc )
       srctheta    = Theta ( tK(sfc), p(sfc)/100.0 )
-   
+
       !~ Compute the profile mixing ratio.  If the parcel is the MU parcel,
       !~ define our parcel to be the most unstable parcel within the lowest
       !~ 180 mb.
       !  -------------------------------------------------------------------
       mlev = sfc + 1
       DO k = sfc + 1, nz
-   
+
          !~ Identify the last layer within 100 hPa of the surface
          !  -----------------------------------------------------
          pdiff = ( p (sfc) - p (k) ) / REAL ( 100 )
@@ -586,40 +586,40 @@ CONTAINS
                srcp    = p  ( k )
             END IF
          END IF
-   
+
       END DO
-   
+
       !~ If we want the mean layer parcel, compute the mean values in the
       !~ lowest 100 hPa.
       !  ----------------------------------------------------------------
       lyrcnt =  mlev - sfc + 1
       IF ( prcl == 2 ) THEN
-   
+
          srclev   = sfc
          srctK    = SUM ( tK (sfc:mlev) ) / REAL ( lyrcnt )
          srcw     = SUM ( w  (sfc:mlev) ) / REAL ( lyrcnt )
          srcrh    = SUM ( rh (sfc:mlev) ) / REAL ( lyrcnt )
          srcp     = SUM ( p  (sfc:mlev) ) / REAL ( lyrcnt )
          srctheta = Theta ( srctK, srcp/100. )
-   
+
       END IF
-   
+
       srcthetaeK = Thetae ( srctK, srcp/100.0, srcrh, srcw )
-   
+
       !~ Calculate temperature and pressure of the LCL
       !  ---------------------------------------------
       tlclK = TLCL ( tK(srclev), rh(srclev) )
       plcl  = p(srclev) * ( (tlclK/tK(srclev))**(Cp/Rd) )
-   
+
       !~ Now lift the parcel
       !  -------------------
-   
+
       buoy  = REAL ( 0 )
       pw    = srcw
       wflag = .false.
       DO k  = srclev, nz
          IF ( p (k) <= plcl ) THEN
-   
+
             !~ The first level after we pass the LCL, we're still going to
             !~ lift the parcel dry adiabatically, as we haven't added the
             !~ the required code to switch between the dry adiabatic and moist
@@ -627,10 +627,10 @@ CONTAINS
             !~ temperature loss, doing that for the first step so we don't over
             !~ guesstimate the instability.
             !  ----------------------------------------------------------------
-   
+
             IF ( wflag ) THEN
                flag  = .false.
-   
+
                !~ Above the LCL, our parcel is now undergoing moist adiabatic
                !~ cooling.  Because of the latent heating being undergone as
                !~ the parcel rises above the LFC, must iterative solve for the
@@ -639,91 +639,91 @@ CONTAINS
                !~ pseudoadiabatic displacements.
                !  --------------------------------------------------------------
                ptK   = The2T ( srcthetaeK, p(k), flag )
-   
+
                !~ Calculate the parcel mixing ratio, which is now changing
                !~ as we condense moisture out of the parcel, and is equivalent
                !~ to the saturation mixing ratio, since we are, in theory, at
                !~ saturation.
                !  ------------------------------------------------------------
                pw = SaturationMixingRatio ( ptK, p(k) )
-   
+
                !~ Now we can calculate the virtual temperature of the parcel
                !~ and the surrounding environment to assess the buoyancy.
                !  ----------------------------------------------------------
                ptvK  = VirtualTemperature ( ptK, pw )
                tvK   = VirtualTemperature ( tK (k), w (k) )
-   
+
                !~ Modification to account for water loading
                !  -----------------------------------------
                freeze = 0.033 * ( 263.15 - pTvK )
                IF ( freeze > 1.0 ) freeze = 1.0
                IF ( freeze < 0.0 ) freeze = 0.0
-   
+
                !~ Approximate how much of the water vapor has condensed out
                !~ of the parcel at this level
                !  ---------------------------------------------------------
                freeze = freeze * 333700.0 * ( srcw - pw ) / 1005.7
-   
+
                pTvK = pTvK - pTvK * ( srcw - pw ) + freeze
                dTvK ( k ) = ptvK - tvK
                buoy ( k ) = g * ( dTvK ( k ) / tvK )
-   
+
             ELSE
-   
+
                !~ Since the theta remains constant whilst undergoing dry
                !~ adiabatic processes, can back out the parcel temperature
                !~ from potential temperature below the LCL
                !  --------------------------------------------------------
                ptK   = srctheta / ( 100000.0/p(k) )**(Rd/Cp)
-   
+
                !~ Grab the parcel virtual temperture, can use the source
                !~ mixing ratio since we are undergoing dry adiabatic cooling
                !  ----------------------------------------------------------
                ptvK  = VirtualTemperature ( ptK, srcw )
-   
+
                !~ Virtual temperature of the environment
                !  --------------------------------------
                tvK   = VirtualTemperature ( tK (k), w (k) )
-   
+
                !~ Buoyancy at this level
                !  ----------------------
                dTvK ( k ) = ptvK - tvK
                buoy ( k ) = g * ( dtvK ( k ) / tvK )
-   
+
                wflag = .true.
-   
+
             END IF
-   
+
          ELSE
-   
+
             !~ Since the theta remains constant whilst undergoing dry
             !~ adiabatic processes, can back out the parcel temperature
             !~ from potential temperature below the LCL
             !  --------------------------------------------------------
             ptK   = srctheta / ( 100000.0/p(k) )**(Rd/Cp)
-   
+
             !~ Grab the parcel virtual temperture, can use the source
             !~ mixing ratio since we are undergoing dry adiabatic cooling
             !  ----------------------------------------------------------
             ptvK  = VirtualTemperature ( ptK, srcw )
-   
+
             !~ Virtual temperature of the environment
             !  --------------------------------------
             tvK   = VirtualTemperature ( tK (k), w (k) )
-   
+
             !~ Buoyancy at this level
             !  ---------------------
             dTvK ( k ) = ptvK - tvK
             buoy ( k ) = g * ( dtvK ( k ) / tvK )
-   
+
          END IF
 
          !~ Chirp
          !  -----
   !          WRITE ( *,'(I15,6F15.3)' )k,p(k)/100.,ptK,pw*1000.,ptvK,tvK,buoy(k)
-   
+
       END DO
-   
+
       !~ Add up the buoyancies, find the LFC
       !  -----------------------------------
       flag   = .false.
@@ -734,13 +734,13 @@ CONTAINS
          IF ( tK (k) < 253.15 ) EXIT
          CAPE = CAPE + MAX ( buoy (k), 0.0 ) * ( hgt (k) - hgt (k-1) )
          CIN  = CIN  + MIN ( buoy (k), 0.0 ) * ( hgt (k) - hgt (k-1) )
-   
+
          !~ If we've already passed the LFC
          !  -------------------------------
          IF ( flag .and. buoy (k) > REAL (0) ) THEN
             pbuoy = pbuoy + buoy (k)
          END IF
-   
+
          !~ We are buoyant now - passed the LFC
          !  -----------------------------------
          IF ( .not. flag .and. buoy (k) > REAL (0) .and. p (k) < plcl ) THEN
@@ -748,7 +748,7 @@ CONTAINS
             pbuoy = pbuoy + buoy (k)
             lfclev = k
          END IF
-   
+
          !~ If we think we've passed the LFC, but encounter a negative layer
          !~ start adding it up.
          !  ----------------------------------------------------------------
@@ -783,11 +783,11 @@ CONTAINS
          IF ( pd .le. pm ) THEN
             lidx = 0.
             EXIT
-   
+
          ELSEIF ( pu .le. pm .and. pd .gt. pm) THEN
 
             !~ Found trapping pressure: up, middle, down.
-            !~ We are doing first order interpolation.  
+            !~ We are doing first order interpolation.
             !  ------------------------------------------
             lidxu = -dTvK ( k ) * ( pu / 100000. ) ** (Rd/Cp)
             lidxd = -dTvK ( k-1 ) * ( pd / 100000. ) ** (Rd/Cp)
@@ -797,21 +797,21 @@ CONTAINS
          ENDIF
 
       END DO
-   
+
       !~ Assuming the the LFC is at a pressure level for now
       !  ---------------------------------------------------
       IF ( lfclev > 0 ) THEN
          PLFC = p   ( lfclev )
          ZLFC = hgt ( lfclev )
       END IF
-   
+
       IF ( PLFC /= PLFC .OR. PLFC < REAL (0) ) THEN
          PLFC = REAL ( -1 )
          ZLFC = REAL ( -1 )
       END IF
-   
+
       IF ( CAPE /= CAPE ) cape = REAL ( 0 )
-   
+
       IF ( CIN  /= CIN  ) cin  = REAL ( 0 )
 
       !~ Chirp
@@ -822,8 +822,8 @@ CONTAINS
   !       WRITE ( *,* ) ' Exiting buoyancy.'
   !       WRITE ( *,* ) ' ==================================== '
   !       WRITE ( *,* ) ''
-   
-  END FUNCTION Buoyancy 
+
+  END FUNCTION Buoyancy
 
 
 
@@ -857,34 +857,34 @@ CONTAINS
 !     BY A CORRECTION BASED ON THE CRITICAL TAU OF THE SHUELL
 !     CORRECTION:
 !                  TAUCR=(RGASD/GRAVITY) * 290.66
-!  
+!
 !     1) WHERE ONLY TAU(SL) EXCEEDS TAUCR, CHANGE TAU(SL) TO TAUCR.
 !
 !     2) WHERE BOTH TAU(SL) AND TAU(GRND) EXCEED TAUCR,
 !        CHANGE TAU(SL) TO TAUCR-CONST*(TAU(GRND)-TAUCR  )**2
 !        WHERE CONST = .005 (GRAVITY/RGASD)
-!  
+!
 !     THE AVERAGE OF TAU(SL) AND TAU(GRND) IS THEN USED TOGETHER
 !     WITH THE GROUND HEIGHT AND PRESSURE TO DERIVE THE PRESSURE
 !     AT SEA LEVEL.
-!    
+!
 !     HEIGHT OF THE 1000MB SURFACE IS COMPUTED FROM THE MSL PRESSURE
 !     FIELD USING THE FORMULA:
-!    
+!
 !       P(MSL) - P(1000MB) = MEAN DENSITY * GRAVITY * HGT(1000MBS)
-!    
+!
 !     WHERE P(MSL) IS THE SEA LEVEL PRESSURE FIELD WE HAVE JUST
 !     COMPUTED.
-!    
+!
 !
 !     MEB 6/13/02: THIS CODE HAS BEEN SIMPLIFIED CONSIDERABLY FROM
 !     THE ONE USED IN ETAPOST.  HORIZONTAL SMOOTHING HAS BEEN
 !     REMOVED AND THE FIRST MODEL LEVEL IS USED RATHER
 !     THAN THE MEAN OF THE VIRTUAL TEMPERATURES IN
 !     THE LOWEST 30MB ABOVE GROUND TO COMPUTE TAU(GRND).
-!    
-!   . 
-!    
+!
+!   .
+!
 ! PROGRAM HISTORY LOG:
 !   93-02-02  RUSS TREADON
 !   98-06-08  T BLACK - CONVERSION FROM 1-D TO 2-D
@@ -897,14 +897,14 @@ CONTAINS
 !   02-06-13  MIKE BALDWIN - WRF VERSION
 !   06-12-18  H CHUANG - BUG FIX TO CORRECT TAU AT SFC
 !   14-04-17  G CREIGHTON - MODIFIED TO INSERT INTO AFWA DIAGNOSTICS IN WRF
-!    
-!$$$ 
+!
+!$$$
 
   FUNCTION MSLP ( zsfc, psfc, zlev1, qlev1, tlev1 )
 
       implicit none
-     
-     
+
+
 !     DECLARE VARIABLES
 
       REAL,    INTENT ( IN )  :: zsfc         !~ Surface height ( m )
@@ -921,7 +921,7 @@ CONTAINS
       real,PARAMETER :: GAMMA=6.5E-3
 
       real MSLP,TVRT,TVRSFC,TAUSFC,TVRSL,TAUSL,TAUAVG
-!    
+!
 !**********************************************************************
 !     START NGMSLP HERE.
 !
@@ -930,24 +930,24 @@ CONTAINS
 !        COMPUTE LAYER TAU (VIRTUAL TEMP*RD/G).
          TVRT = TLEV1*(1.0+0.608*QLEV1)
          !TAU  = TVRT*RD*GI
-!    
+!
 !        COMPUTE TAU AT THE GROUND (Z=ZSFC) AND SEA LEVEL (Z=0)
 !        ASSUMING A CONSTANT LAPSE RATE OF GAMMA=6.5DEG/KM.
          TVRSFC = TVRT + (ZLEV1 - ZSFC)*GAMMA
          TAUSFC = TVRSFC*RD*GI
          TVRSL  = TVRT + (ZLEV1 - ZSL)*GAMMA
          TAUSL  = TVRSL*RD*GI
-!    
+!
 !        IF NEED BE APPLY SHEULL CORRECTION.
          IF ((TAUSL.GT.TAUCR).AND.(TAUSFC.LE.TAUCR)) THEN
             TAUSL=TAUCR
          ELSEIF ((TAUSL.GT.TAUCR).AND.(TAUSFC.GT.TAUCR)) THEN
             TAUSL = TAUCR-CONST*(TAUSFC-TAUCR)**2
          ENDIF
-!    
+!
 !        COMPUTE MEAN TAU.
          TAUAVG = 0.5*(TAUSL+TAUSFC)
-!    
+!
 !        COMPUTE SEA LEVEL PRESSURE.
          MSLP = PSFC*EXP(ZSFC/TAUAVG)
 
@@ -993,7 +993,7 @@ CONTAINS
   !~                                                                          ~!
   !!!~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~!!!
   FUNCTION calc_fits ( p, tK, rh ) RESULT ( fits )
- 
+
     implicit none
 
     !~ Variable declaration
@@ -1002,12 +1002,12 @@ CONTAINS
     real, intent ( in ) :: tK              !~ Temperature ( K )
     real, intent ( in ) :: rh              !~ Rel Humidity ( % )
     real                :: fits            !~ FITS index value
- 
+
     !~ Utility variables
     !  --------------------------
     real                :: twb             !~ Wet bulb temperature ( C )
     real                :: wbt
- 
+
     ! ---------------------------------------------------------------------- !
     ! ---------------------------------------------------------------------- !
 
@@ -1017,12 +1017,12 @@ CONTAINS
 
     !~ Get the wet bulb temperature in degrees Celsius
     !  -----------------------------------------------
-    twb =  WetBulbTemp ( p, tK, rh ) - 273.15 
+    twb =  WetBulbTemp ( p, tK, rh ) - 273.15
 
     !~ Compute the FITS index
     !  ----------------------
     fits = 0.8281*twb + 0.3549*( tK - 273.15 ) + 5.08
- 
+
     !~ Convert the index to Kelvin
     !  ---------------------------
     fits = fits + 273.15
@@ -1034,7 +1034,7 @@ CONTAINS
   !!!~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~!!!
   !~
   !~ Name:
-  !~    calc_wc   
+  !~    calc_wc
   !~
   !~ Description:
   !~    This function calculates wind chill given temperature ( K ) and
@@ -1069,12 +1069,12 @@ CONTAINS
   !!!~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~!!!
   !~
   !~ Name:
-  !~    calc_hi   
+  !~    calc_hi
   !~
   !~ Description:
   !~    This subroutine calculates the heat index.  Requires temperature ( K )
   !~    and relative humidity ( % ).
-  !~ 
+  !~
   !!!~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~!!!
   FUNCTION calc_hi ( Tk, RH ) result ( HI )
 
@@ -1153,7 +1153,7 @@ CONTAINS
     real, intent ( in ) :: tK       !~ Temperature ( K )
     real, intent ( in ) :: rh       !~ Relative Humidity ( % )
     real                :: wbt      !~ Wet Bulb Temperature ( K )
- 
+
     !~ Utility variables
     !  -----------------
     real                :: tdK      !~ Dewpoint temperature ( K )
@@ -1165,7 +1165,7 @@ CONTAINS
     real                :: delta    !~ Dummy term
 
     ! ---------------------------------------------------------------------- !
-    ! ---------------------------------------------------------------------- !          
+    ! ---------------------------------------------------------------------- !
     !~ Initialize variables
     !  --------------------
     wbt = REAL ( 0 )
@@ -1214,7 +1214,7 @@ CONTAINS
     real, intent ( in ) :: tC
     real, intent ( in ) :: rh
     real                :: Dewpoint
- 
+
     real :: term, es, e1, e, logs, expon
 
     expon    = ( 7.5*tC ) / ( 237.7+tC )
@@ -1229,7 +1229,7 @@ CONTAINS
   !!!~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~!!!
   !~
   !~ Name:
-  !~    calc_es 
+  !~    calc_es
   !~
   !~ Description:
   !~    This function returns the saturation vapor pressure over water ( hPa )
@@ -1250,7 +1250,7 @@ CONTAINS
     !  --------------------
     real, intent ( in ) :: tK
     real                :: es
- 
+
     real                :: p1, p2, c1
 
     p1 = 11.344    - 0.0303998 * tK
@@ -1408,7 +1408,7 @@ CONTAINS
     real, intent(in), dimension(:) :: x  ! grid points
     real, intent(in), dimension(:) :: f  ! grid function values
     real, intent(in) :: y                ! interpolation point
-    real :: g                            ! interpolated function value      
+    real :: g                            ! interpolated function value
 
     integer :: k  ! interpolation point index
     integer :: n  ! length of x
@@ -1449,14 +1449,14 @@ CONTAINS
   !!!~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~!!!
   FUNCTION LLT_Windspeed ( nlayer, u, v ) RESULT ( dynamic )
     IMPLICIT NONE
- 
+
     !~ Variable Declaration
     !  --------------------
     INTEGER, INTENT ( IN )         :: nlayer
     REAL, INTENT ( IN )            :: u     ( nlayer )
     REAL, INTENT ( IN )            :: v     ( nlayer )
     REAL                           :: dynamic
- 
+
     !~ Internal function variables
     !  ---------------------------
     INTEGER           :: i
@@ -1465,7 +1465,7 @@ CONTAINS
        PARAMETER ( PI = 3.14159265359 )
 
     !  --------------------------------------------------------------------  !
-    !  --------------------------------------------------------------------  !           
+    !  --------------------------------------------------------------------  !
     !~ Initialize variables
     !  --------------------
     dynamic = REAL ( 0 )
@@ -1500,7 +1500,7 @@ CONTAINS
   !!!~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~!!!
   FUNCTION LLT_Thermodynamic ( nlayer, tK, hgt ) RESULT ( thermodynamic )
   IMPLICIT NONE
- 
+
     !~ Variable Declaration
     !  --------------------
     INTEGER, INTENT ( IN )         :: nlayer
@@ -1562,7 +1562,7 @@ CONTAINS
     REAL, INTENT ( IN )              :: tK  ( nlayer )    !~ Temperatures (K)
     REAL, INTENT ( IN )              :: hgt ( nlayer )    !~ Heights ( m )
     REAL                             :: MountainWave      !~ Mountain wave term
- 
+
     !~ Internal function variables
     !  ---------------------------
     REAL    :: u_term
@@ -1616,7 +1616,7 @@ CONTAINS
       ELSE
         IF ( this_total_mw > total_mw ) total_mw = this_total_mw
       END IF
- 
+
     END DO
 
     !min_uv_term = uv_term
@@ -1804,7 +1804,7 @@ CONTAINS
     ! Local
     ! -----
     CHARACTER*512 :: message
-    CHARACTER*256 :: timestr 
+    CHARACTER*256 :: timestr
     INTEGER :: i,j,k,nz,ostat
     INTEGER :: icing_opt
     REAL :: bdump
@@ -1851,7 +1851,7 @@ CONTAINS
     write ( message, * ) 'inside afwa_diagnostics_driver'
     CALL wrf_debug( 100 , message )
 
-    ! Get timing info 
+    ! Get timing info
     ! Want to know if when the last history output was
     ! Check history and auxhist2 alarms to check last ring time and how often
     ! they are set to ring
@@ -1864,7 +1864,7 @@ CONTAINS
     ! Get domain clock
     ! ----------------
     CALL domain_clock_get ( grid, current_time=CurrTime, &
-         simulationStartTime=StartTime, &            
+         simulationStartTime=StartTime, &
          current_timestr=timestr, time_step=dtint )
 
     ! Set some booleans for use later
@@ -1882,14 +1882,14 @@ CONTAINS
     ! Following uses an overloaded .eq.
     ! ---------------------------------
     is_first_timestep = ( Currtime .eq. StartTime + dtint )
-        
+
     ! Here is an optional check for bad data in case the model has gone
     ! off the hinges unchecked until now.  This happens under certain
     ! configurations and can lead to very wrong data writes.  This is just
     ! a simple check for sane winds and potential temperatures.
     ! --------------------------------------------------------------------
     IF ( config_flags%afwa_bad_data_check .GT. 0 ) THEN
-      IF ( ( is_output_timestep ) .AND. ( .NOT. is_first_timestep ) ) THEN      
+      IF ( ( is_output_timestep ) .AND. ( .NOT. is_first_timestep ) ) THEN
         DO i=its, MIN( ide-1, ite )
           DO k=k_start, k_end
             DO j=jts, MIN( jde-1, jte )
@@ -1926,9 +1926,9 @@ CONTAINS
         ENDDO
       ENDDO
     ENDDO
-    
+
     ! Total pressure
-    ! -------------- 
+    ! --------------
     DO i=ims, ime
       DO k=kms, kme
         DO j=jms, jme
@@ -1950,7 +1950,7 @@ CONTAINS
     ! Calculate relative humidity
     ! ---------------------------
     DO i=ims,ime
-      DO k=kms,kme    
+      DO k=kms,kme
         DO j=jms,jme
           rh(i,k,j)=calc_rh(ptot(i,k,j),grid%t_phy(i,k,j), qvapr(i,k,j))
           rh_cld(i,k,j)=calc_rh(ptot(i,k,j),grid%t_phy(i,k,j), qvapr(i,k,j)+qcloud(i,k,j)+qice(i,k,j))
@@ -1989,7 +1989,7 @@ CONTAINS
           grid % afwa_llws(i,j) = 0.
         ENDDO
       ENDDO
-    ENDIF 
+    ENDIF
 
     ! Calculate the max 10 m wind speed between output times
     ! ------------------------------------------------------
@@ -2010,7 +2010,7 @@ CONTAINS
         ! -------------------------------------------------------------------
         IF ( prate_mm_per_hr .GT. 50. ) THEN
           is_target_level=.false.
-          DO k=kms,kme    
+          DO k=kms,kme
             IF ( ( zagl(i,k,j) >= 1000. ) .and. &
                  ( .NOT. is_target_level ) .and. &
                  ( k .ne. kms ) ) THEN
@@ -2022,7 +2022,7 @@ CONTAINS
               EXIT ! We've found our level, break the loop
             ENDIF
           ENDDO
-          
+
           ! Compute blended wind
           ! --------------------
           factor = MAX ( ( ( 150. - prate_mm_per_hr ) / 100. ), 0. )
@@ -2048,7 +2048,7 @@ CONTAINS
     DO j = jts, jte
       DO i = its, ite
         is_target_level=.false.
-        DO k=kms,kme    
+        DO k=kms,kme
           IF ( ( zagl(i,k,j) >= 609.6 ) .and. &
                ( .NOT. is_target_level ) .and. &
                ( k .ne. kms ) ) THEN
@@ -2057,8 +2057,8 @@ CONTAINS
                     * ((u_phy(i,k,j) - u_phy(i,k-1,j))/(zagl(i,k,j)))
             v2000 = v_phy(i,k-1,j) + (609.6 - (zagl(i,k-1,j))) &
                     * ((v_phy(i,k,j) - v_phy(i,k-1,j))/(zagl(i,k,j)))
-            us = u2000 - grid % u10(i,j) 
-            vs = v2000 - grid % v10(i,j) 
+            us = u2000 - grid % u10(i,j)
+            vs = v2000 - grid % v10(i,j)
             llws(i,j) = uv_wind ( us , vs )
             IF ( llws(i,j) .gt. grid % afwa_llws(i,j) ) THEN
               grid % afwa_llws(i,j) = llws(i,j)
@@ -2071,7 +2071,7 @@ CONTAINS
 
 #if ( WRF_CHEM == 1 )
     ! Surface dust concentration array (ug m-3)
-    ! ----------------------------------------- 
+    ! -----------------------------------------
     DO i=ims, ime
       DO j=jms, jme
         dustc(i,j,1)=chem(i,k_start,j,p_dust_1)*rho(i,k_start,j)
@@ -2084,7 +2084,7 @@ CONTAINS
 #else
     dustc(ims:ime,jms:jme,:)=0.
 #endif
-   
+
     ! Calculate severe weather diagnostics.  These variables should only be
     ! output at highest frequency output.  (e.g. auxhist2)
     ! ---------------------------------------------------------------------
@@ -2192,7 +2192,7 @@ CONTAINS
     ! Calculate precipitation type diagnostics
     ! ----------------------------------------
     IF ( config_flags % afwa_ptype_opt == 1 ) THEN
-    
+
       ! First initialize precip buckets
       ! -------------------------------
       IF ( grid % itimestep .eq. 1) THEN
@@ -2206,7 +2206,7 @@ CONTAINS
           ENDDO
         ENDDO
       ENDIF
-  
+
       ! Diagnose precipitation type
       ! ---------------------------
       CALL precip_type_diagnostics ( grid % t_phy               &
@@ -2227,20 +2227,20 @@ CONTAINS
                              , ims, ime, jms, jme, kms, kme     &
                              , ips, ipe, jps, jpe, kps, kpe )
     ENDIF  ! afwa_ptype_opt == 1
-  
+
     ! --------------------------------------------------------------
     ! The following packages are calculated only on output timesteps
     ! --------------------------------------------------------------
-    IF ( is_output_timestep ) THEN      
+    IF ( is_output_timestep ) THEN
 
       ! Calculate mean sea level pressure
       ! ---------------------------------
       DO j = jms, jme
         DO i = ims, ime
-          grid % afwa_mslp  ( i, j ) =   MSLP ( grid % ht ( i, j )           & 
+          grid % afwa_mslp  ( i, j ) =   MSLP ( grid % ht ( i, j )           &
                                               , grid % psfc ( i, j )         &
-                                              , grid % z ( i, kms, j )       & 
-                                              , qvapr ( i, kms, j )          &  
+                                              , grid % z ( i, kms, j )       &
+                                              , qvapr ( i, kms, j )          &
                                               , grid % t_phy ( i, kms, j ) )
         ENDDO
       ENDDO
@@ -2261,7 +2261,7 @@ CONTAINS
           tv2m(i,j)=grid%t2(i,j) * (1 + 0.61 * grid%q2(i,j))
         ENDDO
       ENDDO
- 
+
       ! Calculate buoyancy parameters.
       ! ------------------------------
       IF ( config_flags % afwa_buoy_opt == 1 ) THEN
@@ -2283,7 +2283,7 @@ CONTAINS
                                      ,        grid % afwa_plfc(i,j) &
                                      ,        grid % afwa_lidx(i,j) &
                                      ,                        3 ) !Surface
-        
+
             ! Subtract terrain height to convert ZLFC from MSL to AGL
             ! -------------------------------------------------------
             IF ( zlfc_msl .ge. grid % ht ( i, j ) ) THEN
@@ -2297,7 +2297,7 @@ CONTAINS
             IF ( grid % afwa_lidx ( i, j ) .ne. 999. ) THEN
               grid % afwa_lidx ( i, j ) = grid % afwa_lidx ( i, j ) + 273.15
             ENDIF
- 
+
             ! Calculate buoyancy again for most unstable layer
             ! ------------------------------------------------
             ostat = Buoyancy (                                   nz &
@@ -2312,7 +2312,7 @@ CONTAINS
                                      ,                         dum2 &
                                      ,                         dum3 &
                                      ,                        1 ) !Most unstable
-        
+
           ENDDO
         ENDDO
       ENDIF  ! afwa_buoy_opt == 1
@@ -2363,7 +2363,7 @@ CONTAINS
                              , ips, ipe, jps, jpe, kps, kpe )
       ENDIF  ! afwa_turb_opt == 1
 
-      ! Calculate equivalent radar reflectivity factor (z_e) using 
+      ! Calculate equivalent radar reflectivity factor (z_e) using
       ! old RIP code (2004) if running radar or VIL packages.
       ! ----------------------------------------------------------
       IF ( config_flags % afwa_radar_opt == 1 .or. &
@@ -2419,7 +2419,7 @@ CONTAINS
                              , ids, ide, jds, jde, kds, kde     &
                              , ims, ime, jms, jme, kms, kme     &
                              , ips, ipe, jps, jpe, kps, kpe )
-      ENDIF  ! afwa_vil_opt ==1 
+      ENDIF  ! afwa_vil_opt ==1
 
       ! Calculate icing and freezing level
       ! ----------------------------------
@@ -2427,7 +2427,7 @@ CONTAINS
 
         ! Determine icing option from microphysics scheme
         ! -----------------------------------------------
-        
+
         IF ( config_flags % mp_physics == GSFCGCESCHEME ) THEN
           icing_opt=1
         ELSEIF ( config_flags % mp_physics == ETAMPNEW ) THEN
@@ -2451,8 +2451,8 @@ CONTAINS
         ELSE
           icing_opt=0  ! Not supported
         ENDIF
- 
-        write ( message, * ) 'Calculating Icing with icing opt ',icing_opt 
+
+        write ( message, * ) 'Calculating Icing with icing opt ',icing_opt
         CALL wrf_debug( 100 , message )
         CALL icing_diagnostics ( icing_opt                      &
                              , grid % fzlev                     &
@@ -2479,7 +2479,7 @@ CONTAINS
       ! Calculate visiblility diagnostics
       ! ---------------------------------
       IF ( config_flags % afwa_vis_opt == 1 ) THEN
-   
+
         ! Interpolate 20m temperature and RH
         ! ----------------------------------
         DO i=ims,ime
@@ -2562,7 +2562,7 @@ CONTAINS
                              , grid % afwa_vis_alpha            &
                              , ids, ide, jds, jde, kds, kde     &
                              , ims, ime, jms, jme, kms, kme     &
-                             , ips, ipe, jps, jpe, kps, kpe ) 
+                             , ips, ipe, jps, jpe, kps, kpe )
       ENDIF
 
       ! Calculate cloud diagnostics
@@ -2675,7 +2675,7 @@ CONTAINS
 
 
     REAL, DIMENSION( ims:ime, jms:jme ),                        &
-         INTENT(INOUT) ::                             w_up_max  & 
+         INTENT(INOUT) ::                             w_up_max  &
                                               ,       w_dn_max  &
                                               ,      tcoli_max  &
                                               ,      midrh_min  &
@@ -2683,7 +2683,7 @@ CONTAINS
                                               ,   afwa_tornado  &
                                               ,   grpl_flx_max  &
                                               ,   tornado_mask  &
-                                              ,    tornado_dur 
+                                              ,    tornado_dur
 
 
 !    REAL, DIMENSION( ims:ime, jms:jme ),                        &
@@ -2725,7 +2725,7 @@ CONTAINS
     DO i=ims,ime
       DO j=jms,jme
         is_target_level=.false.
-        DO k=kms,kme    
+        DO k=kms,kme
           zagl = z(i,k,j) - ht(i,j)
           IF ( ( zagl >= 3500. ) .and. &
                ( .NOT. is_target_level ) .and. &
@@ -2751,7 +2751,7 @@ CONTAINS
     !    ENDIF
     !  ENDDO
     !ENDDO
- 
+
     ! Vertical velocity quantities between output times
     ! -------------------------------------------------
     w_up=0.
@@ -2760,7 +2760,7 @@ CONTAINS
       DO k = k_start, k_end
         DO i = its, ite
           p_tot = p(i,k,j) / 100.
- 
+
           ! Check vertical velocity field below 400 mb
           IF ( p_tot .GT. 400. .AND. w_2(i,k,j) .GT. w_up(i,j) ) THEN
             w_up(i,j) = w_2(i,k,j)
@@ -2777,7 +2777,7 @@ CONTAINS
         ENDDO
       ENDDO
     ENDDO
-   
+
     ! Hail diameter in millimeters (Weibull distribution)
     ! ---------------------------------------------------
     DO j = jts, jte
@@ -2823,7 +2823,7 @@ CONTAINS
         grpl_flx=0
         w_n15=-999.
         DO k = k_start, k_end
-          
+
           ! Interpolate w and qg to -15C level and calculate graupel flux
           ! as simply graupel x vertical velocity at -15C
           ! -------------------------------------------------------------
@@ -2831,7 +2831,7 @@ CONTAINS
                k .GT. k_start .AND. qg (i,k,j) .GT. 1.E-20 ) THEN
             w_n15 = w_2 (i,k,j)
             qg_n15 = 1000. * qg (i,k,j) ! g/kg
-            grpl_flx =  qg_n15 * w_n15   
+            grpl_flx =  qg_n15 * w_n15
           ENDIF
         ENDDO
         IF ( grpl_flx .GT. grpl_flx_max(i,j) ) THEN
@@ -2862,7 +2862,7 @@ CONTAINS
           ! Add 273.15 to lifted index per some standard I don't understand
           ! ---------------------------------------------------------------
           IF ( lidx ( i, j ) .ne. 999. ) lidx ( i, j ) = lidx ( i, j ) + 273.15
-  
+
           ! Subtract terrain height to convert ZLFC from MSL to AGL
           ! -------------------------------------------------------
           IF ( zlfc_msl .ge. 0. ) THEN
@@ -2907,7 +2907,7 @@ CONTAINS
         IF (tornado .GT. 0.) THEN
           tornado_mask(i,j) = 1.
         ENDIF
-  
+
         ! Update the duration of this tornado if there was previously
         ! a tornado mask at this or an adjacent point
         ! -----------------------------------------------------------
@@ -2923,7 +2923,7 @@ CONTAINS
         tornado = tornado * time_factor
 
         ! OPTIONAL
-        ! Adjust previous max tornado wind upward to account for longer 
+        ! Adjust previous max tornado wind upward to account for longer
         ! duration - if after 5 minutes, no adjustment made as
         ! time_factor/time_factor_prev=1
         ! -------------------------------------------------------------
@@ -2967,9 +2967,9 @@ CONTAINS
          INTENT(IN) ::                                     rho  &
                                               ,          qrain  &
                                               ,          qsnow  &
-                                              ,          qgrpl  & 
+                                              ,          qgrpl  &
                                               ,          t_phy  &
-                                              ,            z_e  & 
+                                              ,            z_e  &
                                               ,           dz8w
 
     REAL, DIMENSION( ims:ime, jms:jme ),                        &
@@ -3018,7 +3018,7 @@ CONTAINS
   SUBROUTINE icing_diagnostics ( icing_opt                      &
                              , fzlev                            &
                              , icing_lg                         &
-                             , icing_sm                         & 
+                             , icing_sm                         &
                              , qicing_lg_max                    &
                              , qicing_sm_max                    &
                              , qicing_lg                        &
@@ -3063,7 +3063,7 @@ CONTAINS
     REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),               &
          INTENT(  OUT) ::                            qicing_lg  &
                                               ,      qicing_sm
-         
+
 
     ! Local
     ! -----
@@ -3075,12 +3075,12 @@ CONTAINS
     fzlev (ips:ipe,jps:jpe) = -999.        ! Arbitrary unset/initial value
     icingtop (ips:ipe,jps:jpe) = -999.     ! Arbitrary unset/initial value
     icingbot (ips:ipe,jps:jpe) = -999.     ! Arbitrary unset/initial value
-    icing_lg (ips:ipe,jps:jpe) = 0.        
+    icing_lg (ips:ipe,jps:jpe) = 0.
     icing_sm (ips:ipe,jps:jpe) = 0.
-    qicing_lg_max (ips:ipe,jps:jpe) = 0. 
-    qicing_sm_max (ips:ipe,jps:jpe) = 0. 
+    qicing_lg_max (ips:ipe,jps:jpe) = 0.
+    qicing_sm_max (ips:ipe,jps:jpe) = 0.
     qicing_sm(ips:ipe,kps:kpe,jps:jpe)=0.
-    qicing_lg(ips:ipe,kps:kpe,jps:jpe)=0.   
+    qicing_lg(ips:ipe,kps:kpe,jps:jpe)=0.
 
     ! Loop through i and j
     ! --------------------
@@ -3105,7 +3105,7 @@ CONTAINS
           den = rho(i,k,j)
           qcfrac_lg = 0.
           qcfrac_sm = 0.
-          
+
           ! Eta (Ferrier)
           ! -------------
           IF (icing_opt .eq. 2) THEN
@@ -3120,7 +3120,7 @@ CONTAINS
           ! Thompson
           ! --------
           ! RAS Per James McCormick's stats, more large supercooled
-          ! drops are needed from the Thompson members.  Changing 
+          ! drops are needed from the Thompson members.  Changing
           ! calculation to be like WSM5/6 members.
           !ELSEIF (icing_opt .eq. 3) THEN
           !  IF (qc .lt. 1.0E-3) THEN
@@ -3147,10 +3147,10 @@ CONTAINS
           ! -------------------------------
           ELSEIF (icing_opt .eq. 5) THEN
             IF (qc .lt. 1.4E-3) THEN
-              qcfrac_lg = 28000. * qc**2. + 0.1 * qc 
+              qcfrac_lg = 28000. * qc**2. + 0.1 * qc
             ELSEIF (qc .lt. 2.6E-3) THEN
               qcfrac_lg = 112.351 * qc - 0.102272
-            ELSE 
+            ELSE
               qcfrac_lg = 0.3 * log(654.92 * qc) * 0.301607
             ENDIF
 
@@ -3166,7 +3166,7 @@ CONTAINS
             ENDIF
           ENDIF
           qcfrac_lg = max(qcfrac_lg, 0.)
-          
+
           ! Small (<50 um) supercooled cloud water drop fraction (1 - large).
           ! -----------------------------------------------------------------
           IF (icing_opt .ne. 0 ) THEN
@@ -3176,7 +3176,7 @@ CONTAINS
           ! Supercooled drop mixing ratio
           ! -----------------------------
           qicing_lg (i,k,j) = max(qr + qcfrac_lg * qc, 0.)
-          qicing_sm (i,k,j) = max(qcfrac_sm * qc, 0.)        
+          qicing_sm (i,k,j) = max(qcfrac_sm * qc, 0.)
 
           ! Column integrated icing
           ! -----------------------
@@ -3185,7 +3185,7 @@ CONTAINS
           icing_sm (i,j) = icing_sm (i,j) + qicing_sm (i,k,j) &
                             * dz8w (i,k,j) * rho(i,k,j)
 
-          ! Column maximum supercooled drop mixing ratio 
+          ! Column maximum supercooled drop mixing ratio
           ! --------------------------------------------
           IF ( qicing_lg(i,k,j) .gt. qicing_lg_max(i,j) ) THEN
             qicing_lg_max (i,j) = qicing_lg(i,k,j)
@@ -3193,11 +3193,11 @@ CONTAINS
           IF ( qicing_sm(i,k,j) .gt. qicing_sm_max(i,j) ) THEN
             qicing_sm_max (i,j) = qicing_sm(i,k,j)
           ENDIF
-           
+
           ! Freezing level calculation
           ! --------------------------
           IF (fzlev (i,j) .eq. -999.) THEN  ! At freezing level
-            IF (k .ne. kps) THEN  ! If not at surface, interpolate.      
+            IF (k .ne. kps) THEN  ! If not at surface, interpolate.
               fzlev (i,j) = z (i,k-1,j) + &
                              ((273.15 - t_phy (i,k-1,j)) &
                             /(t_phy (i,k,j) - t_phy (i,k-1,j))) &
@@ -3208,11 +3208,11 @@ CONTAINS
           ENDIF
 
           ! Icing layer top and bottom indices (where icing > some arbitrary
-          ! small value). Set bottom index of icing layer to current k index 
+          ! small value). Set bottom index of icing layer to current k index
           ! if not yet set. Set top index of icing layer to current k index.
           ! ----------------------------------------------------------------
           IF ((qicing_lg (i,k,j) + qicing_sm (i,k,j)) .ge. 1.E-5) THEN
-            IF (kbot .eq. -1) kbot = k  
+            IF (kbot .eq. -1) kbot = k
             ktop=k
           ENDIF
         ENDIF
@@ -3279,7 +3279,7 @@ CONTAINS
     ! Local
     ! -----
     INTEGER :: i,j,k,ktime
-    
+
     DO j = jps, MIN(jpe,jde-1)
     DO i = ips, MIN(ipe,ide-1)
       ktop = -1  ! Undefined
@@ -3292,7 +3292,7 @@ CONTAINS
           ! Reflectivity (first level)
           ! --------------------------
           IF (k == kps) refd(i,j) = MAX(10.0 * log10(z_e(i,k,j)),0.)
-   
+
 !          ! Max reflectivity over the output interval
 !          ! -----------------------------------------
 !          IF (refd(i,j) .gt. refd_max(i,j)) refd_max(i,j) = refd(i,j)
@@ -3303,7 +3303,7 @@ CONTAINS
             refd_com(i,j) = 10.0 * log10(z_e(i,k,j))
           ENDIF
         ENDIF
-        
+
         ! Echo top - the highest level w/ dBZ > 18 (z_e > 63.0957)
         ! --------------------------------------------------------
         IF ( z_e(i,k,j) .gt. 63.0957) THEN
@@ -3396,7 +3396,7 @@ CONTAINS
           factorb_g = factor_g /alpha2
         ENDIF
       ENDIF
- 
+
       ! Calculate variable intercept parameters
       ! ---------------------------------------
       temp_c = amin1(-0.001, t_phy(i,k,j)- T_0)
@@ -3413,16 +3413,16 @@ CONTAINS
       IF (qra.gt. r1) THEN
         ronv = ron_const1r*tanh((ron_qr0-qra)/ron_delqr0) + ron_const2r
       ENDIF
- 
+
       IF (qra < 0.0 ) qra = 0.0
       IF (qsn < 0.0 ) qsn = 0.0
       IF (qgr < 0.0 ) qgr = 0.0
       z_e(i,k,j) = factor_r * (rho(i,k,j) * qra)**1.75 / ronv**.75 + &
                      factorb_s * (rho(i,k,j) * qsn)**1.75 / sonv**.75 + &
                      factorb_g * (rho(i,k,j) * qgr)**1.75 / gonv**.75
- 
+
       IF ( z_e(i,k,j) < 0.0 ) z_e(i,k,j) = 0.0
- 
+
     END DO
     END DO
     END DO
@@ -3484,28 +3484,28 @@ CONTAINS
                                    , precip_type
 
     LOGICAL, DIMENSION (ims:ime, jms:jme ) ::                   &
-                                     saturation 
+                                     saturation
 
     REAL, PARAMETER :: snow_ratio=5.0
 
     ! Loop through all points
-    ! Search vertically twice--first to find the cloud top temperature and the 
+    ! Search vertically twice--first to find the cloud top temperature and the
     ! maximum temperature. Second, determine if any melting or re-freezing will
     ! occur to make ice pellets or freezing rain
     ! -------------------------------------------------------------------------
     DO i=ips,ipe
     DO j=jps,jpe
-  
+
       saturation(i,j)=.false.
-      melt(i,j)=0.0 
+      melt(i,j)=0.0
       precip_type(i,j)=0
-        
+
       ! Modify surface temperature for solar insolation (W/m2)
       ! Set max temperature in the atmopshere
       ! ------------------------------------------------------
       mod_2m_tmp(i,j)=t2(i,j)+(swdown(i,j)/100.0)
       maxtmp(i,j)=mod_2m_tmp(i,j)
-  
+
       ! Only look at points that have precip and are not warm at the surface
       ! --------------------------------------------------------------------
       IF (precip(i,j) .gt. 0.0) THEN
@@ -3513,8 +3513,8 @@ CONTAINS
         IF (mod_2m_tmp(i,j) .gt. 275.15) THEN
           precip_type(i,j)=1  ! Rain
         ELSE
-  
-          ! Check sounding from top for saturation (RH-water gt 80%)--this is 
+
+          ! Check sounding from top for saturation (RH-water gt 80%)--this is
           ! the cloud top. Erase saturation if RH lt 70% (spurious moist layer
           ! aloft)
           ! ------------------------------------------------------------------
@@ -3544,13 +3544,13 @@ CONTAINS
             precip_type(i,j)=2  ! Snow
           ENDIF
 
-          ! ELSE, have to go through the profile again to see if snow melts, 
+          ! ELSE, have to go through the profile again to see if snow melts,
           ! and if anything re-freezes
           ! ----------------------------------------------------------------
           DO k=cloud_top_k_index(i,j),kps,-1
             IF ((z(i,k,j)-ht(i,j)) .gt. 0.0) THEN
- 
-              ! Condition 0--assign falling rain when we get to the 
+
+              ! Condition 0--assign falling rain when we get to the
               ! supercooled temperature if too warm
               ! ---------------------------------------------------
               IF (cloud_top_tmp(i,j) .eq. t_phy(i,k,j) .and. &
@@ -3559,7 +3559,7 @@ CONTAINS
               ENDIF
 
               ! Condition 1--falling frozen precip that will start to melt
-              ! Add up melting energy over warm layers--if enough, turn to 
+              ! Add up melting energy over warm layers--if enough, turn to
               ! liquid
               ! ----------------------------------------------------------
               IF ((precip_type(i,j) .eq. 2 .or. precip_type(i,j) .eq. 3) .and. &
@@ -3572,9 +3572,9 @@ CONTAINS
                 ENDIF
               ENDIF
 
-              ! Condition 2--falling partially melted precip encounters 
-              ! sub-freezing air. Snow will be converted to ice pellets if 
-              ! at least 1/4 of it melted. Instantaneous freeze-up, simplistic 
+              ! Condition 2--falling partially melted precip encounters
+              ! sub-freezing air. Snow will be converted to ice pellets if
+              ! at least 1/4 of it melted. Instantaneous freeze-up, simplistic
               ! --------------------------------------------------------------
               IF (t_phy(i,k,j) .le. 273.15 .and. &
               melt(i,j) .gt. total_melt/4.0 .and. &
@@ -3582,8 +3582,8 @@ CONTAINS
                 precip_type(i,j)=3  ! Ice
                 melt(i,j)=0.0
               ENDIF
-             
-              ! Condition 3--falling liquid that will re-freeze--must reach 
+
+              ! Condition 3--falling liquid that will re-freeze--must reach
               ! nucleation temperature
               ! -----------------------------------------------------------
               IF (precip_type(i,j) .eq. 1) THEN
@@ -3597,7 +3597,7 @@ CONTAINS
 
         ! Accumulate precip according to precip_type
         ! ------------------------------------------
-        IF (precip_type(i,j) .eq. 3) THEN 
+        IF (precip_type(i,j) .eq. 3) THEN
           ice(i,j)=ice(i,j)+precip(i,j)
         ENDIF
         IF (precip_type(i,j) .eq. 2) THEN
@@ -3653,13 +3653,13 @@ CONTAINS
     REAL, DIMENSION( ims:ime, jms:jme ),                        &
          INTENT(IN   ) ::                               qcloud  &
                                               ,          qrain  &
-                                              ,           qice  & 
-                                              ,          qsnow  & 
-                                              ,          qgrpl  & 
-                                              ,            rho  & 
-                                              ,        wind10m  & 
-                                              ,       wind125m  & 
-                                              ,         pwater  & 
+                                              ,           qice  &
+                                              ,          qsnow  &
+                                              ,          qgrpl  &
+                                              ,            rho  &
+                                              ,        wind10m  &
+                                              ,       wind125m  &
+                                              ,         pwater  &
                                               ,           rh2m  &
                                               ,            q2m  &
                                               ,          rh20m  &
@@ -3733,7 +3733,7 @@ CONTAINS
         !ENDIF
 
         ! Update: GAC 20131213  New haze/fog visibility algorithm
-        ! Start with relative humidity predictor.  Increase 
+        ! Start with relative humidity predictor.  Increase
         ! predicted visibility as mixing ratio decreases (as
         ! there is less water to condense).
         ! -------------------------------------------------------
@@ -3742,7 +3742,7 @@ CONTAINS
           !vis_haze=1500.*(105.-rh2m(i,j))*(15./(1000.*q2m(i,j)))
           vis_haze=1500.*(105.-rh2m(i,j))*(5./min(1000.*q2m(i,j),5.))
         ENDIF
- 
+
         ! Calculate a Weibull function "alpha" term.  This can be
         ! used later with visibility (which acts as the "beta" term
         ! in the Weibull function) to create a probability distribution
@@ -3761,7 +3761,7 @@ CONTAINS
                           (100.-rh2m(i,j))/10. + 1./(1000.*q2m(i,j))
           alpha_haze=min(alpha_haze,3.6)
         ENDIF
-        
+
         ! Calculate visibility from hydro/lithometeors
         ! Maximum visibility -> 999999 meters
         ! --------------------------------------------
@@ -3797,8 +3797,8 @@ CONTAINS
     ENDDO
 
   END SUBROUTINE vis_diagnostics
-  
-  
+
+
 
   SUBROUTINE cloud_diagnostics (qcloud                          &
                              , qice                             &
@@ -3820,10 +3820,10 @@ CONTAINS
 
     REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),               &
          INTENT(IN   ) ::                               qcloud  &
-                                              ,           qice  & 
-                                              ,          qsnow  & 
-                                              ,             rh  & 
-                                              ,           dz8w  & 
+                                              ,           qice  &
+                                              ,          qsnow  &
+                                              ,             rh  &
+                                              ,           dz8w  &
                                               ,            rho  &
                                               ,              z
 
@@ -3882,15 +3882,15 @@ CONTAINS
 !            cld_frm_rh = MAX(((maxrh - 70.) / 30.),0.)
 !            cloud (i,j) = MAX(cld_frm_cnd,cld_frm_rh)
 
-            ! Calculate cloud cover beta value by summing 
+            ! Calculate cloud cover beta value by summing
             ! relative humidity above 70% as we go up the
             ! column.  Assume a higher probability of a
             ! cloud if we have an accumulation of high
             ! relative humidity over a typical cloud
-            ! depth of 500m. (Note dz8w is distance 
+            ! depth of 500m. (Note dz8w is distance
             ! between full eta levels. Note also that rh
             ! is derived from the sum of qvapor, qcloud,
-            ! and qcloud, with a maximum of 100%). 
+            ! and qcloud, with a maximum of 100%).
             ! -------------------------------------------
             cld_frm_rh = MAX(((rh (i,k,j) - 90.) / 10.),0.)
             cloud (i,j) = cloud (i,j) + ( cld_frm_rh * dz8w (i,k,j) ) / 250.
@@ -3901,7 +3901,7 @@ CONTAINS
             ! interpolate downward to find the ceiling.
             ! If this is the lowest level, then we will
             ! simply set ceiling to that level.  After
-            ! we interpolate, if ceiling is below the 
+            ! we interpolate, if ceiling is below the
             ! minimum we trust, we set it to the minimum.
             ! -------------------------------------------
             IF ( cloud_ceil (i,j) .eq. -9999. .and. cloud (i,j) .gt. 0.8 ) THEN
@@ -3917,7 +3917,7 @@ CONTAINS
                 cloud_ceil (i,j) = MAX(cloud_ceil (i,j),ceil_min)
               ENDIF
             ENDIF
-            
+
             ! Save cloud amount here to use for interpolation
             ! -----------------------------------------------
             cloud_lo=cloud(i,j)
@@ -3968,12 +3968,12 @@ CONTAINS
     REAL, DIMENSION( ims:ime, jms:jme ),                        &
          INTENT(IN   ) ::                                   t2  &
                                               ,           psfc  &
-                                              ,           rh2m  & 
+                                              ,           rh2m  &
                                               ,        wind10m
 
     REAL, DIMENSION( ims:ime, jms:jme ),                        &
          INTENT(  OUT) ::                              heatidx  &
-                                              ,         wchill  & 
+                                              ,         wchill  &
                                               ,           fits
 
     ! Local
@@ -3982,7 +3982,7 @@ CONTAINS
 
     DO i=ims,ime
       DO j=jms,jme
-       
+
         ! Heat Index
         ! ----------
         heatidx ( i, j ) = calc_hi   (   t2      ( i, j )    &
@@ -4035,11 +4035,11 @@ CONTAINS
     REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),               &
          INTENT(IN   ) ::                                u_phy  &
                                               ,          v_phy  &
-                                              ,          t_phy  & 
-                                              ,              p  & 
+                                              ,          t_phy  &
+                                              ,              p  &
                                               ,           zagl  &
-                                              ,        defor11  & 
-                                              ,        defor12  & 
+                                              ,        defor11  &
+                                              ,        defor12  &
                                               ,        defor22
 
     REAL, DIMENSION( nlyrs ),                                   &
@@ -4047,12 +4047,12 @@ CONTAINS
                                               ,         lyrbot
 
     REAL, DIMENSION( ims:ime, nlyrs, jms:jme ),                 &
-         INTENT(  OUT) ::                                 turb   
+         INTENT(  OUT) ::                                 turb
 
     REAL, DIMENSION( ims:ime, jms:jme ),                        &
          INTENT(  OUT) ::                               llturb  &
                                               ,      llturblgt  &
-                                              ,      llturbmdt  & 
+                                              ,      llturbmdt  &
                                               ,      llturbsvr
 
     ! Local
@@ -4089,7 +4089,7 @@ CONTAINS
     !  ----------------------
     DO i=ims,ime
       DO j=jms,jme
-       
+
         !~ Loop through the turbulence layers
         !  ----------------------------------
         DO n = 1, nlyrs
@@ -4143,7 +4143,7 @@ CONTAINS
                                                ,                lyrtop (n) )
 
         ENDDO
- 
+
         !~ Get top and bottom index of 0-1500 m AGL layer
         !  ----------------------------------------------
         bot = kms
@@ -4163,7 +4163,7 @@ CONTAINS
         this_p    = p     ( i, kms:kme, j )
         this_u    = u_phy ( i, kms:kme, j )
         this_v    = v_phy ( i, kms:kme, j )
-                           
+
         !~ Interpolate req'd vars to the 1500 m level
         !~ Overwrite the "top" index with these values
         !  -------------------------------------------
@@ -4188,7 +4188,7 @@ CONTAINS
         !~ defined, using only the portion of the array valid in the
         !~ 0-1500 m layer, e.g. this_u (bot:top).
         !~ The algorithm itself was developed by:
-        !~ 
+        !~
         !~ Mr. James McCormick
         !~ Aviation Hazards Team
         !~ Air Force Weather Agency 16WS/WXN

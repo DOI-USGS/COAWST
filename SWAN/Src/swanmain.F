@@ -385,8 +385,8 @@
 !
 #ifdef NESTING
 !
-!       Numspec is the number of boundary points for each grid that is 
-!       a child. This value is not necessary for ng=1, but it is 
+!       Numspec is the number of boundary points for each grid that is
+!       a child. This value is not necessary for ng=1, but it is
 !       filled anyway.
 !
         Numspec(ng)=MXCGL*2+MYCGL*2-4
@@ -617,7 +617,7 @@
 
 # ifdef NESTING
 !
-!     AC2_parent is the action density array filled for each grid that is 
+!     AC2_parent is the action density array filled for each grid that is
 !     a parent.
 !
       IF ((first.eq.0).and.(ng.lt.Ngrids)) THEN
@@ -720,7 +720,7 @@
             ENDIF
 !
             IF ((NSTATC.EQ.1).AND.(IT.EQ.0)) THEN
-!  For a non-statioary run, call to init some bottom properties 
+!  For a non-statioary run, call to init some bottom properties
 !  during the first call to swan_run.
 !
               ALLOCATE(CGO(MSC,MICMAX))
@@ -767,7 +767,7 @@
 
 !TIMG            CALL SWTSTA(9)                                                    40.23
 !
-!  Prevent call to output for a stationary run during 
+!  Prevent call to output for a stationary run during
 !  first call to swan_run.
 !
             do_output=1
@@ -3778,7 +3778,7 @@
       OVEXCV(IVTYPE) = -9.
 !
 #if defined SWAN_MODEL
-      IVTYPE = 76                                                   
+      IVTYPE = 76
       OVKEYW(IVTYPE) = 'DIRBOT'                                           !PSD 09/21/2011
       OVSNAM(IVTYPE) = 'DirBot'
       OVLNAM(IVTYPE) = 'Average bottom wave direction'

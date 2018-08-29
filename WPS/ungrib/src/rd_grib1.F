@@ -71,7 +71,7 @@ SUBROUTINE rd_grib1(IUNIT, gribflnm, level, field, hdate,  &
   integer :: debug_level
   integer :: iunit ! Array number in IUARR assigned to the C read pointer.
   integer, dimension(100) :: KSEC1
-  integer, dimension(10) :: KSEC2 
+  integer, dimension(10) :: KSEC2
   integer, dimension(40) :: infogrid
   real, dimension(40) :: ginfo
 !
@@ -204,7 +204,7 @@ SUBROUTINE rd_grib1(IUNIT, gribflnm, level, field, hdate,  &
         map%source = 'NOAA GSD Rapid Refresh'
       else if (iprocess .eq. 105) then
         map%source = 'NOAA GSD'
-      else 
+      else
         print *,'Unknown GSD source'
         stop
       endif
@@ -374,7 +374,7 @@ SUBROUTINE rd_grib1(IUNIT, gribflnm, level, field, hdate,  &
 
   call geth_newdate(hdate,hdate,3600*fcst)
 
-! Store information about the grid on which the data is. 
+! Store information about the grid on which the data is.
 ! This stuff gets stored in the MAP variable, as defined in module GRIDINFO
 
   map%startloc = 'SWCORNER'
@@ -384,9 +384,9 @@ SUBROUTINE rd_grib1(IUNIT, gribflnm, level, field, hdate,  &
 ! says is 6367.47, but they really use 6371.229. Hardcode it.
 ! It's not clear what ECMWF uses. One place says 6367.47 and another 6371.229.
   if ( index(map%source,'NCEP') .ne. 0 ) then
-    map%r_earth = 6371.229   
+    map%r_earth = 6371.229
   else
-    map%r_earth = 6367.47   
+    map%r_earth = 6367.47
   endif
 
   if (ksec2(4).eq.0) then ! Lat/Lon grid
@@ -422,7 +422,7 @@ SUBROUTINE rd_grib1(IUNIT, gribflnm, level, field, hdate,  &
        map%dy = 0.083333333 * sign(1.0,map%dy)
      endif
 ! correction for ncep grid 229   added 5/3/07   JFB
-     if (icenter .eq. 7 .and. KSEC1(5) .eq. 229 ) then 
+     if (icenter .eq. 7 .and. KSEC1(5) .eq. 229 ) then
        if (ginfo(3) .gt. 89. .and. ginfo(9) .gt. 0.) then
          map%dy = -1. * map%dy
        endif
@@ -459,7 +459,7 @@ SUBROUTINE rd_grib1(IUNIT, gribflnm, level, field, hdate,  &
      write(tmp8,'(b8.8)') infogrid(5)
      if (tmp8(5:5) .eq. '0') map%grid_wind = .false.
 !    if (tmp8(2:2) .eq. '0') map%r_earth = 6367.47
-         
+
   elseif(ksec2(4).eq.4) then ! Gaussian Grid
      map%igrid = 4
      map%nx = infogrid(1)
@@ -510,7 +510,7 @@ SUBROUTINE rd_grib1(IUNIT, gribflnm, level, field, hdate,  &
 
 ! Special for NCEP/NCAR Reanalysis Project:
 !      Throw out PSFC on lat/lon grid (save gaussian version)
-  if ((icenter.eq.7).and.(iprocess.eq.80)) then   ! Careful! This combination may refer 
+  if ((icenter.eq.7).and.(iprocess.eq.80)) then   ! Careful! This combination may refer
                                                       ! to other products as well.
      if ((field.eq.'PSFC').and.(ksec2(4).eq.0)) then
         field='NULL'
@@ -622,7 +622,7 @@ endif
 !   call reorder_it (rdatarray, map%nx, map%ny, map%dx, map%dy, infogrid(10))
   endif
 
-! Deallocate a couple of arrays that may have been allocated by the 
+! Deallocate a couple of arrays that may have been allocated by the
 ! GRIB decoding routines.
 
   call deallogrib

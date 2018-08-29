@@ -126,7 +126,7 @@
 #  endif
 # endif
 # if defined VEGETATION && defined MARSH_WAVE_THRUST
-      USE mod_vegetation 
+      USE mod_vegetation
       USE mod_vegarr
       USE marsh_wave_thrust_mod, ONLY : marsh_wave_thrust
 # endif
@@ -425,7 +425,7 @@
 # if defined ALBEDO && defined SHORTWAVE
 #  ifdef ANA_ALBEDO
                 CALL ana_albedo(ng, tile, iNLM)
-#  elif !defined NCEP_FLUXES && !defined ALBEDO_FILE 
+#  elif !defined NCEP_FLUXES && !defined ALBEDO_FILE
                 CALL albedo_eval(ng, tile)
 #  endif
 # endif
@@ -507,7 +507,7 @@
                    CALL marsh_wave_thrust (ng, tile)
                  END DO
                END DO
-# endif 
+# endif
 # ifdef ADJUST_BOUNDARY
 !
 !-----------------------------------------------------------------------

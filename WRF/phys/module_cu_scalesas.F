@@ -2,23 +2,23 @@
 !! LOG
 !!  2015-12-10  Weiguo Wang  added gfs scale-aware SAS scheme to HWRF
 
-MODULE module_cu_scalesas 
+MODULE module_cu_scalesas
 
 CONTAINS
 
 !-----------------------------------------------------------------
       SUBROUTINE CU_SCALESAS(DT,ITIMESTEP,STEPCU,                        &
                  RTHCUTEN,RQVCUTEN,RQCCUTEN,RQICUTEN,               &
-                 RUCUTEN,RVCUTEN,                                   & 
+                 RUCUTEN,RVCUTEN,                                   &
                  RAINCV,PRATEC,HTOP,HBOT,                           &
                  U3D,V3D,W,T3D,QV3D,QC3D,QI3D,PI3D,RHO3D,           &
                  DZ8W,PCPS,P8W,XLAND,CU_ACT_FLAG,                   &
-                 P_QC,                                              & 
+                 P_QC,                                              &
                  MOMMIX, & ! gopal's doing
                  PGCON,sas_mass_flux,                               &
                  shalconv,shal_pgcon,                               &
                  HPBL2D,EVAP2D,HEAT2D,                              & !Kwon for shallow convection
-                 P_QI,P_FIRST_SCALAR,                               & 
+                 P_QI,P_FIRST_SCALAR,                               &
                  DX2D, DY,                                          & ! Wang W for scale-aware cnv
                  SCALEFUN, SCALEFUN1,                               & !cnv scale functions
                  SIGMU,SIGMU1,                                      &
@@ -31,7 +31,7 @@ CONTAINS
       USE MODULE_GFS_FUNCPHYS , ONLY : gfuncphys
       USE MODULE_GFS_PHYSCONS, grav => con_g, CP => con_CP, HVAP => con_HVAP  &
      &,             RV => con_RV, FV => con_fvirt, T0C => con_T0C       &
-     &,             CVAP => con_CVAP, CLIQ => con_CLIQ                  & 
+     &,             CVAP => con_CVAP, CLIQ => con_CLIQ                  &
      &,             EPS => con_eps, EPSM1 => con_epsm1                  &
      &,             ROVCP => con_rocp, RD => con_rd
 !-------------------------------------------------------------------
@@ -123,7 +123,7 @@ CONTAINS
                                         DT
 
 !wang
-      REAL,    INTENT(IN) ::            DY 
+      REAL,    INTENT(IN) ::            DY
       REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(IN) :: DX2D
       REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(OUT) :: SCALEFUN,SCALEFUN1, & !updaft area fraction for deep and shallow cnv
                                                      SIGMU, SIGMU1      !updaft area fraction for      deep and shallow cnv
@@ -140,8 +140,8 @@ CONTAINS
                                         RQVCUTEN,                       &
                                         RTHCUTEN
       REAL, DIMENSION(ims:ime, jms:jme, kms:kme), INTENT(INOUT) ::      &
-                                        RUCUTEN,                        &  
-                                        RVCUTEN                             
+                                        RUCUTEN,                        &
+                                        RVCUTEN
       REAL, OPTIONAL,   INTENT(IN) ::    MOMMIX
 
       REAL, DIMENSION( ims:ime , jms:jme ), OPTIONAL,                   &
@@ -199,15 +199,15 @@ CONTAINS
                                         SLIMSK,                         &
                                         HPBL,EVAP,HEAT                     !Kwon for shallow convection
 
-      REAL     (kind=kind_phys), DIMENSION(its:ite) :: garea             ! grid box area in m^2, 
+      REAL     (kind=kind_phys), DIMENSION(its:ite) :: garea             ! grid box area in m^2,
                                                                          ! Wang scale-aware cnv
 
-      REAL     (kind=kind_phys), DIMENSION(its:ite) :: SCALEFUN_out,SCALEFUN1_out,&  !updraft area fraction for deep and shallow cnv 
+      REAL     (kind=kind_phys), DIMENSION(its:ite) :: SCALEFUN_out,SCALEFUN1_out,&  !updraft area fraction for deep and shallow cnv
                                                       SIGMU_out,SIGMU1_out  !updraft area fraction for deep and shallow cnv
 
 
       REAL     (kind=kind_phys), DIMENSION(its:ite, kts:kte+1) ::       &
-                                        PRSI                            
+                                        PRSI
 
       REAL     (kind=kind_phys), DIMENSION(its:ite, kts:kte) ::         &
                                         DEL,                            &
@@ -215,18 +215,18 @@ CONTAINS
                                         PHIL,                           &
                                         PRSL,                           &
                                         PRSLK,                          &
-                                        Q1,                             & 
-                                        T1,                             & 
-                                        U1,                             & 
-                                        V1,                             & 
-                                        ZI,                             & 
-                                        ZL 
+                                        Q1,                             &
+                                        T1,                             &
+                                        U1,                             &
+                                        V1,                             &
+                                        ZI,                             &
+                                        ZL
 
       REAL     (kind=kind_phys), DIMENSION(its:ite, kts:kte) ::         &
                                         cnvw,cnvc,ud_mf,dd_mf,dt_mf        ! Wang, *_mf not useful for HWRF. it is for transport
 
       REAL     (kind=kind_phys), DIMENSION(its:ite, kts:kte, 2) ::      &
-                                        QL 
+                                        QL
 
       INTEGER, DIMENSION(its:ite) ::                                    &
                                         KBOT,                           &
@@ -243,7 +243,7 @@ CONTAINS
                                         KM,                             &
                                         KP,                             &
                                         KX,                             &
-                                        NCLOUD 
+                                        NCLOUD
 
       DATA IGPVS/0/
 
@@ -322,7 +322,7 @@ CONTAINS
          ! Default: Same as deep convection pgcon
          shal_pgcon_use  = pgcon_use
          ! Read the warning above though.  It may be advisable for
-         ! these to be different.  
+         ! these to be different.
       endif
 
       DO J=JTS,JTE
@@ -330,7 +330,7 @@ CONTAINS
             CU_ACT_FLAG(I,J)=.TRUE.
          ENDDO
       ENDDO
- 
+
       IM=ITE-ITS+1
       KX=KTE-KTS+1
       JCAP=126
@@ -430,7 +430,7 @@ CONTAINS
       DO k=kts+1,kte+1
         km=k-1
         DO i=its,ite
-          PRSI(i,k)=PRSI(i,km)-del(i,km) 
+          PRSI(i,k)=PRSI(i,km)-del(i,km)
         ENDDO
       ENDDO
 
@@ -444,11 +444,11 @@ CONTAINS
 !      CALL SASCNVN(IM,IM,KX,JCAP,DELT,DEL,PRSL,PS,PHIL,                  &
 !                  QL,Q1,T1,U1,V1,RCS,CLDWRK,RN,KBOT,                    &
 !                  KTOP,KCNV,SLIMSK,DOT,NCLOUD,PGCON_USE,massf)
-       !! call scale-aware deep cnv,  
+       !! call scale-aware deep cnv,
        !! added 2015-12-10 W Wang
        !! Note: ps, prsl,del are in Pa. dot in pa/s
-          
-        CALL scale_sascnvn(IM,IM,KX,JCAP,DELT,DEL,PRSL,PS,PHIL,QL,     &   
+
+        CALL scale_sascnvn(IM,IM,KX,JCAP,DELT,DEL,PRSL,PS,PHIL,QL,     &
             q1,t1,u1,v1,cldwrk,rn,kbot,ktop,kcnv,nint(slimsk),garea,       &
             dot,ncloud,ud_mf,dd_mf,dt_mf,cnvw,cnvc,SIGMU_out,SCALEFUN_out)
 !
@@ -472,7 +472,7 @@ CONTAINS
 !     &               q1,t1,u1,v1,rcs,rn,kbot,ktop,kcnv,slimsk,      &
 !     &               dot,ncloud,hpbl,heat,evap,shal_pgcon_use)
 
-       !! call scale-aware shallow cnv,  
+       !! call scale-aware shallow cnv,
        !! added 2015-12-10 W Wang
         call scale_shalcnv(im,im,kx,delt,del,prsl,ps,phil,ql,       &
      &     q1,t1,u1,v1,rn,kbot,ktop,kcnv,nint(slimsk),garea,             &
@@ -488,7 +488,7 @@ CONTAINS
         ! NOTE: ARW should be able to call the new shalcnv here, but
         ! they need to add the three new variables, so I'm leaving the
         ! old shallow convection call here - Sam Trahan
-       
+
       !!wang removed  CALL OLD_ARW_SHALCV(IM,IM,KX,DELT,DEL,PRSI,PRSL,PRSLK,KCNV,Q1,T1,DPSHC)
 #else
         ! Shallow convection is untested for other cores.
@@ -521,7 +521,7 @@ CONTAINS
 
 !===============================================================================
 !     ADD MOMENTUM MIXING TERM AS TENDENCIES. This is gopal's doing for SAS
-!     MOMMIX is the reduction factor set to 0.7 by default. Because NMM has 
+!     MOMMIX is the reduction factor set to 0.7 by default. Because NMM has
 !     divergence damping term, a reducion factor for cumulum mixing may be
 !     required otherwise storms were too weak.
 !===============================================================================
@@ -560,7 +560,7 @@ CONTAINS
 
 !====================================================================
    SUBROUTINE scalesasinit(RTHCUTEN,RQVCUTEN,RQCCUTEN,RQICUTEN,          &
-                      RUCUTEN,RVCUTEN,                              &   
+                      RUCUTEN,RVCUTEN,                              &
                       RESTART,P_QC,P_QI,P_FIRST_SCALAR,             &
                       allowed_to_read,                              &
                       ids, ide, jds, jde, kds, kde,                 &
@@ -582,7 +582,7 @@ CONTAINS
                                                               RQICUTEN
    REAL,     DIMENSION( ims:ime , jms:jme , kms:kme ) , INTENT(OUT) ::  &
                                                               RUCUTEN,  & ! gopal's doing for SAS
-                                                              RVCUTEN   
+                                                              RVCUTEN
 
    INTEGER :: i, j, k, itf, jtf, ktf
 
@@ -602,8 +602,8 @@ CONTAINS
      DO i=its,itf
        RTHCUTEN(i,k,j)=0.
        RQVCUTEN(i,k,j)=0.
-       RUCUTEN(i,j,k)=0.   
-       RVCUTEN(i,j,k)=0.    
+       RUCUTEN(i,j,k)=0.
+       RVCUTEN(i,j,k)=0.
      ENDDO
      ENDDO
      ENDDO
@@ -633,7 +633,7 @@ CONTAINS
 
 !-----------------------------------------------------------------------
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!!! scale aware SAS 
+!!! scale aware SAS
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
       subroutine scale_sascnvn(im,ix,km,jcap,delt,delp,prslp,psp,phil,ql,  &
@@ -652,19 +652,19 @@ CONTAINS
      &  ,            hvap => con_hvap                               &
      &,             rv => con_rv, fv => con_fvirt, t0c => con_t0c    &
      &,             rd => con_rd, cvap => con_cvap, cliq => con_cliq &
-     &,             eps => con_eps, epsm1 => con_epsm1 
+     &,             eps => con_eps, epsm1 => con_epsm1
       implicit none
 !
       integer            im, ix,  km, jcap, ncloud,                 &
-     &                   kbot(im), ktop(im), kcnv(im) 
+     &                   kbot(im), ktop(im), kcnv(im)
 !    &,                  me
       real(kind=kind_phys) delt
       real(kind=kind_phys) psp(im),    delp(ix,km), prslp(ix,km)
       real(kind=kind_phys) ps(im),     del(ix,km),  prsl(ix,km),       &
-     &                     ql(ix,km,2),q1(ix,km),   t1(ix,km),         & 
+     &                     ql(ix,km,2),q1(ix,km),   t1(ix,km),         &
      &                     u1(ix,km),  v1(ix,km),                      &
 !    &                     u1(ix,km),  v1(ix,km),   rcs(im),
-     &                     cldwrk(im), rn(im),      garea(im),         &   
+     &                     cldwrk(im), rn(im),      garea(im),         &
      &                     dot(ix,km), phil(ix,km),                    &
      &                     cnvw(ix,km),cnvc(ix,km),                    &
 ! hchuang code change mass flux output
@@ -677,7 +677,7 @@ CONTAINS
       real(kind=kind_phys) clam,    cxlamu,  cxlamd,                   &
      &                     xlamde,  xlamdd,                            &
      &                     crtlamu, crtlamd
-! 
+!
 !     real(kind=kind_phys) detad
       real(kind=kind_phys) adw,     aup,     aafac,                    &
      &                     beta,    betal,   betas,                    &
@@ -700,7 +700,7 @@ CONTAINS
      &                     val,     val1,    val2,                     &
      &                     w1,      w1l,     w1s,     w2,              &
      &                     w2l,     w2s,     w3,      w3l,             &
-     &                     w3s,     w4,      w4l,     w4s,             & 
+     &                     w3s,     w4,      w4l,     w4s,             &
      &                     xdby,    xpw,     xpwd,                     &
 !    &                     xqrch,   mbdt,    tem,
      &                     xqrch,   tem,     tem1,    tem2,            &
@@ -739,7 +739,7 @@ CONTAINS
 !
 !  parameters for updraft velocity calculation
       real(kind=kind_phys) bet1,    cd1,     f1,      gam1,           &
-     &                     bb1,     bb2,     wucb,                    &    
+     &                     bb1,     bb2,     wucb,                    &
      &                     tfac
 !
 !c  physical parameters
@@ -765,7 +765,7 @@ CONTAINS
       real(kind=kind_phys) wc(im),         wcxmb(im)
       real(kind=kind_phys) wbar(im),       xmbeta(im)
       real(kind=kind_phys) scaldfunc(im),  awlam(im),  xlamx(im),       &
-     &                     sigmaw(im),     sigmagf(im) ,   sigmagfm(im) 
+     &                     sigmaw(im),     sigmagf(im) ,   sigmagfm(im)
 
 !! tmpout
       real(kind=kind_phys) tmpout9(im), sigmuout(im)
@@ -780,7 +780,7 @@ CONTAINS
      &                     heo(im,km),     heso(im,km),                  &
      &                     qrcd(im,km),    dellah(im,km), dellaq(im,km), &
      &                     dellau(im,km),  dellav(im,km), hcko(im,km),   &
-     &                     ucko(im,km),    vcko(im,km),   qcko(im,km),   & 
+     &                     ucko(im,km),    vcko(im,km),   qcko(im,km),   &
      &                     eta(im,km),     etad(im,km),   zi(im,km),     &
      &                     qrcko(im,km),   qrcdo(im,km),                  &
      &                     pwo(im,km),     pwdo(im,km),   c0t(im,km),    &
@@ -926,9 +926,9 @@ CONTAINS
       fjcap   = max(fjcap,val)
       fkm     = (float(km) / 28.) ** 2
       fkm     = max(fkm,val)
-      w1l     = -8.e-3 
+      w1l     = -8.e-3
       w2l     = -4.e-2
-      w3l     = -5.e-3 
+      w3l     = -5.e-3
       w4l     = -5.e-4
       w1s     = -2.e-4
       w2s     = -2.e-3
@@ -944,7 +944,7 @@ CONTAINS
         kmax(i)  = km
         tx1(i)   = 1.0 / ps(i)
       enddo
-!     
+!
       do k = 1, km
         do i=1,im
           if (prsl(i,k)*tx1(i) .gt. 0.04) kmax(i)  = k + 1
@@ -959,7 +959,7 @@ CONTAINS
       enddo
 !c
 !c  hydrostatic height assume zero terr and initially assume
-!c    updraft entrainment rate as an inverse function of height 
+!c    updraft entrainment rate as an inverse function of height
 !c
       do k = 1, km
         do i=1,im
@@ -1100,7 +1100,7 @@ CONTAINS
             val2      =           1.e-10
             qo(i,k)   = max(qo(i,k), val2 )
 !           qo(i,k)   = min(qo(i,k),qeso(i,k))
-            frh(i,k)  = 1. - min(qo(i,k)/qeso(i,k), 1._kind_phys)        
+            frh(i,k)  = 1. - min(qo(i,k)/qeso(i,k), 1._kind_phys)
             heo(i,k)  = .5 * g * (zo(i,k) + zo(i,k+1)) +    &
      &                  cp * to(i,k) + hvap * qo(i,k)
             heso(i,k) = .5 * g * (zo(i,k) + zo(i,k+1)) +    &
@@ -1657,7 +1657,7 @@ CONTAINS
       if(totflg) return
 !!
 !c
-!c  estimate the onvective overshooting as the level 
+!c  estimate the onvective overshooting as the level
 !c    where the [aafac * cloud work function] becomes zero,
 !c    which is the final cloud top
 !c
@@ -1698,8 +1698,8 @@ CONTAINS
         enddo
       enddo
 !c
-!c  compute cloud moisture property, detraining cloud water 
-!c    and precipitation in overshooting layers 
+!c  compute cloud moisture property, detraining cloud water
+!c    and precipitation in overshooting layers
 !c
       do k = 2, km1
         do i = 1, im
@@ -2548,19 +2548,19 @@ CONTAINS
 !
 !  grid-scale vertical velocity at cloud base
 !
-      ptem = -0.01 * rd / g 
+      ptem = -0.01 * rd / g
       do i = 1, im
         wbar(i) = 0.
         if (cnvflg(i)) then
           k = kbcon(i)
           tem  = dot(i,k) * to(i,k) / po(i,k)
-          wbar(i) = ptem * tem 
+          wbar(i) = ptem * tem
         endif
       enddo
 !
 !  estimate updraft velocity at cloud base using cloud base mass flux
 !
-      ptem = 0.01 * rd  
+      ptem = 0.01 * rd
       do i = 1, im
         wcxmb(i) = 0.
         if (cnvflg(i)) then
@@ -2651,7 +2651,7 @@ CONTAINS
 
 !
 !--- compute scale-aware function based on Arakawa & Wu (2013)
-!  using combination of updraft fractions from both 
+!  using combination of updraft fractions from both
 !   Arakawa & Wu (2013) and Grell & Freitas (2014)
 !
       do i = 1, im
@@ -2661,7 +2661,7 @@ CONTAINS
 !           scaldfunc(i) = (1.-sigmaw(i)) * (1.-sigmaw(i))   ! Arakawa & Wu (2013)
 !           scaldfunc(i) = (1.-sigmagf(i)) * (1.-sigmagf(i)) ! Grell & Freitas (2014)
             scaldfunc(i) = (1.-sigmagfm(i)) * (1.-sigmagfm(i)) ! modified Grell & Freitas(2014)
-       
+
 !            scaldfunc(i) = (1.-sigmaw(i)) * (1.-sigmagf(i))  ! AW & GF
             scaldfunc(i) = max(min(scaldfunc(i), 1.0_kind_phys), 0._kind_phys)
              sigmuout(i)=sigmagfm(i)
@@ -2856,7 +2856,7 @@ CONTAINS
         do i = 1, im
           if (cnvflg(i) .and. rn(i).gt.0.) then
             if (k.ge.kbcon(i).and.k.lt.ktcon(i)) then
-              cnvc(i,k) = 0.04 * log(1. + 675. * eta(i,k) * xmb(i)) 
+              cnvc(i,k) = 0.04 * log(1. + 675. * eta(i,k) * xmb(i))
               cnvc(i,k) = min(cnvc(i,k), 0.6_kind_phys)
               cnvc(i,k) = max(cnvc(i,k), 0.0_kind_phys)
             endif
@@ -2945,7 +2945,7 @@ CONTAINS
 
       use MODULE_GFS_machine , only : kind_phys
       use MODULE_GFS_funcphys , only : fpvs
-      use MODULE_GFS_physcons, grav => con_g, cp => con_cp, hvap => con_hvap   & 
+      use MODULE_GFS_physcons, grav => con_g, cp => con_cp, hvap => con_hvap   &
 !      use machine , only : kind_phys
 !      use funcphys , only : fpvs
 !      use physcons, grav => con_g, cp => con_cp, hvap => con_hvap
@@ -2956,7 +2956,7 @@ CONTAINS
 !
 !     integer            im, ix,  km, jcap, ncloud,
       integer            im, ix,  km, ncloud,                              &
-     &                   kbot(im), ktop(im), kcnv(im) 
+     &                   kbot(im), ktop(im), kcnv(im)
 !    &,                  me
       real(kind=kind_phys) delt
       real(kind=kind_phys) psp(im),    delp(ix,km), prslp(ix,km)
@@ -3179,9 +3179,9 @@ CONTAINS
 !     fjcap   = (float(jcap) / 126.) ** 2
 !     val     =           1.
 !     fjcap   = max(fjcap,val)
-      w1l     = -8.e-3 
+      w1l     = -8.e-3
       w2l     = -4.e-2
-      w3l     = -5.e-3 
+      w3l     = -5.e-3
       w4l     = -5.e-4
       w1s     = -2.e-4
       w2s     = -2.e-3
@@ -3196,7 +3196,7 @@ CONTAINS
         kmax(i)  = km
         tx1(i)   = 1.0 / ps(i)
       enddo
-!     
+!
       do k = 1, km
         do i=1,im
           if (prsl(i,k)*tx1(i) .gt. 0.70) kbm(i)   = k + 1

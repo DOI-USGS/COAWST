@@ -2,14 +2,14 @@
 !
 
 !  This MODULE holds the routines which are used to perform various initializations
-!  for the individual domains.  
+!  for the individual domains.
 
 !  This MODULE CONTAINS the following routines:
 
 !  initialize_field_test - 1. Set different fields to different constant
 !                             values.  This is only a test.  If the correct
 !                             domain is not found (based upon the "id")
-!                             then a fatal error is issued.               
+!                             then a fatal error is issued.
 
 !-----------------------------------------------------------------------
 
@@ -36,7 +36,7 @@ CONTAINS
 ! Also dereferences the grid variables and passes them down as arguments.
 ! This is crucial, since the lower level routines may do message passing
 ! and this will get fouled up on machines that insist on passing down
-! copies of assumed-shape arrays (by passing down as arguments, the 
+! copies of assumed-shape arrays (by passing down as arguments, the
 ! data are treated as assumed-size -- ie. f77 -- arrays and the copying
 ! business is avoided).  Fie on the F90 designers.  Fie and a pox.
 
@@ -45,7 +45,7 @@ CONTAINS
    IMPLICIT NONE
 
    !  Input data.
-   TYPE (domain), POINTER :: grid 
+   TYPE (domain), POINTER :: grid
    !  Local data.
    INTEGER :: idum1, idum2
 
@@ -95,7 +95,7 @@ CONTAINS
    REAL    :: hm
    REAL    :: pi
 
-!  stuff from original initialization that has been dropped from the Registry 
+!  stuff from original initialization that has been dropped from the Registry
    REAL    :: vnu, xnu, xnus, dinit0, cbh, p0_temp, t0_temp, zd, zt
    REAL    :: qvf1, qvf2, pd_surf
    INTEGER :: it
@@ -182,7 +182,7 @@ CONTAINS
     CALL nl_set_map_proj(1,0)
 
 
-!  here we initialize data we currently is not initialized 
+!  here we initialize data we currently is not initialized
 !  in the input data
 
     DO j = jts, jte
@@ -245,7 +245,7 @@ CONTAINS
     grid%c2f(k) = 0.
     grid%c1h(k) = 1.
     grid%c2h(k) = 0.
-   ENDDO 
+   ENDDO
 
    DO k=2, kde-1
     grid%dn(k) = 0.5*(grid%dnw(k)+grid%dnw(k-1))
@@ -254,18 +254,18 @@ CONTAINS
     grid%fnm(k) = .5* grid%dnw(k-1)/grid%dn(k)
    ENDDO
 
-   cof1 = (2.*grid%dn(2)+grid%dn(3))/(grid%dn(2)+grid%dn(3))*grid%dnw(1)/grid%dn(2) 
-   cof2 =     grid%dn(2)        /(grid%dn(2)+grid%dn(3))*grid%dnw(1)/grid%dn(3) 
+   cof1 = (2.*grid%dn(2)+grid%dn(3))/(grid%dn(2)+grid%dn(3))*grid%dnw(1)/grid%dn(2)
+   cof2 =     grid%dn(2)        /(grid%dn(2)+grid%dn(3))*grid%dnw(1)/grid%dn(3)
    grid%cf1  = grid%fnp(2) + cof1
    grid%cf2  = grid%fnm(2) - cof1 - cof2
-   grid%cf3  = cof2       
+   grid%cf3  = cof2
 
    grid%cfn  = (.5*grid%dnw(kde-1)+grid%dn(kde-1))/grid%dn(kde-1)
    grid%cfn1 = -.5*grid%dnw(kde-1)/grid%dn(kde-1)
    grid%rdx = 1./config_flags%dx
    grid%rdy = 1./config_flags%dy
 
-!  get the sounding from the ascii sounding file, first get dry sounding and 
+!  get the sounding from the ascii sounding file, first get dry sounding and
 !  calculate base state
 
   write(6,*) ' getting dry sounding for base state '
@@ -327,8 +327,8 @@ CONTAINS
   DO J = jts, min(jde-1,jte)
   DO I = its, min(ide-1,ite)
 
-!  At this point grid%p_top is already set. find the DRY mass in the column 
-!  by interpolating the DRY pressure.  
+!  At this point grid%p_top is already set. find the DRY mass in the column
+!  by interpolating the DRY pressure.
 
    pd_surf = interp_0( pd_in, zk, grid%phb(i,1,j)/g, nl_in )
 
@@ -348,7 +348,7 @@ CONTAINS
       moist(i,k,j,P_QV) = interp_0( qv, pd_in, p_level, nl_in )
       grid%t_1(i,k,j)          = interp_0( theta, pd_in, p_level, nl_in ) - t0
       grid%t_2(i,k,j)          = grid%t_1(i,k,j)
-      
+
 
     enddo
 
@@ -392,8 +392,8 @@ CONTAINS
       grid%ph_1(i,k,j) = grid%ph_1(i,k-1,j) - (grid%dnw(k-1))*(       &
                    (grid%mub(i,j)+grid%mu_1(i,j))*grid%al(i,k-1,j)+ &
                     grid%mu_1(i,j)*grid%alb(i,k-1,j)  )
-                                                   
-      grid%ph_2(i,k,j) = grid%ph_1(i,k,j) 
+
+      grid%ph_2(i,k,j) = grid%ph_1(i,k,j)
       grid%ph0(i,k,j) = grid%ph_1(i,k,j) + grid%phb(i,k,j)
     ENDDO
 
@@ -445,8 +445,8 @@ CONTAINS
         grid%ph_1(i,k,j) = grid%ph_1(i,k-1,j) - (grid%dnw(k-1))*(       &
                      (grid%mub(i,j)+grid%mu_1(i,j))*grid%al(i,k-1,j)+ &
                       grid%mu_1(i,j)*grid%alb(i,k-1,j)  )
-                                                   
-        grid%ph_2(i,k,j) = grid%ph_1(i,k,j) 
+
+        grid%ph_2(i,k,j) = grid%ph_1(i,k,j)
         grid%ph0(i,k,j) = grid%ph_1(i,k,j) + grid%phb(i,k,j)
       ENDDO
 
@@ -654,7 +654,7 @@ CONTAINS
       enddo
 
       p_surf = 100.*p_surf  ! convert to pascals
-      qvf = 1. + rvovrd*qv_input(1) 
+      qvf = 1. + rvovrd*qv_input(1)
       rho_surf = 1./((r/p1000mb)*th_surf*qvf*((p_surf/p1000mb)**cvpm))
       pi_surf = (p_surf/p1000mb)**(r/cp)
 
@@ -668,7 +668,7 @@ CONTAINS
 !  specified surface pressure
 !  -> first, integrate from surface to lowest level
 
-          qvf = 1. + rvovrd*qv_input(1) 
+          qvf = 1. + rvovrd*qv_input(1)
           qvf1 = 1. + qv_input(1)
           rho_input(1) = rho_surf
           dz = h_input(1)
@@ -685,7 +685,7 @@ CONTAINS
             dz = h_input(k)-h_input(k-1)
             qvf1 = 0.5*(2.+(qv_input(k-1)+qv_input(k)))
             qvf = 1. + rvovrd*qv_input(k)   ! qv is in g/kg here
- 
+
             do it=1,10
               pm_input(k) = pm_input(k-1) &
                       - 0.5*dz*(rho_input(k)+rho_input(k-1))*g*qvf1

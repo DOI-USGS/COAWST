@@ -128,13 +128,13 @@ CONTAINS
 
     REAL, DIMENSION( ims:ime, jms:jme ) :: ht_loc
     REAL :: scale_factor
-    INTEGER, DIMENSION( ims:ime, jms:jme ) :: shadowmask 
+    INTEGER, DIMENSION( ims:ime, jms:jme ) :: shadowmask
     INTEGER                             :: ij
     INTEGER  num_roof_layers
     INTEGER  num_wall_layers
     INTEGER  num_road_layers
     INTEGER  iswater
-    INTEGER  rk_step 
+    INTEGER  rk_step
 
 #if ( WRF_DFI_RADAR == 1 )
     INTEGER  i_start,i_end,j_start,j_end,i,j,k
@@ -163,7 +163,7 @@ CONTAINS
                           config_flags%restart, grid%iseedarr_skebs,          &
                           grid%DX,grid%DY,grid%skebs_vertstruc,               &
                           grid%rt_tendf_stoch,                                &
-                          grid%stddev_cutoff_sppt,grid%gridpt_stddev_sppt, & 
+                          grid%stddev_cutoff_sppt,grid%gridpt_stddev_sppt, &
                           grid%VERTSTRUCC,grid%VERTSTRUCS,grid%VERTAMPUV      )
           ! Update streamfunction, backtransform U
            CALL RAND_PERT_UPDATE(grid,'U',                                    &
@@ -182,7 +182,7 @@ CONTAINS
                            config_flags%restart, grid%iseedarr_skebs,         &
                            grid%DX,grid%DY,grid%skebs_vertstruc,              &
                            grid%ru_tendf_stoch,                               &
-                           grid%stddev_cutoff_sppt,grid%gridpt_stddev_sppt, & 
+                           grid%stddev_cutoff_sppt,grid%gridpt_stddev_sppt, &
                            grid%VERTSTRUCC,grid%VERTSTRUCS,grid%VERTAMPUV     )
           ! Don't update streamfunction, backtransform V
            CALL RAND_PERT_UPDATE(grid,'V',                                    &
@@ -201,9 +201,9 @@ CONTAINS
                            config_flags%restart, grid%iseedarr_skebs,         &
                            grid%DX,grid%DY,grid%skebs_vertstruc,              &
                            grid%rv_tendf_stoch,                               &
-                           grid%stddev_cutoff_sppt,grid%gridpt_stddev_sppt, & 
+                           grid%stddev_cutoff_sppt,grid%gridpt_stddev_sppt, &
                            grid%VERTSTRUCC,grid%VERTSTRUCS,grid%VERTAMPT      )
-       ENDIF !skebs_on 
+       ENDIF !skebs_on
 
      if ((grid%sppt_on==1).and.(grid%id .EQ. 1 )) then
           CALL RAND_PERT_UPDATE(grid,'T',                                     &
@@ -222,7 +222,7 @@ CONTAINS
                           config_flags%restart, grid%iseedarr_sppt,           &
                           grid%DX,grid%DY,grid%sppt_vertstruc,                &
                           grid%rstoch,                                        &
-                          grid%stddev_cutoff_sppt,grid%gridpt_stddev_sppt, & 
+                          grid%stddev_cutoff_sppt,grid%gridpt_stddev_sppt, &
                           grid%VERTSTRUCC,grid%VERTSTRUCS,grid%VERTAMPT       )
        ENDIF !sppt_on
 
@@ -243,7 +243,7 @@ CONTAINS
                            config_flags%restart, grid%iseedarr_rand_pert,      &
                            grid%DX,grid%DY,grid%rand_pert_vertstruc,           &
                            grid%RAND_PERT,                                     &
-                           grid%stddev_cutoff_rand_pert,grid%gridpt_stddev_rand_pert, & 
+                           grid%stddev_cutoff_rand_pert,grid%gridpt_stddev_rand_pert, &
                            grid%VERTSTRUCC,grid%VERTSTRUCS,grid%VERTAMPT       )
       ENDIF !rand_perturb_on
       if ((grid%spp_conv==1).and.(grid%id .EQ. 1 )) then
@@ -262,8 +262,8 @@ CONTAINS
                            grid%num_stoch_levels,grid%num_stoch_levels,        &
                            config_flags%restart, grid%iseedarr_spp_conv,          &
                            grid%DX,grid%DY,grid%vertstruc_spp_conv,            &
-                           grid%pattern_spp_conv,                             & 
-                           grid%stddev_cutoff_spp_conv,grid%gridpt_stddev_spp_conv, & 
+                           grid%pattern_spp_conv,                             &
+                           grid%stddev_cutoff_spp_conv,grid%gridpt_stddev_spp_conv, &
                            grid%VERTSTRUCC,grid%VERTSTRUCS,grid%VERTAMPT       )
       ENDIF !spp_conv
       if ((grid%spp_pbl==1).and.(grid%id .EQ. 1 )) then
@@ -282,8 +282,8 @@ CONTAINS
                            grid%num_stoch_levels,grid%num_stoch_levels,        &
                            config_flags%restart, grid%iseedarr_spp_pbl,           &
                            grid%DX,grid%DY,grid%vertstruc_spp_pbl,             &
-                           grid%pattern_spp_pbl,                             & 
-                           grid%stddev_cutoff_spp_pbl,grid%gridpt_stddev_spp_pbl, & 
+                           grid%pattern_spp_pbl,                             &
+                           grid%stddev_cutoff_spp_pbl,grid%gridpt_stddev_spp_pbl, &
                            grid%VERTSTRUCC,grid%VERTSTRUCS,grid%VERTAMPT       )
       ENDIF !spp_pbl
       if ((grid%spp_lsm==1).and.(grid%id .EQ. 1 )) then
@@ -302,8 +302,8 @@ CONTAINS
                            grid%num_stoch_levels,grid%num_stoch_levels,        &
                            config_flags%restart, grid%iseedarr_spp_lsm,           &
                            grid%DX,grid%DY,grid%vertstruc_spp_lsm,             &
-                           grid%pattern_spp_lsm,                             & 
-                           grid%stddev_cutoff_spp_lsm,grid%gridpt_stddev_spp_lsm, & 
+                           grid%pattern_spp_lsm,                             &
+                           grid%stddev_cutoff_spp_lsm,grid%gridpt_stddev_spp_lsm, &
                            grid%VERTSTRUCC,grid%VERTSTRUCS,grid%VERTAMPT       )
       ENDIF !spp_lsm
 
@@ -420,7 +420,7 @@ BENCH_START(tke_diff_bc_tim)
                                    ips, ipe, jps, jpe,                 &
                                    grid%i_start(ij), grid%i_end(ij),   &
                                    grid%j_start(ij), grid%j_end(ij)   )
- 
+
          ENDDO
          !$OMP END PARALLEL DO
 BENCH_END(tke_diff_bc_tim)
@@ -511,7 +511,7 @@ BENCH_START(calc_tke_tim)
                                  grid%cf1, grid%cf2, grid%cf3, grid%warm_rain,          &
                                  grid%mix_upper_bound,                                  &
                                  grid%msftx, grid%msfty,                                &
-                                 grid%zx, grid%zy,                                      & 
+                                 grid%zx, grid%zy,                                      &
                                  ids,ide, jds,jde, kds,kde,                             &
                                  ims,ime, jms,jme, kms,kme,                             &
                                  grid%i_start(ij), grid%i_end(ij),                      &
@@ -563,8 +563,8 @@ BENCH_END(phy_bc_tim)
 IF ( ( config_flags%sfs_opt .GT. 0 ) .AND. ( config_flags%diff_opt .eq. 2 ) ) THEN
 
  CALL sfs_driver( grid, config_flags,     &
-                  nba_mij, n_nba_mij,     & 
-                  nba_rij, n_nba_rij      ) 
+                  nba_mij, n_nba_mij,     &
+                  nba_rij, n_nba_rij      )
 
 ENDIF
 
@@ -598,7 +598,7 @@ ENDIF
 ! rvndgdten     x
 !
 ! (for TKE3)
-! tke_2                                          x               
+! tke_2                                          x
 ! (for TKE5)
 ! tke_2                                                         x
 !
@@ -786,8 +786,8 @@ BENCH_START(tke_rhs_tim)
                          grid%defor12,grid%defor13,grid%defor23,      &
                          grid%u_2,grid%v_2,grid%w_2,grid%div,         &
                          grid%tke_2,grid%mut,grid%c1h,grid%c2h,       &
-                         th_phy,p_phy,p8w,t8w,grid%z,grid%fnm,        & 
-                         grid%fnp,grid%cf1,grid%cf2,grid%cf3,         &     
+                         th_phy,p_phy,p8w,t8w,grid%z,grid%fnm,        &
+                         grid%fnp,grid%cf1,grid%cf2,grid%cf3,         &
                          grid%msftx,grid%msfty,grid%xkmh,             &
                          grid%xkmv,grid%xkhv,grid%rdx,grid%rdy,       &
                          grid%dx,grid%dy,grid%dt,grid%zx,grid%zy,     &
@@ -907,7 +907,7 @@ BENCH_END(hor_diff_tim)
                    grid%obs_coef_wind,                                  &
                    grid%obs_coef_temp,                                  &
                    grid%obs_coef_mois,                                  &
-                   grid%obs_coef_pstr,                                  &             
+                   grid%obs_coef_pstr,                                  &
                    grid%obs_rinxy,                                      &
                    grid%obs_rinsig,                                     &
                    grid%obs_npfi,                                       &
@@ -940,11 +940,11 @@ BENCH_END(hor_diff_tim)
                    grid%i_start(ij), min(grid%i_end(ij),ide-1),         &
                    grid%j_start(ij), min(grid%j_end(ij),jde-1),         &
                    k_start    , min(k_end,kde-1)                     )
- 
+
          ENDDO
          !$OMP END PARALLEL DO
        ENDIF  ! obs_nudge_opt .eq. 1
-! 
+!
 !***********************************************************************
 
   END SUBROUTINE first_rk_step_part2

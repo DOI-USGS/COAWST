@@ -37,7 +37,7 @@ CONTAINS
 !----------------------------------------------------------------------
 
   USE module_dm, ONLY: wrf_dm_sum_real, wrf_dm_maxval
-  USE module_configure 
+  USE module_configure
 
    IMPLICIT NONE
 !======================================================================
@@ -77,10 +77,10 @@ CONTAINS
 ! CLWRF-UC May.09 definitions
 !-----------
 ! is_restart: whether if simulation is a restart
-! clwrfH: Interval (hour) of accumulation for computations 
+! clwrfH: Interval (hour) of accumulation for computations
 ! [var]cl[min/max]: [minimum/maximum] of variable [var] during interval
-! t[var]cl[min/max]: Time (minutes) of [minimum/maximum] of variable 
-!    [var] during interval 
+! t[var]cl[min/max]: Time (minutes) of [minimum/maximum] of variable
+!    [var] during interval
 ! [var]clmean: mean of variable [var] during interval
 ! [var]clstd: standard dev. of variable [var] during interval
 !    Variables are written on aux_hist_out7 (established
@@ -98,8 +98,8 @@ CONTAINS
    INTEGER, DIMENSION(num_tiles), INTENT(IN)       :: i_start,   &
                                       i_end,j_start,j_end
 
-   REAL, DIMENSION( ims:ime , jms:jme ), INTENT(IN) ::           & 
-                                      RAINNCV, RAINCV, SKINTEMP 
+   REAL, DIMENSION( ims:ime , jms:jme ), INTENT(IN) ::           &
+                                      RAINNCV, RAINCV, SKINTEMP
 
    REAL,  INTENT(IN   )                            :: DT, XTIME
    REAL,  INTENT(IN   )                            :: curr_secs2
@@ -117,11 +117,11 @@ CONTAINS
 
    CHARACTER (LEN=80)                        :: timestr
 
-   REAL, DIMENSION( ims:ime , jms:jme ),                                          & 
-                          INTENT(IN)         :: t2, q2, u10, v10 
+   REAL, DIMENSION( ims:ime , jms:jme ),                                          &
+                          INTENT(IN)         :: t2, q2, u10, v10
    REAL, DIMENSION( ims:ime , jms:jme ),                                          &
                           INTENT(OUT)        :: t2clmin, t2clmax, tt2clmin,       &
-                          tt2clmax, t2clmean, t2clstd,                            & 
+                          tt2clmax, t2clmean, t2clstd,                            &
                           q2clmin, q2clmax, tq2clmin, tq2clmax, q2clmean, q2clstd,&
                           u10clmax, v10clmax, spduv10clmax, tspduv10clmax,        &
                           u10clmean, v10clmean, spduv10clmean,                    &
@@ -130,10 +130,10 @@ CONTAINS
                           skintempclmean, skintempclstd
    REAL, DIMENSION( ims:ime , jms:jme ),                                          &
                           INTENT(OUT)        :: raincclmax, rainncclmax,          &
-                          traincclmax, trainncclmax, raincclmean, rainncclmean,   & 
-                          raincclstd, rainncclstd 
+                          traincclmax, trainncclmax, raincclmean, rainncclmean,   &
+                          raincclstd, rainncclstd
    REAL, PARAMETER                           :: minimum0= 1000000.,               &
-                          maximum0= -1000000. 
+                          maximum0= -1000000.
    REAL                                      :: value
    INTEGER, INTENT(IN)                       :: clwrfH
    CHARACTER (LEN=1024)                      :: message
@@ -204,10 +204,10 @@ CONTAINS
             spduv10clmean,u10clstd,v10clstd,spduv10clstd)
 ! Precipitation flux
           CALL varstatisticsMAX(raincv/dt,xtimep,ime-ims+1,jme-jms+1,         &
-            raincclmax,traincclmax,raincclmean,raincclstd) 
+            raincclmax,traincclmax,raincclmean,raincclstd)
           CALL varstatisticsMAX(rainncv/dt,xtimep,ime-ims+1,jme-jms+1,        &
             rainncclmax,trainncclmax,rainncclmean,rainncclstd)
-! Skin Temperature 
+! Skin Temperature
           CALL varstatistics(skintemp-t273,xtimep,ime-ims+1,jme-jms+1,skintempclmin,&
             skintempclmax,tskintempclmin,tskintempclmax,skintempclmean,       &
             skintempclstd)
@@ -306,9 +306,9 @@ CONTAINS
 
 ! UC.CLWRF Nov.09
 SUBROUTINE varstatisticsWIND(varu, varv, tt, dx, dy, varumax, varvmax,       &
-  varuvmax, tvaruvmax, varumean, varvmean, varuvmean, varustd, varvstd,     & 
-  varuvstd) 
-! Subroutine to compute variable statistics for a wind somponents 
+  varuvmax, tvaruvmax, varumean, varvmean, varuvmean, varustd, varvstd,     &
+  varuvstd)
+! Subroutine to compute variable statistics for a wind somponents
 
 IMPLICIT NONE
 
@@ -317,7 +317,7 @@ INTEGER, INTENT(IN)                                            :: dx, dy
 REAL, DIMENSION(dx,dy), INTENT(IN)                             :: varu, varv
 REAL, INTENT(IN)                                               :: tt
 REAL, DIMENSION(dx,dy), INTENT(INOUT)                          :: varumax,   &
-  varvmax, varuvmax, tvaruvmax, varumean, varvmean, varuvmean, varustd,      & 
+  varvmax, varuvmax, tvaruvmax, varumean, varvmean, varuvmean, varustd,      &
   varvstd, varuvstd
 REAL                                                           :: varuv
 
@@ -365,10 +365,10 @@ END DO
 varmean=varmean+var
 varstd=varstd+var*var
 
-END SUBROUTINE varstatisticsMAX 
+END SUBROUTINE varstatisticsMAX
 
-SUBROUTINE varstatistics(var, tt, dx, dy, varmin, varmax, tvarmin, tvarmax,  & 
-  varmean, varstd) 
+SUBROUTINE varstatistics(var, tt, dx, dy, varmin, varmax, tvarmin, tvarmax,  &
+  varmean, varstd)
 ! Subroutine to compute variable statistics
 
 IMPLICIT NONE

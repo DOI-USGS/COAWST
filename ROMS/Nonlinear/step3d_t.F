@@ -966,7 +966,7 @@
      &               0.5_r8*MAX(0.0_r8,                                 &
      &                          MIN(2.0_r8,2.0_r8*ru*rkau,betau))*      &
      &               grad_k(k)*kaz(k)
-                END IF 
+                END IF
                 FC(i,k)=W(i,j,k)*sw
               END IF
             END DO

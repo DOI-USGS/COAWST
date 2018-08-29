@@ -24,8 +24,8 @@
 !  MAINANG     Short waves main propagation angle                      !
 !  HM0GEW      Significant wave height computed from the               !
 !              interpolated spectra                                    !
-!  DANG        
-!  INT         
+!  DANG
+!  INT
 !  FP          Peak frequency                                          !
 !  DF_FFT      Frequency increment for the positive Fourier Components !
 !  FSW         Frequency array                                         !
@@ -298,7 +298,7 @@
       real(r8), allocatable :: f_2d(:,:), wd_2d(:,:), SDSW_circle(:,:)
 !
 !-----------------------------------------------------------------------
-! Define the Nyquist frequency, the maximum and minimum frequencies and 
+! Define the Nyquist frequency, the maximum and minimum frequencies and
 ! the number of directional bins
 !-----------------------------------------------------------------------
 !
@@ -342,7 +342,7 @@
 ! we predefined in the ini file.
 !
 !  Set up 2d gridded freq and dir arrays using the SWAN data.
-!  Also here if SWAN was computed on a full circle, then 
+!  Also here if SWAN was computed on a full circle, then
 !  we mirror the SWAN data from -360 to +720. this allows
 !  user to define a smaller computational grid if needed.
 !
@@ -493,7 +493,7 @@
 !  Imported variable declarations.
 !
       integer, intent(in) :: ng
-      
+
 !  Local variable declarations.
 
       integer :: i, j, k, Npts, MyError
@@ -758,7 +758,7 @@
           fac2=1.0_r8/cosh(k(f1)*h0)
           fac3=1.0_r8/cosh(k(f2)*h0)
           DO p=1,ND
-          
+
           write(*,*) 'doing f1 f2 p ', f1,f2,p,WAVES(ng)%nfreq,ND
 !
 ! Compute the freq diff, dir diff, wave number, and phase of bound wave.
@@ -784,12 +784,12 @@
 
 !            if DDf>fcutoff
 !              DTOT(f1,f2)=0;  % do not consider frequencies higher than fcutoff
-!            end   
-!        
+!            end
+!
 !            if DDf<fmin
 !              DTOT(f1,f2)=0;  % do not consider frequencies lower than fmin
-!            end   
-!            if (isnan(DTOT(f1,f2))==1) 
+!            end
+!            if (isnan(DTOT(f1,f2))==1)
 !              DTOT(f1,f2)=0;
 !            end
 

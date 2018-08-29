@@ -26,7 +26,7 @@ SUBROUTINE med_interp_domain ( parent_grid , nested_grid )
 ! ----------------------------------------------------------
 #if (EM_CORE == 1)
 ! ----------------------------------------------------------
-!    These routines are supplied by module_dm.F from the 
+!    These routines are supplied by module_dm.F from the
 !    external communication package (e.g. external/RSL)
 ! ----------------------------------------------------------
       SUBROUTINE interp_domain_em_part1 ( grid, intermediate_grid, ngrid, config_flags   &
@@ -113,7 +113,7 @@ SUBROUTINE med_interp_domain ( parent_grid , nested_grid )
    this_time=now_time()
 #endif
 ! ----------------------------------------------------------
-!    Interpolation calls for EM CORE.  The called 
+!    Interpolation calls for EM CORE.  The called
 !    routines below are supplied by module_dm.F
 !    from the external communications package (e.g. RSL)
 ! ----------------------------------------------------------
@@ -147,7 +147,7 @@ SUBROUTINE med_interp_domain ( parent_grid , nested_grid )
   IF ( nested_grid%active_this_task ) THEN
   grid => nested_grid%intermediate_grid
   CALL model_to_grid_config_rec ( grid%id , model_config_rec , config_flags )
-  
+
   CALL interp_domain_em_part2 ( grid, nested_grid, parent_grid, config_flags   &
 !
 #     include "actual_new_args.inc"
@@ -275,7 +275,7 @@ SUBROUTINE med_interp_domain_small ( parent_grid , nested_grid )
    END INTERFACE
 
 ! ----------------------------------------------------------
-!    Interpolation calls for EM CORE.  The called 
+!    Interpolation calls for EM CORE.  The called
 !    routines below are supplied by module_dm.F
 !    from the external communications package (e.g. RSL)
 ! ----------------------------------------------------------

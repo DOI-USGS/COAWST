@@ -258,10 +258,10 @@
      &             - uie(i+1,j-1,lieol)-uie(i,j-1,lieol) )*pn(i,j)
           eps12(i,j) = 0.5_r8*(epx + epy)
 !
-          eone=eps11(i,j)+eps22(i,j) 
+          eone=eps11(i,j)+eps22(i,j)
           etwos=(eps11(i,j)-eps22(i,j))*(eps11(i,j)-eps22(i,j))+        &
      &         4.0_r8*eps12(i,j)*eps12(i,j)
-! 
+!
           delta=abs(eone**2+e2r*etwos)
           delta=max(sqrt(delta),epso)
 #ifdef ICE_STRENGTH_QUAD

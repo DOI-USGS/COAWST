@@ -3,7 +3,7 @@
 !  Usage: "g1print [-v] [-V] filename"
 !
 !  Originally from gribscan.
-! 
+!
 program g1print
   use module_grib
   interface
@@ -55,11 +55,11 @@ program g1print
      write(*,'(" rec GRIB GRIB  Lvl  Lvl  Lvl         Time      Fcst")')
      write(*,'(" Num Code name  Code one  two                   hour")')
      write(*,'(52("-"))')
-  endif 
+  endif
 
   irec = 0
   call gribget(munit, ierr)
-  do while (ierr.eq.0) 
+  do while (ierr.eq.0)
      irec = irec + 1
      call gribheader(0,igherr)
      if (igherr /= 0) then
@@ -209,7 +209,7 @@ contains
        c = c + 1
        ierr = 0
     endif
-        
+
   end subroutine checkiarg
   subroutine checkharg(c, a, h, ierr)
     integer :: c
@@ -233,7 +233,7 @@ contains
        c = c + 1
        ierr = 0
     endif
-        
+
   end subroutine checkharg
 
   subroutine checklarg(c, a, l, ierr)
@@ -250,7 +250,7 @@ contains
        c = c + 1
        ierr = 0
     endif
-        
+
   end subroutine checklarg
 
 end subroutine parse_args
@@ -305,7 +305,7 @@ end subroutine parse_args
        field = '     '
      endif
      return
-end subroutine fieldname 
+end subroutine fieldname
 !
      subroutine init_tables
     character(len=5) :: table2(255), table129(255), afwa(255), ecmwf(255), &
@@ -580,7 +580,7 @@ end subroutine init_tables
        'PERPW','DIRSW','PERSW','NSWRS','NLWRS','NSWRT','NLWRT','LWAVR','SWAVR',&
        'GRAD','BRTMP','LWRAD','SWRAD','LHTFL','SHTFL','BLYDP','U FLX','V FLX',&
        'WMIXE','IMG D',&
-! Table 130    LSM 
+! Table 130    LSM
 ! 128-143 not yet assigned
        '     ','     ','     ','     ','     ','   ','   ','     ','     ',&
        '     ','     ','     ','     ','     ','     ','     ','SOILW',&

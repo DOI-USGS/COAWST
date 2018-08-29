@@ -15,7 +15,7 @@ CONTAINS
 !
    SUBROUTINE spectral_nudging(grid,itimestep,dt,xtime,id,analysis_interval, end_fdda_hour, &
                if_no_pbl_nudging_uv, if_no_pbl_nudging_t, if_no_pbl_nudging_ph,&
-               if_zfac_uv, k_zfac_uv, dk_zfac_uv, & 
+               if_zfac_uv, k_zfac_uv, dk_zfac_uv, &
                if_zfac_t, k_zfac_t, dk_zfac_t, &
                if_zfac_ph, k_zfac_ph, dk_zfac_ph, &
                guv, gt, gph, if_ramping, dtramp_min, xwavenum, ywavenum, &
@@ -95,11 +95,11 @@ CONTAINS
                                   imsx,imex,jmsx,jmex,kmsx,kmex,   &
                                   ipsx,ipex,jpsx,jpex,kpsx,kpex,   &
                                   imsy,imey,jmsy,jmey,kmsy,kmey,   &
-                                  ipsy,ipey,jpsy,jpey,kpsy,kpey 
+                                  ipsy,ipey,jpsy,jpey,kpsy,kpey
 
    INTEGER, DIMENSION(num_tiles), INTENT(IN) ::                   &
   &                                    i_start,i_end,j_start,j_end
- 
+
    REAL,     DIMENSION( ims:ime, kms:kme, jms:jme ), &
              INTENT(IN)   ::                  ph3d, &
                                               th3d, &
@@ -179,9 +179,9 @@ CONTAINS
  IF( xtime > actual_end_fdda_min ) RETURN
 
  !$OMP PARALLEL DO   &
- !$OMP PRIVATE ( ij, i,j,k ) ! only for part of the calculation. 
+ !$OMP PRIVATE ( ij, i,j,k ) ! only for part of the calculation.
  !GMM Transpose and filtering needs to be done on patch
- 
+
  DO ij = 1 , num_tiles
 
 !  actual_end_fdda_min = end_fdda_hour*60.0
@@ -214,7 +214,7 @@ CONTAINS
        IF( dbg_level .GE. 10 .AND. xtime <= actual_end_fdda_min ) THEN
 !        Find the mid point of the tile and print out the sample values
          i0 = (ite-its)/2+its
-         j0 = (jte-jts)/2+jts 
+         j0 = (jte-jts)/2+jts
 
          IF( guv > 0.0 ) THEN
            DO k = kts, kte
@@ -260,29 +260,29 @@ CONTAINS
    ktf=MIN0(kte,kde-1)
    itf=MIN0(ite,ide-1)
 !
-! If the user-defined namelist switches (if_no_pbl_nudging_uv, if_no_pbl_nudging_t, 
-! if_no_pbl_nudging_ph swithes) are set to 1, compute the weighting function, wpbl(:,k,:,:), 
-! based on the PBL depth.  wpbl = 1 above the PBL and wpbl = 0 in the PBL.  If all 
+! If the user-defined namelist switches (if_no_pbl_nudging_uv, if_no_pbl_nudging_t,
+! if_no_pbl_nudging_ph swithes) are set to 1, compute the weighting function, wpbl(:,k,:,:),
+! based on the PBL depth.  wpbl = 1 above the PBL and wpbl = 0 in the PBL.  If all
 ! the switche are set to zero, wpbl = 1 (default value).
 !
 !GMM If those are set to zero, then check if the user-defined namelist switches (if_zfac_uv, if_zfac_t,
 ! if_zfac_ph swithes) are set to 1, compute the weighting function, wzfac(k,:),
-! based on the namelist specified k values (k_zfac_uv, k_zfac_t and k_zfac_ph) 
+! based on the namelist specified k values (k_zfac_uv, k_zfac_t and k_zfac_ph)
 ! below which analysis nudging is turned off (wzfac = 1 above k_zfac_x and = 0 in below k_zfac_x).
-!  The strength of nudging increases linearly from k_zfac to kzfac + dk_zfac 
+!  The strength of nudging increases linearly from k_zfac to kzfac + dk_zfac
 ! (dk_zfac_uv, dk_zfac_t and kd_zfac_ph are also set in the namelist, default value is 1).
 !If all switches are set to zero, wzfac = 1 (default value).
 !
 
    IF( if_no_pbl_nudging_uv == 1 ) THEN
 
-     DO j=jts,jtf 
+     DO j=jts,jtf
      DO i=itsu,itf
 
        kpbl = 1
        zpbl = 0.5 * ( pblh(i-1,j) + pblh(i,j) )
 
-       loop_ku: DO k=kts,ktf 
+       loop_ku: DO k=kts,ktf
          zagl_bot = 0.5 * ( z_at_w(i-1,k,  j)-ht(i-1,j) + z_at_w(i,k,  j)-ht(i,j) )
          zagl_top = 0.5 * ( z_at_w(i-1,k+1,j)-ht(i-1,j) + z_at_w(i,k+1,j)-ht(i,j) )
          IF( zpbl >= zagl_bot .AND. zpbl < zagl_top ) THEN
@@ -335,13 +335,13 @@ CONTAINS
 
 
    IF( if_no_pbl_nudging_t == 1 ) THEN
-   
+
      DO j=jts,jtf
      DO i=its,itf
 
        kpbl = 1
        zpbl = pblh(i,j)
-        
+
        loop_kt: DO k=kts,ktf
          zagl_bot = z_at_w(i,k,  j)-ht(i,j)
          zagl_top = z_at_w(i,k+1,j)-ht(i,j)
@@ -353,8 +353,8 @@ CONTAINS
 
        DO k=kts,ktf
           wpbl(i, k, j, 3) = max ( min ( float(k-kpbl) / float(dk_zfac_t) , 1. ) , 0.)
-       ENDDO 
-        
+       ENDDO
+
      ENDDO
      ENDDO
 
@@ -372,13 +372,13 @@ CONTAINS
 
 
    IF( if_no_pbl_nudging_ph == 1 ) THEN
-   
+
      DO j=jts,jtf
      DO i=its,itf
 
        kpbl = 1
        zpbl = pblh(i,j)
-          
+
        loop_kph: DO k=kts,kte
          zagl = z_at_w(i,k,  j)-ht(i,j)
          IF( zpbl >= zagl) THEN
@@ -389,11 +389,11 @@ CONTAINS
 
        DO k=kts,kte
           wpbl(i, k, j, 4) = max ( min ( float(k-kpbl) / float(dk_zfac_ph) , 1. ) , 0.)
-       ENDDO 
-            
-     ENDDO  
+       ENDDO
+
      ENDDO
-        
+     ENDDO
+
    ELSEIF( if_zfac_ph == 1 ) THEN
 
      DO j=jts,jtf
@@ -407,38 +407,38 @@ CONTAINS
    ENDIF
 
 
-! If if_ramping and dtramp_min are defined by user, comput a time weighting function, tfac, 
-! for analysis nudging so that at the end of the nudging period (which has to be at a 
+! If if_ramping and dtramp_min are defined by user, comput a time weighting function, tfac,
+! for analysis nudging so that at the end of the nudging period (which has to be at a
 ! analysis time) we ramp down the nudging coefficient, based on the use-defined sign of dtramp_min.
 !
-! When dtramp_min is negative, ramping ends at end_fdda_hour and starts at 
-! end_fdda_hour-ABS(dtramp_min).  
+! When dtramp_min is negative, ramping ends at end_fdda_hour and starts at
+! end_fdda_hour-ABS(dtramp_min).
 !
-! When dtramp_min is positive, ramping starts at end_fdda_hour and ends at 
-! end_fdda_hour+ABS(dtramp_min). In this case, the obs values are extrapolated using 
-! the obs tendency saved from the previous FDDA wondow.  More specifically for extrapolation, 
+! When dtramp_min is positive, ramping starts at end_fdda_hour and ends at
+! end_fdda_hour+ABS(dtramp_min). In this case, the obs values are extrapolated using
+! the obs tendency saved from the previous FDDA wondow.  More specifically for extrapolation,
 ! coef (see codes below) is recalculated to reflect extrapolation during the ramping period.
 !
    tfac = 1.0
 
    IF( if_ramping == 1 .AND. ABS(dtramp_min) > 0.0 ) THEN
- 
+
      IF( dtramp_min <= 0.0 ) THEN
        actual_end_fdda_min = end_fdda_hour*60.0
      ELSE
        actual_end_fdda_min = end_fdda_hour*60.0 + dtramp_min
      ENDIF
 
-     IF( xtime < actual_end_fdda_min-ABS(dtramp_min) )THEN 
+     IF( xtime < actual_end_fdda_min-ABS(dtramp_min) )THEN
        tfac = 1.0
      ELSEIF( xtime >= actual_end_fdda_min-ABS(dtramp_min) .AND. xtime <= actual_end_fdda_min )THEN
        tfac = ( actual_end_fdda_min - xtime ) / ABS(dtramp_min)
        IF( dtramp_min > 0.0 ) coef = (xtime-xtime_old+analysis_interval)/analysis_interval
-     ELSE                                                     
+     ELSE
        tfac = 0.0
      ENDIF
 
-   ENDIF                                                  
+   ENDIF
 
    ENDDO
    !$OMP END PARALLEL DO
@@ -464,13 +464,13 @@ IF(guv > 0. ) then
    DO k=kts,ktf
    DO i=its,ite
      val_analysis = u_ndg_old(i,k,j) *( 1.0 - coef ) + u_ndg_new(i,k,j) * coef
-     
+
      grid%dif_analysis(i,k,j) = val_analysis - u3d(i,k,j)
 
    ENDDO
    ENDDO
    ENDDO
- 
+
  ENDDO
  !$OMP END PARALLEL DO
 
@@ -482,7 +482,7 @@ IF(guv > 0. ) then
      CALL spectral_nudging_filter_3dx( grid%dif_xxx, xwavenum,    &
                                 ids, ide, jds, jde, kds, kde,         &
                                 imsx, imex, jmsx, jmex, kmsx, kmex,     &
-                                ipsx, ipex, jpsx, jpex, kpsx, MIN(kde-1,kpex) ) 
+                                ipsx, ipex, jpsx, jpex, kpsx, MIN(kde-1,kpex) )
 
 # include "XPOSE_SPECTRAL_NUDGING_x2y.inc"
 
@@ -770,7 +770,7 @@ SUBROUTINE spectral_nudging_filter_3dx( f, nwave,            &
   END IF
 
 
-  nx = ide-ids+1 
+  nx = ide-ids+1
   ny = kte-kts+1 ! we can filter extra level for variables that are non-Z-staggered
   j_end = MIN(jte, jde-1)
   IF (j_end == jde-1) j_end = jde
@@ -862,7 +862,7 @@ SUBROUTINE spectralnudgingfilterfft2dncar(nx,ny,nwave,fin)
   INTEGER :: lot, jump, n, inc, lenr, lensav, lenwrk
   REAL, DIMENSION(nx+15) :: wsave
   REAL, DIMENSION(nx,ny) :: work
-  
+
 
 
 
@@ -930,7 +930,7 @@ END SUBROUTINE spectralnudgingfilterfft2dncar
                if_no_pbl_nudging_uv, if_no_pbl_nudging_t, if_no_pbl_nudging_ph, &
                if_zfac_uv, k_zfac_uv, dk_zfac_uv, &
                if_zfac_t, k_zfac_t, dk_zfac_t, &
-               if_zfac_ph, k_zfac_ph, dk_zfac_ph, &               
+               if_zfac_ph, k_zfac_ph, dk_zfac_ph, &
                guv, gt, gph, if_ramping, dtramp_min, end_fdda_hour, &
                xwavenum,ywavenum,                          &
                       restart, allowed_to_read,                    &
@@ -1016,7 +1016,7 @@ END SUBROUTINE spectralnudgingfilterfft2dncar
         WRITE(wrf_err_message,'(a,i1,a,i3)') &
            'D0',id,' Spectral nudging for wind is turned off below layer', k_zfac_uv
         CALL wrf_message(TRIM(wrf_err_message))
-             IF( dk_zfac_uv < 1 ) CALL wrf_error_fatal('In spectral nudging, dk_zfac_uv must  be greater or equal than 1.')       
+             IF( dk_zfac_uv < 1 ) CALL wrf_error_fatal('In spectral nudging, dk_zfac_uv must  be greater or equal than 1.')
      ENDIF
 
 

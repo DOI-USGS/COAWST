@@ -88,7 +88,7 @@
 !     is Insteps long, but it repeats every 1/df.
 !
       tidx=MOD(iic(ng),WAVES(ng)%Insteps)+1
-!     
+!
       IF (LBC(iwest,isAC3d,ng)%acquire) THEN
         DO d=1,ND
           DO j=Jstr,Jend

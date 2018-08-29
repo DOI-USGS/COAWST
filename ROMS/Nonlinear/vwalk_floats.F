@@ -216,22 +216,22 @@
 
 # ifdef DIAPAUSE
 !  Based on date, determine if NCa are going upwards or downwards
-        
-     
+
+
       IF ( ( RiseStart.lt.RiseEnd .and.                                 &
      &       yday.ge.RiseStart .and. yday.le.RiseEnd ) .or.             &
      &     ( RiseStart.gt.RiseEnd .and.                                 &
      &      ( yday.ge.RiseStart .or. yday.le.RiseEnd ) ) )  THEN
         FloatPhase=1
         diapW=wNCrise*sec2day !Scale to m/sec
-        
+
       ELSE IF ( ( SinkStart.lt.SinkEnd .and.                            &
      &       yday.ge.SinkStart .and. yday.le.SinkEnd ) .or.             &
      &     ( SinkStart.gt.SinkEnd .and.                                 &
      &      ( yday.ge.SinkStart .or. yday.le.SinkEnd ) ) )  THEN
         FloatPhase=3
         diapW=wNCsink*sec2day !Scale to m/sec
-        
+
        ELSE IF ( ( RiseEnd.lt.SinkStart .and.                          &
      &       yday.ge.RiseEnd .and. yday.le.SinkStart ) .or.            &
      &     (RiseEnd.gt.SinkStart .and.                                 &
@@ -243,14 +243,14 @@
      &     (RiseStart.gt.SinkEnd .and.                                &
      &      ( yday.ge.SinkEnd .and. yday.le.RiseStart ) ) )  THEN
         FloatPhase=4
-          diapW=999 
+          diapW=999
       END IF
-      
+
 !      print*,'track=',track(idpth,nfp1,l)
 !      END DO
-         
+
           IF ( diapW.ne.999)THEN
-          
+
      CALL interp_floats_diapW(ng, LBi, UBi, LBj, UBj, 0, N(ng),         &
      &                    Lstr, Lend, nf, izrhs,                        &
      &                    -w3dvar, Lmask, spval, nudg,                  &
@@ -264,9 +264,9 @@
      &                    OCEAN(ng) % W,                                &
      &                    my_thread, bounded, track,                    &
      &                    FloatPhase      )
-     
-          ENDIF 
-#else   
+
+          ENDIF
+#else
 !
 !  Interpolate vertical slopes using nudging velocity coefficients.
 !

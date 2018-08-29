@@ -171,7 +171,7 @@
       enddo
 #undef I_RANGE
 #undef J_RANGE
-#  define I_RANGE MAX(Istr-1,1),Iend+1             
+#  define I_RANGE MAX(Istr-1,1),Iend+1
       do j=Jstr,Jend
         do i=I_RANGE
           nlio = 0
@@ -191,7 +191,7 @@
         enddo
       enddo
 
-#  define J_RANGE MAX(Jstr-1,1),Jend+1 
+#  define J_RANGE MAX(Jstr-1,1),Jend+1
       do j=J_RANGE
         do i=Istr,Iend
           nlio = 0

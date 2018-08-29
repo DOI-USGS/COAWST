@@ -37,7 +37,7 @@
      &                     ICE(ng) % IceNO3,                            &
      &                     ICE(ng) % IceNH4,                            &
      &                     ICE(ng) % IceLog,                            &
-# endif 
+# endif
      &                     ICE(ng) % ui,                                &
      &                     ICE(ng) % vi,                                &
      &                     ICE(ng) % ai,                                &
@@ -147,10 +147,10 @@
           IcePhL(i,j,linew) = MAX(IcePhL(i,j,linew),0.0_r8)
           IceNO3(i,j,linew) = MAX(IceNO3(i,j,linew),0.0_r8)
           IceNH4(i,j,linew) = MAX(IceNH4(i,j,linew),0.0_r8)
-        
+
           IF (hi(i,j,linew).le. 0.02.or.ai(i,j,linew).le.0.5) THEN
             IceLog(i,j,linew) = -1
-          ELSE 
+          ELSE
             IceLog(i,j,linew) = 1  !min(IceLog(i,j,linew),1)
           END IF
         END DO

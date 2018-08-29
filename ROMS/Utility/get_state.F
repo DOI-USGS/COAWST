@@ -48,15 +48,15 @@
       USE mod_scalars
 #if defined ESTUARYBGC && defined SAV_BIOMASS
       USE mod_biology
-#endif 
+#endif
 #if defined SEDIMENT || defined BBL_MODEL
       USE mod_sedbed
       USE mod_sediment
 #endif
-#if defined VEGETATION 
+#if defined VEGETATION
       USE mod_vegarr
       USE mod_vegetation
-#endif 
+#endif
 #if defined ICE_MODEL || defined CICE_MODEL
       USE mod_ice
 #endif
@@ -2078,7 +2078,7 @@
 !
 !  Read in AGB and BGB values
 !
-        foundit=find_string(var_name, n_var, TRIM(Vname(1,idsagb)),     & 
+        foundit=find_string(var_name, n_var, TRIM(Vname(1,idsagb)),     &
      &                        varid)
         gtype=var_flag(varid)*r2dvar
         status=nf_fread2d(ng, IDmod, ncname, ncINPid,                   &
@@ -2091,7 +2091,7 @@
      &                 OCEAN(ng)%AGB)
         IF (FoundError(status, nf90_noerr, __LINE__,                    &
      &                 __FILE__)) THEN
-          IF (Master) THEN 
+          IF (Master) THEN
             WRITE (stdout,60) string, TRIM(Vname(1,idsagb )),           &
      &                        InpRec, TRIM(ncname)
           END IF
@@ -2099,14 +2099,14 @@
           ioerror=status
           RETURN
         ELSE
-          IF (Master) THEN 
-            WRITE (stdout,70) TRIM(Vname(2,idsagb)), Fmin, Fmax 
+          IF (Master) THEN
+            WRITE (stdout,70) TRIM(Vname(2,idsagb)), Fmin, Fmax
           END IF
         END IF
 !
-! BGB 
-!  
-        foundit=find_string(var_name, n_var, TRIM(Vname(1,idsbgb)),     & 
+! BGB
+!
+        foundit=find_string(var_name, n_var, TRIM(Vname(1,idsbgb)),     &
      &                        varid)
         gtype=var_flag(varid)*r2dvar
         status=nf_fread2d(ng, IDmod, ncname, ncINPid,                   &
@@ -2119,7 +2119,7 @@
      &               OCEAN(ng)%BGB)
         IF (FoundError(status, nf90_noerr, __LINE__,                    &
      &                 __FILE__)) THEN
-          IF (Master) THEN 
+          IF (Master) THEN
             WRITE (stdout,60) string, TRIM(Vname(1,idsbgb )),           &
      &                        InpRec, TRIM(ncname)
           END IF
@@ -2127,14 +2127,14 @@
           ioerror=status
           RETURN
         ELSE
-          IF (Master) THEN 
-            WRITE (stdout,70) TRIM(Vname(2,idsbgb)), Fmin, Fmax 
+          IF (Master) THEN
+            WRITE (stdout,70) TRIM(Vname(2,idsbgb)), Fmin, Fmax
           END IF
         END IF
 !
 ! DINsed
-!  
-        foundit=find_string(var_name, n_var, TRIM(Vname(1,iddins)),     & 
+!
+        foundit=find_string(var_name, n_var, TRIM(Vname(1,iddins)),     &
      &                        varid)
         gtype=var_flag(varid)*r3dvar
         status=nf_fread3d(ng, IDmod, ncname, ncINPid,                   &
@@ -2147,7 +2147,7 @@
      &               OCEAN(ng)%DINsed)
         IF (FoundError(status, nf90_noerr, __LINE__,                    &
      &                 __FILE__)) THEN
-          IF (Master) THEN 
+          IF (Master) THEN
             WRITE (stdout,60) string, TRIM(Vname(1,iddins )),           &
      &                        InpRec, TRIM(ncname)
           END IF
@@ -2155,17 +2155,17 @@
           ioerror=status
           RETURN
         ELSE
-          IF (Master) THEN 
-            WRITE (stdout,70) TRIM(Vname(2,iddins)), Fmin, Fmax 
+          IF (Master) THEN
+            WRITE (stdout,70) TRIM(Vname(2,iddins)), Fmin, Fmax
           END IF
         END IF
 !
-#  endif 
+#  endif
 !
-#  ifdef VEGETATION 
+#  ifdef VEGETATION
 #   if defined VEG_DRAG || defined VEG_BIOMASS
 !
-!  Read in plant properties for each vegetation type 
+!  Read in plant properties for each vegetation type
 !
         DO i=1,NVEGP
           IF (get_var(idvprp(i))) THEN
@@ -2196,13 +2196,13 @@
               END IF
             END IF
           END IF
-        END DO 
-#   endif 
+        END DO
+#   endif
 #   ifdef MARSH_WAVE_THRUST
 !
-!  Read in masking for determining marsh interface 
+!  Read in masking for determining marsh interface
 !
-        foundit=find_string(var_name, n_var, TRIM(Vname(1,idTims)),     & 
+        foundit=find_string(var_name, n_var, TRIM(Vname(1,idTims)),     &
      &                        varid)
         gtype=var_flag(varid)*r2dvar
         status=nf_fread2d(ng, IDmod, ncname, ncINPid,                   &
@@ -2215,7 +2215,7 @@
      &                 VEG(ng) % marsh_mask)
         IF (FoundError(status, nf90_noerr, __LINE__,                    &
      &                         __FILE__)) THEN
-          IF (Master) THEN 
+          IF (Master) THEN
             WRITE (stdout,60) string, TRIM(Vname(1,idTims )),           &
      &                        InpRec, TRIM(ncname)
           END IF
@@ -2223,15 +2223,15 @@
           ioerror=status
           RETURN
         ELSE
-          IF (Master) THEN 
-            WRITE (stdout,70) TRIM(Vname(2,idTims)), Fmin, Fmax 
+          IF (Master) THEN
+            WRITE (stdout,70) TRIM(Vname(2,idTims)), Fmin, Fmax
           END IF
         END IF
 !
-#   endif 
-#  endif 
+#   endif
+#  endif
 #  if defined BEST_NPZ && defined BERING_10K
-    
+
 !  Read in benthic initial conditions.
         DO itrc=1,1 !,NBeT(ng)
           IF (get_var(idBvar(itrc))) THEN

@@ -4,7 +4,7 @@
 
       MODULE sed_bedload_vandera_mod
 
-#if defined NONLINEAR && defined SEDIMENT && defined BEDLOAD_VANDERA  
+#if defined NONLINEAR && defined SEDIMENT && defined BEDLOAD_VANDERA
 !
 !svn $Id: sed_bedload_vandera.F 429 2009-12-20 17:30:26Z arango $
 !======================================================================!
@@ -18,7 +18,7 @@
 !  This routine computes sediment bedload transport using              !
 !  Van der A et al.(2013) formulation  for unidirectional flow and     !
 !  accounts for wave asymmetry leading to differential sediment        !
-!  transport for crest and trough cycles.                              ! 
+!  transport for crest and trough cycles.                              !
 !                                                                      !
 !  References:                                                         !
 !                                                                      !
@@ -297,7 +297,7 @@
       real(r8) :: mag_bstr
 !
       real(r8) :: om_cc, om_tt, om_ct, om_tc
-!        
+!
 !      real(r8) :: cff, cff1, cff2, cff3
       real(r8) :: smgd_3
       real(r8) :: bedld_cx, bedld_cy
@@ -339,13 +339,13 @@
           ENDIF
           phi_cw=1.5_r8*pi-Dwave(i,j)-phic(i,j)-angler(i,j)
 !
-! Compute angle between waves and current, measure CCW from wave 
+! Compute angle between waves and current, measure CCW from wave
 ! towards current vector
 !
           phi_wc(i,j)=2.0_r8*pi-phi_cw
 !
         END DO
-      END DO 
+      END DO
 !
       DO ised=NCS+1,NST
         rhos=Srho(ised,ng)                      ! (kg/m3)
@@ -371,15 +371,15 @@
             urms=Uwave_rms(i,j)                 ! (m/s)
             umag_curr=SQRT(Ur(i,j)*Ur(i,j)+Vr(i,j)*Vr(i,j))
             phi_curwave=phi_wc(i,j)
-! 
-! Compute magnitude of stress for computing current velocity 
+!
+! Compute magnitude of stress for computing current velocity
 ! at the wave boundary layer
 !
             mag_bstr=SQRT(bustr(i,j)*bustr(i,j)+bvstr(i,j)*bvstr(i,j))
 !
             uhat=urms*SQRT(2.0_r8)
             ahat=uhat*Td/(2.0_r8*pi)
-            k_wn=kh(Td,depth)/depth                ! Wave number 
+            k_wn=kh(Td,depth)/depth                ! Wave number
             c_w=2*pi/(k_wn*Td)                     ! Wave speed
 !
 ! VA-2013 equation 1 is solved in 3 sub-steps
@@ -391,12 +391,12 @@
 !-----------------------------------------------------------------------
 !
             CALL skewness_params(Hs, Td, depth, r, phi)
-!        
+!
 !-----------------------------------------------------------------------
 ! Abreu et al. use skewness params to get representative critical orbital
 ! velocity for crest and trough cycles , use r and phi.
 !-----------------------------------------------------------------------
-! 
+!
             CALL abreu_points(r, phi, uhat, Td,  T_c, T_t,              &
      &                                    T_cu, T_tu, umax, umin, RR)
 !
@@ -419,9 +419,9 @@
 !
             smgd=(rhos/rho0-1.0_r8)*g*d50
             osmgd=1.0_r8/smgd
-! 
-! Full wave cycle 
-! 
+!
+! Full wave cycle
+!
             CALL full_wave_cycle_stress_factors( d50, d90, osmgd,       &
      &                                                 Td, depth,       &
      &                              umag_curr, phi_curwave, Zref,       &
@@ -432,8 +432,8 @@
      &                           eta, udelta, alpha, fd, ksw, tau_wRe )
 !
 !-----------------------------------------------------------------------
-! 2. Bed shear stress (Shields parameter) for Crest half cycle 
-!    alpha VA2013 Eqn. 19  
+! 2. Bed shear stress (Shields parameter) for Crest half cycle
+!    alpha VA2013 Eqn. 19
 !-----------------------------------------------------------------------
 !
             CALL half_wave_cycle_stress_factors( T_cu, T_c, ahat, ksw,  &
@@ -456,8 +456,8 @@
      &                              om_cc, om_tc)
 !
 !-----------------------------------------------------------------------
-! 2. Bed shear stress (Shields parameter) for Trough half cycle 
-!    alpha VA2013 Eqn. 19  
+! 2. Bed shear stress (Shields parameter) for Trough half cycle
+!    alpha VA2013 Eqn. 19
 !-----------------------------------------------------------------------
 !
             CALL half_wave_cycle_stress_factors( T_tu, T_t, ahat, ksw,  &
@@ -498,7 +498,7 @@
             bedld_ty=cff2*cff3
 !
 !-----------------------------------------------------------------------
-! VA2013  Use the velocity-load equation 1. 
+! VA2013  Use the velocity-load equation 1.
 ! Units of smgd_3 are m2-s-1
 !-----------------------------------------------------------------------
 !
@@ -511,9 +511,9 @@
 !
             bedld_x=rhos*bedld_x
             bedld_y=rhos*bedld_y
-!           
+!
 ! Convert bedload from the wave aligned axis to xi and eta directions
-! 
+!
             theta=1.5_r8*pi-Dwave(i,j)-angler(i,j)
 !
 ! Partition bedld into xi and eta directions, still at rho points.
@@ -955,7 +955,7 @@
         END DO
       END DO
 !
-!  Need to update bed mass for the non-cohesive sediment types, becasue 
+!  Need to update bed mass for the non-cohesive sediment types, becasue
 !  they did not partake in the bedload transport.
 !
       DO ised=1,NCS
@@ -1072,9 +1072,9 @@
 
       RETURN
       END SUBROUTINE sed_bedload_vandera_tile
-! 
+!
 ! Subroutines and functions required for Van der A formulation.
-! 
+!
       SUBROUTINE sandload_vandera( wavecycle,                           &
      &                              Hs, Td,  depth, RR,                 &
      &                              d50, rhos, c_w,                     &
@@ -1097,7 +1097,7 @@
       real(r8), intent(out):: om_ii, om_iy
 !
 ! local variables
-! 
+!
       real(r8), parameter :: m_fac=11.0_r8, n_fac=1.2_r8
       real(r8), parameter :: alpha_fac=8.2_r8
       real(r8), parameter :: xi=1.7_r8 ! Based on Santoss_core.m
@@ -1109,8 +1109,8 @@
       real(r8) :: w_sc_eta, w_sc_dsf
       real(r8) :: cff, cff1_eta, cff1_dsf
       real(r8) :: P
-! 
-! Find settling velocity based on Soulsby (1997). 
+!
+! Find settling velocity based on Soulsby (1997).
 ! VA2013 Use 0.8*d50 for settling velocity (text under equation 28).
 !
       w_s=w_s_calc(0.8_r8*d50, rhos)
@@ -1142,12 +1142,12 @@
 !
       IF(eta.gt.0.0_r8) THEN
 !
-! For ripple regime 
+! For ripple regime
 !
         P=alpha_fac*eta*cff*cff1_eta
       ELSEIF(eta.eq.0.0_r8)THEN
 !
-! For sheet flow regime 
+! For sheet flow regime
 !
         P=alpha_fac*dsf*cff*cff1_dsf
       ENDIF
@@ -1156,9 +1156,9 @@
 !
 ! CRS for multiple sed types
 !
-      eps_eff=1.0_r8 
+      eps_eff=1.0_r8
       theta_ieff=eps_eff*mag_theta_i
-! 
+!
 ! Find critical Shields parameters based on Soulsby (1997).
 !
       theta_cr=theta_cr_calc(d50, rhos)
@@ -1168,8 +1168,8 @@
       theta_diff=MAX((theta_ieff-theta_cr),0.0_r8)
       om_i=m_fac*(theta_diff)**n_fac
 !
-! VA2013 Equation 23-26, Sandload entrained during half cycle 
-! 
+! VA2013 Equation 23-26, Sandload entrained during half cycle
+!
       IF(P.le.1.0_r8) THEN
         om_ii=om_i
         om_iy=0.0_r8
@@ -1195,22 +1195,22 @@
 !  This subroutine returns the following:
 !  eta                 : ripple height
 !  udelta              : current velocity at the wave boundary layer
-!  fd                  : current friction factor  
+!  fd                  : current friction factor
 !  tau_wRe             : Wave averaged Reynolds stress
-!  T_c, T_t, T_cu, T_tu: Updated time periods in half cycles 
+!  T_c, T_t, T_cu, T_tu: Updated time periods in half cycles
 !                        based on current velocity
 !**********************************************************************
-! 
+!
       USE mod_kinds
       USE mod_scalars
       USE mod_vandera_funcs
 !
       implicit none
-!  
+!
 ! Input the crest or trough half cycle velocity
 ! d50 -- grain size in meters
-! Different for crest and trough half cycles 
-!       
+! Different for crest and trough half cycles
+!
       real(r8), intent(in) :: d50, d90, osmgd
       real(r8), intent(in) :: Td, depth
       real(r8), intent(in) :: umag_curr, phi_curwave, Zref
@@ -1221,34 +1221,34 @@
       real(r8), intent(inout) :: eta, udelta, fd, ksw, tau_wRe
 !
 !  Local variables
-! 
+!
       integer  :: iter
       integer,  parameter :: total_iters=10
       real(r8), parameter :: tol=0.001_r8, von_k=0.41_r8
       real(r8), parameter :: eps = 1.0E-14_r8
       real(r8) :: theta_timeavg_old, theta_timeavg, theta_hat_i
-      real(r8) :: k_wn 
+      real(r8) :: k_wn
       real(r8) :: psi  ! maximum mobility number
       real(r8) :: rlen ! ripple length
       real(r8) :: omega
-      real(r8) :: ksd  
+      real(r8) :: ksd
       real(r8) :: fw
       real(r8) :: alpha
       real(r8) :: alpha_w, fwd, k, c_w
       real(r8) :: ustarw, delw
 !
 ! Iterative solution to obtain current and wave related bed roughness
-! VA2013 Apendix A, Shields parameter (Stress) depends on bed roughness 
+! VA2013 Apendix A, Shields parameter (Stress) depends on bed roughness
 ! Bed roughness computed from converged Shields parameter
 !
-! Maximum mobility number at crest and trough 
+! Maximum mobility number at crest and trough
 ! For irregular waves, use Rayleigh distributed maximum value
-! VA, text under equation Appendix B.4 
+! VA, text under equation Appendix B.4
 !
       psi=(1.27_r8*uhat)**2*osmgd
 !
-! Use Appendix B eqn B.1 and B.2 to get ripple height and length 
-!   
+! Use Appendix B eqn B.1 and B.2 to get ripple height and length
+!
       CALL ripple_dim(psi, d50, eta, rlen)
 !
       eta=eta*ahat
@@ -1261,12 +1261,12 @@
       theta_timeavg=0.0_r8
       theta_timeavg_old=0.0_r8
       DO iter=1,total_iters
-! 
-! Calculate wave related bed roughness from VA2013 A.5     
-! 
+!
+! Calculate wave related bed roughness from VA2013 A.5
+!
         ksw=ksw_calc(d50, mu_calc(d50), theta_timeavg, eta, rlen)
 !
-! Calculate full-cycle wave friction factor VA2013 Appendix Eqn. A.4 
+! Calculate full-cycle wave friction factor VA2013 Appendix Eqn. A.4
 !
         fw=fw_calc(ahat, ksw)
 !
@@ -1276,18 +1276,18 @@
      &                                                  eta, rlen)
 !
 ! Calculate full-cycle current friction factor from VA2013 Eqn. 20
-! 
+!
         fd=fd_calc(umag_curr, Zref, ksd)
 !
-        ustarw=0.5_r8*fw*uhat**2.0_r8 
-        delw=2.0_r8*von_k*ustarw/omega 
+        ustarw=0.5_r8*fw*uhat**2.0_r8
+        delw=2.0_r8*von_k*ustarw/omega
 !
-! udelta is the current velocity at the wave boundary layer 
+! udelta is the current velocity at the wave boundary layer
 !
         udelta=MAX( (mag_bstr/von_k)*log(30.0_r8*delw/ksd),eps )
 !
 ! Calculate Time-averaged absolute Shields stress VA2013 Appendix Eq. A.3
-! 
+!
         theta_timeavg=osmgd*(0.5_r8*fd*udelta**2.0_r8+                  &
      &                       0.25_r8*fw*uhat**2.0_r8)
 !
@@ -1300,22 +1300,22 @@
       alpha=udelta/(udelta+uhat)
       fwd=alpha*fd+(1.0-alpha)*fw
 !
-      k_wn=kh(Td,depth)/depth     ! Wave number 
+      k_wn=kh(Td,depth)/depth     ! Wave number
       c_w=2*pi/(k_wn*Td)          ! Wave speed
       alpha_w=0.424_r8
 !
       tau_wRe=rho0*fwd*alpha_w*uhat**3.0_r8/(2.0_r8*c_w)
-!        
-! Compute the change in time period based on converged udelta 
+!
+! Compute the change in time period based on converged udelta
 ! (current velocity at wave boundary layer)
 !
       CALL current_timeperiod(udelta, phi_curwave, umax, umin, RR,      &
      &                        T_c, T_t, Td)
 !
-! Calculate the effect of surface waves 
+! Calculate the effect of surface waves
 !
       CALL surface_wave_mod(Td, depth, uhat, T_c, T_cu, T_t, T_tu)
-! 
+!
       END SUBROUTINE full_wave_cycle_stress_factors
 !
       SUBROUTINE half_wave_cycle_stress_factors( T_iu, T_i, ahat, ksw,  &
@@ -1328,20 +1328,20 @@
 !**********************************************************************
 !  This subroutine returns the following:
 !  dsf                 : sheetflow thickness
-!  theta_ix, theta_iy  : Shields parameter in x and y dir. 
+!  theta_ix, theta_iy  : Shields parameter in x and y dir.
 !  mag_theta_i         : Magnitude of Shields parameter for half cycle
 !**********************************************************************
-! 
+!
       USE mod_kinds
       USE mod_scalars
       USE mod_vandera_funcs
 !
       implicit none
-!  
+!
 ! Input the crest or trough half cycle velocity
 ! d50 -- grain size in meters
-! Different for crest and trough half cycles 
-!       
+! Different for crest and trough half cycles
+!
       real(r8), intent(in) :: T_iu, T_i, ahat, ksw
       real(r8), intent(in) :: fd, alpha
       real(r8), intent(in) :: d50, osmgd
@@ -1350,33 +1350,33 @@
       real(r8), intent(inout) :: dsf, theta_ix, theta_iy, mag_theta_i
 !
 !  Local variables
-! 
+!
       real(r8), parameter :: eps = 1.0E-14_r8
       real(r8) :: fw_i, fwd_i
       real(r8) :: alpha_w, fwd, k, c_w
       real(r8) :: theta_hat_i
       real(r8) :: ui_rx, ui_ry, mag_ui
-!        
+!
 ! Wave friction factor for wave and crest half cycle VA2013 Eqn. 21
-! 
+!
       fw_i=fwi_calc(T_iu, T_i, ahat, ksw)
 !
 ! Wave current friction factor (Madsen and Grant) VA2013 Eqn. 18
-! Different for crest and trough 
+! Different for crest and trough
 !
       fwd_i=alpha*fd+(1.0_r8-alpha)*fw_i
 !
 ! VA2013-Magnitude of Shields parameter Eqn. 17
-! 
+!
       theta_hat_i=0.5_r8*fwd_i*uhat_i**2*osmgd
 !
-! Sheet flow thickness VA2013 Appendix C C.1 
-! Update from initial value 
+! Sheet flow thickness VA2013 Appendix C C.1
+! Update from initial value
 !
-      dsf=dsf_calc(d50, theta_hat_i) !this dsf is in m 
+      dsf=dsf_calc(d50, theta_hat_i) !this dsf is in m
 !
 ! Calculated the velocity magnitude based on representative velocities
-!  equation 12 from Van der A, 2013 
+!  equation 12 from Van der A, 2013
 !
 !-----------------------------------------------------------------------
 ! Get the representative trough half cycle water particle velocity
@@ -1388,19 +1388,19 @@
       mag_ui=MAX( SQRT(ui_rx*ui_rx+ui_ry*ui_ry),eps )
 !
 ! VA2013-Magnitude of Shields parameter Eqn. 17
-! 
+!
       mag_theta_i=0.5_r8*fwd_i*mag_ui**2*osmgd
 !
 !-----------------------------------------------------------------------
 ! Shields parameter in crest cycle
-! rho0 is required for non-dimensionalizing 
+! rho0 is required for non-dimensionalizing
 !-----------------------------------------------------------------------
 !
       theta_ix=ABS(mag_theta_i)*ui_rx/(mag_ui)+tau_wRe*osmgd/rho0
       theta_iy=ABS(mag_theta_i)*ui_ry/(mag_ui)
-!      
+!
       mag_theta_i=sqrt(theta_ix*theta_ix+theta_iy*theta_iy)
-! 
+!
       END SUBROUTINE half_wave_cycle_stress_factors
 !
       SUBROUTINE current_timeperiod(unet, phi_curwave, umax, umin,      &
@@ -1414,15 +1414,15 @@
 ! Modify the crest and trough time periods based on current velocity
 ! This function was developed by Chris Sherwood and Tarandeep Kalra
 !
-! The basis for these formulations are formed from Appendix A.3 
-! in SANTOSS report. 
+! The basis for these formulations are formed from Appendix A.3
+! in SANTOSS report.
 ! Report number: SANTOSS_UT_IR3 Date: January 2010
 !
       USE mod_kinds
       USE mod_scalars
 !
       implicit none
-!  
+!
       real(r8), intent(in) :: unet, phi_curwave
       real(r8), intent(in) :: umax, umin
       real(r8), intent(in) :: RR, Td
@@ -1482,25 +1482,25 @@
 !
       SUBROUTINE surface_wave_mod(Td, depth, uhat,                      &
      &                            T_c, T_cu, T_t, T_tu)
-! 
+!
 !**********************************************************************
 !  This subroutine returns the following:
-!  T_c, T_cu, T_t, T_tu  : Change in time period in crest and 
+!  T_c, T_cu, T_t, T_tu  : Change in time period in crest and
 !                          trough cycle due to particle displacement
-!                          under surface waves. 
+!                          under surface waves.
 !**********************************************************************
 !
 ! Crest period extension for horizontal particle displacement.
-! Tuning factor eps_eff = 0.55 from measurements GWK Schretlen 2010         
-! Equations in Appendix B of SANTOSS Report 
-! Report number: SANTOSS_UT_IR3 Date: January 2010 
+! Tuning factor eps_eff = 0.55 from measurements GWK Schretlen 2010
+! Equations in Appendix B of SANTOSS Report
+! Report number: SANTOSS_UT_IR3 Date: January 2010
 !
       USE mod_kinds
       USE mod_scalars
       USE mod_vandera_funcs
 !
       implicit none
-! 
+!
       real(r8), intent(in) :: Td, depth, uhat
       real(r8), intent(inout) :: T_c, T_cu, T_t, T_tu
 !
@@ -1532,27 +1532,27 @@
       END SUBROUTINE surface_wave_mod
 !
       SUBROUTINE ripple_dim(psi, d50, eta, rlen)
-! 
+!
 !**********************************************************************
 !  This subroutine returns the following:
-!  eta, rlen : Ripple dimensions: (height and length) 
+!  eta, rlen : Ripple dimensions: (height and length)
 !**********************************************************************
 !
 ! Calculate ripple dimensions of O'Donoghue et al. 2006
 ! based on VA2013 Appendix B
-!        
+!
       USE mod_kinds
-      USE mod_scalars 
+      USE mod_scalars
 
-      implicit none 
+      implicit none
 !
       real(r8), intent(in)  :: psi, d50
       real(r8), intent(out) :: eta, rlen
 !
-      real(r8) :: d50_mm 
-      real(r8) :: m_eta, m_lambda, n_eta, n_lambda 
+      real(r8) :: d50_mm
+      real(r8) :: m_eta, m_lambda, n_eta, n_lambda
       real(r8), parameter :: eps=1.0E-14_r8
-!     
+!
       d50_mm=0.001_r8*d50
       IF(d50_mm.lt.0.22_r8) THEN
         m_eta=0.55_r8
@@ -1564,8 +1564,8 @@
         m_eta=1.0_r8
         m_lambda=1.0_r8
       ENDIF
-! 
-! Smooth transition between ripple regime and bed sheet flow regime 
+!
+! Smooth transition between ripple regime and bed sheet flow regime
 !
       IF(psi.le.190.0_r8) THEN
         n_eta=1.0_r8
@@ -1586,10 +1586,10 @@
       END SUBROUTINE ripple_dim
 !
       SUBROUTINE skewness_params( H_s, T, depth, r, phi )
-!        
+!
 ! Ruessink et al. provides equations for calculating skewness parameters
 ! Uses Malarkey and Davies equations to get "bb" and "r"
-! Given input of H_s, T and depth 
+! Given input of H_s, T and depth
 ! r     - skewness/asymmetry parameter r=2b/(1+b^2)            [value]
 ! phi   - skewness/asymmetry parameter                         [value]
 ! Su     - umax/(umax-umin)                                    [value]
@@ -1605,8 +1605,8 @@
       real(r8), intent(in)  :: H_s, T, depth
       real(r8), intent(out) :: r, phi
 !
-! Local variables 
-! 
+! Local variables
+!
       real(r8), parameter :: p1=0.0_r8
       real(r8), parameter :: p2=0.857_r8
       real(r8), parameter :: p3=-0.471_r8
@@ -1623,9 +1623,9 @@
 !
 ! k is the local wave number computed with linear wave theory.
 !
-      k_wn=kh(T,depth)/depth    
+      k_wn=kh(T,depth)/depth
 !
-      a_w=0.5_r8*H_s 
+      a_w=0.5_r8*H_s
       Ur=0.75_r8*a_w*k_wn/((k_wn*depth)**3.0_r8)
 !
 ! Ruessink et al., 2012 Equation 9.
@@ -1633,10 +1633,10 @@
       cff=EXP( (p3-log10(Ur)) /p4)
       B=p1+((p2-p1)/(1.0_r8+cff))
       psi=-90.0_r8*deg2rad*(1.0_r8-TANH(p5/Ur**p6))
-! 
+!
 ! Markaley and Davies, equation provides bb which is "b" in paper
 ! Check from where CRS found these equations
-! 
+!
       bb=sqrt(2.0_r8)*B/(sqrt(2.0_r8*B**2.0_r8+9.0_r8))
       r=2.0_r8*bb/(bb**2.0_r8+1.0_r8)
 !
@@ -1644,9 +1644,9 @@
 !
       phi=-psi-0.5_r8*pi
 !
-! Where are these asymmetry Su, Au utilized 
-! recreate the asymetry 
-!          
+! Where are these asymmetry Su, Au utilized
+! recreate the asymetry
+!
       Su=B*cos(psi)
       Au=B*sin(psi)
 !
@@ -1655,12 +1655,12 @@
 
       SUBROUTINE abreu_points( r, phi, Uw, T, DTc, DTt,                 &
      &                                 DTcu, DTtu, umax, umin, RR )
-! 
-!  Calculate umax, umin, and phases of asymmetrical wave orbital velocity 
+!
+!  Calculate umax, umin, and phases of asymmetrical wave orbital velocity
 !
 !  Use the asymmetry parameters from Ruessink et al, 2012
-!  to get the umax, umin and phases of asymettrical wave 
-!  orbital velocity to be used by Van Der A. 
+!  to get the umax, umin and phases of asymettrical wave
+!  orbital velocity to be used by Van Der A.
 !  T_c is duration of crest
 !  T_cu Duration of accerating flow within crest half cycle
 !
@@ -1673,8 +1673,8 @@
       real(r8), intent(out) :: Dtc, DTt, DTcu, DTtu
       real(r8), intent(out) :: umax, umin, RR
 !
-! Local variables 
-! 
+! Local variables
+!
       real(r8) :: b, c, ratio, tmt, tmc, tzd, tzu
       real(r8) :: omega, w, phi_new
       real(r8) :: P, F0, betar_0, beta
@@ -1686,14 +1686,14 @@
 !
       phi_new=-phi
 
-! Malarkey and Davies (Under equation 16b) 
+! Malarkey and Davies (Under equation 16b)
       P=SQRT(1.0_r8-r*r)
 !
-! Malarkey and Davies (Under equation 16b) 
+! Malarkey and Davies (Under equation 16b)
 !
       b=r/(1.0_r8+P)
 !
-! Appendix E of Malarkey and Davies 
+! Appendix E of Malarkey and Davies
 !
       c=b*SIN(phi_new)
 !
@@ -1723,16 +1723,16 @@
         ratio=-1.0_r8
       ENDIF
       tmt=ASIN(ratio)
-!       
+!
       IF(tmc.lt.0.0_r8) THEN
         tmc=tmc+2.0_r8*pi
       ENDIF
       IF(tmt.lt.0.0_r8) THEN
         tmt=tmt+2.0_r8*pi
       ENDIF
-! 
-! Non dimensional umax and umin, under E5 in Malarkey and Davies 
-! 
+!
+! Non dimensional umax and umin, under E5 in Malarkey and Davies
+!
       umax=1.0_r8+c
       umin=umax-2.0_r8
 !
@@ -1745,20 +1745,20 @@
 !
       tzu=ASIN(b*SIN(phi_new))
       tzd=2.0_r8*ACOS(c)+tzu
-! 
+!
 ! MD, equation 17
 !
       RR=0.5_r8*(1.0_r8+b*SIN(phi_new))
-! 
+!
 ! MD, under equation 18
-! 
+!
       IF(r.le.0.5_r8) THEN
         F0=1.0_r8-0.27_r8*(2.0_r8*r)**(2.1_r8)
       ELSE
         F0=0.59_r8+0.14_r8*(2.0_r8*r)**(-6.2_r8)
       ENDIF
 !
-! MD, Equation 15a,b 
+! MD, Equation 15a,b
 !
       IF(r.ge.0.0_r8.and.r.lt.0.5)THEN
         betar_0=0.5_r8*(1.0_r8+r)
@@ -1781,7 +1781,7 @@
       Ak=-3.0_r8*COS(phi_new)/cff
 !
 ! These are the dimensional fractions of wave periods needed by Van der A eqn.
-! TSK - Check source of these equations 
+! TSK - Check source of these equations
 !
       w=1.0_r8/omega
       DTc=(tzd-tzu)*w

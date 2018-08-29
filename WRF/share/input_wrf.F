@@ -157,7 +157,7 @@
       IF ( switch .EQ. restart_only ) THEN
 
         ! recover the restart alarms from input if available
- 
+
         CALL wrf_get_dom_ti_integer( fid , 'MAX_WRF_ALARMS', max_wrf_alarms_compare, 1, icnt, ierr )
         IF ( max_wrf_alarms_compare .NE. MAX_WRF_ALARMS ) THEN
           WRITE(wrf_err_message,*)'MAX_WRF_ALARMS different in restart file (',max_wrf_alarms_compare,&
@@ -168,13 +168,13 @@
             IF ( grid%alarms_created(i) .AND. .NOT. i .EQ. boundary_only ) THEN
               write(alarmname,'("WRF_ALARM_ISRINGING_",i2.2)')i
               CALL wrf_get_dom_ti_integer( fid, TRIM(alarmname), iring, 1, icnt, ierr )
-  
+
               write(alarmname,'("WRF_ALARM_SECS_TIL_NEXT_RING_",i2.2)')i
               CALL wrf_get_dom_ti_integer( fid, TRIM(alarmname), seconds, 1, icnt, ierr )
               IF ( ierr .EQ. 0 &
                    .AND. seconds .GE. 0 ) THEN  ! disallow negative intervals; can happen with wrfbdy datasets
                                                 ! which keep time differently
-  
+
                 ! Get and set interval so that we are sure to have both the
                 ! interval and first ring time set correctly
                 CALL WRFU_AlarmGet( grid%alarms(i), ringinterval=interval2 )
@@ -204,13 +204,13 @@
           ENDDO
         ENDIF
 
-     
+
      !OUTPUT ONLY (KK)
 
       IF ( switch .EQ. restart_only .AND. .NOT. config_flags%override_restart_timers ) THEN
 
         ! recover the restart alarms from input if available
- 
+
         CALL wrf_get_dom_ti_integer( fid , 'MAX_WRF_ALARMS', max_wrf_alarms_compare, 1, icnt, ierr )
         IF ( max_wrf_alarms_compare .NE. MAX_WRF_ALARMS ) THEN
           WRITE(wrf_err_message,*)'MAX_WRF_ALARMS different in restart file (',max_wrf_alarms_compare,&
@@ -221,13 +221,13 @@
             IF ( grid%alarms_created(i) .AND. .NOT. i .EQ. boundary_only ) THEN
               write(alarmname,'("WRF_ALARM_ISRINGING_",i2.2)')i
               CALL wrf_get_dom_ti_integer( fid, TRIM(alarmname), iring, 1, icnt, ierr )
-  
+
               write(alarmname,'("WRF_ALARM_SECS_TIL_NEXT_RING_",i2.2)')i
               CALL wrf_get_dom_ti_integer( fid, TRIM(alarmname), seconds, 1, icnt, ierr )
               IF ( ierr .EQ. 0 &
                    .AND. seconds .GE. 0 ) THEN  ! disallow negative intervals; can happen with wrfbdy datasets
                                                 ! which keep time differently
-  
+
                 ! Get and set interval so that we are sure to have both the
                 ! interval and first ring time set correctly
                 CALL WRFU_AlarmGet( grid%alarms(i), ringinterval=interval2 )
@@ -388,7 +388,7 @@
           CALL wrf_get_dom_ti_integer ( fid , 'i_parent_start' ,    itmp , 1 , icnt , ierr3 )
        ELSE IF ( ( ( switch .EQ. auxinput1_only ) .OR. ( switch .EQ. input_only ) ) .AND. ( grid%id .EQ. 1 ) ) THEN
           itmp  = config_flags%i_parent_start
-          ierr3 = 0 
+          ierr3 = 0
        END IF
        ierr = max( ierr, ierr3 )
        IF ( itmp .NE. config_flags%i_parent_start ) THEN
@@ -404,7 +404,7 @@
           CALL wrf_get_dom_ti_integer ( fid , 'j_parent_start' ,    itmp , 1 , icnt , ierr3 )
        ELSE IF ( ( ( switch .EQ. auxinput1_only ) .OR. ( switch .EQ. input_only ) ) .AND. ( grid%id .EQ. 1 ) ) THEN
           itmp  = config_flags%j_parent_start
-          ierr3 = 0 
+          ierr3 = 0
        END IF
        ierr = max( ierr, ierr3 )
        IF ( itmp .NE. config_flags%j_parent_start ) THEN
@@ -560,7 +560,7 @@
     ! The default is set to 24 somewhere, from the number of categories
     ! in the traditional USGS dataset
 
-    IF ( ( switch .EQ. input_only )       .OR. & 
+    IF ( ( switch .EQ. input_only )       .OR. &
          ( switch .EQ. auxinput1_only )   .OR. &
          ( switch .EQ. auxinput2_only ) ) THEN
       call wrf_get_dom_ti_integer(fid, "NUM_LAND_CAT", num_land_cat_compare, 1, icnt, ierr)
@@ -591,7 +591,7 @@
     IF ( ( switch .EQ. auxinput1_only ) .AND. &
          ( first_date_nml .EQ. first_date_input ) )  THEN
        CALL wrf_get_dom_ti_integer ( fid, 'NUM_METGRID_SOIL_LEVELS', itmp, 1, icnt, ierr )
-   
+
        IF ( ierr .EQ. 0 ) THEN
 
 #if (EM_CORE == 1)
@@ -954,7 +954,7 @@
           grid%hypsometric_opt = 1
           config_flags%hypsometric_opt = 1
 	  DO loop = 1 , grid%max_dom
-            CALL nl_set_hypsometric_opt ( loop , 1 ) 
+            CALL nl_set_hypsometric_opt ( loop , 1 )
           END DO
           WRITE(wrf_err_message,*)'NOTE:  Ideal cases always use hypsometric_opt=1, regardless of namelist setting'
           CALL wrf_debug( 1 , wrf_err_message )
@@ -965,7 +965,7 @@
 
         !  For backward compatibility.  If we do not find the hypsometric_opt defined
         !  in the input data, this is pre version 3.4.  Most likely, the hypsometric_opt
-        !  was the default value, 1.  
+        !  was the default value, 1.
 
         hypsometric_opt = -1
         CALL wrf_get_dom_ti_integer ( fid , 'HYPSOMETRIC_OPT' , hypsometric_opt , 1 , icnt , ierr )
@@ -973,7 +973,7 @@
           grid%hypsometric_opt = 1
           config_flags%hypsometric_opt = 1
 	  DO loop = 1 , grid%max_dom
-            CALL nl_set_hypsometric_opt ( loop , 1 ) 
+            CALL nl_set_hypsometric_opt ( loop , 1 )
           END DO
           WRITE(wrf_err_message,*)'Resetting the hypsometric_opt from default value of 2 to 1'
           CALL wrf_debug( 0 , wrf_err_message )
@@ -1030,7 +1030,7 @@
             CALL wrf_atotime( current_date(1:19), time )
             CALL domain_clock_get( grid, current_time=currtime, &
                                          current_timestr=currtimestr )
-#if (DA_CORE != 1) 
+#if (DA_CORE != 1)
 ! Don't perform the check for WRFVAR, as we're not passing the right dates
 ! around
             CALL domain_clockprint(150, grid, &
@@ -1072,7 +1072,7 @@
           CALL wrf_atotime( this_datestr(1:19), grid%this_bdy_time )
           CALL wrf_get_dom_td_char ( fid , 'NEXTBDYTIME' ,  current_date(1:19), next_datestr , ierr )
           CALL wrf_atotime( next_datestr(1:19), grid%next_bdy_time )
-         
+
           WRITE ( wrf_err_message , * ) 'LBC for restart: Starting valid date = ',this_datestr(1:19),', Ending valid date = ',next_datestr(1:19)
           CALL wrf_message( TRIM(wrf_err_message) )
           WRITE ( wrf_err_message , * ) 'LBC for restart: Restart time            = ',trim(currtimestr)
@@ -1089,7 +1089,7 @@
               !  While the lateral BC time is less than the restart time, advance forward to the next LBC time.
 
               icount = 0
-              DO WHILE ( ( currentTime .GE. grid%next_bdy_time ) .AND. ( icount < 10000 ) ) 
+              DO WHILE ( ( currentTime .GE. grid%next_bdy_time ) .AND. ( icount < 10000 ) )
                   CALL wrf_get_next_time(fid, current_date , ierr)
                   IF ( ierr .NE. 0 ) THEN
                      CALL wrf_debug ( 0, '---- ERROR: Cannot find a valid time to start the LBC during this restart, likely ran out of time periods to test' )
@@ -1102,7 +1102,7 @@
                   CALL wrf_message( TRIM(wrf_err_message) )
                   icount = icount + 1
               END DO
-             
+
               !  Now the LBC time either matches or is beyond the restart time.  If it matches, we are at the
               !  right time.  If we have gone too far, then back up one time period, and we are good to go.
 
@@ -1142,7 +1142,7 @@
        IF( currentTime .GE. grid%next_bdy_time ) THEN
           IF ( wrf_dm_on_monitor() ) THEN
              write(a_message,*) 'THIS TIME ',this_datestr(1:19),', NEXT TIME ',next_datestr(1:19)
-             CALL wrf_message ( a_message ) 
+             CALL wrf_message ( a_message )
           END IF
           RETURN
        ENDIF
@@ -1160,7 +1160,7 @@
 #endif
 
     !  This test should go after all of the metadata is input, and before the gridded input is ingested.
-     
+
     IF ( count_fatal_error .GT. 0 ) THEN
        WRITE (wrf_err_message, FMT='(A,I6, A)') 'NOTE:  ', count_fatal_error, ' namelist vs input data inconsistencies found.'
        CALL wrf_message ( wrf_err_message )
@@ -1173,7 +1173,7 @@
          switch .EQ. restart_only    ) THEN
       newswitch = switch
       p => grid%head_statevars%next
-      DO WHILE ( ASSOCIATED( p ) ) 
+      DO WHILE ( ASSOCIATED( p ) )
         IF ( p%ProcOrient .NE. 'X' .AND. p%ProcOrient .NE. 'Y' ) THEN   ! no I/O for xposed variables
           IF ( p%Ndim .EQ. 0 ) THEN
             IF ((p%Restart.AND.switch.EQ.restart_only).OR.on_stream( p%streams,newswitch)) THEN
@@ -1265,9 +1265,9 @@
 #if ( ( EM_CORE == 1 ) && ( DA_CORE != 1 ) )
                   !  Vertical interpolation space is required if specified by user.
 
-                  if( TRIM(p%dimname1).EQ.'bottom_top'.OR.TRIM(p%dimname1).EQ.'bottom_top_stag') i_inter = 1 
+                  if( TRIM(p%dimname1).EQ.'bottom_top'.OR.TRIM(p%dimname1).EQ.'bottom_top_stag') i_inter = 1
 #endif
-                  
+
                   IF      ( p%Type .EQ. 'r' ) THEN
                     IF( (i_inter.eq.1.and.n_ref_m.ge.2).and.(switch.eq.history_only) ) THEN
                        em1_c = (p%em1 - 1)/n_ref_m +1

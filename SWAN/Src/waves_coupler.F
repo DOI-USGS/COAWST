@@ -135,7 +135,7 @@
 # ifdef MCT_INTERP_WV2AT
       TYPE T_AV2_A
         TYPE(AttrVect) :: wav2atm_AV2         ! AttrVect variables
-        TYPE(AttrVect) :: atm2wav_AV2 
+        TYPE(AttrVect) :: atm2wav_AV2
       END TYPE T_AV2_A
       TYPE (T_AV2_A), ALLOCATABLE :: AV2_A(:,:)
 
@@ -502,7 +502,7 @@
       cad=LEN_TRIM(to_add)
       write(wostring(cid:cid+cad-1),'(a)') to_add(1:cad)
       cid=cid+cad
-#endif  
+#endif
 !
 !  Finalize and remove trailing spaces from the wostring
 !  for the rlist.
@@ -820,11 +820,11 @@
      &                             "WQP",avdata)
 !
 #if defined VEGETATION && defined VEG_SWAN_COUPLING \
-      && defined VEG_STREAMING      
+      && defined VEG_STREAMING
       ELSE IF (IVTYPE.eq.57) THEN
         CALL AttrVect_importRAttr (AttrVect_G(ng)%wav2ocn_AV,           &
      &                             "DISVEG",avdata)
-#endif   
+#endif
       END IF
 !
       IF (IRQ.eq.Numcouple) THEN
@@ -1350,7 +1350,7 @@
           DO IX=Istr,Iend
             IP=IP+1
             INDXG=(IY-1)*MXC+IX
-            TEMPMCT(INDXG,idveg)=avdata(IP)                     
+            TEMPMCT(INDXG,idveg)=avdata(IP)
             range(1)=MIN(range(1),REAL(avdata(IP)))
             range(2)=MAX(range(2),REAL(avdata(IP)))
           END DO
@@ -1576,7 +1576,7 @@
 !
 # if defined WAVES_OCEAN && defined SED_MORPH
 ! Insert depth into SWAN array.
-! Here the depth is really the bottom level. 
+! Here the depth is really the bottom level.
 ! When the user requests depth for output, that value is written
 ! as COMPDA(INDX,JWLV2) which is DEPTH (really botlev) + watlev.
 !
@@ -1617,10 +1617,10 @@
         END IF
 # endif
 !
-! Insert bot level, water level, velx, vely, fric, and winds 
+! Insert bot level, water level, velx, vely, fric, and winds
 ! into SWAN arrays.
 !
-! If not using a BBL model, then determine the non-spatially 
+! If not using a BBL model, then determine the non-spatially
 ! varying friction coeff to enter into the JFRC2 array.
 !
 # if defined WAVES_OCEAN && !defined BBL_MODEL
@@ -1659,7 +1659,7 @@
                   COMPDA(INDX,JWLV2)=TEMPMCT(IP,idwlv)
                   COMPDA(INDX,JVX2)=TEMPMCT(IP,idvlx)
                   COMPDA(INDX,JVY2)=TEMPMCT(IP,idvly)
-#  if defined VEGETATION && defined VEG_SWAN_COUPLING 
+#  if defined VEGETATION && defined VEG_SWAN_COUPLING
                   COMPDA(INDX,JNPLA2)=TEMPMCT(IP,idveg)
 #  endif
                 ELSE
@@ -2105,10 +2105,10 @@
         END IF
 # endif
 !
-! Insert bot level, water level, velx, vely, fric, and winds 
+! Insert bot level, water level, velx, vely, fric, and winds
 ! into SWAN arrays.
 !
-! If not using a BBL model, then determine the non-spatially 
+! If not using a BBL model, then determine the non-spatially
 ! varying friction coeff to enter into the JFRC2 array.
 !
         IP=0

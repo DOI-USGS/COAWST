@@ -174,7 +174,7 @@
      &                                                ,SIGT4
 
       REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME ),INTENT(IN) ::            &   !<--- Used only with physics (IKJ)
-     &                              GD_CLOUD,GD_CLOUD2                  
+     &                              GD_CLOUD,GD_CLOUD2
 !
       REAL,DIMENSION(IMS:IME,JMS:JME,KMS:KME),INTENT(INOUT) :: CLDFRA
 
@@ -323,8 +323,8 @@
         DO K=KTS+1,KTE
           T8W(I,K,J)=0.5*(TL(K-1)+TL(K))
         ENDDO
-!        T8W(I,KTE+1,J)=-1.E20 
-! For RRTM 
+!        T8W(I,KTE+1,J)=-1.E20
+! For RRTM
         T8W(I,KTE+1,J)=T8W(I,KTE,J) + 0.5*(T8W(I,KTE,J)-T8W(I,KTE-1,J))
 !
       ENDDO
@@ -409,14 +409,14 @@
      &                 ,DX=DXKM,DY=DYKM          &
      &                 ,DXKM=dxkm                                       &
 ! WRF-Solar variables
-                       ,swint_opt=config_flags%swint_opt                &   
+                       ,swint_opt=config_flags%swint_opt                &
      &       ,SWDDIR=grid%swddir,SWDDNI=grid%swddni,SWDDIF=grid%swddif     & ! jararias
      &       ,Gx=grid%Gx,Bx=grid%Bx,gg=grid%gg,bb=grid%bb                  & ! for sza-interpolation
      &       ,swdown_ref=grid%swdown_ref,swddir_ref=grid%swddir_ref        & !
-     &       ,coszen_ref=grid%coszen_ref                                   & 
-     &       ,coszen=grid%coszen                                   & 
-     &       ,hrang=grid%hrang                                   & 
-     &       ,ht=ht                                   & 
+     &       ,coszen_ref=grid%coszen_ref                                   &
+     &       ,coszen=grid%coszen                                   &
+     &       ,hrang=grid%hrang                                   &
+     &       ,ht=ht                                   &
      &       ,aer_type=config_flags%aer_type                                                        &
      &       ,aer_aod550_opt=config_flags%aer_aod550_opt,aer_aod550_val=config_flags%aer_aod550_val &
      &       ,aer_angexp_opt=config_flags%aer_angexp_opt,aer_angexp_val=config_flags%aer_angexp_val &
@@ -832,7 +832,7 @@
 !
 !-----------------------------------------------------------------------
 !
-#if (NMM_CORE==1)    
+#if (NMM_CORE==1)
       LOGICAL,INTENT(IN) ::  DISHEAT                       !  hwrf's doing
 #endif
       INTEGER,INTENT(IN) :: IDS,IDE,JDS,JDE,KDS,KDE                     &
@@ -1074,7 +1074,7 @@
       if ( config_flags%bl_pbl_physics == BOULACSCHEME ) then
          call wrf_error_fatal("Cannot use BOULAC PBL with NMM")
       endif
-      
+
       FRACTIONAL_SEAICE = CONFIG_FLAGS%FRACTIONAL_SEAICE
       IF ( FRACTIONAL_SEAICE == 1 ) THEN
          CALL WRF_ERROR_FATAL("NMM cannot use FRACTIONAL_SEAICE = 1.")
@@ -1478,7 +1478,7 @@
      &          ,NUM_URBAN_HI=config_flags%num_urban_hi                 & !multi-layer urban
      &          ,IDS=IDS,IDE=IDE,JDS=JDS,JDE=JDE,KDS=KDS,KDE=KDE        &
      &          ,IMS=IMS,IME=IME,JMS=JMS,JME=JME,KMS=KMS,KME=KME        &
-     &          ,IPS=ips,IPE=ipe, JPS=jps,JPE=jpe, KPS=kps,KPE=kpe      & 
+     &          ,IPS=ips,IPE=ipe, JPS=jps,JPE=jpe, KPS=kps,KPE=kpe      &
      &          ,I_START=GRID%I_START,I_END=GRID%I_END                  &
      &          ,J_START=GRID%J_START,J_END=GRID%J_END                  &
      &          ,KTS=KTS,KTE=KTE,NUM_TILES=GRID%NUM_TILES               &
@@ -1528,8 +1528,8 @@
      &        ,iopt_sfc=config_flags%opt_sfc,   iopt_frz=config_flags%opt_frz &
      &        ,iopt_inf=config_flags%opt_inf,   iopt_rad=config_flags%opt_rad &
      &        ,iopt_alb=config_flags%opt_alb,   iopt_snf=config_flags%opt_snf &
-     &        ,iopt_tbot=config_flags%opt_tbot, iopt_stc=config_flags%opt_stc & 
-     &        ,iopt_gla=config_flags%opt_gla,   iopt_rsf=config_flags%opt_rsf & 
+     &        ,iopt_tbot=config_flags%opt_tbot, iopt_stc=config_flags%opt_stc &
+     &        ,iopt_gla=config_flags%opt_gla,   iopt_rsf=config_flags%opt_rsf &
      &        , isnowxy=grid%isnowxy  ,    tvxy=grid%tvxy    ,    tgxy=grid%tgxy     &
      &        ,canicexy=grid%canicexy ,canliqxy=grid%canliqxy,   eahxy=grid%eahxy    &
      &        ,   tahxy=grid%tahxy    ,    cmxy=grid%cmxy    ,    chxy=grid%chxy     &
@@ -1544,7 +1544,7 @@
      &        ,planting=grid%planting , harvest=grid%harvest ,season_gdd=grid%season_gdd  &
      &        ,  xsaixy=grid%xsaixy   , taussxy=grid%taussxy                         &
      &        ,  t2mvxy=grid%t2mvxy   ,  t2mbxy=grid%t2mbxy                          &
-     &        ,  q2mvxy=grid%q2mvxy   ,  q2mbxy=grid%q2mbxy                          & 
+     &        ,  q2mvxy=grid%q2mvxy   ,  q2mbxy=grid%q2mbxy                          &
      &        ,  tradxy=grid%tradxy   ,   neexy=grid%neexy   ,   gppxy=grid%gppxy    &
      &        ,   nppxy=grid%nppxy    ,  fvegxy=grid%fvegxy  , runsfxy=grid%runsfxy  &
      &        , runsbxy=grid%runsbxy  ,  ecanxy=grid%ecanxy  ,  edirxy=grid%edirxy   &
@@ -1557,10 +1557,10 @@
      &        ,   evgxy=grid%evgxy    ,   evbxy=grid%evbxy   ,   ghvxy=grid%ghvxy    &
      &        ,   ghbxy=grid%ghbxy    ,   irgxy=grid%irgxy   ,   ircxy=grid%ircxy    &
      &        ,   irbxy=grid%irbxy    ,    trxy=grid%trxy    ,   evcxy=grid%evcxy    &
-     &        ,chleafxy=grid%chleafxy ,  chucxy=grid%chucxy                          &                       
-     &        ,  chv2xy=grid%chv2xy   ,  chb2xy=grid%chb2xy , chstarxy=grid%chstarxy &                       
-     &        ,  smoiseq=grid%smoiseq, smcwtdxy=grid%smcwtdxy, rechxy=grid%rechxy    &                       
-     &        ,  deeprechxy=grid%deeprechxy                                          &                       
+     &        ,chleafxy=grid%chleafxy ,  chucxy=grid%chucxy                          &
+     &        ,  chv2xy=grid%chv2xy   ,  chb2xy=grid%chb2xy , chstarxy=grid%chstarxy &
+     &        ,  smoiseq=grid%smoiseq, smcwtdxy=grid%smcwtdxy, rechxy=grid%rechxy    &
+     &        ,  deeprechxy=grid%deeprechxy                                          &
      &        ,coszen=grid%czen,xlat_urb2d=grid%hlat                                 &
 
 ! mosaic tiling for Noah
@@ -1660,7 +1660,7 @@
      &               ,THZ0=THZ0,QZ0=QZ0,UZ0=UZ0H,VZ0=VZ0H             &
      &               ,QSFC=QS,LOWLYR=LOWLYR                           &
      &               ,PSIM=PSIM,PSIH=PSIH,GZ1OZ0=GZ1OZ0               &
-     &               ,U10=U10,V10=V10,UOCE=UOCE,VOCE=VOCE,T2=T2,WSPD=WSPD,BR=BR,CHKLOWQ=CHKLOWQ &   
+     &               ,U10=U10,V10=V10,UOCE=UOCE,VOCE=VOCE,T2=T2,WSPD=WSPD,BR=BR,CHKLOWQ=CHKLOWQ &
      &               ,DX=DX,DY=DY,STEPBL=NPHS,WARM_RAIN=WARM_RAIN     &
      &               ,KPBL=KPBL,CT=CT,LH=ELFLX,SNOW=SNOW,XICE=SICE    &
      &               ,BL_PBL_PHYSICS=config_flags%bl_pbl_physics      &
@@ -1689,7 +1689,7 @@
 #if HWRF==1
      &               ,VAR_RIC=VAR_RIC                                 &    !Kwon Ric
 #endif
-     &               ,DKU3D=DKU3D,DKT3D=DKT3D 
+     &               ,DKU3D=DKU3D,DKT3D=DKT3D
 #if HWRF==1
      &               ,coef_ric_l=coef_ric_l,coef_ric_s=coef_ric_s     &    !Kwon for Ric
      &          ,pert_pbl=config_flags%pert_pbl                       &
@@ -2275,9 +2275,9 @@
      &                 ,SM,HBM2,PBLH,LPBL,CNVBOT,CNVTOP                 &
      &                 ,HTOP,HBOT,HTOPD,HBOTD,HTOPS,HBOTS               &
      &                 ,RTHBLTEN,RQVBLTEN,RTHRATEN                      &
-#if (NMM_CORE==1)    
+#if (NMM_CORE==1)
      &                 ,TWBS,QWBS                                       &
-     &                 ,DUCUDT, DVCUDT, MOMMIX, store_rand              &                  
+     &                 ,DUCUDT, DVCUDT, MOMMIX, store_rand              &
      &                 ,DTHCUDT,DQVCUDT,DQRCUDT,DQCCUDT,DQICUDT         &! added output CU tendency
      &                 ,DQSCUDT                                         &! added output CU tendency
 
@@ -2329,7 +2329,7 @@
 !
       INTEGER,DIMENSION(IMS:IME,JMS:JME),INTENT(IN) :: LPBL
       REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(IN) :: DX2D ! scale-sware sas
-      REAL,INTENT(IN) :: DYNMM                           ! Delt_Y 
+      REAL,INTENT(IN) :: DYNMM                           ! Delt_Y
       REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(INOUT) :: SCALEFUN,SCALEFUN1 !  scale-sware sas
                                                                      ! scale functions
        REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(INOUT) :: SIGMU,SIGMU1 ! updraft fractional area
@@ -2338,7 +2338,7 @@
       REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(INOUT) :: HPBL2D,EVAP2D,HEAT2D     !Kwon S&P
 
       REAL,DIMENSION(IMS:IME,JMS:JME)               :: SHALL
-! 
+!
       REAL,INTENT(IN) :: DT,GPS,PDTOP,PT
 !
       REAL,INTENT(INOUT) :: ACUTIM,AVCNVC
@@ -2360,7 +2360,7 @@
      &                 ,APR_CAPME,APR_CAPMI                             &
      &                 ,GSW,MASS_FLUX
 #if (NMM_CORE==1)
-     REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(INOUT) :: store_rand 
+     REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(INOUT) :: store_rand
 #endif
 !Biswas
        REAL,DIMENSION(IMS:IME,JMS:JME) :: HFX,QFX,PBLH
@@ -2384,7 +2384,7 @@
 !
 #if (NMM_CORE==1)
       REAL, INTENT(INOUT)::MOMMIX
-      REAL,DIMENSION(IMS:IME,JMS:JME,KMS:KME),INTENT(INOUT):: DUCUDT, DVCUDT 
+      REAL,DIMENSION(IMS:IME,JMS:JME,KMS:KME),INTENT(INOUT):: DUCUDT, DVCUDT
 ! 2015-12-14 added output tendency from CU
       REAL,DIMENSION(IMS:IME,JMS:JME,KMS:KME),INTENT(INOUT):: DTHCUDT   &
      &                                                      , DQVCUDT   &
@@ -2393,7 +2393,7 @@
      &                                                      , DQICUDT   &
      &                                                      , DQSCUDT
 !
-      REAL,DIMENSION(IDS:IDE,JDS:JDE)               :: DATA1 
+      REAL,DIMENSION(IDS:IDE,JDS:JDE)               :: DATA1
       LOGICAL, EXTERNAL::wrf_dm_on_monitor
 #endif
       REAL,DIMENSION(IMS:IME,JMS:JME,KMS:KME),INTENT(INOUT) :: CWM      &
@@ -2477,8 +2477,8 @@
       INTEGER, SAVE  :: nfirst
       data nfirst /0/
 #if (NMM_CORE==1)
-      INTEGER                    :: IDT                
-      REAL,   DIMENSION(2)       :: RND1 
+      INTEGER                    :: IDT
+      REAL,   DIMENSION(2)       :: RND1
 #endif
 !-----------------------------------------------------------------------
 !***********************************************************************
@@ -2525,8 +2525,8 @@
       IF(MOD(NTSD,NCNVC)/=0.AND.                                      &
      &   CONFIG_FLAGS%CU_PHYSICS==SASSCHEME)RETURN
       IF(MOD(NTSD,NCNVC)/=0.AND.                                      &
-     &   CONFIG_FLAGS%CU_PHYSICS==SCALESASSCHEME)RETURN 
-      
+     &   CONFIG_FLAGS%CU_PHYSICS==SCALESASSCHEME)RETURN
+
 !-----------------------------------------------------------------------
       NSTEP_CNV=NCNVC
 !
@@ -2675,7 +2675,7 @@
          ENDDO
 
         ENDIF
-	
+
       ELSE   ! hydrostatic
 
         DO J=MYJS2,MYJE2
@@ -2835,8 +2835,8 @@
 #endif
 #endif
      &                 ,SHALL=grid%shall                                &
-     &                 ,HPBL2D=HPBL2D,EVAP2D=EVAP2D,HEAT2D=HEAT2D       & 
-     &                 ,DX2D=DX2D,DYNMM=DYNMM                           & ! scale-sware SAS 
+     &                 ,HPBL2D=HPBL2D,EVAP2D=EVAP2D,HEAT2D=HEAT2D       &
+     &                 ,DX2D=DX2D,DYNMM=DYNMM                           & ! scale-sware SAS
      &                 ,SCALEFUN=SCALEFUN, SCALEFUN1=SCALEFUN1          & !  scale function
      &                 ,SIGMU=SIGMU, SIGMU1=SIGMU1                      & !  updraft fraction
 
@@ -3079,7 +3079,7 @@
      &                   ,GRID,CONFIG_FLAGS                             &
      &                   ,re_cloud,re_ice,re_snow                       & ! G. Thompson
      &                   ,has_reqc,has_reqi,has_reqs                    & ! G. Thompson
-     &                   ,diag_flag                                     & 
+     &                   ,diag_flag                                     &
      &                   ,IDS,IDE,JDS,JDE,KDS,KDE                       &
      &                   ,IMS,IME,JMS,JME,KMS,KME                       &
      &                   ,ITS,ITE,JTS,JTE,KTS,KTE)

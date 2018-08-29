@@ -420,7 +420,7 @@
       is=LEN_TRIM(Coptions)+1
       Coptions(is:is+14)=' ANA_SEDIMENT,'
 #endif
-#if defined VEGETATION && defined ANA_VEGETATION 
+#if defined VEGETATION && defined ANA_VEGETATION
       IF (Master) WRITE (stdout,20) 'ANA_VEGETATION',                   &
      &   'Analytical vegetation initial conditions.'
       is=LEN_TRIM(Coptions)+1
@@ -696,7 +696,7 @@
       is=LEN_TRIM(Coptions)+1
       Coptions(is:is+7)=' BNORM,'
 #endif
-#ifdef ESTUARYBGC 
+#ifdef ESTUARYBGC
       IF (Master) WRITE (stdout,20) 'ESTUARYBGC',                       &
      &   'Estuary bio-geo-chemical model (Testa et. al).'
       is=LEN_TRIM(Coptions)+1
@@ -988,7 +988,7 @@
       is=LEN_TRIM(Coptions)+1
       Coptions(is:is+17)=' DENITRIFICATION,'
 #endif
-#if defined DENITRIFICATION && defined ESTUARYBGC 
+#if defined DENITRIFICATION && defined ESTUARYBGC
       IF (Master) WRITE (stdout,20) 'DENITRIFICATION',                  &
      &   'Add denitrification processes.'
       is=LEN_TRIM(Coptions)+1
@@ -1049,13 +1049,13 @@
       is=LEN_TRIM(Coptions)+1
       Coptions(is:is+14)=' CHL_BACKSCAT,'
 #endif
-#if defined VEGETATION 
+#if defined VEGETATION
       IF (Master) WRITE (stdout,20) 'VEGETATION',                       &
      &   'Active submerged/emergent vegetation effects.'
       is=LEN_TRIM(Coptions)+1
       Coptions(is:is+12)=' VEGETATION,'
 #endif
-#if defined VEGETATION && defined MARSH_WAVE_THRUST 
+#if defined VEGETATION && defined MARSH_WAVE_THRUST
       IF (Master) WRITE (stdout,20) 'MARSH_WAVE_THRUST',                &
      &   'Vegetation module containing wave thrust effect on marshes .'
       is=LEN_TRIM(Coptions)+1
@@ -2131,7 +2131,7 @@
       is=LEN_TRIM(Coptions)+1
       Coptions(is:is+8)=' OXYGEN,'
 #endif
-#if defined OXYGEN && defined ESTUARYBGC 
+#if defined OXYGEN && defined ESTUARYBGC
 # ifdef OCMIP_OXYGEN_SC
 !
       IF (Master) WRITE (stdout,20) 'OCMIP_OXYGEN_SC',                  &
@@ -3099,7 +3099,7 @@
 # endif
 # if !(defined TS_MPDATA       || defined TS_A4HADVECTION || \
        defined TS_C2HADVECTION || defined TS_C4HADVECTION || \
-       defined TS_U3HADVECTION || defined TS_HSIMT) 
+       defined TS_U3HADVECTION || defined TS_HSIMT)
       IF (Master) WRITE (stdout,20) 'TS_C4HADVECTION',                  &
      &   'Fourth-order centered horizontal advection of tracers.'
       is=LEN_TRIM(Coptions)+1

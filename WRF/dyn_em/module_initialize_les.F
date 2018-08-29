@@ -16,14 +16,14 @@
 !
 
 !  This MODULE holds the routines which are used to perform various initializations
-!  for the individual domains.  
+!  for the individual domains.
 
 !  This MODULE CONTAINS the following routines:
 
 !  initialize_field_test - 1. Set different fields to different constant
 !                             values.  This is only a test.  If the correct
 !                             domain is not found (based upon the "id")
-!                             then a fatal error is issued.               
+!                             then a fatal error is issued.
 
 !-----------------------------------------------------------------------
 
@@ -50,7 +50,7 @@ CONTAINS
 ! Also dereferences the grid variables and passes them down as arguments.
 ! This is crucial, since the lower level routines may do message passing
 ! and this will get fouled up on machines that insist on passing down
-! copies of assumed-shape arrays (by passing down as arguments, the 
+! copies of assumed-shape arrays (by passing down as arguments, the
 ! data are treated as assumed-size -- ie. f77 -- arrays and the copying
 ! business is avoided).  Fie on the F90 designers.  Fie and a pox.
 
@@ -59,7 +59,7 @@ CONTAINS
    IMPLICIT NONE
 
    !  Input data.
-   TYPE (domain), POINTER :: grid 
+   TYPE (domain), POINTER :: grid
    !  Local data.
    INTEGER :: idum1, idum2
 
@@ -110,7 +110,7 @@ CONTAINS
    REAL    :: hm
    REAL    :: pi
 
-!  stuff from original initialization that has been dropped from the Registry 
+!  stuff from original initialization that has been dropped from the Registry
    REAL    :: vnu, xnu, xnus, dinit0, cbh, p0_temp, t0_temp, zd, zt
    REAL    :: qvf1, qvf2, pd_surf, theta_surf
    INTEGER :: it
@@ -218,7 +218,7 @@ CONTAINS
     CALL nl_set_map_proj(1,0)
 
 
-!  here we initialize data we currently is not initialized 
+!  here we initialize data we currently is not initialized
 !  in the input data
 
     DO j = jts, jte
@@ -234,7 +234,7 @@ CONTAINS
          grid%cosa(i,j)     = 1.
          grid%e(i,j)        = 0.
 !  for LES, include Coriolis force
-         grid%f(i,j)        = 1.e-4 
+         grid%f(i,j)        = 1.e-4
 
       END DO
    END DO
@@ -264,7 +264,7 @@ CONTAINS
      ENDIF
    ENDDO
 
-       IF (model_config_rec%eta_levels(1) .EQ. -1) THEN !we do not have eta_levels from namelist      
+       IF (model_config_rec%eta_levels(1) .EQ. -1) THEN !we do not have eta_levels from namelist
          !DJW start of original code to set eta levels
    IF (stretch_grid) THEN ! exponential stretch for eta (nearly constant dz)
 	    CALL wrf_debug(0, "module_initialize_les: eta_levels is not specified in the namelist, setting levels with stretched spacing in eta.")
@@ -334,18 +334,18 @@ CONTAINS
     grid%fnm(k) = .5* grid%dnw(k-1)/grid%dn(k)
    ENDDO
 
-   cof1 = (2.*grid%dn(2)+grid%dn(3))/(grid%dn(2)+grid%dn(3))*grid%dnw(1)/grid%dn(2) 
-   cof2 =     grid%dn(2)        /(grid%dn(2)+grid%dn(3))*grid%dnw(1)/grid%dn(3) 
+   cof1 = (2.*grid%dn(2)+grid%dn(3))/(grid%dn(2)+grid%dn(3))*grid%dnw(1)/grid%dn(2)
+   cof2 =     grid%dn(2)        /(grid%dn(2)+grid%dn(3))*grid%dnw(1)/grid%dn(3)
    grid%cf1  = grid%fnp(2) + cof1
    grid%cf2  = grid%fnm(2) - cof1 - cof2
-   grid%cf3  = cof2       
+   grid%cf3  = cof2
 
    grid%cfn  = (.5*grid%dnw(kde-1)+grid%dn(kde-1))/grid%dn(kde-1)
    grid%cfn1 = -.5*grid%dnw(kde-1)/grid%dn(kde-1)
    grid%rdx = 1./config_flags%dx
    grid%rdy = 1./config_flags%dy
 
-!  get the sounding from the ascii sounding file, first get dry sounding and 
+!  get the sounding from the ascii sounding file, first get dry sounding and
 !  calculate base state
 
   dry_sounding = .true.
@@ -362,7 +362,7 @@ CONTAINS
   CALL wrf_dm_bcast_real( u , nl_max )
   CALL wrf_dm_bcast_real( v , nl_max )
   CALL wrf_dm_bcast_real( qv , nl_max )
-  CALL wrf_dm_bcast_integer ( nl_in , 1 ) 
+  CALL wrf_dm_bcast_integer ( nl_in , 1 )
 
   write(6,*) ' returned from reading sounding, nl_in is ',nl_in
 
@@ -422,7 +422,7 @@ CONTAINS
    ENDDO
 
    !  c1 = d(B)/d(eta).  We define c1f as c1 on FULL levels.  For a vertical difference,
-   !  we need to use B and eta on half levels.  The k-loop ends up referring to the 
+   !  we need to use B and eta on half levels.  The k-loop ends up referring to the
    !  full levels, neglecting the top and bottom.
 
    DO k=kds+1, kde-1
@@ -432,9 +432,9 @@ CONTAINS
    !  The boundary conditions to get the coefficients:
    !  1) At k=kts: define d(B)/d(eta) = 1.  This gives us the same value of B and d(B)/d(eta)
    !     when doing the sigma-only B=eta.
-   !  2) At k=kte: with the new vertical coordinate, define d(B)/d(eta) = 0.  The curve B SMOOTHLY 
-   !     goes to zero, and at the very top, B continues to SMOOTHLY go to zero.  Note that for 
-   !     almost all cases of non B=eta, B is ALREADY=ZERO at the top, so this is a reasonable BC to 
+   !  2) At k=kte: with the new vertical coordinate, define d(B)/d(eta) = 0.  The curve B SMOOTHLY
+   !     goes to zero, and at the very top, B continues to SMOOTHLY go to zero.  Note that for
+   !     almost all cases of non B=eta, B is ALREADY=ZERO at the top, so this is a reasonable BC to
    !     assume.
    !  3) At k=kte: when trying to mimic the original vertical coordinate, since B = eta, then
    !     d(B)/d(eta) = 1.
@@ -567,8 +567,8 @@ CONTAINS
   DO J = jts, min(jde-1,jte)
   DO I = its, min(ide-1,ite)
 
-!  At this point grid%p_top is already set. find the DRY mass in the column 
-!  by interpolating the DRY pressure.  
+!  At this point grid%p_top is already set. find the DRY mass in the column
+!  by interpolating the DRY pressure.
 
    pd_surf = interp_0( pd_in, zk, grid%phb(i,1,j)/g, nl_in )
 
@@ -592,7 +592,7 @@ CONTAINS
       moist(i,k,j,P_QV) = interp_0( qv, pd_in, p_level, nl_in )
       grid%t_1(i,k,j)          = interp_0( theta, pd_in, p_level, nl_in ) - t0
       grid%t_2(i,k,j)          = grid%t_1(i,k,j)
-      
+
 
     enddo
 
@@ -637,8 +637,8 @@ CONTAINS
       grid%ph_1(i,k,j) = grid%ph_1(i,k-1,j) - &
                     grid%dnw(k-1)*((grid%Mub(i,j)+grid%Mu_1(i,j))*grid%al(i,k-1,j)+ &
                     grid%Mu_1(i,j)*grid%alb(i,k-1,j)  )
-                                                   
-      grid%ph_2(i,k,j) = grid%ph_1(i,k,j) 
+
+      grid%ph_2(i,k,j) = grid%ph_1(i,k,j)
       grid%ph0(i,k,j) = grid%ph_1(i,k,j) + grid%phb(i,k,j)
     ENDDO
 
@@ -673,7 +673,7 @@ CONTAINS
       call random_number (randx)
       randx = randx - 0.5
 !     DO K = 1, kte-1
-      DO K = 1, 4 
+      DO K = 1, 4
 
 !  No bubbles for LES!
 !  put in preturbation theta (bubble) and recalc density.  note,
@@ -703,8 +703,8 @@ CONTAINS
         grid%ph_1(i,kk,j) = grid%ph_1(i,kk-1,j) - (grid%dnw(kk-1))*(       &
                      (grid%mub(i,j)+grid%mu_1(i,j))*grid%al(i,kk-1,j)+ &
                       grid%mu_1(i,j)*grid%alb(i,kk-1,j)  )
-                                                   
-        grid%ph_2(i,kk,j) = grid%ph_1(i,kk,j) 
+
+        grid%ph_2(i,kk,j) = grid%ph_1(i,kk,j)
         grid%ph0(i,kk,j) = grid%ph_1(i,kk,j) + grid%phb(i,kk,j)
       ENDDO
 
@@ -931,7 +931,7 @@ CONTAINS
       enddo
 
       p_surf = 100.*p_surf  ! convert to pascals
-      qvf = 1. + rvovrd*qv_input(1) 
+      qvf = 1. + rvovrd*qv_input(1)
       rho_surf = 1./((r/p1000mb)*th_surf*qvf*((p_surf/p1000mb)**cvpm))
       pi_surf = (p_surf/p1000mb)**(r/cp)
 
@@ -945,7 +945,7 @@ CONTAINS
 !  specified surface pressure
 !  -> first, integrate from surface to lowest level
 
-          qvf = 1. + rvovrd*qv_input(1) 
+          qvf = 1. + rvovrd*qv_input(1)
           qvf1 = 1. + qv_input(1)
           rho_input(1) = rho_surf
           dz = h_input(1)
@@ -962,7 +962,7 @@ CONTAINS
             dz = h_input(k)-h_input(k-1)
             qvf1 = 0.5*(2.+(qv_input(k-1)+qv_input(k)))
             qvf = 1. + rvovrd*qv_input(k)   ! qv is in g/kg here
- 
+
             do it=1,10
               pm_input(k) = pm_input(k-1) &
                       - 0.5*dz*(rho_input(k)+rho_input(k-1))*g*qvf1

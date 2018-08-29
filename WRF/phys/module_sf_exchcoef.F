@@ -1,4 +1,4 @@
-!  This MODULE holds the routines that calculate air-sea exchange coefficients 
+!  This MODULE holds the routines that calculate air-sea exchange coefficients
 
 MODULE module_sf_exchcoef
 CONTAINS
@@ -48,7 +48,7 @@ CONTAINS
     END IF
 
   END SUBROUTINE znot_m_v1
-        
+
   SUBROUTINE znot_m_v0(uref,znotm)
   IMPLICIT NONE
 
@@ -57,7 +57,7 @@ CONTAINS
 ! Author      :  Biju Thomas on 02/07/2014
 
     REAL, INTENT(IN) :: uref
-    REAL, INTENT(OUT):: znotm 
+    REAL, INTENT(OUT):: znotm
     REAL             :: yz, y1, y2, y3, y4
 
     yz =  0.0001344
@@ -145,7 +145,7 @@ CONTAINS
     END IF
 
   END SUBROUTINE znot_t_v1
-        
+
   SUBROUTINE znot_t_v0(uref,znott)
   IMPLICIT NONE
 
@@ -154,7 +154,7 @@ CONTAINS
 ! Author      :  Biju Thomas on 02/07/2014
 
     REAL, INTENT(IN) :: uref
-    REAL, INTENT(OUT):: znott 
+    REAL, INTENT(OUT):: znott
 
     IF ( uref .LT. 7.0 ) THEN
        znott = (0.0185 / 9.8*(7.59e-4*uref**2+2.46e-2*uref)**2)
@@ -210,7 +210,7 @@ CONTAINS
        znott = ta6 + ta5*uu + ta4*uu**2  + ta3*uu**3 + ta2*uu**4 +     &
                ta1*uu**5 + ta0*uu**6
     ELSEIF ( uu .GE. 15.0  .AND. uu .LT. 60.0) THEN
-       znott = tb6 + tb5*uu + tb4*uu**2 + tb3*uu**3 + tb2*uu**4 +      & 
+       znott = tb6 + tb5*uu + tb4*uu**2 + tb3*uu**3 + tb2*uu**4 +      &
                tb1*uu**5 + tb0*uu**6
     ELSE
        znott = tt6 + tt5*uu + tt4*uu**2  + tt3*uu**3 + tt2*uu**4 +    &
@@ -256,7 +256,7 @@ CONTAINS
               call  znot_t_v2(windmks,zt)
 !! adjust a little to match obs at 10m, cd is reduced
             tmp=0.4*0.4/(alog(zlev/zm))**2   ! cd at zlev
-            zm1=z10/exp( sqrt(0.4*0.4/(tmp*0.95-0.0002)) ) 
+            zm1=z10/exp( sqrt(0.4*0.4/(tmp*0.95-0.0002)) )
 !ch
             tmp=0.4*0.4/(alog(zlevt/zm)*alog(zlevt/zt))  ! ch at zlev using old formula
             zt1=z10/exp( 0.4*0.4/( 0.95*tmp*alog(z10/zm1) )  )
@@ -265,7 +265,7 @@ CONTAINS
 
               call  znot_m_v1(windmks,zm)
               call  znot_t_v2(windmks,zt)
-!!  for wind<20, cd similar to icoef=2 at 10m, then reduced 
+!!  for wind<20, cd similar to icoef=2 at 10m, then reduced
              tmp=0.4*0.4/(alog(10.0/zm))**2   ! cd at zlev
              aaa=0.75
             if (windmks < 20) then
@@ -273,7 +273,7 @@ CONTAINS
             elseif(windmks < 45.0) then
               aaa=0.99+(windmks-20)*(0.75-0.99)/(45.0-20.0)
             endif
-            zm1=z10/exp( sqrt(0.4*0.4/(tmp*aaa)) )  
+            zm1=z10/exp( sqrt(0.4*0.4/(tmp*aaa)) )
 !ch
           tmp=0.4*0.4/(alog(zlevt/zm)*alog(zlevt/zt))  ! ch at zlev using old formula
             zt1=z10/exp( 0.4*0.4/( 0.95*tmp*alog(z10/zm1) )  )

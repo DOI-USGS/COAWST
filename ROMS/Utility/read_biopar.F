@@ -15,7 +15,7 @@
 !!
 # if defined BIO_FENNEL
 #  include <fennel_inp.h>
-# elif defined ESTUARYBGC 
+# elif defined ESTUARYBGC
 #  include <estuarybgc_inp.h>
 # elif defined ECOSIM
 #  include <ecosim_inp.h>

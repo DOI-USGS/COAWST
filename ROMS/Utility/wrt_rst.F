@@ -32,7 +32,7 @@
       USE mod_sedbed
       USE mod_sediment
 #endif
-#if defined VEGETATION 
+#if defined VEGETATION
       USE mod_vegetation
       USE mod_vegarr
 #endif
@@ -1734,7 +1734,7 @@
 
 #ifdef VEGETATION
 #include "vegetation_wrt_rst.h"
-#endif 
+#endif
 
 # ifdef SEDIMENT
 #  ifdef BEDLOAD

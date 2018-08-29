@@ -2,9 +2,9 @@
 !
 
 ! "Nest up" program in WRFV2.
-! 
+!
 ! Description:
-! 
+!
 ! The nest up (nup.exe) program reads from wrfout_d02_<date> files for
 ! the nest and generates wrfout_d01_<date> files for the same periods as
 ! are in the input files.  The fields in the output are the fields in the
@@ -14,32 +14,32 @@
 ! output over multiple files of nest data and generate an equivalent
 ! number of files of parent data.  The dimensions of the fields in the
 ! output are the size of the nest fields divided by the nesting ratio.
-! 
+!
 ! Source file:   main/nup_em.F
-! 
+!
 ! Compile with WRF: compile em_real
-! 
-! Resulting executable:  
-! 
-!     main/nup.exe 
+!
+! Resulting executable:
+!
+!     main/nup.exe
 !      -and-
 !     symbolic link in test/em_real/nup.exe
-! 
+!
 ! Run as:  nup.exe (no arguments)
-! 
+!
 ! Namelist information:
-! 
+!
 ! Nup.exe uses the same namelist as a nested run of the wrf.exe.
 ! Important settings are:
-! 
+!
 !  &time_control
-! 
+!
 !    start_*            <start time information for both domains>
 !    end_*              <start time information for both domains>
 !    history_interval   <interval between frames in input/output files>
 !    frames_per_outfile <number of frames in input/output files>
 !    io_form_history    <2 for NetCDF>
-! 
+!
 !  &domains
 !     ...
 !    max_dom            <number of domains; must be 2>
@@ -50,12 +50,12 @@
 !    parent_grid_ratio  <col 2 is nesting ratio in both dims>
 !    feedback           <must be 1>
 !    smooth_option      <recommend 0>
-! 
+!
 !  &physics
 !             <all options in this section should be the same
 !              as the run that generated the nest data>
-! 
-!  created: JM 2006 01 25 
+!
+!  created: JM 2006 01 25
 
 PROGRAM nup_em
 
@@ -206,8 +206,8 @@ integer :: ii
 #endif
 
    !  Initialize the modules used by the WRF system.  Many of the CALLs made from the
-   !  init_modules routine are NO-OPs.  Typical initializations are: the size of a 
-   !  REAL, setting the file handles to a pre-use value, defining moisture and 
+   !  init_modules routine are NO-OPs.  Typical initializations are: the size of a
+   !  REAL, setting the file handles to a pre-use value, defining moisture and
    !  chemistry indices, etc.
 
    CALL init_modules(1)   ! Phase 1 returns after MPI_INIT() (if it is called)
@@ -235,7 +235,7 @@ integer :: ii
    CALL initial_config
 #endif
 
-   !  And here is an instance of using the information in the NAMELIST.  
+   !  And here is an instance of using the information in the NAMELIST.
 
    CALL nl_get_debug_level ( 1, debug_level )
    CALL set_wrf_debug_level ( debug_level )
@@ -260,10 +260,10 @@ integer :: ii
    CALL       nl_get_parent_grid_ratio( 2, pgr )
 
    ! parent grid must cover the entire nest, which is always dimensioned a factor of 3 + 1
-   ! so add two here temporarily, then remove later after nest is allocated. 
+   ! so add two here temporarily, then remove later after nest is allocated.
 
    e_we = e_we / pgr + 2
-   e_sn = e_sn / pgr + 2 
+   e_sn = e_sn / pgr + 2
    CALL       nl_set_e_we( 1, e_we )
    CALL       nl_set_e_sn( 1, e_sn )
 
@@ -315,8 +315,8 @@ integer :: ii
    CALL WRFU_AlarmGet( nested_grid%alarms(HISTORY_ALARM), RingInterval=RingInterval )
    CALL WRFU_ClockSet( nested_grid%domain_clock, TimeStep=RingInterval, rc=rc )
    CALL WRFU_ClockSet( parent_grid%domain_clock, TimeStep=RingInterval, rc=rc )
-   
-   !  Get and store the history interval from the fine grid; use for time loop 
+
+   !  Get and store the history interval from the fine grid; use for time loop
 
 
    !  Initialize the I/O for WRF.
@@ -407,7 +407,7 @@ integer :: ii
 
 END PROGRAM nup_em
 
-SUBROUTINE nup ( nested_grid, parent_grid , in_id, out_id, newly_opened ) 
+SUBROUTINE nup ( nested_grid, parent_grid , in_id, out_id, newly_opened )
   USE module_domain
   USE module_io_domain
   USE module_utility
@@ -418,7 +418,7 @@ SUBROUTINE nup ( nested_grid, parent_grid , in_id, out_id, newly_opened )
 
 ! Args
   TYPE(domain), POINTER :: parent_grid, nested_grid
-  INTEGER, INTENT(IN) :: in_id, out_id    ! io descriptors 
+  INTEGER, INTENT(IN) :: in_id, out_id    ! io descriptors
   LOGICAL, INTENT(IN) :: newly_opened     ! whether to add global metadata
 ! Local
   INTEGER :: julyr , julday , iswater , map_proj
@@ -448,19 +448,19 @@ SUBROUTINE nup ( nested_grid, parent_grid , in_id, out_id, newly_opened )
   END INTERFACE
 
   IF ( newly_opened ) THEN
-    CALL wrf_get_dom_ti_integer ( in_id , 'MAP_PROJ' , map_proj , 1 , icnt , ierr ) 
-    CALL wrf_get_dom_ti_real    ( in_id , 'DX'  , dx  , 1 , icnt , ierr ) 
-    CALL wrf_get_dom_ti_real    ( in_id , 'DY'  , dy  , 1 , icnt , ierr ) 
-    CALL wrf_get_dom_ti_real    ( in_id , 'CEN_LAT' , cen_lat , 1 , icnt , ierr ) 
-    CALL wrf_get_dom_ti_real    ( in_id , 'CEN_LON' , cen_lon , 1 , icnt , ierr ) 
-    CALL wrf_get_dom_ti_real    ( in_id , 'TRUELAT1' , truelat1 , 1 , icnt , ierr ) 
-    CALL wrf_get_dom_ti_real    ( in_id , 'TRUELAT2' , truelat2 , 1 , icnt , ierr ) 
-    CALL wrf_get_dom_ti_real    ( in_id , 'MOAD_CEN_LAT' , moad_cen_lat , 1 , icnt , ierr ) 
-    CALL wrf_get_dom_ti_real    ( in_id , 'STAND_LON' , stand_lon , 1 , icnt , ierr ) 
-!     CALL wrf_get_dom_ti_real    ( in_id , 'GMT' , gmt , 1 , icnt , ierr ) 
-!     CALL wrf_get_dom_ti_integer ( in_id , 'JULYR' , julyr , 1 , icnt , ierr ) 
-!     CALL wrf_get_dom_ti_integer ( in_id , 'JULDAY' , julday , 1 , icnt , ierr ) 
-    CALL wrf_get_dom_ti_integer ( in_id , 'ISWATER' , iswater , 1 , icnt , ierr ) 
+    CALL wrf_get_dom_ti_integer ( in_id , 'MAP_PROJ' , map_proj , 1 , icnt , ierr )
+    CALL wrf_get_dom_ti_real    ( in_id , 'DX'  , dx  , 1 , icnt , ierr )
+    CALL wrf_get_dom_ti_real    ( in_id , 'DY'  , dy  , 1 , icnt , ierr )
+    CALL wrf_get_dom_ti_real    ( in_id , 'CEN_LAT' , cen_lat , 1 , icnt , ierr )
+    CALL wrf_get_dom_ti_real    ( in_id , 'CEN_LON' , cen_lon , 1 , icnt , ierr )
+    CALL wrf_get_dom_ti_real    ( in_id , 'TRUELAT1' , truelat1 , 1 , icnt , ierr )
+    CALL wrf_get_dom_ti_real    ( in_id , 'TRUELAT2' , truelat2 , 1 , icnt , ierr )
+    CALL wrf_get_dom_ti_real    ( in_id , 'MOAD_CEN_LAT' , moad_cen_lat , 1 , icnt , ierr )
+    CALL wrf_get_dom_ti_real    ( in_id , 'STAND_LON' , stand_lon , 1 , icnt , ierr )
+!     CALL wrf_get_dom_ti_real    ( in_id , 'GMT' , gmt , 1 , icnt , ierr )
+!     CALL wrf_get_dom_ti_integer ( in_id , 'JULYR' , julyr , 1 , icnt , ierr )
+!     CALL wrf_get_dom_ti_integer ( in_id , 'JULDAY' , julday , 1 , icnt , ierr )
+    CALL wrf_get_dom_ti_integer ( in_id , 'ISWATER' , iswater , 1 , icnt , ierr )
   ENDIF
 
   parent_grid%fnm    = nested_grid%fnm
@@ -468,7 +468,7 @@ SUBROUTINE nup ( nested_grid, parent_grid , in_id, out_id, newly_opened )
   parent_grid%rdnw   = nested_grid%rdnw
   parent_grid%rdn    = nested_grid%rdn
   parent_grid%dnw    = nested_grid%dnw
-  parent_grid%dn     = nested_grid%dn 
+  parent_grid%dn     = nested_grid%dn
   parent_grid%znu    = nested_grid%znu
   parent_grid%znw    = nested_grid%znw
 
@@ -484,7 +484,7 @@ SUBROUTINE nup ( nested_grid, parent_grid , in_id, out_id, newly_opened )
   parent_grid%cf2       = nested_grid%cf2
   parent_grid%cf3       = nested_grid%cf3
 
-  parent_grid%cfn       = nested_grid%cfn 
+  parent_grid%cfn       = nested_grid%cfn
   parent_grid%cfn1      = nested_grid%cfn1
 
 #if ( WRF_CHEM == 1 )
@@ -539,13 +539,13 @@ SUBROUTINE nup ( nested_grid, parent_grid , in_id, out_id, newly_opened )
          END IF
 
          !  Input data.
-   
+
          CALL       wrf_debug ( 100 , 'nup_em: calling input_aux_model_input2' )
          CALL input_aux_model_input2 ( idsi , parent_grid , config_flags , ierr )
          parent_grid%ht_input = parent_grid%ht
-   
+
          !  Close this fine grid static input file.
-   
+
          CALL       wrf_debug ( 100 , 'nup_em: closing fine grid static input' )
          CALL close_dataset ( idsi , config_flags , "DATASET=INPUT" )
 
@@ -574,7 +574,7 @@ SUBROUTINE nup ( nested_grid, parent_grid , in_id, out_id, newly_opened )
             num_veg_cat      = SIZE ( parent_grid%landusef , DIM=2 )
             num_soil_top_cat = SIZE ( parent_grid%soilctop , DIM=2 )
             num_soil_bot_cat = SIZE ( parent_grid%soilcbot , DIM=2 )
-   
+
             CALL land_percentages (  parent_grid%xland , &
                                      parent_grid%landusef , parent_grid%soilctop , parent_grid%soilcbot , &
                                      parent_grid%isltyp , parent_grid%ivgtyp , &
@@ -609,7 +609,7 @@ SUBROUTINE nup ( nested_grid, parent_grid , in_id, out_id, newly_opened )
 
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-   
+
       !  We have 2 terrain elevations.  One is from input and the other is from the
       !  the horizontal interpolation.
 
@@ -617,10 +617,10 @@ SUBROUTINE nup ( nested_grid, parent_grid , in_id, out_id, newly_opened )
       parent_grid%ht      = parent_grid%ht_int
 
       !  We have both the interpolated fields and the higher-resolution static fields.  From these
-      !  the rebalancing is now done.  Note also that the field parent_grid%ht is now from the 
+      !  the rebalancing is now done.  Note also that the field parent_grid%ht is now from the
       !  fine grid input file (after this call is completed).
 
-      CALL rebalance_driver ( parent_grid ) 
+      CALL rebalance_driver ( parent_grid )
 
       !  Different things happen during the different time loops:
       !      first loop - write wrfinput file, close data set, copy files to holder arrays
@@ -659,22 +659,22 @@ SUBROUTINE nup ( nested_grid, parent_grid , in_id, out_id, newly_opened )
 #endif
 
          !  Output the first time period of the data.
-   
-  IF ( newly_opened ) THEN
-    CALL wrf_put_dom_ti_integer ( out_id , 'MAP_PROJ' , map_proj , 1 , ierr ) 
-!     CALL wrf_put_dom_ti_real    ( out_id , 'DX'  , dx  , 1 , ierr ) 
-!     CALL wrf_put_dom_ti_real    ( out_id , 'DY'  , dy  , 1 , ierr ) 
-    CALL wrf_put_dom_ti_real    ( out_id , 'CEN_LAT' , cen_lat , 1 , ierr ) 
-    CALL wrf_put_dom_ti_real    ( out_id , 'CEN_LON' , cen_lon , 1 , ierr ) 
-    CALL wrf_put_dom_ti_real    ( out_id , 'TRUELAT1' , truelat1 , 1 , ierr ) 
-    CALL wrf_put_dom_ti_real    ( out_id , 'TRUELAT2' , truelat2 , 1 , ierr ) 
-    CALL wrf_put_dom_ti_real    ( out_id , 'MOAD_CEN_LAT' , moad_cen_lat , 1 , ierr ) 
-    CALL wrf_put_dom_ti_real    ( out_id , 'STAND_LON' , stand_lon , 1 , ierr ) 
-    CALL wrf_put_dom_ti_integer ( out_id , 'ISWATER' , iswater , 1 , ierr ) 
 
-    CALL wrf_put_dom_ti_real    ( out_id , 'GMT' , gmt , 1 , ierr ) 
-    CALL wrf_put_dom_ti_integer ( out_id , 'JULYR' , julyr , 1 , ierr ) 
-    CALL wrf_put_dom_ti_integer ( out_id , 'JULDAY' , julday , 1 , ierr ) 
+  IF ( newly_opened ) THEN
+    CALL wrf_put_dom_ti_integer ( out_id , 'MAP_PROJ' , map_proj , 1 , ierr )
+!     CALL wrf_put_dom_ti_real    ( out_id , 'DX'  , dx  , 1 , ierr )
+!     CALL wrf_put_dom_ti_real    ( out_id , 'DY'  , dy  , 1 , ierr )
+    CALL wrf_put_dom_ti_real    ( out_id , 'CEN_LAT' , cen_lat , 1 , ierr )
+    CALL wrf_put_dom_ti_real    ( out_id , 'CEN_LON' , cen_lon , 1 , ierr )
+    CALL wrf_put_dom_ti_real    ( out_id , 'TRUELAT1' , truelat1 , 1 , ierr )
+    CALL wrf_put_dom_ti_real    ( out_id , 'TRUELAT2' , truelat2 , 1 , ierr )
+    CALL wrf_put_dom_ti_real    ( out_id , 'MOAD_CEN_LAT' , moad_cen_lat , 1 , ierr )
+    CALL wrf_put_dom_ti_real    ( out_id , 'STAND_LON' , stand_lon , 1 , ierr )
+    CALL wrf_put_dom_ti_integer ( out_id , 'ISWATER' , iswater , 1 , ierr )
+
+    CALL wrf_put_dom_ti_real    ( out_id , 'GMT' , gmt , 1 , ierr )
+    CALL wrf_put_dom_ti_integer ( out_id , 'JULYR' , julyr , 1 , ierr )
+    CALL wrf_put_dom_ti_integer ( out_id , 'JULDAY' , julday , 1 , ierr )
   ENDIF
 
 END SUBROUTINE nup
@@ -770,7 +770,7 @@ SUBROUTINE check_consistency2( ivgtyp , isltyp , landmask , &
 
    INTEGER , INTENT(IN) :: ids , ide , jds , jde , kds , kde , &
                            ims , ime , jms , jme , kms , kme , &
-                           its , ite , jts , jte , kts , kte 
+                           its , ite , jts , jte , kts , kte
    INTEGER , INTENT(IN) :: num_soil_layers , id
 
    INTEGER , DIMENSION(ims:ime,jms:jme) :: ivgtyp , isltyp

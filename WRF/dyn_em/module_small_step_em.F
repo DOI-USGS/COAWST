@@ -1,4 +1,4 @@
-#if ( HYBRID_COORD==1 ) 
+#if ( HYBRID_COORD==1 )
 #  define mu(...) (c1h(k)*XXPCXX(__VA_ARGS__))
 #  define XXPCXX(...) mu(__VA_ARGS__)
 
@@ -84,7 +84,7 @@ SUBROUTINE small_step_prep( u_1, u_2, v_1, v_2, w_1, w_2, &
                             msfvy, msftx, msfty,          &
                             rdx, rdy,                     &
                             rk_step,                      &
-                            ids,ide, jds,jde, kds,kde,    & 
+                            ids,ide, jds,jde, kds,kde,    &
                             ims,ime, jms,jme, kms,kme,    &
                             its,ite, jts,jte, kts,kte    )
 
@@ -160,9 +160,9 @@ SUBROUTINE small_step_prep( u_1, u_2, v_1, v_2, w_1, w_2, &
 !<DESCRIPTION>
 !
 !  small_step_prep prepares the prognostic variables for the small timestep.
-!  This includes switching time-levels in the arrays and computing coupled 
-!  perturbation variables for the small timestep 
-!  (i.e. mu*u" = mu(t)*u(t)-mu(*)*u(*); mu*u" is advanced during the small 
+!  This includes switching time-levels in the arrays and computing coupled
+!  perturbation variables for the small timestep
+!  (i.e. mu*u" = mu(t)*u(t)-mu(*)*u(*); mu*u" is advanced during the small
 !  timesteps
 !
 !</DESCRIPTION>
@@ -555,14 +555,14 @@ SUBROUTINE calc_p_rho( al, p, ph,                    &
 !<DESCRIPTION>
 !
 !  For the nonhydrostatic option,
-!  calc_p_rho computes the perturbation inverse density and 
-!  perturbation pressure from the hydrostatic relation and the 
+!  calc_p_rho computes the perturbation inverse density and
+!  perturbation pressure from the hydrostatic relation and the
 !  linearized equation of state, respectively.
 !
 !  For the hydrostatic option,
 !  calc_p_rho computes the perturbation pressure, perturbation density,
 !  and perturbation geopotential
-!  from the vertical coordinate definition, linearized equation of state 
+!  from the vertical coordinate definition, linearized equation of state
 !  and the hydrostatic relation, respectively.
 !
 !  forward weighting of the pressure (divergence damping) is also
@@ -601,7 +601,7 @@ SUBROUTINE calc_p_rho( al, p, ph,                    &
        DO j=j_start, j_end
        DO k=k_start, k_end
        DO i=i_start, i_end
-#if ! ( HYBRID_COORD==1 ) 
+#if ! ( HYBRID_COORD==1 )
          p(i,k,j)=mu(i,j)*znu(k)
 #else
          p(i,k,j)=MU(i,j)*c3h(k)
@@ -617,7 +617,7 @@ SUBROUTINE calc_p_rho( al, p, ph,                    &
    END IF
 
 !  divergence damping setup
- 
+
      IF (step == 0) then   ! we're initializing small timesteps
        DO j=j_start, j_end
        DO k=k_start, k_end
@@ -625,8 +625,8 @@ SUBROUTINE calc_p_rho( al, p, ph,                    &
          pm1(i,k,j)=p(i,k,j)
        ENDDO
        ENDDO
-       ENDDO 
-     ELSE                     ! we're in the small timesteps 
+       ENDDO
+     ELSE                     ! we're in the small timesteps
        DO j=j_start, j_end    ! and adding div damping component
        DO k=k_start, k_end
        DO i=i_start, i_end
@@ -652,7 +652,7 @@ SUBROUTINE calc_coef_w( a,alpha,gamma,              &
                         ids,ide, jds,jde, kds,kde,  & ! domain dims
                         ims,ime, jms,jme, kms,kme,  & ! memory dims
                         its,ite, jts,jte, kts,kte  )  ! tile   dims
-                                                   
+
       IMPLICIT NONE  ! religion first
 
 !  passed in through the call
@@ -693,7 +693,7 @@ SUBROUTINE calc_coef_w( a,alpha,gamma,              &
 
 !<DESCRIPTION>
 !
-!  calc_coef_w calculates the coefficients needed for the 
+!  calc_coef_w calculates the coefficients needed for the
 !  implicit solution of the vertical momentum and geopotential equations.
 !  This requires solution of a tri-diagonal equation.
 !
@@ -842,7 +842,7 @@ SUBROUTINE advance_uv ( u, ru_tend, v, rv_tend,        &
 
       REAL, DIMENSION( kms:kme ),INTENT(IN   ) :: c1h, c2h, c1f, c2f, &
                                                   c3h, c4h, c3f, c4f
-    
+
 
 !  Local 3d array from the stack (note tile size)
 
@@ -859,8 +859,8 @@ SUBROUTINE advance_uv ( u, ru_tend, v, rv_tend,        &
 
 !<DESCRIPTION>
 !
-!  advance_uv advances the explicit perturbation horizontal momentum 
-!  equations (u,v) by adding in the large-timestep tendency along with 
+!  advance_uv advances the explicit perturbation horizontal momentum
+!  equations (u,v) by adding in the large-timestep tendency along with
 !  the small timestep pressure gradient tendency.
 !
 !</DESCRIPTION>
@@ -965,12 +965,12 @@ SUBROUTINE advance_uv ( u, ru_tend, v, rv_tend,        &
    DO k = k_start, k_end
    DO i = i_start_up, i_end_up
 
-!     Comments on map scale factors:   
+!     Comments on map scale factors:
 !     x pressure gradient: ADT eqn 44, penultimate term on RHS
 !        = -(mx/my)*(mu/rho)*partial dp/dx
 !     [i.e., first rho->mu; 2nd still rho; alpha=1/rho]
 !     Klemp et al. splits into 2 terms:
-!        mu alpha partial dp/dx + partial dp/dnu * partial dphi/dx 
+!        mu alpha partial dp/dx + partial dp/dnu * partial dphi/dx
 !     then into 4 terms:
 !        mu alpha partial dp'/dx + nu mu alpha' partial dmubar/dx +
 !      + mu partial dphi/dx + partial dphi'/dx * (partial dp'/dnu - mu')
@@ -983,7 +983,7 @@ SUBROUTINE advance_uv ( u, ru_tend, v, rv_tend,        &
      dpxy(i,k)= (msfux(i,j)/msfuy(i,j))*.5*rdx*muu(i,j)*(         &
        ((ph (i,k+1,j)-ph (i-1,k+1,j))+(ph (i,k,j)-ph (i-1,k,j)))  &
       +(alt(i,k  ,j)+alt(i-1,k  ,j))*(p  (i,k,j)-p  (i-1,k,j))  &
-      +(al (i,k  ,j)+al (i-1,k  ,j))*(pb (i,k,j)-pb (i-1,k,j)) ) 
+      +(al (i,k  ,j)+al (i-1,k  ,j))*(pb (i,k,j)-pb (i-1,k,j)) )
 
    ENDDO
    ENDDO
@@ -1024,13 +1024,13 @@ SUBROUTINE advance_uv ( u, ru_tend, v, rv_tend,        &
        ENDDO
      ENDDO
 
- 
+
    END IF
 
 
    DO k = k_start, k_end
      DO i = i_start_up, i_end_up
-       u(i,k,j)=u(i,k,j)-dts*cqu(i,k,j)*dpxy(i,k)+mudf_xy(i) 
+       u(i,k,j)=u(i,k,j)-dts*cqu(i,k,j)*dpxy(i,k)+mudf_xy(i)
      ENDDO
    ENDDO
 
@@ -1062,7 +1062,7 @@ SUBROUTINE advance_uv ( u, ru_tend, v, rv_tend,        &
 !         = -(my/mx)*(mu/rho)*partial dp/dy
 !      [i.e., first rho->mu; 2nd still rho; alpha=1/rho]
 !      Klemp et al. splits into 2 terms:
-!         mu alpha partial dp/dy + partial dp/dnu * partial dphi/dy 
+!         mu alpha partial dp/dy + partial dp/dnu * partial dphi/dy
 !      then into 4 terms:
 !         mu alpha partial dp'/dy + nu mu alpha' partial dmubar/dy +
 !       + mu partial dphi/dy + partial dphi'/dy * (partial dp'/dnu - mu')
@@ -1077,14 +1077,14 @@ SUBROUTINE advance_uv ( u, ru_tend, v, rv_tend,        &
        dpxy(i,k)= (msfvy(i,j)/msfvx(i,j))*.5*rdy*muv(i,j)*(       &
         ((ph(i,k+1,j)-ph(i,k+1,j-1))+(ph (i,k,j)-ph (i,k,j-1)))   &
         +(alt(i,k  ,j)+alt(i,k  ,j-1))*(p  (i,k,j)-p  (i,k,j-1))  &
-        +(al (i,k  ,j)+al (i,k  ,j-1))*(pb (i,k,j)-pb (i,k,j-1)) ) 
+        +(al (i,k  ,j)+al (i,k  ,j-1))*(pb (i,k,j)-pb (i,k,j-1)) )
 	    ENDDO
 	    ENDDO
 
 
      IF (non_hydrostatic) THEN
 
-       DO i = i_start, i_end     
+       DO i = i_start, i_end
          dpn(i,1) = .5*( cf1*(p(i,1,j)+p(i,1,j-1))  &
                         +cf2*(p(i,2,j)+p(i,2,j-1))  &
                         +cf3*(p(i,3,j)+p(i,3,j-1)) )
@@ -1124,7 +1124,7 @@ SUBROUTINE advance_uv ( u, ru_tend, v, rv_tend,        &
 
      DO k = k_start, k_end
        DO i = i_start, i_end
-         v(i,k,j)=v(i,k,j)-dts*cqv(i,k,j)*dpxy(i,k)+mudf_xy(i) 
+         v(i,k,j)=v(i,k,j)-dts*cqv(i,k,j)*dpxy(i,k)+mudf_xy(i)
        ENDDO
      ENDDO
    END IF
@@ -1202,7 +1202,7 @@ SUBROUTINE advance_mu_t( ww, ww_1, u, u_1, v, v_1,            &
                                               uam,    &
                                               vam,    &
                                               wwam
-                                              
+
   REAL, DIMENSION( ims:ime , jms:jme ),    INTENT(IN   ) :: muu,  &
                                                             muv,  &
                                                             mut,  &
@@ -1283,11 +1283,11 @@ SUBROUTINE advance_mu_t( ww, ww_1, u, u_1, v, v_1,            &
      ENDDO
 !  NOTE:  mu is not coupled with the map scale factor.
 !         ww (omega) IS coupled with the map scale factor.
-!         Being coupled with the map scale factor means 
+!         Being coupled with the map scale factor means
 !           multiplication by (1/msft) in this case.
 
 !  Comments on map scale factors
-!  ADT eqn 47: 
+!  ADT eqn 47:
 !  partial drho/dt = -mx*my[partial d/dx(rho u/my) + partial d/dy(rho v/mx)]
 !                    -partial d/dz(rho w)
 !  with rho -> mu, dividing by my, and with partial d/dnu(rho nu/my [=ww])
@@ -1297,7 +1297,7 @@ SUBROUTINE advance_mu_t( ww, ww_1, u, u_1, v, v_1,            &
 !  BCs are ww=0 at both
 !  final term gives 0
 !  first term gives Integral([1/my]partial d mu/dt) over total column = dm/dt
-!  RHS remaining is Integral(-mx[partial d/dx(mu u/my) + 
+!  RHS remaining is Integral(-mx[partial d/dx(mu u/my) +
 !                                partial d/dy(mu v/mx)]) over column
 !  lines below find RHS terms at each level then set dmdt = sum over all levels
 !
@@ -1329,7 +1329,7 @@ SUBROUTINE advance_mu_t( ww, ww_1, u, u_1, v, v_1,            &
      ENDDO
      END DO
 
-!  NOTE:  ww_1 (large timestep ww) is already coupled with the 
+!  NOTE:  ww_1 (large timestep ww) is already coupled with the
 !         map scale factor
 
      DO k=1,k_end
@@ -1342,14 +1342,14 @@ SUBROUTINE advance_mu_t( ww, ww_1, u, u_1, v, v_1,            &
 
 ! CALCULATION OF THETA
 
-! NOTE: theta'' is not coupled with the map-scale factor, 
+! NOTE: theta'' is not coupled with the map-scale factor,
 !       while the theta'' tendency is coupled (i.e., mult by 1/msft)
 
 ! Comments on map scale factors
 ! BUT NOTE THAT both are mass coupled
 ! in flux form equations (Klemp et al.) Theta = mu*theta
 !
-! scalar eqn: partial d/dt(rho q/my) = -mx[partial d/dx(q rho u/my) + 
+! scalar eqn: partial d/dt(rho q/my) = -mx[partial d/dx(q rho u/my) +
 !                                          partial d/dy(q rho v/mx)]
 !                                      - partial d/dz(q rho w/my)
 ! with rho -> mu, and with partial d/dnu(q rho nu/my) as the final term
@@ -1365,7 +1365,7 @@ SUBROUTINE advance_mu_t( ww, ww_1, u, u_1, v, v_1,            &
        t   (i,k,j) = t(i,k,j) + msfty(i,j)*dts*ft(i,k,j)
      END DO
      END DO
-   ENDDO   
+   ENDDO
 
    DO j=j_start, j_end
 
@@ -1396,14 +1396,14 @@ SUBROUTINE advance_mu_t( ww, ww_1, u, u_1, v, v_1,            &
              + .5*rdx*                                     &
               ( u(i+1,k,j)*(t_1(i+1,k,j)+t_1(i  ,k,j))     &
                -u(i  ,k,j)*(t_1(i  ,k,j)+t_1(i-1,k,j)) ) ) &
-             + rdnw(k)*( wdtn(i,k+1)-wdtn(i,k) ) )       
+             + rdnw(k)*( wdtn(i,k+1)-wdtn(i,k) ) )
      ENDDO
      ENDDO
 
    ENDDO
 
 END SUBROUTINE advance_mu_t
-          
+
 
 
 !------------------------------------------------------------
@@ -1429,7 +1429,7 @@ SUBROUTINE advance_w( w, rw_tend, ww, w_save, u, v,  &
 ! We think we have found a slight error in surface w calculation
 
   IMPLICIT NONE ! religion first
-      
+
 ! stuff coming in
 
 
@@ -1539,7 +1539,7 @@ SUBROUTINE advance_w( w, rw_tend, ww, w_save, u, v,  &
 
 !   Comments on map scale factors:
 !   phi equation is:
-!    partial d/dt(rho phi/my) = -mx partial d/dx(phi rho u/my) 
+!    partial d/dt(rho phi/my) = -mx partial d/dx(phi rho u/my)
 !                               -mx partial d/dy(phi rho v/mx)
 !                               - partial d/dz(phi rho w/my) + rho g w/my
 !   as with scalar equation, use uncoupled value (here phi) to find the
@@ -1589,13 +1589,13 @@ SUBROUTINE advance_w( w, rw_tend, ww, w_save, u, v,  &
     ENDDO
     ENDDO
 
-!  NOTE:  phi'' is not coupled with the map-scale factor  (1/m), 
+!  NOTE:  phi'' is not coupled with the map-scale factor  (1/m),
 !         but it's tendency is, so must multiply by msft here
 
 !   Comments on map scale factors:
 !   building up RHS of phi equation
 !   ph_tend contains terms 1 and 2; now adding 3 and 4 in stages:
-!   here rhs = ph_previous + (msft/mu)*[rhs_previous - ~ww * delta t * 
+!   here rhs = ph_previous + (msft/mu)*[rhs_previous - ~ww * delta t *
 !                                                      partial d phi/dz]
 !            = ph_previous + (msft*delta t/mu)*[ph_tend + ~g*w/2 - ~ww *
 !                                                         partial d phi/dz]
@@ -1632,7 +1632,7 @@ SUBROUTINE advance_w( w, rw_tend, ww, w_save, u, v,  &
                          (ht(i+1,j)-ht(i,j  ))             &
         *(cf1*u(i+1,1,j)+cf2*u(i+1,2,j)+cf3*u(i+1,3,j))    &
                         +(ht(i,j  )-ht(i-1,j))             &
-        *(cf1*u(i  ,1,j)+cf2*u(i  ,2,j)+cf3*u(i  ,3,j))  ) 
+        *(cf1*u(i  ,1,j)+cf2*u(i  ,2,j)+cf3*u(i  ,3,j))  )
 
      ENDDO
 !
@@ -1643,11 +1643,11 @@ SUBROUTINE advance_w( w, rw_tend, ww, w_save, u, v,  &
 !   above surface, begin by adding delta t * previous (coupled) w tendency
     DO k=2,k_end
       DO i=i_start, i_end
-#if ! ( HYBRID_COORD==1 ) 
+#if ! ( HYBRID_COORD==1 )
         MUTHK   = mut(i,j)
         MUTHKM1 = mut(i,j)
 #endif
-        
+
         w(i,k,j)=w(i,k,j)+dts*rw_tend(i,k,j)                       &
                  + msft_inv(i)*cqw(i,k,j)*(                        &
             +.5*dts*g*rdn(k)*                                      &
@@ -1668,7 +1668,7 @@ SUBROUTINE advance_w( w, rw_tend, ww, w_save, u, v,  &
     K=k_end+1
 
     DO i=i_start, i_end
-#if ! ( HYBRID_COORD==1 ) 
+#if ! ( HYBRID_COORD==1 )
        MUTHKM1 = mut(i,j)
 #endif
        w(i,k,j)=w(i,k,j)+dts*rw_tend(i,k,j)                         &
@@ -1803,7 +1803,7 @@ SUBROUTINE sumflux ( ru, rv, ww,                             &
     ENDDO
     ENDDO
     ENDDO
- 
+
     IF (ite .GT. mini) THEN
       DO  j = jts, minj
       DO  k = kts, mink
@@ -1840,9 +1840,9 @@ SUBROUTINE sumflux ( ru, rv, ww,                             &
       ru_m(i,k,j)  = ru_m(i,k,j) / number_of_small_timesteps   &
                      + muu(i,j)*u_lin(i,k,j)/msfuy(i,j)
       rv_m(i,k,j)  = rv_m(i,k,j) / number_of_small_timesteps   &
-                     + muv(i,j)*v_lin(i,k,j)*msfvx_inv(i,j) 
+                     + muv(i,j)*v_lin(i,k,j)*msfvx_inv(i,j)
       ww_m(i,k,j)  = ww_m(i,k,j) / number_of_small_timesteps   &
-                     + ww_lin(i,k,j) 
+                     + ww_lin(i,k,j)
     ENDDO
     ENDDO
     ENDDO
@@ -1882,7 +1882,7 @@ SUBROUTINE sumflux ( ru, rv, ww,                             &
   ENDIF
 
 
-END SUBROUTINE sumflux 
+END SUBROUTINE sumflux
 
 !---------------------------------------------------------------------
 

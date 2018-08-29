@@ -116,7 +116,7 @@
 
     ! io_form is used to determine if multi-file I/O is enabled and to
     ! control writing of format-specific time-independent metadata
-    io_form = io_form_for_stream( switch ) 
+    io_form = io_form_for_stream( switch )
 
     dryrun       = ( filestate .EQ. WRF_FILE_OPENED_NOT_COMMITTED )
 
@@ -483,44 +483,44 @@ endif
        end if
        if( grid%flag_mf_xy .eq. 1) then
            CALL wrf_put_dom_ti_integer ( fid , 'FLAG_MF_XY' ,  ibuf , 1 , ierr )
-       end if   
+       end if
        if(grid%flag_psfc .eq. 1) then
-          CALL wrf_put_dom_ti_integer ( fid , 'FLAG_PSFC' ,  ibuf , 1 , ierr ) 
-       end if    
+          CALL wrf_put_dom_ti_integer ( fid , 'FLAG_PSFC' ,  ibuf , 1 , ierr )
+       end if
 
        if(grid%flag_slp .eq. 1) then
-          CALL wrf_put_dom_ti_integer ( fid , 'FLAG_SLP' ,  ibuf , 1 , ierr ) 
-       end if 
+          CALL wrf_put_dom_ti_integer ( fid , 'FLAG_SLP' ,  ibuf , 1 , ierr )
+       end if
 
        if(grid%flag_sm000010 .eq. 1)then
-          CALL wrf_put_dom_ti_integer ( fid , 'FLAG_SM000010' ,  ibuf , 1 , ierr ) 
+          CALL wrf_put_dom_ti_integer ( fid , 'FLAG_SM000010' ,  ibuf , 1 , ierr )
        end if
        if(grid%flag_sm010040 .eq. 1)then
-          CALL wrf_put_dom_ti_integer ( fid , 'FLAG_SM010040' ,  ibuf , 1 , ierr ) 
+          CALL wrf_put_dom_ti_integer ( fid , 'FLAG_SM010040' ,  ibuf , 1 , ierr )
        end if
         if(grid%flag_sm040100 .eq. 1)then
-          CALL wrf_put_dom_ti_integer ( fid , 'FLAG_SM040100' ,  ibuf , 1 , ierr ) 
+          CALL wrf_put_dom_ti_integer ( fid , 'FLAG_SM040100' ,  ibuf , 1 , ierr )
        end if
         if(grid%flag_sm100200 .eq. 1)then
-          CALL wrf_put_dom_ti_integer ( fid , 'FLAG_SM100200' ,  ibuf , 1 , ierr ) 
-       end if 
+          CALL wrf_put_dom_ti_integer ( fid , 'FLAG_SM100200' ,  ibuf , 1 , ierr )
+       end if
 
        if(grid%flag_st000010 .eq. 1)then
-          CALL wrf_put_dom_ti_integer ( fid , 'FLAG_ST000010' ,  ibuf , 1 , ierr ) 
+          CALL wrf_put_dom_ti_integer ( fid , 'FLAG_ST000010' ,  ibuf , 1 , ierr )
        end if
        if(grid%flag_st010040 .eq. 1)then
-          CALL wrf_put_dom_ti_integer ( fid , 'FLAG_ST010040' ,  ibuf , 1 , ierr ) 
+          CALL wrf_put_dom_ti_integer ( fid , 'FLAG_ST010040' ,  ibuf , 1 , ierr )
        end if
         if(grid%flag_st040100 .eq. 1)then
-          CALL wrf_put_dom_ti_integer ( fid , 'FLAG_ST040100' ,  ibuf , 1 , ierr ) 
+          CALL wrf_put_dom_ti_integer ( fid , 'FLAG_ST040100' ,  ibuf , 1 , ierr )
        end if
         if(grid%flag_st100200 .eq. 1)then
-          CALL wrf_put_dom_ti_integer ( fid , 'FLAG_ST100200' ,  ibuf , 1 , ierr ) 
-       end if 
+          CALL wrf_put_dom_ti_integer ( fid , 'FLAG_ST100200' ,  ibuf , 1 , ierr )
+       end if
 
         if(grid%flag_soil_layers .eq. 1)then
-          CALL wrf_put_dom_ti_integer ( fid , 'FLAG_SOIL_LAYERS' ,  ibuf , 1 , ierr ) 
-       end if 
+          CALL wrf_put_dom_ti_integer ( fid , 'FLAG_SOIL_LAYERS' ,  ibuf , 1 , ierr )
+       end if
 
        ibuf(1) = grid%num_metgrid_levels
        CALL wrf_put_dom_ti_integer ( fid , 'BOTTOM-TOP_GRID_DIMENSION' , ibuf , 1 , ierr )
@@ -660,12 +660,12 @@ endif
     ibuf(1) = gwd_opt
     CALL wrf_put_dom_ti_integer ( fid, 'GWD_OPT' ,  ibuf , 1 , ierr )
     CALL wrf_put_dom_ti_integer ( fid, 'SF_URBAN_PHYSICS', sf_urban_physics , 1 , ierr )
-    CALL wrf_put_dom_ti_integer ( fid, 'SF_OCEAN_PHYSICS', config_flags%sf_ocean_physics     , 1 , ierr ) 
+    CALL wrf_put_dom_ti_integer ( fid, 'SF_OCEAN_PHYSICS', config_flags%sf_ocean_physics     , 1 , ierr )
 #endif
 
       IF ( switch .EQ. history_only ) THEN
-      CALL wrf_put_dom_ti_integer ( fid, 'SHCU_PHYSICS',     config_flags%shcu_physics , 1 , ierr ) 
-      CALL wrf_put_dom_ti_integer ( fid, 'MFSHCONV',         config_flags%mfshconv , 1 , ierr ) 
+      CALL wrf_put_dom_ti_integer ( fid, 'SHCU_PHYSICS',     config_flags%shcu_physics , 1 , ierr )
+      CALL wrf_put_dom_ti_integer ( fid, 'MFSHCONV',         config_flags%mfshconv , 1 , ierr )
       CALL wrf_put_dom_ti_integer ( fid, 'FEEDBACK', feedback , 1 , ierr )
       CALL wrf_put_dom_ti_integer ( fid, 'SMOOTH_OPTION', smooth_option , 1 , ierr )
       CALL wrf_put_dom_ti_real    ( fid, 'SWRAD_SCAT', swrad_scat , 1 , ierr )
@@ -746,14 +746,14 @@ endif
         CALL wrf_put_dom_ti_real    ( fid, 'OBS_DTRAMP', obs_dtramp , 1 , ierr )
       ENDIF
 
-      CALL wrf_put_dom_ti_real      ( fid, 'BUCKET_MM',   config_flags%bucket_mm   , 1 , ierr ) 
-      CALL wrf_put_dom_ti_real      ( fid, 'BUCKET_J',    config_flags%bucket_J    , 1 , ierr ) 
-      CALL wrf_put_dom_ti_real      ( fid, 'PREC_ACC_DT', config_flags%prec_acc_dt , 1 , ierr ) 
-      CALL wrf_put_dom_ti_integer   ( fid, 'ISFTCFLX',    config_flags%isftcflx    , 1 , ierr ) 
-      CALL wrf_put_dom_ti_integer   ( fid, 'ISHALLOW',    config_flags%ishallow    , 1 , ierr ) 
-      CALL wrf_put_dom_ti_integer   ( fid, 'ISFFLX',      config_flags%isfflx      , 1 , ierr ) 
-      CALL wrf_put_dom_ti_integer   ( fid, 'ICLOUD',      config_flags%icloud      , 1 , ierr ) 
-      CALL wrf_put_dom_ti_integer   ( fid, 'ICLOUD_CU',   config_flags%icloud_cu   , 1 , ierr ) 
+      CALL wrf_put_dom_ti_real      ( fid, 'BUCKET_MM',   config_flags%bucket_mm   , 1 , ierr )
+      CALL wrf_put_dom_ti_real      ( fid, 'BUCKET_J',    config_flags%bucket_J    , 1 , ierr )
+      CALL wrf_put_dom_ti_real      ( fid, 'PREC_ACC_DT', config_flags%prec_acc_dt , 1 , ierr )
+      CALL wrf_put_dom_ti_integer   ( fid, 'ISFTCFLX',    config_flags%isftcflx    , 1 , ierr )
+      CALL wrf_put_dom_ti_integer   ( fid, 'ISHALLOW',    config_flags%ishallow    , 1 , ierr )
+      CALL wrf_put_dom_ti_integer   ( fid, 'ISFFLX',      config_flags%isfflx      , 1 , ierr )
+      CALL wrf_put_dom_ti_integer   ( fid, 'ICLOUD',      config_flags%icloud      , 1 , ierr )
+      CALL wrf_put_dom_ti_integer   ( fid, 'ICLOUD_CU',   config_flags%icloud_cu   , 1 , ierr )
       CALL wrf_put_dom_ti_integer   ( fid, 'TRACER_PBLMIX', tracer_pblmix , 1 , ierr )
       CALL wrf_put_dom_ti_integer   ( fid, 'SCALAR_PBLMIX', scalar_pblmix , 1 , ierr )
       CALL wrf_put_dom_ti_integer   ( fid, 'YSU_TOPDOWN_PBLMIX', ysu_topdown_pblmix , 1 , ierr )
@@ -779,7 +779,7 @@ endif
       ENDIF
 
 
-      CALL wrf_put_dom_ti_integer   ( fid, 'DFI_OPT',          config_flags%dfi_opt      , 1 , ierr ) 
+      CALL wrf_put_dom_ti_integer   ( fid, 'DFI_OPT',          config_flags%dfi_opt      , 1 , ierr )
 
       ENDIF ! history_only
 
@@ -912,7 +912,7 @@ endif
     IF(MMINLU(1:4) == 'USGS') THEN
       MMINLU='USGS'
     ENDIF
-	
+
     IF(MMINLU(1:1) .EQ. " ")THEN
        CALL wrf_put_dom_ti_char ( fid , 'MMINLU',  "    "       , ierr )
     ELSE
@@ -926,7 +926,7 @@ endif
     CALL wrf_put_dom_ti_integer ( fid , 'ISURBAN' ,  config_flags%isurban , 1 , ierr )
     CALL wrf_put_dom_ti_integer ( fid , 'ISOILWATER' ,  config_flags%isoilwater , 1 , ierr )
 ! added these fields for restarting of moving nests, JM
-!For HWRF: zhang 
+!For HWRF: zhang
 #if ( HWRF == 1 )
     CALL wrf_put_dom_ti_integer ( fid , 'I_PARENT_START' ,  grid%i_parent_start  , 1 , ierr )
     CALL wrf_put_dom_ti_integer ( fid , 'J_PARENT_START' ,  grid%j_parent_start  , 1 , ierr )
@@ -976,7 +976,7 @@ endif
          ! This flag sets the switch which defines the topography as the original
          ! generated by real.exe.   The "zero" value means that for the WRF model
          ! output, the topography has been modified.  All output from the ARW
-         ! WRF model has this flag set.  However, to allow nests to still be 
+         ! WRF model has this flag set.  However, to allow nests to still be
          ! instantiated after a parent does IO, and to allow that nest domain
          ! to have the topo adjusted, we save the incoming value of the save_topo
          ! flag.
@@ -988,9 +988,9 @@ endif
     IF ( (first_input   .LE. switch .AND. switch .LE. last_input) .OR. &
          (first_history .LE. switch .AND. switch .LE. last_history ) .OR. &
           switch .EQ. restart_only    ) THEN
-      newswitch = switch 
+      newswitch = switch
       p => grid%head_statevars%next
-      DO WHILE ( ASSOCIATED( p ) ) 
+      DO WHILE ( ASSOCIATED( p ) )
         IF ( p%ProcOrient .NE. 'X' .AND. p%ProcOrient .NE. 'Y' ) THEN   ! no I/O for xposed variables
           IF ( p%Ndim .EQ. 0 ) THEN
             IF ((p%Restart.AND.switch.EQ.restart_only).OR.on_stream(p%streams,newswitch)) THEN
@@ -1407,7 +1407,7 @@ endif
             ENDIF
           ELSE IF ( p%Ndim .EQ. 4 .AND. p%scalar_array ) THEN
               IF (switch.EQ.restart_only.OR.p%Ntl/100.EQ.mod(p%Ntl,100)) THEN
-! Use a different write routine, wrf_ext_write_field_arr, and pass in the 
+! Use a different write routine, wrf_ext_write_field_arr, and pass in the
 ! tracer indeces so that p%rfield_4d can be passsed in without arguments,
 ! avoiding the possiblity of a copy-in/copy-out problem for some compilers.
 ! JM 20091208

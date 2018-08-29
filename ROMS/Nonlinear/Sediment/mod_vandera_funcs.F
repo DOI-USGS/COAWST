@@ -10,18 +10,18 @@
 !----------------------------------------------- John C. Warner--------!
 !----------------------------------------------------------------------!
 !  This module contains several functions that are required for the    !
-!  sediment bedload calculations using Van der A's formulations.       !     
+!  sediment bedload calculations using Van der A's formulations.       !
 !                                                                      !
 !----------------------------------------------------------------------!
 !======================================================================!
 !
       implicit none
-      
-      CONTAINS 
+
+      CONTAINS
 !
       REAL(r8) FUNCTION kh(Td,depth)
 !
-!  Calculate wave number from Wave period and depth 
+!  Calculate wave number from Wave period and depth
 !
 ! RL Soulsby (2006) "Simplified calculation of wave orbital velocities"
 ! HR Wallingford Report TR 155, February 2006
@@ -29,7 +29,7 @@
       USE mod_scalars
 !
       implicit none
-! 
+!
       real(r8) :: Td, depth
       real(r8) :: cff
       real(r8) :: x, y, t, omega
@@ -43,9 +43,9 @@
         y=x
       ENDIF
 !
-! Iteratively solving 3 times for eqn.7 of Soulsby 1997 by using 
+! Iteratively solving 3 times for eqn.7 of Soulsby 1997 by using
 ! eqns. (12a-14)
-!      
+!
       t=TANH(y)
       cff=(y*t-x)/(t+y*(1.0_r8-t*t))
       y=y-cff
@@ -58,20 +58,20 @@
       cff=(y*t-x)/(t+y*(1.0_r8-t*t))
       y=y-cff
       kh=y
-!     
+!
       RETURN
       END FUNCTION
-! 
+!
       REAL(r8) FUNCTION w_s_calc(d50, rhos)
 !
 ! Critical Shields parameter from Soulsby (1997).
-! Dynamics of Marine Sands 
+! Dynamics of Marine Sands
 !
       USE mod_kinds
       USE mod_scalars
 !
       implicit none
-! 
+!
       real(r8), parameter :: nu=1.36E-6_r8
       real(r8) :: d50, rhos
       real(r8) :: s, dstar
@@ -86,24 +86,24 @@
       RETURN
       END FUNCTION
 !
-      REAL(r8) FUNCTION w_sc_calc(Hs, Td, depth, RR, w_s, zws) 
-! 
+      REAL(r8) FUNCTION w_sc_calc(Hs, Td, depth, RR, w_s, zws)
+!
 ! Second order Stokes theory to get vertical velocity of water particle
 ! at a given elevation based on santoss_core.m
-! 
+!
       USE mod_kinds
       USE mod_scalars
 !
-      implicit none 
-!     
+      implicit none
+!
       real(r8) :: Hs, Td, depth, RR, zws, w_s
-      real(r8) :: cff, worb1, worb2, worb 
-!      
+      real(r8) :: cff, worb1, worb2, worb
+!
       worb1=pi*Hs*zws/(Td*depth)
       worb2=worb1*2.0_r8*(RR+RR-1.0_r8)
 !
-!  Using the SANTOSS model formulation 
-! 
+!  Using the SANTOSS model formulation
+!
       cff=1.0_r8/8.0_r8
       worb=cff*worb1*SQRT(64.0_r8-(-worb1+                              &
      &          SQRT(worb1**2.0_r8+32.0_r8*                             &
@@ -113,14 +113,14 @@
 !
       w_sc_calc=worb
 !
-      RETURN  
+      RETURN
       END FUNCTION w_sc_calc
 !
       REAL(r8) FUNCTION mu_calc(d50)
 !
 ! Calculate bed roughness factor based on grain size
 ! VA2013 Appendix A., required for current related bed roughness
-! and wave related bed roughness. 
+! and wave related bed roughness.
 !
       USE mod_kinds
       USE mod_scalars
@@ -167,7 +167,7 @@
       REAL(r8) FUNCTION ksw_calc(d50, mu, theta_timeavg, eta, rlen)
 !
 ! Calculate wave related bed roughness from VA2013 Eqn. A.5.
-! 
+!
       USE mod_kinds
       USE mod_scalars
 !
@@ -187,7 +187,7 @@
 !
       REAL(r8) FUNCTION fw_calc(ahat, ksw)
 !
-! Calculate full-cycle wave friction factor from VA2013 Eqn. A.4. 
+! Calculate full-cycle wave friction factor from VA2013 Eqn. A.4.
 !
       USE mod_kinds
       USE mod_scalars
@@ -214,23 +214,23 @@
 !
 ! Calculate current related friction factor VA2013 Eqn. 20
 ! Assuming logarithmic velocity profile.
-! 
+!
       real(r8) :: umag_curr, Zref, ksd
       real(r8), parameter :: von_k=0.41_r8
-! 
+!
       IF(umag_curr.eq.0.0_r8) THEN
         fd_calc=0.0_r8
       ELSE
         fd_calc=2.0_r8*(von_k/LOG(30.0_r8*Zref/ksd))**2.0_r8
       ENDIF
-!     
+!
       RETURN
       END FUNCTION fd_calc
 !
       REAL(r8) FUNCTION fwi_calc(T_iu, T_i, ahat, ksw)
 !
 ! Wave friction factor for wave and crest half cycle VA2013 Eqn. 21.
-!       
+!
       USE mod_kinds
       USE mod_scalars
 !
@@ -248,14 +248,14 @@
       ELSE
         fwi_calc=0.3_r8
       ENDIF
-!     
+!
       RETURN
       END FUNCTION fwi_calc
 !
       REAL(r8) FUNCTION dsf_calc(d50, theta_i)
 !
 ! Sheet flow thickness VA2013 Appendix C.1.
-!       
+!
       USE mod_kinds
       USE mod_scalars
 !
@@ -286,7 +286,7 @@
       USE mod_scalars
 
       implicit none
-! 
+!
       real(r8), parameter :: nu=1.36E-6_r8
       real(r8) :: d50, rhos
       real(r8) :: s, dstar

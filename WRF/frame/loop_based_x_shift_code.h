@@ -1,5 +1,5 @@
       p => grid%head_statevars%next
-      DO WHILE ( ASSOCIATED( p ) ) 
+      DO WHILE ( ASSOCIATED( p ) )
         IF ( p%ProcOrient .NE. 'X' .AND. p%ProcOrient .NE. 'Y' ) THEN
           IF ( INDEX(TRIM(p%Stagger),'X') .GT. 0 ) THEN
             ipf = MIN(ipe,ide)

@@ -235,7 +235,7 @@ contains
               ,pi2d=pi3d(ims,kms,j)                                            &
               ,utnp=rublten(ims,kms,j),vtnp=rvblten(ims,kms,j)                 &
               ,ttnp=rthblten(ims,kms,j),qtnp=rqvbl2dt(its,kts),ndiff=ndiff     &
-              ,cp=cp,g=g,rovcp=rovcp,rd=rd,rovg=rovg                           &    
+              ,cp=cp,g=g,rovcp=rovcp,rd=rd,rovg=rovg                           &
               ,xlv=xlv,rv=rv                                                   &
               ,ep1=ep1,ep2=ep2,karman=karman                                   &
               ,dz8w2d=dz8w(ims,kms,j)                                          &
@@ -374,7 +374,7 @@ contains
                                     its,ite, jts,jte, kts,kte,                 &
                                     j,ndiff
 
-   integer,  intent(in)      ::     ysu_topdown_pblmix 
+   integer,  intent(in)      ::     ysu_topdown_pblmix
 !
    real,     intent(in   )   ::     dt,rcl,cp,g,rovcp,rovg,rd,xlv,rv
 !
@@ -895,7 +895,7 @@ contains
 !     estimate the entrainment parameters
 !
    do i = its,ite
-     cloudflg(i)=.false. 
+     cloudflg(i)=.false.
      if(pblflg(i)) then
        k = kpbl(i) - 1
        wm3       = wstar3(i) + 5. * ust3(i)
@@ -905,7 +905,7 @@ contains
        we(i) = max(bfxpbl(i)/dthvx(i),-sqrt(wm2(i)))
        if((qx(i,ktrace2+k)+qx(i,ktrace3+k)).gt.0.01e-3.and.ysu_topdown_pblmix.eq.1)then
            if ( kpbl(i) .ge. 2) then
-                cloudflg(i)=.true. 
+                cloudflg(i)=.true.
                 templ=thlix(i,k)*(p2di(i,k+1)/100000)**rovcp
                 !rvls is ws at full level
                 rvls=100.*6.112*EXP(17.67*(templ-273.16)/(templ-29.65))*(ep2/p2di(i,k+1))
@@ -949,7 +949,7 @@ contains
                 !wstar3_2
                 bfx0 = max(radsum/rhox2(i,k)/cp,0.)
                 wstar3_2(i) =  (g/thvx(i,k)*bfx0*hpbl(i))
-                !recompute hgamt 
+                !recompute hgamt
                 wscale(i) = (ust3(i)+phifac*karman*(wstar3(i)+wstar3_2(i))*0.5)**h1
                 wscale(i) = min(wscale(i),ust(i)*aphi16)
                 wscale(i) = max(wscale(i),ust(i)/aphi5)

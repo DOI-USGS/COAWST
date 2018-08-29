@@ -313,7 +313,7 @@
 !
           DO i=Istr,Iend
             enthalpi(i,0,linew)=BOUNDARY(ng)%hi_south(i)*               &
-     &                          BOUNDARY(ng)%ti_south(i)            
+     &                          BOUNDARY(ng)%ti_south(i)
 # ifdef MASKING
             enthalpi(i,0,linew)=enthalpi(i,0,linew)*                    &
      &                   GRID(ng)%rmask(i,0)
@@ -331,7 +331,7 @@
           DO i=Istr,Iend
             IF (vi(i,1,linew).ge.0._r8) THEN
               enthalpi(i,0,linew)=BOUNDARY(ng)%hi_south(i)*             &
-     &                          BOUNDARY(ng)%ti_south(i)            
+     &                          BOUNDARY(ng)%ti_south(i)
 # ifdef MASKING
               enthalpi(i,0,linew)=enthalpi(i,0,linew)*                  &
      &                   GRID(ng)%rmask(i,0)

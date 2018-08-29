@@ -29,16 +29,16 @@ END subroutine wrf
   CALL setfeenv()
 #endif
 
-  ! Set up WRF model.  
+  ! Set up WRF model.
   CALL wrf_init
 
   ! Run digital filter initialization if requested.
   CALL wrf_dfi
 
-  ! WRF model time-stepping.  Calls integrate().  
+  ! WRF model time-stepping.  Calls integrate().
   CALL wrf_run
 
-  ! WRF model clean-up.  This calls MPI_FINALIZE() for DM parallel runs.  
+  ! WRF model clean-up.  This calls MPI_FINALIZE() for DM parallel runs.
   CALL wrf_finalize
 
 END PROGRAM wrf

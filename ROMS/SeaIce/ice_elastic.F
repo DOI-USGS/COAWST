@@ -136,7 +136,7 @@
      &                        ai, hi,                                   &
      &                        sig11, sig22, sig12,                      &
      &                        tauaiu, tauaiv,                           &
-     &                        chu_iw) 
+     &                        chu_iw)
 !***********************************************************************
 !
 
@@ -155,7 +155,7 @@
 
 !  Imported variable declarations.
 !
-      integer, intent(in) :: ng, tile                    
+      integer, intent(in) :: ng, tile
       integer, intent(in) :: LBi, UBi, LBj, UBj
       integer, intent(in) :: IminS, ImaxS, JminS, JmaxS
       integer, intent(in) :: liold, liuol, liunw, lieol, lienw
@@ -275,7 +275,7 @@
       real(r8) :: vforce
       real(r8) :: alfa
       real(r8) :: masu
-      real(r8) :: masv 
+      real(r8) :: masv
       real(r8) :: chux
       real(r8) :: chuy
       real(r8) :: auf
@@ -310,7 +310,7 @@
 !
       cosstang = COS(deg2rad*stressang(ng))
       sinstang = SIN(deg2rad*stressang(ng))
-! 
+!
 ! Initialize fast-step velocities if beginning of cycle
 
 #ifdef FOOO
@@ -410,14 +410,14 @@
 #   ifdef lIMIT_ICE_BSTRESS
 !
 !  Set limiting factor for bottom stress. The bottom stress is adjusted
-!  to not change the direction of momentum.  It only should slow down 
+!  to not change the direction of momentum.  It only should slow down
 !  to zero.  The value of 0.75 is arbitrary limitation assigment.
 !
       cff=0.75_r8/dte(ng)
 #   endif
 ! ...................................
 !
-! *** momentum equation 
+! *** momentum equation
 !
 ! u-eqn
 !
@@ -429,13 +429,13 @@
           masu = max(masu,0.1_r8)
           masu = masu*rhoice(ng)
           auf = max(0.5_r8*(ai(i-1,j,liold)+ai(i,j,liold)),0.01_r8)
-          pmu = 0.5_r8*(pm(i,j) + pm(i-1,j)) 
-          pnu = 0.5_r8*(pn(i,j) + pn(i-1,j)) 
+          pmu = 0.5_r8*(pm(i,j) + pm(i-1,j))
+          pnu = 0.5_r8*(pn(i,j) + pn(i-1,j))
 !
-! *** forces from ice rheology x-direction 
-          s1 = (sig11(i,j,lienw)-sig11(i-1,j,lienw))*pmu 
+! *** forces from ice rheology x-direction
+          s1 = (sig11(i,j,lienw)-sig11(i-1,j,lienw))*pmu
 #ifdef MASKING
-          IF (umask(i,j).gt.0.0_r8.and.umask(i,j+1).lt.1.0_r8) THEN 
+          IF (umask(i,j).gt.0.0_r8.and.umask(i,j+1).lt.1.0_r8) THEN
             f1 = 0.5_r8*(sig12(i,j,lienw)+sig12(i-1,j,lienw))
 # ifdef WET_DRY
           ELSE IF (umask_wet(i,j).gt.0.0_r8.and.                        &
@@ -514,10 +514,10 @@
 #ifdef ACTIVE
 !ACTIVE
 #endif
-! *** wind force 
+! *** wind force
            uforce = uforce + tauaiu(i,j)
 
-! *** pressure from tilting ocean surface 
+! *** pressure from tilting ocean surface
            uforce = uforce - g*(masu)*pmu                               &
      &            *(sealev(i,j)-sealev(i-1,j))
 
@@ -592,7 +592,7 @@
           uforce = uforce + fakt*rhoice(ng)*                            &
      &                            (mfv11 + mfv21 + mfv12 + mfv22)
 !
-! *** stress from ocean current 
+! *** stress from ocean current
           uforce = uforce + auf*chux*rho0*uwater(i,j)
 !
           alfa = masu + dte(ng)*auf*rho0*chux
@@ -610,7 +610,7 @@
 !
 !  solving the momentum equation for u
           uie(i,j,lienw) = (masu*uie(i,j,lieol) +                       &
-     &                       dte(ng)*uforce)/alfa 
+     &                       dte(ng)*uforce)/alfa
 !
 # ifdef MICLM_NUDGING
           cff2 = 0.5*(MInudgcof(i,j)+MInudgcof(i-1,j))
@@ -642,20 +642,20 @@
       END DO
 !
 !
-! *** momentum equation 
+! *** momentum equation
 !
       DO j=JstrP,Jend
         DO i=Istr,Iend
           vforce = 0._r8
           masv = 0.5_r8*(hi(i,j,liold)+hi(i,j-1,liold))
           masv = max(masv,0.1_r8)
-          masv = masv*rhoice(ng) 
+          masv = masv*rhoice(ng)
           avf = max(0.5_r8*(ai(i,j-1,liold)+ai(i,j,liold)),0.01_r8)
           chuy = 0.5_r8*(chu_iw(i,j-1)+chu_iw(i,j))
-          pmv = 0.5_r8*(pm(i,j) + pm(i,j-1)) 
-          pnv = 0.5_r8*(pn(i,j) + pn(i,j-1)) 
+          pmv = 0.5_r8*(pm(i,j) + pm(i,j-1))
+          pnv = 0.5_r8*(pn(i,j) + pn(i,j-1))
 !
-! *** forces from ice rheology y-direction 
+! *** forces from ice rheology y-direction
           s1 = (sig22(i,j,lienw) - sig22(i,j-1,lienw))*pnv
 #ifdef MASKING
           IF (vmask(i,j).gt.0.0_r8.and.vmask(i+1,j).lt.1.0_r8) THEN
@@ -726,7 +726,7 @@
      &           + sig12(i-1,j-1,lienw)+sig12(i,j-1,lienw))
 #endif
 !
-          s2 = (f1-f2)*pmv 
+          s2 = (f1-f2)*pmv
           vforce = s1+s2
 #ifdef ACTIVE
 !ACTIVE
@@ -734,7 +734,7 @@
 ! *** wind force
           vforce = vforce + tauaiv(i,j)
 
-! *** pressure from tilting ocean surface 
+! *** pressure from tilting ocean surface
           vforce = vforce - g*(masv)*pnv                                &
      &            *(sealev(i,j)-sealev(i,j-1))
 !
@@ -810,7 +810,7 @@
           vforce = vforce - fakt*rhoice(ng)*                            &
      &                            (mfu11 + mfu21 + mfu12 + mfu22)
 !
-! *** stress from ocean current 
+! *** stress from ocean current
           vforce = vforce + avf*chuy*rho0*vwater(i,j)
 !
           alfa = masv + dte(ng)*avf*rho0*chuy
@@ -828,7 +828,7 @@
 
 !  solving the momentum equation for v
           vie(i,j,lienw) = (masv*vie(i,j,lieol) +                       &
-     &                       dte(ng)*vforce)/alfa 
+     &                       dte(ng)*vforce)/alfa
 !
 # ifdef MICLM_NUDGING
           cff = 0.5*(MInudgcof(i,j)+MInudgcof(i,j-1))
@@ -856,8 +856,8 @@
             vie(i,j,lienw) = 0.0_r8
           ENDIF
 # endif
-        END DO 
-      END DO 
+        END DO
+      END DO
 
       CALL uibc_tile (ng, tile,                                         &
      &                LBi, UBi, LBj, UBj,                               &

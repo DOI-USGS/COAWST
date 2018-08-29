@@ -47,19 +47,19 @@ MODULE module_optional_input
    REAL , ALLOCATABLE , DIMENSION(:,:,:) :: st_input , sm_input , sw_input
 
    CHARACTER (LEN=80) , PRIVATE :: flag_name
- 
+
    LOGICAL :: already_been_here
 
 CONTAINS
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-   SUBROUTINE init_module_optional_input ( grid , config_flags ) 
+   SUBROUTINE init_module_optional_input ( grid , config_flags )
 
       USE module_domain	, ONLY : domain
       USE module_configure , ONLY : grid_config_rec_type
 
-      IMPLICIT NONE 
+      IMPLICIT NONE
 
       TYPE ( domain ) :: grid
       TYPE (grid_config_rec_type) :: config_flags
@@ -104,7 +104,7 @@ CONTAINS
          IF ( ALLOCATED ( st_input ) ) DEALLOCATE ( st_input )
          IF ( ALLOCATED ( sm_input ) ) DEALLOCATE ( sm_input )
          IF ( ALLOCATED ( sw_input ) ) DEALLOCATE ( sw_input )
-   
+
          ALLOCATE ( st_input(ims:ime,num_st_levels_alloc,jms:jme) )
          ALLOCATE ( sm_input(ims:ime,num_sm_levels_alloc,jms:jme) )
          ALLOCATE ( sw_input(ims:ime,num_sw_levels_alloc,jms:jme) )
@@ -124,7 +124,7 @@ CONTAINS
       USE module_configure       , ONLY : grid_config_rec_type
       USE module_domain	, ONLY : domain
 
-      IMPLICIT NONE 
+      IMPLICIT NONE
 
       TYPE ( domain ) :: grid
       TYPE (grid_config_rec_type) :: config_flags
@@ -226,10 +226,10 @@ CONTAINS
       CALL optional_levels     ( grid , fid , &
                                  ids, ide, jds, jde, kds, kde, &
                                  ims, ime, jms, jme, kms, kme, &
-                                 its, ite, jts, jte, kts, kte  ) 
+                                 its, ite, jts, jte, kts, kte  )
 
-      flag_soil_levels = 0 
-      flag_soil_layers = 0 
+      flag_soil_levels = 0
+      flag_soil_layers = 0
 
       !  How many soil levels have we found?  Well, right now, none.
 
@@ -237,7 +237,7 @@ CONTAINS
       num_sm_levels_input = 0
       num_sw_levels_input = 0
 
-      CALL wrf_get_dom_ti_integer ( fid, 'FLAG_SOIL_LEVELS', itmp, 1, icnt, ierr ) 
+      CALL wrf_get_dom_ti_integer ( fid, 'FLAG_SOIL_LEVELS', itmp, 1, icnt, ierr )
 
       IF ( ierr .EQ. 0 ) THEN
          flag_soil_levels = itmp
@@ -245,7 +245,7 @@ CONTAINS
          CALL wrf_debug(0,message)
       END IF
 
-      CALL wrf_get_dom_ti_integer ( fid, 'FLAG_SOIL_LAYERS', itmp, 1, icnt, ierr ) 
+      CALL wrf_get_dom_ti_integer ( fid, 'FLAG_SOIL_LAYERS', itmp, 1, icnt, ierr )
 
       IF ( ierr .EQ. 0 ) THEN
          flag_soil_layers = itmp
@@ -270,15 +270,15 @@ CONTAINS
             ( model_config_rec%sf_surface_physics(grid%id) .EQ. 4 ) .OR. &
             ( model_config_rec%sf_surface_physics(grid%id) .EQ. 5 ) .OR. &
             ( model_config_rec%sf_surface_physics(grid%id) .EQ. 7 ) .OR. &
-            ( model_config_rec%sf_surface_physics(grid%id) .EQ. 8 ) .OR. & !fds 
+            ( model_config_rec%sf_surface_physics(grid%id) .EQ. 8 ) .OR. & !fds
             ( model_config_rec%sf_surface_physics(grid%id) .EQ. 88 ) ) THEN
-   
+
          CALL optional_lsm_levels ( grid , fid , &
                                     ids, ide, jds, jde, kds, kde, &
                                     ims, ime, jms, jme, kms, kme, &
                                     its, ite, jts, jte, kts, kte  )
       END IF
-     
+
    END SUBROUTINE optional_input
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -294,7 +294,7 @@ CONTAINS
 USE module_configure , ONLY : grid_config_rec_type
 USE module_io_domain
 
-      IMPLICIT NONE 
+      IMPLICIT NONE
 
       TYPE ( domain ) :: grid
       INTEGER , INTENT(IN) :: fid
@@ -323,37 +323,37 @@ USE module_io_domain
       flag_speccldf = 0
 
       flag_name(1:8) = 'QV      '
-      CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
+      CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr )
       IF ( ierr .EQ. 0 ) THEN
          flag_qv       = itmp
       END IF
       flag_name(1:8) = 'QC      '
-      CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
+      CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr )
       IF ( ierr .EQ. 0 ) THEN
          flag_qc       = itmp
       END IF
       flag_name(1:8) = 'QR      '
-      CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
+      CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr )
       IF ( ierr .EQ. 0 ) THEN
          flag_qr       = itmp
       END IF
       flag_name(1:8) = 'QI      '
-      CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
+      CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr )
       IF ( ierr .EQ. 0 ) THEN
          flag_qi       = itmp
       END IF
       flag_name(1:8) = 'QS      '
-      CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
+      CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr )
       IF ( ierr .EQ. 0 ) THEN
          flag_qs       = itmp
       END IF
       flag_name(1:8) = 'QG      '
-      CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
+      CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr )
       IF ( ierr .EQ. 0 ) THEN
          flag_qg       = itmp
       END IF
       flag_name(1:8) = 'QH      '
-      CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
+      CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr )
       IF ( ierr .EQ. 0 ) THEN
          flag_qh       = itmp
       END IF
@@ -378,21 +378,21 @@ USE module_io_domain
          flag_qnifa     = itmp
       END IF
       flag_name(1:8) = 'SH      '
-      CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
+      CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr )
       IF ( ierr .EQ. 0 ) THEN
          flag_sh       = itmp
       END IF
       flag_name(1:8) = 'SPECCLDL'
-      CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
+      CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr )
       IF ( ierr .EQ. 0 ) THEN
          flag_speccldl = itmp
       END IF
       flag_name(1:8) = 'SPECCLDF'
-      CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
+      CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr )
       IF ( ierr .EQ. 0 ) THEN
          flag_speccldf = itmp
       END IF
-    
+
    END SUBROUTINE optional_moist
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -407,7 +407,7 @@ USE module_io_domain
 USE module_configure , ONLY : grid_config_rec_type
 USE module_io_domain
 
-      IMPLICIT NONE 
+      IMPLICIT NONE
 
       TYPE ( domain ) :: grid
       INTEGER , INTENT(IN) :: fid
@@ -420,10 +420,10 @@ USE module_io_domain
 
       flag_name = '                                                                                '
 
-      flag_metgrid = 0 
+      flag_metgrid = 0
 
       flag_name(1:8) = 'METGRID '
-      CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
+      CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr )
       IF ( ierr .EQ. 0 ) THEN
          flag_metgrid  = itmp
       END IF
@@ -436,14 +436,14 @@ USE module_io_domain
          flag_pinterp  = itmp
       END IF
 
-      flag_mf_xy = 0 
+      flag_mf_xy = 0
 
       flag_name(1:8) = 'MF_XY   '
-      CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
+      CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr )
       IF ( ierr .EQ. 0 ) THEN
          flag_mf_xy    = itmp
       END IF
-    
+
       grid%flag_metgrid = flag_metgrid
       grid%flag_mf_xy   = flag_mf_xy
    END SUBROUTINE optional_metgrid
@@ -460,7 +460,7 @@ USE module_io_domain
 USE module_configure , ONLY : grid_config_rec_type
 USE module_io_domain
 
-      IMPLICIT NONE 
+      IMPLICIT NONE
 
       TYPE ( domain ) :: grid
       INTEGER , INTENT(IN) :: fid
@@ -473,14 +473,14 @@ USE module_io_domain
 
       flag_name = '                                                                                '
 
-      flag_sst      = 0 
+      flag_sst      = 0
 
       flag_name(1:8) = 'SST     '
-      CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
+      CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr )
       IF ( ierr .EQ. 0 ) THEN
          flag_sst      = itmp
       END IF
-    
+
    END SUBROUTINE optional_sst
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -495,7 +495,7 @@ USE module_io_domain
 USE module_configure , ONLY : grid_config_rec_type
 USE module_io_domain
 
-      IMPLICIT NONE 
+      IMPLICIT NONE
 
       TYPE ( domain ) :: grid
       INTEGER , INTENT(IN) :: fid
@@ -508,99 +508,99 @@ USE module_io_domain
 
       flag_name = '                                                                                '
 
-      flag_hgtmaxw  = 0 
-      flag_pmaxw    = 0 
-      flag_pmaxwnn  = 0 
-      flag_tmaxw    = 0 
-      flag_umaxw    = 0 
-      flag_vmaxw    = 0 
-      flag_hgttrop  = 0 
-      flag_ptrop    = 0 
-      flag_ptropnn  = 0 
-      flag_ttrop    = 0 
-      flag_utrop    = 0 
-      flag_vtrop    = 0 
+      flag_hgtmaxw  = 0
+      flag_pmaxw    = 0
+      flag_pmaxwnn  = 0
+      flag_tmaxw    = 0
+      flag_umaxw    = 0
+      flag_vmaxw    = 0
+      flag_hgttrop  = 0
+      flag_ptrop    = 0
+      flag_ptropnn  = 0
+      flag_ttrop    = 0
+      flag_utrop    = 0
+      flag_vtrop    = 0
       flag_extra_levels = 0
 
       flag_name(1:8) = 'HGTMAXW '
-      CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
+      CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr )
       IF ( ierr .EQ. 0 ) THEN
          flag_hgtmaxw  = itmp
       END IF
       flag_name(1:8) = 'PMAXW   '
-      CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
+      CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr )
       IF ( ierr .EQ. 0 ) THEN
          flag_pmaxw    = itmp
       END IF
       flag_name(1:8) = 'PMAXWNN '
-      CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
+      CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr )
       IF ( ierr .EQ. 0 ) THEN
          flag_pmaxwnn  = itmp
       END IF
       flag_name(1:8) = 'TMAXW   '
-      CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
+      CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr )
       IF ( ierr .EQ. 0 ) THEN
          flag_tmaxw    = itmp
       END IF
       flag_name(1:8) = 'UMAXW   '
-      CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
+      CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr )
       IF ( ierr .EQ. 0 ) THEN
          flag_umaxw    = itmp
       END IF
       flag_name(1:8) = 'VMAXW   '
-      CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
+      CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr )
       IF ( ierr .EQ. 0 ) THEN
          flag_vmaxw    = itmp
       END IF
       flag_name(1:8) = 'HGTTROP '
-      CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
+      CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr )
       IF ( ierr .EQ. 0 ) THEN
          flag_hgttrop  = itmp
       END IF
       flag_name(1:8) = 'PTROP   '
-      CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
+      CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr )
       IF ( ierr .EQ. 0 ) THEN
          flag_ptrop    = itmp
       END IF
       flag_name(1:8) = 'PTROPNN '
-      CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
+      CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr )
       IF ( ierr .EQ. 0 ) THEN
          flag_ptropnn  = itmp
       END IF
       flag_name(1:8) = 'TTROP   '
-      CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
+      CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr )
       IF ( ierr .EQ. 0 ) THEN
          flag_ttrop    = itmp
       END IF
       flag_name(1:8) = 'UTROP   '
-      CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
+      CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr )
       IF ( ierr .EQ. 0 ) THEN
          flag_utrop    = itmp
       END IF
       flag_name(1:8) = 'VTROP   '
-      CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
+      CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr )
       IF ( ierr .EQ. 0 ) THEN
          flag_vtrop    = itmp
       END IF
 
       !  Newer versions of WPS supply a nearest-neighbor version of pressure and a
-      !  pressure that is suitable for interpolation.  If the nearest neighbor is 
+      !  pressure that is suitable for interpolation.  If the nearest neighbor is
       !  missing, all fields are set to unavailable.
 
       IF ( flag_pmaxwnn .EQ. 0 ) THEN
-         flag_hgtmaxw  = 0 
-         flag_pmaxw    = 0 
-         flag_tmaxw    = 0 
-         flag_umaxw    = 0 
-         flag_vmaxw    = 0 
+         flag_hgtmaxw  = 0
+         flag_pmaxw    = 0
+         flag_tmaxw    = 0
+         flag_umaxw    = 0
+         flag_vmaxw    = 0
       END IF
 
       IF ( flag_ptropnn .EQ. 0 ) THEN
-         flag_hgttrop  = 0 
-         flag_ptrop    = 0 
-         flag_ttrop    = 0 
-         flag_utrop    = 0 
-         flag_vtrop    = 0 
+         flag_hgttrop  = 0
+         flag_ptrop    = 0
+         flag_ttrop    = 0
+         flag_utrop    = 0
+         flag_vtrop    = 0
       END IF
 
       flag_extra_levels = flag_hgtmaxw*flag_pmaxw*flag_tmaxw*flag_umaxw*flag_vmaxw* &
@@ -621,7 +621,7 @@ USE module_io_domain
 USE module_configure , ONLY : grid_config_rec_type
 USE module_io_domain
 
-      IMPLICIT NONE 
+      IMPLICIT NONE
 
       TYPE ( domain ) :: grid
       INTEGER , INTENT(IN) :: fid
@@ -634,14 +634,14 @@ USE module_io_domain
 
       flag_name = '                                                                                '
 
-      flag_lake_depth      = 0 
+      flag_lake_depth      = 0
 
       flag_name(1:10) = 'LAKE_DEPTH'
-      CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
+      CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr )
       IF ( ierr .EQ. 0 ) THEN
          flag_lake_depth      = itmp
       END IF
-    
+
    END SUBROUTINE optional_lake
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -656,7 +656,7 @@ USE module_io_domain
 USE module_configure , ONLY : grid_config_rec_type
 USE module_io_domain
 
-      IMPLICIT NONE 
+      IMPLICIT NONE
 
       TYPE ( domain ) :: grid
       INTEGER , INTENT(IN) :: fid
@@ -669,14 +669,14 @@ USE module_io_domain
 
       flag_name = '                                                                                '
 
-      flag_tsk      = 0 
+      flag_tsk      = 0
 
       flag_name(1:8) = 'TSK     '
-      CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
+      CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr )
       IF ( ierr .EQ. 0 ) THEN
          flag_tsk      = itmp
       END IF
-    
+
    END SUBROUTINE optional_tsk
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -691,7 +691,7 @@ USE module_io_domain
 USE module_configure , ONLY : grid_config_rec_type
 USE module_io_domain
 
-      IMPLICIT NONE 
+      IMPLICIT NONE
 
       TYPE ( domain ) :: grid
       INTEGER , INTENT(IN) :: fid
@@ -704,14 +704,14 @@ USE module_io_domain
 
       flag_name = '                                                                                '
 
-      flag_tavgsfc  = 0 
+      flag_tavgsfc  = 0
 
       flag_name(1:8) = 'TAVGSFC '
-      CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
+      CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr )
       IF ( ierr .EQ. 0 ) THEN
          flag_tavgsfc  = itmp
       END IF
-    
+
    END SUBROUTINE optional_tavgsfc
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -726,7 +726,7 @@ USE module_io_domain
 USE module_configure , ONLY : grid_config_rec_type
 USE module_io_domain
 
-      IMPLICIT NONE 
+      IMPLICIT NONE
 
       TYPE ( domain ) :: grid
       INTEGER , INTENT(IN) :: fid
@@ -739,18 +739,18 @@ USE module_io_domain
 
       flag_name = '                                                                                '
 
-      flag_snowh    = 0 
+      flag_snowh    = 0
 
       flag_name(1:8) = 'SNOWH   '
-      CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
+      CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr )
       IF ( ierr .EQ. 0 ) THEN
          flag_snowh    = itmp
       END IF
 
-      flag_snow     = 0 
+      flag_snow     = 0
 
       flag_name(1:8) = 'SNOW    '
-      CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
+      CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr )
       IF ( ierr .EQ. 0 ) THEN
          flag_snow     = itmp
       END IF
@@ -770,7 +770,7 @@ USE module_io_domain
 USE module_configure , ONLY : grid_config_rec_type
 USE module_io_domain
 
-      IMPLICIT NONE 
+      IMPLICIT NONE
 
       TYPE ( domain ) :: grid
       INTEGER , INTENT(IN) :: fid
@@ -783,31 +783,31 @@ USE module_io_domain
 
       flag_name = '                                                                                '
 
-      flag_psfc     = 0 
-      flag_soilhgt  = 0 
-      flag_toposoil = 0 
-      flag_slp      = 0 
+      flag_psfc     = 0
+      flag_soilhgt  = 0
+      flag_toposoil = 0
+      flag_slp      = 0
 
       flag_name(1:8) = 'TOPOSOIL'
-      CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
+      CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr )
       IF ( ierr .EQ. 0 ) THEN
          flag_toposoil = itmp
       END IF
 
       flag_name(1:8) = 'PSFC    '
-      CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
+      CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr )
       IF ( ierr .EQ. 0 ) THEN
          flag_psfc     = itmp
       END IF
 
       flag_name(1:8) = 'SOILHGT '
-      CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
+      CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr )
       IF ( ierr .EQ. 0 ) THEN
          flag_soilhgt  = itmp
       END IF
 
       flag_name(1:8) = 'SLP     '
-      CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
+      CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr )
       IF ( ierr .EQ. 0 ) THEN
          flag_slp      = itmp
       END IF
@@ -817,9 +817,9 @@ USE module_io_domain
       IF ( ierr .EQ. 0 ) THEN
          flag_um_soil  = itmp
       END IF
-    
+
       grid%flag_soilhgt = flag_soilhgt
-      grid%flag_slp     = flag_slp 
+      grid%flag_slp     = flag_slp
       grid%flag_psfc    = flag_psfc
    END SUBROUTINE optional_sfc
 
@@ -838,7 +838,7 @@ USE module_io_domain
       USE module_configure , ONLY : grid_config_rec_type
       USE module_io_domain
 
-      IMPLICIT NONE 
+      IMPLICIT NONE
 
       TYPE ( domain ) :: grid
       INTEGER , INTENT(IN) :: fid
@@ -854,13 +854,13 @@ USE module_io_domain
 
       flag_name = '                                                                                '
 
-      flag_icedepth = 0 
-      flag_icefrac  = 0 
+      flag_icedepth = 0
+      flag_icefrac  = 0
       flag_albsi    = 0
       flag_snowsi   = 0
 
       flag_name(1:8) = 'ICEFRAC '
-      CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
+      CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr )
       IF ( ierr .EQ. 0 ) THEN
          flag_icefrac  = itmp
       END IF
@@ -872,19 +872,19 @@ USE module_io_domain
       END IF
 
       flag_name(1:8) = 'ICEDEPTH'
-      CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
+      CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr )
       IF ( ierr .EQ. 0 ) THEN
          flag_icedepth = itmp
       END IF
 
       flag_name(1:8) = 'ALBSI   '
-      CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
+      CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr )
       IF ( ierr .EQ. 0 ) THEN
          flag_albsi  = itmp
       END IF
-    
+
       flag_name(1:8) = 'SNOWSI  '
-      CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
+      CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr )
       IF ( ierr .EQ. 0 ) THEN
          flag_snowsi  = itmp
       END IF
@@ -902,7 +902,7 @@ USE module_io_domain
              ! ENDDO
           ENDIF
       ENDIF
-    
+
       !
       !  Check that ALBSI field is available for SEAICE_ALBEDO_OPT == 2
       !
@@ -945,7 +945,7 @@ USE module_io_domain
       USE module_configure , ONLY : grid_config_rec_type
       USE module_io_domain
 
-      IMPLICIT NONE 
+      IMPLICIT NONE
 
       TYPE ( domain ) :: grid
       INTEGER , INTENT(IN) :: fid
@@ -958,20 +958,20 @@ USE module_io_domain
 
       flag_name = '                                                                                '
 
-      flag_ptheta = 0 
+      flag_ptheta = 0
 
       flag_name(1:8) = 'PTHETA  '
-      CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
+      CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr )
       IF ( ierr .EQ. 0 ) THEN
          flag_ptheta = itmp
       END IF
 
       flag_name = '                                                                                '
 
-      flag_prho = 0 
+      flag_prho = 0
 
       flag_name(1:8) = 'PRHO    '
-      CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
+      CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr )
       IF ( ierr .EQ. 0 ) THEN
          flag_prho = itmp
       END IF
@@ -990,7 +990,7 @@ USE module_io_domain
       USE module_configure , ONLY : grid_config_rec_type
       USE module_io_domain
 
-      IMPLICIT NONE 
+      IMPLICIT NONE
 
       TYPE ( domain ) :: grid
       INTEGER , INTENT(IN) :: fid
@@ -1003,10 +1003,10 @@ USE module_io_domain
 
       flag_name = '                                                                                '
 
-      flag_excluded_middle = 0 
+      flag_excluded_middle = 0
 
       flag_name(1:16) = 'EXCLUDED_MIDDLE '
-      CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
+      CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr )
       IF ( ierr .EQ. 0 ) THEN
          flag_excluded_middle = itmp
       END IF
@@ -1025,7 +1025,7 @@ USE module_io_domain
       !USE module_configure , ONLY : grid_config_rec_type
       USE module_io_domain
 
-      IMPLICIT NONE 
+      IMPLICIT NONE
 
       TYPE ( domain ) :: grid
       INTEGER , INTENT(IN) :: fid
@@ -1037,12 +1037,12 @@ USE module_io_domain
       INTEGER :: itmp , icnt , ierr , i , j , k
       INTEGER :: level_above
       CHARACTER (LEN=132) :: message
-    
+
       !  Initialize the soil temp and moisture flags to "field not found".
 
       flag_name = '                                                                                '
 
-      flag_st000010 = 0 
+      flag_st000010 = 0
       flag_st010040 = 0
       flag_st040100 = 0
       flag_st100200 = 0
@@ -1060,7 +1060,7 @@ USE module_io_domain
       flag_sw100200 = 0
       flag_sw010200 = 0
 
-      flag_st000007 = 0 
+      flag_st000007 = 0
       flag_st007028 = 0
       flag_st028100 = 0
       flag_st100255 = 0
@@ -1070,26 +1070,26 @@ USE module_io_domain
       flag_sm028100 = 0
       flag_sm100255 = 0
 
-      flag_soilt000 = 0 
-      flag_soilt005 = 0 
-      flag_soilt020 = 0 
-      flag_soilt040 = 0 
-      flag_soilt160 = 0 
-      flag_soilt300 = 0 
+      flag_soilt000 = 0
+      flag_soilt005 = 0
+      flag_soilt020 = 0
+      flag_soilt040 = 0
+      flag_soilt160 = 0
+      flag_soilt300 = 0
 
-      flag_soilm000 = 0 
-      flag_soilm005 = 0 
-      flag_soilm020 = 0 
-      flag_soilm040 = 0 
-      flag_soilm160 = 0 
-      flag_soilm300 = 0 
+      flag_soilm000 = 0
+      flag_soilm005 = 0
+      flag_soilm020 = 0
+      flag_soilm040 = 0
+      flag_soilm160 = 0
+      flag_soilm300 = 0
 
-      flag_soilw000 = 0 
-      flag_soilw005 = 0 
-      flag_soilw020 = 0 
-      flag_soilw040 = 0 
-      flag_soilw160 = 0 
-      flag_soilw300 = 0 
+      flag_soilw000 = 0
+      flag_soilw005 = 0
+      flag_soilw020 = 0
+      flag_soilw040 = 0
+      flag_soilw160 = 0
+      flag_soilw300 = 0
 
       st_levels_input = -1
       sm_levels_input = -1
@@ -1108,7 +1108,7 @@ USE module_io_domain
          END DO
 
          !----------------------------------------------------------------
-         ! Flip the input soil temperature/moisture/water 
+         ! Flip the input soil temperature/moisture/water
          ! profiles upside down to make k=1 closest to the sfc
          !----------------------------------------------------------------
          DO j = jts , MIN(jde-1,jte)
@@ -1117,7 +1117,7 @@ USE module_io_domain
                   st_input(i,k,j) = grid%soilt(i,num_st_levels_input + 1 - k,j)
                   sm_input(i,k,j) = grid%soilm(i,num_st_levels_input + 1 - k,j)
                   !-------------------------------------------------------------------------
-                  ! Initialize sw_input to 0. For 3D RUC soil moisture, there is no sw, 
+                  ! Initialize sw_input to 0. For 3D RUC soil moisture, there is no sw,
                   ! but num_sw_levels_input is set to num_metgrid_soil_levels from the
                   ! namelist causing sw_input to be used in init_soil_#_real subroutines
                   !-------------------------------------------------------------------------
@@ -1157,7 +1157,7 @@ USE module_io_domain
          END DO
 
          !----------------------------------------------------------------
-         ! Flip the input soil temperature/moisture/water 
+         ! Flip the input soil temperature/moisture/water
          ! profiles upside down to make k=1 closest to the sfc
          !----------------------------------------------------------------
          DO j = jts , MIN(jde-1,jte)
@@ -1189,7 +1189,7 @@ USE module_io_domain
       IF ( ( flag_soil_levels == 0 ) .AND. ( flag_soil_layers == 0 ) ) THEN        ! Legacy code
 
          flag_name(1:8) = 'ST000010'
-         CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
+         CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr )
          IF ( ierr .EQ. 0 ) THEN
             flag_st000010 = itmp
             num_st_levels_input = num_st_levels_input + 1
@@ -1201,7 +1201,7 @@ USE module_io_domain
             END DO
          END IF
          flag_name(1:8) = 'ST010040'
-         CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
+         CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr )
          IF ( ierr .EQ. 0 ) THEN
             flag_st010040 = itmp
             num_st_levels_input = num_st_levels_input + 1
@@ -1213,7 +1213,7 @@ USE module_io_domain
             END DO
          END IF
          flag_name(1:8) = 'ST040100'
-         CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
+         CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr )
          IF ( ierr .EQ. 0 ) THEN
             flag_st040100 = itmp
             num_st_levels_input = num_st_levels_input + 1
@@ -1225,7 +1225,7 @@ USE module_io_domain
             END DO
          END IF
          flag_name(1:8) = 'ST100200'
-         CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
+         CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr )
          IF ( ierr .EQ. 0 ) THEN
             flag_st100200 = itmp
             num_st_levels_input = num_st_levels_input + 1
@@ -1237,7 +1237,7 @@ USE module_io_domain
             END DO
          END IF
          flag_name(1:8) = 'ST010200'
-         CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
+         CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr )
          IF ( ierr .EQ. 0 ) THEN
             flag_st010200 = itmp
             num_st_levels_input = num_st_levels_input + 1
@@ -1249,7 +1249,7 @@ USE module_io_domain
             END DO
          END IF
          flag_name(1:8) = 'ST000007'
-         CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
+         CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr )
          IF ( ierr .EQ. 0 ) THEN
             flag_st000007 = itmp
             num_st_levels_input = num_st_levels_input + 1
@@ -1261,7 +1261,7 @@ USE module_io_domain
             END DO
          END IF
          flag_name(1:8) = 'ST007028'
-         CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
+         CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr )
          IF ( ierr .EQ. 0 ) THEN
             flag_st007028 = itmp
             num_st_levels_input = num_st_levels_input + 1
@@ -1273,7 +1273,7 @@ USE module_io_domain
             END DO
          END IF
          flag_name(1:8) = 'ST028100'
-         CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
+         CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr )
          IF ( ierr .EQ. 0 ) THEN
             flag_st028100 = itmp
             num_st_levels_input = num_st_levels_input + 1
@@ -1285,7 +1285,7 @@ USE module_io_domain
             END DO
          END IF
          flag_name(1:8) = 'ST100255'
-         CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
+         CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr )
          IF ( ierr .EQ. 0 ) THEN
             flag_st100255 = itmp
             num_st_levels_input = num_st_levels_input + 1
@@ -1297,7 +1297,7 @@ USE module_io_domain
             END DO
          END IF
          flag_name(1:8) = 'SOILT000'
-         CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
+         CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr )
          IF ( ierr .EQ. 0 ) THEN
             flag_soilt000 = itmp
             num_st_levels_input = num_st_levels_input + 1
@@ -1309,7 +1309,7 @@ USE module_io_domain
             END DO
          END IF
          flag_name(1:8) = 'SOILT005'
-         CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
+         CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr )
          IF ( ierr .EQ. 0 ) THEN
             flag_soilt005 = itmp
             num_st_levels_input = num_st_levels_input + 1
@@ -1321,7 +1321,7 @@ USE module_io_domain
             END DO
          END IF
          flag_name(1:8) = 'SOILT020'
-         CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
+         CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr )
          IF ( ierr .EQ. 0 ) THEN
             flag_soilt020 = itmp
             num_st_levels_input = num_st_levels_input + 1
@@ -1333,7 +1333,7 @@ USE module_io_domain
             END DO
          END IF
          flag_name(1:8) = 'SOILT040'
-         CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
+         CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr )
          IF ( ierr .EQ. 0 ) THEN
             flag_soilt040 = itmp
             num_st_levels_input = num_st_levels_input + 1
@@ -1345,7 +1345,7 @@ USE module_io_domain
             END DO
          END IF
          flag_name(1:8) = 'SOILT160'
-         CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
+         CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr )
          IF ( ierr .EQ. 0 ) THEN
             flag_soilt160 = itmp
             num_st_levels_input = num_st_levels_input + 1
@@ -1357,7 +1357,7 @@ USE module_io_domain
             END DO
          END IF
          flag_name(1:8) = 'SOILT300'
-         CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
+         CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr )
          IF ( ierr .EQ. 0 ) THEN
             flag_soilt300 = itmp
             num_st_levels_input = num_st_levels_input + 1
@@ -1370,7 +1370,7 @@ USE module_io_domain
          END IF
 
          flag_name(1:8) = 'SM000010'
-         CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
+         CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr )
          IF ( ierr .EQ. 0 ) THEN
             flag_sm000010 = itmp
             num_sm_levels_input = num_sm_levels_input + 1
@@ -1382,7 +1382,7 @@ USE module_io_domain
             END DO
          END IF
          flag_name(1:8) = 'SM010040'
-         CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
+         CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr )
          IF ( ierr .EQ. 0 ) THEN
             flag_sm010040 = itmp
             num_sm_levels_input = num_sm_levels_input + 1
@@ -1394,7 +1394,7 @@ USE module_io_domain
             END DO
          END IF
          flag_name(1:8) = 'SM040100'
-         CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
+         CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr )
          IF ( ierr .EQ. 0 ) THEN
             flag_sm040100 = itmp
             num_sm_levels_input = num_sm_levels_input + 1
@@ -1406,7 +1406,7 @@ USE module_io_domain
             END DO
          END IF
          flag_name(1:8) = 'SM100200'
-         CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
+         CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr )
          IF ( ierr .EQ. 0 ) THEN
             flag_sm100200 = itmp
             num_sm_levels_input = num_sm_levels_input + 1
@@ -1418,7 +1418,7 @@ USE module_io_domain
             END DO
          END IF
          flag_name(1:8) = 'SM010200'
-         CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
+         CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr )
          IF ( ierr .EQ. 0 ) THEN
             flag_sm010200 = itmp
             num_sm_levels_input = num_sm_levels_input + 1
@@ -1430,7 +1430,7 @@ USE module_io_domain
             END DO
          END IF
          flag_name(1:8) = 'SM000007'
-         CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
+         CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr )
          IF ( ierr .EQ. 0 ) THEN
             flag_sm000007 = itmp
             num_sm_levels_input = num_sm_levels_input + 1
@@ -1442,7 +1442,7 @@ USE module_io_domain
             END DO
          END IF
          flag_name(1:8) = 'SM007028'
-         CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
+         CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr )
          IF ( ierr .EQ. 0 ) THEN
             flag_sm007028 = itmp
             num_sm_levels_input = num_sm_levels_input + 1
@@ -1454,7 +1454,7 @@ USE module_io_domain
             END DO
          END IF
          flag_name(1:8) = 'SM028100'
-         CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
+         CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr )
          IF ( ierr .EQ. 0 ) THEN
             flag_sm028100 = itmp
             num_sm_levels_input = num_sm_levels_input + 1
@@ -1466,7 +1466,7 @@ USE module_io_domain
             END DO
          END IF
          flag_name(1:8) = 'SM100255'
-         CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
+         CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr )
          IF ( ierr .EQ. 0 ) THEN
             flag_sm100255 = itmp
             num_sm_levels_input = num_sm_levels_input + 1
@@ -1478,7 +1478,7 @@ USE module_io_domain
             END DO
          END IF
          flag_name(1:8) = 'SOILM000'
-         CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
+         CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr )
          IF ( ierr .EQ. 0 ) THEN
             flag_soilm000 = itmp
             num_sm_levels_input = num_sm_levels_input + 1
@@ -1490,7 +1490,7 @@ USE module_io_domain
             END DO
          END IF
          flag_name(1:8) = 'SOILM005'
-         CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
+         CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr )
          IF ( ierr .EQ. 0 ) THEN
             flag_soilm005 = itmp
             num_sm_levels_input = num_sm_levels_input + 1
@@ -1502,7 +1502,7 @@ USE module_io_domain
             END DO
          END IF
          flag_name(1:8) = 'SOILM020'
-         CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
+         CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr )
          IF ( ierr .EQ. 0 ) THEN
             flag_soilm020 = itmp
             num_sm_levels_input = num_sm_levels_input + 1
@@ -1514,7 +1514,7 @@ USE module_io_domain
             END DO
          END IF
          flag_name(1:8) = 'SOILM040'
-         CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
+         CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr )
          IF ( ierr .EQ. 0 ) THEN
             flag_soilm040 = itmp
             num_sm_levels_input = num_sm_levels_input + 1
@@ -1526,7 +1526,7 @@ USE module_io_domain
             END DO
          END IF
          flag_name(1:8) = 'SOILM160'
-         CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
+         CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr )
          IF ( ierr .EQ. 0 ) THEN
             flag_soilm160 = itmp
             num_sm_levels_input = num_sm_levels_input + 1
@@ -1538,7 +1538,7 @@ USE module_io_domain
             END DO
          END IF
          flag_name(1:8) = 'SOILM300'
-         CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
+         CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr )
          IF ( ierr .EQ. 0 ) THEN
             flag_soilm300 = itmp
             num_sm_levels_input = num_sm_levels_input + 1
@@ -1551,7 +1551,7 @@ USE module_io_domain
          END IF
 
          flag_name(1:8) = 'SW000010'
-         CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
+         CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr )
          IF ( ierr .EQ. 0 ) THEN
             flag_sw000010 = itmp
             num_sw_levels_input = num_sw_levels_input + 1
@@ -1563,7 +1563,7 @@ USE module_io_domain
             END DO
          END IF
          flag_name(1:8) = 'SW010040'
-         CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
+         CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr )
          IF ( ierr .EQ. 0 ) THEN
             flag_sw010040 = itmp
             num_sw_levels_input = num_sw_levels_input + 1
@@ -1575,7 +1575,7 @@ USE module_io_domain
             END DO
          END IF
          flag_name(1:8) = 'SW040100'
-         CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
+         CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr )
          IF ( ierr .EQ. 0 ) THEN
             flag_sw040100 = itmp
             num_sw_levels_input = num_sw_levels_input + 1
@@ -1587,7 +1587,7 @@ USE module_io_domain
             END DO
          END IF
          flag_name(1:8) = 'SW100200'
-         CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
+         CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr )
          IF ( ierr .EQ. 0 ) THEN
             flag_sw100200 = itmp
             num_sw_levels_input = num_sw_levels_input + 1
@@ -1599,7 +1599,7 @@ USE module_io_domain
             END DO
          END IF
          flag_name(1:8) = 'SW010200'
-         CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
+         CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr )
          IF ( ierr .EQ. 0 ) THEN
             flag_sw010200 = itmp
             num_sw_levels_input = num_sw_levels_input + 1
@@ -1611,7 +1611,7 @@ USE module_io_domain
             END DO
          END IF
          flag_name(1:8) = 'SOILW000'
-         CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
+         CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr )
          IF ( ierr .EQ. 0 ) THEN
             flag_soilw000 = itmp
             num_sw_levels_input = num_sw_levels_input + 1
@@ -1623,7 +1623,7 @@ USE module_io_domain
             END DO
          END IF
          flag_name(1:8) = 'SOILW005'
-         CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
+         CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr )
          IF ( ierr .EQ. 0 ) THEN
             flag_soilw005 = itmp
             num_sw_levels_input = num_sw_levels_input + 1
@@ -1635,7 +1635,7 @@ USE module_io_domain
             END DO
          END IF
          flag_name(1:8) = 'SOILW020'
-         CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
+         CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr )
          IF ( ierr .EQ. 0 ) THEN
             flag_soilw020 = itmp
             num_sw_levels_input = num_sw_levels_input + 1
@@ -1647,7 +1647,7 @@ USE module_io_domain
             END DO
          END IF
          flag_name(1:8) = 'SOILW040'
-         CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
+         CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr )
          IF ( ierr .EQ. 0 ) THEN
             flag_soilw040 = itmp
             num_sw_levels_input = num_sw_levels_input + 1
@@ -1659,7 +1659,7 @@ USE module_io_domain
             END DO
          END IF
          flag_name(1:8) = 'SOILW160'
-         CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
+         CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr )
          IF ( ierr .EQ. 0 ) THEN
             flag_soilw160 = itmp
             num_sw_levels_input = num_sw_levels_input + 1
@@ -1671,7 +1671,7 @@ USE module_io_domain
             END DO
          END IF
          flag_name(1:8) = 'SOILW300'
-         CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
+         CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr )
          IF ( ierr .EQ. 0 ) THEN
             flag_soilw300 = itmp
             num_sw_levels_input = num_sw_levels_input + 1
@@ -1688,7 +1688,7 @@ USE module_io_domain
 ! The flags flag_st*, flag_sm*, flag_sw*, flag_soilt*, flag_soilm*, flag_soilw* are no longer used.
 ! If the new flags flag_soil_layers or flag_soil_levels are not set in met_em, and some legacy
 ! flags are, reset the new flags
-    
+
       IF ( ( flag_soil_levels == 0 ) .AND. ( flag_soil_layers == 0 ) ) THEN
          IF ( flag_st000010 == 1 .OR. flag_st010040 == 1 .OR. flag_st040100 == 1 .OR. &
               flag_st100200 == 1 .OR. flag_st010200 == 1 .OR. &
@@ -1725,7 +1725,7 @@ USE module_io_domain
       CALL wrf_debug(1,message)
 
       !  OK, let's do a quick sanity check.
- 
+
       IF ( ( num_st_levels_input .GT. num_st_levels_alloc ) .OR. &
            ( num_sm_levels_input .GT. num_sm_levels_alloc ) .OR. &
            ( num_sw_levels_input .GT. num_sw_levels_alloc ) ) THEN

@@ -133,7 +133,7 @@ integer :: ii
 
 #include "version_decl"
 
-!!!!!!!!!!!!!!!!!!!!!    mousta   
+!!!!!!!!!!!!!!!!!!!!!    mousta
     integer ::  n_ref_m,k_dim_c,k_dim_n
 real :: cf1_c,cf2_c,cf3_c,cfn_c,cfn1_c
    REAL , DIMENSION(:) , ALLOCATABLE :: znw_c,znu_c
@@ -175,8 +175,8 @@ real :: cf1_c,cf2_c,cf3_c,cfn_c,cfn1_c
 #endif
 
    !  Initialize the modules used by the WRF system.  Many of the CALLs made from the
-   !  init_modules routine are NO-OPs.  Typical initializations are: the size of a 
-   !  REAL, setting the file handles to a pre-use value, defining moisture and 
+   !  init_modules routine are NO-OPs.  Typical initializations are: the size of a
+   !  REAL, setting the file handles to a pre-use value, defining moisture and
    !  chemistry indices, etc.
 
    CALL init_modules(1)   ! Phase 1 returns after MPI_INIT() (if it is called)
@@ -232,7 +232,7 @@ real :: cf1_c,cf2_c,cf3_c,cfn_c,cfn1_c
    CALL       wrf_debug (  99,message )
 !!!!!!!!!!!!!!! mousta
 
-   !  And here is an instance of using the information in the NAMELIST.  
+   !  And here is an instance of using the information in the NAMELIST.
 
    CALL nl_get_debug_level ( 1, debug_level )
    CALL set_wrf_debug_level ( debug_level )
@@ -285,14 +285,14 @@ real :: cf1_c,cf2_c,cf3_c,cfn_c,cfn1_c
            model_config_rec%start_day   (parent_grid%id) , &
            model_config_rec%start_hour  (parent_grid%id) , &
            model_config_rec%start_minute(parent_grid%id) , &
-           model_config_rec%start_second(parent_grid%id) 
+           model_config_rec%start_second(parent_grid%id)
 
    WRITE (   end_date_char , FMT = '(I4.4,"-",I5.5,"_",I2.2,":",I2.2,":",I2.2)' ) &
            model_config_rec%  end_year  (parent_grid%id) , &
            model_config_rec%  end_day   (parent_grid%id) , &
            model_config_rec%  end_hour  (parent_grid%id) , &
            model_config_rec%  end_minute(parent_grid%id) , &
-           model_config_rec%  end_second(parent_grid%id) 
+           model_config_rec%  end_second(parent_grid%id)
 #else
    WRITE ( start_date_char , FMT = '(I4.4,"-",I2.2,"-",I2.2,"_",I2.2,":",I2.2,":",I2.2)' ) &
            model_config_rec%start_year  (parent_grid%id) , &
@@ -300,7 +300,7 @@ real :: cf1_c,cf2_c,cf3_c,cfn_c,cfn1_c
            model_config_rec%start_day   (parent_grid%id) , &
            model_config_rec%start_hour  (parent_grid%id) , &
            model_config_rec%start_minute(parent_grid%id) , &
-           model_config_rec%start_second(parent_grid%id) 
+           model_config_rec%start_second(parent_grid%id)
 
    WRITE (   end_date_char , FMT = '(I4.4,"-",I2.2,"-",I2.2,"_",I2.2,":",I2.2,":",I2.2)' ) &
            model_config_rec%  end_year  (parent_grid%id) , &
@@ -308,19 +308,19 @@ real :: cf1_c,cf2_c,cf3_c,cfn_c,cfn1_c
            model_config_rec%  end_day   (parent_grid%id) , &
            model_config_rec%  end_hour  (parent_grid%id) , &
            model_config_rec%  end_minute(parent_grid%id) , &
-           model_config_rec%  end_second(parent_grid%id) 
+           model_config_rec%  end_second(parent_grid%id)
 #endif
 
    !  Override stop time with value computed above.
    CALL domain_clock_set( parent_grid, stop_timestr=end_date_char )
 
-   CALL geth_idts ( end_date_char , start_date_char , total_time_sec ) 
+   CALL geth_idts ( end_date_char , start_date_char , total_time_sec )
 
    new_bdy_frq = model_config_rec%interval_seconds
    time_loop_max = total_time_sec / model_config_rec%interval_seconds + 1
 
-   start_date        = start_date_char // '.0000' 
-   current_date      = start_date_char // '.0000' 
+   start_date        = start_date_char // '.0000'
+   current_date      = start_date_char // '.0000'
    start_date_hold   = start_date_char // '.0000'
    current_date_char = start_date_char
 
@@ -333,7 +333,7 @@ real :: cf1_c,cf2_c,cf3_c,cfn_c,cfn1_c
    CALL unix_ls ( 'wrfout' , parent_grid%id )
 
    !  Open the input data (wrfout_d01_xxxxxx) for reading.
-   
+
    CALL wrf_debug          ( 100 , 'ndown_em main: calling open_r_dataset for ' // TRIM(eligible_file_name(file_counter)) )
    CALL open_r_dataset     ( fid, TRIM(eligible_file_name(file_counter)) , head_grid , config_flags , "DATASET=AUXINPUT1", ierr )
    IF ( ierr .NE. 0 ) THEN
@@ -364,7 +364,7 @@ real :: cf1_c,cf2_c,cf3_c,cfn_c,cfn1_c
       !  over files.
 
       get_the_right_time : DO
-      
+
          CALL wrf_get_next_time ( fid , date_string , status_next_var )
          WRITE ( message , FMT = '(A,A,A,A,A,I5)' ) 'file date/time = ',date_string,'     desired date = ',&
          current_date_char,'     status = ', status_next_var
@@ -402,7 +402,7 @@ real :: cf1_c,cf2_c,cf3_c,cfn_c,cfn1_c
             WRITE( wrf_err_message , FMT='(A,A,A,A,A)' ) 'Found ',TRIM(date_string),' before I found ',TRIM(current_date_char),'.'
             CALL WRF_ERROR_FATAL ( wrf_err_message )
          END IF
-      END DO get_the_right_time 
+      END DO get_the_right_time
 
       CALL wrf_debug          ( 100 , 'wrf: calling input_history' )
       CALL wrf_get_previous_time ( fid , date_string , status_next_var )
@@ -438,21 +438,21 @@ real :: cf1_c,cf2_c,cf3_c,cfn_c,cfn1_c
 
       !  Get the coarse grid info for later transfer to the fine grid domain.
 
-      CALL wrf_get_dom_ti_integer ( fid , 'MAP_PROJ' , map_proj , 1 , icnt , ierr ) 
-      CALL wrf_get_dom_ti_real    ( fid , 'DX'  , dx  , 1 , icnt , ierr ) 
-      CALL wrf_get_dom_ti_real    ( fid , 'DY'  , dy  , 1 , icnt , ierr ) 
-      CALL wrf_get_dom_ti_real    ( fid , 'CEN_LAT' , cen_lat , 1 , icnt , ierr ) 
-      CALL wrf_get_dom_ti_real    ( fid , 'CEN_LON' , cen_lon , 1 , icnt , ierr ) 
-      CALL wrf_get_dom_ti_real    ( fid , 'TRUELAT1' , truelat1 , 1 , icnt , ierr ) 
-      CALL wrf_get_dom_ti_real    ( fid , 'TRUELAT2' , truelat2 , 1 , icnt , ierr ) 
-      CALL wrf_get_dom_ti_real    ( fid , 'MOAD_CEN_LAT' , moad_cen_lat , 1 , icnt , ierr ) 
-      CALL wrf_get_dom_ti_real    ( fid , 'STAND_LON' , stand_lon , 1 , icnt , ierr ) 
-!     CALL wrf_get_dom_ti_real    ( fid , 'GMT' , gmt , 1 , icnt , ierr ) 
-!     CALL wrf_get_dom_ti_integer ( fid , 'JULYR' , julyr , 1 , icnt , ierr ) 
-!     CALL wrf_get_dom_ti_integer ( fid , 'JULDAY' , julday , 1 , icnt , ierr ) 
-      CALL wrf_get_dom_ti_integer ( fid , 'ISWATER' , iswater , 1 , icnt , ierr ) 
+      CALL wrf_get_dom_ti_integer ( fid , 'MAP_PROJ' , map_proj , 1 , icnt , ierr )
+      CALL wrf_get_dom_ti_real    ( fid , 'DX'  , dx  , 1 , icnt , ierr )
+      CALL wrf_get_dom_ti_real    ( fid , 'DY'  , dy  , 1 , icnt , ierr )
+      CALL wrf_get_dom_ti_real    ( fid , 'CEN_LAT' , cen_lat , 1 , icnt , ierr )
+      CALL wrf_get_dom_ti_real    ( fid , 'CEN_LON' , cen_lon , 1 , icnt , ierr )
+      CALL wrf_get_dom_ti_real    ( fid , 'TRUELAT1' , truelat1 , 1 , icnt , ierr )
+      CALL wrf_get_dom_ti_real    ( fid , 'TRUELAT2' , truelat2 , 1 , icnt , ierr )
+      CALL wrf_get_dom_ti_real    ( fid , 'MOAD_CEN_LAT' , moad_cen_lat , 1 , icnt , ierr )
+      CALL wrf_get_dom_ti_real    ( fid , 'STAND_LON' , stand_lon , 1 , icnt , ierr )
+!     CALL wrf_get_dom_ti_real    ( fid , 'GMT' , gmt , 1 , icnt , ierr )
+!     CALL wrf_get_dom_ti_integer ( fid , 'JULYR' , julyr , 1 , icnt , ierr )
+!     CALL wrf_get_dom_ti_integer ( fid , 'JULDAY' , julday , 1 , icnt , ierr )
+      CALL wrf_get_dom_ti_integer ( fid , 'ISWATER' , iswater , 1 , icnt , ierr )
 
-      !  First time in, do this: allocate sapce for the fine grid, get the config flags, open the 
+      !  First time in, do this: allocate sapce for the fine grid, get the config flags, open the
       !  wrfinput and wrfbdy files.  This COULD be done outside the time loop, I think, so check it
       !  out and move it up if you can.
 
@@ -464,7 +464,7 @@ real :: cf1_c,cf2_c,cf3_c,cfn_c,cfn1_c
                                            grid       = nested_grid ,        &
                                            parent     = parent_grid ,        &
                                            kid        = 1                   )
-   
+
          CALL       wrf_debug ( 100 , 'wrf: calling model_to_grid_config_rec ' )
          CALL model_to_grid_config_rec ( nested_grid%id , model_config_rec , config_flags )
          CALL       wrf_debug ( 100 , 'wrf: calling set_scalar_indices_from_config ' )
@@ -473,7 +473,7 @@ real :: cf1_c,cf2_c,cf3_c,cfn_c,cfn1_c
          !  Set up time initializations for the fine grid.
 
          CALL Setup_Timekeeping ( nested_grid )
-         ! Strictly speaking, nest stop time should come from model_config_rec...  
+         ! Strictly speaking, nest stop time should come from model_config_rec...
          CALL domain_clock_get( parent_grid, stop_timestr=stopTimeStr )
          CALL domain_clock_set( nested_grid,                        &
                                 current_timestr=current_date(1:19), &
@@ -493,10 +493,10 @@ nested_grid%chem_in_opt = parent_grid%chem_in_opt
 
          !  Initialize constants and 1d arrays in fine grid from the parent.
 
-         CALL init_domain_constants_em_ptr ( parent_grid , nested_grid ) 
+         CALL init_domain_constants_em_ptr ( parent_grid , nested_grid )
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-   
+
          CALL wrf_debug          ( 100 , 'ndown_em main: calling open_w_dataset for wrfinput' )
          CALL construct_filename1( outname , 'wrfinput' , nested_grid%id , 2 )
          CALL open_w_dataset     ( fido, TRIM(outname) , nested_grid , config_flags , output_input , "DATASET=INPUT", ierr )
@@ -602,7 +602,7 @@ nested_grid%chem_in_opt = parent_grid%chem_in_opt
                                nips , nipe , njps , njpe , 1   , 1   )
 
          !  Open the fine grid SI static file.
-   
+
          CALL construct_filename1( si_inpname , 'wrfndi' , nested_grid%id , 2 )
          CALL       wrf_debug ( 100 , 'med_sidata_input: calling open_r_dataset for ' // TRIM(si_inpname) )
          CALL open_r_dataset ( idsi, TRIM(si_inpname) , nested_grid , config_flags , "DATASET=INPUT", ierr )
@@ -611,13 +611,13 @@ nested_grid%chem_in_opt = parent_grid%chem_in_opt
          END IF
 
          !  Input data.
-   
+
          CALL       wrf_debug ( 100 , 'ndown_em: calling input_auxinput2' )
          CALL input_auxinput2 ( idsi , nested_grid , config_flags , ierr )
          nested_grid%ht_input = nested_grid%ht
-   
+
          !  Close this fine grid static input file.
-   
+
          CALL       wrf_debug ( 100 , 'ndown_em: closing fine grid static input' )
          CALL close_dataset ( idsi , config_flags , "DATASET=INPUT" )
 
@@ -656,7 +656,7 @@ nested_grid%chem_in_opt = parent_grid%chem_in_opt
             num_veg_cat      = SIZE ( nested_grid%landusef , DIM=2 )
             num_soil_top_cat = SIZE ( nested_grid%soilctop , DIM=2 )
             num_soil_bot_cat = SIZE ( nested_grid%soilcbot , DIM=2 )
-   
+
             CALL land_percentages (  nested_grid%xland , &
                                      nested_grid%landusef , nested_grid%soilctop , nested_grid%soilcbot , &
                                      nested_grid%isltyp , nested_grid%ivgtyp , &
@@ -694,7 +694,7 @@ nested_grid%chem_in_opt = parent_grid%chem_in_opt
       END IF
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-   
+
       !  We have 2 terrain elevations.  One is from input and the other is from the
       !  the horizontal interpolation.
 
@@ -702,10 +702,10 @@ nested_grid%chem_in_opt = parent_grid%chem_in_opt
       nested_grid%ht      = nested_grid%ht_int
 
       !  We have both the interpolated fields and the higher-resolution static fields.  From these
-      !  the rebalancing is now done.  Note also that the field nested_grid%ht is now from the 
+      !  the rebalancing is now done.  Note also that the field nested_grid%ht is now from the
       !  fine grid input file (after this call is completed).
 
-      CALL rebalance_driver ( nested_grid ) 
+      CALL rebalance_driver ( nested_grid )
 
       !  Different things happen during the different time loops:
       !      first loop - write wrfinput file, close data set, copy files to holder arrays
@@ -739,7 +739,7 @@ nested_grid%chem_in_opt = parent_grid%chem_in_opt
               end if
 
               if(nested_grid%dust_opt == 1 .or. nested_grid%dmsemis_opt == 1         &
-                 .or. nested_grid%chem_opt == 300  .or. nested_grid%chem_opt == 301) then 
+                 .or. nested_grid%chem_opt == 300  .or. nested_grid%chem_opt == 301) then
                  message = 'READING GOCART BG AND/OR DUST and DMS REF FIELDS'
                  CALL  wrf_message ( message )
                  CALL med_read_wrf_chem_gocart_bg ( nested_grid , config_flags)
@@ -749,7 +749,7 @@ nested_grid%chem_in_opt = parent_grid%chem_in_opt
                  message = 'READING BEIS3.11 EMISSIONS DATA'
                  CALL  wrf_message ( message )
                  CALL med_read_wrf_chem_bioemiss ( nested_grid , config_flags)
-              else if( nested_grid%bio_emiss_opt == 3 ) THEN 
+              else if( nested_grid%bio_emiss_opt == 3 ) THEN
                  message = 'READING MEGAN 2 EMISSIONS DATA'
                  CALL  wrf_message ( message )
                  CALL med_read_wrf_chem_bioemiss ( nested_grid , config_flags)
@@ -762,41 +762,41 @@ nested_grid%chem_in_opt = parent_grid%chem_in_opt
 #endif
 
          !  Output the first time period of the data.
-   
+
          CALL output_input ( fido , nested_grid , config_flags , ierr )
 
-         CALL wrf_put_dom_ti_integer ( fido , 'MAP_PROJ' , map_proj , 1 , ierr ) 
-!        CALL wrf_put_dom_ti_real    ( fido , 'DX'  , dx  , 1 , ierr ) 
-!        CALL wrf_put_dom_ti_real    ( fido , 'DY'  , dy  , 1 , ierr ) 
-         CALL wrf_put_dom_ti_real    ( fido , 'CEN_LAT' , cen_lat , 1 , ierr ) 
-         CALL wrf_put_dom_ti_real    ( fido , 'CEN_LON' , cen_lon , 1 , ierr ) 
-         CALL wrf_put_dom_ti_real    ( fido , 'TRUELAT1' , truelat1 , 1 , ierr ) 
-         CALL wrf_put_dom_ti_real    ( fido , 'TRUELAT2' , truelat2 , 1 , ierr ) 
-         CALL wrf_put_dom_ti_real    ( fido , 'MOAD_CEN_LAT' , moad_cen_lat , 1 , ierr ) 
-         CALL wrf_put_dom_ti_real    ( fido , 'STAND_LON' , stand_lon , 1 , ierr ) 
-         CALL wrf_put_dom_ti_integer ( fido , 'ISWATER' , iswater , 1 , ierr ) 
+         CALL wrf_put_dom_ti_integer ( fido , 'MAP_PROJ' , map_proj , 1 , ierr )
+!        CALL wrf_put_dom_ti_real    ( fido , 'DX'  , dx  , 1 , ierr )
+!        CALL wrf_put_dom_ti_real    ( fido , 'DY'  , dy  , 1 , ierr )
+         CALL wrf_put_dom_ti_real    ( fido , 'CEN_LAT' , cen_lat , 1 , ierr )
+         CALL wrf_put_dom_ti_real    ( fido , 'CEN_LON' , cen_lon , 1 , ierr )
+         CALL wrf_put_dom_ti_real    ( fido , 'TRUELAT1' , truelat1 , 1 , ierr )
+         CALL wrf_put_dom_ti_real    ( fido , 'TRUELAT2' , truelat2 , 1 , ierr )
+         CALL wrf_put_dom_ti_real    ( fido , 'MOAD_CEN_LAT' , moad_cen_lat , 1 , ierr )
+         CALL wrf_put_dom_ti_real    ( fido , 'STAND_LON' , stand_lon , 1 , ierr )
+         CALL wrf_put_dom_ti_integer ( fido , 'ISWATER' , iswater , 1 , ierr )
 
          !  These change if the initial time for the nest is not the same as the
          !  first time period in the WRF output file.
          !  Now that we know the starting date, we need to set the GMT, JULYR, and JULDAY
-         !  values for the global attributes.  This call is based on the setting of the 
+         !  values for the global attributes.  This call is based on the setting of the
          !  current_date string.
 
          CALL geth_julgmt ( julyr , julday , gmt)
          CALL nl_set_julyr  ( nested_grid%id , julyr  )
          CALL nl_set_julday ( nested_grid%id , julday )
          CALL nl_set_gmt    ( nested_grid%id , gmt    )
-         CALL wrf_put_dom_ti_real    ( fido , 'GMT' , gmt , 1 , ierr ) 
-         CALL wrf_put_dom_ti_integer ( fido , 'JULYR' , julyr , 1 , ierr ) 
-         CALL wrf_put_dom_ti_integer ( fido , 'JULDAY' , julday , 1 , ierr ) 
+         CALL wrf_put_dom_ti_real    ( fido , 'GMT' , gmt , 1 , ierr )
+         CALL wrf_put_dom_ti_integer ( fido , 'JULYR' , julyr , 1 , ierr )
+         CALL wrf_put_dom_ti_integer ( fido , 'JULDAY' , julday , 1 , ierr )
 !print *,'current_date =',current_date
 !print *,'julyr=',julyr
 !print *,'julday=',julday
 !print *,'gmt=',gmt
-         
-         !  Close the input (wrfout_d01_000000, for example) file.  That's right, the 
+
+         !  Close the input (wrfout_d01_000000, for example) file.  That's right, the
          !  input is an output file.  Who'd've thunk.
-   
+
          CALL close_dataset      ( fido , config_flags , "DATASET=INPUT" )
 
          !  We need to save the 3d/2d data to compute a difference during the next loop.  Couple the
@@ -1036,7 +1036,7 @@ nested_grid%chem_in_opt = parent_grid%chem_in_opt
                                                                   ips , ipe , jps , jpe , 1 , 1 )
 #if ( WRF_CHEM == 1 )
          do nvchem=1,num_chem
-         cbdy3dtemp1(ips:ipe,kps:kpe,jps:jpe)=cbdy3dtemp0(ips:ipe,kps:kpe,jps:jpe,nvchem) 
+         cbdy3dtemp1(ips:ipe,kps:kpe,jps:jpe)=cbdy3dtemp0(ips:ipe,kps:kpe,jps:jpe,nvchem)
          cbdy3dtemp2(ips:ipe,kps:kpe,jps:jpe)=nested_grid%chem(ips:ipe,kps:kpe,jps:jpe,nvchem)
 !        if(nvchem.eq.p_o3)then
 !          write(0,*)'fill 1ch_b2',time_loop,cbdy3dtemp1(ips,kps,jps),cbdy3dtemp0(ips,kps,jps,nvchem),cbdy3dtemp2(ips,kps,jps)
@@ -1051,14 +1051,14 @@ nested_grid%chem_in_opt = parent_grid%chem_in_opt
                                                                   ids , ide , jds , jde , kds , kde , &
                                                                   ims , ime , jms , jme , kms , kme , &
                                                                   ips , ipe , jps , jpe , kps , kpe )
-         cbdy3dtemp0(ips:ipe,kps:kpe,jps:jpe,nvchem)=cbdy3dtemp2(ips:ipe,kps:kpe,jps:jpe) 
+         cbdy3dtemp0(ips:ipe,kps:kpe,jps:jpe,nvchem)=cbdy3dtemp2(ips:ipe,kps:kpe,jps:jpe)
 !        if(nvchem.eq.p_o3)then
 !          write(0,*)'fill 2ch_b2',cbdy3dtemp1(ips,kps,jps),cbdy3dtemp0(ips,kps,jps,nvchem),cbdy3dtemp2(ips,kps,jps)
 !        endif
          enddo
 #endif
          IF ( time_loop .EQ. 2 ) THEN
-   
+
             !  Generate an output file from this program, which will be an input file to WRF.
 
             CALL wrf_debug          ( 100 , 'ndown_em main: calling open_w_dataset for wrfbdy' )
@@ -1073,7 +1073,7 @@ nested_grid%chem_in_opt = parent_grid%chem_in_opt
          END IF
 
          !  Both pieces of the boundary data are now available to be written.
-         
+
       CALL domain_clock_set( nested_grid, &
                              current_timestr=current_date(1:19) )
       temp24= current_date
@@ -1085,9 +1085,9 @@ nested_grid%chem_in_opt = parent_grid%chem_in_opt
       CALL nl_set_julyr  ( nested_grid%id , julyr  )
       CALL nl_set_julday ( nested_grid%id , julday )
       CALL nl_set_gmt    ( nested_grid%id , gmt    )
-      CALL wrf_put_dom_ti_real    ( fidb , 'GMT' , gmt , 1 , ierr ) 
-      CALL wrf_put_dom_ti_integer ( fidb , 'JULYR' , julyr , 1 , ierr ) 
-      CALL wrf_put_dom_ti_integer ( fidb , 'JULDAY' , julday , 1 , ierr ) 
+      CALL wrf_put_dom_ti_real    ( fidb , 'GMT' , gmt , 1 , ierr )
+      CALL wrf_put_dom_ti_integer ( fidb , 'JULYR' , julyr , 1 , ierr )
+      CALL wrf_put_dom_ti_integer ( fidb , 'JULDAY' , julday , 1 , ierr )
       CALL domain_clock_set( nested_grid, &
                              current_timestr=current_date(1:19) )
 print *,'bdy time = ',time_loop-1,'  bdy date = ',current_date,' ',start_date
@@ -1098,7 +1098,7 @@ print *,'bdy time = ',time_loop-1,'  bdy date = ',current_date,' ',start_date
                              current_timestr=current_date(1:19) )
 
          IF ( time_loop .EQ. 2 ) THEN
-            CALL wrf_put_dom_ti_real    ( fidb , 'BDYFRQ' , new_bdy_frq , 1 , ierr ) 
+            CALL wrf_put_dom_ti_real    ( fidb , 'BDYFRQ' , new_bdy_frq , 1 , ierr )
          END IF
 
          !  We need to save the 3d data to compute a difference during the next loop.  Couple the
@@ -1179,12 +1179,12 @@ print *,'bdy time = ',time_loop-1,'  bdy date = ',current_date,' ',start_date
                                                                            ids , ide , jds , jde , kds , kde , &
                                                                            ims , ime , jms , jme , kms , kme , &
                                                                            ips , ipe , jps , jpe , kps , kpe )
-         END DO 
+         END DO
 
 
 #if ( WRF_CHEM == 1 )
          do nvchem=1,num_chem
-         cbdy3dtemp1(ips:ipe,kps:kpe,jps:jpe)=cbdy3dtemp0(ips:ipe,kps:kpe,jps:jpe,nvchem) 
+         cbdy3dtemp1(ips:ipe,kps:kpe,jps:jpe)=cbdy3dtemp0(ips:ipe,kps:kpe,jps:jpe,nvchem)
 !        if(nvchem.eq.p_o3)then
 !          write(0,*)'fill 2ch_b3',cbdy3dtemp1(ips,kps,jps),cbdy3dtemp0(ips,kps,jps,nvchem)
 !        endif
@@ -1251,7 +1251,7 @@ print *,'bdy time = ',time_loop-1,'  bdy date = ',current_date,' ',start_date
          !  stored in the *bdy3dtemp1 arrays.
 #if ( WRF_CHEM == 1 )
          do nvchem=1,num_chem
-         cbdy3dtemp1(ips:ipe,kps:kpe,jps:jpe)=cbdy3dtemp0(ips:ipe,kps:kpe,jps:jpe,nvchem) 
+         cbdy3dtemp1(ips:ipe,kps:kpe,jps:jpe)=cbdy3dtemp0(ips:ipe,kps:kpe,jps:jpe,nvchem)
          cbdy3dtemp2(ips:ipe,kps:kpe,jps:jpe)=nested_grid%chem(ips:ipe,kps:kpe,jps:jpe,nvchem)
 !        if(nvchem.eq.p_o3)then
 !          write(0,*)'fill 1ch_b4',cbdy3dtemp1(ips,kps,jps),cbdy3dtemp0(ips,kps,jps,nvchem),cbdy3dtemp2(ips,kps,jps)
@@ -1266,7 +1266,7 @@ print *,'bdy time = ',time_loop-1,'  bdy date = ',current_date,' ',start_date
                                                                   ids , ide , jds , jde , kds , kde , &
                                                                   ims , ime , jms , jme , kms , kme , &
                                                                   ips , ipe , jps , jpe , kps , kpe )
-         cbdy3dtemp0(ips:ipe,kps:kpe,jps:jpe,nvchem)=cbdy3dtemp2(ips:ipe,kps:kpe,jps:jpe) 
+         cbdy3dtemp0(ips:ipe,kps:kpe,jps:jpe,nvchem)=cbdy3dtemp2(ips:ipe,kps:kpe,jps:jpe)
 !        if(nvchem.eq.p_o3)then
 !          write(0,*)'fill 2ch_b4',cbdy3dtemp1(ips,kps,jps),cbdy3dtemp0(ips,kps,jps,nvchem),cbdy3dtemp2(ips,kps,jps)
 !        endif
@@ -1333,7 +1333,7 @@ print *,'bdy time = ',time_loop-1,'  bdy date = ',current_date,' ',start_date
                                                                   ids , ide , jds , jde , kds , kde , &
                                                                   ims , ime , jms , jme , kms , kme , &
                                                                   ips , ipe , jps , jpe , kps , kpe )
-         END DO  
+         END DO
 
          CALL stuff_bdytend ( mbdy2dtemp2 , mbdy2dtemp1 , new_bdy_frq , &
                               nested_grid%mu_btxs  , nested_grid%mu_btxe , &
@@ -1345,7 +1345,7 @@ print *,'bdy time = ',time_loop-1,'  bdy date = ',current_date,' ',start_date
                                                                   ips , ipe , jps , jpe , 1 , 1 )
 
          IF ( time_loop .EQ. 2 ) THEN
-   
+
             !  Generate an output file from this program, which will be an input file to WRF.
 
             CALL wrf_debug          ( 100 , 'ndown_em main: calling open_w_dataset for wrfbdy' )
@@ -1372,9 +1372,9 @@ print *,'bdy time = ',time_loop-1,'  bdy date = ',current_date,' ',start_date
       CALL nl_set_julyr  ( nested_grid%id , julyr  )
       CALL nl_set_julday ( nested_grid%id , julday )
       CALL nl_set_gmt    ( nested_grid%id , gmt    )
-      CALL wrf_put_dom_ti_real    ( fidb , 'GMT' , gmt , 1 , ierr ) 
-      CALL wrf_put_dom_ti_integer ( fidb , 'JULYR' , julyr , 1 , ierr ) 
-      CALL wrf_put_dom_ti_integer ( fidb , 'JULDAY' , julday , 1 , ierr ) 
+      CALL wrf_put_dom_ti_real    ( fidb , 'GMT' , gmt , 1 , ierr )
+      CALL wrf_put_dom_ti_integer ( fidb , 'JULYR' , julyr , 1 , ierr )
+      CALL wrf_put_dom_ti_integer ( fidb , 'JULDAY' , julday , 1 , ierr )
       CALL domain_clock_set( nested_grid, &
                              current_timestr=current_date(1:19) )
       CALL output_boundary ( fidb , nested_grid , config_flags , ierr )
@@ -1384,7 +1384,7 @@ print *,'bdy time = ',time_loop-1,'  bdy date = ',current_date,' ',start_date
                              current_timestr=current_date(1:19) )
 
          IF ( time_loop .EQ. 2 ) THEN
-            CALL wrf_put_dom_ti_real    ( fidb , 'BDYFRQ' , new_bdy_frq , 1 , ierr ) 
+            CALL wrf_put_dom_ti_real    ( fidb , 'BDYFRQ' , new_bdy_frq , 1 , ierr )
          END IF
 
          !  Since this is the last time through here, we need to close the boundary file.
@@ -1502,7 +1502,7 @@ SUBROUTINE check_consistency2( ivgtyp , isltyp , landmask , &
 
    INTEGER , INTENT(IN) :: ids , ide , jds , jde , kds , kde , &
                            ims , ime , jms , jme , kms , kme , &
-                           its , ite , jts , jte , kts , kte 
+                           its , ite , jts , jte , kts , kte
    INTEGER , INTENT(IN) :: num_soil_layers , id
 
    INTEGER , DIMENSION(ims:ime,jms:jme) :: ivgtyp , isltyp
@@ -1700,18 +1700,18 @@ END SUBROUTINE check_consistency2
       END SUBROUTINE vert_cor
 
 
-SUBROUTINE init_domain_constants_em_ptr ( parent , nest ) 
+SUBROUTINE init_domain_constants_em_ptr ( parent , nest )
    USE module_domain
    USE module_configure
    IMPLICIT NONE
    TYPE(domain), POINTER  :: parent , nest
-   INTERFACE 
+   INTERFACE
    SUBROUTINE init_domain_constants_em ( parent , nest )
       USE module_domain
       USE module_configure
       TYPE(domain)  :: parent , nest
    END SUBROUTINE init_domain_constants_em
-   END INTERFACE 
+   END INTERFACE
    CALL init_domain_constants_em ( parent , nest )
 END SUBROUTINE init_domain_constants_em_ptr
 
@@ -1737,7 +1737,7 @@ END SUBROUTINE init_domain_constants_em_ptr
               nims, nime, njms, njme, nkms, nkme, &
               nips, nipe, njps, njpe, nkps, nkpe
 
-      
+
          hsca_m = 6.7
          n_refine = model_config_rec % vert_refine_fact
          kde_c = k_dim_c
@@ -1787,8 +1787,8 @@ END SUBROUTINE init_domain_constants_em_ptr
 #endif
          alt_u_c(k+1) =  -hsca_m * alog(pre_c/p_surf_m)
          enddo
-         alt_u_c(1) =  alt_w_c(1) 
-         alt_u_c(kde_c+1) =  alt_w_c(kde_c) 
+         alt_u_c(1) =  alt_w_c(1)
+         alt_u_c(kde_c+1) =  alt_w_c(kde_c)
 !    nest
          do  k = 1,kde_n
 #if  !( HYBRID_COORD==1 )
@@ -1810,10 +1810,10 @@ END SUBROUTINE init_domain_constants_em_ptr
          alt_u_n(kde_n+1) =  alt_w_n(kde_n)
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-IF ( SIZE( parent_grid%u_2, 1 ) * SIZE( parent_grid%u_2, 3 ) .GT. 1 ) THEN 
+IF ( SIZE( parent_grid%u_2, 1 ) * SIZE( parent_grid%u_2, 3 ) .GT. 1 ) THEN
 do j = njms , njme
 do i = nims , nime
-    
+
     do k = 1,kde_c-1
     pro_u_c(k+1) = parent_grid%u_2(i,k,j)
     enddo
@@ -1822,7 +1822,7 @@ do i = nims , nime
                      + cf3_c*parent_grid%u_2(i,3,j)
 
     pro_u_c(kde_c+1) = cfn_c *parent_grid%u_2(i,kde_c-1,j) &
-                     + cfn1_c*parent_grid%u_2(i,kde_c-2,j) 
+                     + cfn1_c*parent_grid%u_2(i,kde_c-2,j)
 
     call inter(pro_u_c,alt_u_c,kde_c+1,pro_u_n,alt_u_n,kde_n+1)
 

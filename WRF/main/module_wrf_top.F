@@ -1,13 +1,13 @@
 !WRF:DRIVER_LAYER:TOP
 !
 
-!TBH:  $$$  move this to ../frame?  
+!TBH:  $$$  move this to ../frame?
 #include "wrfcpp.h"
 
 MODULE module_wrf_top
 !<DESCRIPTION>
-! This module defines top-level wrf_init(), wrf_run(), and wrf_finalize() 
-! routines.  
+! This module defines top-level wrf_init(), wrf_run(), and wrf_finalize()
+! routines.
 !</DESCRIPTION>
 
    USE module_machine
@@ -59,7 +59,7 @@ MODULE module_wrf_top
    CHARACTER (LEN=80)      :: message
    CHARACTER (LEN=256) , PRIVATE :: a_message
 
-   INTERFACE 
+   INTERFACE
      SUBROUTINE Setup_Timekeeping( grid )
       USE module_domain
       TYPE(domain), POINTER :: grid
@@ -68,22 +68,22 @@ MODULE module_wrf_top
 ! #if (EM_CORE == 1)
      SUBROUTINE wrf_dfi_write_initialized_state( )
      END SUBROUTINE wrf_dfi_write_initialized_state
- 
+
      SUBROUTINE wrf_dfi_startfwd_init( )
      END SUBROUTINE wrf_dfi_startfwd_init
-     
+
      SUBROUTINE wrf_dfi_startbck_init( )
      END SUBROUTINE wrf_dfi_startbck_init
-     
+
      SUBROUTINE wrf_dfi_bck_init( )
      END SUBROUTINE wrf_dfi_bck_init
-     
+
      SUBROUTINE wrf_dfi_fwd_init( )
      END SUBROUTINE wrf_dfi_fwd_init
-     
+
      SUBROUTINE wrf_dfi_fst_init( )
      END SUBROUTINE wrf_dfi_fst_init
-     
+
      SUBROUTINE wrf_dfi_array_reset ( )
      END SUBROUTINE wrf_dfi_array_reset
 ! #endif
@@ -155,7 +155,7 @@ CONTAINS
 #ifdef WRF_COUPLING
    MyComm=MyComm_r
 !
-   ! Initialize WRF modules:  
+   ! Initialize WRF modules:
    ! Phase 1 returns after MPI_INIT() (if it is called)
    CALL init_modules(1)
 !  IF ( .NOT. PRESENT( no_init1 ) ) THEN
@@ -163,7 +163,7 @@ CONTAINS
      CALL WRFU_Initialize( defaultCalKind=WRFU_CAL_GREGORIAN )
 !  ENDIF
 #else
-   ! Initialize WRF modules:  
+   ! Initialize WRF modules:
    ! Phase 1 returns after MPI_INIT() (if it is called)
    CALL init_modules(1)
    IF ( .NOT. PRESENT( no_init1 ) ) THEN
@@ -215,7 +215,7 @@ CONTAINS
 #ifdef _ACCEL
    buddcounter = 1
    mydevice = 0
-# if defined(DM_PARALLEL) && !defined(STUBMPI) 
+# if defined(DM_PARALLEL) && !defined(STUBMPI)
    CALL wrf_get_myproc( myproc )
    CALL wrf_get_nproc( nproc )
    CALL wrf_get_hostid ( hostid )
@@ -266,21 +266,21 @@ CONTAINS
    CALL wrf_get_myproc( myproc )
    CALL wrf_get_nproc( nproc )
 # ifdef DM_PARALLEL
-   CALL wrf_get_hostid ( hostid ) 
+   CALL wrf_get_hostid ( hostid )
    CALL wrf_get_dm_communicator ( loccomm )
    ALLOCATE( hostids(nproc) )
    ALLOCATE( budds(nproc) )
    CALL mpi_allgather( hostid, 1, MPI_INTEGER, hostids, 1, MPI_INTEGER, loccomm, ierr )
    IF ( ierr .NE. 0 ) THEN
       write(a_message,*)__FILE__,__LINE__,'error in mpi_allgather ',ierr
-      CALL wrf_message ( a_message ) 
+      CALL wrf_message ( a_message )
    END IF
    budds = -1
-   buddcounter = 0 
+   buddcounter = 0
    ! mark the ones i am on the same node with
-   DO i = 1, nproc 
+   DO i = 1, nproc
       IF ( hostid .EQ. hostids(i) ) THEN
-         budds(i) = buddcounter 
+         budds(i) = buddcounter
          buddcounter = buddcounter + 1
       ENDIF
    ENDDO
@@ -302,7 +302,7 @@ CONTAINS
 ! of zero (the default) causes no information to be printed when the
 ! model runs. The higher the number (up to 1000) the more information is
 ! printed.
-! 
+!
 !</DESCRIPTION>
 
    CALL nl_get_debug_level ( 1, debug_level )
@@ -315,7 +315,7 @@ CONTAINS
 !<DESCRIPTION>
 ! RSL is required for WRF nesting options.
 ! The non-MPI build that allows nesting is only supported on machines
-! with the -DSTUBMPI option.  Check to see if the WRF model is being asked 
+! with the -DSTUBMPI option.  Check to see if the WRF model is being asked
 ! for a for a multi-domain run (max_dom > 1, from the namelist).  If so,
 ! then we check to make sure that we are under the parallel
 ! run option or we are on an acceptable machine.
@@ -325,7 +325,7 @@ CONTAINS
    IF ( max_dom > 1 ) THEN
 #if ( ! defined(DM_PARALLEL)  &&   ! defined(STUBMPI) )
    CALL wrf_error_fatal( &
-     'nesting requires either an MPI build or use of the -DSTUBMPI option' ) 
+     'nesting requires either an MPI build or use of the -DSTUBMPI option' )
 #endif
    END IF
 
@@ -343,7 +343,7 @@ CONTAINS
 ! href=setup_timekeeping.html>setup_timekeeping</a> for head_grid relies
 ! on this configuration information, and it must occur after the second
 ! broadcast of the configuration information.
-! 
+!
 !</DESCRIPTION>
    CALL       wrf_message ( program_name )
    CALL       wrf_debug ( 100 , 'wrf: calling alloc_and_configure_domain ' )
@@ -370,9 +370,9 @@ CONTAINS
 #endif
 
 ! #if (EM_CORE == 1)
-   ! In case we are doing digital filter initialization, set dfi_stage = DFI_SETUP 
+   ! In case we are doing digital filter initialization, set dfi_stage = DFI_SETUP
    !   to indicate in Setup_Timekeeping that we want forecast start and
-   !   end times at this point 
+   !   end times at this point
    IF ( head_grid%dfi_opt .NE. DFI_NODFI ) head_grid%dfi_stage = DFI_SETUP
 ! #endif
 
@@ -391,12 +391,12 @@ CONTAINS
 ! told which domain they are setting up for by passing in the integer id
 ! of the head domain as <tt>head_grid%id</tt>, which is 1 for the
 ! top-most domain.
-! 
+!
 ! In the case that write_restart_at_0h is set to true in the namelist,
 ! the model simply generates a restart file using the just read-in data
 ! and then shuts down. This is used for ensemble breeding, and is not
 ! typically enabled.
-! 
+!
 !</DESCRIPTION>
 
  IF ( domain_active_this_task(1) ) THEN
@@ -407,10 +407,10 @@ CONTAINS
 #ifndef AUTODOC_BUILD
 ! prevent this from showing up before the call to integrate in the autogenerated call tree
       CALL wrf_debug ( 0 , ' 0 h restart only wrf: SUCCESS COMPLETE WRF' )
-! TBH:  $$$ Unscramble this later...  
-! TBH:  $$$ Need to add state to avoid calling wrf_finalize() twice when ESMF 
-! TBH:  $$$ library is used.  Maybe just set clock stop_time=start_time and 
-! TBH:  $$$ do not call wrf_finalize here...  
+! TBH:  $$$ Unscramble this later...
+! TBH:  $$$ Need to add state to avoid calling wrf_finalize() twice when ESMF
+! TBH:  $$$ library is used.  Maybe just set clock stop_time=start_time and
+! TBH:  $$$ do not call wrf_finalize here...
       CALL wrf_finalize( )
 #endif
    END IF
@@ -437,7 +437,7 @@ CONTAINS
 
    CALL initialize_atm_coupling (head_grid, 1)
 #endif
-   IF (coupler_on) CALL cpl_defdomain( head_grid ) 
+   IF (coupler_on) CALL cpl_defdomain( head_grid )
   ENDIF  ! domain_active_this_task
 
    END SUBROUTINE wrf_init
@@ -455,8 +455,8 @@ CONTAINS
 ! and stop times for the domain are set to the start and stop time of the
 ! model run, and then <a href=integrate.html>integrate</a> is called to
 ! advance the domain forward through that specified time interval.  On
-! return, the simulation is completed.  
-! 
+! return, the simulation is completed.
+!
 !</DESCRIPTION>
 
    !  The forecast integration for the most coarse grid is now started.  The
@@ -492,7 +492,7 @@ CONTAINS
 ! directed to shut down here) is called to properly end the run,
 ! including shutting down the communications (for example, most comm
 ! layers would call MPI_FINALIZE at this point if they're using MPI).
-! 
+!
 !</DESCRIPTION>
 #ifdef WRF_COUPLING
    USE ATM_COUPLER_MOD, ONLY: finalize_atm_coupling
@@ -505,12 +505,12 @@ CONTAINS
 
    CALL       wrf_debug (   0 , 'wrf: SUCCESS COMPLETE WRF' )
 
-   ! Call wrf_shutdown() (which calls MPI_FINALIZE() 
-   ! for DM parallel runs).  
+   ! Call wrf_shutdown() (which calls MPI_FINALIZE()
+   ! for DM parallel runs).
    IF ( .NOT. PRESENT( no_shutdown ) ) THEN
      ! Finalize time manager
-      IF (coupler_on) THEN 
-         CALL cpl_finalize() 
+      IF (coupler_on) THEN
+         CALL cpl_finalize()
       ELSE
          CALL WRFU_Finalize
          CALL wrf_shutdown
@@ -532,83 +532,83 @@ CONTAINS
 ! #if (EM_CORE == 1)
       ! Initialization procedure
       IF ( config_flags%dfi_opt .NE. DFI_NODFI ) THEN
-   
-         SELECT CASE ( config_flags%dfi_opt ) 
-     
+
+         SELECT CASE ( config_flags%dfi_opt )
+
             CASE (DFI_DFL)
                wrf_err_message = 'Initializing with DFL'
                CALL wrf_message(TRIM(wrf_err_message))
-   
+
                wrf_err_message = '   Filtering forward in time'
                CALL wrf_message(TRIM(wrf_err_message))
-   
+
                CALL wrf_dfi_fwd_init()
                CALL wrf_run()
-   
+
                CALL wrf_dfi_array_reset()
-   
+
                CALL wrf_dfi_fst_init()
-   
+
                IF ( config_flags%dfi_write_filtered_input ) THEN
                   CALL wrf_dfi_write_initialized_state()
                END IF
-   
+
             CASE (DFI_DDFI)
                wrf_err_message = 'Initializing with DDFI'
                CALL wrf_message(TRIM(wrf_err_message))
-   
+
                wrf_err_message = '   Integrating backward in time'
                CALL wrf_message(TRIM(wrf_err_message))
-   
+
                CALL wrf_dfi_bck_init()
                CALL wrf_run()
-   
+
                wrf_err_message = '   Filtering forward in time'
                CALL wrf_message(TRIM(wrf_err_message))
-   
+
                CALL wrf_dfi_fwd_init()
                CALL wrf_run()
-   
+
                CALL wrf_dfi_array_reset()
-   
+
                CALL wrf_dfi_fst_init()
-   
+
                IF ( config_flags%dfi_write_filtered_input ) THEN
                   CALL wrf_dfi_write_initialized_state()
                END IF
-   
+
             CASE (DFI_TDFI)
                wrf_err_message = 'Initializing with TDFI'
                CALL wrf_message(TRIM(wrf_err_message))
-   
+
                wrf_err_message = '   Integrating backward in time'
                CALL wrf_message(TRIM(wrf_err_message))
-   
+
                CALL wrf_dfi_bck_init()
                CALL wrf_run()
-   
+
                CALL wrf_dfi_array_reset()
-   
+
                wrf_err_message = '   Filtering forward in time'
                CALL wrf_message(TRIM(wrf_err_message))
-   
+
                CALL wrf_dfi_fwd_init()
                CALL wrf_run()
-   
+
                CALL wrf_dfi_array_reset()
-   
+
                CALL wrf_dfi_fst_init()
-   
+
                IF ( config_flags%dfi_write_filtered_input ) THEN
                   CALL wrf_dfi_write_initialized_state()
                END IF
-   
+
             CASE DEFAULT
                wrf_err_message = 'Unrecognized DFI_OPT in namelist'
                CALL wrf_error_fatal(TRIM(wrf_err_message))
-   
+
          END SELECT
-   
+
       END IF
 ! #endif
 
@@ -667,7 +667,7 @@ CONTAINS
    END SUBROUTINE set_derived_rconfigs
 
    RECURSIVE SUBROUTINE alloc_doms_for_dfi ( grid )
-   
+
       !  Input variables.
 
       TYPE (domain) , pointer :: grid
@@ -677,27 +677,27 @@ CONTAINS
       TYPE (domain) , pointer :: new_nest_loc
       TYPE (grid_config_rec_type) :: parent_config_flags
       INTEGER :: nestid_loc , kid_loc
-   
+
          !  Are there any subdomains from this level.  The output is the nestid (the domain
          !  ID of the nest), and kid (an index to which of the parent's children this new nested
          !  domain represents).
-   
+
          DO WHILE ( nests_to_open( grid , nestid_loc , kid_loc ) )
 
-            !  If we found another child domain, we continue on: allocate, set up time keeping, 
+            !  If we found another child domain, we continue on: allocate, set up time keeping,
             !  initialize.
-   
+
             CALL alloc_and_configure_domain ( domain_id  = nestid_loc   , &
                                               grid       = new_nest_loc , &
                                               parent     = grid         , &
                                               kid        = kid_loc        )
-         
+
 print *,'for parent domain id #',grid%id,', found child domain #',nestid_loc
             !  Since this is a DFI run, set the DFI switches to the same for all domains.
 
             new_nest_loc%dfi_opt = head_grid%dfi_opt
             new_nest_loc%dfi_stage = DFI_SETUP
-         
+
             !  Set up time keeping for the fine grid space that was just allocated.
 
             CALL Setup_Timekeeping (new_nest_loc)
@@ -709,11 +709,11 @@ print *,'for parent domain id #',grid%id,', found child domain #',nestid_loc
 
             !  Here's the recursive part.  For each of these child domains, we call this same routine.
             !  This will find all of "new_nest_loc" first generation progeny.
-   
+
             CALL alloc_doms_for_dfi ( new_nest_loc )
-   
+
          END DO
-   
+
    END SUBROUTINE alloc_doms_for_dfi
 
 END MODULE module_wrf_top

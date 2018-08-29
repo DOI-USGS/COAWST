@@ -21,7 +21,7 @@ RECURSIVE SUBROUTINE integrate ( grid )
    USE module_utility
    USE module_cpl, ONLY : coupler_on, cpl_snd, cpl_defdomain
 #ifdef DM_PARALLEL
-! better if this did not need to be used here. Problem is that the definition of 
+! better if this did not need to be used here. Problem is that the definition of
 ! domain_active_this_task comes from module_dm, and the routine it's being passed to (alloc_and_configure_domain)
 ! is defined in module_domain, which uses module_dm.  If that weren't the case, we could have the
 ! alloc_and_configure_domain routine get this form the module_dm module itself, but as it stands there
@@ -54,10 +54,10 @@ RECURSIVE SUBROUTINE integrate ( grid )
 #endif
 
 ! module_integrate:integrate
-! <DESCRIPTION> 
+! <DESCRIPTION>
 ! This is a driver-level routine that controls the integration of a
-! domain and subdomains rooted at the domain. 
-! 
+! domain and subdomains rooted at the domain.
+!
 ! The integrate routine takes a domain pointed to by the argument
 ! <em>grid</em> and advances the domain and its associated nests from the
 ! grid's current time, stored within grid%domain_clock, to a given time
@@ -68,24 +68,24 @@ RECURSIVE SUBROUTINE integrate ( grid )
 ! is checked with a call to domain_clockisstoptime prior to beginning the
 ! loop over time period that is specified by the
 ! current time/stop_subtime interval.
-! 
+!
 ! The clock, the simulation stop time for the domain, and other timing
 ! aspects for the grid are set up in the routine
 ! (<a href="setup_timekeeping.html">setup_timekeeping</a>) at the time
 ! that the domain is initialized.
 ! The lower-level time library and the type declarations for the times
-! and time intervals used are defined either in 
-! external/esmf_time_f90/module_utility.F90 or in 
-! external/io_esmf/module_utility.F90 depending on a build-time decision to 
-! incorporate either the embedded ESMF subset implementation contained in 
-! external/esmf_time_f90 or to use a site-specific installation of the ESMF 
-! library.  This decision is made during the configuration step of the WRF 
-! build process.  Note that arithmetic and comparison is performed on these 
+! and time intervals used are defined either in
+! external/esmf_time_f90/module_utility.F90 or in
+! external/io_esmf/module_utility.F90 depending on a build-time decision to
+! incorporate either the embedded ESMF subset implementation contained in
+! external/esmf_time_f90 or to use a site-specific installation of the ESMF
+! library.  This decision is made during the configuration step of the WRF
+! build process.  Note that arithmetic and comparison is performed on these
 ! data types using F90 operator overloading, also defined in that library.
-! 
+!
 ! This routine is the lowest level of the WRF Driver Layer and for the most
 ! part the WRF routines that are called from here are in the topmost level
-! of the Mediation Layer.  Mediation layer routines typically are not 
+! of the Mediation Layer.  Mediation layer routines typically are not
 ! defined in modules. Therefore, the routines that this routine calls
 ! have explicit interfaces specified in an interface block in this routine.
 !
@@ -95,77 +95,77 @@ RECURSIVE SUBROUTINE integrate ( grid )
 ! of which are merely stubs in WRF Mediation Layer that sits below this routine
 ! in the call tree.  The routines that integrate calls in WRF are defined in
 ! share/mediation_integrate.F.
-! 
+!
 ! Flow of control
-! 
-! 1. Check to see that the domain is not finished 
+!
+! 1. Check to see that the domain is not finished
 ! by testing the value returned by domain_clockisstoptime for the
 ! domain.
-! 
+!
 ! 2. <a href=model_to_grid_config_rec.html>Model_to_grid_config_rec</a> is called to load the local config_flags
 ! structure with the configuration information for the grid stored
 ! in model_config_rec and indexed by the grid's unique integer id. These
 ! structures are defined in frame/module_configure.F.
-! 
+!
 ! 3. The current time of the domain is retrieved from the domain's clock
-! using domain_get_current_time.  
-! 
+! using domain_get_current_time.
+!
 ! 4. Iterate forward while the current time is less than the stop subtime.
-! 
+!
 ! 4.a. Start timing for this iteration (only on node zero in distributed-memory runs)
-! 
-! 4.b. Call <a href=med_setup_step.html>med_setup_step</a> to allow the mediation layer to 
+!
+! 4.b. Call <a href=med_setup_step.html>med_setup_step</a> to allow the mediation layer to
 ! do anything that's needed to call the solver for this domain.  In WRF this means setting
 ! the indices into the 4D tracer arrays for the domain.
-! 
-! 4.c. Check for any nests that need to be started up at this time.  This is done 
-! calling the logical function <a href=nests_to_open.html>nests_to_open</a> (defined in 
+!
+! 4.c. Check for any nests that need to be started up at this time.  This is done
+! calling the logical function <a href=nests_to_open.html>nests_to_open</a> (defined in
 ! frame/module_nesting.F) which returns true and the index into the current domain's list
 ! of children to use for the nest when one needs to be started.
-! 
+!
 ! 4.c.1  Call <a href=alloc_and_configure_domain.html>alloc_and_configure_domain</a> to allocate
 ! the new nest and link it as a child of this grid.
-! 
+!
 ! 4.c.2  Call <a href=setup_Timekeeping.html>setup_Timekeeping</a> for the nest.
-! 
+!
 ! 4.c.3  Initialize the nest's arrays by calling <a href=med_nest_initial.html>med_nest_initial</a>. This will
 ! either interpolate data from this grid onto the nest, read it in from a file, or both. In a restart run, this
 ! is also where the nest reads in its restart file.
-! 
+!
 ! 4.d  If a nest was opened above, check for and resolve overlaps (this is not implemented in WRF 2.0, which
 ! supports multiple nests on the same level but does not support overlapping).
-! 
+!
 ! 4.e  Give the mediation layer an opportunity to do something before the solver is called by
 ! calling <a href=med_before_solve_io.html>med_before_solve_io</a>. In WRF this is the point at which history and
 ! restart data is output.
-! 
-! 4.f  Call <a href=solve_interface.html>solve_interface</a> which calls the solver that advance the domain 
-! one time step, then advance the domain's clock by calling domain_clockadvance.  
-! The enclosing WHILE loop around this section is for handling other domains 
-! with which this domain may overlap.  It is not active in WRF 2.0 and only 
-! executes one trip.  
-! 
+!
+! 4.f  Call <a href=solve_interface.html>solve_interface</a> which calls the solver that advance the domain
+! one time step, then advance the domain's clock by calling domain_clockadvance.
+! The enclosing WHILE loop around this section is for handling other domains
+! with which this domain may overlap.  It is not active in WRF 2.0 and only
+! executes one trip.
+!
 ! 4.g Call med_calc_model_time and med_after_solve_io, which are stubs in WRF.
-! 
+!
 ! 4.h Iterate over the children of this domain (<tt>DO kid = 1, max_nests</tt>) and check each child pointer to see
 ! if it is associated (and therefore, active).
-! 
+!
 ! 4.h.1  Force the nested domain boundaries from this domain by calling <a href=med_nest_force.html>med_nest_force</a>.
-! 
+!
 ! 4.h.2  Setup the time period over which the nest is to run. Sine the current grid has been advanced one time step
 ! and the nest has not, the start for the nest is this grid's current time minus one time step.  The nest's stop_subtime
 ! is the current time, bringing the nest up the same time level as this grid, its parent.
-! 
+!
 ! 4.h.3  Recursively call this routine, integrate, to advance the nest's time.  Since it is recursive, this will
 ! also advance all the domains who are nests of this nest and so on.  In other words, when this call returns, all
 ! the domains rooted at the nest will be at the current time.
-! 
+!
 ! 4.h.4  Feedback data from the nested domain back onto this domain by calling <a href=med_nest_feedback.html>med_nest_feedback</a>.
-! 
+!
 ! 4.i  Write the time to compute this grid and its subtree. This marks the end of the loop begun at step 4, above.
-! 
+!
 ! 5. Give the mediation layer an opportunity to do I/O at the end of the sequence of steps that brought the
-! grid up to stop_subtime with a call to <a href=med_last_solve_io.html>med_last_solve_io</a>.  In WRF, this 
+! grid up to stop_subtime with a call to <a href=med_last_solve_io.html>med_last_solve_io</a>.  In WRF, this
 ! is used to generate the final history and/or restart output when the domain reaches the end of it's integration.
 ! There is logic here to make sure this occurs correctly on a nest, since the nest may finish before its parent.
 ! </DESCRIPTION>
@@ -208,7 +208,7 @@ RECURSIVE SUBROUTINE integrate ( grid )
        TYPE (domain) grid
        TYPE (grid_config_rec_type) config_flags
      END SUBROUTINE med_calc_model_time
-       ! mediation-supplied routine that gives mediation layer opportunity to 
+       ! mediation-supplied routine that gives mediation layer opportunity to
        ! perform I/O before the call to the solve routine
      SUBROUTINE med_before_solve_io ( grid , config_flags )
        USE module_domain
@@ -216,7 +216,7 @@ RECURSIVE SUBROUTINE integrate ( grid )
        TYPE (domain) grid
        TYPE (grid_config_rec_type) config_flags
      END SUBROUTINE med_before_solve_io
-       ! mediation-supplied routine that gives mediation layer opportunity to 
+       ! mediation-supplied routine that gives mediation layer opportunity to
        ! perform I/O after the call to the solve routine
      SUBROUTINE med_after_solve_io ( grid , config_flags )
        USE module_domain
@@ -224,7 +224,7 @@ RECURSIVE SUBROUTINE integrate ( grid )
        TYPE (domain) grid
        TYPE (grid_config_rec_type) config_flags
      END SUBROUTINE med_after_solve_io
-       ! mediation-supplied routine that gives mediation layer opportunity to 
+       ! mediation-supplied routine that gives mediation layer opportunity to
        ! perform I/O to initialize a new nest
      SUBROUTINE med_pre_nest_initial ( parent , newid , config_flags )
        USE module_domain
@@ -239,7 +239,7 @@ RECURSIVE SUBROUTINE integrate ( grid )
        TYPE (domain), POINTER ::  grid , parent
        TYPE (grid_config_rec_type) config_flags
      END SUBROUTINE med_nest_initial
-       ! mediation-supplied routine that gives mediation layer opportunity to 
+       ! mediation-supplied routine that gives mediation layer opportunity to
        ! provide parent->nest forcing
      SUBROUTINE med_nest_force ( parent , grid )
        USE module_domain
@@ -260,7 +260,7 @@ RECURSIVE SUBROUTINE integrate ( grid )
      END SUBROUTINE reconcile_nest_positions_over_tasks
 #endif
 
-       ! mediation-supplied routine that gives mediation layer opportunity to 
+       ! mediation-supplied routine that gives mediation layer opportunity to
        ! provide parent->nest feedback
      SUBROUTINE med_nest_feedback ( parent , grid , config_flags )
        USE module_domain
@@ -269,7 +269,7 @@ RECURSIVE SUBROUTINE integrate ( grid )
        TYPE (grid_config_rec_type) config_flags
      END SUBROUTINE med_nest_feedback
 
-       ! mediation-supplied routine that gives mediation layer opportunity to 
+       ! mediation-supplied routine that gives mediation layer opportunity to
        ! perform I/O prior to the close of this call to integrate
      SUBROUTINE med_last_solve_io ( grid , config_flags )
        USE module_domain
@@ -277,7 +277,7 @@ RECURSIVE SUBROUTINE integrate ( grid )
        TYPE (domain) grid
        TYPE (grid_config_rec_type) config_flags
      END SUBROUTINE med_last_solve_io
-       ! mediation-supplied routine that gives mediation layer opportunity to 
+       ! mediation-supplied routine that gives mediation layer opportunity to
        ! perform setup before iteration over steps in this call to integrate
      SUBROUTINE med_setup_step ( grid , config_flags )
        USE module_domain
@@ -308,8 +308,8 @@ RECURSIVE SUBROUTINE integrate ( grid )
 
    END INTERFACE
 
-   ! This allows us to reference the current grid from anywhere beneath 
-   ! this point for debugging purposes.  
+   ! This allows us to reference the current grid from anywhere beneath
+   ! this point for debugging purposes.
    CALL set_current_grid_ptr( grid )
    CALL push_communicators_for_domain( grid%id )
 
@@ -345,7 +345,7 @@ IF ( grid%active_this_task ) THEN
                IF ( grid%dfi_stage == DFI_STARTFWD ) THEN
                   CALL wrf_dfi_startfwd_init(new_nest)
                ENDIF
-               IF (coupler_on) CALL cpl_defdomain( new_nest ) 
+               IF (coupler_on) CALL cpl_defdomain( new_nest )
 ENDIF ! active_this_task
 #ifdef WRF_COUPLING
                !jcw Here we init a child grid into the MCT coupler.
@@ -379,7 +379,7 @@ IF ( grid_ptr%active_this_task ) THEN
                   CALL set_current_grid_ptr( grid_ptr )
                   CALL wrf_debug( 100 , 'module_integrate: calling solve interface ' )
 
-                  CALL solve_interface ( grid_ptr ) 
+                  CALL solve_interface ( grid_ptr )
 
 ENDIF
                CALL domain_clockadvance ( grid_ptr )
@@ -419,7 +419,7 @@ ENDIF
 #ifdef WRF_COUPLING
                       CALL integrate ( grid_ptr%nests(kid)%ptr, last_step )
 #else
-                      CALL integrate ( grid_ptr%nests(kid)%ptr ) 
+                      CALL integrate ( grid_ptr%nests(kid)%ptr )
 #endif
                    WRITE(message,*)grid%id,' module_integrate: back from recursive call to integrate '
                    CALL wrf_debug( 100 , message )
@@ -450,7 +450,7 @@ ENDIF
                  CALL model_to_grid_config_rec ( grid_ptr%id , model_config_rec , config_flags )
                ENDIF
 #endif
-               IF (coupler_on) CALL cpl_snd( grid_ptr ) 
+               IF (coupler_on) CALL cpl_snd( grid_ptr )
 #ifdef WRF_COUPLING
 !              After all nests are opened, and initialized into MCT,
 !              call to init routers and do initial data exchange.
@@ -502,15 +502,15 @@ ENDIF ! active_this_task
          ELSE
 ! zip up the tree and see if any ancestor is at its stop time
             should_do_last_io = domain_clockisstoptime( head_grid )
-            grid_ptr => grid 
+            grid_ptr => grid
             DO WHILE ( grid_ptr%id .NE. 1 )
                IF ( domain_clockisstoptime( grid_ptr ) ) THEN
-                  should_do_last_io = .TRUE. 
+                  should_do_last_io = .TRUE.
                END IF
                grid_ptr => grid_ptr%parents(1)%ptr
             ENDDO
-            IF ( should_do_last_io ) THEN 
-               grid_ptr => grid 
+            IF ( should_do_last_io ) THEN
+               grid_ptr => grid
                CALL med_nest_feedback ( grid_ptr%parents(1)%ptr, grid , config_flags )
                IF ( grid%active_this_task ) CALL med_last_solve_io ( grid , config_flags )
             ENDIF
@@ -518,7 +518,7 @@ ENDIF ! active_this_task
       ENDIF
    END IF
    CALL pop_communicators_for_domain
-   
+
 END SUBROUTINE integrate
 
 END MODULE module_integrate
