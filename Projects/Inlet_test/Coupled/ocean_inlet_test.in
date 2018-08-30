@@ -73,7 +73,7 @@
 ! Input variable information file name.  This file needs to be processed
 ! first so all information arrays can be initialized properly.
 
-     VARNAME = ROMS/External/varinfo.dat
+     VARNAME = ../../../ROMS/External/varinfo.dat 
 
 ! Number of nested grids.
 
@@ -957,7 +957,7 @@ Dout(iTvdif) == F F     ! temp_vdiff, ...    vertical diffusion
 
 ! Input NetCDF file names, [1:Ngrids].
 
-     GRDNAME == Projects/Inlet_test/Coupled/inlet_test_grid.nc 
+     GRDNAME == inlet_test_grid.nc 
      ININAME == ocean_ini.nc
      ITLNAME == ocean_itl.nc
      IRPNAME == ocean_irp.nc
@@ -1037,12 +1037,12 @@ Dout(iTvdif) == F F     ! temp_vdiff, ...    vertical diffusion
 
 ! Input ASCII parameter filenames.
 
-     APARNAM =  ROMS/External/s4dvar.in
-     SPOSNAM =  Projects/Inlet_test/Coupled/stations_inlet_test.in
-     FPOSNAM =  ROMS/External/floats.in
-     BPARNAM =  ROMS/External/bioFasham.in
-     SPARNAM =  Projects/Inlet_test/Coupled/sediment_inlet_test.in 
-     USRNAME =  ROMS/External/MyFile.dat
+     APARNAM =  s4dvar.in
+     SPOSNAM =  stations_inlet_test.in
+     FPOSNAM =  floats.in
+     BPARNAM =  bioFasham.in
+     SPARNAM =  sediment_inlet_test.in 
+     USRNAME =  MyFile.dat
      VEGNAM  =  vegetation.in
 
 !
