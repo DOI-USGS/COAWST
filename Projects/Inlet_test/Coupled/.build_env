@@ -9,8 +9,8 @@ fi
 
 export ROMS_APPLICATION=INLET_TEST
 
-export MY_ROMS_SRC=${ROMS_ROOT}/roms-coawst-mgh
-export MY_ROMS_BRANCH=master
+export MY_ROMS_SRC=${ROMS_ROOT}/COAWST
+export MY_ROMS_BRANCH=test
 
 export MY_PROJECT_DIR=${PWD}
 

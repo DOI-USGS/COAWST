@@ -34,9 +34,9 @@ fi
 
 ${build_cmd}
 
-# Change the name of the link to "coawst". (I will build this capability intol roms_build.)
+# Change the name of the link to "coawstM". (I will build this capability intol roms_build.)
 
-mv ocean coawst
+mv oceanM coawstM
 
 # Specify output file name
 
@@ -75,7 +75,7 @@ then
 #SBATCH --share
 #SBATCH --hint=nomultithread
 echo ROMS starting at \$(date +%Y-%m-%d\ %H:%M:%S\ %Z)
-srun ./coawst coupling_inlet_test.in
+srun ./coawstM coupling_inlet_test.in
 echo ROMS finished at \$(date +%Y-%m-%d\ %H:%M:%S\ %Z)
 EOF
 
@@ -87,7 +87,7 @@ else
 
   echo "Output will be saved in "${file_out}
 
-  mpirun -np 2 ./coawst coupling_inlet_test.in | tee ${file_out}
+  mpirun -np 2 ./coawstM coupling_inlet_test.in | tee ${file_out}
 
 
 fi
