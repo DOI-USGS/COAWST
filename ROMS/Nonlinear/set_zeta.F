@@ -74,10 +74,10 @@
      &                          IminS, ImaxS, JminS, JmaxS,             &
      &                          Zt_avg1,                                &
 # if defined EMINUSP && defined EMINUSP_SSH
-     &                          rain, evap,                             & 
+     &                          rain, evap,                             &
 # endif
 # if defined RUNOFF && defined RUNOFF_SSH
-     &                          pm, pn, runoff,                         & 
+     &                          pm, pn, runoff,                         &
 # endif
      &                          zeta)
 !***********************************************************************

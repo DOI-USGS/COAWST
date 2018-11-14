@@ -24,9 +24,9 @@ CONTAINS
                      ,htop,hbot                                       &
                  ! Package selection variables
                      ,shcu_physics                                    &
-                 ! Optional moisture tracers 
+                 ! Optional moisture tracers
                      ,qv_curr, qc_curr, qr_curr                       &
-                     ,qi_curr, qs_curr, qg_curr                       & 
+                     ,qi_curr, qs_curr, qg_curr                       &
                      ,qnc_curr,qni_curr                               &
 #if ( WRF_CHEM == 1 )
                      ,chem, chem_opt                                  &
@@ -44,7 +44,7 @@ CONTAINS
                      ,rqvblten,rqvften                                &
                      ,rushten,rvshten                                 &
                      ,rthshten,rthraten,rthblten,rthften              &
-                 ! Optional moisture tracer flags 
+                 ! Optional moisture tracer flags
                      ,f_qv,f_qc,f_qr                                  &
                      ,f_qi,f_qs,f_qg                                  &
                      ,ht,shfrc3d,is_CAMMGMP_used                      &
@@ -55,10 +55,10 @@ CONTAINS
    USE module_model_constants
    USE module_state_description, ONLY: CAMUWSHCUSCHEME    &
 # if (EM_CORE == 1)
-                                       , CAMMGMPSCHEME    & 
+                                       , CAMMGMPSCHEME    &
 # endif
-                                       , G3SHCUSCHEME     & 
-                                       , GRIMSSHCUSCHEME 
+                                       , G3SHCUSCHEME     &
+                                       , GRIMSSHCUSCHEME
 ! *** add new modules of schemes here
 
    USE module_shcu_camuwshcu_driver, ONLY : camuwshcu_driver
@@ -119,13 +119,13 @@ CONTAINS
 !-- DT            time step (second)
 !-- CUDT          cumulus time step (minute)
 !-- curr_secs     current forecast time (seconds)
-!-- itimestep     number of time step (integer)   
+!-- itimestep     number of time step (integer)
 !-- DX            horizontal space interval (m)
 !-- rr            dry air density (kg/m^3)
 !
 !-- RUSHTEN       Zonal wind tendency due to shallow
 !                 cumulus scheme precipitation (m/s/s)
-!-- RVSHTEN       Meridional wind tendency due to 
+!-- RVSHTEN       Meridional wind tendency due to
 !                 cumulus scheme precipitation (m/s/s)
 !-- RTHSHTEN      Theta tendency due to shallow
 !                 cumulus scheme precipitation (K/s)
@@ -145,7 +145,7 @@ CONTAINS
 !-- RAINSH        accumulated total shallow cumulus scheme precipitation (mm)
 !-- RAINSHV       time-step shallow cumulus scheme precipitation (mm)
 !-- PRATESH       precipitiation rate from shallow cumulus scheme (mm/s)
-!-- NCA           counter of the cloud relaxation 
+!-- NCA           counter of the cloud relaxation
 !                 time in KF cumulus scheme (integer)
 !-- u_phy         u-velocity interpolated to theta points (m/s)
 !-- v_phy         v-velocity interpolated to theta points (m/s)
@@ -175,11 +175,11 @@ CONTAINS
 !-- cldfra_old_mp cloud fraction from previous time step if CAMMGMP microphysics is used
 !-- cldfra_conv   convective cloud fraction
 !-- rho           density (kg/m^3)
-!-- XLV0          latent heat of vaporization constant 
+!-- XLV0          latent heat of vaporization constant
 !                 used in temperature dependent formula (J/kg)
-!-- XLV1          latent heat of vaporization constant 
+!-- XLV1          latent heat of vaporization constant
 !                 used in temperature dependent formula (J/kg/K)
-!-- XLS0          latent heat of sublimation constant 
+!-- XLS0          latent heat of sublimation constant
 !                 used in temperature dependent formula (J/kg)
 !-- XLS1          latent heat of sublimation constant
 !                 used in temperature dependent formula (J/kg/K)
@@ -188,7 +188,7 @@ CONTAINS
 !-- Cp            specific heat at constant pressure (1004 J/k/kg)
 !-- rvovrd        R_v divided by R_d (dimensionless)
 !-- G             acceleration due to gravity (m/s^2)
-!-- EP_1          constant for virtual temperature 
+!-- EP_1          constant for virtual temperature
 !                 (R_v/R_d - 1) (dimensionless)
 !--shfrc3d        Shallow cloud fraction
 !-- cmfmc         Deep + Shallow Convective m
@@ -245,7 +245,7 @@ CONTAINS
          INTENT(INOUT)  ::                                    &
                                                           chem
 #endif
-   
+
 
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                 &
          INTENT(IN ) ::                                          &
@@ -272,15 +272,15 @@ CONTAINS
 
    REAL, DIMENSION( ims:ime , jms:jme ),                         &
           INTENT(INOUT) ::                               RAINSH  &
-                                                    ,       NCA  & 
-                                                    ,      HTOP  & 
+                                                    ,       NCA  &
+                                                    ,      HTOP  &
                                                     ,      HBOT
- 
+
 
    REAL, DIMENSION( ims:ime , jms:jme ),INTENT(INOUT),OPTIONAL :: &
         PRATESH, RAINSHV
    REAL, DIMENSION( ims:ime , jms:jme ) :: tmppratesh
-                                                    
+
    REAL,  INTENT(IN   ) :: DT, DX
    INTEGER,      INTENT(IN   ),OPTIONAL    ::                             &
                                       ips,ipe, jps,jpe, kps,kpe
@@ -297,7 +297,7 @@ CONTAINS
          OPTIONAL, INTENT(INOUT) ::                              &
                       ! optional moisture tracers
                       qv_curr, qc_curr, qr_curr                  &
-                     ,qi_curr, qs_curr, qg_curr                  & 
+                     ,qi_curr, qs_curr, qg_curr                  &
                      ! optional scalar tracers !BSINGH
                      ,qnc_curr,qni_curr                          &
                       ! optional moisture and other tendencies
@@ -361,7 +361,7 @@ CONTAINS
 
    if (.not. PRESENT(CURR_SECS)) then
       curr_secs_pass = -1
-   else 
+   else
       curr_secs_pass = curr_secs
    endif
 
@@ -384,11 +384,11 @@ CONTAINS
    else
       tmppratesh(:,:) = 0.
    end if
-   
+
 
    IF (shcu_physics .eq. 0) return
-   
-   
+
+
 ! DON'T JUDGE TIME STEP HERE, SINCE KF NEEDS ACCUMULATED W FIELD.
 ! DO IT INSIDE THE INDIVIDUAL CUMULUS SCHEME
 
@@ -422,7 +422,7 @@ CONTAINS
            ,Z=z, Z_AT_W=z_at_w, DZ8W=dz8w                                &
            ,T_PHY=t, U_PHY=u, V_PHY=v                                    &
            ,MOIST=moist, QV=qv_curr, QC=qc_curr, QI=qi_curr              &
-           ,QNC=qnc_curr, QNI=qni_curr                                   & 
+           ,QNC=qnc_curr, QNI=qni_curr                                   &
 #if ( WRF_CHEM == 1 )
            ,CHEM=chem, CHEM_OPT=chem_opt                                 &
 #endif
@@ -441,7 +441,7 @@ CONTAINS
            ,RUSHTEN=rushten, RVSHTEN=rvshten, RTHSHTEN=rthshten          &
            ,RQVSHTEN=rqvshten, RQCSHTEN=rqcshten, RQRSHTEN=rqrshten      &
            ,RQISHTEN=rqishten, RQSSHTEN=rqsshten, RQGSHTEN=rqgshten      &
-           ,RQCNSHTEN=rqcnshten,RQINSHTEN=rqinshten                      & 
+           ,RQCNSHTEN=rqcnshten,RQINSHTEN=rqinshten                      &
            ,HT=ht,SHFRC3D=shfrc3d,ITIMESTEP=itimestep                    &
                                                                          )
 
@@ -462,7 +462,7 @@ CONTAINS
                                                                          )
       ENDIF
 
-   CASE DEFAULT 
+   CASE DEFAULT
       WRITE( message , * ) 'The shallow cumulus option does not exist: shcu_physics = ', shcu_physics
       CALL wrf_error_fatal ( message )
 

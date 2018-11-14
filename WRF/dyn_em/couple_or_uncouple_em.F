@@ -191,7 +191,7 @@ SUBROUTINE couple_or_uncouple_em ( grid , config_flags , couple &
          ENDDO
        ENDIF
        IF ( ipe .eq. ide ) THEN
-         i = ide       
+         i = ide
          DO j = max(jds,jps),min(jde-1,jpe)
          DO k = kps,kpe-1
            muut_2(i,k,j) = 0.5*(grid%mub(i,j)+grid%mub(i-1,j) + grid%mu_2(i,j) + grid%mu_2(i-1,j))/grid%msfuy(i,j) ! u coupled with y
@@ -202,7 +202,7 @@ SUBROUTINE couple_or_uncouple_em ( grid , config_flags , couple &
      END IF
 
    ELSE
-   
+
 !     write(6,*) ' uncoupling: setting mu arrays '
 
      DO j = max(jds,jps),min(jde-1,jpe)
@@ -243,7 +243,7 @@ SUBROUTINE couple_or_uncouple_em ( grid , config_flags , couple &
      IF ( config_flags%nested .or. config_flags%specified .or. config_flags%polar ) THEN
 
        IF ( jpe .eq. jde ) THEN
-         j = jde 
+         j = jde
          DO k = kps,kpe-1
          DO i = max(ids,ips),min(ide-1,ipe)
            muvt_2(i,k,j) = grid%msfvx(i,j)/(grid%mub(i,j-1) + grid%mu_2(i,j-1)) ! v coupled with x
@@ -270,7 +270,7 @@ SUBROUTINE couple_or_uncouple_em ( grid , config_flags , couple &
          ENDDO
        ENDIF
        IF ( ipe .eq. ide ) THEN
-         i = ide       
+         i = ide
          DO j = max(jds,jps),min(jde-1,jpe)
          DO k = kps,kpe-1
            muut_2(i,k,j) = 2.*grid%msfuy(i,j)/(grid%mub(i,j)+grid%mub(i-1,j) + grid%mu_2(i,j) + grid%mu_2(i-1,j)) ! u coupled with y
@@ -464,7 +464,7 @@ SUBROUTINE couple_or_uncouple_em ( grid , config_flags , couple &
 
      IF (num_tracer >= PARAM_FIRST_SCALAR) THEN
        DO im = PARAM_FIRST_SCALAR , num_tracer
- 
+
      CALL set_physical_bc3d( tracer(ims,kms,jms,im), 'p',        &
                              config_flags,                   &
                              ids,ide, jds,jde, kds,kde,  & ! domain dims
@@ -491,7 +491,7 @@ LOGICAL FUNCTION cd_feedback_mask( pig, ips_save, ipe_save , pjg, jps_save, jpe_
    INTEGER ioff, joff, spec_zone
 
    CALL nl_get_spec_zone( 1, spec_zone )
-   ioff = 0 ; joff = 0 
+   ioff = 0 ; joff = 0
    IF ( xstag  ) ioff = 1
    IF ( ystag  ) joff = 1
 

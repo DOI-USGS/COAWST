@@ -60,7 +60,7 @@ typedef struct node_struct {
   char dim_data_name[NAMELEN] ;
   int  coord_axis ;   /* X, Y, Z, C */
                                  /* DOMAIN_STANDARD, NAMELIST, CONSTANT */
-  int  len_defined_how ;  
+  int  len_defined_how ;
   char assoc_nl_var_s[NAMELEN] ;  /* for NAMELIST */
   char assoc_nl_var_e[NAMELEN] ;  /* for NAMELIST */
   int  coord_start ;               /* for CONSTANT */

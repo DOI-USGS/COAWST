@@ -117,7 +117,7 @@
 #  include <bestnpz.h>
 # elif defined BIO_FENNEL
 #  include <fennel.h>
-# elif defined ESTUARYBGC 
+# elif defined ESTUARYBGC
 #  include <estuarybgc.h>
 # elif defined ECOSIM
 #  include <ecosim.h>

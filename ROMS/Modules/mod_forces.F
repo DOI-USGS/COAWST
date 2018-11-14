@@ -415,7 +415,7 @@
           real(r8), pointer :: qao_n(:,:)
           real(r8), pointer :: snow_n(:,:)
           real(r8), pointer :: p_e_n(:,:)
-# endif 
+# endif
 
 # ifdef CLOUDS
           real(r8), pointer :: cloud(:,:)
@@ -987,7 +987,7 @@
 #  endif
 # endif
 
-# if defined ECOSIM || defined SPECTRAL_LIGHT 
+# if defined ECOSIM || defined SPECTRAL_LIGHT
       allocate ( FORCES(ng) % SpecIr(LBi:UBi,LBj:UBj,NBands) )
       allocate ( FORCES(ng) % avcos(LBi:UBi,LBj:UBj,NBands) )
 # endif
@@ -1555,7 +1555,7 @@
               FORCES(ng) % btflxG(i,j,2,itrc) = IniVal
 # endif
             END DO
-# if defined ECOSIM || defined SPECTRAL_LIGHT 
+# if defined ECOSIM || defined SPECTRAL_LIGHT
             DO itrc=1,NBands
               FORCES(ng) % SpecIr(i,j,itrc) = IniVal
               FORCES(ng) % avcos(i,j,itrc) = IniVal

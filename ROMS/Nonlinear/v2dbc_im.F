@@ -484,8 +484,8 @@
                 cff1=GRID(ng)%om_v(i,Jstr)/REFINED(cr)%om_v(m)
                 bry_val=cff1*REFINED(cr)%DV_avg2(1,m,tnew)/cff
 # ifdef WEC
-                bry_val=bry_val-OCEAN(ng)%vbar_stokes(i,Jstr) 
-# endif 
+                bry_val=bry_val-OCEAN(ng)%vbar_stokes(i,Jstr)
+# endif
 # ifdef MASKING
                 bry_val=bry_val*GRID(ng)%vmask(i,Jstr)
 # endif
@@ -848,8 +848,8 @@
                 cff1=GRID(ng)%om_v(i,Jend+1)/REFINED(cr)%om_v(m)
                 bry_val=cff1*REFINED(cr)%DV_avg2(1,m,tnew)/cff
 # ifdef WEC
-                bry_val=bry_val-OCEAN(ng)%vbar_stokes(i,Jend+1) 
-# endif 
+                bry_val=bry_val-OCEAN(ng)%vbar_stokes(i,Jend+1)
+# endif
 # ifdef MASKING
                 bry_val=bry_val*GRID(ng)%vmask(i,Jend+1)
 # endif

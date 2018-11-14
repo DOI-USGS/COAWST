@@ -1230,7 +1230,7 @@
               DO ng=1,Ngrids
                 Hout(i,ng)=Lbottom(ng)
               END DO
-#endif 
+#endif
 #if defined MIXED_BED
             CASE ('Hout(idprp)')
               Npts=load_l(Nval, Cval, Ngrids, Lbottom)
@@ -1275,7 +1275,7 @@
 #endif
 #if defined SED_FLOCS && defined SED_DEFLOC
             CASE ('MUD_FRAC_EQ')
-              IF (.not.allocated(mud_frac_eq)) THEN 
+              IF (.not.allocated(mud_frac_eq)) THEN
                 allocate (mud_frac_eq(NCS,Ngrids))
               ENDIF
               Npts=load_r(Nval, Rval, NCS*Ngrids, Rmud)

@@ -37,7 +37,7 @@
 #ifdef DM_PARALLEL
    USE module_dm, ONLY : wrf_dm_min_real, wrf_dm_max_real, wrf_dm_maxval, &
         ntasks_x, ntasks_y, &
-        local_communicator_periodic, local_communicator, mytask, ntasks 
+        local_communicator_periodic, local_communicator, mytask, ntasks
 #else
    USE module_dm, ONLY : wrf_dm_min_real, wrf_dm_max_real
 #endif
@@ -126,7 +126,7 @@
 
    REAL :: w_max, w_min
    LOGICAL :: w_needs_to_be_set
-!  
+!
 ! Define variables local (topo_wind local vars)
    REAL    :: alpha, vfac
    INTEGER :: j_save
@@ -176,17 +176,17 @@
 #endif
       IF ( max_rot_angle .GT. ABS(config_flags%max_rot_angle_gwd) ) THEN
          WRITE ( a_message , FMT='(A,F5.2)' ) 'Max projection rotation angle for domain 1 = ',max_rot_angle
-         CALL wrf_message ( a_message ) 
+         CALL wrf_message ( a_message )
          WRITE ( a_message , FMT='(A)'      ) 'This projection may not be appropriate for using the gravity wave drag option.'
-         CALL wrf_message ( a_message ) 
+         CALL wrf_message ( a_message )
          WRITE ( a_message , FMT='(A)'      ) 'In namelist.input make one of the two following changes:'
-         CALL wrf_message ( a_message ) 
+         CALL wrf_message ( a_message )
          WRITE ( a_message , FMT='(A)'      ) ' 1) gwd_opt = 0 '
-         CALL wrf_message ( a_message ) 
+         CALL wrf_message ( a_message )
          WRITE ( a_message , FMT='(A,F5.2)' ) ' 2) max_rot_angle_gwd > ',max_rot_angle
-         CALL wrf_message ( a_message ) 
+         CALL wrf_message ( a_message )
          WRITE ( a_message , FMT='(A)'      ) '--- ERROR: gwd_opt does not work with this domain'
-         CALL wrf_error_fatal ( a_message ) 
+         CALL wrf_error_fatal ( a_message )
       END IF
    END IF
 
@@ -213,7 +213,7 @@
      ALLOCATE( clat_glob(ids:ide,jds:jde), STAT=alloc_status, ERRMSG=alloc_err_message )
 #else
      ALLOCATE( clat_glob(ids:ide,jds:jde), STAT=alloc_status)
-     alloc_err_message = 'Allocation of space for a global field failed.' 
+     alloc_err_message = 'Allocation of space for a global field failed.'
 #endif
 
      IF ( alloc_status .NE. 0 ) THEN
@@ -279,7 +279,7 @@
        first_trip_for_this_domain = .TRUE.
    ENDIF
 
-      ! Print out the maximum map scale factor on the coarse domain 
+      ! Print out the maximum map scale factor on the coarse domain
 
       IF ( ( first_trip_for_this_domain ) .AND. ( grid%id .EQ. 1 ) .AND. &
            ( .NOT. config_flags%polar ) ) THEN
@@ -294,7 +294,7 @@
 #endif
          WRITE ( a_message , FMT='(A,F5.2,A)' ) 'Max map factor in domain 1 = ',max_mf, &
                                                 '. Scale the dt in the model accordingly.'
-         CALL wrf_message ( a_message ) 
+         CALL wrf_message ( a_message )
       END IF
 
     if(config_flags%cycling) then
@@ -324,16 +324,16 @@
        grid%itimestep=0
    ENDIF
 
-   IF ( config_flags%restart .or. grid%moved .or. config_flags%hrrr_cycling) THEN 
+   IF ( config_flags%restart .or. grid%moved .or. config_flags%hrrr_cycling) THEN
        first_trip_for_this_domain = .TRUE.
    ENDIF
 
-   CALL INITIALIZE_STOCH  (grid, config_flags,                  &    
-                           first_trip_for_this_domain,          &    
-                           ips, ipe, jps, jpe, kps, kpe,        &    
-                           ids, ide, jds, jde, kds, kde,        &    
-                           ims, ime, jms, jme, kms, kme,        &    
-                           its, ite, jts, jte, kts, kte,        &    
+   CALL INITIALIZE_STOCH  (grid, config_flags,                  &
+                           first_trip_for_this_domain,          &
+                           ips, ipe, jps, jpe, kps, kpe,        &
+                           ids, ide, jds, jde, kds, kde,        &
+                           ims, ime, jms, jme, kms, kme,        &
+                           its, ite, jts, jte, kts, kte,        &
                            imsx, imex, jmsx, jmex, kmsx, kmex,  &
                            ipsx, ipex, jpsx, jpex, kpsx, kpex,  &
                            imsy, imey, jmsy, jmey, kmsy, kmey,  &
@@ -597,8 +597,8 @@
             !  Base state pressure is a function of eta level and terrain, only, plus
             !  the hand full of constants: p00 (sea level pressure, Pa), t00 (sea level
             !  temperature, K), A (temperature difference, from 1000 mb to 300 mb, K),
-            !  tiso (isothermal temperature at tropopause/lower stratosphere), 
-            !  p_strat (pressure at top of isothermal layer), A_strat (lapse rate in 
+            !  tiso (isothermal temperature at tropopause/lower stratosphere),
+            !  p_strat (pressure at top of isothermal layer), A_strat (lapse rate in
             !  stratosphere above isothermal layer)
 
             p_surf = p00 * EXP ( -t00/a + ( (t00/a)**2 - 2.*g*grid%ht(i,j)/a/r_d ) **0.5 )
@@ -733,7 +733,7 @@
         !  the base state is in exact hydrostatic balance with respect to the model equations.
         !  This field is on full levels.
        DO j = jts,min(jte,jde-1)
-       DO i = its, min(ite,ide-1)               
+       DO i = its, min(ite,ide-1)
         grid%phb(i,1,j) = grid%ht(i,j) * g
         IF ( config_flags%hypsometric_opt .EQ. 1 ) THEN
            DO kk  = 2,kte
@@ -795,9 +795,9 @@
            !  This field is on full levels.
            DO j = jts,min(jte,jde-1)
            DO i = its, min(ite,ide-1)
-            grid%phb(i,1,j) = grid%ht(i,j) * g 
+            grid%phb(i,1,j) = grid%ht(i,j) * g
             DO kk  = 2,kte
-              k = kk - 1 
+              k = kk - 1
               grid%phb(i,kk,j) = grid%phb(i,kk-1,j) - grid%dnw(kk-1)*grid%mub(i,j)*grid%alb(i,kk-1,j)
             END DO
            ENDDO
@@ -805,10 +805,10 @@
         END IF  ! end if initialization for ideal, use method 1 or 2
      END IF ! end if this is a real or ideal run
     END IF ! end if there is more than 1 domain
-     
+
 !------base state is finished, perturbation values are recalculated below-----
 
-  ! For the HRRR application, we want to go through this rebalancing.  They 
+  ! For the HRRR application, we want to go through this rebalancing.  They
   ! have a clunky way of testig on this, but it is operational, so no need to
   ! cause them troubles.
 
@@ -824,7 +824,7 @@
        ENDDO
 
   !  Everyone else runs thorugh here.  NOTE that we might also want to call the
-  !  rebalancing ourselves for different set ups.  It does not impact HRRR, so 
+  !  rebalancing ourselves for different set ups.  It does not impact HRRR, so
   !  it is an easy decision.
 
   ELSE
@@ -1011,7 +1011,7 @@
       grid%dt = grid%starting_time_step
 
 !     Initialize max cfl values
-      
+
       grid%last_max_vert_cfl = 0
       grid%last_max_horiz_cfl = 0
 
@@ -1165,12 +1165,12 @@ endif
                       grid%TRL_URB3D, grid%TBL_URB3D, grid%TGL_URB3D,        & !Optional urban
                       grid%SH_URB2D, grid%LH_URB2D, grid%G_URB2D, grid%RN_URB2D,  & !Optional urban
                       grid%TS_URB2D, grid%FRC_URB2D, grid%UTYPE_URB2D,      & !Optional urban
-                      grid%CMCR_URB2D,grid%TGR_URB2D,grid%TGRL_URB3D,grid%SMR_URB3D, & !Optional urban   
+                      grid%CMCR_URB2D,grid%TGR_URB2D,grid%TGRL_URB3D,grid%SMR_URB3D, & !Optional urban
                       grid%DRELR_URB2D,grid%DRELB_URB2D,grid%DRELG_URB2D,    & !Optional urban
                       grid%FLXHUMR_URB2D,grid%FLXHUMB_URB2D,grid%FLXHUMG_URB2D,   & !Optional urban
                       grid%TRB_URB4D,grid%TW1_URB4D,grid%TW2_URB4D,grid%TGB_URB4D,grid%TLEV_URB3D,  & !multi-layer urban
                       grid%QLEV_URB3D,grid%TW1LEV_URB3D,grid%TW2LEV_URB3D,        & !multi-layer urban
-                      grid%TGLEV_URB3D,grid%TFLEV_URB3D,grid%SF_AC_URB3D,         & !multi-layer urban 
+                      grid%TGLEV_URB3D,grid%TFLEV_URB3D,grid%SF_AC_URB3D,         & !multi-layer urban
                       grid%LF_AC_URB3D,grid%CM_AC_URB3D,grid%SFVENT_URB3D,grid%LFVENT_URB3D,   & !multi-layer urban
                       grid%SFWIN1_URB3D,grid%SFWIN2_URB3D, & !multi-layer urban
                       grid%SFW1_URB3D,grid%SFW2_URB3D,grid%SFR_URB3D,grid%SFG_URB3D,     & !multi-layer urban
@@ -1256,28 +1256,28 @@ endif
                       config_flags%nssl_rho_qh, config_flags%nssl_rho_qhl,    &
                       config_flags%nssl_rho_qs,                               &
                       config_flags%nssl_ipelec,                               &
-                      config_flags%nssl_isaund                               & 
+                      config_flags%nssl_isaund                               &
                       ,grid%RQCNCUTEN, grid%RQINCUTEN,grid%rliq             &      !mchen add for cammpmg
                       ,grid%cldfra_dp,grid%cldfra_sh                        & ! ckay for subgrid cloud
                       ,grid%te_temf,grid%cf3d_temf,grid%wm_temf        & ! WA
-                      ,grid%massflux_EDKF, grid%entr_EDKF, grid%detr_EDKF                & 
+                      ,grid%massflux_EDKF, grid%entr_EDKF, grid%detr_EDKF                &
                       ,grid%thl_up,grid%thv_up,grid%rt_up                                &
                       ,grid%rv_up,grid%rc_up,grid%u_up,grid%v_up,grid%frac_up            &
                       ,grid%ccn_conc                                          & ! RAS
                       ,grid%QKE                                               &!JOE-for mynn
-                      ,grid%landusef,grid%landusef2,grid%mosaic_cat_index                            & ! danli mosaic 
+                      ,grid%landusef,grid%landusef2,grid%mosaic_cat_index                            & ! danli mosaic
                       ,grid%TSK_mosaic,grid%TSLB_mosaic,grid%SMOIS_mosaic,grid%SH2O_mosaic           & ! danli mosaic
                       ,grid%CANWAT_mosaic,grid%SNOW_mosaic,grid%SNOWH_mosaic,grid%SNOWC_mosaic       & ! danli mosaic
                       ,grid%ALBEDO_mosaic,grid%ALBBCK_mosaic, grid%EMISS_mosaic                      & ! danli mosaic
                       ,grid%EMBCK_mosaic, grid%ZNT_mosaic, grid%Z0_mosaic                            & ! danli mosaic
-                      ,grid%TR_URB2D_mosaic,grid%TB_URB2D_mosaic                                     & ! danli mosaic 
-                      ,grid%TG_URB2D_mosaic,grid%TC_URB2D_mosaic                                     & ! danli mosaic 
+                      ,grid%TR_URB2D_mosaic,grid%TB_URB2D_mosaic                                     & ! danli mosaic
+                      ,grid%TG_URB2D_mosaic,grid%TC_URB2D_mosaic                                     & ! danli mosaic
                       ,grid%QC_URB2D_mosaic                                                          & ! danli mosaic
-                      ,grid%TRL_URB3D_mosaic,grid%TBL_URB3D_mosaic                                   & ! danli mosaic 
-                      ,grid%TGL_URB3D_mosaic                                                         & ! danli mosaic 
-                      ,grid%SH_URB2D_mosaic,grid%LH_URB2D_mosaic                                     & ! danli mosaic 
-                      ,grid%G_URB2D_mosaic,grid%RN_URB2D_mosaic                                      & ! danli mosaic 
-                      ,grid%TS_URB2D_mosaic                                                          & ! danli mosaic 
+                      ,grid%TRL_URB3D_mosaic,grid%TBL_URB3D_mosaic                                   & ! danli mosaic
+                      ,grid%TGL_URB3D_mosaic                                                         & ! danli mosaic
+                      ,grid%SH_URB2D_mosaic,grid%LH_URB2D_mosaic                                     & ! danli mosaic
+                      ,grid%G_URB2D_mosaic,grid%RN_URB2D_mosaic                                      & ! danli mosaic
+                      ,grid%TS_URB2D_mosaic                                                          & ! danli mosaic
                       ,grid%TS_RUL2D_mosaic                                                          & ! danli mosaic
                       )
        ENDDO ! loop of tiles for phy_init
@@ -1288,7 +1288,7 @@ endif
    IF (config_flags%do_avgflx_em .EQ. 1) THEN
       WRITE ( message , FMT = '("start_em: initializing avgflx on domain ",I3)' ) &
            & grid%id
-      CALL wrf_message(trim(message)) 
+      CALL wrf_message(trim(message))
       grid%avgflx_count = 0
       f_flux = config_flags%do_avgflx_cugd .EQ. 1  ! WA 9/24/10
       DO ij = 1, grid%num_tiles
@@ -1460,7 +1460,7 @@ endif
                            its , ite , jts , jte   )
 
 ! Set the w at the surface.  If this is the start of a forecast, or if this is a cycled run
-! and the start of that forecast, we define the w field.  However, if this a restart, then 
+! and the start of that forecast, we define the w field.  However, if this a restart, then
 ! we leave w alone.  Initial value is V dot grad(topo) at surface, then smoothly decaying
 ! above that.
 
@@ -1468,8 +1468,8 @@ endif
 
 ! If W already exists (not zero), then we leave it alone.  How to do this?  We find the
 ! max/min on this node at the surface.  If parallel, we collect the max/min from all procs.
-! If the max/min throughout the entire domain at the surface is identically 0, then we say 
-! that the W field is NOT initialized, and we run the set_w_surface routines for the 
+! If the max/min throughout the entire domain at the surface is identically 0, then we say
+! that the W field is NOT initialized, and we run the set_w_surface routines for the
 ! two time levels of W.  If the field is already initialized, we do NOT run those two
 ! routines.
 
@@ -1513,7 +1513,7 @@ endif
                               grid%cf2, grid%cf3, grid%rdx, grid%rdy, grid%msftx, grid%msfty, &
                               ids, ide, jds, jde, kds, kde,                    &
                               ims, ime, jms, jme, kms, kme,                    &
-                              its, ite, jts, jte, kts, kte                     ) 
+                              its, ite, jts, jte, kts, kte                     )
       END IF
    END IF
 
@@ -1803,7 +1803,7 @@ endif
                          grid%tauaerlw5,grid%tauaerlw6,grid%tauaerlw7,grid%tauaerlw8,           &
                          grid%tauaerlw9,grid%tauaerlw10,grid%tauaerlw11,grid%tauaerlw12,        &
                          grid%tauaerlw13,grid%tauaerlw14,grid%tauaerlw15,grid%tauaerlw16,       &
-                         grid%dgnum4d, grid%dgnumwet4d, grid%dgnum_a1, grid%dgnum_a2,           & 
+                         grid%dgnum4d, grid%dgnumwet4d, grid%dgnum_a1, grid%dgnum_a2,           &
                          grid%dgnum_a3, grid%dgnumwet_a1, grid%dgnumwet_a2, grid%dgnumwet_a3,   &
                          grid%pm2_5_dry,grid%pm2_5_water,grid%pm2_5_dry_ec,                &
                          grid%tsoa,grid%asoa,grid%bsoa,                                    &
@@ -1865,7 +1865,7 @@ endif
               enddo
            enddo
         end select
-        
+
         ! initialize advective tendency diagnostics for chem
         if ( grid%itimestep .eq. 0 .and. config_flags%chemdiag .eq. USECHEMDIAG ) then
           grid%advh_ct(:,:,:,:) = 0.
@@ -1993,13 +1993,13 @@ DEALLOCATE(z_at_q)
                  ,num_press_levels=config_flags%num_press_levels &
                  ,max_press_levels=max_plevs    &
                  ,press_levels=model_config_rec%press_levels &
-                 ,p_pl  = grid%p_pl             &  
-                 ,u_pl  = grid%u_pl             &  
-                 ,v_pl  = grid%v_pl             &  
-                 ,t_pl  = grid%t_pl             &  
-                 ,rh_pl = grid%rh_pl            & 
+                 ,p_pl  = grid%p_pl             &
+                 ,u_pl  = grid%u_pl             &
+                 ,v_pl  = grid%v_pl             &
+                 ,t_pl  = grid%t_pl             &
+                 ,rh_pl = grid%rh_pl            &
                  ,ght_pl= grid%ght_pl           &
-                 ,s_pl  = grid%s_pl             &  
+                 ,s_pl  = grid%s_pl             &
                  ,td_pl = grid%td_pl            &
                  ,q_pl = grid%q_pl              &
                  !  Dimension arguments
@@ -2041,13 +2041,13 @@ DEALLOCATE(z_at_q)
                  ,num_z_levels=config_flags%num_z_levels &
                  ,max_z_levels=max_zlevs    &
                  ,z_levels=model_config_rec%z_levels &
-                 ,z_zl  = grid%z_zl             &  
-                 ,u_zl  = grid%u_zl             &  
-                 ,v_zl  = grid%v_zl             &  
-                 ,t_zl  = grid%t_zl             &  
-                 ,rh_zl = grid%rh_zl            & 
+                 ,z_zl  = grid%z_zl             &
+                 ,u_zl  = grid%u_zl             &
+                 ,v_zl  = grid%v_zl             &
+                 ,t_zl  = grid%t_zl             &
+                 ,rh_zl = grid%rh_zl            &
                  ,ght_zl= grid%ght_zl           &
-                 ,s_zl  = grid%s_zl             &  
+                 ,s_zl  = grid%s_zl             &
                  ,td_zl = grid%td_zl            &
                  ,q_zl = grid%q_zl              &
                  !  Dimension arguments
@@ -2055,7 +2055,7 @@ DEALLOCATE(z_at_q)
                  ,IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme    &
                  ,ITS=its,ITE=ite, JTS=jts,JTE=jte, KTS=kts,KTE=kte    )
    ENDIF
- 
+
 
 !  FIRE
 if(config_flags%ifire.eq.2)then
@@ -2063,7 +2063,7 @@ if(config_flags%ifire.eq.2)then
    call fire_driver_em_init ( grid , config_flags    &
             ,ids,ide, kds,kde, jds,jde                &
             ,ims,ime, kms,kme, jms,jme                &
-            ,ips,ipe, kps,kpe, jps,jpe ) 
+            ,ips,ipe, kps,kpe, jps,jpe )
 
    CALL wrf_debug ( 100 , 'start_domain_em: After call to fire_driver_em_init' )
 endif
@@ -2212,7 +2212,7 @@ endif
          DO i = its, MIN(ite,ide-1)
 
         IF (n_moist >= PARAM_FIRST_SCALAR ) THEN
-       
+
                !  Integrate the hydrostatic equation (from the RHS of the bigstep vertical momentum
                !  equation) down from the top to get the pressure perturbation.  First get the pressure
                !  perturbation, moisture, and inverse density (total and perturbation) at the top-most level.
@@ -2302,7 +2302,7 @@ endif
        ELSE  ! n_moist
 
          kk = kte - 1
-               k = kk + 1 
+               k = kk + 1
 
                qvf1 = 0.5*(moist(i,kk,j,P_QV)+moist(i,kk,j,P_QV))
                qvf2 = 1./(1.+qvf1)
@@ -2319,7 +2319,7 @@ endif
             !  inverse density fields (total and perturbation).
 
            DO kk=kte-2,kts,-1
-               k = kk + 1 
+               k = kk + 1
                qvf1 = 0.5*(moist(i,kk,j,P_QV)+moist(i,kk+1,j,P_QV))
                qvf2 = 1./(1.+qvf1)
                qvf1 = qvf1*qvf2

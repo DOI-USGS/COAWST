@@ -58,7 +58,7 @@
 # include "tile.h"
 !
 # if defined VEGETATION && defined VEG_TURB
-! 
+!
 !-----------------------------------------------------------------------
 !  Add the effect of vegetation on the turbulence model.
 !-----------------------------------------------------------------------
@@ -91,7 +91,7 @@
 # ifdef WEC_VF
      &                       OCEAN(ng) % W_stokes,                      &
 # endif
-# if defined VEGETATION && defined VEG_TURB 
+# if defined VEGETATION && defined VEG_TURB
      &                       VEG(ng) % tke_veg,                         &
      &                       VEG(ng) % gls_veg,                         &
 # endif
@@ -809,11 +809,11 @@
 
 # if defined VEGETATION && defined VEG_TURB
 !
-!  Add the effect of vegetation on tke and gls 
-!          
+!  Add the effect of vegetation on tke and gls
+!
             tke(i,j,k,nnew)=tke(i,j,k,nnew)+dt(ng)*tke_veg(i,j,k)
             gls(i,j,k,nnew)=gls(i,j,k,nnew)+dt(ng)*gls_veg(i,j,k)
-# endif 
+# endif
 !
 !  Compute dissipation of turbulent energy (m3/s3).
 !

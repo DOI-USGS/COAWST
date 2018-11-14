@@ -201,7 +201,7 @@
                             itimestep, dt, dx, dy,                &
                             xlat, xlon, xland, ht,                &
                             t_phy, p_phy, rho, u, v, w,           &
-                            th_phy, pi_phy,dz8w,                  &  
+                            th_phy, pi_phy,dz8w,                  &
                             z, moist,                             &
                           ! Scheme specific prognostics
                             ktop_deep,                            &
@@ -247,7 +247,7 @@
 ! IC:CG methods
  USE module_ltng_iccg
 
-! LPI 
+! LPI
 #if (EM_CORE==1)
   USE module_ltng_lpi
 #endif
@@ -261,7 +261,7 @@
 
  REAL,    DIMENSION( ims:ime,          jms:jme ),           INTENT(IN   ) :: xlat, xlon, xland, ht
  REAL,    DIMENSION( ims:ime, kms:kme, jms:jme ),           INTENT(IN   ) :: t_phy, p_phy, rho
- REAL,    DIMENSION( ims:ime, kms:kme, jms:jme ),           INTENT(IN   ) :: th_phy, pi_phy, dz8w  
+ REAL,    DIMENSION( ims:ime, kms:kme, jms:jme ),           INTENT(IN   ) :: th_phy, pi_phy, dz8w
  REAL,    DIMENSION( ims:ime, kms:kme, jms:jme ),           INTENT(IN   ) :: u, v, w, z
  REAL,    DIMENSION( ims:ime, kms:kme, jms:jme, num_moist), INTENT(IN   ) :: moist
 

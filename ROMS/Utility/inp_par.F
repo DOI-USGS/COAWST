@@ -838,7 +838,7 @@
       OPEN (65, FILE=TRIM(vegnam), FORM='formatted', STATUS='old')
 
       CALL read_VegPar (model, 65, out, Lwrite)
-#endif 
+#endif
 !
 !-----------------------------------------------------------------------
 !  Report lateral boundary conditions.

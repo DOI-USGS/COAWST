@@ -153,7 +153,7 @@
 #ifdef COAWST_COUPLING
 !
 !  Initialize the MCT routers to ROMS. This has to be
-!  done outside an 'ng' loop so that it is synchronous 
+!  done outside an 'ng' loop so that it is synchronous
 !  with ROMS.
 !
       CALL INITIALIZE_WAV_ROUTERS

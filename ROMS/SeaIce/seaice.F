@@ -76,7 +76,7 @@
 #ifdef ICE_MOMENTUM
 # ifdef ICE_EVP
 ! ----------------------------------------------------------------------
-!  Compute the internal ice stresses according to the 
+!  Compute the internal ice stresses according to the
 !  Elastic-Viscous-Plastic rheology (EVP).
 ! ----------------------------------------------------------------------
 

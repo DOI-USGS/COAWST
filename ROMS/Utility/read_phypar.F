@@ -288,7 +288,7 @@
 !end              END DO
 #endif
 #if defined ESTUARYBGC && defined SPECTRAL_LIGHT
-            CASE ('NBAND') 
+            CASE ('NBAND')
               Npts=load_i(Nval, Rval, 1, Ivalue)
               NBAND=Ivalue(1)
               IF (NBAND.le.0) THEN
@@ -4295,7 +4295,7 @@
             CASE ('NBCFILES')
               Npts=load_i(Nval, Rval, Ngrids, nBCfiles)
               DO ng=1,Ngrids
-                IF (nBCfiles(ng).le.0) THEN 
+                IF (nBCfiles(ng).le.0) THEN
                   IF (Master) WRITE (out,260) 'NBCFILES', nBCfiles(ng), &
      &                            'Must be equal or greater than one.'
                   exit_flag=4

@@ -1532,4 +1532,3 @@
 #endif
       RETURN
       END SUBROUTINE wrt_his2
- 

@@ -160,16 +160,16 @@ SUBROUTINE init_domain_vert_nesting ( parent, nest, use_baseparam_fr_nml )
           REAL, DIMENSION(kde_c), INTENT(IN   ) :: znw_c
           LOGICAL, INTENT(IN   ) :: use_baseparam_fr_nml
       END SUBROUTINE vert_cor_vertical_nesting_arbitrary
-      
+
    END INTERFACE
 
-   
+
    ! save the coarse grid values here
-   
+
    znw_c = nest%znw(1:parent%e_vert)
-   
+
    ! calculate the nest (fine) grid values here
-   ! one of these calls goes to integer refinement in the vertical direction, and one goes to arbitrary refinement.  Eventually the call to integer refinement will be obsolete. 
+   ! one of these calls goes to integer refinement in the vertical direction, and one goes to arbitrary refinement.  Eventually the call to integer refinement will be obsolete.
    if (nest%vert_refine_method .EQ. 1) then  !if you are in this subroutine there is vertical nesting- (i.e. nest%e_vert /= parent%e_vert to enter this subroutine)
       CALL vert_cor_vertical_nesting_integer(nest,znw_c,parent%e_vert)
    elseif (nest%vert_refine_method .EQ. 2) then
@@ -198,13 +198,13 @@ END SUBROUTINE init_domain_vert_nesting
 !KAL everything else is set from znw
 !KAL dnw is delta eta on w levels
 !KAL rdn is inverse delta eta on w levels
-!KAL fnp 
+!KAL fnp
 
         kde_c = k_dim_c
         kde_n = nest%e_vert
 !        n_refine = nest%vert_refine_fact
         n_refine = (kde_n-1)/(kde_c-1)
-	
+
          kkk = 0
          do k = 1 , kde_c-1
          dznw_m = znw_c(k+1) - znw_c(k)
@@ -238,7 +238,7 @@ END SUBROUTINE init_domain_vert_nesting
 
       nest%cfn  = (.5*nest%dnw(kde_n-1)+nest%dn(kde_n-1))/nest%dn(kde_n-1)
       nest%cfn1 = -.5*nest%dnw(kde_n-1)/nest%dn(kde_n-1)
-      
+
       ! the variables dzs and zs are kept from the parent domain.  These are the depths and thickness of the soil layers, which are not included in vertical nesting.
 
       END SUBROUTINE vert_cor_vertical_nesting_integer

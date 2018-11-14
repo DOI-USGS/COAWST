@@ -45,24 +45,24 @@
 #if defined ESTUARYBGC && defined SPECTRAL_LIGHT
 ! PARout        Photosynthetically Available Radiation (PAR)           !
 ! PARs          Spectral PAR                                           !
-! SpKd          Spectral Attenuation     
+! SpKd          Spectral Attenuation
 #endif
-#if defined ESTUARYBGC && defined SAV_BIOMASS                             
+#if defined ESTUARYBGC && defined SAV_BIOMASS
 ! DINwcr        Dissolved Inorganic Nitrogen-water column(mu mols N)   !
 ! DINsed        Dissolved Inorganic Nitrogen-sediment column(mu mols N)!
-! DOwcr         Dissolved Oxygen - water column                        ! 
-! DINwcr_sav    Dissolved Inorganic Nitrogen-water column in SAV(mu M) ! 
+! DOwcr         Dissolved Oxygen - water column                        !
+! DINwcr_sav    Dissolved Inorganic Nitrogen-water column in SAV(mu M) !
 ! AGB           Above ground biomas                                    !
 ! BGB           Below ground biomass                                   !
-! PP                                                                   !  
-! AGM                             
+! PP                                                                   !
+! AGM
 ! AGAR
 ! AGBR
 ! SEARS
 ! AGBG
 ! BGAG
 ! BGR
-! BGM 
+! BGM
 #endif
 #ifdef WEC
 !  Wave effect on currents variables                                   !
@@ -157,7 +157,7 @@
       defined BIO_UMAINE) && defined CARBON
           real(r8), pointer :: pH(:,:)
 # endif
-# if defined ESTUARYBGC && defined SPECTRAL_LIGHT 
+# if defined ESTUARYBGC && defined SPECTRAL_LIGHT
           real(r8), pointer :: PARout(:,:,:)
           real(r8), pointer :: PARs(:,:,:)
           real(r8), pointer :: SpKd(:,:,:)

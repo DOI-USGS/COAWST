@@ -1,4 +1,4 @@
-#if ( HYBRID_COORD==1 ) 
+#if ( HYBRID_COORD==1 )
 #  define mut(...) (c1f(k)*XXPCTXX(__VA_ARGS__)+c2f(k))
 #  define XXPCTXX(...) mut(__VA_ARGS__)
 
@@ -64,14 +64,14 @@ SUBROUTINE calc_mu_uv ( config_flags,                 &
                         its, ite, jts, jte, kts, kte )
 
    IMPLICIT NONE
-   
+
    ! Input data
 
    TYPE(grid_config_rec_type   ) ,   INTENT(IN   ) :: config_flags
 
    INTEGER ,          INTENT(IN   ) :: ids, ide, jds, jde, kds, kde, &
                                        ims, ime, jms, jme, kms, kme, &
-                                       its, ite, jts, jte, kts, kte 
+                                       its, ite, jts, jte, kts, kte
 
    REAL, DIMENSION( ims:ime , jms:jme ) , INTENT(  OUT) :: muu, muv
    REAL, DIMENSION( ims:ime , jms:jme ) , INTENT(IN   ) :: mu, mub
@@ -222,14 +222,14 @@ SUBROUTINE calc_mu_uv_1 ( config_flags,                 &
                           its, ite, jts, jte, kts, kte )
 
    IMPLICIT NONE
-   
+
    ! Input data
 
    TYPE(grid_config_rec_type   ) ,   INTENT(IN   ) :: config_flags
 
    INTEGER ,          INTENT(IN   ) :: ids, ide, jds, jde, kds, kde, &
                                        ims, ime, jms, jme, kms, kme, &
-                                       its, ite, jts, jte, kts, kte 
+                                       its, ite, jts, jte, kts, kte
 
    REAL, DIMENSION( ims:ime , jms:jme ) , INTENT(  OUT) :: muu, muv
    REAL, DIMENSION( ims:ime , jms:jme ) , INTENT(IN   ) :: mu
@@ -245,7 +245,7 @@ SUBROUTINE calc_mu_uv_1 ( config_flags,                 &
 !  This routine uses the full state (mu)
 !
 !</DESCRIPTION>
-   
+
       itf=ite
       jtf=MIN(jte,jde-1)
 
@@ -380,14 +380,14 @@ SUBROUTINE couple_momentum ( muu, ru, u, msfu,              &
 
    REAL , DIMENSION( ims:ime , jms:jme ) , INTENT(IN   ) :: muu, muv, mut
    REAL , DIMENSION( ims:ime , jms:jme ) , INTENT(IN   ) :: msfu, msfv, msft, msfv_inv
-   
+
    REAL , DIMENSION( ims:ime , kms:kme , jms:jme ) , INTENT(IN   ) :: u, v, w
    REAL , DIMENSION( kms:kme ) ,    INTENT(IN   ) :: c1h, c2h, c1f, c2f
-   
+
    ! Local data
-   
+
    INTEGER :: i, j, k, itf, jtf, ktf
-   
+
 !<DESCRIPTION>
 !
 ! couple_momentum couples the velocities to the full column mass and
@@ -396,7 +396,7 @@ SUBROUTINE couple_momentum ( muu, ru, u, msfu,              &
 !</DESCRIPTION>
 
    ktf=MIN(kte,kde-1)
-   
+
       itf=ite
       jtf=MIN(jte,jde-1)
 
@@ -440,12 +440,12 @@ SUBROUTINE calc_mu_staggered ( mu, mub, muu, muv,            &
                                   its, ite, jts, jte, kts, kte )
 
    IMPLICIT NONE
-   
+
    ! Input data
 
    INTEGER ,          INTENT(IN   ) :: ids, ide, jds, jde, kds, kde, &
                                        ims, ime, jms, jme, kms, kme, &
-                                       its, ite, jts, jte, kts, kte 
+                                       its, ite, jts, jte, kts, kte
 
    REAL, DIMENSION( ims:ime , jms:jme ) , INTENT(  OUT) :: muu, muv
    REAL, DIMENSION( ims:ime , jms:jme ) , INTENT(IN   ) :: mu, mub
@@ -460,7 +460,7 @@ SUBROUTINE calc_mu_staggered ( mu, mub, muu, muv,            &
 ! velocity points (u,v).
 !
 !</DESCRIPTION>
-   
+
       itf=ite
       jtf=MIN(jte,jde-1)
 
@@ -574,26 +574,26 @@ SUBROUTINE couple ( mu, mub, rfield, field, name, &
    REAL , DIMENSION( ims:ime , kms:kme , jms:jme ) , INTENT(  OUT) :: rfield
 
    REAL , DIMENSION( ims:ime , jms:jme ) , INTENT(IN   ) :: mu, mub, msf
-   
+
    REAL , DIMENSION( ims:ime , kms:kme , jms:jme ) , INTENT(IN   ) :: field
 
    REAL , DIMENSION( kms:kme ) ,    INTENT(IN   ) :: c1h, c2h, c1, c2
-   
+
    ! Local data
-   
+
    INTEGER :: i, j, k, itf, jtf, ktf
    REAL , DIMENSION(ims:ime,jms:jme) :: muu , muv
 
 !<DESCRIPTION>
 !
-! subroutine couple couples the input variable with the dry-air 
-! column mass (mu).  
+! subroutine couple couples the input variable with the dry-air
+! column mass (mu).
 !
 !</DESCRIPTION>
 
-   
+
    ktf=MIN(kte,kde-1)
-   
+
    IF (name .EQ. 'u')THEN
 
       CALL calc_mu_staggered ( mu, mub, muu, muv,            &
@@ -653,7 +653,7 @@ SUBROUTINE couple ( mu, mub, rfield, field, name, &
       ENDDO
       ENDDO
 
-   ELSE 
+   ELSE
       itf=MIN(ite,ide-1)
       jtf=MIN(jte,jde-1)
       DO j=jts,jtf
@@ -663,7 +663,7 @@ SUBROUTINE couple ( mu, mub, rfield, field, name, &
       ENDDO
       ENDDO
       ENDDO
-   
+
    ENDIF
 
 END SUBROUTINE couple
@@ -696,12 +696,12 @@ SUBROUTINE calc_ww_cp ( u, v, mup, mub, c1h, c2h, ww,    &
                                                             msfvx_inv
    REAL , DIMENSION( kms:kme ) , INTENT(IN   ) :: dnw
    REAL , DIMENSION( kms:kme ) , INTENT(IN   ) :: c1h, c2h
-   
+
    REAL , DIMENSION( ims:ime , kms:kme , jms:jme ) , INTENT(OUT  ) :: ww
    REAL , INTENT(IN   )  :: rdx, rdy
-   
+
    ! Local data
-   
+
    INTEGER :: i, j, k, itf, jtf, ktf
    REAL , DIMENSION( its:ite ) :: dmdt
    REAL , DIMENSION( its:ite, kts:kte ) :: divv
@@ -709,7 +709,7 @@ SUBROUTINE calc_ww_cp ( u, v, mup, mub, c1h, c2h, ww,    &
 
 !<DESCRIPTION>
 !
-!  calc_ww calculates omega using the velocities (u,v) and the dry-air 
+!  calc_ww calculates omega using the velocities (u,v) and the dry-air
 !  column mass (mup+mub).
 !  The algorithm integrates the continuity equation through the column
 !  followed by a diagnosis of omega.
@@ -718,13 +718,13 @@ SUBROUTINE calc_ww_cp ( u, v, mup, mub, c1h, c2h, ww,    &
 
 !<DESCRIPTION>
 !
-!  calc_ww_cp calculates omega using the velocities (u,v) and the 
+!  calc_ww_cp calculates omega using the velocities (u,v) and the
 !  column mass mu.
 !
 !</DESCRIPTION>
 
     jtf=MIN(jte,jde-1)
-    ktf=MIN(kte,kde-1)  
+    ktf=MIN(kte,kde-1)
     itf=MIN(ite,ide-1)
 
 !  mu coupled with the appropriate map factor
@@ -751,7 +751,7 @@ SUBROUTINE calc_ww_cp ( u, v, mup, mub, c1h, c2h, ww,    &
 
 !       Comments on the modifications for map scale factors
 !       ADT eqn 47 / my (putting rho -> 'mu') is:
-!       (1/my) partial d mu/dt = -mx partial d/dx(mu u/my) 
+!       (1/my) partial d mu/dt = -mx partial d/dx(mu u/my)
 !                                -mx partial d/dy(mu v/mx)
 !                                -partial d/dz(mu w/my)
 !
@@ -761,8 +761,8 @@ SUBROUTINE calc_ww_cp ( u, v, mup, mub, c1h, c2h, ww,    &
 !       Integrating with respect to nu over ALL levels, with dnu/dt=0 at top
 !       and bottom, the last term becomes = 0
 !
-!       Integral|bot->top[(1/my) partial d mu/dt]dnu = 
-!       Integral|bot->top[-mx partial d/dx(mu u/my) 
+!       Integral|bot->top[(1/my) partial d mu/dt]dnu =
+!       Integral|bot->top[-mx partial d/dx(mu u/my)
 !                         -mx partial d/dy(mu v/mx)]dnu
 !
 !       muu='mu'[on u]/my, muv='mu'[on v]/mx
@@ -792,7 +792,7 @@ SUBROUTINE calc_ww_cp ( u, v, mup, mub, c1h, c2h, ww,    &
 
 !       Further map scale factor notes:
 !       Now integrate from bottom to top, level by level:
-!       mu dnu/dt/my [k+1] = mu dnu/dt/my [k] + [-(1/my) partial d mu/dt 
+!       mu dnu/dt/my [k+1] = mu dnu/dt/my [k] + [-(1/my) partial d mu/dt
 !                           -mx partial d/dx(mu u/my)
 !                           -mx partial d/dy(mu v/mx)]*dnu[k->k+1]
 !       ww [k+1] = ww [k] -(1/my) partial d mu/dt * dnu[k->k+1] - divv[k]
@@ -817,32 +817,32 @@ END SUBROUTINE calc_ww_cp
 
 
 !-------------------------------------------------------------------------------
- 
+
 SUBROUTINE calc_cq ( moist, cqu, cqv, cqw, n_moist, &
                      ids, ide, jds, jde, kds, kde,  &
                      ims, ime, jms, jme, kms, kme,  &
                      its, ite, jts, jte, kts, kte  )
 
    IMPLICIT NONE
-   
+
    ! Input data
 
    INTEGER ,          INTENT(IN   ) :: ids, ide, jds, jde, kds, kde, &
                                        ims, ime, jms, jme, kms, kme, &
-                                       its, ite, jts, jte, kts, kte 
+                                       its, ite, jts, jte, kts, kte
 
    INTEGER ,          INTENT(IN   ) :: n_moist
-   
+
 
    REAL, DIMENSION( ims:ime, kms:kme , jms:jme , n_moist ), INTENT(IN   ) :: moist
-                                              
+
    REAL, DIMENSION( ims:ime , kms:kme , jms:jme ) , INTENT(  OUT) :: cqu, cqv, cqw
 
    ! Local stuff
 
    ! Changes from Larry Meadows, Intel Corp.  Improve vectorization of this routine
    REAL :: qtot(its:ite)
-   
+
    INTEGER :: i, j, k, itf, jtf, ktf, ispe
 
 !<DESCRIPTION>
@@ -947,12 +947,12 @@ SUBROUTINE calc_alt ( alt, al, alb,                  &
                       its, ite, jts, jte, kts, kte  )
 
    IMPLICIT NONE
-   
+
    ! Input data
 
    INTEGER ,          INTENT(IN   ) :: ids, ide, jds, jde, kds, kde, &
                                        ims, ime, jms, jme, kms, kme, &
-                                       its, ite, jts, jte, kts, kte 
+                                       its, ite, jts, jte, kts, kte
 
    REAL, DIMENSION( ims:ime , kms:kme , jms:jme ), INTENT(IN   ) :: alb, al
    REAL, DIMENSION( ims:ime , kms:kme , jms:jme ), INTENT(  OUT) :: alt
@@ -995,14 +995,14 @@ SUBROUTINE calc_p_rho_phi ( moist, n_moist, hypsometric_opt,      &
                             its, ite, jts, jte, kts, kte  )
 
   IMPLICIT NONE
-   
+
    ! Input data
 
   LOGICAL ,          INTENT(IN   ) :: non_hydrostatic
 
   INTEGER ,          INTENT(IN   ) :: ids, ide, jds, jde, kds, kde, &
                                       ims, ime, jms, jme, kms, kme, &
-                                      its, ite, jts, jte, kts, kte 
+                                      its, ite, jts, jte, kts, kte
 
   INTEGER ,          INTENT(IN   ) :: n_moist
   INTEGER ,          INTENT(IN   ) :: hypsometric_opt
@@ -1040,7 +1040,7 @@ SUBROUTINE calc_p_rho_phi ( moist, n_moist, hypsometric_opt,      &
 !
 ! For the hydrostatic option, calc_p_rho_phi calculates the
 ! diagnostic quantities (inverse) density and geopotential from the
-! prognostic variables using the equation of state and the hydrostatic 
+! prognostic variables using the equation of state and the hydrostatic
 ! equation.
 !
 !</DESCRIPTION>
@@ -1075,11 +1075,11 @@ SUBROUTINE calc_p_rho_phi ( moist, n_moist, hypsometric_opt,      &
         DO j=jts,jtf
         DO k=kts,ktf
         DO i=its,itf
-#if  !( HYBRID_COORD==1 ) 
+#if  !( HYBRID_COORD==1 )
           pfu = muts(i,j)*znw(k+1)+ptop
           pfd = muts(i,j)*znw(k)  +ptop
           phm = muts(i,j)*znu(k)  +ptop
-#elif ( HYBRID_COORD==1 ) 
+#elif ( HYBRID_COORD==1 )
           pfu = c3f(k+1)*MUTS(i,j) + c4f(k+1) + ptop
           pfd = c3f(k  )*MUTS(i,j) + c4f(k  ) + ptop
           phm = c3h(k  )*MUTS(i,j) + c4h(k  ) + ptop
@@ -1092,7 +1092,7 @@ SUBROUTINE calc_p_rho_phi ( moist, n_moist, hypsometric_opt,      &
         CALL wrf_error_fatal ( 'calc_p_rho_phi: hypsometric_opt should be 1 or 2' )
       END IF
 
-      IF (n_moist >= PARAM_FIRST_SCALAR ) THEN  
+      IF (n_moist >= PARAM_FIRST_SCALAR ) THEN
 
         DO j=jts,jtf
         DO k=kts,ktf
@@ -1131,7 +1131,7 @@ SUBROUTINE calc_p_rho_phi ( moist, n_moist, hypsometric_opt,      &
 !  hydrostatic pressure, al, and ph1 calc; WCS, 5 sept 2001
 
 
-      IF (n_moist >= PARAM_FIRST_SCALAR ) THEN  
+      IF (n_moist >= PARAM_FIRST_SCALAR ) THEN
 
         DO j=jts,jtf
 
@@ -1218,7 +1218,7 @@ SUBROUTINE calc_p_rho_phi ( moist, n_moist, hypsometric_opt,      &
             ENDDO
           ENDDO
         ENDDO
-     ELSE 
+     ELSE
 
      ! Revised hypsometric eq.: dZ=-al*p*dLOG(p), where p is dry pressure
 
@@ -1229,11 +1229,11 @@ SUBROUTINE calc_p_rho_phi ( moist, n_moist, hypsometric_opt,      &
 
         DO k=kts+1,ktf+1
           DO i=its,itf
-#if  !( HYBRID_COORD==1 ) 
+#if  !( HYBRID_COORD==1 )
             pfu = muts(i,j)*znw(k)  +ptop
             pfd = muts(i,j)*znw(k-1)+ptop
             phm = muts(i,j)*znu(k-1)+ptop
-#elif ( HYBRID_COORD==1 ) 
+#elif ( HYBRID_COORD==1 )
             pfu = c3f(k  )*MUTS(i,j) + c4f(k  ) + ptop
             pfd = c3f(k-1)*MUTS(i,j) + c4f(k-1) + ptop
             phm = c3h(k-1)*MUTS(i,j) + c4h(k-1) + ptop
@@ -1263,12 +1263,12 @@ SUBROUTINE calc_php ( php, ph, phb,                  &
                       its, ite, jts, jte, kts, kte  )
 
    IMPLICIT NONE
-   
+
    ! Input data
 
    INTEGER ,          INTENT(IN   ) :: ids, ide, jds, jde, kds, kde, &
                                        ims, ime, jms, jme, kms, kme, &
-                                       its, ite, jts, jte, kts, kte 
+                                       its, ite, jts, jte, kts, kte
 
    REAL, DIMENSION( ims:ime, kms:kme , jms:jme ), INTENT(IN   ) :: phb, ph
    REAL, DIMENSION( ims:ime, kms:kme , jms:jme ), INTENT(  OUT) :: php
@@ -1313,7 +1313,7 @@ SUBROUTINE diagnose_w( ph_tend, ph_new, ph_old, w, mut,     &
 
    INTEGER ,          INTENT(IN   ) :: ids, ide, jds, jde, kds, kde, &
                                        ims, ime, jms, jme, kms, kme, &
-                                       its, ite, jts, jte, kts, kte 
+                                       its, ite, jts, jte, kts, kte
 
    REAL, DIMENSION( ims:ime, kms:kme , jms:jme ), INTENT(IN   ) ::   ph_tend, &
                                                                      ph_new,  &
@@ -1375,7 +1375,7 @@ SUBROUTINE diagnose_w( ph_tend, ph_new, ph_old, w, mut,     &
 !  use geopotential equation to diagnose w
 
 !  Further notes on map scale factors
-!  If ph_tend contains:  -mx partial d/dx(mu rho u/my) 
+!  If ph_tend contains:  -mx partial d/dx(mu rho u/my)
 !                        -mx partial d/dy(phi mu v/mx)
 !                        -partial d/dz(phi mu w/my)
 !  then phi eqn is: partial d/dt(mu phi/my) = ph_tend + mu g w/my
@@ -1384,7 +1384,7 @@ SUBROUTINE diagnose_w( ph_tend, ph_new, ph_old, w, mut,     &
      DO k = 2, kte
      DO i = its, itf
        w(i,k,j) =  msfty(i,j)*(  (ph_new(i,k,j)-ph_old(i,k,j))/dt       &
-                               - ph_tend(i,k,j)/mut(i,j)        )/g 
+                               - ph_tend(i,k,j)/mut(i,j)        )/g
 
      ENDDO
      ENDDO
@@ -1415,7 +1415,7 @@ SUBROUTINE rhs_ph( ph_tend, u, v, ww,               &
 
    INTEGER ,          INTENT(IN   ) :: ids, ide, jds, jde, kds, kde, &
                                        ims, ime, jms, jme, kms, kme, &
-                                       its, ite, jts, jte, kts, kte 
+                                       its, ite, jts, jte, kts, kte
 
    REAL, DIMENSION( ims:ime, kms:kme , jms:jme ), INTENT(IN   ) ::        &
                                                                      u,   &
@@ -1423,7 +1423,7 @@ SUBROUTINE rhs_ph( ph_tend, u, v, ww,               &
                                                                      ww,  &
                                                                      ph,  &
                                                                      ph_old, &
-                                                                     phb, & 
+                                                                     phb, &
                                                                     w
 
    REAL, DIMENSION( ims:ime, kms:kme , jms:jme ), INTENT(INOUT) :: ph_tend
@@ -1437,7 +1437,7 @@ SUBROUTINE rhs_ph( ph_tend, u, v, ww,               &
    REAL, DIMENSION( kms:kme ), INTENT(IN   ) :: rdnw, fnm, fnp
 
    REAL, DIMENSION( kms:kme ), INTENT(IN   ) :: c1f, c2f
-   
+
 
    REAL,  INTENT(IN   ) :: cfn, cfn1, rdx, rdy
 
@@ -1465,7 +1465,7 @@ SUBROUTINE rhs_ph( ph_tend, u, v, ww,               &
    specified = .false.
    if(config_flags%specified .or. config_flags%nested) specified = .true.
 
-   advective_order = config_flags%h_sca_adv_order 
+   advective_order = config_flags%h_sca_adv_order
 
    itf=MIN(ite,ide-1)
    jtf=MIN(jte,jde-1)
@@ -1478,11 +1478,11 @@ SUBROUTINE rhs_ph( ph_tend, u, v, ww,               &
 !                                               +mu g w/my
 !
 !  A little further explanation...
-!  The tendency term we are computing here is for mu/my d/dt(phi).  It is advective form 
+!  The tendency term we are computing here is for mu/my d/dt(phi).  It is advective form
 !  but it is multiplied be mu/my.  It will be decoupled from (mu/my) when the implicit w-phi
-!  solution is computed in subourine advance_w.  The formulation dates from the early 
+!  solution is computed in subourine advance_w.  The formulation dates from the early
 !  days of the mass coordinate model when we were testing both a flux and an advective formulation
-!  for the geopotential equation and different forms of the vertical momentum equation and the 
+!  for the geopotential equation and different forms of the vertical momentum equation and the
 !  vertically implicit solver.
 
 ! advective form for the geopotential equation
@@ -1585,7 +1585,7 @@ SUBROUTINE rhs_ph( ph_tend, u, v, ww,               &
                   (phb(i  ,k,j)-phb(i-1,k,j)+ph(i  ,k,j)-ph(i-1,k,j))  )
      ENDDO
      ENDDO
- 
+
      k = kte
      DO i = i_start, itf
         ph_tend(i,k,j)=ph_tend(i,k,j) - (0.5*rdx/msfty(i,j))*                        &
@@ -1619,7 +1619,7 @@ SUBROUTINE rhs_ph( ph_tend, u, v, ww,               &
                     8.*(ph(i,k,j+1)-ph(i,k,j-1))                                    &
                       -(ph(i,k,j+2)-ph(i,k,j-2))                                    &
                    +8.*(phb(i,k,j+1)-phb(i,k,j-1))                                  &
-                      -(phb(i,k,j+2)-phb(i,k,j-2))  )   )                
+                      -(phb(i,k,j+2)-phb(i,k,j-2))  )   )
 
 
      ENDDO
@@ -1633,7 +1633,7 @@ SUBROUTINE rhs_ph( ph_tend, u, v, ww,               &
                     8.*(ph(i,k,j+1)-ph(i,k,j-1))                                               &
                       -(ph(i,k,j+2)-ph(i,k,j-2))                                               &
                    +8.*(phb(i,k,j+1)-phb(i,k,j-1))                                             &
-                      -(phb(i,k,j+2)-phb(i,k,j-2))  )   )                
+                      -(phb(i,k,j+2)-phb(i,k,j-2))  )   )
 
      ENDDO
 
@@ -1709,10 +1709,10 @@ SUBROUTINE rhs_ph( ph_tend, u, v, ww,               &
                     8.*(ph(i+1,k,j)-ph(i-1,k,j))                                   &
                       -(ph(i+2,k,j)-ph(i-2,k,j))                                   &
                    +8.*(phb(i+1,k,j)-phb(i-1,k,j))                                 &
-                      -(phb(i+2,k,j)-phb(i-2,k,j))  )   )                
+                      -(phb(i+2,k,j)-phb(i-2,k,j))  )   )
      ENDDO
      ENDDO
- 
+
      k = kte
      DO i = i_start, itf
         ph_tend(i,k,j)=ph_tend(i,k,j) - (0.5*rdx/msfty(i,j))*(                                 &
@@ -1741,7 +1741,7 @@ SUBROUTINE rhs_ph( ph_tend, u, v, ww,               &
                   (phb(i  ,k,j)-phb(i-1,k,j)+ph(i  ,k,j)-ph(i-1,k,j))  )
      ENDDO
      ENDDO
- 
+
      k = kte
      DO j = j_start, jtf
         ph_tend(i,k,j)=ph_tend(i,k,j) - (0.5*rdx/msfty(i,j))*                        &
@@ -1765,7 +1765,7 @@ SUBROUTINE rhs_ph( ph_tend, u, v, ww,               &
                   (phb(i  ,k,j)-phb(i-1,k,j)+ph(i  ,k,j)-ph(i-1,k,j))  )
      ENDDO
      ENDDO
- 
+
      k = kte
      DO j = j_start, jtf
         ph_tend(i,k,j)=ph_tend(i,k,j) - (0.5*rdx/msfty(i,j))*                        &
@@ -1806,7 +1806,7 @@ SUBROUTINE rhs_ph( ph_tend, u, v, ww,               &
                       +(ph(i,k,j+3)-ph(i,k,j-3))                                    &
                   +45.*(phb(i,k,j+1)-phb(i,k,j-1))                                  &
                    -9.*(phb(i,k,j+2)-phb(i,k,j-2))                                  &
-                      +(phb(i,k,j+3)-phb(i,k,j-3))  )   )                
+                      +(phb(i,k,j+3)-phb(i,k,j-3))  )   )
 
 
      ENDDO
@@ -1822,7 +1822,7 @@ SUBROUTINE rhs_ph( ph_tend, u, v, ww,               &
                       +(ph(i,k,j+3)-ph(i,k,j-3))                                               &
                   +45.*(phb(i,k,j+1)-phb(i,k,j-1))                                             &
                    -9.*(phb(i,k,j+2)-phb(i,k,j-2))                                             &
-                      +(phb(i,k,j+3)-phb(i,k,j-3))  )   )                
+                      +(phb(i,k,j+3)-phb(i,k,j-3))  )   )
 
      ENDDO
 
@@ -1841,7 +1841,7 @@ SUBROUTINE rhs_ph( ph_tend, u, v, ww,               &
                     8.*(ph(i,k,j+1)-ph(i,k,j-1))                                    &
                       -(ph(i,k,j+2)-ph(i,k,j-2))                                    &
                    +8.*(phb(i,k,j+1)-phb(i,k,j-1))                                  &
-                      -(phb(i,k,j+2)-phb(i,k,j-2))  )   )                
+                      -(phb(i,k,j+2)-phb(i,k,j-2))  )   )
 
 
      ENDDO
@@ -1855,7 +1855,7 @@ SUBROUTINE rhs_ph( ph_tend, u, v, ww,               &
                     8.*(ph(i,k,j+1)-ph(i,k,j-1))                                             &
                       -(ph(i,k,j+2)-ph(i,k,j-2))                                             &
                    +8.*(phb(i,k,j+1)-phb(i,k,j-1))                                           &
-                      -(phb(i,k,j+2)-phb(i,k,j-2))  )   )                
+                      -(phb(i,k,j+2)-phb(i,k,j-2))  )   )
 
      ENDDO
 
@@ -1871,7 +1871,7 @@ SUBROUTINE rhs_ph( ph_tend, u, v, ww,               &
                     8.*(ph(i,k,j+1)-ph(i,k,j-1))                                  &
                       -(ph(i,k,j+2)-ph(i,k,j-2))                                  &
                    +8.*(phb(i,k,j+1)-phb(i,k,j-1))                                &
-                      -(phb(i,k,j+2)-phb(i,k,j-2))  )   )                
+                      -(phb(i,k,j+2)-phb(i,k,j-2))  )   )
 
 
      ENDDO
@@ -1885,7 +1885,7 @@ SUBROUTINE rhs_ph( ph_tend, u, v, ww,               &
                     8.*(ph(i,k,j+1)-ph(i,k,j-1))                                             &
                       -(ph(i,k,j+2)-ph(i,k,j-2))                                             &
                    +8.*(phb(i,k,j+1)-phb(i,k,j-1))                                           &
-                      -(phb(i,k,j+2)-phb(i,k,j-2))  )   )                
+                      -(phb(i,k,j+2)-phb(i,k,j-2))  )   )
 
      ENDDO
 
@@ -1963,10 +1963,10 @@ SUBROUTINE rhs_ph( ph_tend, u, v, ww,               &
                       +(ph(i+3,k,j)-ph(i-3,k,j))                                  &
                   +45.*(phb(i+1,k,j)-phb(i-1,k,j))                                &
                    -9.*(phb(i+2,k,j)-phb(i-2,k,j))                                &
-                      +(phb(i+3,k,j)-phb(i-3,k,j))  )   )                
+                      +(phb(i+3,k,j)-phb(i-3,k,j))  )   )
      ENDDO
      ENDDO
- 
+
      k = kte
      DO i = i_start, itf
         ph_tend(i,k,j)=ph_tend(i,k,j) - (0.5*rdx/msfty(i,j))*(                             &
@@ -1994,7 +1994,7 @@ SUBROUTINE rhs_ph( ph_tend, u, v, ww,               &
                     8.*(ph(i+1,k,j)-ph(i-1,k,j))                                  &
                       -(ph(i+2,k,j)-ph(i-2,k,j))                                  &
                    +8.*(phb(i+1,k,j)-phb(i-1,k,j))                                &
-                      -(phb(i+2,k,j)-phb(i-2,k,j))  )   )                
+                      -(phb(i+2,k,j)-phb(i-2,k,j))  )   )
        ENDDO
        k = kte
        ph_tend(i,k,j)=ph_tend(i,k,j) - (0.5*rdx/msfty(i,j))*(                             &
@@ -2018,7 +2018,7 @@ SUBROUTINE rhs_ph( ph_tend, u, v, ww,               &
                     8.*(ph(i+1,k,j)-ph(i-1,k,j))                                  &
                       -(ph(i+2,k,j)-ph(i-2,k,j))                                  &
                    +8.*(phb(i+1,k,j)-phb(i-1,k,j))                                &
-                      -(phb(i+2,k,j)-phb(i-2,k,j))  )   )                
+                      -(phb(i+2,k,j)-phb(i-2,k,j))  )   )
        ENDDO
        k = kte
        ph_tend(i,k,j)=ph_tend(i,k,j) - (0.5*rdx/msfty(i,j))*(                             &
@@ -2047,7 +2047,7 @@ SUBROUTINE rhs_ph( ph_tend, u, v, ww,               &
                   (phb(i  ,k,j)-phb(i-1,k,j)+ph(i  ,k,j)-ph(i-1,k,j))  )
      ENDDO
      ENDDO
- 
+
      k = kte
      DO j = j_start, jtf
         ph_tend(i,k,j)=ph_tend(i,k,j) - (0.5*rdx/msfty(i,j))*                        &
@@ -2071,7 +2071,7 @@ SUBROUTINE rhs_ph( ph_tend, u, v, ww,               &
                   (phb(i  ,k,j)-phb(i-1,k,j)+ph(i  ,k,j)-ph(i-1,k,j))  )
      ENDDO
      ENDDO
- 
+
      k = kte
      DO j = j_start, jtf
         ph_tend(i,k,j)=ph_tend(i,k,j) - (0.5*rdx/msfty(i,j))*                        &
@@ -2177,7 +2177,7 @@ SUBROUTINE rhs_ph( ph_tend, u, v, ww,               &
                    +ur*(ph_old(i,k,j)-ph_old(i-1,k,j)))
        ENDDO
 
-        k = kde    
+        k = kde
         kz = k-1
         ub=.5*( fnm(kz)*(u(i+1,kz  ,j)+u(i,kz  ,j))   &
                +fnp(kz)*(u(i+1,kz-1,j)+u(i,kz-1,j)) )
@@ -2207,7 +2207,7 @@ SUBROUTINE horizontal_pressure_gradient( ru_tend,rv_tend,                &
                                          its, ite, jts, jte, kts, kte   )
 
    IMPLICIT NONE
-   
+
    ! Input data
 
 
@@ -2217,7 +2217,7 @@ SUBROUTINE horizontal_pressure_gradient( ru_tend,rv_tend,                &
 
    INTEGER ,          INTENT(IN   ) :: ids, ide, jds, jde, kds, kde, &
                                        ims, ime, jms, jme, kms, kme, &
-                                       its, ite, jts, jte, kts, kte 
+                                       its, ite, jts, jte, kts, kte
 
    REAL, DIMENSION( ims:ime, kms:kme , jms:jme ), INTENT(IN   ) ::        &
                                                                      ph,  &
@@ -2254,8 +2254,8 @@ SUBROUTINE horizontal_pressure_gradient( ru_tend,rv_tend,                &
 
 !<DESCRIPTION>
 !
-!  horizontal_pressure_gradient calculates the 
-!  horizontal pressure gradient terms for the large-timestep tendency 
+!  horizontal_pressure_gradient calculates the
+!  horizontal pressure gradient terms for the large-timestep tendency
 !  in the horizontal momentum equations (u,v).
 !
 !</DESCRIPTION>
@@ -2308,7 +2308,7 @@ SUBROUTINE horizontal_pressure_gradient( ru_tend,rv_tend,                &
                              +cfn1*(p(i,kde-2,j-1)+p(i,kde-2,j)) )
           ENDDO
         ENDIF
-               
+
         DO k=2,ktf
           DO i = i_start, itf
             dpn(i,k) = .5*( fnm(k)*(p(i,k  ,j-1)+p(i,k  ,j))  &
@@ -2320,12 +2320,12 @@ SUBROUTINE horizontal_pressure_gradient( ru_tend,rv_tend,                &
 !       [alt, al are 1/rho terms; muv, mu are NOT coupled]
         DO K=1,ktf
           DO i = i_start, itf
-            ! Here are mu dp/dy terms 1-3 
+            ! Here are mu dp/dy terms 1-3
             dpy = (msfvy(i,j)/msfvx(i,j))*.5*rdy*muv(i,j)*(                 &
                      (ph (i,k+1,j)-ph (i,k+1,j-1) + ph(i,k,j)-ph(i,k,j-1))  &
                     +(alt(i,k  ,j)+alt(i,k  ,j-1))*(p (i,k,j)-p (i,k,j-1))  &
                     +(al (i,k  ,j)+al (i,k  ,j-1))*(pb(i,k,j)-pb(i,k,j-1)) )
-            ! Here is mu dp/dy term 4 
+            ! Here is mu dp/dy term 4
             dpy = dpy + (msfvy(i,j)/msfvx(i,j))*rdy*(php(i,k,j)-php(i,k,j-1))* &
                 (rdnw(k)*(dpn(i,k+1)-dpn(i,k))-.5*(mu(i,j-1)+mu(i,j)))
             rv_tend(i,k,j) = rv_tend(i,k,j)-cqv(i,k,j)*dpy
@@ -2383,7 +2383,7 @@ SUBROUTINE horizontal_pressure_gradient( ru_tend,rv_tend,                &
                              +cfn1*(p(i-1,kde-2,j)+p(i,kde-2,j)) )
           ENDDO
         ENDIF
-               
+
         DO k=2,ktf
           DO i = i_start, itf
             dpn(i,k) = .5*( fnm(k)*(p(i-1,k  ,j)+p(i,k  ,j))  &
@@ -2438,12 +2438,12 @@ SUBROUTINE pg_buoy_w( rw_tend, p, cqw, muf, mubf,     &
                       its, ite, jts, jte, kts, kte   )
 
    IMPLICIT NONE
-   
+
    ! Input data
 
    INTEGER ,          INTENT(IN   ) :: ids, ide, jds, jde, kds, kde, &
                                        ims, ime, jms, jme, kms, kme, &
-                                       its, ite, jts, jte, kts, kte 
+                                       its, ite, jts, jte, kts, kte
 
    REAL, DIMENSION( ims:ime, kms:kme , jms:jme ), INTENT(IN   ) ::   p
    REAL, DIMENSION( ims:ime, kms:kme , jms:jme ), INTENT(INOUT) ::   cqw
@@ -2465,8 +2465,8 @@ SUBROUTINE pg_buoy_w( rw_tend, p, cqw, muf, mubf,     &
 
 !<DESCRIPTION>
 !
-!  pg_buoy_w calculates the 
-!  vertical pressure gradient and buoyancy terms for the large-timestep 
+!  pg_buoy_w calculates the
+!  vertical pressure gradient and buoyancy terms for the large-timestep
 !  tendency in the vertical momentum equation.
 !
 !</DESCRIPTION>
@@ -2505,7 +2505,7 @@ SUBROUTINE pg_buoy_w( rw_tend, p, cqw, muf, mubf,     &
                        cq1*rdn(k)*(p(i,k,j)-p(i,k-1,j))  &
                        -muf(i,j)-cq2*mubf(i,j)            )
      END DO
-     ENDDO           
+     ENDDO
 
 
    ENDDO
@@ -2564,18 +2564,18 @@ SUBROUTINE w_damp( rw_tend, max_vert_cfl,max_horiz_cfl, &
 
    integer :: total
    REAL :: msfuxt , msfxffl
-   
+
 !<DESCRIPTION>
 !
 !  w_damp computes a damping term for the vertical velocity when the
-!  vertical Courant number is too large.  This was found to be preferable to 
+!  vertical Courant number is too large.  This was found to be preferable to
 !  decreasing the timestep or increasing the diffusion in real-data applications
 !  that produced potentially-unstable large vertical velocities because of
-!  unphysically large heating rates coming from the cumulus parameterization 
+!  unphysically large heating rates coming from the cumulus parameterization
 !  schemes run at moderately high resolutions (dx ~ O(10) km).
 !
 !  Additionally, w_damp returns the maximum cfl values due to vertical motion and
-!  horizontal motion.  These values are returned via the max_vert_cfl and 
+!  horizontal motion.  These values are returned via the max_vert_cfl and
 !  max_horiz_cfl variables.  (Added by T. Hutchinson, WSI, 3/5/2007)
 !
 !</DESCRIPTION>
@@ -2589,7 +2589,7 @@ SUBROUTINE w_damp( rw_tend, max_vert_cfl,max_horiz_cfl, &
    total = 0
 
    IF(config_flags%polar ) then
-     msfxffl = 1.0/COS(config_flags%fft_filter_lat*degrad) 
+     msfxffl = 1.0/COS(config_flags%fft_filter_lat*degrad)
    END IF
 
    IF ( config_flags%w_damping == 1 ) THEN
@@ -2621,22 +2621,22 @@ SUBROUTINE w_damp( rw_tend, max_vert_cfl,max_horiz_cfl, &
         vert_cfl = abs(ww(i,k,j)/mut(i,j)*rdnw(k)*dt)
 
         IF ( vert_cfl > max_vert_cfl ) THEN
-           max_vert_cfl = vert_cfl ; maxi = i ; maxj = j ; maxk = k 
+           max_vert_cfl = vert_cfl ; maxi = i ; maxj = j ; maxk = k
            maxdub = w(i,k,j) ; maxdeta = -1./rdnw(k)
         ENDIF
 #  endif
-        
+
         horiz_cfl = max( abs(u(i,k,j) * rdx * msfuxt * dt),                          &
              abs(v(i,k,j) * rdy * msfvy(i,j) * dt) )
         if (horiz_cfl > max_horiz_cfl) then
            max_horiz_cfl = horiz_cfl
         endif
-        
+
         if(vert_cfl .gt. w_beta)then
 #else
 ! restructure to get rid of divide
 !
-! This had been used for efficiency, but with the addition of returning the cfl values, 
+! This had been used for efficiency, but with the addition of returning the cfl values,
 !   the old version (above) was reinstated.  (T. Hutchinson, 3/5/2007)
 !
         cf_n = abs(ww(i,k,j)*rdnw(k)*dt)
@@ -2644,7 +2644,7 @@ SUBROUTINE w_damp( rw_tend, max_vert_cfl,max_horiz_cfl, &
         if(cf_n .gt. cf_d*w_beta )then
 #endif
 #ifndef OPTIMIZE_CFL_TEST
-! This internal write is costly on newer Xeon processors because it breaks 
+! This internal write is costly on newer Xeon processors because it breaks
 ! vectorization.  (J. Michalakes for L. Meadows at Intel, 12/13/2012)
            WRITE(temp,*)i,j,k,' vert_cfl,w,d(eta)=',vert_cfl,w(i,k,j),-1./rdnw(k)
            CALL wrf_debug ( 100 , TRIM(temp) )
@@ -2677,25 +2677,25 @@ SUBROUTINE w_damp( rw_tend, max_vert_cfl,max_horiz_cfl, &
            msfuxt = msfux(i,j)
         END IF
         vert_cfl = abs(ww(i,k,j)/mut(i,j)*rdnw(k)*dt)
-        
+
         IF ( vert_cfl > max_vert_cfl ) THEN
-           max_vert_cfl = vert_cfl ; maxi = i ; maxj = j ; maxk = k 
+           max_vert_cfl = vert_cfl ; maxi = i ; maxj = j ; maxk = k
            maxdub = w(i,k,j) ; maxdeta = -1./rdnw(k)
         ENDIF
 #  endif
-        
+
         horiz_cfl = max( abs(u(i,k,j) * rdx * msfuxt * dt),                          &
              abs(v(i,k,j) * rdy * msfvy(i,j) * dt) )
 
         if (horiz_cfl > max_horiz_cfl) then
            max_horiz_cfl = horiz_cfl
         endif
-        
+
         if(vert_cfl .gt. w_beta)then
 #else
 ! restructure to get rid of divide
 !
-! This had been used for efficiency, but with the addition of returning the cfl values, 
+! This had been used for efficiency, but with the addition of returning the cfl values,
 !   the old version (above) was reinstated.  (T. Hutchinson, 3/5/2007)
 !
         cf_n = abs(ww(i,k,j)*rdnw(k)*dt)
@@ -2739,7 +2739,7 @@ SUBROUTINE horizontal_diffusion ( name, field, tendency, MUT, c1, c2,  &
                                   its, ite, jts, jte, kts, kte        )
 
    IMPLICIT NONE
-   
+
    ! Input data
 
    TYPE(grid_config_rec_type), INTENT(IN   ) :: config_flags
@@ -2771,7 +2771,7 @@ SUBROUTINE horizontal_diffusion ( name, field, tendency, MUT, c1, c2,  &
                                                                 khdif
 
    ! Local data
-   
+
    INTEGER :: i, j, k, itf, jtf, ktf
 
    INTEGER :: i_start, i_end, j_start, j_end
@@ -2792,7 +2792,7 @@ SUBROUTINE horizontal_diffusion ( name, field, tendency, MUT, c1, c2,  &
    if(config_flags%specified .or. config_flags%nested) specified = .true.
 
    ktf=MIN(kte,kde-1)
-   
+
    IF (name .EQ. 'u') THEN
 
       i_start = its
@@ -2817,7 +2817,7 @@ SUBROUTINE horizontal_diffusion ( name, field, tendency, MUT, c1, c2,  &
 
          mkrdxm=(msftx(i-1,j)/msfty(i-1,j))*MUT(i-1,j)*xkmhd(i-1,k,j)*rdx
          mkrdxp=(msftx(i,j)/msfty(i,j))*MUT(i,j)*xkmhd(i,k,j)*rdx
-         mrdx=msfux(i,j)*msfuy(i,j)*rdx 
+         mrdx=msfux(i,j)*msfuy(i,j)*rdx
          mkrdym=( (msfuy(i,j)+msfuy(i,j-1))/(msfux(i,j)+msfux(i,j-1)) )* &
                 0.25*(MUT(i,j)+MUT(i,j-1)+MUT(i-1,j-1)+MUT(i-1,j))* &
                 0.25*(xkmhd(i,k,j)+xkmhd(i,k,j-1)+xkmhd(i-1,k,j-1)+xkmhd(i-1,k,j))*rdy
@@ -2828,9 +2828,9 @@ SUBROUTINE horizontal_diffusion ( name, field, tendency, MUT, c1, c2,  &
          ! no values at u,v points
          ! msfuy - has to be y as part of d/dY
          !         has to be u as we're at a u point
-         mrdy=msfux(i,j)*msfuy(i,j)*rdy 
+         mrdy=msfux(i,j)*msfuy(i,j)*rdy
 
-         ! correctly averaged version of rho~ * m^2 * 
+         ! correctly averaged version of rho~ * m^2 *
          !    [partial d/dX(partial du^/dX) + partial d/dY(partial du^/dY)]
             tendency(i,k,j)=tendency(i,k,j)+( &
                             mrdx*(mkrdxp*(field(i+1,k,j)-field(i  ,k,j))  &
@@ -2840,7 +2840,7 @@ SUBROUTINE horizontal_diffusion ( name, field, tendency, MUT, c1, c2,  &
       ENDDO
       ENDDO
       ENDDO
-   
+
    ELSE IF (name .EQ. 'v')THEN
 
       i_start = its
@@ -2880,7 +2880,7 @@ SUBROUTINE horizontal_diffusion ( name, field, tendency, MUT, c1, c2,  &
       ENDDO
       ENDDO
       ENDDO
-   
+
    ELSE IF (name .EQ. 'w')THEN
 
       i_start = its
@@ -2924,7 +2924,7 @@ SUBROUTINE horizontal_diffusion ( name, field, tendency, MUT, c1, c2,  &
       ENDDO
       ENDDO
       ENDDO
-   
+
    ELSE
 
 
@@ -2961,7 +2961,7 @@ SUBROUTINE horizontal_diffusion ( name, field, tendency, MUT, c1, c2,  &
       ENDDO
       ENDDO
       ENDDO
-           
+
    ENDIF
 
 END SUBROUTINE horizontal_diffusion
@@ -2978,9 +2978,9 @@ SUBROUTINE horizontal_diffusion_3dmp ( name, field, tendency, MUT, c1, c2,  &
                                        its, ite, jts, jte, kts, kte        )
 
    IMPLICIT NONE
-   
+
    ! Input data
-   
+
    TYPE(grid_config_rec_type), INTENT(IN   ) :: config_flags
 
    INTEGER ,        INTENT(IN   ) :: ids, ide, jds, jde, kds, kde, &
@@ -3012,7 +3012,7 @@ SUBROUTINE horizontal_diffusion_3dmp ( name, field, tendency, MUT, c1, c2,  &
                                                                 khdif
 
    ! Local data
-   
+
    INTEGER :: i, j, k, itf, jtf, ktf
 
    INTEGER :: i_start, i_end, j_start, j_end
@@ -3034,7 +3034,7 @@ SUBROUTINE horizontal_diffusion_3dmp ( name, field, tendency, MUT, c1, c2,  &
    if(config_flags%specified .or. config_flags%nested) specified = .true.
 
    ktf=MIN(kte,kde-1)
-   
+
       i_start = its
       i_end   = MIN(ite,ide-1)
       j_start = jts
@@ -3069,7 +3069,7 @@ SUBROUTINE horizontal_diffusion_3dmp ( name, field, tendency, MUT, c1, c2,  &
                                    -base_3d(i,k,j+1)+base_3d(i,k,j  ) )    &
                           -mkrdym*(   field(i,k,j  )  -field(i,k,j-1)      &
                                    -base_3d(i,k,j  )+base_3d(i,k,j-1) )  ) &
-                                                                         ) 
+                                                                         )
       ENDDO
       ENDDO
       ENDDO
@@ -3087,9 +3087,9 @@ SUBROUTINE vertical_diffusion ( name, field, tendency,        &
 
 
    IMPLICIT NONE
-   
+
    ! Input data
-   
+
    TYPE(grid_config_rec_type), INTENT(IN   ) :: config_flags
 
    INTEGER ,    INTENT(IN   ) :: ids, ide, jds, jde, kds, kde, &
@@ -3111,9 +3111,9 @@ SUBROUTINE vertical_diffusion ( name, field, tendency,        &
    REAL , DIMENSION( kms:kme )   ,                 INTENT(IN   ) :: c1, c2
 
    REAL ,                                      INTENT(IN   ) :: kvdif
-   
+
    ! Local data
-   
+
    INTEGER :: i, j, k, itf, jtf, ktf
    INTEGER :: i_start, i_end, j_start, j_end
 
@@ -3135,10 +3135,10 @@ SUBROUTINE vertical_diffusion ( name, field, tendency,        &
    if(config_flags%specified .or. config_flags%nested) specified = .true.
 
    ktf=MIN(kte,kde-1)
-   
+
    IF (name .EQ. 'w')THEN
 
-   
+
    i_start = its
    i_end   = MIN(ite,ide-1)
    j_start = jts
@@ -3215,9 +3215,9 @@ SUBROUTINE vertical_diffusion_mp ( field, tendency, config_flags, &
 
 
    IMPLICIT NONE
-   
+
    ! Input data
-   
+
    TYPE(grid_config_rec_type), INTENT(IN   ) :: config_flags
 
    INTEGER ,    INTENT(IN   ) :: ids, ide, jds, jde, kds, kde, &
@@ -3239,9 +3239,9 @@ SUBROUTINE vertical_diffusion_mp ( field, tendency, config_flags, &
    REAL , DIMENSION( kms:kme ) ,                 INTENT(IN   ) :: c1, c2
 
    REAL ,                                      INTENT(IN   ) :: kvdif
-   
+
    ! Local data
-   
+
    INTEGER :: i, j, k, itf, jtf, ktf
    INTEGER :: i_start, i_end, j_start, j_end
 
@@ -3263,7 +3263,7 @@ SUBROUTINE vertical_diffusion_mp ( field, tendency, config_flags, &
    if(config_flags%specified .or. config_flags%nested) specified = .true.
 
    ktf=MIN(kte,kde-1)
-   
+
      i_start = its
      i_end   = MIN(ite,ide-1)
      j_start = jts
@@ -3309,9 +3309,9 @@ SUBROUTINE vertical_diffusion_3dmp ( field, tendency, config_flags, &
 
 
    IMPLICIT NONE
-   
+
    ! Input data
-   
+
    TYPE(grid_config_rec_type), INTENT(IN   ) :: config_flags
 
    INTEGER ,    INTENT(IN   ) :: ids, ide, jds, jde, kds, kde, &
@@ -3333,9 +3333,9 @@ SUBROUTINE vertical_diffusion_3dmp ( field, tendency, config_flags, &
    REAL , DIMENSION( kms:kme ) ,                 INTENT(IN   ) :: c1, c2
 
    REAL ,                                      INTENT(IN   ) :: kvdif
-   
+
    ! Local data
-   
+
    INTEGER :: i, j, k, itf, jtf, ktf
    INTEGER :: i_start, i_end, j_start, j_end
 
@@ -3349,7 +3349,7 @@ SUBROUTINE vertical_diffusion_3dmp ( field, tendency, config_flags, &
 !
 !  vertical_diffusion_3dmp
 !  computes vertical diffusion tendency of a perturbation variable
-!  (field-base_3d).  
+!  (field-base_3d).
 !
 !</DESCRIPTION>
 
@@ -3357,7 +3357,7 @@ SUBROUTINE vertical_diffusion_3dmp ( field, tendency, config_flags, &
    if(config_flags%specified .or. config_flags%nested) specified = .true.
 
    ktf=MIN(kte,kde-1)
-   
+
      i_start = its
      i_end   = MIN(ite,ide-1)
      j_start = jts
@@ -3405,9 +3405,9 @@ SUBROUTINE vertical_diffusion_u ( field, tendency,              &
 
 
    IMPLICIT NONE
-   
+
    ! Input data
-   
+
    TYPE(grid_config_rec_type), INTENT(IN   ) :: config_flags
 
    INTEGER ,    INTENT(IN   ) :: ids, ide, jds, jde, kds, kde, &
@@ -3427,9 +3427,9 @@ SUBROUTINE vertical_diffusion_u ( field, tendency,              &
    REAL , DIMENSION( kms:kme ) ,                 INTENT(IN   ) :: c1h, c2h
 
    REAL ,                                      INTENT(IN   ) :: kvdif
-   
+
    ! Local data
-   
+
    INTEGER :: i, j, k, itf, jtf, ktf
    INTEGER :: i_start, i_end, j_start, j_end
 
@@ -3441,7 +3441,7 @@ SUBROUTINE vertical_diffusion_u ( field, tendency,              &
 
 !<DESCRIPTION>
 !
-!  vertical_diffusion_u computes vertical diffusion tendency for 
+!  vertical_diffusion_u computes vertical diffusion tendency for
 !  the u momentum equation.  This routine assumes a constant eddy
 !  viscosity kvdif.
 !
@@ -3493,7 +3493,7 @@ j_loop_u : DO j = j_start, j_end
      ENDDO
 
  ENDDO j_loop_u
-   
+
 END SUBROUTINE vertical_diffusion_u
 
 !-------------------------------------------------------------------------------
@@ -3508,9 +3508,9 @@ SUBROUTINE vertical_diffusion_v ( field, tendency,              &
 
 
    IMPLICIT NONE
-   
+
    ! Input data
-   
+
    TYPE(grid_config_rec_type), INTENT(IN   ) :: config_flags
 
    INTEGER ,    INTENT(IN   ) :: ids, ide, jds, jde, kds, kde, &
@@ -3529,9 +3529,9 @@ SUBROUTINE vertical_diffusion_v ( field, tendency,              &
    REAL , DIMENSION( ims:ime , jms:jme ) ,         INTENT(IN   ) :: muv
 
    REAL ,                                      INTENT(IN   ) :: kvdif
-   
+
    ! Local data
-   
+
    INTEGER :: i, j, k, itf, jtf, ktf, jm1
    INTEGER :: i_start, i_end, j_start, j_end
 
@@ -3543,7 +3543,7 @@ SUBROUTINE vertical_diffusion_v ( field, tendency,              &
 
 !<DESCRIPTION>
 !
-!  vertical_diffusion_v computes vertical diffusion tendency for 
+!  vertical_diffusion_v computes vertical diffusion tendency for
 !  the v momentum equation.  This routine assumes a constant eddy
 !  viscosity kvdif.
 !
@@ -3553,7 +3553,7 @@ SUBROUTINE vertical_diffusion_v ( field, tendency,              &
    if(config_flags%specified .or. config_flags%nested) specified = .true.
 
    ktf=MIN(kte,kde-1)
-   
+
       i_start = its
       i_end   = MIN(ite,ide-1)
       j_start = jts
@@ -3586,7 +3586,7 @@ j_loop_v : DO j = j_start, j_end
      ENDDO
 
      DO k=kts,ktf-1
-       DO i = i_start, i_end 
+       DO i = i_start, i_end
          tendency(i,k,j)=tendency(i,k,j)+                              &
                 g*g*rdnw(k)/muv(i,j)/(0.5*(alt(i,k,jm1)+alt(i,k,j)))*  &
                               (vflux(i,k)-vflux(i,k-1))
@@ -3594,7 +3594,7 @@ j_loop_v : DO j = j_start, j_end
      ENDDO
 
  ENDDO j_loop_v
-   
+
 END SUBROUTINE vertical_diffusion_v
 
 !***************  end new mass coordinate routines
@@ -3607,22 +3607,22 @@ SUBROUTINE calculate_full ( rfield, rfieldb, rfieldp,     &
                             its, ite, jts, jte, kts, kte )
 
    IMPLICIT NONE
-   
+
    ! Input data
-   
+
    INTEGER ,      INTENT(IN   ) :: ids, ide, jds, jde, kds, kde, &
                                    ims, ime, jms, jme, kms, kme, &
-                                   its, ite, jts, jte, kts, kte 
-   
+                                   its, ite, jts, jte, kts, kte
+
    REAL , DIMENSION( ims:ime , kms:kme , jms:jme ) , INTENT(IN   ) :: rfieldb, &
                                                                       rfieldp
 
    REAL , DIMENSION( ims:ime , kms:kme , jms:jme ) , INTENT(OUT  ) :: rfield
-   
+
    ! Local indices.
-   
+
    INTEGER :: i, j, k, itf, jtf, ktf
-   
+
 !<DESCRIPTION>
 !
 !  calculate_full
@@ -3656,10 +3656,10 @@ SUBROUTINE coriolis ( ru, rv, rw, ru_tend, rv_tend, rw_tend, &
                       its, ite, jts, jte, kts, kte          )
 
    IMPLICIT NONE
-   
+
    ! Input data
-   
-   TYPE(grid_config_rec_type) ,           INTENT(IN   ) :: config_flags   
+
+   TYPE(grid_config_rec_type) ,           INTENT(IN   ) :: config_flags
 
    INTEGER ,                 INTENT(IN   ) :: ids, ide, jds, jde, kds, kde, &
                                               ims, ime, jms, jme, kms, kme, &
@@ -3686,17 +3686,17 @@ SUBROUTINE coriolis ( ru, rv, rw, ru_tend, rv_tend, rw_tend, &
 
    REAL , DIMENSION( kms:kme ) ,                 INTENT(IN   ) :: fzm, &
                                                                   fzp
-   
+
    ! Local indices.
-   
+
    INTEGER :: i, j , k, ktf
    INTEGER :: i_start, i_end, j_start, j_end
-   
+
    LOGICAL :: specified
 
 !<DESCRIPTION>
 !
-!  coriolis calculates the large timestep tendency terms in the 
+!  coriolis calculates the large timestep tendency terms in the
 !  u, v, and w momentum equations arise from the coriolis force.
 !
 !</DESCRIPTION>
@@ -3731,7 +3731,7 @@ SUBROUTINE coriolis ( ru, rv, rw, ru_tend, rv_tend, rw_tend, &
 
    DO k=kts,ktf
    DO i = i_start, i_end
-   
+
      ru_tend(i,k,j)=ru_tend(i,k,j) + (msfux(i,j)/msfuy(i,j))*0.5*(f(i,j)+f(i-1,j)) &
        *0.25*(rv(i-1,k,j+1)+rv(i,k,j+1)+rv(i-1,k,j)+rv(i,k,j)) &
            - 0.5*(e(i,j)+e(i-1,j))*0.5*(cosa(i,j)+cosa(i-1,j)) &
@@ -3744,7 +3744,7 @@ SUBROUTINE coriolis ( ru, rv, rw, ru_tend, rv_tend, rw_tend, &
 !  IF ( (config_flags%open_xs) .and. (its == ids) ) THEN
 
 !    DO k=kts,ktf
-!  
+!
 !      ru_tend(its,k,j)=ru_tend(its,k,j) + (msfux(its,j)/msfuy(its,j))*0.5*(f(its,j)+f(its,j))   &
 !        *0.25*(rv(its,k,j+1)+rv(its,k,j+1)+rv(its,k,j)+rv(its,k,j)) &
 !            - 0.5*(e(its,j)+e(its,j))*0.5*(cosa(its,j)+cosa(its,j)) &
@@ -3757,7 +3757,7 @@ SUBROUTINE coriolis ( ru, rv, rw, ru_tend, rv_tend, rw_tend, &
 !  IF ( (config_flags%open_xe) .and. (ite == ide) ) THEN
 
 !    DO k=kts,ktf
-!  
+!
 !      ru_tend(ite,k,j)=ru_tend(ite,k,j) + (msfux(ite,j)/msfuy(ite,j))*0.5*(f(ite-1,j)+f(ite-1,j)) &
 !        *0.25*(rv(ite-1,k,j+1)+rv(ite-1,k,j+1)+rv(ite-1,k,j)+rv(ite-1,k,j)) &
 !            - 0.5*(e(ite-1,j)+e(ite-1,j))*0.5*(cosa(ite-1,j)+cosa(ite-1,j)) &
@@ -3791,11 +3791,11 @@ SUBROUTINE coriolis ( ru, rv, rw, ru_tend, rv_tend, rw_tend, &
 
 !    DO k=kts,ktf
 !    DO i=its,MIN(ide-1,ite)
-!  
+!
 !       rv_tend(i,k,jts)=rv_tend(i,k,jts) - (msfvy(i,jts)/msfvx(i,jts))*0.5*(f(i,jts)+f(i,jts))    &
 !        *0.25*(ru(i,k,jts)+ru(i+1,k,jts)+ru(i,k,jts)+ru(i+1,k,jts))   &
 !            + (msfvy(i,jts)/msfvx(i,jts))*0.5*(e(i,jts)+e(i,jts))*0.5*(sina(i,jts)+sina(i,jts))   &
-!            *0.25*(rw(i,k+1,jts)+rw(i,k,jts)+rw(i,k+1,jts)+rw(i,k,jts)) 
+!            *0.25*(rw(i,k+1,jts)+rw(i,k,jts)+rw(i,k+1,jts)+rw(i,k,jts))
 
 !    ENDDO
 !    ENDDO
@@ -3805,11 +3805,11 @@ SUBROUTINE coriolis ( ru, rv, rw, ru_tend, rv_tend, rw_tend, &
    DO j=j_start, j_end
    DO k=kts,ktf
    DO i=its,MIN(ide-1,ite)
-   
+
       rv_tend(i,k,j)=rv_tend(i,k,j) - (msfvy(i,j)/msfvx(i,j))*0.5*(f(i,j)+f(i,j-1))    &
        *0.25*(ru(i,k,j)+ru(i+1,k,j)+ru(i,k,j-1)+ru(i+1,k,j-1)) &
            + (msfvy(i,j)/msfvx(i,j))*0.5*(e(i,j)+e(i,j-1))*0.5*(sina(i,j)+sina(i,j-1)) &
-           *0.25*(rw(i,k+1,j-1)+rw(i,k,j-1)+rw(i,k+1,j)+rw(i,k,j)) 
+           *0.25*(rw(i,k+1,j-1)+rw(i,k,j-1)+rw(i,k+1,j)+rw(i,k,j))
 
    ENDDO
    ENDDO
@@ -3821,18 +3821,18 @@ SUBROUTINE coriolis ( ru, rv, rw, ru_tend, rv_tend, rw_tend, &
 
 !    DO k=kts,ktf
 !    DO i=its,MIN(ide-1,ite)
-!  
+!
 !       rv_tend(i,k,jte)=rv_tend(i,k,jte) - (msfvy(i,jte)/msfvx(i,jte))*0.5*(f(i,jte-1)+f(i,jte-1))        &
 !        *0.25*(ru(i,k,jte-1)+ru(i+1,k,jte-1)+ru(i,k,jte-1)+ru(i+1,k,jte-1))   &
 !            + (msfvy(i,jte)/msfvx(i,jte))*0.5*(e(i,jte-1)+e(i,jte-1))*0.5*(sina(i,jte-1)+sina(i,jte-1))   &
-!            *0.25*(rw(i,k+1,jte-1)+rw(i,k,jte-1)+rw(i,k+1,jte-1)+rw(i,k,jte-1)) 
+!            *0.25*(rw(i,k+1,jte-1)+rw(i,k,jte-1)+rw(i,k+1,jte-1)+rw(i,k,jte-1))
 
 !    ENDDO
 !    ENDDO
 
 !  ENDIF
 
-! coriolis term for w-mometum 
+! coriolis term for w-mometum
 
 ! Notes on map scale factors
 ! ADT eqn 46/my, RHS terms 5 and 5b [0 for sina=0]: 2 mu u omega cos(lat)/my +?
@@ -3871,10 +3871,10 @@ SUBROUTINE perturbation_coriolis ( ru_in, rv_in, rw, ru_tend, rv_tend, rw_tend, 
                                    its, ite, jts, jte, kts, kte                )
 
    IMPLICIT NONE
-   
+
    ! Input data
-   
-   TYPE(grid_config_rec_type) ,           INTENT(IN   ) :: config_flags   
+
+   TYPE(grid_config_rec_type) ,           INTENT(IN   ) :: config_flags
 
    INTEGER ,                 INTENT(IN   ) :: ids, ide, jds, jde, kds, kde, &
                                               ims, ime, jms, jme, kms, kme, &
@@ -3904,7 +3904,7 @@ SUBROUTINE perturbation_coriolis ( ru_in, rv_in, rw, ru_tend, rv_tend, rw_tend, 
 
    REAL , DIMENSION( ims:ime , jms:jme ) ,         INTENT(IN   ) :: muu, &
                                                                     muv
-                                                                    
+
 
    REAL , DIMENSION( kms:kme ) ,                 INTENT(IN   ) :: fzm, &
                                                                   fzp
@@ -3914,7 +3914,7 @@ SUBROUTINE perturbation_coriolis ( ru_in, rv_in, rw, ru_tend, rv_tend, rw_tend, 
                                                                   z_base
 
    REAL , DIMENSION( kms:kme ) ,                 INTENT(IN   ) :: c1h, c2h
-   
+
    ! Local storage
 
    REAL , DIMENSION( ims:ime , kms:kme , jms:jme ) :: ru, &
@@ -3923,15 +3923,15 @@ SUBROUTINE perturbation_coriolis ( ru_in, rv_in, rw, ru_tend, rv_tend, rw_tend, 
    REAL  :: z_at_u, z_at_v, wkp1, wk, wkm1
 
    ! Local indices.
-   
+
    INTEGER :: i, j , k, ktf
    INTEGER :: i_start, i_end, j_start, j_end
-   
+
    LOGICAL :: specified
 
 !<DESCRIPTION>
 !
-!  perturbation_coriolis calculates the large timestep tendency terms in the 
+!  perturbation_coriolis calculates the large timestep tendency terms in the
 !  u, v, and w momentum equations arise from the coriolis force.  This version
 !  subtracts off the horizontal velocities from the initial sounding when
 !  computing the forcing terms, hence "perturbation" coriolis.
@@ -3975,7 +3975,7 @@ SUBROUTINE perturbation_coriolis ( ru_in, rv_in, rw, ru_tend, rv_tend, rw_tend, 
    ENDDO
 
 
-!  pick up top and bottom v 
+!  pick up top and bottom v
 
    DO j = jts, MIN(jte,jde-1)+1
    DO i = i_start-1, i_end
@@ -4024,7 +4024,7 @@ SUBROUTINE perturbation_coriolis ( ru_in, rv_in, rw, ru_tend, rv_tend, rw_tend, 
    IF ( (config_flags%open_xs) .and. (its == ids) ) THEN
 
      DO k=kts,ktf
-   
+
        ru_tend(its,k,j)=ru_tend(its,k,j) + (msfux(its,j)/msfuy(its,j))*0.5*(f(its,j)+f(its,j))   &
          *0.25*(rv(its,k,j+1)+rv(its,k,j+1)+rv(its,k,j)+rv(its,k,j)) &
              - 0.5*(e(its,j)+e(its,j))*0.5*(cosa(its,j)+cosa(its,j)) &
@@ -4037,7 +4037,7 @@ SUBROUTINE perturbation_coriolis ( ru_in, rv_in, rw, ru_tend, rv_tend, rw_tend, 
    IF ( (config_flags%open_xe) .and. (ite == ide) ) THEN
 
      DO k=kts,ktf
-   
+
        ru_tend(ite,k,j)=ru_tend(ite,k,j) + (msfux(ite,j)/msfuy(ite,j))*0.5*(f(ite-1,j)+f(ite-1,j)) &
          *0.25*(rv(ite-1,k,j+1)+rv(ite-1,k,j+1)+rv(ite-1,k,j)+rv(ite-1,k,j)) &
              - 0.5*(e(ite-1,j)+e(ite-1,j))*0.5*(cosa(ite-1,j)+cosa(ite-1,j)) &
@@ -4119,11 +4119,11 @@ SUBROUTINE perturbation_coriolis ( ru_in, rv_in, rw, ru_tend, rv_tend, rw_tend, 
 
      DO k=kts,ktf
      DO i=its,MIN(ide-1,ite)
-   
+
         rv_tend(i,k,jts)=rv_tend(i,k,jts) - (msfvy(i,jts)/msfvx(i,jts))*0.5*(f(i,jts)+f(i,jts))    &
          *0.25*(ru(i,k,jts)+ru(i+1,k,jts)+ru(i,k,jts)+ru(i+1,k,jts))   &
              + (msfvy(i,jts)/msfvx(i,jts))*0.5*(e(i,jts)+e(i,jts))*0.5*(sina(i,jts)+sina(i,jts))   &
-             *0.25*(rw(i,k+1,jts)+rw(i,k,jts)+rw(i,k+1,jts)+rw(i,k,jts)) 
+             *0.25*(rw(i,k+1,jts)+rw(i,k,jts)+rw(i,k+1,jts)+rw(i,k,jts))
 
      ENDDO
      ENDDO
@@ -4133,11 +4133,11 @@ SUBROUTINE perturbation_coriolis ( ru_in, rv_in, rw, ru_tend, rv_tend, rw_tend, 
    DO j=j_start, j_end
    DO k=kts,ktf
    DO i=its,MIN(ide-1,ite)
-   
+
       rv_tend(i,k,j)=rv_tend(i,k,j) - (msfvy(i,j)/msfvx(i,j))*0.5*(f(i,j)+f(i,j-1))    &
        *0.25*(ru(i,k,j)+ru(i+1,k,j)+ru(i,k,j-1)+ru(i+1,k,j-1)) &
            + (msfvy(i,j)/msfvx(i,j))*0.5*(e(i,j)+e(i,j-1))*0.5*(sina(i,j)+sina(i,j-1)) &
-           *0.25*(rw(i,k+1,j-1)+rw(i,k,j-1)+rw(i,k+1,j)+rw(i,k,j)) 
+           *0.25*(rw(i,k+1,j-1)+rw(i,k,j-1)+rw(i,k+1,j)+rw(i,k,j))
 
    ENDDO
    ENDDO
@@ -4149,18 +4149,18 @@ SUBROUTINE perturbation_coriolis ( ru_in, rv_in, rw, ru_tend, rv_tend, rw_tend, 
 
      DO k=kts,ktf
      DO i=its,MIN(ide-1,ite)
-   
+
         rv_tend(i,k,jte)=rv_tend(i,k,jte) - (msfvy(i,jte)/msfvx(i,jte))*0.5*(f(i,jte-1)+f(i,jte-1))        &
          *0.25*(ru(i,k,jte-1)+ru(i+1,k,jte-1)+ru(i,k,jte-1)+ru(i+1,k,jte-1))   &
              + (msfvy(i,jte)/msfvx(i,jte))*0.5*(e(i,jte-1)+e(i,jte-1))*0.5*(sina(i,jte-1)+sina(i,jte-1))   &
-             *0.25*(rw(i,k+1,jte-1)+rw(i,k,jte-1)+rw(i,k+1,jte-1)+rw(i,k,jte-1)) 
+             *0.25*(rw(i,k+1,jte-1)+rw(i,k,jte-1)+rw(i,k+1,jte-1)+rw(i,k,jte-1))
 
      ENDDO
      ENDDO
 
    ENDIF
 
-! coriolis term for w-mometum 
+! coriolis term for w-mometum
 !  Map scale factors: see comments above for Coriolis
 
    DO j=jts,MIN(jte, jde-1)
@@ -4191,15 +4191,15 @@ SUBROUTINE curvature ( ru, rv, rw, u, v, w, ru_tend, rv_tend, rw_tend, &
 
 
    IMPLICIT NONE
-   
+
    ! Input data
 
-   TYPE(grid_config_rec_type) ,           INTENT(IN   ) :: config_flags   
+   TYPE(grid_config_rec_type) ,           INTENT(IN   ) :: config_flags
 
    INTEGER ,                  INTENT(IN   ) :: ids, ide, jds, jde, kds, kde, &
                                                ims, ime, jms, jme, kms, kme, &
                                                its, ite, jts, jte, kts, kte
-   
+
    REAL , DIMENSION( ims:ime , kms:kme , jms:jme ) ,                     &
                                                INTENT(INOUT) :: ru_tend, &
                                                                 rv_tend, &
@@ -4226,9 +4226,9 @@ SUBROUTINE curvature ( ru, rv, rw, u, v, w, ru_tend, rv_tend, rw_tend, &
 
    REAL ,                                      INTENT(IN   ) :: rdx,     &
                                                                 rdy
-   
+
    ! Local data
-   
+
 !   INTEGER :: i, j, k, itf, jtf, ktf, kp1, im, ip, jm, jp
    INTEGER :: i, j, k, itf, jtf, ktf
    INTEGER :: i_start, i_end, j_start, j_end
@@ -4240,8 +4240,8 @@ SUBROUTINE curvature ( ru, rv, rw, u, v, w, ru_tend, rv_tend, rw_tend, &
 
 !<DESCRIPTION>
 !
-!  curvature calculates the large timestep tendency terms in the 
-!  u, v, and w momentum equations arise from the curvature terms.  
+!  curvature calculates the large timestep tendency terms in the
+!  u, v, and w momentum equations arise from the curvature terms.
 !
 !</DESCRIPTION>
 
@@ -4260,7 +4260,7 @@ SUBROUTINE curvature ( ru, rv, rw, u, v, w, ru_tend, rv_tend, rw_tend, &
 !   IF ( config_flags%open_xe ) irmax = ide-1
 !   IF ( config_flags%open_ys ) jrmin = jds
 !   IF ( config_flags%open_ye ) jrmax = jde-1
-   
+
 ! Define v cross grad m at scalar points - vxgm(i,j)
 
    i_start = its-1
@@ -4287,7 +4287,7 @@ SUBROUTINE curvature ( ru, rv, rw, u, v, w, ru_tend, rv_tend, rw_tend, &
 !     msf...x varies with y only
 !     But we know that this is not = 0 for cylindrical,
 !     therefore use msfvX in 1st line
-!     which => by symmetry use msfuY in 2nd line - ???  
+!     which => by symmetry use msfuY in 2nd line - ???
       vxgm(i,k,j)=0.5*(u(i,k,j)+u(i+1,k,j))*(msfvx(i,j+1)-msfvx(i,j))*rdy - &
                   0.5*(v(i,k,j)+v(i,k,j+1))*(msfuy(i+1,j)-msfuy(i,j))*rdx
    ENDDO
@@ -4408,7 +4408,7 @@ SUBROUTINE curvature ( ru, rv, rw, u, v, w, ru_tend, rv_tend, rw_tend, &
 !                                               - mu v w /(a mx)
 !  ru = mu u / my ; rw = mu w / my ; rv = mu v / mx
 !  terms are:
-!  - (my/mx)*u ru tan(lat) / a - (my/mx)*v rw / a 
+!  - (my/mx)*u ru tan(lat) / a - (my/mx)*v rw / a
 !  = - [my/(mx*a)]*[u ru tan(lat) + v rw]
 !  - (1/a)*[(my/mx)*u ru tan(lat) + w rv]
 !  xlat defined with end points half grid space from pole, hence are on
@@ -4491,7 +4491,7 @@ SUBROUTINE decouple ( rr, rfield, field, name, config_flags, &
 
    ! Input data
 
-   TYPE(grid_config_rec_type) ,           INTENT(IN   ) :: config_flags   
+   TYPE(grid_config_rec_type) ,           INTENT(IN   ) :: config_flags
 
    INTEGER ,                                   INTENT(IN   ) :: ids, ide, jds, jde, kds, kde, &
                                                                 ims, ime, jms, jme, kms, kme, &
@@ -4502,15 +4502,15 @@ SUBROUTINE decouple ( rr, rfield, field, name, config_flags, &
    REAL , DIMENSION( ims:ime , kms:kme , jms:jme ) , INTENT(IN   ) :: rfield
 
    REAL , DIMENSION( ims:ime , kms:kme , jms:jme ) , INTENT(IN   ) :: rr
-   
+
    REAL , DIMENSION( ims:ime , kms:kme , jms:jme ) , INTENT(OUT  ) :: field
-   
+
    REAL , DIMENSION( kms:kme ) , INTENT(IN   ) :: fzm, fzp
-   
+
    ! Local data
-   
+
    INTEGER :: i, j, k, itf, jtf, ktf
-   
+
 !<DESCRIPTION>
 !
 !  decouple decouples a variable from the column dry-air mass.
@@ -4518,7 +4518,7 @@ SUBROUTINE decouple ( rr, rfield, field, name, config_flags, &
 !</DESCRIPTION>
 
    ktf=MIN(kte,kde-1)
-   
+
    IF (name .EQ. 'u')THEN
       itf=ite
       jtf=MIN(jte,jde-1)
@@ -4560,7 +4560,7 @@ SUBROUTINE decouple ( rr, rfield, field, name, config_flags, &
       ENDDO
       ENDDO
 
-   ELSE 
+   ELSE
       itf=MIN(ite,ide-1)
       jtf=MIN(jte,jde-1)
    ! For theta we will decouple tb and tp and add them to give t afterwards
@@ -4571,7 +4571,7 @@ SUBROUTINE decouple ( rr, rfield, field, name, config_flags, &
       ENDDO
       ENDDO
       ENDDO
-   
+
    ENDIF
 
 END SUBROUTINE decouple
@@ -4586,9 +4586,9 @@ SUBROUTINE zero_tend ( tendency,                     &
 
 
    IMPLICIT NONE
-   
+
    ! Input data
-   
+
    INTEGER ,                                   INTENT(IN   ) :: ids, ide, jds, jde, kds, kde, &
                                                                 ims, ime, jms, jme, kms, kme, &
                                                                 its, ite, jts, jte, kts, kte
@@ -4596,7 +4596,7 @@ SUBROUTINE zero_tend ( tendency,                     &
    REAL , DIMENSION( ims:ime , kms:kme , jms:jme ) , INTENT(INOUT) :: tendency
 
    ! Local data
-   
+
    INTEGER :: i, j, k, itf, jtf, ktf
 
 !<DESCRIPTION>
@@ -4624,9 +4624,9 @@ SUBROUTINE zero_tend2d( tendency,                     &
 
 
    IMPLICIT NONE
-   
+
    ! Input data
-   
+
    INTEGER ,                                   INTENT(IN   ) :: ids, ide, jds, jde, kds, kde, &
                                                                 ims, ime, jms, jme, kms, kme, &
                                                                 its, ite, jts, jte, kts, kte
@@ -4634,7 +4634,7 @@ SUBROUTINE zero_tend2d( tendency,                     &
    REAL , DIMENSION( ims:ime , jms:jme ) , INTENT(INOUT) :: tendency
 
    ! Local data
-   
+
    INTEGER :: i, j, k, itf, jtf, ktf
 
 !<DESCRIPTION>
@@ -4663,7 +4663,7 @@ SUBROUTINE zero_pole ( field,                        &
   IMPLICIT NONE
 
   ! Input data
-   
+
   INTEGER , INTENT(IN   ) :: ids, ide, jds, jde, kds, kde, &
                              ims, ime, jms, jme, kms, kme, &
                              its, ite, jts, jte, kts, kte
@@ -4702,7 +4702,7 @@ SUBROUTINE pole_point_bc ( field,                        &
   IMPLICIT NONE
 
   ! Input data
-   
+
   INTEGER , INTENT(IN   ) :: ids, ide, jds, jde, kds, kde, &
                              ims, ime, jms, jme, kms, kme, &
                              its, ite, jts, jte, kts, kte
@@ -4777,7 +4777,7 @@ END SUBROUTINE pole_point_bc
                                                                 rho, &
                                                                   z, &
                                                                dz8w, &
-                                                              z_at_w 
+                                                              z_at_w
 
    REAL , DIMENSION( ims:ime , kms:kme , jms:jme ) ,                 &
           INTENT(  OUT)                                  ::   p_hyd, &
@@ -4816,7 +4816,7 @@ END SUBROUTINE pole_point_bc
 !<DESCRIPTION>
 !
 !  phys_prep calculates a number of diagnostic quantities needed by
-!  the physics routines.  
+!  the physics routines.
 !
 !</DESCRIPTION>
 
@@ -4997,7 +4997,7 @@ END SUBROUTINE phy_prep
    REAL , DIMENSION( ims:ime, jms:jme ), INTENT(IN   )   ::     mut, muu, muv
 
    REAL,  DIMENSION( ims:ime , kms:kme, jms:jme ),                   &
-          INTENT(INOUT)   ::                               RTHRATEN  
+          INTENT(INOUT)   ::                               RTHRATEN
 
    REAL,  DIMENSION( ims:ime , kms:kme, jms:jme ),                   &
           INTENT(INOUT)   ::                                RUCUTEN, &
@@ -5429,9 +5429,9 @@ END SUBROUTINE phy_prep_part2
 
 !  set up loop bounds for this grid's boundary conditions
 
-    i_start = its    
+    i_start = its
     i_end   = min( ite,ide-1 )
-    j_start = jts    
+    j_start = jts
     j_end   = min( jte,jde-1 )
 
     k_start = kts
@@ -5592,9 +5592,9 @@ END SUBROUTINE phy_prep_part2
 !  set up loop bounds for this grid's boundary conditions
 
 
-    i_start = its    
+    i_start = its
     i_end   = min( ite,ide-1 )
-    j_start = jts    
+    j_start = jts
     j_end   = min( jte,jde-1 )
 !      i_start=max(its,ids+4)
 !      i_end=min(ite,ide-5)
@@ -6021,11 +6021,11 @@ END SUBROUTINE set_tend
                               ims, ime, jms, jme, kms, kme,    &
                               its, ite, jts, jte, kts, kte   )
 
-! Purpose:  Newtonian relaxation on potential temperature.  Serves two 
-!           purposes:  1) to mimic atmospheric radiation in a simple 
-!           manner, and 2) to keep the vertical profile of temperature 
-!           close to the initial (base-state) profile, which is useful 
-!           for certain idealized applications. 
+! Purpose:  Newtonian relaxation on potential temperature.  Serves two
+!           purposes:  1) to mimic atmospheric radiation in a simple
+!           manner, and 2) to keep the vertical profile of temperature
+!           close to the initial (base-state) profile, which is useful
+!           for certain idealized applications.
 
 ! Reference:  Rotunno and Emanuel, 1987, JAS, p. 546
 
@@ -6119,25 +6119,25 @@ END SUBROUTINE set_tend
 
 !==============================================================================
 !==============================================================================
-                                                                                
+
       SUBROUTINE sixth_order_diffusion( name, field, tendency, MUT, dt,  &
                                         config_flags, c1, c2,           &
                                         diff_6th_opt, diff_6th_factor,  &
                                         ids, ide, jds, jde, kds, kde,   &
                                         ims, ime, jms, jme, kms, kme,   &
                                         its, ite, jts, jte, kts, kte )
-                                                                                
+
 ! History:       14 Nov 2006   Name of variable changed by Jason Knievel
-!                07 Jun 2006   Revised and generalized by Jason Knievel  
+!                07 Jun 2006   Revised and generalized by Jason Knievel
 !                25 Apr 2005   Original code by Jason Knievel, NCAR
-                                                                                
+
 ! Purpose:       Apply 6th-order, monotonic (flux-limited), numerical
 !                diffusion to 3-d velocity and to scalars.
-                                                                                
+
 ! References:    Ming Xue (MWR Aug 2000)
 !                Durran ("Numerical Methods for Wave Equations..." 1999)
 !                George Bryan (personal communication)
- 
+
 !------------------------------------------------------------------------------
 ! Begin: Declarations.
 
@@ -6147,22 +6147,22 @@ END SUBROUTINE set_tend
     :: ids, ide, jds, jde, kds, kde,   &
        ims, ime, jms, jme, kms, kme,   &
        its, ite, jts, jte, kts, kte
- 
+
     TYPE(grid_config_rec_type), INTENT(IN)  &
     :: config_flags
- 
+
     REAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(INOUT)  &
     :: tendency
- 
+
     REAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(IN)  &
     :: field
- 
+
     REAL, DIMENSION( ims:ime , jms:jme ), INTENT(IN)  &
     :: MUT
- 
+
     REAL, DIMENSION( kms:kme ), INTENT(IN)  &
     :: c1, c2
- 
+
     REAL, INTENT(IN)  &
     :: dt
 
@@ -6181,7 +6181,7 @@ END SUBROUTINE set_tend
        j_start, j_end,  &
        k_start, k_end,  &
        ktf
- 
+
     REAL  &
     :: dflux_x_p0, dflux_y_p0,  &
        dflux_x_p1, dflux_y_p1,  &
@@ -6191,7 +6191,7 @@ END SUBROUTINE set_tend
 
     LOGICAL  &
     :: specified
- 
+
 ! End: Declarations.
 !------------------------------------------------------------------------------
 
@@ -6203,7 +6203,7 @@ END SUBROUTINE set_tend
 ! although application of the flux limiter reduces somewhat the effects of
 ! diffusion for a given coefficient.
 
-    diff_6th_coef = diff_6th_factor * 0.015625 / ( 2.0 * dt )  
+    diff_6th_coef = diff_6th_factor * 0.015625 / ( 2.0 * dt )
 
 ! End: Translate diffusion factor.
 !------------------------------------------------------------------------------
@@ -6225,14 +6225,14 @@ END SUBROUTINE set_tend
       k_end   = ktf
 
     ELSE IF ( name .EQ. 'v' ) THEN
- 
+
       i_start = its
       i_end   = MIN(ide-1,ite)
       j_start = jts
       j_end   = jte
       k_start = kts
       k_end   = ktf
- 
+
     ELSE IF ( name .EQ. 'w' ) THEN
 
       i_start = its
@@ -6250,7 +6250,7 @@ END SUBROUTINE set_tend
       j_end   = MIN(jde-1,jte)
       k_start = kts
       k_end   = ktf
- 
+
     ENDIF
 
 ! End: Assignment of limits of spatial loops.
@@ -6265,26 +6265,26 @@ END SUBROUTINE set_tend
 
 !------------------------------------------------------------------------------
 ! Begin: Diffusion in x (i index).
- 
+
 ! Calculate the diffusive flux in x direction (from Xue's eq. 3).
- 
+
       dflux_x_p0 = (  10.0 * ( field(i,  k,j) - field(i-1,k,j) )    &
                      - 5.0 * ( field(i+1,k,j) - field(i-2,k,j) )    &
                      +       ( field(i+2,k,j) - field(i-3,k,j) ) )
- 
+
       dflux_x_p1 = (  10.0 * ( field(i+1,k,j) - field(i  ,k,j) )    &
                      - 5.0 * ( field(i+2,k,j) - field(i-1,k,j) )    &
                      +       ( field(i+3,k,j) - field(i-2,k,j) ) )
- 
+
 ! If requested in the namelist (diff_6th_opt=2), prohibit up-gradient diffusion
 ! (variation on Xue's eq. 10).
 
       IF ( diff_6th_opt .EQ. 2 ) THEN
- 
+
         IF ( dflux_x_p0 * ( field(i  ,k,j)-field(i-1,k,j) ) .LE. 0.0 ) THEN
           dflux_x_p0 = 0.0
         END IF
- 
+
         IF ( dflux_x_p1 * ( field(i+1,k,j)-field(i  ,k,j) ) .LE. 0.0 ) THEN
           dflux_x_p1 = 0.0
         END IF
@@ -6292,7 +6292,7 @@ END SUBROUTINE set_tend
       END IF
 
 ! Apply 6th-order diffusion in x direction.
- 
+
       IF      ( name .EQ. 'u' ) THEN
         mu_avg_p0 = MUT(i-1,j)
         mu_avg_p1 = MUT(i  ,j)
@@ -6315,43 +6315,43 @@ END SUBROUTINE set_tend
                     MUT(i  ,j) +    &
                     MUT(i+1,j) )
       END IF
- 
+
       tendency_x = diff_6th_coef *  &
                  ( ( mu_avg_p1 * dflux_x_p1 ) - ( mu_avg_p0 * dflux_x_p0 ) )
- 
+
 ! End: Diffusion in x.
 !------------------------------------------------------------------------------
- 
+
 !------------------------------------------------------------------------------
 ! Begin: Diffusion in y (j index).
- 
+
 ! Calculate the diffusive flux in y direction (from Xue's eq. 3).
- 
+
       dflux_y_p0 = (  10.0 * ( field(i,k,j  ) - field(i,k,j-1) )    &
                      - 5.0 * ( field(i,k,j+1) - field(i,k,j-2) )    &
                      +       ( field(i,k,j+2) - field(i,k,j-3) ) )
- 
+
       dflux_y_p1 = (  10.0 * ( field(i,k,j+1) - field(i,k,j  ) )    &
                      - 5.0 * ( field(i,k,j+2) - field(i,k,j-1) )    &
                      +       ( field(i,k,j+3) - field(i,k,j-2) ) )
- 
+
 ! If requested in the namelist (diff_6th_opt=2), prohibit up-gradient diffusion
 ! (variation on Xue's eq. 10).
 
       IF ( diff_6th_opt .EQ. 2 ) THEN
- 
+
         IF ( dflux_y_p0 * ( field(i,k,j  )-field(i,k,j-1) ) .LE. 0.0 ) THEN
           dflux_y_p0 = 0.0
         END IF
- 
+
         IF ( dflux_y_p1 * ( field(i,k,j+1)-field(i,k,j  ) ) .LE. 0.0 ) THEN
           dflux_y_p1 = 0.0
         END IF
 
       END IF
- 
+
 ! Apply 6th-order diffusion in y direction.
- 
+
       IF      ( name .EQ. 'u' ) THEN
         mu_avg_p0 = 0.25 * (       &
                     MUT(i-1,j-1) +  &
@@ -6374,18 +6374,18 @@ END SUBROUTINE set_tend
                     MUT(i,j  ) +  &
                     MUT(i,j+1) )
       END IF
- 
+
       tendency_y = diff_6th_coef *  &
                  ( ( mu_avg_p1 * dflux_y_p1 ) - ( mu_avg_p0 * dflux_y_p0 ) )
- 
+
 ! End: Diffusion in y.
 !------------------------------------------------------------------------------
- 
+
 !------------------------------------------------------------------------------
 ! Begin: Combine diffusion in x and y.
-     
+
       tendency(i,k,j) = tendency(i,k,j) + tendency_x + tendency_y
- 
+
 ! End: Combine diffusion in x and y.
 !------------------------------------------------------------------------------
 
@@ -6395,7 +6395,7 @@ END SUBROUTINE set_tend
 
 ! End: Loop across spatial dimensions.
 !------------------------------------------------------------------------------
- 
+
     END SUBROUTINE sixth_order_diffusion
 
 !==============================================================================
@@ -6406,7 +6406,7 @@ SUBROUTINE initialize_moist_old ( moist_old , moist , &
                                   its, ite, jts, jte, kts, kte     )
 
    !  For the theta_m option, the moist_old variable is uninitialized
-   !  at the beginning of EACH of the RK steps.  So, just set the 
+   !  at the beginning of EACH of the RK steps.  So, just set the
    !  starting value of moist_old as the final value of moist from the
    !  previous time step.  Here "moist" is only the P_Qv index.
 
@@ -6414,7 +6414,7 @@ SUBROUTINE initialize_moist_old ( moist_old , moist , &
 
    INTEGER , INTENT(IN) ::   ids, ide, jds, jde, kds, kde ,   &
                              ims, ime, jms, jme, kms, kme ,   &
-                             its, ite, jts, jte, kts, kte     
+                             its, ite, jts, jte, kts, kte
    REAL    , INTENT(IN   ) , DIMENSION(ims:ime,kms:kme,jms:jme) :: moist
    REAL    , INTENT(  OUT) , DIMENSION(ims:ime,kms:kme,jms:jme) :: moist_old
 
@@ -6439,7 +6439,7 @@ SUBROUTINE theta_to_thetam ( t_1 , moist_old ,                &
                              t_2 , moist ,                    &
                              h_diabatic ,                     &
                              itimestep ,                      &
-                             rk_step ,                        & 
+                             rk_step ,                        &
                              ids, ide, jds, jde, kds, kde ,   &
                              ims, ime, jms, jme, kms, kme ,   &
                              its, ite, jts, jte, kts, kte     )
@@ -6451,7 +6451,7 @@ SUBROUTINE theta_to_thetam ( t_1 , moist_old ,                &
 
    INTEGER , INTENT(IN) ::   ids, ide, jds, jde, kds, kde ,   &
                              ims, ime, jms, jme, kms, kme ,   &
-                             its, ite, jts, jte, kts, kte     
+                             its, ite, jts, jte, kts, kte
    INTEGER , INTENT(IN) ::   rk_step, itimestep
    REAL    , INTENT(IN   ) , DIMENSION(ims:ime,kms:kme,jms:jme) :: moist, moist_tend
    REAL    , INTENT(INOUT) , DIMENSION(ims:ime,kms:kme,jms:jme) :: moist_old
@@ -6503,7 +6503,7 @@ SUBROUTINE thetam_to_theta ( t_1 , moist_old ,                &
 
    INTEGER , INTENT(IN) ::   ids, ide, jds, jde, kds, kde ,   &
                              ims, ime, jms, jme, kms, kme ,   &
-                             its, ite, jts, jte, kts, kte     
+                             its, ite, jts, jte, kts, kte
    REAL    , INTENT(IN   ) , DIMENSION(ims:ime,kms:kme,jms:jme) :: moist, moist_old
    REAL    , INTENT(INOUT) , DIMENSION(ims:ime,kms:kme,jms:jme) :: t_1, t_2
 

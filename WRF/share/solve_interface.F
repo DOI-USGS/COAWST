@@ -1,7 +1,7 @@
 !WRF:MEDIATION_LAYER:ADT_BARRIER
 !
 
-SUBROUTINE solve_interface ( grid ) 
+SUBROUTINE solve_interface ( grid )
 
    USE module_domain
    USE module_timing
@@ -79,7 +79,7 @@ SUBROUTINE solve_interface ( grid )
      CALL chem_driver  ( grid , config_flags  &
 !
 # include "actual_new_args.inc"
-!  
+!
                )
    ENDIF
 # endif

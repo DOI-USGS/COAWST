@@ -95,17 +95,17 @@
       integer, allocatable :: isand(:)    ! Non-cohesive sediment
 !
 !-----------------------------------------------------------------------
-!  Set bed property variables 
+!  Set bed property variables
 !-----------------------------------------------------------------------
 !
-      integer :: MBEDP                     ! Number of bed properties  
-      integer :: ithck, iaged, iporo, idiff 
+      integer :: MBEDP                     ! Number of bed properties
+      integer :: ithck, iaged, iporo, idiff
 #if defined COHESIVE_BED || defined SED_BIODIFF || defined MIXED_BED
-      integer :: ibtcr 
+      integer :: ibtcr
 #endif
 !
 !-----------------------------------------------------------------------
-!  Set bottom property variables 
+!  Set bottom property variables
 !-----------------------------------------------------------------------
 !
       integer :: MBOTP                     ! Number of bottom properties
@@ -113,13 +113,13 @@
       integer :: irlen, irhgt, ibwav, izdef
       integer :: izapp, izNik, izbio, izbfm
       integer :: izbld, izwbl, iactv, ishgt
-      integer :: imaxD, idnet  
+      integer :: imaxD, idnet
 #if defined COHESIVE_BED || defined SED_BIODIFF || defined MIXED_BED
       integer :: idoff, idslp, idtim, idbmx
-      integer :: idbmm, idbzs, idbzm, idbzp 
-#endif 
+      integer :: idbmm, idbzs, idbzm, idbzp
+#endif
 #if defined MIXED_BED
-      integer :: idprp 
+      integer :: idprp
 #endif
 !
 !  Sediment metadata indices vectors.
@@ -185,36 +185,36 @@
 !  Local variable declarations
 !
       integer :: i, ic
-      integer :: counter1, counter2 
+      integer :: counter1, counter2
       real(r8), parameter :: IniVal = 0.0_r8
 !
 !-----------------------------------------------------------------------
 !  Set bed properties indices.
 !-----------------------------------------------------------------------
 !
-      counter1 = 1           ! Initializing counter 
+      counter1 = 1           ! Initializing counter
       ithck    = counter1    ! layer thickness
       counter1 = counter1+1
-      iaged    = counter1    ! layer age 
-      counter1 = counter1+1 
-      iporo    = counter1    ! layer porosity 
+      iaged    = counter1    ! layer age
       counter1 = counter1+1
-      idiff    = counter1    ! layer bio-diffusivity 
+      iporo    = counter1    ! layer porosity
+      counter1 = counter1+1
+      idiff    = counter1    ! layer bio-diffusivity
 #if defined COHESIVE_BED || defined SED_BIODIFF || defined MIXED_BED
-      counter1 = counter1+1 
-      ibtcr    = counter1    ! layer critical stress 
-#endif 
+      counter1 = counter1+1
+      ibtcr    = counter1    ! layer critical stress
+#endif
 !
 !-----------------------------------------------------------------------
 !  Set bottom properties indices.
 !-----------------------------------------------------------------------
-! 
-      counter2 = 1           ! Initializing counter 
+!
+      counter2 = 1           ! Initializing counter
       isd50    = counter2    ! Median sediment grain diameter (m).
       counter2 = counter2+1
       idens    = counter2    ! Median sediment grain density (kg/m3).
       counter2 = counter2+1
-      iwsed    = counter2    ! Mean settling velocity (m/s).  
+      iwsed    = counter2    ! Mean settling velocity (m/s).
       counter2 = counter2+1
       itauc    = counter2    ! Mean critical erosion stress (m2/s2).
       counter2 = counter2+1
@@ -229,53 +229,53 @@
       izapp    = counter2    ! Apparent bottom roughness (m).
       counter2 = counter2+1
       izNik    = counter2    ! Nikuradse bottom roughness (m).
-      counter2 = counter2+1  
+      counter2 = counter2+1
       izbio    = counter2    ! Biological bottom roughness (m).
-      counter2 = counter2+1  
+      counter2 = counter2+1
       izbfm    = counter2    ! Bed form bottom roughness (m).
       counter2 = counter2+1
       izbld    = counter2    ! Bed load bottom roughness (m).
       counter2 = counter2+1
       izwbl    = counter2    ! Bottom roughness used wave BBL (m).
-      counter2 = counter2+1  
+      counter2 = counter2+1
       iactv    = counter2    ! Active layer thickness for erosive potential (m).
-      counter2 = counter2+1  
+      counter2 = counter2+1
       ishgt    = counter2    ! Sediment saltation height (m).
-      counter2 = counter2+1   
+      counter2 = counter2+1
       imaxD    = counter2    ! Maximum inundation depth.
       counter2 = counter2+1
       idnet    = counter2    ! Erosion/deposition
 #if defined COHESIVE_BED || defined SED_BIODIFF || defined MIXED_BED
       counter2 = counter2+1
-      idoff    = counter2    ! Offset for calculation of dmix erodibility profile (m). 
-      counter2 = counter2+1                                 
-      idslp    = counter2    ! Slope  for calculation of dmix or erodibility profile.  
-      counter2 = counter2+1                                       
+      idoff    = counter2    ! Offset for calculation of dmix erodibility profile (m).
+      counter2 = counter2+1
+      idslp    = counter2    ! Slope  for calculation of dmix or erodibility profile.
+      counter2 = counter2+1
       idtim    = counter2    ! Time scale for restoring erodibility profile (s).
       counter2 = counter2+1
       idbmx    = counter2    ! Bed biodifusivity maximum.
-      counter2 = counter2+1    
+      counter2 = counter2+1
       idbmm    = counter2    ! Bed biodifusivity minimum.
       counter2 = counter2+1
       idbzs    = counter2    ! Bed biodifusivity zs.
-      counter2 = counter2+1     
+      counter2 = counter2+1
       idbzm    = counter2    ! Bed biodifusivity zm.
       counter2 = counter2+1
       idbzp    = counter2    ! Bed biodifusivity phi.
-#endif 
+#endif
 #if defined MIXED_BED
       counter2 = counter2+1
-      idprp    = counter2    ! Cohesive behavior. 
-#endif 
+      idprp    = counter2    ! Cohesive behavior.
+#endif
 !
-!  Allocate bed & bottom properties 
+!  Allocate bed & bottom properties
 !
       MBEDP   = counter1
       IF (.not.allocated(idSbed)) THEN
         allocate ( idSbed(MBEDP) )
       END IF
 !
-      MBOTP   = counter2 
+      MBOTP   = counter2
       IF (.not.allocated(idBott)) THEN
         allocate ( idBott(MBOTP) )
       END IF

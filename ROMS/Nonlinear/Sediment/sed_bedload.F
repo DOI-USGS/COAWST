@@ -7,7 +7,7 @@
       MODULE sed_bedload_mod
 
 #if defined NONLINEAR && defined SEDIMENT && \
-   (defined BEDLOAD_SOULSBY || defined BEDLOAD_MPM) 
+   (defined BEDLOAD_SOULSBY || defined BEDLOAD_MPM)
 !
 !svn $Id: sed_bedload.F 830 2017-01-24 21:21:11Z arango $
 !==================================================== John C. Warner ===
@@ -484,7 +484,7 @@
             cff3=0.5_r8*(1.0_r8+SIGN(1.0_r8,                            &
      &                   theta_max/                                     &
      &          (max(tau_ce(ised,ng),bed(i,j,1,ibtcr))*osmgd)-1.0_r8))
-	
+
 #   else
 ! Only sediment class critical stresses needs to be exceeded
             cff3=0.5_r8*(1.0_r8+SIGN(1.0_r8,                            &
@@ -1029,7 +1029,7 @@
         END DO
       END DO
 !
-!  Need to update bed mass for the non-cohesive sediment types, becasue 
+!  Need to update bed mass for the non-cohesive sediment types, becasue
 !  they did not partake in the bedload transport.
 !
       DO ised=1,NCS

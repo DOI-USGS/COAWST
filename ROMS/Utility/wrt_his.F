@@ -43,7 +43,7 @@
       USE mod_sedbed
       USE mod_sediment
 #endif
-#if defined VEGETATION 
+#if defined VEGETATION
       USE mod_vegetation
       USE mod_vegarr
 #endif
@@ -2873,7 +2873,7 @@
 # endif
 #endif
 !
-#if defined ESTUARYBGC && defined SPECTRAL_LIGHT 
+#if defined ESTUARYBGC && defined SPECTRAL_LIGHT
 !  Write out Photosynthetically Available Radiation (PAR)
 !
       IF (Hout(idPARo,ng)) THEN
@@ -2957,9 +2957,9 @@
 !
 #if defined ESTUARYBGC && defined SAV_BIOMASS
 !
-!  Write out Dissolved Inorganic Nitrogen in water column 
+!  Write out Dissolved Inorganic Nitrogen in water column
 !
-      IF (Hout(iddinw,ng)) THEN 
+      IF (Hout(iddinw,ng)) THEN
         scale=1.0_r8
         gtype=gfactor*r3dvar
         status=nf_fwrite3d(ng, iNLM, HIS(ng)%ncid, HIS(ng)%Vid(iddinw), &
@@ -2975,7 +2975,7 @@
      &                     OCEAN(ng) % DINwcr)
         IF (FoundError(status, nf90_noerr, __LINE__,                    &
      &                 __FILE__)) THEN
-          IF (Master) THEN 
+          IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,iddinw)), HIS(ng)%Rindex
           END IF
           exit_flag=3
@@ -2984,9 +2984,9 @@
         END IF
       END IF
 !
-!  Write out Dissolved Inorganic Nitrogen in sediment column 
+!  Write out Dissolved Inorganic Nitrogen in sediment column
 !
-      IF (Hout(iddins,ng)) THEN 
+      IF (Hout(iddins,ng)) THEN
         scale=1.0_r8
         gtype=gfactor*r3dvar
         status=nf_fwrite3d(ng, iNLM, HIS(ng)%ncid, HIS(ng)%Vid(iddins), &
@@ -3011,9 +3011,9 @@
         END IF
       END IF
 !
-!  Write out Dissolved Oxygen in water column 
+!  Write out Dissolved Oxygen in water column
 !
-      IF (Hout(iddowc,ng)) THEN 
+      IF (Hout(iddowc,ng)) THEN
         scale=1.0_r8
         gtype=gfactor*r3dvar
         status=nf_fwrite3d(ng, iNLM, HIS(ng)%ncid, HIS(ng)%Vid(iddowc), &
@@ -3038,9 +3038,9 @@
         END IF
       END IF
 !
-!  Write out Dissolved Inorganic Nitrogen in water column due to SAV 
+!  Write out Dissolved Inorganic Nitrogen in water column due to SAV
 !
-      IF (Hout(idwsvl,ng)) THEN 
+      IF (Hout(idwsvl,ng)) THEN
         scale=1.0_r8
         gtype=gfactor*r3dvar
         status=nf_fwrite3d(ng, iNLM, HIS(ng)%ncid, HIS(ng)%Vid(idwsvl), &
@@ -3127,7 +3127,7 @@
         status=nf_fwrite3d(ng, iNLM, HIS(ng)%ncid, HIS(ng)%Vid(idsvpp), &
      &                     HIS(ng)%Rindex, gtype,                       &
      &                     LBi, UBi, LBj, UBj, 1, N(ng), scale,         &
-# ifdef MASKING 
+# ifdef MASKING
 #  ifdef WET_DRY
      &                     GRID(ng) % rmask_full,                       &
 #  else
@@ -4026,7 +4026,7 @@
 #endif
 #ifdef VEGETATION
 #include "vegetation_wrt_his.h"
-#endif 
+#endif
 
 #ifdef WEC_MELLOR
 !

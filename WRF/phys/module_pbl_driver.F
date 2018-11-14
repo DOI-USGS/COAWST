@@ -8,14 +8,14 @@ CONTAINS
    SUBROUTINE pbl_driver(                                          &
                   itimestep,dt,u_frame,v_frame                     &
                  ,bldt,curr_secs,adapt_step_flag                   &
-                 ,bldtacttime                                      & 
+                 ,bldtacttime                                      &
                  ,rublten,rvblten,rthblten                         &
                  ,tsk,xland,znt                                    &
 #if (HWRF==1)
                  ,msang,scurx,scury,iwavecpl,lcurr_sf              &
                  ,mznt                                             &
 #endif
-                 ,ht                                               &   
+                 ,ht                                               &
                  ,ust,pblh,hfx,qfx,grdflx                          &
                  ,u_phy,v_phy,w,th_phy,rho                         &
                  ,p_phy,pi_phy,p8w,t_phy,dz8w,z                    &
@@ -41,7 +41,7 @@ CONTAINS
               ! MYNN
                  ,qke,Sh3d                                         &
                  ,qke_adv,bl_mynn_tkeadvect                        & !ACF for QKE advection
-                 ,tsq,qsq,cov,rmol,ch,qcg,grav_settling            & 
+                 ,tsq,qsq,cov,rmol,ch,qcg,grav_settling            &
                  ,dqke,qWT,qSHEAR,qBUOY,qDISS,bl_mynn_tkebudget    &
                  ,bl_mynn_cloudpdf                                 &
                  ,bl_mynn_mixlength                                &
@@ -70,7 +70,7 @@ CONTAINS
                  ,i_start,i_end, j_start,j_end, kts,kte, num_tiles &
              ! Optional
                  ,hol, mol, regime                                 &
-             ! Optional gravity-wave drag             
+             ! Optional gravity-wave drag
                  ,gwd_opt                                          &
                  ,dtaux3d,dtauy3d                                  &
                  ,dusfcg,dvsfcg,var2d,oc12d                        &
@@ -96,9 +96,9 @@ CONTAINS
 ! variables  for GBM PBL
                ,exch_tke, rthraten                         &
                ,a_e_bep,b_e_bep,dlg_bep,dl_u_bep           &
-               ,mfshconv, massflux_EDKF, entr_EDKF, detr_EDKF    & 
+               ,mfshconv, massflux_EDKF, entr_EDKF, detr_EDKF    &
                ,thl_up, thv_up, rt_up ,rv_up, rc_up, u_up, v_up    &
-               ,frac_up,rc_mf                                      & 
+               ,frac_up,rc_mf                                      &
 ! Wind Turbine Parameterizations
                ,phb,xlat_u,xlong_u,xlat_v,xlong_v,id                 &
 ! variables required for camuwpbl scheme
@@ -107,7 +107,7 @@ CONTAINS
                , tpert2d,qpert2d,wpert2d,wsedl3d                     &
                , turbtype3d,smaw3d                                   &
                , fnm,fnp                                             &
-! variables required for camuwpbl scheme (optional)               
+! variables required for camuwpbl scheme (optional)
                ,qnc_curr,f_qnc,qni_curr,f_qni,rqniblten              &
                ,IS_CAMMGMP_USED                                      &
 ! for grims shallow convection with ysupbl/MYNN
@@ -127,7 +127,7 @@ CONTAINS
 ! END FASDAS
 !
                                                                      )
-       
+
 !------------------------------------------------------------------
 #if (EM_CORE==1)
    USE module_state_description, ONLY :                            &
@@ -232,19 +232,19 @@ CONTAINS
 ! QNC        cloud Liq number concentration (#/kg) !For CAMUWPBL scheme
 ! QNI        cloud ice number concentration (#/kg) !For CAMUWPBL scheme
 !-----------------------------------------------------------------
-!-- RUBLTEN       U tendency due to 
+!-- RUBLTEN       U tendency due to
 !                 PBL parameterization (m/s^2)
-!-- RVBLTEN       V tendency due to 
+!-- RVBLTEN       V tendency due to
 !                 PBL parameterization (m/s^2)
-!-- RTHBLTEN      Theta tendency due to 
+!-- RTHBLTEN      Theta tendency due to
 !                 PBL parameterization (K/s)
-!-- RQVBLTEN      Qv tendency due to 
+!-- RQVBLTEN      Qv tendency due to
 !                 PBL parameterization (kg/kg/s)
-!-- RQCBLTEN      Qc tendency due to 
+!-- RQCBLTEN      Qc tendency due to
 !                 PBL parameterization (kg/kg/s)
-!-- RQIBLTEN      Qi tendency due to 
+!-- RQIBLTEN      Qi tendency due to
 !                 PBL parameterization (kg/kg/s)
-!-- RQNIBLTEN     Qni tendency due to 
+!-- RQNIBLTEN     Qni tendency due to
 !                 PBL parameterization (#/kg/s) !For CAMUWPBL scheme
 !-- id            WRF grid id  (optional, only needed by turbine drag schemes)
 !-- itimestep     number of time steps
@@ -268,7 +268,7 @@ CONTAINS
 !-- QFX           upward moisture flux at the surface (kg/m^2/s)
 !-- REGIME        flag indicating PBL regime (stable, unstable, etc.)
 !-- exch_m        exchange coefficient for momentum, m^2/s
-!-- exch_h        exchange coefficient for heat, K m/s 
+!-- exch_h        exchange coefficient for heat, K m/s
 !-- exch_tke      exchange coeff. for TKE [enhanced], m^2/s (gbmpbl scheme)
 !-- rthraten      tendency from radiation, used in GBM PBL scheme
 !-- akhs          sfc exchange coefficient of heat/moisture from MYJ
@@ -320,12 +320,12 @@ CONTAINS
 !-- DT            time step (second)
 !-- n_moist       number of moisture species
 !-- PSFC          pressure at the surface (Pa)
-!-- TSLB          
+!-- TSLB
 !-- ZS
 !-- DZS
 !-- num_soil_layers number of soil layer
 !-- IFSNOW      ifsnow=1 for snow-cover effects
-!-- z_at_w      Height above sea level at layer interfaces (m) 
+!-- z_at_w      Height above sea level at layer interfaces (m)
 !-- cldfra      Cloud fraction [unitless]
 !-- cldfra_old_mp      Cloud fraction [unitless]
 !-- rthratenlw  Tendency for LW ( K/s)
@@ -335,7 +335,7 @@ CONTAINS
 !-- qpert2d     Convective humidity excess (kg/kg)
 !-- wpert2d     Turbulent velocity excess (m/s)
 !-- wsedl3d     Sedimentation velocity of stratiform liquid cloud droplet (m/s)
-!-- turbtype3d  Turbulent interface types [ no unit ]  
+!-- turbtype3d  Turbulent interface types [ no unit ]
 !-- smaw3d      Normalized Galperin instability function for momentum  ( 0<= <=4.964 and 1 at neutral ) [no units]
 !
 !-- P_QV          species index for water vapor
@@ -364,7 +364,7 @@ CONTAINS
 !-- kte           end index for k in tile
 !
 !******************************************************************
-!------------------------------------------------------------------ 
+!------------------------------------------------------------------
 !
 
 
@@ -416,7 +416,7 @@ CONTAINS
    REAL,       INTENT(IN   ),OPTIONAL    ::     bldt
    REAL,       INTENT(IN   ),OPTIONAL    ::     curr_secs
    LOGICAL,    INTENT(IN   ),OPTIONAL    ::     adapt_step_flag
-   REAL,       INTENT(INOUT),OPTIONAL    ::     bldtacttime  
+   REAL,       INTENT(INOUT),OPTIONAL    ::     bldtacttime
 ! Optional for Wind Turbine Parameterizations
    REAL, DIMENSION( ims:ime, kms:kme ,jms:jme ), &
          INTENT(IN), OPTIONAL    :: phb
@@ -441,7 +441,7 @@ CONTAINS
 !1D variables required for CAMUWPBL scheme
    REAL , DIMENSION( kms:kme ) ,                                      &
         INTENT(IN   ) , OPTIONAL ::                                        fnm,  & !Factors for interpolation at "w" grid (interfaces)
-                                                                fnp                                                                  
+                                                                fnp
 !3D Variables for camuwpbl scheme
     REAL,       DIMENSION( ims:ime, kms:kme, jms:jme ),           &
                INTENT(IN   ), OPTIONAL    ::              z_at_w, &
@@ -576,7 +576,7 @@ CONTAINS
         & qcg,  ch
    REAL,    DIMENSION( ims:ime , jms:jme ), &
         &OPTIONAL, INTENT(INOUT) ::  rmol
-   
+
 
 
 !
@@ -612,12 +612,12 @@ CONTAINS
 
    REAL, OPTIONAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(INOUT) ::b_e_bep        ! Explicit component for the TKE
 
-   REAL, OPTIONAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(INOUT) ::dlg_bep        ! Height above ground (L_ground in formula (24) of the BLM paper). 
+   REAL, OPTIONAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(INOUT) ::dlg_bep        ! Height above ground (L_ground in formula (24) of the BLM paper).
    REAL, OPTIONAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(INOUT) ::dl_u_bep        ! Length scale (lb in formula (22) ofthe BLM paper).
-! urban surface and volumes        
+! urban surface and volumes
    REAL, OPTIONAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(INOUT) ::sf_bep           ! surfaces
    REAL, OPTIONAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(INOUT) ::vl_bep            ! volumes
- 
+
 ! Bep changes end
 !  New variables for TEMF scheme
    REAL, OPTIONAL, DIMENSION( ims:ime, kms:kme, jms:jme ),            &
@@ -703,10 +703,10 @@ CONTAINS
    INTEGER, INTENT(IN) ::  mfshconv
 
    REAL,       DIMENSION( ims:ime, kms:kme, jms:jme ), OPTIONAL,  &
-               INTENT(OUT) ::    massflux_EDKF, entr_EDKF, detr_EDKF & 
+               INTENT(OUT) ::    massflux_EDKF, entr_EDKF, detr_EDKF &
                                      ,thl_up, thv_up, rt_up       &
                                      ,rv_up, rc_up, u_up, v_up    &
-                                     ,frac_up,rc_mf  
+                                     ,frac_up,rc_mf
 
     REAL , OPTIONAL   ,DIMENSION(ims:ime,kms:kme,jms:jme,num_tracer),INTENT(INOUT)   :: tracer
     REAL , OPTIONAL   ,DIMENSION(ims:ime,kms:kme,jms:jme,num_tracer),INTENT(INOUT)   :: tracer_tend
@@ -882,9 +882,9 @@ CONTAINS
   radiation = .false.
   IF (ra_lw_physics .gt. 0) radiation = .true.
 
-!---- 
+!----
 ! CALCULATE CONSTANT
- 
+
    DTMIN=DT/60.
 ! PBL schemes need PBL time step for updates
 
@@ -941,7 +941,7 @@ CONTAINS
      ALLOCATE (sf(ims:ime,kms:kme,jms:jme) )       ! surfaces
      ALLOCATE (vl(ims:ime,kms:kme,jms:jme) )       ! volumes
    ENDIF
-   
+
 ! SAVE OLD VALUES
 
    !$OMP PARALLEL DO   &
@@ -1004,22 +1004,22 @@ CONTAINS
 #if (NMM_CORE != 1)
       IF ( idiff.eq.1 ) THEN
 !Alberto
-! Here we should put a switch: 
-! if we do not use BEP, just initialize the values of the a, and b to zero, except for the lowest model level, 
-! where the heat and momentum fluxes are introduced         
+! Here we should put a switch:
+! if we do not use BEP, just initialize the values of the a, and b to zero, except for the lowest model level,
+! where the heat and momentum fluxes are introduced
 ! if we use BEP, use the values computed by BEP weigthed by the urban fraction.
 ! for the moment I put a simple "if" but it should be changed to a more elegant way after(using the CASE, maybe?)
 !!!!!!!!!!!!!!
-! This is the more general way to go, however some of these variables (e. g. a_t, a_q) may be zero nearly all time. 
+! This is the more general way to go, however some of these variables (e. g. a_t, a_q) may be zero nearly all time.
 ! if we need to be as tight as possible for the memory we can think how to reduce the storage.
 !!!!!!!!!!!!!!!!!!
 ! This stuff is becoming large, probably better to put in a subroutine
 !!!!!!!!!!!!!!!!!!!
 ! preparing the a, b, sf, and vl terms
-         
-         IF (flag_bep) THEN    
+
+         IF (flag_bep) THEN
            do j=j_start(ij),j_end(ij)
-           do i=i_start(ij),i_end(ij)            
+           do i=i_start(ij),i_end(ij)
            do k=kts,kte
              a_u(i,k,j)=a_u_bep(i,k,j)
              a_v(i,k,j)=a_v_bep(i,k,j)
@@ -1053,8 +1053,8 @@ CONTAINS
            sf(i,kte+1,j)=1.
 ! fix the values for the surface fluxes (source/sink terms)
 ! here for momentum the resolution is done implicitely
-! while for heat and moisture is done explicitely 
-            a_u(i,1,j)=(-ust(I,J)*ust(I,J))/dz8w(i,1,j)/((u_phy(i,1,j)**2+v_phy(i,1,j)**2.)**.5)           
+! while for heat and moisture is done explicitely
+            a_u(i,1,j)=(-ust(I,J)*ust(I,J))/dz8w(i,1,j)/((u_phy(i,1,j)**2+v_phy(i,1,j)**2.)**.5)
             a_v(i,1,j)=(-ust(I,J)*ust(I,J))/dz8w(i,1,j)/((u_phy(i,1,j)**2+v_phy(i,1,j)**2.)**.5)
             b_t(i,1,j)=hfx(i,j)/rho(i,1,j)/CP/dz8w(i,1,j)
             b_q(i,1,j)=qfx(i,j)/rho(i,1,j)/dz8w(i,1,j)
@@ -1067,20 +1067,20 @@ CONTAINS
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
            enddo
            enddo
-           
+
          ENDIF
 
-        endif      
-                                           
-     
- 
-!Alberto. From this point if some PBL scheme has a non local term 
+        endif
+
+
+
+!Alberto. From this point if some PBL scheme has a non local term
 ! (not dependent on the local values of the variable)
 ! this can be added to b_t, b_q, or b_u, b_v.
-!!!!!!!!!!!!!!!!!!!           
- 
-#endif 
-      
+!!!!!!!!!!!!!!!!!!!
+
+#endif
+
    ENDDO
    !$OMP END PARALLEL DO
 !
@@ -1309,7 +1309,7 @@ CONTAINS
               ,IDS=ids,IDE=ide,JDS=jds,JDE=jde,KDS=kds,KDE=kde      &
               ,IMS=ims,IME=ime,JMS=jms,JME=jme,KMS=kms,KME=kme      &
               ,ITS=its,ITE=ite,JTS=jts,JTE=jte,KTS=kts,KTE=kte      &
-                                                                    ) 
+                                                                    )
            ELSE
                WRITE ( message , FMT = '(A,5(L1,1X))' )             &
                  'present: '//                                      &
@@ -1448,7 +1448,7 @@ CONTAINS
               ,XLAND=xland,SICE=xice,SNOW=snow                      &
               ,TKE_MYJ=tke_pbl,EXCH_H=exch_h,USTAR=ust,ZNT=znt      &
               ,EL_MYJ=el_pbl,PBLH=pblh,KPBL=kpbl,CT=ct              &
-              ,AKHS=akhs,AKMS=akms,ELFLX=lh,MIXHT=mixht             &  
+              ,AKHS=akhs,AKMS=akms,ELFLX=lh,MIXHT=mixht             &
               ,RUBLTEN=rublten,RVBLTEN=rvblten,RTHBLTEN=rthblten    &
               ,RQVBLTEN=rqvblten,RQCBLTEN=rqcblten                  &
               ,RQIBLTEN=rqiblten,RQSBLTEN=rqsblten                  & !BSF
@@ -1504,7 +1504,7 @@ CONTAINS
                CALL wrf_debug(0,message)
                CALL wrf_error_fatal('Lack arguments to call MYJ pbl')
            ENDIF
- 
+
       CASE (QNSEPBLSCHEME)
            IF ( PRESENT( qv_curr )  .AND. PRESENT( qc_curr )  .AND. &
                 PRESENT( rqvblten ) .AND. PRESENT( rqcblten ) .AND. &
@@ -1522,12 +1522,12 @@ CONTAINS
                     ,IMS=IMS,IME=IME,JMS=JMS,JME=JME,KMS=KMS,KME=KME      &
                     ,ITS=ITS,ITE=ITE,JTS=JTS,JTE=JTE,KTS=KTS,KTE=KTE      &
                     ,KRR=2,MASSFLUX_EDKF=massflux_EDKF                    &
-                    ,ENTR_EDKF=entr_EDKF, DETR_EDKF=detr_EDKF             & 
+                    ,ENTR_EDKF=entr_EDKF, DETR_EDKF=detr_EDKF             &
                     ,THL_UP=thl_up, THV_UP=thv_up, RT_UP=rt_up            &
                     ,RV_UP=rv_up,RC_UP=rc_up, U_UP=u_up, V_UP=v_up        &
                     ,FRAC_UP=frac_up, RC_MF=rc_mf,WTHV=u_phytmp           &
-                    ,PLM_BL89=v_phytmp   ) 
-               ENDIF   
+                    ,PLM_BL89=v_phytmp   )
+               ENDIF
 
              CALL wrf_debug(100,'in QNSEPBL')
              CALL qnsepbl(                                           &
@@ -1542,14 +1542,14 @@ CONTAINS
               ,TKE=tke_pbl,EXCH_H=exch_h,EXCH_M=exch_m,USTAR=ust,ZNT=znt      &
               ,EL_MYJ=el_pbl,PBLH=pblh,KPBL=kpbl,CT=ct              &
               ,AKHS=akhs,AKMS=akms,ELFLX=lh                         &
-              ,HFX=hfx,WTHV_MF=u_phytmp,LM_BL89=v_phytmp            & 
+              ,HFX=hfx,WTHV_MF=u_phytmp,LM_BL89=v_phytmp            &
               ,RUBLTEN=rublten,RVBLTEN=rvblten,RTHBLTEN=rthblten    &
               ,RQVBLTEN=rqvblten,RQCBLTEN=rqcblten                  &
               ,IDS=ids,IDE=ide,JDS=jds,JDE=jde,KDS=kds,KDE=kde      &
               ,IMS=ims,IME=ime,JMS=jms,JME=jme,KMS=kms,KME=kme      &
               ,ITS=its,ITE=ite,JTS=jts,JTE=jte,KTS=kts,KTE=kte      &
                                                                     )
-! note the tendencies have been added inside qnse 
+! note the tendencies have been added inside qnse
 !            IF ( PRESENT (MFSHCONV) )THEN
 !              IF (MFSHCONV.EQ.1)THEN
 !              rublten(:,:,:)=rublten(:,:,:)+rumften(:,:,:)
@@ -1557,8 +1557,8 @@ CONTAINS
 !              rthblten(:,:,:)=rthblten(:,:,:)+rthmften(:,:,:)
 !              rqvblten(:,:,:)=rqvblten(:,:,:)+rqvmften(:,:,:)
 !              rqcblten(:,:,:)=rqcblten(:,:,:)+rqcmften(:,:,:)
-!              ENDIF   
-!            ENDIF   
+!              ENDIF
+!            ENDIF
 
             ELSE
                WRITE ( message , FMT = '(A,4(L1,1X))' )             &
@@ -1576,7 +1576,7 @@ CONTAINS
            ENDIF
 
       CASE (ACMPBLSCHEME)
-           
+
            !!  These are values that are not supplied to pbl driver, but are required by ACM
            IF ( PRESENT( qv_curr )  .AND. PRESENT( qc_curr )  .AND. &
                 PRESENT( rqvblten ) .AND. PRESENT( rqcblten ) .AND. &
@@ -1599,7 +1599,7 @@ CONTAINS
               ,RQVBLTEN=rqvblten,RQCBLTEN=rqcblten,RQIBLTEN=rqiblten             &
               ,IDS=ids,IDE=ide,JDS=jds,JDE=jde,KDS=kds,KDE=kde                   &
               ,IMS=ims,IME=ime,JMS=jms,JME=jme,KMS=kms,KME=kme                   &
-              ,ITS=its,ITE=ite,JTS=jts,JTE=jte,KTS=kts,KTE=kte                   &   
+              ,ITS=its,ITE=ite,JTS=jts,JTE=jte,KTS=kts,KTE=kte                   &
                                                                       )
            ELSE
                WRITE ( message , FMT = '(A,4(L1,1X))' )             &
@@ -1642,7 +1642,7 @@ CONTAINS
               ELSE
                  initflag=0
               ENDIF
-              
+
               CALL  mynn_bl_driver(&
                    &initflag=initflag,grav_settling=grav_settling,       &
                    &delt=dtbl,dz=dz8w,dx=dx,znt=znt,                     &
@@ -1761,13 +1761,13 @@ CONTAINS
               ,ITS=its,ITE=ite,JTS=jts,JTE=jte,KTS=kts,KTE=kte  )
 
            CASE (CAMUWPBLSCHEME)
-              
+
               CALL wrf_debug(100,'in camuwpbl')
               IF ( PRESENT( qv_curr  )  .AND. PRESENT( qc_curr   )  .AND. &
                    PRESENT( qi_curr  )  .AND. PRESENT( qnc_curr  )  .AND. &
                    PRESENT( qni_curr )  .AND.                             &
                    PRESENT( rqvblten )  .AND. PRESENT( rqcblten  )  .AND. &
-                   PRESENT( rqiblten )  .AND. PRESENT( rqniblten )        &                   
+                   PRESENT( rqiblten )  .AND. PRESENT( rqniblten )        &
                  )THEN
                  CALL CAMUWPBL(DT=dt,U_PHY=u_phy,V_PHY=v_phy,TH_PHY=th_phy,RHO=rho   &
                       ,QV_CURR=qv_curr,HFX=hfx,QFX=qfx,USTAR=ust,P8W=p8w,P_PHY=p_phy &
@@ -1781,7 +1781,7 @@ CONTAINS
                       ,IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde             &
                       ,IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme             &
                       ,ITS=its,ITE=ite, JTS=jts,JTE=jte, KTS=kts,KTE=kte             &
-!Intent-inout 
+!Intent-inout
                       ,TAURESX2D=tauresx2d,TAURESY2D=tauresy2d                       &
                       ,RUBLTEN=rublten,RVBLTEN=rvblten,RTHBLTEN=rthblten             &
                       ,RQIBLTEN=rqiblten,RQNIBLTEN=rqniblten,RQVBLTEN=rqvblten       &
@@ -1810,16 +1810,16 @@ CONTAINS
                       PRESENT( rqvblten ) ,                             &
                       PRESENT( rqcblten ) ,                             &
                       PRESENT( rqiblten ) ,                             &
-                      PRESENT( rqniblten ) 
+                      PRESENT( rqniblten )
 
                  CALL wrf_debug(0,message)
                  CALL wrf_error_fatal('Lack arguments to call CAMUWPBL pbl')
               ENDIF
-              
+
 #endif
 
            CASE (GBMPBLSCHEME)
-               CALL wrf_debug(100,'in gbmpbl') 
+               CALL wrf_debug(100,'in gbmpbl')
                IF ( PRESENT( qv_curr )  .AND. PRESENT( qc_curr )  .AND.&
                PRESENT( qi_curr )                            .AND. &
                PRESENT( rqvblten ) .AND. PRESENT( rqcblten ) .AND. &
@@ -1833,11 +1833,11 @@ CONTAINS
               ,RUBLTEN=rublten,RVBLTEN=rvblten                      &
               ,RTHBLTEN=rthblten,RQVBLTEN=rqvblten                  &
               ,RQCBLTEN=rqcblten,RQIBLTEN=rqiblten                  &
-              ,KZM_GBM=exch_m,KTH_GBM=exch_h,KETHL_GBM=exch_tke     & 
+              ,KZM_GBM=exch_m,KTH_GBM=exch_h,KETHL_GBM=exch_tke     &
               ,EL_GBM=el_pbl,DZ8W=dz8w,Z=z,PSFC=PSFC                &
-              ,TKE_PBL=tke_pbl,RTHRATEN=rthraten                    & 
-              ,ZNT=znt,UST=ust,ZOL=zol,HOL=hol,PBL=pblh             & 
-              ,KPBL2D=kpbl,REGIME=regime                            & 
+              ,TKE_PBL=tke_pbl,RTHRATEN=rthraten                    &
+              ,ZNT=znt,UST=ust,ZOL=zol,HOL=hol,PBL=pblh             &
+              ,KPBL2D=kpbl,REGIME=regime                            &
               ,PSIM=psim,PSIH=psih,XLAND=xland                      &
               ,HFX=hfx,QFX=qfx,TSK=tskold,GZ1OZ0=gz1oz0             &
               ,WSPD=wspd,BR=br,DT=dtbl,DTMIN=dtmin                  &
@@ -1889,7 +1889,7 @@ CONTAINS
                      'xlat_v, '//                                       &
                      'xlong_v = ' ,                                     &
                       PRESENT( id ) ,                                   &
-                      PRESENT( z_at_w ) 
+                      PRESENT( z_at_w )
                      CALL wrf_debug(0,message)
                      CALL wrf_error_fatal('Lack arguments to call turbine_drag')
                   ENDIF
@@ -1898,7 +1898,7 @@ CONTAINS
 #endif
 
 
-   
+
    IF (PRESENT(dtaux3d)) THEN
        IF(gwd_opt .EQ. 1)THEN
              CALL gwdo(                                              &
@@ -1921,7 +1921,7 @@ CONTAINS
        ENDIF
    ENDIF
 
-#if (EM_CORE==1)                                                                                                                                                                             
+#if (EM_CORE==1)
 !JOE-added - fog (cloud) water deposition calculation
    IF (grav_settling .GE. 1) THEN
       IF ( PRESENT(vdfg) .AND. PRESENT(qc_curr)) THEN
@@ -1947,15 +1947,15 @@ CONTAINS
 
 !Alberto: here we call the general routine to solve the diffusion
 ! + all the source/sink terms.
-! the only thing that should be passed from the PBL schemes is the value of the exch_h, and exch_m 
+! the only thing that should be passed from the PBL schemes is the value of the exch_h, and exch_m
 ! (and the non local terms, if present, through the b).
 ! So, this routine can be used by any of the previous schemes. We only need to pass the right variables
 ! (and eliminate the computation of the tendencies from the previous routines, to avoid doing twice the job).
-! As I explain below, in the routine, here we could extract the vertical turbulent 
+! As I explain below, in the routine, here we could extract the vertical turbulent
 ! fluxes (something that will be general for all the routines).
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    
-            
+
+
           CALL diff3d  (DT=dtbl,CP=cp,DZ=dz8w,TH=th_phy,QV=qv_curr,QC=qc_curr,T=t_phy  &
               ,U=u_phy,V=v_phy,RHO=rho,EXCH_H=exch_h                  &
               ,EXCH_M=exch_m                                          &
@@ -1980,7 +1980,7 @@ CONTAINS
           DEALLOCATE (sf )       ! surfaces
           DEALLOCATE (vl )       ! volumes
      ENDIF       !idiff
-      
+
           IF(scalar_pblmix .GT. 0)THEN
             CALL diff4d  (DT=dtbl,DZ=dz8w, SCALAR=scalar, is_scalar=.true.  &
               ,RHO=rho,EXCH_H=exch_h        &
@@ -2003,7 +2003,7 @@ CONTAINS
           ENDIF
 
 #endif
-      
+
    ENDDO
    !$OMP END PARALLEL DO
 
@@ -2013,7 +2013,7 @@ CONTAINS
 
 !=============================================================================
           SUBROUTINE diff3d(DT,CP,DZ,TH ,QV,QC,T,U,V,RHO                              &
-              ,EXCH_H,EXCH_M                   &  
+              ,EXCH_H,EXCH_M                   &
               ,RUBLTEN,RVBLTEN,RTHBLTEN    &
               ,RQVBLTEN,RQCBLTEN                  &
               ,WU,WV,WT,WQ                 &
@@ -2030,14 +2030,14 @@ CONTAINS
 !    August 2008.
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! ALberto
-! This routine solves the vertical diffusion 
+! This routine solves the vertical diffusion
 ! + other source/sink terms (surface fluxes, building drag, non local terms, etc.)
-! for U,V, potential temperature and moisture. The equation should be written 
+! for U,V, potential temperature and moisture. The equation should be written
 ! as follow, for a generic variable M:
-! 
+!
 !      dM      1     d      dM
 !     ---- =----  ---(rho*K----)+AM+B
-!      dt     rho    dz     dz  
+!      dt     rho    dz     dz
 ! where A and B are the implict and explcit coefficients of the source/sink terms
 ! (at the lowest level the surface fluxes should go in these terms)
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -2061,8 +2061,8 @@ CONTAINS
       REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME),INTENT(IN) :: V ! Y-compnent of the wind
       REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME),INTENT(IN) :: RHO ! Air Density
       REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME),INTENT(IN) :: EXCH_H ! Turbulent coefficient for heat
-      REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME),INTENT(IN) :: EXCH_M ! Turbulent coefficient for momentum 
-      
+      REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME),INTENT(IN) :: EXCH_M ! Turbulent coefficient for momentum
+
       REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME),INTENT(IN) :: A_U ! Implicit coefficient for DRAG (x -component)
       REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME),INTENT(IN) :: B_U ! Explicit coefficient for DRAG (x -component)
       REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME),INTENT(IN) :: A_V ! Implicit coefficient for DRAG (y -component)
@@ -2070,8 +2070,8 @@ CONTAINS
       REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME),INTENT(IN) :: A_T ! Implicit coefficient for Heat flux from buildings
       REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME),INTENT(IN) :: B_T ! Explicit coefficient for Heat flux from buildings
       REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME),INTENT(IN) :: A_Q ! Implicit coefficient for moisture flux
-      REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME),INTENT(IN) :: B_Q ! Explicit coefficient for moisture flux 
-    
+      REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME),INTENT(IN) :: B_Q ! Explicit coefficient for moisture flux
+
       REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME),INTENT(IN) :: VL ! fraction of air volume in the grid cell
       REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME),INTENT(IN) :: SF ! fraction of air at the face of the grid cell
 !outputs
@@ -2085,14 +2085,14 @@ CONTAINS
       REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME),INTENT(OUT) :: WT ! turbulent flux of potential temperature
       REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME),INTENT(OUT) :: WQ ! turbulent flux of water vapor
 ! Parameters
-     REAL ELOCP 
+     REAL ELOCP
 ! locals (same meaning as above, but 1D)
 
       real u1d(kms:kme),v1d(kms:kme),exch_h1d(kms:kme)
       real the1d(kms:kme) ! Equivalent potential temperature
       real exch_m1d(kms:kme),qv1d(kms:kme),qc1d(kms:kme)
       real dz1d(kms:kme),rho1d(kms:kme),rhoz1d(kms:kme)
-      real sf1d(kms:kme),vl1d(kms:kme)   
+      real sf1d(kms:kme),vl1d(kms:kme)
       real a_u1d(kms:kme),b_u1d(kms:kme)
       real a_v1d(kms:kme),b_v1d(kms:kme)
       real a_t1d(kms:kme),b_t1d(kms:kme)
@@ -2101,7 +2101,7 @@ CONTAINS
       real wu1d(kms:kme),wv1d(kms:kme),wt1d(kms:kme),wq1d(kms:kme),wqc1d(kms:kme)
       real thnew
 !
-      integer i,k,j  
+      integer i,k,j
 !----------------------------------------------------------------------
       ELOCP=2.72E6/CP
       u1d=0.
@@ -2125,7 +2125,7 @@ CONTAINS
       b_t1d=0.
       b_q1d=0.
       b_qc1d=0.
-       
+
       do j=jts,jte
       do i=its,ite
 
@@ -2137,7 +2137,7 @@ CONTAINS
         the1d(k)=TH(i,k,j)*(QC(i,k,j)*(-ELOCP/T(i,k,j))+1)
         qv1d(k)=qv(i,k,j)
         dz1d(k)=dz(i,k,j)
-        rho1d(k)=rho(i,k,j) 
+        rho1d(k)=rho(i,k,j)
         a_u1d(k)=a_u(i,k,j)
         b_u1d(k)=b_u(i,k,j)
         a_v1d(k)=a_v(i,k,j)
@@ -2151,13 +2151,13 @@ CONTAINS
         vl1d(k)=vl(i,k,j)
         sf1d(k)=sf(i,k,j)
        enddo
-       sf1d(kte+1)=1. 
-       do k=kts,kte    
+       sf1d(kte+1)=1.
+       do k=kts,kte
         exch_h1d(k)=exch_h(i,k,j)
         exch_m1d(k)=exch_m(i,k,j)
        enddo
        exch_h1d(kts)=0.
-!       exch_h1d(kte+1)=0  
+!       exch_h1d(kte+1)=0
        exch_m1d(kts)=0.
 !       exch_m1d(kte+1)=0
         rhoz1d(kts)=rho1d(kts)
@@ -2168,32 +2168,32 @@ CONTAINS
         rhoz1d(kte+1)=rho1d(kte)
 
 
-! solve the diffusion for x-component of the wind   
-          
-       call diff(kms,kme,kts,kte,dt,u1d,rho1d,rhoz1d,exch_m1d,a_u1d,b_u1d,sf1d, &
-     &            vl1d,dz1d,wu1d) 
+! solve the diffusion for x-component of the wind
 
-! solve the diffusion for y-component of the wind              
+       call diff(kms,kme,kts,kte,dt,u1d,rho1d,rhoz1d,exch_m1d,a_u1d,b_u1d,sf1d, &
+     &            vl1d,dz1d,wu1d)
+
+! solve the diffusion for y-component of the wind
 
        call diff(kms,kme,kts,kte,dt,v1d,rho1d,rhoz1d,exch_m1d,a_v1d,b_v1d,sf1d, &
-     &            vl1d,dz1d,wv1d) 
+     &            vl1d,dz1d,wv1d)
 
 ! solve the diffusion for equivalent potential temperature
 
        call diff(kms,kme,kts,kte,dt,the1d,rho1d,rhoz1d,exch_h1d,a_t1d,b_t1d,sf1d, &
-     &            vl1d,dz1d,wt1d) 
+     &            vl1d,dz1d,wt1d)
 
 ! solve the diffusion for the water vapor mixing ratio
 
        call diff(kms,kme,kts,kte,dt,qv1d,rho1d,rhoz1d,exch_h1d,a_q1d,b_q1d,sf1d, &
-     &            vl1d,dz1d,wq1d) 
+     &            vl1d,dz1d,wq1d)
 
 ! solve the diffusion for the cloud water mixing ratio
 
        call diff(kms,kme,kts,kte,dt,qc1d,rho1d,rhoz1d,exch_h1d,a_qc1d,b_qc1d,sf1d, &
-     &            vl1d,dz1d,wqc1d)        
+     &            vl1d,dz1d,wqc1d)
 
-!     
+!
 ! compute the tendencies
 
         do k=kts,kte
@@ -2209,15 +2209,15 @@ CONTAINS
           wq(i,k,j)=wq1d(k)
         enddo
       enddo
-      enddo 
+      enddo
 !!!!!!!!!!!!
 
-        
+
       END SUBROUTINE diff3d
 #if (EM_CORE==1)
 ! ===6=8===============================================================72
           SUBROUTINE diff4d(DT,DZ,SCALAR,IS_SCALAR,RHO              &
-              ,EXCH_H,EXCH_M  &  
+              ,EXCH_H,EXCH_M  &
               ,SCALAR_TEND    &
               ,NUM_SCALAR, PARAM_FIRST_SCALAR     &
               ,IDS,IDE,JDS,JDE,KDS,KDE      &
@@ -2230,14 +2230,14 @@ CONTAINS
 !    August 2008.
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! ALberto
-! This routine solves the vertical diffusion 
+! This routine solves the vertical diffusion
 ! + other source/sink terms (surface fluxes, building drag, non local terms, etc.)
-! for U,V, potential temperature and moisture. The equation should be written 
+! for U,V, potential temperature and moisture. The equation should be written
 ! as follow, for a generic variable M:
-! 
+!
 !      dM      1     d      dM
 !     ---- =----  ---(rho*K----)+AM+B
-!      dt     rho    dz     dz  
+!      dt     rho    dz     dz
 ! where A and B are the implict and explcit coefficients of the source/sink terms
 ! (at the lowest level the surface fluxes should go in these terms)
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -2261,8 +2261,8 @@ CONTAINS
       REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME,NUM_SCALAR),INTENT(IN) :: SCALAR ! 4d scalar mixing ratio
       REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME),INTENT(IN) :: RHO ! Air Density
       REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME),INTENT(IN) :: EXCH_H ! Turbulent coefficient for heat
-      REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME),INTENT(IN) :: EXCH_M ! Turbulent coefficient for momentum 
-      
+      REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME),INTENT(IN) :: EXCH_M ! Turbulent coefficient for momentum
+
 ! outputs
       REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME,NUM_SCALAR),INTENT(INOUT) :: SCALAR_TEND ! 4d scalar mixing ratio tendency
 ! locals (same meaning as above, but 1D)
@@ -2270,11 +2270,11 @@ CONTAINS
       real s1d(kms:kme),exch_h1d(kms:kme)
       real exch_m1d(kms:kme)
       real dz1d(kms:kme),rho1d(kms:kme),rhoz1d(kms:kme)
-      real sf1d(kms:kme),vl1d(kms:kme)   
+      real sf1d(kms:kme),vl1d(kms:kme)
       real a_s1d(kms:kme),b_s1d(kms:kme)
       real ws1d(kms:kme)
 !
-      integer i,k,j,im  
+      integer i,k,j,im
 !----------------------------------------------------------------------
       s1d=0.
       exch_h1d=0.
@@ -2285,7 +2285,7 @@ CONTAINS
       vl1d=0.
       a_s1d=0.
       b_s1d=0.
-       
+
       DO im=PARAM_FIRST_SCALAR,NUM_SCALAR
 ! need to avoid mixing scalars associated with precipitating species (e.g. Nr)
         IF((IS_SCALAR .AND. im.NE.P_QNS .AND. im.NE.P_QNR .AND. im.NE.P_QNG &
@@ -2299,19 +2299,19 @@ CONTAINS
        do k=kts,kte
         s1d(k)=SCALAR(i,k,j,im)
         dz1d(k)=dz(i,k,j)
-        rho1d(k)=rho(i,k,j) 
+        rho1d(k)=rho(i,k,j)
 !        a_s1d(k)=a_s(i,k,j)   ! implicit source
 !        b_s1d(k)=b_s(i,k,j)   ! explicit source
         vl1d(k)=1.
         sf1d(k)=1.
        enddo
-       sf1d(kte+1)=1. 
-       do k=kts,kte    
+       sf1d(kte+1)=1.
+       do k=kts,kte
         exch_h1d(k)=exch_h(i,k,j)
         exch_m1d(k)=exch_m(i,k,j)
        enddo
        exch_h1d(kts)=0.
-!       exch_h1d(kte+1)=0  
+!       exch_h1d(kte+1)=0
        exch_m1d(kts)=0.
 !       exch_m1d(kte+1)=0
         rhoz1d(kts)=rho1d(kts)
@@ -2323,11 +2323,11 @@ CONTAINS
 
 
 ! solve the diffusion for scalar
-          
-       call diff(kms,kme,kts,kte,dt,s1d,rho1d,rhoz1d,exch_h1d,a_s1d,b_s1d,sf1d, &
-     &            vl1d,dz1d,ws1d) 
 
-!     
+       call diff(kms,kme,kts,kte,dt,s1d,rho1d,rhoz1d,exch_h1d,a_s1d,b_s1d,sf1d, &
+     &            vl1d,dz1d,ws1d)
+
+!
 ! compute the tendencies
 
         do k=kts,kte
@@ -2335,15 +2335,15 @@ CONTAINS
 !          ws(i,k,j)=ws1d(k)   ! output fluxes
         enddo
         enddo
-        enddo 
+        enddo
       ELSE
 !      print *,'scalar skipped im=',im, is_scalar
       ENDIF
-      
+
       ENDDO ! im loop
 !!!!!!!!!!!!
 
-        
+
       END SUBROUTINE diff4d
 ! ===6=8===============================================================72
 #endif
@@ -2380,7 +2380,7 @@ CONTAINS
         real sf(kms:kme),vl(kms:kme)
         real aa(kms:kme),bb(kms:kme)
 
-        
+
 ! Compute cddz=2*cd/dz
 
         cddz(kts)=sf(kts)*daz(kts)*cd(kts)/dz(kts)
@@ -2408,7 +2408,7 @@ CONTAINS
            c(iz)=co(iz)
           enddo
           call invert (kms,kme,kts,kte,a,c,co)
-           
+
 !let compute the fluxes, as diagnostic variable
 
           do iz=kts,iz1

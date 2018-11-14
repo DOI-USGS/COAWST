@@ -22,7 +22,7 @@ MODULE module_mp_wdm6
    REAL, PARAMETER, PRIVATE :: xncr = 3.e8        ! maritime cloud in contrast to 3.e8 in tc80
    REAL, PARAMETER, PRIVATE :: xmyu = 1.718e-5    ! the dynamic viscosity kgm-1s-1
    REAL, PARAMETER, PRIVATE :: avts = 11.72       ! a constant for terminal velocity of snow
-   REAL, PARAMETER, PRIVATE :: bvts = .41         ! a constant for terminal velocity of snow 
+   REAL, PARAMETER, PRIVATE :: bvts = .41         ! a constant for terminal velocity of snow
 !   REAL, PARAMETER, PRIVATE :: avtg = 330.        ! a constant for terminal velocity of graupel ! RAS - now set in subroutine based on namelist option
 !   REAL, PARAMETER, PRIVATE :: bvtg = 0.8         ! a constant for terminal velocity of graupel ! RAS - now set in subroutine based on namelist option
 !   REAL, PARAMETER, PRIVATE :: deng = 500.        ! density of graupel !RAS13.1 - now set in subroutine based on namelist option
@@ -35,28 +35,28 @@ MODULE module_mp_wdm6
 !   REAL, PARAMETER, PRIVATE :: lamdagmax = 6.e4   ! limited maximum value for slope parameter of graupel - now set in subroutine based on namelist option
    REAL, PARAMETER, PRIVATE :: dicon = 11.9       ! constant for the cloud-ice diamter
    REAL, PARAMETER, PRIVATE :: dimax = 500.e-6    ! limited maximum value for the cloud-ice diamter
-   REAL, PARAMETER, PRIVATE :: n0s = 2.e6         ! temperature dependent intercept parameter snow 
+   REAL, PARAMETER, PRIVATE :: n0s = 2.e6         ! temperature dependent intercept parameter snow
    REAL, PARAMETER, PRIVATE :: alpha = .12        ! .122 exponen factor for n0s
    REAL, PARAMETER, PRIVATE :: pfrz1 = 100.       ! constant in Biggs freezing
    REAL, PARAMETER, PRIVATE :: pfrz2 = 0.66       ! constant in Biggs freezing
-   REAL, PARAMETER, PRIVATE :: qcrmin = 1.e-9     ! minimun values for qr, qs, and qg 
-   REAL, PARAMETER, PRIVATE :: ncmin = 1.e1       ! minimum value for Nc 
+   REAL, PARAMETER, PRIVATE :: qcrmin = 1.e-9     ! minimun values for qr, qs, and qg
+   REAL, PARAMETER, PRIVATE :: ncmin = 1.e1       ! minimum value for Nc
    REAL, PARAMETER, PRIVATE :: nrmin = 1.e-2      ! minimum value for Nr
    REAL, PARAMETER, PRIVATE :: eacrc = 1.0        ! Snow/cloud-water collection efficiency
    REAL, PARAMETER, PRIVATE :: dens  =  100.0     ! Density of snow
    REAL, PARAMETER, PRIVATE :: qs0   =  6.e-4     ! threshold amount for aggretion to occur
 !
-   REAL, PARAMETER, PRIVATE :: satmax = 1.0048    ! maximum saturation value for CCN activation 
-                                                  ! 1.008 for maritime /1.0048 for conti 
+   REAL, PARAMETER, PRIVATE :: satmax = 1.0048    ! maximum saturation value for CCN activation
+                                                  ! 1.008 for maritime /1.0048 for conti
    REAL, PARAMETER, PRIVATE :: actk = 0.6         ! parameter for the CCN activation
    REAL, PARAMETER, PRIVATE :: actr = 1.5         ! radius of activated CCN drops
    REAL, PARAMETER, PRIVATE :: ncrk1 = 3.03e3     ! Long's collection kernel coefficient
    REAL, PARAMETER, PRIVATE :: ncrk2 = 2.59e15    ! Long's collection kernel coefficient
    REAL, PARAMETER, PRIVATE :: di100 = 1.e-4      ! parameter related with accretion and collection of cloud drops
    REAL, PARAMETER, PRIVATE :: di600 = 6.e-4      ! parameter related with accretion and collection of cloud drops
-   REAL, PARAMETER, PRIVATE :: di2000 = 2000.e-6  ! parameter related with accretion and collection of cloud drops 
+   REAL, PARAMETER, PRIVATE :: di2000 = 2000.e-6  ! parameter related with accretion and collection of cloud drops
    REAL, PARAMETER, PRIVATE :: di82    = 82.e-6   ! dimater related with raindrops evaporation
-   REAL, PARAMETER, PRIVATE :: di15    = 15.e-6   ! auto conversion takes place beyond this diameter 
+   REAL, PARAMETER, PRIVATE :: di15    = 15.e-6   ! auto conversion takes place beyond this diameter
 !
    REAL, SAVE ::                                           &
              qc0,qck1,pidnc,bvtr1,bvtr2,bvtr3,bvtr4,bvtr5, &
@@ -92,7 +92,7 @@ CONTAINS
                     graupel, graupelncv,                   &
                     itimestep,                             &
                     has_reqc, has_reqi, has_reqs,          &  ! for radiation
-                    re_cloud, re_ice,   re_snow,           &  ! for radiation     
+                    re_cloud, re_ice,   re_snow,           &  ! for radiation
                     ids,ide, jds,jde, kds,kde,             &
                     ims,ime, jms,jme, kms,kme,             &
                     its,ite, jts,jte, kts,kte              &
@@ -101,15 +101,15 @@ CONTAINS
   IMPLICIT NONE
 !-------------------------------------------------------------------
 !
-!  This code is a WRF double-moment 6-class GRAUPEL phase 
-!  microphyiscs scheme (WDM6). The WDM microphysics scheme predicts 
-!  number concentrations for warm rain species including clouds and 
+!  This code is a WRF double-moment 6-class GRAUPEL phase
+!  microphyiscs scheme (WDM6). The WDM microphysics scheme predicts
+!  number concentrations for warm rain species including clouds and
 !  rain. cloud condensation nuclei (CCN) is also predicted.
-!  The cold rain species including ice, snow, graupel follow the 
+!  The cold rain species including ice, snow, graupel follow the
 !  WRF single-moment 6-class microphysics (WSM6, Hong and Lim 2006)
-!  in which theoretical background for WSM ice phase microphysics is 
+!  in which theoretical background for WSM ice phase microphysics is
 !  based on Hong et al. (2004). A new mixed-phase terminal velocity
-!  for precipitating ice is introduced in WSM6 (Dudhia et al. 2008). 
+!  for precipitating ice is introduced in WSM6 (Dudhia et al. 2008).
 !  The WDM scheme is described in Lim and Hong (2010).
 !  All units are in m.k.s. and source/sink terms in kgkg-1s-1.
 !
@@ -131,14 +131,14 @@ CONTAINS
 !        bug fix in melting terms, bae from kiaps, nov 2015
 !        ==> density of air is divided, which has not been
 !
-!  Reference) Lim and Hong (LH, 2010) Mon. Wea. Rev. 
+!  Reference) Lim and Hong (LH, 2010) Mon. Wea. Rev.
 !             Juang and Hong (JH, 2010) Mon. Wea. Rev.
-!             Hong, Dudhia, Chen (HDC, 2004) Mon. Wea. Rev. 
-!             Hong and Lim (HL, 2006) J. Korean Meteor. Soc. 
+!             Hong, Dudhia, Chen (HDC, 2004) Mon. Wea. Rev.
+!             Hong and Lim (HL, 2006) J. Korean Meteor. Soc.
 !             Cohard and Pinty (CP, 2000) Quart. J. Roy. Meteor. Soc.
 !             Khairoutdinov and Kogan (KK, 2000) Mon. Wea. Rev.
 !             Dudhia, Hong and Lim (DHL, 2008) J. Meteor. Soc. Japan
-!             
+!
 !             Lin, Farley, Orville (LFO, 1983) J. Appl. Meteor.
 !             Rutledge, Hobbs (RH83, 1983) J. Atmos. Sci.
 !             Rutledge, Hobbs (RH84, 1984) J. Atmos. Sci.
@@ -155,7 +155,7 @@ CONTAINS
                                                               qr, &
                                                               qs, &
                                                               qg, &
-                                                              nn, & 
+                                                              nn, &
                                                               nc, &
                                                               nr
   REAL, DIMENSION( ims:ime , kms:kme , jms:jme ),                 &
@@ -197,7 +197,7 @@ CONTAINS
         INTENT(INOUT)::                                           &
                                                         re_cloud, &
                                                           re_ice, &
-                                                         re_snow   
+                                                         re_snow
 
 !+---+-----------------------------------------------------------------+
   REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(INOUT)::     &  ! GT
@@ -210,7 +210,7 @@ CONTAINS
   REAL, DIMENSION( ims:ime , jms:jme ), OPTIONAL,                 &
         INTENT(INOUT) ::                                 graupel, &
                                                         graupelncv
-   
+
 ! LOCAL VAR
   REAL, DIMENSION( its:ite , kts:kte ) ::   t
   REAL, DIMENSION( its:ite , kts:kte, 2 ) ::   qci
@@ -227,11 +227,11 @@ CONTAINS
   REAL, DIMENSION( kts:kte ) :: qi1d
   REAL, DIMENSION( kts:kte ) :: re_qc, re_qi, re_qs
 
-      IF (itimestep .eq. 1) THEN 
+      IF (itimestep .eq. 1) THEN
         DO j=jms,jme
-           DO k=kms,kme    
+           DO k=kms,kme
            DO i=ims,ime
-              nn(i,k,j) = ccn0   
+              nn(i,k,j) = ccn0
            ENDDO
            ENDDO
         ENDDO
@@ -248,7 +248,7 @@ CONTAINS
             qrs(i,k,3) = qg(i,k,j)
             ncr(i,k,1) = nn(i,k,j)
             ncr(i,k,2) = nc(i,k,j)
-            ncr(i,k,3) = nr(i,k,j)     
+            ncr(i,k,3) = nr(i,k,j)
          ENDDO
          ENDDO
          !  Sending array starting locations of optional variables may cause
@@ -267,7 +267,7 @@ CONTAINS
                     ,ims,ime, jms,jme, kms,kme                    &
                     ,its,ite, jts,jte, kts,kte                    &
                     ,snow(ims,j),snowncv(ims,j)                   &
-                    ,graupel(ims,j),graupelncv(ims,j)             & 
+                    ,graupel(ims,j),graupelncv(ims,j)             &
                                                                    )
          DO K=kts,kte
          DO I=its,ite
@@ -279,7 +279,7 @@ CONTAINS
             qg(i,k,j) = qrs(i,k,3)
             nn(i,k,j) = ncr(i,k,1)
             nc(i,k,j) = ncr(i,k,2)
-            nr(i,k,j) = ncr(i,k,3)   
+            nr(i,k,j) = ncr(i,k,3)
          ENDDO
          ENDDO
 
@@ -305,7 +305,7 @@ CONTAINS
          endif
          ENDIF
 
-! calculate effective radius of cloud, ice, and snow 
+! calculate effective radius of cloud, ice, and snow
          IF (has_reqc.ne.0 .and. has_reqi.ne.0 .and. has_reqs.ne.0) THEN
            DO i=its,ite
              DO k=kts,kte
@@ -330,9 +330,9 @@ CONTAINS
              ENDDO
            ENDDO
          ENDIF
-           
+
       ENDDO
- 
+
   END SUBROUTINE wdm6
 !===================================================================
 !
@@ -366,7 +366,7 @@ CONTAINS
   REAL, DIMENSION( its:ite , kts:kte, 3 ),                        &
         INTENT(INOUT) ::                                          &
                                                              qrs, &
-                                                             ncr 
+                                                             ncr
   REAL, DIMENSION( ims:ime , kms:kme ),                           &
         INTENT(INOUT) ::                                          &
                                                                q
@@ -408,16 +408,16 @@ CONTAINS
   REAL, DIMENSION( its:ite , kts:kte , 3) ::                      &
         rh, qs, rslope, rslope2, rslope3, rslopeb,                &
         falk, fall, work1, qrs_tmp
-  REAL, DIMENSION( its:ite , kts:kte ) ::                         & 
-        rslopec, rslopec2,rslopec3 
+  REAL, DIMENSION( its:ite , kts:kte ) ::                         &
+        rslopec, rslopec2,rslopec3
   REAL, DIMENSION( its:ite , kts:kte,  2) ::                      &
-        avedia 
+        avedia
   REAL, DIMENSION( its:ite , kts:kte ) ::                         &
         workn,falln,falkn
   REAL, DIMENSION( its:ite , kts:kte ) ::                         &
         worka,workr
   REAL, DIMENSION( its:ite , kts:kte ) ::                         &
-        den_tmp, delz_tmp, ncr_tmp 
+        den_tmp, delz_tmp, ncr_tmp
   REAL, DIMENSION( its:ite , kts:kte ) ::                         &
         lamdr_tmp
   REAL, DIMENSION( its:ite , kts:kte ) ::                         &
@@ -432,11 +432,11 @@ CONTAINS
   REAL, DIMENSION( its:ite , kts:kte ) ::                         &
         nraut, nracw, ncevp, nccol, nrcol,                        &
         nsacw, ngacw, niacr, nsacr, ngacr, naacw,                 &
-        nseml, ngeml, ncact 
+        nseml, ngeml, ncact
   REAL, DIMENSION( its:ite , kts:kte ) ::                         &
         pigen, pidep, pcond, pgevp, psmlt, psevp,                 &
         xl, cpm, work2, denfac, n0sfac, qsum,                     &
-        denqrs1, denqr1, denqrs2, denqrs3, denncr3, denqci, xni 
+        denqrs1, denqr1, denqrs2, denqrs3, denncr3, denqci, xni
   REAL, DIMENSION( its:ite ) ::                                   &
         delqrs1, delqrs2, delqrs3, delncr3, delqi
   REAL, DIMENSION( its:ite ) :: tstepsnow, tstepgraup
@@ -460,7 +460,7 @@ CONTAINS
             xlwork2, factor, source, value, coecol,               &
             nfrzdtr, nfrzdtc,                                     &
             taucon, lencon, lenconcr,                       &
-            xlf, pfrzdtc, pfrzdtr, supice, alpha2, delta2, delta3 
+            xlf, pfrzdtc, pfrzdtr, supice, alpha2, delta2, delta3
   REAL  :: vt2ave
   REAL  :: holdc, holdci
 !
@@ -478,7 +478,7 @@ CONTAINS
 !     size distributions: (x=mixing ratio, y=air density):
 !     valid for mixing ratio > 1.e-9 kg/kg.
 !
-! Optimizatin : A**B => exp(log(A)*(B)) 
+! Optimizatin : A**B => exp(log(A)*(B))
       lamdac(x,y,z)= exp(log(((pidnc*z)/(x*y)))*((.33333333)))
 !----------------------------------------------------------------
 !     diffus: diffusion coefficient of the water vapor
@@ -507,7 +507,7 @@ CONTAINS
           qrs(i,k,3) = max(qrs(i,k,3),0.0)
           ncr(i,k,1) = max(ncr(i,k,1),0.0)
           ncr(i,k,2) = max(ncr(i,k,2),0.0)
-          ncr(i,k,3) = max(ncr(i,k,3),0.0) 
+          ncr(i,k,3) = max(ncr(i,k,3),0.0)
         enddo
       enddo
 !
@@ -694,7 +694,7 @@ CONTAINS
           ncr_tmp(i,k) = ncr(i,k,3)
         enddo
       enddo
-      call slope_wdm6(qrs_tmp,ncr_tmp,den_tmp,denfac,t,rslope,rslopeb,rslope2, & 
+      call slope_wdm6(qrs_tmp,ncr_tmp,den_tmp,denfac,t,rslope,rslopeb,rslope2, &
                      rslope3,work1,workn,its,ite,kts,kte)
 !
 ! vt update for qr and nr
@@ -807,7 +807,7 @@ CONTAINS
               coeres = rslope2(i,k,2)*sqrt(rslope(i,k,2)*rslopeb(i,k,2))
               psmlt(i,k) = xka(t(i,k),den(i,k))/xlf*(t0c-t(i,k))*pi/2.       &
                          *n0sfac(i,k)*(precs1*rslope2(i,k,2)                 &
-                         +precs2*work2(i,k)*coeres)/den(i,k)                  
+                         +precs2*work2(i,k)*coeres)/den(i,k)
               psmlt(i,k) = min(max(psmlt(i,k)*dtcld/mstep(i),-qrs(i,k,2)     &
                          /mstep(i)),0.)
               qrs(i,k,2) = qrs(i,k,2) + psmlt(i,k)
@@ -830,7 +830,7 @@ CONTAINS
               coeres = rslope2(i,k,3)*sqrt(rslope(i,k,3)*rslopeb(i,k,3))
               pgmlt(i,k) = xka(t(i,k),den(i,k))/xlf*(t0c-t(i,k))*(precg1     &
                            *rslope2(i,k,3) + precg2*work2(i,k)*coeres)       &
-                           /den(i,k)                                          
+                           /den(i,k)
               pgmlt(i,k) = min(max(pgmlt(i,k)*dtcld/mstep(i),                &
                           -qrs(i,k,3)/mstep(i)),0.)
               qrs(i,k,3) = qrs(i,k,3) + pgmlt(i,k)
@@ -895,7 +895,7 @@ CONTAINS
         If(fallsum_qsi.gt.0.) then
           tstepsnow(i) = fallsum_qsi*delz(i,kts)/denr*dtcld*1000. + tstepsnow(i)
           IF( PRESENT (snowncv) .AND. PRESENT (snow)) THEN
-            snowncv(i) = fallsum_qsi*delz(i,kts)/denr*dtcld*1000. + snowncv(i)     
+            snowncv(i) = fallsum_qsi*delz(i,kts)/denr*dtcld*1000. + snowncv(i)
             snow(i) = fallsum_qsi*delz(i,kts)/denr*dtcld*1000. + snow(i)
           ENDIF
         ENDIF
@@ -903,7 +903,7 @@ CONTAINS
           tstepgraup(i) = fallsum_qg*delz(i,kts)/denr*dtcld*1000.              &
                             + tstepgraup(i)
           IF( PRESENT (graupelncv) .AND. PRESENT (graupel)) THEN
-            graupelncv(i) = fallsum_qg*delz(i,kts)/denr*dtcld*1000.            &  
+            graupelncv(i) = fallsum_qg*delz(i,kts)/denr*dtcld*1000.            &
                             + graupelncv(i)
             graupel(i) = fallsum_qg*delz(i,kts)/denr*dtcld*1000. + graupel(i)
           ENDIF
@@ -942,9 +942,9 @@ CONTAINS
             qci(i,k,2) = qci(i,k,2) + qci(i,k,1)
 !---------------------------------------------------------------
 ! nihmf: homogeneous  of cloud water below -40c [LH A17]
-!        (T<-40C: NC->) 
+!        (T<-40C: NC->)
 !---------------------------------------------------------------
-            if(ncr(i,k,2).gt.0.) ncr(i,k,2) = 0. 
+            if(ncr(i,k,2).gt.0.) ncr(i,k,2) = 0.
             t(i,k) = t(i,k) + xlf/cpm(i,k)*qci(i,k,1)
             qci(i,k,1) = 0.
           endif
@@ -954,12 +954,12 @@ CONTAINS
 !---------------------------------------------------------------
           if(supcol.gt.0. .and. qci(i,k,1).gt.qmin) then
             supcolt=min(supcol,70.)
-            pfrzdtc = min(pi*pi*pfrz1*(exp(pfrz2*supcolt)-1.)*denr/den(i,k)    & 
+            pfrzdtc = min(pi*pi*pfrz1*(exp(pfrz2*supcolt)-1.)*denr/den(i,k)    &
                      *ncr(i,k,2)*rslopec3(i,k)*rslopec3(i,k)/18.*dtcld         &
                      ,qci(i,k,1))
 !---------------------------------------------------------------
 ! nihtf: heterogeneous  of cloud water [LH A16]
-!         (T0>T>-40C: NC->) 
+!         (T0>T>-40C: NC->)
 !---------------------------------------------------------------
             if(ncr(i,k,2).gt.ncmin) then
               nfrzdtc = min(pi*pfrz1*(exp(pfrz2*supcolt)-1.)*ncr(i,k,2)        &
@@ -969,7 +969,7 @@ CONTAINS
             qci(i,k,2) = qci(i,k,2) + pfrzdtc
             t(i,k) = t(i,k) + xlf/cpm(i,k)*pfrzdtc
             qci(i,k,1) = qci(i,k,1)-pfrzdtc
-          endif 
+          endif
 !---------------------------------------------------------------
 ! pgfrz:  freezing of rain water [HL A20] [LFO 45]
 !        (T<T0, QR->QG)
@@ -977,15 +977,15 @@ CONTAINS
           if(supcol.gt.0. .and. qrs(i,k,1).gt.0.) then
             supcolt=min(supcol,70.)
             pfrzdtr = min(140.*(pi*pi)*pfrz1*ncr(i,k,3)*denr/den(i,k)          &
-                  *(exp(pfrz2*supcolt)-1.)*rslope3(i,k,1)*rslope3(i,k,1)       & 
-                  *dtcld,qrs(i,k,1))        
+                  *(exp(pfrz2*supcolt)-1.)*rslope3(i,k,1)*rslope3(i,k,1)       &
+                  *dtcld,qrs(i,k,1))
 !---------------------------------------------------------------
 ! ngfrz: freezing of rain water [LH A26]
-!        (T<T0, NR-> ) 
+!        (T<T0, NR-> )
 !---------------------------------------------------------------
             if(ncr(i,k,3).gt.nrmin) then
               nfrzdtr = min(4.*pi*pfrz1*ncr(i,k,3)*(exp(pfrz2*supcolt)-1.)     &
-                       *rslope3(i,k,1)*dtcld, ncr(i,k,3)) 
+                       *rslope3(i,k,1)*dtcld, ncr(i,k,3))
               ncr(i,k,3) = ncr(i,k,3) - nfrzdtr
             endif
             qrs(i,k,3) = qrs(i,k,3) + pfrzdtr
@@ -1018,8 +1018,8 @@ CONTAINS
       do k = kts, kte
         do i = its, ite
 !-----------------------------------------------------------------
-! compute the mean-volume drop diameter                  [LH A10] 
-! for raindrop distribution                          
+! compute the mean-volume drop diameter                  [LH A10]
+! for raindrop distribution
 !-----------------------------------------------------------------
           avedia(i,k,2) = rslope(i,k,1)*((24.)**(.3333333))
 !
@@ -1093,25 +1093,25 @@ CONTAINS
                          + 24.*rslope3(i,k,1)),ncr(i,k,2)/dtcld)
               pracw(i,k) = min(pi/6.*(denr/den(i,k))*ncrk1*ncr(i,k,2)          &
                          *ncr(i,k,3)*rslopec3(i,k)*(2.*rslopec3(i,k)           &
-                         + 24.*rslope3(i,k,1)),qci(i,k,1)/dtcld)   
+                         + 24.*rslope3(i,k,1)),qci(i,k,1)/dtcld)
             else
               nracw(i,k) = min(ncrk2*ncr(i,k,2)*ncr(i,k,3)*(2.*rslopec3(i,k)   &
                          *rslopec3(i,k)+5040.*rslope3(i,k,1)                   &
                          *rslope3(i,k,1)),ncr(i,k,2)/dtcld)
               pracw(i,k) = min(pi/6.*(denr/den(i,k))*ncrk2*ncr(i,k,2)          &
-                         *ncr(i,k,3)*rslopec3(i,k)*(6.*rslopec3(i,k)           &     
-                         *rslopec3(i,k)+5040.*rslope3(i,k,1)*rslope3(i,k,1))   & 
+                         *ncr(i,k,3)*rslopec3(i,k)*(6.*rslopec3(i,k)           &
+                         *rslopec3(i,k)+5040.*rslope3(i,k,1)*rslope3(i,k,1))   &
                          ,qci(i,k,1)/dtcld)
             endif
-          endif 
+          endif
 !----------------------------------------------------------------
-! nccol: self collection of cloud water             [LH A8] [CP 24 & 25]     
+! nccol: self collection of cloud water             [LH A8] [CP 24 & 25]
 !        (NC->)
 !----------------------------------------------------------------
           if(avedia(i,k,1).ge.di100) then
             nccol(i,k) = ncrk1*ncr(i,k,2)*ncr(i,k,2)*rslopec3(i,k)
           else
-            nccol(i,k) = 2.*ncrk2*ncr(i,k,2)*ncr(i,k,2)*rslopec3(i,k)        &     
+            nccol(i,k) = 2.*ncrk2*ncr(i,k,2)*ncr(i,k,2)*rslopec3(i,k)        &
                          *rslopec3(i,k)
           endif
 !----------------------------------------------------------------
@@ -1119,13 +1119,13 @@ CONTAINS
 !        (NR->)
 !----------------------------------------------------------------
           if(qrs(i,k,1).ge.lenconcr) then
-            if(avedia(i,k,2).lt.di100) then 
+            if(avedia(i,k,2).lt.di100) then
               nrcol(i,k) = 5040.*ncrk2*ncr(i,k,3)*ncr(i,k,3)*rslope3(i,k,1)    &
                           *rslope3(i,k,1)
             elseif(avedia(i,k,2).ge.di100 .and. avedia(i,k,2).lt.di600) then
               nrcol(i,k) = 24.*ncrk1*ncr(i,k,3)*ncr(i,k,3)*rslope3(i,k,1)
             elseif(avedia(i,k,2).ge.di600 .and. avedia(i,k,2).lt.di2000) then
-              coecol = -2.5e3*(avedia(i,k,2)-di600) 
+              coecol = -2.5e3*(avedia(i,k,2)-di600)
               nrcol(i,k) = 24.*exp(coecol)*ncrk1*ncr(i,k,3)*ncr(i,k,3)         &
                          *rslope3(i,k,1)
             else
@@ -1133,7 +1133,7 @@ CONTAINS
             endif
           endif
 !---------------------------------------------------------------
-! prevp: evaporation/condensation rate of rain   [HL A41]  
+! prevp: evaporation/condensation rate of rain   [HL A41]
 !        (QV->QR or QR->QV)
 !---------------------------------------------------------------
           if(qrs(i,k,1).gt.0.) then
@@ -1144,8 +1144,8 @@ CONTAINS
               prevp(i,k) = max(prevp(i,k),-qrs(i,k,1)/dtcld)
               prevp(i,k) = max(prevp(i,k),satdt/2)
 !----------------------------------------------------------------
-! Nrevp: evaporation/condensation rate of rain   [LH A14] 
-!        (NR->NCCN) 
+! Nrevp: evaporation/condensation rate of rain   [LH A14]
+!        (NR->NCCN)
 !----------------------------------------------------------------
               if(prevp(i,k).eq.-qrs(i,k,1)/dtcld) then
                 ncr(i,k,1) = ncr(i,k,1)+ncr(i,k,3)
@@ -1197,8 +1197,8 @@ CONTAINS
           vt2g=pvtg*rslopeb(i,k,3)*denfac(i,k)
           qsum(i,k) = max((qrs(i,k,2)+qrs(i,k,3)),1.e-15)
           if(qsum(i,k) .gt. 1.e-15) then
-            vt2ave=(vt2s*qrs(i,k,2)+vt2g*qrs(i,k,3))/(qsum(i,k))          
-          else    
+            vt2ave=(vt2s*qrs(i,k,2)+vt2g*qrs(i,k,3))/(qsum(i,k))
+          else
             vt2ave=0.
           endif
           if(supcol.gt.0. .and. qci(i,k,2).gt.qmin) then
@@ -1221,7 +1221,7 @@ CONTAINS
             endif
 !-------------------------------------------------------------
 ! niacr: Accretion of rain by cloud ice  [LH A25]
-!        (T<T0: NR->) 
+!        (T<T0: NR->)
 !-------------------------------------------------------------
             if(ncr(i,k,3).gt.nrmin) then
               niacr(i,k) = pi*avtr*ncr(i,k,3)*xni(i,k)*denfac(i,k)*g4pbr       &
@@ -1261,7 +1261,7 @@ CONTAINS
           endif
 !-------------------------------------------------------------
 ! nsacw: Accretion of cloud water by snow  [LH A12]
-!        (NC ->) 
+!        (NC ->)
 !-------------------------------------------------------------
          if(qrs(i,k,2).gt.qcrmin .and. ncr(i,k,2).gt.ncmin) then
            nsacw(i,k) = min(pacrc*n0sfac(i,k)*rslope3(i,k,2)*rslopeb(i,k,2)    &
@@ -1277,15 +1277,15 @@ CONTAINS
           endif
 !-------------------------------------------------------------
 ! ngacw: Accretion of cloud water by graupel [LH A13]
-!        (NC-> 
+!        (NC->
 !-------------------------------------------------------------
           if(qrs(i,k,3).gt.qcrmin .and. ncr(i,k,2).gt.ncmin) then
             ngacw(i,k) = min(pacrg*rslope3(i,k,3)*rslopeb(i,k,3)*ncr(i,k,2)    &
                         *denfac(i,k),ncr(i,k,2)/dtcld)
           endif
 !-------------------------------------------------------------
-! paacw: Accretion of cloud water by averaged snow/graupel 
-!        (T<T0: QC->QG or QS, and T>=T0: QC->QR) 
+! paacw: Accretion of cloud water by averaged snow/graupel
+!        (T<T0: QC->QG or QS, and T>=T0: QC->QR)
 !-------------------------------------------------------------
           if(qsum(i,k) .gt. 1.e-15) then
             paacw(i,k) = (qrs(i,k,2)*psacw(i,k)+qrs(i,k,3)*pgacw(i,k))/(qsum(i,k))
@@ -1294,7 +1294,7 @@ CONTAINS
 !        (Nc->)
 !-------------------------------------------------------------
             naacw(i,k) = (qrs(i,k,2)*nsacw(i,k)+qrs(i,k,3)*ngacw(i,k))/(qsum(i,k))
-          endif      
+          endif
 !-------------------------------------------------------------
 ! pracs: Accretion of snow by rain [HL A11] [LFO 27]
 !         (T<T0: QS->QG)
@@ -1313,7 +1313,7 @@ CONTAINS
 !         (T<T0:QR->QS or QR->QG) (T>=T0: enhance melting of snow)
 !-------------------------------------------------------------
             acrfac = 30.*rslope3(i,k,1)*rslope2(i,k,1)*rslope(i,k,2)           &
-                     +10.*rslope2(i,k,1)*rslope2(i,k,1)*rslope2(i,k,2)         & 
+                     +10.*rslope2(i,k,1)*rslope2(i,k,1)*rslope2(i,k,2)         &
                      + 2.*rslope3(i,k,1)*rslope3(i,k,2)
             psacr(i,k) = pi*pi*ncr(i,k,3)*n0s*n0sfac(i,k)*abs(vt2ave-vt2r)     &
                         *(denr/den(i,k))*acrfac
@@ -1321,11 +1321,11 @@ CONTAINS
           endif
           if(qrs(i,k,2).gt.qcrmin .and. ncr(i,k,3).gt.nrmin) then
 !-------------------------------------------------------------
-! nsacr: Accretion of rain by snow  [LH A23] 
+! nsacr: Accretion of rain by snow  [LH A23]
 !       (T<T0:NR->)
 !-------------------------------------------------------------
             acrfac = 1.5*rslope2(i,k,1)*rslope(i,k,2)                          &
-                    + 1.0*rslope(i,k,1)*rslope2(i,k,2)+.5*rslope3(i,k,2)        
+                    + 1.0*rslope(i,k,1)*rslope2(i,k,2)+.5*rslope3(i,k,2)
             nsacr(i,k) = pi*ncr(i,k,3)*n0s*n0sfac(i,k)*abs(vt2ave-vt2r)        &
                         *acrfac
             nsacr(i,k) = min(nsacr(i,k),ncr(i,k,3)/dtcld)
@@ -1336,19 +1336,19 @@ CONTAINS
 !-------------------------------------------------------------
           if(qrs(i,k,3).gt.qcrmin .and. qrs(i,k,1).gt.qcrmin) then
             acrfac = 30.*rslope3(i,k,1)*rslope2(i,k,1)*rslope(i,k,3)           &
-                    +10.*rslope2(i,k,1)*rslope2(i,k,1)*rslope2(i,k,3)          & 
+                    +10.*rslope2(i,k,1)*rslope2(i,k,1)*rslope2(i,k,3)          &
                     + 2.*rslope3(i,k,1)*rslope3(i,k,3)
             pgacr(i,k) = pi*pi*ncr(i,k,3)*n0g*abs(vt2ave-vt2r)*(denr/den(i,k)) &
                         *acrfac
             pgacr(i,k) = min(pgacr(i,k),qrs(i,k,1)/dtcld)
           endif
 !-------------------------------------------------------------
-! ngacr: Accretion of rain by graupel  [LH A24] 
-!        (T<T0: NR->) 
+! ngacr: Accretion of rain by graupel  [LH A24]
+!        (T<T0: NR->)
 !-------------------------------------------------------------
           if(qrs(i,k,3).gt.qcrmin .and. ncr(i,k,3).gt.nrmin) then
             acrfac = 1.5*rslope2(i,k,1)*rslope(i,k,3)                          &
-                    + 1.0*rslope(i,k,1)*rslope2(i,k,3) + .5*rslope3(i,k,3)   
+                    + 1.0*rslope(i,k,1)*rslope2(i,k,3) + .5*rslope3(i,k,3)
             ngacr(i,k) = pi*ncr(i,k,3)*n0g*abs(vt2ave-vt2r)*acrfac
             ngacr(i,k) = min(ngacr(i,k),ncr(i,k,3)/dtcld)
           endif
@@ -1359,7 +1359,7 @@ CONTAINS
 !        new combined snow/graupel fall speeds
 !-------------------------------------------------------------
           if(qrs(i,k,3).gt.qcrmin .and. qrs(i,k,2).gt.qcrmin) then
-            pgacs(i,k) = 0. 
+            pgacs(i,k) = 0.
           endif
           if(supcol.le.0) then
             xlf = xlf0
@@ -1367,7 +1367,7 @@ CONTAINS
 ! pseml: Enhanced melting of snow by accretion of water [HL A34]
 !        (T>=T0: QS->QR)
 !-------------------------------------------------------------
-            if(qrs(i,k,2).gt.0.)                                               & 
+            if(qrs(i,k,2).gt.0.)                                               &
               pseml(i,k) = min(max(cliq*supcol*(paacw(i,k)+psacr(i,k))         &
                           /xlf,-qrs(i,k,2)/dtcld),0.)
 !--------------------------------------------------------------
@@ -1386,7 +1386,7 @@ CONTAINS
               pgeml(i,k) = min(max(cliq*supcol*(paacw(i,k)+pgacr(i,k))/xlf     &
                           ,-qrs(i,k,3)/dtcld),0.)
 !--------------------------------------------------------------
-! ngeml: Enhanced melting of graupel by accretion of water [LH A30] 
+! ngeml: Enhanced melting of graupel by accretion of water [LH A30]
 !         (T>=T0: -> NR)
 !--------------------------------------------------------------
               if (qrs(i,k,3).gt.qcrmin) then
@@ -1834,12 +1834,12 @@ CONTAINS
             ncr(i,k,1) = max(ncr(i,k,1)-ncact(i,k)*dtcld,0.)
             ncr(i,k,2) = max(ncr(i,k,2)+ncact(i,k)*dtcld,0.)
             t(i,k) = t(i,k)+pcact(i,k)*xl(i,k)/cpm(i,k)*dtcld
-          endif  
+          endif
 !---------------------------------------------------------------
 !  pcond:condensational/evaporational rate of cloud water [HL A46] [RH83 A6]
 !     if there exists additional water vapor condensated/if
 !     evaporation of cloud water is not enough to remove subsaturation
-!  (QV->QC or QC->QV)     
+!  (QV->QC or QC->QV)
 !---------------------------------------------------------------
           tr=ttp/t(i,k)
           qs(i,k,1)=psat*exp(log(tr)*(xa))*exp(xb*(1.-tr))
@@ -1849,11 +1849,11 @@ CONTAINS
           work1(i,k,1) = conden(t(i,k),q(i,k),qs(i,k,1),xl(i,k),cpm(i,k))
           work2(i,k) = qci(i,k,1)+work1(i,k,1)
           pcond(i,k) = min(max(work1(i,k,1)/dtcld,0.),max(q(i,k),0.)/dtcld)
-          if(qci(i,k,1).gt.0. .and. work1(i,k,1).lt.0.)                        & 
+          if(qci(i,k,1).gt.0. .and. work1(i,k,1).lt.0.)                        &
             pcond(i,k) = max(work1(i,k,1),-qci(i,k,1))/dtcld
 !----------------------------------------------------------------
-! ncevp: evpration of Cloud number concentration  [LH A3] 
-! (NC->NCCN) 
+! ncevp: evpration of Cloud number concentration  [LH A3]
+! (NC->NCCN)
 !----------------------------------------------------------------
           if(pcond(i,k).eq.-qci(i,k,1)/dtcld) then
             ncr(i,k,2) = 0.
@@ -1874,16 +1874,16 @@ CONTAINS
           if(qci(i,k,1).le.qmin) qci(i,k,1) = 0.0
           if(qci(i,k,2).le.qmin) qci(i,k,2) = 0.0
           if(qrs(i,k,1).ge.qcrmin .and. ncr(i,k,3) .ge. nrmin) then
-            lamdr_tmp(i,k) = exp(log(((pidnr*ncr(i,k,3))                       & 
+            lamdr_tmp(i,k) = exp(log(((pidnr*ncr(i,k,3))                       &
                          /(den(i,k)*qrs(i,k,1))))*((.33333333)))
             if(lamdr_tmp(i,k) .le. lamdarmin) then
               lamdr_tmp(i,k) = lamdarmin
               ncr(i,k,3) = den(i,k)*qrs(i,k,1)*lamdr_tmp(i,k)**3/pidnr
             elseif(lamdr_tmp(i,k) .ge. lamdarmax) then
-              lamdr_tmp(i,k) = lamdarmax 
+              lamdr_tmp(i,k) = lamdarmax
               ncr(i,k,3) = den(i,k)*qrs(i,k,1)*lamdr_tmp(i,k)**3/pidnr
             endif
-          endif  
+          endif
           if(qci(i,k,1).ge.qmin .and. ncr(i,k,2) .ge. ncmin ) then
             lamdc_tmp(i,k) = exp(log(((pidnc*ncr(i,k,2))                       &
                          /(den(i,k)*qci(i,k,1))))*((.33333333)))
@@ -1954,7 +1954,7 @@ CONTAINS
    REAL, INTENT(IN) :: den0,denr,dens,cl,cpv,ccn0
    INTEGER, INTENT(IN) :: hail_opt  ! RAS
    LOGICAL, INTENT(IN) :: allowed_to_read
- 
+
 ! RAS13.1 define graupel parameters as graupel-like or hail-like,
 !         depending on namelist option
       IF (hail_opt .eq. 1) THEN !Hail!
@@ -1994,7 +1994,7 @@ CONTAINS
    g5pbr = rgmma(bvtr5)
    g6pbr = rgmma(bvtr6)
    g7pbr = rgmma(bvtr7)
-   g5pbro2 = rgmma(bvtr2o5) 
+   g5pbro2 = rgmma(bvtr2o5)
    g7pbro2 = rgmma(bvtr3o5)
    pvtr = avtr*g5pbr/24.
    pvtrn = avtr*g2pbr
@@ -2082,11 +2082,11 @@ CONTAINS
                                                                        rslope, &
                                                                       rslopeb, &
                                                                       rslope2, &
-                                                                      rslope3, & 
+                                                                      rslope3, &
                                                                            vt
   REAL, DIMENSION( its:ite , kts:kte) ::                                       &
-                                                                          ncr, & 
-                                                                          vtn, & 
+                                                                          ncr, &
+                                                                          vtn, &
                                                                           den, &
                                                                        denfac, &
                                                                             t
@@ -2148,10 +2148,10 @@ CONTAINS
           vt(i,k,2) = pvts*rslopeb(i,k,2)*denfac(i,k)
           vt(i,k,3) = pvtg*rslopeb(i,k,3)*denfac(i,k)
           vtn(i,k) = pvtrn*rslopeb(i,k,1)*denfac(i,k)
-          if(qrs(i,k,1).le.0.0) vt(i,k,1) = 0.0 
+          if(qrs(i,k,1).le.0.0) vt(i,k,1) = 0.0
           if(qrs(i,k,2).le.0.0) vt(i,k,2) = 0.0
           if(qrs(i,k,3).le.0.0) vt(i,k,3) = 0.0
-          if(ncr(i,k).le.0.0) vtn(i,k) = 0.0 
+          if(ncr(i,k).le.0.0) vtn(i,k) = 0.0
         enddo
       enddo
   END subroutine slope_wdm6
@@ -2162,7 +2162,7 @@ CONTAINS
   INTEGER       ::               its,ite, jts,jte, kts,kte
   REAL, DIMENSION( its:ite , kts:kte) ::                                       &
                                                                           qrs, &
-                                                                          ncr, & 
+                                                                          ncr, &
                                                                        rslope, &
                                                                       rslopeb, &
                                                                       rslope2, &
@@ -2198,7 +2198,7 @@ CONTAINS
           vt(i,k) = pvtr*rslopeb(i,k)*denfac(i,k)
           vtn(i,k) = pvtrn*rslopeb(i,k)*denfac(i,k)
           if(qrs(i,k).le.0.0) vt(i,k) = 0.0
-          if(ncr(i,k).le.0.0) vtn(i,k) = 0.0 
+          if(ncr(i,k).le.0.0) vtn(i,k) = 0.0
         enddo
       enddo
   END subroutine slope_rain
@@ -2409,7 +2409,7 @@ CONTAINS
         dza(k) = za(k+1)-za(k)
       enddo
       dza(km+1) = zi(km+1) - za(km+1)
-!     
+!
 ! computer deformation at arrival point
       do k=1,km
         qa(k) = qq(k)*dz(k)/dza(k)
@@ -2418,7 +2418,7 @@ CONTAINS
       enddo
       qa(km+1) = 0.0
 !     call maxmin(km,1,qa,' arrival points ')
-!     
+!
 ! compute arrival terminal velocity, and estimate mean terminal velocity
 ! then back to use mean terminal velocity
       if( n.le.iter ) then
@@ -2430,7 +2430,7 @@ CONTAINS
         if(rid.eq.1) wa(:) = wa2(:)
         if( n.ge.2 ) wa(1:km)=0.5*(wa(1:km)+was(1:km))
         do k=1,km
-!#ifdef DEBUG 
+!#ifdef DEBUG
 !        print*,' slope_wsm3 ',qr(k)*1000.,den(k),denfac(k),tk(k),tmp(k),tmp1(k),tmp2(k),ww(k),wa(k)
 !#endif
 ! mean wind is average of departure and new arrival winds
@@ -2440,7 +2440,7 @@ CONTAINS
         n=n+1
         go to 100
       endif
-!     
+!
 ! estimate values at arrival cell interface with monotone
       do k=2,km
         dip=(qa(k+1)-qa(k))/(dza(k+1)+dza(k))
@@ -2524,9 +2524,9 @@ CONTAINS
                endif
                cycle intp
              endif
-!     
+!
        enddo intp
-!            
+!
 ! rain out
       sum_precip: do k=1,km
                     if( za(k).lt.0.0 .and. za(k+1).lt.0.0 ) then
@@ -2538,13 +2538,13 @@ CONTAINS
                     endif
                     exit sum_precip
       enddo sum_precip
-!              
-! replace the new values 
-      rql(i,:) = qn(:)     
-!                          
+!
+! replace the new values
+      rql(i,:) = qn(:)
+!
 ! ----------------------------------
-      enddo i_loop         
-!                        
+      enddo i_loop
+!
   END SUBROUTINE nislfv_rain_plmr
 !-------------------------------------------------------------------
       SUBROUTINE nislfv_rain_plm6(im,km,denl,denfacl,tkl,dzl,wwl,rql,rql2, precip1, precip2,dt,id,iter)
@@ -2999,11 +2999,11 @@ CONTAINS
                                 re_qc, re_qi, re_qs, kts, kte, ii, jj)
 
 !-----------------------------------------------------------------------
-!  Compute radiation effective radii of cloud water, ice, and snow for 
+!  Compute radiation effective radii of cloud water, ice, and snow for
 !  double-moment microphysics..
 !  These are entirely consistent with microphysics assumptions, not
 !  constant or otherwise ad hoc as is internal to most radiation
-!  schemes.  
+!  schemes.
 !  Coded and implemented by Soo Ya Bae, KIAPS, January 2015.
 !-----------------------------------------------------------------------
 
@@ -3089,7 +3089,7 @@ CONTAINS
           if (rqs(k).le.R1) CYCLE
           supcol = t0c-t(k)
           n0sfac = max(min(exp(alpha*supcol),n0smax/n0s),1.)
-          lamdas = sqrt(sqrt(pidn0s*n0sfac/rqs(k))) 
+          lamdas = sqrt(sqrt(pidn0s*n0sfac/rqs(k)))
           re_qs(k) = max(25.e-6,min(0.5*(1./lamdas),999.e-6))
         enddo
       endif

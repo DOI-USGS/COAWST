@@ -395,9 +395,9 @@ CONTAINS
 !
 !<DESCRIPTION>
 ! If there is an error reading the "nml_name" namelist, this routine is
-! called to check for namelist variables that have been removed by the 
+! called to check for namelist variables that have been removed by the
 ! developers and are still in user's namelists.
-! 
+!
 ! The calls to this routine are in registry-generated code: inc/config_reads.inc
 !</DESCRIPTION>
 !

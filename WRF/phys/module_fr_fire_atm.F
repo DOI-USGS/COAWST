@@ -17,16 +17,16 @@ SUBROUTINE fire_tendency( &
     ids,ide, kds,kde, jds,jde,   & ! dimensions
     ims,ime, kms,kme, jms,jme,   &
     its,ite, kts,kte, jts,jte,   &
-    grnhfx,grnqfx,canhfx,canqfx, & ! heat fluxes summed up to  atm grid 
-    alfg,alfc,z1can,             & ! coeffients, properties, geometry 
+    grnhfx,grnqfx,canhfx,canqfx, & ! heat fluxes summed up to  atm grid
+    alfg,alfc,z1can,             & ! coeffients, properties, geometry
     zs,z_at_w,dz8w,mu,c1h,c2h,rho, &
-    rthfrten,rqvfrten)             ! theta and Qv tendencies 
+    rthfrten,rqvfrten)             ! theta and Qv tendencies
 
-! This routine is atmospheric physics 
+! This routine is atmospheric physics
 ! it does NOT go into module_fr_fire_phys because it is not related to fire physical processes
 
 ! --- this routine takes fire generated heat and moisture fluxes and
-!     calculates their influence on the theta and water vapor 
+!     calculates their influence on the theta and water vapor
 ! --- note that these tendencies are valid at the Arakawa-A location
 
    IMPLICIT NONE
@@ -69,7 +69,7 @@ SUBROUTINE fire_tendency( &
    REAL :: alfg_i, alfc_i
 
    REAL, DIMENSION( its:ite,kts:kte,jts:jte ) :: hfx,qfx
-   
+
 !!   character(len=128)::msg
 
         do j=jts,jte
@@ -83,7 +83,7 @@ SUBROUTINE fire_tendency( &
 
 
 ! --- set some local constants
-   
+
 
    cp_i = 1./cp     ! inverse of specific heat
    xlv_i = 1./xlv   ! inverse of latent heat
@@ -96,7 +96,7 @@ SUBROUTINE fire_tendency( &
    call print_2d_stats(its,ite,jts,jte,ims,ime,jms,jme,grnhfx,'fire_tendency:grnhfx')
    call print_2d_stats(its,ite,jts,jte,ims,ime,jms,jme,grnqfx,'fire_tendency:grnqfx')
 
-! --- set loop indicies : note that 
+! --- set loop indicies : note that
 
    i_st = MAX(its,ids+1)
    i_en = MIN(ite,ide-1)
@@ -123,7 +123,7 @@ SUBROUTINE fire_tendency( &
             ELSE
                fact_c = cp_i * EXP( - alfc_i * (z_w - z1can) )
             END IF
-            hfx(i,k,j) = fact_g * grnhfx(i,j) + fact_c * canhfx(i,j) 
+            hfx(i,k,j) = fact_g * grnhfx(i,j) + fact_c * canhfx(i,j)
 
 !!            write(msg,2)i,k,j,z_w,grnhfx(i,j),hfx(i,k,j)
 !!2           format('hfx:',3i4,6e11.3)
@@ -137,8 +137,8 @@ SUBROUTINE fire_tendency( &
             ELSE
                fact_c = xlv_i * EXP( - alfc_i * (z_w - z1can) )
             END IF
-            qfx(i,k,j) = fact_g * grnqfx(i,j) + fact_c * canqfx(i,j) 
-            
+            qfx(i,k,j) = fact_g * grnqfx(i,j) + fact_c * canqfx(i,j)
+
 !!            if(hfx(i,k,j).ne.0. .or. qfx(i,k,j) .ne. 0.)then
 !!                write(msg,1)i,k,j,hfx(i,k,j),qfx(i,k,j)
 !!1               format('tend:',3i6,2e11.3)
@@ -151,7 +151,7 @@ SUBROUTINE fire_tendency( &
 
 ! --- add flux divergence to tendencies
 !
-!   multiply by dry air mass (mu) to eliminate the need to 
+!   multiply by dry air mass (mu) to eliminate the need to
 !   call sr. calculate_phy_tend (in dyn_em/module_em.F)
 
    DO j = j_st,j_en

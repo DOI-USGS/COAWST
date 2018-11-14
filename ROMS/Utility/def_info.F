@@ -74,7 +74,7 @@
       USE mod_inwave_vars
       USE mod_inwave_bound
 #endif
-!     
+!
       USE def_var_mod, ONLY : def_var
 #if !defined PARALLEL_OUT  && defined DISTRIBUTE
       USE distribute_mod, ONLY : mp_bcasti
@@ -2988,7 +2988,7 @@
 #if defined BIOLOGY && defined SOLVE3D
 # if defined BIO_FENNEL
 #  include <fennel_def.h>
-# elif defined ESTUARYBGC 
+# elif defined ESTUARYBGC
 #  include <estuarybgc_def.h>
 # elif defined ECOSIM
 #  include <ecosim_def.h>

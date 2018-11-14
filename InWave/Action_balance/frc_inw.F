@@ -187,7 +187,7 @@
               EW=EW+EN
 !=======================================================================
 !  Compute the mean wave number and intrinsic periods
-!  What we do is give more importance to those wave 
+!  What we do is give more importance to those wave
 !  numbers with more energy
 !=======================================================================
               KM=KM+kwc(i,j,d)*EN

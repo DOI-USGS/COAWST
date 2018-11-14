@@ -1,4 +1,4 @@
-#if ( HYBRID_COORD==1 ) 
+#if ( HYBRID_COORD==1 )
 #  define mub(...) (c1(k)*XXPCBXX(__VA_ARGS__)+c2(k))
 #  define XXPCBXX(...) mub(__VA_ARGS__)
 
@@ -89,7 +89,7 @@ SUBROUTINE pxft ( grid                          &
 #ifdef DM_PARALLEL
    USE module_dm, ONLY : local_communicator, mytask, ntasks, ntasks_x, ntasks_y &
                        , local_communicator_periodic, itrace                    &
-                       , local_communicator_x 
+                       , local_communicator_x
    USE module_driver_constants
 #if 0
    USE module_comm_dm, ONLY : &
@@ -172,14 +172,14 @@ integer myproc, i, j, k
 ! carries one or both of these on their back through the filtering and then
 ! copies them back afterwards. IMPORTANT NOTE: for simplicity, this routine
 ! is not completely general.  It makes the following assumptions:
-! 
+!
 ! 1) If both flag_mu and flag_mut are specified then flag_uv is also specified
-! 
+!
 ! 2) If flag_uv is not specified, then only flag_mu and not flag_mut can be
-! 
+!
 ! 3) If flag_mu is specified than either flag_uv or flag_t must be
 !
-! This is designed to keep the clutter to a minimum in solve_em. 
+! This is designed to keep the clutter to a minimum in solve_em.
 ! This is not intended to be a general abstraction of the polar filtering
 ! calls in in WRF solvers or if the solve_em algorithms change.
 ! If the needs of the calling solver change, this logic may have to be
@@ -202,7 +202,7 @@ call wrf_get_myproc(myproc)
 ! U & V
    IF ( flag_uv .EQ. 1 ) THEN
      IF ( piggyback_mu ) THEN
-       grid%u_2(ips:ipe,kde,jps:jpe) = grid%mu_2(ips:ipe,jps:jpe) 
+       grid%u_2(ips:ipe,kde,jps:jpe) = grid%mu_2(ips:ipe,jps:jpe)
      ENDIF
 #if ( defined( DM_PARALLEL ) && ( ! defined( STUBMPI ) ) )
 # include "XPOSE_POLAR_FILTER_V_z2x.inc"
@@ -271,7 +271,7 @@ call wrf_get_myproc(myproc)
         CALL filter_tracer ( grid%t_xxx , grid%clat_xxx , grid%mf_xxx , &
                              grid%fft_filter_lat , grid%mf_fft , &
                              pos_def, swap_pole_with_next_j , &
-                             ids, ide, jds, jde, kds, kde , & 
+                             ids, ide, jds, jde, kds, kde , &
                              imsx, imex, jmsx, jmex, kmsx, kmex, &
                              ipsx, ipex, jpsx, jpex, kpsx, kpex )
      END IF
@@ -291,7 +291,7 @@ call wrf_get_myproc(myproc)
         CALL filter_tracer ( grid%t_2 , grid%clat , grid%msft , &
                              grid%fft_filter_lat , grid%mf_fft , &
                              pos_def, swap_pole_with_next_j , &
-                             ids, ide, jds, jde, kds, kde , & 
+                             ids, ide, jds, jde, kds, kde , &
                              ims, ime, jms, jme, kms, kme, &
                              ips, ipe, jps, jpe, kps, k_end )
      END IF
@@ -427,7 +427,7 @@ call wrf_get_myproc(myproc)
         CALL filter_tracer ( grid%fourd_xxx , grid%clat_xxx , grid%mf_xxx , &
                              grid%fft_filter_lat , grid%mf_fft , &
                              pos_def, swap_pole_with_next_j , &
-                             ids, ide, jds, jde, kds, kde , & 
+                             ids, ide, jds, jde, kds, kde , &
                              imsx, imex, jmsx, jmex, kmsx, kmex, &
                              ipsx, ipex, jpsx, jpex, kpsx, kpex )
      END IF
@@ -443,7 +443,7 @@ call wrf_get_myproc(myproc)
         CALL filter_tracer ( moist(ims,kms,jms,itrace) , grid%clat , grid%msft , &
                              grid%fft_filter_lat , grid%mf_fft , &
                              pos_def, swap_pole_with_next_j , &
-                             ids, ide, jds, jde, kds, kde , & 
+                             ids, ide, jds, jde, kds, kde , &
                              ims, ime, jms, jme, kms, kme, &
                              ips, ipe, jps, jpe, kps, MIN(kpe,kde-1) )
      END IF
@@ -466,7 +466,7 @@ call wrf_get_myproc(myproc)
         CALL filter_tracer ( grid%fourd_xxx , grid%clat_xxx , grid%mf_xxx , &
                              grid%fft_filter_lat , grid%mf_fft , &
                              pos_def, swap_pole_with_next_j , &
-                             ids, ide, jds, jde, kds, kde , & 
+                             ids, ide, jds, jde, kds, kde , &
                              imsx, imex, jmsx, jmex, kmsx, kmex, &
                              ipsx, ipex, jpsx, jpex, kpsx, kpex )
      END IF
@@ -482,7 +482,7 @@ call wrf_get_myproc(myproc)
         CALL filter_tracer ( chem(ims,kms,jms,itrace) , grid%clat , grid%msft , &
                              grid%fft_filter_lat , grid%mf_fft , &
                              pos_def, swap_pole_with_next_j , &
-                             ids, ide, jds, jde, kds, kde , & 
+                             ids, ide, jds, jde, kds, kde , &
                              ims, ime, jms, jme, kms, kme, &
                              ips, ipe, jps, jpe, kps, MIN(kpe,kde-1) )
      END IF
@@ -506,7 +506,7 @@ call wrf_get_myproc(myproc)
         CALL filter_tracer ( grid%fourd_xxx , grid%clat_xxx , grid%mf_xxx , &
                              grid%fft_filter_lat , grid%mf_fft , &
                              pos_def, swap_pole_with_next_j , &
-                             ids, ide, jds, jde, kds, kde , & 
+                             ids, ide, jds, jde, kds, kde , &
                              imsx, imex, jmsx, jmex, kmsx, kmex, &
                              ipsx, ipex, jpsx, jpex, kpsx, kpex )
      END IF
@@ -523,7 +523,7 @@ call wrf_get_myproc(myproc)
         CALL filter_tracer ( tracer(ims,kms,jms,itrace) , grid%clat , grid%msft , &
                              grid%fft_filter_lat , grid%mf_fft , &
                              pos_def, swap_pole_with_next_j , &
-                             ids, ide, jds, jde, kds, kde , & 
+                             ids, ide, jds, jde, kds, kde , &
                              ims, ime, jms, jme, kms, kme, &
                              ips, ipe, jps, jpe, kps, MIN(kpe,kde-1) )
      END IF
@@ -546,7 +546,7 @@ call wrf_get_myproc(myproc)
         CALL filter_tracer ( grid%fourd_xxx , grid%clat_xxx , grid%mf_xxx , &
                              grid%fft_filter_lat , grid%mf_fft , &
                              pos_def, swap_pole_with_next_j , &
-                             ids, ide, jds, jde, kds, kde , & 
+                             ids, ide, jds, jde, kds, kde , &
                              imsx, imex, jmsx, jmex, kmsx, kmex, &
                              ipsx, ipex, jpsx, jpex, kpsx, kpex )
      END IF
@@ -562,7 +562,7 @@ call wrf_get_myproc(myproc)
         CALL filter_tracer ( scalar(ims,kms,jms,itrace) , grid%clat , grid%msft , &
                              grid%fft_filter_lat , grid%mf_fft , &
                              pos_def, swap_pole_with_next_j , &
-                             ids, ide, jds, jde, kds, kde , & 
+                             ids, ide, jds, jde, kds, kde , &
                              ims, ime, jms, jme, kms, kme, &
                              ips, ipe, jps, jpe, kps, MIN(kpe,kde-1) )
      END IF
@@ -681,7 +681,7 @@ SUBROUTINE polar_filter_fft_2d_ncar(nx,ny,fin,lat,filter_latitude,piggyback,fftf
   INTEGER :: k, fftflag
   REAL, DIMENSION(NX,NY) :: work
   REAL, DIMENSION(NX+15) :: wsave
-  REAL(KIND=8), DIMENSION(NX,NY) :: fin8, work8 
+  REAL(KIND=8), DIMENSION(NX,NY) :: fin8, work8
   REAL(KIND=8), DIMENSION(NX+15) :: wsave8
 
   INTEGER :: i, j
@@ -711,7 +711,7 @@ SUBROUTINE polar_filter_fft_2d_ncar(nx,ny,fin,lat,filter_latitude,piggyback,fftf
   IF(piggyback) ntop = ny-1
 
 !  forward transform
-!  initialize coefficients, place in wsave 
+!  initialize coefficients, place in wsave
 !   (should place this in init and save wsave at program start)
 
   if(fftflag.eq.0) then
@@ -722,23 +722,23 @@ SUBROUTINE polar_filter_fft_2d_ncar(nx,ny,fin,lat,filter_latitude,piggyback,fftf
 
   IF(ier /= 0) THEN
     write(a_message,*) ' error in rfftmi ',ier
-    CALL wrf_message ( a_message ) 
+    CALL wrf_message ( a_message )
   END IF
 
 !  do the forward transform
 
   if(fftflag.eq.0) then
      call rfftmf(lot, jump, n, inc, fin, lenr, wsave, lensav, work, lenwrk, ier)
-  else 
+  else
      fin8 = fin
-     do k=1,ny 
+     do k=1,ny
         call dfft1f(n, inc, fin8(1,k), lenr, wsave8, lensav, work8, lenwrk, ier)
-     enddo 
+     enddo
   endif
 
   IF(ier /= 0) THEN
     write(a_message,*) ' error in rfftmf ',ier
-    CALL wrf_message ( a_message ) 
+    CALL wrf_message ( a_message )
   END IF
 
   if(MOD(n,2) == 0) then
@@ -804,15 +804,15 @@ SUBROUTINE polar_filter_fft_2d_ncar(nx,ny,fin,lat,filter_latitude,piggyback,fftf
   if(fftflag.eq.0) then
      call rfftmb(lot, jump, n, inc, fin, lenr, wsave, lensav, work, lenwrk, ier)
   else
-     do k=1,ny 
+     do k=1,ny
         call dfft1b(n, inc, fin8(1,k), lenr, wsave8, lensav, work8, lenwrk, ier)
      enddo
-     fin= fin8     
+     fin= fin8
   endif
 
   IF(ier /= 0) THEN
     write(a_message,*) ' error in rfftmb ',ier
-    CALL wrf_message ( a_message ) 
+    CALL wrf_message ( a_message )
   END IF
 
 END SUBROUTINE polar_filter_fft_2d_ncar
@@ -865,7 +865,7 @@ END SUBROUTINE polar_filter_fft_2d_ncar
       loop_neg : DO j = MIN(jde-1,jte) , jts , -1
          IF ( xlat(its,j) .LT. 0.0 ) THEN
             IF ( ABS(xlat(its,j)) .GE. fft_filter_lat ) THEN
-               j_lat_neg = j 
+               j_lat_neg = j
                EXIT loop_neg
             END IF
          END IF
@@ -891,7 +891,7 @@ END SUBROUTINE polar_filter_fft_2d_ncar
          END DO
 
          !  Filter the fields at the negative lats.
-   
+
          DO j = MIN(j_lat_neg,jte) , jts , -1
 !           i_kicker = MIN( MAX ( NINT(msftx(its,j)/2) , 1 ) , (ide - ids) / 2 )
             i_kicker = MIN( MAX ( NINT(msftx(its,j)/mf_fft/2) , 1 ) , (ide - ids) / 2 )
@@ -919,9 +919,9 @@ END SUBROUTINE polar_filter_fft_2d_ncar
                tr_out(i,j) = ( tr_in(i,j) + sum ) / REAL ( 2 * count + 1 )
             END DO
          END DO
-   
+
          !  Filter the fields at the positive lats.
-   
+
          DO j = MAX(j_lat_pos,jts) , MIN(jde-1,jte)
 !           i_kicker = MIN( MAX ( NINT(msftx(its,j)/2) , 1 ) , (ide - ids) / 2 )
             i_kicker = MIN( MAX ( NINT(msftx(its,j)/mf_fft/2) , 1 ) , (ide - ids) / 2 )
@@ -949,17 +949,17 @@ END SUBROUTINE polar_filter_fft_2d_ncar
                tr_out(i,j) = ( tr_in(i,j) + sum ) / REAL ( 2 * count + 1 )
             END DO
          END DO
-   
+
          !  Set output values for whole patch.
-   
+
          DO j = jts , MIN(jde-1,jte)
             DO i = its , MIN(ide-1,ite)
                tr3d_in(i,k,j) = tr_out(i,j)
             END DO
          END DO
-   
+
          !  Positive definite on scalars?
-   
+
          IF ( pos_def ) THEN
             DO j = jts , MIN(jde-1,jte)
                DO i = its , MIN(ide-1,ite)
@@ -967,16 +967,16 @@ END SUBROUTINE polar_filter_fft_2d_ncar
                END DO
             END DO
          END IF
-   
+
          !  Remove values at j=1 and j=jde-1 locations, set them to the rows just next to them.
-   
+
          IF ( swap_pole_with_next_j ) THEN
             IF  ( jts .EQ. jds ) THEN
                DO i = its , MIN(ide-1,ite)
                   tr3d_in(i,k,jts) = tr3d_in(i,k,jts+1)
                END DO
             END IF
-   
+
             IF  ( jte .EQ. jde ) THEN
                DO i = its , MIN(ide-1,ite)
                   tr3d_in(i,k,jte-1) = tr3d_in(i,k,jte-2)
@@ -1057,7 +1057,7 @@ END SUBROUTINE polar_filter_fft_2d_ncar
          END DO
 
          !  Filter the topo at the negative lats.
-   
+
          DO j = j_lat_neg , jts , -1
             i_kicker = MIN( MAX ( NINT(msftx(its,j)) , 1 ) , (ide - ids) / 2 )
 !           print *,'j = ' , j, ', kicker = ',i_kicker
@@ -1103,9 +1103,9 @@ END SUBROUTINE polar_filter_fft_2d_ncar
                END IF
             END DO
          END DO
-   
+
          !  Filter the topo at the positive lats.
-   
+
          DO j = j_lat_pos , MIN(jde-1,jte)
             i_kicker = MIN( MAX ( NINT(msftx(its,j)) , 1 ) , (ide - ids) / 2 )
 !           print *,'j = ' , j, ', kicker = ',i_kicker
@@ -1151,9 +1151,9 @@ END SUBROUTINE polar_filter_fft_2d_ncar
                END IF
             END DO
          END DO
-   
+
          !  Set output values to initial input topo values for whole patch.
-   
+
          DO j = jts , MIN(jde-1,jte)
             DO i = its , MIN(ide-1,ite)
                tr3d_in(i,k,j) = tr_out(i,j)

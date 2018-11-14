@@ -26,13 +26,13 @@
       USE mod_sedbed
 # endif
 # if defined VEGETATION && defined VEG_DRAG
-      USE mod_vegarr 
+      USE mod_vegarr
       USE vegetation_drag_mod, ONLY : vegetation_drag_cal
-# endif 
-# if defined VEGETATION && defined VEG_HMIXING 
-      USE mod_vegarr 
+# endif
+# if defined VEGETATION && defined VEG_HMIXING
+      USE mod_vegarr
       USE vegetation_hmixing_mod, ONLY : vegetation_hmixing_cal
-# endif 
+# endif
       USE mod_stepping
 !
 !  Imported variable declarations.
@@ -90,13 +90,13 @@
      &                  MIXING(ng) % visc4_p,   MIXING(ng) % visc4_r,   &
 #  endif
 # endif
-# if defined VEGETATION && defined VEG_DRAG 
+# if defined VEGETATION && defined VEG_DRAG
      &                  VEG(ng) % step2d_uveg,                          &
      &                  VEG(ng) % step2d_vveg,                          &
 # endif
-# if defined VEGETATION && defined VEG_HMIXING 
+# if defined VEGETATION && defined VEG_HMIXING
      &                  VEG(ng) % visc2d_r_veg,                         &
-# endif 
+# endif
 # ifdef WEC
 #  ifdef WEC_VF
 #   ifdef WEC_ROLLER
@@ -203,7 +203,7 @@
 # if defined VEGETATION && defined VEG_DRAG
      &                        step2d_uveg, step2d_vveg,                 &
 # endif
-# if defined VEGETATION && defined VEG_HMIXING 
+# if defined VEGETATION && defined VEG_HMIXING
      &                        visc2d_r_veg,                             &
 # endif
 # ifdef WEC
@@ -325,11 +325,11 @@
       real(r8), intent(in) :: visc4_r(LBi:,LBj:)
 #   endif
 #  endif
-#  if defined VEGETATION && defined VEG_DRAG 
+#  if defined VEGETATION && defined VEG_DRAG
       real(r8), intent(in) :: step2d_uveg(LBi:,LBj:)
       real(r8), intent(in) :: step2d_vveg(LBi:,LBj:)
 #  endif
-#  if defined VEGETATION && defined VEG_HMIXING 
+#  if defined VEGETATION && defined VEG_HMIXING
       real(r8), intent(in) :: visc2d_r_veg(LBi:,LBj:)
 #  endif
 #  ifdef WEC
@@ -468,7 +468,7 @@
       real(r8), intent(in) :: step2d_uveg(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: step2d_vveg(LBi:UBi,LBj:UBj)
 #  endif
-#  if defined VEGETATION && defined VEG_HMIXING 
+#  if defined VEGETATION && defined VEG_HMIXING
       real(r8), intent(in) :: visc2d_r_veg(LBi:UBi,LBj:UBj)
 #  endif
 #  ifdef WEC

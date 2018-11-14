@@ -1,7 +1,7 @@
 !IDEAL:MODEL_LAYER:INITIALIZATION
 
 !  This MODULE holds the routines which are used to perform various initializations
-!  for the individual domains.  
+!  for the individual domains.
 
 !-----------------------------------------------------------------------
 
@@ -28,7 +28,7 @@ CONTAINS
 ! Also dereferences the grid variables and passes them down as arguments.
 ! This is crucial, since the lower level routines may do message passing
 ! and this will get fouled up on machines that insist on passing down
-! copies of assumed-shape arrays (by passing down as arguments, the 
+! copies of assumed-shape arrays (by passing down as arguments, the
 ! data are treated as assumed-size -- ie. f77 -- arrays and the copying
 ! business is avoided).  Fie on the F90 designers.  Fie and a pox.
 
@@ -37,7 +37,7 @@ CONTAINS
    IMPLICIT NONE
 
    !  Input data.
-   TYPE (domain), POINTER :: grid 
+   TYPE (domain), POINTER :: grid
    !  Local data.
    INTEGER :: idum1, idum2
 
@@ -262,7 +262,7 @@ CONTAINS
     grid%c2f(k) = 0.
     grid%c1h(k) = 1.
     grid%c2h(k) = 0.
-   ENDDO 
+   ENDDO
 
    DO k=2, kde-1
     grid%dn(k) = 0.5*(grid%dnw(k)+grid%dnw(k-1))
@@ -271,11 +271,11 @@ CONTAINS
     grid%fnm(k) = .5* grid%dnw(k-1)/grid%dn(k)
    ENDDO
 
-   cof1 = (2.*grid%dn(2)+grid%dn(3))/(grid%dn(2)+grid%dn(3))*grid%dnw(1)/grid%dn(2) 
-   cof2 =     grid%dn(2)        /(grid%dn(2)+grid%dn(3))*grid%dnw(1)/grid%dn(3) 
+   cof1 = (2.*grid%dn(2)+grid%dn(3))/(grid%dn(2)+grid%dn(3))*grid%dnw(1)/grid%dn(2)
+   cof2 =     grid%dn(2)        /(grid%dn(2)+grid%dn(3))*grid%dnw(1)/grid%dn(3)
    grid%cf1  = grid%fnp(2) + cof1
    grid%cf2  = grid%fnm(2) - cof1 - cof2
-   grid%cf3  = cof2       
+   grid%cf3  = cof2
 
    grid%cfn  = (.5*grid%dnw(kde-1)+grid%dn(kde-1))/grid%dn(kde-1)
    grid%cfn1 = -.5*grid%dnw(kde-1)/grid%dn(kde-1)
@@ -445,7 +445,7 @@ CONTAINS
    END DO
    END DO
 
-  
+
    DO k=kts,kte
       grid%t_base(k)  = grid%t_init(its,k,jts)
       grid%qv_base(k) = 0.

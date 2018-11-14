@@ -64,7 +64,7 @@
      &                        uie, vie,                                 &
      &                        hi, pice, zetai, eta,                     &
      &                        sig11, sig22, sig12                       &
-     &                        ) 
+     &                        )
 !***********************************************************************
 !
 
@@ -127,11 +127,11 @@
       real(r8) :: e0
       real(r8) :: ep
       real(r8) :: ee
-      real(r8) :: ees 
+      real(r8) :: ees
       real(r8) :: gamma
       real(r8) :: f1
       real(r8) :: f2
-      real(r8) :: f3 
+      real(r8) :: f3
       real(r8) :: alfa
       real(r8) :: beta
       real(r8) :: epx
@@ -141,12 +141,12 @@
 
 !----------------
 !
-!.....initial value for Youngs modulus (between 0 and 1) 
+!.....initial value for Youngs modulus (between 0 and 1)
 !
       e0=0.25_r8
 
 !
-!...........stress tensor 
+!...........stress tensor
 !
       DO j=Jstr,Jend
         DO i=Istr,Iend
@@ -163,37 +163,37 @@
       DO j=Jstr,Jend
         DO i=Istr,Iend
 !
-          IF (hi(i,j,liold).gt.0.01_r8) THEN 
-            e = 2.0_r8*e0*rhoice(ng)*hi(i,j,liold)/(pm(i,j)*dte(ng))**2 
-            ep = e*pice(i,j)/(4.0_r8*zetai(i,j)+1.0E-8_r8) 
-            ee = e/(2.0_r8*eta(i,j)+1.0E-8_r8) 
+          IF (hi(i,j,liold).gt.0.01_r8) THEN
+            e = 2.0_r8*e0*rhoice(ng)*hi(i,j,liold)/(pm(i,j)*dte(ng))**2
+            ep = e*pice(i,j)/(4.0_r8*zetai(i,j)+1.0E-8_r8)
+            ee = e/(2.0_r8*eta(i,j)+1.0E-8_r8)
             ees= e*(eta(i,j)-zetai(i,j))/                               &
-     &             (4.0_r8*eta(i,j)*zetai(i,j)+1.0E-8_r8) 
+     &             (4.0_r8*eta(i,j)*zetai(i,j)+1.0E-8_r8)
 !
-            alfa = 1.0_r8/dte(ng) + ee + ees 
-            beta = ees 
-            gamma = 1/dte(ng) + ee 
-            f1 = e*eps11(i,j) - ep + sig11(i,j,lieol)/dte(ng) 
-            f2 = e*eps22(i,j) - ep + sig22(i,j,lieol)/dte(ng) 
-            f3 = e*eps12(i,j) + sig12(i,j,lieol)/dte(ng) 
-            sig11(i,j,lienw) = (alfa*f1 - beta*f2)/(alfa**2 - beta**2) 
-            sig12(i,j,lienw) = f3/gamma 
-            sig22(i,j,lienw) = (alfa*f2 - beta*f1)/(alfa**2 - beta**2) 
+            alfa = 1.0_r8/dte(ng) + ee + ees
+            beta = ees
+            gamma = 1/dte(ng) + ee
+            f1 = e*eps11(i,j) - ep + sig11(i,j,lieol)/dte(ng)
+            f2 = e*eps22(i,j) - ep + sig22(i,j,lieol)/dte(ng)
+            f3 = e*eps12(i,j) + sig12(i,j,lieol)/dte(ng)
+            sig11(i,j,lienw) = (alfa*f1 - beta*f2)/(alfa**2 - beta**2)
+            sig12(i,j,lienw) = f3/gamma
+            sig22(i,j,lienw) = (alfa*f2 - beta*f1)/(alfa**2 - beta**2)
 !
           ELSE
-! 
+!
             sig11(i,j,lienw) = 2.0_r8*eta(i,j)*eps11(i,j)+              &
      &        (zetai(i,j)-eta(i,j))*                                    &
      &        (eps11(i,j)+eps22(i,j))  - pice(i,j)/2.0_r8
-!     
+!
             sig22(i,j,lienw) = 2.0_r8*eta(i,j)*eps22(i,j)+              &
      &        (zetai(i,j)-eta(i,j))*                                    &
-     &        (eps11(i,j)+eps22(i,j))  - pice(i,j)/2.0_r8 
+     &        (eps11(i,j)+eps22(i,j))  - pice(i,j)/2.0_r8
 !
             sig12(i,j,lienw) = 2.0_r8*eta(i,j)*eps12(i,j)
 !
-          END IF 
-        END DO 
+          END IF
+        END DO
       END DO
 
       CALL i2d_bc_tile (ng, tile, iNLM,                                 &

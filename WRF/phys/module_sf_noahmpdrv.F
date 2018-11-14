@@ -10,7 +10,7 @@ MODULE module_sf_noahmpdrv
 CONTAINS
 !
   SUBROUTINE noahmplsm(ITIMESTEP,        YR,   JULIAN,   COSZIN,XLAT,XLONG, & ! IN : Time/Space-related
-                  DZ8W,       DT,       DZS,    NSOIL,       DX,            & ! IN : Model configuration 
+                  DZ8W,       DT,       DZS,    NSOIL,       DX,            & ! IN : Model configuration
 	        IVGTYP,   ISLTYP,    VEGFRA,   VEGMAX,      TMN,            & ! IN : Vegetation/Soil characteristics
 		 XLAND,     XICE,XICE_THRES,  CROPCAT,                      & ! IN : Vegetation/Soil characteristics
 	       PLANTING,  HARVEST,SEASON_GDD,                               &
@@ -81,7 +81,7 @@ CONTAINS
     REAL,    DIMENSION( ims:ime,          jms:jme ), INTENT(IN   ) ::  XLAND     ! =2 ocean; =1 land/seaice
     REAL,    DIMENSION( ims:ime,          jms:jme ), INTENT(IN   ) ::  XICE      ! fraction of grid that is seaice
     REAL,                                            INTENT(IN   ) ::  XICE_THRES! fraction of grid determining seaice
-    INTEGER,                                         INTENT(IN   ) ::  IDVEG     ! dynamic vegetation (1 -> off ; 2 -> on) with opt_crs = 1      
+    INTEGER,                                         INTENT(IN   ) ::  IDVEG     ! dynamic vegetation (1 -> off ; 2 -> on) with opt_crs = 1
     INTEGER,                                         INTENT(IN   ) ::  IOPT_CRS  ! canopy stomatal resistance (1-> Ball-Berry; 2->Jarvis)
     INTEGER,                                         INTENT(IN   ) ::  IOPT_BTR  ! soil moisture factor for stomatal resistance (1-> Noah; 2-> CLM; 3-> SSiB)
     INTEGER,                                         INTENT(IN   ) ::  IOPT_RUN  ! runoff and groundwater (1->SIMGM; 2->SIMTOP; 3->Schaake96; 4->BATS)
@@ -121,7 +121,7 @@ CONTAINS
     REAL,    DIMENSION( ims:ime,          jms:jme ), INTENT(IN   ) ::  HARVEST   ! harvest date
     REAL,    DIMENSION( ims:ime,          jms:jme ), INTENT(IN   ) ::  SEASON_GDD! growing season GDD
     REAL,    DIMENSION( ims:ime,          jms:jme ), INTENT(INOUT) ::  GRAINXY   ! mass of grain XING [g/m2]
-    REAL,    DIMENSION( ims:ime,          jms:jme ), INTENT(INOUT) ::  GDDXY     ! growing degree days XING (based on 10C) 
+    REAL,    DIMENSION( ims:ime,          jms:jme ), INTENT(INOUT) ::  GDDXY     ! growing degree days XING (based on 10C)
  INTEGER,    DIMENSION( ims:ime,          jms:jme ), INTENT(INOUT) ::  PGSXY
 
 #ifdef WRF_HYDRO
@@ -201,7 +201,7 @@ CONTAINS
     REAL,    DIMENSION( ims:ime, 1:nsoil, jms:jme ), INTENT(INOUT) ::  SMOISEQ   ! eq volumetric soil moisture [m3/m3]
     REAL,    DIMENSION( ims:ime,          jms:jme ), INTENT(INOUT) ::  SMCWTDXY  ! soil moisture content in the layer to the water table when deep
     REAL,    DIMENSION( ims:ime,          jms:jme ), INTENT(INOUT) ::  DEEPRECHXY ! recharge to the water table when deep
-    REAL,    DIMENSION( ims:ime,          jms:jme ), INTENT(INOUT) ::  RECHXY    ! recharge to the water table (diagnostic) 
+    REAL,    DIMENSION( ims:ime,          jms:jme ), INTENT(INOUT) ::  RECHXY    ! recharge to the water table (diagnostic)
 
 ! OUT (with no Noah LSM equivalent)
 
@@ -245,10 +245,10 @@ CONTAINS
     REAL,    DIMENSION( ims:ime,          jms:jme ), INTENT(OUT  ) ::  IRBXY     ! bare net longwave rad. [w/m2] [+ to atm]
     REAL,    DIMENSION( ims:ime,          jms:jme ), INTENT(OUT  ) ::  TRXY      ! transpiration [w/m2]  [+ to atm]
     REAL,    DIMENSION( ims:ime,          jms:jme ), INTENT(OUT  ) ::  EVCXY     ! canopy evaporation heat [w/m2]  [+ to atm]
-    REAL,    DIMENSION( ims:ime,          jms:jme ), INTENT(OUT  ) ::  CHLEAFXY  ! leaf exchange coefficient 
-    REAL,    DIMENSION( ims:ime,          jms:jme ), INTENT(OUT  ) ::  CHUCXY    ! under canopy exchange coefficient 
-    REAL,    DIMENSION( ims:ime,          jms:jme ), INTENT(OUT  ) ::  CHV2XY    ! veg 2m exchange coefficient 
-    REAL,    DIMENSION( ims:ime,          jms:jme ), INTENT(OUT  ) ::  CHB2XY    ! bare 2m exchange coefficient 
+    REAL,    DIMENSION( ims:ime,          jms:jme ), INTENT(OUT  ) ::  CHLEAFXY  ! leaf exchange coefficient
+    REAL,    DIMENSION( ims:ime,          jms:jme ), INTENT(OUT  ) ::  CHUCXY    ! under canopy exchange coefficient
+    REAL,    DIMENSION( ims:ime,          jms:jme ), INTENT(OUT  ) ::  CHV2XY    ! veg 2m exchange coefficient
+    REAL,    DIMENSION( ims:ime,          jms:jme ), INTENT(OUT  ) ::  CHB2XY    ! bare 2m exchange coefficient
     INTEGER,  INTENT(IN   )   ::     ids,ide, jds,jde, kds,kde,  &  ! d -> domain
          &                           ims,ime, jms,jme, kms,kme,  &  ! m -> memory
          &                           its,ite, jts,jte, kts,kte      ! t -> tile
@@ -287,7 +287,7 @@ CONTAINS
 ! INOUT (with generic LSM equivalent)
 
     REAL                                :: FSH          ! total sensible heat (w/m2) [+ to atm]
-    REAL                                :: SSOIL        ! soil heat heat (w/m2) 
+    REAL                                :: SSOIL        ! soil heat heat (w/m2)
     REAL                                :: SALB         ! surface albedo (-)
     REAL                                :: FSNO         ! snow cover fraction (-)
     REAL,   DIMENSION( 1:NSOIL)         :: SMCEQ        ! eq vol. soil moisture (m3/m3)
@@ -320,7 +320,7 @@ CONTAINS
     REAL                                :: WT           ! groundwater storage [mm]
     REAL                                :: SMCWTD       ! soil moisture content in the layer to the water table when deep
     REAL                                :: DEEPRECH     ! recharge to the water table when deep
-    REAL                                :: RECH         ! recharge to the water table (diagnostic)  
+    REAL                                :: RECH         ! recharge to the water table (diagnostic)
     REAL, DIMENSION(-2:NSOIL)           :: ZSNSO        ! snow layer depth [m]
     REAL, DIMENSION(-2:              0) :: SNICE        ! snow layer ice [mm]
     REAL, DIMENSION(-2:              0) :: SNLIQ        ! snow layer liquid water [mm]
@@ -380,10 +380,10 @@ CONTAINS
     REAL                                :: GHB          ! bare ground heat flux [w/m2] [+ to soil]
     REAL                                :: TR           ! transpiration [w/m2]  [+ to atm]
     REAL                                :: EVC          ! canopy evaporation heat [w/m2]  [+ to atm]
-    REAL                                :: CHLEAF       ! leaf exchange coefficient 
-    REAL                                :: CHUC         ! under canopy exchange coefficient 
-    REAL                                :: CHV2         ! veg 2m exchange coefficient 
-    REAL                                :: CHB2         ! bare 2m exchange coefficient 
+    REAL                                :: CHLEAF       ! leaf exchange coefficient
+    REAL                                :: CHUC         ! under canopy exchange coefficient
+    REAL                                :: CHV2         ! veg 2m exchange coefficient
+    REAL                                :: CHB2         ! bare 2m exchange coefficient
   REAL   :: PAHV    !precipitation advected heat - vegetation net (W/m2)
   REAL   :: PAHG    !precipitation advected heat - under canopy net (W/m2)
   REAL   :: PAHB    !precipitation advected heat - bare ground net (W/m2)
@@ -428,7 +428,7 @@ CONTAINS
 
     INTEGER, PARAMETER                  :: NSNOW = 3    ! number of snow layers fixed to 3
     REAL, PARAMETER                     :: undefined_value = -1.E36
-    
+
     type(noahmp_parameters) :: parameters
 
 
@@ -496,7 +496,7 @@ CONTAINS
 
        IF((XLAND(I,J)-1.5) >= 0.) CYCLE ILOOP   ! Open water case
 
-!     2D to 1D       
+!     2D to 1D
 
 ! IN only
 
@@ -541,7 +541,7 @@ CONTAINS
          PRCPOTHR  = PRCP - PRCPCONV - PRCPNONC - PRCPSHCV ! take care of other (fog) contained in rainbl
 	 PRCPOTHR  = MAX(0.0,PRCPOTHR)
 	 PRCPNONC  = PRCPNONC + PRCPOTHR
-         PRCPSNOW  = PRCPSNOW + SR(I,J)  * PRCPOTHR 
+         PRCPSNOW  = PRCPSNOW + SR(I,J)  * PRCPOTHR
        ELSE
          PRCPCONV  = 0.
          PRCPNONC  = PRCP
@@ -614,7 +614,7 @@ CONTAINS
            VEGTYP = ISURBAN_TABLE
          ELSE
            VEGTYP = NATURAL_TABLE  ! set urban vegetation type based on table natural
-           FVGMAX = 0.96 
+           FVGMAX = 0.96
          ENDIF
 
        ENDIF
@@ -633,7 +633,7 @@ CONTAINS
 !       parameters%refkdt = REFKDT_2D(I,J)         ! Soil Infiltration Parameter
 
        CALL TRANSFER_MP_PARAMETERS(VEGTYP,SOILTYP,SLOPETYP,SOILCOLOR,CROPTYPE,parameters)
-       
+
        GRAIN = GRAINXY (I,J)                ! mass of grain XING [g/m2]
        GDD   = GDDXY (I,J)                  ! growing degree days XING
        PGS   = PGSXY (I,J)                  ! growing degree days XING
@@ -669,7 +669,7 @@ CONTAINS
 ! Initialized local
 
        FICEOLD = 0.0
-       FICEOLD(ISNOW+1:0) = SNICEXY(I,ISNOW+1:0,J) &  ! snow ice fraction  
+       FICEOLD(ISNOW+1:0) = SNICEXY(I,ISNOW+1:0,J) &  ! snow ice fraction
            /(SNICEXY(I,ISNOW+1:0,J)+SNLIQXY(I,ISNOW+1:0,J))
        CO2PP  = CO2_TABLE * P_ML                      ! partial pressure co2 [Pa]
        O2PP   = O2_TABLE  * P_ML                      ! partial pressure  o2 [Pa]
@@ -679,7 +679,7 @@ CONTAINS
        DZ8W1D = DZ8W (I,1,J)                          ! thickness of atmospheric layers
 
        IF(VEGTYP == 25) FVEG = 0.0                  ! Set playa, lava, sand to bare
-       IF(VEGTYP == 25) PLAI = 0.0 
+       IF(VEGTYP == 25) PLAI = 0.0
        IF(VEGTYP == 26) FVEG = 0.0                  ! hard coded for USGS
        IF(VEGTYP == 26) PLAI = 0.0
        IF(VEGTYP == 27) FVEG = 0.0
@@ -688,7 +688,7 @@ CONTAINS
        IF ( VEGTYP == ISICE_TABLE ) THEN
          ICE = -1                           ! Land-ice point
          CALL NOAHMP_OPTIONS_GLACIER(IOPT_ALB  ,IOPT_SNF  ,IOPT_TBOT, IOPT_STC, IOPT_GLA )
-      
+
          TBOT = MIN(TBOT,263.15)                      ! set deep temp to at most -10C
          CALL NOAHMP_GLACIER(     I,       J,    COSZ,   NSNOW,   NSOIL,      DT, & ! IN : Time/Space/Model-related
                                T_ML,    P_ML,    U_ML,    V_ML,    Q_ML,    SWDN, & ! IN : Forcing
@@ -696,7 +696,7 @@ CONTAINS
                               QSNOW,  SNEQVO,  ALBOLD,      CM,      CH,   ISNOW, & ! IN/OUT :
                                 SWE,     SMC,   ZSNSO,  SNDPTH,   SNICE,   SNLIQ, & ! IN/OUT :
                                  TG,     STC,   SMH2O,   TAUSS,  QSFC1D,          & ! IN/OUT :
-                                FSA,     FSR,    FIRA,     FSH,    FGEV,   SSOIL, & ! OUT : 
+                                FSA,     FSR,    FIRA,     FSH,    FGEV,   SSOIL, & ! OUT :
                                TRAD,   ESOIL,   RUNSF,   RUNSB,     SAG,    SALB, & ! OUT :
                               QSNBOT,PONDING,PONDING1,PONDING2,    T2MB,    Q2MB, & ! OUT :
 			      EMISSI,  FPICE,    CHB2 &                             ! OUT :
@@ -705,63 +705,63 @@ CONTAINS
 #endif
                               )
 
-         FSNO   = 1.0       
+         FSNO   = 1.0
          TV     = undefined_value     ! Output from standard Noah-MP undefined for glacier points
-         TGB    = TG 
-         CANICE = undefined_value 
-         CANLIQ = undefined_value 
-         EAH    = undefined_value 
+         TGB    = TG
+         CANICE = undefined_value
+         CANLIQ = undefined_value
+         EAH    = undefined_value
          TAH    = undefined_value
-         FWET   = undefined_value 
-         WSLAKE = undefined_value 
-!         ZWT    = undefined_value 
-         WA     = undefined_value 
-         WT     = undefined_value 
-         LFMASS = undefined_value 
-         RTMASS = undefined_value 
-         STMASS = undefined_value 
-         WOOD   = undefined_value 
+         FWET   = undefined_value
+         WSLAKE = undefined_value
+!         ZWT    = undefined_value
+         WA     = undefined_value
+         WT     = undefined_value
+         LFMASS = undefined_value
+         RTMASS = undefined_value
+         STMASS = undefined_value
+         WOOD   = undefined_value
          GRAIN  = undefined_value
          GDD    = undefined_value
-         STBLCP = undefined_value 
-         FASTCP = undefined_value 
-         PLAI   = undefined_value 
-         PSAI   = undefined_value 
-         T2MV   = undefined_value 
-         Q2MV   = undefined_value 
-         NEE    = undefined_value 
-         GPP    = undefined_value 
-         NPP    = undefined_value 
-         FVEGMP = 0.0 
-         ECAN   = undefined_value 
-         ETRAN  = undefined_value 
-         APAR   = undefined_value 
-         PSN    = undefined_value 
-         SAV    = undefined_value 
-         RSSUN  = undefined_value 
-         RSSHA  = undefined_value 
-         BGAP   = undefined_value 
-         WGAP   = undefined_value 
+         STBLCP = undefined_value
+         FASTCP = undefined_value
+         PLAI   = undefined_value
+         PSAI   = undefined_value
+         T2MV   = undefined_value
+         Q2MV   = undefined_value
+         NEE    = undefined_value
+         GPP    = undefined_value
+         NPP    = undefined_value
+         FVEGMP = 0.0
+         ECAN   = undefined_value
+         ETRAN  = undefined_value
+         APAR   = undefined_value
+         PSN    = undefined_value
+         SAV    = undefined_value
+         RSSUN  = undefined_value
+         RSSHA  = undefined_value
+         BGAP   = undefined_value
+         WGAP   = undefined_value
          TGV    = undefined_value
-         CHV    = undefined_value 
-         CHB    = CH 
-         IRC    = undefined_value 
-         IRG    = undefined_value 
-         SHC    = undefined_value 
-         SHG    = undefined_value 
-         EVG    = undefined_value 
-         GHV    = undefined_value 
+         CHV    = undefined_value
+         CHB    = CH
+         IRC    = undefined_value
+         IRG    = undefined_value
+         SHC    = undefined_value
+         SHG    = undefined_value
+         EVG    = undefined_value
+         GHV    = undefined_value
          IRB    = FIRA
          SHB    = FSH
          EVB    = FGEV
          GHB    = SSOIL
-         TR     = undefined_value 
-         EVC    = undefined_value 
-         CHLEAF = undefined_value 
-         CHUC   = undefined_value 
-         CHV2   = undefined_value 
-         FCEV   = undefined_value 
-         FCTR   = undefined_value        
+         TR     = undefined_value
+         EVC    = undefined_value
+         CHLEAF = undefined_value
+         CHUC   = undefined_value
+         CHV2   = undefined_value
+         FCEV   = undefined_value
+         FCTR   = undefined_value
          Z0WRF  = 0.002
          QFX(I,J) = ESOIL
          LH (I,J) = FGEV
@@ -771,43 +771,43 @@ CONTAINS
          ICE=0                              ! Neither sea ice or land ice.
          CALL NOAHMP_SFLX (parameters, &
             I       , J       , LAT     , YEARLEN , JULIAN  , COSZ    , & ! IN : Time/Space-related
-            DT      , DX      , DZ8W1D  , NSOIL   , ZSOIL   , NSNOW   , & ! IN : Model configuration 
+            DT      , DX      , DZ8W1D  , NSOIL   , ZSOIL   , NSNOW   , & ! IN : Model configuration
             FVEG    , FVGMAX  , VEGTYP  , ICE     , IST     , CROPTYPE, & ! IN : Vegetation/Soil characteristics
             SMCEQ   ,                                                   & ! IN : Vegetation/Soil characteristics
             T_ML    , P_ML    , PSFC    , U_ML    , V_ML    , Q_ML    , & ! IN : Forcing
             QC      , SWDN    , LWDN    ,                               & ! IN : Forcing
 	    PRCPCONV, PRCPNONC, PRCPSHCV, PRCPSNOW, PRCPGRPL, PRCPHAIL, & ! IN : Forcing
             TBOT    , CO2PP   , O2PP    , FOLN    , FICEOLD , Z_ML    , & ! IN : Forcing
-            ALBOLD  , SNEQVO  ,                                         & ! IN/OUT : 
-            STC     , SMH2O   , SMC     , TAH     , EAH     , FWET    , & ! IN/OUT : 
-            CANLIQ  , CANICE  , TV      , TG      , QSFC1D  , QSNOW   , & ! IN/OUT : 
-            ISNOW   , ZSNSO   , SNDPTH  , SWE     , SNICE   , SNLIQ   , & ! IN/OUT : 
-            ZWT     , WA      , WT      , WSLAKE  , LFMASS  , RTMASS  , & ! IN/OUT : 
-            STMASS  , WOOD    , STBLCP  , FASTCP  , PLAI    , PSAI    , & ! IN/OUT : 
-            CM      , CH      , TAUSS   ,                               & ! IN/OUT : 
-            GRAIN   , GDD     , PGS     ,                               & ! IN/OUT 
+            ALBOLD  , SNEQVO  ,                                         & ! IN/OUT :
+            STC     , SMH2O   , SMC     , TAH     , EAH     , FWET    , & ! IN/OUT :
+            CANLIQ  , CANICE  , TV      , TG      , QSFC1D  , QSNOW   , & ! IN/OUT :
+            ISNOW   , ZSNSO   , SNDPTH  , SWE     , SNICE   , SNLIQ   , & ! IN/OUT :
+            ZWT     , WA      , WT      , WSLAKE  , LFMASS  , RTMASS  , & ! IN/OUT :
+            STMASS  , WOOD    , STBLCP  , FASTCP  , PLAI    , PSAI    , & ! IN/OUT :
+            CM      , CH      , TAUSS   ,                               & ! IN/OUT :
+            GRAIN   , GDD     , PGS     ,                               & ! IN/OUT
             SMCWTD  ,DEEPRECH , RECH    ,                               & ! IN/OUT :
             Z0WRF   ,                                                   &
-            FSA     , FSR     , FIRA    , FSH     , SSOIL   , FCEV    , & ! OUT : 
-            FGEV    , FCTR    , ECAN    , ETRAN   , ESOIL   , TRAD    , & ! OUT : 
-            TGB     , TGV     , T2MV    , T2MB    , Q2MV    , Q2MB    , & ! OUT : 
-            RUNSF   , RUNSB   , APAR    , PSN     , SAV     , SAG     , & ! OUT : 
-            FSNO    , NEE     , GPP     , NPP     , FVEGMP  , SALB    , & ! OUT : 
-            QSNBOT  , PONDING , PONDING1, PONDING2, RSSUN   , RSSHA   , & ! OUT : 
-            BGAP    , WGAP    , CHV     , CHB     , EMISSI  ,           & ! OUT : 
+            FSA     , FSR     , FIRA    , FSH     , SSOIL   , FCEV    , & ! OUT :
+            FGEV    , FCTR    , ECAN    , ETRAN   , ESOIL   , TRAD    , & ! OUT :
+            TGB     , TGV     , T2MV    , T2MB    , Q2MV    , Q2MB    , & ! OUT :
+            RUNSF   , RUNSB   , APAR    , PSN     , SAV     , SAG     , & ! OUT :
+            FSNO    , NEE     , GPP     , NPP     , FVEGMP  , SALB    , & ! OUT :
+            QSNBOT  , PONDING , PONDING1, PONDING2, RSSUN   , RSSHA   , & ! OUT :
+            BGAP    , WGAP    , CHV     , CHB     , EMISSI  ,           & ! OUT :
             SHG     , SHC     , SHB     , EVG     , EVB     , GHV     , & ! OUT :
 	    GHB     , IRG     , IRC     , IRB     , TR      , EVC     , & ! OUT :
-	    CHLEAF  , CHUC    , CHV2    , CHB2    , FPICE   , PAHV    , & 
+	    CHLEAF  , CHUC    , CHV2    , CHB2    , FPICE   , PAHV    , &
             PAHG    , PAHB    , PAH                                     &
 #ifdef WRF_HYDRO
             , sfcheadrt(i,j)                               &
 #endif
             )            ! OUT :
-                  
+
             QFX(I,J) = ECAN + ESOIL + ETRAN
             LH       (I,J)                = FCEV + FGEV + FCTR
 
-   ENDIF ! glacial split ends 
+   ENDIF ! glacial split ends
 
 #ifdef WRF_HYDRO
 !AD_CHANGE: Glacier cells can produce small negative subsurface runoff for mass balance.
@@ -925,7 +925,7 @@ CONTAINS
              SMCWTDXY(I,J)                 = SMCWTD
 
              GRAINXY  (I,J) = GRAIN !GRAIN XING
-             GDDXY    (I,J) = GDD   !XING 
+             GDDXY    (I,J) = GDD   !XING
 	     PGSXY    (I,J) = PGS
 
           ENDIF                                                         ! endif of land-sea test
@@ -949,9 +949,9 @@ SUBROUTINE TRANSFER_MP_PARAMETERS(VEGTYPE,SOILTYPE,SLOPETYPE,SOILCOLOR,CROPTYPE,
   INTEGER, INTENT(IN)    :: SLOPETYPE
   INTEGER, INTENT(IN)    :: SOILCOLOR
   INTEGER, INTENT(IN)    :: CROPTYPE
-    
+
   type (noahmp_parameters), intent(inout) :: parameters
-    
+
   REAL    :: REFDK
   REAL    :: REFKDT
   REAL    :: FRZK
@@ -986,7 +986,7 @@ SUBROUTINE TRANSFER_MP_PARAMETERS(VEGTYPE,SOILTYPE,SLOPETYPE,SOILCOLOR,CROPTYPE,
   parameters%SLA    =    SLA_TABLE(VEGTYPE)       !single-side leaf area per Kg [m2/kg]
   parameters%DILEFC = DILEFC_TABLE(VEGTYPE)       !coeficient for leaf stress death [1/s]
   parameters%DILEFW = DILEFW_TABLE(VEGTYPE)       !coeficient for leaf stress death [1/s]
-  parameters%FRAGR  =  FRAGR_TABLE(VEGTYPE)       !fraction of growth respiration  !original was 0.3 
+  parameters%FRAGR  =  FRAGR_TABLE(VEGTYPE)       !fraction of growth respiration  !original was 0.3
   parameters%LTOVRC = LTOVRC_TABLE(VEGTYPE)       !leaf turnover [1/s]
 
   parameters%C3PSN  =  C3PSN_TABLE(VEGTYPE)       !photosynthetic pathway: 0. = c4, 1. = c3
@@ -1034,7 +1034,7 @@ SUBROUTINE TRANSFER_MP_PARAMETERS(VEGTYPE,SOILTYPE,SLOPETYPE,SOILCOLOR,CROPTYPE,
    parameters%ALBSAT    = ALBSAT_TABLE(SOILCOLOR,:)
    parameters%ALBDRY    = ALBDRY_TABLE(SOILCOLOR,:)
    parameters%ALBICE    = ALBICE_TABLE
-   parameters%ALBLAK    = ALBLAK_TABLE               
+   parameters%ALBLAK    = ALBLAK_TABLE
    parameters%OMEGAS    = OMEGAS_TABLE
    parameters%BETADS    = BETADS_TABLE
    parameters%BETAIS    = BETAIS_TABLE
@@ -1052,12 +1052,12 @@ SUBROUTINE TRANSFER_MP_PARAMETERS(VEGTYPE,SOILTYPE,SLOPETYPE,SOILCOLOR,CROPTYPE,
    parameters%GDDTBASE  =  GDDTBASE_TABLE(CROPTYPE)    ! Base temperature for GDD accumulation [C]
    parameters%GDDTCUT   =   GDDTCUT_TABLE(CROPTYPE)    ! Upper temperature for GDD accumulation [C]
    parameters%GDDS1     =     GDDS1_TABLE(CROPTYPE)    ! GDD from seeding to emergence
-   parameters%GDDS2     =     GDDS2_TABLE(CROPTYPE)    ! GDD from seeding to initial vegetative 
-   parameters%GDDS3     =     GDDS3_TABLE(CROPTYPE)    ! GDD from seeding to post vegetative 
+   parameters%GDDS2     =     GDDS2_TABLE(CROPTYPE)    ! GDD from seeding to initial vegetative
+   parameters%GDDS3     =     GDDS3_TABLE(CROPTYPE)    ! GDD from seeding to post vegetative
    parameters%GDDS4     =     GDDS4_TABLE(CROPTYPE)    ! GDD from seeding to intial reproductive
-   parameters%GDDS5     =     GDDS5_TABLE(CROPTYPE)    ! GDD from seeding to pysical maturity 
+   parameters%GDDS5     =     GDDS5_TABLE(CROPTYPE)    ! GDD from seeding to pysical maturity
    parameters%C3C4      =      C3C4_TABLE(CROPTYPE)    ! photosynthetic pathway:  1. = c3 2. = c4
-   parameters%AREF      =      AREF_TABLE(CROPTYPE)    ! reference maximum CO2 assimulation rate 
+   parameters%AREF      =      AREF_TABLE(CROPTYPE)    ! reference maximum CO2 assimulation rate
    parameters%PSNRF     =     PSNRF_TABLE(CROPTYPE)    ! CO2 assimulation reduction factor(0-1) (caused by non-modeling part,e.g.pest,weeds)
    parameters%I2PAR     =     I2PAR_TABLE(CROPTYPE)    ! Fraction of incoming solar radiation to photosynthetically active radiation
    parameters%TASSIM0   =   TASSIM0_TABLE(CROPTYPE)    ! Minimum temperature for CO2 assimulation [C]
@@ -1127,10 +1127,10 @@ SUBROUTINE TRANSFER_MP_PARAMETERS(VEGTYPE,SOILTYPE,SLOPETYPE,SOILCOLOR,CROPTYPE,
     parameters%SLOPE  = SLOPE_TABLE(SLOPETYPE)
 
     IF(parameters%URBAN_FLAG)THEN  ! Hardcoding some urban parameters for soil
-       parameters%SMCMAX = 0.45 
-       parameters%SMCREF = 0.42 
-       parameters%SMCWLT = 0.40 
-       parameters%SMCDRY = 0.40 
+       parameters%SMCMAX = 0.45
+       parameters%SMCREF = 0.42
+       parameters%SMCWLT = 0.40
+       parameters%SMCDRY = 0.40
        parameters%CSOIL  = 3.E6
     ENDIF
 
@@ -1154,7 +1154,7 @@ SUBROUTINE TRANSFER_MP_PARAMETERS(VEGTYPE,SOILTYPE,SLOPETYPE,SOILCOLOR,CROPTYPE,
        croptype ,cropcat  ,                      &
 !jref:start
        t2mvxy   ,t2mbxy   ,chstarxy,            &
-!jref:end       
+!jref:end
        NSOIL, restart,                 &
        allowed_to_read , iopt_run,                         &
        sf_urban_physics,                         &  ! urban scheme
@@ -1269,7 +1269,7 @@ SUBROUTINE TRANSFER_MP_PARAMETERS(VEGTYPE,SOILTYPE,SLOPETYPE,SOILCOLOR,CROPTYPE,
 !jref:end
 
 
-    REAL, DIMENSION(1:NSOIL)  :: ZSOIL      ! Depth of the soil layer bottom (m) from 
+    REAL, DIMENSION(1:NSOIL)  :: ZSOIL      ! Depth of the soil layer bottom (m) from
     !                                                   the surface (negative)
 
     REAL                      :: BEXP, SMCMAX, PSISAT
@@ -1368,7 +1368,7 @@ SUBROUTINE TRANSFER_MP_PARAMETERS(VEGTYPE,SOILTYPE,SLOPETYPE,SOILCOLOR,CROPTYPE,
 		SNOW(I,J) = MAX(SNOW(I,J), 10.0)        ! set SWE to at least 10mm
                 SNOWH(I,J)=SNOW(I,J)*0.01               ! SNOW in mm and SNOWH in m
 	    ELSE
-	      
+
               BEXP   =   BEXP_TABLE(ISLTYP(I,J))
               SMCMAX = SMCMAX_TABLE(ISLTYP(I,J))
               PSISAT = -1.0*PSISAT_TABLE(ISLTYP(I,J))
@@ -1407,7 +1407,7 @@ SUBROUTINE TRANSFER_MP_PARAMETERS(VEGTYPE,SOILTYPE,SLOPETYPE,SOILCOLOR,CROPTYPE,
              CANWAT     (I,J) = 0.0
              canliqxy   (I,J) = CANWAT(I,J)
              canicexy   (I,J) = 0.
-             eahxy      (I,J) = 2000. 
+             eahxy      (I,J) = 2000.
              tahxy      (I,J) = TSK(I,J)
 	       if(snow(i,j) > 0.0 .and. tsk(i,j) > 273.15) tahxy(I,J) = 273.15
 !             tahxy      (I,J) = 287.
@@ -1427,7 +1427,7 @@ SUBROUTINE TRANSFER_MP_PARAMETERS(VEGTYPE,SOILTYPE,SLOPETYPE,SOILCOLOR,CROPTYPE,
              qsnowxy    (I,J) = 0.0
              wslakexy   (I,J) = 0.0
 
-             if(iopt_run.ne.5) then 
+             if(iopt_run.ne.5) then
                    waxy       (I,J) = 4900.                                       !???
                    wtxy       (I,J) = waxy(i,j)                                   !???
                    zwtxy      (I,J) = (25. + 2.0) - waxy(i,j)/1000/0.2            !???
@@ -1440,7 +1440,7 @@ SUBROUTINE TRANSFER_MP_PARAMETERS(VEGTYPE,SOILTYPE,SLOPETYPE,SOILCOLOR,CROPTYPE,
            IF(IVGTYP(I,J) == ISBARREN_TABLE .OR. IVGTYP(I,J) == ISICE_TABLE .OR. &
 	      ( SF_URBAN_PHYSICS == 0 .AND. IVGTYP(I,J) == ISURBAN_TABLE )  .OR. &
 	      IVGTYP(I,J) == ISWATER_TABLE ) THEN
-	     
+
 	     lai        (I,J) = 0.0
              xsaixy     (I,J) = 0.0
              lfmassxy   (I,J) = 0.0
@@ -1454,7 +1454,7 @@ SUBROUTINE TRANSFER_MP_PARAMETERS(VEGTYPE,SOILTYPE,SLOPETYPE,SOILCOLOR,CROPTYPE,
 	     cropcat    (I,J) = 0
 
 	   ELSE
-	     
+
 	     lai        (I,J) = max(lai(i,j),0.05)             ! at least start with 0.05 for arbitrary initialization (v3.7)
              xsaixy     (I,J) = max(0.1*lai(I,J),0.05)         ! MB: arbitrarily initialize SAI using input LAI (v3.7)
              masslai = 1000. / max(SLA_TABLE(IVGTYP(I,J)),1.0) ! conversion from lai to mass  (v3.7)
@@ -1466,12 +1466,12 @@ SUBROUTINE TRANSFER_MP_PARAMETERS(VEGTYPE,SOILTYPE,SLOPETYPE,SOILCOLOR,CROPTYPE,
              stblcpxy   (I,J) = 1000.0                         !
              fastcpxy   (I,J) = 1000.0                         !
              grainxy    (I,J) = 1E-10
-             gddxy      (I,J) = 0    
+             gddxy      (I,J) = 0
 	     cropcat    (i,j) = default_crop_table
 
 	     if(croptype(i,5,j) >= 0.5) then
                rtmassxy(i,j) = 0.0
-               woodxy  (i,j) = 0.0                    
+               woodxy  (i,j) = 0.0
 
 	       if(    croptype(i,1,j) > croptype(i,2,j) .and. &
 		      croptype(i,1,j) > croptype(i,3,j) .and. &
@@ -1511,7 +1511,7 @@ SUBROUTINE TRANSFER_MP_PARAMETERS(VEGTYPE,SOILTYPE,SLOPETYPE,SOILCOLOR,CROPTYPE,
           ZSOIL(NS)       = ZSOIL(NS-1) - DZS(NS)
        END DO
 
-       ! Initialize snow/soil layer arrays ZSNSOXY, TSNOXY, SNICEXY, SNLIQXY, 
+       ! Initialize snow/soil layer arrays ZSNSOXY, TSNOXY, SNICEXY, SNLIQXY,
        ! and ISNOWXY
        CALL snow_init ( ims , ime , jms , jme , its , itf , jts , jtf , 3 , &
             &           NSOIL , zsoil , snow , tgxy , snowh ,     &
@@ -1546,7 +1546,7 @@ SUBROUTINE TRANSFER_MP_PARAMETERS(VEGTYPE,SOILTYPE,SLOPETYPE,SOILCOLOR,CROPTYPE,
              STEPWTD = nint(WTDDT*60./DT)
              STEPWTD = max(STEPWTD,1)
 
-              CALL groundwater_init ( & 
+              CALL groundwater_init ( &
       &       nsoil, zsoil , dzs  ,isltyp, ivgtyp,wtddt , &
       &       fdepthxy, ht, riverbedxy, eqzwt, rivercondxy, pexpxy , areaxy, zwtxy,   &
       &       smois,sh2o, smoiseq, smcwtdxy, deeprechxy, rechxy, qslatxy, qrfsxy, qspringsxy, &
@@ -1573,11 +1573,11 @@ SUBROUTINE TRANSFER_MP_PARAMETERS(VEGTYPE,SOILTYPE,SLOPETYPE,SOILCOLOR,CROPTYPE,
 !   Initialize snow arrays for Noah-MP LSM, based in input SNOWDEP, NSNOW
 !   ISNOWXY is an index array, indicating the index of the top snow layer.  Valid indices
 !           for snow layers range from 0 (no snow) and -1 (shallow snow) to (-NSNOW)+1 (deep snow).
-!   TSNOXY holds the temperature of the snow layer.  Snow layers are initialized with 
+!   TSNOXY holds the temperature of the snow layer.  Snow layers are initialized with
 !          temperature = ground temperature [?].  Snow-free levels in the array have value 0.0
 !   SNICEXY is the frozen content of a snow layer.  Initial estimate based on SNODEP and SWE
 !   SNLIQXY is the liquid content of a snow layer.  Initialized to 0.0
-!   ZNSNOXY is the layer depth from the surface.  
+!   ZNSNOXY is the layer depth from the surface.
 !------------------------------------------------------------------------------------------
     IMPLICIT NONE
 !------------------------------------------------------------------------------------------
@@ -1585,7 +1585,7 @@ SUBROUTINE TRANSFER_MP_PARAMETERS(VEGTYPE,SOILTYPE,SLOPETYPE,SOILCOLOR,CROPTYPE,
     INTEGER, INTENT(IN)                              :: its, itf, jts, jtf
     INTEGER, INTENT(IN)                              :: NSNOW
     INTEGER, INTENT(IN)                              :: NSOIL
-    REAL,    INTENT(IN), DIMENSION(ims:ime, jms:jme) :: SWE 
+    REAL,    INTENT(IN), DIMENSION(ims:ime, jms:jme) :: SWE
     REAL,    INTENT(IN), DIMENSION(ims:ime, jms:jme) :: SNODEP
     REAL,    INTENT(IN), DIMENSION(ims:ime, jms:jme) :: TGXY
     REAL,    INTENT(IN), DIMENSION(1:NSOIL)          :: ZSOIL
@@ -1696,7 +1696,7 @@ SUBROUTINE TRANSFER_MP_PARAMETERS(VEGTYPE,SOILTYPE,SLOPETYPE,SOILCOLOR,CROPTYPE,
     REAL,    INTENT(IN), DIMENSION(1:NSOIL)          :: ZSOIL,DZS
     INTEGER, INTENT(IN), DIMENSION(ims:ime, jms:jme) :: ISLTYP, IVGTYP
     REAL,    INTENT(IN), DIMENSION(ims:ime, jms:jme) :: FDEPTH, TOPO , AREA
-    REAL,    INTENT(IN), DIMENSION(ims:ime, jms:jme) :: rechclim 
+    REAL,    INTENT(IN), DIMENSION(ims:ime, jms:jme) :: rechclim
     REAL,    INTENT(OUT), DIMENSION(ims:ime, jms:jme) :: RIVERCOND
     REAL,    INTENT(INOUT), DIMENSION(ims:ime, jms:jme) :: WTD, RIVERBED, EQWTD, PEXP
     REAL,     DIMENSION( ims:ime , 1:nsoil, jms:jme ), &
@@ -1709,7 +1709,7 @@ SUBROUTINE TRANSFER_MP_PARAMETERS(VEGTYPE,SOILTYPE,SLOPETYPE,SOILCOLOR,CROPTYPE,
                                                            RECHXY, &
                                                            QSLATXY, &
                                                            QRFSXY, &
-                                                           QSPRINGSXY  
+                                                           QSPRINGSXY
 ! local
     INTEGER  :: I,J,K,ITER,itf,jtf, NITER, NCOUNT
     REAL :: BEXP,SMCMAX,PSISAT,SMCWLT,DWSAT,DKSAT
@@ -1730,7 +1730,7 @@ SUBROUTINE TRANSFER_MP_PARAMETERS(VEGTYPE,SOILTYPE,SLOPETYPE,SOILCOLOR,CROPTYPE,
     ELSEWHERE
          LANDMASK=-1
     ENDWHERE
-    
+
     PEXP = 1.0
 
     DELTAT=365.*24*3600. !1 year
@@ -1745,7 +1745,7 @@ SUBROUTINE TRANSFER_MP_PARAMETERS(VEGTYPE,SOILTYPE,SLOPETYPE,SOILCOLOR,CROPTYPE,
 
     QLAT = 0.
     CALL LATERALFLOW(ISLTYP,EQWTD,QLAT,FDEPTH,TOPO,LANDMASK,DELTAT,AREA       &
-                        ,ids,ide,jds,jde,kds,kde                      & 
+                        ,ids,ide,jds,jde,kds,kde                      &
                         ,ims,ime,jms,jme,kms,kme                      &
                         ,its,ite,jts,jte,kts,kte                      )
 
@@ -1814,10 +1814,10 @@ SUBROUTINE TRANSFER_MP_PARAMETERS(VEGTYPE,SOILTYPE,SLOPETYPE,SOILCOLOR,CROPTYPE,
 
     QLAT = 0.
     CALL LATERALFLOW(ISLTYP,WTD,QLAT,FDEPTH,TOPO,LANDMASK,DELTAT,AREA       &
-                        ,ids,ide,jds,jde,kds,kde                      & 
+                        ,ids,ide,jds,jde,kds,kde                      &
                         ,ims,ime,jms,jme,kms,kme                      &
                         ,its,ite,jts,jte,kts,kte                      )
-                        
+
 !compute flux from grounwater to rivers in the cell
 
     DO J=jts,jtf
@@ -1825,12 +1825,12 @@ SUBROUTINE TRANSFER_MP_PARAMETERS(VEGTYPE,SOILTYPE,SLOPETYPE,SOILCOLOR,CROPTYPE,
           IF(LANDMASK(I,J).GT.0)THEN
              IF(WTD(I,J) .GT. RIVERBED(I,J) .AND.  EQWTD(I,J) .GT. RIVERBED(I,J)) THEN
                RCOND = RIVERCOND(I,J) * EXP(PEXP(I,J)*(WTD(I,J)-EQWTD(I,J)))
-             ELSE    
+             ELSE
                RCOND = RIVERCOND(I,J)
              ENDIF
              QRF(I,J) = RCOND * (WTD(I,J)-RIVERBED(I,J)) * DELTAT/AREA(I,J)
 !for now, dont allow it to go from river to groundwater
-             QRF(I,J) = MAX(QRF(I,J),0.) 
+             QRF(I,J) = MAX(QRF(I,J),0.)
           ELSE
              QRF(I,J) = 0.
           ENDIF
@@ -1845,9 +1845,9 @@ SUBROUTINE TRANSFER_MP_PARAMETERS(VEGTYPE,SOILTYPE,SLOPETYPE,SOILCOLOR,CROPTYPE,
              SMCMAX = SMCMAX_TABLE(ISLTYP(I,J))
              SMCWLT = SMCWLT_TABLE(ISLTYP(I,J))
              IF(IVGTYP(I,J)==ISURBAN_TABLE)THEN
-                 SMCMAX = 0.45         
-                 SMCWLT = 0.40         
-             ENDIF 
+                 SMCMAX = 0.45
+                 SMCWLT = 0.40
+             ENDIF
              DWSAT  =   DWSAT_TABLE(ISLTYP(I,J))
              DKSAT  =   DKSAT_TABLE(ISLTYP(I,J))
              PSISAT = -PSISAT_TABLE(ISLTYP(I,J))
@@ -1875,7 +1875,7 @@ SUBROUTINE TRANSFER_MP_PARAMETERS(VEGTYPE,SOILTYPE,SLOPETYPE,SOILCOLOR,CROPTYPE,
                          DO ITER = 1, 100
                            DD = (SMC+SMCMAX)/(2.*SMCMAX)
                            AA = -DKSAT * DD  ** EXPON
-                           BBB = CC * ( (SMCMAX/SMC)**BEXP - 1. ) + 1. 
+                           BBB = CC * ( (SMCMAX/SMC)**BEXP - 1. ) + 1.
                            FUNC =  AA * BBB - FLUX
                            DFUNC = -DKSAT * (EXPON/(2.*SMCMAX)) * DD ** (EXPON - 1.) * BBB &
                                    + AA * CC * (-BEXP) * SMCMAX ** BEXP * SMC ** (-BEXP-1.)
@@ -1906,7 +1906,7 @@ SUBROUTINE TRANSFER_MP_PARAMETERS(VEGTYPE,SOILTYPE,SLOPETYPE,SOILCOLOR,CROPTYPE,
                               WTD(I,J) = ZSOIL(K)
                           ELSE
                               WTD(I,J) = ( SMOIS(I,K,J)*DZS(K) - SMCEQ(K)*ZSOIL(K-1) + SMCMAX*ZSOIL(K) ) / &
-                                         (SMCMAX - SMCEQ(K))   
+                                         (SMCMAX - SMCEQ(K))
                           ENDIF
                           EXIT
                      ENDIF
@@ -1973,7 +1973,7 @@ SUBROUTINE TRANSFER_MP_PARAMETERS(VEGTYPE,SOILTYPE,SLOPETYPE,SOILCOLOR,CROPTYPE,
 
          DO ITER = 1, 100
             FUNC = (SMC - SMCMAX) * AA +  BB * SMC ** EXPON
-            DFUNC = AA + BB * EXPON * SMC ** BEXP 
+            DFUNC = AA + BB * EXPON * SMC ** BEXP
 
             DX = FUNC/DFUNC
             SMC = SMC - DX
@@ -1987,12 +1987,12 @@ SUBROUTINE TRANSFER_MP_PARAMETERS(VEGTYPE,SOILTYPE,SLOPETYPE,SOILCOLOR,CROPTYPE,
 END  SUBROUTINE EQSMOISTURE
 !
 !------------------------------------------------------------------------------------------
-  SUBROUTINE noahmp_urban(sf_urban_physics,   NSOIL,         IVGTYP,  ITIMESTEP,            & ! IN : Model configuration 
+  SUBROUTINE noahmp_urban(sf_urban_physics,   NSOIL,         IVGTYP,  ITIMESTEP,            & ! IN : Model configuration
                                  DT,     COSZ_URB2D,     XLAT_URB2D,                        & ! IN : Time/Space-related
                                 T3D,           QV3D,          U_PHY,      V_PHY,   SWDOWN,  & ! IN : Forcing
 		                GLW,          P8W3D,         RAINBL,       DZ8W,      ZNT,  & ! IN : Forcing
-                                TSK,            HFX,            QFX,         LH,   GRDFLX,  & ! IN/OUT : LSM 
-		             ALBEDO,          EMISS,           QSFC,                        & ! IN/OUT : LSM 
+                                TSK,            HFX,            QFX,         LH,   GRDFLX,  & ! IN/OUT : LSM
+		             ALBEDO,          EMISS,           QSFC,                        & ! IN/OUT : LSM
                             ids,ide,        jds,jde,        kds,kde,                        &
                             ims,ime,        jms,jme,        kms,kme,                        &
                             its,ite,        jts,jte,        kts,kte,                        &
@@ -2339,22 +2339,22 @@ ILOOP : DO I = its, ite
 
     UTYPE_URB = UTYPE_URB2D(I,J) !urban type (low, high or industrial)
 
-    TA_URB    = T3D(I,1,J)                                ! [K]            
-    QA_URB    = QV3D(I,1,J)/(1.0+QV3D(I,1,J))             ! [kg/kg]       
+    TA_URB    = T3D(I,1,J)                                ! [K]
+    QA_URB    = QV3D(I,1,J)/(1.0+QV3D(I,1,J))             ! [kg/kg]
     UA_URB    = SQRT(U_PHY(I,1,J)**2.+V_PHY(I,1,J)**2.)
     U1_URB    = U_PHY(I,1,J)
     V1_URB    = V_PHY(I,1,J)
     IF(UA_URB < 1.) UA_URB=1.                             ! [m/s]
-    SSG_URB   = SWDOWN(I,J)                               ! [W/m/m]      
-    SSGD_URB  = 0.8*SWDOWN(I,J)                           ! [W/m/m]     
+    SSG_URB   = SWDOWN(I,J)                               ! [W/m/m]
+    SSGD_URB  = 0.8*SWDOWN(I,J)                           ! [W/m/m]
     SSGQ_URB  = SSG_URB-SSGD_URB                          ! [W/m/m]
     LLG_URB   = GLW(I,J)                                  ! [W/m/m]
-    RAIN_URB  = RAINBL(I,J)                               ! [mm]       
-    RHOO_URB  = (P8W3D(I,KTS+1,J)+P8W3D(I,KTS,J))*0.5 / (287.04 * TA_URB * (1.0+ 0.61 * QA_URB)) ![kg/m/m/m] 
-    ZA_URB    = 0.5*DZ8W(I,1,J)                           ! [m]         
+    RAIN_URB  = RAINBL(I,J)                               ! [mm]
+    RHOO_URB  = (P8W3D(I,KTS+1,J)+P8W3D(I,KTS,J))*0.5 / (287.04 * TA_URB * (1.0+ 0.61 * QA_URB)) ![kg/m/m/m]
+    ZA_URB    = 0.5*DZ8W(I,1,J)                           ! [m]
     DELT_URB  = DT                                        ! [sec]
     XLAT_URB  = XLAT_URB2D(I,J)                           ! [deg]
-    COSZ_URB  = COSZ_URB2D(I,J) 
+    COSZ_URB  = COSZ_URB2D(I,J)
     OMG_URB   = OMG_URB2D(I,J)
     ZNT_URB   = ZNT(I,J)
 
@@ -2407,7 +2407,7 @@ ILOOP : DO I = its, ite
     ENDIF
 
     CHS_URB  = CHS(I,J)
-    CHS2(I,J)= CQS2(I,J)      
+    CHS2(I,J)= CQS2(I,J)
     CHS2_URB = CHS2(I,J)
     IF (PRESENT(CMR_SFCDIF)) THEN
       CMR_URB = CMR_SFCDIF(I,J)
@@ -2462,14 +2462,14 @@ ILOOP : DO I = its, ite
 
     TS_URB2D(I,J) = TS_URB
 
-    ALBEDO(I,J)   = FRC_URB2D(I,J) * ALB_URB + (1-FRC_URB2D(I,J)) * ALBEDO(I,J)        ![-]      
-    HFX(I,J)      = FRC_URB2D(I,J) * SH_URB  + (1-FRC_URB2D(I,J)) * HFX(I,J)           ![W/m/m] 
+    ALBEDO(I,J)   = FRC_URB2D(I,J) * ALB_URB + (1-FRC_URB2D(I,J)) * ALBEDO(I,J)        ![-]
+    HFX(I,J)      = FRC_URB2D(I,J) * SH_URB  + (1-FRC_URB2D(I,J)) * HFX(I,J)           ![W/m/m]
     QFX(I,J)      = FRC_URB2D(I,J) * LH_KINEMATIC_URB &
-                       + (1-FRC_URB2D(I,J))* QFX(I,J)                                  ![kg/m/m/s] 
-    LH(I,J)       = FRC_URB2D(I,J) * LH_URB  + (1-FRC_URB2D(I,J)) * LH(I,J)            ![W/m/m]   
-    GRDFLX(I,J)   = FRC_URB2D(I,J) * (G_URB) + (1-FRC_URB2D(I,J)) * GRDFLX(I,J)        ![W/m/m]  
-    TSK(I,J)      = FRC_URB2D(I,J) * TS_URB  + (1-FRC_URB2D(I,J)) * TSK(I,J)           ![K]    
-!    Q1            = QSFC(I,J)/(1.0+QSFC(I,J))                                         
+                       + (1-FRC_URB2D(I,J))* QFX(I,J)                                  ![kg/m/m/s]
+    LH(I,J)       = FRC_URB2D(I,J) * LH_URB  + (1-FRC_URB2D(I,J)) * LH(I,J)            ![W/m/m]
+    GRDFLX(I,J)   = FRC_URB2D(I,J) * (G_URB) + (1-FRC_URB2D(I,J)) * GRDFLX(I,J)        ![W/m/m]
+    TSK(I,J)      = FRC_URB2D(I,J) * TS_URB  + (1-FRC_URB2D(I,J)) * TSK(I,J)           ![K]
+!    Q1            = QSFC(I,J)/(1.0+QSFC(I,J))
 !    Q1            = FRC_URB2D(I,J) * QS_URB  + (1-FRC_URB2D(I,J)) * Q1                 ![-]
 
 ! Convert QSFC back to mixing ratio
@@ -2515,7 +2515,7 @@ ILOOP : DO I = its, ite
 
     SH_URB2D(I,J)      = SH_URB
     LH_URB2D(I,J)      = LH_URB
-    G_URB2D(I,J)       = G_URB         
+    G_URB2D(I,J)       = G_URB
     RN_URB2D(I,J)      = RN_URB
     PSIM_URB2D(I,J)    = PSIM_URB
     PSIH_URB2D(I,J)    = PSIH_URB
@@ -2622,7 +2622,7 @@ END DO
 
 ENDIF ! SF_URBAN_PHYSICS == 3
 
-IF((SF_URBAN_PHYSICS == 2).OR.(SF_URBAN_PHYSICS == 3))THEN 
+IF((SF_URBAN_PHYSICS == 2).OR.(SF_URBAN_PHYSICS == 3))THEN
 
   sigma_sb=5.67e-08
   do j = jts, jte
@@ -2657,7 +2657,7 @@ IF((SF_URBAN_PHYSICS == 2).OR.(SF_URBAN_PHYSICS == 3))THEN
     a_v_bep(i,1,j)   = (1.-frc_urb2d(i,j))*(-ust(I,J)*ust(I,J))/dz8w(i,1,j)/   &
                           ((u_phy(i,1,j)**2+v_phy(i,1,j)**2.)**.5)+a_v_bep(i,1,j)
 
-    b_t_bep(i,1,j)   = (1.-frc_urb2d(i,j))*hfx_rural(i,j)/dz8w(i,1,j)/rho(i,1,j)/CP+ & 
+    b_t_bep(i,1,j)   = (1.-frc_urb2d(i,j))*hfx_rural(i,j)/dz8w(i,1,j)/rho(i,1,j)/CP+ &
                            b_t_bep(i,1,j)
 
     b_q_bep(i,1,j)   = (1.-frc_urb2d(i,j))*qfx_rural(i,j)/dz8w(i,1,j)/rho(i,1,j)+b_q_bep(i,1,j)

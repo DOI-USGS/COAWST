@@ -60,7 +60,7 @@
 # ifdef ICESHELF
      &                     GRID(ng) % zice,                             &
 # endif
-#endif 
+#endif
      &                     OCEAN(ng)% zeta)
       RETURN
       END SUBROUTINE stiffness

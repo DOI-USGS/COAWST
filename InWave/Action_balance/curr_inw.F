@@ -152,7 +152,7 @@
         DO i=Istr,Iend
 
 ! For the different directional components when there are currents the Tr
-! is different and therefore also the kwc and the currents affecting the 
+! is different and therefore also the kwc and the currents affecting the
 ! waves. Here I am assuming that this difference is very small.
 ! We can change this is the future.
 

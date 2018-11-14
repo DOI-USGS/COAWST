@@ -204,7 +204,7 @@ SUBROUTINE med_force_domain ( parent_grid , nested_grid )
    !
    ! Added following line to handle adaptive time step.  This should probably
    !   go somewhere else, but I'm not sure where.
-   !   
+   !
    ! T. Hutchinson, WSI  1/23/07
    !
 

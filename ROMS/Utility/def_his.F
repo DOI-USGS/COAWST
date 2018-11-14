@@ -89,7 +89,7 @@
 # if defined ESTUARYBGC
       integer :: s3dgrd(4)
 # endif
-#if defined VEGETATION 
+#if defined VEGETATION
 # if defined VEG_DRAG || defined VEG_BIOMASS
       integer :: v3pgrd(4)
 # endif
@@ -206,7 +206,7 @@
         IF (FoundError(exit_flag, NoError, __LINE__,                    &
      &                 __FILE__)) RETURN
 #endif
-        
+
 #ifdef INWAVE_MODEL
         status=def_dim(ng, iNLM, HIS(ng)%ncid, ncname,'ND',             &
                        ND, DimIDs(33))
@@ -329,7 +329,7 @@
      &                 NVEG, DimIDs(35))
         IF (FoundError(exit_flag, NoError, __LINE__,                    &
      &                 __FILE__)) RETURN
-# endif 
+# endif
 #endif
 
 #ifdef ADJUST_BOUNDARY
@@ -505,7 +505,7 @@
         b3dgrd(4)=DimIDs(12)
 #  endif
 # endif
-# if defined ESTUARYBGC 
+# if defined ESTUARYBGC
 !
 !  Define dimension vector for spectral light type variables.
 !
@@ -2056,7 +2056,7 @@
 !
 !  Define Dissolved Inorganic Nitrogen in water column
 !
-        IF (Hout(iddinw,ng)) THEN 
+        IF (Hout(iddinw,ng)) THEN
           Vinfo( 1)=Vname(1,iddinw)
           Vinfo( 2)=Vname(2,iddinw)
           Vinfo( 3)=Vname(3,iddinw)
@@ -2075,7 +2075,7 @@
 !
 !  Define Dissolved Inorganic Nitrogen in sediment column
 !
-        IF (Hout(iddins,ng)) THEN 
+        IF (Hout(iddins,ng)) THEN
           Vinfo( 1)=Vname(1,iddins)
           Vinfo( 2)=Vname(2,iddins)
           Vinfo( 3)=Vname(3,iddins)
@@ -2094,7 +2094,7 @@
 !
 !  Define Dissolved Oxygen in water column
 !
-        IF (Hout(iddowc,ng)) THEN 
+        IF (Hout(iddowc,ng)) THEN
           Vinfo( 1)=Vname(1,iddowc)
           Vinfo( 2)=Vname(2,iddowc)
           Vinfo( 3)=Vname(3,iddowc)
@@ -2111,9 +2111,9 @@
      &                   __FILE__)) RETURN
         END IF
 !
-!  Define Dissolved Inorganic Nitrogen in water column due to SAV 
+!  Define Dissolved Inorganic Nitrogen in water column due to SAV
 !
-        IF (Hout(idwsvl,ng)) THEN 
+        IF (Hout(idwsvl,ng)) THEN
           Vinfo( 1)=Vname(1,idwsvl)
           Vinfo( 2)=Vname(2,idwsvl)
           Vinfo( 3)=Vname(3,idwsvl)
@@ -2265,7 +2265,7 @@
         END IF
 !
 ! AGBG
-! 
+!
         IF (Hout(idsvbg,ng)) THEN
           Vinfo( 1)=Vname(1,idsvbg)
           Vinfo( 2)=Vname(2,idsvbg)
@@ -2284,7 +2284,7 @@
         END IF
 !
 ! BGAG
-! 
+!
         IF (Hout(idsvag,ng)) THEN
           Vinfo( 1)=Vname(1,idsvag)
           Vinfo( 2)=Vname(2,idsvag)
@@ -2302,8 +2302,8 @@
      &                   __FILE__)) RETURN
         END IF
 !
-! BGR 
-! 
+! BGR
+!
         IF (Hout(idsbgr,ng)) THEN
           Vinfo( 1)=Vname(1,idsbgr)
           Vinfo( 2)=Vname(2,idsbgr)
@@ -2322,7 +2322,7 @@
         END IF
 !
 ! BGM
-! 
+!
         IF (Hout(idsbgm,ng)) THEN
           Vinfo( 1)=Vname(1,idsbgm)
           Vinfo( 2)=Vname(2,idsbgm)
@@ -2342,7 +2342,7 @@
 !
 # endif
 !
-#if defined VEGETATION 
+#if defined VEGETATION
 #include "vegetation_def_his.h"
 #endif
 !
@@ -4785,7 +4785,7 @@
 
           END IF
 !
-#if defined VEGETATION 
+#if defined VEGETATION
 # if defined VEG_DRAG || defined VEG_BIOMASS
           DO itrc=1,NVEGP
             IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idvprp(itrc)))) THEN
@@ -4793,9 +4793,9 @@
               HIS(ng)%Vid(itrc)=var_id(i)
             END IF
           END DO
-# endif 
+# endif
 #endif
-! 
+!
 #ifdef SOLVE3D
           DO itrc=1,NT(ng)
             IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idTvar(itrc)))) THEN
@@ -5449,7 +5449,7 @@
      &                                  TRIM(ncname)
           exit_flag=3
           RETURN
-        END IF            
+        END IF
 # endif
 # ifdef MELT_PONDS
         IF (.not.got_var(idApond).and.Hout(idApond,ng)) THEN
@@ -5849,18 +5849,18 @@
           END IF
 # endif
         END DO
-# ifdef VEGETATION 
-#  if defined VEG_DRAG || defined VEG_BIOMASS 
-        DO i=1,NVEGP 
+# ifdef VEGETATION
+#  if defined VEG_DRAG || defined VEG_BIOMASS
+        DO i=1,NVEGP
           IF (.not.got_var(idvprp(i)).and.Hout(idvprp(i),ng)) THEN
             IF (Master) WRITE (stdout,70) TRIM(Vname(1,idvprp(i))),     &
      &                                    TRIM(ncname)
             exit_flag=3
             RETURN
           END IF
-        END DO 
+        END DO
 #  endif
-# endif 
+# endif
 # ifdef SEDIMENT
         DO i=1,NST
           IF (.not.got_var(idfrac(i)).and.Hout(idfrac(i),ng)) THEN

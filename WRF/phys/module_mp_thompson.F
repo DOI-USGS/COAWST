@@ -1089,7 +1089,7 @@
 !     endif
 
       dt = dt_in
-   
+
       qc_max = 0.
       qr_max = 0.
       qs_max = 0.
@@ -2827,7 +2827,7 @@
          if ((qi1d(k) + qiten(k)*DT) .gt. R1) then
             ri(k) = (qi1d(k) + qiten(k)*DT)*rho(k)
             ni(k) = MAX(R2, (ni1d(k) + niten(k)*DT)*rho(k))
-            L_qi(k) = .true. 
+            L_qi(k) = .true.
          else
             ri(k) = R1
             ni(k) = R2
@@ -2854,7 +2854,7 @@
             nr(k) = R2
             L_qr(k) = .false.
          endif
-               
+
          if ((qs1d(k) + qsten(k)*DT) .gt. R1) then
             rs(k) = (qs1d(k) + qsten(k)*DT)*rho(k)
             L_qs(k) = .true.
@@ -3127,7 +3127,7 @@
           prv_rev(k) = MIN(DBLE(rate_max), prv_rev(k)*orho)
 
 !..TEST: G. Thompson  10 May 2013
-!..Reduce the rain evaporation in same places as melting graupel occurs. 
+!..Reduce the rain evaporation in same places as melting graupel occurs.
 !..Rationale: falling and simultaneous melting graupel in subsaturated
 !..regions will not melt as fast because particle temperature stays
 !..at 0C.  Also not much shedding of the water from the graupel so
@@ -3952,7 +3952,7 @@
                   massr = am_r * Dr(n2)**bm_r
                   do n = 1, nbs
                      masss = am_s * Ds(n)**bm_s
-      
+
                      dvs = 0.5d0*((vr(n2) - vs(n)) + DABS(vr(n2)-vs(n)))
                      dvr = 0.5d0*((vs(n) - vr(n2)) + DABS(vs(n)-vr(n2)))
 
@@ -4716,7 +4716,7 @@
 !+---+-----------------------------------------------------------------+
       SUBROUTINE GSER(GAMSER,A,X,GLN)
 !     --- RETURNS THE INCOMPLETE GAMMA FUNCTION P(A,X) EVALUATED BY ITS
-!     --- ITS SERIES REPRESENTATION AS GAMSER.  ALSO RETURNS LN(GAMMA(A)) 
+!     --- ITS SERIES REPRESENTATION AS GAMSER.  ALSO RETURNS LN(GAMMA(A))
 !     --- AS GLN.
 !     --- USES GAMMLN
       IMPLICIT NONE
@@ -4985,7 +4985,7 @@
       a2  = -A*(y1+y2)*0.5
       a3  = A/3.
 
-      if (yy.le.y1) then 
+      if (yy.le.y1) then
          dab = aa
       else if (yy.ge.y2) then
          dab = bb
@@ -4993,15 +4993,15 @@
          dab = a0+(a1*yy)+(a2*yy*yy)+(a3*yy*yy*yy)
       endif
 
-      if (dab.lt.aa) then 
+      if (dab.lt.aa) then
          dab = aa
       endif
-      if (dab.gt.bb) then 
+      if (dab.gt.bb) then
          dab = bb
       endif
       delta_p = dab
 
-      END FUNCTION delta_p 
+      END FUNCTION delta_p
 
 !+---+-----------------------------------------------------------------+
 !ctrlL

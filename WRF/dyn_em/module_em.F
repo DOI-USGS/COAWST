@@ -1,4 +1,4 @@
-#if ( HYBRID_COORD==1 ) 
+#if ( HYBRID_COORD==1 )
 #  define mut(...) (c1(k)*XXPCTXX(__VA_ARGS__)+c2(k))
 #  define XXPCTXX(...) mut(__VA_ARGS__)
 
@@ -30,25 +30,25 @@
 MODULE module_em
 
    USE module_model_constants
-   
+
    USE module_advect_em, only: advect_u, advect_v, advect_w, advect_scalar, advect_scalar_pd, advect_scalar_mono, &
         advect_weno_u, advect_weno_v, advect_weno_w, advect_scalar_weno,  advect_scalar_wenopd
-   
+
    USE module_big_step_utilities_em, only: grid_config_rec_type, calculate_full, couple_momentum, calc_mu_uv, calc_ww_cp, &
         calc_cq, calc_alt, calc_php, set_tend, rhs_ph, &
    	horizontal_pressure_gradient, pg_buoy_w, w_damp, perturbation_coriolis, coriolis, curvature, horizontal_diffusion, &
         horizontal_diffusion_3dmp, vertical_diffusion_u, &
 	vertical_diffusion_v, vertical_diffusion, vertical_diffusion_3dmp, sixth_order_diffusion, rk_rayleigh_damp, &
         theta_relaxation, vertical_diffusion_mp, zero_tend, zero_tend2d
-	
+
    USE module_state_description, only: param_first_scalar, p_qr, p_qv, p_qc, p_qg, p_qi, p_qs, tiedtkescheme,ntiedtkescheme, heldsuarez, &
         positivedef, gdscheme, g3scheme, gfscheme, kfetascheme, mskfscheme, monotonic, wenopd_scalar, weno_scalar, weno_mom
-	
+
    USE module_damping_em, only: held_suarez_damp
 
-   USE module_dm 
+   USE module_dm
 
-   USE module_llxy 
+   USE module_llxy
 
    USE module_domain, ONLY : domain, get_ijk_from_grid
 
@@ -113,7 +113,7 @@ SUBROUTINE rk_step_prep  ( config_flags, rk_step,           &
 
    REAL , DIMENSION(  ims:ime , kms:kme, jms:jme ) ,                      &
                                                INTENT(IN   ) ::  p
-                                                                 
+
 
 
 
@@ -142,13 +142,13 @@ SUBROUTINE rk_step_prep  ( config_flags, rk_step,           &
 
 !<DESCRIPTION>
 !
-!  rk_step_prep prepares a number of diagnostic quantities 
+!  rk_step_prep prepares a number of diagnostic quantities
 !  in preperation for a Runge-Kutta timestep.  subroutines called
 !  by rk_step_prep calculate
 !
 !  (1) total column dry air mass (mut, call to calculate_full)
 !
-!  (2) total column dry air mass at u and v points 
+!  (2) total column dry air mass at u and v points
 !      (muu, muv, call to calculate_mu_uv)
 !
 !  (3) mass-coupled velocities for advection
@@ -257,7 +257,7 @@ SUBROUTINE rk_tendency ( config_flags, rk_step,                           &
                                         INTENT(IN   ) :: ru,      &
                                                          rv,      &
                                                          rw,      &
-                                                         ww,      & 
+                                                         ww,      &
                                                          u,       &
                                                          v,       &
                                                          w,       &
@@ -312,7 +312,7 @@ SUBROUTINE rk_tendency ( config_flags, rk_step,                           &
                                                                     msfvy,   &
                                                                     msftx,   &
                                                                     msfty,   &
-                                                                    clat,    & 
+                                                                    clat,    &
                                                                     f,       &
                                                                     e,       &
                                                                     sina,    &
@@ -361,8 +361,8 @@ SUBROUTINE rk_tendency ( config_flags, rk_step,                           &
 
 !<DESCRIPTION>
 !
-!  rk_tendency computes the large-timestep tendency terms in the 
-!  momentum, thermodynamic (theta), and geopotential equations.  
+!  rk_tendency computes the large-timestep tendency terms in the
+!  momentum, thermodynamic (theta), and geopotential equations.
 !  These terms include:
 !
 !  (1) advection (for u, v, w, theta - calls to advect_u, advect_v,
@@ -456,7 +456,7 @@ SUBROUTINE rk_tendency ( config_flags, rk_step,                           &
                    its, ite, jts, jte, kts, kte )
 
      ELSE
-     
+
      CALL advect_u ( u, u , ru_tend, ru, rv, ww, &
                    c1h, c2h,                     &
                    mut, time_step, config_flags, &
@@ -481,7 +481,7 @@ SUBROUTINE rk_tendency ( config_flags, rk_step,                           &
                    its, ite, jts, jte, kts, kte )
 
     ELSE
-     
+
      CALL advect_v ( v, v , rv_tend, ru, rv, ww,  &
                    c1h, c2h,                     &
                    mut, time_step, config_flags, &
@@ -507,7 +507,7 @@ SUBROUTINE rk_tendency ( config_flags, rk_step,                           &
                      its, ite, jts, jte, kts, kte )
 
      ELSE
-     
+
      CALL advect_w ( w, w, rw_tend, ru, rv, ww,    &
                      c1h, c2h,                     &
                      mut, time_step, config_flags, &
@@ -549,10 +549,10 @@ SUBROUTINE rk_tendency ( config_flags, rk_step,                           &
                           rdx, rdy, rdnw,               &
                           ids, ide, jds, jde, kds, kde, &
                           ims, ime, jms, jme, kms, kme, &
-                          its, ite, jts, jte, kts, kte ) 
+                          its, ite, jts, jte, kts, kte )
 
      ENDIF
-     
+
      IF ( config_flags%cu_physics == GDSCHEME  .OR.     &
           config_flags%cu_physics == GFSCHEME  .OR.     &
           config_flags%cu_physics == G3SCHEME  .OR.     &
@@ -649,7 +649,7 @@ SUBROUTINE rk_tendency ( config_flags, rk_step,                           &
 
 ! Damping option added for Held-Suarez test (also uses lw option HELDSUAREZ)
       IF (config_flags%ra_lw_physics == HELDSUAREZ) THEN
-         CALL held_suarez_damp ( ru_tend, rv_tend,               &   
+         CALL held_suarez_damp ( ru_tend, rv_tend,               &
                                  ru,rv,p,pb,                     &
                                  ids, ide, jds, jde, kds, kde,   &
                                  ims, ime, jms, jme, kms, kme,   &
@@ -666,7 +666,7 @@ SUBROUTINE rk_tendency ( config_flags, rk_step,                           &
   forward_step: IF( rk_step == 1 ) THEN
 
     diff_opt1 : IF (config_flags%diff_opt .eq. 1) THEN
-   
+
         CALL horizontal_diffusion ('u', u, ru_tendf, mut,               &
                                         c1h, c2h, config_flags,         &
                                         msfux, msfuy, msfvx, msfvx_inv, &
@@ -759,7 +759,7 @@ SUBROUTINE rk_tendency ( config_flags, rk_step,                           &
                                        ims, ime, jms, jme, kms, kme,  &
                                        its, ite, jts, jte, kts, kte )
 
-      IF (non_hydrostatic)                                            & 
+      IF (non_hydrostatic)                                            &
       CALL sixth_order_diffusion( 'w', w, rw_tendf, mut, dt,          &
                                        config_flags, c1f, c2f,        &
                                        diff_6th_opt, diff_6th_factor, &
@@ -862,9 +862,9 @@ SUBROUTINE rk_addtend_dry ( ru_tend, rv_tend, rw_tend, ph_tend, t_tend,      &
 !
 ! rk_addtend_dry constructs the full large-timestep tendency terms for
 ! momentum (u,v,w), theta and geopotential equations.   This is accomplished
-! by combining the physics tendencies (in *tendf; these are computed 
-! the first RK substep, held fixed thereafter) with the RK tendencies 
-! (in *tend, these include advection, pressure gradient, etc; 
+! by combining the physics tendencies (in *tendf; these are computed
+! the first RK substep, held fixed thereafter) with the RK tendencies
+! (in *tend, these include advection, pressure gradient, etc;
 ! these change each rk substep).  Output is in *tend.
 !
 !</DESCRIPTION>
@@ -940,13 +940,13 @@ END SUBROUTINE rk_addtend_dry
 !-------------------------------------------------------------------------------
 
 SUBROUTINE rk_scalar_tend ( scs, sce, config_flags,          &
-                            tenddec,                        & 
+                            tenddec,                        &
                             rk_step, dt,                     &
                             ru, rv, ww, mut, mub, mu_old,    &
                             c1h, c2h, alt,                   &
                             scalar_old, scalar,              &
                             scalar_tends, advect_tend,       &
-                            h_tendency, z_tendency,          & 
+                            h_tendency, z_tendency,          &
                             RQVFTEN,                         &
                             base, moist_step, fnm, fnp,      &
                             msfux, msfuy, msfvx, msfvx_inv,  &
@@ -979,9 +979,9 @@ SUBROUTINE rk_scalar_tend ( scs, sce, config_flags,          &
 
    REAL, DIMENSION(ims:ime, kms:kme, jms:jme , scs:sce ),                      &
                                          INTENT(INOUT)  :: scalar_tends
-                                                    
+
    REAL, DIMENSION(ims:ime, kms:kme, jms:jme  ), INTENT(INOUT) :: advect_tend
-   REAL, DIMENSION(ims:ime, kms:kme, jms:jme  ), INTENT(  OUT) :: h_tendency, z_tendency 
+   REAL, DIMENSION(ims:ime, kms:kme, jms:jme  ), INTENT(  OUT) :: h_tendency, z_tendency
 
    REAL, DIMENSION(ims:ime, kms:kme, jms:jme  ), INTENT(OUT  ) :: RQVFTEN
 
@@ -1021,10 +1021,10 @@ SUBROUTINE rk_scalar_tend ( scs, sce, config_flags,          &
 
    REAL ,                                        INTENT(IN   ) :: dt
 
-   INTEGER, INTENT(IN   ) :: adv_opt          
+   INTEGER, INTENT(IN   ) :: adv_opt
 
    ! Local data
-  
+
    INTEGER :: im, i,j,k
    INTEGER :: time_step
 
@@ -1032,7 +1032,7 @@ SUBROUTINE rk_scalar_tend ( scs, sce, config_flags,          &
 
 !<DESCRIPTION>
 !
-! rk_scalar_tend calls routines that computes scalar tendency from advection 
+! rk_scalar_tend calls routines that computes scalar tendency from advection
 ! and 3D mixing (TKE or fixed eddy viscosities).
 !
 !</DESCRIPTION>
@@ -1065,11 +1065,11 @@ SUBROUTINE rk_scalar_tend ( scs, sce, config_flags,          &
         CALL advect_scalar_pd       ( scalar(ims,kms,jms,im),             &
                                       scalar_old(ims,kms,jms,im),         &
                                       advect_tend(ims,kms,jms),           &
-                                      h_tendency(ims,kms,jms),            & 
-                                      z_tendency(ims,kms,jms),            & 
+                                      h_tendency(ims,kms,jms),            &
+                                      z_tendency(ims,kms,jms),            &
                                       ru, rv, ww, c1h, c2h,               &
                                       mut, mub, mu_old,                   &
-                                      time_step, config_flags, tenddec,   & 
+                                      time_step, config_flags, tenddec,   &
                                       msfux, msfuy, msfvx, msfvy,         &
                                       msftx, msfty, fnm, fnp,             &
                                       rdx, rdy, rdnw,dt,                  &
@@ -1082,11 +1082,11 @@ SUBROUTINE rk_scalar_tend ( scs, sce, config_flags,          &
         CALL advect_scalar_mono       ( scalar(ims,kms,jms,im),             &
                                         scalar_old(ims,kms,jms,im),         &
                                         advect_tend(ims,kms,jms),           &
-                                        h_tendency(ims,kms,jms),            & 
-                                        z_tendency(ims,kms,jms),            & 
+                                        h_tendency(ims,kms,jms),            &
+                                        z_tendency(ims,kms,jms),            &
                                         ru, rv, ww, c1h, c2h,               &
                                         mut, mub, mu_old,                   &
-                                        config_flags, tenddec,              & 
+                                        config_flags, tenddec,              &
                                         msfux, msfuy, msfvx, msfvy,         &
                                         msftx, msfty, fnm, fnp,             &
                                         rdx, rdy, rdnw,dt,                  &
@@ -1142,7 +1142,7 @@ SUBROUTINE rk_scalar_tend ( scs, sce, config_flags,          &
       END IF
 
      IF((config_flags%cu_physics == GDSCHEME .OR. config_flags%cu_physics == G3SCHEME .OR. &
-         config_flags%cu_physics == GFSCHEME .OR.    & 
+         config_flags%cu_physics == GFSCHEME .OR.    &
          config_flags%cu_physics == KFETASCHEME .OR. config_flags%cu_physics == MSKFSCHEME .OR. &
          config_flags%cu_physics == TIEDTKESCHEME .OR. config_flags%cu_physics == NTIEDTKESCHEME  ) &      ! Tiedtke
                      .and. moist_step .and. ( im == P_QV) ) THEN
@@ -1179,7 +1179,7 @@ SUBROUTINE rk_scalar_tend ( scs, sce, config_flags,          &
                                          ims, ime, jms, jme, kms, kme, &
                                          its, ite, jts, jte, kts, kte )
 
-         ELSE 
+         ELSE
 
             CALL vertical_diffusion (  'm', scalar(ims,kms,jms,im),       &
                                             scalar_tends(ims,kms,jms,im), &
@@ -1243,7 +1243,7 @@ SUBROUTINE q_diabatic_add ( scs, sce,                        &
    REAL ,                                        INTENT(IN   ) :: dt
 
    ! Local data
-  
+
    INTEGER :: im, i,j,k
 
 !<DESCRIPTION>
@@ -1310,7 +1310,7 @@ SUBROUTINE q_diabatic_subtr( scs, sce,                       &
    REAL ,                                        INTENT(IN   ) :: dt
 
    ! Local data
-  
+
    INTEGER :: im, i,j,k
 
 !<DESCRIPTION>
@@ -1355,14 +1355,14 @@ END SUBROUTINE q_diabatic_subtr
 
 SUBROUTINE rk_update_scalar( scs, sce,                      &
                              scalar_1, scalar_2, sc_tend,   &
-                             advh_t, advz_t,                & 
+                             advh_t, advz_t,                &
                              advect_tend,                   &
-                             h_tendency, z_tendency,        & 
+                             h_tendency, z_tendency,        &
                              msftx, msfty, c1, c2,          &
                              mu_old, mu_new, mu_base,       &
                              rk_step, dt, spec_zone,        &
                              config_flags,                  &
-                             tenddec,                      & 
+                             tenddec,                      &
                              ids, ide, jds, jde, kds, kde,  &
                              ims, ime, jms, jme, kms, kme,  &
                              its, ite, jts, jte, kts, kte  )
@@ -1373,7 +1373,7 @@ SUBROUTINE rk_update_scalar( scs, sce,                      &
 
    TYPE(grid_config_rec_type   ) ,   INTENT(IN   ) :: config_flags
 
-   LOGICAL ,                INTENT(IN   ) :: tenddec 
+   LOGICAL ,                INTENT(IN   ) :: tenddec
 
    INTEGER ,                INTENT(IN   ) :: scs, sce, rk_step, spec_zone
    INTEGER ,                INTENT(IN   ) :: ids, ide, jds, jde, kds, kde, &
@@ -1415,7 +1415,7 @@ SUBROUTINE rk_update_scalar( scs, sce,                      &
 !<DESCRIPTION>
 !
 !  rk_scalar_update advances the scalar equation given the time t value
-!  of the scalar and the scalar tendency.  
+!  of the scalar and the scalar tendency.
 !
 !</DESCRIPTION>
 
@@ -1460,7 +1460,7 @@ SUBROUTINE rk_update_scalar( scs, sce,                      &
        ENDDO
        ENDDO
        ENDDO
-   
+
        DO  j = j_start,j_end
        DO  k = k_start,k_end
        DO  i = i_start,i_end
@@ -1469,7 +1469,7 @@ SUBROUTINE rk_update_scalar( scs, sce,                      &
        ENDDO
        ENDDO
        ENDDO
-   
+
        DO  j = j_start_spc,j_end_spc
        DO  k = k_start_spc,k_end_spc
        DO  i = i_start_spc,i_end_spc
@@ -1477,7 +1477,7 @@ SUBROUTINE rk_update_scalar( scs, sce,                      &
        ENDDO
        ENDDO
        ENDDO
-   
+
       DO  j = jts, min(jte,jde-1)
 
       DO  i = its, min(ite,ide-1)
@@ -1511,7 +1511,7 @@ SUBROUTINE rk_update_scalar( scs, sce,                      &
        ENDDO
        ENDDO
        ENDDO
-   
+
        DO  j = j_start,j_end
        DO  k = k_start,k_end
        DO  i = i_start,i_end
@@ -1520,7 +1520,7 @@ SUBROUTINE rk_update_scalar( scs, sce,                      &
        ENDDO
        ENDDO
        ENDDO
-   
+
        DO  j = j_start_spc,j_end_spc
        DO  k = k_start_spc,k_end_spc
        DO  i = i_start_spc,i_end_spc
@@ -1558,7 +1558,7 @@ SUBROUTINE rk_update_scalar( scs, sce,                      &
           ENDDO
         END IF
       END IF
-      
+
       ENDDO
 
       ENDDO
@@ -1614,7 +1614,7 @@ SUBROUTINE rk_update_scalar_pd( scs, sce,                      &
 !<DESCRIPTION>
 !
 !  rk_scalar_update advances the scalar equation given the time t value
-!  of the scalar and the scalar tendency.  
+!  of the scalar and the scalar tendency.
 !
 !</DESCRIPTION>
 
@@ -1654,7 +1654,7 @@ SUBROUTINE rk_update_scalar_pd( scs, sce,                      &
        ENDDO
        ENDDO
        ENDDO
-   
+
        DO  j = j_start_spc,j_end_spc
        DO  k = k_start_spc,k_end_spc
        DO  i = i_start_spc,i_end_spc
@@ -1731,7 +1731,7 @@ SUBROUTINE init_zero_tendency(ru_tendf, rv_tendf, rw_tendf, ph_tendf,  &
 
 !<DESCRIPTION>
 !
-! init_zero_tendency 
+! init_zero_tendency
 ! sets tendency arrays to zero for all prognostic variables.
 !
 !</DESCRIPTION>
@@ -1814,7 +1814,7 @@ SUBROUTINE dump_data( a, field, io_unit,            &
                       ids, ide, jds, jde, kds, kde )
 implicit none
 integer ::  ims, ime, jms, jme, kms, kme, &
-            ids, ide, jds, jde, kds, kde 
+            ids, ide, jds, jde, kds, kde
 real, dimension(ims:ime, kms:kme, jds:jde) :: a
 character :: field
 integer :: io_unit
@@ -1878,13 +1878,13 @@ SUBROUTINE calculate_phy_tend (config_flags,c1,c2,                     &
 
       REAL,     DIMENSION( kms:kme )                                 , &
                 INTENT(IN   )   ::                               c1, c2
-                                                                 
+
       REAL,     DIMENSION( ims:ime, jms:jme )                        , &
                 INTENT(IN   )   ::                                mut, &
                                                                   muu, &
                                                                   muv
-      
-                                                           
+
+
 ! radiation
 
       REAL,     DIMENSION( ims:ime, kms:kme, jms:jme ),                &
@@ -2289,8 +2289,8 @@ SUBROUTINE bound_tke ( tke, tke_upper_bound,       &
   END SUBROUTINE bound_tke
 
 !----------------------------------------------------------------------------------
-!cyl: Implement the forward Lagrangian trajectory calculation in WRF 
-!Chiaying Lee RSMAS/UM 
+!cyl: Implement the forward Lagrangian trajectory calculation in WRF
+!Chiaying Lee RSMAS/UM
 !----------------------------------------------------------------------------------
 subroutine trajectory (     grid,config_flags,               &
                             dt,itimestep,ru_m, rv_m, ww_m,   &
@@ -2313,9 +2313,9 @@ subroutine trajectory (     grid,config_flags,               &
 
   implicit none
 !---------------------------------------------------------------------------------------------------
-! Subroutine trajectory calculates forward Lagrangian trajectory  
+! Subroutine trajectory calculates forward Lagrangian trajectory
 ! of the selecting points. The trajectory of each point is subjected to u, v, and w.
-! (Lee and Chen 2013, MWR).     
+! (Lee and Chen 2013, MWR).
 !
 ! The trajectories is initialized with given longitude (degree), latitude (degree), and height(eta level).
 !
@@ -2384,7 +2384,7 @@ subroutine trajectory (     grid,config_flags,               &
   call trajmapproj(grid, config_flags_temp,proj)
 
 
-! convert ru_m, rv_m and ww_m in u,v,w 
+! convert ru_m, rv_m and ww_m in u,v,w
    const1=1.0/2.0/sqrt(2.0)
 
    dm = grid%id
@@ -2429,9 +2429,9 @@ traj_lat(tjk),traj_long(tjk),traj_i(tjk),traj_j(tjk))
       end if
 
       i_traj = floor(traj_i(tjk)) ! find the lower_left_bottom corner for
-!trajectory 
-      j_traj = floor(traj_j(tjk)) ! 
-      k_traj = floor(traj_k(tjk)) ! 
+!trajectory
+      j_traj = floor(traj_j(tjk)) !
+      k_traj = floor(traj_k(tjk)) !
 traj_in_domain: &
       if ((i_traj .ge. its .and. i_traj .le. ite .and. i_traj .lt. ide) .and. &
           (j_traj .ge. jts .and. j_traj .le. jte .and. j_traj .lt. jde) .and. &
@@ -2567,7 +2567,7 @@ is_in_time_interval: &
         w_temp_upper=(w_a*d_a+w_b*d_b+w_c*d_c+w_d*d_d)/(d_a+d_b+d_c+d_d)
 
         traj_w=w_temp_upper*abs(real(j_traj)-traj_j(tjk))+w_temp_lower*abs(real(j_traj+1)-traj_j(tjk))
-!get old eta 
+!get old eta
         eta_old=grid%znw(k_w+1)*abs(traj_k(tjk)+0.5-real(k_w))+grid%znw(k_w)*abs(traj_k(tjk)+0.5-real(k_w+1))
 
         rdx_grid=rdx*msft(i_traj,j_traj)! 1/(dx/msft)
@@ -2594,7 +2594,7 @@ is_in_time_interval: &
                            /(grid%znw(keta_temp)-grid%znw(keta_temp+1))
             traj_k(tjk) = traj_k(tjk)-0.5
         endif
-!! convert i,j,k into lon, lat 
+!! convert i,j,k into lon, lat
         if( has_proj_map ) then
           call ij_to_latlon (proj, traj_i(tjk), &
                              traj_j(tjk),traj_lat(tjk),traj_long(tjk))
@@ -2618,8 +2618,8 @@ enddo traj_loop
 
 END SUBROUTINE trajectory
 !------------------------------------------------------------------------
-!cyl:Implement the map prpjection code for trajectory calculation 
-!                                    Chiaying Lee  RSMAS/UM        
+!cyl:Implement the map prpjection code for trajectory calculation
+!                                    Chiaying Lee  RSMAS/UM
 !------------------------------------------------------------------------
 subroutine trajmapproj (grid,config_flags,ts_proj)
 !------------------------------------------------------------------------

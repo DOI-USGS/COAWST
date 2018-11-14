@@ -53,9 +53,9 @@
 #if defined SEDIMENT && defined SED_FLOCS
       USE mod_sedflocs, ONLY : allocate_sedflocs, initialize_sedflocs
 #endif
-#if defined VEGETATION 
+#if defined VEGETATION
       USE mod_vegarr,ONLY:allocate_vegarr, initialize_vegarr
-#endif 
+#endif
       USE mod_sources, ONLY : allocate_sources
 #if defined TRC_PSOURCE
       USE mod_trc_sources, ONLY : allocate_trc_sources
@@ -248,7 +248,7 @@
 #if defined SEDIMENT && defined SED_FLOCS
             CALL initialize_sedflocs (ng, TILE, model)
 #endif
-#if defined VEGETATION 
+#if defined VEGETATION
             CALL initialize_vegarr (ng, TILE, model)
 #endif
 #if defined SSH_TIDES || defined UV_TIDES || defined POT_TIDES

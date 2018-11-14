@@ -7,7 +7,7 @@ SUBROUTINE med_initialdata_input_ptr ( grid , config_flags )
    IMPLICIT NONE
    TYPE (domain) , POINTER :: grid
    TYPE (grid_config_rec_type) , INTENT(IN)   :: config_flags
-   INTERFACE 
+   INTERFACE
       SUBROUTINE med_initialdata_input ( grid , config_flags )
          USE module_domain
          USE module_configure
@@ -31,12 +31,12 @@ use module_io
 
    IMPLICIT NONE
 
-  ! Interface 
+  ! Interface
    INTERFACE
      SUBROUTINE start_domain ( grid , allowed_to_read )  ! comes from module_start in appropriate dyn_ directory
        USE module_domain
        TYPE (domain) grid
-       LOGICAL, INTENT(IN) :: allowed_to_read 
+       LOGICAL, INTENT(IN) :: allowed_to_read
      END SUBROUTINE start_domain
    END INTERFACE
 
@@ -87,23 +87,23 @@ use module_io
      if( grid%auxinput7_oid .NE. 0 ) then
        CALL close_dataset ( grid%auxinput7_oid , config_flags , "DATASET=AUXINPUT7" )
      endif
-        
+
         CALL open_r_dataset ( grid%auxinput7_oid, TRIM(inpname) , grid , config_flags , "DATASET=AUXINPUT7", ierr )
 
 !        call set_first_operation(grid%auxinput6_oid)
 
-        
+
         IF ( ierr .NE. 0 ) THEN
           WRITE( wrf_err_message , * ) 'program wrf: error opening ',TRIM(inpname),' for reading ierr=',ierr
           CALL WRF_ERROR_FATAL ( wrf_err_message )
         ENDIF
-           
+
            CALL wrf_debug              (   0 , 'med_initialdata_input: calling input_aux_model_input7' )
            CALL input_auxinput7 ( grid%auxinput7_oid ,   grid , config_flags , ierr )
            CALL wrf_debug              ( 100 , 'med_initialdata_input: back from input_aux_model_input7' )
-        
+
         CALL close_dataset ( grid%auxinput7_oid , config_flags , "DATASET=AUXINPUT7" )
-       
+
        ENDIF
 !gmm
 
@@ -188,7 +188,7 @@ SUBROUTINE med_shutdown_io ( grid , config_flags )
    grid_ptr => grid
    CALL med_shutdown_io_recurse ( grid_ptr , config_flags )
 
-#if ( HWRF == 1 ) 
+#if ( HWRF == 1 )
    DO id = 1, max_domains
      IF( domain_active_this_task(id) ) THEN
        CALL push_communicators_for_domain(id)
@@ -246,7 +246,7 @@ SUBROUTINE med_add_config_info_to_grid ( grid )
 
    USE module_domain
    USE module_configure
- 
+
    IMPLICIT NONE
 
    !  Input data.
