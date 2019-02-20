@@ -1,6 +1,6 @@
-# svn $Id: makefile 830 2017-01-24 21:21:11Z arango $
+# svn $Id: makefile 889 2018-02-10 03:32:52Z arango $
 #::::::::::::::::::::::::::::::::::::::::::::::::::::: Hernan G. Arango :::
-# Copyright (c) 2002-2018 The ROMS/TOMS Group             Kate Hedstrom :::
+# Copyright (c) 2002-2019 The ROMS/TOMS Group             Kate Hedstrom :::
 #   Licensed under a MIT/X style license                                :::
 #   See License_ROMS.txt                                                :::
 #::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
@@ -180,7 +180,7 @@ ifdef USE_ROMS
 #  library to account for calls to objects in other ROMS libraries or
 #  cycling dependencies. These type of dependencies are problematic in
 #  some compilers during linking. This library appears twice at linking
-#  step (beginning and almost the end of ROMS library list).
+#  step (begining and almost the end of ROMS library list).
 #--------------------------------------------------------------------------
 
   libraries  := $(SCRATCH_DIR)/libUTIL.a
@@ -240,13 +240,9 @@ ifneq "$(MAKECMDGOALS)" "clean"
   GET_MACROS := $(wildcard $(SCRATCH_DIR)/make_macros.*)
 
   ifdef GET_MACROS
-   include $(SCRATCH_DIR)/make_macros.mk
-   $(if ,, $(warning INCLUDING FILE $(SCRATCH_DIR)/make_macros.mk \
-                     WHICH CONTAINS APPLICATION-DEPENDENT MAKE DEFINITIONS))
+    include $(SCRATCH_DIR)/make_macros.mk
   else
-   include $(MAKE_MACROS)
-   $(if ,, $(warning INCLUDING FILE $(MAKE_MACROS) \
-                    WHICH CONTAINS APPLICATION-DEPENDENT MAKE DEFINITIONS))
+    include $(MAKE_MACROS)
   endif
  endif
 endif
@@ -450,6 +446,9 @@ ifdef USE_REPRESENTER
  modules  +=	ROMS/Representer \
 		ROMS/Representer/Biology
 endif
+ifdef USE_SEAICE
+ modules  +=	ROMS/Nonlinear/SeaIce
+endif
 ifdef USE_TANGENT
  modules  +=	ROMS/Tangent \
 		ROMS/Tangent/Biology
@@ -463,9 +462,6 @@ ifdef USE_ROMS
 		ROMS/Functionals \
 		ROMS/Utility \
 		ROMS/Modules
-endif
-ifdef USE_SEAICE
- modules  +=	ROMS/SeaIce
 endif
 ifdef USE_CICE
  modules  +=	SeaIce/Extra
@@ -485,7 +481,7 @@ ifdef USE_REPRESENTER
 		ROMS/Representer/Biology
 endif
 ifdef USE_SEAICE
- includes +=	ROMS/SeaIce
+ includes +=	ROMS/Nonlinear/SeaIce
 endif
 ifdef USE_TANGENT
  includes +=	ROMS/Tangent \
@@ -503,6 +499,10 @@ ifdef USE_ROMS
 endif
 ifdef MY_HEADER_DIR
  includes +=	$(MY_HEADER_DIR)
+endif
+
+ifdef USE_COAMPS
+ includes +=	$(COAMPS_LIB_DIR)
 endif
 
 ifdef USE_SWAN
@@ -528,6 +528,14 @@ ifdef USE_INWAVE
 		InWave/Modules \
 		InWave/Utility
 endif
+
+#ifdef USE_WRF
+# ifeq "$(strip $(WRF_LIB_DIR))" "$(WRF_SRC_DIR)"
+#  includes +=	$(addprefix $(WRF_LIB_DIR)/,$(WRF_MOD_DIRS))
+# else
+#  includes +=	$(WRF_LIB_DIR)
+# endif
+#endif
 
 ifdef USE_ROMS
  modules  +=	Master
@@ -703,7 +711,7 @@ $(SCRATCH_DIR)/MakeDepend: makefile \
                            $(SCRATCH_DIR)/$(NETCDF_MODFILE) \
                            $(SCRATCH_DIR)/$(TYPESIZES_MODFILE) \
                            | $(SCRATCH_DIR)
-	$(SFMAKEDEPEND) $(MDEPFLAGS) $(sources) > $(SCRATCH_DIR)/MakeDepend
+	@ $(SFMAKEDEPEND) $(MDEPFLAGS) $(sources) > $(SCRATCH_DIR)/MakeDepend
 	cp -p $(MAKE_MACROS) $(SCRATCH_DIR)
 
 .PHONY: depend
@@ -714,7 +722,7 @@ depend: $(SCRATCH_DIR)
 	$(SFMAKEDEPEND) $(MDEPFLAGS) $(sources) > $(SCRATCH_DIR)/MakeDepend
 endif
 
-ifneq "$(MAKECMDGOALS)" "clean"
+ifneq ($(MAKECMDGOALS),clean)
   -include $(SCRATCH_DIR)/MakeDepend
 endif
 
@@ -725,17 +733,17 @@ endif
 .PHONY: tarfile
 
 tarfile:
-		tar --exclude=".svn" --exclude Output -cvf coawst_v3.3.tar *
+		tar --exclude=".svn" --exclude Output -cvf coawst_v3.4.tar *
 
 .PHONY: zipfile
 
 zipfile:
-		zip -r roms-3_0.zip *
+		zip -r roms-3_7.zip *
 
 .PHONY: gzipfile
 
 gzipfile:
-		gzip -v roms-3_0.gzip *
+		gzip -v roms-3_7.gzip *
 
 #--------------------------------------------------------------------------
 #  Cleaning targets.
